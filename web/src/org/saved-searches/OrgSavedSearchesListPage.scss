@@ -10,9 +10,8 @@
     &__row {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         padding: 0.75rem;
-        border-top: solid 1px #cfd6e4;
-        border-bottom: solid 1px #cfd6e4;
         font-weight: bold;
 
         &--icon {

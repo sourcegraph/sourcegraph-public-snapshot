@@ -18,6 +18,7 @@ export interface SavedQueryFields {
 }
 
 interface Props extends RouteComponentProps<{}> {
+    authenticatedUser: GQL.IUser | null
     defaultValues?: Partial<SavedQueryFields>
     title?: string
     submitLabel: string
@@ -152,16 +153,38 @@ export class SavedSearchForm extends React.Component<Props, State> {
                             </label>
                         </div>
                     )}
+                    {this.isUnsupportedNotifyQuery(this.state.values) && (
+                        <div className="alert alert-warning mb-3">
+                            <strong>Warning:</strong> non-commit searches do not currently support notifications.
+                            Consider adding <code>type:diff</code> or <code>type:commit</code> to your query.
+                        </div>
+                    )}
+                    {notify && !window.context.emailEnabled && !this.isUnsupportedNotifyQuery(this.state.values) && (
+                        <div className="alert alert-warning mb-3">
+                            <strong>Warning:</strong> Sending emails is not currently configured on this Sourcegraph
+                            server.{' '}
+                            {this.props.authenticatedUser && this.props.authenticatedUser.siteAdmin
+                                ? 'Use the email.smtp site configuration setting to enable sending emails.'
+                                : 'Contact your server admin for more information.'}
+                        </div>
+                    )}
                     <button type="submit" className="btn btn-primary saved-search-form__submit-button">
                         {this.props.submitLabel}
                     </button>
                     {this.state.error && !this.state.isSubmitting && (
-                        <div className="alert alert-danger mb-2">
+                        <div className="alert alert-danger mb-3">
                             <strong>Error:</strong> {this.state.error.message}
                         </div>
                     )}
                 </Form>
             </div>
         )
+    }
+    /**
+     * Tells if the query is unsupported for sending notifications.
+     */
+    private isUnsupportedNotifyQuery(v: SavedQueryFields): boolean {
+        const notifying = v.notify || v.notifySlack
+        return notifying && !v.query.includes('type:diff') && !v.query.includes('type:commit')
     }
 }

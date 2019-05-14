@@ -1,3 +1,4 @@
+import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import { UserAreaHeaderNavItem } from './UserAreaHeader'
 
@@ -11,6 +12,12 @@ export const userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem> = [
         to: '/settings',
         label: 'Settings',
         icon: SettingsIcon,
+        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
+    },
+    {
+        to: '/searches',
+        label: 'Saved searches',
+        icon: FeatureSearchOutlineIcon,
         condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
     },
 ]

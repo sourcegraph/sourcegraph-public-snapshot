@@ -9,7 +9,6 @@ import { Subject, Subscription } from 'rxjs'
 import { map, mapTo, startWith, switchMap, catchError } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { deleteSavedSearch, fetchSavedQueries } from '../../search/backend'
-import { OrgAreaPageProps } from '../area/OrgArea'
 
 interface NodeProps extends RouteComponentProps {
     savedSearch: GQL.ISavedSearch
@@ -81,9 +80,11 @@ interface State {
     savedSearches: GQL.ISavedSearch[]
 }
 
-interface Props extends RouteComponentProps<{}>, OrgAreaPageProps {}
+interface Props extends RouteComponentProps<{}> {
+    authenticatedUser: GQL.IUser | null
+}
 
-export class OrgSavedSearchesListPage extends React.Component<Props, State> {
+export class UserSavedSearchesListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()
     private refreshRequests = new Subject<void>()
 
@@ -107,6 +108,7 @@ export class OrgSavedSearchesListPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const { authenticatedUser } = this.props
         return (
             <div className="org-saved-searches-list-page">
                 <div className="org-saved-searches-list-page__title">
@@ -121,9 +123,10 @@ export class OrgSavedSearchesListPage extends React.Component<Props, State> {
                     </div>
                 </div>
                 <div className="list-group list-group-flush">
-                    {this.state.savedSearches.length > 0 &&
+                    {!!authenticatedUser &&
+                        this.state.savedSearches.length > 0 &&
                         this.state.savedSearches
-                            .filter(search => search.orgID === this.props.org.id)
+                            .filter(search => search.userID === authenticatedUser.id)
                             .map(search => (
                                 <SavedSearchNode {...this.props} savedSearch={search} onDelete={this.onDelete} />
                             ))}

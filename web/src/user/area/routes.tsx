@@ -1,6 +1,9 @@
 import React from 'react'
 import { Redirect } from 'react-router'
 
+import { UserSavedSearchesCreateForm } from '../saved-searches/UserSavedSearchesCreateForm'
+import { UserSavedSearchesListPage } from '../saved-searches/UserSavedSearchesListPage'
+import { UserSavedSearchesUpdateForm } from '../saved-searches/UserSavedSearchesUpdateForm'
 import { UserAreaRoute } from './UserArea'
 
 const UserOverviewPage = React.lazy(async () => ({
@@ -29,6 +32,22 @@ export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
                 isLightTheme={props.isLightTheme}
             />
         ),
+    },
+    {
+        path: '/searches',
+        exact: true,
+        // tslint:disable-next-line:jsx-no-lambda
+        render: props => <UserSavedSearchesListPage {...props} />,
+    },
+    {
+        path: '/searches/add',
+        // tslint:disable-next-line:jsx-no-lambda
+        render: props => <UserSavedSearchesCreateForm {...props} />,
+    },
+    {
+        path: '/searches/:id',
+        // tslint:disable-next-line:jsx-no-lambda
+        render: props => <UserSavedSearchesUpdateForm {...props} />,
     },
 
     // Redirect from previous /users/:username/account -> /users/:username/settings/profile.
