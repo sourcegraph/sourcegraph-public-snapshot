@@ -11,7 +11,7 @@ const SettingsSchemaJSON = `{
   "type": "object",
   "properties": {
     "search.savedQueries": {
-      "description": "Saved search queries",
+      "description": "DEPRECATED: Saved search queries",
       "type": "array",
       "items": {
         "type": "object",

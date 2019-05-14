@@ -320,6 +320,27 @@ type Mutation {
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomMutation!
+    # Creates a saved search.
+    createSavedSearch(
+        description: String!
+        query: String!
+        notifyOwner: Boolean!
+        notifySlack: Boolean!
+        orgID: ID
+        userID: ID
+    ): SavedSearch!
+    # Updates a saved search
+    updateSavedSearch(
+        id: ID!
+        description: String!
+        query: String!
+        notifyOwner: Boolean!
+        notifySlack: Boolean!
+        orgID: ID
+        userID: ID
+    ): SavedSearch!
+    # Deletes a saved search
+    deleteSavedSearch(id: ID!): EmptyResponse
 }
 
 # A new external service.
@@ -534,26 +555,6 @@ type SettingsMutation {
         # entire previous settings value will be overwritten by this new value.
         contents: String!
     ): UpdateSettingsPayload
-    # Create a saved query.
-    createSavedQuery(
-        description: String!
-        query: String!
-        showOnHomepage: Boolean = false
-        notify: Boolean = false
-        notifySlack: Boolean = false
-        disableSubscriptionNotifications: Boolean = false
-    ): SavedQuery!
-    # Update the saved query with the given ID in settings.
-    updateSavedQuery(
-        id: ID!
-        description: String
-        query: String
-        showOnHomepage: Boolean = false
-        notify: Boolean = false
-        notifySlack: Boolean = false
-    ): SavedQuery!
-    # Delete the saved query with the given ID in the settings.
-    deleteSavedQuery(id: ID!, disableSubscriptionNotifications: Boolean = false): EmptyResponse
 }
 
 # An edit to a JSON property in a settings JSON object. The JSON property to edit can be nested.
@@ -790,8 +791,8 @@ type Query {
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
     ): Search
-    # All saved queries configured for the current user, merged from all configurations.
-    savedQueries: [SavedQuery!]!
+    # All saved searches configured for the current user, merged from all configurations.
+    savedSearches: [SavedSearch!]!
     # All repository groups for the current user, merged from all configurations.
     repoGroups: [RepoGroup!]!
     # The current site.
@@ -972,28 +973,24 @@ type SearchAlert {
 }
 
 # A saved search query, defined in settings.
-type SavedQuery {
-    # The unique ID of the saved query.
+type SavedSearch implements Node {
+    # The unique ID of this saved query.
     id: ID!
-    # The subject whose settings this saved query was defined in.
-    subject: SettingsSubject!
-    # The unique key of this saved query (unique only among all other saved
-    # queries of the same subject).
-    key: String
-    # The 0-indexed index of this saved query in the subject's settings.
-    index: Int!
     # The description.
     description: String!
     # The query.
     query: String!
-    # DEPRECATED: Sourcegraph no longer shows saved searches on the homepage. This resolver will be removed in a future release.
-    #
-    # Whether or not to show on the homepage.
-    showOnHomepage: Boolean!
-    # Whether or not to notify.
+    # Whether or not to notify the owner of the saved search via email. This owner is either
+    # a single user, or every member of an organization that owns the saved search.
     notify: Boolean!
     # Whether or not to notify on Slack.
     notifySlack: Boolean!
+    # The user ID of the owner if the owner is a user.
+    userID: ID
+    # The organization ID of the owner if the owner is an org.
+    orgID: ID
+    # The Slack webhook URL associated with this saved search, if any.
+    slackWebhookURL: String
 }
 
 # A search query description.
@@ -2375,7 +2372,6 @@ type Org implements Node & SettingsSubject {
     url: String!
     # The URL to the organization's settings.
     settingsURL: String
-    # A list of extensions published by this organization in the extension registry.
 }
 
 # The result of Mutation.inviteUserToOrganization.

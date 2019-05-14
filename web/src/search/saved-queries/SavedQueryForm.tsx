@@ -1,21 +1,25 @@
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
-
-import { from, fromEvent, Observable, Subject, Subscription } from 'rxjs'
-import { catchError, filter, map } from 'rxjs/operators'
+import { fromEvent, Observable, Subject, Subscription } from 'rxjs'
+import { catchError, filter } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 import { Link } from '../../../../shared/src/components/Link'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { isSettingsValid, SettingsCascadeProps, SettingsSubject } from '../../../../shared/src/settings/settings'
+import { SettingsCascadeProps, SettingsSubject } from '../../../../shared/src/settings/settings'
 import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
 
 export interface SavedQueryFields {
+    id: GQL.ID
     description: string
     query: string
     subject: GQL.ID
     notify: boolean
     notifySlack: boolean
+    userID: GQL.ID | null
+    orgID: GQL.ID | null
+    slackWebhookURL: string | null
+    orgName: string
 }
 
 interface Props extends SettingsCascadeProps {
@@ -36,14 +40,12 @@ interface State {
     isFocused: boolean
     error?: any
     sawUnsupportedNotifyQueryWarning: boolean
-    slackWebhooks: Map<GQL.ID, string | null> // subject GraphQL ID -> slack webhook
 }
 
 export class SavedQueryForm extends React.Component<Props, State> {
     private handleDescriptionChange = this.createInputChangeHandler('description')
-    private handleSubjectChange = this.createInputChangeHandler('subject')
     private handleNotifyChange = this.createInputChangeHandler('notify')
-    private handleNotifySlackChange = this.createInputChangeHandler('notifySlack')
+    private handleNotifySlackChange = this.createInputChangeHandler('notifySlack') // This needs to update the subject to correspond to the org that is selected now.
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -55,57 +57,30 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
         this.state = {
             values: {
+                id: (defaultValues && defaultValues.id) || '',
                 query: (defaultValues && defaultValues.query) || '',
                 description: (defaultValues && defaultValues.description) || '',
                 subject: (defaultValues && defaultValues.subject) || '',
                 notify: !!(defaultValues && defaultValues.notify),
                 notifySlack: !!(defaultValues && defaultValues.notifySlack),
+                userID:
+                    (defaultValues && defaultValues.userID) ||
+                    (defaultValues && defaultValues.orgID
+                        ? null
+                        : this.props.authenticatedUser && this.props.authenticatedUser.id) ||
+                    null,
+                orgID: (defaultValues && defaultValues.orgID) || null,
+                slackWebhookURL: (defaultValues && defaultValues.slackWebhookURL) || null,
+                orgName: (defaultValues && defaultValues.orgName) || '',
             },
             subjectOptions: [],
             isSubmitting: false,
             isFocused: false,
             sawUnsupportedNotifyQueryWarning: false,
-            slackWebhooks: new Map<GQL.ID, string | null>(),
         }
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            from(this.componentUpdates)
-                .pipe(
-                    map(({ settingsCascade }) => settingsCascade),
-                    filter(isSettingsValid)
-                )
-                .subscribe(settingsCascade => {
-                    const subject = settingsCascade.subjects.find(s => !!s.subject.id && s.subject.viewerCanAdminister)
-
-                    this.setState(state => ({
-                        subjectOptions: settingsCascade.subjects.map(({ subject }) => subject),
-                        values: {
-                            ...state.values,
-                            subject: state.values.subject || (subject && subject.subject.id) || '',
-                        },
-                    }))
-
-                    settingsCascade.subjects.map(subject => {
-                        if (subject.settings) {
-                            let slackWebhookURL: string | null
-                            try {
-                                const settings = subject.settings
-                                if (settings && settings['notifications.slack']) {
-                                    slackWebhookURL = settings['notifications.slack'].webhookURL
-                                }
-                            } catch (e) {
-                                slackWebhookURL = null
-                            }
-                            this.setState(state => ({
-                                slackWebhooks: state.slackWebhooks.set(subject.subject.id, slackWebhookURL),
-                            }))
-                        }
-                    })
-                })
-        )
-
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
                 .pipe(filter(event => !this.state.isFocused && event.key === Key.Escape && !this.state.isSubmitting))
@@ -126,8 +101,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
     public render(): JSX.Element {
         const { onDidCancel, title, submitLabel } = this.props
         const {
-            values: { query, description, subject, notify, notifySlack },
-            subjectOptions,
+            values: { query, description, notify, notifySlack, userID, orgID },
             isSubmitting,
             error,
         } = this.state
@@ -173,22 +147,36 @@ export class SavedQueryForm extends React.Component<Props, State> {
                 </div>
                 <div className="form-group">
                     <label>Save location</label>
+                    <div>User</div>
                     <div className="saved-query-form__save-location">
-                        {subjectOptions
-                            .filter(
-                                (subjectOption: SettingsSubject): subjectOption is GQL.IOrg | GQL.IUser =>
-                                    subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
-                            )
-                            .map((subjectOption, i) => (
+                        {this.props.authenticatedUser && (
+                            <label className="saved-query-form__save-location-options">
+                                <input
+                                    className="saved-query-form__save-location-input"
+                                    onChange={this.userOwnerChangeHandler(this.props.authenticatedUser.id)}
+                                    type="radio"
+                                    value={this.props.authenticatedUser.username}
+                                    checked={this.props.authenticatedUser.id === userID}
+                                />
+                                {this.props.authenticatedUser.username}
+                            </label>
+                        )}
+                    </div>
+                    {this.props.authenticatedUser && this.props.authenticatedUser.organizations.nodes.length > 0 && (
+                        <div>Organizations</div>
+                    )}
+                    <div className="saved-query-form__save-location">
+                        {this.props.authenticatedUser &&
+                            this.props.authenticatedUser.organizations.nodes.map((org, i) => (
                                 <label className="saved-query-form__save-location-options" key={i}>
                                     <input
                                         className="saved-query-form__save-location-input"
-                                        onChange={this.handleSubjectChange}
+                                        onChange={this.orgOwnerChangeHandler(org)}
                                         type="radio"
-                                        value={subjectOption.id}
-                                        checked={subject === subjectOption.id}
-                                    />{' '}
-                                    {settingsSubjectLabel(subjectOption)}
+                                        value={org.name}
+                                        checked={org.id === orgID}
+                                    />
+                                    {org.name}
                                 </label>
                             ))}
                     </div>
@@ -204,19 +192,21 @@ export class SavedQueryForm extends React.Component<Props, State> {
                                 Email notifications
                             </label>
                         </span>
-                        <span className="saved-query-form__save-location-options">
-                            <label
-                                data-tooltip={`Send Slack notifications to webhook defined in configuration for ${this.saveTargetName()}`}
-                            >
-                                <input
-                                    className="saved-query-form__save-location-input"
-                                    type="checkbox"
-                                    defaultChecked={notifySlack}
-                                    onChange={this.handleNotifySlackChange}
-                                />{' '}
-                                Slack notifications
-                            </label>
-                        </span>
+                        {notifySlack && (
+                            <span className="saved-query-form__save-location-options">
+                                <label
+                                    data-tooltip={`Send Slack notifications to webhook defined in configuration for ${this.saveTargetName()}`}
+                                >
+                                    <input
+                                        className="saved-query-form__save-location-input"
+                                        type="checkbox"
+                                        defaultChecked={notifySlack}
+                                        onChange={this.handleNotifySlackChange}
+                                    />{' '}
+                                    Slack notifications
+                                </label>
+                            </span>
+                        )}
                     </div>
                 </div>
                 {this.isUnsupportedNotifyQuery(this.state.values) && (
@@ -233,7 +223,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                             : 'Contact your server admin for more information.'}
                     </div>
                 )}
-                {notifySlack && this.isSubjectMissingSlackWebhook() && (
+                {notifySlack && this.isSavedSearchMissingSlackWebhook() && (
                     <div className="alert alert-warning mb-2">
                         <strong>Required:</strong>{' '}
                         <Link target="_blank" to={this.getConfigureSlackURL()}>
@@ -248,7 +238,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     </div>
                 )}
                 <div>
-                    <button type="submit" className="btn btn-primary" disabled={!subject || isSubmitting}>
+                    <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                         {submitLabel}
                     </button>{' '}
                     <button type="reset" className="btn btn-secondary" disabled={isSubmitting} onClick={onDidCancel}>
@@ -267,13 +257,8 @@ export class SavedQueryForm extends React.Component<Props, State> {
         return notifying && !v.query.includes('type:diff') && !v.query.includes('type:commit')
     }
 
-    private isSubjectMissingSlackWebhook = () => {
-        const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)
-        if (!chosen) {
-            return false
-        }
-        return !this.state.slackWebhooks.get(chosen.id)
-    }
+    private isSavedSearchMissingSlackWebhook = () =>
+        !this.state.values.slackWebhookURL || this.state.values.slackWebhookURL === ''
 
     private getConfigureSlackURL = () => {
         const chosen = this.state.subjectOptions.find(subjectOption => subjectOption.id === this.state.values.subject)
@@ -290,13 +275,11 @@ export class SavedQueryForm extends React.Component<Props, State> {
     }
 
     private saveTargetName = () => {
-        const chosen = this.state.subjectOptions
-            .filter(
-                (subjectOption: SettingsSubject): subjectOption is GQL.IOrg | GQL.IUser =>
-                    subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
-            )
-            .find(subjectOption => subjectOption.id === this.state.values.subject)
-        return chosen && settingsSubjectLabel(chosen, true)
+        const chosen: 'user' | 'org' = this.state.values.userID === null ? 'user' : 'org'
+        if (chosen === 'user') {
+            return (this.props.authenticatedUser && this.props.authenticatedUser.username) || '(user)'
+        }
+        return this.state.values.orgName
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -354,7 +337,6 @@ export class SavedQueryForm extends React.Component<Props, State> {
     private createInputChangeHandler(key: keyof SavedQueryFields): React.FormEventHandler<HTMLInputElement> {
         return event => {
             const { value, checked, type } = event.currentTarget
-
             this.setState(state => ({
                 values: {
                     ...state.values,
@@ -363,13 +345,29 @@ export class SavedQueryForm extends React.Component<Props, State> {
             }))
         }
     }
-}
 
-function settingsSubjectLabel(s: GQL.IUser | GQL.IOrg, short?: boolean): string {
-    switch (s.__typename) {
-        case 'User':
-            return short ? s.username : `${s.username} (user settings)`
-        case 'Org':
-            return short ? s.name : `${s.name} (org settings)`
+    private orgOwnerChangeHandler(org: GQL.IOrg): React.FormEventHandler<HTMLInputElement> {
+        return event => {
+            this.setState(state => ({
+                values: {
+                    ...state.values,
+                    orgID: org.id,
+                    userID: null,
+                    orgName: org.displayName || org.name,
+                },
+            }))
+        }
+    }
+
+    private userOwnerChangeHandler(id: GQL.ID): React.FormEventHandler<HTMLInputElement> {
+        return event => {
+            this.setState(state => ({
+                values: {
+                    ...state.values,
+                    userID: id,
+                    orgID: null,
+                },
+            }))
+        }
     }
 }
