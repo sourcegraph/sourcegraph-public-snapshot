@@ -1,1 +1,1 @@
-DROP INDEX IF EXISTS uri_idx;
+DROP INDEX IF EXISTS repo_uri_idx;
