@@ -1151,8 +1151,9 @@ type Repository implements Node & GenericSearchResultInterface {
     # - my-code-host.example.com/myrepo
     # - myrepo
     name: String!
-    # An alias for name.
-    uri: String! @deprecated(reason: "use name instead")
+    # URI is the full name for this repository (e.g., "github.com/user/repo").
+    # See the documentation for the name field.
+    uri: String!
     # The repository's description.
     description: String!
     # The primary programming language in the repository.

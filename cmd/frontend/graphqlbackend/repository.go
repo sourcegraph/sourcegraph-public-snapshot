@@ -66,9 +66,8 @@ func (r *repositoryResolver) Name() string {
 	return string(r.repo.Name)
 }
 
-// TODO(chris): Remove URI in favor of Name.
 func (r *repositoryResolver) URI() string {
-	return string(r.repo.Name)
+	return r.repo.URI
 }
 
 func (r *repositoryResolver) Description() string {

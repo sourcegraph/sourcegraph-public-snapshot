@@ -16,10 +16,17 @@ type Repo struct {
 	// service itself).
 	ExternalRepo *api.ExternalRepoSpec
 
-	// Name is the name for this repository (e.g., "github.com/user/repo").
+	// Name is the name for this repository (e.g., "github.com/user/repo"). It
+	// is the same as URI, unless the user configures a non-default
+	// repositoryPathPattern.
 	//
 	// Previously, this was called RepoURI.
 	Name api.RepoName
+
+	// URI is the full name for this repository (e.g.,
+	// "github.com/user/repo"). See the documentation for the Name field.
+	URI string
+
 	// Description is a brief description of the repository.
 	Description string
 	// Language is the primary programming language used in this repository.
