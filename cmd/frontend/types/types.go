@@ -24,9 +24,6 @@ type Repo struct {
 	Description string
 	// Language is the primary programming language used in this repository.
 	Language string
-	// Enabled is whether the repository is enabled. Disabled repositories are
-	// not accessible by users (except site admins).
-	Enabled bool
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
 	// CreatedAt is when this repository was created on Sourcegraph.

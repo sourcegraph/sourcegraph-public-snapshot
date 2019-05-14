@@ -17,9 +17,8 @@ func TestReposService_Get(t *testing.T) {
 	ctx := testContext()
 
 	wantRepo := &types.Repo{
-		ID:      1,
-		Name:    "github.com/u/r",
-		Enabled: true,
+		ID:   1,
+		Name: "github.com/u/r",
 	}
 
 	calledGet := db.Mocks.Repos.MockGet_Return(t, wantRepo)
