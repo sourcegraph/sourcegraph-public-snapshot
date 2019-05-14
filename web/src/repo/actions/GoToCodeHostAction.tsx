@@ -144,7 +144,10 @@ function serviceTypeDisplayNameAndIcon(
             return { displayName: 'GitHub', icon: GithubCircleIcon }
         case 'gitlab':
             return { displayName: 'GitLab' }
-        case 'bitbucketserver':
+        case 'bitbucketServer':
+            // TODO: Why is bitbucketServer (correctly) camelCase but
+            // awscodecommit is (correctly) lowercase? Why is serviceType
+            // not type-checked for validity?
             return { displayName: 'Bitbucket Server', icon: BitbucketIcon }
         case 'phabricator':
             return { displayName: 'Phabricator', icon: PhabricatorIcon }
