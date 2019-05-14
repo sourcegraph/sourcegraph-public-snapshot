@@ -340,6 +340,14 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 				result.ErrorNotFound = true
 				return result, nil
 			}
+			if isUnauthorized(err) {
+				result.ErrorUnauthorized = true
+				return result, nil
+			}
+			if isTemporarilyUnavailable(err) {
+				result.ErrorTemporarilyUnavailable = true
+				return result, nil
+			}
 			return nil, err
 		}
 
@@ -451,4 +459,13 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 
 func pathAppend(base, p string) string {
 	return strings.TrimRight(base, "/") + p
+}
+
+func isUnauthorized(err error) bool {
+	code := github.HTTPErrorCode(err)
+	return code == http.StatusUnauthorized || code == http.StatusForbidden
+}
+
+func isTemporarilyUnavailable(err error) bool {
+	return err == repos.ErrGitHubAPITemporarilyUnavailable || github.IsRateLimitExceeded(err)
 }

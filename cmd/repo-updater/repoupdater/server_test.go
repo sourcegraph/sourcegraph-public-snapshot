@@ -728,7 +728,7 @@ func TestRepoLookup(t *testing.T) {
 			},
 			stored: []*repos.Repo{},
 			githubDotComSource: &fakeGithubDotComSource{
-				Repo: githubRepository,
+				repo: githubRepository,
 			},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
 				ExternalRepo: &api.ExternalRepoSpec{
@@ -754,19 +754,43 @@ func TestRepoLookup(t *testing.T) {
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
 			githubDotComSource: &fakeGithubDotComSource{
-				Repo: nil,
+				err: github.ErrNotFound,
 			},
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
 			err:    "repository not found",
 			assert: repos.Assert.ReposEqual(),
 		},
 		{
-			name: "not found - AWS CodeCommit on Sourcegraph.com",
+			name: "unauthorized - GitHub.com on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			githubDotComSource: &fakeGithubDotComSource{
+				err: &github.APIError{Code: http.StatusUnauthorized},
+			},
+			result: &protocol.RepoLookupResult{ErrorUnauthorized: true},
+			err:    "not authorized",
+			assert: repos.Assert.ReposEqual(),
+		},
+		{
+			name: "temporarily unavailable - GitHub.com on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			githubDotComSource: &fakeGithubDotComSource{
+				err: repos.ErrGitHubAPITemporarilyUnavailable,
+			},
+			result: &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true},
+			err:    "repository temporarily unavailable",
+			assert: repos.Assert.ReposEqual(),
+		},
+		{
+			name: "GithubDotcomSource on Sourcegraph.com ignores non-Github.com repos",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
 			},
 			githubDotComSource: &fakeGithubDotComSource{
-				Repo: githubRepository,
+				repo: githubRepository,
 			},
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
 			err:    "repository not found",
@@ -821,15 +845,12 @@ func TestRepoLookup(t *testing.T) {
 }
 
 type fakeGithubDotComSource struct {
-	Repo *repos.Repo
+	repo *repos.Repo
+	err  error
 }
 
 func (s *fakeGithubDotComSource) GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error) {
-	if s.Repo == nil {
-		return nil, github.ErrNotFound
-	}
-
-	return s.Repo, nil
+	return s.repo, s.err
 }
 
 func formatJSON(s string) string {
