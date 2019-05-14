@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS uri_idx;
