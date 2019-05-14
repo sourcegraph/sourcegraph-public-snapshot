@@ -782,16 +782,14 @@ func TestGithubSource_GetRepo(t *testing.T) {
 		err           string
 	}{
 		{
+			name:          "invalid name",
+			nameWithOwner: "thisIsNotANameWithOwner",
+			err:           `Invalid GitHub repository: nameWithOwner=thisIsNotANameWithOwner: invalid GitHub repository "owner/name" string: "thisIsNotANameWithOwner"`,
+		},
+		{
 			name:          "not found",
 			nameWithOwner: "foobarfoobarfoobar/please-let-this-not-exist",
-			assert: func(t *testing.T, have *Repo) {
-				t.Helper()
-
-				if have != nil {
-					t.Errorf("repo is not nil: %v", have)
-				}
-			},
-			err: `request to http://github-proxy/repos/foobarfoobarfoobar/please-let-this-not-exist returned status 404: Not Found`,
+			err:           `request to http://github-proxy/repos/foobarfoobarfoobar/please-let-this-not-exist returned status 404: Not Found`,
 		},
 		{
 			name:          "found",
