@@ -349,9 +349,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return nil, err
 		}
 	} else {
-		repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
-			Names: []string{string(args.Repo)},
-		})
+		repos, err := s.Store.ListRepos(ctx, newListRepoArgs(args))
 		if err != nil {
 			return nil, err
 		}
@@ -460,4 +458,18 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 
 func pathAppend(base, p string) string {
 	return strings.TrimRight(base, "/") + p
+}
+
+func newListRepoArgs(args protocol.RepoLookupArgs) repos.StoreListReposArgs {
+	listRepoArgs := repos.StoreListReposArgs{}
+
+	if args.Repo != "" {
+		listRepoArgs.Names = []string{string(args.Repo)}
+	}
+
+	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType != "" {
+		listRepoArgs.Kinds = []string{string(args.ExternalRepo.ServiceType)}
+	}
+
+	return listRepoArgs
 }

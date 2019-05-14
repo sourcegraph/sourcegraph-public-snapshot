@@ -698,6 +698,29 @@ func TestRepoLookup(t *testing.T) {
 			}},
 		},
 		{
+			name: "found with ExternalRepoSpec - GitHub",
+			args: protocol.RepoLookupArgs{
+				ExternalRepo: &githubRepository.ExternalRepo,
+			},
+			reposInStore: []*repos.Repo{githubRepository},
+			want: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ExternalRepo: &api.ExternalRepoSpec{
+					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					ServiceType: github.ServiceType,
+					ServiceID:   "https://github.com/",
+				},
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				Links: &protocol.RepoLinks{
+					Root:   "github.com/foo/bar",
+					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+					Commit: "github.com/foo/bar/commit/{commit}",
+				},
+			}},
+		},
+		{
 			name: "found - AWS CodeCommit",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
