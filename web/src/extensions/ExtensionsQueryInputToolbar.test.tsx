@@ -1,6 +1,6 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { EXTENSION_CATEGORIES } from '../../../shared/src/schema/extension.schema'
+import { EXTENSION_CATEGORIES } from '../../../shared/src/schema/extensionSchema'
 import { extensionsQuery } from './extension/extension'
 import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
 
