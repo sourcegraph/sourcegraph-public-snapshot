@@ -33,19 +33,19 @@ func URLToInlineComment(ctx context.Context, thread *types.DiscussionThread, com
 func urlToInline(ctx context.Context, t *types.DiscussionThread, c *types.DiscussionComment) (*url.URL, error) {
 	var u *url.URL
 	switch {
-	case t.TargetRepo != nil:
+	case t.Target != nil:
 		// TODO(slimsag:discussions): future: Consider how to handle cases like:
 		// - repo renames
 		// - file paths not existing on the default branch (or at all).
 
-		repo, err := db.Repos.Get(ctx, t.TargetRepo.RepoID)
+		repo, err := db.Repos.Get(ctx, t.Target.RepoID)
 		if err != nil {
 			return nil, errors.Wrap(err, "db.Repos.Get")
 		}
-		if t.TargetRepo.Path == nil {
+		if t.Target.Path == nil {
 			return nil, nil // Can't generate a link to this yet, we don't have a UI for it yet.
 		}
-		u = &url.URL{Path: path.Join("/", string(repo.Name), "/-/blob/", *t.TargetRepo.Path)}
+		u = &url.URL{Path: path.Join("/", string(repo.Name), "/-/blob/", *t.Target.Path)}
 
 		fragment := url.Values{}
 		fragment.Set("tab", "discussions")
@@ -54,8 +54,8 @@ func urlToInline(ctx context.Context, t *types.DiscussionThread, c *types.Discus
 			fragment.Set("commentID", strconv.FormatInt(c.ID, 10))
 		}
 		encFragment := fragment.Encode()
-		if t.TargetRepo.StartLine != nil {
-			encFragment = fmt.Sprintf("L%d&%s", *t.TargetRepo.StartLine+1, encFragment)
+		if t.Target.StartLine != nil {
+			encFragment = fmt.Sprintf("L%d&%s", *t.Target.StartLine+1, encFragment)
 		}
 		u.Fragment = encFragment
 	default:
