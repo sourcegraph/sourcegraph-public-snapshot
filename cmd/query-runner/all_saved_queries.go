@@ -119,7 +119,6 @@ func sendNotificationsForCreatedOrUpdatedOrDeleted(oldList, newList map[api.Save
 		go func() {
 			if err := notifySavedQueryWasCreatedOrUpdated(oldVal, newVal); err != nil {
 				log15.Error("Failed to handle updated saved search.", "query", oldVal.Config.Query, "error", err)
-
 			}
 		}()
 	}
