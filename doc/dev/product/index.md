@@ -58,6 +58,7 @@ If a project wants to do a project-specific [retrospective](../retrospectives/in
 - [Scaling Engineering Teams via Writing Things Down and Sharing - aka RFCs](https://blog.pragmaticengineer.com/scaling-engineering-teams-via-writing-things-down-rfcs/)
 - [Go proposal template](https://github.com/golang/proposal/blob/master/design/TEMPLATE.md)
 - [Rust RFC template](https://github.com/rust-lang/rfcs/blob/master/0000-template.md)
+- [Personas](./personas.md)
 
 ## Release early, release often
 
