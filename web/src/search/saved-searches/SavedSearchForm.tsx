@@ -4,7 +4,6 @@ import { Observable, Subscription } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { Form } from '../../components/Form'
-import { OrgAreaPageProps } from '../../org/area/OrgArea'
 
 export interface SavedQueryFields {
     id: GQL.ID
