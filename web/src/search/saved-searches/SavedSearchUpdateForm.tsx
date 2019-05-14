@@ -11,6 +11,7 @@ import { SavedQueryFields, SavedSearchForm } from '../../search/saved-searches/S
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }> {
     authenticatedUser: GQL.IUser | null
+    emailNotificationLabel: string
 }
 
 const LOADING: 'loading' = 'loading'

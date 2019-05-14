@@ -8,9 +8,6 @@ const SearchPage = React.lazy(async () => ({
 const SearchResults = React.lazy(async () => ({
     default: (await import('./search/results/SearchResults')).SearchResults,
 }))
-const SavedQueriesPage = React.lazy(async () => ({
-    default: (await import('./search/saved-queries/SavedQueries')).SavedQueriesPage,
-}))
 const SiteAdminArea = React.lazy(async () => ({
     default: (await import('./site-admin/SiteAdminArea')).SiteAdminArea,
 }))

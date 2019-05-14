@@ -9,6 +9,10 @@ interface Props extends RouteComponentProps<{ id: GQL.ID }> {
 
 export const OrgSavedSearchesUpdateForm: React.FunctionComponent<Props> = (props: Props) => (
     <div>
-        <SavedSearchUpdateForm {...props} authenticatedUser={props.authenticatedUser} />
+        <SavedSearchUpdateForm
+            {...props}
+            authenticatedUser={props.authenticatedUser}
+            emailNotificationLabel="Send email notifications to all members of this organization"
+        />
     </div>
 )

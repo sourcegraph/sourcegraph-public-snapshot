@@ -25,7 +25,6 @@ import { SearchResult } from '../../components/SearchResult'
 import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { shouldDisplayPerformanceWarning } from '../backend'
-import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
 import { SavedSearchModal } from '../saved-searches/SavedSearchModal'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
