@@ -42,11 +42,20 @@ func printConfigValidation() {
 // the configuration in the database upon startup. This is used to e.g. ensure
 // dev environments have a consistent configuration and to load secrets from a
 // separate private repository.
+//
+// As this method writes to the configuration DB, it should be invoked before
+// the configuration server is started but after PostgreSQL is connected.
 func handleConfigOverrides() {
-	if conf.IsDev(conf.DeployType()) {
-		raw := conf.Raw()
+	overrideCriticalConfig := os.Getenv("OVERRIDE_CRITICAL_CONFIG")
+	overrideSiteConfig := os.Getenv("OVERRIDE_SITE_CONFIG")
+	overrideExtSvcConfig := os.Getenv("OVERRIDE_EXTSVC_CONFIG")
+	overrideAny := overrideCriticalConfig || overrideSiteConfig || overrideExtSvcConfig
+	if overrideAny || conf.IsDev(conf.DeployType()) {
+		raw, err := (&configurationSource{}).Read(context.Background())
+		if err != nil {
+			log.Fatal("Failed to read existing configuration for applying config overrides:", error)
+		}
 
-		overrideCriticalConfig := os.Getenv("OVERRIDE_CRITICAL_CONFIG")
 		legacyOverrideCriticalConfig := os.Getenv("DEV_OVERRIDE_CRITICAL_CONFIG")
 		if overrideCriticalConfig == "" && legacyOverrideCriticalConfig != "" {
 			overrideCriticalConfig = legacyOverrideCriticalConfig
@@ -59,7 +68,6 @@ func handleConfigOverrides() {
 			raw.Critical = string(critical)
 		}
 
-		overrideSiteConfig := os.Getenv("OVERRIDE_SITE_CONFIG")
 		legacyOverrideSiteConfig := os.Getenv("DEV_OVERRIDE_SITE_CONFIG")
 		if overrideSiteConfig == "" && legacyOverrideSiteConfig != "" {
 			overrideSiteConfig = legacyOverrideSiteConfig
@@ -79,7 +87,6 @@ func handleConfigOverrides() {
 			}
 		}
 
-		overrideExtSvcConfig := os.Getenv("OVERRIDE_EXTSVC_CONFIG")
 		legacyOverrideExtSvcConfig := os.Getenv("DEV_OVERRIDE_EXTSVC_CONFIG")
 		if overrideExtSvcConfig == "" && legacyOverrideExtSvcConfig != "" {
 			overrideExtSvcConfig = legacyOverrideExtSvcConfig
