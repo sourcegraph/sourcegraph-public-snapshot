@@ -16,7 +16,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/opentracing/opentracing-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
@@ -31,7 +30,7 @@ import (
 )
 
 func TestServer_handleRepoLookup(t *testing.T) {
-	s := &Server{GithubDotComSource: &fakeGithubDotComSource{}}
+	s := &Server{}
 
 	h := ObservedHandler(
 		log15.Root(),
@@ -310,11 +309,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 				t.Fatalf("failed to prepare store: %v", err)
 			}
 
-			s := &Server{
-				GithubDotComSource: &fakeGithubDotComSource{},
-				Kinds:              tc.kinds,
-				Store:              store,
-			}
+			s := &Server{Kinds: tc.kinds, Store: store}
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 			cli := repoupdater.Client{URL: srv.URL}
@@ -464,10 +459,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			s := &Server{
-				GithubDotComSource: &fakeGithubDotComSource{},
-				Store:              tc.store,
-			}
+			s := &Server{Store: tc.store}
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 			cli := repoupdater.Client{URL: srv.URL}
@@ -560,7 +552,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 		err:    "repository with ID 42 does not exist",
 	}}
 
-	s := &Server{GithubDotComSource: &fakeGithubDotComSource{}, Store: store}
+	s := &Server{Store: store}
 	srv := httptest.NewServer(s.Handler())
 	defer srv.Close()
 	cli := repoupdater.Client{URL: srv.URL}
@@ -667,14 +659,13 @@ func TestRepoLookup(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name                  string
-		args                  protocol.RepoLookupArgs
-		stored                repos.Repos
-		result                *protocol.RepoLookupResult
-		sourcegraphDotComMode bool
-		githubDotComSource    *fakeGithubDotComSource
-		assert                repos.ReposAssertion
-		err                   string
+		name               string
+		args               protocol.RepoLookupArgs
+		stored             repos.Repos
+		result             *protocol.RepoLookupResult
+		githubDotComSource *fakeGithubDotComSource
+		assert             repos.ReposAssertion
+		err                string
 	}{
 		{
 			name: "not found",
@@ -735,8 +726,7 @@ func TestRepoLookup(t *testing.T) {
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
-			stored:                []*repos.Repo{},
-			sourcegraphDotComMode: true,
+			stored: []*repos.Repo{},
 			githubDotComSource: &fakeGithubDotComSource{
 				Repo: githubRepository,
 			},
@@ -763,7 +753,6 @@ func TestRepoLookup(t *testing.T) {
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
-			sourcegraphDotComMode: true,
 			githubDotComSource: &fakeGithubDotComSource{
 				Repo: nil,
 			},
@@ -776,7 +765,6 @@ func TestRepoLookup(t *testing.T) {
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
 			},
-			sourcegraphDotComMode: true,
 			githubDotComSource: &fakeGithubDotComSource{
 				Repo: githubRepository,
 			},
@@ -791,21 +779,10 @@ func TestRepoLookup(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			if tc.sourcegraphDotComMode {
-				orig := envvar.SourcegraphDotComMode()
-				envvar.MockSourcegraphDotComMode(true)
-				defer envvar.MockSourcegraphDotComMode(orig)
-			}
-
 			store := new(repos.FakeStore)
 			must(store.UpsertRepos(ctx, tc.stored.Clone()...))
 
-			s := &Server{
-				GithubDotComSource: &fakeGithubDotComSource{},
-				Syncer:             &repos.Syncer{},
-				Store:              store,
-			}
-
+			s := &Server{Syncer: &repos.Syncer{}, Store: store}
 			if tc.githubDotComSource != nil {
 				s.GithubDotComSource = tc.githubDotComSource
 			}

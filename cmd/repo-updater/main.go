@@ -16,6 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -84,20 +85,13 @@ func main() {
 		)
 	}
 
+	cf := repos.NewHTTPClientFactory()
 	var src repos.Sourcer
-	var githubDotComSrc *repos.GithubSource
 	{
 		m := repos.NewSourceMetrics()
 		m.ListRepos.MustRegister(prometheus.DefaultRegisterer)
 
-		cf := repos.NewHTTPClientFactory()
 		src = repos.NewSourcer(cf, repos.ObservedSource(log15.Root(), m))
-
-		var err error
-		githubDotComSrc, err = repos.NewGithubDotComSource(cf)
-		if err != nil {
-			log.Fatalf("failed to create Github.com source: %v", err)
-		}
 	}
 
 	migrations := []repos.Migration{
@@ -221,10 +215,17 @@ func main() {
 
 	// Start up handler that frontend relies on
 	server := repoupdater.Server{
-		Kinds:              kinds,
-		Store:              store,
-		Syncer:             syncer,
-		GithubDotComSource: githubDotComSrc,
+		Kinds:  kinds,
+		Store:  store,
+		Syncer: syncer,
+	}
+
+	if envvar.SourcegraphDotComMode() {
+		githubDotComSrc, err := repos.NewGithubDotComSource(cf)
+		if err != nil {
+			log.Fatalf("failed to create Github.com source: %v", err)
+		}
+		server.GithubDotComSource = githubDotComSrc
 	}
 
 	var handler http.Handler

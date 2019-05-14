@@ -11,7 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
@@ -373,7 +372,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 }
 
 func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
-	if !envvar.SourcegraphDotComMode() {
+	if s.GithubDotComSource == nil {
 		return false
 	}
 
