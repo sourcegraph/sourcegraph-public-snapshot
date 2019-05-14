@@ -39,6 +39,9 @@ const SiteInitPage = React.lazy(async () => ({ default: (await import('./site-ad
 const RedirectToUserPage = React.lazy(async () => ({
     default: (await import('./user/settings/RedirectToUserPage')).RedirectToUserPage,
 }))
+const RedirectToUserSavedSearches = React.lazy(async () => ({
+    default: (await import('./search/saved-searches/RedirectToUserSavedSearches')).RedirectToUserSavedSearches,
+}))
 const RedirectToUserSettings = React.lazy(async () => ({
     default: (await import('./user/settings/RedirectToUserSettings')).RedirectToUserSettings,
 }))
@@ -96,7 +99,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/search/searches',
-        render: props => <SavedQueriesPage {...props} />,
+        render: props => <RedirectToUserSavedSearches {...props} />,
         exact: true,
         forceNarrowWidth: true,
     },
