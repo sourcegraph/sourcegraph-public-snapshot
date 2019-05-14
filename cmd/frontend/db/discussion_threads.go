@@ -70,10 +70,10 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 	if newThread.DeletedAt != nil {
 		return nil, errors.New("newThread.DeletedAt must not be specified")
 	}
-	if newThread.TargetRepo != nil {
-		if rev := newThread.TargetRepo.Revision; rev != nil {
+	if newThread.Target != nil {
+		if rev := newThread.Target.Revision; rev != nil {
 			if !git.IsAbsoluteRevision(*rev) {
-				return nil, errors.New("newThread.TargetRepo.Revision must be an absolute Git revision (40 character SHA-1 hash)")
+				return nil, errors.New("newThread.Target.Revision must be an absolute Git revision (40 character SHA-1 hash)")
 			}
 		}
 	} else {
@@ -106,14 +106,14 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 		targetID   int64
 	)
 	switch {
-	case newThread.TargetRepo != nil:
+	case newThread.Target != nil:
 		var err error
-		newThread.TargetRepo, err = t.createTargetRepo(ctx, newThread.TargetRepo, newThread.ID)
+		newThread.Target, err = t.createTargetRepo(ctx, newThread.Target, newThread.ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "createTargetRepo")
 		}
 		targetName = "target_repo_id"
-		targetID = newThread.TargetRepo.ID
+		targetID = newThread.Target.ID
 	default:
 		return nil, errors.New("unexpected target type")
 	}
@@ -666,7 +666,7 @@ func (t *discussionThreads) getBySQL(ctx context.Context, query string, args ...
 			return nil, err
 		}
 		if targetRepoID != nil {
-			thread.TargetRepo, err = t.getTargetRepo(ctx, *targetRepoID)
+			thread.Target, err = t.getTargetRepo(ctx, *targetRepoID)
 			if err != nil {
 				return nil, errors.Wrap(err, "getTargetRepo")
 			}

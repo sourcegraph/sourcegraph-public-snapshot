@@ -422,7 +422,7 @@ func TestUsers_Delete(t *testing.T) {
 			newThread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
 				AuthorUserID: user.ID,
 				Title:        "Hello world",
-				TargetRepo: &types.DiscussionThreadTargetRepo{
+				Target: &types.DiscussionThreadTargetRepo{
 					RepoID:   repo.ID,
 					Path:     strPtr("foo/bar/mux.go"),
 					Branch:   strPtr("master"),

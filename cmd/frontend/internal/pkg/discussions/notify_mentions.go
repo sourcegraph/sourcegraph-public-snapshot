@@ -217,8 +217,8 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 		codeContextText string
 		codeContextHTML template.HTML
 	)
-	if n.thread.TargetRepo != nil {
-		repo, err := db.Repos.Get(ctx, n.thread.TargetRepo.RepoID)
+	if n.thread.Target != nil {
+		repo, err := db.Repos.Get(ctx, n.thread.Target.RepoID)
 		if err != nil {
 			return errors.Wrap(err, "repoShortName: db.Repos.Get")
 		}
@@ -227,12 +227,12 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 			split = split[len(split)-2:]
 		}
 		repoShortName = strings.Join(split, "/")
-		if n.thread.TargetRepo.Path != nil {
-			fileName = path.Base(*n.thread.TargetRepo.Path)
+		if n.thread.Target.Path != nil {
+			fileName = path.Base(*n.thread.Target.Path)
 		}
 
-		codeContextText = formatTargetRepoLinesText(n.thread.TargetRepo)
-		codeContextHTML, err = formatTargetRepoLinesHTML(ctx, n.thread.TargetRepo)
+		codeContextText = formatTargetRepoLinesText(n.thread.Target)
+		codeContextHTML, err = formatTargetRepoLinesHTML(ctx, n.thread.Target)
 		if err != nil {
 			return errors.Wrap(err, "formatTargetRepoLinesHTML")
 		}

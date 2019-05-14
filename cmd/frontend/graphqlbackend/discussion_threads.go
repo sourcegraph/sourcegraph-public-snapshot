@@ -191,9 +191,9 @@ func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx contex
 
 func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *struct {
 	Input *struct {
-		Title      *string
-		Contents   string
-		TargetRepo *discussionThreadTargetRepoInput
+		Title    *string
+		Contents string
+		Target   *discussionThreadTargetRepoInput
 	}
 }) (*discussionThreadResolver, error) {
 	if args.Input.Title == nil {
@@ -227,11 +227,11 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		AuthorUserID: currentUser.user.ID,
 		Title:        *args.Input.Title,
 	}
-	if args.Input.TargetRepo != nil {
-		if err := args.Input.TargetRepo.validate(); err != nil {
+	if args.Input.Target != nil {
+		if err := args.Input.Target.validate(); err != nil {
 			return nil, err
 		}
-		newThread.TargetRepo, err = args.Input.TargetRepo.convert(ctx)
+		newThread.Target, err = args.Input.Target.convert(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -621,10 +621,10 @@ type discussionThreadTargetResolver struct {
 }
 
 func (r *discussionThreadTargetResolver) ToDiscussionThreadTargetRepo() (*discussionThreadTargetRepoResolver, bool) {
-	if r.t.TargetRepo == nil {
+	if r.t.Target == nil {
 		return nil, false
 	}
-	return &discussionThreadTargetRepoResolver{t: r.t.TargetRepo}, true
+	return &discussionThreadTargetRepoResolver{t: r.t.Target}, true
 }
 
 func marshalDiscussionThreadID(dbID int64) graphql.ID {

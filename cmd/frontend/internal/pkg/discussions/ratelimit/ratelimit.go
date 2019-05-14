@@ -177,8 +177,8 @@ func TimeUntilUserCanCreateThread(ctx context.Context, userID int32, newThreadTi
 	var actions []action
 	for _, t := range threads {
 		var key string
-		if t.TargetRepo != nil {
-			key = fmt.Sprint(t.TargetRepo.RepoID, orEmpty(t.TargetRepo.Path), orEmpty(t.TargetRepo.Branch), orEmpty(t.TargetRepo.Revision))
+		if t.Target != nil {
+			key = fmt.Sprint(t.Target.RepoID, orEmpty(t.Target.Path), orEmpty(t.Target.Branch), orEmpty(t.Target.Revision))
 		} else {
 			// We don't know what this type of thread is, so we assume it does
 			// not need to be rate limited harshly.
