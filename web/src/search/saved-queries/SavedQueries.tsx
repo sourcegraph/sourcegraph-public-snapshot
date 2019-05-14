@@ -14,7 +14,7 @@ import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { siteFlags } from '../../site/backend'
 import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchSavedQueries } from '../backend'
+import { fetchSavedSearches } from '../backend'
 import { ExampleSearches } from './ExampleSearches'
 import { SavedQuery } from './SavedQuery'
 import { SavedQueryCreateForm } from './SavedQueryCreateForm'
@@ -65,7 +65,7 @@ export class SavedQueries extends React.Component<Props, State> {
             this.refreshRequests
                 .pipe(
                     startWith(void 0),
-                    switchMap(fetchSavedQueries),
+                    switchMap(fetchSavedSearches),
                     map(savedQueries => ({
                         savedQueries: sortBy(savedQueries, ['description', 'id']),
                         loading: false,

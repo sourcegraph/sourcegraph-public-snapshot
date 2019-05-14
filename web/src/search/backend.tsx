@@ -241,8 +241,8 @@ export function fetchReposByQuery(query: string): Observable<{ name: string; url
     )
 }
 
-const savedQueryFragment = gql`
-    fragment SavedQueryFields on SavedSearch {
+const savedSearchFragment = gql`
+    fragment SavedSearchFields on SavedSearch {
         id
         description
         notify
@@ -254,14 +254,14 @@ const savedQueryFragment = gql`
     }
 `
 
-export function fetchSavedQueries(): Observable<GQL.ISavedSearch[]> {
+export function fetchSavedSearches(): Observable<GQL.ISavedSearch[]> {
     return queryGraphQL(gql`
         query savedSearches {
             savedSearches {
-                ...SavedQueryFields
+                ...SavedSearchFields
             }
         }
-        ${savedQueryFragment}
+        ${savedSearchFragment}
     `).pipe(
         map(({ data, errors }) => {
             if (!data || !data.savedSearches) {
@@ -323,10 +323,10 @@ export function createSavedSearch(
                     userID: $userID
                     orgID: $orgID
                 ) {
-                    ...SavedQueryFields
+                    ...SavedSearchFields
                 }
             }
-            ${savedQueryFragment}
+            ${savedSearchFragment}
         `,
         {
             description,
@@ -371,10 +371,10 @@ export function updateSavedSearch(
                     userID: $userID
                     orgID: $orgID
                 ) {
-                    ...SavedQueryFields
+                    ...SavedSearchFields
                 }
             }
-            ${savedQueryFragment}
+            ${savedSearchFragment}
         `,
         {
             id,

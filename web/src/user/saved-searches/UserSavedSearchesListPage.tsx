@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { deleteSavedSearch, fetchSavedQueries } from '../../search/backend'
+import { deleteSavedSearch, fetchSavedSearches } from '../../search/backend'
 
 interface NodeProps extends RouteComponentProps {
     savedSearch: GQL.ISavedSearch
@@ -100,7 +100,7 @@ export class UserSavedSearchesListPage extends React.Component<Props, State> {
             this.refreshRequests
                 .pipe(
                     startWith(void 0),
-                    switchMap(fetchSavedQueries),
+                    switchMap(fetchSavedSearches),
                     map(savedSearches => ({ savedSearches }))
                 )
                 .subscribe(newState => this.setState(newState as State), err => console.error(err))

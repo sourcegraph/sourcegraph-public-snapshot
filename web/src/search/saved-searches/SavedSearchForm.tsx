@@ -130,27 +130,31 @@ export class SavedSearchForm extends React.Component<Props, State> {
                     <div className="saved-search-form__input">
                         <label className="saved-search-form__label">Email notifications:</label>
                         <div>
-                            <input
-                                type="checkbox"
-                                name="Notify owner"
-                                className="saved-search-form__checkbox"
-                                defaultChecked={notify}
-                                onChange={this.createInputChangeHandler('notify')}
-                            />{' '}
-                            <span>{this.props.emailNotificationLabel}</span>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="Notify owner"
+                                    className="saved-search-form__checkbox"
+                                    defaultChecked={notify}
+                                    onChange={this.createInputChangeHandler('notify')}
+                                />{' '}
+                                <span>{this.props.emailNotificationLabel}</span>
+                            </label>
                         </div>
                     </div>
                     {notifySlack && slackWebhookURL && (
                         <div className="saved-search-form__input">
                             <label className="saved-search-form__label">Slack notifications:</label>
-                            <input
-                                type="text"
-                                name="Slack webhook URL"
-                                className="form-control"
-                                value={slackWebhookURL}
-                                disabled={true}
-                                onChange={this.createInputChangeHandler('slackWebhookURL')}
-                            />
+                            <label>
+                                <input
+                                    type="text"
+                                    name="Slack webhook URL"
+                                    className="form-control"
+                                    value={slackWebhookURL}
+                                    disabled={true}
+                                    onChange={this.createInputChangeHandler('slackWebhookURL')}
+                                />
+                            </label>
                             <label className="small">
                                 Slack webhooks are deprecated and will be removed in a future Sourcegraph version.
                             </label>
