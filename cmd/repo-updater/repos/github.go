@@ -373,7 +373,3 @@ func exampleRepositoryQuerySplit(q string) string {
 	_ = enc.Encode(qs)
 	return strings.TrimSpace(b.String())
 }
-
-// ErrGitHubAPITemporarilyUnavailable is returned by GetGitHubRepository when the GitHub API is
-// unavailable.
-var ErrGitHubAPITemporarilyUnavailable = errors.New("the GitHub API is temporarily unavailable")

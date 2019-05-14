@@ -749,7 +749,7 @@ func TestRepoLookup(t *testing.T) {
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
 			githubDotComSource: &fakeGithubDotComSource{
-				err: repos.ErrGitHubAPITemporarilyUnavailable,
+				err: &github.APIError{Message: "API rate limit exceeded"},
 			},
 			result: &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true},
 			err:    "repository temporarily unavailable",

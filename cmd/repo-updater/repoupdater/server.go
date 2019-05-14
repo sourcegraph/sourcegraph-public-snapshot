@@ -450,5 +450,5 @@ func isUnauthorized(err error) bool {
 }
 
 func isTemporarilyUnavailable(err error) bool {
-	return err == repos.ErrGitHubAPITemporarilyUnavailable || github.IsRateLimitExceeded(err)
+	return github.IsRateLimitExceeded(err)
 }
