@@ -35,6 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed settings editors only having a few pixels height.
 - Fixed a bug where browser extension and code review integration usage stats were not being captured on the site-admin Usage Stats page.
 - Fixed an issue where in some rare cases PostgreSQL starting up slowly could incorrectly trigger a panic in the `frontend` service.
+- Fixed an issue where the management console password would incorrectly reset to a new secure one after a user account was created.
 
 ## 3.3.7
 
