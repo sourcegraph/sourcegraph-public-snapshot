@@ -421,6 +421,7 @@ Indexes:
     "repo_metadata_gin_idx" gin (metadata)
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_sources_gin_idx" gin (sources)
+    "repo_uri_idx" btree (uri)
 Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
     "deleted_at_unused" CHECK (deleted_at IS NULL)
