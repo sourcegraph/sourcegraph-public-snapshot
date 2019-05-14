@@ -377,10 +377,6 @@ func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
 		return false
 	}
 
-	if s.GithubDotComSource == nil {
-		return false
-	}
-
 	repoName := strings.ToLower(string(args.Repo))
 	return strings.HasPrefix(repoName, "github.com/")
 }

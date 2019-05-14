@@ -31,7 +31,7 @@ import (
 )
 
 func TestServer_handleRepoLookup(t *testing.T) {
-	s := &Server{}
+	s := &Server{GithubDotComSource: &fakeGithubDotComSource{}}
 
 	h := ObservedHandler(
 		log15.Root(),
@@ -310,7 +310,12 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 				t.Fatalf("failed to prepare store: %v", err)
 			}
 
-			srv := httptest.NewServer((&Server{Kinds: tc.kinds, Store: store}).Handler())
+			s := &Server{
+				GithubDotComSource: &fakeGithubDotComSource{},
+				Kinds:              tc.kinds,
+				Store:              store,
+			}
+			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 			cli := repoupdater.Client{URL: srv.URL}
 
@@ -459,7 +464,11 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			srv := httptest.NewServer((&Server{Store: tc.store}).Handler())
+			s := &Server{
+				GithubDotComSource: &fakeGithubDotComSource{},
+				Store:              tc.store,
+			}
+			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 			cli := repoupdater.Client{URL: srv.URL}
 
@@ -551,7 +560,8 @@ func TestServer_RepoExternalServices(t *testing.T) {
 		err:    "repository with ID 42 does not exist",
 	}}
 
-	srv := httptest.NewServer((&Server{Store: store}).Handler())
+	s := &Server{GithubDotComSource: &fakeGithubDotComSource{}, Store: store}
+	srv := httptest.NewServer(s.Handler())
 	defer srv.Close()
 	cli := repoupdater.Client{URL: srv.URL}
 	for _, tc := range testCases {
@@ -790,7 +800,11 @@ func TestRepoLookup(t *testing.T) {
 			store := new(repos.FakeStore)
 			must(store.UpsertRepos(ctx, tc.stored.Clone()...))
 
-			s := &Server{Syncer: &repos.Syncer{}, Store: store}
+			s := &Server{
+				GithubDotComSource: &fakeGithubDotComSource{},
+				Syncer:             &repos.Syncer{},
+				Store:              store,
+			}
 
 			if tc.githubDotComSource != nil {
 				s.GithubDotComSource = tc.githubDotComSource
