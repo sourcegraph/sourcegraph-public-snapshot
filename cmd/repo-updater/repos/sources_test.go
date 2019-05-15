@@ -790,7 +790,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 		{
 			name:          "not found",
 			nameWithOwner: "foobarfoobarfoobar/please-let-this-not-exist",
-			err:           `request to http://github-proxy/repos/foobarfoobarfoobar/please-let-this-not-exist returned status 404: Not Found`,
+			err:           `GitHub repository not found`,
 		},
 		{
 			name:          "found",
