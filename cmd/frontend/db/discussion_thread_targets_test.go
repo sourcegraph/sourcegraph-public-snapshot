@@ -68,6 +68,27 @@ func TestDiscussionThreads_Targets(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Get target 1.
+	{
+		gotTarget1, err := DiscussionThreads.GetTarget(ctx, target1.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(gotTarget1, target1) {
+			t.Fatalf("got target1 %v, want %v", gotTarget1, target1)
+		}
+	}
+	// Get target 2.
+	{
+		gotTarget2, err := DiscussionThreads.GetTarget(ctx, target2.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(gotTarget2, target2) {
+			t.Fatalf("got target1 %v, want %v", gotTarget2, target2)
+		}
+	}
+
 	// List targets.
 	targets, err := DiscussionThreads.ListTargets(ctx, thread.ID)
 	if err != nil {
@@ -89,4 +110,26 @@ func TestDiscussionThreads_Targets(t *testing.T) {
 	if want := []*types.DiscussionThreadTargetRepo{target2}; !reflect.DeepEqual(targets, want) {
 		t.Errorf("got targets %v, want %v", targets, want)
 	}
+
+	// Ensure getting target 1 returns nil (because it was removed).
+	{
+		gotTarget1, err := DiscussionThreads.GetTarget(ctx, target1.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if gotTarget1 != nil {
+			t.Fatalf("got target1 %v, want nil", gotTarget1)
+		}
+	}
+	// Get target 2.
+	{
+		gotTarget2, err := DiscussionThreads.GetTarget(ctx, target2.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(gotTarget2, target2) {
+			t.Fatalf("got target1 %v, want %v", gotTarget2, target2)
+		}
+	}
+
 }
