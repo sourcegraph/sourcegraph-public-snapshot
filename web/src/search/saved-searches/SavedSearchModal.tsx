@@ -12,8 +12,13 @@ interface Props {
     onDidCancel: () => void
 }
 
+enum UserOrOrg {
+    User = 'User',
+    Org = 'Org',
+}
+
 interface State {
-    saveLocation: string
+    saveLocation: UserOrOrg
     organization?: string
 }
 
@@ -21,13 +26,13 @@ export class SavedSearchModal extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {
-            saveLocation: 'User',
+            saveLocation: UserOrOrg.User,
         }
     }
 
     private onLocationChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const locationType = event.target.value
-        this.setState({ saveLocation: locationType })
+        this.setState({ saveLocation: locationType as UserOrOrg })
     }
 
     private onOrganizationChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -42,15 +47,15 @@ export class SavedSearchModal extends React.Component<Props, State> {
                     <h3>Save search query to: </h3>
                     <div className="form-group">
                         <Select onChange={this.onLocationChange} className="saved-search-modal-form__select">
-                            <option>User</option>
+                            <option value={UserOrOrg.User}>User</option>
                             {this.props.authenticatedUser.organizations &&
                                 this.props.authenticatedUser.organizations.nodes.length > 0 && (
-                                    <option>Organization</option>
+                                    <option value={UserOrOrg.Org}>Organization</option>
                                 )}
                         </Select>
                         {this.props.authenticatedUser.organizations &&
                             this.props.authenticatedUser.organizations.nodes.length > 0 &&
-                            this.state.saveLocation.toLowerCase() === 'organization' && (
+                            this.state.saveLocation === UserOrOrg.Org && (
                                 <Select
                                     onChange={this.onOrganizationChange}
                                     placeholder="Select an organization"
@@ -67,7 +72,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
                     </div>
                     <button
                         type="submit"
-                        disabled={this.state.saveLocation.toLowerCase() === 'organization' && !this.state.organization}
+                        disabled={this.state.saveLocation === UserOrOrg.Org && !this.state.organization}
                         className="btn btn-primary saved-search-modal-form__button"
                     >
                         Save query
