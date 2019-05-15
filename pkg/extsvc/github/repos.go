@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -252,6 +253,9 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (
 	// http://[sourcegraph-hostname]/github.com/foo/bar.
 	var result restRepository
 	if err := c.requestGet(ctx, "", fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
+		if HTTPErrorCode(err) == http.StatusNotFound {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 	return convertRestRepo(result), nil
