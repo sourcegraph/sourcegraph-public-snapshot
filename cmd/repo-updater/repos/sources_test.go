@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
+	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -833,7 +834,13 @@ func TestGithubSource_GetRepo(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		tc.name = "GITHUB-DOT-COM/" + tc.name
+
 		t.Run(tc.name, func(t *testing.T) {
+			// The GithubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
