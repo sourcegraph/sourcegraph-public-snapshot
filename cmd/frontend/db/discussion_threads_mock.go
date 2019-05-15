@@ -13,6 +13,8 @@ type MockDiscussionThreads struct {
 	Update func(ctx context.Context, threadID int64, opts *DiscussionThreadsUpdateOptions) (*types.DiscussionThread, error)
 	List   func(ctx context.Context, opt *DiscussionThreadsListOptions) ([]*types.DiscussionThread, error)
 	Count  func(ctx context.Context, opt *DiscussionThreadsListOptions) (int, error)
+
+	ListTargets func(threadID int64) ([]*types.DiscussionThreadTargetRepo, error)
 }
 
 func (s *MockDiscussionThreads) MockCreate_Return(t *testing.T, returns *types.DiscussionThread, returnsErr error) (called *bool, calledWith *types.DiscussionThread) {

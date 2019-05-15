@@ -32,27 +32,29 @@ const discussionThreadFieldsFragment = gql`
             ...UserFields
         }
         title
-        target {
-            __typename
-            ... on DiscussionThreadTargetRepo {
-                repository {
-                    name
-                }
-                path
-                branch {
-                    displayName
-                }
-                revision {
-                    displayName
-                }
-                selection {
-                    startLine
-                    startCharacter
-                    endLine
-                    endCharacter
-                    linesBefore
-                    lines
-                    linesAfter
+        targets(first: 1) {
+            nodes {
+                __typename
+                ... on DiscussionThreadTargetRepo {
+                    repository {
+                        name
+                    }
+                    path
+                    branch {
+                        displayName
+                    }
+                    revision {
+                        displayName
+                    }
+                    selection {
+                        startLine
+                        startCharacter
+                        endLine
+                        endCharacter
+                        linesBefore
+                        lines
+                        linesAfter
+                    }
                 }
             }
         }
