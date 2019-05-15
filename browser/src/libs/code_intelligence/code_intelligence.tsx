@@ -24,6 +24,7 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
+import { PartialCodeEditor } from '../../../../shared/src/api/client/context/context'
 import { CodeEditorData } from '../../../../shared/src/api/client/services/editorService'
 import { WorkspaceRootWithMetadata } from '../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
@@ -502,6 +503,11 @@ export function handleCodeHost({
                     isActive: true,
                 }
                 const editorId = extensionsController.services.editor.addEditor(editorData)
+                const scope: PartialCodeEditor = {
+                    ...editorData,
+                    ...editorId,
+                    model,
+                }
                 const codeViewState: CodeViewState = {
                     subscriptions: new Subscription(),
                     roots: [{ uri: toRootURI(fileInfo), inputRevision: fileInfo.rev || '' }],
@@ -626,7 +632,7 @@ export function handleCodeHost({
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
                             location={H.createLocation(window.location)}
-                            scope={{ ...editorData, model }}
+                            scope={scope}
                         />,
                         mount
                     )

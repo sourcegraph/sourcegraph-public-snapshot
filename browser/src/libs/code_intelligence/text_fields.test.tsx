@@ -64,7 +64,7 @@ describe('text_fields', () => {
             mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
             const editors = await from(services.editor.editors)
                 .pipe(
-                    skip(2),
+                    skip(1),
                     take(1)
                 )
                 .toPromise()

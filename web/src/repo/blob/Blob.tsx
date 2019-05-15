@@ -206,10 +206,10 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         )
         const goToDefinition = (ev: MouseEvent) => {
             const goToDefinitionAction =
-                this.state.actionsOrError instanceof Array &&
+                Array.isArray(this.state.actionsOrError) &&
                 this.state.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
             if (goToDefinitionAction) {
-                this.props.history.push(goToDefinitionAction.action.commandArguments![0])
+                this.props.history.push(goToDefinitionAction.action.commandArguments![0] as string)
                 ev.stopPropagation()
             }
         }

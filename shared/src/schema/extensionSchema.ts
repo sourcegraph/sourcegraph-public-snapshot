@@ -1,4 +1,4 @@
-import { Contributions } from '../api/protocol/contribution'
+import { Contributions, Raw } from '../api/protocol/contribution'
 
 /**
  * See the extensions.schema.json JSON Schema for canonical documentation on these types.
@@ -51,7 +51,7 @@ export interface ExtensionManifest {
     tags?: string[]
     icon?: string
     activationEvents: string[]
-    contributes?: Contributions & { configuration?: { [key: string]: any } }
+    contributes?: Raw<Contributions> & { configuration?: { [key: string]: any } }
 }
 
 /** TypeScript helper for making an array type with constant string union elements, not just string[]. */

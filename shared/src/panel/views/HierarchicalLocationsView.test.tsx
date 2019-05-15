@@ -5,10 +5,14 @@ jest.mock('react-visibility-sensor', () => 'VisibilitySensor')
 
 import { Location } from '@sourcegraph/extension-api-types'
 import H from 'history'
+import { noop } from 'lodash'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, concat, NEVER, Observable, of } from 'rxjs'
 import * as sinon from 'sinon'
+import { ContextService } from '../../api/client/context/contextService'
+import { parseTemplate } from '../../api/client/context/expr/evaluator'
+import { ContributionsEntry, ContributionUnsubscribable } from '../../api/client/services/contribution'
 import { setLinkComponent } from '../../components/Link'
 import { Controller } from '../../extensions/controller'
 import { SettingsCascadeOrError } from '../../settings/settings'
@@ -19,12 +23,19 @@ describe('<HierarchicalLocationsView />', () => {
         setLinkComponent((props: any) => <a {...props} />)
     })
     const getProps = () => {
-        const services = {
-            context: {
-                data: new BehaviorSubject<{}>({}),
+        const contextData = new BehaviorSubject<{}>({})
+        const contextService: ContextService = {
+            data: contextData,
+            updateContext(update: any): void {
+                contextData.next(update)
             },
+        }
+        const services = {
+            context: contextService,
             contribution: {
-                registerContributions: sinon.spy(),
+                registerContributions: sinon.spy(
+                    (entry: ContributionsEntry): ContributionUnsubscribable => ({ entry, unsubscribe: noop })
+                ),
             },
         }
         const extensionsController: Pick<Controller, 'services'> = {
@@ -69,13 +80,13 @@ describe('<HierarchicalLocationsView />', () => {
         const { props, services } = getProps()
         renderer.create(<HierarchicalLocationsView {...props} />)
         expect(services.contribution.registerContributions.called).toBe(true)
-        expect(services.contribution.registerContributions.getCall(0).args[0]).toMatchObject({
+        const expected: ContributionsEntry = {
             contributions: {
                 actions: [
                     {
                         id: 'panel.locations.groupByFile',
-                        title: 'Group by file',
-                        category: 'Locations (panel)',
+                        title: parseTemplate('Group by file'),
+                        category: parseTemplate('Locations (panel)'),
                         command: 'updateConfiguration',
                     },
                 ],
@@ -87,7 +98,8 @@ describe('<HierarchicalLocationsView />', () => {
                     ],
                 },
             },
-        })
+        }
+        expect(services.contribution.registerContributions.getCall(0).args[0]).toMatchObject(expected)
     })
 
     const SAMPLE_LOCATION: Location = {
