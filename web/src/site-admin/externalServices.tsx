@@ -181,7 +181,8 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
         </span>
     ),
     defaultDisplayName: 'GitHub',
-    defaultConfig: `// GitHub external service docs: https://docs.sourcegraph.com/admin/external_service/github
+    defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+// GitHub external service docs: https://docs.sourcegraph.com/admin/external_service/github
 {
   "url": "https://github.com",
 
@@ -237,7 +238,8 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
         shortDescription: 'Add AWS CodeCommit repositories.',
         jsonSchema: awsCodeCommitSchemaJSON,
         defaultDisplayName: 'AWS CodeCommit',
-        defaultConfig: `// AWS CodeCommit external service docs: https://docs.sourcegraph.com/admin/external_service/aws_codecommit#configuration
+        defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+// AWS CodeCommit external service docs: https://docs.sourcegraph.com/admin/external_service/aws_codecommit#configuration
 {
   "accessKeyID": "<access key id>",
   "secretAccessKey": "<secret access key>",
@@ -304,7 +306,8 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
         shortDescription: 'Add Bitbucket Server repositories.',
         jsonSchema: bitbucketServerSchemaJSON,
         defaultDisplayName: 'Bitbucket Server',
-        defaultConfig: `// Bitbucket Server external service docs: https://docs.sourcegraph.com/admin/external_service/aws_codecommit#configuration
+        defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+// Bitbucket Server external service docs: https://docs.sourcegraph.com/admin/external_service/aws_codecommit#configuration
 {
   "url": "https://bitbucket.example.com",
 
@@ -406,7 +409,8 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
         shortDescription: 'Add GitLab projects.',
         jsonSchema: gitlabSchemaJSON,
         defaultDisplayName: 'GitLab',
-        defaultConfig: `// GitLab external service docs: https://docs.sourcegraph.com/admin/external_service/gitlab#configuration
+        defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+// GitLab external service docs: https://docs.sourcegraph.com/admin/external_service/gitlab#configuration
 {
   "url": "https://example.gitlab.com",
 
@@ -741,7 +745,8 @@ const externalServiceAddVariants: Partial<
             title: 'GitHub Enterprise repositories',
             shortDescription: 'Add GitHub Enterprise repositories.',
             defaultDisplayName: 'GitHub Enterprise',
-            defaultConfig: `// GitHub external service docs: https://docs.sourcegraph.com/admin/external_service/github
+            defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+// GitHub external service docs: https://docs.sourcegraph.com/admin/external_service/github
 {
   // GitHub Enterprise URL
   "url": "https://github.example.com",
