@@ -1,10 +1,10 @@
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Observable, Subscription } from 'rxjs'
-import { catchError } from 'rxjs/operators'
+import { Omit } from 'utility-types'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { Form } from '../../components/Form'
+
 export interface SavedQueryFields {
     id: GQL.ID
     description: string
@@ -24,18 +24,16 @@ interface Props extends RouteComponentProps<{}> {
     title?: string
     submitLabel: string
     emailNotificationLabel: string
-    onSubmit: (fields: Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>) => Observable<void>
-}
-
-interface State {
-    values: Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>
-    isSubmitting: boolean
+    onSubmit: (fields: Omit<SavedQueryFields, 'id'>) => void
+    loading: boolean
     error?: any
 }
 
-export class SavedSearchForm extends React.Component<Props, State> {
-    private subscriptions = new Subscription()
+interface State {
+    values: Omit<SavedQueryFields, 'id'>
+}
 
+export class SavedSearchForm extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
@@ -59,7 +57,6 @@ export class SavedSearchForm extends React.Component<Props, State> {
                 orgID,
                 slackWebhookURL,
             },
-            isSubmitting: false,
         }
     }
 
@@ -82,22 +79,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-
-        this.setState({ isSubmitting: true })
-
-        this.subscriptions.add(
-            this.props
-                .onSubmit(this.state.values)
-                .pipe(
-                    catchError(error => {
-                        console.error(error)
-                        this.setState({ error, isSubmitting: false })
-
-                        return []
-                    })
-                )
-                .subscribe(() => this.setState({ error: null, isSubmitting: false }))
-        )
+        this.props.onSubmit(this.state.values)
     }
 
     public render(): JSX.Element | null {
@@ -186,14 +168,14 @@ export class SavedSearchForm extends React.Component<Props, State> {
                     )}
                     <button
                         type="submit"
-                        disabled={this.state.isSubmitting}
+                        disabled={this.props.loading}
                         className="btn btn-primary saved-search-form__submit-button"
                     >
                         {this.props.submitLabel}
                     </button>
-                    {this.state.error && !this.state.isSubmitting && (
+                    {this.props.error && !this.props.loading && (
                         <div className="alert alert-danger mb-3">
-                            <strong>Error:</strong> {this.state.error.message}
+                            <strong>Error:</strong> {this.props.error.message}
                         </div>
                     )}
                 </Form>
@@ -203,7 +185,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
     /**
      * Tells if the query is unsupported for sending notifications.
      */
-    private isUnsupportedNotifyQuery(v: Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>): boolean {
+    private isUnsupportedNotifyQuery(v: Omit<SavedQueryFields, 'id'>): boolean {
         const notifying = v.notify || v.notifySlack
         return notifying && !v.query.includes('type:diff') && !v.query.includes('type:commit')
     }

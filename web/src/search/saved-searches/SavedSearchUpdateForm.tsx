@@ -96,9 +96,6 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
         return (
             <div>
                 {this.state.savedSearchOrError === LOADING && <LoadingSpinner className="icon-inline" />}
-                {isErrorLike(this.state.savedSearchOrError) && (
-                    <p className="alert alert-danger">{upperFirst(this.state.savedSearchOrError.message)}</p>
-                )}
                 {this.props.authenticatedUser && savedSearch && (
                     <SavedSearchForm
                         {...this.props}
@@ -114,10 +111,12 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                             userID: savedSearch.userID,
                             orgID: savedSearch.orgID,
                         }}
+                        loading={this.state.updatedOrError === LOADING}
                         // tslint:disable-next-line:jsx-no-lambda
-                        onSubmit={(
-                            fields: Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>
-                        ): Observable<void> => of(this.onSubmit({ id: savedSearch.id, ...fields }))}
+                        onSubmit={(fields: Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>): void =>
+                            this.onSubmit({ id: savedSearch.id, ...fields })
+                        }
+                        error={isErrorLike(this.state.updatedOrError) ? this.state.updatedOrError : undefined}
                     />
                 )}
                 {this.state.updatedOrError === true && (
