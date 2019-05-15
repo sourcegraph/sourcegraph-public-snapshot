@@ -24,8 +24,6 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
-	// Kinds of external services synced with the new syncer
-	Kinds []string
 	repos.Store
 	*repos.Syncer
 	GithubDotComSource interface {
@@ -91,13 +89,6 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
-	var resp protocol.ExcludeRepoResponse
-
-	if len(s.Kinds) == 0 {
-		respond(w, http.StatusOK, &resp)
-		return
-	}
-
 	var req protocol.ExcludeRepoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respond(w, http.StatusInternalServerError, err)
@@ -105,8 +96,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
-		IDs:   []uint32{req.ID},
-		Kinds: s.Kinds,
+		IDs: []uint32{req.ID},
 	})
 
 	if err != nil {
@@ -114,6 +104,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var resp protocol.ExcludeRepoResponse
 	if len(rs) == 0 {
 		log15.Warn("exclude-repo: repo not found. skipping", "repo.id", req.ID)
 		respond(w, http.StatusOK, resp)
@@ -132,13 +123,9 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 
 	for _, e := range es {
 		if err := e.Exclude(rs...); err != nil {
-			break
+			respond(w, http.StatusInternalServerError, err)
+			return
 		}
-	}
-
-	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
 	}
 
 	err = s.Store.UpsertExternalServices(r.Context(), es...)
@@ -284,27 +271,23 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	}
 
 	if s.Syncer == nil {
-		log15.Debug("server.external-service-sync", "syncer", "disabled")
+		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
+			ExternalService: req.ExternalService,
+			Error:           errors.New("Syncer is not enabled"),
+		})
 		return
 	}
 
-	for _, kind := range s.Kinds {
-		if req.ExternalService.Kind != kind {
-			continue
-		}
-
-		_, err := s.Syncer.Sync(r.Context(), kind)
-		switch {
-		case err == nil:
-			log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
-			_ = json.NewEncoder(w).Encode(&protocol.ExternalServiceSyncResult{
-				ExternalService: req.ExternalService,
-				Error:           err,
-			})
-		default:
-			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+	_, err := s.Syncer.Sync(r.Context(), req.ExternalService.Kind)
+	switch {
+	case err == nil:
+		log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
+		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
+			ExternalService: req.ExternalService,
+		})
+	default:
+		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -467,5 +450,5 @@ func isUnauthorized(err error) bool {
 }
 
 func isTemporarilyUnavailable(err error) bool {
-	return err == repos.ErrGitHubAPITemporarilyUnavailable || github.IsRateLimitExceeded(err)
+	return github.IsRateLimitExceeded(err)
 }
