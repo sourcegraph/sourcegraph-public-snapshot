@@ -26,8 +26,7 @@ import (
 	"syscall"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
+	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -81,17 +80,17 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 	if runCommandMock != nil {
 		return runCommandMock(ctx, cmd)
 	}
-	span, _ := opentracing.StartSpanFromContext(ctx, "runCommand")
-	span.SetTag("path", cmd.Path)
-	span.SetTag("args", cmd.Args)
-	span.SetTag("dir", cmd.Dir)
+	tr, ctx := trace.New(ctx, "runCommand", fmt.Sprintf("%v", cmd.Args))
+	defer tr.Finish()
+	tr.LogFields(
+		otlog.String("dir", cmd.Dir),
+		otlog.String("path", cmd.Path),
+		otlog.Object("args", cmd.Args))
 	defer func() {
+		tr.SetError(err)
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-			span.SetTag("exitCode", exitCode)
+			tr.LogFields(otlog.Int("exitCode", exitCode))
 		}
-		span.Finish()
 	}()
 
 	err = cmd.Run()
@@ -473,30 +472,31 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 
 	// Instrumentation
-	{
-		repo := repotrackutil.GetTrackedRepo(req.Repo)
-		cmd := ""
-		if len(req.Args) > 0 {
-			cmd = req.Args[0]
-		}
-		args := strings.Join(req.Args, " ")
+	repo := repotrackutil.GetTrackedRepo(req.Repo)
+	cmdStr := ""
+	if len(req.Args) > 0 {
+		cmdStr = req.Args[0]
+	}
+	args := strings.Join(req.Args, " ")
+	tr, ctx := trace.New(ctx, "exec."+cmdStr, string(req.Repo))
+	defer tr.Finish()
+	tr.LazyPrintf("args: %s", args)
+	defer func() {
+		tr.LogFields(
+			otlog.String("status", status),
+			otlog.Int64("stdout", stdoutN),
+			otlog.Int64("stderr", stderrN),
+		)
+		tr.SetError(execErr)
+	}()
 
-		var tr *trace.Trace
-		tr, ctx = trace.New(ctx, "exec."+cmd, string(req.Repo))
-		tr.LazyPrintf("args: %s", args)
-		execRunning.WithLabelValues(cmd, repo).Inc()
+	{
+		execRunning.WithLabelValues(cmdStr, repo).Inc()
 		defer func() {
-			tr.LogFields(
-				otlog.String("status", status),
-				otlog.Int64("stdout", stdoutN),
-				otlog.Int64("stderr", stderrN),
-			)
-			tr.SetError(execErr)
-			tr.Finish()
 
 			duration := time.Since(start)
-			execRunning.WithLabelValues(cmd, repo).Dec()
-			execDuration.WithLabelValues(cmd, repo, status).Observe(duration.Seconds())
+			execRunning.WithLabelValues(cmdStr, repo).Dec()
+			execDuration.WithLabelValues(cmdStr, repo, status).Observe(duration.Seconds())
 
 			var cmdDuration time.Duration
 			var fetchDuration time.Duration
@@ -509,7 +509,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 				ev := honey.Event("gitserver-exec")
 				ev.AddField("repo", req.Repo)
 				ev.AddField("remote_url", req.URL)
-				ev.AddField("cmd", cmd)
+				ev.AddField("cmd", cmdStr)
 				ev.AddField("args", args)
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
@@ -599,7 +599,13 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
-		if resolved, err := quickRevParseHead(dir); err == nil && git.IsAbsoluteRevision(resolved) {
+		tr.LazyPrintf("rev-parse")
+		resolved, err := quickRevParseHead(ctx, dir)
+		if err != nil {
+			tr.LazyPrintf("quickRevParseHead failed with %v", err)
+		}
+		if err == nil && git.IsAbsoluteRevision(resolved) {
+			tr.LazyPrintf("quickRevParseHead succeeded, returned %s", resolved)
 			w.Write([]byte(resolved))
 			w.Header().Set("X-Exec-Error", "")
 			w.Header().Set("X-Exec-Exit-Status", "0")
@@ -608,31 +614,36 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	execGitCommand(ctx, w, cmdStart, req, dir, exitStatus, execErr, status, stdoutN, stderrN)
+}
+
+func execGitCommand(ctx context.Context, w http.ResponseWriter, cmdStart time.Time, req protocol.ExecRequest, dir string, exitStatus int, execErr error, status string, stdoutN int64, stderrN int64) {
+	tr, ctx := trace.New(ctx, "execGitCommand", fmt.Sprintf("args: %v", req.Args))
+	defer tr.Finish()
 	var stderrBuf bytes.Buffer
 	stdoutW := &writeCounter{w: w}
 	stderrW := &writeCounter{w: &stderrBuf}
-
 	cmdStart = time.Now()
 	cmd := exec.CommandContext(ctx, "git", req.Args...)
 	cmd.Dir = dir
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
-
 	exitStatus, execErr = runCommand(ctx, cmd)
-
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
 	stderrN = stderrW.n
-
 	stderr := stderrBuf.String()
 	if len(stderr) > 1024 {
 		stderr = stderr[:1024]
 	}
-
 	// write trailer
 	w.Header().Set("X-Exec-Error", errorString(execErr))
 	w.Header().Set("X-Exec-Exit-Status", status)
 	w.Header().Set("X-Exec-Stderr", string(stderr))
+
+	tr.LogFields(
+		otlog.String("error", errorString(execErr)),
+		otlog.String("stderr", string(stderr)))
 }
 
 // setGitAttributes writes our global gitattributes to
@@ -1277,7 +1288,10 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 
 // quickRevParseHead best-effort mimics the execution of `git rev-parse HEAD`, but doesn't exec a child process.
 // It just reads the relevant files from the bare git repository directory.
-func quickRevParseHead(dir string) (string, error) {
+func quickRevParseHead(ctx context.Context, dir string) (string, error) {
+	tr, ctx := trace.New(ctx, "quickRevParseHead", dir)
+	defer tr.Finish()
+
 	// See if HEAD contains a commit hash and return it if so.
 	head, err := ioutil.ReadFile(filepath.Join(dir, "HEAD"))
 	if os.IsNotExist(err) {
@@ -1289,6 +1303,7 @@ func quickRevParseHead(dir string) (string, error) {
 	}
 	head = bytes.TrimSpace(head)
 	if git.IsAbsoluteRevision(string(head)) {
+		tr.LazyPrintf("HEAD contains a commit hash: %s", string(head))
 		return string(head), nil
 	}
 

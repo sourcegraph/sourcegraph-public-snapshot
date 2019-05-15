@@ -206,8 +206,9 @@ func BenchmarkQuickRevParseHead_packed_refs(b *testing.B) {
 	// Exclude setup
 	b.ResetTimer()
 
+	ctx := context.Background()
 	for n := 0; n < b.N; n++ {
-		rev, err := quickRevParseHead(dir)
+		rev, err := quickRevParseHead(ctx, dir)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -249,8 +250,9 @@ func BenchmarkQuickRevParseHead_unpacked_refs(b *testing.B) {
 	// Exclude setup
 	b.ResetTimer()
 
+	ctx := context.Background()
 	for n := 0; n < b.N; n++ {
-		rev, err := quickRevParseHead(dir)
+		rev, err := quickRevParseHead(ctx, dir)
 		if err != nil {
 			b.Fatal(err)
 		}
