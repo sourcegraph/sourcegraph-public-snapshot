@@ -1,8 +1,8 @@
 import { TokenType } from './lexer'
-import { Expression, Parser, TemplateParser } from './parser'
+import { ExpressionNode, Parser, TemplateParser } from './parser'
 
 describe('Parser', () => {
-    const TESTS: { [expr: string]: Expression } = {
+    const TESTS: { [expr: string]: ExpressionNode } = {
         '!a': {
             Unary: {
                 operator: '!',
@@ -208,7 +208,7 @@ describe('Parser', () => {
 })
 
 describe('TemplateParser', () => {
-    const TESTS: { [template: string]: Expression } = {
+    const TESTS: { [template: string]: ExpressionNode } = {
         // tslint:disable-next-line:no-invalid-template-strings
         '${x}': {
             Template: {

@@ -268,7 +268,7 @@ describe('code_intelligence', () => {
             )
             const editors = await from(services.editor.editors)
                 .pipe(
-                    skip(2),
+                    skip(1),
                     take(1)
                 )
                 .toPromise()
@@ -420,7 +420,7 @@ describe('code_intelligence', () => {
             )
             let editors = await from(services.editor.editors)
                 .pipe(
-                    skip(3),
+                    skip(2),
                     take(1)
                 )
                 .toPromise()
