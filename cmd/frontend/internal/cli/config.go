@@ -42,37 +42,56 @@ func printConfigValidation() {
 // the configuration in the database upon startup. This is used to e.g. ensure
 // dev environments have a consistent configuration and to load secrets from a
 // separate private repository.
+//
+// As this method writes to the configuration DB, it should be invoked before
+// the configuration server is started but after PostgreSQL is connected.
 func handleConfigOverrides() {
-	if conf.IsDev(conf.DeployType()) {
-		raw := conf.Raw()
+	overrideCriticalConfig := os.Getenv("CRITICAL_CONFIG_FILE")
+	overrideSiteConfig := os.Getenv("SITE_CONFIG_FILE")
+	overrideExtSvcConfig := os.Getenv("EXTSVC_CONFIG_FILE")
+	overrideAny := overrideCriticalConfig != "" || overrideSiteConfig != "" || overrideExtSvcConfig != ""
+	if overrideAny || conf.IsDev(conf.DeployType()) {
+		raw, err := (&configurationSource{}).Read(context.Background())
+		if err != nil {
+			log.Fatal("Failed to read existing configuration for applying config overrides:", err)
+		}
 
-		devOverrideCriticalConfig := os.Getenv("DEV_OVERRIDE_CRITICAL_CONFIG")
-		if devOverrideCriticalConfig != "" {
-			critical, err := ioutil.ReadFile(devOverrideCriticalConfig)
+		legacyOverrideCriticalConfig := os.Getenv("DEV_OVERRIDE_CRITICAL_CONFIG")
+		if overrideCriticalConfig == "" && legacyOverrideCriticalConfig != "" {
+			overrideCriticalConfig = legacyOverrideCriticalConfig
+		}
+		if overrideCriticalConfig != "" {
+			critical, err := ioutil.ReadFile(overrideCriticalConfig)
 			if err != nil {
 				log.Fatal(err)
 			}
 			raw.Critical = string(critical)
 		}
 
-		devOverrideSiteConfig := os.Getenv("DEV_OVERRIDE_SITE_CONFIG")
-		if devOverrideSiteConfig != "" {
-			site, err := ioutil.ReadFile(devOverrideSiteConfig)
+		legacyOverrideSiteConfig := os.Getenv("DEV_OVERRIDE_SITE_CONFIG")
+		if overrideSiteConfig == "" && legacyOverrideSiteConfig != "" {
+			overrideSiteConfig = legacyOverrideSiteConfig
+		}
+		if overrideSiteConfig != "" {
+			site, err := ioutil.ReadFile(overrideSiteConfig)
 			if err != nil {
 				log.Fatal(err)
 			}
 			raw.Site = string(site)
 		}
 
-		if devOverrideCriticalConfig != "" || devOverrideSiteConfig != "" {
+		if overrideCriticalConfig != "" || overrideSiteConfig != "" {
 			err := (&configurationSource{}).Write(context.Background(), raw)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 
-		devOverrideExtSvcConfig := os.Getenv("DEV_OVERRIDE_EXTSVC_CONFIG")
-		if devOverrideExtSvcConfig != "" {
+		legacyOverrideExtSvcConfig := os.Getenv("DEV_OVERRIDE_EXTSVC_CONFIG")
+		if overrideExtSvcConfig == "" && legacyOverrideExtSvcConfig != "" {
+			overrideExtSvcConfig = legacyOverrideExtSvcConfig
+		}
+		if overrideExtSvcConfig != "" {
 			existing, err := db.ExternalServices.List(context.Background(), db.ExternalServicesListOptions{})
 			if err != nil {
 				log.Fatal(err)
@@ -81,7 +100,7 @@ func handleConfigOverrides() {
 				return
 			}
 
-			extsvc, err := ioutil.ReadFile(devOverrideExtSvcConfig)
+			extsvc, err := ioutil.ReadFile(overrideExtSvcConfig)
 			if err != nil {
 				log.Fatal(err)
 			}
