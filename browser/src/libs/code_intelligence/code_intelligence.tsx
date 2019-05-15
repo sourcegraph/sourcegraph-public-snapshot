@@ -582,8 +582,8 @@ export function handleCodeHost({
                 }
 
                 // Apply decorations coming from extensions
-                let decorationsByLine: DecorationMapByLine = new Map()
-                if (!fileInfo.baseCommitID) {
+                {
+                    let decorationsByLine: DecorationMapByLine = new Map()
                     codeViewState.subscriptions.add(
                         extensionsController.services.textDocumentDecoration
                             .getDecorations(toTextDocumentIdentifier(fileInfo))
@@ -591,11 +591,39 @@ export function handleCodeHost({
                             // We manage the subscription correctly.
                             // tslint:disable-next-line: rxjs-no-nested-subscribe
                             .subscribe(decorations => {
+                                console.log('new decorations for head', decorations)
                                 decorationsByLine = applyDecorations(
                                     domFunctions,
                                     element,
                                     decorations || [],
-                                    decorationsByLine
+                                    decorationsByLine,
+                                    fileInfo.baseCommitID ? 'head' : undefined
+                                )
+                            })
+                    )
+                }
+                if (fileInfo.baseCommitID && fileInfo.baseFilePath) {
+                    let decorationsByLine: DecorationMapByLine = new Map()
+                    codeViewState.subscriptions.add(
+                        extensionsController.services.textDocumentDecoration
+                            .getDecorations(
+                                toTextDocumentIdentifier({
+                                    repoName: fileInfo.baseRepoName || fileInfo.repoName, // not sure if all code hosts set baseRepoName
+                                    commitID: fileInfo.baseCommitID,
+                                    filePath: fileInfo.baseFilePath,
+                                })
+                            )
+                            // The nested subscribe cannot be replaced with a switchMap()
+                            // We manage the subscription correctly.
+                            // tslint:disable-next-line: rxjs-no-nested-subscribe
+                            .subscribe(decorations => {
+                                console.log('new decorations for base', decorations)
+                                decorationsByLine = applyDecorations(
+                                    domFunctions,
+                                    element,
+                                    decorations || [],
+                                    decorationsByLine,
+                                    'base'
                                 )
                             })
                     )

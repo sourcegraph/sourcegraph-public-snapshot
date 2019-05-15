@@ -1,4 +1,4 @@
-import { DOMFunctions, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { DiffPart, DOMFunctions as CodeIntellifyDOMFuncions, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Selection } from '@sourcegraph/extension-api-types'
 import { Observable, of, zip } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
@@ -11,6 +11,13 @@ import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost, FileInfo } from './code_intelligence'
 import { ensureRevisionsAreCloned } from './util/file_info'
 import { trackViews, ViewResolver } from './views'
+
+export interface DOMFunctions extends CodeIntellifyDOMFuncions {
+    /**
+     * Gets the element for the entire line (including line number(s) and code).
+     */
+    getLineElementFromLineNumber: (codeView: HTMLElement, line: number, part?: DiffPart) => HTMLElement | null
+}
 
 /**
  * Defines a code view that is present on a page.

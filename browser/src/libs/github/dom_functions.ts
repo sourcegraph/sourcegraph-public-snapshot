@@ -1,4 +1,5 @@
-import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
+import { DiffPart } from '@sourcegraph/codeintellify'
+import { DOMFunctions } from '../code_intelligence/code_views'
 import { parseURL } from './util'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
@@ -103,6 +104,17 @@ export const diffDomFunctions: DOMFunctions = {
         }
         return getBlobCodeInner(codeCell)
     },
+    getLineElementFromLineNumber: (codeView, line, part) => {
+        const isSplitDiff = isDomSplitDiff(codeView)
+        const nthChild = getLineNumberElementIndex(part!, isSplitDiff) + 1 // nth-child() is 1-indexed
+        const lineNumberCell = codeView.querySelector<HTMLTableCellElement>(
+            `td:nth-child(${nthChild})[data-line-number="${line}"]`
+        )
+        if (!lineNumberCell) {
+            return null
+        }
+        return lineNumberCell.parentElement
+    },
     getLineNumberFromCodeElement,
     getDiffCodePart,
     isFirstCharacterDiffIndicator: codeElement => {
@@ -171,7 +183,7 @@ export const searchCodeSnippetDOMFunctions: DOMFunctions = {
         let lineNumberCell: HTMLElement | null = null
 
         for (const cell of lineNumberCells) {
-            const a = cell.querySelector('a')!
+            const a = cell.querySelector('a')
             if (a.href.match(new RegExp(`#L${line}$`))) {
                 lineNumberCell = cell as HTMLElement
                 break
