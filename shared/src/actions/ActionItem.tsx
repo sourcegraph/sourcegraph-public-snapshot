@@ -213,6 +213,8 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     urlForClientCommandOpen(this.props.action, this.props.location) ||
                     (this.props.altAction && urlForClientCommandOpen(this.props.altAction, this.props.location))
                 }
+                target="_blank"
+                rel="noopener"
                 onSelect={this.runAction}
             >
                 {content}
