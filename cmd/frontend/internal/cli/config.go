@@ -49,11 +49,11 @@ func handleConfigOverrides() {
 	overrideCriticalConfig := os.Getenv("CRITICAL_CONFIG_FILE")
 	overrideSiteConfig := os.Getenv("SITE_CONFIG_FILE")
 	overrideExtSvcConfig := os.Getenv("EXTSVC_CONFIG_FILE")
-	overrideAny := overrideCriticalConfig || overrideSiteConfig || overrideExtSvcConfig
+	overrideAny := overrideCriticalConfig != "" || overrideSiteConfig != "" || overrideExtSvcConfig != ""
 	if overrideAny || conf.IsDev(conf.DeployType()) {
 		raw, err := (&configurationSource{}).Read(context.Background())
 		if err != nil {
-			log.Fatal("Failed to read existing configuration for applying config overrides:", error)
+			log.Fatal("Failed to read existing configuration for applying config overrides:", err)
 		}
 
 		legacyOverrideCriticalConfig := os.Getenv("DEV_OVERRIDE_CRITICAL_CONFIG")
