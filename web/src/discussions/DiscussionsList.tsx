@@ -9,7 +9,10 @@ import { Timestamp } from '../components/time/Timestamp'
 import { fetchDiscussionThreads } from './backend'
 
 interface DiscussionNodeProps {
-    node: GQL.IDiscussionThread
+    node: Pick<
+        GQL.IDiscussionThread,
+        'idWithoutKind' | 'title' | 'author' | 'inlineURL' | 'comments' | 'createdAt' | 'target'
+    >
     location: H.Location
     withRepo?: boolean
 }
@@ -32,7 +35,7 @@ const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, lo
                 </Link>
             </div>
             <div className="text-muted">
-                #{node.id} created <Timestamp date={node.createdAt} /> by{' '}
+                #{node.idWithoutKind} created <Timestamp date={node.createdAt} /> by{' '}
                 <Link to={`/users/${node.author.username}`} data-tooltip={node.author.displayName}>
                     {node.author.username}
                 </Link>{' '}
@@ -47,7 +50,7 @@ const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, lo
 }
 
 class FilteredDiscussionsConnection extends FilteredConnection<
-    GQL.IDiscussionThread,
+    DiscussionNodeProps['node'],
     Pick<DiscussionNodeProps, 'location'>
 > {}
 
