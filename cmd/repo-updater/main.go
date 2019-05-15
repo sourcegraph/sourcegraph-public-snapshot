@@ -98,7 +98,10 @@ func main() {
 		repos.BitbucketServerUsernameMigration(clock), // Needs to run before EnabledStateDeprecationMigration
 		repos.BitbucketServerSetDefaultRepositoryQueryMigration(clock),
 		repos.AWSCodeCommitSetBogusGitCredentialsMigration(clock),
-		repos.EnabledStateDeprecationMigration(src, clock),
+	}
+
+	if !envvar.SourcegraphDotComMode() {
+		migrations = append(migrations, repos.EnabledStateDeprecationMigration(src, clock))
 	}
 
 	for _, m := range migrations {
