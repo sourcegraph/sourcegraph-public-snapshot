@@ -59,10 +59,7 @@ func getMode() configurationMode {
 	}
 }
 
-var (
-	configurationServerFrontendOnly            *Server
-	configurationServerFrontendOnlyInitialized = make(chan struct{})
-)
+var configurationServerFrontendOnlyInitialized = make(chan struct{})
 
 func init() {
 	clientStore := NewStore()
@@ -118,7 +115,6 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 	defaultClient.passthrough = source
 
 	go defaultClient.continuouslyUpdate(nil)
-	configurationServerFrontendOnly = server
 	close(configurationServerFrontendOnlyInitialized)
 	return server
 }
