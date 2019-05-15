@@ -176,11 +176,21 @@ func TimeUntilUserCanCreateThread(ctx context.Context, userID int32, newThreadTi
 	}
 	var actions []action
 	for _, t := range threads {
+		targets, err := db.DiscussionThreads.ListTargets(ctx, t.ID)
+		if err != nil {
+			log15.Error("discussions: failed to determine ratelimit for thread creation", "error", err)
+			return one800DBError
+		}
+
+		// For rate-limiting purposes, take only the first target of each thread (if any). Treating
+		// a thread action as a unique action on each target would be unduly harsh, and taking only
+		// the first target is not subject to gaming (i.e., the user altering the order of a
+		// thread's targets would only yield a stricter rate limit, not a more lenient one).
 		var key string
-		if t.Target != nil {
-			key = fmt.Sprint(t.Target.RepoID, orEmpty(t.Target.Path), orEmpty(t.Target.Branch), orEmpty(t.Target.Revision))
+		if len(targets) == 1 {
+			key = fmt.Sprint(targets[0].RepoID, orEmpty(targets[0].Path), orEmpty(targets[0].Branch), orEmpty(targets[0].Revision))
 		} else {
-			// We don't know what this type of thread is, so we assume it does
+			// We don't know what this type of target is, so we assume it does
 			// not need to be rate limited harshly.
 			key = "not-unique"
 		}

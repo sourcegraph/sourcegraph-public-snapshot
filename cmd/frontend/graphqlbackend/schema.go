@@ -2570,7 +2570,10 @@ type DiscussionThreadTargetRepo {
 # repository. In the future, this may be extended to include other targets such
 # as user profiles, extensions, etc. Clients should ignore target types they
 # do not understand gracefully.
-union DiscussionThreadTarget = DiscussionThreadTargetRepo
+#
+# BACKCOMPAT: The EmptyResponse type is only returned from DiscussionThread#target
+# when it would otherwise be null.
+union DiscussionThreadTarget = DiscussionThreadTargetRepo | EmptyResponse
 
 # A discussion thread around some target (e.g. a file in a repo).
 type DiscussionThread implements Node {
@@ -2591,8 +2594,8 @@ type DiscussionThread implements Node {
     # in the thread. It is always present, even if the user e.g. input no content.
     title: String!
 
-    # The target of this discussion thread.
-    target: DiscussionThreadTarget!
+    # The first target of this discussion thread.
+    target: DiscussionThreadTarget
 
     # The URL at which this thread can be viewed inline (i.e. in the file blob view).
     #

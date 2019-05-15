@@ -96,7 +96,6 @@ Foreign-key constraints:
  id             | bigint                   | not null default nextval('discussion_threads_id_seq'::regclass)
  author_user_id | integer                  | not null
  title          | text                     | 
- target_repo_id | bigint                   | 
  created_at     | timestamp with time zone | not null default now()
  archived_at    | timestamp with time zone | 
  updated_at     | timestamp with time zone | not null default now()
@@ -107,7 +106,6 @@ Indexes:
     "discussion_threads_id_idx" btree (id)
 Foreign-key constraints:
     "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
-    "discussion_threads_target_repo_id_fk" FOREIGN KEY (target_repo_id) REFERENCES discussion_threads_target_repo(id) ON DELETE CASCADE
 Referenced by:
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE
     TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE
@@ -138,8 +136,6 @@ Indexes:
 Foreign-key constraints:
     "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "discussion_threads_target_repo_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE
-Referenced by:
-    TABLE "discussion_threads" CONSTRAINT "discussion_threads_target_repo_id_fk" FOREIGN KEY (target_repo_id) REFERENCES discussion_threads_target_repo(id) ON DELETE CASCADE
 
 ```
 

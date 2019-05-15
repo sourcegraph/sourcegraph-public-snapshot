@@ -32,20 +32,27 @@ func URLToInlineComment(ctx context.Context, thread *types.DiscussionThread, com
 
 func urlToInline(ctx context.Context, t *types.DiscussionThread, c *types.DiscussionComment) (*url.URL, error) {
 	var u *url.URL
+
+	// TODO(sqs): This only takes the 1st target. Support multiple targets.
+	targets, err := db.DiscussionThreads.ListTargets(ctx, t.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "DiscussionThreads.ListTargets")
+	}
 	switch {
-	case t.Target != nil:
+	case len(targets) > 0:
 		// TODO(slimsag:discussions): future: Consider how to handle cases like:
 		// - repo renames
 		// - file paths not existing on the default branch (or at all).
 
-		repo, err := db.Repos.Get(ctx, t.Target.RepoID)
+		target := targets[0]
+		repo, err := db.Repos.Get(ctx, target.RepoID)
 		if err != nil {
 			return nil, errors.Wrap(err, "db.Repos.Get")
 		}
-		if t.Target.Path == nil {
+		if target.Path == nil {
 			return nil, nil // Can't generate a link to this yet, we don't have a UI for it yet.
 		}
-		u = &url.URL{Path: path.Join("/", string(repo.Name), "/-/blob/", *t.Target.Path)}
+		u = &url.URL{Path: path.Join("/", string(repo.Name), "/-/blob/", *target.Path)}
 
 		fragment := url.Values{}
 		fragment.Set("tab", "discussions")
@@ -54,8 +61,8 @@ func urlToInline(ctx context.Context, t *types.DiscussionThread, c *types.Discus
 			fragment.Set("commentID", strconv.FormatInt(c.ID, 10))
 		}
 		encFragment := fragment.Encode()
-		if t.Target.StartLine != nil {
-			encFragment = fmt.Sprintf("L%d&%s", *t.Target.StartLine+1, encFragment)
+		if target.StartLine != nil {
+			encFragment = fmt.Sprintf("L%d&%s", *target.StartLine+1, encFragment)
 		}
 		u.Fragment = encFragment
 	default:
