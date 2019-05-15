@@ -561,7 +561,7 @@ func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds 
 				targetRepoConds = append(targetRepoConds, sqlf.Sprintf("path!=%v", *opts.NotTargetRepoPath))
 			}
 		}
-		conds = append(conds, sqlf.Sprintf("id IN (SELECT id FROM discussion_threads_target_repo WHERE %v)", sqlf.Join(targetRepoConds, "AND")))
+		conds = append(conds, sqlf.Sprintf("id IN (SELECT thread_id FROM discussion_threads_target_repo WHERE %v)", sqlf.Join(targetRepoConds, "AND")))
 	}
 	return conds
 }
