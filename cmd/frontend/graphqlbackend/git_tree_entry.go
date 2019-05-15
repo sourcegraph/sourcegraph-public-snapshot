@@ -82,11 +82,7 @@ func (r *gitTreeEntryResolver) urlPath(prefix string) string {
 func (r *gitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *gitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	rev, err := r.commit.inputRevOrImmutableRev()
-	if err != nil {
-		return nil, err
-	}
-	return externallink.FileOrDir(ctx, r.commit.repo.repo, rev, r.path, r.stat.Mode().IsDir())
+	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.inputRevOrImmutableRev(), r.path, r.stat.Mode().IsDir())
 }
 
 func (r *gitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
@@ -194,11 +190,7 @@ func (r *gitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if err != nil {
 		return false, err
 	}
-	oid, err := r.commit.OID()
-	if err != nil {
-		return false, err
-	}
-	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(oid), filepath.Dir(r.path), false)
+	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.OID()), filepath.Dir(r.path), false)
 	if err != nil {
 		return false, err
 	}
