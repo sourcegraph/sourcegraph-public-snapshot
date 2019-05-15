@@ -88,7 +88,9 @@ exports[`ActionItem render as link for "open" command 1`] = `
   className="action-item "
   onClick={[Function]}
   onKeyPress={[Function]}
+  rel="noopener"
   tabIndex={0}
+  target="_blank"
   to="https://example.com"
 >
   
