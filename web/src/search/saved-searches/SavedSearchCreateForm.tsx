@@ -48,21 +48,18 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                                 fields.userID,
                                 fields.orgID
                             ).pipe(
-                                map(() => {
-                                    this.setState({
-                                        loadingOrError: null,
-                                    })
-                                    this.props.history.push(this.props.returnPath)
-                                }),
-                                catchError(loadingOrError => {
-                                    this.setState({ loadingOrError })
-                                    return []
-                                })
+                                map(() => null),
+                                catchError(error => [error])
                             )
                         )
                     )
                 )
-                .subscribe()
+                .subscribe(loadingOrError => {
+                    this.setState({ loadingOrError })
+                    if (loadingOrError === null) {
+                        this.props.history.push(this.props.returnPath)
+                    }
+                })
         )
     }
 
