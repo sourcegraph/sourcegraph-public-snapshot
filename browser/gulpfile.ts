@@ -19,7 +19,7 @@ export function watch(): ChildProcess {
 }
 
 const PHABRICATOR_EXTENSION_FILES = path.join(__dirname, './build/phabricator/dist/**')
-const PHABRICATOR_ASSETS_DIRECTORY = path.join(__dirname, '../../ui/assets/extension')
+const PHABRICATOR_ASSETS_DIRECTORY = path.join(__dirname, '../ui/assets/extension')
 
 /**
  * Copies the phabricator extension over to the ui/assets folder so they can be served by the webapp. The package
