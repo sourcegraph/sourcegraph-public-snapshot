@@ -266,7 +266,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context) ([]*bitbuckets
 		go func(q string) {
 			defer wg.Done()
 
-			page := &bitbucketserver.PageToken{Limit: 100}
+			page := &bitbucketserver.PageToken{Limit: 1000}
 			for page.HasMore() {
 				var err error
 				var repos []*bitbucketserver.Repo

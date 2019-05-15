@@ -30,8 +30,8 @@ var requestCounter = metrics.NewRequestCounter("bitbucket", "Total number of req
 // "List all repositories" requests (which are a good portion of our requests) to 1,000/hr,
 // and they restrict "List a user or team's repositories" requests (which are roughly equal
 // to our repository lookup requests) to 1,000/hr. We peform a list repositories request
-// for every 100 repositories on Bitbucket every 1m by default, so for someone with 20,000
-// Bitbucket repositories we need 20,000/100 requests per minute (1200/hr) + overhead for
+// for every 1000 repositories on Bitbucket every 1m by default, so for someone with 20,000
+// Bitbucket repositories we need 20,000/1000 requests per minute (1200/hr) + overhead for
 // repository lookup requests by users. So we use a generous 7,200/hr here until we hear
 // from someone that these values do not work well for them.
 const (
