@@ -1,11 +1,11 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Observable, of, Subject, Subscription } from 'rxjs'
-import { map, mapTo, switchMap, catchError } from 'rxjs/operators'
+import { of, Subject, Subscription } from 'rxjs'
+import { catchError, mapTo, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { ErrorLike } from '../../../../shared/src/util/errors'
 import { createSavedSearch } from '../../search/backend'
 import { SavedQueryFields, SavedSearchForm } from '../../search/saved-searches/SavedSearchForm'
-import { ErrorLike, asError } from '../../../../shared/src/util/errors'
 
 interface Props extends RouteComponentProps {
     /** The URL path to return to after successfully creating a saved search.  */

@@ -8,8 +8,8 @@ import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { deleteSavedSearch, fetchSavedSearches } from '../../search/backend'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { deleteSavedSearch, fetchSavedSearches } from '../../search/backend'
 
 interface NodeProps extends RouteComponentProps {
     savedSearch: GQL.ISavedSearch
