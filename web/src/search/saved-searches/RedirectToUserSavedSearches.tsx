@@ -5,7 +5,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 
 /**
- * Redirects from /settings to /user/$USERNAME/settings, where $USERNAME is the currently authenticated user's
+ * Redirects from /settings to /user/$USERNAME/searches, where $USERNAME is the currently authenticated user's
  * username.
  */
 export const RedirectToUserSavedSearches = withAuthenticatedUser(
