@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Kinds of external services in use are now included in [server pings](https://docs.sourcegraph.com/admin/pings).
 - Bitbucket Server: An actual Bitbucket icon is now used for the jump-to-bitbucket action on repository pages instead of the previously generic icon.
+- The saved searches UI has changed. There is now a Saved searches page in the user and organizations settings area. A saved search appears in the settings area of the user or organization it is associated with.
 
 ### Removed
 
