@@ -8,9 +8,9 @@ import H from 'history'
 import { noop } from 'lodash'
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { BehaviorSubject, concat, NEVER, Observable, of } from 'rxjs'
+import { concat, NEVER, Observable, of } from 'rxjs'
 import * as sinon from 'sinon'
-import { ContextService } from '../../api/client/context/contextService'
+import { createContextService } from '../../api/client/context/contextService'
 import { parseTemplate } from '../../api/client/context/expr/evaluator'
 import { ContributionsEntry, ContributionUnsubscribable } from '../../api/client/services/contribution'
 import { setLinkComponent } from '../../components/Link'
@@ -23,15 +23,8 @@ describe('<HierarchicalLocationsView />', () => {
         setLinkComponent((props: any) => <a {...props} />)
     })
     const getProps = () => {
-        const contextData = new BehaviorSubject<{}>({})
-        const contextService: ContextService = {
-            data: contextData,
-            updateContext(update: any): void {
-                contextData.next(update)
-            },
-        }
         const services = {
-            context: contextService,
+            context: createContextService({ clientApplication: 'other' }),
             contribution: {
                 registerContributions: sinon.spy(
                     (entry: ContributionsEntry): ContributionUnsubscribable => ({ entry, unsubscribe: noop })
