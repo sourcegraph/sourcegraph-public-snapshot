@@ -223,6 +223,8 @@
 // 1528395579_.up.sql (175B)
 // 1528395580_create_user_permissions_table.down.sql (56B)
 // 1528395580_create_user_permissions_table.up.sql (331B)
+// 1528395581_.down.sql (267B)
+// 1528395581_.up.sql (322B)
 
 package migrations
 
@@ -4751,6 +4753,46 @@ func _1528395580_create_user_permissions_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395581_DownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\xcd\xb1\x4a\x43\x31\x18\xc5\xf1\x3d\x4f\x71\xc6\x76\xe9\x0b\x5c\x1c\xd2\xe4\x54\x0b\xb9\x89\x24\x29\x8e\xa1\xfa\x5d\xea\xb7\xb4\x72\x13\xdf\x5f\xc4\x45\xa4\xe0\x7c\xf8\x9f\xdf\x9e\x8f\xc7\x38\x19\x63\x43\x65\x46\xb5\xfb\x40\x88\xf6\xb7\xcf\xde\xf5\x76\x6d\xe3\x7d\x5d\xce\xd2\x61\xbd\x87\x4b\xe1\x34\x47\x8c\xf3\x7a\x59\x46\x5b\x97\x8f\x5b\x53\xc1\xab\x5e\xf4\x3a\x90\x79\x60\x66\x74\x2c\x77\xf2\xf6\xab\xd9\xa8\x6c\x91\x22\x3c\x03\x2b\xe1\x6c\x71\xd6\x73\x32\xa7\x67\x6f\xeb\x5d\x5b\x50\x58\xff\xb0\x0f\x9b\xc2\x40\x57\x31\x76\x2a\x38\xe4\x34\xff\xc3\x62\xe0\xe5\x89\x99\xf8\xd9\xbe\x2f\x64\xa7\xb2\x9d\x8c\x71\x69\x9e\x8f\x75\x32\x5f\x01\x00\x00\xff\xff\x58\x6f\x54\x03\x0b\x01\x00\x00")
+
+func _1528395581_DownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395581_DownSql,
+		"1528395581_.down.sql",
+	)
+}
+
+func _1528395581_DownSql() (*asset, error) {
+	bytes, err := _1528395581_DownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395581_.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xeb, 0x2d, 0xb4, 0x42, 0xd3, 0xc1, 0x1, 0x8, 0x59, 0x9e, 0xeb, 0x60, 0xab, 0x97, 0x1c, 0xdf, 0x25, 0x41, 0xdb, 0xa0, 0x44, 0x86, 0x90, 0x8d, 0x1, 0x81, 0xb6, 0xd8, 0x86, 0xd4, 0x6c, 0x1c}}
+	return a, nil
+}
+
+var __1528395581_UpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\xcf\x41\x4b\xc3\x40\x10\x05\xe0\xfb\xfe\x8a\x77\x54\x70\x03\x3d\x47\x84\xa6\x0d\x52\x48\x1a\x29\xf1\x1c\xc6\x66\x30\xab\xe9\x4e\xd9\x99\x28\xfe\x7b\x91\x1e\x6c\x61\x6f\xc3\xcc\xf0\x3d\x5e\x55\x3f\xef\xf6\xa5\x73\xde\xa3\xa5\x4f\xc6\x18\xf4\xb8\xa8\x06\x89\x83\x4d\x89\x69\x54\x3c\xfa\xa7\xcc\x7a\x30\x4a\xef\x6c\x43\xe2\xb3\x80\xb0\xf2\x26\x3e\xe2\x2e\x8a\x5d\xe6\xd5\x3d\x12\xcf\x64\x41\xa2\x4e\xe1\x5c\xa0\x9f\x72\xfa\x0d\xb3\xad\x60\xf4\x36\x33\x68\xfe\x3b\xfe\x60\x22\x05\xe1\xf2\x3a\x84\x11\x47\x99\x97\x53\x7c\x80\x0a\xbe\x19\x1f\x8b\x1a\x22\xf3\x08\x13\x24\x3e\xc9\x17\xc3\xb2\x29\xc5\x55\xca\xbf\x53\xb8\x75\xd3\xd7\x07\xf4\xeb\xaa\xa9\x73\xcd\xb7\x87\xee\x05\x9b\xae\x79\x6d\xf7\xb8\x15\x4a\xe7\x36\x5d\xdb\xee\xfa\xd2\xfd\x06\x00\x00\xff\xff\xf5\x4b\xe7\x37\x42\x01\x00\x00")
+
+func _1528395581_UpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395581_UpSql,
+		"1528395581_.up.sql",
+	)
+}
+
+func _1528395581_UpSql() (*asset, error) {
+	bytes, err := _1528395581_UpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395581_.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x64, 0x84, 0x80, 0xb4, 0x14, 0xe6, 0x8f, 0x9d, 0x1b, 0x7b, 0xfc, 0x64, 0xd6, 0xd9, 0x5c, 0xbc, 0x30, 0x6a, 0x86, 0x22, 0xd4, 0xd6, 0x22, 0x3d, 0xc0, 0x25, 0x44, 0x97, 0x1c, 0x45, 0x8, 0x56}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5287,6 +5329,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395580_create_user_permissions_table.down.sql": _1528395580_create_user_permissions_tableDownSql,
 
 	"1528395580_create_user_permissions_table.up.sql": _1528395580_create_user_permissions_tableUpSql,
+
+	"1528395581_.down.sql": _1528395581_DownSql,
+
+	"1528395581_.up.sql": _1528395581_UpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5553,6 +5599,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395579_.up.sql":                                          {_1528395579_UpSql, map[string]*bintree{}},
 	"1528395580_create_user_permissions_table.down.sql":           {_1528395580_create_user_permissions_tableDownSql, map[string]*bintree{}},
 	"1528395580_create_user_permissions_table.up.sql":             {_1528395580_create_user_permissions_tableUpSql, map[string]*bintree{}},
+	"1528395581_.down.sql":                                        {_1528395581_DownSql, map[string]*bintree{}},
+	"1528395581_.up.sql":                                          {_1528395581_UpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

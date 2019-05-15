@@ -408,26 +408,11 @@ func TestUsers_Delete(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			// Create a repository to comply with the postgres repo constraint.
-			if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
-				t.Fatal(err)
-			}
-			repo, err := Repos.GetByName(ctx, "myrepo")
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			// Create a discussion thread to confirm that deletion properly removes
 			// threads and their associated comments.
 			newThread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
 				AuthorUserID: user.ID,
 				Title:        "Hello world",
-				Target: &types.DiscussionThreadTargetRepo{
-					RepoID:   repo.ID,
-					Path:     strPtr("foo/bar/mux.go"),
-					Branch:   strPtr("master"),
-					Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
-				},
 			})
 			if err != nil {
 				t.Fatal(err)

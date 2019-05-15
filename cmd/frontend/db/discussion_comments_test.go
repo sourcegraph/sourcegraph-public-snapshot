@@ -41,12 +41,6 @@ func TestDiscussionComments_Create(t *testing.T) {
 	thread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
 		AuthorUserID: user.ID,
 		Title:        "Hello world!",
-		Target: &types.DiscussionThreadTargetRepo{
-			RepoID:   repo.ID,
-			Path:     strPtr("foo/bar/mux.go"),
-			Branch:   strPtr("master"),
-			Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
-		},
 	})
 	if err != nil {
 		t.Fatal(err)

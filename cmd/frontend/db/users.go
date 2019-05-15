@@ -475,9 +475,6 @@ func (u *users) HardDelete(ctx context.Context, id int32) error {
 	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_mail_reply_tokens WHERE user_id=$1", id); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, "UPDATE discussion_threads SET target_repo_id=null WHERE author_user_id=$1", id); err != nil {
-		return err
-	}
 	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_threads_target_repo WHERE thread_id IN (SELECT id FROM discussion_threads WHERE author_user_id=$1)", id); err != nil {
 		return err
 	}

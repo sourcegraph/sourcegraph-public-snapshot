@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 // TODO(slimsag:discussions): future: tests for DiscussionThreadsListOptions.TargetRepoID
@@ -70,15 +69,6 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 	if newThread.DeletedAt != nil {
 		return nil, errors.New("newThread.DeletedAt must not be specified")
 	}
-	if newThread.Target != nil {
-		if rev := newThread.Target.Revision; rev != nil {
-			if !git.IsAbsoluteRevision(*rev) {
-				return nil, errors.New("newThread.Target.Revision must be an absolute Git revision (40 character SHA-1 hash)")
-			}
-		}
-	} else {
-		return nil, errors.New("newThread must have a target")
-	}
 
 	// TODO(slimsag:discussions): should be in a transaction
 
@@ -98,30 +88,6 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 	).Scan(&newThread.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "create thread")
-	}
-
-	// Create the thread target and have it reference the thread we just created.
-	var (
-		targetName string
-		targetID   int64
-	)
-	switch {
-	case newThread.Target != nil:
-		var err error
-		newThread.Target, err = t.createTargetRepo(ctx, newThread.Target, newThread.ID)
-		if err != nil {
-			return nil, errors.Wrap(err, "createTargetRepo")
-		}
-		targetName = "target_repo_id"
-		targetID = newThread.Target.ID
-	default:
-		return nil, errors.New("unexpected target type")
-	}
-
-	// Update the thread to reference the target we just created.
-	_, err = dbconn.Global.ExecContext(ctx, `UPDATE discussion_threads SET `+targetName+`=$1 WHERE id=$2`, targetID, newThread.ID)
-	if err != nil {
-		return nil, errors.Wrap(err, "update thread target")
 	}
 	return newThread, nil
 }
@@ -589,47 +555,6 @@ func (*discussionThreads) getCountBySQL(ctx context.Context, query string, args 
 	return count, err
 }
 
-// createTargetRepo handles the creation of a repo-based discussion thread target.
-func (t *discussionThreads) createTargetRepo(ctx context.Context, tr *types.DiscussionThreadTargetRepo, threadID int64) (*types.DiscussionThreadTargetRepo, error) {
-	var fields []*sqlf.Query
-	var values []*sqlf.Query
-	field := func(name string, arg interface{}) {
-		fields = append(fields, sqlf.Sprintf("%s", sqlf.Sprintf(name)))
-		values = append(values, sqlf.Sprintf("%v", arg))
-	}
-	field("thread_id", threadID)
-	field("repo_id", tr.RepoID)
-	if tr.Path != nil {
-		field("path", *tr.Path)
-	}
-	if tr.Branch != nil {
-		field("branch", *tr.Branch)
-	}
-	if tr.Revision != nil {
-		field("revision", *tr.Revision)
-	}
-	if tr.HasSelection() {
-		field("start_line", *tr.StartLine)
-		field("end_line", *tr.EndLine)
-		field("start_character", *tr.StartCharacter)
-		field("end_character", *tr.EndCharacter)
-		field("lines_before", strings.Join(*tr.LinesBefore, "\n"))
-		field("lines", strings.Join(*tr.Lines, "\n"))
-		field("lines_after", strings.Join(*tr.LinesAfter, "\n"))
-	}
-	q := sqlf.Sprintf("INSERT INTO discussion_threads_target_repo(%v) VALUES (%v) RETURNING id", sqlf.Join(fields, ",\n"), sqlf.Join(values, ","))
-
-	// To debug query building, uncomment these lines:
-	// fmt.Println(q.Query(sqlf.PostgresBindVar))
-	// fmt.Println(q.Args())
-
-	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&tr.ID)
-	if err != nil {
-		return nil, err
-	}
-	return tr, err
-}
-
 // getBySQL returns threads matching the SQL query, if any exist.
 func (t *discussionThreads) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.DiscussionThread, error) {
 	rows, err := dbconn.Global.QueryContext(ctx, `
@@ -637,7 +562,6 @@ func (t *discussionThreads) getBySQL(ctx context.Context, query string, args ...
 			t.id,
 			t.author_user_id,
 			t.title,
-			t.target_repo_id,
 			t.created_at,
 			t.archived_at,
 			t.updated_at
@@ -649,15 +573,11 @@ func (t *discussionThreads) getBySQL(ctx context.Context, query string, args ...
 	threads := []*types.DiscussionThread{}
 	defer rows.Close()
 	for rows.Next() {
-		var (
-			thread       types.DiscussionThread
-			targetRepoID *int64
-		)
+		var thread types.DiscussionThread
 		err := rows.Scan(
 			&thread.ID,
 			&thread.AuthorUserID,
 			&thread.Title,
-			&targetRepoID,
 			&thread.CreatedAt,
 			&thread.ArchivedAt,
 			&thread.UpdatedAt,
@@ -665,70 +585,12 @@ func (t *discussionThreads) getBySQL(ctx context.Context, query string, args ...
 		if err != nil {
 			return nil, err
 		}
-		if targetRepoID != nil {
-			thread.Target, err = t.getTargetRepo(ctx, *targetRepoID)
-			if err != nil {
-				return nil, errors.Wrap(err, "getTargetRepo")
-			}
-		}
 		threads = append(threads, &thread)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 	return threads, nil
-}
-
-func (t *discussionThreads) getTargetRepo(ctx context.Context, targetRepoID int64) (*types.DiscussionThreadTargetRepo, error) {
-	tr := &types.DiscussionThreadTargetRepo{}
-	var linesBefore, lines, linesAfter *string
-	err := dbconn.Global.QueryRowContext(ctx, `
-		SELECT
-			t.id,
-			t.thread_id,
-			t.repo_id,
-			t.path,
-			t.branch,
-			t.revision,
-			t.start_line,
-			t.end_line,
-			t.start_character,
-			t.end_character,
-			t.lines_before,
-			t.lines,
-			t.lines_after
-		FROM discussion_threads_target_repo t WHERE id=$1
-	`, targetRepoID).Scan(
-		&tr.ID,
-		&tr.ThreadID,
-		&tr.RepoID,
-		&tr.Path,
-		&tr.Branch,
-		&tr.Revision,
-		&tr.StartLine,
-		&tr.EndLine,
-		&tr.StartCharacter,
-		&tr.EndCharacter,
-		&linesBefore,
-		&lines,
-		&linesAfter,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if linesBefore != nil {
-		linesBeforeSplit := strings.Split(*linesBefore, "\n")
-		tr.LinesBefore = &linesBeforeSplit
-	}
-	if lines != nil {
-		linesSplit := strings.Split(*lines, "\n")
-		tr.Lines = &linesSplit
-	}
-	if linesAfter != nil {
-		linesAfterSplit := strings.Split(*linesAfter, "\n")
-		tr.LinesAfter = &linesAfterSplit
-	}
-	return tr, nil
 }
 
 // extraFuzzy turns a string like "cat" into "%c%a%t%". It can be used with a
