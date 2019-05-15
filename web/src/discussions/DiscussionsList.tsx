@@ -39,7 +39,7 @@ const DiscussionNode: React.FunctionComponent<DiscussionNodeProps> = ({ node, lo
                 <Link to={`/users/${node.author.username}`} data-tooltip={node.author.displayName}>
                     {node.author.username}
                 </Link>{' '}
-                {withRepo && (
+                {node.target && node.target.__typename === 'DiscussionThreadTargetRepo' && withRepo && (
                     <>
                         in <Link to={node.target.repository.name}>{node.target.repository.name}</Link>
                     </>

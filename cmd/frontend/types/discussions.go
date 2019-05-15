@@ -12,7 +12,6 @@ type DiscussionThread struct {
 	ID           int64
 	AuthorUserID int32
 	Title        string
-	Target       *DiscussionThreadTargetRepo
 	CreatedAt    time.Time
 	ArchivedAt   *time.Time
 	UpdatedAt    time.Time

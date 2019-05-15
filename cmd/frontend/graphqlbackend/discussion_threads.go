@@ -201,6 +201,12 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		title := strings.TrimSpace(strings.SplitN(strings.TrimSpace(args.Input.Contents), "\n", 2)[0])
 		args.Input.Title = &title
 	}
+	// Validate the target input.
+	if args.Input.Target != nil {
+		if err := args.Input.Target.validate(); err != nil {
+			return nil, err
+		}
+	}
 
 	// 🚨 SECURITY: Only signed in users with a verified email may add comments
 	// to a discussion thread.
@@ -227,18 +233,24 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		AuthorUserID: currentUser.user.ID,
 		Title:        *args.Input.Title,
 	}
+	thread, err := db.DiscussionThreads.Create(ctx, newThread)
+	if err != nil {
+		return nil, errors.Wrap(err, "DiscussionThreads.Create")
+	}
+
+	// Add the target, if any.
 	if args.Input.Target != nil {
 		if err := args.Input.Target.validate(); err != nil {
 			return nil, err
 		}
-		newThread.Target, err = args.Input.Target.convert(ctx)
+		target, err := args.Input.Target.convert(ctx)
 		if err != nil {
 			return nil, err
 		}
-	}
-	thread, err := db.DiscussionThreads.Create(ctx, newThread)
-	if err != nil {
-		return nil, errors.Wrap(err, "DiscussionThreads.Create")
+		target.ThreadID = thread.ID
+		if _, err := db.DiscussionThreads.AddTarget(ctx, target); err != nil {
+			return nil, err
+		}
 	}
 
 	// Create the first comment in the thread.
@@ -617,14 +629,24 @@ func (r *discussionThreadTargetRepoResolver) RelativeSelection(ctx context.Conte
 }
 
 type discussionThreadTargetResolver struct {
-	t *types.DiscussionThread
+	t *types.DiscussionThreadTargetRepo
+
+	// BACKCOMPAT: See (*discussionThreadResolver).Target for more information.
+	unrecognized bool
 }
 
 func (r *discussionThreadTargetResolver) ToDiscussionThreadTargetRepo() (*discussionThreadTargetRepoResolver, bool) {
-	if r.t.Target == nil {
+	if r.t == nil {
 		return nil, false
 	}
-	return &discussionThreadTargetRepoResolver{t: r.t.Target}, true
+	return &discussionThreadTargetRepoResolver{t: r.t}, true
+}
+
+func (r *discussionThreadTargetResolver) ToEmptyResponse() (*EmptyResponse, bool) {
+	if r.unrecognized {
+		return &EmptyResponse{}, true
+	}
+	return nil, false
 }
 
 func marshalDiscussionThreadID(dbID int64) graphql.ID {
@@ -675,13 +697,25 @@ func (d *discussionThreadResolver) Author(ctx context.Context) (*UserResolver, e
 
 func (d *discussionThreadResolver) Title() string { return d.t.Title }
 
-func (d *discussionThreadResolver) Target(ctx context.Context) *discussionThreadTargetResolver {
-	return &discussionThreadTargetResolver{t: d.t}
+func (d *discussionThreadResolver) Target(ctx context.Context) (*discussionThreadTargetResolver, error) {
+	// TODO(sqs): This only takes the 1st target. Support multiple targets.
+	targets, err := db.DiscussionThreads.ListTargets(ctx, d.t.ID)
+	if err != nil {
+		return nil, err
+	}
+	if len(targets) > 0 {
+		return &discussionThreadTargetResolver{t: targets[0]}, nil
+	}
+
+	// BACKCOMPAT: For backcompat with clients expecting this to be non-nullable, return a value
+	// that is of a different __typename. The documentation has always required callers to handle
+	// unrecognized __typenames gracefully.
+	return &discussionThreadTargetResolver{unrecognized: true}, nil
 }
 
 func (d *discussionThreadResolver) InlineURL(ctx context.Context) (*string, error) {
 	url, err := discussions.URLToInlineThread(ctx, d.t)
-	if err != nil {
+	if err != nil || url == nil {
 		return nil, err
 	}
 	return strptr(url.String()), nil

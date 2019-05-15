@@ -211,14 +211,20 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 		return nil
 	}
 
+	// TODO(sqs): This only takes the 1st target. Support multiple targets.
 	var (
 		repoShortName   string
 		fileName        string
 		codeContextText string
 		codeContextHTML template.HTML
 	)
-	if n.thread.Target != nil {
-		repo, err := db.Repos.Get(ctx, n.thread.Target.RepoID)
+	targets, err := db.DiscussionThreads.ListTargets(ctx, n.thread.ID)
+	if err != nil {
+		return errors.Wrap(err, "DiscussionThreads.ListTargets")
+	}
+	if len(targets) > 0 {
+		target := targets[0]
+		repo, err := db.Repos.Get(ctx, target.RepoID)
 		if err != nil {
 			return errors.Wrap(err, "repoShortName: db.Repos.Get")
 		}
@@ -227,12 +233,12 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 			split = split[len(split)-2:]
 		}
 		repoShortName = strings.Join(split, "/")
-		if n.thread.Target.Path != nil {
-			fileName = path.Base(*n.thread.Target.Path)
+		if target.Path != nil {
+			fileName = path.Base(*target.Path)
 		}
 
-		codeContextText = formatTargetRepoLinesText(n.thread.Target)
-		codeContextHTML, err = formatTargetRepoLinesHTML(ctx, n.thread.Target)
+		codeContextText = formatTargetRepoLinesText(target)
+		codeContextHTML, err = formatTargetRepoLinesHTML(ctx, target)
 		if err != nil {
 			return errors.Wrap(err, "formatTargetRepoLinesHTML")
 		}

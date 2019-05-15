@@ -150,7 +150,9 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
             hash.set('commentID', comment.idWithoutKind)
         }
 
-        return thread.target.__typename === 'DiscussionThreadTargetRepo' && thread.target.selection !== null
+        return thread.target &&
+            thread.target.__typename === 'DiscussionThreadTargetRepo' &&
+            thread.target.selection !== null
             ? formatHash(
                   {
                       line: thread.target.selection.startLine + 1,

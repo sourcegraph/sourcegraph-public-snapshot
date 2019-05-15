@@ -1,18 +1,15 @@
 package db
 
 import (
-	"reflect"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
 // TODO(slimsag:discussions): future: test that DiscussionThreadsListOptions.AuthorUserID works
 
-func TestDiscussionThreads_CreateGet(t *testing.T) {
+func TestDiscussionThreads_CreateAddTargetGet(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -28,25 +25,10 @@ func TestDiscussionThreads_CreateGet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
-		t.Fatal(err)
-	}
-	repo, err := Repos.GetByName(ctx, "myrepo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Create the thread.
 	thread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
 		AuthorUserID: user.ID,
 		Title:        "Hello world!",
-		Target: &types.DiscussionThreadTargetRepo{
-			RepoID:   repo.ID,
-			Path:     strPtr("foo/bar/mux.go"),
-			Branch:   strPtr("master"),
-			Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
-		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -64,11 +46,6 @@ func TestDiscussionThreads_CreateGet(t *testing.T) {
 	if gotThread.AuthorUserID != thread.AuthorUserID {
 		t.Logf("got thread AuthorUserID:  %v", gotThread.AuthorUserID)
 		t.Fatalf("want thread AuthorUserID: %v", thread.AuthorUserID)
-	}
-	thread.Target.ThreadID = gotThread.Target.ThreadID
-	if !reflect.DeepEqual(gotThread.Target, thread.Target) {
-		t.Logf("got thread Target:  %v", spew.Sdump(gotThread.Target))
-		t.Fatalf("want thread Target: %v", spew.Sdump(thread.Target))
 	}
 }
 
@@ -88,25 +65,10 @@ func TestDiscussionThreads_Update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
-		t.Fatal(err)
-	}
-	repo, err := Repos.GetByName(ctx, "myrepo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Create the thread.
 	thread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
 		AuthorUserID: user.ID,
 		Title:        "Hello world!",
-		Target: &types.DiscussionThreadTargetRepo{
-			RepoID:   repo.ID,
-			Path:     strPtr("foo/bar/mux.go"),
-			Branch:   strPtr("master"),
-			Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
-		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -145,25 +107,10 @@ func TestDiscussionThreads_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
-		t.Fatal(err)
-	}
-	repo, err := Repos.GetByName(ctx, "myrepo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Create the thread.
 	thread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
 		AuthorUserID: user.ID,
 		Title:        "Hello world!",
-		Target: &types.DiscussionThreadTargetRepo{
-			RepoID:   repo.ID,
-			Path:     strPtr("foo/bar/mux.go"),
-			Branch:   strPtr("master"),
-			Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
-		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -209,25 +156,10 @@ func TestDiscussionThreads_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
-		t.Fatal(err)
-	}
-	repo, err := Repos.GetByName(ctx, "myrepo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Create the thread.
 	thread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
 		AuthorUserID: user.ID,
 		Title:        "Hello world!",
-		Target: &types.DiscussionThreadTargetRepo{
-			RepoID:   repo.ID,
-			Path:     strPtr("foo/bar/mux.go"),
-			Branch:   strPtr("master"),
-			Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
-		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -273,25 +205,10 @@ func TestDiscussionThreads_Delete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
-		t.Fatal(err)
-	}
-	repo, err := Repos.GetByName(ctx, "myrepo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Create the thread.
 	thread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
 		AuthorUserID: user.ID,
 		Title:        "Hello world!",
-		Target: &types.DiscussionThreadTargetRepo{
-			RepoID:   repo.ID,
-			Path:     strPtr("foo/bar/mux.go"),
-			Branch:   strPtr("master"),
-			Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
-		},
 	})
 	if err != nil {
 		t.Fatal(err)

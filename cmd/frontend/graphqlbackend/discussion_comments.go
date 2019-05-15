@@ -98,7 +98,7 @@ func (r *discussionCommentResolver) InlineURL(ctx context.Context) (*string, err
 		return nil, errors.Wrap(err, "DiscussionThreads.Get")
 	}
 	url, err := discussions.URLToInlineComment(ctx, thread, r.c)
-	if err != nil {
+	if err != nil || url == nil {
 		return nil, err
 	}
 	return strptr(url.String()), nil
