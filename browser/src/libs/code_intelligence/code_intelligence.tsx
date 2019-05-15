@@ -64,7 +64,13 @@ import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
-import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
+import {
+    applyDecorations,
+    DecorationMapByLine,
+    initializeExtensions,
+    renderCommandPalette,
+    renderGlobalDebug,
+} from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
 import { handleTextFields, TextField } from './text_fields'
 import { ViewResolver } from './views'
@@ -576,7 +582,7 @@ export function handleCodeHost({
                 }
 
                 // Apply decorations coming from extensions
-                let decoratedLines: number[] = []
+                let decorationsByLine: DecorationMapByLine = new Map()
                 if (!fileInfo.baseCommitID) {
                     codeViewState.subscriptions.add(
                         extensionsController.services.textDocumentDecoration
@@ -585,11 +591,11 @@ export function handleCodeHost({
                             // We manage the subscription correctly.
                             // tslint:disable-next-line: rxjs-no-nested-subscribe
                             .subscribe(decorations => {
-                                decoratedLines = applyDecorations(
+                                decorationsByLine = applyDecorations(
                                     domFunctions,
                                     element,
                                     decorations || [],
-                                    decoratedLines
+                                    decorationsByLine
                                 )
                             })
                     )
