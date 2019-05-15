@@ -354,7 +354,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                         />
                         <Route key="hardcoded-key" component={RepoPageNotFound} />
                     </Switch>
-                    }
                 </ErrorBoundary>
             </div>
         )
