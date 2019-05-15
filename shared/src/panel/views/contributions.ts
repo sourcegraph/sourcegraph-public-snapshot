@@ -1,11 +1,12 @@
 import { Unsubscribable } from 'rxjs'
+import { parseContributionExpressions } from '../../api/client/services/contribution'
 import { ExtensionsControllerProps } from '../../extensions/controller'
 
 export function registerPanelToolbarContributions({
     extensionsController,
 }: ExtensionsControllerProps<'services'>): Unsubscribable {
     return extensionsController.services.contribution.registerContributions({
-        contributions: {
+        contributions: parseContributionExpressions({
             actions: [
                 {
                     id: 'panel.locations.groupByFile',
@@ -31,6 +32,6 @@ export function registerPanelToolbarContributions({
                     },
                 ],
             },
-        },
+        }),
     })
 }

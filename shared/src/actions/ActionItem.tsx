@@ -5,7 +5,7 @@ import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 import { ExecuteCommandParams } from '../api/client/services/command'
-import { EvaluatedActionContribution } from '../api/protocol'
+import { ActionContribution, Evaluated } from '../api/protocol'
 import { urlForOpenPanel } from '../commands/commands'
 import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
@@ -18,13 +18,13 @@ export interface ActionItemAction {
      * The action specified in the menu item's {@link module:sourcegraph.module/protocol.MenuItemContribution#action}
      * property.
      */
-    action: EvaluatedActionContribution
+    action: Evaluated<ActionContribution>
 
     /**
      * The alternative action specified in the menu item's
      * {@link module:sourcegraph.module/protocol.MenuItemContribution#alt} property.
      */
-    altAction?: EvaluatedActionContribution
+    altAction?: Evaluated<ActionContribution>
 }
 
 export interface ActionItemComponentProps
@@ -268,13 +268,21 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
     }
 }
 
-function urlForClientCommandOpen(action: EvaluatedActionContribution, location: H.Location): string | undefined {
-    if (action.command === 'open' && action.commandArguments && typeof action.commandArguments[0] === 'string') {
-        return action.commandArguments[0]
+function urlForClientCommandOpen(action: Evaluated<ActionContribution>, location: H.Location): string | undefined {
+    if (action.command === 'open' && action.commandArguments) {
+        const url = action.commandArguments[0]
+        if (typeof url !== 'string') {
+            return undefined
+        }
+        return url
     }
 
-    if (action.command === 'openPanel' && action.commandArguments && typeof action.commandArguments[0] === 'string') {
-        return urlForOpenPanel(action.commandArguments[0], location.hash)
+    if (action.command === 'openPanel' && action.commandArguments) {
+        const url = action.commandArguments[0]
+        if (typeof url !== 'string') {
+            return undefined
+        }
+        return urlForOpenPanel(url, location.hash)
     }
 
     return undefined

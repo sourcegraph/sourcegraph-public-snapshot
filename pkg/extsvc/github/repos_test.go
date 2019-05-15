@@ -140,6 +140,9 @@ func TestClient_GetRepository_nonexistent(t *testing.T) {
 	if !IsNotFound(err) {
 		t.Errorf("got err == %v, want IsNotFound(err) == true", err)
 	}
+	if err != ErrNotFound {
+		t.Errorf("got err == %q, want ErrNotFound", err)
+	}
 	if repo != nil {
 		t.Error("repo != nil")
 	}

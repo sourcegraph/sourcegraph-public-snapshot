@@ -1,16 +1,16 @@
 import { sortBy } from 'lodash'
 import { ActionItemAction } from '../actions/ActionItem'
-import { ContributableMenu, EvaluatedContributions } from '../api/protocol'
+import { ContributableMenu, Contributions, Evaluated } from '../api/protocol'
 
 const MENU_ITEMS_PROP_SORT_ORDER = ['group', 'id']
 
 /**
- * Collect all command contrbutions for the menu.
+ * Collect all command contributions for the menu.
  *
  * @param prioritizeActions sort these actions first
  */
 export function getContributedActionItems(
-    contributions: EvaluatedContributions,
+    contributions: Evaluated<Contributions>,
     menu: ContributableMenu
 ): ActionItemAction[] {
     if (!contributions.actions) {

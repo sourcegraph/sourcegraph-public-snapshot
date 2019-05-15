@@ -41,10 +41,10 @@ func NewSyncer(
 	}
 }
 
-// Run runs the Sync at the specified interval for the given external service kinds.
-func (s *Syncer) Run(ctx context.Context, interval time.Duration, kinds ...string) error {
+// Run runs the Sync at the specified interval.
+func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 	for ctx.Err() == nil {
-		if _, err := s.Sync(ctx, kinds...); err != nil {
+		if _, err := s.Sync(ctx); err != nil {
 			log15.Error("Syncer", "error", err)
 		}
 		time.Sleep(interval)

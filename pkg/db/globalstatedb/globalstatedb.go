@@ -102,7 +102,18 @@ func tryInsertNew(ctx context.Context, dbh interface {
 	// because previously global state had a siteID and now we ignore that (or someone ran `DELETE
 	// FROM global_state;` in the PostgreSQL database). In either case, it's safe to generate a new
 	// site ID and set the site as initialized.
-	_, err = dbh.ExecContext(ctx, "INSERT INTO global_state(site_id, initialized) values($1, EXISTS (SELECT 1 FROM users WHERE deleted_at IS NULL))", siteID)
+	_, err = dbh.ExecContext(ctx, `
+	INSERT INTO global_state(
+		site_id,
+		initialized,
+		mgmt_password_plaintext,
+		mgmt_password_bcrypt
+	) values(
+		$1,
+		EXISTS (SELECT 1 FROM users WHERE deleted_at IS NULL),
+		(SELECT COALESCE((SELECT mgmt_password_plaintext FROM global_state LIMIT 1), '')),
+		(SELECT COALESCE((SELECT mgmt_password_bcrypt FROM global_state LIMIT 1), ''))
+	);`, siteID)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Constraint == "global_state_pkey" {

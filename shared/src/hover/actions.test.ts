@@ -279,7 +279,7 @@ describe('getDefinitionURL', () => {
         ).resolves.toEqual({ url: '/r@v/-/blob/f#L2:2&tab=def', multiple: true }))
 })
 
-describe('registerHoverContributions', () => {
+describe('registerHoverContributions()', () => {
     const contribution = new ContributionRegistry(
         createTestEditorService(of([])),
         { data: of(EMPTY_SETTINGS_CASCADE) },
@@ -313,13 +313,17 @@ describe('registerHoverContributions', () => {
             )
             .toPromise()
 
-    describe('getHoverActions', () => {
+    describe('getHoverActions()', () => {
         const GO_TO_DEFINITION_ACTION: ActionItemAction = {
             action: {
                 command: 'goToDefinition',
                 commandArguments: ['{"textDocument":{"uri":"git://r?c#f"},"position":{"line":1,"character":1}}'],
                 id: 'goToDefinition',
                 title: 'Go to definition',
+                actionItem: undefined,
+                category: undefined,
+                description: undefined,
+                iconURL: undefined,
             },
             altAction: undefined,
         }
@@ -342,7 +346,7 @@ describe('registerHoverContributions', () => {
             altAction: undefined,
         }
 
-        test('shows goToDefinition (non-preloaded) when the definition is loading', async () =>
+        it.only('shows goToDefinition (non-preloaded) when the definition is loading', async () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': true,
@@ -354,7 +358,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION]))
 
-        test('shows goToDefinition (non-preloaded) when the definition had an error', async () =>
+        it('shows goToDefinition (non-preloaded) when the definition had an error', async () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -366,7 +370,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION]))
 
-        test('hides goToDefinition when the definition was not found', async () =>
+        it('hides goToDefinition when the definition was not found', async () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -378,7 +382,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([]))
 
-        test('shows goToDefinition.preloaded when goToDefinition.url is available', async () =>
+        it('shows goToDefinition.preloaded when goToDefinition.url is available', async () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -390,7 +394,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_PRELOADED_ACTION]))
 
-        test('shows findReferences when the definition exists', async () =>
+        it('shows findReferences when the definition exists', async () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -402,7 +406,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_PRELOADED_ACTION, FIND_REFERENCES_ACTION]))
 
-        test('hides findReferences when the definition might exist (and is still loading)', async () =>
+        it('hides findReferences when the definition might exist (and is still loading)', async () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': true,
@@ -414,7 +418,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION, FIND_REFERENCES_ACTION]))
 
-        test('shows findReferences when the definition had an error', async () =>
+        it('shows findReferences when the definition had an error', async () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -426,7 +430,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION, FIND_REFERENCES_ACTION]))
 
-        test('does not show findReferences when the definition was not found', async () =>
+        it('does not show findReferences when the definition was not found', async () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,

@@ -446,16 +446,10 @@ func TestFreeUpSpace(t *testing.T) {
 		}
 
 		// Check.
-		files, err := ioutil.ReadDir(rd)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(files) != 1 {
-			t.Fatalf("got %d items in %s, want exactly 1", len(files), rd)
-		}
-		if files[0].Name() != "repo2" {
-			t.Errorf("name of only item in repos dir is %q, want repo2", files[0].Name())
-		}
+		assertPaths(t, rd,
+			".tmp",
+			"repo2/.git/HEAD",
+			"repo2/.git/space_eater")
 		rds, err := dirSize(rd)
 		if err != nil {
 			t.Fatal(err)

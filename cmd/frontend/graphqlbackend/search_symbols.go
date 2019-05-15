@@ -171,6 +171,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
 		} else {
 			fileMatch := &fileMatchResolver{
+				JPath:   symbolRes.symbol.Path,
 				symbols: []*searchSymbolResult{symbolRes},
 				uri:     uri,
 				repo:    symbolRes.commit.repo.repo,

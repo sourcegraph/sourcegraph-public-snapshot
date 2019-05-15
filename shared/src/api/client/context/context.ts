@@ -3,22 +3,6 @@ import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/setti
 import { CodeEditor } from '../services/editorService'
 
 /**
- * Returns a new context created by applying the update context to the base context. It is equivalent to `{...base,
- * ...update}` in JavaScript except that null values in the update result in deletion of the property.
- */
-export function applyContextUpdate(base: Context, update: Context): Context {
-    const result = { ...base }
-    for (const [key, value] of Object.entries(update)) {
-        if (value === null) {
-            delete result[key]
-        } else {
-            result[key] = value
-        }
-    }
-    return result
-}
-
-/**
  * Context is an arbitrary, immutable set of key-value pairs. Its value can be any JSON object.
  *
  * @template T If you have a value with a property of type T that is not one of the primitive types listed below
@@ -31,7 +15,7 @@ export interface Context<T = never>
         string | number | boolean | null | Context | T | (string | number | boolean | null | Context | T)[]
     > {}
 
-export type PartialCodeEditor = Pick<CodeEditor, 'type' | 'resource' | 'selections' | 'isActive'> & {
+export type PartialCodeEditor = Pick<CodeEditor, 'editorId' | 'type' | 'resource' | 'selections' | 'isActive'> & {
     model: Pick<CodeEditor['model'], 'uri' | 'languageId'>
 }
 
