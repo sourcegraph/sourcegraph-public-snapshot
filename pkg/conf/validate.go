@@ -72,13 +72,6 @@ func Validate(input conftypes.RawUnified) (problems []string, err error) {
 	return problems, nil
 }
 
-// ValidateSite is like Validate, except it only validates the site configuration.
-func ValidateSite(input string) (problems []string, err error) {
-	raw := Raw()
-	raw.Site = input
-	return Validate(raw)
-}
-
 func doValidate(inputStr, schema string) (problems []string, err error) {
 	input := []byte(jsonc.Normalize(inputStr))
 
