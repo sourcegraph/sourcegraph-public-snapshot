@@ -1,7 +1,6 @@
 package conf
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"os"
@@ -9,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -89,54 +87,6 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 	default:
 		panic("deploy type did not register default configuration")
 	}
-}
-
-func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
-	var config []*schema.AWSCodeCommitConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "AWSCODECOMMIT", &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
-	var config []*schema.BitbucketServerConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "BITBUCKETSERVER", &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
-	var config []*schema.GitHubConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITHUB", &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
-	var config []*schema.GitLabConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITLAB", &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) {
-	var config []*schema.GitoliteConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITOLITE", &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
-	var config []*schema.PhabricatorConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "PHABRICATOR", &config); err != nil {
-		return nil, err
-	}
-	return config, nil
 }
 
 type AccessTokAllow string
