@@ -115,7 +115,9 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                             orgID: savedSearch.orgID,
                         }}
                         // tslint:disable-next-line:jsx-no-lambda
-                        onSubmit={(fields: SavedQueryFields): Observable<void> => of(this.onSubmit(fields))}
+                        onSubmit={(
+                            fields: Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>
+                        ): Observable<void> => of(this.onSubmit({ id: savedSearch.id, ...fields }))}
                     />
                 )}
                 {this.state.updatedOrError === true && (

@@ -24,11 +24,11 @@ interface Props extends RouteComponentProps<{}> {
     title?: string
     submitLabel: string
     emailNotificationLabel: string
-    onSubmit: (fields: SavedQueryFields) => Observable<void>
+    onSubmit: (fields: Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>) => Observable<void>
 }
 
 interface State {
-    values: SavedQueryFields
+    values: Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>
     isSubmitting: boolean
     error?: any
 }
@@ -51,7 +51,6 @@ export class SavedSearchForm extends React.Component<Props, State> {
 
         this.state = {
             values: {
-                id: (props.defaultValues && props.defaultValues.id) || '',
                 description,
                 query,
                 notify,
@@ -204,7 +203,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
     /**
      * Tells if the query is unsupported for sending notifications.
      */
-    private isUnsupportedNotifyQuery(v: SavedQueryFields): boolean {
+    private isUnsupportedNotifyQuery(v: Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>): boolean {
         const notifying = v.notify || v.notifySlack
         return notifying && !v.query.includes('type:diff') && !v.query.includes('type:commit')
     }

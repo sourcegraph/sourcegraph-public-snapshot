@@ -28,7 +28,7 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
         }
     }
     private subscriptions = new Subscription()
-    private submits = new Subject<SavedQueryFields>()
+    private submits = new Subject<Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>>()
 
     public componentDidMount(): void {
         this.subscriptions.add(
@@ -87,5 +87,6 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
         )
     }
 
-    private onSubmit = (fields: SavedQueryFields) => of(this.submits.next(fields))
+    private onSubmit = (fields: Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>) =>
+        of(this.submits.next(fields))
 }
