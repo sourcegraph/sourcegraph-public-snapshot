@@ -4,7 +4,7 @@
   "dependencies": {
     "deasync": "^0.1.14",
     "react": "^16.8.6",
-    "rxjs": "^6.3.3"
+    "rxjs": "^6.5.2"
   },
   "scripts": {
     "serve": "cp ../../../ui/assets/img/favicon.png ./src && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/parcel serve --out-dir=../assets --no-source-maps -p 2680 src/index.html",
