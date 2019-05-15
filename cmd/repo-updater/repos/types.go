@@ -684,15 +684,6 @@ func (rs Repos) Names() []string {
 	return names
 }
 
-// IDs returns the list of ids from all Repos.
-func (rs Repos) IDs() []uint32 {
-	ids := make([]uint32, len(rs))
-	for i := range rs {
-		ids[i] = rs[i].ID
-	}
-	return ids
-}
-
 // Kinds returns the unique set of kinds from all Repos.
 func (rs Repos) Kinds() (kinds []string) {
 	set := map[string]bool{}
@@ -831,14 +822,4 @@ func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices
 	clone := es.Clone()
 	clone.Apply(opts...)
 	return clone
-}
-
-// Filter returns all the ExternalServices that match the given predicate.
-func (es ExternalServices) Filter(pred func(*ExternalService) bool) (fs ExternalServices) {
-	for _, e := range es {
-		if pred(e) {
-			fs = append(fs, e)
-		}
-	}
-	return fs
 }
