@@ -14,7 +14,10 @@ type MockDiscussionThreads struct {
 	List   func(ctx context.Context, opt *DiscussionThreadsListOptions) ([]*types.DiscussionThread, error)
 	Count  func(ctx context.Context, opt *DiscussionThreadsListOptions) (int, error)
 
-	ListTargets func(threadID int64) ([]*types.DiscussionThreadTargetRepo, error)
+	GetTarget    func(targetID int64) (*types.DiscussionThreadTargetRepo, error)
+	AddTarget    func(*types.DiscussionThreadTargetRepo) (*types.DiscussionThreadTargetRepo, error)
+	RemoveTarget func(targetID int64) error
+	ListTargets  func(threadID int64) ([]*types.DiscussionThreadTargetRepo, error)
 }
 
 func (s *MockDiscussionThreads) MockCreate_Return(t *testing.T, returns *types.DiscussionThread, returnsErr error) (called *bool, calledWith *types.DiscussionThread) {

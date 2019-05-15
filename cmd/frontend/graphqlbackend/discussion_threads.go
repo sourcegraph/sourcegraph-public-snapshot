@@ -193,7 +193,7 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 	Input *struct {
 		Title    *string
 		Contents string
-		Target   *discussionThreadTargetRepoInput
+		Target   *discussionThreadTargetInput
 	}
 }) (*discussionThreadResolver, error) {
 	if args.Input.Title == nil {
@@ -240,10 +240,7 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 
 	// Add the target, if any.
 	if args.Input.Target != nil {
-		if err := args.Input.Target.validate(); err != nil {
-			return nil, err
-		}
-		target, err := args.Input.Target.convert(ctx)
+		target, err := args.Input.Target.validateAndGetTarget(ctx)
 		if err != nil {
 			return nil, err
 		}

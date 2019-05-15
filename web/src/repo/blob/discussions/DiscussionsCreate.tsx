@@ -74,24 +74,26 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
             title,
             contents,
             target: {
-                repositoryID: this.props.repoID,
-                path: this.props.filePath,
-                branch: this.props.rev,
-                revision: this.props.commitID,
-                selection: {
-                    startLine,
-                    startCharacter,
-                    endLine,
-                    endCharacter,
+                repo: {
+                    repositoryID: this.props.repoID,
+                    path: this.props.filePath,
+                    branch: this.props.rev,
+                    revision: this.props.commitID,
+                    selection: {
+                        startLine,
+                        startCharacter,
+                        endLine,
+                        endCharacter,
 
-                    // TODO(slimsag:discussions): Even though these fields are declared as
-                    // nullable in the GraphQL schema ("lines: [String!]"), graphql/schema.ts
-                    // not generate the proper nullable type, so we must cast to any.
-                    //
-                    // See https://github.com/sourcegraph/sourcegraph/issues/13098
-                    linesBefore: null as any,
-                    lines: null as any,
-                    linesAfter: null as any,
+                        // TODO(slimsag:discussions): Even though these fields are declared as
+                        // nullable in the GraphQL schema ("lines: [String!]"), graphql/schema.ts
+                        // not generate the proper nullable type, so we must cast to any.
+                        //
+                        // See https://github.com/sourcegraph/sourcegraph/issues/13098
+                        linesBefore: null as any,
+                        lines: null as any,
+                        linesAfter: null as any,
+                    },
                 },
             },
         }).pipe(

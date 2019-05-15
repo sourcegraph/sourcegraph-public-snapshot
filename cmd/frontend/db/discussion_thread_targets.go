@@ -11,8 +11,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
+// GetTarget returns a target by ID, or nil if no target exists with the specified ID.
+func (t *discussionThreads) GetTarget(ctx context.Context, targetID int64) (*types.DiscussionThreadTargetRepo, error) {
+	if Mocks.DiscussionThreads.GetTarget != nil {
+		return Mocks.DiscussionThreads.GetTarget(targetID)
+	}
+
+	targets, err := t.getTargetsBySQL(ctx, sqlf.Sprintf(`WHERE id=%v`, targetID))
+	if err != nil {
+		return nil, err
+	}
+	if len(targets) == 0 {
+		return nil, nil
+	}
+	return targets[0], nil
+}
+
 // AddTarget adds a target to a thread. A thread has zero or more targets.
 func (t *discussionThreads) AddTarget(ctx context.Context, tr *types.DiscussionThreadTargetRepo) (*types.DiscussionThreadTargetRepo, error) {
+	if Mocks.DiscussionThreads.AddTarget != nil {
+		return Mocks.DiscussionThreads.AddTarget(tr)
+	}
+
 	if rev := tr.Revision; rev != nil {
 		if !git.IsAbsoluteRevision(*rev) {
 			return nil, errors.New("thread target revision must be an absolute Git revision (40 character SHA-1 hash)")
@@ -60,6 +80,10 @@ func (t *discussionThreads) AddTarget(ctx context.Context, tr *types.DiscussionT
 
 // RemoveTarget removes a target from a thread.
 func (t *discussionThreads) RemoveTarget(ctx context.Context, targetID int64) error {
+	if Mocks.DiscussionThreads.RemoveTarget != nil {
+		return Mocks.DiscussionThreads.RemoveTarget(targetID)
+	}
+
 	_, err := dbconn.Global.ExecContext(ctx, `DELETE FROM discussion_threads_target_repo WHERE id=$1`, targetID)
 	return err
 }
@@ -69,7 +93,10 @@ func (t *discussionThreads) ListTargets(ctx context.Context, threadID int64) ([]
 	if Mocks.DiscussionThreads.ListTargets != nil {
 		return Mocks.DiscussionThreads.ListTargets(threadID)
 	}
+	return t.getTargetsBySQL(ctx, sqlf.Sprintf(`WHERE thread_id=%v`, threadID))
+}
 
+func (t *discussionThreads) getTargetsBySQL(ctx context.Context, queryPart *sqlf.Query) ([]*types.DiscussionThreadTargetRepo, error) {
 	rows, err := dbconn.Global.QueryContext(ctx, `
 		SELECT
 			t.id,
@@ -85,8 +112,7 @@ func (t *discussionThreads) ListTargets(ctx context.Context, threadID int64) ([]
 			t.lines_before,
 			t.lines,
 			t.lines_after
-		FROM discussion_threads_target_repo t WHERE thread_id=$1
-	`, threadID)
+		FROM discussion_threads_target_repo t `+queryPart.Query(sqlf.PostgresBindVar), queryPart.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -131,4 +157,5 @@ func (t *discussionThreads) ListTargets(ctx context.Context, threadID int64) ([]
 		targets = append(targets, &tr)
 	}
 	return targets, rows.Err()
+
 }

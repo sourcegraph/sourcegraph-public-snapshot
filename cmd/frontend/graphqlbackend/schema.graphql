@@ -455,6 +455,12 @@ input DiscussionThreadTargetRepoInput {
     selection: DiscussionThreadTargetRepoSelectionInput
 }
 
+# A discussion thread target. Exactly 1 field must be set (for the type of target to add).
+input DiscussionThreadTargetInput {
+    # Add a repo target.
+    repo: DiscussionThreadTargetRepoInput
+}
+
 # Describes the creation of a new thread around some target (e.g. a file in a repo).
 input DiscussionThreadCreateInput {
     # An explicitly chosen title for the discussion thread. Otherwise, the title
@@ -464,9 +470,8 @@ input DiscussionThreadCreateInput {
     # The contents of the thread's first comment (i.e. the threads comment).
     contents: String!
 
-    # The target repo of this discussion thread. This is nullable so that in
-    # the future more target types may be added.
-    target: DiscussionThreadTargetRepoInput
+    # The first target of this discussion thread, if any.
+    target: DiscussionThreadTargetInput
 }
 
 # Describes an update mutation to an existing thread.
@@ -519,6 +524,13 @@ type DiscussionsMutation {
     #
     # Returns null if the thread was deleted.
     updateThread(input: DiscussionThreadUpdateInput!): DiscussionThread
+
+    # Adds a target to an existing thread. Returns the new target.
+    addTargetToThread(threadID: ID!, target: DiscussionThreadTargetInput!): DiscussionThreadTarget!
+
+    # Updates an existing target in a thread. Returns the updated target, or null if the target was
+    # removed (which is currently the only supported update operation).
+    updateTargetInThread(targetID: ID!, remove: Boolean): DiscussionThreadTarget
 
     # Adds a new comment to a thread. Returns the updated thread.
     addCommentToThread(threadID: ID!, contents: String!): DiscussionThread!
@@ -2530,6 +2542,9 @@ type DiscussionThreadTargetRepoSelection {
 # - A selection inside a file inside a repository.
 #
 type DiscussionThreadTargetRepo {
+    # The discussion thread target ID (globally unique).
+    id: ID!
+
     # The repository in which the thread was created.
     repository: Repository!
 
