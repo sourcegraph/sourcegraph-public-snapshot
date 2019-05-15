@@ -1,16 +1,6 @@
 import { Selection } from '@sourcegraph/extension-api-types'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { applyContextUpdate, Context, getComputedContextProperty, PartialCodeEditor } from './context'
-
-describe('applyContextUpdate', () => {
-    test('merges properties', () =>
-        expect(applyContextUpdate({ a: 1, b: null, c: 2, d: 3, e: null }, { a: null, b: 1, c: 3 })).toEqual({
-            b: 1,
-            c: 3,
-            d: 3,
-            e: null,
-        } as Context))
-})
+import { getComputedContextProperty, PartialCodeEditor } from './context'
 
 describe('getComputedContextProperty', () => {
     test('provides config', () => {
@@ -31,6 +21,7 @@ describe('getComputedContextProperty', () => {
     describe('with code editors', () => {
         const editors: PartialCodeEditor[] = [
             {
+                editorId: 'editor1',
                 type: 'CodeEditor',
                 resource: 'file:///inactive',
                 model: {
@@ -49,6 +40,7 @@ describe('getComputedContextProperty', () => {
                 isActive: false,
             },
             {
+                editorId: 'editor2',
                 type: 'CodeEditor',
                 resource: 'file:///a/b.c',
                 model: {
@@ -179,6 +171,7 @@ describe('getComputedContextProperty', () => {
             test('returns null when there is no selection', () => {
                 assertNoSelection([
                     {
+                        editorId: 'editor1',
                         type: 'CodeEditor' as const,
                         resource: 'file:///a/b.c',
                         model: {

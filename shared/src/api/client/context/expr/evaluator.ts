@@ -1,5 +1,39 @@
 import { TokenType } from './lexer'
-import { Expression, Parser, TemplateParser } from './parser'
+import { ExpressionNode, Parser, TemplateParser } from './parser'
+
+/**
+ * A parsed context expression (that can evaluate to anything)
+ */
+export class Expression<T> {
+    constructor(private root: ExpressionNode) {}
+
+    public exec(context: ComputedContext): T {
+        return exec(this.root, context)
+    }
+}
+
+/**
+ * A parsed template string that can contain `${contextKey}` interpolations.
+ * Always evaluates to a string.
+ */
+export class TemplateExpression<S extends string = string> extends Expression<S> {}
+
+/**
+ * Evaluates an expression with the given context and returns the result.
+ */
+export function parse<T>(expr: string): Expression<T> {
+    return new Expression<T>(new Parser().parse(expr))
+}
+
+/**
+ * Evaluates a template with the given context and returns the result.
+ *
+ * A template is a string that interpolates expressions in ${...}. It uses the same syntax as
+ * JavaScript templates.
+ */
+export function parseTemplate(template: string): TemplateExpression {
+    return new TemplateExpression(new TemplateParser().parse(template))
+}
 
 /** A way to look up the value for an identifier. */
 export interface ComputedContext {
@@ -11,29 +45,12 @@ export const EMPTY_COMPUTED_CONTEXT: ComputedContext = {
     get: () => undefined,
 }
 
-/**
- * Evaluates an expression with the given context and returns the result.
- */
-export function evaluate(expr: string, context: ComputedContext): any {
-    return exec(new Parser().parse(expr), context)
-}
-
-/**
- * Evaluates a template with the given context and returns the result.
- *
- * A template is a string that interpolates expressions in ${...}. It uses the same syntax as
- * JavaScript templates.
- */
-export function evaluateTemplate(template: string, context: ComputedContext): string {
-    return exec(new TemplateParser().parse(template), context)
-}
-
 const FUNCS: { [name: string]: (...args: any[]) => any } = {
     get: (obj: any, key: string): any => obj[key],
     json: (obj: any): string => JSON.stringify(obj),
 }
 
-function exec(node: Expression, context: ComputedContext): any {
+export function exec(node: ExpressionNode, context: ComputedContext): any {
     if ('Literal' in node) {
         switch (node.Literal.type) {
             case TokenType.String:

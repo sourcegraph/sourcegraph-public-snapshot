@@ -1,6 +1,7 @@
 import { Selection } from '@sourcegraph/extension-api-types'
+import { isEqual } from 'lodash'
 import { BehaviorSubject, combineLatest, Subscribable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { distinctUntilChanged, map, publishReplay, refCount } from 'rxjs/operators'
 import { TextDocumentPositionParams } from '../../protocol'
 import { ModelService, TextModel } from './modelService'
 /**
@@ -25,6 +26,23 @@ export interface CodeEditorData {
 }
 
 /**
+ * Picks from `CodeEditor` only the properties that should be considered to determine if two editors are equal.
+ */
+const pickCodeEditorEqualityData = ({
+    editorId,
+    type,
+    isActive,
+    resource,
+    selections,
+}: CodeEditor): EditorId & CodeEditorData => ({
+    editorId,
+    type,
+    resource,
+    selections,
+    isActive,
+})
+
+/**
  * Describes a code editor that has been added to the {@link EditorService}.
  */
 export interface CodeEditor extends EditorId, CodeEditorData {
@@ -38,7 +56,10 @@ export interface CodeEditor extends EditorId, CodeEditorData {
  * The editor service manages editors and documents.
  */
 export interface EditorService {
-    /** All code editors, with each editor's model. */
+    /**
+     * All code editors, with each editor's model.
+     * Emits the current value upon subscription.
+     */
     readonly editors: Subscribable<readonly CodeEditor[]>
 
     /**
@@ -89,7 +110,10 @@ export function createEditorService(modelService: Pick<ModelService, 'models' | 
     let id = 0
     const nextId = () => `editor#${id++}`
 
-    const findModelForEditor = (models: readonly TextModel[], { resource }: Pick<CodeEditorData, 'resource'>) => {
+    const findModelForEditor = (
+        models: readonly TextModel[],
+        { resource }: Pick<CodeEditorData, 'resource'>
+    ): TextModel => {
         const model = models.find(m => m.uri === resource)
         if (!model) {
             throw new Error(`editor model not found: ${resource}`)
@@ -105,12 +129,22 @@ export function createEditorService(modelService: Pick<ModelService, 'models' | 
         editors: combineLatest(editors, modelService.models).pipe(
             map(([editors, models]) =>
                 editors.map(editor => ({ ...editor, model: findModelForEditor(models, editor) }))
-            )
+            ),
+            // `models` can emit but not result in any editor having a different model
+            // Make sure to exclude Editor.models from the comparison
+            distinctUntilChanged((a, b) =>
+                isEqual(a.map(pickCodeEditorEqualityData), b.map(pickCodeEditorEqualityData))
+            ),
+            // Perf optimization: avoid running the comparison for every subscriber
+            // This does not change the behaviour of the Observable.
+            publishReplay(1),
+            refCount()
         ),
         addEditor: data => {
-            const editor: AddedCodeEditor = { ...data, editorId: nextId() }
+            const editorId = nextId()
+            const editor: AddedCodeEditor = { ...data, editorId }
             editors.next([...editors.value, editor])
-            return editor
+            return { editorId }
         },
         hasEditor: ({ editorId }) => exists(editorId),
         setSelections({ editorId }: EditorId, selections: Selection[]): void {
