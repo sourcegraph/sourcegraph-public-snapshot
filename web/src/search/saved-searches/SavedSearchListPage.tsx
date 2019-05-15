@@ -16,9 +16,14 @@ interface NodeProps extends RouteComponentProps {
     onDelete: () => void
 }
 
-class SavedSearchNode extends React.PureComponent<NodeProps> {
+interface NodeState {
+    isDeleting: boolean
+}
+
+class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     constructor(props: NodeProps) {
         super(props)
+        this.state = { isDeleting: false }
     }
 
     private subscriptions = new Subscription()
@@ -38,7 +43,10 @@ class SavedSearchNode extends React.PureComponent<NodeProps> {
                         )
                     )
                 )
-                .subscribe(() => this.props.onDelete())
+                .subscribe(() => {
+                    this.setState({ isDeleting: false })
+                    this.props.onDelete()
+                })
         )
     }
     public render(): JSX.Element | null {
@@ -59,7 +67,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps> {
                     <button
                         className="btn btn-sm btn-danger e2e-delete-external-service-button"
                         onClick={this.onDelete}
-                        // disabled={this.state.loading}
+                        disabled={this.state.isDeleting}
                         data-tooltip="Delete saved search"
                     >
                         <DeleteIcon className="icon-inline" />
@@ -73,6 +81,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps> {
         if (!window.confirm(`Delete the external service ${this.props.savedSearch.description}?`)) {
             return
         }
+        this.setState({ isDeleting: true })
         this.delete.next(this.props.savedSearch)
     }
 }
