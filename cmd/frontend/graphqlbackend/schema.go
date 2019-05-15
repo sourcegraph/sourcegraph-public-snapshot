@@ -2567,8 +2567,14 @@ type DiscussionThread implements Node {
     # in the thread. It is always present, even if the user e.g. input no content.
     title: String!
 
+    # The targets of this discussion thread.
+    targets(
+        # Returns the first n targets from the list.
+        first: Int
+    ): DiscussionThreadTargetConnection!
+
     # The first target of this discussion thread.
-    target: DiscussionThreadTarget
+    target: DiscussionThreadTarget @deprecated(reason: "use targets instead")
 
     # The URL at which this thread can be viewed inline (i.e. in the file blob view).
     #
@@ -2675,6 +2681,19 @@ type DiscussionCommentConnection {
     # The total count of discussion comments in the connection. This total
     # count may be larger than the number of nodes in this object when the
     # result is paginated.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A list of a discussion thread targets.
+type DiscussionThreadTargetConnection {
+    # A list of discussion thread targets.
+    nodes: [DiscussionThreadTarget!]!
+
+    # The total count of discussion thread targets in the connection. This total count may be larger
+    # than the number of nodes in this object when the result is paginated.
     totalCount: Int!
 
     # Pagination information.

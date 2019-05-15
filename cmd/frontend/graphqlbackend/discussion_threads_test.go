@@ -11,6 +11,96 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
+func TestDiscussionThread_Target(t *testing.T) {
+	resetMocks()
+	mockViewerCanUseDiscussions = func() error { return nil }
+	defer func() { mockViewerCanUseDiscussions = nil }()
+	const wantThreadID = 123
+	db.Mocks.DiscussionThreads.List = func(_ context.Context, opt *db.DiscussionThreadsListOptions) ([]*types.DiscussionThread, error) {
+		return []*types.DiscussionThread{{ID: wantThreadID}}, nil
+	}
+
+	t.Run("no target", func(t *testing.T) {
+		db.Mocks.DiscussionThreads.ListTargets = func(threadID int64) ([]*types.DiscussionThreadTargetRepo, error) {
+			if threadID != wantThreadID {
+				t.Fatalf("got threadID %v, want %v", threadID, wantThreadID)
+			}
+			return []*types.DiscussionThreadTargetRepo{}, nil
+		}
+		gqltesting.RunTests(t, []*gqltesting.Test{
+			{
+				Schema: GraphQLSchema,
+				Query: `
+				{
+					discussionThreads {
+						nodes {
+							target {
+								__typename
+								... on DiscussionThreadTargetRepo {
+									path
+								}
+							}
+						}
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"discussionThreads": {
+						"nodes": [
+							{
+								"target": null
+							}
+						]
+					}
+				}
+			`,
+			},
+		})
+	})
+	t.Run("first target from multiple", func(t *testing.T) {
+		db.Mocks.DiscussionThreads.ListTargets = func(threadID int64) ([]*types.DiscussionThreadTargetRepo, error) {
+			if threadID != wantThreadID {
+				t.Fatalf("got threadID %v, want %v", threadID, wantThreadID)
+			}
+			return []*types.DiscussionThreadTargetRepo{{Path: strptr("foo/bar")}, {Path: strptr("qux")}}, nil
+		}
+		gqltesting.RunTests(t, []*gqltesting.Test{
+			{
+				Schema: GraphQLSchema,
+				Query: `
+				{
+					discussionThreads {
+						nodes {
+							target {
+								__typename
+								... on DiscussionThreadTargetRepo {
+									path
+								}
+							}
+						}
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"discussionThreads": {
+						"nodes": [
+							{
+								"target": {
+									"__typename": "DiscussionThreadTargetRepo",
+									"path": "foo/bar"
+								}
+							}
+						]
+					}
+				}
+			`,
+			},
+		})
+	})
+}
+
 func TestDiscussionThread_Get(t *testing.T) {
 	resetMocks()
 	mockViewerCanUseDiscussions = func() error { return nil }
