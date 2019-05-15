@@ -465,14 +465,14 @@ input DiscussionThreadCreateInput {
 # Describes an update mutation to an existing thread.
 input DiscussionThreadUpdateInput {
     # The ID of the thread to update.
-    ThreadID: ID!
+    threadID: ID!
 
     # When non-null, indicates that the thread should be archived.
-    Archive: Boolean
+    archive: Boolean
 
     # When non-null, indicates that the thread should be deleted. Only admins
     # can perform this action.
-    Delete: Boolean
+    delete: Boolean
 }
 
 # Describes an update mutation to an existing comment in a thread.
