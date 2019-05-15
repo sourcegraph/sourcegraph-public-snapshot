@@ -66,6 +66,10 @@ func (t *discussionThreads) RemoveTarget(ctx context.Context, targetID int64) er
 
 // ListTargets returns a list of targets for a thread.
 func (t *discussionThreads) ListTargets(ctx context.Context, threadID int64) ([]*types.DiscussionThreadTargetRepo, error) {
+	if Mocks.DiscussionThreads.ListTargets != nil {
+		return Mocks.DiscussionThreads.ListTargets(threadID)
+	}
+
 	rows, err := dbconn.Global.QueryContext(ctx, `
 		SELECT
 			t.id,

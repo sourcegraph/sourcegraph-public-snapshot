@@ -697,6 +697,10 @@ func (d *discussionThreadResolver) Author(ctx context.Context) (*UserResolver, e
 
 func (d *discussionThreadResolver) Title() string { return d.t.Title }
 
+func (d *discussionThreadResolver) Targets(ctx context.Context, args *graphqlutil.ConnectionArgs) *discussionThreadTargetConnectionResolver {
+	return &discussionThreadTargetConnectionResolver{threadID: d.t.ID, args: args}
+}
+
 func (d *discussionThreadResolver) Target(ctx context.Context) (*discussionThreadTargetResolver, error) {
 	// TODO(sqs): This only takes the 1st target. Support multiple targets.
 	targets, err := db.DiscussionThreads.ListTargets(ctx, d.t.ID)
