@@ -10,6 +10,9 @@ interface Props {
     /** The link target. */
     target?: '_self' | '_blank' | string
 
+    /** Use "noopener" for external URLs */
+    rel?: string
+
     /**
      * Called when the user clicks or presses enter on this element.
      */
@@ -72,7 +75,7 @@ export class LinkOrButton extends React.PureComponent<Props> {
         }
 
         return (
-            <Link {...commonProps} to={this.props.to} target={this.props.target}>
+            <Link {...commonProps} to={this.props.to} target={this.props.target} rel={this.props.rel}>
                 {this.props.children}
             </Link>
         )
