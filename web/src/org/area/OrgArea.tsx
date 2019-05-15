@@ -17,12 +17,12 @@ import { HeroPage } from '../../components/HeroPage'
 import { ThemeProps } from '../../theme'
 import { OrgSavedSearchesCreateForm } from '../saved-searches/OrgSavedSearchesCreateForm'
 import { OrgSavedSearchesUpdateForm } from '../saved-searches/OrgSavedSearchesUpdateForm'
+import { OrgSavedSearchListPage } from '../saved-searches/OrgSavedSearchListPage'
 import { OrgSettingsArea } from '../settings/OrgSettingsArea'
 import { OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
 import { OrgMembersPage } from './OrgMembersPage'
 import { OrgOverviewPage } from './OrgOverviewPage'
-import { OrgSavedSearchListPage } from '../saved-searches/OrgSavedSearchListPage'
 
 function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> {
     return queryGraphQL(

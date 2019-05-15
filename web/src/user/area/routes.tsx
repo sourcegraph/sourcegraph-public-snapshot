@@ -2,8 +2,8 @@ import React from 'react'
 import { Redirect } from 'react-router'
 
 import { UserSavedSearchesCreateForm } from '../saved-searches/UserSavedSearchesCreateForm'
-import { UserSavedSearchListPage } from '../saved-searches/UserSavedSearchListPage'
 import { UserSavedSearchesUpdateForm } from '../saved-searches/UserSavedSearchesUpdateForm'
+import { UserSavedSearchListPage } from '../saved-searches/UserSavedSearchListPage'
 import { UserAreaRoute } from './UserArea'
 
 const UserOverviewPage = React.lazy(async () => ({
