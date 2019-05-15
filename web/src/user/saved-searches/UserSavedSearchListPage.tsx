@@ -4,9 +4,8 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { SavedSearchListPage } from '../../search/saved-searches/SavedSearchListPage'
 
 interface Props extends RouteComponentProps<{}> {
-    authenticatedUser: GQL.IUser
+    authenticatedUser: GQL.IUser | null
 }
 
-export const UserSavedSearchListPage: React.FunctionComponent<Props> = (props: Props) => (
-    <SavedSearchListPage {...props} userID={props.authenticatedUser.id} />
-)
+export const UserSavedSearchListPage: React.FunctionComponent<Props> = (props: Props) =>
+    props.authenticatedUser && <SavedSearchListPage {...props} userID={props.authenticatedUser.id} />

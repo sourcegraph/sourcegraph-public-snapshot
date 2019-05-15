@@ -22,7 +22,7 @@ import { OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
 import { OrgMembersPage } from './OrgMembersPage'
 import { OrgOverviewPage } from './OrgOverviewPage'
-import { OrgSavedSearchesPage } from './OrgSavedSearchesPage'
+import { OrgSavedSearchListPage } from '../saved-searches/OrgSavedSearchListPage'
 
 function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> {
     return queryGraphQL(
@@ -198,11 +198,7 @@ export class OrgArea extends React.Component<Props> {
                                         exact={true}
                                         // tslint:disable-next-line:jsx-no-lambda
                                         render={routeComponentProps => (
-                                            <OrgSavedSearchesPage
-                                                {...routeComponentProps}
-                                                {...transferProps}
-                                                isLightTheme={this.props.isLightTheme}
-                                            />
+                                            <OrgSavedSearchListPage {...routeComponentProps} {...transferProps} />
                                         )}
                                     />
                                     <Route

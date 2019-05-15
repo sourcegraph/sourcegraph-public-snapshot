@@ -42,9 +42,9 @@ class SavedSearchNode extends React.PureComponent<NodeProps> {
     }
     public render(): JSX.Element | null {
         return (
-            <div className="org-saved-searches-list-page__row list-group-item">
+            <div className="saved-search-list-page__row list-group-item">
                 <div className="d-flex">
-                    <MessageTextOutlineIcon className="org-saved-searches-list-page__row--icon icon-inline" />
+                    <MessageTextOutlineIcon className="saved-search-list-page__row--icon icon-inline" />
                     <div>{this.props.savedSearch.description}</div>
                 </div>
                 <div>
@@ -110,8 +110,8 @@ export class SavedSearchListPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="org-saved-searches-list-page">
-                <div className="org-saved-searches-list-page__title">
+            <div className="saved-search-list-page">
+                <div className="saved-search-list-page__title">
                     <div>
                         <h2>Saved searches</h2>
                         <div>Manage notifications and alerts for specific search queries</div>
