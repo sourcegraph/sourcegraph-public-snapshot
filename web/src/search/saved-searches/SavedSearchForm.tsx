@@ -39,16 +39,26 @@ export class SavedSearchForm extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
+        const {
+            description = '',
+            query = '',
+            notify = false,
+            notifySlack = false,
+            userID = null,
+            orgID = null,
+            slackWebhookURL = '',
+        } = props.defaultValues || {}
+
         this.state = {
             values: {
                 id: (props.defaultValues && props.defaultValues.id) || '',
-                description: (props.defaultValues && props.defaultValues.description) || '',
-                query: (props.defaultValues && props.defaultValues.query) || '',
-                notify: (props.defaultValues && props.defaultValues.notify) || false,
-                notifySlack: (props.defaultValues && props.defaultValues.notifySlack) || false,
-                userID: (props.defaultValues && props.defaultValues.userID) || null,
-                orgID: (props.defaultValues && props.defaultValues.orgID) || null,
-                slackWebhookURL: (props.defaultValues && props.defaultValues.slackWebhookURL) || null,
+                description,
+                query,
+                notify,
+                notifySlack,
+                userID,
+                orgID,
+                slackWebhookURL,
             },
             isSubmitting: false,
         }
@@ -87,7 +97,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
                         return []
                     })
                 )
-                .subscribe()
+                .subscribe(() => this.setState({ error: null, isSubmitting: false }))
         )
     }
 
@@ -175,7 +185,11 @@ export class SavedSearchForm extends React.Component<Props, State> {
                                 : 'Contact your server admin for more information.'}
                         </div>
                     )}
-                    <button type="submit" className="btn btn-primary saved-search-form__submit-button">
+                    <button
+                        type="submit"
+                        disabled={this.state.isSubmitting}
+                        className="btn btn-primary saved-search-form__submit-button"
+                    >
                         {this.props.submitLabel}
                     </button>
                     {this.state.error && !this.state.isSubmitting && (

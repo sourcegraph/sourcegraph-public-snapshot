@@ -9,6 +9,7 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { deleteSavedSearch, fetchSavedSearches } from '../../search/backend'
+import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 
 interface NodeProps extends RouteComponentProps {
     savedSearch: GQL.ISavedSearch
@@ -77,7 +78,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps> {
 }
 
 interface State {
-    savedSearches: GQL.ISavedSearch[]
+    savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
 }
 
 interface Props extends RouteComponentProps<{}> {
@@ -89,11 +90,9 @@ export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()
     private refreshRequests = new Subject<void>()
 
+    public state: State = {}
     constructor(props: Props) {
         super(props)
-        this.state = {
-            savedSearches: [],
-        }
     }
 
     public componentDidMount(): void {
@@ -101,10 +100,17 @@ export class SavedSearchListPage extends React.Component<Props, State> {
             this.refreshRequests
                 .pipe(
                     startWith(void 0),
-                    switchMap(fetchSavedSearches),
-                    map(savedSearches => ({ savedSearches }))
+                    switchMap(() =>
+                        fetchSavedSearches().pipe(
+                            catchError(error => {
+                                console.error(error)
+                                return [asError(error)]
+                            })
+                        )
+                    ),
+                    map(savedSearchesOrError => ({ savedSearchesOrError }))
                 )
-                .subscribe(newState => this.setState(newState as State), err => console.error(err))
+                .subscribe(newState => this.setState(newState as State))
         )
     }
 
@@ -122,9 +128,16 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                         </Link>
                     </div>
                 </div>
+                {this.state.savedSearchesOrError && isErrorLike(this.state.savedSearchesOrError) && (
+                    <div className="alert alert-danger mb-3">
+                        <strong>Error:</strong> {this.state.savedSearchesOrError.message}
+                    </div>
+                )}
                 <div className="list-group list-group-flush">
-                    {this.state.savedSearches.length > 0 &&
-                        this.state.savedSearches
+                    {this.state.savedSearchesOrError &&
+                        !isErrorLike(this.state.savedSearchesOrError) &&
+                        this.state.savedSearchesOrError.length > 0 &&
+                        this.state.savedSearchesOrError
                             .filter(search =>
                                 this.props.orgID
                                     ? search.orgID === this.props.orgID
