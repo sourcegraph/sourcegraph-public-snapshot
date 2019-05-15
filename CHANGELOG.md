@@ -21,7 +21,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-
 ## 3.4.0 (unreleased)
 
 ### Added
