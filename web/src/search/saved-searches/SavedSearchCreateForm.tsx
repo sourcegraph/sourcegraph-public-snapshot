@@ -20,14 +20,14 @@ interface Props extends RouteComponentProps {
 const LOADING: 'loading' = 'loading'
 
 interface State {
-    loadingOrError: typeof LOADING | ErrorLike | null
+    createdOrError: undefined | typeof LOADING | true | ErrorLike
 }
 
 export class SavedSearchCreateForm extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {
-            loadingOrError: null,
+            createdOrError: undefined,
         }
     }
     private subscriptions = new Subscription()
@@ -48,15 +48,15 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                                 fields.userID,
                                 fields.orgID
                             ).pipe(
-                                map(() => null),
+                                map(() => true),
                                 catchError(error => [error])
                             )
                         )
                     )
                 )
-                .subscribe(loadingOrError => {
-                    this.setState({ loadingOrError })
-                    if (loadingOrError === null) {
+                .subscribe(createdOrError => {
+                    this.setState({ createdOrError })
+                    if (createdOrError === true) {
                         this.props.history.push(this.props.returnPath)
                     }
                 })
@@ -83,8 +83,8 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                             : { userID: this.props.userID, ...defaultValue }
                     }
                     onSubmit={this.onSubmit}
-                    loading={this.state.loadingOrError === LOADING}
-                    error={isErrorLike(this.state.loadingOrError) ? this.state.loadingOrError : undefined}
+                    loading={this.state.createdOrError === LOADING}
+                    error={isErrorLike(this.state.createdOrError) ? this.state.createdOrError : undefined}
                 />
             </>
         )
