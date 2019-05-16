@@ -257,6 +257,29 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 		s.repoByID[r.ID] = r
 	}
 
+	return s.checkConstraints()
+}
+
+// checkConstraints ensures the FakeStore has not violated any constraints we
+// maintain on our DB.
+//
+// Constraints:
+// - name is unique case insensitively
+// - external repo is unique if set
+func (s *FakeStore) checkConstraints() error {
+	seenName := map[string]bool{}
+	seenExternalRepo := map[api.ExternalRepoSpec]bool{}
+	for _, r := range s.repoByID {
+		name := strings.ToLower(r.Name)
+		if seenName[name] {
+			return errors.Errorf("duplicate repo name: %s", name)
+		}
+		seenName[name] = true
+		if r.ExternalRepo.IsSet() && seenExternalRepo[r.ExternalRepo] {
+			return errors.Errorf("duplicate external repo spec: %v", r.ExternalRepo)
+		}
+		seenExternalRepo[r.ExternalRepo] = true
+	}
 	return nil
 }
 
