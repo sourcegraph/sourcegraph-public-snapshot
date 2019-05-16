@@ -55,7 +55,7 @@ export const CompletionWidgetDropdown: React.FunctionComponent<CompletionWidgetD
     noResultsClassName = '',
 }: CompletionWidgetDropdownProps) => (
     <Downshift
-        defaultHighlightedIndex={0}
+        initialHighlightedIndex={0}
         isOpen={true}
         itemToString={completionItemToString}
         onChange={onItemSelected}
