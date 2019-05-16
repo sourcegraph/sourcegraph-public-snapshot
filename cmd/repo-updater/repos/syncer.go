@@ -108,6 +108,10 @@ func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (diff D
 	ctx, save := s.observe(ctx, "Syncer.SyncSubset", strings.Join(Repos(sourcedSubset).Names(), " "))
 	defer save(&diff, &err)
 
+	if len(sourcedSubset) == 0 {
+		return Diff{}, nil
+	}
+
 	store := s.store
 	if tr, ok := s.store.(Transactor); ok {
 		var txs TxStore
@@ -255,7 +259,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	}
 
 	for _, r := range byID {
-		if !seenID[r.ExternalRepo] && !seenName[r.Name] {
+		if !seenID[r.ExternalRepo] {
 			diff.Added = append(diff.Added, r)
 		}
 	}

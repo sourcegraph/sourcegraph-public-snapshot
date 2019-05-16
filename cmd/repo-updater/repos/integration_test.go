@@ -53,6 +53,7 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/ListRepos", testStoreListRepos(store)},
 		{"DBStore/ListRepos/Pagination", testStoreListReposPagination(store)},
 		{"DBStore/Syncer/Sync", testSyncerSync(store)},
+		{"DBStore/Syncer/SyncSubset", testSyncSubset(store)},
 		{"Migrations/GithubSetDefaultRepositoryQuery",
 			testGithubSetDefaultRepositoryQueryMigration(store)},
 		{"Migrations/GitLabSetDefaultProjectQuery",
