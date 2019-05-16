@@ -124,12 +124,11 @@ const searchResultCodeViewResolver = toCodeViewResolver('.code-list-item', {
     toolbarButtonProps,
 })
 
-const commentSnippetCodeViewResolver = toCodeViewResolver('.js-comment-body', {
+const snippetCodeView: Omit<CodeView, 'element'> = {
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveSnippetFileInfo,
     getPositionAdjuster: getSnippetPositionAdjuster,
-    toolbarButtonProps,
-})
+}
 
 export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolbarMount']> = (
     codeViewElement: HTMLElement
@@ -154,12 +153,24 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
 }
 
 /**
- * The modern single file blob view.
+ * Matches the modern single-file code view, or snippets embedded in comments.
  *
  */
 export const fileLineContainerResolver: ViewResolver<CodeView> = {
     selector: '.js-file-line-container',
     resolveView: (fileLineContainer: HTMLElement): CodeView | null => {
+        const embeddedBlobWrapper = fileLineContainer.closest('.blob-wrapper-embedded')
+        if (embeddedBlobWrapper) {
+            // This is a snippet embedded in a comment.
+            // Resolve to `.blob-wrapper-embedded`'s parent element,
+            // the smallest element that contains both the code and
+            // the HTML anchor allowing to resolve the file info.
+            const element = embeddedBlobWrapper.parentElement!
+            return {
+                element,
+                ...snippetCodeView,
+            }
+        }
         const { filePath } = parseURL()
         if (!filePath) {
             // this is not a single-file code view
@@ -252,12 +263,7 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
 
 export const githubCodeHost: CodeHost = {
     name: 'github',
-    codeViewResolvers: [
-        genericCodeViewResolver,
-        fileLineContainerResolver,
-        searchResultCodeViewResolver,
-        commentSnippetCodeViewResolver,
-    ],
+    codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     textFieldResolvers: [commentTextFieldResolver],
     getContext: () => {

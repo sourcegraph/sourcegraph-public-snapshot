@@ -1,5 +1,5 @@
 import { DiffResolvedRevSpec } from '../../shared/repo'
-import { GitHubBlobUrl, GitHubMode, GitHubPullUrl, GitHubRepositoryUrl, GitHubURL } from '../github'
+import { GitHubURL } from '../github'
 
 /**
  * getFileContainers returns the elements on the page which should be marked
@@ -181,73 +181,6 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
     }
 }
 
-const GITHUB_BLOB_REGEX = /^(https?):\/\/(github.com)\/([A-Za-z0-9_]+)\/([A-Za-z0-9-]+)\/blob\/([^#]*)(#L[0-9]+)?/i
-const GITHUB_PULL_REGEX = /^(https?):\/\/(github.com)\/([A-Za-z0-9_]+)\/([A-Za-z0-9-]+)\/pull\/([0-9]+)(\/(commits|files))?/i
-const COMMIT_HASH_REGEX = /^([0-9a-f]{40})/i
-export function getGitHubState(url: string): GitHubBlobUrl | GitHubPullUrl | GitHubRepositoryUrl | null {
-    const blobMatch = GITHUB_BLOB_REGEX.exec(url)
-    if (blobMatch) {
-        const match = {
-            protocol: blobMatch[1],
-            hostname: blobMatch[2],
-            org: blobMatch[3],
-            repo: blobMatch[4],
-            revAndPath: blobMatch[5],
-            lineNumber: blobMatch[6],
-        }
-        const rev = getRevOrBranch(match.revAndPath)
-        if (!rev) {
-            return null
-        }
-        const filePath = match.revAndPath.replace(rev + '/', '')
-        return {
-            mode: GitHubMode.Blob,
-            owner: match.org,
-            ghRepoName: match.repo,
-            revAndPath: match.revAndPath,
-            lineNumber: match.lineNumber,
-            rev,
-            filePath,
-        }
-    }
-    const pullMatch = GITHUB_PULL_REGEX.exec(url)
-    if (pullMatch) {
-        const match = {
-            protocol: pullMatch[1],
-            hostname: pullMatch[2],
-            org: pullMatch[3],
-            repo: pullMatch[4],
-            id: pullMatch[5],
-            view: pullMatch[7],
-        }
-        const numId: number = parseInt(match.id, 10)
-        if (isNaN(numId)) {
-            console.error(`match.id ${match.id} is parsing to NaN`)
-            return null
-        }
-        return {
-            mode: GitHubMode.PullRequest,
-            ghRepoName: match.repo,
-            owner: match.org,
-            view: match.view,
-            rev: '',
-            id: numId,
-        }
-    }
-    const parsed = parseURL()
-    if (parsed && parsed.ghRepoName && parsed.repoName && parsed.user) {
-        return {
-            mode: GitHubMode.Repository,
-            owner: parsed.user,
-            ghRepoName: parsed.ghRepoName,
-            rev: parsed.rev,
-            filePath: parsed.filePath,
-        }
-    }
-
-    return null
-}
-
 function getBranchName(): string | null {
     const branchButtons = document.getElementsByClassName('btn btn-sm select-menu-button js-menu-target css-truncate')
     if (branchButtons.length === 0) {
@@ -266,22 +199,6 @@ function getBranchName(): string | null {
     }
     // otherwise, the branch name is fully rendered in the button
     return (innerButtonEls[0] as HTMLElement).innerText
-}
-
-function getRevOrBranch(revAndPath: string): string | null {
-    const matchesCommit = COMMIT_HASH_REGEX.exec(revAndPath)
-    if (matchesCommit) {
-        return matchesCommit[1].substring(0, 40)
-    }
-    const branch = getBranchName()
-    if (!branch) {
-        return null
-    }
-    if (!revAndPath.startsWith(branch)) {
-        console.error(`branch and path is ${revAndPath}, and branch is ${branch}`)
-        return null
-    }
-    return branch
 }
 
 export function parseURL(loc: Pick<Location, 'host' | 'hash' | 'pathname'> = window.location): GitHubURL {

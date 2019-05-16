@@ -46,6 +46,11 @@ describe('util', () => {
                 name: 'selections - range',
                 url: 'https://github.com/sourcegraph/sourcegraph/blob/master/jest.config.base.js#L5-L12',
             },
+            {
+                name: 'snippet permalink',
+                url:
+                    'https://github.com/sourcegraph/sourcegraph/blob/6a91ccec97a46bfb511b7ff58d790554a7d075c8/client/browser/src/shared/repo/backend.tsx#L128-L151',
+            },
         ]
         for (const { name, url } of testcases) {
             test(name, () => {
