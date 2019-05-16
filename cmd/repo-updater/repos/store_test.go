@@ -765,6 +765,32 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		repos: repos.Assert.ReposEqual(&github, &gitlab),
 	})
 
+	testCases = append(testCases, testCase{
+		name:   "use or",
+		stored: repositories,
+		args: func(repos.Repos) repos.StoreListReposArgs {
+			return repos.StoreListReposArgs{
+				Names: []string{"gitlab.com/bar/foo"},
+				Kinds: []string{"github"},
+				UseOr: true,
+			}
+		},
+		repos: repos.Assert.ReposEqual(&github, &gitlab),
+	})
+
+	testCases = append(testCases, testCase{
+		name:   "use and",
+		stored: repositories,
+		args: func(repos.Repos) repos.StoreListReposArgs {
+			return repos.StoreListReposArgs{
+				Names: []string{"gitlab.com/bar/foo"},
+				Kinds: []string{"github"},
+				UseOr: false,
+			}
+		},
+		repos: repos.Assert.ReposEqual(),
+	})
+
 	return func(t *testing.T) {
 		t.Helper()
 
