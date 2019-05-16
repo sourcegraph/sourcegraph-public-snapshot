@@ -12,6 +12,7 @@ import (
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -124,34 +126,11 @@ func main() {
 	}
 
 	if envvar.SourcegraphDotComMode() {
-		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-			Kinds: []string{"github"},
-		})
-		if err != nil {
-			log.Fatalf("failed to list external services: %v", err)
-		}
-
-		var githubDotComSvc *repos.ExternalService
-		for _, e := range es {
-			cfg, err := e.Configuration()
-			if err != nil {
-				log.Fatalf("unable to get external service configuration: %v", err)
-			}
-			if cfg.(*schema.GitHubConnection).Token != "" {
-				githubDotComSvc = e
-				break
-			}
-		}
-
-		if githubDotComSvc == nil {
-			log.Fatal("no external service for Github.com found")
-		}
-
-		githubDotComSrc, err := repos.NewGithubSource(githubDotComSvc, cf)
+		src, err := makeGitHubDotComSrc(ctx, store, cf)
 		if err != nil {
 			log.Fatalf("failed to create Github.com source: %v", err)
 		}
-		server.GithubDotComSource = githubDotComSrc
+		server.GithubDotComSource = src
 
 	} else {
 		diffs := make(chan repos.Diff)
@@ -224,4 +203,31 @@ func main() {
 	})
 
 	select {}
+}
+
+func makeGitHubDotComSrc(ctx context.Context, store repos.Store, cf *httpcli.Factory) (*repos.GithubSource, error) {
+	es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+		Kinds: []string{"github"},
+	})
+	if err != nil {
+		return nil, errors.Errorf("failed to list external services: %v", err)
+	}
+
+	var githubDotComSvc *repos.ExternalService
+	for _, e := range es {
+		cfg, err := e.Configuration()
+		if err != nil {
+			return nil, errors.Errorf("unable to get external service configuration: %v", err)
+		}
+		if cfg.(*schema.GitHubConnection).Token != "" {
+			githubDotComSvc = e
+			break
+		}
+	}
+
+	if githubDotComSvc == nil {
+		return nil, errors.Errorf("no external service for Github.com found")
+	}
+
+	return repos.NewGithubSource(githubDotComSvc, cf)
 }
