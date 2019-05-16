@@ -68,7 +68,6 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		oid:    "c1",
 		author: *toSignatureResolver(&gitSignatureWithDate),
 	}
-	_, _ = wantCommit.OID() // set wantCommit.Once state to done
 
 	if want := []*commitSearchResultResolver{
 		{
