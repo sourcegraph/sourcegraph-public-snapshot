@@ -10,6 +10,7 @@ import { Notifications } from '../../../../shared/src/notifications/Notification
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
 import * as H from 'history'
+import { isEqual } from 'lodash'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
@@ -88,7 +89,10 @@ export const renderGlobalDebug = ({
 
 const IS_LIGHT_THEME = true // assume all code hosts have a light theme (correct for now)
 
-const groupByLine = (decorations: TextDocumentDecoration[]) => {
+/**
+ * @returns Map from line number to non-empty array of TextDocumentDecoration for that line
+ */
+const groupByLine = (decorations: TextDocumentDecoration[]): Map<number, TextDocumentDecoration[]> => {
     const grouped = new Map<number, TextDocumentDecoration[]>()
     for (const d of decorations) {
         const lineNumber = d.range.start.line + 1
@@ -102,35 +106,53 @@ const groupByLine = (decorations: TextDocumentDecoration[]) => {
     return grouped
 }
 
-const cleanupDecorations = (dom: DOMFunctions, codeView: HTMLElement, lines: number[]): void => {
-    for (const lineNumber of lines) {
-        const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
-        if (!codeElement) {
-            continue
-        }
-        codeElement.style.backgroundColor = null
-        const previousDecorations = codeElement.querySelectorAll('.line-decoration-attachment')
-        for (const d of previousDecorations) {
-            d.remove()
-        }
+/**
+ * Cleans up the line decorations in one line
+ */
+const cleanupDecorationsForLine = (codeElement: HTMLElement): void => {
+    codeElement.style.backgroundColor = null
+    const previousAttachments = codeElement.querySelectorAll('.line-decoration-attachment')
+    for (const attachment of previousAttachments) {
+        attachment.remove()
     }
 }
 
+export type DecorationMapByLine = Map<number, TextDocumentDecoration[]>
+
 /**
  * Applies a decoration to a code view. This doesn't work with diff views yet.
+ *
+ * @returns New decorations, grouped by line number
  */
 export const applyDecorations = (
     dom: DOMFunctions,
     codeView: HTMLElement,
     decorations: TextDocumentDecoration[],
-    previousDecorations: number[]
-): number[] => {
-    cleanupDecorations(dom, codeView, previousDecorations)
+    previousDecorations: DecorationMapByLine
+): DecorationMapByLine => {
     const decorationsByLine = groupByLine(decorations)
+    // Clean up lines that now don't have decorations anymore
+    for (const lineNumber of previousDecorations.keys()) {
+        if (!decorationsByLine.has(lineNumber)) {
+            const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
+            if (codeElement) {
+                cleanupDecorationsForLine(codeElement)
+            }
+        }
+    }
     for (const [lineNumber, decorationsForLine] of decorationsByLine) {
+        const previousDecorationsForLine = previousDecorations.get(lineNumber)
+        if (isEqual(decorationsForLine, previousDecorationsForLine)) {
+            // No change in this line
+            continue
+        }
         const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
         if (!codeElement) {
             throw new Error(`Unable to find code element for line ${lineNumber}`)
+        }
+        // Clean up previous decorations if this line had some
+        if (previousDecorationsForLine) {
+            cleanupDecorationsForLine(codeElement)
         }
         for (const decoration of decorationsForLine) {
             const style = decorationStyleForTheme(decoration, IS_LIGHT_THEME)
@@ -168,5 +190,5 @@ export const applyDecorations = (
             }
         }
     }
-    return [...decorationsByLine.keys()]
+    return decorationsByLine
 }
