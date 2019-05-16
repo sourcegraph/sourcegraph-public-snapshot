@@ -16,6 +16,29 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed a bug where submitting a saved query without selecting the location would fail for non-site admins (#3628).
+- Fixed settings editors only having a few pixels height.
+- Fixed a bug where browser extension and code review integration usage stats were not being captured on the site-admin Usage Stats page.
+- Fixed an issue where in some rare cases PostgreSQL starting up slowly could incorrectly trigger a panic in the `frontend` service.
+- Fixed an issue where the management console password would incorrectly reset to a new secure one after a user account was created.
+- Fixed a bug where gitserver would leak file descriptors when performing common operations.
+- Substantially improved the performance of updating external service configurations on instances with thousands of repositories, going from e.g. several minutes to about a minute for ~20k repositories.
+- Fully resolved the search performance regression in v3.2.0, restoring performance of search back to the same levels it was before changes made in v3.2.0.
+
+## 3.3.7
+
+### Added
+
+- The `bitbucketserver.exclude` setting in [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration) additionally allows you to exclude repositories matched by a regular expression (so that they won't be synced).
+
+### Changed
+
+### Removed
+
+### Fixed
+
+- Fixed a major indexed search performance regression that occurred in v3.2.0. (#3685)
+- Fixed an issue where Sourcegraph would fail to update repositories on some instances (`pq: duplicate key value violates unique constraint "repo_external_service_unique_idx"`) (#3680)
+- Fixed an issue where Sourcegraph would not exclude unavailable Bitbucket Server repositories. (#3772)
 
 ## 3.3.6
 

@@ -26,7 +26,7 @@ import (
 	"syscall"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -1315,6 +1315,7 @@ func quickRevParseHead(dir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer f.Close()
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		fields := bytes.Fields(scanner.Bytes())
