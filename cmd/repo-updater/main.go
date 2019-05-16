@@ -131,31 +131,35 @@ func main() {
 			log.Fatalf("failed to create Github.com source: %v", err)
 		}
 		server.GithubDotComSource = src
+	}
 
-	} else {
-		diffs := make(chan repos.Diff)
-		syncer := repos.NewSyncer(store, src, diffs, clock)
-		server.Syncer = syncer
+	diffs := make(chan repos.Diff)
+	syncer := repos.NewSyncer(store, src, diffs, clock)
+	syncer.FailFullSync = envvar.SourcegraphDotComMode()
+	server.Syncer = syncer
 
+	if !envvar.SourcegraphDotComMode() {
 		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval())) }()
+	}
 
-		gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
+	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
 
-		// Start new repo syncer updates scheduler relay thread.
-		go func() {
-			for diff := range diffs {
-				if len(diff.Added) > 0 {
-					log15.Debug("syncer.sync", "diff.added", diff.Added.Names())
-				}
+	// Start new repo syncer updates scheduler relay thread.
+	go func() {
+		for diff := range diffs {
+			if len(diff.Added) > 0 {
+				log15.Debug("syncer.sync", "diff.added", diff.Added.Names())
+			}
 
-				if len(diff.Modified) > 0 {
-					log15.Debug("syncer.sync", "diff.modified", diff.Modified.Names())
-				}
+			if len(diff.Modified) > 0 {
+				log15.Debug("syncer.sync", "diff.modified", diff.Modified.Names())
+			}
 
-				if len(diff.Deleted) > 0 {
-					log15.Debug("syncer.sync", "diff.deleted", diff.Deleted.Names())
-				}
+			if len(diff.Deleted) > 0 {
+				log15.Debug("syncer.sync", "diff.deleted", diff.Deleted.Names())
+			}
 
+			if !envvar.SourcegraphDotComMode() {
 				rs := diff.Repos()
 				if !conf.Get().DisableAutoGitUpdates {
 					repos.Scheduler.Update(rs...)
@@ -167,10 +171,12 @@ func main() {
 					}
 				}()
 			}
-		}()
+		}
+	}()
 
-		go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
+	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
+	if !envvar.SourcegraphDotComMode() {
 		// git-server repos purging thread
 		go repos.RunRepositoryPurgeWorker(ctx)
 	}

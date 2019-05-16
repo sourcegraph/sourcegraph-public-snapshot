@@ -18,6 +18,10 @@ import (
 // A Syncer periodically synchronizes available repositories from all its given Sources
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
+	// FailFullSync prevents Sync from running. This should only be true for
+	// Sourcegraph.com
+	FailFullSync bool
+
 	store   Store
 	sourcer Sourcer
 	diffs   chan Diff
@@ -57,6 +61,10 @@ func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err error) {
 	ctx, save := s.observe(ctx, "Syncer.Sync", strings.Join(kinds, " "))
 	defer save(&diff, &err)
+
+	if s.FailFullSync {
+		return Diff{}, errors.New("Syncer is not enabled")
+	}
 
 	var sourced Repos
 	if sourced, err = s.sourced(ctx, kinds...); err != nil {

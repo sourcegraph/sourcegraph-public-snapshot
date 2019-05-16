@@ -270,14 +270,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if s.Syncer == nil {
-		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
-			ExternalService: req.ExternalService,
-			Error:           errors.New("Syncer is not enabled"),
-		})
-		return
-	}
-
 	_, err := s.Syncer.Sync(r.Context(), req.ExternalService.Kind)
 	switch {
 	case err == nil:
