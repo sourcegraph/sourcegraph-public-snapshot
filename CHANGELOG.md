@@ -9,6 +9,18 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
+## Unreleased
+
+### Added
+
+### Changed
+
+- The saved searches UI has changed. There is now a Saved searches page in the user and organizations settings area. A saved search appears in the settings area of the user or organization it is associated with.
+
+### Removed
+
+### Fixed
+
 ## 3.4.0 (unreleased)
 
 ### Added

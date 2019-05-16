@@ -40,6 +40,8 @@ Dockerfile @ggilmore
 # Documentation and homepage
 README.md @sqs
 /doc/ @sqs
+/doc/dev/product/ @christinaforney
+/doc/dev/teams.md @beyang @nicksnyder
 /web/src/enterprise/dotcom/welcome/ @sqs
 
 # Browser extensions
