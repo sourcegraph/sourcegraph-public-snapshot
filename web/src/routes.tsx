@@ -8,9 +8,6 @@ const SearchPage = React.lazy(async () => ({
 const SearchResults = React.lazy(async () => ({
     default: (await import('./search/results/SearchResults')).SearchResults,
 }))
-const SavedQueriesPage = React.lazy(async () => ({
-    default: (await import('./search/saved-queries/SavedQueries')).SavedQueriesPage,
-}))
 const SiteAdminArea = React.lazy(async () => ({
     default: (await import('./site-admin/SiteAdminArea')).SiteAdminArea,
 }))
@@ -38,6 +35,9 @@ const ScopePage = React.lazy(async () => ({ default: (await import('./search/inp
 const SiteInitPage = React.lazy(async () => ({ default: (await import('./site-admin/SiteInitPage')).SiteInitPage }))
 const RedirectToUserPage = React.lazy(async () => ({
     default: (await import('./user/settings/RedirectToUserPage')).RedirectToUserPage,
+}))
+const RedirectToUserSavedSearches = React.lazy(async () => ({
+    default: (await import('./search/saved-searches/RedirectToUserSavedSearches')).RedirectToUserSavedSearches,
 }))
 const RedirectToUserSettings = React.lazy(async () => ({
     default: (await import('./user/settings/RedirectToUserSettings')).RedirectToUserSettings,
@@ -96,7 +96,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/search/searches',
-        render: props => <SavedQueriesPage {...props} />,
+        render: props => <RedirectToUserSavedSearches {...props} />,
         exact: true,
         forceNarrowWidth: true,
     },

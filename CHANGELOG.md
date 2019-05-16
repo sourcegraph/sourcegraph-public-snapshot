@@ -9,6 +9,18 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
+## Unreleased
+
+### Added
+
+### Changed
+
+- The saved searches UI has changed. There is now a Saved searches page in the user and organizations settings area. A saved search appears in the settings area of the user or organization it is associated with.
+
+### Removed
+
+### Fixed
+
 ## 3.4.0 (unreleased)
 
 ### Added
@@ -41,6 +53,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a bug where browser extension and code review integration usage stats were not being captured on the site-admin Usage Stats page.
 - Fixed an issue where in some rare cases PostgreSQL starting up slowly could incorrectly trigger a panic in the `frontend` service.
 - Fixed an issue where the management console password would incorrectly reset to a new secure one after a user account was created.
+- Substantially improved the performance of updating external service configurations on instances with thousands of repositories, going from e.g. several minutes to about a minute for ~20k repositories.
 - Fully resolved the search performance regression in v3.2.0, restoring performance of search back to the same levels it was before changes made in v3.2.0.
 
 ## 3.3.7
