@@ -26,7 +26,7 @@ import (
 	"syscall"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -40,7 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // tempDirName is the name used for the temporary directory under ReposDir.
@@ -1312,6 +1312,7 @@ func quickRevParseHead(dir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer f.Close()
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		fields := bytes.Fields(scanner.Bytes())
