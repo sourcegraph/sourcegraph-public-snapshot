@@ -63,10 +63,15 @@ type FakeStore struct {
 	repoIDSeq uint32
 	svcByID   map[int64]*ExternalService
 	repoByID  map[uint32]*Repo
+	parent    *FakeStore
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
 func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
+	if s.parent != nil {
+		return nil, errors.New("already in transaction")
+	}
+
 	svcByID := make(map[int64]*ExternalService, len(s.svcByID))
 	for id, svc := range s.svcByID {
 		svcByID[id] = svc.Clone()
@@ -89,12 +94,22 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 		svcByID:   svcByID,
 		repoIDSeq: s.repoIDSeq,
 		repoByID:  repoByID,
+		parent:    s,
 	}, nil
 }
 
 // Done fakes the implementation of a TxStore's Done method by always discarding all state
 // changes made during the transaction.
-func (s *FakeStore) Done(...*error) {}
+func (s *FakeStore) Done(e ...*error) {
+	if len(e) > 0 && e[0] != nil && *e[0] != nil {
+		return
+	}
+
+	// Transaction succeeded. Copy maps into parent
+	p := s.parent
+	s.parent = nil
+	*p = *s
+}
 
 // ListExternalServices lists all stored external services that match the given args.
 func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
