@@ -1498,10 +1498,10 @@
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
   version "2.0.0"
 
-"@sourcegraph/prettierrc@^3.0.0":
-  version "3.0.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/prettierrc/-/prettierrc-3.0.0.tgz#716b64b287565f98f539f76bea206912ab4d03b3"
-  integrity sha512-ziLujsC3IESHGYdtiJ7yVjte9i7mr6jKWTYtCVqgOWeY1Er0/xsQ/sdZIyK61tD282wvd7VjS4pk5RoGEN7biw==
+"@sourcegraph/prettierrc@^3.0.1":
+  version "3.0.1"
+  resolved "https://registry.npmjs.org/@sourcegraph/prettierrc/-/prettierrc-3.0.1.tgz#e1db0046dca3c5e770d0f2ac68bbd794fee37138"
+  integrity sha512-Xyfsk2zLbtJXjgzPC5Q91AdoZ9YECB7Z5pyUCoYb36zqClBRkN2F/VoT+04pLqBf9xsr9uKfJoaf/WGGngLlVg==
 
 "@sourcegraph/react-loading-spinner@0.0.7":
   version "0.0.7"
@@ -11820,10 +11820,10 @@ prepend-http@^2.0.0:
   resolved "https://registry.npmjs.org/prepend-http/-/prepend-http-2.0.0.tgz#e92434bfa5ea8c19f41cdfd401d741a3c819d897"
   integrity sha1-6SQ0v6XqjBn0HN/UAddBo8gZ2Jc=
 
-prettier@^1.15.2, prettier@^1.17.0:
-  version "1.17.0"
-  resolved "https://registry.npmjs.org/prettier/-/prettier-1.17.0.tgz#53b303676eed22cc14a9f0cec09b477b3026c008"
-  integrity sha512-sXe5lSt2WQlCbydGETgfm1YBShgOX4HxQkFPvbxkcwgDvGDeqVau8h+12+lmSVlP3rHPz0oavfddSZg/q+Szjw==
+prettier@^1.15.2, prettier@^1.17.1:
+  version "1.17.1"
+  resolved "https://registry.npmjs.org/prettier/-/prettier-1.17.1.tgz#ed64b4e93e370cb8a25b9ef7fef3e4fd1c0995db"
+  integrity sha512-TzGRNvuUSmPgwivDqkZ9tM/qTGW9hqDKWOE9YHiyQdixlKbv7kvEqsmDPrcHJTKwthU774TQwZXVtaQ/mMsvjg==
 
 pretty-bytes@^5.2.0:
   version "5.2.0"
