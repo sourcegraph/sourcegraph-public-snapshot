@@ -8,9 +8,6 @@ const IntegrationsExploreSection = React.lazy(async () => ({
 const RepositoriesExploreSection = React.lazy(async () => ({
     default: (await import('../repo/explore/RepositoriesExploreSection')).RepositoriesExploreSection,
 }))
-const SavedSearchesExploreSection = React.lazy(async () => ({
-    default: (await import('../search/saved-queries/explore/SavedSearchesExploreSection')).SavedSearchesExploreSection,
-}))
 const SiteUsageExploreSection = React.lazy(async () => ({
     default: (await import('../usageStatistics/explore/SiteUsageExploreSection')).SiteUsageExploreSection,
 }))
@@ -23,9 +20,6 @@ export const exploreSections: ReadonlyArray<ExploreSectionDescriptor> = [
     { render: props => <IntegrationsExploreSection {...props} /> },
     {
         render: props => <RepositoriesExploreSection {...props} />,
-    },
-    {
-        render: props => <SavedSearchesExploreSection {...props} />,
     },
     {
         render: props => <SiteUsageExploreSection {...props} />,
