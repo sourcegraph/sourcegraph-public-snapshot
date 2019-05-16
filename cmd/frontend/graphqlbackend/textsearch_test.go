@@ -246,14 +246,23 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
 	defer cancel()
 	type args struct {
-		ctx             context.Context
-		query           *search.PatternInfo
-		repos           []*search.RepositoryRevisions
-		useFullDeadline bool
-		searcher        zoekt.Searcher
-		opts            zoekt.SearchOptions
-		since           func(time.Time) time.Duration
+		ctx              context.Context
+		query            *search.PatternInfo
+		indexedRevisions map[*search.RepositoryRevisions]string
+		repos            []*search.RepositoryRevisions
+		useFullDeadline  bool
+		searcher         zoekt.Searcher
+		opts             zoekt.SearchOptions
+		since            func(time.Time) time.Duration
 	}
+
+	singleRepositoryRevisions := []*search.RepositoryRevisions{
+		{Repo: &types.Repo{}},
+	}
+	singleIndexedRevisions := map[*search.RepositoryRevisions]string{
+		singleRepositoryRevisions[0]: "abc",
+	}
+
 	tests := []struct {
 		name              string
 		args              args
@@ -265,15 +274,14 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		{
 			name: "returns no error if search completed with no matches before timeout",
 			args: args{
-				ctx:   context.Background(),
-				query: &search.PatternInfo{PathPatternsAreRegExps: true},
-				repos: []*search.RepositoryRevisions{
-					{Repo: &types.Repo{}},
-				},
-				useFullDeadline: false,
-				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
-				opts:            zoekt.SearchOptions{MaxWallTime: time.Second},
-				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
+				ctx:              context.Background(),
+				query:            &search.PatternInfo{PathPatternsAreRegExps: true},
+				indexedRevisions: singleIndexedRevisions,
+				repos:            singleRepositoryRevisions,
+				useFullDeadline:  false,
+				searcher:         &fakeSearcher{result: &zoekt.SearchResult{}},
+				opts:             zoekt.SearchOptions{MaxWallTime: time.Second},
+				since:            func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
@@ -283,15 +291,14 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		{
 			name: "returns error if max wall time is exceeded but no matches have been found yet",
 			args: args{
-				ctx:   context.Background(),
-				query: &search.PatternInfo{PathPatternsAreRegExps: true},
-				repos: []*search.RepositoryRevisions{
-					{Repo: &types.Repo{}},
-				},
-				useFullDeadline: false,
-				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
-				opts:            zoekt.SearchOptions{MaxWallTime: time.Second},
-				since:           func(time.Time) time.Duration { return time.Second },
+				ctx:              context.Background(),
+				query:            &search.PatternInfo{PathPatternsAreRegExps: true},
+				indexedRevisions: singleIndexedRevisions,
+				repos:            singleRepositoryRevisions,
+				useFullDeadline:  false,
+				searcher:         &fakeSearcher{result: &zoekt.SearchResult{}},
+				opts:             zoekt.SearchOptions{MaxWallTime: time.Second},
+				since:            func(time.Time) time.Duration { return time.Second },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
@@ -301,15 +308,14 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		{
 			name: "returns error if context timeout already passed",
 			args: args{
-				ctx:   zeroTimeoutCtx,
-				query: &search.PatternInfo{PathPatternsAreRegExps: true},
-				repos: []*search.RepositoryRevisions{
-					{Repo: &types.Repo{}},
-				},
-				useFullDeadline: true,
-				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
-				opts:            zoekt.SearchOptions{},
-				since:           func(time.Time) time.Duration { return 0 },
+				ctx:              zeroTimeoutCtx,
+				query:            &search.PatternInfo{PathPatternsAreRegExps: true},
+				indexedRevisions: singleIndexedRevisions,
+				repos:            singleRepositoryRevisions,
+				useFullDeadline:  true,
+				searcher:         &fakeSearcher{result: &zoekt.SearchResult{}},
+				opts:             zoekt.SearchOptions{},
+				since:            func(time.Time) time.Duration { return 0 },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
@@ -319,15 +325,14 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		{
 			name: "returns error if searcher returns an error",
 			args: args{
-				ctx:   context.Background(),
-				query: &search.PatternInfo{PathPatternsAreRegExps: true},
-				repos: []*search.RepositoryRevisions{
-					{Repo: &types.Repo{}},
-				},
-				useFullDeadline: true,
-				searcher:        &errorSearcher{err: errors.New("womp womp")},
-				opts:            zoekt.SearchOptions{},
-				since:           func(time.Time) time.Duration { return 0 },
+				ctx:              context.Background(),
+				query:            &search.PatternInfo{PathPatternsAreRegExps: true},
+				indexedRevisions: singleIndexedRevisions,
+				repos:            singleRepositoryRevisions,
+				useFullDeadline:  true,
+				searcher:         &errorSearcher{err: errors.New("womp womp")},
+				opts:             zoekt.SearchOptions{},
+				since:            func(time.Time) time.Duration { return 0 },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
@@ -337,7 +342,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.repos, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts, tt.args.since)
+			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.repos, tt.args.indexedRevisions, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts, tt.args.since)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
