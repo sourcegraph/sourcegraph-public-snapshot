@@ -107,7 +107,7 @@ const groupByLine = (decorations: TextDocumentDecoration[]): Map<number, TextDoc
 }
 
 /**
- * Cleans up the line decorations inone line
+ * Cleans up the line decorations in one line
  */
 const cleanupDecorationsForLine = (codeElement: HTMLElement): void => {
     codeElement.style.backgroundColor = null
