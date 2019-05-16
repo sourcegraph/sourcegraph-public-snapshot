@@ -60,7 +60,7 @@ type fileMatchResolver struct {
 	symbols      []*searchSymbolResult
 	uri          string
 	repo         *types.Repo
-	commitID     api.CommitID // or empty for default branch
+	commitID     api.CommitID
 	// inputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.
@@ -419,17 +419,17 @@ func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 	return searchOpts
 }
 
-func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
 
 	// Tell zoekt which repos to search
 	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
-	repoMap := make(map[api.RepoName]*types.Repo, len(repos))
+	repoMap := make(map[api.RepoName]*search.RepositoryRevisions, len(repos))
 	for _, repoRev := range repos {
 		repoSet.Set[string(repoRev.Repo.Name)] = true
-		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev.Repo
+		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
 	}
 
 	queryExceptRepos, err := queryToZoektQuery(query)
@@ -551,14 +551,14 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 				})
 			}
 		}
-		repo := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
+		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
 		matches[i] = &fileMatchResolver{
 			JPath:        file.FileName,
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,
-			uri:          fileMatchURI(repo.Name, "", file.FileName),
-			repo:         repo,
-			commitID:     "", // zoekt only searches default branch
+			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
+			repo:         repoRev.Repo,
+			commitID:     api.CommitID(indexedRevisions[repoRev]),
 		}
 	}
 
@@ -645,9 +645,15 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
 }
 
-func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
+// zoektIndexedRepos splits the input repo list into two parts: (1) the
+// repositories `indexed` by Zoekt and (2) the repositories that are
+// `unindexed`.
+//
+// Additionally, it returns a mapping of `indexed` repositories to the exact
+// Git commit of HEAD that is indexed.
+func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, err error) {
 	if !Search().Index.Enabled() {
-		return nil, repos, nil
+		return nil, repos, nil, nil
 	}
 	for _, repoRev := range repos {
 		// We search HEAD using zoekt
@@ -663,33 +669,43 @@ func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions)
 
 	// Return early if we don't need to querying zoekt
 	if len(indexed) == 0 {
-		return indexed, unindexed, nil
+		return indexed, unindexed, nil, nil
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	resp, err := Search().Index.ListAll(ctx)
 	if err != nil {
-		return nil, repos, err
+		return nil, repos, nil, err
 	}
 
 	// Everything currently in indexed is at HEAD. Filter out repos which
 	// zoekt hasn't indexed yet.
-	set := map[string]bool{}
+	zoektIndexed := map[string]zoekt.Repository{}
 	for _, repo := range resp.Repos {
-		set[repo.Repository.Name] = true
+		zoektIndexed[repo.Repository.Name] = repo.Repository
 	}
 	head := indexed
 	indexed = indexed[:0]
 	for _, repoRev := range head {
-		if set[string(repoRev.Repo.Name)] {
+		if _, ok := zoektIndexed[string(repoRev.Repo.Name)]; ok {
 			indexed = append(indexed, repoRev)
 		} else {
 			unindexed = append(unindexed, repoRev)
 		}
 	}
 
-	return indexed, unindexed, nil
+	// Populate the indexedRevisions map.
+	indexedRevisions = make(map[*search.RepositoryRevisions]string, len(indexed))
+	for _, repoRev := range indexed {
+		for _, branch := range zoektIndexed[string(repoRev.Repo.Name)].Branches {
+			if branch.Name == "HEAD" {
+				indexedRevisions[repoRev] = branch.Version
+				break
+			}
+		}
+	}
+	return indexed, unindexed, indexedRevisions, nil
 }
 
 var mockSearchFilesInRepos func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error)
@@ -711,7 +727,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 
 	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
 
-	zoektRepos, searcherRepos, err := zoektIndexedRepos(ctx, args.Repos)
+	zoektRepos, searcherRepos, indexedRevisions, err := zoektIndexedRepos(ctx, args.Repos)
 	if err != nil {
 		// Don't hard fail if index is not available yet.
 		tr.LogFields(otlog.String("indexErr", err.Error()))
@@ -858,7 +874,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		query := args.Pattern
 		k := zoektResultCountFactor(len(zoektRepos), query)
 		opts := zoektSearchOpts(k, query)
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, args.UseFullDeadline, Search().Index.Client, opts, time.Since)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, indexedRevisions, args.UseFullDeadline, Search().Index.Client, opts, time.Since)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
