@@ -2,22 +2,22 @@
 
 Saved searches lets you save and describe search queries so you can easily monitor the results on an ongoing basis. You can create a saved search for anything, including diffs and commits across all branches of your repositories.
 
-Saved searches can be an early warning system for common problems in your code--and a way to monitor best practices, the progress of refactors, etc. Alerts for saved searches can be sent through email or Slack, ensuring you're aware of important code changes.
+Saved searches can be an early warning system for common problems in your code--and a way to monitor best practices, the progress of refactors, etc. Alerts for saved searches can be sent through email, ensuring you're aware of important code changes.
 
 ---
 
 ## Example saved searches
 
-* Recent security-related changes on all branches                            
-  * `type:diff repo:@*refs/heads/ after:"5 days ago" \b(auth[^o][^r]|security\b|cve|password|secure|unsafe|perms|permissions)`  
-* Admitted hacks and TODOs in app code                                       
-  * `-file:\.(json|md|txt)$ hack|todo|kludge|fixme`                                                                             
-* New usages of a function                                                   
-  * `type:diff after:"1 week ago" onDidAddNewMethod\(`                                                                          
+* Recent security-related changes on all branches
+  * `type:diff repo:@*refs/heads/ after:"5 days ago" \b(auth[^o][^r]|security\b|cve|password|secure|unsafe|perms|permissions)`
+* Admitted hacks and TODOs in app code
+  * `-file:\.(json|md|txt)$ hack|todo|kludge|fixme`
+* New usages of a function
+  * `type:diff after:"1 week ago" onDidAddNewMethod\(`
 * Recent quality related changes on all branches (customize for your linters)
-  * `repo:@*refs/heads/:^master type:diff after:"1 week ago" (tslint:disable)`                                                  
-* Recent dependency changes                                                  
-  * `file:package.json type:diff after:"1 week ago"`                                                                            
+  * `repo:@*refs/heads/:^master type:diff after:"1 week ago" (tslint:disable)`
+* Recent dependency changes
+  * `file:package.json type:diff after:"1 week ago"`
 
 ## Built-in searches
 
@@ -61,19 +61,12 @@ To view saved searches, go to **User menu > Saved searches** in the top navigati
 
 ---
 
-## Configuring email and Slack notifications
+## Configuring email notifications
 
-Sourcegraph can automatically run your saved searches and notify you when new results are available via email and/or Slack. With this feature you can get notified about issues in your code (such as licensing issues, security changes, potential secrets being committed, etc.)
+Sourcegraph can automatically run your saved searches and notify you when new results are available via email. With this feature you can get notified about issues in your code (such as licensing issues, security changes, potential secrets being committed, etc.)
 
-To configure email or Slack notifications, click **Edit** on a saved search and check the **Email notifications** or **Slack notifications** checkbox and press **Save**. You will receive a notification telling you it is set up and working almost instantly!
+To configure email notifications, click **Edit** on a saved search and check the **Email notifications** checkbox and press **Save**. You will receive a notification telling you it is set up and working almost instantly!
 
-### Advanced notification configuration
-
-By default, email notifications notify the owner of the configuration (either a single user or the entire org). Slack notifications notify an entire org (via its configured Slack webhook).
-
-However, it is possible to create more advanced configurations, by using the following options in saved searches section of the user or org configuration:
-
-1.  `notify` (same as **Email notifications** checkbox), whether or not to notify the configuration owner (single user or entire org) via email.
-1.  `notifySlack` (same as **Slack notifications** checkbox), whether or not orgs that are notified will be notified via their configured Slack webhook.
+By default, email notifications notify the owner of the configuration (either a single user or the entire org).
 
 ---
