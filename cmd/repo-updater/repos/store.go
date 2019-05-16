@@ -10,6 +10,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -28,8 +29,6 @@ type Store interface {
 
 // StoreListReposArgs is a query arguments type used by
 // the ListRepos method of Store implementations.
-//
-// Each defined argument must map to a disjunct (i.e. AND) filter predicate.
 type StoreListReposArgs struct {
 	// Names of repos to list. When zero-valued, this is omitted from the predicate set.
 	Names []string
@@ -37,10 +36,15 @@ type StoreListReposArgs struct {
 	IDs []uint32
 	// Kinds of repos to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
+	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
+	ExternalRepos []api.ExternalRepoSpec
 	// Limit the total number of repos returned. Zero means no limit
 	Limit int64
 	// PerPage determines the number of repos returned on each page. Zero means it defaults to 10000.
 	PerPage int64
+
+	// UseOr decides between ANDing or ORing the predicates together.
+	UseOr bool
 }
 
 // StoreListExternalServicesArgs is a query arguments type used by
@@ -299,6 +303,7 @@ SELECT
 FROM repo
 WHERE id > %s
 AND %s
+AND deleted_at IS NULL
 ORDER BY id ASC LIMIT %s
 `
 
@@ -332,13 +337,30 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 			sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ",")))
 	}
 
-	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
+	if len(args.ExternalRepos) > 0 {
+		er := make([]*sqlf.Query, 0, len(args.ExternalRepos))
+		for _, spec := range args.ExternalRepos {
+			er = append(er, sqlf.Sprintf("(external_id = NULLIF(BTRIM(%s), '') AND external_service_type = NULLIF(BTRIM(%s), '') AND external_service_id = NULLIF(BTRIM(%s), ''))", spec.ID, spec.ServiceType, spec.ServiceID))
+		}
+		preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	var predQ *sqlf.Query
+	if args.UseOr {
+		predQ = sqlf.Join(preds, "\n OR ")
+	} else {
+		predQ = sqlf.Join(preds, "\n AND ")
+	}
 
 	return func(cursor, limit int64) *sqlf.Query {
 		return sqlf.Sprintf(
 			listReposQueryFmtstr,
 			cursor,
-			sqlf.Join(preds, "\n AND "),
+			sqlf.Sprintf("(%s)", predQ),
 			limit,
 		)
 	}

@@ -706,6 +706,17 @@ func (rs Repos) Kinds() (kinds []string) {
 	return kinds
 }
 
+// ExternalRepos returns the list of set ExternalRepoSpecs from all Repos.
+func (rs Repos) ExternalRepos() []api.ExternalRepoSpec {
+	specs := make([]api.ExternalRepoSpec, 0, len(rs))
+	for _, r := range rs {
+		if r.ExternalRepo.IsSet() {
+			specs = append(specs, r.ExternalRepo)
+		}
+	}
+	return specs
+}
+
 func (rs Repos) Len() int {
 	return len(rs)
 }

@@ -569,7 +569,8 @@ func apiExternalServices(es ...*repos.ExternalService) []api.ExternalService {
 }
 
 func TestRepoLookup(t *testing.T) {
-	now := time.Now().UTC()
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
 
 	githubRepository := &repos.Repo{
 		Name:        "github.com/foo/bar",
@@ -579,6 +580,7 @@ func TestRepoLookup(t *testing.T) {
 		Archived:    false,
 		Fork:        false,
 		CreatedAt:   now,
+		UpdatedAt:   now,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 			ServiceType: "github",
@@ -777,7 +779,8 @@ func TestRepoLookup(t *testing.T) {
 			store := new(repos.FakeStore)
 			must(store.UpsertRepos(ctx, tc.stored.Clone()...))
 
-			s := &Server{Syncer: &repos.Syncer{}, Store: store}
+			syncer := repos.NewSyncer(store, nil, nil, clock.Now)
+			s := &Server{Syncer: syncer, Store: store}
 			if tc.githubDotComSource != nil {
 				s.GithubDotComSource = tc.githubDotComSource
 			}

@@ -326,7 +326,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return nil, err
 		}
 
-		err = s.Store.UpsertRepos(ctx, repo)
+		_, err = s.Syncer.SyncSubset(ctx, repo)
 		if err != nil {
 			return nil, err
 		}

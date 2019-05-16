@@ -101,6 +101,47 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err erro
 	return diff, nil
 }
 
+// SyncSubset runs the syncer on a subset of the stored repositories. It will
+// only sync the repositories with the same name or external service spec as
+// sourcedSubset repositories.
+func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (diff Diff, err error) {
+	ctx, save := s.observe(ctx, "Syncer.SyncSubset", strings.Join(Repos(sourcedSubset).Names(), " "))
+	defer save(&diff, &err)
+
+	store := s.store
+	if tr, ok := s.store.(Transactor); ok {
+		var txs TxStore
+		if txs, err = tr.Transact(ctx); err != nil {
+			return Diff{}, errors.Wrap(err, "syncer.syncsubset.transact")
+		}
+		defer txs.Done(&err)
+		store = txs
+	}
+
+	var storedSubset Repos
+	args := StoreListReposArgs{
+		Names:         Repos(sourcedSubset).Names(),
+		ExternalRepos: Repos(sourcedSubset).ExternalRepos(),
+		UseOr:         true,
+	}
+	if storedSubset, err = store.ListRepos(ctx, args); err != nil {
+		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.list-repos")
+	}
+
+	diff = NewDiff(sourcedSubset, storedSubset)
+	upserts := s.upserts(diff)
+
+	if err = store.UpsertRepos(ctx, upserts...); err != nil {
+		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-repos")
+	}
+
+	if s.diffs != nil {
+		s.diffs <- diff
+	}
+
+	return diff, nil
+}
+
 func (s *Syncer) upserts(diff Diff) []*Repo {
 	now := s.now()
 	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Deleted)+len(diff.Modified))
