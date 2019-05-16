@@ -194,14 +194,33 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		ids[id] = true
 	}
 
+	externalRepos := make(map[api.ExternalRepoSpec]bool, len(args.ExternalRepos))
+	for _, spec := range args.ExternalRepos {
+		externalRepos[spec] = true
+	}
+
 	set := make(map[*Repo]bool, len(s.repoByID))
 	repos := make(Repos, 0, len(s.repoByID))
 	for _, r := range s.repoByID {
-		if !set[r] &&
-			(len(kinds) == 0 || kinds[strings.ToLower(r.ExternalRepo.ServiceType)]) &&
-			(len(names) == 0 || names[r.Name]) &&
-			(len(ids) == 0 || ids[r.ID]) {
+		if set[r] {
+			continue
+		}
 
+		var preds []bool
+		if len(kinds) > 0 {
+			preds = append(preds, kinds[strings.ToLower(r.ExternalRepo.ServiceType)])
+		}
+		if len(names) > 0 {
+			preds = append(preds, names[r.Name])
+		}
+		if len(ids) > 0 {
+			preds = append(preds, ids[r.ID])
+		}
+		if len(externalRepos) > 0 {
+			preds = append(preds, externalRepos[r.ExternalRepo])
+		}
+
+		if (args.UseOr && evalOr(preds...)) || (!args.UseOr && evalAnd(preds...)) {
 			repos = append(repos, r)
 			set[r] = true
 		}
@@ -215,6 +234,27 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 	}
 
 	return repos, nil
+}
+
+func evalOr(bs ...bool) bool {
+	if len(bs) == 0 {
+		return true
+	}
+	for _, b := range bs {
+		if b {
+			return true
+		}
+	}
+	return false
+}
+
+func evalAnd(bs ...bool) bool {
+	for _, b := range bs {
+		if !b {
+			return false
+		}
+	}
+	return true
 }
 
 // UpsertRepos upserts all the given repos in the store.
@@ -244,11 +284,11 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 	}
 
 	for _, r := range updates {
-		if repo := s.repoByID[r.ID]; repo == nil {
-			inserts = append(inserts, r)
-		} else {
-			repo.Update(r)
+		repo := s.repoByID[r.ID]
+		if repo == nil {
+			return errors.Errorf("upserting repo with non-existant ID: id=%v", r.ID)
 		}
+		repo.Update(r)
 	}
 
 	for _, r := range inserts {
