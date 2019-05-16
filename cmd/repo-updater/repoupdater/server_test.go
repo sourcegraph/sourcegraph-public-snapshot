@@ -722,6 +722,33 @@ func TestRepoLookup(t *testing.T) {
 			assert: repos.Assert.ReposEqual(githubRepository),
 		},
 		{
+			name: "found - GitHub.com on Sourcegraph.com already exists",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			stored: []*repos.Repo{githubRepository},
+			githubDotComSource: &fakeGithubDotComSource{
+				repo: githubRepository,
+			},
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ExternalRepo: &api.ExternalRepoSpec{
+					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					ServiceType: github.ServiceType,
+					ServiceID:   "https://github.com/",
+				},
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				Links: &protocol.RepoLinks{
+					Root:   "github.com/foo/bar",
+					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+					Commit: "github.com/foo/bar/commit/{commit}",
+				},
+			}},
+			assert: repos.Assert.ReposEqual(githubRepository),
+		},
+		{
 			name: "not found - GitHub.com on Sourcegraph.com",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
@@ -777,7 +804,10 @@ func TestRepoLookup(t *testing.T) {
 			ctx := context.Background()
 
 			store := new(repos.FakeStore)
-			must(store.UpsertRepos(ctx, tc.stored.Clone()...))
+			err := store.UpsertRepos(ctx, tc.stored.Clone()...)
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			syncer := repos.NewSyncer(store, nil, nil, clock.Now)
 			s := &Server{Syncer: syncer, Store: store}
@@ -824,7 +854,7 @@ type fakeGithubDotComSource struct {
 }
 
 func (s *fakeGithubDotComSource) GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error) {
-	return s.repo, s.err
+	return s.repo.Clone(), s.err
 }
 
 func formatJSON(s string) string {

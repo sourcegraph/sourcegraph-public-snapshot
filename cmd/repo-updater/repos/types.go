@@ -650,6 +650,9 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 
 // Clone returns a clone of the given repo.
 func (r *Repo) Clone() *Repo {
+	if r == nil {
+		return nil
+	}
 	clone := *r
 	return &clone
 }
