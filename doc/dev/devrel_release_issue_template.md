@@ -1,0 +1,61 @@
+<!--
+This template is used for tracking DevRel activities for our monthly major/minor release of Sourcegraph.
+-->
+
+# DevRel MAJOR.MINOR Release (YYYY-MM-20)
+
+<!-- 
+  Once created, link the blog post pull request, email, and tweet for this release.
+-->
+
+- [ ] [Release blog post](#)
+- [ ] [Release email](#)
+- [ ] [Release tweet](#)
+
+## At the start of the month (YYYY-MM-01)
+
+- [ ] Add events to the shared Release Schedule calendar in Google and invite team@sourcegraph.com:
+  - [ ] Blog post first draft ready (5 business days before release)
+  - [ ] Publish blog post, email and tweet (10am day of release unless agreed otherwise)
+- [ ] Create draft blog post Google doc in [Sourcegraph shared](https://drive.google.com/drive/u/0/folders/0B3lEU2lM-l9gUk5sNmRSMVFHVFU)
+  - [ ] View each [team's release deliverables](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+milestone%3A{MAJOR}.{MINOR}+label%3Aroadmap) to generate the outline of the blog post
+  - [ ] Share link to blog post doc in #progress Slack channel, asking Team leads to review
+- [ ] Create draft tweet
+- [ ] Create draft email
+- [ ] Link to the blog post, email and tweet <!-- top of this file -->
+
+## In the first week
+
+- [ ] Confirm with each team that the planned deliverables are still on track
+- [ ] Fill out each section based on the deliverables to first draft quality
+- [ ] Think about what media (e.g. screenshot, screencast) will accompany the section content
+
+## In the second week
+
+- [ ] Get feedback on the blog post from teams and product in order to finalize changes
+- [ ] Tweet written
+- [ ] Email written
+- [ ] Export blog post from Google docs to Markdown and create a new branch and draft pull request in [sourcegraph/about](https://github.com/sourcegraph/about/), using the [release blog post template](https://github.com/sourcegraph/about/blob/master/RELEASE_BLOG_POST_TEMPLATE.md)
+- [ ] Send blog post, and email to [copy editor](https://docs.google.com/spreadsheets/d/1UUSSWrS8aKsLEg7M3Qdzw9s0GLJCI1eCrSJI06Qofb0/edit#gid=0_)
+
+## 5 working days before release
+
+- [ ] Start producing screenshots, diagrams, and screencasts for each blog post section
+
+## 3 working days before release
+
+- [ ] Check for any last minute release changes that affect the blog post, e.g. last minute feature removal
+- [ ] Finalize screenshots, diagrams, and screencasts
+- [ ] Blog post approved
+- [ ] Email approved
+- [ ] Tweet approved
+
+## Day of release
+
+- [ ] Publish blog post once the final release is cut, and docs version change is deployed
+- [ ] Publish tweet:
+  - [ ] Pin new release tweet
+  - [ ] Confirm with Product if tweet will be promoted
+- [ ] Send email in HubSpot
+- [ ] Create new `motd` in [Sourcegraph.com global settings](https://sourcegraph.com/site-admin/global-settings)
+- [ ] Put notification in #dev-rel Slack channel with links to blog post and tweet
