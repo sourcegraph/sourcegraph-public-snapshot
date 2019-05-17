@@ -228,15 +228,22 @@ func (p *Provider) fetchAndSetUserRepos(ctx context.Context, userAccount *extsvc
 		return nil, nil
 	}
 
+	repoIDs := make([]string, len(repos))
+	i := 0
+	for repo := range repos {
+		repoIDs[i] = repo.ID
+		i++
+	}
+
+	canAccess, isPublic, err := p.fetchUserRepos(ctx, userAccount, repoIDs)
+	if err != nil {
+		return nil, err
+	}
 	userRepos := make(map[string]bool)
 	publicRepos := make(map[string]bool)
 	for r := range repos {
-		canAccess, isPublic, err := p.fetchUserRepo(ctx, userAccount, r.ExternalRepoSpec.ID)
-		if err != nil {
-			return nil, err
-		}
-		userRepos[r.ExternalRepoSpec.ID] = canAccess
-		publicRepos[r.ExternalRepoSpec.ID] = isPublic
+		userRepos[r.ExternalRepoSpec.ID] = canAccess[r.ExternalRepoSpec.ID]
+		publicRepos[r.ExternalRepoSpec.ID] = isPublic[r.ExternalRepoSpec.ID]
 	}
 
 	if err := p.setCachedUserRepos(ctx, userAccount, userRepos); err != nil {
@@ -313,6 +320,41 @@ func (p *Provider) getCachedUserRepos(ctx context.Context, userAccount *extsvc.E
 		cachedIsAllowed[repoList[i]] = val.Read
 	}
 	return cachedIsAllowed, nil
+}
+
+func (p *Provider) fetchUserRepos(ctx context.Context, userAccount *extsvc.ExternalAccount, repoIDs []string) (canAccess map[string]bool, isPublic map[string]bool, err error) {
+	_, tok, err := github.GetExternalAccountData(&userAccount.ExternalAccountData)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Batch fetch repos from API
+	ghRepos := make(map[string]*github.Repository)
+	for i := 0; i < len(repoIDs); i += github.MaxNodeIDs {
+		j := i + github.MaxNodeIDs
+		if j > len(repoIDs) {
+			j = len(repoIDs)
+		}
+		ghReposBatch, err := p.client.GetRepositoriesByNodeIDFromAPI(ctx, tok.AccessToken, repoIDs[i:j])
+		if err != nil {
+			return nil, nil, err
+		}
+		for k, v := range ghReposBatch {
+			ghRepos[k] = v
+		}
+	}
+
+	isPublic = make(map[string]bool)
+	for _, r := range ghRepos {
+		isPublic[r.ID] = !r.IsPrivate
+	}
+	canAccess = make(map[string]bool)
+	for _, rid := range repoIDs {
+		_, exists := ghRepos[rid]
+		canAccess[rid] = exists
+	}
+
+	return canAccess, isPublic, nil
 }
 
 // fetchUserRepo fetches whether the given user can access the given repo from the GitHub API.
