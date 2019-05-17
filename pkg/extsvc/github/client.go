@@ -253,7 +253,11 @@ func (c *Client) requestGraphQL(ctx context.Context, token, query string, vars m
 		return err
 	}
 
-	req, err := http.NewRequest("POST", "/graphql", bytes.NewReader(reqBody))
+	graphqlEndpoint := "/graphql"
+	if !c.githubDotCom {
+		graphqlEndpoint = "../graphql"
+	}
+	req, err := http.NewRequest("POST", graphqlEndpoint, bytes.NewReader(reqBody))
 	if err != nil {
 		return err
 	}
