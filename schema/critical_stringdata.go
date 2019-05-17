@@ -8,6 +8,7 @@ const CriticalSchemaJSON = `{
   "$id": "critical.schema.json#",
   "title": "Critical configuration",
   "description": "Critical configuration for a Sourcegraph site.",
+  "allowComments": true,
   "type": "object",
   "additionalProperties": false,
   "properties": {
