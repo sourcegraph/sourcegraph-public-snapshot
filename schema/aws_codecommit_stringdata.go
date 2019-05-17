@@ -8,6 +8,7 @@ const AWSCodeCommitSchemaJSON = `{
   "$id": "aws_codecommit.schema.json#",
   "title": "AWSCodeCommitConnection",
   "description": "Configuration for a connection to AWS CodeCommit.",
+  "allowComments": true,
   "type": "object",
   "additionalProperties": false,
   "required": ["region", "accessKeyID", "secretAccessKey", "gitCredentials"],
