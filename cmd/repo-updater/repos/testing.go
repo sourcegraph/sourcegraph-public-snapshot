@@ -63,10 +63,15 @@ type FakeStore struct {
 	repoIDSeq uint32
 	svcByID   map[int64]*ExternalService
 	repoByID  map[uint32]*Repo
+	parent    *FakeStore
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
 func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
+	if s.parent != nil {
+		return nil, errors.New("already in transaction")
+	}
+
 	svcByID := make(map[int64]*ExternalService, len(s.svcByID))
 	for id, svc := range s.svcByID {
 		svcByID[id] = svc.Clone()
@@ -89,12 +94,22 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 		svcByID:   svcByID,
 		repoIDSeq: s.repoIDSeq,
 		repoByID:  repoByID,
+		parent:    s,
 	}, nil
 }
 
 // Done fakes the implementation of a TxStore's Done method by always discarding all state
 // changes made during the transaction.
-func (s *FakeStore) Done(...*error) {}
+func (s *FakeStore) Done(e ...*error) {
+	if len(e) > 0 && e[0] != nil && *e[0] != nil {
+		return
+	}
+
+	// Transaction succeeded. Copy maps into parent
+	p := s.parent
+	s.parent = nil
+	*p = *s
+}
 
 // ListExternalServices lists all stored external services that match the given args.
 func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
@@ -194,14 +209,33 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		ids[id] = true
 	}
 
+	externalRepos := make(map[api.ExternalRepoSpec]bool, len(args.ExternalRepos))
+	for _, spec := range args.ExternalRepos {
+		externalRepos[spec] = true
+	}
+
 	set := make(map[*Repo]bool, len(s.repoByID))
 	repos := make(Repos, 0, len(s.repoByID))
 	for _, r := range s.repoByID {
-		if !set[r] &&
-			(len(kinds) == 0 || kinds[strings.ToLower(r.ExternalRepo.ServiceType)]) &&
-			(len(names) == 0 || names[r.Name]) &&
-			(len(ids) == 0 || ids[r.ID]) {
+		if set[r] {
+			continue
+		}
 
+		var preds []bool
+		if len(kinds) > 0 {
+			preds = append(preds, kinds[strings.ToLower(r.ExternalRepo.ServiceType)])
+		}
+		if len(names) > 0 {
+			preds = append(preds, names[r.Name])
+		}
+		if len(ids) > 0 {
+			preds = append(preds, ids[r.ID])
+		}
+		if len(externalRepos) > 0 {
+			preds = append(preds, externalRepos[r.ExternalRepo])
+		}
+
+		if (args.UseOr && evalOr(preds...)) || (!args.UseOr && evalAnd(preds...)) {
 			repos = append(repos, r)
 			set[r] = true
 		}
@@ -215,6 +249,27 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 	}
 
 	return repos, nil
+}
+
+func evalOr(bs ...bool) bool {
+	if len(bs) == 0 {
+		return true
+	}
+	for _, b := range bs {
+		if b {
+			return true
+		}
+	}
+	return false
+}
+
+func evalAnd(bs ...bool) bool {
+	for _, b := range bs {
+		if !b {
+			return false
+		}
+	}
+	return true
 }
 
 // UpsertRepos upserts all the given repos in the store.
@@ -244,11 +299,11 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 	}
 
 	for _, r := range updates {
-		if repo := s.repoByID[r.ID]; repo == nil {
-			inserts = append(inserts, r)
-		} else {
-			repo.Update(r)
+		repo := s.repoByID[r.ID]
+		if repo == nil {
+			return errors.Errorf("upserting repo with non-existant ID: id=%v", r.ID)
 		}
+		repo.Update(r)
 	}
 
 	for _, r := range inserts {
@@ -257,6 +312,29 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 		s.repoByID[r.ID] = r
 	}
 
+	return s.checkConstraints()
+}
+
+// checkConstraints ensures the FakeStore has not violated any constraints we
+// maintain on our DB.
+//
+// Constraints:
+// - name is unique case insensitively
+// - external repo is unique if set
+func (s *FakeStore) checkConstraints() error {
+	seenName := map[string]bool{}
+	seenExternalRepo := map[api.ExternalRepoSpec]bool{}
+	for _, r := range s.repoByID {
+		name := strings.ToLower(r.Name)
+		if seenName[name] {
+			return errors.Errorf("duplicate repo name: %s", name)
+		}
+		seenName[name] = true
+		if r.ExternalRepo.IsSet() && seenExternalRepo[r.ExternalRepo] {
+			return errors.Errorf("duplicate external repo spec: %v", r.ExternalRepo)
+		}
+		seenExternalRepo[r.ExternalRepo] = true
+	}
 	return nil
 }
 

@@ -356,6 +356,68 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
+				name: "repo inserted with same name as another repo that gets deleted",
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(tc.svc.Clone(), nil,
+						tc.repo,
+					),
+				),
+				store: s,
+				stored: repos.Repos{
+					tc.repo.With(repos.Opt.RepoExternalID("another-id")),
+				},
+				now: clock.Now,
+				diff: repos.Diff{
+					Added: repos.Repos{
+						tc.repo.With(
+							repos.Opt.RepoCreatedAt(clock.Time(1)),
+							repos.Opt.RepoModifiedAt(clock.Time(1)),
+						),
+					},
+					Deleted: repos.Repos{
+						tc.repo.With(func(r *repos.Repo) {
+							r.ExternalRepo.ID = "another-id"
+							r.Sources = map[string]*repos.SourceInfo{}
+							r.DeletedAt = clock.Time(0)
+							r.UpdatedAt = clock.Time(0)
+						}),
+					},
+				},
+				err: "<nil>",
+			},
+			testCase{
+				name: "repo inserted with same name as repo without id",
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(tc.svc.Clone(), nil,
+						tc.repo,
+					),
+				),
+				store: s,
+				stored: repos.Repos{
+					tc.repo.With(repos.Opt.RepoName("old-name")), // same external id as sourced
+					tc.repo.With(repos.Opt.RepoExternalID("")),   // same name as sourced
+				}.With(repos.Opt.RepoCreatedAt(clock.Time(1))),
+				now: clock.Now,
+				diff: repos.Diff{
+					Modified: repos.Repos{
+						tc.repo.With(
+							repos.Opt.RepoCreatedAt(clock.Time(1)),
+							repos.Opt.RepoModifiedAt(clock.Time(1)),
+						),
+					},
+					Deleted: repos.Repos{
+						tc.repo.With(func(r *repos.Repo) {
+							r.ExternalRepo.ID = ""
+							r.Sources = map[string]*repos.SourceInfo{}
+							r.DeletedAt = clock.Time(0)
+							r.UpdatedAt = clock.Time(0)
+							r.CreatedAt = clock.Time(0)
+						}),
+					},
+				},
+				err: "<nil>",
+			},
+			testCase{
 				name:    "renamed repo which was deleted is detected and added",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   s,
@@ -514,6 +576,137 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{})
 					repos.Assert.ReposEqual(want...)(t, have)
 				}
+			}))
+		}
+	}
+}
+
+func TestSync_SyncSubset(t *testing.T) {
+	t.Parallel()
+
+	testSyncSubset(new(repos.FakeStore))(t)
+}
+
+func testSyncSubset(s repos.Store) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), time.Second)
+
+	repo := &repos.Repo{
+		ID:          0, // explicitly make default value for sourced repo
+		Name:        "github.com/foo/bar",
+		Description: "The description",
+		Language:    "barlang",
+		Enabled:     true,
+		Archived:    false,
+		Fork:        false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			ServiceType: "github",
+			ServiceID:   "https://github.com/",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:123": {
+				ID:       "extsvc:123",
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+		Metadata: &github.Repository{
+			ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			URL:           "github.com/foo/bar",
+			DatabaseID:    1234,
+			Description:   "The description",
+			NameWithOwner: "foo/bar",
+		},
+	}
+
+	testCases := []struct {
+		name    string
+		sourced repos.Repos
+		stored  repos.Repos
+		assert  repos.ReposAssertion
+	}{{
+		name:   "no sourced",
+		stored: repos.Repos{repo.With(repos.Opt.RepoCreatedAt(clock.Time(2)))},
+		assert: repos.Assert.ReposEqual(repo.With(repos.Opt.RepoCreatedAt(clock.Time(2)))),
+	}, {
+		name:    "insert",
+		sourced: repos.Repos{repo},
+		assert:  repos.Assert.ReposEqual(repo.With(repos.Opt.RepoCreatedAt(clock.Time(2)))),
+	}, {
+		name:    "update",
+		sourced: repos.Repos{repo},
+		stored:  repos.Repos{repo.With(repos.Opt.RepoCreatedAt(clock.Time(2)))},
+		assert: repos.Assert.ReposEqual(repo.With(
+			repos.Opt.RepoModifiedAt(clock.Time(2)),
+			repos.Opt.RepoCreatedAt(clock.Time(2)))),
+	}, {
+		name:    "update name",
+		sourced: repos.Repos{repo},
+		stored: repos.Repos{repo.With(
+			repos.Opt.RepoName("old/name"),
+			repos.Opt.RepoCreatedAt(clock.Time(2)))},
+		assert: repos.Assert.ReposEqual(repo.With(
+			repos.Opt.RepoModifiedAt(clock.Time(2)),
+			repos.Opt.RepoCreatedAt(clock.Time(2)))),
+	}, {
+		name:    "delete conflicting name",
+		sourced: repos.Repos{repo},
+		stored: repos.Repos{repo.With(
+			repos.Opt.RepoExternalID("old id"),
+			repos.Opt.RepoCreatedAt(clock.Time(2)))},
+		assert: repos.Assert.ReposEqual(repo.With(
+			repos.Opt.RepoCreatedAt(clock.Time(2)))),
+	}, {
+		name:    "rename and delete conflicting name",
+		sourced: repos.Repos{repo},
+		stored: repos.Repos{
+			repo.With(
+				repos.Opt.RepoExternalID("old id"),
+				repos.Opt.RepoCreatedAt(clock.Time(2))),
+			repo.With(
+				repos.Opt.RepoName("old name"),
+				repos.Opt.RepoCreatedAt(clock.Time(2))),
+		},
+		assert: repos.Assert.ReposEqual(repo.With(
+			repos.Opt.RepoCreatedAt(clock.Time(2)))),
+	}}
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		for _, tc := range testCases {
+			if tc.name == "" {
+				continue
+			}
+
+			tc := tc
+			ctx := context.Background()
+
+			t.Run(tc.name, transact(ctx, s, func(t testing.TB, st repos.Store) {
+				defer func() {
+					if err := recover(); err != nil {
+						t.Fatalf("%q panicked: %v", tc.name, err)
+					}
+				}()
+
+				if len(tc.stored) > 0 {
+					if err := st.UpsertRepos(ctx, tc.stored.Clone()...); err != nil {
+						t.Fatalf("failed to prepare store: %v", err)
+					}
+				}
+
+				clock := clock
+				syncer := repos.NewSyncer(st, nil, nil, clock.Now)
+				_, err := syncer.SyncSubset(ctx, tc.sourced.Clone()...)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, err := st.ListRepos(ctx, repos.StoreListReposArgs{})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				tc.assert(t, have)
 			}))
 		}
 	}
