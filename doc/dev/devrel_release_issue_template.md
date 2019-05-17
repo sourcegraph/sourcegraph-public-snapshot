@@ -32,7 +32,7 @@ This template is used for tracking DevRel activities for our monthly major/minor
 
 ## In the second week
 
-- [ ] Get feedback on the blog post from teams and product in order to finalize changes
+- [ ] Post the blog post draft to #dev-announce: `The blog post draft for <VERSION> is ready, please review your parts are accurate and provide feedback by <DATE>: <link>
 - [ ] Tweet written
 - [ ] Email written
 - [ ] Export blog post from Google docs to Markdown and create a new branch and draft pull request in [sourcegraph/about](https://github.com/sourcegraph/about/), using the [release blog post template](https://github.com/sourcegraph/about/blob/master/RELEASE_BLOG_POST_TEMPLATE.md)
