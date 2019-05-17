@@ -35,6 +35,7 @@ This template is used for tracking DevRel activities for our monthly major/minor
 - [ ] Post the blog post draft to #dev-announce: `The blog post draft for <VERSION> is ready, please review your parts are accurate and provide feedback by <DATE>: <link>
 - [ ] Tweet written
 - [ ] Email written
+- [ ] Write a warning at the top of the Google doc: `The blog post has been finalized and moved to Markdown, further changes here will not be reflected. Contact @ryan-blunden for suggestions.`
 - [ ] Export blog post from Google docs to Markdown and create a new branch and draft pull request in [sourcegraph/about](https://github.com/sourcegraph/about/), using the [release blog post template](https://github.com/sourcegraph/about/blob/master/RELEASE_BLOG_POST_TEMPLATE.md)
 - [ ] Send blog post, and email to [copy editor](https://docs.google.com/spreadsheets/d/1UUSSWrS8aKsLEg7M3Qdzw9s0GLJCI1eCrSJI06Qofb0/edit#gid=0_)
 
