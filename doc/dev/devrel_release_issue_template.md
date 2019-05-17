@@ -2,7 +2,7 @@
 This template is used for tracking DevRel activities for our monthly major/minor release of Sourcegraph.
 -->
 
-# DevRel MAJOR.MINOR Release (YYYY-MM-20)
+# MAJOR.MINOR Release: DevRel tasks
 
 <!-- 
   Once created, link the blog post pull request, email, and tweet for this release.
@@ -14,15 +14,21 @@ This template is used for tracking DevRel activities for our monthly major/minor
 
 ## At the start of the month (YYYY-MM-01)
 
-- [ ] Add events to the shared Release Schedule calendar in Google and invite team@sourcegraph.com:
-  - [ ] Blog post first draft ready (5 business days before release)
-  - [ ] Publish blog post, email and tweet (10am day of release unless agreed otherwise)
 - [ ] Create draft blog post Google doc in [Sourcegraph shared](https://drive.google.com/drive/u/0/folders/0B3lEU2lM-l9gUk5sNmRSMVFHVFU)
   - [ ] View each [team's release deliverables](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+milestone%3A{MAJOR}.{MINOR}+label%3Aroadmap) to generate the outline of the blog post
   - [ ] Share link to blog post doc in #progress Slack channel, asking Team leads to review
+
 - [ ] Create draft tweet
 - [ ] Create draft email
-- [ ] Link to the blog post, email and tweet <!-- top of this file -->
+- [ ] Link to the blog post, email and tweet <!-- empty links are the top of the issue template>
+
+### Create calendar events
+
+Add events to the shared Release Schedule calendar in Google and invite team@sourcegraph.com:
+
+- [ ] Blog post draft ready for review (5 days before release)
+- [ ] Final blog post changes/suggestions must be submitted (3 days before the release)
+- [ ] Blog post / tweets go live (the specific date we plan to do this, often not the 20th when it is a Friday).
 
 ## In the first week
 
