@@ -8,6 +8,7 @@ const GitHubSchemaJSON = `{
   "$id": "github.schema.json#",
   "title": "GitHubConnection",
   "description": "Configuration for a connection to GitHub or GitHub Enterprise.",
+  "allowComments": true,
   "type": "object",
   "additionalProperties": false,
   "required": ["url", "token", "repositoryQuery"],

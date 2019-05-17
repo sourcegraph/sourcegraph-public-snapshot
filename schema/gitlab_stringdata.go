@@ -8,6 +8,7 @@ const GitLabSchemaJSON = `{
   "$id": "gitlab.schema.json#",
   "title": "GitLabConnection",
   "description": "Configuration for a connection to GitLab (GitLab.com or GitLab self-managed).",
+  "allowComments": true,
   "type": "object",
   "additionalProperties": false,
   "required": ["url", "token", "projectQuery"],

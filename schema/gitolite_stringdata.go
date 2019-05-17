@@ -8,6 +8,7 @@ const GitoliteSchemaJSON = `{
   "$id": "gitolite.schema.json#",
   "title": "GitoliteConnection",
   "description": "Configuration for a connection to Gitolite.",
+  "allowComments": true,
   "type": "object",
   "additionalProperties": false,
   "required": ["prefix", "host"],

@@ -8,6 +8,7 @@ const SiteSchemaJSON = `{
   "$id": "site.schema.json#",
   "title": "Site configuration",
   "description": "Configuration for a Sourcegraph site.",
+  "allowComments": true,
   "type": "object",
   "additionalProperties": false,
   "properties": {
