@@ -218,7 +218,11 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 			}
 			var names []string
 			for _, info := range infos {
-				names = append(names, info.Name())
+				name := info.Name()
+				if info.IsDir() {
+					name = name + "/"
+				}
+				names = append(names, name)
 			}
 			result := strings.Join(names, "\n")
 			fmt.Fprintf(w, "%s", template.HTMLEscapeString(result))
