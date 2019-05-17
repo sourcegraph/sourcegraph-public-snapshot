@@ -55,7 +55,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where in some rare cases PostgreSQL starting up slowly could incorrectly trigger a panic in the `frontend` service.
 - Fixed an issue where the management console password would incorrectly reset to a new secure one after a user account was created.
 - Fixed a bug where gitserver would leak file descriptors when performing common operations.
-- Substantially improved the performance of updating external service configurations on instances with thousands of repositories, going from e.g. several minutes to about a minute for ~20k repositories.
+- Substantially improved the performance of updating Bitbucket Server external service configurations on instances with thousands of repositories, going from e.g. several minutes to about a minute for ~20k repositories (#4037).
 - Fully resolved the search performance regression in v3.2.0, restoring performance of search back to the same levels it was before changes made in v3.2.0.
 
 ## 3.3.7
