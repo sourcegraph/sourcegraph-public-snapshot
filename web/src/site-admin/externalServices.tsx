@@ -213,12 +213,12 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
   // See https://help.github.com/en/articles/searching-for-repositories for the list of search qualifiers.
   "repositoryQuery": [
   // "org:<name>" // set this to "none" to disable querying
-  ]
+  ],
 
   // repos: Explicit list of repositories to select
   // "repos": [
   //   "<owner>/<repository>"
-  // ]
+  // ],
 
   // exclude: Repositories to exclude (overrides repositories from repositoryQuery and repos)
   // "exclude": [
@@ -250,7 +250,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   "gitCredentials": {
     "username": "<username>",
     "password": "<password>"
-  }
+  },
 
   // Repositories to exclude by name ({"name": "git-codecommit.us-west-1.amazonaws.com/repo-name"})
   // or by ARN ({"id": "arn:aws:codecommit:us-west-1:999999999999:name"})
@@ -307,7 +307,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
         jsonSchema: bitbucketServerSchemaJSON,
         defaultDisplayName: 'Bitbucket Server',
         defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-// Bitbucket Server external service docs: https://docs.sourcegraph.com/admin/external_service/aws_codecommit#configuration
+// Bitbucket Server external service docs: https://docs.sourcegraph.com/admin/external_service/bitbucket_server#configuration
 {
   "url": "https://bitbucket.example.com",
 
@@ -331,12 +331,12 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   // https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
   "repositoryQuery": [
   //   "?name=<repo>\u0026projectname=<project>" // set this to "none" to disable querying
-  ]
+  ],
 
   // repos: Explicit list of repositories to select
   // "repos": [
   //   "<project/<repository>"
-  // ]
+  // ],
 
   // exclude: Repositories to exclude (overrides repositories from repositoryQuery and repos)
   // "exclude": [
@@ -431,13 +431,13 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   // of queries.
   "projectQuery": [
   //   "?archived=no\u0026visibility=private" // set this to "none" to disable querying
-  ]
+  ],
 
   // projects: Project repositories to select.  Supports name: {"name": "group/name"}, or ID: {"id": 42})
   // "projects": [
   //   { "name": "<group>/<name>" },
   //   { "id": <id> }
-  // ]
+  // ],
 
   // exclude: Project repositories to exclude.  Supports name: {"name": "group/name"}, or ID: {"id": 42})
   // "exclude": [
@@ -779,12 +779,12 @@ const externalServiceAddVariants: Partial<
   // See https://help.github.com/en/articles/searching-for-repositories for the list of search qualifiers.
   "repositoryQuery": [
   //   "org:name"
-  ]
+  ],
 
   // repos: Explicit list of repositories to select
   // "repos": [
   //   "<owner>/<repository>"
-  // ]
+  // ],
 
   // exclude: Repositories to exclude (overrides repositories from repositoryQuery and repos)
   // "exclude": [
