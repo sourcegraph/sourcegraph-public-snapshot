@@ -196,7 +196,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context) ([]*gitlab.Project, 
 			select {
 			case projch <- p:
 			case <-ctx.Done():
-				break
+				return
 			}
 		}
 	}()
