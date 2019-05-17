@@ -37,7 +37,7 @@ const GitoliteSchemaJSON = `{
       "format": "regex"
     },
     "exclude": {
-      "description": "A list of repositories to never mirror from this Gitolite instance. Supports excluding by exact name ({\"name\": \"foo\"}) or by regular expression ({\"pattern\": \"secret-.*\"}).",
+      "description": "A list of repositories to never mirror from this Gitolite instance. Supports excluding by exact name ({\"name\": \"foo\"}).",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -53,7 +53,7 @@ const GitoliteSchemaJSON = `{
           }
         }
       },
-      "examples": [[{ "name": "myrepo" }, { "pattern": "^topsecretproject/.*" }]]
+      "examples": [[{ "name": "myrepo" }]]
     },
     "phabricatorMetadataCommand": {
       "description": "This is DEPRECATED. Use the ` + "`" + `phabricator` + "`" + ` field instead.",
