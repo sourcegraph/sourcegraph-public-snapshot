@@ -21,6 +21,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fix a bug where using a repo search filter with the prefix `github.com` only searched for repos with the prefix `github.com`. (#4103)
+
 ## 3.4.0 (unreleased)
 
 ### Added
