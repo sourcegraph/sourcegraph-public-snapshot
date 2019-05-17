@@ -21,8 +21,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fix a bug where using a repo search filter with the prefix `github.com` only searched for repos whose name starts with `github.com`, even though no `^` was specified in the search filter. (#4103)
-
 ## 3.4.0 (unreleased)
 
 ### Added
@@ -57,6 +55,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a bug where gitserver would leak file descriptors when performing common operations.
 - Substantially improved the performance of updating Bitbucket Server external service configurations on instances with thousands of repositories, going from e.g. several minutes to about a minute for ~20k repositories (#4037).
 - Fully resolved the search performance regression in v3.2.0, restoring performance of search back to the same levels it was before changes made in v3.2.0.
+- Fix a bug where using a repo search filter with the prefix `github.com` only searched for repos whose name starts with `github.com`, even though no `^` was specified in the search filter. (#4103)
 
 ## 3.3.7
 
