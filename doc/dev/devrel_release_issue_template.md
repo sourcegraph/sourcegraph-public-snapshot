@@ -26,7 +26,7 @@ This template is used for tracking DevRel activities for our monthly major/minor
 
 ## In the first week
 
-- [ ] Confirm with each team that the planned deliverables are still on track
+- [ ] Confirm with each team that the planned deliverables are still on track to be announced in the blog post.
 - [ ] Fill out each section based on the deliverables to first draft quality
 - [ ] Think about what media (e.g. screenshot, screencast) will accompany the section content
 
