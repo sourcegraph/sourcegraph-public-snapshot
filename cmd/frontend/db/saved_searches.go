@@ -155,7 +155,7 @@ func (s *savedSearches) ListSavedSearchesByUserID(ctx context.Context, userID in
 	conds := sqlf.Sprintf("WHERE user_id=%d", userID)
 
 	if len(orgConditions) > 0 {
-		conds = sqlf.Sprintf("%v OR %v", conds, sqlf.Join(orgConditions, " ) OR ("))
+		conds = sqlf.Sprintf("%v OR %v", conds, sqlf.Join(orgConditions, " OR "))
 	}
 
 	query := sqlf.Sprintf(`SELECT

@@ -266,3 +266,118 @@ func TestSavedSearchesGetByID(t *testing.T) {
 		t.Errorf("query is '%v+', want '%v+'", *savedSearch, *want)
 	}
 }
+
+func TestListSavedSearchesByUserID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := dbtesting.TestContext(t)
+	_, err := Users.Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	if err != nil {
+		t.Fatal("can't create user", err)
+	}
+	userID := int32(1)
+	fake := &types.SavedSearch{
+		Query:       "test",
+		Description: "test",
+		Notify:      true,
+		NotifySlack: true,
+		UserID:      &userID,
+		OrgID:       nil,
+	}
+	ss, err := SavedSearches.Create(ctx, fake)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if ss == nil {
+		t.Fatalf("no saved search returned, create failed")
+	}
+
+	org1, err := Orgs.Create(ctx, "org1", nil)
+	if err != nil {
+		t.Fatal("can't create org1", err)
+	}
+	org2, err := Orgs.Create(ctx, "org2", nil)
+	if err != nil {
+		t.Fatal("can't create org2", err)
+	}
+
+	orgFake := &types.SavedSearch{
+		Query:       "test",
+		Description: "test",
+		Notify:      true,
+		NotifySlack: true,
+		UserID:      nil,
+		OrgID:       &org1.ID,
+	}
+	orgSearch, err := SavedSearches.Create(ctx, orgFake)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if orgSearch == nil {
+		t.Fatalf("no saved search returned, org saved search create failed")
+	}
+
+	org2Fake := &types.SavedSearch{
+		Query:       "test",
+		Description: "test",
+		Notify:      true,
+		NotifySlack: true,
+		UserID:      nil,
+		OrgID:       &org2.ID,
+	}
+	org2Search, err := SavedSearches.Create(ctx, org2Fake)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if org2Search == nil {
+		t.Fatalf("no saved search returned, org2 saved search create failed")
+	}
+
+	_, err = OrgMembers.Create(ctx, org1.ID, userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = OrgMembers.Create(ctx, org2.ID, userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	savedSearches, err := SavedSearches.ListSavedSearchesByUserID(ctx, userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []*types.SavedSearch{{
+		ID:          1,
+		Query:       "test",
+		Description: "test",
+		Notify:      true,
+		NotifySlack: true,
+		UserID:      &userID,
+		OrgID:       nil,
+	}, {
+		ID:          2,
+		Query:       "test",
+		Description: "test",
+		Notify:      true,
+		NotifySlack: true,
+		UserID:      nil,
+		OrgID:       &org1.ID,
+	}, {
+		ID:          3,
+		Query:       "test",
+		Description: "test",
+		Notify:      true,
+		NotifySlack: true,
+		UserID:      nil,
+		OrgID:       &org2.ID,
+	}}
+
+	if !reflect.DeepEqual(savedSearches, want) {
+		t.Errorf("got %v, want %v", savedSearches, want)
+	}
+
+}
