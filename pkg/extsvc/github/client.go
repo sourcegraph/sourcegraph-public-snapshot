@@ -252,7 +252,13 @@ func (c *Client) requestGraphQL(ctx context.Context, token, query string, vars m
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("POST", "/graphql", bytes.NewReader(reqBody))
+	// GitHub.com GraphQL endpoint is api.github.com/graphql. GitHub Enterprise is /api/graphql (the
+	// REST endpoint is /api/v3, necessitating the "..").
+	graphqlEndpoint := "/graphql"
+	if !c.githubDotCom {
+		graphqlEndpoint = "../graphql"
+	}
+	req, err := http.NewRequest("POST", graphqlEndpoint, bytes.NewReader(reqBody))
 	if err != nil {
 		return err
 	}
