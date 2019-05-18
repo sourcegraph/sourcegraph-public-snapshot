@@ -8,7 +8,6 @@ const config = {
       {
         modules: false,
         useBuiltIns: 'entry',
-        corejs: 3,
       },
     ],
     '@babel/preset-typescript',

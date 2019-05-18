@@ -48,6 +48,7 @@
   "devDependencies": {
     "@babel/core": "^7.2.2",
     "@babel/plugin-syntax-dynamic-import": "^7.2.0",
+    "@babel/polyfill": "^7.2.5",
     "@babel/preset-env": "^7.2.3",
     "@babel/runtime": "^7.2.0",
     "@gql2ts/from-schema": "^1.10.1",
@@ -209,7 +210,6 @@
     "bootstrap": "^4.3.1",
     "classnames": "^2.2.6",
     "copy-to-clipboard": "^3.1.0",
-    "core-js": "^3.0.1",
     "d3-axis": "^1.0.12",
     "d3-scale": "^3.0.0",
     "d3-selection": "^1.4.0",
@@ -235,7 +235,6 @@
     "react-stripe-elements": "^3.0.0",
     "react-visibility-sensor": "^5.0.2",
     "reactstrap": "https://registry.npmjs.org/@sqs/reactstrap/-/reactstrap-6.5.0-tmp1.tgz",
-    "regenerator-runtime": "^0.13.2",
     "rxjs": "^6.5.2",
     "sanitize-html": "^1.20.0",
     "semver": "^6.0.0",
