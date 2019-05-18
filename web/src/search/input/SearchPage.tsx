@@ -87,7 +87,7 @@ export class SearchPage extends React.Component<Props, State> {
                             autoFocus={'cursor-at-end'}
                             hasGlobalQueryBehavior={true}
                         />
-                        <SearchButton activation={this.props.activation} />
+                        <SearchButton />
                     </div>
                     {hasScopes ? (
                         <>
@@ -149,7 +149,7 @@ export class SearchPage extends React.Component<Props, State> {
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         const query = [this.state.builderQuery, this.state.userQuery].filter(s => !!s).join(' ')
-        submitSearch(this.props.history, query, 'home')
+        submitSearch(this.props.history, query, 'home', this.props.activation)
     }
 
     private getPageTitle(): string | undefined {
