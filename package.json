@@ -172,7 +172,7 @@
     "puppeteer": "1.15.0",
     "react-docgen-typescript-webpack-plugin": "^1.1.0",
     "react-test-renderer": "^16.8.6",
-    "react-testing-library": "^5.4.2",
+    "react-testing-library": "^7.0.1",
     "sass-loader": "^7.1.0",
     "shelljs": "^0.8.3",
     "shelljs-exec-proxy": "^0.1.1",
