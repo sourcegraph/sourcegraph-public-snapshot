@@ -188,9 +188,8 @@ func doPostgresDSN(currentUser string, getenv func(string) string) string {
 	// TODO match logic in lib/pq
 	// https://sourcegraph.com/github.com/lib/pq@d6156e141ac6c06345c7c73f450987a9ed4b751f/-/blob/connector.go#L42
 	dsn := &url.URL{
-		Scheme:   "postgres",
-		Host:     "127.0.0.1:5432",
-		RawQuery: "sslmode=disable",
+		Scheme: "postgres",
+		Host:   "127.0.0.1:5432",
 	}
 
 	// Username preference: PGUSER, $USER, postgres
