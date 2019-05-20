@@ -2743,8 +2743,14 @@ type Site implements SettingsSubject {
     # Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
     # Only applies if the site does not have a valid license.
     freeUsersExceeded: Boolean!
+
+    # DEPRECATED: This field is always false and will be removed in future
+    # releases. All repositories are enabled by default starting with
+    # Sourcegraph 3.4
+    #
     # Whether the site has zero access-enabled repositories.
     noRepositoriesEnabled: Boolean!
+        @deprecated(reason: "All repositories are enabled by default now. This field is always false.")
     # Alerts to display to the viewer.
     alerts: [Alert!]!
     # BACKCOMPAT: Always returns true.

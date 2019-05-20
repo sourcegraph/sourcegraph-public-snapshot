@@ -14,7 +14,6 @@ import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
-import { NoRepositoriesEnabledAlert } from '../site/NoRepositoriesEnabledAlert'
 import { UpdateAvailableAlert } from '../site/UpdateAvailableAlert'
 import { GlobalAlert } from './GlobalAlert'
 import { Notices } from './Notices'
@@ -48,12 +47,8 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
             <div className="global-alerts">
                 {this.state.siteFlags && (
                     <>
-                        {this.state.siteFlags.needsRepositoryConfiguration ? (
+                        {this.state.siteFlags.needsRepositoryConfiguration && (
                             <NeedsRepositoryConfigurationAlert className="global-alerts__alert" />
-                        ) : (
-                            this.state.siteFlags.noRepositoriesEnabled && (
-                                <NoRepositoriesEnabledAlert className="global-alerts__alert" />
-                            )
                         )}
                         {this.props.isSiteAdmin &&
                             this.state.siteFlags.updateCheck &&
@@ -79,9 +74,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             />
                         )}
                         {/* Only show if the user has already enabled repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
-                        {window.context.likelyDockerOnMac && !this.state.siteFlags.noRepositoriesEnabled && (
-                            <DockerForMacAlert className="global-alerts__alert" />
-                        )}
+                        {window.context.likelyDockerOnMac && <DockerForMacAlert className="global-alerts__alert" />}
                         {this.state.siteFlags.alerts.map((alert, i) => (
                             <GlobalAlert key={i} alert={alert} className="global-alerts__alert" />
                         ))}
