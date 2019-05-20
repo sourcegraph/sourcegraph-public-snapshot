@@ -4,7 +4,6 @@ export type SiteFlags = Pick<
     GQL.ISite,
     | 'needsRepositoryConfiguration'
     | 'freeUsersExceeded'
-    | 'noRepositoriesEnabled'
     | 'alerts'
     | 'authProviders'
     | 'disableBuiltInSearches'
