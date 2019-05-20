@@ -262,7 +262,7 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 
 				reposPage, err := s.searchClient.ListRepositoriesForSearch(ctx, repositoryQuery, page)
 				if err != nil {
-					errs = multierror.Append(errs, errors.Wrapf(err, "failed to list GitHub repositories for search: page=%q, searchString=%q,", page, repositoryQuery))
+					errs = multierror.Append(errs, errors.Wrapf(err, "failed to list GitHub repositories for search: page=%d, searchString=%q", page, repositoryQuery))
 					break
 				}
 
