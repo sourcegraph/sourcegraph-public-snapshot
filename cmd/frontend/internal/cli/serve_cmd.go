@@ -97,8 +97,8 @@ func Main() error {
 	if err := dbconn.ConnectToDB(""); err != nil {
 		log.Fatal(err)
 	}
-	handleConfigOverrides()
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
+	handleConfigOverrides()
 	conf.MustValidateDefaults()
 
 	// Filter trace logs
