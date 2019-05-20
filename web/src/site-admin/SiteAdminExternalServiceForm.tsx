@@ -29,7 +29,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
             <Form className="external-service-form" onSubmit={this.props.onSubmit}>
                 {this.props.error && (
                     <div className="alert alert-danger">
-                        <p>Error saving invalid configuration:</p>
+                        <p>Error saving configuration:</p>
                         <Markdown dangerousInnerHTML={renderMarkdown(this.props.error.message)} />
                     </div>
                 )}
