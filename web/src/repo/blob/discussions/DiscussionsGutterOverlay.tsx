@@ -17,8 +17,8 @@ interface DiscussionsGutterOverlayProps extends RepoFile {
 
 const onCreateDiscussionClick = () => eventLogger.log('CreateDiscussionClicked')
 
-export const DiscussionsGutterOverlay: React.FunctionComponent<DiscussionsGutterOverlayProps> = props => {
-    const hash = new URLSearchParams(props.location.hash.slice('#'.length))
+export const urlForNewThreadAtSelection = (location: H.Location): string => {
+    const hash = new URLSearchParams(location.hash.slice('#'.length))
     const onDiscussionsNew = hash.get('tab') === 'discussions' && hash.get('createThread') === 'true'
     hash.delete('threadID')
     hash.delete('commentID')
@@ -29,7 +29,12 @@ export const DiscussionsGutterOverlay: React.FunctionComponent<DiscussionsGutter
         hash.set('tab', 'discussions')
         hash.set('createThread', 'true')
     }
-    const newURL = props.location.pathname + props.location.search + '#' + hash.toString()
+    return location.pathname + location.search + '#' + hash.toString()
+}
+
+export const DiscussionsGutterOverlay: React.FunctionComponent<DiscussionsGutterOverlayProps> = props => {
+    const hash = new URLSearchParams(location.hash.slice('#'.length))
+    const onDiscussionsNew = hash.get('tab') === 'discussions' && hash.get('createThread') === 'true'
 
     return (
         <div
@@ -54,7 +59,7 @@ export const DiscussionsGutterOverlay: React.FunctionComponent<DiscussionsGutter
                 className="discussions-gutter-overlay__link btn btn-sm btn-link btn-icon"
                 onClick={onCreateDiscussionClick}
                 data-tooltip={onDiscussionsNew ? 'Close discussions' : 'Create a discussion for this selection'}
-                to={newURL}
+                to={urlForNewThreadAtSelection(props.location)}
             >
                 <ChatIcon className="icon-inline" />
             </Link>
