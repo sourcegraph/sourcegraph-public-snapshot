@@ -9,7 +9,7 @@ interface Props {
     threadTitle?: string
     commentID?: GQL.ID
     commentContent?: string
-    filePath: string
+    filePath?: string
     location: H.Location
 }
 
@@ -19,7 +19,7 @@ export class DiscussionsNavbar extends React.PureComponent<Props> {
         const { threadID, threadTitle, commentID, commentContent, filePath, location } = this.props
         return (
             <div className="discussions-navbar">
-                <Link to={this.locationWith(location)}>{filePath}</Link>
+                {filePath && <Link to={this.locationWith(location)}>{filePath}</Link>}
                 <ChevronRightIcon className="icon-inline" />
                 {threadID !== undefined && commentID !== undefined && (
                     <>

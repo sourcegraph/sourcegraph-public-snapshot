@@ -19,9 +19,7 @@ import { DiscussionsNavbar } from './DiscussionsNavbar'
 interface Props extends ExtensionsControllerProps {
     threadIDWithoutKind: string
     commentIDWithoutKind?: string
-    repoID: GQL.ID
-    rev: string | undefined
-    filePath: string
+    filePath?: string
     showNavbar?: boolean
     history: H.History
     location: H.Location
