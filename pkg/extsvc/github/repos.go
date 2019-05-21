@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -432,7 +431,7 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 		return RepositoryListPage{}, err
 	}
 	if response.IncompleteResults {
-		return RepositoryListPage{}, errors.New("github repository search returned incomplete results. This is an ephemeral error from GitHub, so does not indicate a problem with your configuration. See https://developer.github.com/changes/2014-04-07-understanding-search-results-and-potential-timeouts/ for more information")
+		return RepositoryListPage{}, ErrIncompleteResults
 	}
 	repos := make([]*Repository, 0, len(response.Items))
 	for _, restRepo := range response.Items {
