@@ -467,6 +467,9 @@ input DiscussionThreadUpdateInput {
     # The ID of the thread to update.
     ThreadID: ID!
 
+    # When non-null, indicates that the thread's title should be updated to the specified value.
+    title: String
+
     # When non-null, indicates that the thread should be archived.
     Archive: Boolean
 

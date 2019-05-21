@@ -113,11 +113,16 @@ func TestDiscussionThreads_Update(t *testing.T) {
 	}
 
 	// Update the thread.
+	const wantTitle = "x"
 	gotThread, err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionThreadsUpdateOptions{
+		Title:   strPtr(wantTitle),
 		Archive: boolPtr(true),
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if gotThread.Title != wantTitle {
+		t.Errorf("got title %q, want %q", gotThread.Title, wantTitle)
 	}
 	if gotThread.ArchivedAt == nil {
 		t.Fatal("expected thread to be archived")

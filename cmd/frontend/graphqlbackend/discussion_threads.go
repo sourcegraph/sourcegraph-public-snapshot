@@ -270,6 +270,7 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *struct {
 	Input *struct {
 		ThreadID graphql.ID
+		Title    *string
 		Archive  *bool
 		Delete   *bool
 	}
@@ -299,6 +300,7 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 	thread, err := db.DiscussionThreads.Update(ctx, threadID, &db.DiscussionThreadsUpdateOptions{
 		Archive: args.Input.Archive,
 		Delete:  delete,
+		Title:   args.Input.Title,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionThreads.Update")
@@ -734,10 +736,16 @@ func (r *discussionThreadsConnectionResolver) PageInfo(ctx context.Context) (*gr
 	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(threads) > r.opt.Limit), nil
 }
 
+var mockViewerCanUseDiscussions func() error
+
 // viewerCanUseDiscussions returns an error if the user in the context cannot
 // use code discussions, e.g. due to the extension not being installed or
 // enabled.
 func viewerCanUseDiscussions(ctx context.Context) error {
+	if mockViewerCanUseDiscussions != nil {
+		return mockViewerCanUseDiscussions()
+	}
+
 	merged, err := viewerFinalSettings(ctx)
 	if err != nil {
 		return err
