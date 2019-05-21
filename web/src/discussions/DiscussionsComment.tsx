@@ -40,6 +40,8 @@ interface Props extends ExtensionsControllerProps {
      * button clicks.
      */
     onDelete?: (comment: GQL.IDiscussionComment) => Observable<void>
+
+    className?: string
 }
 
 interface State {
@@ -67,7 +69,8 @@ export class DiscussionsComment extends React.PureComponent<Props> {
 
         return (
             <div
-                className={`discussions-comment${isTargeted ? ' discussions-comment--targeted' : ''}`}
+                className={`discussions-comment${isTargeted ? ' discussions-comment--targeted' : ''} ${this.props
+                    .className || ''}`}
                 ref={isTargeted ? this.setScrollToElement : undefined}
             >
                 <div className="discussions-comment__top-area">

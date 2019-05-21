@@ -25,6 +25,7 @@ interface Props extends ExtensionsControllerProps {
     location: H.Location
     forceURL?: boolean
     className?: string
+    commentClassName?: string
 
     /**
      * Do not show the first comment in the thread. This is useful when the first comment is treated
@@ -136,6 +137,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                                     onClearReports={this.onCommentClearReports}
                                     onDelete={this.onCommentDelete}
                                     extensionsController={this.props.extensionsController}
+                                    className={this.props.commentClassName}
                                 />
                             )
                         )}
