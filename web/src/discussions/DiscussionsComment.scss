@@ -62,6 +62,10 @@
     &__reports:hover {
         text-decoration: underline;
     }
+
+    p:last-child {
+        margin-bottom: 0;
+    }
 }
 
 @keyframes highlight-light {
