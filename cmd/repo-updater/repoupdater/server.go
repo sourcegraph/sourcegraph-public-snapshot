@@ -270,9 +270,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// TODO: Hackity hack hack just for trying this
-	// _, err := s.Syncer.Sync(r.Context(), req.ExternalService.Kind)
-	err := github.ErrIncompleteResults
+	_, err := s.Syncer.Sync(r.Context(), req.ExternalService.Kind)
 	switch {
 	case err == nil:
 		log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
