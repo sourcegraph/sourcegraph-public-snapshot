@@ -46,12 +46,14 @@ func printConfigValidation() {
 // As this method writes to the configuration DB, it should be invoked before
 // the configuration server is started but after PostgreSQL is connected.
 func handleConfigOverrides() {
+	ctx := context.Background()
+
 	overrideCriticalConfig := os.Getenv("CRITICAL_CONFIG_FILE")
 	overrideSiteConfig := os.Getenv("SITE_CONFIG_FILE")
 	overrideExtSvcConfig := os.Getenv("EXTSVC_CONFIG_FILE")
 	overrideAny := overrideCriticalConfig != "" || overrideSiteConfig != "" || overrideExtSvcConfig != ""
 	if overrideAny || conf.IsDev(conf.DeployType()) {
-		raw, err := (&configurationSource{}).Read(context.Background())
+		raw, err := (&configurationSource{}).Read(ctx)
 		if err != nil {
 			log.Fatal("Failed to read existing configuration for applying config overrides:", err)
 		}
@@ -81,7 +83,7 @@ func handleConfigOverrides() {
 		}
 
 		if overrideCriticalConfig != "" || overrideSiteConfig != "" {
-			err := (&configurationSource{}).Write(context.Background(), raw)
+			err := (&configurationSource{}).Write(ctx, raw)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -98,7 +100,7 @@ func handleConfigOverrides() {
 			}
 			confGet := func() *conf.Unified { return parsed }
 
-			existing, err := db.ExternalServices.List(context.Background(), db.ExternalServicesListOptions{})
+			existing, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -123,7 +125,7 @@ func handleConfigOverrides() {
 					if err != nil {
 						log.Fatal(err)
 					}
-					if err := db.ExternalServices.Create(context.Background(), confGet, &types.ExternalService{
+					if err := db.ExternalServices.Create(ctx, confGet, &types.ExternalService{
 						Kind:        key,
 						DisplayName: fmt.Sprintf("%s #%d", key, i+1),
 						Config:      string(marshaledCfg),
