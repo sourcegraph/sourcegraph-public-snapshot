@@ -119,6 +119,9 @@ func handleConfigOverrides() error {
 			if err := jsonc.Unmarshal(string(extsvc), &configs); err != nil {
 				return errors.Wrap(err, "parsing EXTSVC_CONFIG_FILE")
 			}
+			if len(configs) == 0 {
+				log15.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
+			}
 			for key, cfgs := range configs {
 				for i, cfg := range cfgs {
 					marshaledCfg, err := json.MarshalIndent(cfg, "", "  ")
