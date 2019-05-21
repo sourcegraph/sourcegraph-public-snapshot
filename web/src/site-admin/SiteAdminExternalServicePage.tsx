@@ -83,10 +83,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                         )
                     )
                 )
-                .subscribe(stateUpdate => {
-                    console.dir(stateUpdate)
-                    this.setState(stateUpdate as State)
-                })
+                .subscribe(stateUpdate => this.setState(stateUpdate as State))
         )
 
         this.componentUpdates.next(this.props)
