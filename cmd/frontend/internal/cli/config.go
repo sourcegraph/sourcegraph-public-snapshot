@@ -58,10 +58,6 @@ func handleConfigOverrides() error {
 			return errors.Wrap(err, "reading existing config for applying overrides")
 		}
 
-		legacyOverrideCriticalConfig := os.Getenv("DEV_OVERRIDE_CRITICAL_CONFIG")
-		if overrideCriticalConfig == "" && legacyOverrideCriticalConfig != "" {
-			overrideCriticalConfig = legacyOverrideCriticalConfig
-		}
 		if overrideCriticalConfig != "" {
 			critical, err := ioutil.ReadFile(overrideCriticalConfig)
 			if err != nil {
@@ -70,10 +66,6 @@ func handleConfigOverrides() error {
 			raw.Critical = string(critical)
 		}
 
-		legacyOverrideSiteConfig := os.Getenv("DEV_OVERRIDE_SITE_CONFIG")
-		if overrideSiteConfig == "" && legacyOverrideSiteConfig != "" {
-			overrideSiteConfig = legacyOverrideSiteConfig
-		}
 		if overrideSiteConfig != "" {
 			site, err := ioutil.ReadFile(overrideSiteConfig)
 			if err != nil {
@@ -89,10 +81,6 @@ func handleConfigOverrides() error {
 			}
 		}
 
-		legacyOverrideExtSvcConfig := os.Getenv("DEV_OVERRIDE_EXTSVC_CONFIG")
-		if overrideExtSvcConfig == "" && legacyOverrideExtSvcConfig != "" {
-			overrideExtSvcConfig = legacyOverrideExtSvcConfig
-		}
 		if overrideExtSvcConfig != "" {
 			parsed, err := conf.ParseConfig(raw)
 			if err != nil {

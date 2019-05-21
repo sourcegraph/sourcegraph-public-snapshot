@@ -18,8 +18,7 @@ import (
 // Tests that wish to use a specific configuration should use conf.Mock.
 //
 // Note: This actually generally only applies to 'go test' because we always
-// override this configuration via DEV_OVERRIDE_*_CONFIG environment
-// variables.
+// override this configuration via *_CONFIG_FILE environment variables.
 var DevAndTesting = conftypes.RawUnified{
 	Critical: `{
 	"auth.providers": [
