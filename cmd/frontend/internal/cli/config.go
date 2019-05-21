@@ -45,7 +45,7 @@ func printConfigValidation() {
 //
 // As this method writes to the configuration DB, it should be invoked before
 // the configuration server is started but after PostgreSQL is connected.
-func handleConfigOverrides() {
+func handleConfigOverrides() error {
 	ctx := context.Background()
 
 	overrideCriticalConfig := os.Getenv("CRITICAL_CONFIG_FILE")
@@ -55,7 +55,7 @@ func handleConfigOverrides() {
 	if overrideAny || conf.IsDev(conf.DeployType()) {
 		raw, err := (&configurationSource{}).Read(ctx)
 		if err != nil {
-			log.Fatal("Failed to read existing configuration for applying config overrides:", err)
+			return errors.Wrap(err, "reading existing config for applying overrides")
 		}
 
 		legacyOverrideCriticalConfig := os.Getenv("DEV_OVERRIDE_CRITICAL_CONFIG")
@@ -65,7 +65,7 @@ func handleConfigOverrides() {
 		if overrideCriticalConfig != "" {
 			critical, err := ioutil.ReadFile(overrideCriticalConfig)
 			if err != nil {
-				log.Fatal(err)
+				return errors.Wrap(err, "reading CRITICAL_CONFIG_FILE")
 			}
 			raw.Critical = string(critical)
 		}
@@ -77,7 +77,7 @@ func handleConfigOverrides() {
 		if overrideSiteConfig != "" {
 			site, err := ioutil.ReadFile(overrideSiteConfig)
 			if err != nil {
-				log.Fatal(err)
+				return errors.Wrap(err, "reading SITE_CONFIG_FILE")
 			}
 			raw.Site = string(site)
 		}
@@ -85,7 +85,7 @@ func handleConfigOverrides() {
 		if overrideCriticalConfig != "" || overrideSiteConfig != "" {
 			err := (&configurationSource{}).Write(ctx, raw)
 			if err != nil {
-				log.Fatal(err)
+				return errors.Wrap(err, "writing critical/site config overrides to database")
 			}
 		}
 
@@ -96,41 +96,41 @@ func handleConfigOverrides() {
 		if overrideExtSvcConfig != "" {
 			parsed, err := conf.ParseConfig(raw)
 			if err != nil {
-				log.Fatal(err)
+				return errors.Wrap(err, "parsing critical/site config")
 			}
 			confGet := func() *conf.Unified { return parsed }
 
 			existing, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
 			if err != nil {
-				log.Fatal(err)
+				return errors.Wrap(err, "ExternalServices.List")
 			}
 			for _, existing := range existing {
 				err := db.ExternalServices.Delete(ctx, existing.ID)
 				if err != nil {
-					log.Fatal(err)
+					return errors.Wrap(err, "ExternalServices.Delete")
 				}
 			}
 
 			extsvc, err := ioutil.ReadFile(overrideExtSvcConfig)
 			if err != nil {
-				log.Fatal(err)
+				return errors.Wrap(err, "reading EXTSVC_CONFIG_FILE")
 			}
 			var configs map[string][]*json.RawMessage
 			if err := jsonc.Unmarshal(string(extsvc), &configs); err != nil {
-				log.Fatal(err)
+				return errors.Wrap(err, "parsing EXTSVC_CONFIG_FILE")
 			}
 			for key, cfgs := range configs {
 				for i, cfg := range cfgs {
 					marshaledCfg, err := json.MarshalIndent(cfg, "", "  ")
 					if err != nil {
-						log.Fatal(err)
+						return errors.Wrap(err, fmt.Sprintf("marshaling extsvc config ([%s][%i])", key, i))
 					}
 					if err := db.ExternalServices.Create(ctx, confGet, &types.ExternalService{
 						Kind:        key,
 						DisplayName: fmt.Sprintf("%s #%d", key, i+1),
 						Config:      string(marshaledCfg),
 					}); err != nil {
-						log.Fatal(err)
+						return errors.Wrap(err, "ExternalServices.Create")
 					}
 				}
 			}
