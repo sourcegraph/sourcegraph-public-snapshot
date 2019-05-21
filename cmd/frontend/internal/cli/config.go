@@ -122,7 +122,7 @@ func handleConfigOverrides() {
 					}
 					if err := db.ExternalServices.Create(context.Background(), confGet, &types.ExternalService{
 						Kind:        key,
-						DisplayName: fmt.Sprintf("Dev %s #%d", key, i+1),
+						DisplayName: fmt.Sprintf("%s #%d", key, i+1),
 						Config:      string(marshaledCfg),
 					}); err != nil {
 						log.Fatal(err)
