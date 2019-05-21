@@ -114,7 +114,7 @@ func handleConfigOverrides() error {
 				for i, cfg := range cfgs {
 					marshaledCfg, err := json.MarshalIndent(cfg, "", "  ")
 					if err != nil {
-						return errors.Wrap(err, fmt.Sprintf("marshaling extsvc config ([%s][%i])", key, i))
+						return errors.Wrap(err, fmt.Sprintf("marshaling extsvc config ([%v][%v])", key, i))
 					}
 					if err := db.ExternalServices.Create(ctx, confGet, &types.ExternalService{
 						Kind:        key,
