@@ -1,7 +1,5 @@
 import * as H from 'history'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import React from 'react'
-import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { Markdown } from '../../../shared/src/components/Markdown'
@@ -120,7 +118,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                             <p>
                                 <b>Warning</b>
                             </p>
-                            <Markdown dangerousInnerHTML={renderMarkdown(this.state.externalService.warning)} />
+                            <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
                         </div>
                     </div>
                 ) : (
