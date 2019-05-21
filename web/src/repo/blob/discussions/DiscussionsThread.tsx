@@ -26,6 +26,7 @@ interface Props extends ExtensionsControllerProps {
     history: H.History
     location: H.Location
     forceURL?: boolean
+    className?: string
 }
 
 interface State {
@@ -107,7 +108,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         }
 
         return (
-            <div className="discussions-thread">
+            <div className={`discussions-thread ${this.props.className || ''}`}>
                 {this.props.showNavbar && (
                     <DiscussionsNavbar {...this.props} threadTitle={thread ? thread.title : undefined} />
                 )}

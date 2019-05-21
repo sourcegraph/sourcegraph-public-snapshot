@@ -19,6 +19,7 @@ interface Props extends ExtensionsControllerProps {
     rev: string | undefined
     filePath: string
     showNavbar?: boolean
+    className?: string
     history: H.History
     location: H.Location
 }
@@ -35,7 +36,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="discussions-create">
+            <div className={`discussions-create ${this.props.className || ''}`}>
                 {this.props.showNavbar && <DiscussionsNavbar {...this.props} threadTitle={this.state.title} />}
                 <div className="discussions-create__content">
                     {this.state.title && this.state.title.length > 60 && (
