@@ -98,7 +98,7 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 
 // Eagerly trigger a repo-updater sync.
 func syncExternalService(ctx context.Context, svc *types.ExternalService) error {
-	res, err := repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
+	_, err := repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
 		ID:          svc.ID,
 		Kind:        svc.Kind,
 		DisplayName: svc.DisplayName,
@@ -110,10 +110,6 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 
 	if err != nil {
 		return err
-	}
-
-	if res.Error != "" {
-		return errors.New(res.Error)
 	}
 
 	return nil
