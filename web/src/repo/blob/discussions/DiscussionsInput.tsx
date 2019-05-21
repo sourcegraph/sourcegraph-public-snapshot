@@ -3,7 +3,7 @@ import * as H from 'history'
 import { uniqueId } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
-import { concat, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { concat, from, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mergeMap, startWith, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 import { CodeEditor, EditorId } from '../../../../../shared/src/api/client/services/editorService'
 import { TextModel } from '../../../../../shared/src/api/client/services/modelService'
@@ -47,7 +47,7 @@ interface Props extends ExtensionsControllerProps {
     submitLabel: string
 
     /** Called when the submit button is clicked. */
-    onSubmit: (title: string, comment: string) => Observable<void>
+    onSubmit: (title: string, comment: string) => Promise<void>
 
     /** How & whether or not to render a title input field. */
     titleMode: TitleMode
@@ -208,7 +208,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
 
                 // Combine form submits and keyboard shortcut submits
                 merge(
-                    this.submits.pipe(tap(e => e.preventDefault())),
+                    from(this.submits).pipe(tap(e => e.preventDefault())),
 
                     // cmd+enter (darwin) or ctrl+enter (linux/win)
                     this.textAreaKeyDowns.pipe(
@@ -224,7 +224,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         concat(
                             // Start with setting submitting: true
                             of<Update>(state => ({ ...state, submitting: true })),
-                            props.onSubmit(titleInputValue, this.trimImplicitTitle(textAreaValue)).pipe(
+                            from(props.onSubmit(titleInputValue, this.trimImplicitTitle(textAreaValue))).pipe(
                                 map(
                                     (): Update => state => ({
                                         ...state,

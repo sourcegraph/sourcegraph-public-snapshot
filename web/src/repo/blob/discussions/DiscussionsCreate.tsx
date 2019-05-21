@@ -104,18 +104,20 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                     },
                 },
             },
-        }).pipe(
-            tap(thread => {
-                const location = this.props.location
-                const hash = new URLSearchParams(location.hash.slice('#'.length))
-                hash.set('tab', 'discussions')
-                hash.set('threadID', thread.idWithoutKind)
-                // TODO(slimsag:discussions): ASAP: focus the new thread's range
-                this.props.history.push(location.pathname + location.search + '#' + hash.toString())
-            }),
-            map(thread => undefined),
-            catchError(e => throwError(new Error('Error creating thread: ' + asError(e).message)))
-        )
+        })
+            .pipe(
+                tap(thread => {
+                    const location = this.props.location
+                    const hash = new URLSearchParams(location.hash.slice('#'.length))
+                    hash.set('tab', 'discussions')
+                    hash.set('threadID', thread.idWithoutKind)
+                    // TODO(slimsag:discussions): ASAP: focus the new thread's range
+                    this.props.history.push(location.pathname + location.search + '#' + hash.toString())
+                }),
+                map(thread => undefined),
+                catchError(e => throwError(new Error('Error creating thread: ' + asError(e).message)))
+            )
+            .toPromise()
     }
 
     private onTitleChange = (newTitle: string) => this.setState({ title: newTitle })
