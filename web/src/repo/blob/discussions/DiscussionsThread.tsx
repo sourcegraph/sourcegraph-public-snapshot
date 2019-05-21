@@ -195,11 +195,13 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         if (!this.state.thread) {
             throw new Error('no thread')
         }
-        return addCommentToThread(this.state.thread.id, contents).pipe(
-            tap(thread => this.setState({ thread })),
-            map(thread => undefined),
-            catchError(e => throwError(new Error('Error creating comment: ' + asError(e).message)))
-        )
+        return addCommentToThread(this.state.thread.id, contents)
+            .pipe(
+                tap(thread => this.setState({ thread })),
+                map(thread => undefined),
+                catchError(e => throwError(new Error('Error creating comment: ' + asError(e).message)))
+            )
+            .toPromise()
     }
 
     private onCommentReport = (comment: GQL.IDiscussionComment, reason: string) =>
