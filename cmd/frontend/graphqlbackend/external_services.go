@@ -18,10 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
 
-func haveExternalServiceConfigFile() bool {
-	return os.Getenv("EXTSVC_CONFIG_FILE") != ""
-}
-
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	Input *struct {
 		Kind        string
@@ -33,7 +29,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	if haveExternalServiceConfigFile() {
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
 		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
@@ -70,7 +66,7 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	if haveExternalServiceConfigFile() {
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
@@ -124,7 +120,7 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	if haveExternalServiceConfigFile() {
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
 		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
