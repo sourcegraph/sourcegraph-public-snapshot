@@ -214,7 +214,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 subtitle = (
                     <div className="app__error">
                         {subtitle}
-                        {subtitle && <hr />}
+                        {subtitle && <hr className="my-3" />}
                         <pre>{errorMessage}</pre>
                     </div>
                 )

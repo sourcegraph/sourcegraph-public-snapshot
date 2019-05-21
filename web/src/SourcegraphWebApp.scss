@@ -129,6 +129,9 @@ $progress-border-radius: 0;
 $progress-bg: transparent;
 $progress-height: auto;
 
+$hr-border-color: var(--border-color);
+$hr-margin-y: 0.25rem;
+
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
@@ -204,14 +207,6 @@ body,
             padding: 1rem;
         }
     }
-}
-
-hr {
-    margin-top: 1.5rem;
-    margin-bottom: 1.5rem;
-    background-color: #93a9c8;
-    height: 0.0625rem;
-    border: none;
 }
 
 .form-control::placeholder {
