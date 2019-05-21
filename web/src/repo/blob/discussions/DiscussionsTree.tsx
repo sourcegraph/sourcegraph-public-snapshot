@@ -41,14 +41,15 @@ export class DiscussionsTree extends React.PureComponent<Props> {
                     threadIDWithoutKind={threadIDWithoutKind}
                     commentIDWithoutKind={commentIDWithoutKind}
                     {...this.props}
+                    showNavbar={true}
                 />
             )
         }
         if (threadIDWithoutKind) {
-            return <DiscussionsThread threadIDWithoutKind={threadIDWithoutKind} {...this.props} />
+            return <DiscussionsThread {...this.props} threadIDWithoutKind={threadIDWithoutKind} showNavbar={true} />
         }
         if (hash.get('createThread') === 'true') {
-            return <DiscussionsCreate {...this.props} />
+            return <DiscussionsCreate {...this.props} showNavbar={true} />
         }
         return <DiscussionsList {...this.props} />
     }

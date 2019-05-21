@@ -22,6 +22,7 @@ interface Props extends ExtensionsControllerProps {
     repoID: GQL.ID
     rev: string | undefined
     filePath: string
+    showNavbar?: boolean
     history: H.History
     location: H.Location
 }
@@ -106,7 +107,9 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
 
         return (
             <div className="discussions-thread">
-                <DiscussionsNavbar {...this.props} threadTitle={thread ? thread.title : undefined} />
+                {this.props.showNavbar && (
+                    <DiscussionsNavbar {...this.props} threadTitle={thread ? thread.title : undefined} />
+                )}
                 {loading && <LoadingSpinner className="icon-inline" />}
                 {error && (
                     <div className="discussions-thread__error alert alert-danger">
