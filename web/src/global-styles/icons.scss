@@ -13,6 +13,12 @@
     vertical-align: bottom;
     display: inline-flex;
     align-items: center;
+
+    &:focus {
+        // Remove browser default focus ring that appears in Chrome when clicking on an icon that
+        // has a data-tooltip.
+        outline: 0;
+    }
 }
 
 svg.icon-inline,
