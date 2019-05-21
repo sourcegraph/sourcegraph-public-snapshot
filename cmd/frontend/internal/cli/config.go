@@ -102,8 +102,11 @@ func handleConfigOverrides() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			if len(existing) > 0 {
-				return
+			for _, existing := range existing {
+				err := db.ExternalServices.Delete(ctx, existing.ID)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 
 			extsvc, err := ioutil.ReadFile(overrideExtSvcConfig)
