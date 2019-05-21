@@ -55,6 +55,11 @@ interface Props extends ExtensionsControllerProps {
     /** Called when the title value changes. */
     onTitleChange?: (title: string) => void
 
+    /**
+     * If set, a "Discard" button is shown, and this callback is called when it is clicked.
+     */
+    onDiscard?: () => void
+
     className?: string
 }
 
@@ -313,6 +318,16 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     </div>
                 </TabsWithLocalStorageViewStatePersistence>
                 <div className="discussions-input__row">
+                    {this.props.onDiscard && (
+                        <button
+                            type="reset"
+                            className="btn btn-link discussions-input__button"
+                            disabled={this.state.submitting}
+                            onClick={this.props.onDiscard}
+                        >
+                            Discard
+                        </button>
+                    )}
                     <button
                         type="submit"
                         className="btn btn-primary discussions-input__button"
