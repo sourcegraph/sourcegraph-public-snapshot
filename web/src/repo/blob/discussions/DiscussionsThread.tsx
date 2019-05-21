@@ -142,6 +142,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                             )
                         )}
                         <DiscussionsInput
+                            className="mt-3"
                             key="input"
                             submitLabel="Comment"
                             titleMode={TitleMode.None}
