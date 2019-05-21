@@ -130,11 +130,6 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
         exact: true,
     },
     {
-        path: '/discussions',
-        render: lazyComponent(() => import('./discussions/DiscussionsPage'), 'DiscussionsPage'),
-        exact: true,
-    },
-    {
         path: '/search/scope/:id',
         render: lazyComponent(() => import('./search/input/ScopePage'), 'ScopePage'),
         exact: true,
