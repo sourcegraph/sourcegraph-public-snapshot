@@ -197,6 +197,7 @@ func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalServic
 		result.ExternalService = svc
 		return &result, nil
 	} else if err = json.Unmarshal(bs, &result); err != nil {
+		fmt.Printf("unmarshalling is an error. bs=%q, err=%q\n", bs, err)
 		return nil, err
 	}
 
