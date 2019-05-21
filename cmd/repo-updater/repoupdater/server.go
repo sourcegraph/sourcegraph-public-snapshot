@@ -283,7 +283,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 		syncResult := &protocol.ExternalServiceSyncResult{
 			ExternalService: req.ExternalService,
-			Error:           err,
+			Error:           err.Error(),
 		}
 		respond(w, http.StatusOK, syncResult)
 	default:

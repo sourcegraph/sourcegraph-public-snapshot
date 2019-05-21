@@ -112,7 +112,11 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 		return err
 	}
 
-	return res.Error
+	if res.Error != "" {
+		return errors.New(res.Error)
+	}
+
+	return nil
 }
 
 func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
