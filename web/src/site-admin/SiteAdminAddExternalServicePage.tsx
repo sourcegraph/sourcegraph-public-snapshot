@@ -1,4 +1,5 @@
 import * as H from 'history'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -40,7 +41,10 @@ interface State {
      */
     loading: boolean
 
-    warning?: string
+    /**
+     * Holds the externalService if creation was successful but produced a warning
+     */
+    externalService?: GQL.IExternalService
 }
 
 /**
@@ -70,7 +74,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                         addExternalService(input, this.props.eventLogger).pipe(
                             map(extSvc => {
                                 if (extSvc.warning) {
-                                    this.setState({ error: undefined, warning: extSvc.warning, loading: false })
+                                    this.setState({ error: undefined, externalService: extSvc, loading: false })
                                 } else {
                                     // Refresh site flags so that global site alerts
                                     // reflect the latest configuration.
@@ -96,40 +100,47 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     }
 
     public render(): JSX.Element | null {
-        const externalService = getExternalService(this.props.kind, this.props.variant)
+        const kindMetadata = getExternalService(this.props.kind, this.props.variant)
+        const createdExternalService = this.state.externalService
         return (
             <div className="add-external-service-page mt-3">
                 <PageTitle title="Add external service" />
                 <h1>Add external service</h1>
-                <div className="mb-3">
-                    <ExternalServiceCard {...externalService} />
-                </div>
-                <div className="mb-4">{externalService.longDescription}</div>
-                {this.state.warning ? (
-                    <div className="alert alert-warning">
-                        <p>Warning:</p>
-                        <Markdown dangerousInnerHTML={renderMarkdown(this.state.warning)} />
-
-                        <Link
-                            className="btn btn-warning"
-                            to="/site-admin/external-services"
-                            data-tooltip="View external services"
-                        >
-                            View external services
-                        </Link>
+                {createdExternalService && createdExternalService.warning ? (
+                    <div>
+                        <div className="mb-3" key={createdExternalService.id}>
+                            <ExternalServiceCard
+                                {...kindMetadata}
+                                title={createdExternalService.displayName}
+                                shortDescription="Update this external service configuration to manage repository mirroring."
+                                to={`/site-admin/external-services/${createdExternalService.id}`}
+                            />
+                        </div>
+                        <div className="alert alert-warning">
+                            <p>
+                                <b>Warning</b>
+                            </p>
+                            <Markdown dangerousInnerHTML={renderMarkdown(this.state.externalService.warning)} />
+                        </div>
                     </div>
                 ) : (
-                    <SiteAdminExternalServiceForm
-                        {...this.props}
-                        error={this.state.error}
-                        input={this.getExternalServiceInput()}
-                        editorActions={externalService.editorActions}
-                        jsonSchema={externalService.jsonSchema}
-                        mode="create"
-                        onSubmit={this.onSubmit}
-                        onChange={this.onChange}
-                        loading={this.state.loading}
-                    />
+                    <div>
+                        <div className="mb-3">
+                            <ExternalServiceCard {...kindMetadata} />
+                        </div>
+                        <div className="mb-4">{kindMetadata.longDescription}</div>
+                        <SiteAdminExternalServiceForm
+                            {...this.props}
+                            error={this.state.error}
+                            input={this.getExternalServiceInput()}
+                            editorActions={kindMetadata.editorActions}
+                            jsonSchema={kindMetadata.jsonSchema}
+                            mode="create"
+                            onSubmit={this.onSubmit}
+                            onChange={this.onChange}
+                            loading={this.state.loading}
+                        />
+                    </div>
                 )}
             </div>
         )
@@ -168,6 +179,7 @@ function addExternalService(
                 addExternalService(input: $input) {
                     id
                     kind
+                    displayName
                     warning
                 }
             }
