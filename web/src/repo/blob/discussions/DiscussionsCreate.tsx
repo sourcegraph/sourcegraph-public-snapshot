@@ -20,6 +20,12 @@ interface Props extends ExtensionsControllerProps {
     filePath: string
     showNavbar?: boolean
     className?: string
+
+    /**
+     * If set, a "Discard" button is shown, and this callback is called when it is clicked.
+     */
+    onDiscard?: () => void
+
     history: H.History
     location: H.Location
 }
