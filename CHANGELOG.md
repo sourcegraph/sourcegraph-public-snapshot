@@ -25,11 +25,17 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- You may now specify `DISABLE_CONFIG_UPDATES=true` on the management console to prevent updates to the critical configuration. This is useful when loading critical config via a file using `CRITICAL_CONFIG_FILE` on the frontend.
+
 ### Changed
+
+- When `EXTSVC_CONFIG_FILE` or `SITE_CONFIG_FILE` are specified, updates to external services and the site config are now prevented.
 
 ### Removed
 
 ### Fixed
+
+- Fixed an issue where `EXTSVC_CONFIG_FILE` being specified would incorrectly cause a panic.
 
 ## 3.4.0
 

@@ -33,10 +33,11 @@ import (
 const port = "2633"
 
 var (
-	tlsCert       = env.Get("TLS_CERT", "/etc/sourcegraph/management/cert.pem", "TLS certificate (automatically generated if file does not exist)")
-	tlsKey        = env.Get("TLS_KEY", "/etc/sourcegraph/management/key.pem", "TLS key (automatically generated if file does not exist)")
-	customTLS     = env.Get("CUSTOM_TLS", "false", "When true, disables TLS cert/key generation to prevent accidents.")
-	unsafeNoHTTPS = env.Get("UNSAFE_NO_HTTPS", "false", "(unsafe) When true, disables HTTPS entirely. Anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf!")
+	tlsCert              = env.Get("TLS_CERT", "/etc/sourcegraph/management/cert.pem", "TLS certificate (automatically generated if file does not exist)")
+	tlsKey               = env.Get("TLS_KEY", "/etc/sourcegraph/management/key.pem", "TLS key (automatically generated if file does not exist)")
+	customTLS            = env.Get("CUSTOM_TLS", "false", "When true, disables TLS cert/key generation to prevent accidents.")
+	unsafeNoHTTPS        = env.Get("UNSAFE_NO_HTTPS", "false", "(unsafe) When true, disables HTTPS entirely. Anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf!")
+	disableConfigUpdates = env.Get("DISABLE_CONFIG_UPDATES", "false", "When true, disables updating the configuration. Useful when using CRITICAL_CONFIG_FILE on the frontend service.")
 )
 
 func configureTLS() error {
@@ -197,6 +198,12 @@ func httpError(w http.ResponseWriter, message string, code string) {
 
 func serveUpdate(w http.ResponseWriter, r *http.Request) {
 	logger := log15.New("route", "update")
+
+	disableConfigUpdates, _ := strconv.ParseBool(disableConfigUpdates)
+	if disableConfigUpdates {
+		httpError(w, errors.New("Updating configuration was disabled via DISABLE_CONFIG_UPDATES").Error(), "config_updates_disabled")
+		return
+	}
 
 	var args struct {
 		LastID   string
