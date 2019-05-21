@@ -1,10 +1,13 @@
 import * as H from 'history'
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
+import { Markdown } from '../../../shared/src/components/Markdown'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
@@ -36,6 +39,8 @@ interface State {
      * True if the form is currently being submitted
      */
     loading: boolean
+
+    warning?: string
 }
 
 /**
@@ -63,13 +68,16 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                     tap(() => this.setState({ loading: true })),
                     switchMap(input =>
                         addExternalService(input, this.props.eventLogger).pipe(
-                            map(() => {
-                                // Refresh site flags so that global site alerts
-                                // reflect the latest configuration.
-                                refreshSiteFlags().subscribe({ error: err => console.error(err) })
-
-                                this.setState({ loading: false })
-                                this.props.history.push(`/site-admin/external-services`)
+                            map(extSvc => {
+                                if (extSvc.warning) {
+                                    this.setState({ error: undefined, warning: extSvc.warning, loading: false })
+                                } else {
+                                    // Refresh site flags so that global site alerts
+                                    // reflect the latest configuration.
+                                    refreshSiteFlags().subscribe({ error: err => console.error(err) })
+                                    this.setState({ loading: false })
+                                    this.props.history.push(`/site-admin/external-services`)
+                                }
                             }),
                             catchError(error => {
                                 console.error(error)
@@ -97,17 +105,32 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                     <ExternalServiceCard {...externalService} />
                 </div>
                 <div className="mb-4">{externalService.longDescription}</div>
-                <SiteAdminExternalServiceForm
-                    {...this.props}
-                    error={this.state.error}
-                    input={this.getExternalServiceInput()}
-                    editorActions={externalService.editorActions}
-                    jsonSchema={externalService.jsonSchema}
-                    mode="create"
-                    onSubmit={this.onSubmit}
-                    onChange={this.onChange}
-                    loading={this.state.loading}
-                />
+                {this.state.warning ? (
+                    <div className="alert alert-warning">
+                        <p>Warning:</p>
+                        <Markdown dangerousInnerHTML={renderMarkdown(this.state.warning)} />
+
+                        <Link
+                            className="btn btn-warning"
+                            to="/site-admin/external-services"
+                            data-tooltip="View external services"
+                        >
+                            View external services
+                        </Link>
+                    </div>
+                ) : (
+                    <SiteAdminExternalServiceForm
+                        {...this.props}
+                        error={this.state.error}
+                        input={this.getExternalServiceInput()}
+                        editorActions={externalService.editorActions}
+                        jsonSchema={externalService.jsonSchema}
+                        mode="create"
+                        onSubmit={this.onSubmit}
+                        onChange={this.onChange}
+                        loading={this.state.loading}
+                    />
+                )}
             </div>
         )
     }
@@ -144,6 +167,8 @@ function addExternalService(
             mutation addExternalService($input: AddExternalServiceInput!) {
                 addExternalService(input: $input) {
                     id
+                    kind
+                    warning
                 }
             }
         `,

@@ -14,6 +14,7 @@ interface Props extends Pick<ExternalServiceKindMetadata, 'jsonSchema' | 'editor
     input: GQL.IAddExternalServiceInput
     isLightTheme: boolean
     error?: ErrorLike
+    warning?: string
     mode: 'edit' | 'create'
     loading: boolean
     onSubmit: (event?: React.FormEvent<HTMLFormElement>) => void
@@ -31,6 +32,12 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                     <div className="alert alert-danger">
                         <p>Error saving configuration:</p>
                         <Markdown dangerousInnerHTML={renderMarkdown(this.props.error.message)} />
+                    </div>
+                )}
+                {this.props.warning && (
+                    <div className="alert alert-warning">
+                        <p>Warning:</p>
+                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.warning)} />
                     </div>
                 )}
                 <div className="form-group">
