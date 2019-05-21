@@ -37,3 +37,23 @@ $input-padding: $spacer;
     display: block;
     margin-top: $spacer * 0.25;
 }
+
+// TODO!(sqs): fix these after rebasing onto web-ui
+//
+// If you have a Bootstrap input group with prepends or appends, you want the focus ring to appear
+// around the entire input group, not just around the text field in the middle of it. These classes make it possible.
+//
+// Use this class on the prepends or appends.
+.bg-form-control {
+    background-color: $input-bg !important;
+}
+// Use this class on the .input-group when the text field is focused. (You'll need onFocus/onBlur
+// listeners on the text field to toggle this class on the .input-group.)
+.form-control-focus {
+    // Duplicated from Bootstrap @mixin form-control-focus.
+    color: $input-focus-color;
+    background-color: $input-focus-bg;
+    border-color: $input-focus-border-color !important;
+    outline: 0;
+    box-shadow: $input-focus-box-shadow;
+}
