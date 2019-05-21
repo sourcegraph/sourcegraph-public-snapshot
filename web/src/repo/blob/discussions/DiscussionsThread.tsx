@@ -25,6 +25,7 @@ interface Props extends ExtensionsControllerProps {
     showNavbar?: boolean
     history: H.History
     location: H.Location
+    forceURL?: boolean
 }
 
 interface State {
@@ -87,7 +88,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
 
         // If the thread is loaded, ensure that the URL hash is updated to
         // reflect the line that the discussion was created on.
-        if (thread) {
+        if (thread && this.props.forceURL) {
             // TODO(sqs): support multiple thread targets
             const target =
                 thread.targets && thread.targets.nodes && thread.targets.nodes.length > 0
