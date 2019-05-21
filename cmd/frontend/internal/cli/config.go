@@ -92,6 +92,12 @@ func handleConfigOverrides() {
 			overrideExtSvcConfig = legacyOverrideExtSvcConfig
 		}
 		if overrideExtSvcConfig != "" {
+			parsed, err := conf.ParseConfig(raw)
+			if err != nil {
+				log.Fatal(err)
+			}
+			confGet := func() *conf.Unified { return parsed }
+
 			existing, err := db.ExternalServices.List(context.Background(), db.ExternalServicesListOptions{})
 			if err != nil {
 				log.Fatal(err)
@@ -114,7 +120,7 @@ func handleConfigOverrides() {
 					if err != nil {
 						log.Fatal(err)
 					}
-					if err := db.ExternalServices.Create(context.Background(), &types.ExternalService{
+					if err := db.ExternalServices.Create(context.Background(), confGet, &types.ExternalService{
 						Kind:        key,
 						DisplayName: fmt.Sprintf("Dev %s #%d", key, i+1),
 						Config:      string(marshaledCfg),

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
 
@@ -34,7 +35,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 		Config:      args.Input.Config,
 	}
 
-	if err := db.ExternalServices.Create(ctx, externalService); err != nil {
+	if err := db.ExternalServices.Create(ctx, conf.Get, externalService); err != nil {
 		return nil, err
 	}
 
