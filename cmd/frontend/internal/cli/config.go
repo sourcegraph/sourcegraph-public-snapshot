@@ -139,6 +139,7 @@ func handleConfigOverrides() error {
 			}
 		}
 	}
+	return nil
 }
 
 type configurationSource struct{}
