@@ -97,7 +97,9 @@ func Main() error {
 	if err := dbconn.ConnectToDB(""); err != nil {
 		log.Fatal(err)
 	}
-	handleConfigOverrides()
+	if err := handleConfigOverrides(); err != nil {
+		log.Fatal("applying config overrides:", err)
+	}
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
 	conf.MustValidateDefaults()
 

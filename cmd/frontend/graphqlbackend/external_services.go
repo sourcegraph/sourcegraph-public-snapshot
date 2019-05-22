@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
 
@@ -27,6 +29,9 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
+	}
 
 	externalService := &types.ExternalService{
 		Kind:        args.Input.Kind,
@@ -34,7 +39,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 		Config:      args.Input.Config,
 	}
 
-	if err := db.ExternalServices.Create(ctx, externalService); err != nil {
+	if err := db.ExternalServices.Create(ctx, conf.Get, externalService); err != nil {
 		return nil, err
 	}
 
@@ -60,6 +65,9 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	// 🚨 SECURITY: Only site admins are allowed to update the user.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
+	}
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
 	if args.Input.Config != nil && strings.TrimSpace(*args.Input.Config) == "" {
@@ -111,6 +119,9 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 	// 🚨 SECURITY: Only site admins can delete external services.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
+	}
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
 	id, err := unmarshalExternalServiceID(args.ExternalService)

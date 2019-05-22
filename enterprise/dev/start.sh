@@ -18,9 +18,9 @@ source "$DEV_PRIVATE_PATH/enterprise/dev/env"
 # set to true if unset so set -u won't break us
 : ${SOURCEGRAPH_COMBINE_CONFIG:=false}
 
-export DEV_OVERRIDE_CRITICAL_CONFIG=$DEV_PRIVATE_PATH/enterprise/dev/critical-config.json
-export DEV_OVERRIDE_SITE_CONFIG=$DEV_PRIVATE_PATH/enterprise/dev/site-config.json
-export DEV_OVERRIDE_EXTSVC_CONFIG=$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json
+export CRITICAL_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/critical-config.json
+export SITE_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/site-config.json
+export EXTSVC_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json
 export GOMOD_ROOT=$PWD
 export PROCFILE=$PWD/dev/Procfile
 export ENTERPRISE_COMMANDS="frontend management-console"
