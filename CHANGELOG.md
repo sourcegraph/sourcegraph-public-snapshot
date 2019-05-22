@@ -37,6 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an issue where `EXTSVC_CONFIG_FILE` being specified would incorrectly cause a panic.
+- Fixed an issue where user/org/global settings from old Sourcegraph versions (2.x) could incorrectly be null, leading to various errors.
 
 ## 3.4.0
 
