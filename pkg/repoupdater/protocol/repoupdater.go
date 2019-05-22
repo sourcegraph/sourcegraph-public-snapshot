@@ -174,5 +174,5 @@ type ExternalServiceSyncRequest struct {
 // ExternalServiceSyncResult is a result type of an external service's sync request.
 type ExternalServiceSyncResult struct {
 	ExternalService api.ExternalService
-	Error           error
+	Error           string
 }

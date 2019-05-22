@@ -1111,6 +1111,12 @@ type ExternalService implements Node {
     createdAt: String!
     # When the external service was last updated.
     updatedAt: String!
+    # This is an optional field that's populated when we ran into errors on the
+    # backend side when trying to create/update an ExternalService, but the
+    # create/update still succeeded.
+    # It is a field on ExternalService instead of a separate thing in order to
+    # not break the API and stay backwards compatible.
+    warning: String
 }
 
 # A list of repositories.

@@ -200,6 +200,9 @@ func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalServic
 		return nil, err
 	}
 
+	if result.Error != "" {
+		return nil, errors.New(result.Error)
+	}
 	return &result, nil
 }
 

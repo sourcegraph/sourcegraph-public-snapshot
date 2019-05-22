@@ -43,11 +43,12 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	res := &externalServiceResolver{externalService: externalService}
 	if err := syncExternalService(ctx, externalService); err != nil {
-		return nil, errors.Wrap(err, "warning: external service created, but sync request failed")
+		res.warning = fmt.Sprintf("External service created, but we encountered a problem while syncing the external service: %s", err)
 	}
 
-	return &externalServiceResolver{externalService: externalService}, nil
+	return res, nil
 }
 
 func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
@@ -87,16 +88,17 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	res := &externalServiceResolver{externalService: externalService}
 	if err = syncExternalService(ctx, externalService); err != nil {
-		return nil, errors.Wrap(err, "warning: external service updated, but sync request failed")
+		res.warning = fmt.Sprintf("External service updated, but we encountered a problem while syncing the external service: %s", err)
 	}
 
-	return &externalServiceResolver{externalService: externalService}, nil
+	return res, nil
 }
 
 // Eagerly trigger a repo-updater sync.
 func syncExternalService(ctx context.Context, svc *types.ExternalService) error {
-	res, err := repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
+	_, err := repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
 		ID:          svc.ID,
 		Kind:        svc.Kind,
 		DisplayName: svc.DisplayName,
@@ -110,7 +112,7 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 		return err
 	}
 
-	return res.Error
+	return nil
 }
 
 func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
