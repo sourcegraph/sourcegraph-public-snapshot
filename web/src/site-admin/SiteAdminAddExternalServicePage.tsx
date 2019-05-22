@@ -70,17 +70,6 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                     tap(() => this.setState({ loading: true })),
                     switchMap(input =>
                         addExternalService(input, this.props.eventLogger).pipe(
-                            map(extSvc => {
-                                if (extSvc.warning) {
-                                    this.setState({ error: undefined, externalService: extSvc, loading: false })
-                                } else {
-                                    // Refresh site flags so that global site alerts
-                                    // reflect the latest configuration.
-                                    refreshSiteFlags().subscribe({ error: err => console.error(err) })
-                                    this.setState({ loading: false })
-                                    this.props.history.push(`/site-admin/external-services`)
-                                }
-                            }),
                             catchError(error => {
                                 console.error(error)
                                 this.setState({ error, loading: false })
@@ -89,7 +78,17 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                         )
                     )
                 )
-                .subscribe()
+                .subscribe(externalService => {
+                    if (externalService.warning) {
+                        this.setState({ externalService, error: undefined, loading: false })
+                    } else {
+                        // Refresh site flags so that global site alerts
+                        // reflect the latest configuration.
+                        refreshSiteFlags().subscribe({ error: err => console.error(err) })
+                        this.setState({ loading: false })
+                        this.props.history.push(`/site-admin/external-services`)
+                    }
+                })
         )
     }
 

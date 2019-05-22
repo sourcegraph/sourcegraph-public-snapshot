@@ -68,9 +68,9 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                         concat(
                             [{ updatedOrError: LOADING, warning: null }],
                             updateExternalService(input).pipe(
-                                mergeMap(val =>
-                                    val.warning
-                                        ? of({ warning: val.warning, updatedOrError: null })
+                                mergeMap(({ warning }) =>
+                                    warning
+                                        ? of({ warning, updatedOrError: null })
                                         : concat(
                                               // Flash "updated" text
                                               of({ updatedOrError: true }),
