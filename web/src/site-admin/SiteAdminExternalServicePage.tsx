@@ -3,11 +3,11 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, delay, distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap } from 'rxjs/operators'
+import { catchError, delay, distinctUntilChanged, map, mergeMap, startWith, switchMap } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { queryGraphQL } from '../backend/graphql'
+import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { ExternalServiceCard } from './../components/ExternalServiceCard'
@@ -28,6 +28,8 @@ interface State {
      * loading, or an error.
      */
     updatedOrError: null | true | typeof LOADING | ErrorLike
+
+    warning?: string
 }
 
 export class SiteAdminExternalServicePage extends React.Component<Props, State> {
@@ -64,16 +66,17 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 .pipe(
                     switchMap(input =>
                         concat(
-                            [{ updatedOrError: LOADING }],
+                            [{ updatedOrError: LOADING, warning: null }],
                             updateExternalService(input).pipe(
-                                mapTo(null),
-                                mergeMap(() =>
-                                    concat(
-                                        // Flash "updated" text
-                                        of({ updatedOrError: true }),
-                                        // Hide "updated" text again after 1s
-                                        of({ updatedOrError: null }).pipe(delay(1000))
-                                    )
+                                mergeMap(val =>
+                                    val.warning
+                                        ? of({ warning: val.warning, updatedOrError: null })
+                                        : concat(
+                                              // Flash "updated" text
+                                              of({ updatedOrError: true }),
+                                              // Hide "updated" text again after 1s
+                                              of({ updatedOrError: null }).pipe(delay(1000))
+                                          )
                                 ),
                                 catchError((error: Error) => [{ updatedOrError: asError(error) }])
                             )
@@ -131,6 +134,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                         editorActions={externalServiceCategory.editorActions}
                         jsonSchema={externalServiceCategory.jsonSchema}
                         error={error}
+                        warning={this.state.warning}
                         mode="edit"
                         loading={this.state.updatedOrError === LOADING}
                         onSubmit={this.onSubmit}
@@ -171,22 +175,21 @@ function isExternalService(
     return externalServiceOrError !== LOADING && !isErrorLike(externalServiceOrError)
 }
 
-function updateExternalService(input: GQL.IUpdateExternalServiceInput): Observable<GQL.IExternalService> {
-    return queryGraphQL(
+function updateExternalService(
+    input: GQL.IUpdateExternalServiceInput
+): Observable<Pick<GQL.IExternalService, 'warning'>> {
+    return mutateGraphQL(
         gql`
             mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
                 updateExternalService(input: $input) {
-                    id
-                    kind
-                    displayName
-                    config
+                    warning
                 }
             }
         `,
         { input }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.node as GQL.IExternalService)
+        map(data => data.updateExternalService)
     )
 }
 

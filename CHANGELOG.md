@@ -33,6 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - When `EXTSVC_CONFIG_FILE` or `SITE_CONFIG_FILE` are specified, updates to external services and the site config are now prevented.
+- Site admins will now see a warning if creating or updating an external service was successful but the process could not complete entirely due to an ephemeral error (such as GitHub API search queries running into timeouts and returning incomplete results).
 
 ### Removed
 

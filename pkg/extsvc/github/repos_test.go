@@ -324,10 +324,9 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 	// If we have incomplete results we want to fail. Our syncer requires all
 	// repositories to be returned, otherwise it will delete the missing
 	// repositories.
-	want := `github repository search returned incomplete results. This is an ephemeral error from GitHub, so does not indicate a problem with your configuration. See https://developer.github.com/changes/2014-04-07-understanding-search-results-and-potential-timeouts/ for more information`
 	_, err := c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
 
-	if have := fmt.Sprint(err); want != have {
+	if have, want := err, ErrIncompleteResults; want != have {
 		t.Errorf("\nhave: %s\nwant: %s", have, want)
 	}
 }
