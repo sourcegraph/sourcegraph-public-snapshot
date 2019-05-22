@@ -26,10 +26,10 @@ class FilteredSiteAdminProductSubscriptionConnection extends FilteredConnection<
     Pick<SiteAdminProductSubscriptionNodeProps, 'onDidUpdate'>
 > {}
 
-type subscriptionsDisplays = 'by-created-at' | 'by-expires-at'
+type SubscriptionsDisplays = 'by-created-at' | 'by-expires-at'
 
 interface State {
-    tab: subscriptionsDisplays
+    tab: SubscriptionsDisplays
 }
 
 /**
@@ -37,7 +37,7 @@ interface State {
  */
 export class SiteAdminProductSubscriptionsPage extends React.Component<Props, State> {
     public state: State = { tab: 'by-created-at' }
-    private static TABS: Tab<subscriptionsDisplays>[] = [
+    private static TABS: Tab<SubscriptionsDisplays>[] = [
         { id: 'by-created-at', label: 'Sort by latest created' },
         { id: 'by-expires-at', label: 'Sort by license expiration' },
     ]
@@ -54,7 +54,7 @@ export class SiteAdminProductSubscriptionsPage extends React.Component<Props, St
         this.subscriptions.unsubscribe()
     }
 
-    private tabSelected = (tab: subscriptionsDisplays) => this.setState({ tab })
+    private tabSelected = (tab: SubscriptionsDisplays) => this.setState({ tab })
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<SiteAdminProductSubscriptionNodeProps, 'onDidUpdate'> = {
