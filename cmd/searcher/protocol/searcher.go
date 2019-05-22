@@ -42,7 +42,7 @@ type Request struct {
 }
 
 // GitserverRepo returns the repository information necessary to perform gitserver requests.
-func (r Request) GitserverRepo() gitserver.Repo { return gitserver.Repo{Name: r.Repo, URL: r.URL} }
+func (r Request) GitserverRepo() gitserver.Repo { return gitserver.Repo{Name: r.Repo} }
 
 // PatternInfo describes a search request on a repo. Most of the fields
 // are based on PatternInfo used in vscode.
