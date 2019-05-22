@@ -16,7 +16,6 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - The saved searches UI has changed. There is now a Saved searches page in the user and organizations settings area. A saved search appears in the settings area of the user or organization it is associated with.
-- Site admins will now see a warning if creating or updating an external service was successful but the process could not complete entirely due to an ephemeral error (such as the GitHub API shedding load and returning incomplete results).
 
 ### Removed
 
@@ -31,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - When `EXTSVC_CONFIG_FILE` or `SITE_CONFIG_FILE` are specified, updates to external services and the site config are now prevented.
+- Site admins will now see a warning if creating or updating an external service was successful but the process could not complete entirely due to an ephemeral error (such as GitHub API search queries running into timeouts and returning incomplete results).
 
 ### Removed
 
