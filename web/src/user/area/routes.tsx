@@ -1,25 +1,15 @@
 import React from 'react'
 import { Redirect } from 'react-router'
-
-import { UserSavedSearchesCreateForm } from '../saved-searches/UserSavedSearchesCreateForm'
-import { UserSavedSearchesUpdateForm } from '../saved-searches/UserSavedSearchesUpdateForm'
-import { UserSavedSearchListPage } from '../saved-searches/UserSavedSearchListPage'
+import { lazyComponent } from '../../util/lazyComponent'
 import { UserAreaRoute } from './UserArea'
 
-const UserOverviewPage = React.lazy(async () => ({
-    default: (await import('./UserOverviewPage')).UserOverviewPage,
-}))
-
-const UserSettingsArea = React.lazy(async () => ({
-    default: (await import('../settings/UserSettingsArea')).UserSettingsArea,
-}))
+const UserSettingsArea = lazyComponent(() => import('../settings/UserSettingsArea'), 'UserSettingsArea')
 
 export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
     {
         path: '',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserOverviewPage {...props} />,
+        render: lazyComponent(() => import('./UserOverviewPage'), 'UserOverviewPage'),
     },
     {
         path: '/settings',
@@ -37,17 +27,20 @@ export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
         path: '/searches',
         exact: true,
         // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSavedSearchListPage {...props} />,
+        render: props =>
+            lazyComponent(() => import('../saved-searches/UserSavedSearchListPage'), 'UserSavedSearchListPage'),
     },
     {
         path: '/searches/add',
         // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSavedSearchesCreateForm {...props} />,
+        render: props =>
+            lazyComponent(() => import('../saved-searches/UserSavedSearchesCreateForm'), 'UserSavedSearchesCreateForm'),
     },
     {
         path: '/searches/:id',
         // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserSavedSearchesUpdateForm {...props} />,
+        render: props =>
+            lazyComponent(() => import('../saved-searches/UserSavedSearchesUpdateForm'), 'UserSavedSearchesUpdateForm'),
     },
 
     // Redirect from previous /users/:username/account -> /users/:username/settings/profile.

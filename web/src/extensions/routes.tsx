@@ -1,16 +1,14 @@
 import React from 'react'
+import { lazyComponent } from '../util/lazyComponent'
 import { ExtensionsAreaRoute } from './ExtensionsArea'
-const ExtensionArea = React.lazy(async () => ({ default: (await import('./extension/ExtensionArea')).ExtensionArea }))
-const ExtensionsOverviewPage = React.lazy(async () => ({
-    default: (await import('./ExtensionsOverviewPage')).ExtensionsOverviewPage,
-}))
+
+const ExtensionArea = lazyComponent(() => import('./extension/ExtensionArea'), 'ExtensionArea')
 
 export const extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute> = [
     {
         path: '',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props => <ExtensionsOverviewPage {...props} />,
+        render: lazyComponent(() => import('./ExtensionsOverviewPage'), 'ExtensionsOverviewPage'),
     },
     {
         path: `/:extensionID(.*)/-/`,

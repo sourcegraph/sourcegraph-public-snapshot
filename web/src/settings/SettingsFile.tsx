@@ -201,10 +201,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
     private monacoRef = (monacoValue: typeof _monaco | null) => {
         this.monaco = monacoValue
-        // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
-        // so we know its #_result property is set by now.
-        const monacoSettingsEditor = MonacoSettingsEditor._result
-        if (this.monaco && monacoSettingsEditor) {
+        if (this.monaco) {
             this.subscriptions.add(
                 disposableToFn(
                     this.monaco.editor.onDidCreateEditor(editor => {
@@ -214,10 +211,14 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             )
             this.subscriptions.add(
                 disposableToFn(
-                    this.monaco.editor.onDidCreateModel(model => {
-                        if (this.editor && monacoSettingsEditor.isStandaloneCodeEditor(this.editor)) {
+                    this.monaco.editor.onDidCreateModel(async model => {
+                        // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
+                        // so this import call will not incur another load.
+                        const { MonacoSettingsEditor } = await import('../settings/MonacoSettingsEditor')
+
+                        if (this.editor && MonacoSettingsEditor.isStandaloneCodeEditor(this.editor)) {
                             for (const { id, label, run } of settingsActions) {
-                                monacoSettingsEditor.addEditorAction(this.editor, model, label, id, run)
+                                MonacoSettingsEditor.addEditorAction(this.editor, model, label, id, run)
                             }
                         }
                     })

@@ -1,10 +1,8 @@
 import React from 'react'
 import { siteAdminOverviewComponents } from '../../site-admin/overviewComponents'
-const ProductSubscriptionStatus = React.lazy(async () => ({
-    default: (await import('./productSubscription/ProductSubscriptionStatus')).ProductSubscriptionStatus,
-}))
+import { lazyComponent } from '../../util/lazyComponent'
 
 export const enterpriseSiteAdminOverviewComponents: ReadonlyArray<React.ComponentType<any>> = [
     ...siteAdminOverviewComponents,
-    ProductSubscriptionStatus,
+    lazyComponent(() => import('./productSubscription/ProductSubscriptionStatus'), 'ProductSubscriptionStatus'),
 ]
