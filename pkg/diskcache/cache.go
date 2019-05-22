@@ -63,6 +63,7 @@ func (s *Store) Open(ctx context.Context, key string, fetcher Fetcher) (file *Fi
 		}
 		file, err := os.OpenFile(path, os.O_WRONLY, 0600)
 		if err != nil {
+			readCloser.Close()
 			return errors.Wrap(err, "failed to open temporary archive cache item")
 		}
 		err = copyAndClose(file, readCloser)
