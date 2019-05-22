@@ -162,7 +162,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                 offset={this.visibilitySensorOffset}
             >
                 <>
-                    {this.state.HTML && (
+                    {this.state.HTML !== undefined ? (
                         <Link key={this.props.item.url} to={this.props.item.url} className="search-result-match">
                             {this.bodyIsCode ? (
                                 <code>
@@ -180,8 +180,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                 />
                             )}
                         </Link>
-                    )}
-                    {!this.state.HTML && (
+                    ) : (
                         <>
                             <LoadingSpinner className="icon-inline search-result-match__loader" />
                             <table>
