@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -22,6 +23,7 @@ import (
 	"github.com/stripe/stripe-go/invoice"
 	"github.com/stripe/stripe-go/plan"
 	"github.com/stripe/stripe-go/sub"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func init() {
@@ -110,6 +112,17 @@ func (r *productSubscription) Events(ctx context.Context) ([]graphqlbackend.Prod
 }
 
 func (r *productSubscription) ActiveLicense(ctx context.Context) (graphqlbackend.ProductLicense, error) {
+	l, err := r.activeDBLicense(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if l == nil {
+		return nil, nil
+	}
+	return &productLicense{v: l}, err
+}
+
+func (r *productSubscription) activeDBLicense(ctx context.Context) (*dbLicense, error) {
 	// Return newest license.
 	licenses, err := dbLicenses{}.List(ctx, dbLicensesListOptions{
 		ProductSubscriptionID: r.v.ID,
@@ -121,7 +134,7 @@ func (r *productSubscription) ActiveLicense(ctx context.Context) (graphqlbackend
 	if len(licenses) == 0 {
 		return nil, nil
 	}
-	return &productLicense{v: licenses[0]}, nil
+	return licenses[0], nil
 }
 
 func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ProductLicenseConnection, error) {
@@ -462,8 +475,14 @@ func (ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.Con
 	if accountUser != nil {
 		opt.UserID = accountUser.DatabaseID()
 	}
-	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &productSubscriptionConnection{opt: opt}, nil
+
+	orderByExpiresAt := args.OrderBy == "SUBSCRIPTION_ACTIVE_LICENSE_EXPIRES_AT"
+	// Only set limit and offset if ordering by default created_at field. If ordering by
+	// license expiration, must fetch ALL records from the db, and compute the ordering in Go.
+	if !orderByExpiresAt {
+		args.ConnectionArgs.Set(&opt.LimitOffset)
+	}
+	return &productSubscriptionConnection{opt: opt, orderByExpiresAt: orderByExpiresAt}, nil
 }
 
 // productSubscriptionConnection implements the GraphQL type ProductSubscriptionConnection.
@@ -473,13 +492,55 @@ func (ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.Con
 type productSubscriptionConnection struct {
 	opt dbSubscriptionsListOptions
 
+	// special handling for non-SQL ordering option
+	orderByExpiresAt bool
+
 	// cache results because they are used by multiple fields
 	once    sync.Once
-	results []*dbSubscription
+	results sortSubscriptions
 	err     error
 }
 
-func (r *productSubscriptionConnection) compute(ctx context.Context) ([]*dbSubscription, error) {
+type subscriptionWithActiveLicense struct {
+	subscription  *dbSubscription
+	activeLicense *dbLicense
+}
+
+type sortSubscriptions []*subscriptionWithActiveLicense
+
+func (s sortSubscriptions) Len() int {
+	return len(s)
+}
+
+func (s sortSubscriptions) Less(i, j int) bool {
+	// Subscriptions with no license should always be last.
+	if s[i].activeLicense == nil {
+		return false
+	}
+	if s[j].activeLicense == nil {
+		return true
+	}
+
+	l1 := &productLicense{v: s[i].activeLicense}
+	l1Info, err := l1.Info()
+	if err != nil {
+		log15.Error("graphqlbackend.productLicense.Info() failed", "error", err)
+		return false
+	}
+	l2 := &productLicense{v: s[j].activeLicense}
+	l2Info, err := l2.Info()
+	// Subscriptions with no license should be at the end of the list.
+	if err != nil {
+		log15.Error("graphqlbackend.productLicense.Info() failed", "error", err)
+		return false
+	}
+	return l1Info.ExpiresAtValue.Before(l2Info.ExpiresAtValue)
+}
+func (s sortSubscriptions) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (r *productSubscriptionConnection) compute(ctx context.Context) (sortSubscriptions, error) {
 	r.once.Do(func() {
 		opt2 := r.opt
 		if opt2.LimitOffset != nil {
@@ -488,7 +549,28 @@ func (r *productSubscriptionConnection) compute(ctx context.Context) ([]*dbSubsc
 			opt2.Limit++ // so we can detect if there is a next page
 		}
 
-		r.results, r.err = dbSubscriptions{}.List(ctx, opt2)
+		var dbSubs []*dbSubscription
+		dbSubs, r.err = dbSubscriptions{}.List(ctx, opt2)
+		if r.err != nil {
+			return
+		}
+
+		r.results = make([]*subscriptionWithActiveLicense, len(dbSubs))
+		for i, s := range dbSubs {
+			r.results[i] = &subscriptionWithActiveLicense{subscription: s}
+		}
+
+		if r.orderByExpiresAt {
+			for i, s := range r.results {
+				ps := &productSubscription{v: s.subscription}
+				r.results[i].activeLicense, r.err = ps.activeDBLicense(ctx)
+				if r.err != nil {
+					return
+				}
+			}
+
+			sort.Sort(r.results)
+		}
 	})
 	return r.results, r.err
 }
@@ -501,7 +583,7 @@ func (r *productSubscriptionConnection) Nodes(ctx context.Context) ([]graphqlbac
 
 	var l []graphqlbackend.ProductSubscription
 	for _, result := range results {
-		l = append(l, &productSubscription{v: result})
+		l = append(l, &productSubscription{v: result.subscription})
 	}
 	return l, nil
 }

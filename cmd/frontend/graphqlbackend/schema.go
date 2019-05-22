@@ -3411,6 +3411,8 @@ type DotcomQuery {
         #
         # Only Sourcegraph.com site admins may perform this query with account == null.
         account: ID
+        # Ordering for subscriptions in the list.
+        orderBy: SubscriptionOrderBy = SUBSCRIPTION_CREATED_AT
     ): ProductSubscriptionConnection!
     # The invoice that would be generated for a new or updated subscription. This is used to show
     # users a preview of the credits, debits, and other billing information before creating or
@@ -3488,6 +3490,14 @@ type ProductSubscription implements Node {
     #
     # Only Sourcegraph.com site admins may query this field.
     urlForSiteAdminBilling: String
+}
+
+# SubscriptionOrderBy enumerates the ways a subscription list can be ordered.
+enum SubscriptionOrderBy {
+    # Order by subscription creation date, in descending order.
+    SUBSCRIPTION_CREATED_AT
+    # Order by subscription active license expiration date, in ascending order.
+    SUBSCRIPTION_ACTIVE_LICENSE_EXPIRES_AT
 }
 
 # A list of product subscriptions.

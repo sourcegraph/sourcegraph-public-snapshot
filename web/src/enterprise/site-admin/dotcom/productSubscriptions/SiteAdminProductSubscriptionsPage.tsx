@@ -4,6 +4,7 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { Tab, TabsWithLocalStorageViewStatePersistence } from '../../../../../../shared/src/components/Tabs'
 import { gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../../../shared/src/util/errors'
@@ -25,10 +26,23 @@ class FilteredSiteAdminProductSubscriptionConnection extends FilteredConnection<
     Pick<SiteAdminProductSubscriptionNodeProps, 'onDidUpdate'>
 > {}
 
+type subscriptionsDisplays = 'by-created-at' | 'by-expires-at'
+
+interface State {
+    tab: subscriptionsDisplays
+}
+
 /**
  * Displays the product subscriptions that have been created on Sourcegraph.com.
  */
-export class SiteAdminProductSubscriptionsPage extends React.Component<Props> {
+export class SiteAdminProductSubscriptionsPage extends React.Component<Props, State> {
+    public state: State = { tab: 'by-created-at' }
+    private static TABS: Tab<subscriptionsDisplays>[] = [
+        { id: 'by-created-at', label: 'Sort by latest created' },
+        { id: 'by-expires-at', label: 'Sort by license expiration' },
+    ]
+    private static LAST_TAB_STORAGE_KEY = 'site-admin-product-subscriptions-last-tab'
+
     private subscriptions = new Subscription()
     private updates = new Subject<void>()
 
@@ -39,6 +53,8 @@ export class SiteAdminProductSubscriptionsPage extends React.Component<Props> {
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
+
+    private tabSelected = (tab: subscriptionsDisplays) => this.setState({ tab })
 
     public render(): JSX.Element | null {
         const nodeProps: Pick<SiteAdminProductSubscriptionNodeProps, 'onDidUpdate'> = {
@@ -55,31 +71,57 @@ export class SiteAdminProductSubscriptionsPage extends React.Component<Props> {
                         Create product subscription
                     </Link>
                 </div>
-                <FilteredSiteAdminProductSubscriptionConnection
-                    className="mt-3"
-                    listComponent="table"
-                    listClassName="table"
-                    noun="product subscription"
-                    pluralNoun="product subscriptions"
-                    queryConnection={this.queryProductSubscriptions}
-                    headComponent={SiteAdminProductSubscriptionNodeHeader}
-                    nodeComponent={SiteAdminProductSubscriptionNode}
-                    nodeComponentProps={nodeProps}
-                    hideSearch={true}
-                    updates={this.updates}
-                    history={this.props.history}
-                    location={this.props.location}
-                />
+                <TabsWithLocalStorageViewStatePersistence
+                    tabs={SiteAdminProductSubscriptionsPage.TABS}
+                    storageKey={SiteAdminProductSubscriptionsPage.LAST_TAB_STORAGE_KEY}
+                    tabClassName="tab-bar__tab--h5like"
+                    onSelectTab={this.tabSelected}
+                >
+                    <FilteredSiteAdminProductSubscriptionConnection
+                        key="by-created-at"
+                        className="mt-3"
+                        listComponent="table"
+                        listClassName="table"
+                        noun="product subscription"
+                        pluralNoun="product subscriptions"
+                        queryConnection={this.queryProductSubscriptionsByCreatedAt}
+                        headComponent={SiteAdminProductSubscriptionNodeHeader}
+                        nodeComponent={SiteAdminProductSubscriptionNode}
+                        nodeComponentProps={nodeProps}
+                        hideSearch={true}
+                        updates={this.updates}
+                        history={this.props.history}
+                        location={this.props.location}
+                    />
+                    <FilteredSiteAdminProductSubscriptionConnection
+                        key="by-expires-at"
+                        className="mt-3"
+                        listComponent="table"
+                        listClassName="table"
+                        noun="product subscription"
+                        pluralNoun="product subscriptions"
+                        queryConnection={this.queryProductSubscriptionsByExpiresAt}
+                        headComponent={SiteAdminProductSubscriptionNodeHeader}
+                        nodeComponent={SiteAdminProductSubscriptionNode}
+                        nodeComponentProps={nodeProps}
+                        hideSearch={true}
+                        updates={this.updates}
+                        history={this.props.history}
+                        location={this.props.location}
+                    />
+                </TabsWithLocalStorageViewStatePersistence>
             </div>
         )
     }
 
-    private queryProductSubscriptions = (args: { first?: number }): Observable<GQL.IProductSubscriptionConnection> =>
+    private queryProductSubscriptions = (orderBy: GQL.SubscriptionOrderBy) => (args: {
+        first?: number
+    }): Observable<GQL.IProductSubscriptionConnection> =>
         queryGraphQL(
             gql`
-                query ProductSubscriptions($first: Int, $account: ID) {
+                query ProductSubscriptions($first: Int, $account: ID, $orderBy: SubscriptionOrderBy) {
                     dotcom {
-                        productSubscriptions(first: $first, account: $account) {
+                        productSubscriptions(first: $first, account: $account, orderBy: $orderBy) {
                             nodes {
                                 ...ProductSubscriptionFields
                             }
@@ -94,6 +136,7 @@ export class SiteAdminProductSubscriptionsPage extends React.Component<Props> {
             `,
             {
                 first: args.first,
+                orderBy,
             } as GQL.IProductSubscriptionsOnDotcomQueryArguments
         ).pipe(
             map(({ data, errors }) => {
@@ -103,6 +146,12 @@ export class SiteAdminProductSubscriptionsPage extends React.Component<Props> {
                 return data.dotcom.productSubscriptions
             })
         )
+    private queryProductSubscriptionsByCreatedAt = this.queryProductSubscriptions(
+        GQL.SubscriptionOrderBy.SUBSCRIPTION_CREATED_AT
+    )
+    private queryProductSubscriptionsByExpiresAt = this.queryProductSubscriptions(
+        GQL.SubscriptionOrderBy.SUBSCRIPTION_ACTIVE_LICENSE_EXPIRES_AT
+    )
 
     private onDidUpdateProductSubscription = () => this.updates.next()
 }

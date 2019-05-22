@@ -3,6 +3,7 @@ import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
 import { gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
+import { LicenseExpiresAtLabel } from '../../../dotcom/productSubscriptions/LicenseExpiresAtLabel'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 
 export const siteAdminProductSubscriptionFragment = gql`
@@ -43,6 +44,7 @@ export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent<{ n
         <tr>
             <th>ID</th>
             <th>Plan</th>
+            <th>License expiration</th>
             <th>Customer</th>
         </tr>
     </thead>
@@ -67,6 +69,9 @@ export class SiteAdminProductSubscriptionNode extends React.PureComponent<SiteAd
                 </td>
                 <td className="text-nowrap">
                     <ProductSubscriptionLabel productSubscription={this.props.node} className="mr-3" />
+                </td>
+                <td className="text-nowrap">
+                    <LicenseExpiresAtLabel productSubscription={this.props.node} className="mr-3" />
                 </td>
                 <td className="w-100">
                     <AccountName account={this.props.node.account} />
