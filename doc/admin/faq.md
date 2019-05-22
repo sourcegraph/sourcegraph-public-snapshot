@@ -8,59 +8,60 @@ The other option is to deploy and run Sourcegraph on a cloud provider. For an ex
 
 ## How do I access the Sourcegraph database?
 
-For single-node deployments (`sourcegraph/server`), follow these steps on the machine that is running the Sourcegraph Docker container:
+> NOTE: To execute an SQL query against the database without first creating an interactive session (as below), append `--command "SELECT * FROM users;"` to the `docker container exec` command.
 
-1.  Get the Docker container ID for Sourcegraph:
-    ```
-    $ docker ps
-    CONTAINER ID        IMAGE
-    d039ec989761        sourcegraph/server:VERSION
-    ```
-2.  Open a PostgreSQL interactive terminal:
-    ```
-    docker exec -it d039ec989761 psql -U postgres sourcegraph
-    ```
-3.  Run your SQL query:
-    ```
-    select * from users;
-    ```
+### For single-node deployments (`sourcegraph/server`)
 
-For Kubernetes cluster deployments:
+Get the Docker container ID for Sourcegraph:
 
-1.  Get the id of one pgsql pod:
-    ```
-    $ kubectl get pods -l app=pgsql
-    NAME                     READY     STATUS    RESTARTS   AGE
-    pgsql-76a4bfcd64-rt4cn   2/2       Running   0          19m
-    ```
-2.  Open a PostgreSQL interactive terminal:
-    ```
-    kubectl exec -it pgsql-76a4bfcd64-rt4cn -- psql -U sg
-    ```
-3.  Run your SQL query:
-    ```
-    select * from users;
-    ```
+```shell
+docker ps
+CONTAINER ID        IMAGE
+d039ec989761        sourcegraph/server:VERSION
+```
+
+Open a PostgreSQL interactive terminal:
+
+```shell
+docker container exec -it d039ec989761 psql -U postgres sourcegraph
+```
+
+Run your SQL query:
+
+```sql
+SELECT * FROM users;
+```
+
+### For Kubernetes cluster deployments
+
+Get the id of one `pgsql` Pod:
+
+```shell
+kubectl get pods -l app=pgsql
+NAME                     READY     STATUS    RESTARTS   AGE
+pgsql-76a4bfcd64-rt4cn   2/2       Running   0          19m
+```
+
+Open a PostgreSQL interactive terminal:
+
+```shell
+kubectl exec -it pgsql-76a4bfcd64-rt4cn -- psql -U sg
+```
+
+Run your SQL query:
+
+```sql
+SELECT * FROM users;
+```
+
+## How does Sourcegraph store repositories on disk?
+
+Sourcegraph stores bare Git repositories (without a working tree), which is a complete mirror of the repository on your code host.
+
+If you are keen for more details on what bare Git repositories are, see [check out this discussion on StackOverflow](https://stackoverflow.com/q/5540883).
+
+The directories should contain just a few files and directories, namely: HEAD, config, description, hooks, info, objects, packed-refs, refs
 
 ## Troubleshooting
 
-### Docker Toolbox on Windows: `New state of 'nil' is invalid`
-
-If you are using Docker Toolbox on Windows to run Sourcegraph, you may see an error in the `frontend` log output:
-
-```
-     frontend |
-     frontend |
-     frontend |
-     frontend |     New state of 'nil' is invalid.
-```
-
-After this error, no more `frontend` log output is printed.
-
-This problem is caused by [docker/toolbox#695](https://github.com/docker/toolbox/issues/695#issuecomment-356218801) in Docker Toolbox on Windows. To work around it, set the environment variable `LOGO=false`, as in:
-
-```shell
-docker run -e LOGO=false ... sourcegraph/server
-```
-
-See [sourcegraph/sourcegraph#398](https://github.com/sourcegraph/sourcegraph/issues/398) for more information.
+Content moved to a [dedicated troubleshooting page](troubleshooting.md).
