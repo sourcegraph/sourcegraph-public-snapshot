@@ -66,76 +66,76 @@ func (er *EmptyResponse) AlwaysNil() *string {
 	return nil
 }
 
-type node interface {
+type Node interface {
 	ID() graphql.ID
 }
 
 type nodeResolver struct {
-	node
+	Node
 }
 
 func (r *nodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
-	n, ok := r.node.(*accessTokenResolver)
+	n, ok := r.Node.(*accessTokenResolver)
 	return n, ok
 }
 
 func (r *nodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
-	n, ok := r.node.(*discussionCommentResolver)
+	n, ok := r.Node.(*discussionCommentResolver)
 	return n, ok
 }
 
 func (r *nodeResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
-	n, ok := r.node.(*discussionThreadResolver)
+	n, ok := r.Node.(*discussionThreadResolver)
 	return n, ok
 }
 
 func (r *nodeResolver) ToProductLicense() (ProductLicense, bool) {
-	n, ok := r.node.(ProductLicense)
+	n, ok := r.Node.(ProductLicense)
 	return n, ok
 }
 
 func (r *nodeResolver) ToProductSubscription() (ProductSubscription, bool) {
-	n, ok := r.node.(ProductSubscription)
+	n, ok := r.Node.(ProductSubscription)
 	return n, ok
 }
 
 func (r *nodeResolver) ToExternalAccount() (*externalAccountResolver, bool) {
-	n, ok := r.node.(*externalAccountResolver)
+	n, ok := r.Node.(*externalAccountResolver)
 	return n, ok
 }
 
 func (r *nodeResolver) ToExternalService() (*externalServiceResolver, bool) {
-	n, ok := r.node.(*externalServiceResolver)
+	n, ok := r.Node.(*externalServiceResolver)
 	return n, ok
 }
 
 func (r *nodeResolver) ToGitRef() (*gitRefResolver, bool) {
-	n, ok := r.node.(*gitRefResolver)
+	n, ok := r.Node.(*gitRefResolver)
 	return n, ok
 }
 
 func (r *nodeResolver) ToRepository() (*repositoryResolver, bool) {
-	n, ok := r.node.(*repositoryResolver)
+	n, ok := r.Node.(*repositoryResolver)
 	return n, ok
 }
 
 func (r *nodeResolver) ToUser() (*UserResolver, bool) {
-	n, ok := r.node.(*UserResolver)
+	n, ok := r.Node.(*UserResolver)
 	return n, ok
 }
 
 func (r *nodeResolver) ToOrg() (*OrgResolver, bool) {
-	n, ok := r.node.(*OrgResolver)
+	n, ok := r.Node.(*OrgResolver)
 	return n, ok
 }
 
 func (r *nodeResolver) ToOrganizationInvitation() (*organizationInvitationResolver, bool) {
-	n, ok := r.node.(*organizationInvitationResolver)
+	n, ok := r.Node.(*organizationInvitationResolver)
 	return n, ok
 }
 
 func (r *nodeResolver) ToGitCommit() (*gitCommitResolver, bool) {
-	n, ok := r.node.(*gitCommitResolver)
+	n, ok := r.Node.(*gitCommitResolver)
 	return n, ok
 }
 
@@ -143,16 +143,16 @@ func (r *nodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
 	if NodeToRegistryExtension == nil {
 		return nil, false
 	}
-	return NodeToRegistryExtension(r.node)
+	return NodeToRegistryExtension(r.Node)
 }
 
 func (r *nodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
-	n, ok := r.node.(*savedSearchResolver)
+	n, ok := r.Node.(*savedSearchResolver)
 	return n, ok
 }
 
 func (r *nodeResolver) ToSite() (*siteResolver, bool) {
-	n, ok := r.node.(*siteResolver)
+	n, ok := r.Node.(*siteResolver)
 	return n, ok
 }
 
@@ -188,7 +188,7 @@ func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }
 	return &nodeResolver{n}, nil
 }
 
-func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
+func nodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, id)

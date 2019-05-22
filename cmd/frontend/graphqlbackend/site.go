@@ -22,7 +22,7 @@ import (
 
 const singletonSiteGQLID = "site"
 
-func siteByGQLID(ctx context.Context, id graphql.ID) (node, error) {
+func siteByGQLID(ctx context.Context, id graphql.ID) (Node, error) {
 	siteGQLID, err := unmarshalSiteGQLID(id)
 	if err != nil {
 		return nil, err
