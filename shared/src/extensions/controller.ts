@@ -1,5 +1,5 @@
 import { from, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
-import { filter, map, publishReplay, refCount, switchAll } from 'rxjs/operators'
+import { map, publishReplay, refCount } from 'rxjs/operators'
 import { createExtensionHostClient } from '../api/client/client'
 import { Services } from '../api/client/services'
 import { ExecuteCommandParams } from '../api/client/services/command'
@@ -145,32 +145,34 @@ export function createController(context: PlatformContext): Controller {
     }
 }
 
-function registerExtensionContributions(
-    contributionRegistry: ContributionRegistry,
+export function registerExtensionContributions(
+    contributionRegistry: Pick<ContributionRegistry, 'registerContributions'>,
     { activeExtensions }: Pick<ExtensionsService, 'activeExtensions'>
 ): Unsubscribable {
     const contributions = from(activeExtensions).pipe(
-        switchAll(),
-        map(({ manifest }) => manifest),
-        filter(
-            (manifest): manifest is Exclude<typeof manifest, ErrorLike | null> =>
-                manifest !== null && !isErrorLike(manifest)
-        ),
-        map(({ contributes }) => contributes),
-        filter(isDefined),
-        map(contributions => {
-            try {
-                return parseContributionExpressions(contributions)
-            } catch (err) {
-                // An error during evaluation causes all of the contributions in the same entry to be
-                // discarded.
-                console.warn('Discarding contributions: parsing expressions or templates failed.', {
-                    contributions,
-                    err,
+        map(extensions =>
+            extensions
+                .map(({ manifest }) => manifest)
+                .filter(
+                    (manifest): manifest is Exclude<typeof manifest, ErrorLike | null> =>
+                        manifest !== null && !isErrorLike(manifest)
+                )
+                .map(({ contributes }) => contributes)
+                .filter(isDefined)
+                .map(contributions => {
+                    try {
+                        return parseContributionExpressions(contributions)
+                    } catch (err) {
+                        // An error during evaluation causes all of the contributions in the same entry to be
+                        // discarded.
+                        console.warn('Discarding contributions: parsing expressions or templates failed.', {
+                            contributions,
+                            err,
+                        })
+                        return {}
+                    }
                 })
-                return {}
-            }
-        }),
+        ),
         // Perf optimization: only parse all the context expression once if there are multiple Subscribers.
         // This does not change the behaviour of the Observable, it always emits the current value on Subscription.
         publishReplay(1),
