@@ -184,9 +184,15 @@ func (e *ExternalServicesStore) validateGitlabConnection(c *schema.GitLabConnect
 
 // Create creates a external service.
 //
+// Since this method is used before the configuration server has started
+// (search for "EXTSVC_CONFIG_FILE") you must pass the conf.Get function in so
+// that an alternative can be used when the configuration server has not
+// started, otherwise a panic would occur once pkg/conf's deadlock detector
+// determines a deadlock occurred.
+//
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) Create(ctx context.Context, externalService *types.ExternalService) error {
-	ps := conf.Get().Critical.AuthProviders
+func (c *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
+	ps := confGet().Critical.AuthProviders
 	if err := c.ValidateConfig(externalService.Kind, externalService.Config, ps); err != nil {
 		return err
 	}
