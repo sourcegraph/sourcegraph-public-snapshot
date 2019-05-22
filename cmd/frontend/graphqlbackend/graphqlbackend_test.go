@@ -55,7 +55,7 @@ func TestNodeResolverTo(t *testing.T) {
 	}
 
 	for _, n := range nodes {
-		r := &nodeResolver{n}
+		r := &NodeResolver{n}
 		if _, b := r.ToAccessToken(); b {
 			continue
 		}
