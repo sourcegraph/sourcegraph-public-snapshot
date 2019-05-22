@@ -28,7 +28,7 @@ type settingsSubject struct {
 // settingsSubjectByID fetches the settings subject with the given ID. If the ID refers to a node
 // that is not a valid settings subject, an error is returned.
 func settingsSubjectByID(ctx context.Context, id graphql.ID) (*settingsSubject, error) {
-	resolver, err := nodeByID(ctx, id)
+	resolver, err := NodeByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
