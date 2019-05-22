@@ -106,7 +106,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                 <h1>Add external service</h1>
                 {createdExternalService && createdExternalService.warning ? (
                     <div>
-                        <div className="mb-3" key={createdExternalService.id}>
+                        <div className="mb-3">
                             <ExternalServiceCard
                                 {...kindMetadata}
                                 title={createdExternalService.displayName}
@@ -115,9 +115,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                             />
                         </div>
                         <div className="alert alert-warning">
-                            <p>
-                                <b>Warning</b>
-                            </p>
+                            <h4>Warning</h4>
                             <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
                         </div>
                     </div>

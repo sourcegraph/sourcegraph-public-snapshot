@@ -36,7 +36,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                 )}
                 {this.props.warning && (
                     <div className="alert alert-warning">
-                        <p>Warning:</p>
+                        <h4>Warning</h4>
                         <Markdown dangerousInnerHTML={renderMarkdown(this.props.warning)} />
                     </div>
                 )}
