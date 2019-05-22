@@ -529,7 +529,6 @@ func (s sortSubscriptions) Less(i, j int) bool {
 	}
 	l2 := &productLicense{v: s[j].activeLicense}
 	l2Info, err := l2.Info()
-	// Subscriptions with no license should be at the end of the list.
 	if err != nil {
 		log15.Error("graphqlbackend.productLicense.Info() failed", "error", err)
 		return false
