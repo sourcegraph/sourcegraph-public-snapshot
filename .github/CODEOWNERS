@@ -59,6 +59,7 @@ README.md @sqs
 /pkg/endpoint/ @keegancsmith
 /pkg/rcache/ @keegancsmith
 /pkg/redispool/ @keegancsmith
+/pkg/store/ @keegancsmith
 
 # Don't set any reviewers for these,
 # configure by package through Renovate config (see renovate.json)
