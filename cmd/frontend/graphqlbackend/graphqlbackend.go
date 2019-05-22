@@ -70,88 +70,88 @@ type Node interface {
 	ID() graphql.ID
 }
 
-type nodeResolver struct {
+type NodeResolver struct {
 	Node
 }
 
-func (r *nodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
+func (r *NodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	n, ok := r.Node.(*accessTokenResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
+func (r *NodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
 	n, ok := r.Node.(*discussionCommentResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
+func (r *NodeResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
 	n, ok := r.Node.(*discussionThreadResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToProductLicense() (ProductLicense, bool) {
+func (r *NodeResolver) ToProductLicense() (ProductLicense, bool) {
 	n, ok := r.Node.(ProductLicense)
 	return n, ok
 }
 
-func (r *nodeResolver) ToProductSubscription() (ProductSubscription, bool) {
+func (r *NodeResolver) ToProductSubscription() (ProductSubscription, bool) {
 	n, ok := r.Node.(ProductSubscription)
 	return n, ok
 }
 
-func (r *nodeResolver) ToExternalAccount() (*externalAccountResolver, bool) {
+func (r *NodeResolver) ToExternalAccount() (*externalAccountResolver, bool) {
 	n, ok := r.Node.(*externalAccountResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToExternalService() (*externalServiceResolver, bool) {
+func (r *NodeResolver) ToExternalService() (*externalServiceResolver, bool) {
 	n, ok := r.Node.(*externalServiceResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToGitRef() (*gitRefResolver, bool) {
+func (r *NodeResolver) ToGitRef() (*gitRefResolver, bool) {
 	n, ok := r.Node.(*gitRefResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToRepository() (*repositoryResolver, bool) {
+func (r *NodeResolver) ToRepository() (*repositoryResolver, bool) {
 	n, ok := r.Node.(*repositoryResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToUser() (*UserResolver, bool) {
+func (r *NodeResolver) ToUser() (*UserResolver, bool) {
 	n, ok := r.Node.(*UserResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToOrg() (*OrgResolver, bool) {
+func (r *NodeResolver) ToOrg() (*OrgResolver, bool) {
 	n, ok := r.Node.(*OrgResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToOrganizationInvitation() (*organizationInvitationResolver, bool) {
+func (r *NodeResolver) ToOrganizationInvitation() (*organizationInvitationResolver, bool) {
 	n, ok := r.Node.(*organizationInvitationResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToGitCommit() (*gitCommitResolver, bool) {
+func (r *NodeResolver) ToGitCommit() (*gitCommitResolver, bool) {
 	n, ok := r.Node.(*gitCommitResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
+func (r *NodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
 	if NodeToRegistryExtension == nil {
 		return nil, false
 	}
 	return NodeToRegistryExtension(r.Node)
 }
 
-func (r *nodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
+func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
 	n, ok := r.Node.(*savedSearchResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToSite() (*siteResolver, bool) {
+func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	n, ok := r.Node.(*siteResolver)
 	return n, ok
 }
@@ -180,12 +180,12 @@ func (r *schemaResolver) Root() *schemaResolver {
 	return &schemaResolver{}
 }
 
-func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*nodeResolver, error) {
+func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*NodeResolver, error) {
 	n, err := nodeByID(ctx, args.ID)
 	if err != nil {
 		return nil, err
 	}
-	return &nodeResolver{n}, nil
+	return &NodeResolver{n}, nil
 }
 
 func nodeByID(ctx context.Context, id graphql.ID) (Node, error) {
