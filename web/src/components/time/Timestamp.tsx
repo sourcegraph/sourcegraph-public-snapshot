@@ -41,7 +41,7 @@ export class Timestamp extends React.PureComponent<Props> {
             label = label.replace('about ', '')
         }
         return (
-            <span className={`timestamp${' ' + this.props.className || ''}`} data-tooltip={this.props.date}>
+            <span className={`timestamp ${this.props.className || ''}`} data-tooltip={this.props.date}>
                 {label}
             </span>
         )

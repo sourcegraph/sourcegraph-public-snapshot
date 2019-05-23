@@ -2,7 +2,7 @@
 
 exports[`Timestamp mocked current time 1`] = `
 <span
-  className="timestamp"
+  className="timestamp "
   data-tooltip="2006-01-02"
 >
   about 22 hours ago
@@ -11,7 +11,7 @@ exports[`Timestamp mocked current time 1`] = `
 
 exports[`Timestamp noAbout 1`] = `
 <span
-  className="timestamp"
+  className="timestamp "
   data-tooltip="2006-01-02"
 >
   22 hours ago
