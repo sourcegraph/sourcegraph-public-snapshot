@@ -52,9 +52,9 @@ export class SearchUsageStats extends React.Component<SearchUsageStatsProps, Sea
         return (
             <div className="search-usage-stats">
                 <h3 className="search-usage-stats__header">
-                    <span className="search-usage-stats__header__title">Top search queries</span>
+                    <span className="search-usage-stats__header--title">Top search queries</span>
                     <input
-                        className="form-control search-usage-stats__header__input"
+                        className="form-control search-usage-stats__header--input"
                         type="number"
                         name="count"
                         value={this.state.count}
@@ -71,11 +71,11 @@ export class SearchUsageStats extends React.Component<SearchUsageStatsProps, Sea
                     </thead>
                     <tbody>
                         {this.state.queries.map(({ query, count }) => (
-                            <tr className="search-usage-stats__top-queries__entry">
-                                <td className="search-usage-stats__top-queries__entry__cell">
+                            <tr className="search-usage-stats__top-queries--entry">
+                                <td className="search-usage-stats__top-queries--entry-cell">
                                     <Link to={`/search?${buildSearchURLQuery(query)}`}>{query}</Link>
                                 </td>
-                                <td className="search-usage-stats__top-queries__entry__cell">{count}</td>
+                                <td className="search-usage-stats__top-queries--entry-cell">{count}</td>
                             </tr>
                         ))}
                     </tbody>

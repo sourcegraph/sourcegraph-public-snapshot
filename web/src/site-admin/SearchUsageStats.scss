@@ -2,10 +2,10 @@
     &__header {
         display: flex;
 
-        &__title {
+        &--title {
             flex: 1;
         }
-        &__input {
+        &--input {
             flex: 0;
         }
     }
@@ -13,7 +13,7 @@
     &__top-queries {
         width: 100%;
 
-        &__entry {
+        &--entry {
             border-bottom: 1px solid $table-border-color;
 
             .theme-light & {
@@ -24,7 +24,7 @@
                 border-bottom: none;
             }
 
-            &__cell {
+            &-cell {
                 padding: 0.625rem;
             }
         }
