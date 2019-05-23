@@ -58,7 +58,7 @@ SELECT * FROM users;
 
 Sourcegraph stores bare Git repositories (without a working tree), which is a complete mirror of the repository on your code host.
 
-If you are keen for more details on what bare Git repositories are, see [check out this discussion on StackOverflow](https://stackoverflow.com/q/5540883).
+If you are keen for more details on what bare Git repositories are, [check out this discussion on StackOverflow](https://stackoverflow.com/q/5540883).
 
 The directories should contain just a few files and directories, namely: HEAD, config, description, hooks, info, objects, packed-refs, refs
 
