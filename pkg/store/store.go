@@ -242,7 +242,7 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 			err = err1
 		}
 		done(err)
-		// CloseWithError is gaurenteed not to return a nil error
+		// CloseWithError is guaranteed to return a nil error
 		_ = pw.CloseWithError(errors.Wrapf(err, "failed to fetch %s@%s", repo, commit))
 	}()
 
