@@ -9,12 +9,12 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
     data-tooltip="Alice Zhao"
     src="http://example.com/alice.png"
   />
-
+   
   <strong>
     Alice Zhao
   </strong>
-
-  committed
+   
+  committed 
   <span
     className="timestamp "
     data-tooltip="1990-01-01"
@@ -33,12 +33,12 @@ exports[`GitCommitNodeByline author 1`] = `
     data-tooltip="Alice Zhao"
     src="http://example.com/alice.png"
   />
-
+   
   <strong>
     Alice Zhao
   </strong>
-
-  committed
+   
+  committed 
   <span
     className="timestamp "
     data-tooltip="1990-01-01"
@@ -57,25 +57,25 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
     data-tooltip="Alice Zhao (author)"
     src="http://example.com/alice.png"
   />
-
+   
   <img
     className="avatar-icon icon-inline mr-1"
     data-tooltip="Bob Yang (committer)"
     src="http://example.com/bob.png"
   />
-
+   
   <strong>
     Alice Zhao
   </strong>
-
+   
   authored
    and
-
+   
   <strong>
     Bob Yang
   </strong>
-
-  committed
+   
+  committed 
   <span
     className="timestamp "
     data-tooltip="1991-01-01"
@@ -94,25 +94,25 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
     data-tooltip="Alice Zhao (author)"
     src="http://example.com/alice.png"
   />
-
+   
   <img
     className="avatar-icon icon-inline mr-1"
     data-tooltip="Bob Yang (committer)"
     src="http://example.com/bob.png"
   />
-
+   
   <strong>
     Alice Zhao
   </strong>
-
+   
   authored
    and
-
+   
   <strong>
     Bob Yang
   </strong>
-
-  committed
+   
+  committed 
   <span
     className="timestamp "
     data-tooltip="1991-01-01"
@@ -131,12 +131,12 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
     data-tooltip="Alice Zhao"
     src="http://example.com/alice.png"
   />
-
+   
   <strong>
     Alice Zhao
   </strong>
-
-  committed
+   
+  committed 
   <span
     className="timestamp "
     data-tooltip="1990-01-01"
@@ -155,12 +155,12 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
     data-tooltip="Alice Zhao"
     src="http://example.com/alice.png"
   />
-
+   
   <strong>
     Alice Zhao
   </strong>
-
-  committed
+   
+  committed 
   <span
     className="timestamp "
     data-tooltip="1990-01-01"
