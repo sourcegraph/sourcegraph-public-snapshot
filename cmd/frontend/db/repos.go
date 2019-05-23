@@ -450,15 +450,15 @@ func parseIncludePattern(pattern string) (exact, like []string, regexp string, e
 // allMatchingStrings returns a complete list of the strings that re
 // matches, if it's possible to determine the list.
 func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffix []string, err error) {
-	prog, err := regexpsyntax.Compile(re)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-
 	switch re.Op {
 	case regexpsyntax.OpEmptyMatch:
 		return []string{""}, nil, nil, nil, nil
 	case regexpsyntax.OpLiteral:
+		prog, err := regexpsyntax.Compile(re)
+		if err != nil {
+			return nil, nil, nil, nil, err
+		}
+
 		prefix, complete := prog.Prefix()
 		if complete {
 			return nil, []string{prefix}, nil, nil, nil
