@@ -24,7 +24,7 @@ declare var jsdom: import('jsdom').JSDOM
  *
  * See https://github.com/webpack-contrib/worker-loader#integrating-with-typescript.
  */
-declare module 'worker-loader?inline!*' {
+declare module 'worker-loader?inline*' {
     class WebpackWorker extends Worker {
         constructor()
     }

@@ -1,9 +1,51 @@
 import * as MessageChannelAdapter from '@sourcegraph/comlink/messagechanneladapter'
 import { Observable } from 'rxjs'
 import uuid from 'uuid'
-import { createExtensionHost as createInPageExtensionHost } from '../../../shared/src/api/extension/worker'
 import { EndpointPair } from '../../../shared/src/platform/context'
 import { isInPage } from '../context'
+
+function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointPair> {
+    return new Observable(subscriber => {
+        // Create an iframe pointing to extensionHostFrame.html,
+        // which will load the extension host worker, and forward it
+        // the client endpoints.
+        const frame: HTMLIFrameElement = document.createElement('iframe')
+        frame.setAttribute('src', `${sourcegraphURL}/.assets/extension/extensionHostFrame.html`)
+        frame.setAttribute('style', `display: none;`)
+        document.body.append(frame)
+        const clientAPIChannel = new MessageChannel()
+        const extensionHostAPIChannel = new MessageChannel()
+        const workerEndpoints: EndpointPair = {
+            proxy: clientAPIChannel.port2,
+            expose: extensionHostAPIChannel.port2,
+        }
+        const clientEndpoints = {
+            proxy: extensionHostAPIChannel.port1,
+            expose: clientAPIChannel.port1,
+        }
+        window.addEventListener('message', ({ data }) => {
+            if (data === 'extensionHostFrameLoaded') {
+                frame.contentWindow!.postMessage(
+                    {
+                        type: 'workerInit',
+                        payload: {
+                            endpoints: clientEndpoints,
+                            wrapEndpoints: false,
+                        },
+                    },
+                    sourcegraphURL,
+                    Object.values(clientEndpoints)
+                )
+                subscriber.next(workerEndpoints)
+            }
+        })
+        return () => {
+            clientEndpoints.proxy.close()
+            clientEndpoints.expose.close()
+            frame.remove()
+        }
+    })
+}
 
 /**
  * Returns an observable of a communication channel to an extension host.
@@ -18,9 +60,9 @@ import { isInPage } from '../context'
  * worker per pair of ports, and forward messages between the port objects and
  * the extension host worker's endpoints.
  */
-export function createExtensionHost(): Observable<EndpointPair> {
+export function createExtensionHost(sourcegraphURL: string): Observable<EndpointPair> {
     if (isInPage) {
-        return createInPageExtensionHost({ wrapEndpoints: false })
+        return createInPageExtensionHost(sourcegraphURL)
     }
     const id = uuid.v4()
     return new Observable(subscriber => {

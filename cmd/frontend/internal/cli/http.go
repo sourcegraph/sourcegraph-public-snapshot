@@ -129,7 +129,7 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		// headers for security
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-XSS-Protection", "1; mode=block")
-		w.Header().Set("X-Frame-Options", "DENY")
+		// w.Header().Set("X-Frame-Options", "DENY")
 		// no cache by default
 		w.Header().Set("Cache-Control", "no-cache, max-age=0")
 
@@ -141,9 +141,16 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 
 		if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" || isExtensionRequest {
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			isCorsAllowedRequest := isAllowedOrigin(headerOrigin, strings.Fields(corsOrigin))
 
-			if isExtensionRequest || isAllowedOrigin(headerOrigin, strings.Fields(corsOrigin)) {
+			if isExtensionRequest || isCorsAllowedRequest {
 				w.Header().Set("Access-Control-Allow-Origin", headerOrigin)
+			}
+
+			// Allow loading iframes from a cors-allowed origin.
+			if isCorsAllowedRequest {
+				w.Header().Set("Content-Security-Policy", "frame-ancestors "+headerOrigin)
+				w.Header().Set("X-Frame-Options", "allow-from "+headerOrigin)
 			}
 
 			if r.Method == "OPTIONS" {

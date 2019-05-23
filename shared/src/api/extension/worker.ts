@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs'
-import ExtensionHostWorker from 'worker-loader?inline!./main.worker.ts'
+import ExtensionHostWorker from 'worker-loader?inline&name=extensionHostWorker.bundle.js!./main.worker.ts'
 import { EndpointPair } from '../../platform/context'
 
 interface ExtensionHostInitOptions {
