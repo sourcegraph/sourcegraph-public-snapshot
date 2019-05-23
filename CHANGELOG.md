@@ -48,6 +48,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed an issue where `EXTSVC_CONFIG_FILE` being specified would incorrectly cause a panic.
 - Fixed an issue where user/org/global settings from old Sourcegraph versions (2.x) could incorrectly be null, leading to various errors.
+- Fixed an issue where an ephemeral infrastructure error (`tar/archive: invalid tar header`) would fail a search.
 
 ## 3.4.0
 
