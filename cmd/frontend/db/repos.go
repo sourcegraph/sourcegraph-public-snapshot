@@ -482,6 +482,11 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 		}
 		return nil, nil, nil, nil, nil
 
+	case regexpsyntax.OpStar:
+		if len(re.Sub) == 1 && (re.Sub[0].Op == regexpsyntax.OpAnyCharNotNL || re.Sub[0].Op == regexpsyntax.OpAnyChar) {
+			return nil, []string{""}, nil, nil, nil
+		}
+
 	case regexpsyntax.OpBeginText:
 		return nil, nil, []string{""}, nil, nil
 
