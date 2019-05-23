@@ -20,6 +20,11 @@
 /cmd/gitserver/ @sourcegraph/core-services
 /cmd/repo-updater/ @sourcegraph/core-services
 /migrations/ @sourcegraph/core-services
+/pkg/gitserver/ @sourcegraph/core-services
+/pkg/repoupdater/ @sourcegraph/core-services
+/pkg/trace/ @sourcegraph/core-services
+/pkg/tracer/ @sourcegraph/core-services
+/pkg/vcs/ @sourcegraph/core-services
 
 # Search
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
@@ -40,13 +45,21 @@ Dockerfile @ggilmore
 # Documentation and homepage
 README.md @sqs
 /doc/ @sqs
+/doc/dev/product/ @christinaforney
+/doc/dev/teams.md @beyang @nicksnyder
 /web/src/enterprise/dotcom/welcome/ @sqs
 
 # Browser extensions
-/client/browser/ @felixfbecker @lguychard
+/browser/ @felixfbecker @lguychard
 
 # Sourcegraph extension API
 /packages/sourcegraph-extension-api/ @lguychard
+
+# pkg
+/pkg/endpoint/ @keegancsmith
+/pkg/rcache/ @keegancsmith
+/pkg/redispool/ @keegancsmith
+/pkg/store/ @keegancsmith
 
 # Don't set any reviewers for these,
 # configure by package through Renovate config (see renovate.json)

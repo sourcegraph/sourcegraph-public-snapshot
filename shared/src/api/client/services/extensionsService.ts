@@ -12,6 +12,7 @@ import { PlatformContext } from '../../../platform/context'
 import { isErrorLike } from '../../../util/errors'
 import { memoizeObservable } from '../../../util/memoizeObservable'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
+import { isDefined } from '../../../util/types'
 import { CodeEditor, EditorService } from './editorService'
 import { SettingsService } from './settings'
 
@@ -42,7 +43,7 @@ const getConfiguredSideloadedExtension = (baseUrl: string) =>
         )
     )
 
-interface PartialContext extends Pick<PlatformContext, 'queryGraphQL' | 'getScriptURLForExtension'> {
+interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getScriptURLForExtension'> {
     sideloadedExtensionURL: Subscribable<string | null>
 }
 
@@ -65,7 +66,7 @@ export class ExtensionsService {
 
     protected configuredExtensions: Subscribable<ConfiguredExtension[]> = viewerConfiguredExtensions({
         settings: this.settingsService.data,
-        queryGraphQL: this.platformContext.queryGraphQL,
+        requestGraphQL: this.platformContext.requestGraphQL,
     })
 
     /**
@@ -118,18 +119,18 @@ export class ExtensionsService {
     public get activeExtensions(): Subscribable<ExecutableExtension[]> {
         // Extensions that have been activated (including extensions with zero "activationEvents" that evaluate to
         // true currently).
-        const activatedExtensionIDs: string[] = []
+        const activatedExtensionIDs = new Set<string>()
         return combineLatest(from(this.editorService.editors), this.enabledExtensions).pipe(
             tap(([editors, enabledExtensions]) => {
                 const activeExtensions = this.extensionActivationFilter(enabledExtensions, editors)
                 for (const x of activeExtensions) {
-                    if (!activatedExtensionIDs.includes(x.id)) {
-                        activatedExtensionIDs.push(x.id)
+                    if (!activatedExtensionIDs.has(x.id)) {
+                        activatedExtensionIDs.add(x.id)
                     }
                 }
             }),
-            map(([, extensions]) => (extensions ? extensions.filter(x => activatedExtensionIDs.includes(x.id)) : [])),
-            distinctUntilChanged((a, b) => isEqual(a, b)),
+            map(([, extensions]) => (extensions ? extensions.filter(x => activatedExtensionIDs.has(x.id)) : [])),
+            distinctUntilChanged((a, b) => isEqual(new Set(a.map(e => e.id)), new Set(b.map(e => e.id)))),
             switchMap(extensions =>
                 combineLatestOrDefault(
                     extensions.map(x =>
@@ -147,7 +148,8 @@ export class ExtensionsService {
                     )
                 )
             ),
-            map(extensions => extensions.filter((x): x is ExecutableExtension => x !== null))
+            map(extensions => extensions.filter(isDefined)),
+            distinctUntilChanged((a, b) => isEqual(new Set(a.map(e => e.id)), new Set(b.map(e => e.id))))
         )
     }
 

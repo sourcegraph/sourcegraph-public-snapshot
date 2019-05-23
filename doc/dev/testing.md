@@ -11,7 +11,7 @@ directly, `go test ./util/textutil`.
 - To run unit tests in development (only running the tests related to uncommitted code), run `yarn test --watch`.
   - And/or use [vscode-jest](https://github.com/jest-community/vscode-jest) with `jest.autoEnable: true` (and, if you want, `jest.showCoverageOnLoad: true`)
 - To debug tests in VS Code, use [vscode-jest](https://github.com/jest-community/vscode-jest) and click the **Debug** code lens next to any `test('name ...', ...)` definition in your test file (be sure to set a breakpoint or break on uncaught exceptions by clicking in the left gutter).
-- You can also run `yarn test` from any of the individual project dirs (`shared/`, `web/`, `client/browser/`).
+- You can also run `yarn test` from any of the individual project dirs (`shared/`, `web/`, `browser/`).
 
 Usually while developing you will either have `yarn test --watch` running in a terminal or you will use vscode-jest.
 

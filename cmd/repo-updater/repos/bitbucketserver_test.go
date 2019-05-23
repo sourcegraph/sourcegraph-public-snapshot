@@ -10,11 +10,10 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestBitbucketServerRepoInfo(t *testing.T) {
+func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -47,11 +46,19 @@ func TestBitbucketServerRepoInfo(t *testing.T) {
 			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
 		},
 	}
+
+	svc := ExternalService{ID: 1, Kind: "BITBUCKETSERVER"}
+
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			var got []*protocol.RepoInfo
+			s, err := newBitbucketServerSource(&svc, config, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var got []*Repo
 			for _, r := range repos {
-				got = append(got, bitbucketServerRepoInfo(config, r))
+				got = append(got, s.makeRepo(r))
 			}
 			actual, err := json.MarshalIndent(got, "", "  ")
 			if err != nil {
@@ -59,7 +66,7 @@ func TestBitbucketServerRepoInfo(t *testing.T) {
 			}
 
 			golden := filepath.Join("testdata", "bitbucketserver-repos-"+name+".golden")
-			if *update {
+			if update(name) {
 				err := ioutil.WriteFile(golden, actual, 0644)
 				if err != nil {
 					t.Fatal(err)
@@ -81,7 +88,7 @@ func TestBitbucketServerRepoInfo(t *testing.T) {
 	}
 }
 
-func TestBitbucketServerExclude(t *testing.T) {
+func TestBitbucketServerSource_Exclude(t *testing.T) {
 	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -133,9 +140,12 @@ func TestBitbucketServerExclude(t *testing.T) {
 			}},
 		},
 	}
+
+	svc := ExternalService{ID: 1, Kind: "BITBUCKETSERVER"}
+
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			conn, err := newBitbucketServerConnection(config, nil)
+			s, err := newBitbucketServerSource(&svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -150,7 +160,7 @@ func TestBitbucketServerExclude(t *testing.T) {
 				if r.Project != nil {
 					name = r.Project.Key + "/" + name
 				}
-				if conn.excludes(r) {
+				if s.excludes(r) {
 					got.Exclude = append(got.Exclude, name)
 				} else {
 					got.Include = append(got.Include, name)
@@ -162,7 +172,7 @@ func TestBitbucketServerExclude(t *testing.T) {
 			}
 
 			golden := filepath.Join("testdata", "bitbucketserver-repos-exclude-"+name+".golden")
-			if *update {
+			if update(name) {
 				err := ioutil.WriteFile(golden, actual, 0644)
 				if err != nil {
 					t.Fatal(err)

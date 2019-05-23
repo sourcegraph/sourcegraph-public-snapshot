@@ -17,7 +17,6 @@ import { ClientRoots } from './api/roots'
 import { ClientSearch } from './api/search'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
-import { applyContextUpdate } from './context/context'
 import { Services } from './services'
 import {
     MessageActionItem,
@@ -67,9 +66,7 @@ export async function createExtensionHostClientConnection(
     const clientConfiguration = new ClientConfiguration<any>(proxy.configuration, services.settings)
     subscription.add(clientConfiguration)
 
-    const clientContext = new ClientContext((updates: ContextValues) =>
-        services.context.data.next(applyContextUpdate(services.context.data.value, updates))
-    )
+    const clientContext = new ClientContext((updates: ContextValues) => services.context.updateContext(updates))
     subscription.add(clientContext)
 
     // Sync models and editors to the extension host

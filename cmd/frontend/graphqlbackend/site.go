@@ -2,7 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -184,6 +186,9 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	// so only admins may view it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return false, err
+	}
+	if os.Getenv("SITE_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+		return false, errors.New("updating site configuration not allowed when using SITE_CONFIG_FILE")
 	}
 	if strings.TrimSpace(args.Input) == "" {
 		return false, fmt.Errorf("blank site configuration is invalid (you can clear the site configuration by entering an empty JSON object: {})")

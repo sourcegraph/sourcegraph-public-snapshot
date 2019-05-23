@@ -1,4 +1,4 @@
-import { evaluate, evaluateTemplate } from './evaluator'
+import { parse, parseTemplate } from './evaluator'
 
 const FIXTURE_CONTEXT = new Map<string, any>(
     Object.entries({
@@ -10,7 +10,7 @@ const FIXTURE_CONTEXT = new Map<string, any>(
     })
 )
 
-describe('evaluate', () => {
+describe('Expression', () => {
     // tslint:disable:no-invalid-template-strings
     const TESTS = {
         a: 1,
@@ -43,13 +43,13 @@ describe('evaluate', () => {
     // tslint:enable:no-invalid-template-strings
     for (const [expr, want] of Object.entries(TESTS)) {
         test(expr, () => {
-            const value = evaluate(expr, FIXTURE_CONTEXT)
+            const value = parse<unknown>(expr).exec(FIXTURE_CONTEXT)
             expect(value).toBe(want)
         })
     }
 })
 
-describe('evaluateTemplate', () => {
+describe('TemplateExpression', () => {
     // tslint:disable:no-invalid-template-strings
     const TESTS = {
         a: 'a',
@@ -61,7 +61,7 @@ describe('evaluateTemplate', () => {
     // tslint:enable:no-invalid-template-strings
     for (const [template, want] of Object.entries(TESTS)) {
         test(template, () => {
-            const value = evaluateTemplate(template, FIXTURE_CONTEXT)
+            const value = parseTemplate(template).exec(FIXTURE_CONTEXT)
             expect(value).toBe(want)
         })
     }

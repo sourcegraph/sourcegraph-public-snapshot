@@ -2,14 +2,14 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
 
-interface Props<C extends React.ReactElement<any>> {
+interface Props<C extends React.ReactElement<any> = React.ReactElement<any>> {
     className?: string
 
     /**
      * Where the resize handle is (which also determines the axis along which the element can be
      * resized).
      */
-    handlePosition: 'right' | 'top'
+    handlePosition: 'right' | 'left' | 'top'
 
     /**
      * Persist and restore the size of the element using this key.
@@ -26,6 +26,9 @@ interface Props<C extends React.ReactElement<any>> {
      */
     element: C
 }
+
+const isHorizontal = (handlePosition: Props['handlePosition']) =>
+    handlePosition === 'right' || handlePosition === 'left'
 
 interface State {
     resizing: boolean
@@ -88,7 +91,7 @@ export class Resizable<C extends React.ReactElement<any>> extends React.PureComp
                 className={`resizable resizable--${this.props.handlePosition} ${this.props.className || ''}`}
                 ref={this.setContainerRef}
                 // tslint:disable-next-line jsx-ban-props
-                style={{ [this.props.handlePosition === 'right' ? 'width' : 'height']: `${this.state.size}px` }}
+                style={{ [isHorizontal(this.props.handlePosition) ? 'width' : 'height']: `${this.state.size}px` }}
             >
                 <div
                     className={`resizable__ghost ${this.state.resizing ? 'resizable__ghost--resizing' : ''}`}
@@ -125,10 +128,11 @@ export class Resizable<C extends React.ReactElement<any>> extends React.PureComp
     private onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         e.preventDefault()
         if (this.state.resizing && this.containerRef) {
-            let size =
-                this.props.handlePosition === 'right'
+            let size = isHorizontal(this.props.handlePosition)
+                ? this.props.handlePosition === 'right'
                     ? e.pageX - this.containerRef.getBoundingClientRect().left
-                    : this.containerRef.getBoundingClientRect().bottom - e.pageY
+                    : this.containerRef.getBoundingClientRect().right - e.pageX
+                : this.containerRef.getBoundingClientRect().bottom - e.pageY
             if (e.shiftKey) {
                 size = Math.ceil(size / 20) * 20
             }

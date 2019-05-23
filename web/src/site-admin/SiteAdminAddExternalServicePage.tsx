@@ -2,9 +2,11 @@ import * as H from 'history'
 import React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
+import { Markdown } from '../../../shared/src/components/Markdown'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
@@ -36,6 +38,11 @@ interface State {
      * True if the form is currently being submitted
      */
     loading: boolean
+
+    /**
+     * Holds the externalService if creation was successful but produced a warning
+     */
+    externalService?: GQL.IExternalService
 }
 
 /**
@@ -63,14 +70,6 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                     tap(() => this.setState({ loading: true })),
                     switchMap(input =>
                         addExternalService(input, this.props.eventLogger).pipe(
-                            map(() => {
-                                // Refresh site flags so that global site alerts
-                                // reflect the latest configuration.
-                                refreshSiteFlags().subscribe({ error: err => console.error(err) })
-
-                                this.setState({ loading: false })
-                                this.props.history.push(`/site-admin/external-services`)
-                            }),
                             catchError(error => {
                                 console.error(error)
                                 this.setState({ error, loading: false })
@@ -79,7 +78,17 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                         )
                     )
                 )
-                .subscribe()
+                .subscribe(externalService => {
+                    if (externalService.warning) {
+                        this.setState({ externalService, error: undefined, loading: false })
+                    } else {
+                        // Refresh site flags so that global site alerts
+                        // reflect the latest configuration.
+                        refreshSiteFlags().subscribe({ error: err => console.error(err) })
+                        this.setState({ loading: false })
+                        this.props.history.push(`/site-admin/external-services`)
+                    }
+                })
         )
     }
 
@@ -88,26 +97,46 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     }
 
     public render(): JSX.Element | null {
-        const externalService = getExternalService(this.props.kind, this.props.variant)
+        const kindMetadata = getExternalService(this.props.kind, this.props.variant)
+        const createdExternalService = this.state.externalService
         return (
             <div className="add-external-service-page mt-3">
                 <PageTitle title="Add external service" />
                 <h1>Add external service</h1>
-                <div className="mb-3">
-                    <ExternalServiceCard {...externalService} />
-                </div>
-                <div className="mb-4">{externalService.longDescription}</div>
-                <SiteAdminExternalServiceForm
-                    {...this.props}
-                    error={this.state.error}
-                    input={this.getExternalServiceInput()}
-                    editorActions={externalService.editorActions}
-                    jsonSchema={externalService.jsonSchema}
-                    mode="create"
-                    onSubmit={this.onSubmit}
-                    onChange={this.onChange}
-                    loading={this.state.loading}
-                />
+                {createdExternalService && createdExternalService.warning ? (
+                    <div>
+                        <div className="mb-3">
+                            <ExternalServiceCard
+                                {...kindMetadata}
+                                title={createdExternalService.displayName}
+                                shortDescription="Update this external service configuration to manage repository mirroring."
+                                to={`/site-admin/external-services/${createdExternalService.id}`}
+                            />
+                        </div>
+                        <div className="alert alert-warning">
+                            <h4>Warning</h4>
+                            <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
+                        </div>
+                    </div>
+                ) : (
+                    <div>
+                        <div className="mb-3">
+                            <ExternalServiceCard {...kindMetadata} />
+                        </div>
+                        <div className="mb-4">{kindMetadata.longDescription}</div>
+                        <SiteAdminExternalServiceForm
+                            {...this.props}
+                            error={this.state.error}
+                            input={this.getExternalServiceInput()}
+                            editorActions={kindMetadata.editorActions}
+                            jsonSchema={kindMetadata.jsonSchema}
+                            mode="create"
+                            onSubmit={this.onSubmit}
+                            onChange={this.onChange}
+                            loading={this.state.loading}
+                        />
+                    </div>
+                )}
             </div>
         )
     }
@@ -144,6 +173,9 @@ function addExternalService(
             mutation addExternalService($input: AddExternalServiceInput!) {
                 addExternalService(input: $input) {
                     id
+                    kind
+                    displayName
+                    warning
                 }
             }
         `,

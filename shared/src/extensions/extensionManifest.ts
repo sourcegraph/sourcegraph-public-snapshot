@@ -1,5 +1,5 @@
 import { isPlainObject } from 'lodash'
-import { ExtensionManifest as ExtensionManifestSchema } from '../schema/extension.schema'
+import { ExtensionManifest as ExtensionManifestSchema } from '../schema/extensionSchema'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { parseJSONCOrError } from '../util/jsonc'
 
@@ -7,19 +7,18 @@ import { parseJSONCOrError } from '../util/jsonc'
  * Represents an input object that is validated against a subset of properties of the {@link ExtensionManifest}
  * JSON Schema. For simplicity, only necessary fields are validated and included here.
  */
-export interface ExtensionManifest
-    extends Pick<
-        ExtensionManifestSchema,
-        | 'description'
-        | 'repository'
-        | 'categories'
-        | 'tags'
-        | 'readme'
-        | 'url'
-        | 'icon'
-        | 'activationEvents'
-        | 'contributes'
-    > {}
+export type ExtensionManifest = Pick<
+    ExtensionManifestSchema,
+    | 'description'
+    | 'repository'
+    | 'categories'
+    | 'tags'
+    | 'readme'
+    | 'url'
+    | 'icon'
+    | 'activationEvents'
+    | 'contributes'
+>
 
 /**
  * Parses and validates the extension manifest. If parsing or validation fails, an error value is returned (not

@@ -5,6 +5,9 @@
     &--top {
         flex-direction: column-reverse;
     }
+    &--left {
+        flex-direction: row-reverse;
+    }
 
     $handle-size: 0.35rem;
 
@@ -15,14 +18,21 @@
         user-select: none;
         z-index: 1;
 
-        &--right {
+        &--right,
+        &--left {
             height: 100%;
             width: $handle-size;
-            margin-left: calc(-1 * #{$handle-size});
             cursor: ew-resize;
             top: 0;
             bottom: 0;
+        }
+        &--left {
+            margin-left: calc(-1 * #{$handle-size});
             right: 0;
+        }
+        &--right {
+            margin-right: calc(-1 * #{$handle-size});
+            left: 0;
         }
         &--top {
             width: 100%;

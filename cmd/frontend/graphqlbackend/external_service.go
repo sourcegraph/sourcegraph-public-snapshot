@@ -15,6 +15,7 @@ import (
 
 type externalServiceResolver struct {
 	externalService *types.ExternalService
+	warning         string
 }
 
 const externalServiceIDKind = "ExternalService"
@@ -73,4 +74,11 @@ func (r *externalServiceResolver) CreatedAt() string {
 
 func (r *externalServiceResolver) UpdatedAt() string {
 	return r.externalService.UpdatedAt.Format(time.RFC3339)
+}
+
+func (r *externalServiceResolver) Warning() *string {
+	if r.warning == "" {
+		return nil
+	}
+	return &r.warning
 }

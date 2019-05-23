@@ -1,7 +1,7 @@
 import { DownshiftState, StateChangeOptions } from 'downshift'
 import { inRange } from 'lodash'
 import * as React from 'react'
-import { fromEvent, Subject, Subscription } from 'rxjs'
+import { fromEvent, merge, Subject, Subscription } from 'rxjs'
 import { CompletionItem, CompletionList } from 'sourcegraph'
 import getCaretCoordinates from 'textarea-caret'
 import { Key } from 'ts-key-enum'
@@ -84,7 +84,10 @@ export class CompletionWidget extends React.Component<CompletionWidgetProps, Sta
         )
         // Unhide whenever the user types something.
         this.subscriptions.add(
-            fromEvent<KeyboardEvent>(this.props.textArea, 'keypress').subscribe(() => this.setState({ hidden: false }))
+            merge(
+                fromEvent<KeyboardEvent>(this.props.textArea, 'keypress'),
+                fromEvent<KeyboardEvent>(this.props.textArea, 'input')
+            ).subscribe(() => this.setState({ hidden: false }))
         )
     }
 

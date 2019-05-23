@@ -158,27 +158,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
 		proposeQueries := true
 		if !envvar.SourcegraphDotComMode() {
-			if noRepositoriesEnabled, err := noRepositoriesEnabled(ctx); err == nil && noRepositoriesEnabled {
+			if needsRepoConfig, err := needsRepositoryConfiguration(ctx); err == nil && needsRepoConfig {
 				proposeQueries = false
-				ok, err := needsRepositoryConfiguration(ctx)
-				if err != nil {
-					return nil, err
-				}
-				if ok {
-					a.title = "No repositories or code hosts configured"
-					a.description = "To start searching code, "
-					if isSiteAdmin {
-						a.description += "first go to site admin to configure repositories and code hosts."
-					} else {
-						a.description = "ask the site admin to configure and enable repositories."
-					}
+				a.title = "No repositories or code hosts configured"
+				a.description = "To start searching code, "
+				if isSiteAdmin {
+					a.description += "first go to site admin to configure repositories and code hosts."
 				} else {
-					a.title = "No repositories enabled"
-					if isSiteAdmin {
-						a.description = "Go to site admin to enable repositories to search."
-					} else {
-						a.description = "Ask the site admin to enable repositories to search."
-					}
+					a.description = "ask the site admin to configure and enable repositories."
 				}
 			}
 		}

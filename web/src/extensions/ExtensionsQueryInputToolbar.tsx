@@ -1,6 +1,6 @@
 import React from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { EXTENSION_CATEGORIES } from '../../../shared/src/schema/extension.schema'
+import { EXTENSION_CATEGORIES } from '../../../shared/src/schema/extensionSchema'
 import { extensionsQuery } from './extension/extension'
 
 interface Props {

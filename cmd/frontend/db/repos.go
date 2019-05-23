@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
@@ -61,23 +60,39 @@ func (s *repos) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 	return repos[0], nil
 }
 
-// GetByName returns the repository with the given name from the database, or an
-// error. If the repo doesn't exist in the DB, then errcode.IsNotFound will
-// return true on the error returned. It does not attempt to look up or update
-// the repository on any external service (such as its code host).
-func (s *repos) GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error) {
+// GetByName returns the repository with the given nameOrUri from the
+// database, or an error. If we have a match on name and uri, we prefer the
+// match on name.
+//
+// Name is the name for this repository (e.g., "github.com/user/repo"). It is
+// the same as URI, unless the user configures a non-default
+// repositoryPathPattern.
+func (s *repos) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.Repo, error) {
 	if Mocks.Repos.GetByName != nil {
-		return Mocks.Repos.GetByName(ctx, name)
+		return Mocks.Repos.GetByName(ctx, nameOrURI)
 	}
 
-	repos, err := s.getBySQL(ctx, sqlf.Sprintf("name=%s LIMIT 1", name))
+	repos, err := s.getBySQL(ctx, sqlf.Sprintf("name=%s LIMIT 1", nameOrURI))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(repos) == 1 {
+		return repos[0], nil
+	}
+
+	// We don't fetch in the same SQL query since uri is not unique and could
+	// conflict with a name. We prefer returning the matching name if it
+	// exists.
+	repos, err = s.getBySQL(ctx, sqlf.Sprintf("uri=%s LIMIT 1", nameOrURI))
 	if err != nil {
 		return nil, err
 	}
 
 	if len(repos) == 0 {
-		return nil, &repoNotFoundErr{Name: name}
+		return nil, &repoNotFoundErr{Name: nameOrURI}
 	}
+
 	return repos[0], nil
 }
 
@@ -101,10 +116,10 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 }
 
 const getRepoByQueryFmtstr = `
-SELECT id, name, description, language, enabled, created_at,
+SELECT id, name, COALESCE(uri, ''), description, language, created_at,
   updated_at, external_id, external_service_type, external_service_id
 FROM repo
-WHERE deleted_at IS NULL AND %s`
+WHERE deleted_at IS NULL AND enabled = true AND %s`
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	q := sqlf.Sprintf(getRepoByQueryFmtstr, querySuffix)
@@ -122,9 +137,9 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 		if err := rows.Scan(
 			&repo.ID,
 			&repo.Name,
+			&repo.URI,
 			&repo.Description,
 			&repo.Language,
-			&repo.Enabled,
 			&repo.CreatedAt,
 			&repo.UpdatedAt,
 			&spec.id, &spec.serviceType, &spec.serviceID,
@@ -656,7 +671,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 		}
 		insert = true // missing
 	} else {
-		enabled = r.Enabled
+		enabled = true
 		language = r.Language
 		// Ignore Enabled for deciding to update
 		insert = ((op.Description != r.Description) ||
@@ -684,23 +699,6 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	)
 
 	return err
-}
-
-// AllowEnableDisable returns true iff there are any repositories that are not
-// managed by the new syncer.
-//
-// TODO(keegan) This should be removed in 3.4.
-// https://github.com/sourcegraph/sourcegraph/issues/2025
-func (s *repos) AllowEnableDisable(ctx context.Context) (bool, error) {
-	err := dbconn.Global.QueryRowContext(ctx, `SELECT 1 FROM repo WHERE sources = '{}' AND deleted_at IS NULL LIMIT 1`).Scan(new(int))
-	switch {
-	case err == nil:
-		return true, nil
-	case err == sql.ErrNoRows:
-		return false, nil
-	default:
-		return false, err
-	}
 }
 
 // dbExternalRepoSpec is convenience type for inserting or selecting *api.ExternalRepoSpec database data.

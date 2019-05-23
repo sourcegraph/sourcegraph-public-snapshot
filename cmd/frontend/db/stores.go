@@ -8,9 +8,10 @@ var (
 	DiscussionMailReplyTokens = &discussionMailReplyTokens{}
 	Repos                     = &repos{}
 	Phabricator               = &phabricator{}
-	SavedQueries              = &savedQueries{}
+	QueryRunnerState          = &queryRunnerState{}
 	Orgs                      = &orgs{}
 	OrgMembers                = &orgMembers{}
+	SavedSearches             = &savedSearches{}
 	Settings                  = &settings{}
 	Users                     = &users{}
 	UserEmails                = &userEmails{}

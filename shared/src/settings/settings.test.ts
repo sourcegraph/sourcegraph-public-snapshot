@@ -15,7 +15,6 @@ const FIXTURE_ORG: SettingsSubject & SubjectSettingsContents = {
     name: 'n',
     displayName: 'n',
     id: 'a',
-    settingsURL: 'u',
     viewerCanAdminister: true,
     latestSettings: { id: 1, contents: '{"a":1}' },
 }
@@ -25,7 +24,6 @@ const FIXTURE_USER: SettingsSubject & SubjectSettingsContents = {
     username: 'n',
     displayName: 'n',
     id: 'b',
-    settingsURL: 'u',
     viewerCanAdminister: true,
     latestSettings: { id: 2, contents: '{"b":2}' },
 }

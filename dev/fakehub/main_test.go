@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -37,18 +36,9 @@ func Test_fakehub(t *testing.T) {
 			return s.Serve(ln)
 		})
 
-		// Main page should link to config.
+		// Main page should show config.
 		addr := ln.Addr()
-		page, err := fetch(addr, "/")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !strings.Contains(page, `<a href="/config">`) {
-			t.Fatalf("page is `%s`, want it to contain a link to /config", page)
-		}
-
-		// Config should have no repos.
-		confStr, err := fetch(addr, "/config")
+		confStr, err := fetch(addr, "/")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -63,7 +53,7 @@ func Test_fakehub(t *testing.T) {
 		confStr = comments.ReplaceAllString(confStr, "")
 		var conf Conf
 		if err := json.Unmarshal([]byte(confStr), &conf); err != nil {
-			t.Fatal(err)
+			t.Fatal(err, " while parsing \n", confStr)
 		}
 
 		// Clean up.

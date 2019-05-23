@@ -130,7 +130,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				case lsp.SKClass:
 					score += 3
 				}
-				if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.uri.String()), strings.ToLower(sr.symbol.Name)) {
+				if len(sr.symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.uri().String()), strings.ToLower(sr.symbol.Name)) {
 					score++
 				}
 				results = append(results, newSearchResultResolver(sr, score))
@@ -244,8 +244,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// (that do specify a commit ID), because their key k (i.e., k in seen[k]) will not
 			// equal.
 			k.file = s.path
-		case *symbolResolver:
-			k.repoName = s.location.resource.commit.repo.repo.Name
+		case *searchSymbolResult:
+			k.repoName = s.commit.repo.repo.Name
 			k.symbol = s.symbol.Name + s.symbol.Parent
 		default:
 			panic(fmt.Sprintf("unhandled: %#v", s))

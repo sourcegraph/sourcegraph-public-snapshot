@@ -46,6 +46,8 @@ func (p *Provider_RepoPerms_Test) run(t *testing.T) {
 	})
 	github.GetRepositoryByNodeIDMock = githubMock.GetRepositoryByNodeID
 	defer func() { github.GetRepositoryByNodeIDMock = nil }()
+	github.GetRepositoriesByNodeIDFromAPIMock = githubMock.GetRepositoriesByNodeIDFromAPI
+	defer func() { github.GetRepositoriesByNodeIDFromAPIMock = nil }()
 
 	provider := NewProvider(p.githubURL, "base-token", p.cacheTTL, make(authz.MockCache))
 	for j := 0; j < 2; j++ { // run twice for cache coherency
@@ -185,6 +187,60 @@ func TestProvider_RepoPerms(t *testing.T) {
 	}
 }
 
+func Test_fetchUserRepos(t *testing.T) {
+	githubMock := newMockGitHub([]*github.Repository{
+		{ID: "u0/private", IsPrivate: true},
+		{ID: "u0/public"},
+		{ID: "u1/private", IsPrivate: true},
+		{ID: "u1/public"},
+		{ID: "u99/private", IsPrivate: true},
+		{ID: "u99/public"},
+	}, map[string][]string{
+		"t0": {"u0/private", "u0/public"},
+		"t1": {"u1/private", "u1/public"},
+	})
+	github.GetRepositoriesByNodeIDFromAPIMock = githubMock.GetRepositoriesByNodeIDFromAPI
+	defer func() { github.GetRepositoriesByNodeIDFromAPIMock = nil }()
+	oldMaxNodeIDs := github.MaxNodeIDs
+	github.MaxNodeIDs = 2
+	defer func() { github.MaxNodeIDs = oldMaxNodeIDs }()
+
+	provider := NewProvider(mustURL(t, "https://github.com"), "base-token", 0, make(authz.MockCache))
+	canAccess, isPublic, err := provider.fetchUserRepos(context.Background(), ua("u0", "t0"), []string{
+		"u0/private",
+		"u0/public",
+		"u1/private",
+		"u1/public",
+		"u99/private",
+		"u99/public",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantCanAccess := map[string]bool{
+		"u0/private":  true,
+		"u0/public":   true,
+		"u1/private":  false,
+		"u1/public":   true,
+		"u99/private": false,
+		"u99/public":  true,
+	}
+	wantIsPublic := map[string]bool{
+		"u0/private": false,
+		"u0/public":  true,
+		"u1/public":  true,
+		"u99/public": true,
+	}
+
+	if !reflect.DeepEqual(canAccess, wantCanAccess) {
+		t.Errorf("canAccess %+v != wantCanAccess %+v", canAccess, wantCanAccess)
+	}
+	if !reflect.DeepEqual(isPublic, wantIsPublic) {
+		t.Errorf("isPublic %+v != wantIsPublic %+v", isPublic, wantIsPublic)
+	}
+}
+
 var (
 	readPerms = map[authz.Perm]bool{authz.Read: true}
 	noPerms   = map[authz.Perm]bool{authz.Read: false}
@@ -229,6 +285,9 @@ type mockGitHub struct {
 
 	// getRepositoryByNodeIDCount tracks the number of times GetRepositoryByNodeID is called
 	getRepositoryByNodeIDCount int
+
+	// getRepositoriesByNodeIDCount tracks the number of times GetRepositoriesByNodeIDFromAPI is called
+	getRepositoriesByNodeIDCount int
 }
 
 func newMockGitHub(repos []*github.Repository, tokenRepos map[string][]string) *mockGitHub {
@@ -282,4 +341,17 @@ func (m *mockGitHub) GetRepositoryByNodeID(ctx context.Context, token, id string
 		return nil, github.ErrNotFound
 	}
 	return r, nil
+}
+
+func (m *mockGitHub) GetRepositoriesByNodeIDFromAPI(ctx context.Context, token string, nodeIDs []string) (map[string]*github.Repository, error) {
+	m.getRepositoriesByNodeIDCount++
+
+	repos := make(map[string]*github.Repository)
+	for rid := range m.PublicRepos {
+		repos[rid] = m.Repos[rid]
+	}
+	for rid := range m.TokenRepos[token] {
+		repos[rid] = m.Repos[rid]
+	}
+	return repos, nil
 }

@@ -590,7 +590,7 @@ func (r *discussionThreadTargetRepoResolver) RelativeSelection(ctx context.Conte
 		endLine:        *r.t.EndLine,
 		endCharacter:   *r.t.EndCharacter,
 	}
-	if oid, _ := commit.OID(); r.t.Revision != nil && *r.t.Revision == string(oid) {
+	if r.t.Revision != nil && *r.t.Revision == string(commit.OID()) {
 		return oldSel, nil // nothing to do (requested relative revision is identical to the stored revision)
 	}
 	if r.t.Branch != nil {
@@ -598,15 +598,7 @@ func (r *discussionThreadTargetRepoResolver) RelativeSelection(ctx context.Conte
 		if err != nil {
 			return nil, err
 		}
-		bOid, err := branchCommit.OID()
-		if err != nil {
-			return nil, err
-		}
-		oid, err := commit.OID()
-		if err != nil {
-			return nil, err
-		}
-		if bOid == oid {
+		if branchCommit.OID() == commit.OID() {
 			return oldSel, nil // nothing to do (requested relative revision is identical to the stored branch revision)
 		}
 	}

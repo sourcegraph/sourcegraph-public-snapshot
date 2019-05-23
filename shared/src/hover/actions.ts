@@ -16,6 +16,7 @@ import {
 } from 'rxjs/operators'
 import { ActionItemAction } from '../actions/ActionItem'
 import { Context } from '../api/client/context/context'
+import { parse, parseTemplate } from '../api/client/context/expr/evaluator'
 import { Services } from '../api/client/services'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { ContributableMenu, TextDocumentPositionParams } from '../api/protocol'
@@ -275,11 +276,11 @@ export function registerHoverContributions({
                 actions: [
                     {
                         id: 'goToDefinition',
-                        title: 'Go to definition',
+                        title: parseTemplate('Go to definition'),
                         command: 'goToDefinition',
                         commandArguments: [
                             // tslint:disable:no-invalid-template-strings
-                            '${json(hoverPosition)}',
+                            parseTemplate('${json(hoverPosition)}'),
                             // tslint:enable:no-invalid-template-strings
                         ],
                     },
@@ -287,10 +288,10 @@ export function registerHoverContributions({
                         // This action is used when preloading the definition succeeded and at least 1
                         // definition was found.
                         id: 'goToDefinition.preloaded',
-                        title: 'Go to definition',
+                        title: parseTemplate('Go to definition'),
                         command: 'open',
                         // tslint:disable-next-line:no-invalid-template-strings
-                        commandArguments: ['${goToDefinition.url}'],
+                        commandArguments: [parseTemplate('${goToDefinition.url}')],
                     },
                 ],
                 menus: {
@@ -299,11 +300,11 @@ export function registerHoverContributions({
                         // goToDefinition.{error, loading, url} will all be falsey.)
                         {
                             action: 'goToDefinition',
-                            when: 'goToDefinition.error || goToDefinition.showLoading',
+                            when: parse('goToDefinition.error || goToDefinition.showLoading'),
                         },
                         {
                             action: 'goToDefinition.preloaded',
-                            when: 'goToDefinition.url',
+                            when: parse('goToDefinition.url'),
                         },
                     ],
                 },
@@ -349,10 +350,10 @@ export function registerHoverContributions({
                 actions: [
                     {
                         id: 'findReferences',
-                        title: 'Find references',
+                        title: parseTemplate('Find references'),
                         command: 'open',
                         // tslint:disable-next-line:no-invalid-template-strings
-                        commandArguments: ['${findReferences.url}'],
+                        commandArguments: [parseTemplate('${findReferences.url}')],
                     },
                 ],
                 menus: {
@@ -363,8 +364,9 @@ export function registerHoverContributions({
                         // logic is implemented in the observable pipe that sets findReferences.url above.
                         {
                             action: 'findReferences',
-                            when:
-                                'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
+                            when: parse(
+                                'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)'
+                            ),
                         },
                     ],
                 },

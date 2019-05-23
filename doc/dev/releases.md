@@ -47,7 +47,13 @@ What is the process we follow to release?
 
 The release captain is _responsible_ for managing the release process and ensuring that the release happens on time. The release captain may _delegate_ work to other teammates, but such delegation does not absolve the release captain of their responsibility to ensure that delegated work gets done.
 
-No later than 5 _working days_ before the release day the release captain creates a tracking issue using the [release issue template](release_issue_template.md) and assigns it to themself to complete.
+No later than 5 _working days_ before the release day the release captain creates a tracking issue using the [release issue template](release_issue_template.md) and assigns it to themselves to complete.
+
+### Release templates
+
+- [Release issue template](release_issue_template.md)
+- [Patch release issue template](patch_release_issue_template.md)
+- [DevRel release issue template](devrel_release_template.md)
 
 ### Schedule
 
@@ -60,9 +66,9 @@ No later than 5 _working days_ before the release day the release captain create
 | 3.4 | @beyang | 2019-05-20 (Monday) |
 | 3.5 | @ggilmore | 2019-06-20 (Thursday) |
 | 3.6 | @keegancsmith | 2019-07-20 (Saturday) |
-| 3.7 | @ijsnow | 2019-08-20 (Tuesday) |
-| 3.8 | @tsenart | 2019-09-20 (Friday) |
-| 3.9 | @lguychard | 2019-10-20 (Sunday) |
+| 3.7 | @beyang | 2019-08-20 (Tuesday) |
+| 3.8 | @lguychard | 2019-09-20 (Friday) |
+| 3.9 | @tsenart| 2019-10-20 (Sunday) |
 | 3.10 | @attfarhan | 2019-11-20 (Wednesday) |
 | 3.11 | @chrismwendt | 2019-12-20 (Saturday) |
 | 3.12 | @vanesa | 2020-01-20 (Monday, MLK) |

@@ -5,27 +5,27 @@
     "**/bower_components": true,
     "dist": true,
     "ui/assets": true,
-    "client/browser/build": true,
-    "**/coverage": true
+    "browser/build": true,
+    "**/coverage": true,
   },
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",
-    "**/dev/site-config.json": "jsonc"
+    "**/dev/site-config.json": "jsonc",
   },
   "json.schemas": [
     {
       "fileMatch": ["dev/critical-config.json"],
-      "url": "/schema/critical.schema.json"
+      "url": "/schema/critical.schema.json",
     },
     {
       "fileMatch": ["dev/site-config.json"],
-      "url": "/schema/site.schema.json"
-    }
+      "url": "/schema/site.schema.json",
+    },
   ],
   "editor.formatOnSave": true,
   "typescript.tsdk": "node_modules/typescript/lib",
   "go.docsTool": "gogetdoc",
   "jest.pathToJest": "yarn -s test",
   "jest.showCoverageOnLoad": false,
-  "jest.autoEnable": false // until we confirm people like it
+  "jest.autoEnable": false, // until we confirm people like it
 }

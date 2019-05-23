@@ -25,7 +25,6 @@ export function refreshSiteFlags(): Observable<never> {
                     site {
                         needsRepositoryConfiguration
                         freeUsersExceeded
-                        noRepositoriesEnabled
                         alerts {
                             type
                             message
@@ -55,6 +54,7 @@ export function refreshSiteFlags(): Observable<never> {
                             }
                             noLicenseWarningUserCount
                         }
+                        productVersion
                     }
                 }
             `)

@@ -1,0 +1,114 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/Org/repos/foO
+    method: GET
+  response:
+    body: '{"slug":"foo","id":1,"name":"foo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"ORG","id":1,"name":"Org","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/ORG"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/org/foo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/org/foo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/ORG/repos/foo/browse"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 03 May 2019 14:24:40 GMT
+      Pragma:
+      - no-cache
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@1L780SNx864x42x0'
+      X-Asen:
+      - SEN-L13362690
+      X-Asessionid:
+      - 7ho48f
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/org/repos/baz
+    method: GET
+  response:
+    body: '{"slug":"baz","id":3,"name":"baz","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"ORG","id":1,"name":"Org","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/ORG"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/org/baz.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/org/baz.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/ORG/repos/baz/browse"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 03 May 2019 14:24:40 GMT
+      Pragma:
+      - no-cache
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@1L780SNx864x43x0'
+      X-Asen:
+      - SEN-L13362690
+      X-Asessionid:
+      - 1p2nayc
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/ORG/repos/bar
+    method: GET
+  response:
+    body: '{"slug":"bar","id":2,"name":"bar","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"ORG","id":1,"name":"Org","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/ORG"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/org/bar.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/org/bar.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/ORG/repos/bar/browse"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 03 May 2019 14:24:40 GMT
+      Pragma:
+      - no-cache
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@1L780SNx864x44x0'
+      X-Asen:
+      - SEN-L13362690
+      X-Asessionid:
+      - 9794x9
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""

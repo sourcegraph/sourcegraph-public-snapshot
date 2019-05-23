@@ -5,7 +5,7 @@ import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Notice, Settings } from '../schema/settings.schema'
 
-const Notice: React.FunctionComponent<{ notice: Notice; className?: string }> = ({ notice, className = '' }) => {
+const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string }> = ({ notice, className = '' }) => {
     const content = <Markdown dangerousInnerHTML={renderMarkdown(notice.message)} />
     const baseClassName = notice.location === 'top' ? 'alert-info' : 'bg-transparent border'
     return !!notice.dismissible ? (
@@ -50,7 +50,7 @@ export const Notices: React.FunctionComponent<Props> = ({
     return (
         <div className={`notices ${className}`}>
             {notices.map((notice, i) => (
-                <Notice key={i} className={alertClassName} notice={notice} />
+                <NoticeAlert key={i} className={alertClassName} notice={notice} />
             ))}
         </div>
     )

@@ -8,6 +8,7 @@ const GitoliteSchemaJSON = `{
   "$id": "gitolite.schema.json#",
   "title": "GitoliteConnection",
   "description": "Configuration for a connection to Gitolite.",
+  "allowComments": true,
   "type": "object",
   "additionalProperties": false,
   "required": ["prefix", "host"],
@@ -22,18 +23,37 @@ const GitoliteSchemaJSON = `{
       "examples": ["gitolite.example.com/"]
     },
     "host": {
-      "description": "Gitolite host that stores the repositories (e.g., git@gitolite.example.com).",
+      "description": "Gitolite host that stores the repositories (e.g., git@gitolite.example.com, ssh://git@gitolite.example.com:2222/).",
       "not": {
         "type": "string",
         "pattern": "example\\.com"
       },
       "type": "string",
-      "examples": ["git@gitolite.example.com"]
+      "examples": ["git@gitolite.example.com", "ssh://git@gitolite.example.com:2222/"]
     },
     "blacklist": {
       "description": "Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.",
       "type": "string",
       "format": "regex"
+    },
+    "exclude": {
+      "description": "A list of repositories to never mirror from this Gitolite instance. Supports excluding by exact name ({\"name\": \"foo\"}).",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "ExcludedGitoliteRepo",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }],
+        "properties": {
+          "name": {
+            "description": "The name of a Gitolite repo (\"my-repo\") to exclude from mirroring.",
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "examples": [[{ "name": "myrepo" }]]
     },
     "phabricatorMetadataCommand": {
       "description": "This is DEPRECATED. Use the ` + "`" + `phabricator` + "`" + ` field instead.",

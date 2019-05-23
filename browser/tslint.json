@@ -1,0 +1,10 @@
+{
+  "extends": ["../tslint.json"],
+  "linterOptions": { "exclude": ["node_modules/**", "**/*.json", "coverage/**"] },
+  "rules": {
+    "deprecation": {
+      "severity": "warning"
+    },
+    "jsx-ban-props": false
+  }
+}

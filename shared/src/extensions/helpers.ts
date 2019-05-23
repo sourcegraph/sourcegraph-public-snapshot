@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash'
 import { from, Observable, of, throwError } from 'rxjs'
 import { catchError, distinctUntilChanged, map, publishReplay, refCount, switchMap } from 'rxjs/operators'
-import { gql, graphQLContent } from '../graphql/graphql'
+import { gql } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
 import { asError, createAggregateError } from '../util/errors'
@@ -13,12 +13,12 @@ import { ConfiguredRegistryExtension, extensionIDsFromSettings, toConfiguredRegi
  */
 export function viewerConfiguredExtensions({
     settings,
-    queryGraphQL,
-}: Pick<PlatformContext, 'settings' | 'queryGraphQL'>): Observable<ConfiguredRegistryExtension[]> {
+    requestGraphQL,
+}: Pick<PlatformContext, 'settings' | 'requestGraphQL'>): Observable<ConfiguredRegistryExtension[]> {
     return from(settings).pipe(
         map(settings => extensionIDsFromSettings(settings)),
         distinctUntilChanged((a, b) => isEqual(a, b)),
-        switchMap(extensionIDs => queryConfiguredRegistryExtensions({ queryGraphQL }, extensionIDs)),
+        switchMap(extensionIDs => queryConfiguredRegistryExtensions({ requestGraphQL }, extensionIDs)),
         catchError(error => throwError(asError(error))),
         publishReplay(),
         refCount()
@@ -31,7 +31,7 @@ export function viewerConfiguredExtensions({
  * @returns An observable that emits once with the results.
  */
 export function queryConfiguredRegistryExtensions(
-    { queryGraphQL }: Pick<PlatformContext, 'queryGraphQL'>,
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     extensionIDs: string[]
 ): Observable<ConfiguredRegistryExtension[]> {
     if (extensionIDs.length === 0) {
@@ -42,8 +42,8 @@ export function queryConfiguredRegistryExtensions(
         prioritizeExtensionIDs: extensionIDs,
     }
     return from(
-        queryGraphQL<GQL.IQuery>(
-            gql`
+        requestGraphQL<GQL.IQuery>({
+            request: gql`
                 query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
                     extensionRegistry {
                         extensions(first: $first, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
@@ -59,10 +59,10 @@ export function queryConfiguredRegistryExtensions(
                         }
                     }
                 }
-            `[graphQLContent],
+            `,
             variables,
-            false
-        )
+            mightContainPrivateInfo: false,
+        })
     ).pipe(
         map(({ data, errors }) => {
             if (

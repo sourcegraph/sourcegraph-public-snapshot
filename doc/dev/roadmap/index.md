@@ -29,7 +29,7 @@ We're also working toward making Sourcegraph the [**infrastructure for developer
 
 ## Search
 
-Owners: @ijt, @ijsnow
+Owners: @ijt
 
 Currently we're prioritizing speed and stability of search. Here are some more things we plan to tackle in the near future.
 

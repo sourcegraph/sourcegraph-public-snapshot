@@ -42,70 +42,92 @@ func printConfigValidation() {
 // the configuration in the database upon startup. This is used to e.g. ensure
 // dev environments have a consistent configuration and to load secrets from a
 // separate private repository.
-func handleConfigOverrides() {
-	if conf.IsDev(conf.DeployType()) {
-		raw := conf.Raw()
+//
+// As this method writes to the configuration DB, it should be invoked before
+// the configuration server is started but after PostgreSQL is connected.
+func handleConfigOverrides() error {
+	ctx := context.Background()
 
-		devOverrideCriticalConfig := os.Getenv("DEV_OVERRIDE_CRITICAL_CONFIG")
-		if devOverrideCriticalConfig != "" {
-			critical, err := ioutil.ReadFile(devOverrideCriticalConfig)
+	overrideCriticalConfig := os.Getenv("CRITICAL_CONFIG_FILE")
+	overrideSiteConfig := os.Getenv("SITE_CONFIG_FILE")
+	overrideExtSvcConfig := os.Getenv("EXTSVC_CONFIG_FILE")
+	overrideAny := overrideCriticalConfig != "" || overrideSiteConfig != "" || overrideExtSvcConfig != ""
+	if overrideAny || conf.IsDev(conf.DeployType()) {
+		raw, err := (&configurationSource{}).Read(ctx)
+		if err != nil {
+			return errors.Wrap(err, "reading existing config for applying overrides")
+		}
+
+		if overrideCriticalConfig != "" {
+			critical, err := ioutil.ReadFile(overrideCriticalConfig)
 			if err != nil {
-				log.Fatal(err)
+				return errors.Wrap(err, "reading CRITICAL_CONFIG_FILE")
 			}
 			raw.Critical = string(critical)
 		}
 
-		devOverrideSiteConfig := os.Getenv("DEV_OVERRIDE_SITE_CONFIG")
-		if devOverrideSiteConfig != "" {
-			site, err := ioutil.ReadFile(devOverrideSiteConfig)
+		if overrideSiteConfig != "" {
+			site, err := ioutil.ReadFile(overrideSiteConfig)
 			if err != nil {
-				log.Fatal(err)
+				return errors.Wrap(err, "reading SITE_CONFIG_FILE")
 			}
 			raw.Site = string(site)
 		}
 
-		if devOverrideCriticalConfig != "" || devOverrideSiteConfig != "" {
-			err := (&configurationSource{}).Write(context.Background(), raw)
+		if overrideCriticalConfig != "" || overrideSiteConfig != "" {
+			err := (&configurationSource{}).Write(ctx, raw)
 			if err != nil {
-				log.Fatal(err)
+				return errors.Wrap(err, "writing critical/site config overrides to database")
 			}
 		}
 
-		devOverrideExtSvcConfig := os.Getenv("DEV_OVERRIDE_EXTSVC_CONFIG")
-		if devOverrideExtSvcConfig != "" {
-			existing, err := db.ExternalServices.List(context.Background(), db.ExternalServicesListOptions{})
+		if overrideExtSvcConfig != "" {
+			parsed, err := conf.ParseConfig(raw)
 			if err != nil {
-				log.Fatal(err)
+				return errors.Wrap(err, "parsing critical/site config")
 			}
-			if len(existing) > 0 {
-				return
+			confGet := func() *conf.Unified { return parsed }
+
+			existing, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
+			if err != nil {
+				return errors.Wrap(err, "ExternalServices.List")
+			}
+			for _, existing := range existing {
+				err := db.ExternalServices.Delete(ctx, existing.ID)
+				if err != nil {
+					return errors.Wrap(err, "ExternalServices.Delete")
+				}
 			}
 
-			extsvc, err := ioutil.ReadFile(devOverrideExtSvcConfig)
+			extsvc, err := ioutil.ReadFile(overrideExtSvcConfig)
 			if err != nil {
-				log.Fatal(err)
+				return errors.Wrap(err, "reading EXTSVC_CONFIG_FILE")
 			}
 			var configs map[string][]*json.RawMessage
 			if err := jsonc.Unmarshal(string(extsvc), &configs); err != nil {
-				log.Fatal(err)
+				return errors.Wrap(err, "parsing EXTSVC_CONFIG_FILE")
+			}
+			if len(configs) == 0 {
+				log15.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 			}
 			for key, cfgs := range configs {
 				for i, cfg := range cfgs {
 					marshaledCfg, err := json.MarshalIndent(cfg, "", "  ")
 					if err != nil {
-						log.Fatal(err)
+						return errors.Wrap(err, fmt.Sprintf("marshaling extsvc config ([%v][%v])", key, i))
 					}
-					if err := db.ExternalServices.Create(context.Background(), &types.ExternalService{
+					if err := db.ExternalServices.Create(ctx, confGet, &types.ExternalService{
 						Kind:        key,
-						DisplayName: fmt.Sprintf("Dev %s #%d", key, i+1),
+						DisplayName: fmt.Sprintf("%s #%d", key, i+1),
 						Config:      string(marshaledCfg),
 					}); err != nil {
-						log.Fatal(err)
+						return errors.Wrap(err, "ExternalServices.Create")
 					}
 				}
 			}
 		}
 	}
+	return nil
 }
 
 type configurationSource struct{}
@@ -169,9 +191,8 @@ func doPostgresDSN(currentUser string, getenv func(string) string) string {
 	// TODO match logic in lib/pq
 	// https://sourcegraph.com/github.com/lib/pq@d6156e141ac6c06345c7c73f450987a9ed4b751f/-/blob/connector.go#L42
 	dsn := &url.URL{
-		Scheme:   "postgres",
-		Host:     "127.0.0.1:5432",
-		RawQuery: "sslmode=disable",
+		Scheme: "postgres",
+		Host:   "127.0.0.1:5432",
 	}
 
 	// Username preference: PGUSER, $USER, postgres

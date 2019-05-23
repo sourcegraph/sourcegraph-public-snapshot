@@ -19,7 +19,7 @@ import (
 func main() {
 	log.SetPrefix("")
 	n := flag.Int("n", 1, "number of instances of each repo to make")
-	addr := flag.String("addr", "127.0.0.1:", "address on which to serve (default picks an unused port)")
+	addr := flag.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
 	flag.Parse()
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `usage: fakehub [opts] path/to/dir/containing/git/dirs
@@ -27,7 +27,7 @@ func main() {
 fakehub will serve any number (controlled with -n) of copies of the repo over
 HTTP at /repo/1/.git, /repo/2/.git etc. These can be git cloned, and they can
 be used as test data for sourcegraph. The easiest way to get them into
-sourcegraph is to visit http://127.0.0.1:3434/config and paste the contents
+sourcegraph is to visit the URL printed out on startup and paste the contents
 into the text box for adding single repos in sourcegraph Site Admin.
 `)
 		flag.PrintDefaults()
@@ -71,7 +71,7 @@ func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {
 	// Start the HTTP server.
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		handleDefault(tvars, w)
+		handleConfig(tvars, w)
 	})
 
 	if n == 1 {
@@ -83,9 +83,6 @@ func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {
 		}
 	}
 
-	mux.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
-		handleConfig(tvars, w)
-	})
 	s := &http.Server{
 		Handler: logger(mux),
 	}

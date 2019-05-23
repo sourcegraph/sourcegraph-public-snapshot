@@ -193,11 +193,24 @@ func (s *Server) cleanupRepos() {
 		log15.Error("cleanup: error iterating over repositories", "error", err)
 	}
 
+	// Check how much disk space is available.
 	actualFreeBytes, err := s.bytesFreeOnDisk()
 	if err != nil {
 		log15.Error("cleanup: finding the amount of space free on disk", "error", err)
 		return
 	}
+	G := float64(1024 * 1024 * 1024)
+	mount, err := findMountPoint(s.ReposDir)
+	if err != nil {
+		log15.Error("finding mount point for dir containing repos", "error", err)
+		mount = "<not found>"
+	}
+	log15.Debug("cleanup",
+		"free space in GiB", float64(actualFreeBytes)/G,
+		"desired free space in GiB", float64(s.DesiredFreeDiskSpace)/G,
+		"mount point", mount)
+
+	// Free up space if necessary.
 	howManyBytesToFree := int64(s.DesiredFreeDiskSpace) - int64(actualFreeBytes)
 	if err := s.freeUpSpace(howManyBytesToFree); err != nil {
 		log15.Error("cleanup: error freeing up space", "error", err)
@@ -207,15 +220,14 @@ func (s *Server) cleanupRepos() {
 // bytesFreeOnDisk tells how much space is available on the disk containing s.ReposDir.
 func (s *Server) bytesFreeOnDisk() (uint64, error) {
 	var fs syscall.Statfs_t
-	mp, err := findMountPoint(s.ReposDir)
+	mount, err := findMountPoint(s.ReposDir)
 	if err != nil {
 		return 0, errors.Wrap(err, "finding mount point for dir containing repos")
 	}
-	if err := syscall.Statfs(mp, &fs); err != nil {
+	if err := syscall.Statfs(mount, &fs); err != nil {
 		return 0, errors.Wrap(err, "finding out how much disk space is free")
 	}
 	free := fs.Bavail * uint64(fs.Bsize)
-	log15.Info("computed free space", "repo dir", s.ReposDir, "mount point", mp, "free space bytes", free)
 	return free, nil
 }
 
@@ -275,7 +287,6 @@ func device(f string) (int64, error) {
 // recently to most recently used, until it has freed howManyBytesToFree.
 func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 	if howManyBytesToFree <= 0 {
-		log15.Info("cleanup: skipping repository cleanup, don't need to free disk space", "howManyBytesToFree", howManyBytesToFree)
 		return nil
 	}
 
@@ -305,12 +316,25 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 		if err != nil {
 			return errors.Wrapf(err, "computing size of directory %s", d)
 		}
-		gitDirParent := filepath.Dir(d)
-		log15.Info("cleanup: removing repo dir that hasn't been used in a while", "repodir", d, "howlong", time.Since(dirModTimes[d]))
-		if err := os.RemoveAll(gitDirParent); err != nil {
+		if err := s.removeRepoDirectory(d); err != nil {
 			return errors.Wrap(err, "removing repo directory")
 		}
 		spaceFreed += delta
+
+		// Report the new disk usage situation after removing this repo.
+		actualFreeBytes, err := s.bytesFreeOnDisk()
+		if err != nil {
+			return errors.Wrap(err, "finding the amount of space free on disk")
+		}
+		G := float64(1024 * 1024 * 1024)
+		log15.Info("cleanup: removed least recently used repo",
+			"repo", d,
+			"how old", time.Since(dirModTimes[d]),
+			"free space in GiB", float64(actualFreeBytes)/G,
+			"desired free space in GiB", float64(s.DesiredFreeDiskSpace)/G,
+			"space freed in GiB", float64(spaceFreed)/G,
+			"how much space to free in GiB", float64(howManyBytesToFree)/G)
+
 		if spaceFreed >= howManyBytesToFree {
 			return nil
 		}

@@ -13,9 +13,9 @@
     "skipLibCheck": true,
     "noErrorTruncation": true,
     "importHelpers": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
   },
 
   "files": ["gulpfile.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
 }

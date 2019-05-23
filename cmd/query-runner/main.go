@@ -1,3 +1,4 @@
+// Command query-runner runs saved queries and notifies subscribers when the queries have new results.
 package main
 
 import (
@@ -15,7 +16,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -46,11 +47,13 @@ func main() {
 
 	go debugserver.Start()
 
-	http.HandleFunc(queryrunnerapi.PathSavedQueryWasCreatedOrUpdated, serveSavedQueryWasCreatedOrUpdated)
-	http.HandleFunc(queryrunnerapi.PathSavedQueryWasDeleted, serveSavedQueryWasDeleted)
-	http.HandleFunc(queryrunnerapi.PathTestNotification, serveTestNotification)
-
 	ctx := context.Background()
+
+	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
+		log15.Error("failed to wait for frontend", "error", err)
+	}
+
+	http.HandleFunc(queryrunnerapi.PathTestNotification, serveTestNotification)
 
 	go func() {
 		err := executor.run(ctx)
@@ -99,21 +102,28 @@ func (e *executorT) run(ctx context.Context) error {
 		e.forceRunInterval = &forceRunInterval
 	}
 
-	// Kick off fetching of the full list of saved queries from the frontend.
-	// Important to do this early on in case we get created/updated/deleted
-	// notifications for saved queries.
-	allSavedQueries.fetchInitialListFromFrontend()
-
 	// TODO(slimsag): Make gitserver notify us about repositories being updated
 	// as we could avoid executing queries if repositories haven't updated
 	// (impossible for new results to exist).
+	var oldList map[api.SavedQueryIDSpec]api.ConfigSavedQuery
 	for {
-		allSavedQueries := allSavedQueries.get()
+		allSavedQueries, err := api.InternalClient.SavedQueriesListAll(context.Background())
+		if err != nil {
+			log15.Error("executor: error fetching saved queries list (trying again in 5s", "error", err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		if oldList != nil {
+			sendNotificationsForCreatedOrUpdatedOrDeleted(oldList, allSavedQueries)
+		}
+		oldList = allSavedQueries
+
 		start := time.Now()
-		for _, query := range allSavedQueries {
-			err := e.runQuery(ctx, query.Spec, query.Config)
+		for spec, config := range allSavedQueries {
+			err := e.runQuery(ctx, spec, config)
 			if err != nil {
-				log15.Error("executor: failed to run query", "error", err, "query_description", query.Config.Description)
+				log15.Error("executor: failed to run query", "error", err, "query_description", config.Description)
 			}
 		}
 

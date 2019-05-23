@@ -13,7 +13,7 @@ import (
 
 	"github.com/ericchiang/k8s"
 	corev1 "github.com/ericchiang/k8s/apis/core/v1"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/pkg/errors"
 )
@@ -141,7 +141,7 @@ func (m *Map) getUrls() (*hashMap, error) {
 func inform(client *k8s.Client, m *Map, u *k8sURL) error {
 	watcher, err := client.Watch(context.Background(), client.Namespace, new(corev1.Endpoints), k8s.QueryParam("fieldSelector", "metadata.name="+u.Service))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "client.Watch")
 	}
 	defer watcher.Close()
 
@@ -149,11 +149,12 @@ func inform(client *k8s.Client, m *Map, u *k8sURL) error {
 		var endpoints corev1.Endpoints
 		eventType, err := watcher.Next(&endpoints)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "watcher.Next")
 		}
 
 		if eventType != k8s.EventAdded && eventType != k8s.EventModified {
 			// Either we are error or the endpoint has been removed.
+			log15.Warn(`eventType is not "added" or "modified"`, "eventType", eventType, "subsets", endpoints.Subsets)
 			endpoints.Subsets = nil
 		}
 		urls, err := endpointsToMap(u, &endpoints)

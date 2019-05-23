@@ -52,7 +52,7 @@ func (s *MockRepos) MockGetByName(t *testing.T, want api.RepoName, repo api.Repo
 			t.Errorf("got repo name %q, want %q", name, want)
 			return nil, &repoNotFoundErr{Name: name}
 		}
-		return &types.Repo{ID: repo, Name: name, Enabled: true}, nil
+		return &types.Repo{ID: repo, Name: name}, nil
 	}
 	return
 }

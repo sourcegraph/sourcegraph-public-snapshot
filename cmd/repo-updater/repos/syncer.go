@@ -18,6 +18,10 @@ import (
 // A Syncer periodically synchronizes available repositories from all its given Sources
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
+	// FailFullSync prevents Sync from running. This should only be true for
+	// Sourcegraph.com
+	FailFullSync bool
+
 	store   Store
 	sourcer Sourcer
 	diffs   chan Diff
@@ -41,10 +45,10 @@ func NewSyncer(
 	}
 }
 
-// Run runs the Sync at the specified interval for the given external service kinds.
-func (s *Syncer) Run(ctx context.Context, interval time.Duration, kinds ...string) error {
+// Run runs the Sync at the specified interval.
+func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 	for ctx.Err() == nil {
-		if _, err := s.Sync(ctx, kinds...); err != nil {
+		if _, err := s.Sync(ctx); err != nil {
 			log15.Error("Syncer", "error", err)
 		}
 		time.Sleep(interval)
@@ -57,6 +61,10 @@ func (s *Syncer) Run(ctx context.Context, interval time.Duration, kinds ...strin
 func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err error) {
 	ctx, save := s.observe(ctx, "Syncer.Sync", strings.Join(kinds, " "))
 	defer save(&diff, &err)
+
+	if s.FailFullSync {
+		return Diff{}, errors.New("Syncer is not enabled")
+	}
 
 	var sourced Repos
 	if sourced, err = s.sourced(ctx, kinds...); err != nil {
@@ -84,6 +92,51 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err erro
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.upsert-repos")
+	}
+
+	if s.diffs != nil {
+		s.diffs <- diff
+	}
+
+	return diff, nil
+}
+
+// SyncSubset runs the syncer on a subset of the stored repositories. It will
+// only sync the repositories with the same name or external service spec as
+// sourcedSubset repositories.
+func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (diff Diff, err error) {
+	ctx, save := s.observe(ctx, "Syncer.SyncSubset", strings.Join(Repos(sourcedSubset).Names(), " "))
+	defer save(&diff, &err)
+
+	if len(sourcedSubset) == 0 {
+		return Diff{}, nil
+	}
+
+	store := s.store
+	if tr, ok := s.store.(Transactor); ok {
+		var txs TxStore
+		if txs, err = tr.Transact(ctx); err != nil {
+			return Diff{}, errors.Wrap(err, "syncer.syncsubset.transact")
+		}
+		defer txs.Done(&err)
+		store = txs
+	}
+
+	var storedSubset Repos
+	args := StoreListReposArgs{
+		Names:         Repos(sourcedSubset).Names(),
+		ExternalRepos: Repos(sourcedSubset).ExternalRepos(),
+		UseOr:         true,
+	}
+	if storedSubset, err = store.ListRepos(ctx, args); err != nil {
+		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.list-repos")
+	}
+
+	diff = NewDiff(sourcedSubset, storedSubset)
+	upserts := s.upserts(diff)
+
+	if err = store.UpsertRepos(ctx, upserts...); err != nil {
+		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-repos")
 	}
 
 	if s.diffs != nil {
@@ -162,8 +215,8 @@ func (d Diff) Repos() Repos {
 func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
 	for _, r := range sourced {
-		if r.ExternalRepo == (api.ExternalRepoSpec{}) {
-			panic(fmt.Errorf("%s has no external repo spec", r.Name))
+		if !r.ExternalRepo.IsSet() {
+			panic(fmt.Errorf("%s has no valid external repo spec: %s", r.Name, r.ExternalRepo))
 		} else if old := byID[r.ExternalRepo]; old != nil {
 			merge(old, r)
 		} else {
@@ -189,7 +242,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 
 	for _, old := range stored {
 		src := byID[old.ExternalRepo]
-		if src == nil && old.ExternalRepo == (api.ExternalRepoSpec{}) && !seenName[old.Name] {
+		if src == nil && old.ExternalRepo.ID == "" && !seenName[old.Name] {
 			src = byName[old.Name]
 		}
 
@@ -206,7 +259,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	}
 
 	for _, r := range byID {
-		if !seenID[r.ExternalRepo] && !seenName[r.Name] {
+		if !seenID[r.ExternalRepo] {
 			diff.Added = append(diff.Added, r)
 		}
 	}
@@ -285,8 +338,8 @@ type byExternalRepoSpecSet []*Repo
 func (rs byExternalRepoSpecSet) Len() int      { return len(rs) }
 func (rs byExternalRepoSpecSet) Swap(i, j int) { rs[i], rs[j] = rs[j], rs[i] }
 func (rs byExternalRepoSpecSet) Less(i, j int) bool {
-	iSet := rs[i].ExternalRepo != (api.ExternalRepoSpec{})
-	jSet := rs[j].ExternalRepo != (api.ExternalRepoSpec{})
+	iSet := rs[i].ExternalRepo.IsSet()
+	jSet := rs[j].ExternalRepo.IsSet()
 	if iSet == jSet {
 		return false
 	}

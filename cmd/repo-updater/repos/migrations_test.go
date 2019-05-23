@@ -8,10 +8,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestEnabledStateDeprecationMigration(t *testing.T) {
@@ -60,8 +63,11 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			ServiceType: "github",
 			ServiceID:   "http://github.com",
 		},
-		Sources:  map[string]*repos.SourceInfo{},
-		Metadata: new(github.Repository),
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &github.Repository{
+			ID:            "bar",
+			NameWithOwner: "foo/bar",
+		},
 	}
 
 	gitlabService := repos.ExternalService{
@@ -85,8 +91,13 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			ServiceType: "gitlab",
 			ServiceID:   "http://gitlab.com",
 		},
-		Sources:  map[string]*repos.SourceInfo{},
-		Metadata: new(gitlab.Project),
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &gitlab.Project{
+			ProjectCommon: gitlab.ProjectCommon{
+				ID:                1,
+				PathWithNamespace: "foo/bar",
+			},
+		},
 	}
 
 	bitbucketServerService := repos.ExternalService{
@@ -111,8 +122,69 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			ServiceType: "bitbucketServer",
 			ServiceID:   "http://bitbucketserver.mycorp.com",
 		},
-		Sources:  map[string]*repos.SourceInfo{},
-		Metadata: new(bitbucketserver.Repo),
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &bitbucketserver.Repo{
+			ID:   1,
+			Slug: "bar",
+			Project: &bitbucketserver.Project{
+				Key: "foo",
+			},
+		},
+	}
+
+	awsCodeCommitService := repos.ExternalService{
+		ID:          9,
+		Kind:        "AWSCODECOMMIT",
+		DisplayName: "AWS CodeCommit - Test",
+		Config: formatJSON(`
+		{
+			"region": "us-west-1",
+			"accessKeyID": "secret-accessKeyID",
+			"secretAccessKey": "secret-secretAccessKey",
+			"gitCredentials": {"username": "user", "password": "pw"},
+		}`),
+	}
+
+	awsCodeCommitRepo := repos.Repo{
+		Name:    "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+			ServiceType: "awscodecommit",
+			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
+		},
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &awscodecommit.Repository{
+			ID:   "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+			Name: "stripe-go",
+		},
+	}
+
+	gitoliteService := repos.ExternalService{
+		ID:          4,
+		Kind:        "GITOLITE",
+		DisplayName: "Gitolite - Test",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"prefix": "/",
+			"host": "git@gitolite.mycorp.com"
+		}`),
+	}
+
+	gitoliteRepo := repos.Repo{
+		Name:    "gitolite.mycorp.com/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "bar",
+			ServiceType: "gitolite",
+			ServiceID:   "git@gitolite.mycorp.com",
+		},
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &gitolite.Repo{
+			Name: "bar",
+			URL:  "git@gitolite.mycorp.com:bar.git",
+		},
 	}
 
 	var testCases []testCase
@@ -123,6 +195,8 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 		{svc: githubService, repo: githubRepo},
 		{svc: gitlabService, repo: gitlabRepo},
 		{svc: bitbucketServerService, repo: bitbucketServerRepo},
+		{svc: awsCodeCommitService, repo: awsCodeCommitRepo},
+		{svc: gitoliteService, repo: gitoliteRepo},
 	} {
 		repo, svc := k.repo, k.svc
 		testCases = append(testCases,
@@ -137,7 +211,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			},
 			testCase{
 				name:   "disabled: was not deleted and was not modified, got excluded",
-				stored: repos.Repos{&repo},
+				stored: repos.Repos{&repo}.With(repos.Opt.RepoMetadata(nil)),
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
 				),
@@ -149,7 +223,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			},
 			testCase{
 				name:   "disabled: was not deleted, got modified, then excluded",
-				stored: repos.Repos{&repo},
+				stored: repos.Repos{&repo}.With(repos.Opt.RepoMetadata(nil)),
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(svc.Clone(), nil,
 					repo.With(func(r *repos.Repo) {
 						r.Description = "some updated description"
@@ -212,7 +286,7 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 			},
 			testCase{
 				name:   "disabled: repo is excluded in all of its sources",
-				stored: repos.Repos{repo.With(repos.Opt.RepoDeletedAt(now))},
+				stored: repos.Repos{&repo}.With(repos.Opt.RepoMetadata(nil)),
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(svc.Clone(), nil, repo.Clone()),
 					repos.NewFakeSource(svc.With(repos.Opt.ExternalServiceID(23)), nil, repo.Clone()),
@@ -799,6 +873,192 @@ func testBitbucketServerUsernameMigration(store repos.Store) func(*testing.T) {
 
 	}
 }
+
+func TestAWSCodeCommitSetBogusGitCredentialsMigration(t *testing.T) {
+	t.Parallel()
+	testAWSCodeCommitSetBogusGitCredentialsMigration(new(repos.FakeStore))(t)
+}
+
+func testAWSCodeCommitSetBogusGitCredentialsMigration(store repos.Store) func(*testing.T) {
+	awsCodeCommitServiceWithCredentials := repos.ExternalService{
+		Kind:        "AWSCODECOMMIT",
+		DisplayName: "AWS CodeCommit",
+		Config: formatJSON(`{
+			"region": "us-west-1",
+			"accessKeyID": "secret-accessKeyID",
+			"secretAccessKey": "secret-secretAccessKey",
+			"gitCredentials": {"username": "user", "password": "pw"},
+		}`),
+	}
+
+	awsCodeCommitServiceWithoutCredentials := repos.ExternalService{
+		Kind:        "AWSCODECOMMIT",
+		DisplayName: "AWS CodeCommit",
+		Config: formatJSON(`{
+			"region": "us-west-1",
+			"accessKeyID": "secret-accessKeyID",
+			"secretAccessKey": "secret-secretAccessKey"
+		}`),
+	}
+
+	awsCodeCommitServiceWithCredentialsMissingUsername := repos.ExternalService{
+		Kind:        "AWSCODECOMMIT",
+		DisplayName: "AWS CodeCommit",
+		Config: formatJSON(`{
+			"region": "us-west-1",
+			"accessKeyID": "secret-accessKeyID",
+			"secretAccessKey": "secret-secretAccessKey",
+			"gitCredentials": {"password": "pw"},
+		}`),
+	}
+
+	awsCodeCommitServiceWithCredentialsMissingPassword := repos.ExternalService{
+		Kind:        "AWSCODECOMMIT",
+		DisplayName: "AWS CodeCommit",
+		Config: formatJSON(`{
+			"region": "us-west-1",
+			"accessKeyID": "secret-accessKeyID",
+			"secretAccessKey": "secret-secretAccessKey",
+			"gitCredentials": {"username": "username"},
+		}`),
+	}
+
+	gitlab := repos.ExternalService{
+		Kind:        "GITLAB",
+		DisplayName: "Gitlab - Test",
+		Config:      formatJSON(`{"url": "https://gitlab.com"}`),
+	}
+
+	clock := repos.NewFakeClock(time.Now(), 0)
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		for _, tc := range []struct {
+			name   string
+			stored repos.ExternalServices
+			assert repos.ExternalServicesAssertion
+			err    string
+		}{
+			{
+				name:   "no external services",
+				stored: repos.ExternalServices{},
+				assert: repos.Assert.ExternalServicesEqual(),
+				err:    "<nil>",
+			},
+			{
+				name:   "non-awsCodeCommit services are left unchanged",
+				stored: repos.ExternalServices{&gitlab},
+				assert: repos.Assert.ExternalServicesEqual(&gitlab),
+				err:    "<nil>",
+			},
+			{
+				name:   "awsCodeCommit services with gitCredentials set are left unchanged",
+				stored: repos.ExternalServices{&awsCodeCommitServiceWithCredentials},
+				assert: repos.Assert.ExternalServicesEqual(&awsCodeCommitServiceWithCredentials),
+				err:    "<nil>",
+			},
+			{
+				name:   "awsCodeCommit services without credentials are migrated",
+				stored: repos.ExternalServices{&awsCodeCommitServiceWithoutCredentials},
+				assert: repos.Assert.ExternalServicesEqual(
+					awsCodeCommitServiceWithoutCredentials.With(
+						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
+						func(e *repos.ExternalService) {
+							var err error
+
+							e.Config, err = jsonc.Edit(e.Config,
+								schema.AWSCodeCommitGitCredentials{
+									Username: "insert-git-credentials-username-here",
+									Password: "insert-git-credentials-password-here",
+								},
+								"gitCredentials",
+							)
+
+							if err != nil {
+								panic(err)
+							}
+						},
+					),
+				),
+				err: "<nil>",
+			},
+			{
+				name:   "awsCodeCommit services with only username in credentials are migrated",
+				stored: repos.ExternalServices{&awsCodeCommitServiceWithCredentialsMissingPassword},
+				assert: repos.Assert.ExternalServicesEqual(
+					awsCodeCommitServiceWithCredentialsMissingPassword.With(
+						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
+						func(e *repos.ExternalService) {
+							var err error
+							e.Config, err = jsonc.Edit(e.Config,
+								schema.AWSCodeCommitGitCredentials{
+									Username: "username",
+									Password: "insert-git-credentials-password-here",
+								},
+								"gitCredentials",
+							)
+
+							if err != nil {
+								panic(err)
+							}
+						},
+					),
+				),
+				err: "<nil>",
+			},
+			{
+				name:   "awsCodeCommit services with only password in credentials are migrated",
+				stored: repos.ExternalServices{&awsCodeCommitServiceWithCredentialsMissingUsername},
+				assert: repos.Assert.ExternalServicesEqual(
+					awsCodeCommitServiceWithCredentialsMissingUsername.With(
+						repos.Opt.ExternalServiceModifiedAt(clock.Time(0)),
+						func(e *repos.ExternalService) {
+							var err error
+							e.Config, err = jsonc.Edit(e.Config,
+								schema.AWSCodeCommitGitCredentials{
+									Username: "insert-git-credentials-username-here",
+									Password: "pw",
+								},
+								"gitCredentials",
+							)
+
+							if err != nil {
+								panic(err)
+							}
+						},
+					),
+				),
+				err: "<nil>",
+			},
+		} {
+			tc := tc
+			ctx := context.Background()
+
+			t.Run(tc.name, transact(ctx, store, func(t testing.TB, tx repos.Store) {
+				if err := tx.UpsertExternalServices(ctx, tc.stored.Clone()...); err != nil {
+					t.Fatalf("failed to prepare store: %v", err)
+				}
+
+				err := repos.AWSCodeCommitSetBogusGitCredentialsMigration(clock.Now).Run(ctx, tx)
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+				}
+
+				es, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if tc.assert != nil {
+					tc.assert(t, es)
+				}
+			}))
+		}
+
+	}
+}
+
 func formatJSON(s string) string {
 	formatted, err := jsonc.Format(s, true, 2)
 	if err != nil {

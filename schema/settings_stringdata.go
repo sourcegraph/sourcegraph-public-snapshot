@@ -8,10 +8,11 @@ const SettingsSchemaJSON = `{
   "$id": "settings.schema.json#",
   "title": "Settings",
   "description": "Configuration settings for users and organizations on Sourcegraph.",
+  "allowComments": true,
   "type": "object",
   "properties": {
     "search.savedQueries": {
-      "description": "Saved search queries",
+      "description": "DEPRECATED: Saved search queries",
       "type": "array",
       "items": {
         "type": "object",
@@ -98,6 +99,11 @@ const SettingsSchemaJSON = `{
           }
         }
       }
+    },
+    "alerts.showPatchUpdates": {
+      "description": "Whether to show alerts for patch version updates. Alerts for major and minor version updates will always be shown.",
+      "type": "boolean",
+      "default": true
     },
     "extensions": {
       "description": "The Sourcegraph extensions to use. Enable an extension by adding a property ` + "`" + `\"my/extension\": true` + "`" + ` (where ` + "`" + `my/extension` + "`" + ` is the extension ID). Override a previously enabled extension and disable it by setting its value to ` + "`" + `false` + "`" + `.",

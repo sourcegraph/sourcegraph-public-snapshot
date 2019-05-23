@@ -26,7 +26,7 @@ import (
 	"syscall"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -40,7 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // tempDirName is the name used for the temporary directory under ReposDir.
@@ -546,10 +546,6 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 
 	dir := path.Join(s.ReposDir, string(req.Repo))
 	cloneProgress, cloneInProgress := s.locker.Status(dir)
-	if strings.ToLower(string(req.Repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
-		cloneInProgress = true
-		cloneProgress = "This will never finish cloning"
-	}
 	if cloneInProgress {
 		status = "clone-in-progress"
 		w.WriteHeader(http.StatusNotFound)
@@ -672,6 +668,10 @@ type cloneOptions struct {
 // cloneRepo issues a git clone command for the given repo. It is
 // non-blocking.
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, opts *cloneOptions) (string, error) {
+	if strings.ToLower(string(repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
+		return "This will never finish cloning", nil
+	}
+
 	dir := filepath.Join(s.ReposDir, string(protocol.NormalizeRepo(repo)))
 
 	// PERF: Before doing the network request to check if isCloneable, lets
@@ -1312,6 +1312,7 @@ func quickRevParseHead(dir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer f.Close()
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		fields := bytes.Fields(scanner.Bytes())

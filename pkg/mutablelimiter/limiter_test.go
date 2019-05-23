@@ -15,8 +15,8 @@ func TestLimiter(t *testing.T) {
 		}
 	}()
 
-	timeoutContext := func() context.Context {
-		ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
+	timeoutContext := func(d time.Duration) context.Context {
+		ctx, cancel := context.WithTimeout(context.Background(), d)
 		cancels = append(cancels, cancel)
 		return ctx
 	}
@@ -36,7 +36,7 @@ func TestLimiter(t *testing.T) {
 	defer cancel2()
 
 	// Should block, so use a context with a deadline
-	_, _, err = l.Acquire(timeoutContext())
+	_, _, err = l.Acquire(timeoutContext(250 * time.Millisecond))
 	if err != context.DeadlineExceeded {
 		t.Fatal("expected acquire to fail")
 	}
@@ -54,7 +54,7 @@ func TestLimiter(t *testing.T) {
 
 	// Now should work. Still use context with a deadline to ensure acquire
 	// wins over deadline
-	ctx3, cancel3, err := l.Acquire(timeoutContext())
+	ctx3, cancel3, err := l.Acquire(timeoutContext(10 * time.Second))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,8 +62,10 @@ func TestLimiter(t *testing.T) {
 
 	// Adjust limit down, should cancel oldest job
 	l.SetLimit(2)
-	time.Sleep(100 * time.Millisecond) // give time to cancel
-	if ctx1.Err() == nil {
+	select {
+	case <-ctx1.Done():
+		// what we want
+	case <-time.After(5 * time.Second):
 		t.Fatal("expected first context to be canceled")
 	}
 	if ctx2.Err() != nil || ctx3.Err() != nil {

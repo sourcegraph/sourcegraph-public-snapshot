@@ -3,13 +3,16 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"github.com/graph-gophers/graphql-go"
 	"reflect"
 	"testing"
 
+	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func TestSearch(t *testing.T) {
@@ -18,15 +21,51 @@ func TestSearch(t *testing.T) {
 		ResultCount int
 	}
 	tcs := []struct {
-		name          string
-		searchQuery   string
-		reposListMock func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
-		wantResults   Results
+		name                         string
+		searchQuery                  string
+		reposListMock                func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
+		repoRevsMock                 func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error)
+		externalServicesListMock     func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error)
+		phabricatorGetRepoByNameMock func(repo api.RepoName) (*types.PhabricatorRepo, error)
+		wantResults                  Results
 	}{
 		{
 			name:        "empty query against no repos gets no results",
 			searchQuery: "",
 			reposListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
+				return nil, nil
+			},
+			repoRevsMock: func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
+				return api.CommitID(""), nil
+			},
+			externalServicesListMock: func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				return nil, nil
+			},
+			phabricatorGetRepoByNameMock: func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+				return nil, nil
+			},
+			wantResults: Results{
+				Results:     nil,
+				ResultCount: 0,
+			},
+		},
+		{
+			name:        "empty query against empty repo gets no results",
+			searchQuery: "",
+			reposListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
+				return []*types.Repo{
+					{
+						Name: "test",
+					},
+				}, nil
+			},
+			repoRevsMock: func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
+				return api.CommitID(""), nil
+			},
+			externalServicesListMock: func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				return nil, nil
+			},
+			phabricatorGetRepoByNameMock: func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 				return nil, nil
 			},
 			wantResults: Results{
@@ -42,12 +81,15 @@ func TestSearch(t *testing.T) {
 			vars := map[string]interface{}{"query": tc.searchQuery}
 			db.Mocks.Repos.List = tc.reposListMock
 			sr := &schemaResolver{
-				recentSearches: &RecentSearchesIgnorer{},
+				recentSearches: &NopRecentSearches{},
 			}
 			schema, err := graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
 			if err != nil {
 				t.Fatal(err)
 			}
+			db.Mocks.ExternalServices.List = tc.externalServicesListMock
+			db.Mocks.Phabricator.GetByName = tc.phabricatorGetRepoByNameMock
+			git.Mocks.ResolveRevision = tc.repoRevsMock
 			result := schema.Exec(context.Background(), testSearchGQLQuery, "", vars)
 			if len(result.Errors) > 0 {
 				t.Fatalf("graphQL query returned errors: %+v", result.Errors)
@@ -66,11 +108,14 @@ func TestSearch(t *testing.T) {
 	}
 }
 
-type RecentSearchesIgnorer struct{}
+type NopRecentSearches struct{}
 
-func (m *RecentSearchesIgnorer) Log(ctx context.Context, s string) error      { return nil }
-func (m *RecentSearchesIgnorer) List(ctx context.Context) ([]string, error)   { return nil, nil }
-func (m *RecentSearchesIgnorer) Cleanup(ctx context.Context, limit int) error { return nil }
+func (m *NopRecentSearches) Log(ctx context.Context, s string) error { return nil }
+func (m *NopRecentSearches) Top(ctx context.Context, n int32) ([]string, []int32, error) {
+	return nil, nil, nil
+}
+func (m *NopRecentSearches) List(ctx context.Context) ([]string, error)   { return nil, nil }
+func (m *NopRecentSearches) Cleanup(ctx context.Context, limit int) error { return nil }
 
 var testSearchGQLQuery = `
 		fragment FileMatchFields on FileMatch {
