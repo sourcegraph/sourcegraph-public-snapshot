@@ -18,11 +18,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/search/rpc"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // Text is a searcher which routes requests for indexed commits to indexed
-// search, but fallsback to our just in time search for everything else.
+// search, but falls back to our just in time search for everything else.
 type Text struct {
 	// Index is the indexed searcher (Zoekt). It needs to return the list of
 	// repositories it can search. This should be Zoekt, but is an interface
@@ -57,25 +57,25 @@ func (t *Text) Search(ctx context.Context, q query.Q, opts *search.Options) (res
 	go func() {
 		defer close(shards)
 
-		index, fallback, err := t.Index.SplitRepositories(ctx, q, opts)
+		indexedRepos, nonIndexedRepos, err := t.Index.SplitRepositories(ctx, q, opts)
 		if err != nil {
 			// Don't hard fail if index is not available yet.
 			tr.LogFields(otlog.String("indexErr", err.Error()))
 			isIndexAvailable = false
 			err = nil
-			index = nil
-			fallback = opts.Repositories
+			indexedRepos = nil
+			nonIndexedRepos = opts.Repositories
 		}
 
-		if len(index) > 0 {
+		if len(indexedRepos) > 0 {
 			o := *opts
-			o.Repositories = index
+			o.Repositories = indexedRepos
 			shards <- shard{Searcher: t.Index, Q: q, Options: &o}
 		}
 
-		if len(fallback) > 0 {
+		if len(nonIndexedRepos) > 0 {
 			o := *opts
-			o.Repositories = fallback
+			o.Repositories = nonIndexedRepos
 			shards <- shard{Searcher: t.Fallback, Q: q, Options: &o}
 		}
 	}()
