@@ -26,21 +26,21 @@ export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
     {
         path: '/searches',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props =>
-            lazyComponent(() => import('../saved-searches/UserSavedSearchListPage'), 'UserSavedSearchListPage'),
+        render: lazyComponent(() => import('../saved-searches/UserSavedSearchListPage'), 'UserSavedSearchListPage'),
     },
     {
         path: '/searches/add',
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props =>
-            lazyComponent(() => import('../saved-searches/UserSavedSearchesCreateForm'), 'UserSavedSearchesCreateForm'),
+        render: lazyComponent(
+            () => import('../saved-searches/UserSavedSearchesCreateForm'),
+            'UserSavedSearchesCreateForm'
+        ),
     },
     {
         path: '/searches/:id',
-        // tslint:disable-next-line:jsx-no-lambda
-        render: props =>
-            lazyComponent(() => import('../saved-searches/UserSavedSearchesUpdateForm'), 'UserSavedSearchesUpdateForm'),
+        render: lazyComponent(
+            () => import('../saved-searches/UserSavedSearchesUpdateForm'),
+            'UserSavedSearchesUpdateForm'
+        ),
     },
 
     // Redirect from previous /users/:username/account -> /users/:username/settings/profile.
