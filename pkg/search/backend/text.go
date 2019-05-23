@@ -27,10 +27,7 @@ type Text struct {
 	// Index is the indexed searcher (Zoekt). It needs to return the list of
 	// repositories it can search. This should be Zoekt, but is an interface
 	// for testing purposes.
-	Index interface {
-		search.Searcher
-		SplitRepositories(context.Context, query.Q, *search.Options) (canSearch, cantSearch []api.RepoName, err error)
-	}
+	Index *Zoekt
 
 	// Fallback is the searcher used for anything that Index can't
 	// search. This should be TextJIT, but is an interface for testing
