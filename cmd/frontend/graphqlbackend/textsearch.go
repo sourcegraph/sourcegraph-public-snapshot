@@ -29,12 +29,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
+	// A global limiter on number of concurrent searcher searches.
+	textSearchLimiter = mutablelimiter.New(32)
+
 	searchHTTPClient = &http.Client{
 		// nethttp.Transport will propagate opentracing spans
 		Transport: &nethttp.Transport{
@@ -849,15 +853,15 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		fetchTimeout = 500 * time.Millisecond
 	}
 
-	// textSearchLimiter limits the number of concurrent searches. We limit it
-	// to a multiple of the number of search replicas we have.
-	var textSearchLimiter semaphore
 	if len(searcherRepos) > 0 {
+		// The number of searcher endpoints can change over time. Inform our
+		// limiter of the new limit, which is a multiple of the number of
+		// searchers.
 		eps, err := Search().SearcherURLs.Endpoints()
 		if err != nil {
 			return nil, common, err
 		}
-		textSearchLimiter = make(semaphore, len(eps)*32)
+		textSearchLimiter.SetLimit(len(eps) * 32)
 	}
 
 	for _, repoRev := range searcherRepos {
@@ -870,14 +874,15 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 
 		// Only reason acquire can fail is if ctx is cancelled. So we can stop
 		// looping through searcherRepos.
-		if err := textSearchLimiter.Acquire(ctx); err != nil {
+		limitCtx, limitDone, acquireErr := textSearchLimiter.Acquire(ctx)
+		if acquireErr != nil {
 			break
 		}
 
 		wg.Add(1)
-		go func(repoRev search.RepositoryRevisions) {
+		go func(ctx context.Context, done context.CancelFunc, repoRev search.RepositoryRevisions) {
 			defer wg.Done()
-			defer textSearchLimiter.Release()
+			defer done()
 
 			rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
 			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
@@ -909,7 +914,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				cancel()
 			}
 			addMatches(matches)
-		}(*repoRev)
+		}(limitCtx, limitDone, *repoRev)
 	}
 
 	wg.Wait()
