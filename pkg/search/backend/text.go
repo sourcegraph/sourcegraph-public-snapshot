@@ -65,13 +65,15 @@ func (t *Text) Search(ctx context.Context, q query.Q, opts *search.Options) (res
 		}
 
 		if len(indexedRepos) > 0 {
-			opts.Repositories = indexedRepos
-			shards <- shard{Searcher: t.Index, Q: q, Options: opts}
+			o := *opts
+			o.Repositories = indexedRepos
+			shards <- shard{Searcher: t.Index, Q: q, Options: &o}
 		}
 
 		if len(nonIndexedRepos) > 0 {
-			opts.Repositories = nonIndexedRepos
-			shards <- shard{Searcher: t.Fallback, Q: q, Options: opts}
+			o := *opts
+			o.Repositories = nonIndexedRepos
+			shards <- shard{Searcher: t.Fallback, Q: q, Options: &o}
 		}
 	}()
 
