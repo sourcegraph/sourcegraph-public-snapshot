@@ -807,6 +807,41 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 	}
 
+	wg.Add(1)
+	go func() {
+		// TODO limitHit, handleRepoSearchResult
+		defer wg.Done()
+		query := args.Pattern
+		k := zoektResultCountFactor(len(zoektRepos), query)
+		opts := zoektSearchOpts(k, query)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, indexedRevisions, args.UseFullDeadline, Search().Index.Client, opts, time.Since)
+		mu.Lock()
+		defer mu.Unlock()
+		if ctx.Err() == nil {
+			for _, repo := range zoektRepos {
+				common.searched = append(common.searched, repo.Repo)
+				common.indexed = append(common.indexed, repo.Repo)
+			}
+			for repo := range reposLimitHit {
+				// Repos that aren't included in the result set due to exceeded limits are partially searched
+				// for dynamic filter purposes. Note, reposLimitHit may include repos that did not have any results
+				// returned in the original result set, because indexed search has `limitHit` for the
+				// entire search rather than per repo as in non-indexed search.
+				common.partial[api.RepoName(repo)] = struct{}{}
+			}
+		}
+		if limitHit {
+			common.limitHit = true
+		}
+		tr.LogFields(otlog.Object("searchErr", searchErr), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
+		if searchErr != nil && err == nil && !overLimitCanceled {
+			err = searchErr
+			tr.LazyPrintf("cancel indexed search due to error: %v", err)
+			cancel()
+		}
+		addMatches(matches)
+	}()
+
 	var fetchTimeout time.Duration
 	if len(searcherRepos) == 1 || args.UseFullDeadline {
 		// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
@@ -866,41 +901,6 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			addMatches(matches)
 		}(*repoRev)
 	}
-
-	wg.Add(1)
-	go func() {
-		// TODO limitHit, handleRepoSearchResult
-		defer wg.Done()
-		query := args.Pattern
-		k := zoektResultCountFactor(len(zoektRepos), query)
-		opts := zoektSearchOpts(k, query)
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, indexedRevisions, args.UseFullDeadline, Search().Index.Client, opts, time.Since)
-		mu.Lock()
-		defer mu.Unlock()
-		if ctx.Err() == nil {
-			for _, repo := range zoektRepos {
-				common.searched = append(common.searched, repo.Repo)
-				common.indexed = append(common.indexed, repo.Repo)
-			}
-			for repo := range reposLimitHit {
-				// Repos that aren't included in the result set due to exceeded limits are partially searched
-				// for dynamic filter purposes. Note, reposLimitHit may include repos that did not have any results
-				// returned in the original result set, because indexed search has `limitHit` for the
-				// entire search rather than per repo as in non-indexed search.
-				common.partial[api.RepoName(repo)] = struct{}{}
-			}
-		}
-		if limitHit {
-			common.limitHit = true
-		}
-		tr.LogFields(otlog.Object("searchErr", searchErr), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-		if searchErr != nil && err == nil && !overLimitCanceled {
-			err = searchErr
-			tr.LazyPrintf("cancel indexed search due to error: %v", err)
-			cancel()
-		}
-		addMatches(matches)
-	}()
 
 	wg.Wait()
 	if err != nil {
