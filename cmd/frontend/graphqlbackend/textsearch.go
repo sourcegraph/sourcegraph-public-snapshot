@@ -35,9 +35,6 @@ import (
 )
 
 var (
-	// textSearchLimiter limits the number of open TCP connections created by frontend to searcher.
-	textSearchLimiter = make(semaphore, 500)
-
 	searchHTTPClient = &http.Client{
 		// nethttp.Transport will propagate opentracing spans
 		Transport: &nethttp.Transport{
@@ -267,12 +264,6 @@ func textSearchURL(ctx context.Context, url string) ([]*fileMatchResolver, bool,
 
 	// Do not lose the context returned by TraceRequest
 	ctx = req.Context()
-
-	// Limit number of outstanding searcher requests
-	if err := textSearchLimiter.Acquire(ctx); err != nil {
-		return nil, false, err
-	}
-	defer textSearchLimiter.Release()
 
 	resp, err := searchHTTPClient.Do(req)
 	if err != nil {
@@ -858,6 +849,17 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		fetchTimeout = 500 * time.Millisecond
 	}
 
+	// textSearchLimiter limits the number of concurrent searches. We limit it
+	// to a multiple of the number of search replicas we have.
+	var textSearchLimiter semaphore
+	if len(searcherRepos) > 0 {
+		eps, err := Search().SearcherURLs.Endpoints()
+		if err != nil {
+			return nil, common, err
+		}
+		textSearchLimiter = make(semaphore, len(eps)*32)
+	}
+
 	for _, repoRev := range searcherRepos {
 		if len(repoRev.Revs) == 0 {
 			continue
@@ -866,9 +868,17 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			return nil, common, errMultipleRevsNotSupported
 		}
 
+		// Only reason acquire can fail is if ctx is cancelled. So we can stop
+		// looping through searcherRepos.
+		if err := textSearchLimiter.Acquire(ctx); err != nil {
+			break
+		}
+
 		wg.Add(1)
 		go func(repoRev search.RepositoryRevisions) {
 			defer wg.Done()
+			defer textSearchLimiter.Release()
+
 			rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
 			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
 			if searchErr != nil {
