@@ -63,18 +63,11 @@ type ExcludeRepoResponse struct {
 //
 // Exactly one of Repo and ExternalRepo should be set.
 type RepoLookupArgs struct {
-	// Repo is the repository name to look up. If the ExternalRepo information is available to the
-	// caller, it is preferred to use that (because it is robust to renames).
+	// Repo is the repository name to look up.
 	Repo api.RepoName `json:",omitempty"`
-
-	// ExternalRepo specifies the repository to look up by its external repository identity.
-	ExternalRepo *api.ExternalRepoSpec
 }
 
 func (a *RepoLookupArgs) String() string {
-	if a.ExternalRepo != nil {
-		return fmt.Sprintf("RepoLookupArgs{%s}", a.ExternalRepo)
-	}
 	return fmt.Sprintf("RepoLookupArgs{%s}", a.Repo)
 }
 

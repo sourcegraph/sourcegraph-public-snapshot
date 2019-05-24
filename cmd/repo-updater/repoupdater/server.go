@@ -303,8 +303,8 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		tr.Finish()
 	}()
 
-	if args.Repo == "" && args.ExternalRepo == nil {
-		return nil, errors.New("at least one of Repo and ExternalRepo must be set (both are empty)")
+	if args.Repo == "" {
+		return nil, errors.New("Repo must be set (is blank)")
 	}
 
 	if mockRepoLookup != nil {
