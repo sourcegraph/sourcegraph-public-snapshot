@@ -11,7 +11,7 @@ import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
-console.log('Using mode', mode)
+console.error('Using mode', mode)
 
 const devtool = mode === 'production' ? 'source-map' : 'cheap-module-eval-source-map'
 
