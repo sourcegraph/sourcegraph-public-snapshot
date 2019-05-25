@@ -5,8 +5,6 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
 import OptimizeCssAssetsPlugin from 'optimize-css-assets-webpack-plugin'
 import * as path from 'path'
-// @ts-ignore
-import rxPaths from 'rxjs/_esm5/path-mapping'
 import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
 
@@ -114,7 +112,6 @@ const config: webpack.Configuration = {
     resolve: {
         extensions: ['.mjs', '.ts', '.tsx', '.js'],
         mainFields: ['es2015', 'module', 'browser', 'main'],
-        alias: { ...rxPaths() },
     },
     module: {
         rules: [
