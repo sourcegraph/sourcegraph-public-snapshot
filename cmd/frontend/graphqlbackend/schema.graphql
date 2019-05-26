@@ -794,9 +794,40 @@ type Query {
     # The configuration for clients.
     clientConfiguration: ClientConfigurationDetails!
     # Runs a search.
+    #
+    # In Sourcegraph versions before 3.5, requesting more results could be done
+    # by first making a request with only specifying a 'query', and then
+    # checking the 'SearchResults' 'limitHit' field. If the limit was hit, it
+    # indicated more results existed and the query could be retried with a
+    # larger 'count:' query parameter. All original results and some new
+    # results would be returned. In other words, there was no true pagination
+    # of search results and search results arrived in a random (fastest-first)
+    # order.
+    #
+    # In Sourcegraph 3.5, pagination was introduced which unlike the prior
+    # approach allows for:
+    #
+    # - Getting subsequent results faster (as prior results are no longer computed and transferred).
+    # - Consuming the entire result set (using multiple requests).
+    # - Getting results in a defined order.
+    #
+    # All new API consumers should make use of this API by specifying 'offset'
+    # and 'limit' parameters.
     search(
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
+
+        # When specified, indicates that this request should be paginated and
+        # results should be returned starting at this offset.
+        #
+        # All new clients should specify this field.
+        offset: SearchOffset
+
+        # When specified, indicates that this request should be paginated and
+        # results should be limited to this amount.
+        #
+        # All new clients should specify this field.
+        limit: SearchLimit
     ): Search
     # All saved searches configured for the current user, merged from all configurations.
     savedSearches: [SavedSearch!]!
@@ -843,6 +874,72 @@ type ClientConfigurationDetails {
 type ParentSourcegraphDetails {
     # Sourcegraph instance URL.
     url: String!
+}
+
+# An offset for pagination in search.
+input SearchOffset {
+    # Indicates that Sourcegraph should skip searching the first N repositories
+    # out of all repositories determined to be searchable based on the search
+    # query.
+    repositories: Int!
+
+    # Indicates that repositories containing no results should be skipped when
+    # possible. For example, if:
+    #
+    # - Sourcegraph has 100 repositories
+    # - 'SearchOffset.repositories = 50'
+    # - 'SearchOffset.skipEmptyRepositories = true'
+    # - 'SearchLimit.repositories = 10'
+    #
+    # Sourcegraph will begin searching at the 50th repository and continue
+    # searching until either:
+    #
+    # - 10 repositories with results are found (or less if there are not 10
+    #   such repositories overall).
+    # - More than 1 second has passed (in this case, the client should
+    #   continue by making a subsequent paginated request using the
+    #   'SearchResults.repositoryOffset' to continue searching where the server
+    #   left off). This gives the client an opportunity to present an updated
+    #   number of repositories searched and how many remain unsearched.
+    #
+    skipEmptyRepositories: Boolean = true
+
+    # Indicates that Sourcegraph should skip the first N results found in each
+    # repository searched.
+    #
+    # In most cases, using just 'repositories' above is sufficient.
+    #
+    # This field is useful when there is a desire to paginate results within a
+    # single repository. Usually, this is only useful when there are extremely
+    # large repositories in Sourcegraph which could produce more results than
+    # can be searched in a reasonable timeframe.
+    results: Int
+}
+
+# A limit on the number of search results returned by the GraphQL query.
+input SearchLimit {
+    # Indicates that the results should at max include results from N
+    # repositories out of all repositories determined to be searchable based on
+    # the search query.
+    repositories: Int! = 10
+
+    # Indicates that if more than N results are encountered in a repository,
+    # only that many results should be returned and no further repositories
+    # should be searched. This allows clients to paginate results within very
+    # large repositories. In this case, to determine if there are more results
+    # overall the client would need to check if
+    # 'length(SearchResults.repositories) > SearchLimit.repositories'
+    # OR
+    # 'length(SearchResults.results) == SearchLimit.results'
+    # are true.
+    #
+    # In most cases, using just 'repositories' above is sufficient.
+    #
+    # This field is useful when there is a desire to paginate results within a
+    # single repository. Usually, this is only useful when there are extremely
+    # large repositories in Sourcegraph which could produce more results than
+    # can be searched in a reasonable timeframe.
+    results: Int
 }
 
 # A search.
@@ -920,9 +1017,19 @@ type SearchResults {
     # This string is typically shown to users to indicate the true result count.
     approximateResultCount: String!
     # Whether or not the results limit was hit.
+    #
+    # For paginated requests, this field is meaningless.
     limitHit: Boolean!
     # Integers representing the sparkline for the search results.
     sparkline: [Int!]!
+    # The last repository that was searched while running this query.
+    #
+    # This differs from the input 'SearchOffset.repositories' value when
+    # repositories have been skipped due to not having results (i.e. when
+    # 'SearchOffset.skipEmptyRepositories = true').
+    #
+    # Always zero for non-paginated searches.
+    repositoryOffset: Int!
     # Repositories that were eligible to be searched.
     repositories: [Repository!]!
     # Repositories that were actually searched. Excludes repositories that would have been searched but were not
