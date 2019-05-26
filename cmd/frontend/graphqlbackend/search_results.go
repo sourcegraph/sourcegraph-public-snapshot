@@ -155,13 +155,15 @@ func (sr *searchResultsResolver) Results() []*searchResultResolver {
 	return sr.results
 }
 
-func (sr *searchResultsResolver) ResultCount() int32 {
+func (sr *searchResultsResolver) MatchCount() int32 {
 	var totalResults int32
 	for _, result := range sr.results {
 		totalResults += result.resultCount()
 	}
 	return totalResults
 }
+
+func (sr *searchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
 
 func (sr *searchResultsResolver) ApproximateResultCount() string {
 	count := sr.ResultCount()
