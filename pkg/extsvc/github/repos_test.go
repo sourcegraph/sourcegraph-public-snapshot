@@ -527,3 +527,114 @@ func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
 		t.Errorf("got %v, want %v", got, want)
 	}
 }
+
+func TestClient_buildGetRepositoriesBatchQuery(t *testing.T) {
+	repos := []string{
+		"sourcegraph/grapher-tutorial",
+		"sourcegraph/clojure-grapher",
+		"sourcegraph/programming-challenge",
+		"sourcegraph/annotate",
+		"sourcegraph/sourcegraph-sublime-old",
+		"sourcegraph/makex",
+		"sourcegraph/pydep",
+		"sourcegraph/vcsstore",
+		"sourcegraph/contains.dot",
+	}
+
+	wantIncluded := `
+repo_sourcegraph_grapher_tutorial: repository(owner: "sourcegraph", name: "grapher-tutorial") { ... on Repository { ...RepositoryFields } }
+repo_sourcegraph_clojure_grapher: repository(owner: "sourcegraph", name: "clojure-grapher") { ... on Repository { ...RepositoryFields } }
+repo_sourcegraph_programming_challenge: repository(owner: "sourcegraph", name: "programming-challenge") { ... on Repository { ...RepositoryFields } }
+repo_sourcegraph_annotate: repository(owner: "sourcegraph", name: "annotate") { ... on Repository { ...RepositoryFields } }
+repo_sourcegraph_sourcegraph_sublime_old: repository(owner: "sourcegraph", name: "sourcegraph-sublime-old") { ... on Repository { ...RepositoryFields } }
+repo_sourcegraph_makex: repository(owner: "sourcegraph", name: "makex") { ... on Repository { ...RepositoryFields } }
+repo_sourcegraph_pydep: repository(owner: "sourcegraph", name: "pydep") { ... on Repository { ...RepositoryFields } }
+repo_sourcegraph_vcsstore: repository(owner: "sourcegraph", name: "vcsstore") { ... on Repository { ...RepositoryFields } }
+repo_sourcegraph_contains_dot: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repository { ...RepositoryFields } }`
+
+	mock := mockHTTPResponseBody{responseBody: ""}
+	c := newTestClient(t, &mock)
+	query, err := c.buildGetRepositoriesBatchQuery(context.Background(), repos)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Printf("query=%q", query)
+	if !strings.Contains(query, wantIncluded) {
+		t.Fatalf("query does not contain repository query. query=%q, want=%q", query, wantIncluded)
+	}
+}
+
+func TestClient_GetRepositoriesByNameWithOwnerFromAPI(t *testing.T) {
+	mock := mockHTTPResponseBody{
+		responseBody: `
+{
+  "data": {
+    "repo_sourcegraph_grapher_tutorial": {
+      "id": "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+      "nameWithOwner": "sourcegraph/grapher-tutorial",
+      "description": "monkey language",
+      "url": "https://github.com/sourcegraph/grapher-tutorial",
+      "isPrivate": true,
+      "isFork": false,
+      "isArchived": true,
+      "viewerPermission": "ADMIN"
+    },
+    "repo_sourcegraph_clojure_grapher": {
+      "id": "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
+      "nameWithOwner": "sourcegraph/clojure-grapher",
+      "description": "clojure grapher",
+      "url": "https://github.com/sourcegraph/clojure-grapher",
+      "isPrivate": true,
+      "isFork": false,
+      "isArchived": true,
+      "viewerPermission": "ADMIN"
+    }
+  }
+}
+`}
+	c := newTestClient(t, &mock)
+
+	namesWithOwners := []string{
+		"sourcegraph/grapher-tutorial",
+		"sourcegraph/clojure-grapher",
+	}
+
+	wantRepos := []*Repository{
+		{
+			ID:               "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+			NameWithOwner:    "sourcegraph/grapher-tutorial",
+			Description:      "monkey language",
+			URL:              "https://github.com/sourcegraph/grapher-tutorial",
+			IsPrivate:        true,
+			IsFork:           false,
+			IsArchived:       true,
+			ViewerPermission: "ADMIN",
+		},
+		{
+			ID:               "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
+			NameWithOwner:    "sourcegraph/clojure-grapher",
+			Description:      "clojure grapher",
+			URL:              "https://github.com/sourcegraph/clojure-grapher",
+			IsPrivate:        true,
+			IsFork:           false,
+			IsArchived:       true,
+			ViewerPermission: "ADMIN",
+		},
+	}
+
+	repos, err := c.GetRepositoriesByNameWithOwnerFromAPI(context.Background(), "", namesWithOwners)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mock.count != 1 {
+		t.Errorf("mock.count == %d", mock.count)
+	}
+	if want, have := len(wantRepos), len(repos); want != have {
+		t.Errorf("wrong number of repos. want=%d, have=%d", want, have)
+	}
+
+	if !repoListsAreEqual(repos, wantRepos) {
+		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(wantRepos))
+	}
+}

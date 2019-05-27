@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -377,6 +378,74 @@ query Repositories($ids: [ID!]!) {
 		}
 	}
 	return repos, nil
+}
+
+// GetRepositoriesByNameWithOwnerFromAPI fetches the specified repositories
+// (namesWithOwners) from the GitHub GraphQL API and returns a slice of
+// repositories.
+// If a repository is not found, it will return an error.
+//
+// The maximum number of repositories to be fetched is 30. If more
+// namesWithOwners are given, the method returns an error. 30 is not a official
+// limit of the API, but based on the observation that the GitHub GraphQL does
+// not return results when more than 37 aliases are specified in a query. 30 is
+// the conservative step back from 37.
+//
+// This method does not cache.
+func (c *Client) GetRepositoriesByNameWithOwnerFromAPI(ctx context.Context, token string, namesWithOwners []string) ([]*Repository, error) {
+	if len(namesWithOwners) > 30 {
+		return nil, errors.New("cannot fetch more than 30 repositories via GraphQL API")
+	}
+
+	query, err := c.buildGetRepositoriesBatchQuery(ctx, namesWithOwners)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]*Repository
+	err = c.requestGraphQL(ctx, token, query, map[string]interface{}{}, &result)
+	if err != nil {
+		if gqlErrs, ok := err.(graphqlErrors); ok {
+			for _, err2 := range gqlErrs {
+				if err2.Type == graphqlErrTypeNotFound {
+					continue
+				}
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	repos := []*Repository{}
+	for _, r := range result {
+		if r != nil {
+			repos = append(repos, r)
+		}
+	}
+	return repos, nil
+}
+
+func (c *Client) buildGetRepositoriesBatchQuery(ctx context.Context, namesWithOwners []string) (string, error) {
+	var b strings.Builder
+	b.WriteString(c.repositoryFieldsGraphQLFragment())
+	b.WriteString("query {\n")
+
+	for _, pair := range namesWithOwners {
+		owner, name, err := SplitRepositoryNameWithOwner(pair)
+		if err != nil {
+			return "", err
+		}
+		ident := strings.Replace(fmt.Sprintf("repo_%s_%s", owner, name), "-", "_", -1)
+		ident = strings.Replace(ident, ".", "_", -1)
+
+		b.WriteString(fmt.Sprintf("%s: repository(owner: %q, name: %q) { ", ident, owner, name))
+		b.WriteString("... on Repository { ...RepositoryFields } }\n")
+	}
+
+	b.WriteString("}")
+
+	return b.String(), nil
 }
 
 func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
