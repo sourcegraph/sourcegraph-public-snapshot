@@ -23,6 +23,7 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -703,9 +704,184 @@ func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions)
 	return indexed, unindexed, indexedRevisions, nil
 }
 
+type numTotalReposCache struct {
+	sync.RWMutex
+	lastUpdate time.Time
+	count      int
+}
+
+func (n *numTotalReposCache) get(ctx context.Context) int {
+	n.RLock()
+	if !n.lastUpdate.IsZero() && time.Since(n.lastUpdate) < 1*time.Minute {
+		defer n.RUnlock()
+		return n.count
+	}
+	n.RUnlock()
+
+	n.Lock()
+	newCount, err := db.Repos.Count(ctx, db.ReposListOptions{Enabled: true})
+	if err != nil {
+		defer n.Unlock()
+		log15.Error("failed to determine numTotalRepos", "error", err)
+		return n.count
+	}
+	n.count = newCount
+	n.Unlock()
+	return newCount
+}
+
+var numTotalRepos = &numTotalReposCache{}
+
+func clamp(x, min, max int32) int32 {
+	if x < min {
+		return min
+	}
+	if x > max {
+		return max
+	}
+	return x
+}
+
+// paginatedSearchFilesInRepos searches a set of repos for a pattern while
+// respecting the (optional) offset and limit pagination parameters.
+//
+// The input args.Repos must already be sorted using repoIsLess.
+func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, offset *searchOffset, limit *searchLimit) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+	if offset == nil && limit == nil {
+		// not a paginated request.
+		return searchFilesInRepos(ctx, args)
+	}
+	if offset == nil {
+		offset = &searchOffset{}
+	}
+	if limit == nil {
+		limit = &searchLimit{}
+	}
+	offset.Repositories = clamp(offset.Repositories, 0, int32(len(args.Repos)))
+	limit.Repositories = clamp(limit.Repositories, 0, int32(len(args.Repos)))
+	args.Repos = args.Repos[offset.Repositories:]
+
+	// There is no guarantee that the repos we search have any results for the
+	// user, so if we did them one-by-one or even consecutively then
+	// needle-in-the-haystack searches could be very slow compared to non
+	// paginated searches which effectively search all repositories
+	// concurrently.
+	//
+	// So, we concurrently search a bucket of repositories that is based on the
+	// total number of repositories on Sourcegraph. This makes our absolute
+	// worst-case performance for such queries N times worse than non-paginated
+	// queries where N is the divisor (8).
+	numTotalRepos := numTotalRepos.get(ctx)
+	concurrentSearchBucketSize := numTotalRepos / 8
+
+	common = &searchResultsCommon{}
+	resultsByRepo := map[*types.Repo][]*fileMatchResolver{}
+	for start := 0; start <= len(args.Repos); start += concurrentSearchBucketSize {
+		if start > len(args.Repos) {
+			break
+		}
+
+		end := start + concurrentSearchBucketSize
+		if end > len(args.Repos) {
+			end = len(args.Repos)
+		}
+		bucket := *args
+		bucket.Repos = args.Repos[start:end]
+
+		// potential for optimizations: if searchOffset.SkipEmptyRepositories is true
+		// and searchFilesInRepos finds results from enough repositories that we care
+		// about (following the semantics of SkipEmptyRepositories) it could stop
+		// searching and save time. Respecting SkipEmptyRepositories semantics
+		// would be somewhat tricky so I didn't do it.
+		r, c, err := searchFilesInRepos(ctx, &bucket)
+		if err != nil {
+			return nil, nil, err // TODO: confirm this is proper error handling
+		}
+		for _, match := range r {
+			resultsByRepo[match.repo] = append(resultsByRepo[match.repo], match)
+		}
+		common.update(*c)
+		if !offset.SkipEmptyRepositories && len(common.repos) >= int(limit.Repositories) {
+			break
+		}
+		if offset.SkipEmptyRepositories && common.repositoriesWithMatchesCount >= limit.Repositories {
+			break
+		}
+	}
+
+	// The above may have yielded more results than the client was asking for,
+	// since we search in large batches. Using cursor-based pagination in the
+	// future we could save this work for a short while such that when the
+	// client makes their next request we simply serve these results instead of
+	// discarding them. For now, we discard.
+	var (
+		finalResults []*fileMatchResolver
+		finalCommon  = &searchResultsCommon{
+			limitHit:         false, // irrelevant in paginated search
+			indexUnavailable: common.indexUnavailable,
+			partial:          make(map[api.RepoName]struct{}),
+		}
+	)
+	copyOverRepo := func(repo *types.Repo, targetList *[]*types.Repo, ifInsideList []*types.Repo) {
+		for _, r := range ifInsideList {
+			if repo == r {
+				*targetList = append(*targetList, repo)
+				return
+			}
+		}
+	}
+	for _, desiredRepoRevs := range args.Repos {
+		repo := desiredRepoRevs.Repo
+		results := resultsByRepo[repo]
+
+		if offset.SkipEmptyRepositories {
+			isCloning := listContainsRepo(common.cloning, repo)
+			isMissing := listContainsRepo(common.missing, repo)
+			isTimedout := listContainsRepo(common.timedout, repo)
+			_, isPartial := common.partial[repo.Name]
+			trulyNoResults := len(results) == 0 && !isCloning && !isMissing && !isTimedout && !isPartial
+			if trulyNoResults {
+				continue
+			}
+		}
+		if !offset.SkipEmptyRepositories && len(finalCommon.repos) >= int(limit.Repositories) {
+			break
+		}
+		if offset.SkipEmptyRepositories && finalCommon.repositoriesWithMatchesCount >= limit.Repositories {
+			break
+		}
+
+		// Include the results and copy over metadata from the common structure.
+		finalResults = append(finalResults, results...)
+		finalCommon.resultCount += int32(len(results))
+		finalCommon.repositoriesWithMatchesCount++
+		copyOverRepo(repo, &finalCommon.repos, common.repos)
+		copyOverRepo(repo, &finalCommon.searched, common.searched)
+		copyOverRepo(repo, &finalCommon.indexed, common.indexed)
+		copyOverRepo(repo, &finalCommon.cloning, common.cloning)
+		copyOverRepo(repo, &finalCommon.missing, common.missing)
+		copyOverRepo(repo, &finalCommon.timedout, common.timedout)
+		if _, ok := common.partial[repo.Name]; ok {
+			finalCommon.partial[repo.Name] = struct{}{}
+		}
+	}
+	return finalResults, finalCommon, nil
+}
+
+func listContainsRepo(list []*types.Repo, x *types.Repo) bool {
+	for _, r := range list {
+		if r == x {
+			return true
+		}
+	}
+	return false
+}
+
 var mockSearchFilesInRepos func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error)
 
 // searchFilesInRepos searches a set of repos for a pattern.
+//
+// The returned results are sorted.
 func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
@@ -772,11 +948,12 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 
 	var (
 		// TODO: convert wg to an errgroup
-		wg                sync.WaitGroup
-		mu                sync.Mutex
-		unflattened       [][]*fileMatchResolver
-		flattenedSize     int
-		overLimitCanceled bool // canceled because we were over the limit
+		wg                          sync.WaitGroup
+		mu                          sync.Mutex
+		unflattened                 [][]*fileMatchResolver
+		flattenedSize               int
+		overLimitCanceled           bool // canceled because we were over the limit
+		repositoriesWithMatchesByID = map[api.RepoID]struct{}{}
 	)
 
 	// addMatches assumes the caller holds mu.
@@ -790,9 +967,14 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			unflattened = append(unflattened, matches)
 			flattenedSize += len(matches)
 
+			for _, match := range matches {
+				repositoriesWithMatchesByID[match.repo.ID] = struct{}{}
+			}
+			common.repositoriesWithMatchesCount = int32(len(repositoriesWithMatchesByID))
+
 			// Stop searching once we have found enough matches. This does
-			// lead to potentially unstable result ordering, but is worth
-			// it for the performance benefit.
+			// lead to potentially unstable result ordering (in the
+			// non-pagination case), but is wort it for the performance benefit.
 			if flattenedSize > int(args.Pattern.FileMatchLimit) {
 				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.Pattern.FileMatchLimit)
 				overLimitCanceled = true

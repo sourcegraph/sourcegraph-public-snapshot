@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -44,7 +44,7 @@ type searchResultsCommon struct {
 	missing  []*types.Repo             // repos that could not be searched because they do not exist
 	partial  map[api.RepoName]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
-	maxResultsCount, resultCount int32
+	maxResultsCount, resultCount, repositoriesWithMatchesCount int32
 
 	// timedout usually contains repos that haven't finished being fetched yet.
 	// This should only happen for large repos and the searcher caches are
@@ -133,6 +133,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	appendUnique(&c.missing, other.missing)
 	appendUnique(&c.timedout, other.timedout)
 	c.resultCount += other.resultCount
+	c.repositoriesWithMatchesCount += other.repositoriesWithMatchesCount
 
 	if c.partial == nil {
 		c.partial = make(map[api.RepoName]struct{})
@@ -460,6 +461,10 @@ loop:
 	return sparkline, nil
 }
 
+func (sr *searchResultsResolver) RepositoryOffset(ctx context.Context) int32 {
+	panic("TODO")
+}
+
 func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
 	start := time.Now()
 	rr, err := r.doResults(ctx, "")
@@ -651,6 +656,18 @@ func (r *searchResolver) searchTimeoutFieldSet() bool {
 }
 
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
+	if r.offset != nil || r.limit != nil {
+		// For paginated queries, the maximum time a search query is allowed
+		// to run is 1 second and it cannot be altered.
+		//
+		// TODO(slimsag): For rollout of pagination by default, this may be too
+		// aggressive due to symbols and other search providers being too slow,
+		// but 1s being the constraint is important for other reasons (so
+		// clients can notify their users of current search progress). Need to
+		// ensure all search providers are fast enough for this to be OK.
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		return ctx, cancel, nil
+	}
 	d := defaultTimeout
 	timeout, _ := r.query.StringValue(query.FieldTimeout)
 	if timeout != "" {
@@ -775,6 +792,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		seenResultTypes[resultType] = struct{}{}
 		switch resultType {
 		case "repo":
+			// TODO: support pagination
 			// Search for repos
 			wg := waitGroup(true)
 			wg.Add(1)
@@ -800,6 +818,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				}
 			})
 		case "symbol":
+			// TODO: support pagination
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
@@ -842,7 +861,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args)
+				// TODO: wrap paginatedSearchFilesInRepos with something that can change our
+				// GraphQL API to a cursor-based result-level pagination API. For example,
+				// by returning a connection ID so subsequent requests can optimally resume
+				// transfer of results we already computed in paginatedSearchFilesInRepos
+				// instead of discarding them.
+				fileResults, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.offset, r.limit)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 					multiErrMu.Lock()
@@ -872,6 +896,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				}
 			})
 		case "diff":
+			// TODO: support pagination
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
@@ -895,6 +920,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				}
 			})
 		case "commit":
+			// TODO: support pagination
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)
 			goroutine.Go(func() {
