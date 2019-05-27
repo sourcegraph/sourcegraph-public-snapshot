@@ -43,6 +43,7 @@ func (c *Client) repositoryFieldsGraphQLFragment() string {
 		return `
 fragment RepositoryFields on Repository {
 	id
+	databaseId
 	nameWithOwner
 	description
 	url
@@ -59,6 +60,7 @@ fragment RepositoryFields on Repository {
 	return `
 fragment RepositoryFields on Repository {
 	id
+	databaseId
 	nameWithOwner
 	description
 	url

@@ -572,6 +572,7 @@ func TestClient_GetRepositoriesByNameWithOwnerFromAPI(t *testing.T) {
   "data": {
     "repo_sourcegraph_grapher_tutorial": {
       "id": "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+      "databaseId": 14601798,
       "nameWithOwner": "sourcegraph/grapher-tutorial",
       "description": "monkey language",
       "url": "https://github.com/sourcegraph/grapher-tutorial",
@@ -582,6 +583,7 @@ func TestClient_GetRepositoriesByNameWithOwnerFromAPI(t *testing.T) {
     },
     "repo_sourcegraph_clojure_grapher": {
       "id": "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
+	  "databaseId": 15756908,
       "nameWithOwner": "sourcegraph/clojure-grapher",
       "description": "clojure grapher",
       "url": "https://github.com/sourcegraph/clojure-grapher",
@@ -603,6 +605,7 @@ func TestClient_GetRepositoriesByNameWithOwnerFromAPI(t *testing.T) {
 	wantRepos := []*Repository{
 		{
 			ID:               "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+			DatabaseID:       14601798,
 			NameWithOwner:    "sourcegraph/grapher-tutorial",
 			Description:      "monkey language",
 			URL:              "https://github.com/sourcegraph/grapher-tutorial",
@@ -613,6 +616,7 @@ func TestClient_GetRepositoriesByNameWithOwnerFromAPI(t *testing.T) {
 		},
 		{
 			ID:               "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
+			DatabaseID:       15756908,
 			NameWithOwner:    "sourcegraph/clojure-grapher",
 			Description:      "clojure grapher",
 			URL:              "https://github.com/sourcegraph/clojure-grapher",
