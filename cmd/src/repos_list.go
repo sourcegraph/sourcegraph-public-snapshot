@@ -93,7 +93,7 @@ Examples:
 		var orderBy string
 		switch *orderByFlag {
 		case "name":
-			orderBy = "REPO_URI"
+			orderBy = "REPOSITORY_NAME"
 		case "created-at":
 			orderBy = "REPO_CREATED_AT"
 		default:

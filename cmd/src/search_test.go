@@ -113,11 +113,11 @@ func TestSearchOutput(t *testing.T) {
 	}
 }
 
-var nMonthsAgoPattern = regexp.MustCompile(`\d+ months? ago`)
+var nTimeAgoPattern = regexp.MustCompile(`(\d+|N) (months?|years?|time) ago`)
 
 // normalizeTimeAgo makes tests not depend on the current time.
 func normalizeTimeAgo(s *string) {
-	*s = nMonthsAgoPattern.ReplaceAllString(*s, "N months ago")
+	*s = nTimeAgoPattern.ReplaceAllString(*s, "N time ago")
 }
 
 func TestBuildVersionHasNewSearchInterface(t *testing.T) {
