@@ -310,30 +310,34 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 		}
 	}
 
-	for _, nameWithOwner := range s.config.Repos {
+	var (
+		batchSize = 30
+		lenRepos  = len(s.config.Repos)
+	)
+
+	for i := 0; i < lenRepos; i += batchSize {
 		if err := ctx.Err(); err != nil {
 			errs = multierror.Append(errs, err)
 			break
 		}
 
-		owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+		start := i
+		end := i + batchSize
+		if end > lenRepos {
+			end = lenRepos
+		}
+		batch := s.config.Repos[start:end]
+
+		repos, err := s.client.GetRepositoriesByNameWithOwnerFromAPI(ctx, "", batch)
 		if err != nil {
-			errs = multierror.Append(errs, errors.New("Invalid GitHub repository: nameWithOwner="+nameWithOwner))
+			errs = multierror.Append(errs, errors.Wrapf(err, "Error getting GitHub repositories: %v", batch))
 			break
 		}
-		repo, err := s.client.GetRepository(ctx, owner, name)
-		if err != nil {
-			// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
-			// 404 errors on external service config validation.
-			if github.IsNotFound(err) {
-				log15.Warn("skipping missing github.repos entry:", "name", nameWithOwner, "err", err)
-				continue
-			}
-			errs = multierror.Append(errs, errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner))
-			break
+		log15.Debug("github sync: GetRepositoriesByNameWithOwnerFromAPI", "repos", batch)
+		log15.Info("github sync: GetRepositoriesByNameWithOwnerFromAPI", "batchSize", len(batch))
+		for _, r := range repos {
+			set[r.DatabaseID] = r
 		}
-		log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
-		set[repo.DatabaseID] = repo
 		time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 	}
 
