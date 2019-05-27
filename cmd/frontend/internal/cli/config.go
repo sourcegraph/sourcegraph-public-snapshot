@@ -186,15 +186,15 @@ func serviceConnections() conftypes.ServiceConnections {
 		}
 
 		serviceConnectionsVal = conftypes.ServiceConnections{
-			GitServers:  gitServers(os.Getenv),
+			GitServers:  gitServers(),
 			PostgresDSN: postgresDSN(username, os.Getenv),
 		}
 	})
 	return serviceConnectionsVal
 }
 
-func gitServers(getenv func(string) string) []string {
-	v := getenv("SRC_GIT_SERVERS")
+func gitServers() []string {
+	v := os.Getenv("SRC_GIT_SERVERS")
 	if v == "" {
 		// Detect 'go test' and setup default addresses in that case.
 		p, err := os.Executable()
