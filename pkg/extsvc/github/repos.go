@@ -398,7 +398,7 @@ func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ..
 		return nil, errors.New("cannot fetch more than 30 repositories via GraphQL API")
 	}
 
-	query, err := c.buildGetRepositoriesBatchQuery(ctx, namesWithOwners)
+	query, err := c.buildGetReposBatchQuery(ctx, namesWithOwners)
 	if err != nil {
 		return nil, err
 	}
@@ -427,7 +427,7 @@ func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ..
 	return repos, nil
 }
 
-func (c *Client) buildGetRepositoriesBatchQuery(ctx context.Context, namesWithOwners []string) (string, error) {
+func (c *Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []string) (string, error) {
 	var b strings.Builder
 	b.WriteString(c.repositoryFieldsGraphQLFragment())
 	b.WriteString("query {\n")

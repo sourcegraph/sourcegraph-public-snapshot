@@ -554,12 +554,11 @@ repo_sourcegraph_contains_dot: repository(owner: "sourcegraph", name: "contains.
 
 	mock := mockHTTPResponseBody{responseBody: ""}
 	c := newTestClient(t, &mock)
-	query, err := c.buildGetRepositoriesBatchQuery(context.Background(), repos)
+	query, err := c.buildGetReposBatchQuery(context.Background(), repos)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	fmt.Printf("query=%q", query)
 	if !strings.Contains(query, wantIncluded) {
 		t.Fatalf("query does not contain repository query. query=%q, want=%q", query, wantIncluded)
 	}
