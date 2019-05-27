@@ -29,14 +29,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
-	// textSearchLimiter limits the number of open TCP connections created by frontend to searcher.
-	textSearchLimiter = make(semaphore, 500)
+	// A global limiter on number of concurrent searcher searches.
+	textSearchLimiter = mutablelimiter.New(32)
 
 	searchHTTPClient = &http.Client{
 		// nethttp.Transport will propagate opentracing spans
@@ -267,12 +268,6 @@ func textSearchURL(ctx context.Context, url string) ([]*fileMatchResolver, bool,
 
 	// Do not lose the context returned by TraceRequest
 	ctx = req.Context()
-
-	// Limit number of outstanding searcher requests
-	if err := textSearchLimiter.Acquire(ctx); err != nil {
-		return nil, false, err
-	}
-	defer textSearchLimiter.Release()
 
 	resp, err := searchHTTPClient.Do(req)
 	if err != nil {
@@ -807,66 +802,6 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 	}
 
-	var fetchTimeout time.Duration
-	if len(searcherRepos) == 1 || args.UseFullDeadline {
-		// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
-		deadline, ok := ctx.Deadline()
-		if ok {
-			fetchTimeout = time.Until(deadline)
-		} else {
-			// In practice, this case should not happen because a deadline should always be set
-			// but if it does happen just set a long but finite timeout.
-			fetchTimeout = time.Minute
-		}
-	} else {
-		// When searching many repos, don't wait long for any single repo to fetch.
-		fetchTimeout = 500 * time.Millisecond
-	}
-
-	for _, repoRev := range searcherRepos {
-		if len(repoRev.Revs) == 0 {
-			continue
-		}
-		if len(repoRev.Revs) >= 2 {
-			return nil, common, errMultipleRevsNotSupported
-		}
-
-		wg.Add(1)
-		go func(repoRev search.RepositoryRevisions) {
-			defer wg.Done()
-			rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
-			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
-			if searchErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
-				log15.Warn("searchFilesInRepo failed", "error", searchErr, "repo", repoRev.Repo.Name)
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			if ctx.Err() == nil {
-				common.searched = append(common.searched, repoRev.Repo)
-			}
-			if repoLimitHit {
-				// We did not return all results in this repository.
-				common.partial[repoRev.Repo.Name] = struct{}{}
-			}
-			// non-diff search reports timeout through searchErr, so pass false for timedOut
-			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, searchErr); fatalErr != nil {
-				if ctx.Err() == context.Canceled {
-					// Our request has been canceled (either because another one of searcherRepos
-					// had a fatal error, or otherwise), so we can just ignore these results. We
-					// handle this here, not in handleRepoSearchResult, because different callers of
-					// handleRepoSearchResult (for different result types) currently all need to
-					// handle cancellations differently.
-					return
-				}
-				err = errors.Wrapf(searchErr, "failed to search %s", repoRev.String())
-				tr.LazyPrintf("cancel due to error: %v", err)
-				cancel()
-			}
-			addMatches(matches)
-		}(*repoRev)
-	}
-
 	wg.Add(1)
 	go func() {
 		// TODO limitHit, handleRepoSearchResult
@@ -901,6 +836,86 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 		addMatches(matches)
 	}()
+
+	var fetchTimeout time.Duration
+	if len(searcherRepos) == 1 || args.UseFullDeadline {
+		// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
+		deadline, ok := ctx.Deadline()
+		if ok {
+			fetchTimeout = time.Until(deadline)
+		} else {
+			// In practice, this case should not happen because a deadline should always be set
+			// but if it does happen just set a long but finite timeout.
+			fetchTimeout = time.Minute
+		}
+	} else {
+		// When searching many repos, don't wait long for any single repo to fetch.
+		fetchTimeout = 500 * time.Millisecond
+	}
+
+	if len(searcherRepos) > 0 {
+		// The number of searcher endpoints can change over time. Inform our
+		// limiter of the new limit, which is a multiple of the number of
+		// searchers.
+		eps, err := Search().SearcherURLs.Endpoints()
+		if err != nil {
+			return nil, common, err
+		}
+		textSearchLimiter.SetLimit(len(eps) * 32)
+	}
+
+	for _, repoRev := range searcherRepos {
+		if len(repoRev.Revs) == 0 {
+			continue
+		}
+		if len(repoRev.Revs) >= 2 {
+			return nil, common, errMultipleRevsNotSupported
+		}
+
+		// Only reason acquire can fail is if ctx is cancelled. So we can stop
+		// looping through searcherRepos.
+		limitCtx, limitDone, acquireErr := textSearchLimiter.Acquire(ctx)
+		if acquireErr != nil {
+			break
+		}
+
+		wg.Add(1)
+		go func(ctx context.Context, done context.CancelFunc, repoRev search.RepositoryRevisions) {
+			defer wg.Done()
+			defer done()
+
+			rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
+			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
+			if searchErr != nil {
+				tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
+				log15.Warn("searchFilesInRepo failed", "error", searchErr, "repo", repoRev.Repo.Name)
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			if ctx.Err() == nil {
+				common.searched = append(common.searched, repoRev.Repo)
+			}
+			if repoLimitHit {
+				// We did not return all results in this repository.
+				common.partial[repoRev.Repo.Name] = struct{}{}
+			}
+			// non-diff search reports timeout through searchErr, so pass false for timedOut
+			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, searchErr); fatalErr != nil {
+				if ctx.Err() == context.Canceled {
+					// Our request has been canceled (either because another one of searcherRepos
+					// had a fatal error, or otherwise), so we can just ignore these results. We
+					// handle this here, not in handleRepoSearchResult, because different callers of
+					// handleRepoSearchResult (for different result types) currently all need to
+					// handle cancellations differently.
+					return
+				}
+				err = errors.Wrapf(searchErr, "failed to search %s", repoRev.String())
+				tr.LazyPrintf("cancel due to error: %v", err)
+				cancel()
+			}
+			addMatches(matches)
+		}(limitCtx, limitDone, *repoRev)
+	}
 
 	wg.Wait()
 	if err != nil {

@@ -359,3 +359,10 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		})
 	}
 }
+
+func init() {
+	// Set both URLs to something that will fail in tests. We shouldn't be
+	// contacting them in tests.
+	zoektAddr = "127.0.0.1:101010"
+	searcherURL = "http://127.0.0.1:101010"
+}
