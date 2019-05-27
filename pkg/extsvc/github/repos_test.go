@@ -627,7 +627,7 @@ func TestClient_GetRepositoriesByNameWithOwnerFromAPI(t *testing.T) {
 		},
 	}
 
-	repos, err := c.GetRepositoriesByNameWithOwnerFromAPI(context.Background(), "", namesWithOwners)
+	repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
 	if err != nil {
 		t.Fatal(err)
 	}

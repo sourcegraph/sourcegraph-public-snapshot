@@ -310,12 +310,9 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 		}
 	}
 
-	var (
-		batchSize = 30
-		lenRepos  = len(s.config.Repos)
-	)
+	const batchSize = 30
 
-	for i := 0; i < lenRepos; i += batchSize {
+	for i := 0; i < len(s.config.Repos); i += batchSize {
 		if err := ctx.Err(); err != nil {
 			errs = multierror.Append(errs, err)
 			break
@@ -323,18 +320,17 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 
 		start := i
 		end := i + batchSize
-		if end > lenRepos {
-			end = lenRepos
+		if end > len(s.config.Repos) {
+			end = len(s.config.Repos)
 		}
 		batch := s.config.Repos[start:end]
 
-		repos, err := s.client.GetRepositoriesByNameWithOwnerFromAPI(ctx, "", batch)
+		repos, err := s.client.GetReposByNameWithOwner(ctx, batch...)
 		if err != nil {
 			errs = multierror.Append(errs, errors.Wrapf(err, "Error getting GitHub repositories: %v", batch))
 			break
 		}
-		log15.Debug("github sync: GetRepositoriesByNameWithOwnerFromAPI", "repos", batch)
-		log15.Info("github sync: GetRepositoriesByNameWithOwnerFromAPI", "batchSize", len(batch))
+		log15.Debug("github sync: GetGetReposByNameWithOwner", "repos", batch)
 		for _, r := range repos {
 			set[r.DatabaseID] = r
 		}
