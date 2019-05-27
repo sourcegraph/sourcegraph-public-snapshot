@@ -423,7 +423,7 @@ func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ..
 		}
 	}
 
-	repos := []*Repository{}
+	repos := make([]*Repository, 0, len(result))
 	for _, r := range result {
 		if r != nil {
 			repos = append(repos, r)
