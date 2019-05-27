@@ -20,6 +20,8 @@ import (
 	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
@@ -131,6 +133,13 @@ func TestSources_ListRepos(t *testing.T) {
 	//    --name="bitbucket"\
 	//    -d -p 7990:7990 -p 7999:7999 \
 	//    atlassian/bitbucket-server
+
+	conf.Mock(&conf.Unified{
+		ServiceConnections: conftypes.ServiceConnections{
+			GitServers: []string{"127.0.0.1:3178"},
+		},
+	})
+	defer conf.Mock(nil)
 
 	type testCase struct {
 		name   string
