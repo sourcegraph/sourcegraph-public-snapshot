@@ -20,7 +20,7 @@ const (
 	FieldType      = "type"
 
 	// Custom fields to allow nested search
-	FieldRepoHasFile = "repoHasFile"
+	FieldRepoHasFile = "repohasfile"
 
 	// For diff and commit search only:
 	FieldBefore    = "before"
@@ -52,7 +52,7 @@ var (
 			FieldLang:      {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
 			FieldType:      stringFieldType,
 
-			FieldRepoHasFile: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldRepoHasFile: regexpNegatableFieldType,
 
 			FieldBefore:    stringFieldType,
 			FieldAfter:     stringFieldType,

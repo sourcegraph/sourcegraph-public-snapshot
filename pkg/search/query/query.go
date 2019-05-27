@@ -130,7 +130,7 @@ type RepoHasFile struct {
 }
 
 func (q *RepoHasFile) String() string {
-	return "repoHasFile:" + q.FilePattern
+	return "repohasfile:" + q.FilePattern
 }
 
 // RepoSet is a list of repos to match. It is a Sourcegraph addition and only

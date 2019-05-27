@@ -113,6 +113,7 @@ func parseExpr(in []byte) (Q, int, error) {
 	b = b[len(tok.Input):]
 
 	text := string(tok.Text)
+	fmt.Println("TYPE, TEXT", tok.Type, text)
 	switch tok.Type {
 	case tokCase:
 		switch text {

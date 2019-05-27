@@ -111,7 +111,7 @@ func TestParseQuery(t *testing.T) {
 		{"abc or", nil},
 		{"or abc", nil},
 		{"def or or abc", nil},
-		{`repoHasFile:foo.go`, &RepoHasFile{FilePattern: `foo.go`}},
+		{`repohasfile:foo\.go`, &Substring{Pattern: `repohasfile:foo.go`}},
 		{"", &Const{Value: true}},
 	} {
 		got, err := Parse(c.in)
