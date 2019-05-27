@@ -55,8 +55,7 @@ func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
 	}
 
 	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
-		Repo:         repo.Name,
-		ExternalRepo: repo.ExternalRepo,
+		Repo: repo.Name,
 	})
 	if err != nil {
 		return gitserver.Repo{Name: repo.Name}, err
