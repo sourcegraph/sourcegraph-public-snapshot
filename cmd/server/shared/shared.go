@@ -5,6 +5,7 @@ package shared
 
 import (
 	"encoding/json"
+	"flag"
 	"log"
 	"os"
 	"path/filepath"
@@ -58,6 +59,7 @@ var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL")
 // Main is the main server command function which is shared between Sourcegraph
 // server's open-source and enterprise variant.
 func Main() {
+	flag.Parse()
 	log.SetFlags(0)
 
 	// Ensure CONFIG_DIR and DATA_DIR
