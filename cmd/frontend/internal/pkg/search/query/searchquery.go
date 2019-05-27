@@ -19,6 +19,9 @@ const (
 	FieldLang      = "lang"
 	FieldType      = "type"
 
+	// Custom fields to allow nested search
+	FieldRepoHasFile = "repoHasFile"
+
 	// For diff and commit search only:
 	FieldBefore    = "before"
 	FieldAfter     = "after"
@@ -48,6 +51,8 @@ var (
 			FieldArchived:  {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldLang:      {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
 			FieldType:      stringFieldType,
+
+			FieldRepoHasFile: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 
 			FieldBefore:    stringFieldType,
 			FieldAfter:     stringFieldType,

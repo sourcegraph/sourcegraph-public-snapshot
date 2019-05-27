@@ -125,6 +125,14 @@ func (q *Repo) String() string {
 	return fmt.Sprintf("repo:%s", q.Pattern)
 }
 
+type RepoHasFile struct {
+	FilePattern string
+}
+
+func (q *RepoHasFile) String() string {
+	return "repoHasFile:" + q.FilePattern
+}
+
 // RepoSet is a list of repos to match. It is a Sourcegraph addition and only
 // used in the Rest interface for efficient checking of large repo lists.
 type RepoSet struct {
