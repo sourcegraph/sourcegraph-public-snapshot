@@ -3,11 +3,12 @@
 cd $(dirname "${BASH_SOURCE[0]}")/../migrations
 set -e
 
-# The name is intentionally empty ('') so that it forces a merge conflict if two branches attempt to
-# create a migration at the same sequence number (because they will both add a file with the same
-# name, like `migrations/1528277032_.up.sql`).
+if [ -z "$1" ]; then
+    echo "USAGE: $0 <name>"
+    exit 1
+fi
 
-migrate create -ext sql -dir . -digits 10 -seq ''
+migrate create -ext sql -dir . -digits 10 -seq "$1"
 
 files=$(ls -1 | grep '^[0-9]'.*\.sql | sort -n | tail -n2)
 
