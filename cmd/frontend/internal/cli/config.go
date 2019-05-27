@@ -145,8 +145,8 @@ func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, er
 		Critical: critical.Contents,
 		Site:     site.Contents,
 
-		// TODO(slimsag): future: pass GitServers list via this.
 		ServiceConnections: conftypes.ServiceConnections{
+			GitServers:  conf.SrcGitServers,
 			PostgresDSN: postgresDSN(),
 		},
 	}, nil
