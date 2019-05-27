@@ -23,8 +23,10 @@ function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointP
             proxy: extensionHostAPIChannel.port1,
             expose: clientAPIChannel.port1,
         }
-        window.addEventListener('message', ({ data }) => {
-            if (data === 'extensionHostFrameLoaded') {
+        // Subscribe to the load event on the frame,
+        frame.addEventListener(
+            'load',
+            () => {
                 frame.contentWindow!.postMessage(
                     {
                         type: 'workerInit',
@@ -37,8 +39,11 @@ function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointP
                     Object.values(clientEndpoints)
                 )
                 subscriber.next(workerEndpoints)
+            },
+            {
+                once: true,
             }
-        })
+        )
         return () => {
             clientEndpoints.proxy.close()
             clientEndpoints.expose.close()

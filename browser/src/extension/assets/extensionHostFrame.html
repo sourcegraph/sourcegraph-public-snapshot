@@ -1,6 +1,8 @@
 <script type="text/javascript">
+    // Create extension host worker
     const hostWorker = new Worker('/.assets/extension/scripts/extensionHostWorker.bundle.js')
-    window.parent.postMessage('extensionHostFrameLoaded', '*')
+    // Forward extension host worker init message,
+    // making sur to transfer the endpoint MessagePort objects.
     window.addEventListener('message', ({ data }) => {
         const { type, payload } = data
         switch (type) {
