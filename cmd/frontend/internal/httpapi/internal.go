@@ -402,7 +402,7 @@ func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveGitServerAddrs(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(conf.SrcGitServers); err != nil {
+	if err := json.NewEncoder(w).Encode(conf.Get().ServiceConnections.GitServers); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -185,11 +186,23 @@ func serviceConnections() conftypes.ServiceConnections {
 		}
 
 		serviceConnectionsVal = conftypes.ServiceConnections{
-			GitServers:  conf.SrcGitServers,
+			GitServers:  gitServers(os.Getenv),
 			PostgresDSN: postgresDSN(username, os.Getenv),
 		}
 	})
 	return serviceConnectionsVal
+}
+
+func gitServers(getenv func(string) string) []string {
+	v := getenv("SRC_GIT_SERVERS")
+	if v == "" {
+		// Detect 'go test' and setup default addresses in that case.
+		p, err := os.Executable()
+		if err == nil && strings.HasSuffix(p, ".test") {
+			v = "gitserver:3178"
+		}
+	}
+	return strings.Fields(v)
 }
 
 func postgresDSN(currentUser string, getenv func(string) string) string {
