@@ -382,6 +382,11 @@ query Repositories($ids: [ID!]!) {
 	return repos, nil
 }
 
+// ErrBatchTooLarge is when the requested batch of GitHub repositories to fetch
+// is too large and goes over the limit of what can be requested in a single
+// GraphQL call
+var ErrBatchTooLarge = errors.New("requested batch of GitHub repositories too large")
+
 // GetReposByNameWithOwner fetches the specified repositories (namesWithOwners)
 // from the GitHub GraphQL API and returns a slice of repositories.
 // If a repository is not found, it will return an error.
@@ -395,7 +400,7 @@ query Repositories($ids: [ID!]!) {
 // This method does not cache.
 func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ...string) ([]*Repository, error) {
 	if len(namesWithOwners) > 30 {
-		return nil, errors.New("cannot fetch more than 30 repositories via GraphQL API")
+		return nil, ErrBatchTooLarge
 	}
 
 	query, err := c.buildGetReposBatchQuery(ctx, namesWithOwners)
