@@ -564,7 +564,7 @@ repo_sourcegraph_contains_dot: repository(owner: "sourcegraph", name: "contains.
 	}
 }
 
-func TestClient_GetRepositoriesByNameWithOwnerFromAPI(t *testing.T) {
+func TestClient_GetReposByNameWithOwner(t *testing.T) {
 	mock := mockHTTPResponseBody{
 		responseBody: `
 {
