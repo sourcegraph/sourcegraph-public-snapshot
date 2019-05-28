@@ -570,8 +570,40 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		"sourcegraph/clojure-grapher",
 	}
 
-	mock := mockHTTPResponseBody{
-		responseBody: `
+	grapherTutorialRepo := &Repository{
+		ID:               "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+		DatabaseID:       14601798,
+		NameWithOwner:    "sourcegraph/grapher-tutorial",
+		Description:      "monkey language",
+		URL:              "https://github.com/sourcegraph/grapher-tutorial",
+		IsPrivate:        true,
+		IsFork:           false,
+		IsArchived:       true,
+		ViewerPermission: "ADMIN",
+	}
+
+	clojureGrapherRepo := &Repository{
+		ID:               "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
+		DatabaseID:       15756908,
+		NameWithOwner:    "sourcegraph/clojure-grapher",
+		Description:      "clojure grapher",
+		URL:              "https://github.com/sourcegraph/clojure-grapher",
+		IsPrivate:        true,
+		IsFork:           false,
+		IsArchived:       true,
+		ViewerPermission: "ADMIN",
+	}
+
+	testCases := []struct {
+		name             string
+		mockResponseBody string
+		wantRepos        []*Repository
+		err              string
+	}{
+
+		{
+			name: "found",
+			mockResponseBody: `
 {
   "data": {
     "repo_sourcegraph_grapher_tutorial": {
@@ -598,58 +630,12 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
     }
   }
 }
-`}
-	c := newTestClient(t, &mock)
-
-	wantRepos := []*Repository{
-		{
-			ID:               "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
-			DatabaseID:       14601798,
-			NameWithOwner:    "sourcegraph/grapher-tutorial",
-			Description:      "monkey language",
-			URL:              "https://github.com/sourcegraph/grapher-tutorial",
-			IsPrivate:        true,
-			IsFork:           false,
-			IsArchived:       true,
-			ViewerPermission: "ADMIN",
+`,
+			wantRepos: []*Repository{grapherTutorialRepo, clojureGrapherRepo},
 		},
 		{
-			ID:               "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
-			DatabaseID:       15756908,
-			NameWithOwner:    "sourcegraph/clojure-grapher",
-			Description:      "clojure grapher",
-			URL:              "https://github.com/sourcegraph/clojure-grapher",
-			IsPrivate:        true,
-			IsFork:           false,
-			IsArchived:       true,
-			ViewerPermission: "ADMIN",
-		},
-	}
-
-	repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if mock.count != 1 {
-		t.Errorf("mock.count == %d", mock.count)
-	}
-	if want, have := len(wantRepos), len(repos); want != have {
-		t.Errorf("wrong number of repos. want=%d, have=%d", want, have)
-	}
-
-	if !repoListsAreEqual(repos, wantRepos) {
-		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(wantRepos))
-	}
-}
-
-func TestClient_GetReposByNameWithOwner_notfound(t *testing.T) {
-	namesWithOwners := []string{
-		"sourcegraph/grapher-tutorial",
-		"sourcegraph/foobar",
-	}
-
-	mock := mockHTTPResponseBody{
-		responseBody: `
+			name: "not found",
+			mockResponseBody: `
 {
   "data": {
     "repo_sourcegraph_grapher_tutorial": {
@@ -663,13 +649,13 @@ func TestClient_GetReposByNameWithOwner_notfound(t *testing.T) {
       "isArchived": true,
       "viewerPermission": "ADMIN"
     },
-    "repo_sourcegraph_foobar": null
+    "repo_sourcegraph_clojure_grapher": null
   },
   "errors": [
     {
       "type": "NOT_FOUND",
       "path": [
-        "repo_sourcegraph_foobar"
+        "repo_sourcegraph_clojure_grapher"
       ],
       "locations": [
         {
@@ -677,43 +663,65 @@ func TestClient_GetReposByNameWithOwner_notfound(t *testing.T) {
           "column": 3
         }
       ],
-      "message": "Could not resolve to a Repository with the name 'foobar'."
+      "message": "Could not resolve to a Repository with the name 'clojure-grapher'."
     }
   ]
 }
-`}
-
-	wantRepos := []*Repository{
+`,
+			wantRepos: []*Repository{grapherTutorialRepo},
+		},
 		{
-			ID:               "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
-			DatabaseID:       14601798,
-			NameWithOwner:    "sourcegraph/grapher-tutorial",
-			Description:      "monkey language",
-			URL:              "https://github.com/sourcegraph/grapher-tutorial",
-			IsPrivate:        true,
-			IsFork:           false,
-			IsArchived:       true,
-			ViewerPermission: "ADMIN",
+			name: "error",
+			mockResponseBody: `
+{
+  "errors": [
+    {
+      "path": [
+        "fragment RepositoryFields",
+        "foobar"
+      ],
+      "extensions": {
+        "code": "undefinedField",
+        "typeName": "Repository",
+        "fieldName": "foobar"
+      },
+      "locations": [
+        {
+          "line": 10,
+          "column": 3
+        }
+      ],
+      "message": "Field 'foobar' doesn't exist on type 'Repository'"
+    }
+  ]
+}
+`,
+			wantRepos: []*Repository{},
+			err:       "error in GraphQL response: Field 'foobar' doesn't exist on type 'Repository'",
 		},
 	}
 
-	c := newTestClient(t, &mock)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 
-	repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
-	if err != nil {
-		t.Fatalf("got err == %v, want err == nil", err)
-	}
-	if IsNotFound(err) {
-		t.Fatal("got IsNotFound(err) == true")
-	}
-	if mock.count != 1 {
-		t.Errorf("mock.count == %d", mock.count)
-	}
-	if want, have := len(wantRepos), len(repos); want != have {
-		t.Errorf("wrong number of repos. want=%d, have=%d", want, have)
-	}
+			mock := mockHTTPResponseBody{responseBody: tc.mockResponseBody}
+			c := newTestClient(t, &mock)
 
-	if !repoListsAreEqual(repos, wantRepos) {
-		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(wantRepos))
+			repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
+			if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); tc.err != "" && have != want {
+				t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+			}
+
+			if mock.count != 1 {
+				t.Errorf("mock.count == %d", mock.count)
+			}
+			if want, have := len(tc.wantRepos), len(repos); want != have {
+				t.Errorf("wrong number of repos. want=%d, have=%d", want, have)
+			}
+
+			if !repoListsAreEqual(repos, tc.wantRepos) {
+				t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(tc.wantRepos))
+			}
+		})
 	}
 }
