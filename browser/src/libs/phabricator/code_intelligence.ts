@@ -157,10 +157,20 @@ const diffusionSourceCodeViewResolver = toCodeViewResolver('.diffusion-source', 
     toolbarButtonProps,
 })
 
+// Matches Diffusion single file code views on recent Phabricator versions.
+const phabSourceCodeViewResolver = toCodeViewResolver('.phabricator-source-code-container', {
+    dom: diffusionDOMFns,
+    resolveFileInfo: resolveDiffusionFileInfo,
+})
+
 export const checkIsPhabricator = () => !!document.querySelector('.phabricator-wordmark')
 
 export const phabricatorCodeHost: CodeHost = {
-    codeViewResolvers: [differentialChangesetCodeViewResolver, diffusionSourceCodeViewResolver],
+    codeViewResolvers: [
+        differentialChangesetCodeViewResolver,
+        diffusionSourceCodeViewResolver,
+        phabSourceCodeViewResolver,
+    ],
     name: 'phabricator',
     check: checkIsPhabricator,
 
