@@ -81,8 +81,6 @@ export function fetchAllOrganizations(args: { first?: number; query?: string }):
 interface RepositoryArgs {
     first?: number
     query?: string
-    enabled?: boolean
-    disabled?: boolean
     cloned?: boolean
     cloneInProgress?: boolean
     notCloned?: boolean
@@ -97,8 +95,6 @@ interface RepositoryArgs {
  */
 function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
     args = {
-        enabled: true,
-        disabled: false,
         cloned: true,
         cloneInProgress: true,
         notCloned: true,
@@ -111,8 +107,6 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
             query Repositories(
                 $first: Int
                 $query: String
-                $enabled: Boolean
-                $disabled: Boolean
                 $cloned: Boolean
                 $cloneInProgress: Boolean
                 $notCloned: Boolean
@@ -122,8 +116,6 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
                 repositories(
                     first: $first
                     query: $query
-                    enabled: $enabled
-                    disabled: $disabled
                     cloned: $cloned
                     cloneInProgress: $cloneInProgress
                     notCloned: $notCloned
@@ -133,7 +125,6 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
                     nodes {
                         id
                         name
-                        enabled
                         createdAt
                         viewerCanAdminister
                         url
@@ -166,7 +157,7 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
         startWith(null),
         mergeMap(() => fetchAllRepositories(args)),
         tap(result => {
-            if (result.nodes && result.nodes.some(n => n.enabled && !n.mirrorInfo.cloned)) {
+            if (result.nodes && result.nodes.some(n => !n.mirrorInfo.cloned)) {
                 setTimeout(() => subject.next(), 5000)
             }
         })
