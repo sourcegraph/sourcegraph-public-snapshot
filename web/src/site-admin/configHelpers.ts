@@ -11,7 +11,7 @@ const defaultFormattingOptions: FormattingOptions = {
 
 const setSearchContextLines: ConfigInsertionFunction = config => {
     const DEFAULT = 3 // a reasonable value that will be clearly different from the default 1
-    return { edits: setProperty(config, ['search.contextLines'], DEFAULT, defaultFormattingOptions) }
+    return { edits: setProperty(config, ['search.contextLines'], DEFAULT, defaultFormattingOptions), selectText: `${DEFAULT}` }
 }
 
 const addSearchScopeToSettings: ConfigInsertionFunction = config => {
@@ -28,7 +28,7 @@ const addSlackWebhook: ConfigInsertionFunction = config => {
         webhookURL: 'get webhook URL at https://YOUR-WORKSPACE-NAME.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks',
     }
     const edits = setProperty(config, ['notifications.slack'], value, defaultFormattingOptions)
-    return { edits, selectText: '""', cursorOffset: 1 }
+    return { edits, selectText: 'YOUR-WORKSPACE-NAME' }
 }
 
 export interface EditorAction {
