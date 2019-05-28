@@ -23,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed repository search patterns which contain `.*`. Previously our optimizer would ignore `.*`, which in some cases would lead to our repository search excluding some repositories from the results.
 
-## 3.4.2 (unreleased)
+## 3.4.3 (unreleased)
 
 ### Added
 
@@ -32,6 +32,18 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 ### Fixed
+
+## 3.4.2
+
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+- Fixed https://github.com/sourcegraph/sourcegraph/issues/4127
 
 ## 3.4.1
 
