@@ -310,31 +310,36 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 		}
 	}
 
-	const batchSize = 30
+	err := s.fetchAllRepositoriesInBatches(ctx, set)
+	if err != nil {
+		log15.Warn("github sync: fetching in batches failed. falling back to sequential fetch", "error", err)
 
-	for i := 0; i < len(s.config.Repos); i += batchSize {
-		if err := ctx.Err(); err != nil {
-			errs = multierror.Append(errs, err)
-			break
-		}
+		for _, nameWithOwner := range s.config.Repos {
+			if err := ctx.Err(); err != nil {
+				errs = multierror.Append(errs, err)
+				break
+			}
 
-		start := i
-		end := i + batchSize
-		if end > len(s.config.Repos) {
-			end = len(s.config.Repos)
+			owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+			if err != nil {
+				errs = multierror.Append(errs, errors.New("Invalid GitHub repository: nameWithOwner="+nameWithOwner))
+				break
+			}
+			repo, err := s.client.GetRepository(ctx, owner, name)
+			if err != nil {
+				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
+				// 404 errors on external service config validation.
+				if github.IsNotFound(err) {
+					log15.Warn("skipping missing github.repos entry:", "name", nameWithOwner, "err", err)
+					continue
+				}
+				errs = multierror.Append(errs, errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner))
+				break
+			}
+			log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
+			set[repo.DatabaseID] = repo
+			time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 		}
-		batch := s.config.Repos[start:end]
-
-		repos, err := s.client.GetReposByNameWithOwner(ctx, batch...)
-		if err != nil {
-			errs = multierror.Append(errs, errors.Wrapf(err, "Error getting GitHub repositories: %v", batch))
-			break
-		}
-		log15.Debug("github sync: GetGetReposByNameWithOwner", "repos", batch)
-		for _, r := range repos {
-			set[r.DatabaseID] = r
-		}
-		time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 	}
 
 	repos := make([]*github.Repository, 0, len(set))
@@ -359,6 +364,37 @@ func (s *GithubSource) getRepository(ctx context.Context, nameWithOwner string) 
 	}
 
 	return repo, nil
+}
+
+// fetchAllRepositoriesInBatches fetches the repositories configured in
+// config.Repos in batches and adds them to the supplied set
+func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, set map[int64]*github.Repository) error {
+	const batchSize = 30
+
+	for i := 0; i < len(s.config.Repos); i += batchSize {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		start := i
+		end := i + batchSize
+		if end > len(s.config.Repos) {
+			end = len(s.config.Repos)
+		}
+		batch := s.config.Repos[start:end]
+
+		repos, err := s.client.GetReposByNameWithOwner(ctx, batch...)
+		if err != nil {
+			return err
+		}
+		log15.Debug("github sync: GetGetReposByNameWithOwner", "repos", batch)
+		for _, r := range repos {
+			set[r.DatabaseID] = r
+		}
+		time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
+	}
+
+	return nil
 }
 
 func exampleRepositoryQuerySplit(q string) string {
