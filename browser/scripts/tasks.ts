@@ -50,6 +50,7 @@ export function copyPhabricator(): void {
     shelljs.cp('build/dist/js/phabricator.bundle.js', 'build/phabricator/dist/scripts')
     shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', 'build/phabricator/dist/scripts')
     shelljs.cp('build/dist/css/style.bundle.css', 'build/phabricator/dist/css')
+    shelljs.cp('src/phabricator/extensionHostFrame.html', 'build/phabricator/dist')
 }
 
 const BROWSER_TITLES = {
