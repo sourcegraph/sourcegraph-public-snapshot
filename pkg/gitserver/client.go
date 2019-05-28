@@ -16,7 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -51,8 +50,7 @@ var DefaultClient = NewClient(&http.Client{
 func NewClient(cli httpcli.Doer) *Client {
 	return &Client{
 		Addrs: func(ctx context.Context) []string {
-			updateGitServerAddrList()
-			return gitserverAddrList.Load().([]string)
+			return conf.Get().ServiceConnections.GitServers
 		},
 		HTTPClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
@@ -61,57 +59,6 @@ func NewClient(cli httpcli.Doer) *Client {
 		// frontend internal API)
 		UserAgent: filepath.Base(os.Args[0]),
 	}
-}
-
-func init() {
-	gitserverAddrList.Store([]string{})
-}
-
-var (
-	updateGitServerAddrListOnce sync.Once
-	gitserverAddrList           atomic.Value
-)
-
-func updateGitServerAddrList() {
-	updateGitServerAddrListOnce.Do(func() {
-		if len(conf.SrcGitServers) > 0 {
-			// SRC_GIT_SERVERS is set in the environment and as such takes
-			// precedence (only if it is not set do we fallback to the
-			// frontend). Generally only the frontend takes this codepath,
-			// but this codepath also applies to services that have not had
-			// their env updated yet.
-			gitserverAddrList.Store(conf.SrcGitServers)
-			return
-		}
-
-		// SRC_GIT_SERVERS is not configured in the environment, so we instead
-		// ask the frontend for this information. This is generally the code
-		// path that all non-frontend services take.
-		ctx := context.Background()
-		if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
-			log15.Error("failed to wait for frontend", "error", err)
-		}
-
-		fetchAddrsOnce := func() {
-			for {
-				addrs, err := api.InternalClient.GitServerAddrs(ctx)
-				if err != nil {
-					log15.Error("failed to discover gitserver instances via frontend internal API", "error", err)
-					time.Sleep(5 * time.Second)
-					continue
-				}
-				gitserverAddrList.Store(addrs)
-				break
-			}
-		}
-		fetchAddrsOnce()
-		go func() {
-			for {
-				fetchAddrsOnce()
-				time.Sleep(5 * time.Second)
-			}
-		}()
-	})
 }
 
 // Client is a gitserver client.
