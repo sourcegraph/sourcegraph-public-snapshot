@@ -565,6 +565,11 @@ repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repositor
 }
 
 func TestClient_GetReposByNameWithOwner(t *testing.T) {
+	namesWithOwners := []string{
+		"sourcegraph/grapher-tutorial",
+		"sourcegraph/clojure-grapher",
+	}
+
 	mock := mockHTTPResponseBody{
 		responseBody: `
 {
@@ -596,11 +601,6 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 `}
 	c := newTestClient(t, &mock)
 
-	namesWithOwners := []string{
-		"sourcegraph/grapher-tutorial",
-		"sourcegraph/clojure-grapher",
-	}
-
 	wantRepos := []*Repository{
 		{
 			ID:               "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
@@ -629,6 +629,82 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 	repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if mock.count != 1 {
+		t.Errorf("mock.count == %d", mock.count)
+	}
+	if want, have := len(wantRepos), len(repos); want != have {
+		t.Errorf("wrong number of repos. want=%d, have=%d", want, have)
+	}
+
+	if !repoListsAreEqual(repos, wantRepos) {
+		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(wantRepos))
+	}
+}
+
+func TestClient_GetReposByNameWithOwner_notfound(t *testing.T) {
+	namesWithOwners := []string{
+		"sourcegraph/grapher-tutorial",
+		"sourcegraph/foobar",
+	}
+
+	mock := mockHTTPResponseBody{
+		responseBody: `
+{
+  "data": {
+    "repo_sourcegraph_grapher_tutorial": {
+      "id": "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+      "databaseId": 14601798,
+      "nameWithOwner": "sourcegraph/grapher-tutorial",
+      "description": "monkey language",
+      "url": "https://github.com/sourcegraph/grapher-tutorial",
+      "isPrivate": true,
+      "isFork": false,
+      "isArchived": true,
+      "viewerPermission": "ADMIN"
+    },
+    "repo_sourcegraph_foobar": null
+  },
+  "errors": [
+    {
+      "type": "NOT_FOUND",
+      "path": [
+        "repo_sourcegraph_foobar"
+      ],
+      "locations": [
+        {
+          "line": 13,
+          "column": 3
+        }
+      ],
+      "message": "Could not resolve to a Repository with the name 'foobar'."
+    }
+  ]
+}
+`}
+
+	wantRepos := []*Repository{
+		{
+			ID:               "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+			DatabaseID:       14601798,
+			NameWithOwner:    "sourcegraph/grapher-tutorial",
+			Description:      "monkey language",
+			URL:              "https://github.com/sourcegraph/grapher-tutorial",
+			IsPrivate:        true,
+			IsFork:           false,
+			IsArchived:       true,
+			ViewerPermission: "ADMIN",
+		},
+	}
+
+	c := newTestClient(t, &mock)
+
+	repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
+	if err != nil {
+		t.Fatalf("got err == %v, want err == nil", err)
+	}
+	if IsNotFound(err) {
+		t.Fatal("got IsNotFound(err) == true")
 	}
 	if mock.count != 1 {
 		t.Errorf("mock.count == %d", mock.count)

@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // SplitRepositoryNameWithOwner splits a GitHub repository's "owner/name" string into "owner" and "name", with
@@ -414,6 +415,7 @@ func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ..
 		if gqlErrs, ok := err.(graphqlErrors); ok {
 			for _, err2 := range gqlErrs {
 				if err2.Type == graphqlErrTypeNotFound {
+					log15.Warn("GitHub repository not found", "error", err2)
 					continue
 				}
 				return nil, err
