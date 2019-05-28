@@ -48,16 +48,14 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                                 <LoadingSpinner className="icon-inline" /> Cloning
                             </small>
                         )}
-                        {this.props.node.enabled &&
-                            !this.props.node.mirrorInfo.cloneInProgress &&
-                            !this.props.node.mirrorInfo.cloned && (
-                                <small
-                                    className="ml-2 text-muted"
-                                    data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
-                                >
-                                    <CloudOutlineIcon className="icon-inline" /> Not yet cloned
-                                </small>
-                            )}
+                        {!this.props.node.mirrorInfo.cloneInProgress && !this.props.node.mirrorInfo.cloned && (
+                            <small
+                                className="ml-2 text-muted"
+                                data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
+                            >
+                                <CloudOutlineIcon className="icon-inline" /> Not yet cloned
+                            </small>
+                        )}
                     </div>
                     <div className="repository-node__actions">
                         {
