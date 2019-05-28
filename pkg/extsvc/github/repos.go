@@ -437,15 +437,12 @@ func (c *Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []
 	b.WriteString(c.repositoryFieldsGraphQLFragment())
 	b.WriteString("query {\n")
 
-	for _, pair := range namesWithOwners {
+	for i, pair := range namesWithOwners {
 		owner, name, err := SplitRepositoryNameWithOwner(pair)
 		if err != nil {
 			return "", err
 		}
-		ident := strings.Replace(fmt.Sprintf("repo_%s_%s", owner, name), "-", "_", -1)
-		ident = strings.Replace(ident, ".", "_", -1)
-
-		b.WriteString(fmt.Sprintf("%s: repository(owner: %q, name: %q) { ", ident, owner, name))
+		b.WriteString(fmt.Sprintf("repo%d: repository(owner: %q, name: %q) { ", i, owner, name))
 		b.WriteString("... on Repository { ...RepositoryFields } }\n")
 	}
 
