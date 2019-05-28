@@ -32,7 +32,7 @@ func Mount(mux *http.ServeMux) {
 		}
 
 		// Allow extensionHostFrame to be rendered in an iframe on trusted origins
-        corsOrigin := conf.Get().CorsOrigin
+		corsOrigin := conf.Get().CorsOrigin
 		if filepath.Base(r.URL.Path) == "extensionHostFrame.html" && corsOrigin != "" {
 			w.Header().Set("Content-Security-Policy", "frame-ancestors "+corsOrigin)
 			w.Header().Set("X-Frame-Options", "allow-from "+corsOrigin)
