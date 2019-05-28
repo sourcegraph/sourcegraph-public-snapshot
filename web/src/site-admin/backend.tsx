@@ -173,23 +173,6 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
     )
 }
 
-export function setRepositoryEnabled(repository: GQL.ID, enabled: boolean): Observable<void> {
-    return mutateGraphQL(
-        gql`
-            mutation SetRepositoryEnabled($repository: ID!, $enabled: Boolean!) {
-                setRepositoryEnabled(repository: $repository, enabled: $enabled) {
-                    alwaysNil
-                }
-            }
-        `,
-        { repository, enabled }
-    ).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        map(() => undefined)
-    )
-}
-
 export function updateMirrorRepository(args: { repository: GQL.ID }): Observable<void> {
     return mutateGraphQL(
         gql`
@@ -229,23 +212,6 @@ export function checkMirrorRepositoryConnection(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),
         map(data => data.checkMirrorRepositoryConnection)
-    )
-}
-
-export function deleteRepository(repository: GQL.ID): Observable<void> {
-    return mutateGraphQL(
-        gql`
-            mutation DeleteRepository($repository: ID!) {
-                deleteRepository(repository: $repository) {
-                    alwaysNil
-                }
-            }
-        `,
-        { repository }
-    ).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        map(() => undefined)
     )
 }
 
