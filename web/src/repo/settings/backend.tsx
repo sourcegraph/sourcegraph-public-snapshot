@@ -16,7 +16,6 @@ export function fetchRepository(name: string): Observable<GQL.IRepository> {
                     id
                     name
                     viewerCanAdminister
-                    enabled
                     mirrorInfo {
                         remoteURL
                         cloneInProgress

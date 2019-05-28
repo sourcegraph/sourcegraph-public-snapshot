@@ -210,24 +210,6 @@ describe('e2e test suite', function(this: any): void {
                 await page.waitForSelector(`.repository-node[data-e2e-repository='github.com/${slug}']`, {
                     visible: true,
                 })
-                if (
-                    await page.$(`.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='false']`)
-                ) {
-                    await page.click(
-                        `.repository-node[data-e2e-repository='github.com/${slug}'] .e2e-enable-repository`
-                    )
-                    if (slug === 'sourcegraphtest/AlwaysCloningTest') {
-                        await page.waitForSelector(
-                            `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true']`,
-                            { visible: true }
-                        )
-                    } else {
-                        await page.waitForSelector(
-                            `.repository-node[data-e2e-repository='github.com/${slug}'][data-e2e-enabled='true'][data-e2e-cloned='true']`,
-                            { visible: true }
-                        )
-                    }
-                }
             }
         }
     }
