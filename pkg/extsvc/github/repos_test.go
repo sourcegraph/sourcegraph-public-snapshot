@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -718,6 +719,13 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 			if want, have := len(tc.wantRepos), len(repos); want != have {
 				t.Errorf("wrong number of repos. want=%d, have=%d", want, have)
 			}
+
+			newSortFunc := func(s []*Repository) func(int, int) bool {
+				return func(i, j int) bool { return s[i].ID < s[j].ID }
+			}
+
+			sort.Slice(tc.wantRepos, newSortFunc(tc.wantRepos))
+			sort.Slice(repos, newSortFunc(repos))
 
 			if !repoListsAreEqual(repos, tc.wantRepos) {
 				t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(tc.wantRepos))
