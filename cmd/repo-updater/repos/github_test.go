@@ -46,7 +46,6 @@ func TestGithubSource_ListRepos(t *testing.T) {
 
 	testCases := []struct {
 		name   string
-		ctx    context.Context
 		assert ReposAssertion
 		mw     httpcli.Middleware
 		err    string
