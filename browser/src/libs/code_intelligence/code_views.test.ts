@@ -1,7 +1,6 @@
 import { of, Subject } from 'rxjs'
 import { toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
-import { Omit } from 'utility-types'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { FileInfo } from './code_intelligence'
 import { CodeView, toCodeViewResolver, trackCodeViews } from './code_views'

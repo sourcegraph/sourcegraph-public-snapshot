@@ -1,6 +1,5 @@
 import { AdjustmentDirection, DOMFunctions, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { of } from 'rxjs'
-import { Omit } from 'utility-types'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { querySelectorOrSelf } from '../../shared/util/dom'

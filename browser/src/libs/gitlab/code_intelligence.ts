@@ -1,4 +1,3 @@
-import { Omit } from 'utility-types'
 import { CodeHost } from '../code_intelligence'
 import { CodeView } from '../code_intelligence/code_views'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../code_intelligence/util/selections'

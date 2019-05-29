@@ -1,7 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Omit } from 'utility-types'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { Form } from '../../components/Form'
 

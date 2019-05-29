@@ -1,5 +1,4 @@
 import { startCase } from 'lodash'
-import { Omit } from 'utility-types'
 import { DOMFunctionsTest, getFixtureBody, testDOMFunctions } from '../code_intelligence/code_intelligence_test_utils'
 import { diffDomFunctions, isDomSplitDiff, singleFileDOMFunctions } from './dom_functions'
 

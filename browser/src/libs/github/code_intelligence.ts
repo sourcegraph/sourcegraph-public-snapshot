@@ -1,7 +1,6 @@
 import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
-import { Omit } from 'utility-types'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import {
     FileSpec,

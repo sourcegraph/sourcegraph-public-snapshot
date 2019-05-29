@@ -1,7 +1,6 @@
 import { Observable } from 'rxjs'
 import { ajax, AjaxRequest, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map } from 'rxjs/operators'
-import { Omit } from 'utility-types'
 import { createAggregateError, normalizeAjaxError } from '../util/errors'
 import * as GQL from './schema'
 

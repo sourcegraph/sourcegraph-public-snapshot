@@ -1,5 +1,4 @@
 import { startCase } from 'lodash'
-import { Omit } from 'utility-types'
 import { DOMFunctionsTest, testDOMFunctions } from '../code_intelligence/code_intelligence_test_utils'
 import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
 
