@@ -152,7 +152,7 @@ export function testDOMFunctions(
                     // Generate CSS selector for element
                     const simmer = new Simmer(codeViewElement)
                     const selector = simmer(codeElement!)
-                    expect({ selector, content: codeElement!.textContent }).toMatchSnapshot()
+                    expect({ selector, content: codeElement!.textContent!.trim() }).toMatchSnapshot()
                 })
             })
 
