@@ -420,7 +420,7 @@ func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 	return searchOpts
 }
 
-func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, rawQuery *query.Query, repos []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, rawQuery *query.Query, repos []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -433,7 +433,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, rawQuery *q
 		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
 	}
 
-	queryExceptRepos, err := queryToZoektQuery(query)
+	queryExceptRepos, err := queryToZoektQuery(queryPatternInfo)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -477,9 +477,9 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, rawQuery *q
 	// object to optimize returning quickly.
 	//
 	// TODO: use query.RepoHasFile (import name clash)
-	if rawQuery.Fields["repohasfile"] != nil {
+	if rawQuery.Fields[query.FieldRepoHasFile] != nil {
 		// Construct a query which just searches for repos that contain the file passed in to `repohasfile`
-		fileOnlyQuery, err := queryToZoektFileOnlyQuery(query)
+		fileOnlyQuery, err := queryToZoektFileOnlyQuery(queryPatternInfo)
 		if err != nil {
 			return nil, false, nil, err
 		}
@@ -497,7 +497,6 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, rawQuery *q
 		}
 		repoSet.Set = newRepoSet
 		finalQuery = zoektquery.NewAnd(repoSet, queryExceptRepos)
-		fmt.Println("FINAL QUERY", finalQuery)
 	}
 	t0 := time.Now()
 	resp, err := searcher.Search(ctx, finalQuery, &searchOpts)
@@ -530,14 +529,14 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, rawQuery *q
 		return nil, false, nil, nil
 	}
 
-	k := zoektResultCountFactor(len(repos), query)
+	k := zoektResultCountFactor(len(repos), queryPatternInfo)
 	maxLineMatches := 25 + k
 	maxLineFragmentMatches := 3 + k
-	if len(resp.Files) > int(query.FileMatchLimit) {
+	if len(resp.Files) > int(queryPatternInfo.FileMatchLimit) {
 		// List of files we cut out from the Zoekt response because they exceed the file match limit on the Sourcegraph end.
 		// We use this to get a list of repositories that do not have complete results.
-		fileMatchesInSkippedRepos := resp.Files[int(query.FileMatchLimit):]
-		resp.Files = resp.Files[:int(query.FileMatchLimit)]
+		fileMatchesInSkippedRepos := resp.Files[int(queryPatternInfo.FileMatchLimit):]
+		resp.Files = resp.Files[:int(queryPatternInfo.FileMatchLimit)]
 
 		if !limitHit {
 			// Zoekt evaluated all files and repositories, but Zoekt returned more file matches

@@ -607,7 +607,6 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 	// Handle file: and -file: filters.
 	includePatterns, excludePatterns := r.query.RegexpPatterns(query.FieldFile)
 	repoIncludePatterns, repoExcludePatterns := r.query.RegexpPatterns(query.FieldRepoHasFile)
-	// fmt.Println(repoHasFileIncludePattern)
 
 	if opts != nil && opts.forceFileSearch {
 		for _, v := range r.query.Values(query.FieldDefault) {
