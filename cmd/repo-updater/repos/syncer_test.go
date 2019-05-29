@@ -904,6 +904,18 @@ func TestDiff(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "deterministic merging of source",
+			source: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1"), Description: "desc1", Sources: map[string]*repos.SourceInfo{"a": nil}},
+				{Name: "foo", ExternalRepo: eid("1"), Description: "desc2", Sources: map[string]*repos.SourceInfo{"b": nil}},
+			},
+			diff: repos.Diff{
+				Added: repos.Repos{
+					{Name: "foo", ExternalRepo: eid("1"), Description: "desc2", Sources: map[string]*repos.SourceInfo{"a": nil, "b": nil}},
+				},
+			},
+		},
 	}
 
 	for _, tc := range permutedCases {

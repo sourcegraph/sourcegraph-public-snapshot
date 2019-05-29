@@ -719,6 +719,9 @@ func (rs Repos) Swap(i, j int) {
 	rs[i], rs[j] = rs[j], rs[i]
 }
 
+// Less compares Repos by the important fields (fields with constraints in our
+// DB). Additionally it will sort on Sources to give a determinstic order on
+// repos returned from a sourcer.
 func (rs Repos) Less(i, j int) bool {
 	if rs[i].ID != rs[j].ID {
 		return rs[i].ID < rs[j].ID
@@ -726,7 +729,33 @@ func (rs Repos) Less(i, j int) bool {
 	if rs[i].Name != rs[j].Name {
 		return rs[i].Name < rs[j].Name
 	}
-	return rs[i].ExternalRepo.Compare(rs[j].ExternalRepo) == -1
+	if cmp := rs[i].ExternalRepo.Compare(rs[j].ExternalRepo); cmp != 0 {
+		return cmp == -1
+	}
+
+	sources := func(idx int) []string {
+		m := rs[idx].Sources
+		keys := make([]string, 0, len(m))
+		for k := range m {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		return keys
+	}
+	return sortedSliceLess(sources(i), sources(j))
+}
+
+// sortedSliceLess returns true if a < b
+func sortedSliceLess(a, b []string) bool {
+	for i, v := range a {
+		if i == len(b) {
+			return false
+		}
+		if v != b[i] {
+			return v < b[i]
+		}
+	}
+	return true
 }
 
 // Concat adds the given Repos to the end of rs.
