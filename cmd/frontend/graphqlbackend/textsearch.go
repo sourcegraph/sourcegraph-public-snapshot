@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"net/url"
 	"regexp/syntax"
@@ -419,7 +420,7 @@ func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 	return searchOpts
 }
 
-func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, rawQuery *query.Query, repos []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -469,7 +470,37 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 		ctx = cNew
 		defer cancel()
 	}
-
+	// fmt.Println("QUERY INCLUDE PATTERNS", )
+	// if the query has the repo has file field,
+	// construct a Zoekt Query just to search for files
+	// matching the value passed in the field. Set search
+	// options to shardMatchCount = 1.
+	// TODO: use query.RepoHasFile (import name clash)
+	if rawQuery.Fields["repohasfile"] != nil {
+		fmt.Println("HAS REPO HAS URL")
+		// 	rawQuery
+		// construct a query just with files
+		fileOnlyQuery, err := queryToZoektFileOnlyQuery(query)
+		if err != nil {
+			return nil, false, nil, err
+		}
+		fmt.Println("File only query", fileOnlyQuery)
+		newSearchOpts := &searchOpts
+		newSearchOpts.ShardMaxMatchCount = 1
+		newSearchOpts.TotalMaxMatchCount = math.MaxInt32
+		resp, err := searcher.Search(ctx, fileOnlyQuery, &searchOpts)
+		if err != nil {
+			return nil, false, nil, err
+		}
+		newRepoSet := make(map[string]bool, len(resp.RepoURLs))
+		for repoURL := range resp.RepoURLs {
+			newRepoSet[repoURL] = true
+		}
+		repoSet.Set = newRepoSet
+		finalQuery = zoektquery.NewAnd(repoSet, queryExceptRepos)
+		fmt.Println("FINAL QUERY", finalQuery)
+		// shardmaxcount = 1
+	}
 	t0 := time.Now()
 	resp, err := searcher.Search(ctx, finalQuery, &searchOpts)
 	if err != nil {
@@ -620,6 +651,77 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 			Content:  true,
 		})
 	}
+
+	// zoekt also uses regular expressions for file paths
+	// TODO PathPatternsAreCaseSensitive
+	// TODO whitespace in file path patterns?
+	if !query.PathPatternsAreRegExps {
+		return nil, errors.New("zoekt only supports regex path patterns")
+	}
+	for _, p := range query.IncludePatterns {
+		q, err := fileRe(p)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, q)
+	}
+	if query.ExcludePattern != "" {
+		q, err := fileRe(query.ExcludePattern)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, &zoektquery.Not{Child: q})
+	}
+
+	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
+}
+
+func queryToZoektFileOnlyQuery(query *search.PatternInfo) (zoektquery.Q, error) {
+	var and []zoektquery.Q
+
+	parseRe := func(pattern string, filenameOnly bool) (zoektquery.Q, error) {
+		// these are the flags used by zoekt, which differ to searcher.
+		re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+		if err != nil {
+			return nil, err
+		}
+		noOpAnyChar(re)
+		// zoekt decides to use its literal optimization at the query parser
+		// level, so we check if our regex can just be a literal.
+		if re.Op == syntax.OpLiteral {
+			return &zoektquery.Substring{
+				Pattern:       string(re.Rune),
+				CaseSensitive: query.IsCaseSensitive,
+
+				FileName: filenameOnly,
+			}, nil
+		}
+		return &zoektquery.Regexp{
+			Regexp:        re,
+			CaseSensitive: query.IsCaseSensitive,
+
+			FileName: filenameOnly,
+		}, nil
+	}
+	fileRe := func(pattern string) (zoektquery.Q, error) {
+		return parseRe(pattern, true)
+	}
+
+	// if query.IsRegExp {
+	// 	q, err := parseRe(query.Pattern, false)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	and = append(and, q)
+	// } else {
+	// 	and = append(and, &zoektquery.Substring{
+	// 		Pattern:       query.Pattern,
+	// 		CaseSensitive: query.IsCaseSensitive,
+
+	// 		FileName: true,
+	// 		Content:  true,
+	// 	})
+	// }
 
 	// zoekt also uses regular expressions for file paths
 	// TODO PathPatternsAreCaseSensitive
@@ -872,9 +974,10 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		// TODO limitHit, handleRepoSearchResult
 		defer wg.Done()
 		query := args.Pattern
+		rawQuery := args.Query
 		k := zoektResultCountFactor(len(zoektRepos), query)
 		opts := zoektSearchOpts(k, query)
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, indexedRevisions, args.UseFullDeadline, Search().Index.Client, opts, time.Since)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, rawQuery, zoektRepos, indexedRevisions, args.UseFullDeadline, Search().Index.Client, opts, time.Since)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
