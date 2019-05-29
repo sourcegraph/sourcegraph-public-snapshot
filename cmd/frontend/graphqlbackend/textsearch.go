@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	searchquery "github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -471,29 +472,52 @@ func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, 
 		defer cancel()
 	}
 
-	// If a query has the `repohasfile` filter,
-	// construct a Zoekt Query just to search for files
-	// matching the value passed in the filter. We use a new SearchOptions
-	// object to optimize returning quickly.
-	//
-	// TODO: use query.RepoHasFile (import name clash)
+	// If the query has a `repohasfile` flag, we want to construct a new reposet based
+	// on the values passed in to the flag.
 	if rawQuery.Fields[query.FieldRepoHasFile] != nil {
-		// Construct a query which just searches for repos that contain the file passed in to `repohasfile`
-		fileOnlyQuery, err := queryToZoektFileOnlyQuery(queryPatternInfo)
+		// Construct a query which just searches for repos that contain the file passed into `repohasfile`
+		filesToIncludeQuery, err := queryToZoektFileOnlyQuery(queryPatternInfo)
 		if err != nil {
 			return nil, false, nil, err
 		}
+
 		newSearchOpts := searchOpts
 		newSearchOpts.ShardMaxMatchCount = 1
 		newSearchOpts.TotalMaxMatchCount = math.MaxInt32
 		newSearchOpts.MaxDocDisplayCount = 0
-		resp, err := searcher.Search(ctx, fileOnlyQuery, &searchOpts)
+
+		includeResp, err := searcher.Search(ctx, filesToIncludeQuery, &searchOpts)
 		if err != nil {
 			return nil, false, nil, err
 		}
-		newRepoSet := make(map[string]bool, len(resp.RepoURLs))
-		for repoURL := range resp.RepoURLs {
+
+		// Construct a query which just searches for repos that contain the file passed into `-repohasfile`
+		filesToExcludeQuery, err := queryToZoektExcludeFileOnlyQuery(queryPatternInfo)
+		if err != nil {
+			return nil, false, nil, err
+		}
+
+		excludeResp, err := searcher.Search(ctx, filesToExcludeQuery, &searchOpts)
+		if err != nil {
+			return nil, false, nil, err
+		}
+
+		newRepoSet := make(map[string]bool, len(includeResp.RepoURLs))
+		// For each repo that had a result in the include set, add it to our new repoSet.
+		for repoURL := range includeResp.RepoURLs {
 			newRepoSet[repoURL] = true
+		}
+		// When there is no exclude flag, the value returned is a constant "TRUE", which
+		// tells the zoekt searcher to include all repos. If there is no exclude flag, we
+		// don't want to add all repos in the list of excluded repos, so check for this value.
+		trueConst := searchquery.Const{true}
+		if filesToExcludeQuery.String() != trueConst.String() {
+			for repoURL := range excludeResp.RepoURLs {
+				// For each repo that had a result in the exclude set, if it exists in the repoSet, set the value to false so we don't search over it.
+				if newRepoSet[repoURL] {
+					newRepoSet[repoURL] = false
+				}
+			}
 		}
 		repoSet.Set = newRepoSet
 		finalQuery = zoektquery.NewAnd(repoSet, queryExceptRepos)
@@ -716,12 +740,51 @@ func queryToZoektFileOnlyQuery(query *search.PatternInfo) (zoektquery.Q, error) 
 		}
 		and = append(and, q)
 	}
-	for _, p := range query.RepoExcludePatterns {
-		q, err := fileRe(p)
+
+	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
+}
+
+func queryToZoektExcludeFileOnlyQuery(query *search.PatternInfo) (zoektquery.Q, error) {
+	var and []zoektquery.Q
+
+	parseRe := func(pattern string, filenameOnly bool) (zoektquery.Q, error) {
+		// these are the flags used by zoekt, which differ to searcher.
+		re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
 		if err != nil {
 			return nil, err
 		}
-		and = append(and, &zoektquery.Not{Child: q})
+		noOpAnyChar(re)
+		// zoekt decides to use its literal optimization at the query parser
+		// level, so we check if our regex can just be a literal.
+		if re.Op == syntax.OpLiteral {
+			return &zoektquery.Substring{
+				Pattern:       string(re.Rune),
+				CaseSensitive: query.IsCaseSensitive,
+
+				FileName: filenameOnly,
+			}, nil
+		}
+		return &zoektquery.Regexp{
+			Regexp:        re,
+			CaseSensitive: query.IsCaseSensitive,
+
+			FileName: filenameOnly,
+		}, nil
+	}
+	fileRe := func(pattern string) (zoektquery.Q, error) {
+		return parseRe(pattern, true)
+	}
+	if !query.PathPatternsAreRegExps {
+		return nil, errors.New("zoekt only supports regex path patterns")
+	}
+	if len(query.RepoExcludePatterns) > 0 {
+		for _, p := range query.RepoExcludePatterns {
+			q, err := fileRe(p)
+			if err != nil {
+				return nil, err
+			}
+			and = append(and, q)
+		}
 	}
 
 	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
