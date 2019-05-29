@@ -20,6 +20,7 @@ describe('code_views', () => {
             dom: {
                 getCodeElementFromTarget: () => null,
                 getCodeElementFromLineNumber: () => null,
+                getLineElementFromLineNumber: () => null,
                 getLineNumberFromCodeElement: () => 1,
             },
             resolveFileInfo: () => of(fileInfo),

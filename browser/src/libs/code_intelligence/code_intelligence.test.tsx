@@ -251,6 +251,7 @@ describe('code_intelligence', () => {
                                 dom: {
                                     getCodeElementFromTarget: jest.fn(),
                                     getCodeElementFromLineNumber: jest.fn(),
+                                    getLineElementFromLineNumber: jest.fn(),
                                     getLineNumberFromCodeElement: jest.fn(),
                                 },
                                 resolveFileInfo: codeView => of(fileInfo),
@@ -303,6 +304,7 @@ describe('code_intelligence', () => {
                 filePath: '/bar.ts',
                 commitID: '1',
             }
+            // For this test, we pretend bar.ts only has one line of code
             const line = document.createElement('div')
             codeView.appendChild(line)
             subscriptions.add(
@@ -314,9 +316,10 @@ describe('code_intelligence', () => {
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
                                 dom: {
-                                    getCodeElementFromTarget: jest.fn(),
+                                    getCodeElementFromTarget: () => line,
                                     getCodeElementFromLineNumber: () => line,
-                                    getLineNumberFromCodeElement: jest.fn(),
+                                    getLineElementFromLineNumber: () => line,
+                                    getLineNumberFromCodeElement: () => 1,
                                 },
                                 resolveFileInfo: codeView => of(fileInfo),
                             }),
@@ -358,7 +361,7 @@ describe('code_intelligence', () => {
                 },
             ])
             await decorated()
-            expect(line.querySelectorAll('.line-decoration-attachment').length).toBe(1)
+            expect(line.querySelectorAll('.line-decoration-attachment')).toHaveLength(1)
             expect(line.querySelector('.line-decoration-attachment')!.textContent).toEqual('test decoration')
 
             // Decorate the code view again, and verify that previous decorations
@@ -404,6 +407,7 @@ describe('code_intelligence', () => {
                                 dom: {
                                     getCodeElementFromTarget: jest.fn(),
                                     getCodeElementFromLineNumber: jest.fn(),
+                                    getLineElementFromLineNumber: jest.fn(),
                                     getLineNumberFromCodeElement: jest.fn(),
                                 },
                                 resolveFileInfo: codeView => of(fileInfo),

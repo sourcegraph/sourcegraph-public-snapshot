@@ -1,4 +1,19 @@
-import { DOMFunctions } from '@sourcegraph/codeintellify'
+import { DiffPart } from '@sourcegraph/codeintellify'
+import { DOMFunctions } from '../code_intelligence/code_views'
+
+const getSingleFileLineElementFromLineNumber = (codeView: HTMLElement, line: number): HTMLElement => {
+    const lineNumElem = codeView.querySelector<HTMLElement>(`[data-line-number="${line}"`)
+    if (!lineNumElem) {
+        throw new Error(`Line ${line} not found in code view`)
+    }
+
+    const lineElem = lineNumElem.closest('.line') as HTMLElement | null
+    if (!lineElem) {
+        throw new Error('Could not find line elem for line element')
+    }
+
+    return lineElem
+}
 
 export const singleFileDOMFunctions: DOMFunctions = {
     getCodeElementFromTarget: target => {
@@ -24,19 +39,27 @@ export const singleFileDOMFunctions: DOMFunctions = {
 
         return lineNum
     },
-    getCodeElementFromLineNumber: (codeView, line) => {
-        const lineNumElem = codeView.querySelector<HTMLElement>(`[data-line-number="${line}"`)
-        if (!lineNumElem) {
-            throw new Error(`Line ${line} not found in code view`)
-        }
+    getLineElementFromLineNumber: getSingleFileLineElementFromLineNumber,
+    getCodeElementFromLineNumber: (codeView, line) =>
+        getSingleFileLineElementFromLineNumber(codeView, line).querySelector<HTMLElement>(
+            '.CodeMirror-line span[role="presentation"]'
+        ),
+}
 
-        const lineElem = lineNumElem.closest('.line') as HTMLElement | null
-        if (!lineElem) {
-            throw new Error('Could not find line elem for line element')
-        }
+const getDiffLineElementFromLineNumber = (codeView: HTMLElement, line: number, part?: DiffPart): HTMLElement => {
+    for (const lineNumElem of codeView.getElementsByClassName(`line-number-${part === 'head' ? 'to' : 'from'}`)) {
+        const lineNum = parseInt((lineNumElem.textContent || '').trim(), 10)
+        if (!isNaN(lineNum) && lineNum === line) {
+            const lineElem = lineNumElem.closest('.line') as HTMLElement | null
+            if (!lineElem) {
+                throw new Error('Could not find line elem for line element')
+            }
 
-        return lineElem.querySelector<HTMLElement>('.CodeMirror-line span[role="presentation"]')
-    },
+            return lineElem
+        }
+    }
+
+    throw new Error(`Could not locate line number element for line ${line}`)
 }
 
 export const diffDOMFunctions: DOMFunctions = {
@@ -65,21 +88,11 @@ export const diffDOMFunctions: DOMFunctions = {
 
         throw new Error('Could not find line number element for code element')
     },
-    getCodeElementFromLineNumber: (codeView, line, part) => {
-        for (const lineNumElem of codeView.getElementsByClassName(`line-number-${part === 'head' ? 'to' : 'from'}`)) {
-            const lineNum = parseInt((lineNumElem.textContent || '').trim(), 10)
-            if (!isNaN(lineNum) && lineNum === line) {
-                const lineElem = lineNumElem.closest('.line') as HTMLElement | null
-                if (!lineElem) {
-                    throw new Error('Could not find line elem for line element')
-                }
-
-                return lineElem.querySelector<HTMLElement>('.CodeMirror-line span[role="presentation"]')
-            }
-        }
-
-        throw new Error(`Could not locate line number element for line ${line}`)
-    },
+    getLineElementFromLineNumber: getDiffLineElementFromLineNumber,
+    getCodeElementFromLineNumber: (codeView, line, part) =>
+        getDiffLineElementFromLineNumber(codeView, line, part).querySelector<HTMLElement>(
+            '.CodeMirror-line span[role="presentation"]'
+        ),
     getDiffCodePart: codeElement => {
         if (!document.querySelector('.side-by-side-diff')) {
             return codeElement.closest('.line')!.classList.contains('removed') ? 'base' : 'head'

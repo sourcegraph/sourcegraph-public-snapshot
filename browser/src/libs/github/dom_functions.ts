@@ -1,4 +1,5 @@
-import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
+import { DiffPart } from '@sourcegraph/codeintellify'
+import { DOMFunctions } from '../code_intelligence/code_views'
 import { isDiffPageType, parseURL } from './util'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
@@ -66,6 +67,34 @@ const getCodeCellFromTarget = (target: HTMLElement): HTMLTableCellElement | null
 }
 
 /**
+ * Returns the `<td>` containing the code (which may contain a `.blob-code-inner`)
+ */
+const getDiffCodeCellFromLineNumber = (
+    codeView: HTMLElement,
+    line: number,
+    part?: DiffPart
+): HTMLTableCellElement | null => {
+    const isSplitDiff = isDomSplitDiff(codeView)
+    const nthChild = getLineNumberElementIndex(part!, isSplitDiff) + 1 // nth-child() is 1-indexed
+    const lineNumberCell = codeView.querySelector<HTMLTableCellElement>(
+        `td:nth-child(${nthChild})[data-line-number="${line}"]`
+    )
+    if (!lineNumberCell) {
+        return null
+    }
+    let codeCell: HTMLTableCellElement
+    if (isSplitDiff) {
+        // In split diff view, the code cell is next to the line number cell
+        codeCell = lineNumberCell.nextElementSibling as HTMLTableCellElement
+    } else {
+        // In unified diff view, the code cell is the last cell
+        const row = lineNumberCell.parentElement as HTMLTableRowElement
+        codeCell = row.lastElementChild as HTMLTableCellElement
+    }
+    return codeCell
+}
+
+/**
  * Returns the `<span class="blob-code-inner">` element inside a cell.
  * The code element on diff pages is the `<span class="blob-code-inner">` element inside the cell,
  * because the cell also contains a button to add a comment
@@ -83,25 +112,10 @@ export const diffDomFunctions: DOMFunctions = {
         const codeCell = getCodeCellFromTarget(target)
         return codeCell && getBlobCodeInner(codeCell)
     },
+    getLineElementFromLineNumber: getDiffCodeCellFromLineNumber,
     getCodeElementFromLineNumber: (codeView, line, part) => {
-        const isSplitDiff = isDomSplitDiff(codeView)
-        const nthChild = getLineNumberElementIndex(part!, isSplitDiff) + 1 // nth-child() is 1-indexed
-        const lineNumberCell = codeView.querySelector<HTMLTableCellElement>(
-            `td:nth-child(${nthChild})[data-line-number="${line}"]`
-        )
-        if (!lineNumberCell) {
-            return null
-        }
-        let codeCell: HTMLTableCellElement
-        if (isSplitDiff) {
-            // In split diff view, the code cell is next to the line number cell
-            codeCell = lineNumberCell.nextElementSibling as HTMLTableCellElement
-        } else {
-            // In unified diff view, the code cell is the last cell
-            const row = lineNumberCell.parentElement!
-            codeCell = row.lastElementChild as HTMLTableCellElement
-        }
-        return getBlobCodeInner(codeCell)
+        const codeCell = getDiffCodeCellFromLineNumber(codeView, line, part!)
+        return codeCell && getBlobCodeInner(codeCell)
     },
     getLineNumberFromCodeElement,
     getDiffCodePart,
@@ -147,48 +161,47 @@ export const diffDomFunctions: DOMFunctions = {
     },
 }
 
+const getSingleFileCodeElementFromLineNumber = (codeView: HTMLElement, line: number): HTMLElement | null => {
+    const lineNumberCell = codeView.querySelector(`td[data-line-number="${line}"]`)
+    // In blob views, the `<td>` is the code element
+    return lineNumberCell && (lineNumberCell.nextElementSibling as HTMLTableCellElement)
+}
+
 /**
  * Implementations of the DOM functions for GitHub blob code views
  */
 export const singleFileDOMFunctions: DOMFunctions = {
     getCodeElementFromTarget: getCodeCellFromTarget,
-    getCodeElementFromLineNumber: (codeView, line) => {
-        const lineNumberCell = codeView.querySelector(`td[data-line-number="${line}"]`)
-        if (!lineNumberCell) {
-            return null
-        }
-        const codeCell = lineNumberCell.nextElementSibling as HTMLTableCellElement
-        // In blob views, the `<td>` is the code element
-        return codeCell
-    },
+    getCodeElementFromLineNumber: getSingleFileCodeElementFromLineNumber,
+    getLineElementFromLineNumber: getSingleFileCodeElementFromLineNumber,
     getLineNumberFromCodeElement,
+}
+
+const getSearchCodeSnippetLineNumberCellFromLineNumber = (codeView: HTMLElement, line: number): HTMLElement | null => {
+    const lineNumberCells = codeView.querySelectorAll('td.blob-num')
+    let lineNumberCell: HTMLTableCellElement | null = null
+    for (const cell of lineNumberCells) {
+        const a = cell.querySelector('a')!
+        if (a.href.endsWith(`#L${line}`)) {
+            lineNumberCell = cell as HTMLTableCellElement
+            break
+        }
+    }
+    return lineNumberCell
+}
+
+const getSearchCodeSnippetCodeElementFromLineNumber = (codeView: HTMLElement, line: number): HTMLElement | null => {
+    const lineNumberCell = getSearchCodeSnippetLineNumberCellFromLineNumber(codeView, line)
+    // In search snippet views, the `<td>` is the code element
+    return lineNumberCell && (lineNumberCell.nextElementSibling as HTMLTableCellElement)
 }
 
 export const searchCodeSnippetDOMFunctions: DOMFunctions = {
     getCodeElementFromTarget: getCodeCellFromTarget,
-    getCodeElementFromLineNumber: (codeView, line, part) => {
-        const lineNumberCells = codeView.querySelectorAll('td.blob-num')
-        let lineNumberCell: HTMLElement | null = null
-
-        for (const cell of lineNumberCells) {
-            const a = cell.querySelector('a')!
-            if (a.href.match(new RegExp(`#L${line}$`))) {
-                lineNumberCell = cell as HTMLElement
-                break
-            }
-        }
-
-        if (!lineNumberCell) {
-            return null
-        }
-
-        const codeCell = lineNumberCell.nextElementSibling as HTMLTableCellElement
-        // In blob views, the `<td>` is the code element
-        return codeCell
-    },
+    getCodeElementFromLineNumber: getSearchCodeSnippetCodeElementFromLineNumber,
+    getLineElementFromLineNumber: getSearchCodeSnippetCodeElementFromLineNumber,
     getLineNumberFromCodeElement: (codeElement: HTMLElement): number => {
         const cell = codeElement.closest('td')!.previousElementSibling as HTMLTableCellElement
-
         return parseInt(cell.firstElementChild!.textContent!, 10)
     },
 }

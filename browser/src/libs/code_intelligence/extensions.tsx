@@ -8,7 +8,7 @@ import {
 } from '../../../../shared/src/commandPalette/CommandList'
 import { Notifications } from '../../../../shared/src/notifications/Notifications'
 
-import { DOMFunctions } from '@sourcegraph/codeintellify'
+import { DiffPart } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import {
@@ -25,6 +25,7 @@ import { createPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { CodeHost } from './code_intelligence'
+import { DOMFunctions } from './code_views'
 
 /**
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.
@@ -106,15 +107,16 @@ const groupByLine = (decorations: TextDocumentDecoration[]): Map<number, TextDoc
     return grouped
 }
 
-/**
- * Cleans up the line decorations in one line
- */
-const cleanupDecorationsForLine = (codeElement: HTMLElement): void => {
+const cleanupDecorationsForCodeElement = (codeElement: HTMLElement): void => {
     codeElement.style.backgroundColor = null
     const previousAttachments = codeElement.querySelectorAll('.line-decoration-attachment')
     for (const attachment of previousAttachments) {
         attachment.remove()
     }
+}
+
+const cleanupDecorationsForLineElement = (lineElement: HTMLElement): void => {
+    lineElement.style.backgroundColor = null
 }
 
 export type DecorationMapByLine = Map<number, TextDocumentDecoration[]>
@@ -128,7 +130,8 @@ export const applyDecorations = (
     dom: DOMFunctions,
     codeView: HTMLElement,
     decorations: TextDocumentDecoration[],
-    previousDecorations: DecorationMapByLine
+    previousDecorations: DecorationMapByLine,
+    part?: DiffPart
 ): DecorationMapByLine => {
     const decorationsByLine = groupByLine(decorations)
     // Clean up lines that now don't have decorations anymore
@@ -136,28 +139,52 @@ export const applyDecorations = (
         if (!decorationsByLine.has(lineNumber)) {
             const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
             if (codeElement) {
-                cleanupDecorationsForLine(codeElement)
+                cleanupDecorationsForCodeElement(codeElement)
+            }
+            const lineElement = dom.getLineElementFromLineNumber(codeView, lineNumber)
+            if (lineElement) {
+                cleanupDecorationsForLineElement(lineElement)
             }
         }
     }
     for (const [lineNumber, decorationsForLine] of decorationsByLine) {
         const previousDecorationsForLine = previousDecorations.get(lineNumber)
         if (isEqual(decorationsForLine, previousDecorationsForLine)) {
+            console.log('Skipping decoration in line', lineNumber)
             // No change in this line
             continue
         }
-        const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
+        const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber, part)
         if (!codeElement) {
-            throw new Error(`Unable to find code element for line ${lineNumber}`)
+            if (part === undefined) {
+                throw new Error(`Unable to find code element for line ${lineNumber}`)
+            }
+            // In diffs it's normal that many lines are not visible
+            continue
+        }
+        const lineElement = dom.getLineElementFromLineNumber(codeView, lineNumber, part)
+        if (!lineElement) {
+            if (part === undefined) {
+                throw new Error(`Could not find line element for line ${lineNumber}`)
+            }
+            // In diffs it's normal that many lines are not visible
+            continue
         }
         // Clean up previous decorations if this line had some
         if (previousDecorationsForLine) {
-            cleanupDecorationsForLine(codeElement)
+            cleanupDecorationsForCodeElement(codeElement)
+            cleanupDecorationsForLineElement(lineElement)
         }
         for (const decoration of decorationsForLine) {
             const style = decorationStyleForTheme(decoration, IS_LIGHT_THEME)
             if (style.backgroundColor) {
-                codeElement.style.backgroundColor = style.backgroundColor
+                let backgroundElement: HTMLElement
+                if (decoration.isWholeLine) {
+                    backgroundElement = lineElement
+                } else {
+                    backgroundElement = codeElement
+                }
+                backgroundElement.style.backgroundColor = style.backgroundColor
             }
 
             if (decoration.after) {

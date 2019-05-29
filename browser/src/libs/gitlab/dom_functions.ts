@@ -1,12 +1,19 @@
-import { DOMFunctions } from '@sourcegraph/codeintellify'
+import { DiffPart } from '@sourcegraph/codeintellify'
+import { DOMFunctions } from '../code_intelligence/code_views'
 
+const getSingleFileCodeElementFromLineNumber = (
+    codeView: HTMLElement,
+    line: number,
+    part?: DiffPart
+): HTMLElement | null => codeView.querySelector<HTMLElement>(`#LC${line}`)
 export const singleFileDOMFunctions: DOMFunctions = {
     getCodeElementFromTarget: target => target.closest('span.line') as HTMLElement | null,
     getLineNumberFromCodeElement: codeElement => {
         const line = codeElement.id.replace(/^LC/, '')
         return parseInt(line, 10)
     },
-    getCodeElementFromLineNumber: (codeView, line) => codeView.querySelector<HTMLElement>(`#LC${line}`),
+    getCodeElementFromLineNumber: getSingleFileCodeElementFromLineNumber,
+    getLineElementFromLineNumber: getSingleFileCodeElementFromLineNumber,
 }
 
 const getDiffCodePart: DOMFunctions['getDiffCodePart'] = codeElement => {
@@ -20,6 +27,29 @@ const getDiffCodePart: DOMFunctions['getDiffCodePart'] = codeElement => {
     }
 
     return row.classList.contains(selector) ? 'base' : 'head'
+}
+
+const getDiffCodeElementFromLineNumber = (codeView: HTMLElement, line: number, part?: DiffPart): HTMLElement | null => {
+    const lineNumberElement = codeView.querySelector<HTMLElement>(
+        `.${part === 'base' ? 'old_line' : 'new_line'} [data-linenumber="${line}"]`
+    )
+    if (!lineNumberElement) {
+        return null
+    }
+
+    const row = lineNumberElement.closest('tr')
+    if (!row) {
+        return null
+    }
+
+    let selector = 'span.line'
+
+    // Split diff
+    if (row.classList.contains('parallel')) {
+        selector = `.${part === 'base' ? 'left-side' : 'right-side'} ${selector}`
+    }
+
+    return row.querySelector<HTMLElement>(selector)
 }
 
 export const diffDOMFunctions: DOMFunctions = {
@@ -43,27 +73,10 @@ export const diffDOMFunctions: DOMFunctions = {
 
         throw new Error('Unable to determine line number for diff code element')
     },
-    getCodeElementFromLineNumber: (codeView, line, part) => {
-        const lineNumberElement = codeView.querySelector(
-            `.${part === 'base' ? 'old_line' : 'new_line'} [data-linenumber="${line}"]`
-        )
-        if (!lineNumberElement) {
-            return null
-        }
-
-        const row = lineNumberElement.closest('tr')
-        if (!row) {
-            return null
-        }
-
-        let selector = 'span.line'
-
-        // Split diff
-        if (row.classList.contains('parallel')) {
-            selector = `.${part === 'base' ? 'left-side' : 'right-side'} ${selector}`
-        }
-
-        return row.querySelector<HTMLElement>(selector)
+    getCodeElementFromLineNumber: getDiffCodeElementFromLineNumber,
+    getLineElementFromLineNumber: (codeView, line, part) => {
+        const codeElement = getDiffCodeElementFromLineNumber(codeView, line, part)
+        return codeElement && (codeElement.parentElement as HTMLTableCellElement)
     },
     getDiffCodePart,
 }

@@ -7,7 +7,21 @@ Object {
 }
 `;
 
+exports[`Phabricator DOM functions diffDOMFunctions Commit Page Split view line number 3 in head diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "​import (",
+  "selector": "TR:nth-child(3) > TD:nth-child(5)",
+}
+`;
+
 exports[`Phabricator DOM functions diffDOMFunctions Commit Page Split view line number 7 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "​func log() {",
+  "selector": "TR:nth-child(7) > TD.new.new-full:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Commit Page Split view line number 7 in head diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "​func log() {",
   "selector": "TR:nth-child(7) > TD.new.new-full:nth-child(5)",
@@ -21,7 +35,21 @@ Object {
 }
 `;
 
+exports[`Phabricator DOM functions diffDOMFunctions Commit Page Split view line number 10 in base diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "fmt.Println(\\"Debug\\")",
+  "selector": "TR:nth-child(15) > TD.old:nth-child(2)",
+}
+`;
+
 exports[`Phabricator DOM functions diffDOMFunctions Commit Page Unified view line number 3 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "import (",
+  "selector": "TR:nth-child(3) > TD.right:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Commit Page Unified view line number 3 in head diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "import (",
   "selector": "TR:nth-child(3) > TD.right:nth-child(4)",
@@ -35,7 +63,21 @@ Object {
 }
 `;
 
+exports[`Phabricator DOM functions diffDOMFunctions Commit Page Unified view line number 7 in head diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "func log() {",
+  "selector": "TR:nth-child(7) > TD.right.new:nth-child(4)",
+}
+`;
+
 exports[`Phabricator DOM functions diffDOMFunctions Commit Page Unified view line number 10 in base diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "fmt.Println(\\"Debug\\")",
+  "selector": "TR:nth-child(15) > TD.left.old:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Commit Page Unified view line number 10 in base diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "fmt.Println(\\"Debug\\")",
   "selector": "TR:nth-child(15) > TD.left.old:nth-child(4)",
@@ -49,7 +91,21 @@ Object {
 }
 `;
 
+exports[`Phabricator DOM functions diffDOMFunctions Differential Page Split view line number 9 in head diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "​    Println(\\"hello world\\")",
+  "selector": "TR:nth-child(9) > TD:nth-child(5)",
+}
+`;
+
 exports[`Phabricator DOM functions diffDOMFunctions Differential Page Split view line number 10 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "​  fmt.Println(\\"Debug\\")",
+  "selector": "TR:nth-child(10) > TD.new.new-full:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Differential Page Split view line number 10 in head diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "​  fmt.Println(\\"Debug\\")",
   "selector": "TR:nth-child(10) > TD.new.new-full:nth-child(5)",
@@ -63,7 +119,21 @@ Object {
 }
 `;
 
+exports[`Phabricator DOM functions diffDOMFunctions Differential Page Unified view line number 9 in head diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "Println(\\"hello world\\")",
+  "selector": "TR:nth-child(9) > TD.right:nth-child(4)",
+}
+`;
+
 exports[`Phabricator DOM functions diffDOMFunctions Differential Page Unified view line number 10 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "fmt.Println(\\"Debug\\")",
+  "selector": "TR:nth-child(10) > TD.right.new:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Differential Page Unified view line number 10 in head diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "fmt.Println(\\"Debug\\")",
   "selector": "TR:nth-child(10) > TD.right.new:nth-child(4)",
@@ -77,7 +147,21 @@ Object {
 }
 `;
 
+exports[`Phabricator DOM functions diffusionDOMFns line number 1 getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "​package main",
+  "selector": "TR:nth-child(1) > TD",
+}
+`;
+
 exports[`Phabricator DOM functions diffusionDOMFns line number 10 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "​}",
+  "selector": "TR:nth-child(10) > TD",
+}
+`;
+
+exports[`Phabricator DOM functions diffusionDOMFns line number 10 getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "​}",
   "selector": "TR:nth-child(10) > TD",
