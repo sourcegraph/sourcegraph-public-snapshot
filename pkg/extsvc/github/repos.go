@@ -444,7 +444,7 @@ func (c *Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []
 		if err != nil {
 			return "", err
 		}
-		b.WriteString(fmt.Sprintf("repo%d: repository(owner: %q, name: %q) { ", i, owner, name))
+		fmt.Fprintf(&b, "repo%d: repository(owner: %q, name: %q) { ", i, owner, name)
 		b.WriteString("... on Repository { ...RepositoryFields } }\n")
 	}
 
