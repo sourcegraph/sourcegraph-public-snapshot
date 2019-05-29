@@ -7,7 +7,7 @@ Object {
 }
 `;
 
-exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 733 in head diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 733 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "defer srv.Close()",
   "selector": "TR.line_holder.parallel:nth-child(3) > TD.line_content.parallel.right-side",
@@ -21,7 +21,7 @@ Object {
 }
 `;
 
-exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 735 in base diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 735 in base diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "u := url.URL{Scheme: \\"ws\\", Host: srv.Listener.Addr().String(), Path: build.Session.Endpoint + \\"/exec\\"}",
   "selector": "[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_735_735']",
@@ -35,7 +35,7 @@ Object {
 }
 `;
 
-exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 740 in head diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 740 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "headers := http.Header{",
   "selector": "[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_740']",
@@ -49,7 +49,7 @@ Object {
 }
 `;
 
-exports[`Bitbucket DOM functions diffDOMFunctions Unified view line number 733 in head diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Unified view line number 733 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "defer srv.Close()",
   "selector": "TR[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_733_733'].line_holder > TD.line_content",
@@ -63,7 +63,7 @@ Object {
 }
 `;
 
-exports[`Bitbucket DOM functions diffDOMFunctions Unified view line number 735 in base diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Unified view line number 735 in base diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "u := url.URL{Scheme: \\"ws\\", Host: srv.Listener.Addr().String(), Path: build.Session.Endpoint + \\"/exec\\"}",
   "selector": "TR[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_735_735'].line_holder.old > TD.line_content.old",
@@ -77,7 +77,7 @@ Object {
 }
 `;
 
-exports[`Bitbucket DOM functions diffDOMFunctions Unified view line number 740 in head diff part getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions diffDOMFunctions Unified view line number 740 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "headers := http.Header{",
   "selector": "TR[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_737_740'].line_holder.new > TD.line_content.new",
@@ -91,7 +91,7 @@ Object {
 }
 `;
 
-exports[`Bitbucket DOM functions singleFileDOMFunctions line number 1 getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions singleFileDOMFunctions line number 1 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "package shell",
   "selector": "[id='LC1']",
@@ -105,7 +105,7 @@ Object {
 }
 `;
 
-exports[`Bitbucket DOM functions singleFileDOMFunctions line number 22 getLineElementFromLineNumber() should return the right code element given the line number 1`] = `
+exports[`Bitbucket DOM functions singleFileDOMFunctions line number 22 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "type executor struct {",
   "selector": "[id='LC22']",

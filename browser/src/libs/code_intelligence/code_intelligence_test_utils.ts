@@ -157,7 +157,7 @@ export function testDOMFunctions(
     for (const { diffPart, lineNumber } of codeElements) {
         describe(`line number ${lineNumber}` + (diffPart !== undefined ? ` in ${diffPart} diff part` : ''), () => {
             describe('getLineElementFromLineNumber()', () => {
-                it(`should return the right code element given the line number`, async () => {
+                it(`should return the right line element given the line number`, async () => {
                     const codeElement = domFunctions.getLineElementFromLineNumber(codeViewElement, lineNumber, diffPart)
                     expect(codeElement).toBeDefined()
                     expect(codeElement).not.toBeNull()
