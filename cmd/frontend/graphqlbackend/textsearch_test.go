@@ -248,6 +248,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	type args struct {
 		ctx              context.Context
 		query            *search.PatternInfo
+		rawQuery         *query.Query
 		indexedRevisions map[*search.RepositoryRevisions]string
 		repos            []*search.RepositoryRevisions
 		useFullDeadline  bool
@@ -263,6 +264,11 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		singleRepositoryRevisions[0]: "abc",
 	}
 
+	q, err := query.ParseAndCheck("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tests := []struct {
 		name              string
 		args              args
@@ -276,6 +282,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			args: args{
 				ctx:              context.Background(),
 				query:            &search.PatternInfo{PathPatternsAreRegExps: true},
+				rawQuery:         q,
 				indexedRevisions: singleIndexedRevisions,
 				repos:            singleRepositoryRevisions,
 				useFullDeadline:  false,
@@ -293,6 +300,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			args: args{
 				ctx:              context.Background(),
 				query:            &search.PatternInfo{PathPatternsAreRegExps: true},
+				rawQuery:         q,
 				indexedRevisions: singleIndexedRevisions,
 				repos:            singleRepositoryRevisions,
 				useFullDeadline:  false,
@@ -310,6 +318,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			args: args{
 				ctx:              zeroTimeoutCtx,
 				query:            &search.PatternInfo{PathPatternsAreRegExps: true},
+				rawQuery:         q,
 				indexedRevisions: singleIndexedRevisions,
 				repos:            singleRepositoryRevisions,
 				useFullDeadline:  true,
@@ -327,6 +336,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			args: args{
 				ctx:              context.Background(),
 				query:            &search.PatternInfo{PathPatternsAreRegExps: true},
+				rawQuery:         q,
 				indexedRevisions: singleIndexedRevisions,
 				repos:            singleRepositoryRevisions,
 				useFullDeadline:  true,
@@ -342,7 +352,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.repos, tt.args.indexedRevisions, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts, tt.args.since)
+			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.rawQuery, tt.args.repos, tt.args.indexedRevisions, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts, tt.args.since)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
