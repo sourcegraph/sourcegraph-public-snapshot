@@ -31,16 +31,14 @@ func TestGithubSource_ListRepos(t *testing.T) {
 	assertAllReposListed := func(t testing.TB, rs Repos) {
 		t.Helper()
 
-		if have, want := len(rs), 2; have != want {
-			t.Fatalf("wrong number of repos yielded. want=%d, have=%d", want, have)
-		}
-
 		want := []string{
 			"github.com/sourcegraph/about",
 			"github.com/sourcegraph/sourcegraph",
 		}
+
 		have := rs.Names()
 		sort.Strings(have)
+
 		if !reflect.DeepEqual(have, want) {
 			t.Error(cmp.Diff(have, want))
 		}
