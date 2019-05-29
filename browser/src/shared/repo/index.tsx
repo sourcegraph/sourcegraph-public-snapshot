@@ -26,8 +26,7 @@ export interface OpenInSourcegraphProps {
     withModifierKey?: boolean
 }
 
-export interface OpenDiffInSourcegraphProps
-    extends Pick<OpenInSourcegraphProps, Exclude<keyof OpenInSourcegraphProps, 'commit'>> {
+export interface OpenDiffInSourcegraphProps extends Omit<OpenInSourcegraphProps, 'commit'> {
     commit: {
         baseRev: string
         headRev: string

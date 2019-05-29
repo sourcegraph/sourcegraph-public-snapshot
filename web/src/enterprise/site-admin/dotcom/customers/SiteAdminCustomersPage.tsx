@@ -52,7 +52,7 @@ interface Props extends RouteComponentProps<{}> {}
 
 class FilteredSiteAdminCustomerConnection extends FilteredConnection<
     Pick<GQL.IUser, 'id' | 'username' | 'displayName' | 'urlForSiteAdminBilling'>,
-    Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>>
+    Omit<SiteAdminCustomerNodeProps, 'node'>
 > {}
 
 /**
@@ -71,7 +71,7 @@ export class SiteAdminProductCustomersPage extends React.Component<Props> {
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>> = {
+        const nodeProps: Omit<SiteAdminCustomerNodeProps, 'node'> = {
             onDidUpdate: this.onUserUpdate,
         }
 

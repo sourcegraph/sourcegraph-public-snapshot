@@ -11,7 +11,7 @@ interface ConfigurableFeatureFlag {
 
 export interface OptionsMenuProps
     extends OptionsHeaderProps,
-        Pick<ServerURLFormProps, Exclude<keyof ServerURLFormProps, 'value' | 'onChange' | 'onSubmit'>> {
+        Omit<ServerURLFormProps, 'value' | 'onChange' | 'onSubmit'> {
     sourcegraphURL: ServerURLFormProps['value']
     onURLChange: ServerURLFormProps['onChange']
     onURLSubmit: ServerURLFormProps['onSubmit']

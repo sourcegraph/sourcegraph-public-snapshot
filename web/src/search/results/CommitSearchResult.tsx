@@ -134,8 +134,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
             repoName: props.result.commit.repository.name,
         }
 
-        interface AbsoluteRepoFilePositionNonReadonly
-            extends Pick<AbsoluteRepoFilePosition, Exclude<keyof AbsoluteRepoFilePosition, 'position'>> {
+        interface AbsoluteRepoFilePositionNonReadonly extends Omit<AbsoluteRepoFilePosition, 'position'> {
             position: { line: number; character: number }
         }
 

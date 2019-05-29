@@ -20,7 +20,7 @@ export function assertToJSON(a: any, expected: any): void {
 
 interface TestInitData {
     roots: readonly WorkspaceRootWithMetadata[]
-    editors: readonly Pick<CodeEditor, Exclude<keyof CodeEditor, 'editorId'>>[]
+    editors: readonly Omit<CodeEditor, 'editorId'>[]
 }
 
 const FIXTURE_INIT_DATA: TestInitData = {

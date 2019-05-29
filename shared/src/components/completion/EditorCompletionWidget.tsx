@@ -25,7 +25,7 @@ import { CompletionWidget, CompletionWidgetProps } from './CompletionWidget'
 
 export interface EditorCompletionWidgetProps
     extends ExtensionsControllerProps,
-        Pick<CompletionWidgetProps, Exclude<keyof CompletionWidgetProps, 'completionListOrError' | 'onSelectItem'>> {
+        Omit<CompletionWidgetProps, 'completionListOrError' | 'onSelectItem'> {
     /**
      * The ID of the editor to show a completion widget for.
      */

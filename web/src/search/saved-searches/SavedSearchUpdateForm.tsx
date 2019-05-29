@@ -112,7 +112,7 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                         }}
                         loading={this.state.updatedOrError === LOADING}
                         // tslint:disable-next-line:jsx-no-lambda
-                        onSubmit={(fields: Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>): void =>
+                        onSubmit={(fields: Omit<SavedQueryFields, 'id'>): void =>
                             this.onSubmit({ id: savedSearch.id, ...fields })
                         }
                         error={isErrorLike(this.state.updatedOrError) ? this.state.updatedOrError : undefined}

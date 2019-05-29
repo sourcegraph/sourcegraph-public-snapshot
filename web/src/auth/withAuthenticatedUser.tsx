@@ -8,7 +8,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
  */
 export const withAuthenticatedUser = <P extends object & { authenticatedUser: GQL.IUser }>(
     Component: React.ComponentType<P>
-): React.ComponentType<Pick<P, Exclude<keyof P, 'authenticatedUser'>> & { authenticatedUser: GQL.IUser | null }> => ({
+): React.ComponentType<Omit<P, 'authenticatedUser'> & { authenticatedUser: GQL.IUser | null }> => ({
     authenticatedUser,
     ...props
 }) => {

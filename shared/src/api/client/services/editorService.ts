@@ -121,7 +121,7 @@ export function createEditorService(modelService: Pick<ModelService, 'models' | 
         return model
     }
 
-    type AddedCodeEditor = Pick<CodeEditor, Exclude<keyof CodeEditor, 'model'>>
+    type AddedCodeEditor = Omit<CodeEditor, 'model'>
     const editors = new BehaviorSubject<readonly AddedCodeEditor[]>([])
     const getEditor = (editorId: EditorId['editorId']) => editors.value.find(e => e.editorId === editorId)
     const exists = (editorId: EditorId['editorId']) => !!getEditor(editorId)

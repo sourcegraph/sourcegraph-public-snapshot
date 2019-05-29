@@ -92,7 +92,7 @@ export class BlobPanel extends React.PureComponent<Props> {
             title: string,
             priority: number,
             registry: TextDocumentLocationProviderRegistry<P>,
-            extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
+            extraParams?: Omit<P, keyof TextDocumentPositionParams>
         ): Entry<ViewProviderRegistrationOptions, ProvideViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
             provider: from(this.props.extensionsController.services.editor.editors).pipe(
