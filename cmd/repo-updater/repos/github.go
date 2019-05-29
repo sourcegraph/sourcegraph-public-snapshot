@@ -312,6 +312,12 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 
 	err := s.fetchAllRepositoriesInBatches(ctx, set)
 	if err != nil {
+		// The way we fetch repositories in batches through the GraphQL API -
+		// using aliases to query multiple repositories in one query - is
+		// currently "undefined behaviour". Very rarely but unreproducibly it
+		// resulted in EOF errors while testing. And since we rely on fetching
+		// to work, we fall back to the (slower) sequential fetching in case we
+		// run into an GraphQL API error
 		log15.Warn("github sync: fetching in batches failed. falling back to sequential fetch", "error", err)
 
 		for _, nameWithOwner := range s.config.Repos {

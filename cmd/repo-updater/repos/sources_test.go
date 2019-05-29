@@ -871,13 +871,11 @@ func TestGithubSource_GetRepo(t *testing.T) {
 	}
 }
 
-func newClientFactory(t testing.TB, name string) (*httpcli.Factory, func(testing.TB)) {
+func newClientFactory(t testing.TB, name string, mws ...httpcli.Middleware) (*httpcli.Factory, func(testing.TB)) {
 	cassete := filepath.Join("testdata", "sources", strings.Replace(name, " ", "-", -1))
 	rec := newRecorder(t, cassete, update(name))
-	mw := httpcli.NewMiddleware(
-		githubProxyRedirectMiddleware,
-		gitserverRedirectMiddleware,
-	)
+	mws = append(mws, githubProxyRedirectMiddleware, gitserverRedirectMiddleware)
+	mw := httpcli.NewMiddleware(mws...)
 	return httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)),
 		func(t testing.TB) { save(t, rec) }
 }
