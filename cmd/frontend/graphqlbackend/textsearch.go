@@ -474,20 +474,22 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, rawQuery *q
 	// if the query has the repo has file field,
 	// construct a Zoekt Query just to search for files
 	// matching the value passed in the field. Set search
-	// options to shardMatchCount = 1.
+	// options to ShardMaxMatchCount = 1, TotalMaxMatchCount to a large number,
+	// and MaxDocDisplayCount = 0.
 	// TODO: use query.RepoHasFile (import name clash)
 	if rawQuery.Fields["repohasfile"] != nil {
 		fmt.Println("HAS REPO HAS URL")
-		// 	rawQuery
+		// rawQuery
 		// construct a query just with files
 		fileOnlyQuery, err := queryToZoektFileOnlyQuery(query)
 		if err != nil {
 			return nil, false, nil, err
 		}
 		fmt.Println("File only query", fileOnlyQuery)
-		newSearchOpts := &searchOpts
+		newSearchOpts := searchOpts
 		newSearchOpts.ShardMaxMatchCount = 1
 		newSearchOpts.TotalMaxMatchCount = math.MaxInt32
+		newSearchOpts.MaxDocDisplayCount = 0
 		resp, err := searcher.Search(ctx, fileOnlyQuery, &searchOpts)
 		if err != nil {
 			return nil, false, nil, err
@@ -499,7 +501,6 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, rawQuery *q
 		repoSet.Set = newRepoSet
 		finalQuery = zoektquery.NewAnd(repoSet, queryExceptRepos)
 		fmt.Println("FINAL QUERY", finalQuery)
-		// shardmaxcount = 1
 	}
 	t0 := time.Now()
 	resp, err := searcher.Search(ctx, finalQuery, &searchOpts)
@@ -736,8 +737,22 @@ func queryToZoektFileOnlyQuery(query *search.PatternInfo) (zoektquery.Q, error) 
 		}
 		and = append(and, q)
 	}
+	for _, p := range query.RepoIncludePatterns {
+		q, err := fileRe(p)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, q)
+	}
 	if query.ExcludePattern != "" {
 		q, err := fileRe(query.ExcludePattern)
+		if err != nil {
+			return nil, err
+		}
+		and = append(and, &zoektquery.Not{Child: q})
+	}
+	for _, p := range query.RepoExcludePatterns {
+		q, err := fileRe(p)
 		if err != nil {
 			return nil, err
 		}

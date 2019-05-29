@@ -22,6 +22,9 @@ type PatternInfo struct {
 	IncludePatterns []string
 	ExcludePattern  string
 
+	RepoIncludePatterns []string
+	RepoExcludePatterns []string
+
 	PathPatternsAreRegExps       bool
 	PathPatternsAreCaseSensitive bool
 
