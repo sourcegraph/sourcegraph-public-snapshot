@@ -510,7 +510,7 @@ func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, 
 		// When there is no exclude flag, the value returned is a constant "TRUE", which
 		// tells the zoekt searcher to include all repos. If there is no exclude flag, we
 		// don't want to add all repos in the list of excluded repos, so check for this value.
-		trueConst := searchquery.Const{true}
+		trueConst := searchquery.Const{Value: true}
 		if filesToExcludeQuery.String() != trueConst.String() {
 			for repoURL := range excludeResp.RepoURLs {
 				// For each repo that had a result in the exclude set, if it exists in the repoSet, set the value to false so we don't search over it.
