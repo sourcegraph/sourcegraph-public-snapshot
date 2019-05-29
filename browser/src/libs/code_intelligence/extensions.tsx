@@ -190,6 +190,7 @@ export const applyDecorations = (
                 }
 
                 const after = document.createElement('span')
+                after.style.color = style.color || null
                 after.style.backgroundColor = style.backgroundColor || null
                 after.textContent = decoration.after.contentText || null
                 after.title = decoration.after.hoverMessage || ''
