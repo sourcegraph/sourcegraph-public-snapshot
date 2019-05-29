@@ -476,7 +476,7 @@ func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, 
 	// on the values passed in to the flag.
 	if rawQuery.Fields[query.FieldRepoHasFile] != nil {
 		// Construct a query which just searches for repos that contain the file passed into `repohasfile`
-		filesToIncludeQuery, err := queryToZoektFileOnlyQuery(queryPatternInfo)
+		filesToIncludeQuery, err := queryToZoektFileOnlyQuery(queryPatternInfo, queryPatternInfo.RepoIncludePatterns)
 		if err != nil {
 			return nil, false, nil, err
 		}
@@ -492,7 +492,7 @@ func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, 
 		}
 
 		// Construct a query which just searches for repos that contain the file passed into `-repohasfile`
-		filesToExcludeQuery, err := queryToZoektExcludeFileOnlyQuery(queryPatternInfo)
+		filesToExcludeQuery, err := queryToZoektFileOnlyQuery(queryPatternInfo, queryPatternInfo.RepoExcludePatterns)
 		if err != nil {
 			return nil, false, nil, err
 		}
@@ -697,9 +697,9 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
 }
 
-// queryToZoekFileOnlyQuery constructs a query that searches for a file pattern passed in to the
-// `repohasfile` field in a query.
-func queryToZoektFileOnlyQuery(query *search.PatternInfo) (zoektquery.Q, error) {
+// queryToZoekFileOnlyQuery constructs a Zoekt query that searches for a file pattern(s).
+// `listOfFilePaths` specifies which field on `query` should be the list of file patterns to look for.
+func queryToZoektFileOnlyQuery(query *search.PatternInfo, listOfFilePaths []string) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
 	parseRe := func(pattern string, filenameOnly bool) (zoektquery.Q, error) {
@@ -733,58 +733,12 @@ func queryToZoektFileOnlyQuery(query *search.PatternInfo) (zoektquery.Q, error) 
 	if !query.PathPatternsAreRegExps {
 		return nil, errors.New("zoekt only supports regex path patterns")
 	}
-	for _, p := range query.RepoIncludePatterns {
+	for _, p := range listOfFilePaths {
 		q, err := fileRe(p)
 		if err != nil {
 			return nil, err
 		}
 		and = append(and, q)
-	}
-
-	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
-}
-
-func queryToZoektExcludeFileOnlyQuery(query *search.PatternInfo) (zoektquery.Q, error) {
-	var and []zoektquery.Q
-
-	parseRe := func(pattern string, filenameOnly bool) (zoektquery.Q, error) {
-		// these are the flags used by zoekt, which differ to searcher.
-		re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-		if err != nil {
-			return nil, err
-		}
-		noOpAnyChar(re)
-		// zoekt decides to use its literal optimization at the query parser
-		// level, so we check if our regex can just be a literal.
-		if re.Op == syntax.OpLiteral {
-			return &zoektquery.Substring{
-				Pattern:       string(re.Rune),
-				CaseSensitive: query.IsCaseSensitive,
-
-				FileName: filenameOnly,
-			}, nil
-		}
-		return &zoektquery.Regexp{
-			Regexp:        re,
-			CaseSensitive: query.IsCaseSensitive,
-
-			FileName: filenameOnly,
-		}, nil
-	}
-	fileRe := func(pattern string) (zoektquery.Q, error) {
-		return parseRe(pattern, true)
-	}
-	if !query.PathPatternsAreRegExps {
-		return nil, errors.New("zoekt only supports regex path patterns")
-	}
-	if len(query.RepoExcludePatterns) > 0 {
-		for _, p := range query.RepoExcludePatterns {
-			q, err := fileRe(p)
-			if err != nil {
-				return nil, err
-			}
-			and = append(and, q)
-		}
 	}
 
 	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil

@@ -126,6 +126,58 @@ func queryEqual(a zoektquery.Q, b zoektquery.Q) bool {
 	return zoektquery.Map(a, sortChildren).String() == zoektquery.Map(b, sortChildren).String()
 }
 
+func TestQueryToZoektFileOnlyQuery(t *testing.T) {
+	cases := []struct {
+		Name    string
+		Pattern *search.PatternInfo
+		Query   string
+	}{
+		{
+			Name: "single repohasfile filter",
+			Pattern: &search.PatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              nil,
+				ExcludePattern:               "",
+				RepoIncludePatterns:          []string{"test.md"},
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query: `f:"test.md"`,
+		},
+		{
+			Name: "single negated repohasfile filter",
+			Pattern: &search.PatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              nil,
+				ExcludePattern:               "",
+				RepoExcludePatterns:          []string{"test.md"},
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query: `f:"test\.md"`,
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			q, err := zoektquery.Parse(tt.Query)
+			if err != nil {
+				t.Fatalf("failed to parse %q: %v", tt.Query, err)
+			}
+			got, err := queryToZoektFileOnlyQuery(tt.Pattern, tt.Pattern.RepoExcludePatterns)
+			if err != nil {
+				t.Fatal("queryToZoektQuery failed:", err)
+			}
+			if !queryEqual(got, q) {
+				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), q.String())
+			}
+		})
+	}
+}
+
 func TestSearchFilesInRepos(t *testing.T) {
 	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
