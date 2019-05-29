@@ -1,84 +1,79 @@
 import { startCase } from 'lodash'
 import { Omit } from 'utility-types'
-import {
-    DiffDOMFunctionsTest,
-    getFixtureBody,
-    testDOMFunctions,
-} from '../code_intelligence/code_intelligence_test_utils'
-import { diffDomFunctions, isDomSplitDiff } from './dom_functions'
+import { DOMFunctionsTest, getFixtureBody, testDOMFunctions } from '../code_intelligence/code_intelligence_test_utils'
+import { diffDomFunctions, isDomSplitDiff, singleFileDOMFunctions } from './dom_functions'
 
 type GitHubVersion = 'github.com' | 'ghe-2.14.11'
-type GitHubPage = 'pull-request' | 'pull-request-discussion' | 'commit'
-
-interface GitHubCodeViewFixture
-    extends Omit<DiffDOMFunctionsTest, 'htmlFixturePath' | 'firstCharacterIsDiffIndicator'> {}
-
-const DIFF_FIXTURES: Record<GitHubVersion, Record<GitHubPage, GitHubCodeViewFixture>> = {
-    'ghe-2.14.11': {
-        commit: {
-            url: 'https://ghe.sgdev.org/beyang/mux/commit/1fddf523893b7475951631ed0f7e09edd9ce50d0',
-            diffLineCases: [
-                { diffPart: 'head', lineNumber: 80 }, // not changed
-                { diffPart: 'head', lineNumber: 82 }, // added
-                { diffPart: 'base', lineNumber: 82 }, // removed
-            ],
-        },
-        'pull-request': {
-            url: 'http://ghe.sgdev.org/beyang/mux/pull/1',
-            diffLineCases: [
-                { diffPart: 'head', lineNumber: 63 }, // not changed
-                { diffPart: 'head', lineNumber: 64 }, // added
-            ],
-        },
-        'pull-request-discussion': {
-            url: 'http://ghe.sgdev.org/beyang/mux/pull/1',
-            diffLineCases: [
-                { diffPart: 'head', lineNumber: 64 }, // added
-            ],
-        },
-    },
-    'github.com': {
-        commit: {
-            url: 'https://github.com/sourcegraph/sourcegraph/commit/d3d0fe7fad2c909e3a2e4de2259dc6604983a092',
-            diffLineCases: [
-                { diffPart: 'head', lineNumber: 41 }, // not changed
-                { diffPart: 'base', lineNumber: 42 }, // removeed
-                { diffPart: 'head', lineNumber: 42 }, // added
-            ],
-        },
-        'pull-request': {
-            url: 'https://github.com/sourcegraph/sourcegraph/pull/3272/files',
-            diffLineCases: [
-                { diffPart: 'head', lineNumber: 570 }, // not changed
-                { diffPart: 'base', lineNumber: 572 }, // removed
-                { diffPart: 'head', lineNumber: 572 }, // added
-            ],
-        },
-        'pull-request-discussion': {
-            url: 'https://github.com/sourcegraph/sourcegraph/pull/3221',
-            diffLineCases: [
-                { diffPart: 'head', lineNumber: 62 }, // added
-            ],
-        },
-    },
-}
 
 describe('GitHub DOM functions', () => {
     describe('diffDomFunctions', () => {
-        for (const [version, pages] of Object.entries(DIFF_FIXTURES)) {
+        type GitHubDiffPage = 'pull-request' | 'pull-request-discussion' | 'commit'
+
+        interface GitHubCodeViewFixture
+            extends Omit<DOMFunctionsTest, 'htmlFixturePath' | 'firstCharacterIsDiffIndicator'> {}
+
+        const diffFixtures: Record<GitHubVersion, Record<GitHubDiffPage, GitHubCodeViewFixture>> = {
+            'ghe-2.14.11': {
+                commit: {
+                    url: 'https://ghe.sgdev.org/beyang/mux/commit/1fddf523893b7475951631ed0f7e09edd9ce50d0',
+                    lineCases: [
+                        { diffPart: 'head', lineNumber: 80 }, // not changed
+                        { diffPart: 'head', lineNumber: 82 }, // added
+                        { diffPart: 'base', lineNumber: 82 }, // removed
+                    ],
+                },
+                'pull-request': {
+                    url: 'http://ghe.sgdev.org/beyang/mux/pull/1',
+                    lineCases: [
+                        { diffPart: 'head', lineNumber: 63 }, // not changed
+                        { diffPart: 'head', lineNumber: 64 }, // added
+                    ],
+                },
+                'pull-request-discussion': {
+                    url: 'http://ghe.sgdev.org/beyang/mux/pull/1',
+                    lineCases: [
+                        { diffPart: 'head', lineNumber: 64 }, // added
+                    ],
+                },
+            },
+            'github.com': {
+                commit: {
+                    url: 'https://github.com/sourcegraph/sourcegraph/commit/d3d0fe7fad2c909e3a2e4de2259dc6604983a092',
+                    lineCases: [
+                        { diffPart: 'head', lineNumber: 41 }, // not changed
+                        { diffPart: 'base', lineNumber: 42 }, // removeed
+                        { diffPart: 'head', lineNumber: 42 }, // added
+                    ],
+                },
+                'pull-request': {
+                    url: 'https://github.com/sourcegraph/sourcegraph/pull/3272/files',
+                    lineCases: [
+                        { diffPart: 'head', lineNumber: 570 }, // not changed
+                        { diffPart: 'base', lineNumber: 572 }, // removed
+                        { diffPart: 'head', lineNumber: 572 }, // added
+                    ],
+                },
+                'pull-request-discussion': {
+                    url: 'https://github.com/sourcegraph/sourcegraph/pull/3221',
+                    lineCases: [
+                        { diffPart: 'head', lineNumber: 62 }, // added
+                    ],
+                },
+            },
+        }
+        for (const [version, pages] of Object.entries(diffFixtures)) {
             describe(version, () => {
-                for (const [page, { diffLineCases, url }] of Object.entries(pages)) {
+                for (const [page, { lineCases, url }] of Object.entries(pages)) {
                     describe(`${startCase(page)} page`, () => {
                         for (const extension of ['vanilla', 'refined-github']) {
-                            const firstCharacterIsDiffIndicator = version !== 'github.com'
-
                             describe(startCase(extension), () => {
+                                const firstCharacterIsDiffIndicator = version !== 'github.com'
                                 if (page === 'pull-request-discussion') {
                                     const htmlFixturePath = `${__dirname}/__fixtures__/${version}/${page}/${extension}/code-view.html`
                                     testDOMFunctions(diffDomFunctions, {
                                         url,
                                         htmlFixturePath,
-                                        diffLineCases,
+                                        lineCases,
                                         firstCharacterIsDiffIndicator,
                                     })
                                 } else {
@@ -88,7 +83,7 @@ describe('GitHub DOM functions', () => {
                                             testDOMFunctions(diffDomFunctions, {
                                                 url,
                                                 htmlFixturePath,
-                                                diffLineCases,
+                                                lineCases,
                                                 firstCharacterIsDiffIndicator,
                                             })
                                         })
@@ -96,6 +91,23 @@ describe('GitHub DOM functions', () => {
                                 }
                             })
                         }
+                    })
+                }
+            })
+        }
+    })
+
+    describe('singleFileDOMFunctions', () => {
+        for (const version of ['github.com', 'ghe-2.14.11']) {
+            describe(version, () => {
+                for (const extension of ['vanilla', 'refined-github']) {
+                    describe(startCase(extension), () => {
+                        const htmlFixturePath = `${__dirname}/__fixtures__/${version}/blob/${extension}/code-view.html`
+                        testDOMFunctions(singleFileDOMFunctions, {
+                            htmlFixturePath,
+                            lineCases: [{ lineNumber: 1 }, { lineNumber: 2 }],
+                            firstCharacterIsDiffIndicator: false,
+                        })
                     })
                 }
             })

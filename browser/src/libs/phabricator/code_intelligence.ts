@@ -1,7 +1,6 @@
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
 import { map } from 'rxjs/operators'
-import { Omit } from 'utility-types'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
@@ -79,17 +78,21 @@ const getPositionAdjuster = (
 const toolbarButtonProps = {
     className: 'button grey button-grey has-icon has-text phui-button-default msl',
 }
-const commitCodeView: Omit<CodeView, 'element'> = {
+export const commitCodeView = {
     dom: diffDomFunctions,
     resolveFileInfo: resolveRevisionFileInfo,
     getPositionAdjuster,
-    getToolbarMount: codeView => {
+    getToolbarMount: (codeView: HTMLElement): HTMLElement => {
+        let mount = codeView.querySelector<HTMLElement>('.sourcegraph-app-annotator')
+        if (mount) {
+            return mount
+        }
         const actions = codeView.querySelector('.differential-changeset-buttons')
         if (!actions) {
             throw new Error('Unable to find action links for revision')
         }
 
-        const mount = document.createElement('div')
+        mount = document.createElement('div')
         mount.style.display = 'inline-block'
         mount.classList.add('sourcegraph-app-annotator')
 
