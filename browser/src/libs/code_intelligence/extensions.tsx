@@ -120,11 +120,11 @@ export const applyDecorations = (
     // Clean up lines that now don't have decorations anymore
     for (const lineNumber of previousDecorations.keys()) {
         if (!decorationsByLine.has(lineNumber)) {
-            const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
+            const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber, part)
             if (codeElement) {
                 cleanupDecorationsForCodeElement(codeElement)
             }
-            const lineElement = dom.getLineElementFromLineNumber(codeView, lineNumber)
+            const lineElement = dom.getLineElementFromLineNumber(codeView, lineNumber, part)
             if (lineElement) {
                 cleanupDecorationsForLineElement(lineElement)
             }
