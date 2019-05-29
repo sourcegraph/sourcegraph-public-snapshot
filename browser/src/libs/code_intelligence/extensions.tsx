@@ -133,7 +133,6 @@ export const applyDecorations = (
     for (const [lineNumber, decorationsForLine] of decorationsByLine) {
         const previousDecorationsForLine = previousDecorations.get(lineNumber)
         if (isEqual(decorationsForLine, previousDecorationsForLine)) {
-            console.log('Skipping decoration in line', lineNumber)
             // No change in this line
             continue
         }
