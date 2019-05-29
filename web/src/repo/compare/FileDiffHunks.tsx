@@ -1,15 +1,23 @@
 import { DiffPart, DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { NEVER, Subject, Subscription } from 'rxjs'
-import { filter } from 'rxjs/operators'
+import { combineLatest, NEVER, Observable, of, Subject, Subscription } from 'rxjs'
+import { distinctUntilChanged, filter, map, switchMap } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
+import {
+    DecorationMapByLine,
+    decorationStyleForTheme,
+    groupDecorationsByLine,
+} from '../../../../shared/src/api/client/services/decoration'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isDefined } from '../../../../shared/src/util/types'
-import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import { FileSpec, makeRepoURI, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import { ThemeProps } from '../../theme'
 
 const DiffBoundary: React.FunctionComponent<{
     /** The "lines" property is set for end boundaries (only for start boundaries and between hunks). */
@@ -36,16 +44,19 @@ const DiffBoundary: React.FunctionComponent<{
     </tr>
 )
 
-const DiffHunk: React.FunctionComponent<{
-    /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
-    fileDiffAnchor: string
+const DiffHunk: React.FunctionComponent<
+    {
+        /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
+        fileDiffAnchor: string
 
-    hunk: GQL.IFileDiffHunk
-    lineNumbers: boolean
+        hunk: GQL.IFileDiffHunk
+        lineNumbers: boolean
+        decorations: Record<'head' | 'base', DecorationMapByLine>
 
-    location: H.Location
-    history: H.History
-}> = ({ fileDiffAnchor, hunk, lineNumbers, location, history }) => {
+        location: H.Location
+        history: H.History
+    } & ThemeProps
+> = ({ fileDiffAnchor, decorations, hunk, lineNumbers, location, history, isLightTheme }) => {
     let oldLine = hunk.oldRange.startLine
     let newLine = hunk.newRange.startLine
     return (
@@ -68,6 +79,18 @@ const DiffHunk: React.FunctionComponent<{
                     }
                     const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
                     const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
+                    const decorationsForLine = [
+                        // If the line wasn't newly added, look for decorations in the base rev
+                        ...((line[0] !== '+' && decorations.base.get(oldLine)) || []),
+                        // If the line wasn't deleted, look for decorations in the head rev
+                        ...((line[0] !== '-' && decorations.head.get(oldLine)) || []),
+                        // Look for decorations in both if the line existed in both
+                    ]
+                    const style = decorationsForLine
+                        .filter(decoration => decoration.isWholeLine)
+                        .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
+                        .reduce((style, decoration) => ({ ...style, ...decoration }), {})
+
                     return (
                         <tr
                             key={i}
@@ -82,6 +105,7 @@ const DiffHunk: React.FunctionComponent<{
                         >
                             {lineNumbers && (
                                 <>
+                                    {/* Base line number (if line existed in base rev) */}
                                     {line[0] !== '+' ? (
                                         <td
                                             className="diff-hunk__num"
@@ -94,6 +118,8 @@ const DiffHunk: React.FunctionComponent<{
                                     ) : (
                                         <td className="diff-hunk__num diff-hunk__num--empty" />
                                     )}
+
+                                    {/* Head line number (if line still exists in head rev) */}
                                     {line[0] !== '-' ? (
                                         <td
                                             className="diff-hunk__num"
@@ -108,7 +134,10 @@ const DiffHunk: React.FunctionComponent<{
                                     )}
                                 </>
                             )}
-                            <td className="diff-hunk__content">{line}</td>
+                            {/* tslint:disable-next-line: jsx-ban-props Needed for decorations */}
+                            <td className="diff-hunk__content" style={style}>
+                                {line}
+                            </td>
                         </tr>
                     )
                 })}
@@ -179,10 +208,14 @@ interface Part {
     repoID: GQL.ID
     rev: string
     commitID: string
+
+    /**
+     * `null` if the file does not exist in this diff part.
+     */
     filePath: string | null
 }
 
-interface Props extends PlatformContextProps {
+interface FileHunksProps extends PlatformContextProps, ExtensionsControllerProps, ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
 
@@ -204,10 +237,15 @@ interface Props extends PlatformContextProps {
     hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
 }
 
-interface State {}
+interface FileDiffHunksState {
+    /**
+     * Decorations for the file at the two revisions of the diff
+     */
+    decorations: Record<'head' | 'base', DecorationMapByLine>
+}
 
 /** Displays hunks in a unified file diff. */
-export class FileDiffHunks extends React.Component<Props, State> {
+export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunksState> {
     /** Emits whenever the ref callback for the code element is called */
     private codeElements = new Subject<HTMLElement | null>()
     private nextCodeElement = (element: HTMLElement | null) => this.codeElements.next(element)
@@ -232,17 +270,15 @@ export class FileDiffHunks extends React.Component<Props, State> {
     }
 
     /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
-    private componentUpdates = new Subject<void>()
+    private componentUpdates = new Subject<FileHunksProps>()
 
     /** Subscriptions to be disposed on unmout */
     private subscriptions = new Subscription()
 
-    constructor(props: Props) {
+    constructor(props: FileHunksProps) {
         super(props)
         this.state = {
-            hoverOverlayIsFixed: false,
-            clickedGoToDefinition: false,
-            mouseIsMoving: false,
+            decorations: { head: new Map(), base: new Map() },
         }
 
         this.subscriptions.add(
@@ -261,13 +297,51 @@ export class FileDiffHunks extends React.Component<Props, State> {
                 },
             })
         )
+
+        // Listen to decorations from extensions and group them by line
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    map(({ head, base, extensionsController }) => ({ head, base, extensionsController })),
+                    distinctUntilChanged(
+                        (a, b) =>
+                            isEqual(a.head, b.head) &&
+                            isEqual(a.base, b.base) &&
+                            a.extensionsController !== b.extensionsController
+                    ),
+                    switchMap(({ head, base, extensionsController }) => {
+                        const getDecorationsForPart = ({
+                            repoName,
+                            commitID,
+                            filePath,
+                        }: Part): Observable<TextDocumentDecoration[] | null> =>
+                            filePath !== null
+                                ? extensionsController.services.textDocumentDecoration.getDecorations({
+                                      uri: makeRepoURI({ repoName, commitID, filePath }),
+                                  })
+                                : of(null)
+                        return combineLatest([getDecorationsForPart(head), getDecorationsForPart(base)])
+                    })
+                )
+                .subscribe(([headDecorations, baseDecorations]) => {
+                    this.setState({
+                        decorations: {
+                            head: groupDecorationsByLine(headDecorations),
+                            base: groupDecorationsByLine(baseDecorations),
+                        },
+                    })
+                })
+        )
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next()
+        this.componentUpdates.next(this.props)
     }
 
-    public shouldComponentUpdate(nextProps: Readonly<Props>, nextState: Readonly<State>): boolean {
+    public shouldComponentUpdate(
+        nextProps: Readonly<FileHunksProps>,
+        nextState: Readonly<FileDiffHunksState>
+    ): boolean {
         return !isEqual(this.props, nextProps) || !isEqual(this.state, nextState)
     }
 
@@ -299,12 +373,10 @@ export class FileDiffHunks extends React.Component<Props, State> {
                             <tbody>
                                 {this.props.hunks.map((hunk, i) => (
                                     <DiffHunk
+                                        {...this.props}
                                         key={i}
                                         hunk={hunk}
-                                        fileDiffAnchor={this.props.fileDiffAnchor}
-                                        lineNumbers={this.props.lineNumbers}
-                                        location={this.props.location}
-                                        history={this.props.history}
+                                        decorations={this.state.decorations}
                                     />
                                 ))}
                             </tbody>

@@ -25,6 +25,7 @@ import {
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { PartialCodeEditor } from '../../../../shared/src/api/client/context/context'
+import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
 import { CodeEditorData } from '../../../../shared/src/api/client/services/editorService'
 import { WorkspaceRootWithMetadata } from '../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
@@ -64,13 +65,7 @@ import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
-import {
-    applyDecorations,
-    DecorationMapByLine,
-    initializeExtensions,
-    renderCommandPalette,
-    renderGlobalDebug,
-} from './extensions'
+import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
 import { handleTextFields, TextField } from './text_fields'
 import { ViewResolver } from './views'
@@ -591,7 +586,6 @@ export function handleCodeHost({
                             // We manage the subscription correctly.
                             // tslint:disable-next-line: rxjs-no-nested-subscribe
                             .subscribe(decorations => {
-                                console.log('new decorations for head', decorations)
                                 decorationsByLine = applyDecorations(
                                     domFunctions,
                                     element,
@@ -617,7 +611,6 @@ export function handleCodeHost({
                             // We manage the subscription correctly.
                             // tslint:disable-next-line: rxjs-no-nested-subscribe
                             .subscribe(decorations => {
-                                console.log('new decorations for base', decorations)
                                 decorationsByLine = applyDecorations(
                                     domFunctions,
                                     element,

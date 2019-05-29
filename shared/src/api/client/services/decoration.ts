@@ -71,3 +71,24 @@ export function decorationAttachmentStyleForTheme(
     const { contentText, hoverMessage, linkURL, light, dark, ...base } = attachment
     return { ...base, ...overrides }
 }
+
+export type DecorationMapByLine = ReadonlyMap<number, TextDocumentDecoration[]>
+
+/**
+ * @returns Map from 1-based line number to non-empty array of TextDocumentDecoration for that line
+ *
+ * @todo this does not handle decorations that span multiple lines
+ */
+export const groupDecorationsByLine = (decorations: TextDocumentDecoration[] | null): DecorationMapByLine => {
+    const grouped = new Map<number, TextDocumentDecoration[]>()
+    for (const d of decorations || []) {
+        const lineNumber = d.range.start.line + 1
+        const decorationsForLine = grouped.get(lineNumber)
+        if (!decorationsForLine) {
+            grouped.set(lineNumber, [d])
+        } else {
+            decorationsForLine.push(d)
+        }
+    }
+    return grouped
+}

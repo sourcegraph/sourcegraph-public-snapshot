@@ -12,6 +12,7 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
+import { ThemeProps } from '../../theme'
 import { FileDiffConnection } from './FileDiffConnection'
 import { FileDiffNode } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
@@ -98,7 +99,8 @@ interface RepositoryCompareDiffPageProps
     extends RepositoryCompareAreaPageProps,
         RouteComponentProps<{}>,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        ThemeProps {
     /** The base of the comparison. */
     base: { repoName: string; repoID: GQL.ID; rev: string | null; commitID: string }
 
@@ -119,14 +121,10 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     queryConnection={this.queryDiffs}
                     nodeComponent={FileDiffNode}
                     nodeComponentProps={{
+                        ...this.props,
                         base: { ...this.props.base, rev: this.props.base.rev || 'HEAD' },
                         head: { ...this.props.head, rev: this.props.head.rev || 'HEAD' },
                         lineNumbers: true,
-                        platformContext: this.props.platformContext,
-                        location: this.props.location,
-                        history: this.props.history,
-                        hoverifier: this.props.hoverifier,
-                        extensionsController: this.props.extensionsController,
                     }}
                     defaultFirst={25}
                     hideSearch={true}

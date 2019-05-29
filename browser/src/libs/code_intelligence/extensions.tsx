@@ -13,7 +13,9 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import {
     decorationAttachmentStyleForTheme,
+    DecorationMapByLine,
     decorationStyleForTheme,
+    groupDecorationsByLine,
 } from '../../../../shared/src/api/client/services/decoration'
 import {
     createController as createExtensionsController,
@@ -90,23 +92,6 @@ export const renderGlobalDebug = ({
 
 const IS_LIGHT_THEME = true // assume all code hosts have a light theme (correct for now)
 
-/**
- * @returns Map from line number to non-empty array of TextDocumentDecoration for that line
- */
-const groupByLine = (decorations: TextDocumentDecoration[]): Map<number, TextDocumentDecoration[]> => {
-    const grouped = new Map<number, TextDocumentDecoration[]>()
-    for (const d of decorations) {
-        const lineNumber = d.range.start.line + 1
-        const decorationsForLine = grouped.get(lineNumber)
-        if (!decorationsForLine) {
-            grouped.set(lineNumber, [d])
-        } else {
-            decorationsForLine.push(d)
-        }
-    }
-    return grouped
-}
-
 const cleanupDecorationsForCodeElement = (codeElement: HTMLElement): void => {
     codeElement.style.backgroundColor = null
     const previousAttachments = codeElement.querySelectorAll('.line-decoration-attachment')
@@ -118,8 +103,6 @@ const cleanupDecorationsForCodeElement = (codeElement: HTMLElement): void => {
 const cleanupDecorationsForLineElement = (lineElement: HTMLElement): void => {
     lineElement.style.backgroundColor = null
 }
-
-export type DecorationMapByLine = Map<number, TextDocumentDecoration[]>
 
 /**
  * Applies a decoration to a code view. This doesn't work with diff views yet.
@@ -133,7 +116,7 @@ export const applyDecorations = (
     previousDecorations: DecorationMapByLine,
     part?: DiffPart
 ): DecorationMapByLine => {
-    const decorationsByLine = groupByLine(decorations)
+    const decorationsByLine = groupDecorationsByLine(decorations)
     // Clean up lines that now don't have decorations anymore
     for (const lineNumber of previousDecorations.keys()) {
         if (!decorationsByLine.has(lineNumber)) {

@@ -11,10 +11,11 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
+import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
@@ -77,7 +78,8 @@ interface Props
     extends RepositoryCompareAreaPageProps,
         RouteComponentProps<{}>,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        ThemeProps {
     /** The base of the comparison. */
     base: { repoName: string; repoID: GQL.ID; rev?: string | null }
 
@@ -108,7 +110,6 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                         (a, b) => a.repo.id === b.repo.id && a.base.rev === b.base.rev && a.head.rev === b.head.rev
                     ),
                     switchMap(({ repo, base, head }) => {
-                        type PartialStateUpdate = Pick<State, 'rangeOrError'>
                         if (!base.rev && !head.rev) {
                             return of({ rangeOrError: null })
                         }
@@ -119,8 +120,8 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                                 base: base.rev || null,
                                 head: head.rev || null,
                             }).pipe(
-                                catchError(error => [error]),
-                                map(c => ({ rangeOrError: c } as PartialStateUpdate))
+                                catchError(error => [asError(error)]),
+                                map((rangeOrError): Pick<State, 'rangeOrError'> => ({ rangeOrError }))
                             )
                         )
                     })
