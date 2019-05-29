@@ -335,3 +335,59 @@ Object {
   "selector": "TD.blob-code.blob-code-addition:nth-child(4) > SPAN.blob-code-inner",
 }
 `;
+
+exports[`GitHub DOM functions singleFileDOMFunctions ghe-2.14.11 Refined Github line number 1 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "// Copyright 2012 The Gorilla Authors. All rights reserved.",
+  "selector": "[id='LC1']",
+}
+`;
+
+exports[`GitHub DOM functions singleFileDOMFunctions ghe-2.14.11 Refined Github line number 2 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "// Use of this source code is governed by a BSD-style",
+  "selector": "[id='LC2']",
+}
+`;
+
+exports[`GitHub DOM functions singleFileDOMFunctions ghe-2.14.11 Vanilla line number 1 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "// Copyright 2012 The Gorilla Authors. All rights reserved.",
+  "selector": "[id='LC1']",
+}
+`;
+
+exports[`GitHub DOM functions singleFileDOMFunctions ghe-2.14.11 Vanilla line number 2 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "// Use of this source code is governed by a BSD-style",
+  "selector": "[id='LC2']",
+}
+`;
+
+exports[`GitHub DOM functions singleFileDOMFunctions github.com Refined Github line number 1 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "export const isURL = (value: any): value is URL =>",
+  "selector": "[id='LC1']",
+}
+`;
+
+exports[`GitHub DOM functions singleFileDOMFunctions github.com Refined Github line number 2 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "!!value && typeof value.toString === 'function' && value.href === value.toString()",
+  "selector": "[id='LC2']",
+}
+`;
+
+exports[`GitHub DOM functions singleFileDOMFunctions github.com Vanilla line number 1 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "export const isURL = (value: any): value is URL =>",
+  "selector": "[id='LC1']",
+}
+`;
+
+exports[`GitHub DOM functions singleFileDOMFunctions github.com Vanilla line number 2 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "!!value && typeof value.toString === 'function' && value.href === value.toString()",
+  "selector": "[id='LC2']",
+}
+`;
