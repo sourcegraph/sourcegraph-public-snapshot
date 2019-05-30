@@ -136,6 +136,7 @@ export const applyDecorations = (
             // No change in this line
             continue
         }
+
         const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber, part)
         if (!codeElement) {
             if (part === undefined) {
@@ -152,11 +153,14 @@ export const applyDecorations = (
             // In diffs it's normal that many lines are not visible
             continue
         }
-        // Clean up previous decorations if this line had some
-        if (previousDecorationsForLine) {
-            cleanupDecorationsForCodeElement(codeElement)
-            cleanupDecorationsForLineElement(lineElement)
-        }
+
+        // Clean up previous decorations
+        // Sometimes these can be there even if we cleaned them up if
+        // the code host snapshotted the DOM before removal of the code view
+        // (happens on GitHub when switching tabs on a PR)
+        cleanupDecorationsForCodeElement(codeElement, part)
+        cleanupDecorationsForLineElement(lineElement)
+
         for (const decoration of decorationsForLine) {
             const style = decorationStyleForTheme(decoration, IS_LIGHT_THEME)
             if (style.backgroundColor) {
