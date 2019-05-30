@@ -675,111 +675,111 @@ Object {
 exports[`GitHub DOM functions singleFileDOMFunctions ghe-2.14.11 Refined Github line number 1 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "// Copyright 2012 The Gorilla Authors. All rights reserved.",
-  "selector": "[id='LC1']",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions ghe-2.14.11 Refined Github line number 1 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "// Copyright 2012 The Gorilla Authors. All rights reserved.",
-  "selector": "[id='LC1']",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions ghe-2.14.11 Refined Github line number 2 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "// Use of this source code is governed by a BSD-style",
-  "selector": "[id='LC2']",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions ghe-2.14.11 Refined Github line number 2 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "// Use of this source code is governed by a BSD-style",
-  "selector": "[id='LC2']",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions ghe-2.14.11 Vanilla line number 1 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "// Copyright 2012 The Gorilla Authors. All rights reserved.",
-  "selector": "[id='LC1']",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions ghe-2.14.11 Vanilla line number 1 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "// Copyright 2012 The Gorilla Authors. All rights reserved.",
-  "selector": "[id='LC1']",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions ghe-2.14.11 Vanilla line number 2 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "// Use of this source code is governed by a BSD-style",
-  "selector": "[id='LC2']",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions ghe-2.14.11 Vanilla line number 2 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "// Use of this source code is governed by a BSD-style",
-  "selector": "[id='LC2']",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions github.com Refined Github line number 1 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "export const isURL = (value: any): value is URL =>",
-  "selector": "[id='LC1']",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions github.com Refined Github line number 1 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "export const isURL = (value: any): value is URL =>",
-  "selector": "[id='LC1']",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions github.com Refined Github line number 2 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "!!value && typeof value.toString === 'function' && value.href === value.toString()",
-  "selector": "[id='LC2']",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions github.com Refined Github line number 2 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "!!value && typeof value.toString === 'function' && value.href === value.toString()",
-  "selector": "[id='LC2']",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions github.com Vanilla line number 1 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "export const isURL = (value: any): value is URL =>",
-  "selector": "[id='LC1']",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions github.com Vanilla line number 1 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "export const isURL = (value: any): value is URL =>",
-  "selector": "[id='LC1']",
+  "selector": "TR:nth-child(1) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions github.com Vanilla line number 2 getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "!!value && typeof value.toString === 'function' && value.href === value.toString()",
-  "selector": "[id='LC2']",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;
 
 exports[`GitHub DOM functions singleFileDOMFunctions github.com Vanilla line number 2 getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "!!value && typeof value.toString === 'function' && value.href === value.toString()",
-  "selector": "[id='LC2']",
+  "selector": "TR:nth-child(2) > TD.blob-code.blob-code-inner.js-file-line",
 }
 `;

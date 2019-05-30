@@ -3,14 +3,14 @@
 exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 54 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "routes []*Route",
-  "selector": false,
+  "selector": "DIV.diff-editor.side-by-side-diff-editor-to > DIV.CodeMirror.cm-s-stash-default > DIV.CodeMirror-scroll > DIV.CodeMirror-sizer > DIV > DIV.CodeMirror-lines > DIV > DIV.CodeMirror-code > DIV.context.line:nth-child(54) > PRE.CodeMirror-line > SPAN",
 }
 `;
 
 exports[`Bitbucket DOM functions diffDOMFunctions Split view line number 54 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
   "content": "This line has a comment.Add a comment on this line.54     routes []*Route",
-  "selector": false,
+  "selector": "DIV.diff-editor.side-by-side-diff-editor-to > DIV.CodeMirror.cm-s-stash-default > DIV.CodeMirror-scroll > DIV.CodeMirror-sizer > DIV > DIV.CodeMirror-lines > DIV > DIV.CodeMirror-code > DIV.context.line:nth-child(54)",
 }
 `;
 

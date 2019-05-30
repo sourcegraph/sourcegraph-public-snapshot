@@ -1,7 +1,7 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
 import assert from 'assert'
 import { readFile } from 'mz/fs'
-import Simmer from 'simmerjs'
+import Simmer, { Options as SimmerOptions } from 'simmerjs'
 import { SetIntersection } from 'utility-types'
 import { CodeHost, MountGetter } from './code_intelligence'
 import { CodeView, DOMFunctions } from './code_views'
@@ -156,14 +156,21 @@ export function testDOMFunctions(
     })
     for (const { diffPart, lineNumber } of codeElements) {
         describe(`line number ${lineNumber}` + (diffPart !== undefined ? ` in ${diffPart} diff part` : ''), () => {
+            const simmerOptions: SimmerOptions = {
+                depth: 20,
+                specificityThreshold: 500,
+                selectorMaxLength: 1000,
+            }
+
             describe('getLineElementFromLineNumber()', () => {
                 it(`should return the right line element given the line number`, async () => {
                     const codeElement = domFunctions.getLineElementFromLineNumber(codeViewElement, lineNumber, diffPart)
                     expect(codeElement).toBeDefined()
                     expect(codeElement).not.toBeNull()
                     // Generate CSS selector for element
-                    const simmer = new Simmer(codeViewElement)
+                    const simmer = new Simmer(codeViewElement, simmerOptions)
                     const selector = simmer(codeElement!)
+                    expect(selector).toBeTruthy()
                     expect({ selector, content: codeElement!.textContent!.trim() }).toMatchSnapshot()
                 })
             })
@@ -174,8 +181,9 @@ export function testDOMFunctions(
                     expect(codeElement).toBeDefined()
                     expect(codeElement).not.toBeNull()
                     // Generate CSS selector for element
-                    const simmer = new Simmer(codeViewElement)
+                    const simmer = new Simmer(codeViewElement, simmerOptions)
                     const selector = simmer(codeElement!)
+                    expect(selector).toBeTruthy()
                     expect({ selector, content: codeElement!.textContent!.trim() }).toMatchSnapshot()
                 })
             })
