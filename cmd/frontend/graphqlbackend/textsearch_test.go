@@ -131,6 +131,8 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 		Name    string
 		Pattern *search.PatternInfo
 		Query   string
+		// This should be the same value passed in to either FilePatternsReposMustInclude or FilePatternsReposMustExclude
+		ListOfFilePaths []string
 	}{
 		{
 			Name: "single repohasfile filter",
@@ -144,7 +146,8 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query: `f:"test.md"`,
+			Query:           `f:"test.md"`,
+			ListOfFilePaths: []string{"test.md"},
 		},
 		{
 			Name: "single negated repohasfile filter",
@@ -158,7 +161,8 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query: `f:"test\.md"`,
+			Query:           `f:"test.md"`,
+			ListOfFilePaths: []string{"test.md"},
 		},
 	}
 	for _, tt := range cases {
@@ -167,7 +171,7 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to parse %q: %v", tt.Query, err)
 			}
-			got, err := queryToZoektFileOnlyQuery(tt.Pattern, tt.Pattern.FilePatternsReposMustExclude)
+			got, err := queryToZoektFileOnlyQuery(tt.Pattern, tt.ListOfFilePaths)
 			if err != nil {
 				t.Fatal("queryToZoektQuery failed:", err)
 			}
@@ -313,11 +317,6 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	}
 	singleIndexedRevisions := map[*search.RepositoryRevisions]string{
 		singleRepositoryRevisions[0]: "abc",
-	}
-
-	q, err := query.ParseAndCheck("foo")
-	if err != nil {
-		t.Fatal(err)
 	}
 
 	tests := []struct {
