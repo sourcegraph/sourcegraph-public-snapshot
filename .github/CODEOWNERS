@@ -3,51 +3,51 @@
 # https://help.github.com/articles/about-codeowners/
 
 # Top-level catch-alls (these are weaker confidence and might need to be reassigned at some point)
-/enterprise/cmd/frontend @beyang
-/enterprise/cmd/server @beyang
+/enterprise/cmd/frontend @beyang @slimsag
+/enterprise/cmd/server @beyang @slimsag
 /enterprise/dev @beyang
 /cmd/frontend/docsite @sqs
-/cmd/frontend/shared @beyang
-/cmd/frontend/backend @beyang
-/cmd/frontend/internal/app/assets @beyang
-/cmd/frontend/internal/app/templates @beyang
+/cmd/frontend/shared @beyang @slimsag
+/cmd/frontend/backend @beyang @slimsag
+/cmd/frontend/internal/app/assets @slimsag
+/cmd/frontend/internal/app/templates @slimsag
 /cmd/frontend/internal/app/canonicalurl @beyang
 /cmd/frontend/internal/app/*.go @beyang
-/cmd/frontend/internal/app/assetsutil @beyang
-/cmd/frontend/internal/app/ui @beyang
+/cmd/frontend/internal/app/assetsutil @slimsag
+/cmd/frontend/internal/app/ui @slimsag
 /cmd/frontend/internal/app/returnto @beyang
-/cmd/frontend/internal/app/pkg @beyang
-/cmd/frontend/internal/app/router @beyang
-/cmd/frontend/internal/app/errorutil @beyang
-/cmd/frontend/internal/goroutine @keegancsmith
+/cmd/frontend/internal/app/pkg @beyang @slimsag
+/cmd/frontend/internal/app/router @slimsag
+/cmd/frontend/internal/app/errorutil @beyang @slimsag
+/cmd/frontend/internal/goroutine @slimsag
 /cmd/frontend/internal/inventory @beyang
 /cmd/frontend/internal/cli/middleware @beyang
-/cmd/frontend/internal/cli @beyang
+/cmd/frontend/internal/cli @slimsag @beyang
 /cmd/frontend/internal/pkg/siteid @beyang
 /cmd/frontend/internal/pkg/suspiciousnames @beyang
-/cmd/frontend/internal/pkg/markdown @beyang
-/cmd/frontend/internal/pkg/handlerutil @beyang
-/cmd/frontend/internal/httpapi @beyang
-/cmd/frontend/types @beyang
+/cmd/frontend/internal/pkg/markdown @slimsag
+/cmd/frontend/internal/pkg/handlerutil @slimsag @beyang
+/cmd/frontend/internal/httpapi @slimsag
+/cmd/frontend/types @slimsag
 /cmd/frontend/hooks @beyang
-/cmd/frontend/internal/ @beyang
+/cmd/frontend/internal/ @beyang @slimsag
 /pkg/randstring/ @beyang
 /pkg/pubsub/ @beyang
 /pkg/repotrackutil/ @beyang
 /pkg/atomicvalue/ @beyang
 /pkg/testutil/ @beyang
 /pkg/debugserver/ @beyang
-/pkg/vfsutil/ @beyang
+/pkg/vfsutil/ @slimsag
 /pkg/gituri/ @beyang
 /pkg/db/ @keegancsmith
 /pkg/processrestart @keegancsmith
 /pkg/honey @keegancsmith
 /pkg/ratelimit @beyang
 /pkg/registry @chrismwendt
-/pkg/slack @beyang
+/pkg/slack @slimsag
 /pkg/prefixsuffixsaver @beyang
 /pkg/gosrc @beyang
-/pkg/txemail @beyang
+/pkg/txemail @slimsag
 /gulpfile.ts @beyang
 /client @felixfbecker
 /renovate.json @felixfbecker
@@ -77,7 +77,7 @@
 /dev @beyang
 /.buildkite @beyang
 /.storybook @felixfbecker
-/CONTRIBUTING.md @beyang @nicksnyder
+/CONTRIBUTING.md @beyang @nicksnyder @slimsag
 /.dockerignore @beyang
 /.mailmap @beyang
 /tsconfig.json @felixfbecker
@@ -92,8 +92,8 @@
 /.editorconfig @felixfbecker
 /jest.config.js @felixfbecker
 /go.mod @beyang
-/cmd @beyang
-/pkg @beyang
+/cmd @beyang @slimsag
+/pkg @beyang @slimsag
 
 # Frontend
 /web/src/ @felixfbecker
@@ -137,12 +137,12 @@
 /pkg/tracer/ @sourcegraph/core-services
 /pkg/vcs/ @sourcegraph/core-services
 /cmd/frontend/db @sourcegraph/core-services
-/cmd/frontend/graphqlbackend @sourcegraph/core-services
-/cmd/frontend/globals @sourcegraph/core-services
-/enterprise/cmd/frontend/internal/graphqlbackend @sourcegraph/core-services
+/cmd/frontend/graphqlbackend @sourcegraph/core-services @slimsag
+/cmd/frontend/globals @sourcegraph/core-services @slimsag
+/enterprise/cmd/frontend/internal/graphqlbackend @sourcegraph/core-services @slimsag
 /enterprise/cmd/frontend/db @sourcegraph/core-services
 /schema @sourcegraph/core-services
-/cmd/frontend/internal/bg @sourcegraph/core-services
+/cmd/frontend/internal/bg @sourcegraph/core-services @slimsag
 /cmd/github-proxy @sourcegraph/core-services
 /pkg/api/ @core-services
 /pkg/jsonc @tsenart
@@ -174,7 +174,7 @@
 /cmd/frontend/types/saved_searches.go @attfarhan
 
 # Deployment and distribution
-Dockerfile @ggilmore
+Dockerfile @sourcegraph/distribution
 /docker-images @sourcegraph/distribution
 /enterprise/docs/deployment.md @sourcegraph/distribution
 **/build.sh @sourcegraph/distribution
@@ -212,21 +212,27 @@ README.md @sqs
 /cmd/management-console @slimsag
 /enterprise/cmd/management-console @slimsag
 
+# Code discussions
+**/*discussion* @slimsag
+/web/src/discussions @slimsag
+/web/src/repo/blob/discussions @slimsag
+/cmd/frontend/types/discussions.go @slimsag
+/cmd/frontend/internal/pkg/discussions @slimsag
+/cmd/frontend/graphqlbackend/discussion* @slimsag
+/cmd/frontend/db/discussion* @slimsag
+
 # Development
 /dev/fakehub @ijt
 /dev/repogen @ijt
 /.vscode @felixfbecker
 
 # Misc and special overrides
-/LICENSE* @sqs @beyang
+/LICENSE* @sqs @beyang @slimsag
 /enterprise/pkg/license @sqs @beyang
-/cmd/frontend/db/*discussion* @slimsag
 /cmd/frontend/external/session @beyang
 /cmd/frontend/external @beyang
-/cmd/frontend/graphqlbackend/discussion_thread* @slimsag
 /babel.config.js @sqs
 /enterprise/docs @sqs
-/cmd/frontend/internal/pkg/discussions @slimsag
 /cmd/loadtest @beyang
 /pkg/legacyconf/ @slimsag
 /pkg/hubspot/ @dadlerj
