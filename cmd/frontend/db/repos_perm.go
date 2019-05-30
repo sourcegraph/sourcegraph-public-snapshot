@@ -78,10 +78,11 @@ func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos ma
 	for repo := range repos {
 		// 🚨 SECURITY: Defensively bar access to repos with no external repo spec (we don't know
 		// where they came from, so can't reliably enforce permissions)
-		if s := repo.ExternalRepoSpec; s.ID == "" || s.ServiceID == "" || s.ServiceType == "" {
-			continue
+		if repo.ExternalRepoSpec.IsSet() {
+			unverified[repo] = struct{}{}
+		} else if authzAllowByDefault && len(authzProviders) == 0 {
+			accepted[repo.RepoName] = struct{}{}
 		}
-		unverified[repo] = struct{}{}
 	}
 
 	// Walk through all authz providers, checking repo permissions against each. If any own a given
