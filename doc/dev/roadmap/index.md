@@ -33,9 +33,11 @@ Owners: @ijt
 
 Currently we're prioritizing speed and stability of search. Here are some more things we plan to tackle in the near future.
 
-- [Multi-line searches](https://github.com/sourcegraph/sourcegraph/issues/35)
-- [Nested search queries](https://github.com/sourcegraph/sourcegraph/issues/1005) (e.g., in all repositories whose `package.json` contains `foo`, find matches of `bar`)
-- Streaming search results to reduce time to first result.
+- [Multi-line](https://github.com/sourcegraph/sourcegraph/issues/4138): allow `\n` in queries.
+- [Literal](https://github.com/sourcegraph/sourcegraph/issues/4178): first try queries literally before trying them as regexes.
+- [Paginated](https://github.com/sourcegraph/sourcegraph/issues/2865): show the first page of results and wait for the user/client to ask for more.
+- [Structural](https://github.com/sourcegraph/sourcegraph/issues/3890): allow queries with holes `:[foo]` matching sensible chunks of code.
+- [Nested](https://github.com/sourcegraph/sourcegraph/issues/1005): combine queries logically with AND, OR, and NOT.
 - More ways to filter queries (provided by extensions), such as by authorship, recency, and language-specific or dependency graph information
 - [More types/sources of search results](https://github.com/sourcegraph/sourcegraph/issues/738) (provided by extensions), such as documentation (wiki, Markdown, and Google Docs), issues, PR comments, logs, and configuration data
 - Investigate instant, as-you-type search (Livegrep-style)

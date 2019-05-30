@@ -58,7 +58,6 @@ export const fetchRepository = memoizeObservable(
                             serviceType
                         }
                         description
-                        enabled
                         viewerCanAdminister
                         redirectURL
                         defaultBranch {

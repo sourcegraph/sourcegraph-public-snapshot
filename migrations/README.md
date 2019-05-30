@@ -18,7 +18,7 @@ are terminated.
 Run the following:
 
 ```
-./dev/add_migration.sh
+./dev/add_migration.sh MIGRATION_NAME
 ```
 
 There will be up/down `.sql` migration files created in this directory. Add

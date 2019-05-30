@@ -94,6 +94,29 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 	}
 }
 
+func TestPrepareZip_errHeader(t *testing.T) {
+	s, cleanup := tmpStore(t)
+	defer cleanup()
+	s.FetchTar = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
+		buf := new(bytes.Buffer)
+		w := tar.NewWriter(buf)
+		w.Flush()
+		buf.WriteString("oh yeah")
+		err := w.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
+	}
+	_, err := s.PrepareZip(context.Background(), gitserver.Repo{Name: "foo"}, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	if got, want := errors.Cause(err).Error(), tar.ErrHeader.Error(); got != want {
+		t.Fatalf("expected PrepareZip to fail with tar.ErrHeader, failed with %v", got)
+	}
+	if !errors.Cause(err).(interface{ Temporary() bool }).Temporary() {
+		t.Fatalf("expected PrepareZip to fail with a temporary error, failed with %v", err)
+	}
+}
+
 func TestIngoreSizeMax(t *testing.T) {
 	patterns := []string{
 		"foo",

@@ -9,7 +9,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // SplitRepositoryNameWithOwner splits a GitHub repository's "owner/name" string into "owner" and "name", with
@@ -42,6 +44,7 @@ func (c *Client) repositoryFieldsGraphQLFragment() string {
 		return `
 fragment RepositoryFields on Repository {
 	id
+	databaseId
 	nameWithOwner
 	description
 	url
@@ -58,6 +61,7 @@ fragment RepositoryFields on Repository {
 	return `
 fragment RepositoryFields on Repository {
 	id
+	databaseId
 	nameWithOwner
 	description
 	url
@@ -377,6 +381,76 @@ query Repositories($ids: [ID!]!) {
 		}
 	}
 	return repos, nil
+}
+
+// ErrBatchTooLarge is when the requested batch of GitHub repositories to fetch
+// is too large and goes over the limit of what can be requested in a single
+// GraphQL call
+var ErrBatchTooLarge = errors.New("requested batch of GitHub repositories too large")
+
+// GetReposByNameWithOwner fetches the specified repositories (namesWithOwners)
+// from the GitHub GraphQL API and returns a slice of repositories.
+// If a repository is not found, it will return an error.
+//
+// The maximum number of repositories to be fetched is 30. If more
+// namesWithOwners are given, the method returns an error. 30 is not a official
+// limit of the API, but based on the observation that the GitHub GraphQL does
+// not return results when more than 37 aliases are specified in a query. 30 is
+// the conservative step back from 37.
+//
+// This method does not cache.
+func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ...string) ([]*Repository, error) {
+	if len(namesWithOwners) > 30 {
+		return nil, ErrBatchTooLarge
+	}
+
+	query, err := c.buildGetReposBatchQuery(ctx, namesWithOwners)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]*Repository
+	err = c.requestGraphQL(ctx, "", query, map[string]interface{}{}, &result)
+	if err != nil {
+		if gqlErrs, ok := err.(graphqlErrors); ok {
+			for _, err2 := range gqlErrs {
+				if err2.Type == graphqlErrTypeNotFound {
+					log15.Warn("GitHub repository not found", "error", err2)
+					continue
+				}
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	repos := make([]*Repository, 0, len(result))
+	for _, r := range result {
+		if r != nil {
+			repos = append(repos, r)
+		}
+	}
+	return repos, nil
+}
+
+func (c *Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []string) (string, error) {
+	var b strings.Builder
+	b.WriteString(c.repositoryFieldsGraphQLFragment())
+	b.WriteString("query {\n")
+
+	for i, pair := range namesWithOwners {
+		owner, name, err := SplitRepositoryNameWithOwner(pair)
+		if err != nil {
+			return "", err
+		}
+		fmt.Fprintf(&b, "repo%d: repository(owner: %q, name: %q) { ", i, owner, name)
+		b.WriteString("... on Repository { ...RepositoryFields } }\n")
+	}
+
+	b.WriteString("}")
+
+	return b.String(), nil
 }
 
 func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {

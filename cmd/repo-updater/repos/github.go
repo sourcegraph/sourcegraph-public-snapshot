@@ -310,31 +310,45 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 		}
 	}
 
-	for _, nameWithOwner := range s.config.Repos {
-		if err := ctx.Err(); err != nil {
-			errs = multierror.Append(errs, err)
-			break
-		}
+	err := s.fetchAllRepositoriesInBatches(ctx, set)
+	if err != nil {
+		// The way we fetch repositories in batches through the GraphQL API -
+		// using aliases to query multiple repositories in one query - is
+		// currently "undefined behaviour". Very rarely but unreproducibly it
+		// resulted in EOF errors while testing. And since we rely on fetching
+		// to work, we fall back to the (slower) sequential fetching in case we
+		// run into an GraphQL API error
+		log15.Warn("github sync: fetching in batches failed. falling back to sequential fetch", "error", err)
 
-		owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
-		if err != nil {
-			errs = multierror.Append(errs, errors.New("Invalid GitHub repository: nameWithOwner="+nameWithOwner))
-			break
-		}
-		repo, err := s.client.GetRepository(ctx, owner, name)
-		if err != nil {
-			// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
-			// 404 errors on external service config validation.
-			if github.IsNotFound(err) {
-				log15.Warn("skipping missing github.repos entry:", "name", nameWithOwner, "err", err)
-				continue
+		for _, nameWithOwner := range s.config.Repos {
+			if err := ctx.Err(); err != nil {
+				errs = multierror.Append(errs, err)
+				break
 			}
-			errs = multierror.Append(errs, errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner))
-			break
+
+			owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+			if err != nil {
+				errs = multierror.Append(errs, errors.New("Invalid GitHub repository: nameWithOwner="+nameWithOwner))
+				break
+			}
+
+			repo, err := s.client.GetRepository(ctx, owner, name)
+			if err != nil {
+				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
+				// 404 errors on external service config validation.
+				if github.IsNotFound(err) {
+					log15.Warn("skipping missing github.repos entry:", "name", nameWithOwner, "err", err)
+					continue
+				}
+				errs = multierror.Append(errs, errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner))
+				break
+			}
+
+			log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
+			set[repo.DatabaseID] = repo
+
+			time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 		}
-		log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
-		set[repo.DatabaseID] = repo
-		time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 	}
 
 	repos := make([]*github.Repository, 0, len(set))
@@ -359,6 +373,39 @@ func (s *GithubSource) getRepository(ctx context.Context, nameWithOwner string) 
 	}
 
 	return repo, nil
+}
+
+// fetchAllRepositoriesInBatches fetches the repositories configured in
+// config.Repos in batches and adds them to the supplied set
+func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, set map[int64]*github.Repository) error {
+	const batchSize = 30
+
+	for i := 0; i < len(s.config.Repos); i += batchSize {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		start := i
+		end := i + batchSize
+		if end > len(s.config.Repos) {
+			end = len(s.config.Repos)
+		}
+		batch := s.config.Repos[start:end]
+
+		repos, err := s.client.GetReposByNameWithOwner(ctx, batch...)
+		if err != nil {
+			return err
+		}
+
+		log15.Debug("github sync: GetGetReposByNameWithOwner", "repos", batch)
+		for _, r := range repos {
+			set[r.DatabaseID] = r
+		}
+
+		time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
+	}
+
+	return nil
 }
 
 func exampleRepositoryQuerySplit(q string) string {

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
@@ -20,6 +21,8 @@ import (
 func TestCountGoImporters(t *testing.T) {
 	ctx := testContext()
 	const wantRepoName = "github.com/alice/myrepo"
+
+	rcache.SetupForTest(t)
 
 	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)

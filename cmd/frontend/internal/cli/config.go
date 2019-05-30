@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -145,10 +147,7 @@ func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, er
 		Critical: critical.Contents,
 		Site:     site.Contents,
 
-		// TODO(slimsag): future: pass GitServers list via this.
-		ServiceConnections: conftypes.ServiceConnections{
-			PostgresDSN: postgresDSN(),
-		},
+		ServiceConnections: serviceConnections(),
 	}, nil
 }
 
@@ -174,15 +173,39 @@ func (c configurationSource) Write(ctx context.Context, input conftypes.RawUnifi
 	return nil
 }
 
-func postgresDSN() string {
-	username := ""
-	if user, err := user.Current(); err == nil {
-		username = user.Username
-	}
-	return doPostgresDSN(username, os.Getenv)
+var (
+	serviceConnectionsVal  conftypes.ServiceConnections
+	serviceConnectionsOnce sync.Once
+)
+
+func serviceConnections() conftypes.ServiceConnections {
+	serviceConnectionsOnce.Do(func() {
+		username := ""
+		if user, err := user.Current(); err == nil {
+			username = user.Username
+		}
+
+		serviceConnectionsVal = conftypes.ServiceConnections{
+			GitServers:  gitServers(),
+			PostgresDSN: postgresDSN(username, os.Getenv),
+		}
+	})
+	return serviceConnectionsVal
 }
 
-func doPostgresDSN(currentUser string, getenv func(string) string) string {
+func gitServers() []string {
+	v := os.Getenv("SRC_GIT_SERVERS")
+	if v == "" {
+		// Detect 'go test' and setup default addresses in that case.
+		p, err := os.Executable()
+		if err == nil && strings.HasSuffix(p, ".test") {
+			v = "gitserver:3178"
+		}
+	}
+	return strings.Fields(v)
+}
+
+func postgresDSN(currentUser string, getenv func(string) string) string {
 	// PGDATASOURCE is a sourcegraph specific variable for just setting the DSN
 	if dsn := getenv("PGDATASOURCE"); dsn != "" {
 		return dsn

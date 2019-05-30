@@ -117,7 +117,20 @@ export const diffusionDOMFns: DOMFunctions = {
         if (!lineAnchor) {
             throw new Error('could not find line number anchor from code element')
         }
-        return parseInt(lineAnchor.textContent || '', 10)
+        // In recent Phabricator versions, the line number is stored in the `data-n`
+        // attribute, and the textContent is empty.
+        if (lineAnchor.dataset.n !== undefined) {
+            const lineNumber = parseInt(lineAnchor.dataset.n, 10)
+            if (isNaN(lineNumber)) {
+                throw new Error(`Could not parse lineNumber from data-n attribute: ${lineAnchor.dataset.n}`)
+            }
+            return lineNumber
+        }
+        const lineNumber = parseInt(lineAnchor.textContent || '', 10)
+        if (isNaN(lineNumber)) {
+            throw new Error(`Could not parse lineNumber from lineAnchor.textContent: ${lineAnchor.textContent}`)
+        }
+        return lineNumber
     },
     isFirstCharacterDiffIndicator: () => false,
 }

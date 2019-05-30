@@ -123,7 +123,7 @@ func main() {
 		resp, err := http.DefaultClient.Do(req2)
 		requestMu.Unlock()
 		if err != nil {
-			log.Print(err)
+			log15.Warn("proxy error", "err", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

@@ -9,6 +9,6 @@ describe('gitlab/code_intelligence', () => {
         testMountGetters(gitlabCodeHost, `${__dirname}/__fixtures__/repository.html`)
     })
     describe('getToolbarMount()', () => {
-        testToolbarMountGetter(`${__dirname}/__fixtures__/code-views/pr-unified.html`, getToolbarMount)
+        testToolbarMountGetter(`${__dirname}/__fixtures__/code-views/merge-request/unified.html`, getToolbarMount)
     })
 })

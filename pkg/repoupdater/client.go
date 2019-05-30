@@ -92,11 +92,6 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		}
 		span.Finish()
 	}()
-	if args.ExternalRepo != nil {
-		span.SetTag("ExternalRepo.ID", args.ExternalRepo.ID)
-		span.SetTag("ExternalRepo.ServiceType", args.ExternalRepo.ServiceType)
-		span.SetTag("ExternalRepo.ServiceID", args.ExternalRepo.ServiceID)
-	}
 	if args.Repo != "" {
 		span.SetTag("Repo", string(args.Repo))
 	}

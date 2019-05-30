@@ -401,13 +401,6 @@ func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveGitServerAddrs(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(conf.SrcGitServers); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
-}
-
 func serveCanSendEmail(w http.ResponseWriter, r *http.Request) error {
 	if err := json.NewEncoder(w).Encode(conf.CanSendEmail()); err != nil {
 		return errors.Wrap(err, "Encode")

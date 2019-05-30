@@ -21,7 +21,31 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-## 3.4.1 (unreleased)
+- Fixed repository search patterns which contain `.*`. Previously our optimizer would ignore `.*`, which in some cases would lead to our repository search excluding some repositories from the results.
+
+## 3.4.3 (unreleased)
+
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+## 3.4.2
+
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+- Fixed https://github.com/sourcegraph/sourcegraph/issues/4127
+
+## 3.4.1
 
 ### Added
 
@@ -38,6 +62,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed an issue where `EXTSVC_CONFIG_FILE` being specified would incorrectly cause a panic.
 - Fixed an issue where user/org/global settings from old Sourcegraph versions (2.x) could incorrectly be null, leading to various errors.
+- Fixed an issue where an ephemeral infrastructure error (`tar/archive: invalid tar header`) would fail a search.
 
 ## 3.4.0
 

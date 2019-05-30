@@ -242,7 +242,8 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 			err = err1
 		}
 		done(err)
-		pw.CloseWithError(err)
+		// CloseWithError is guaranteed to return a nil error
+		_ = pw.CloseWithError(errors.Wrapf(err, "failed to fetch %s@%s", repo, commit))
 	}()
 
 	return pr, nil
@@ -260,6 +261,13 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string) 
 			return nil
 		}
 		if err != nil {
+			// Gitserver sometimes returns invalid headers. However, it only
+			// seems to occur in situations where a retry would likely solve
+			// it. So mark the error as temporary, to avoid failing the whole
+			// search. https://github.com/sourcegraph/sourcegraph/issues/3799
+			if err == tar.ErrHeader {
+				return temporaryError{error: err}
+			}
 			return err
 		}
 
@@ -394,6 +402,17 @@ var (
 		Help:      "The total number of archive fetches that failed.",
 	})
 )
+
+// temporaryError wraps an error but adds the Temporary method. It does not
+// implement Cause so that errors.Cause() returns an error which implements
+// Temporary.
+type temporaryError struct {
+	error
+}
+
+func (temporaryError) Temporary() bool {
+	return true
+}
 
 func init() {
 	prometheus.MustRegister(cacheSizeBytes)
