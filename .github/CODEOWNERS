@@ -12,7 +12,7 @@
 /cmd/frontend/internal/app/assets @slimsag
 /cmd/frontend/internal/app/templates @slimsag
 /cmd/frontend/internal/app/canonicalurl @beyang
-/cmd/frontend/internal/app/*.go @beyang
+/cmd/frontend/internal/app/*.go @slimsag
 /cmd/frontend/internal/app/assetsutil @slimsag
 /cmd/frontend/internal/app/ui @slimsag
 /cmd/frontend/internal/app/returnto @beyang
@@ -20,8 +20,8 @@
 /cmd/frontend/internal/app/router @slimsag
 /cmd/frontend/internal/app/errorutil @beyang @slimsag
 /cmd/frontend/internal/goroutine @slimsag
-/cmd/frontend/internal/inventory @beyang
-/cmd/frontend/internal/cli/middleware @beyang
+/cmd/frontend/internal/inventory @beyang @slimsag
+/cmd/frontend/internal/cli/middleware @beyang @slimsag
 /cmd/frontend/internal/cli @slimsag @beyang
 /cmd/frontend/internal/pkg/siteid @beyang
 /cmd/frontend/internal/pkg/suspiciousnames @beyang
@@ -29,7 +29,7 @@
 /cmd/frontend/internal/pkg/handlerutil @slimsag @beyang
 /cmd/frontend/internal/httpapi @slimsag
 /cmd/frontend/types @slimsag
-/cmd/frontend/hooks @beyang
+/cmd/frontend/hooks @beyang @slimsag
 /cmd/frontend/internal/ @beyang @slimsag
 /pkg/randstring/ @beyang
 /pkg/pubsub/ @beyang
@@ -40,7 +40,7 @@
 /pkg/vfsutil/ @slimsag
 /pkg/gituri/ @beyang
 /pkg/db/ @keegancsmith
-/pkg/processrestart @keegancsmith
+/pkg/processrestart @slimsag @keegancsmith
 /pkg/honey @keegancsmith
 /pkg/ratelimit @beyang
 /pkg/registry @chrismwendt
@@ -101,7 +101,7 @@
 /web @felixfbecker @lguychard
 /ui @felixfbecker @lguychard
 /enterprise/ui @felixfbecker @lguychard
-/cmd/frontend/internal/app/jscontext @felixfbecker
+/cmd/frontend/internal/app/jscontext @slimsag
 /packages/@sourcegraph @felixfbecker
 
 # Tracking
@@ -110,7 +110,6 @@
 **/tracking @dadlerj
 /cmd/frontend/internal/pkg/usagestats @dadlerj
 /pkg/eventlogger @dadlerj
-/pkg/metrics @dadlerj
 
 # Auth
 /cmd/frontend/authz/ @beyang
@@ -144,8 +143,8 @@
 /schema @sourcegraph/core-services
 /cmd/frontend/internal/bg @sourcegraph/core-services @slimsag
 /cmd/github-proxy @sourcegraph/core-services
-/pkg/api/ @core-services
-/pkg/jsonc @tsenart
+/pkg/api/ @sourcegraph/core-services
+/pkg/jsonc @tsenart @slimsag
 
 # Code nav
 /cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-nav
@@ -181,6 +180,8 @@ Dockerfile @sourcegraph/distribution
 /cmd/frontend/envvar @sourcegraph/distribution
 /cmd/server @sourcegraph/distribution
 /pkg/conf @slimsag
+/pkg/db/confdb @slimsag
+/pkg/db/globalstatedb @slimsag
 
 # Licensing and billing
 /enterprise/cmd/frontend/internal/dotcom @sourcegraph/distribution
@@ -203,10 +204,11 @@ README.md @sqs
 /enterprise/cmd/frontend/internal/registry @felixfbecker
 
 # Backend shared packages
-/pkg/endpoint/ @keegancsmith
+/pkg/endpoint/ @keegancsmith @slimsag
 /pkg/rcache/ @keegancsmith
 /pkg/redispool/ @keegancsmith
 /pkg/store/ @keegancsmith
+/pkg/metrics @keegancsmith @slimsag
 
 # Management console
 /cmd/management-console @slimsag
