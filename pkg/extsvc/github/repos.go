@@ -479,6 +479,24 @@ func (c *Client) ListUserRepositories(ctx context.Context, page int) (repos []*R
 	return repos, len(repos) > 0, 1, nil
 }
 
+// ListOrgRepositories lists GitHub repositories from the specified organization.
+// org is the name of the organization. page is the page of results to return.
+// Pages are 1-indexed (so the first call should be for page 1).
+func (c *Client) ListOrgRepositories(ctx context.Context, org string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+	var restRepos []restRepository
+	path := fmt.Sprintf("orgs/%s/repos?sort=pushed&page=%d&per_page=100", org, page)
+	if err := c.requestGet(ctx, "", path, &restRepos); err != nil {
+		return nil, false, 1, err
+	}
+	repos = make([]*Repository, 0, len(restRepos))
+	for _, restRepo := range restRepos {
+		repos = append(repos, convertRestRepo(restRepo))
+	}
+	// 🚨 SECURITY: must forward token here to ensure caching by token
+	c.addRepositoriesToCache("", repos)
+	return repos, len(repos) > 0, 1, nil
+}
+
 type restSearchResponse struct {
 	TotalCount        int              `json:"total_count"`
 	IncompleteResults bool             `json:"incomplete_results"`
