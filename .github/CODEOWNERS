@@ -2,12 +2,115 @@
 # Each line is a file pattern followed by one or more owners.
 # https://help.github.com/articles/about-codeowners/
 
+# Top-level catch-alls (these are weaker confidence and might need to be reassigned at some point)
+/enterprise/cmd/frontend @beyang
+/enterprise/cmd/server @beyang
+/enterprise/dev @beyang
+/cmd/frontend/docsite @sqs
+/cmd/frontend/shared @beyang
+/cmd/frontend/backend @beyang
+/cmd/frontend/internal/app/assets @beyang
+/cmd/frontend/internal/app/templates @beyang
+/cmd/frontend/internal/app/canonicalurl @beyang
+/cmd/frontend/internal/app/*.go @beyang
+/cmd/frontend/internal/app/assetsutil @beyang
+/cmd/frontend/internal/app/ui @beyang
+/cmd/frontend/internal/app/returnto @beyang
+/cmd/frontend/internal/app/pkg @beyang
+/cmd/frontend/internal/app/router @beyang
+/cmd/frontend/internal/app/errorutil @beyang
+/cmd/frontend/internal/goroutine @keegancsmith
+/cmd/frontend/internal/inventory @beyang
+/cmd/frontend/internal/cli/middleware @beyang
+/cmd/frontend/internal/cli @beyang
+/cmd/frontend/internal/pkg/siteid @beyang
+/cmd/frontend/internal/pkg/suspiciousnames @beyang
+/cmd/frontend/internal/pkg/markdown @beyang
+/cmd/frontend/internal/pkg/handlerutil @beyang
+/cmd/frontend/internal/httpapi @beyang
+/cmd/frontend/types @beyang
+/cmd/frontend/hooks @beyang
+/cmd/frontend/internal/ @beyang
+/pkg/randstring/ @beyang
+/pkg/pubsub/ @beyang
+/pkg/repotrackutil/ @beyang
+/pkg/atomicvalue/ @beyang
+/pkg/testutil/ @beyang
+/pkg/debugserver/ @beyang
+/pkg/vfsutil/ @beyang
+/pkg/gituri/ @beyang
+/pkg/db/ @keegancsmith
+/pkg/processrestart @keegancsmith
+/pkg/honey @keegancsmith
+/pkg/ratelimit @beyang
+/pkg/registry @chrismwendt
+/pkg/slack @beyang
+/pkg/prefixsuffixsaver @beyang
+/pkg/gosrc @beyang
+/pkg/txemail @beyang
+/gulpfile.ts @beyang
+/client @felixfbecker
+/renovate.json @felixfbecker
+/.stylelintrc.json @felixfbecker
+/graphql-schema-linter.config.js @felixfbecker
+/.prettierignore @felixfbecker
+/.github @beyang
+/.gitmodules @beyang
+/.gitattributes @beyang
+/.yarnrc @felixfbecker
+/CHANGELOG.md @beyang
+/pkg/httputil @beyang
+/pkg/diskcache @beyang
+/pkg/sysreq @beyang
+/pkg/errcode @beyang
+/pkg/extsvc @beyang
+/pkg/routevar @beyang
+/pkg/env @beyang
+/pkg/pathmatch @beyang
+/pkg/version @beyang
+/pkg/httptestutil @beyang
+/pkg/mutablelimiter @beyang
+/pkg/buildkite @ggilmore
+/pkg/httpcli @beyang
+/packages @beyang
+/cmd/frontend @beyang
+/dev @beyang
+/.buildkite @beyang
+/.storybook @felixfbecker
+/CONTRIBUTING.md @beyang @nicksnyder
+/.dockerignore @beyang
+/.mailmap @beyang
+/tsconfig.json @felixfbecker
+/jest.config.base.js @felixfbecker
+/tslint.json @felixfbecker
+/enterprise/cmd @beyang
+/enterprise/pkg @beyang
+/enterprise @beyang
+/doc.go @beyang
+/.gitignore @beyang
+/prettier.config.js @felixfbecker
+/.editorconfig @felixfbecker
+/jest.config.js @felixfbecker
+/go.mod @beyang
+/cmd @beyang
+/pkg @beyang
+
 # Frontend
 /web/src/ @felixfbecker
+/shared @felixfbecker
+/web @felixfbecker @lguychard
+/ui @felixfbecker @lguychard
+/enterprise/ui @felixfbecker @lguychard
+/cmd/frontend/internal/app/jscontext @felixfbecker
+/packages/@sourcegraph @felixfbecker
 
 # Tracking
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
 /web/src/tracking/ @dadlerj
+**/tracking @dadlerj
+/cmd/frontend/internal/pkg/usagestats @dadlerj
+/pkg/eventlogger @dadlerj
+/pkg/metrics @dadlerj
 
 # Auth
 /cmd/frontend/authz/ @beyang
@@ -17,6 +120,11 @@
 /cmd/frontend/external/session/session.go @beyang
 /enterprise/cmd/frontend/internal/authz @beyang
 /enterprise/cmd/frontend/auth @beyang
+/enterprise/dev/auth-provider @beyang
+/cmd/frontend/graphqlbackend/*session* @beyang
+/cmd/frontend/graphqlbackend/*auth* @beyang
+/cmd/frontend/graphqlbackend/access_token.go @beyang
+/pkg/actor/ @beyang
 
 # Core Services
 *git*/* @sourcegraph/core-services
@@ -28,11 +136,33 @@
 /pkg/trace/ @sourcegraph/core-services
 /pkg/tracer/ @sourcegraph/core-services
 /pkg/vcs/ @sourcegraph/core-services
+/cmd/frontend/db @sourcegraph/core-services
+/cmd/frontend/graphqlbackend @sourcegraph/core-services
+/cmd/frontend/globals @sourcegraph/core-services
+/enterprise/cmd/frontend/internal/graphqlbackend @sourcegraph/core-services
+/enterprise/cmd/frontend/db @sourcegraph/core-services
+/schema @sourcegraph/core-services
+/cmd/frontend/internal/bg @sourcegraph/core-services
+/cmd/github-proxy @sourcegraph/core-services
+/pkg/api/ @core-services
+/pkg/jsonc @tsenart
 
-# Search
+# Code nav
+/cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-nav
+/enterprise/cmd/frontend/internal/symbols @sourcegraph/code-nav
+
+# Search and replace
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
 */search/**/* @sourcegraph/code-search
 /cmd/searcher/ @sourcegraph/code-search
+/cmd/frontend/db/*search* @sourcegraph/code-search
+/cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
+/cmd/frontend/internal/pkg/search @sourcegraph/code-search
+/cmd/symbols @sourcegraph/code-search
+/cmd/query-runner @sourcegraph/code-search
+/cmd/replacer @rvantonder
+/pkg/symbols/ @sourcegraph/code-search
+/pkg/search @sourcegraph/code-search
 
 # Saved searches
 /web/src/SavedQuery.tsx @attfarhan
@@ -41,9 +171,20 @@
 /web/src/SavedQueryUpdateForm.tsx @attfarhan
 /web/src/SavedQueryForm.tsx @attfarhan
 /web/src/SavedQueryRow.tsx @attfarhan
+/cmd/frontend/types/saved_searches.go @attfarhan
 
-# Deployment
+# Deployment and distribution
 Dockerfile @ggilmore
+/docker-images @sourcegraph/distribution
+/enterprise/docs/deployment.md @sourcegraph/distribution
+**/build.sh @sourcegraph/distribution
+/cmd/frontend/envvar @sourcegraph/distribution
+/cmd/server @sourcegraph/distribution
+/pkg/conf @slimsag
+
+# Licensing and billing
+/enterprise/cmd/frontend/internal/dotcom @sourcegraph/distribution
+/enterprise/cmd/frontend/internal/licensing @sourcegraph/distribution
 
 # Documentation and homepage
 README.md @sqs
@@ -55,8 +196,11 @@ README.md @sqs
 # Browser extensions
 /browser/ @felixfbecker @lguychard
 
-# Sourcegraph extension API
+# Extension API
 /packages/sourcegraph-extension-api/ @lguychard
+/packages/@sourcegraph/extension-api-types @lguychard
+/cmd/frontend/registry @felixfbecker
+/enterprise/cmd/frontend/internal/registry @felixfbecker
 
 # Backend shared packages
 /pkg/endpoint/ @keegancsmith
@@ -64,10 +208,31 @@ README.md @sqs
 /pkg/redispool/ @keegancsmith
 /pkg/store/ @keegancsmith
 
+# Management console
+/cmd/management-console @slimsag
+/enterprise/cmd/management-console @slimsag
+
 # Development
 /dev/fakehub @ijt
+/.vscode @felixfbecker
+
+# Misc and special overrides
+/LICENSE* @sqs @beyang
+/enterprise/pkg/license @sqs @beyang
+/cmd/frontend/db/*discussion* @slimsag
+/cmd/frontend/external/session @beyang
+/cmd/frontend/external @beyang
+/cmd/frontend/graphqlbackend/discussion_thread* @slimsag
+/babel.config.js @sqs
+/enterprise/docs @sqs
+/cmd/frontend/internal/pkg/discussions @slimsag
+/cmd/loadtest @beyang
+/pkg/legacyconf/ @slimsag
+/pkg/hubspot/ @dadlerj
+/pkg/highlight/ @slimsag
 
 # Don't set any reviewers for these,
 # configure by package through Renovate config (see renovate.json)
 **/package.json
 **/yarn.lock
+/go.sum
