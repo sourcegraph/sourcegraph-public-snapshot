@@ -416,6 +416,73 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	}
 }
 
+func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
+	type args struct {
+		ctx                             context.Context
+		queryPatternInfo                *search.PatternInfo
+		searcher                        zoekt.Searcher
+		repoSet                         zoektquery.RepoSet
+		repoHasFileFlagIsInQuery        bool
+		negatedRepoHasFileFlagIsInQuery bool
+	}
+
+	tests := []struct {
+		name        string
+		args        args
+		wantRepoSet *zoektquery.RepoSet
+	}{
+		{
+			name: "returns filtered repoSet when repoHasFileFlag is in query",
+			args: args{
+				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1"}, PathPatternsAreRegExps: true},
+				searcher: &fakeSearcher{result: &zoekt.SearchResult{
+					Files: []zoekt.FileMatch{{
+						FileName:   "test.md",
+						Repository: "github.com/test/1",
+						LineMatches: []zoekt.LineMatch{{
+							FileName: true,
+						}}},
+					},
+					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1"}}},
+				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
+				repoHasFileFlagIsInQuery:        true,
+				negatedRepoHasFileFlagIsInQuery: false,
+			},
+			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+		},
+		{
+			name: "returns filtered repoSet when negated repoHasFileFlag is in query",
+			args: args{
+				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustExclude: []string{"1"}, PathPatternsAreRegExps: true},
+				searcher: &fakeSearcher{result: &zoekt.SearchResult{
+					Files: []zoekt.FileMatch{{
+						FileName:   "test.md",
+						Repository: "github.com/test/1",
+						LineMatches: []zoekt.LineMatch{{
+							FileName: true,
+						}}},
+					},
+					RepoURLs: map[string]string{"github.com/test/2": "github.com/test/2"}}},
+				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
+				repoHasFileFlagIsInQuery:        true,
+				negatedRepoHasFileFlagIsInQuery: false,
+			},
+			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/2": true}},
+		}}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(tt.args.ctx, tt.args.queryPatternInfo, tt.args.searcher, tt.args.repoSet, tt.args.repoHasFileFlagIsInQuery, tt.args.negatedRepoHasFileFlagIsInQuery)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(gotRepoSet, tt.wantRepoSet) {
+				t.Errorf("createNewRepoSetWithRepoHasFileInputs() gotRepoSet = %v, want %v", gotRepoSet, tt.wantRepoSet)
+			}
+		})
+	}
+}
+
 func init() {
 	// Set both URLs to something that will fail in tests. We shouldn't be
 	// contacting them in tests.
