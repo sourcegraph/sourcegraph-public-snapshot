@@ -421,7 +421,7 @@ func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 	return searchOpts
 }
 
-func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, rawQuery *query.Query, repos []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, repos []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -472,9 +472,12 @@ func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, 
 		defer cancel()
 	}
 
-	// If the query has a `repohasfile` flag, we want to construct a new reposet based
+	repoHasFileFlagIsInQuery := len(queryPatternInfo.FilePatternsReposMustInclude) > 0
+	negatedRepoHasFileFlagIsInQuery := len(queryPatternInfo.FilePatternsReposMustExclude) > 0
+
+	// If the query has a `repohasfile` or `-repohasfile` flag, we want to construct a new reposet based
 	// on the values passed in to the flag.
-	if rawQuery.Fields[query.FieldRepoHasFile] != nil {
+	if repoHasFileFlagIsInQuery || negatedRepoHasFileFlagIsInQuery {
 		// Construct a query which just searches for repos that contain the file passed into `repohasfile`
 		filesToIncludeQuery, err := queryToZoektFileOnlyQuery(queryPatternInfo, queryPatternInfo.FilePatternsReposMustInclude)
 		if err != nil {
@@ -492,7 +495,7 @@ func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, 
 			MaxWallTime:            searchOpts.MaxWallTime,
 		}
 
-		if len(queryPatternInfo.FilePatternsReposMustInclude) > 0 {
+		if repoHasFileFlagIsInQuery {
 			includeResp, err := searcher.Search(ctx, filesToIncludeQuery, &newSearchOpts)
 			if err != nil {
 				return nil, false, nil, err
@@ -512,7 +515,7 @@ func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, 
 			return nil, false, nil, err
 		}
 
-		if len(queryPatternInfo.FilePatternsReposMustExclude) > 0 {
+		if negatedRepoHasFileFlagIsInQuery {
 			excludeResp, err := searcher.Search(ctx, filesToExcludeQuery, &newSearchOpts)
 			if err != nil {
 				return nil, false, nil, err
@@ -982,10 +985,9 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		// TODO limitHit, handleRepoSearchResult
 		defer wg.Done()
 		query := args.Pattern
-		rawQuery := args.Query
 		k := zoektResultCountFactor(len(zoektRepos), query)
 		opts := zoektSearchOpts(k, query)
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, rawQuery, zoektRepos, indexedRevisions, args.UseFullDeadline, Search().Index.Client, opts, time.Since)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, indexedRevisions, args.UseFullDeadline, Search().Index.Client, opts, time.Since)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
