@@ -481,12 +481,19 @@ func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, 
 			return nil, false, nil, err
 		}
 
-		newSearchOpts := searchOpts
-		newSearchOpts.ShardMaxMatchCount = 1
-		newSearchOpts.TotalMaxMatchCount = math.MaxInt32
-		newSearchOpts.MaxDocDisplayCount = 0
+		newSearchOpts := zoekt.SearchOptions{
+			ShardMaxMatchCount:     1,
+			TotalMaxMatchCount:     math.MaxInt32,
+			MaxDocDisplayCount:     0,
+			Whole:                  searchOpts.Whole,
+			EstimateDocCount:       searchOpts.EstimateDocCount,
+			ShardMaxImportantMatch: searchOpts.ShardMaxImportantMatch,
+			TotalMaxImportantMatch: searchOpts.TotalMaxImportantMatch,
+			MaxWallTime:            searchOpts.MaxWallTime,
+		}
+
 		if len(queryPatternInfo.FilePatternsReposMustInclude) > 0 {
-			includeResp, err := searcher.Search(ctx, filesToIncludeQuery, &searchOpts)
+			includeResp, err := searcher.Search(ctx, filesToIncludeQuery, &newSearchOpts)
 			if err != nil {
 				return nil, false, nil, err
 			}
@@ -506,7 +513,7 @@ func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, 
 		}
 
 		if len(queryPatternInfo.FilePatternsReposMustExclude) > 0 {
-			excludeResp, err := searcher.Search(ctx, filesToExcludeQuery, &searchOpts)
+			excludeResp, err := searcher.Search(ctx, filesToExcludeQuery, &newSearchOpts)
 			if err != nil {
 				return nil, false, nil, err
 			}
