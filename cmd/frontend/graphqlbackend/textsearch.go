@@ -476,7 +476,7 @@ func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, 
 	// on the values passed in to the flag.
 	if rawQuery.Fields[query.FieldRepoHasFile] != nil {
 		// Construct a query which just searches for repos that contain the file passed into `repohasfile`
-		filesToIncludeQuery, err := queryToZoektFileOnlyQuery(queryPatternInfo, queryPatternInfo.RepoIncludePatterns)
+		filesToIncludeQuery, err := queryToZoektFileOnlyQuery(queryPatternInfo, queryPatternInfo.FilePatternsReposMustInclude)
 		if err != nil {
 			return nil, false, nil, err
 		}
@@ -485,41 +485,45 @@ func zoektSearchHEAD(ctx context.Context, queryPatternInfo *search.PatternInfo, 
 		newSearchOpts.ShardMaxMatchCount = 1
 		newSearchOpts.TotalMaxMatchCount = math.MaxInt32
 		newSearchOpts.MaxDocDisplayCount = 0
+		if len(queryPatternInfo.FilePatternsReposMustInclude) > 0 {
+			includeResp, err := searcher.Search(ctx, filesToIncludeQuery, &searchOpts)
+			if err != nil {
+				return nil, false, nil, err
+			}
+			newRepoSet := make(map[string]bool, len(includeResp.RepoURLs))
+			// For each repo that had a result in the include set, add it to our new repoSet.
+			for repoURL := range includeResp.RepoURLs {
+				newRepoSet[repoURL] = true
+			}
+			repoSet.Set = newRepoSet
 
-		includeResp, err := searcher.Search(ctx, filesToIncludeQuery, &searchOpts)
-		if err != nil {
-			return nil, false, nil, err
 		}
 
 		// Construct a query which just searches for repos that contain the file passed into `-repohasfile`
-		filesToExcludeQuery, err := queryToZoektFileOnlyQuery(queryPatternInfo, queryPatternInfo.RepoExcludePatterns)
+		filesToExcludeQuery, err := queryToZoektFileOnlyQuery(queryPatternInfo, queryPatternInfo.FilePatternsReposMustExclude)
 		if err != nil {
 			return nil, false, nil, err
 		}
 
-		excludeResp, err := searcher.Search(ctx, filesToExcludeQuery, &searchOpts)
-		if err != nil {
-			return nil, false, nil, err
-		}
-
-		newRepoSet := make(map[string]bool, len(includeResp.RepoURLs))
-		// For each repo that had a result in the include set, add it to our new repoSet.
-		for repoURL := range includeResp.RepoURLs {
-			newRepoSet[repoURL] = true
-		}
-		// When there is no exclude flag, the value returned is a constant "TRUE", which
-		// tells the zoekt searcher to include all repos. If there is no exclude flag, we
-		// don't want to add all repos in the list of excluded repos, so check for this value.
-		trueConst := searchquery.Const{Value: true}
-		if filesToExcludeQuery.String() != trueConst.String() {
-			for repoURL := range excludeResp.RepoURLs {
-				// For each repo that had a result in the exclude set, if it exists in the repoSet, set the value to false so we don't search over it.
-				if newRepoSet[repoURL] {
-					newRepoSet[repoURL] = false
+		if len(queryPatternInfo.FilePatternsReposMustExclude) > 0 {
+			excludeResp, err := searcher.Search(ctx, filesToExcludeQuery, &searchOpts)
+			if err != nil {
+				return nil, false, nil, err
+			}
+			// When there is no exclude flag, the value returned is a constant TRUE, which
+			// tells the zoekt searcher to include all repos. If there is no exclude flag, we
+			// don't want to add all repos in the list of excluded repos, so check for this value.
+			if c, ok := filesToExcludeQuery.(*searchquery.Const); !ok || ok && !c.Value {
+				for repoURL := range excludeResp.RepoURLs {
+					// For each repo that had a result in the exclude set, if it exists in the repoSet, set the value to false so we don't search over it.
+					if repoSet.Set[repoURL] {
+						// repoSet.Set[repoURL] = false
+						delete(repoSet.Set, repoURL)
+					}
 				}
 			}
 		}
-		repoSet.Set = newRepoSet
+
 		finalQuery = zoektquery.NewAnd(repoSet, queryExceptRepos)
 	}
 	t0 := time.Now()
