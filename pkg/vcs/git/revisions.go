@@ -102,7 +102,7 @@ func ResolveRevision(ctx context.Context, repo gitserver.Repo, remoteURLFunc fun
 		retryer.remoteURLFunc = nil
 	}
 	err = retryer.run()
-	return commit, err
+	return commit, errors.Wrapf(err, "finding absolute commit for a commit-ish spec in repo %+v", repo)
 }
 
 // runRevParse sends the git rev-parse command to gitserver. It interprets
