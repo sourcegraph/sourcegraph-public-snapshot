@@ -640,39 +640,40 @@ func noOpAnyChar(re *syntax.Regexp) {
 	}
 }
 
-func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
-	var and []zoektquery.Q
-
-	parseRe := func(pattern string, filenameOnly bool) (zoektquery.Q, error) {
-		// these are the flags used by zoekt, which differ to searcher.
-		re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-		if err != nil {
-			return nil, err
-		}
-		noOpAnyChar(re)
-		// zoekt decides to use its literal optimization at the query parser
-		// level, so we check if our regex can just be a literal.
-		if re.Op == syntax.OpLiteral {
-			return &zoektquery.Substring{
-				Pattern:       string(re.Rune),
-				CaseSensitive: query.IsCaseSensitive,
-
-				FileName: filenameOnly,
-			}, nil
-		}
-		return &zoektquery.Regexp{
-			Regexp:        re,
-			CaseSensitive: query.IsCaseSensitive,
+func parseRe(pattern string, filenameOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
+	// these are the flags used by zoekt, which differ to searcher.
+	re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	if err != nil {
+		return nil, err
+	}
+	noOpAnyChar(re)
+	// zoekt decides to use its literal optimization at the query parser
+	// level, so we check if our regex can just be a literal.
+	if re.Op == syntax.OpLiteral {
+		return &zoektquery.Substring{
+			Pattern:       string(re.Rune),
+			CaseSensitive: queryIsCaseSensitive,
 
 			FileName: filenameOnly,
 		}, nil
 	}
-	fileRe := func(pattern string) (zoektquery.Q, error) {
-		return parseRe(pattern, true)
-	}
+	return &zoektquery.Regexp{
+		Regexp:        re,
+		CaseSensitive: queryIsCaseSensitive,
+
+		FileName: filenameOnly,
+	}, nil
+}
+
+func fileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
+	return parseRe(pattern, true, queryIsCaseSensitive)
+}
+
+func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
+	var and []zoektquery.Q
 
 	if query.IsRegExp {
-		q, err := parseRe(query.Pattern, false)
+		q, err := parseRe(query.Pattern, false, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
@@ -694,14 +695,14 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 		return nil, errors.New("zoekt only supports regex path patterns")
 	}
 	for _, p := range query.IncludePatterns {
-		q, err := fileRe(p)
+		q, err := fileRe(p, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
 		and = append(and, q)
 	}
 	if query.ExcludePattern != "" {
-		q, err := fileRe(query.ExcludePattern)
+		q, err := fileRe(query.ExcludePattern, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
@@ -716,39 +717,11 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 func queryToZoektFileOnlyQuery(query *search.PatternInfo, listOfFilePaths []string) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
-	parseRe := func(pattern string, filenameOnly bool) (zoektquery.Q, error) {
-		// these are the flags used by zoekt, which differ to searcher.
-		re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-		if err != nil {
-			return nil, err
-		}
-		noOpAnyChar(re)
-		// zoekt decides to use its literal optimization at the query parser
-		// level, so we check if our regex can just be a literal.
-		if re.Op == syntax.OpLiteral {
-			return &zoektquery.Substring{
-				Pattern:       string(re.Rune),
-				CaseSensitive: query.IsCaseSensitive,
-
-				FileName: filenameOnly,
-			}, nil
-		}
-		return &zoektquery.Regexp{
-			Regexp:        re,
-			CaseSensitive: query.IsCaseSensitive,
-
-			FileName: filenameOnly,
-		}, nil
-	}
-	fileRe := func(pattern string) (zoektquery.Q, error) {
-		return parseRe(pattern, true)
-	}
-
 	if !query.PathPatternsAreRegExps {
 		return nil, errors.New("zoekt only supports regex path patterns")
 	}
 	for _, p := range listOfFilePaths {
-		q, err := fileRe(p)
+		q, err := fileRe(p, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
