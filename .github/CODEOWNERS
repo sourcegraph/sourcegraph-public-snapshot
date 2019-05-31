@@ -63,7 +63,6 @@
 /pkg/diskcache @beyang
 /pkg/sysreq @beyang
 /pkg/errcode @beyang
-/pkg/extsvc @beyang
 /pkg/routevar @beyang
 /pkg/env @beyang
 /pkg/pathmatch @beyang
@@ -147,7 +146,7 @@
 /cmd/github-proxy @sourcegraph/core-services
 /pkg/api/ @sourcegraph/core-services
 /pkg/jsonc @tsenart @slimsag
-/pkg/extsvc @sourcegraph/core-services 
+/pkg/extsvc @sourcegraph/core-services
 
 # Code nav
 /cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-nav
