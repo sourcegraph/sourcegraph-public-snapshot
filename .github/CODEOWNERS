@@ -71,7 +71,7 @@
 /pkg/httptestutil @beyang
 /pkg/mutablelimiter @beyang
 /pkg/buildkite @ggilmore
-/pkg/httpcli @beyang
+/pkg/httpcli @sourcegraph/core-services
 /packages @beyang
 /cmd/frontend @beyang
 /dev @beyang
