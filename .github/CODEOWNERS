@@ -97,9 +97,8 @@
 /enterprise/cmd/frontend/internal/registry @sqs @beyang
 
 # Frontend
-/shared @felixfbecker
+/shared @sourcegraph/code-nav
 /web @felixfbecker @lguychard
-/web/src/ @felixfbecker
 /ui @felixfbecker @lguychard
 /enterprise/ui @felixfbecker @lguychard
 /cmd/frontend/internal/app/jscontext @slimsag
