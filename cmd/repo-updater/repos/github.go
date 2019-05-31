@@ -174,10 +174,11 @@ func (s *GithubSource) excludes(r *github.Repository) bool {
 	return s.exclude[strings.ToLower(r.NameWithOwner)] || s.exclude[r.ID]
 }
 
-type RepositoryPager func(int) ([]*github.Repository, bool, int, error)
+// RepositoryPager is a function that takes in a page number and returns
+type RepositoryPager func(page int) (repos []*github.Repository, hasNextPage bool, wait int, err error)
 
-// exhaustRepositoryPager takes in a RepositoryPager and accumulates the repositories from every page.
-func (s *GithubSource) exhaustRepositoryPager(pager RepositoryPager, ctx context.Context) (set map[int64]*github.Repository, err error) {
+// exhaustRepositoryPager takes in a RepositoryPager and accumulates all the repositories from every page.
+func (s *GithubSource) exhaustRepositoryPager(ctx context.Context, pager RepositoryPager) (set map[int64]*github.Repository, err error) {
 	set = make(map[int64]*github.Repository)
 
 	hasNextPage := true
@@ -206,8 +207,9 @@ func (s *GithubSource) exhaustRepositoryPager(pager RepositoryPager, ctx context
 }
 
 // listOrgRepositories handles the `orgs` option.
-func (s *GithubSource) listOrgRepositories(org string, ctx context.Context) (map[int64]*github.Repository, error) {
+func (s *GithubSource) listOrgRepositories(ctx context.Context, org string) (map[int64]*github.Repository, error) {
 	return s.exhaustRepositoryPager(
+		ctx,
 		func(page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 			repos, hasNextPage, rateLimitCost, err = s.client.ListOrgRepositories(ctx, org, page)
 			rateLimitRemaining, rateLimitReset, rateLimitRetry, _ := s.client.RateLimit.Get()
@@ -220,12 +222,12 @@ func (s *GithubSource) listOrgRepositories(org string, ctx context.Context) (map
 				"retryAfter", rateLimitRetry,
 			)
 			return
-		}, ctx,
+		},
 	)
 }
 
 // listSelectedRepositories handles the `repos` option.
-func (s *GithubSource) listSelectedRepositories(names []string, ctx context.Context) (set map[int64]*github.Repository, err error) {
+func (s *GithubSource) listSelectedRepositories(ctx context.Context, names []string) (set map[int64]*github.Repository, err error) {
 	set = make(map[int64]*github.Repository)
 	for _, nameWithOwner := range s.config.Repos {
 		if err = ctx.Err(); err != nil {
@@ -259,7 +261,7 @@ func (s *GithubSource) listSelectedRepositories(names []string, ctx context.Cont
 }
 
 // listQueryRepositories handles the `repositoryQuery` option.
-func (s *GithubSource) listQueryRepositories(query string, ctx context.Context) (set map[int64]*github.Repository, err error) {
+func (s *GithubSource) listQueryRepositories(ctx context.Context, query string) (set map[int64]*github.Repository, err error) {
 	switch query {
 	case "public":
 		set = make(map[int64]*github.Repository)
@@ -293,6 +295,7 @@ func (s *GithubSource) listQueryRepositories(query string, ctx context.Context) 
 		}
 	case "affiliated":
 		set, err = s.exhaustRepositoryPager(
+			ctx,
 			func(page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 				repos, hasNextPage, rateLimitCost, err = s.client.ListUserRepositories(ctx, page)
 				rateLimitRemaining, rateLimitReset, rateLimitRetry, _ := s.client.RateLimit.Get()
@@ -305,7 +308,7 @@ func (s *GithubSource) listQueryRepositories(query string, ctx context.Context) 
 					"retryAfter", rateLimitRetry,
 				)
 				return
-			}, ctx,
+			},
 		)
 	case "none":
 		// nothing
@@ -313,6 +316,7 @@ func (s *GithubSource) listQueryRepositories(query string, ctx context.Context) 
 		// Run the query as a GitHub advanced repository search
 		// (https://github.com/search/advanced).
 		set, err = s.exhaustRepositoryPager(
+			ctx,
 			func(page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 				var reposPage github.RepositoryListPage
 				reposPage, err = s.searchClient.ListRepositoriesForSearch(ctx, query, page)
@@ -356,7 +360,7 @@ func (s *GithubSource) listQueryRepositories(query string, ctx context.Context) 
 				}
 
 				return
-			}, ctx,
+			},
 		)
 	}
 	return
@@ -368,8 +372,9 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 
 	// repositoryQuery
 	for _, repositoryQuery := range s.config.RepositoryQuery {
-		repos, err := s.listQueryRepositories(repositoryQuery, ctx)
+		repos, err := s.listQueryRepositories(ctx, repositoryQuery)
 		if err != nil {
+			errs = multierror.Append(errs, err)
 			continue
 		}
 		for id, r := range repos {
@@ -390,7 +395,6 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 
 		repos, err := s.listSelectedRepositories(s.config.Repos, ctx)
 		if err != nil {
-			fmt.Printf("%v", err)
 			errs = multierror.Append(errs, err)
 		}
 
@@ -401,7 +405,7 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 
 	// orgs
 	for _, org := range s.config.Orgs {
-		repos, err := s.listOrgRepositories(org, ctx)
+		repos, err := s.listOrgRepositories(ctx, org)
 		if err != nil {
 			errs = multierror.Append(errs, errors.Wrapf(err, "failed to list organization %s repos", org))
 			continue
