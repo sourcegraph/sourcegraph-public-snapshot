@@ -153,7 +153,7 @@
 /cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-nav
 /enterprise/cmd/frontend/internal/symbols @sourcegraph/code-nav
 
-# Search and replace
+# Search and code mod
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
 */search/**/* @sourcegraph/code-search
 /cmd/searcher/ @sourcegraph/code-search
