@@ -393,7 +393,7 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 		// run into an GraphQL API error
 		log15.Warn("github sync: fetching in batches failed. falling back to sequential fetch", "error", err)
 
-		repos, err := s.listSelectedRepositories(s.config.Repos, ctx)
+		repos, err := s.listSelectedRepositories(ctx, s.config.Repos)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 		}
