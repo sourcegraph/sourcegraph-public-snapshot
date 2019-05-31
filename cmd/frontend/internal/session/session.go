@@ -63,16 +63,48 @@ func SetSessionStore(s sessions.Store) {
 	sessionStore = s
 }
 
+// sessionsStore wraps another sessions.Store to dynamically set the value
+// of a session.Options.Secure field to what is returned by the secure
+// closure at invocation time.
+type sessionsStore struct {
+	sessions.Store
+	secure func() bool
+}
+
+// Get returns a cached session, setting the secure cookie option dynamically.
+func (st *sessionsStore) Get(r *http.Request, name string) (s *sessions.Session, err error) {
+	defer st.setSecureOption(s)
+	return st.Store.Get(r, name)
+}
+
+// New creates and returns a new session with the secure cookie setting option set
+// dynamically.
+func (st *sessionsStore) New(r *http.Request, name string) (s *sessions.Session, err error) {
+	defer st.setSecureOption(s)
+	return st.Store.New(r, name)
+}
+
+func (st *sessionsStore) setSecureOption(s *sessions.Session) {
+	if s != nil {
+		s.Options.Secure = st.secure()
+	}
+}
+
 // NewRedisStore creates a new session store backed by Redis.
-func NewRedisStore(secureCookie bool) sessions.Store {
+func NewRedisStore(secureCookie func() bool) sessions.Store {
 	rstore, err := redistore.NewRediStoreWithPool(redispool.Store, []byte(sessionCookieKey))
 	if err != nil {
 		waitForRedis(rstore)
 	}
+
 	rstore.Options.Path = "/"
+	rstore.Options.Secure = secureCookie()
 	rstore.Options.HttpOnly = true
-	rstore.Options.Secure = secureCookie
-	return rstore
+
+	return &sessionsStore{
+		Store:  rstore,
+		secure: secureCookie,
+	}
 }
 
 // Ping attempts to contact Redis and returns a non-nil error upon failure. It is intended to be
