@@ -2,7 +2,7 @@ package git
 
 import (
 	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -20,8 +20,13 @@ func (e *RevisionNotFoundError) HTTPStatusCode() int {
 	return 404
 }
 
-// IsRevisionNotFound reports if err is a RevisionNotFoundError.
+// IsRevisionNotFound reports if err or its cause is a RevisionNotFoundError.
 func IsRevisionNotFound(err error) bool {
 	_, ok := err.(*RevisionNotFoundError)
+	if !ok {
+		err = errors.Cause(err)
+		_, ok := err.(*RevisionNotFoundError)
+		return ok
+	}
 	return ok
 }
