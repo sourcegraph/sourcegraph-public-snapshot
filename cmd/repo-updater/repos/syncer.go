@@ -229,7 +229,15 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 
 	byName := make(map[string]*Repo, len(byID))
 	for _, r := range byID {
-		byName[r.Name] = r
+		k := strings.ToLower(r.Name)
+		if old := byName[k]; old == nil {
+			byName[k] = r
+		} else if r.Less(old) {
+			delete(byID, old.ExternalRepo)
+			byName[k] = r
+		} else {
+			delete(byID, r.ExternalRepo)
+		}
 	}
 
 	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))

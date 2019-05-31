@@ -749,16 +749,16 @@ func TestDiff(t *testing.T) {
 		{
 			name: "modified",
 			store: repos.Repos{
-				{ExternalRepo: eid("1"), Description: "foo"},
-				{ExternalRepo: eid("2")},
+				{ExternalRepo: eid("1"), Name: "foo", Description: "foo"},
+				{ExternalRepo: eid("2"), Name: "bar"},
 			},
 			source: repos.Repos{
-				{ExternalRepo: eid("1"), Description: "bar"},
-				{ExternalRepo: eid("2"), URI: "2"},
+				{ExternalRepo: eid("1"), Name: "foo", Description: "bar"},
+				{ExternalRepo: eid("2"), Name: "bar", URI: "2"},
 			},
 			diff: repos.Diff{Modified: repos.Repos{
-				{ExternalRepo: eid("1"), Description: "bar"},
-				{ExternalRepo: eid("2"), URI: "2"},
+				{ExternalRepo: eid("1"), Name: "foo", Description: "bar"},
+				{ExternalRepo: eid("2"), Name: "bar", URI: "2"},
 			}},
 		},
 		{
@@ -913,6 +913,51 @@ func TestDiff(t *testing.T) {
 			diff: repos.Diff{
 				Added: repos.Repos{
 					{Name: "foo", ExternalRepo: eid("1"), Description: "desc2", Sources: map[string]*repos.SourceInfo{"a": nil, "b": nil}},
+				},
+			},
+		},
+		{
+			name: "conflict on case insensitive name",
+			source: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1")},
+				{Name: "Foo", ExternalRepo: eid("2")},
+			},
+			diff: repos.Diff{
+				Added: repos.Repos{
+					{Name: "Foo", ExternalRepo: eid("2")},
+				},
+			},
+		},
+		{
+			name: "conflict on case insensitive name exists 1",
+			store: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1")},
+			},
+			source: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1")},
+				{Name: "Foo", ExternalRepo: eid("2")},
+			},
+			diff: repos.Diff{
+				Added: repos.Repos{
+					{Name: "Foo", ExternalRepo: eid("2")},
+				},
+				Deleted: repos.Repos{
+					{Name: "foo", ExternalRepo: eid("1")},
+				},
+			},
+		},
+		{
+			name: "conflict on case insensitive name exists 2",
+			store: repos.Repos{
+				{Name: "Foo", ExternalRepo: eid("2")},
+			},
+			source: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1")},
+				{Name: "Foo", ExternalRepo: eid("2")},
+			},
+			diff: repos.Diff{
+				Unmodified: repos.Repos{
+					{Name: "Foo", ExternalRepo: eid("2")},
 				},
 			},
 		},
