@@ -46,9 +46,13 @@ RUN apk update && apk add --no-cache \
     'redis=3.2.12-r0' bind-tools ca-certificates git@edge \
     mailcap nginx openssh-client su-exec tini
 
+# IMPORTANT: If you update the syntect_server version below, you MUST confirm
+# the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
+# have been appropriately set in cmd/server/shared/shared.go.
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:5e1efbb@sha256:6ec136246b302a6c8fc113f087a66d5f9a89a9f5b851e9abb917c8b5e1d8c4b1 /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
+
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
 ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
