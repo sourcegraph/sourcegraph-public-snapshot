@@ -147,6 +147,7 @@
 /cmd/github-proxy @sourcegraph/core-services
 /pkg/api/ @sourcegraph/core-services
 /pkg/jsonc @tsenart @slimsag
+/pkg/extsvc @sourcegraph/core-services 
 
 # Code nav
 /cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-nav
