@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"regexp"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -142,20 +141,20 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if !r.cloned || !r.cloneInProgress || !r.notCloned {
 				// Query gitserver to filter by repository clone status.
 				repoNames := make([]api.RepoName, len(repos))
-				lookup := make(map[api.RepoName]*types.Repo)
 				for i, repo := range repos {
 					repoNames[i] = repo.Name
-					lookup[repo.Name] = repo
 				}
-				keepRepos := repos[:0]
-				info, err := gitserver.DefaultClient.RepoInfo(ctx, repoNames...)
+				response, err := gitserver.DefaultClient.RepoInfo(ctx, repoNames...)
 				if err != nil {
 					r.err = err
 					return
 				}
-				for repoName, info := range info.Results {
-					if (r.cloned && info.Cloned && !info.CloneInProgress) || (r.cloneInProgress && info.CloneInProgress) || (r.notCloned && !info.Cloned && !info.CloneInProgress) {
-						keepRepos = append(keepRepos, lookup[repoName])
+				keepRepos := repos[:0]
+				for _, repo := range repos {
+					if info := response.Results[repo.Name]; info == nil {
+						continue
+					} else if (r.cloned && info.Cloned && !info.CloneInProgress) || (r.cloneInProgress && info.CloneInProgress) || (r.notCloned && !info.Cloned && !info.CloneInProgress) {
+						keepRepos = append(keepRepos, repo)
 					}
 				}
 				repos = keepRepos
@@ -173,8 +172,6 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 
 			r.repos = append(r.repos, repos...)
-			// TODO(@mrnugget): This needs to take the sort-column into account
-			sort.Slice(r.repos, func(i, j int) bool { return r.repos[i].Name < r.repos[j].Name })
 
 			if opt2.LimitOffset == nil {
 				break

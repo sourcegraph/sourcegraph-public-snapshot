@@ -10,7 +10,7 @@ import (
 
 func TestRepositories(t *testing.T) {
 	resetMocks()
-	db.Mocks.Repos.MockList(t, "repo3", "repo1", "repo2")
+	db.Mocks.Repos.MockList(t, "repo1", "repo2", "repo3")
 	db.Mocks.Repos.Count = func(context.Context, db.ReposListOptions) (int, error) { return 3, nil }
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
