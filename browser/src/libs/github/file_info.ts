@@ -4,7 +4,7 @@ import { PlatformContext } from '../../../../shared/src/platform/context'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
 import { getCommitIDFromPermalink } from './scrape'
-import { getBranchName, getDeltaFileName, getDiffResolvedRev, parseURL } from './util'
+import { getDeltaFileName, getDiffResolvedRev, getFilePath, parseURL } from './util'
 
 export const resolveDiffFileInfo = (
     codeView: HTMLElement,
@@ -79,23 +79,20 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> => 
         }
         const { revAndFilePath, repoName } = parsedURL
 
-        // We must scrape for the branch name in order to determine
-        // the precise file path: otherwise we'll get tripped up parsing the
-        // pathname when the branch name contains forward slashes.
-        // TODO ideally, this should only scrape the code view itself.
-        const branchName = getBranchName()
-        if (!revAndFilePath.startsWith(branchName)) {
+        const filePath = getFilePath()
+        if (filePath === undefined) {
+            throw new Error(`Failed to find the file path.`)
+        }
+        if (!revAndFilePath.endsWith(filePath)) {
             throw new Error(
-                `Could not parse filePath: revAndFilePath ${revAndFilePath} does not start with branchName ${branchName}`
+                `The file path ${filePath} should always be a suffix of revAndFilePath ${revAndFilePath}, but isn't in this case.`
             )
         }
-        const filePath = revAndFilePath.slice(branchName.length + 1)
-        const commitID = getCommitIDFromPermalink()
         return of({
             repoName,
             filePath,
-            commitID,
-            rev: branchName,
+            commitID: getCommitIDFromPermalink(),
+            rev: revAndFilePath.slice(0, revAndFilePath.length - filePath.length),
         })
     } catch (error) {
         return throwError(error)

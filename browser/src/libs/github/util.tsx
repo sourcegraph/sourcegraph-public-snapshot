@@ -182,29 +182,30 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
 }
 
 /**
- * Scrapes the branch name from the branch select menu element
- * present on GitHub blob pages.
+ * Returns the file path for the current page. Must be on a blob page.
+ *
+ * Implementation details:
+ *
+ * - This scrapes the file path from the "Copy path" button on GitHub blob
+ *   pages:
+ *
+ *     <clipboard-copy value="foo/bar.go"> Copy path </clipboard-copy>
+ *
+ * - We can't get the file path from the URL because the branch name can contain
+ *   slashes which make the boundary between the branch name and file path
+ *   ambiguous. For example:
+ *
+ *     https://github.com/sourcegraph/sourcegraph/blob/bext/release/cmd/frontend/internal/session/session.go
+ *
+ * TODO ideally, this should only scrape the code view itself.
  */
-export function getBranchName(): string {
-    const branchSelectMenu = document.querySelector('.branch-select-menu') as HTMLElement
-    if (!branchSelectMenu) {
-        throw new Error('Could not find .branch-select-menu')
-    }
-    const cssTruncateTarget = branchSelectMenu.querySelector('span.css-truncate-target') as HTMLElement
-    if (!cssTruncateTarget) {
-        throw new Error('Could not find span.css-truncate-target')
-    }
-    if (!cssTruncateTarget.innerText.endsWith('…')) {
-        // The branch name is not truncated
-        return cssTruncateTarget.innerText
-    }
-    // When the branch name is truncated, it is stored in full
-    // in the select menu button's title attribute.
-    const selectButton = cssTruncateTarget.closest('.select-menu-button') as HTMLElement
-    if (!selectButton) {
-        throw new Error('Could not find .select-menu-button')
-    }
-    return selectButton.title
+export function getFilePath(): string | undefined {
+    return document.evaluate(
+        "//clipboard-copy[contains(text(), 'Copy path')]/@value",
+        document,
+        null,
+        XPathResult.STRING_TYPE
+    ).stringValue
 }
 
 type GitHubURL =
