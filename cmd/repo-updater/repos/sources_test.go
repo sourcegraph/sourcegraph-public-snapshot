@@ -22,11 +22,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -781,102 +779,6 @@ func TestSources_ListRepos(t *testing.T) {
 				}
 			})
 		}
-	}
-}
-
-func TestGithubSource_GetRepo(t *testing.T) {
-	testCases := []struct {
-		name          string
-		nameWithOwner string
-		assert        func(*testing.T, *Repo)
-		err           string
-	}{
-		{
-			name:          "invalid name",
-			nameWithOwner: "thisIsNotANameWithOwner",
-			err:           `Invalid GitHub repository: nameWithOwner=thisIsNotANameWithOwner: invalid GitHub repository "owner/name" string: "thisIsNotANameWithOwner"`,
-		},
-		{
-			name:          "not found",
-			nameWithOwner: "foobarfoobarfoobar/please-let-this-not-exist",
-			err:           `GitHub repository not found`,
-		},
-		{
-			name:          "found",
-			nameWithOwner: "sourcegraph/sourcegraph",
-			assert: func(t *testing.T, have *Repo) {
-				t.Helper()
-
-				want := &Repo{
-					Name:        "github.com/sourcegraph/sourcegraph",
-					Description: "Code search and navigation tool (self-hosted)",
-					Enabled:     true,
-					URI:         "github.com/sourcegraph/sourcegraph",
-					ExternalRepo: api.ExternalRepoSpec{
-						ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
-						ServiceType: "github",
-						ServiceID:   "https://github.com/",
-					},
-					Sources: map[string]*SourceInfo{
-						"extsvc:github:0": {
-							ID:       "extsvc:github:0",
-							CloneURL: "https://github.com/sourcegraph/sourcegraph",
-						},
-					},
-					Metadata: &github.Repository{
-						ID:            "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
-						DatabaseID:    41288708,
-						NameWithOwner: "sourcegraph/sourcegraph",
-						Description:   "Code search and navigation tool (self-hosted)",
-						URL:           "https://github.com/sourcegraph/sourcegraph",
-					},
-				}
-
-				if !reflect.DeepEqual(have, want) {
-					t.Errorf("response: %s", cmp.Diff(have, want))
-				}
-			},
-			err: "<nil>",
-		},
-	}
-
-	for _, tc := range testCases {
-		tc := tc
-		tc.name = "GITHUB-DOT-COM/" + tc.name
-
-		t.Run(tc.name, func(t *testing.T) {
-			// The GithubSource uses the github.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
-
-			cf, save := newClientFactory(t, tc.name)
-			defer save(t)
-
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			svc := &ExternalService{
-				Kind: "GITHUB",
-				Config: marshalJSON(t, &schema.GitHubConnection{
-					Url: "https://github.com",
-				}),
-			}
-
-			githubSrc, err := NewGithubSource(svc, cf)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			repo, err := githubSrc.GetRepo(context.Background(), tc.nameWithOwner)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
-			}
-
-			if tc.assert != nil {
-				tc.assert(t, repo)
-			}
-		})
 	}
 }
 
