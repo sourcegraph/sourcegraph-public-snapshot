@@ -364,6 +364,56 @@ func TestClient_GetRepositoryByNodeID_nonexistent(t *testing.T) {
 	}
 }
 
+func TestClient_ListOrgRepositories(t *testing.T) {
+	mock := mockHTTPResponseBody{
+		responseBody: `[
+  {
+    "node_id": "i",
+    "full_name": "o/r",
+    "description": "d",
+    "html_url": "https://github.example.com/o/r",
+    "fork": true
+  },
+  {
+    "node_id": "j",
+    "full_name": "a/b",
+    "description": "c",
+    "html_url": "https://github.example.com/a/b",
+    "fork": false
+  }
+]
+`}
+
+	c := newTestClient(t, &mock)
+	wantRepos := []*Repository{
+		{
+			ID:            "i",
+			NameWithOwner: "o/r",
+			Description:   "d",
+			URL:           "https://github.example.com/o/r",
+			IsFork:        true,
+		},
+		{
+			ID:            "j",
+			NameWithOwner: "a/b",
+			Description:   "c",
+			URL:           "https://github.example.com/a/b",
+			IsFork:        false,
+		},
+	}
+
+	repos, hasNextPage, _, err := c.ListOrgRepositories(context.Background(), "sourcegraph", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !repoListsAreEqual(repos, wantRepos) {
+		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(wantRepos))
+	}
+	if !hasNextPage {
+		t.Errorf("got hasNextPage: false want: true")
+	}
+}
+
 func stringForRepoList(repos []*Repository) string {
 	repoStrings := []string{}
 	for _, repo := range repos {

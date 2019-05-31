@@ -54,7 +54,7 @@ const GitHubSchemaJSON = `{
       "examples": [["name"], ["kubernetes", "golang", "facebook"]]
     },
     "exclude": {
-      "description": "A list of repositories to never mirror from this GitHub instance. Takes precedence over \"repos\" and \"repositoryQuery\" configuration.\n\nSupports excluding by name ({\"name\": \"owner/name\"}) or by ID ({\"id\": \"MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==\"}).\n\nNote: ID is the GitHub GraphQL ID, not the GitHub database ID. eg: \"curl https://api.github.com/repos/vuejs/vue | jq .node_id\"",
+      "description": "A list of repositories to never mirror from this GitHub instance. Takes precedence over \"orgs\", \"repos\", and \"repositoryQuery\" configuration.\n\nSupports excluding by name ({\"name\": \"owner/name\"}) or by ID ({\"id\": \"MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==\"}).\n\nNote: ID is the GitHub GraphQL ID, not the GitHub database ID. eg: \"curl https://api.github.com/repos/vuejs/vue | jq .node_id\"",
       "type": "array",
       "minItems": 1,
       "items": {

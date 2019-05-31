@@ -194,8 +194,8 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
   //
   // There are 4 fields used to select repositories for searching and code intel:
   //  - repositoryQuery (required)
-  //  - repos
   //  - orgs
+  //  - repos
   //  - exclude
 
   // repositoryQuery: List of strings, either a special keyword ("none" or "affiliated"), or
@@ -215,17 +215,17 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
   // "org:<name>" // set this to "none" to disable querying
   ],
 
+  // orgs: List of organizations whose repositories should be selected
+  // "orgs": [
+  //   "<org name>"
+  // ],
+
   // repos: Explicit list of repositories to select
   // "repos": [
   //   "<owner>/<repository>"
   // ],
 
-  // orgs: Explicit list of organizations to select all repositories from
-  // "orgs": [
-  //   "<org name>"
-  // ],
-
-  // exclude: Repositories to exclude (overrides repositories from repositoryQuery and repos)
+  // exclude: Repositories to exclude (overrides repositories from repositoryQuery, orgs, and repos)
   // "exclude": [
   //   {
   //     "name": "<owner>/<repository>"
