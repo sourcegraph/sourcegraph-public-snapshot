@@ -49,7 +49,7 @@
 /pkg/gosrc @beyang
 /pkg/txemail @slimsag
 /gulpfile.ts @beyang
-/client @felixfbecker
+/client @sqs
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
 /graphql-schema-linter.config.js @felixfbecker
@@ -94,15 +94,18 @@
 /go.mod @beyang
 /cmd @beyang @slimsag
 /pkg @beyang @slimsag
+/enterprise/cmd/frontend/internal/registry @sqs @beyang
 
 # Frontend
-/web/src/ @felixfbecker
 /shared @felixfbecker
 /web @felixfbecker @lguychard
+/web/src/ @felixfbecker
 /ui @felixfbecker @lguychard
 /enterprise/ui @felixfbecker @lguychard
 /cmd/frontend/internal/app/jscontext @slimsag
-/packages/@sourcegraph @felixfbecker
+/packages/@sourcegraph @sourcegraph/code-nav
+/web/src/site-admin/externalServices.tsx @beyang
+/shared/src/components/activation/ @beyang
 
 # Tracking
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
@@ -198,10 +201,9 @@ README.md @sqs
 /browser/ @felixfbecker @lguychard
 
 # Extension API
-/packages/sourcegraph-extension-api/ @lguychard
-/packages/@sourcegraph/extension-api-types @lguychard
+/packages/sourcegraph-extension-api/ @sourcegraph/code-nav
+/packages/@sourcegraph/extension-api-types @sourcegraph/code-nav
 /cmd/frontend/registry @felixfbecker
-/enterprise/cmd/frontend/internal/registry @felixfbecker
 
 # Backend shared packages
 /pkg/endpoint/ @keegancsmith @slimsag
@@ -233,7 +235,7 @@ README.md @sqs
 /enterprise/pkg/license @sqs @beyang
 /cmd/frontend/external/session @beyang
 /cmd/frontend/external @beyang
-/babel.config.js @sqs
+/babel.config.js @sqs @felixfbecker
 /enterprise/docs @sqs
 /cmd/loadtest @beyang
 /pkg/legacyconf/ @slimsag
