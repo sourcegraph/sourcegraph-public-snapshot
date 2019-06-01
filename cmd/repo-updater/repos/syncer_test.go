@@ -472,6 +472,18 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				},
 				err: "<nil>",
 			},
+			testCase{
+				name: "case insensitive name",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
+					tc.repo.Clone(),
+					tc.repo.With(repos.Opt.RepoName(strings.ToUpper(tc.repo.Name))),
+				)),
+				store:  s,
+				stored: repos.Repos{tc.repo.With(repos.Opt.RepoName(strings.ToUpper(tc.repo.Name)))},
+				now:    clock.Now,
+				diff:   repos.Diff{Modified: repos.Repos{tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(0)))}},
+				err:    "<nil>",
+			},
 			func() testCase {
 				var update interface{}
 				switch strings.ToLower(tc.repo.ExternalRepo.ServiceType) {
