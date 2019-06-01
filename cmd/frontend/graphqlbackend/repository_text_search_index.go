@@ -11,12 +11,12 @@ import (
 )
 
 func (r *repositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if !Search().Index.Enabled() {
+	if !IndexedSearch().Enabled() {
 		return nil
 	}
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
-		client: Search().Index.Client,
+		client: IndexedSearch().Client,
 	}
 }
 

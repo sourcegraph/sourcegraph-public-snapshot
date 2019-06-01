@@ -102,7 +102,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		}
 
 		var indexed map[api.RepoName]bool
-		searchIndexEnabled := Search().Index.Enabled()
+		searchIndexEnabled := IndexedSearch().Enabled()
 		isIndexed := func(repo api.RepoName) bool {
 			if !searchIndexEnabled {
 				return true // do not need index
@@ -112,7 +112,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		if searchIndexEnabled && (!r.indexed || !r.notIndexed) {
 			listCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 			defer cancel()
-			indexedRepos, err := Search().Index.ListAll(listCtx)
+			indexedRepos, err := IndexedSearch().ListAll(listCtx)
 			if err != nil {
 				r.err = err
 				return

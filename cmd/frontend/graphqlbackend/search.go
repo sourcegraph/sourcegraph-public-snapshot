@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/search/backend"
 
 	zoektrpc "github.com/google/zoekt/rpc"
@@ -737,71 +736,40 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev search.Reposito
 
 var errMultipleRevsNotSupported = errors.New("not yet supported: searching multiple revs in the same repo")
 
-// SearchProviders contains instances of our search providers.
-type SearchProviders struct {
-	// Text is our root text searcher.
-	Text *backend.Text
-
-	// SearcherURLs is an endpoint map to our searcher service replicas.
-	//
-	// Note: This field will be removed once we have removed our old search
-	// code paths.
-	SearcherURLs *endpoint.Map
-
-	// Index is a search.Searcher for Zoekt.
-	Index *backend.Zoekt
-}
-
 var (
 	zoektAddr   = env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")
 	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
 
-	searchOnce sync.Once
-	searchP    *SearchProviders
+	searcherURLsOnce sync.Once
+	searcherURLs *endpoint.Map
+
+	indexedSearchOnce sync.Once
+	indexedSearch *backend.Zoekt
 )
 
-// Search returns instances of our search providers.
-func Search() *SearchProviders {
-	searchOnce.Do(func() {
-		// Zoekt
-		index := &backend.Zoekt{}
-		if zoektAddr != "" {
-			index.Client = zoektrpc.Client(zoektAddr)
-		}
-		go func() {
-			conf.Watch(func() {
-				index.SetEnabled(conf.SearchIndexEnabled())
-			})
-		}()
-
-		// Searcher
-		var searcherURLs *endpoint.Map
+func SearcherURLs() *endpoint.Map {
+	searcherURLsOnce.Do(func() {
 		if len(strings.Fields(searcherURL)) == 0 {
 			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
 		} else {
 			searcherURLs = endpoint.New(searcherURL)
 		}
-
-		text := &backend.Text{
-			Index: index,
-			Fallback: &backend.TextJIT{
-				Endpoints: searcherURLs,
-				Resolve: func(ctx context.Context, name api.RepoName, spec string) (api.CommitID, error) {
-					// Do not trigger a repo-updater lookup (e.g.,
-					// backend.{GitRepo,Repos.ResolveRev}) because that would
-					// slow this operation down by a lot (if we're looping
-					// over many repos). This means that it'll fail if a repo
-					// is not on gitserver.
-					return git.ResolveRevision(ctx, gitserver.Repo{Name: name}, nil, spec, &git.ResolveRevisionOptions{NoEnsureRevision: true})
-				},
-			},
-		}
-
-		searchP = &SearchProviders{
-			Text:         text,
-			SearcherURLs: searcherURLs,
-			Index:        index,
-		}
 	})
-	return searchP
+	return searcherURLs
 }
+
+func IndexedSearch() *backend.Zoekt {
+	indexedSearchOnce.Do(func() {
+		indexedSearch = &backend.Zoekt{}
+		if zoektAddr != "" {
+			indexedSearch.Client = zoektrpc.Client(zoektAddr)
+		}
+		go func() {
+			conf.Watch(func() {
+				indexedSearch.SetEnabled(conf.SearchIndexEnabled())
+			})
+		}()
+	})
+	return indexedSearch
+}
+
