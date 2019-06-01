@@ -961,6 +961,50 @@ func TestDiff(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "associate by name",
+			store: repos.Repos{
+				{Name: "foo"},
+				{Name: "baz"},
+			},
+			source: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1")},
+				{Name: "bar", ExternalRepo: eid("2")},
+			},
+			diff: repos.Diff{
+				Added: repos.Repos{
+					{Name: "bar", ExternalRepo: eid("2")},
+				},
+				Modified: repos.Repos{
+					{Name: "foo", ExternalRepo: eid("1")},
+				},
+				Deleted: repos.Repos{
+					{Name: "baz"},
+				},
+			},
+		},
+		{
+			name: "associate by name conflict",
+			store: repos.Repos{
+				{Name: "foo"},
+				{Name: "bar", ExternalRepo: eid("1")},
+			},
+			source: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1")},
+				{Name: "bar", ExternalRepo: eid("2")},
+			},
+			diff: repos.Diff{
+				Added: repos.Repos{
+					{Name: "bar", ExternalRepo: eid("2")},
+				},
+				Modified: repos.Repos{
+					{Name: "foo", ExternalRepo: eid("1")},
+				},
+				Deleted: repos.Repos{
+					{Name: "foo"},
+				},
+			},
+		},
 	}
 
 	for _, tc := range permutedCases {
