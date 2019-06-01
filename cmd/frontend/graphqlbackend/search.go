@@ -53,8 +53,6 @@ func maxReposToSearch() int {
 	}
 }
 
-var nestedRx = regexp.MustCompile(`^!(hier|nested)!`)
-
 // Search provides search results and suggestions.
 func (r *schemaResolver) Search(args *struct {
 	Query string
@@ -68,13 +66,13 @@ func (r *schemaResolver) Search(args *struct {
 	defer tr.Finish()
 	// TODO(ijt): remove this potential goroutine leak.
 	go r.addQueryToSearchesTable(args.Query)
-	query, err := query.ParseAndCheck(args.Query)
+	q, err := query.ParseAndCheck(args.Query)
 	if err != nil {
 		log15.Debug("graphql search failed to parse", "query", args.Query, "error", err)
 		return nil, err
 	}
 	return &searchResolver{
-		query: query,
+		query: q,
 	}, nil
 }
 
@@ -741,10 +739,10 @@ var (
 	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
 
 	searcherURLsOnce sync.Once
-	searcherURLs *endpoint.Map
+	searcherURLs     *endpoint.Map
 
 	indexedSearchOnce sync.Once
-	indexedSearch *backend.Zoekt
+	indexedSearch     *backend.Zoekt
 )
 
 func SearcherURLs() *endpoint.Map {
@@ -772,4 +770,3 @@ func IndexedSearch() *backend.Zoekt {
 	})
 	return indexedSearch
 }
-

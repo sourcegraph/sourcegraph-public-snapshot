@@ -11,7 +11,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 )
 
-// Zoekt is Searcher which wraps a zoekt.Searcher.
+// Zoekt wraps a zoekt.Searcher.
 //
 // Note: Zoekt starts up background goroutines, so call Close when done using
 // the Client.
@@ -79,6 +79,8 @@ func (c *Zoekt) Enabled() bool {
 	return c.Client != nil && !b
 }
 
+// start starts a goroutine that keeps the listResp and listErr fields updated
+// from the Zoekt server, as a local cache.
 func (c *Zoekt) start() {
 	c.mu.Lock()
 	if c.state != 0 {
