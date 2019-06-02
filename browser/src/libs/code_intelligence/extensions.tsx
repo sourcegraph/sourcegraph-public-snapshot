@@ -92,9 +92,9 @@ export const renderGlobalDebug = ({
 
 const IS_LIGHT_THEME = true // assume all code hosts have a light theme (correct for now)
 
-const cleanupDecorationsForCodeElement = (codeElement: HTMLElement): void => {
+const cleanupDecorationsForCodeElement = (codeElement: HTMLElement, part: DiffPart | undefined): void => {
     codeElement.style.backgroundColor = null
-    const previousAttachments = codeElement.querySelectorAll('.line-decoration-attachment')
+    const previousAttachments = codeElement.querySelectorAll(`.line-decoration-attachment[data-part=${part}]`)
     for (const attachment of previousAttachments) {
         attachment.remove()
     }
@@ -122,7 +122,7 @@ export const applyDecorations = (
         if (!decorationsByLine.has(lineNumber)) {
             const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber, part)
             if (codeElement) {
-                cleanupDecorationsForCodeElement(codeElement)
+                cleanupDecorationsForCodeElement(codeElement, part)
             }
             const lineElement = dom.getLineElementFromLineNumber(codeView, lineNumber, part)
             if (lineElement) {
@@ -199,6 +199,7 @@ export const applyDecorations = (
                 after.title = decoration.after.hoverMessage || ''
 
                 const annotation = decoration.after.linkURL ? linkTo(decoration.after.linkURL)(after) : after
+                annotation.dataset.part = String(part)
                 annotation.className = 'sourcegraph-extension-element line-decoration-attachment'
                 codeElement.appendChild(annotation)
             }
