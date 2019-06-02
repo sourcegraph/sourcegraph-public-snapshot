@@ -7,16 +7,18 @@ import { combineLatest, NEVER, Observable, of, Subject, Subscription } from 'rxj
 import { distinctUntilChanged, filter, map, switchMap } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import {
+    decorationAttachmentStyleForTheme,
     DecorationMapByLine,
     decorationStyleForTheme,
     groupDecorationsByLine,
 } from '../../../../shared/src/api/client/services/decoration'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
+import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { isDefined } from '../../../../shared/src/util/types'
-import { FileSpec, makeRepoURI, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toURIWithPath } from '../../../../shared/src/util/url'
 import { ThemeProps } from '../../theme'
 
 const DiffBoundary: React.FunctionComponent<{
@@ -80,13 +82,13 @@ const DiffHunk: React.FunctionComponent<
                     const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
                     const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
                     const decorationsForLine = [
-                        // If the line wasn't newly added, look for decorations in the base rev
-                        ...((line[0] !== '+' && decorations.base.get(oldLine)) || []),
+                        // If the line was deleted, look for decorations in the base rev
+                        ...((line[0] === '-' && decorations.base.get(oldLine - 1)) || []),
                         // If the line wasn't deleted, look for decorations in the head rev
-                        ...((line[0] !== '-' && decorations.head.get(oldLine)) || []),
+                        ...((line[0] !== '-' && decorations.head.get(newLine - 1)) || []),
                         // Look for decorations in both if the line existed in both
                     ]
-                    const style = decorationsForLine
+                    const lineStyle = decorationsForLine
                         .filter(decoration => decoration.isWholeLine)
                         .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
                         .reduce((style, decoration) => ({ ...style, ...decoration }), {})
@@ -135,8 +137,25 @@ const DiffHunk: React.FunctionComponent<
                                 </>
                             )}
                             {/* tslint:disable-next-line: jsx-ban-props Needed for decorations */}
-                            <td className="diff-hunk__content" style={style}>
+                            <td className="diff-hunk__content" style={lineStyle}>
                                 {line}
+                                {decorationsForLine.filter(propertyIsDefined('after')).map((decoration, i) => {
+                                    const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
+                                    return (
+                                        <>
+                                            {' '}
+                                            <LinkOrSpan
+                                                key={i}
+                                                to={decoration.after.linkURL}
+                                                data-tooltip={decoration.after.hoverMessage}
+                                                // tslint:disable-next-line: jsx-ban-props Needed for decorations
+                                                style={style}
+                                            >
+                                                {decoration.after.contentText}
+                                            </LinkOrSpan>
+                                        </>
+                                    )
+                                })}
                             </td>
                         </tr>
                     )
@@ -317,7 +336,7 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
                         }: Part): Observable<TextDocumentDecoration[] | null> =>
                             filePath !== null
                                 ? extensionsController.services.textDocumentDecoration.getDecorations({
-                                      uri: makeRepoURI({ repoName, commitID, filePath }),
+                                      uri: toURIWithPath({ repoName, commitID, filePath }),
                                   })
                                 : of(null)
                         return combineLatest([getDecorationsForPart(head), getDecorationsForPart(base)])
@@ -332,6 +351,10 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
                     })
                 })
         )
+    }
+
+    public componentDidMount(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentDidUpdate(): void {
