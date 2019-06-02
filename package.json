@@ -69,7 +69,7 @@
     "@storybook/components": "^5.0.11",
     "@storybook/react": "^5.0.11",
     "@storybook/theming": "^5.0.11",
-    "@types/babel__core": "7.1.0",
+    "@types/babel__core": "7.1.2",
     "@types/chai": "4.1.7",
     "@types/chai-as-promised": "7.1.0",
     "@types/chalk": "2.2.0",
