@@ -3492,14 +3492,6 @@ axios@0.15.3:
   dependencies:
     follow-redirects "1.0.0"
 
-axios@^0.17.0:
-  version "0.17.1"
-  resolved "https://registry.npmjs.org/axios/-/axios-0.17.1.tgz#2d8e3e5d0bdbd7327f91bc814f5c57660f81824d"
-  integrity sha1-LY4+XQvb1zJ/kbyBT1xXZg+Bgk0=
-  dependencies:
-    follow-redirects "^1.2.5"
-    is-buffer "^1.1.5"
-
 axios@^0.18.0:
   version "0.18.0"
   resolved "https://registry.npmjs.org/axios/-/axios-0.18.0.tgz#32d53e4851efdc0a11993b6cd000789d70c05102"
@@ -4093,13 +4085,13 @@ brorand@^1.0.1:
   resolved "https://registry.npmjs.org/brorand/-/brorand-1.1.0.tgz#12c25efe40a45e3c323eb8675a0a0ce57b22371f"
   integrity sha1-EsJe/kCkXjwyPrhnWgoM5XsiNx8=
 
-brotli-size@0.0.1:
-  version "0.0.1"
-  resolved "https://registry.npmjs.org/brotli-size/-/brotli-size-0.0.1.tgz#8c1aeea01cd22f359b048951185bd539ff0c829f"
-  integrity sha1-jBruoBzSLzWbBIlRGFvVOf8Mgp8=
+brotli-size@0.1.0:
+  version "0.1.0"
+  resolved "https://registry.npmjs.org/brotli-size/-/brotli-size-0.1.0.tgz#a2c518096c7c1a75e9e66908a42cd9dc77d2b69f"
+  integrity sha512-5ny7BNvpe2TSmdafF1T9dnFYp3AIrJ8qJt29K0DQJzORlK38LBim/CmlY26JtreV6SWmXza7Oa+9m61SzvxR0Q==
   dependencies:
     duplexer "^0.1.1"
-    iltorb "^1.0.9"
+    iltorb "^2.4.3"
 
 browser-process-hrtime@^0.1.2:
   version "0.1.3"
@@ -4266,26 +4258,31 @@ builtin-status-codes@^3.0.0:
   resolved "https://registry.npmjs.org/builtin-status-codes/-/builtin-status-codes-3.0.0.tgz#85982878e21b98e1c66425e03d0174788f569ee8"
   integrity sha1-hZgoeOIbmOHGZCXgPQF0eI9Wnug=
 
-bundlesize@^0.17.1:
-  version "0.17.1"
-  resolved "https://registry.npmjs.org/bundlesize/-/bundlesize-0.17.1.tgz#87018f4aa31e27127481897fc90e30248a4be28b"
-  integrity sha512-p5I5Tpoug9aOVGg4kQETMJ8xquY66mX9XI19kXkkAFnmDhDXwSF+1jq1OjBGz7h27TAulM3k2wLEJPvickTt0A==
+bundlesize@^0.17.2:
+  version "0.17.2"
+  resolved "https://registry.npmjs.org/bundlesize/-/bundlesize-0.17.2.tgz#d31a80ffe1591251411ad730442eb4e20790f827"
+  integrity sha512-cJAZ6wvs6IHQCnUn9kTme4GL+ahoICjcS0QPcGTj61Hl4bCc8wKkkVLUote4k/1yxa0+kUIrIo9wyNJ+XIciEw==
   dependencies:
-    axios "^0.17.0"
-    brotli-size "0.0.1"
-    bytes "^3.0.0"
+    axios "^0.18.0"
+    brotli-size "0.1.0"
+    bytes "^3.1.0"
     ci-env "^1.4.0"
-    commander "^2.11.0"
+    commander "^2.20.0"
     github-build "^1.2.0"
-    glob "^7.1.2"
+    glob "^7.1.4"
     gzip-size "^4.0.0"
     prettycli "^1.4.3"
     read-pkg-up "^3.0.0"
 
-bytes@3.0.0, bytes@^3.0.0:
+bytes@3.0.0:
   version "3.0.0"
   resolved "https://registry.npmjs.org/bytes/-/bytes-3.0.0.tgz#d32815404d689699f85a4ea4fa8755dd13a96048"
   integrity sha1-0ygVQE1olpn4Wk6k+odV3ROpYEg=
+
+bytes@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.npmjs.org/bytes/-/bytes-3.1.0.tgz#f6cf7933a360e0588fa9fde85651cdc7f805d1f6"
+  integrity sha512-zauLjrfCG+xvoyaqLoV8bLVXXNGC4JqlxFCutSDWA6fJrTo2ZuvLYTqZ7aHBLZSMOopbzwv8f+wZcVzfVTI2Dg==
 
 cacache@^11.0.2:
   version "11.3.1"
@@ -4966,12 +4963,12 @@ comma-separated-tokens@^1.0.0:
   dependencies:
     trim "0.0.1"
 
-commander@2.17.x, commander@^2.10.0, commander@^2.11.0, commander@^2.12.1, commander@^2.9.0, commander@~2.17.1:
+commander@2.17.x, commander@~2.17.1:
   version "2.17.1"
   resolved "https://registry.npmjs.org/commander/-/commander-2.17.1.tgz#bd77ab7de6de94205ceacc72f1716d29f20a77bf"
   integrity sha512-wPMUt6FnH2yzG95SA6mzjQOEKUU3aLaDEmzs1ti+1E9h+CsrZghRlqEM/EJ4KscsQVG8uNN4uVreUeT8+drlgg==
 
-commander@^2.19.0:
+commander@^2.10.0, commander@^2.11.0, commander@^2.12.1, commander@^2.19.0, commander@^2.20.0, commander@^2.9.0:
   version "2.20.0"
   resolved "https://registry.npmjs.org/commander/-/commander-2.20.0.tgz#d58bb2b5c1ee8f87b0d340027e9e94e222c5a422"
   integrity sha512-7j2y+40w61zy6YC2iRNpUe/NwhNyoXrYpHMrSunaMG64nRnaf96zO/KMQR4OyN/UnE5KLyEBnKHd4aG3rskjpQ==
@@ -5851,11 +5848,6 @@ detect-file@^1.0.0:
   resolved "https://registry.npmjs.org/detect-file/-/detect-file-1.0.0.tgz#f0d66d03672a825cb1b73bdb3fe62310c8e552b7"
   integrity sha1-8NZtA2cqglyxtzvbP+YjEMjlUrc=
 
-detect-libc@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.npmjs.org/detect-libc/-/detect-libc-0.2.0.tgz#47fdf567348a17ec25fcbf0b9e446348a76f9fb5"
-  integrity sha1-R/31ZzSKF+wl/L8LnkRjSKdvn7U=
-
 detect-libc@^1.0.2, detect-libc@^1.0.3:
   version "1.0.3"
   resolved "https://registry.npmjs.org/detect-libc/-/detect-libc-1.0.3.tgz#fa137c4bd698edf55cd5cd02ac559f91a4c4ba9b"
@@ -6546,10 +6538,10 @@ expand-brackets@^2.1.4:
     snapdragon "^0.8.1"
     to-regex "^3.0.1"
 
-expand-template@^1.0.2:
-  version "1.1.1"
-  resolved "https://registry.npmjs.org/expand-template/-/expand-template-1.1.1.tgz#981f188c0c3a87d2e28f559bc541426ff94f21dd"
-  integrity sha512-cebqLtV8KOZfw0UI8TEFWxtczxxC1jvyUvx6H4fyp1K1FN7A4Q+uggVUlOsI1K8AGU0rwOGqP8nCapdrw8CYQg==
+expand-template@^2.0.3:
+  version "2.0.3"
+  resolved "https://registry.npmjs.org/expand-template/-/expand-template-2.0.3.tgz#6e14b3fcee0f3a6340ecb57d2e8918692052a47c"
+  integrity sha512-XYfuKMvj4O35f/pOXLObndIRvyQ+/+6AhODh+OKWj9S9498pHHn/IMszH+gt0fBCRWMNfk1ZSp5x3AifmnI2vg==
 
 expand-tilde@^2.0.0, expand-tilde@^2.0.2:
   version "2.0.2"
@@ -6944,7 +6936,7 @@ follow-redirects@1.0.0:
   dependencies:
     debug "^2.2.0"
 
-follow-redirects@^1.0.0, follow-redirects@^1.2.5, follow-redirects@^1.3.0:
+follow-redirects@^1.0.0, follow-redirects@^1.3.0:
   version "1.7.0"
   resolved "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.7.0.tgz#489ebc198dc0e7f64167bd23b03c4c19b5784c76"
   integrity sha512-m/pZQy4Gj287eNy94nivy5wchN3Kp+Q5WgUPNy5lJSZ3sgkVKSYV/ZChMAQVIgx1SqfZ2zBZtPA2YlXIWxxJOQ==
@@ -7244,10 +7236,10 @@ glob-watcher@^5.0.3:
     just-debounce "^1.0.0"
     object.defaults "^1.1.0"
 
-glob@^7.0.0, glob@^7.0.3, glob@^7.1.1, glob@^7.1.2, glob@^7.1.3, glob@~7.1.1:
-  version "7.1.3"
-  resolved "https://registry.npmjs.org/glob/-/glob-7.1.3.tgz#3960832d3f1574108342dafd3a67b332c0969df1"
-  integrity sha512-vcfuiIxogLV4DlGBHIUOwI0IbrJ8HWPc4MU7HzviGeNho/UJDfi6B5p3sHeWIQ0KGIU0Jpxi5ZHxemQfLkkAwQ==
+glob@^7.0.0, glob@^7.0.3, glob@^7.1.1, glob@^7.1.2, glob@^7.1.3, glob@^7.1.4, glob@~7.1.1:
+  version "7.1.4"
+  resolved "https://registry.npmjs.org/glob/-/glob-7.1.4.tgz#aa608a2f6c577ad357e1ae5a5c26d9a8d1969255"
+  integrity sha512-hkLPepehmnKk41pUGm3sYxoFs/umurYfYJCerbXEyFIWcAzvpipAgVkBqqT9RBKMGjnq6kMuyYwha6csxbiM1A==
   dependencies:
     fs.realpath "^1.0.0"
     inflight "^1.0.4"
@@ -8009,15 +8001,16 @@ ignore@^5.0.6:
   resolved "https://registry.npmjs.org/ignore/-/ignore-5.1.1.tgz#2fc6b8f518aff48fef65a7f348ed85632448e4a5"
   integrity sha512-DWjnQIFLenVrwyRCKZT+7a7/U4Cqgar4WG8V++K3hw+lrW1hc/SIwdiGmtxKCVACmHULTuGeBbHJmbwW7/sAvA==
 
-iltorb@^1.0.9:
-  version "1.3.10"
-  resolved "https://registry.npmjs.org/iltorb/-/iltorb-1.3.10.tgz#a0d9e4e7d52bf510741442236cbe0cc4230fc9f8"
-  integrity sha512-nyB4+ru1u8CQqQ6w7YjasboKN3NQTN8GH/V/eEssNRKhW6UbdxdWhB9fJ5EEdjJfezKY0qPrcwLyIcgjL8hHxA==
+iltorb@^2.4.3:
+  version "2.4.3"
+  resolved "https://registry.npmjs.org/iltorb/-/iltorb-2.4.3.tgz#b489689d24c8a25a2cf170c515f97954edd45577"
+  integrity sha512-cr/kC07Cf9sW3TWH7yUxV2QkNjby4LMCsXGmxPCQs5x//QzTpF3GLPNY7L66G+DkNGaTRCgY+vYZ+dyAcuDOnQ==
   dependencies:
-    detect-libc "^0.2.0"
-    nan "^2.6.2"
-    node-gyp "^3.6.2"
-    prebuild-install "^2.3.0"
+    detect-libc "^1.0.3"
+    nan "^2.13.2"
+    npmlog "^4.1.2"
+    prebuild-install "^5.3.0"
+    which-pm-runs "^1.0.0"
 
 immer@1.10.0:
   version "1.10.0"
@@ -10274,7 +10267,7 @@ mz@^2.7.0:
     object-assign "^4.0.1"
     thenify-all "^1.0.0"
 
-nan@^2.13.2, nan@^2.6.2, nan@^2.9.2:
+nan@^2.13.2, nan@^2.9.2:
   version "2.13.2"
   resolved "https://registry.npmjs.org/nan/-/nan-2.13.2.tgz#f51dc7ae66ba7d5d55e1e6d4d8092e802c9aefe7"
   integrity sha512-TghvYc72wlMGMVMluVo9WRJc0mB8KxxF/gZ4YYFy7V2ZQX9l7rgbPg7vjS9mt6U5HXODVFVI2bOduCzwOMv/lw==
@@ -10295,6 +10288,11 @@ nanomatch@^1.2.9:
     regex-not "^1.0.0"
     snapdragon "^0.8.1"
     to-regex "^3.0.1"
+
+napi-build-utils@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/napi-build-utils/-/napi-build-utils-1.0.1.tgz#1381a0f92c39d66bf19852e7873432fc2123e508"
+  integrity sha512-boQj1WFgQH3v4clhu3mTNfP+vOBxorDlE8EKiMjUlLG3C4qAESnn9AxIOkFgTR2c9LtzNjPrjS60cT27ZKBhaA==
 
 natural-compare@^1.4.0:
   version "1.4.0"
@@ -10358,10 +10356,10 @@ no-case@^2.2.0:
   dependencies:
     lower-case "^1.1.1"
 
-node-abi@^2.2.0:
-  version "2.5.0"
-  resolved "https://registry.npmjs.org/node-abi/-/node-abi-2.5.0.tgz#942e1a78bce764bc0c1672d5821e492b9d032052"
-  integrity sha512-9g2twBGSP6wIR5PW7tXvAWnEWKJDH/VskdXp168xsw9VVxpEGov8K4jsP4/VeoC7b2ZAyzckvMCuQuQlw44lXg==
+node-abi@^2.7.0:
+  version "2.8.0"
+  resolved "https://registry.npmjs.org/node-abi/-/node-abi-2.8.0.tgz#bd2e88dbe6a6871e6dd08553e0605779325737ec"
+  integrity sha512-1/aa2clS0pue0HjckL62CsbhWWU35HARvBDXcJtYKbYR7LnIutmpxmXbuDMV9kEviD2lP/wACOgWmmwljghHyQ==
   dependencies:
     semver "^5.4.1"
 
@@ -10395,7 +10393,7 @@ node-forge@0.7.5:
   resolved "https://registry.npmjs.org/node-forge/-/node-forge-0.7.5.tgz#6c152c345ce11c52f465c2abd957e8639cd674df"
   integrity sha512-MmbQJ2MTESTjt3Gi/3yG1wGpIMhUfcIypUCGtTizFR9IiccFwxSpfp0vtIZlkFclEqERemxfnSdZEMR9VqqEFQ==
 
-node-gyp@^3.6.2, node-gyp@^3.8.0:
+node-gyp@^3.8.0:
   version "3.8.0"
   resolved "https://registry.npmjs.org/node-gyp/-/node-gyp-3.8.0.tgz#540304261c330e80d0d5edce253a68cb3964218c"
   integrity sha512-3g8lYefrRRzvGeSowdJKAKyks8oUpLEd/DyPV4eMhVlhJ0aNaZqIrNUIPuEWWTAoPqyFkfGrM67MC69baqn6vA==
@@ -11784,22 +11782,23 @@ postcss@^7.0.0, postcss@^7.0.1, postcss@^7.0.14, postcss@^7.0.2, postcss@^7.0.5,
     source-map "^0.6.1"
     supports-color "^6.1.0"
 
-prebuild-install@^2.3.0:
-  version "2.5.3"
-  resolved "https://registry.npmjs.org/prebuild-install/-/prebuild-install-2.5.3.tgz#9f65f242782d370296353710e9bc843490c19f69"
-  integrity sha512-/rI36cN2g7vDQnKWN8Uzupi++KjyqS9iS+/fpwG4Ea8d0Pip0PQ5bshUNzVwt+/D2MRfhVAplYMMvWLqWrCF/g==
+prebuild-install@^5.3.0:
+  version "5.3.0"
+  resolved "https://registry.npmjs.org/prebuild-install/-/prebuild-install-5.3.0.tgz#58b4d8344e03590990931ee088dd5401b03004c8"
+  integrity sha512-aaLVANlj4HgZweKttFNUVNRxDukytuIuxeK2boIMHjagNJCiVKWFsKF4tCE3ql3GbrD2tExPQ7/pwtEJcHNZeg==
   dependencies:
     detect-libc "^1.0.3"
-    expand-template "^1.0.2"
+    expand-template "^2.0.3"
     github-from-package "0.0.0"
     minimist "^1.2.0"
     mkdirp "^0.5.1"
-    node-abi "^2.2.0"
+    napi-build-utils "^1.0.1"
+    node-abi "^2.7.0"
     noop-logger "^0.1.1"
     npmlog "^4.0.1"
     os-homedir "^1.0.1"
     pump "^2.0.1"
-    rc "^1.1.6"
+    rc "^1.2.7"
     simple-get "^2.7.0"
     tar-fs "^1.13.0"
     tunnel-agent "^0.6.0"
@@ -12150,7 +12149,7 @@ raw-loader@^1.0.0:
     loader-utils "^1.1.0"
     schema-utils "^1.0.0"
 
-rc@^1.1.6, rc@^1.2.7:
+rc@^1.2.7:
   version "1.2.8"
   resolved "https://registry.npmjs.org/rc/-/rc-1.2.8.tgz#cd924bf5200a075b83c188cd6b9e211b7fc0d3ed"
   integrity sha512-y3bGgqKj3QBdxLbLkomlohkvsA8gdAiUQlSBJnBhfn+BPxg4bc62d8TcBW15wavDfgexCgccckhcZvywyQYPOw==
