@@ -2098,10 +2098,10 @@
   dependencies:
     chalk "*"
 
-"@types/classnames@2.2.7":
-  version "2.2.7"
-  resolved "https://registry.npmjs.org/@types/classnames/-/classnames-2.2.7.tgz#fb68cc9be8487e6ea5b13700e759bfbab7e0fefd"
-  integrity sha512-rzOhiQ55WzAiFgXRtitP/ZUT8iVNyllEpylJ5zHzR4vArUvMB39GTk+Zon/uAM0JxEFAWnwsxC2gH8s+tZ3Myg==
+"@types/classnames@2.2.8":
+  version "2.2.8"
+  resolved "https://registry.npmjs.org/@types/classnames/-/classnames-2.2.8.tgz#17139e1e1104203572caa4368f6796f6225b70b4"
+  integrity sha512-3UrLzPnz8u+MMXuJTF++389IfLSQUbl5F3ry9WCxva0BKG5H/oo5NuPRXk+HrpPU1+5pVHSWhnVWRzIaFQ7QuQ==
 
 "@types/cli-color@^0.3.29":
   version "0.3.29"
