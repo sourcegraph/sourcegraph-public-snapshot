@@ -82,6 +82,16 @@ const getDiffCodeCellFromLineNumber = (
     if (!lineNumberCell) {
         return null
     }
+    // In unified diff, the not-changed lines shall only be returned for the head.
+    // Without this check they would be returned for both head and base.
+    if (
+        !isSplitDiff &&
+        part === 'base' &&
+        !lineNumberCell.classList.contains('blob-num-addition') &&
+        !lineNumberCell.classList.contains('blob-num-deletion')
+    ) {
+        return null
+    }
     let codeCell: HTMLTableCellElement
     if (isSplitDiff) {
         // In split diff view, the code cell is next to the line number cell

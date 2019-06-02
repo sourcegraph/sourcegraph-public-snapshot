@@ -196,7 +196,9 @@ export const applyDecorations = (
                 after.style.color = style.color || null
                 after.style.backgroundColor = style.backgroundColor || null
                 after.textContent = decoration.after.contentText || null
-                after.title = decoration.after.hoverMessage || ''
+                if (decoration.after.hoverMessage) {
+                    after.title = decoration.after.hoverMessage
+                }
 
                 const annotation = decoration.after.linkURL ? linkTo(decoration.after.linkURL)(after) : after
                 annotation.dataset.part = String(part)
