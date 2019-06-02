@@ -582,7 +582,6 @@ export function handleCodeHost({
                 {
                     let decorationsByLine: DecorationMapByLine = new Map()
                     const update = (decorations?: TextDocumentDecoration[] | null): void => {
-                        console.log('New decorations for head', fileInfo.filePath, decorations)
                         decorationsByLine = applyDecorations(
                             domFunctions,
                             element,
@@ -605,7 +604,6 @@ export function handleCodeHost({
                 if (fileInfo.baseCommitID && fileInfo.baseFilePath) {
                     let decorationsByLine: DecorationMapByLine = new Map()
                     const update = (decorations?: TextDocumentDecoration[] | null): void => {
-                        console.log('New decorations for base', fileInfo.baseFilePath, decorations)
                         decorationsByLine = applyDecorations(
                             domFunctions,
                             element,
