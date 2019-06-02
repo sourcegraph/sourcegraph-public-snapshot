@@ -174,7 +174,7 @@ func endpointsToMap(u *k8sURL, eps *corev1.Endpoints) (*hashMap, error) {
 		}
 	}
 	if len(urls) == 0 {
-		return nil, errors.Errorf("No %s endpoints", u.Service)
+		return nil, errors.Errorf("no %s endpoints could be found (this may indicate more searcher replicas are needed, contact support@sourcegraph.com for assistance)", u.Service)
 	}
 	return newConsistentHashMap(urls), nil
 }
