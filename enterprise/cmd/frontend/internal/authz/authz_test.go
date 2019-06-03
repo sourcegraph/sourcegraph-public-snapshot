@@ -58,6 +58,7 @@ func Test_providersFromConfig(t *testing.T) {
 		description                  string
 		cfg                          conf.Unified
 		gitlabConnections            []*schema.GitLabConnection
+		bitbucketServerConnections   []*schema.BitbucketServerConnection
 		expAuthzAllowAccessByDefault bool
 		expAuthzProviders            []authz.Provider
 		expSeriousProblems           []string
@@ -328,12 +329,80 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			description: "1 BitbucketServer connection with authz disabled",
+			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+				{
+					Authorization: nil,
+					Url:           "https://bitbucket.mycorp.org",
+					Username:      "admin",
+					Token:         "secret-token",
+				},
+			},
+			expAuthzAllowAccessByDefault: true,
+			expAuthzProviders:            nil,
+		},
+		{
+			description: "Bitbucket Server TTL error",
+			cfg:         conf.Unified{},
+			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+				{
+					Authorization: &schema.BitbucketServerAuthorization{
+						IdentityProvider: schema.BitbucketServerIdentityProvider{
+							Username: &schema.BitbucketServerUsernameIdentity{
+								Type: "username",
+							},
+						},
+						Ttl: "invalid",
+					},
+					Url:      "https://bitbucketserver.mycorp.org",
+					Username: "admin",
+					Token:    "secret-token",
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"authorization.ttl: time: invalid duration invalid"},
+		},
+		{
+			description: "Bitbucket Server exact username matching",
+			cfg:         conf.Unified{},
+			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+				{
+					Authorization: &schema.BitbucketServerAuthorization{
+						IdentityProvider: schema.BitbucketServerIdentityProvider{
+							Username: &schema.BitbucketServerUsernameIdentity{
+								Type: "username",
+							},
+						},
+						Ttl: "invalid",
+					},
+					Url:      "https://bitbucketserver.mycorp.org",
+					Username: "admin",
+					Token:    "secret-token",
+				},
+			},
+			expAuthzAllowAccessByDefault: true,
+			expAuthzProviders: []authz.Provider{ // TODO(tsenart): FIXME once we have perms implemented
+				gitlabAuthzProviderParams{
+					SudoOp: gitlab.SudoProviderOp{
+						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
+						SudoToken:         "asdf",
+						CacheTTL:          3 * time.Hour,
+						UseNativeUsername: true,
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Logf("Test %q", test.description)
 
-		store := fakeStore{gitlabs: test.gitlabConnections}
+		store := fakeStore{
+			gitlabs:          test.gitlabConnections,
+			bitbucketServers: test.bitbucketServerConnections,
+		}
+
 		allowAccessByDefault, authzProviders, seriousProblems, _ := ProvidersFromConfig(context.Background(), &test.cfg, &store)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
@@ -364,8 +433,9 @@ func asJSON(t *testing.T, v interface{}) string {
 }
 
 type fakeStore struct {
-	gitlabs []*schema.GitLabConnection
-	githubs []*schema.GitHubConnection
+	gitlabs          []*schema.GitLabConnection
+	githubs          []*schema.GitHubConnection
+	bitbucketServers []*schema.BitbucketServerConnection
 }
 
 func (s fakeStore) ListGitHubConnections(context.Context) ([]*schema.GitHubConnection, error) {
@@ -374,4 +444,8 @@ func (s fakeStore) ListGitHubConnections(context.Context) ([]*schema.GitHubConne
 
 func (s fakeStore) ListGitLabConnections(context.Context) ([]*schema.GitLabConnection, error) {
 	return s.gitlabs, nil
+}
+
+func (s fakeStore) ListBitbucketServerConnections(context.Context) ([]*schema.BitbucketServerConnection, error) {
+	return s.bitbucketServers, nil
 }

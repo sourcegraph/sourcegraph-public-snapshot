@@ -13,6 +13,7 @@ import (
 type ExternalServicesStore interface {
 	ListGitLabConnections(context.Context) ([]*schema.GitLabConnection, error)
 	ListGitHubConnections(context.Context) ([]*schema.GitHubConnection, error)
+	ListBitbucketServerConnections(context.Context) ([]*schema.BitbucketServerConnection, error)
 }
 
 // ProvidersFromConfig returns the set of permission-related providers derived from the site config.
@@ -53,6 +54,15 @@ func ProvidersFromConfig(
 		authzProviders = append(authzProviders, ghp...)
 		seriousProblems = append(seriousProblems, ghproblems...)
 		warnings = append(warnings, ghwarnings...)
+	}
+
+	if bitbucketServers, err := s.ListBitbucketServerConnections(ctx); err != nil {
+		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load Bitbucket Server external service configs: %s", err))
+	} else {
+		ps, problems, warnings := bitbucketServerProviders(ctx, cfg, bitbucketServers)
+		authzProviders = append(authzProviders, ps...)
+		seriousProblems = append(seriousProblems, problems...)
+		warnings = append(warnings, warnings...)
 	}
 
 	return allowAccessByDefault, authzProviders, seriousProblems, warnings
