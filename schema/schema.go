@@ -91,8 +91,15 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
+// BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
+type BitbucketServerAuthorization struct {
+	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
+	Ttl              string                          `json:"ttl,omitempty"`
+}
+
 // BitbucketServerConnection description: Configuration for a connection to Bitbucket Server.
 type BitbucketServerConnection struct {
+	Authorization               *BitbucketServerAuthorization  `json:"authorization,omitempty"`
 	Certificate                 string                         `json:"certificate,omitempty"`
 	Exclude                     []*ExcludedBitbucketServerRepo `json:"exclude,omitempty"`
 	ExcludePersonalRepositories bool                           `json:"excludePersonalRepositories,omitempty"`
@@ -105,6 +112,35 @@ type BitbucketServerConnection struct {
 	Token                       string                         `json:"token,omitempty"`
 	Url                         string                         `json:"url"`
 	Username                    string                         `json:"username"`
+}
+
+// BitbucketServerIdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user.
+type BitbucketServerIdentityProvider struct {
+	Username *BitbucketServerUsernameIdentity
+}
+
+func (v BitbucketServerIdentityProvider) MarshalJSON() ([]byte, error) {
+	if v.Username != nil {
+		return json.Marshal(v.Username)
+	}
+	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
+}
+func (v *BitbucketServerIdentityProvider) UnmarshalJSON(data []byte) error {
+	var d struct {
+		DiscriminantProperty string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &d); err != nil {
+		return err
+	}
+	switch d.DiscriminantProperty {
+	case "username":
+		return json.Unmarshal(data, &v.Username)
+	}
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"username"})
+}
+
+type BitbucketServerUsernameIdentity struct {
+	Type string `json:"type"`
 }
 type BrandAssets struct {
 	Logo   string `json:"logo,omitempty"`

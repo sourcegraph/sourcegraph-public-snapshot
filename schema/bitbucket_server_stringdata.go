@@ -131,6 +131,50 @@ const BitbucketServerSchemaJSON = `{
       "description": "Defines whether repositories from this Bitbucket Server instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Server repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Server); site admins can still disable them explicitly, and they'll remain disabled.",
       "type": "boolean",
       "default": false
+    },
+    "authorization": {
+      "title": "BitbucketServerAuthorization",
+      "description": "If non-null, enforces Bitbucket Server repository permissions.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identityProvider"],
+      "properties": {
+        "identityProvider": {
+          "description": "The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user.",
+          "title": "BitbucketServerIdentityProvider",
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["username"]
+            }
+          },
+          "oneOf": [{ "$ref": "#/definitions/UsernameIdentity" }],
+          "!go": {
+            "taggedUnionType": true
+          }
+        },
+        "ttl": {
+          "description": "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
+          "type": "string",
+          "default": "3h"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "UsernameIdentity": {
+      "title": "BitbucketServerUsernameIdentity",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "username"
+        }
+      }
     }
   }
 }

@@ -437,6 +437,36 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid authorization ttl",
+			config: `{"authorization": {"ttl": "foo"}}`,
+			assert: includes(`authorization.ttl: time: invalid duration foo`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "valid authorization ttl 0",
+			config: `{"authorization": {"ttl": "0"}}`,
+			assert: excludes(`authorization.ttl: time: invalid duration 0`),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "username identity provider",
+			config: `
+			{
+				"url": "https://bitbucketserver.corp.com",
+				"username": "admin",
+				"token": "super-secret-token",
+				"repositoryQuery": ["none"],
+				"authorization": {
+					"identityProvider": {
+						"type": "username"
+					}
+				}
+			}
+			`,
+			assert: equals("<nil>"),
+		},
+		{
 			kind:   "GITHUB",
 			desc:   "without url, token nor repositoryQuery",
 			config: `{}`,
