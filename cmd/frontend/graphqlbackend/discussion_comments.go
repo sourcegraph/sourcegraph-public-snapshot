@@ -48,6 +48,7 @@ func (r *discussionCommentResolver) Contents(ctx context.Context) (string, error
 	}
 	return thread.Title, nil
 }
+
 func (r *discussionCommentResolver) HTML(ctx context.Context, args *struct{ Options *markdownOptions }) (string, error) {
 	contents, err := r.Contents(ctx)
 	if err != nil {
@@ -55,6 +56,7 @@ func (r *discussionCommentResolver) HTML(ctx context.Context, args *struct{ Opti
 	}
 	return markdown.Render(contents, nil), nil
 }
+
 func (r *discussionCommentResolver) InlineURL(ctx context.Context) (*string, error) {
 	thread, err := db.DiscussionThreads.Get(ctx, r.c.ThreadID)
 	if err != nil {
@@ -66,12 +68,15 @@ func (r *discussionCommentResolver) InlineURL(ctx context.Context) (*string, err
 	}
 	return strptr(url.String()), nil
 }
+
 func (r *discussionCommentResolver) CreatedAt(ctx context.Context) string {
 	return r.c.CreatedAt.Format(time.RFC3339)
 }
+
 func (r *discussionCommentResolver) UpdatedAt(ctx context.Context) string {
 	return r.c.UpdatedAt.Format(time.RFC3339)
 }
+
 func (r *discussionCommentResolver) Reports(ctx context.Context) []string {
 	// 🚨 SECURITY: Only site admins can read reports.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {

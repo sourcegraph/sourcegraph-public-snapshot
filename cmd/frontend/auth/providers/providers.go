@@ -166,6 +166,7 @@ func (p sortProviders) Less(i, j int) bool {
 	}
 	return p[i].ConfigID().ID < p[j].ConfigID().ID
 }
+
 func (p sortProviders) Swap(i, j int) {
 	p[i], p[j] = p[j], p[i]
 }

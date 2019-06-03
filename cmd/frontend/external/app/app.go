@@ -7,13 +7,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 )
 
-type (
-	SignOutURL = app.SignOutURL
-)
+type SignOutURL = app.SignOutURL
 
-var (
-	RegisterSSOSignOutHandler = app.RegisterSSOSignOutHandler
-)
+var RegisterSSOSignOutHandler = app.RegisterSSOSignOutHandler
 
 func SetBillingPublishableKey(value string) {
 	jscontext.BillingPublishableKey = value

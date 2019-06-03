@@ -841,7 +841,6 @@ func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 
 		return nil
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -26,7 +26,6 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 	fmt.Fprintln(&buf, "User-agent: *")
 	if allowRobots {
 		fmt.Fprintln(&buf, "Allow: /")
-
 	} else {
 		fmt.Fprintln(&buf, "Disallow: /")
 	}

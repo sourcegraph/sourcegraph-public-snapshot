@@ -25,6 +25,7 @@ func (r *externalRepositoryResolver) ID() string { return r.repository.repo.Exte
 func (r *externalRepositoryResolver) ServiceType() string {
 	return r.repository.repo.ExternalRepo.ServiceType
 }
+
 func (r *externalRepositoryResolver) ServiceID() string {
 	return r.repository.repo.ExternalRepo.ServiceID
 }

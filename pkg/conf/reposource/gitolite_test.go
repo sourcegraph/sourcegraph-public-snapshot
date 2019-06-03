@@ -7,7 +7,7 @@ import (
 )
 
 func TestGitolite_cloneURLToRepoName(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		conn schema.GitoliteConnection
 		urls []urlToRepoName
 	}{{

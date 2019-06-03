@@ -7,7 +7,7 @@ import (
 )
 
 func TestBitbucketServer_cloneURLToRepoName(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		conn schema.BitbucketServerConnection
 		urls []urlToRepoName
 	}{{

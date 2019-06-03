@@ -292,9 +292,9 @@ func TestMiddleware(t *testing.T) {
 			t.Errorf("wrong response code: got %v, want %v", got, want)
 		}
 	})
-	var (
-		loggedInCookies []*http.Cookie
-	)
+
+	var loggedInCookies []*http.Cookie
+
 	t.Run("get SP metadata and register SP with IDP", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/.auth/saml/metadata?pc="+providerID, "", nil, false, nil)
 		service := samlidp.Service{}

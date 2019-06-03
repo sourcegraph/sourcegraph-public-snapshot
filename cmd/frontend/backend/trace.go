@@ -22,6 +22,7 @@ var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Help:      "Total time spent on backend endpoints.",
 	Buckets:   tracepkg.UserLatencyBuckets,
 }, metricLabels)
+
 var requestGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
 	Subsystem: "backend",

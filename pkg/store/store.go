@@ -27,11 +27,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-const (
-	// maxFileSize is the limit on file size in bytes. Only files smaller
-	// than this are searched.
-	maxFileSize = 1 << 20 // 1MB; match https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+%22-file_limit%22
-)
+// maxFileSize is the limit on file size in bytes. Only files smaller
+// than this are searched.
+const maxFileSize = 1 << 20 // 1MB; match https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+%22-file_limit%22
 
 // Store manages the fetching and storing of git archives. Its main purpose is
 // keeping a local disk cache of the fetched archives to help speed up future

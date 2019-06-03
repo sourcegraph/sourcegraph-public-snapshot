@@ -14,10 +14,8 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-var (
-	// HTTPClient is the HTTP client to use (otherwise http.DefaultClient is used).
-	HTTPClient *http.Client
-)
+// HTTPClient is the HTTP client to use (otherwise http.DefaultClient is used).
+var HTTPClient *http.Client
 
 const (
 	// APIVersion is a string that uniquely identifies this API version.

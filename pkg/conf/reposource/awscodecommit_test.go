@@ -7,7 +7,7 @@ import (
 )
 
 func TestAWS_cloneURLToRepoName(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		conn schema.AWSCodeCommitConnection
 		urls []urlToRepoName
 	}{{

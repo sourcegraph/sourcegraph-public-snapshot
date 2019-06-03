@@ -62,7 +62,8 @@ func TestClient_GetProject(t *testing.T) {
 	"http_url_to_repo": "https://gitlab.example.com/n1/n2/r.git",
 	"ssh_url_to_repo": "git@gitlab.example.com:n1/n2/r.git"
 }
-`}
+`,
+	}
 	c := newTestClient(t)
 	c.httpClient = &mock
 

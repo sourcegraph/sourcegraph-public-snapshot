@@ -367,7 +367,6 @@ func testEnabledStateDeprecationMigration(store repos.Store) func(*testing.T) {
 				}
 			}))
 		}
-
 	}
 }
 
@@ -508,7 +507,6 @@ func testGithubSetDefaultRepositoryQueryMigration(store repos.Store) func(*testi
 				}
 			}))
 		}
-
 	}
 }
 
@@ -624,7 +622,6 @@ func testGitLabSetDefaultProjectQueryMigration(store repos.Store) func(*testing.
 				}
 			}))
 		}
-
 	}
 }
 
@@ -741,7 +738,6 @@ func testBitbucketServerSetDefaultRepositoryQueryMigration(store repos.Store) fu
 				}
 			}))
 		}
-
 	}
 }
 
@@ -870,7 +866,6 @@ func testBitbucketServerUsernameMigration(store repos.Store) func(*testing.T) {
 				}
 			}))
 		}
-
 	}
 }
 
@@ -1055,7 +1050,6 @@ func testAWSCodeCommitSetBogusGitCredentialsMigration(store repos.Store) func(*t
 				}
 			}))
 		}
-
 	}
 }
 

@@ -113,6 +113,7 @@ func TestClient_ListRepos(t *testing.T) {
 		})
 	}
 }
+
 func TestClient_GetRawDiff(t *testing.T) {
 	cli, save := newClient(t, "GetRawDiff")
 	defer save()
@@ -240,7 +241,6 @@ func newClient(t testing.TB, name string) (*phabricator.Client, func()) {
 		i.Request.Form = map[string][]string{}
 		return nil
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,7 +257,6 @@ func newClient(t testing.TB, name string) (*phabricator.Client, func()) {
 		os.Getenv("PHABRICATOR_TOKEN"),
 		hc,
 	)
-
 	if err != nil {
 		t.Fatal(err)
 	}

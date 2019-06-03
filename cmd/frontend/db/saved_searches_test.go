@@ -50,7 +50,6 @@ func TestSavedSearchesIsEmpty(t *testing.T) {
 	if want != isEmpty {
 		t.Errorf("want %v, got %v", want, isEmpty)
 	}
-
 }
 
 func TestSavedSearchesCreate(t *testing.T) {
@@ -260,7 +259,8 @@ func TestSavedSearchesGetByID(t *testing.T) {
 		Notify:      true,
 		NotifySlack: true,
 		UserID:      &userID,
-		OrgID:       nil}}
+		OrgID:       nil,
+	}}
 
 	if !reflect.DeepEqual(savedSearch, want) {
 		t.Errorf("query is '%v+', want '%v+'", *savedSearch, *want)
@@ -379,5 +379,4 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 	if !reflect.DeepEqual(savedSearches, want) {
 		t.Errorf("got %v, want %v", savedSearches, want)
 	}
-
 }

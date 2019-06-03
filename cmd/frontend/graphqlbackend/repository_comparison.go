@@ -269,6 +269,7 @@ func (r *fileDiffResolver) Hunks() []*diffHunk {
 	}
 	return hunks
 }
+
 func (r *fileDiffResolver) Stat() *diffStat {
 	stat := r.fileDiff.Stat()
 	return &diffStat{
@@ -330,6 +331,7 @@ func (r *diffHunk) OldNoNewlineAt() bool { return r.hunk.OrigNoNewlineAt != 0 }
 func (r *diffHunk) NewRange() *diffHunkRange {
 	return &diffHunkRange{startLine: r.hunk.NewStartLine, lines: r.hunk.NewLines}
 }
+
 func (r *diffHunk) Section() *string {
 	if r.hunk.Section == "" {
 		return nil

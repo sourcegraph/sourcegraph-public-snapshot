@@ -208,17 +208,18 @@ func TestCookieMiddleware(t *testing.T) {
 		req      *http.Request
 		expActor *actor.Actor
 		deleted  bool // whether the session was deleted
-	}{{
-		req:      httptest.NewRequest("GET", "/", nil),
-		expActor: &actor.Actor{},
-	}, {
-		req:      authedReqs[0],
-		expActor: actors[0],
-	}, {
-		req:      authedReqs[1],
-		expActor: &actor.Actor{},
-		deleted:  true,
-	},
+	}{
+		{
+			req:      httptest.NewRequest("GET", "/", nil),
+			expActor: &actor.Actor{},
+		}, {
+			req:      authedReqs[0],
+			expActor: actors[0],
+		}, {
+			req:      authedReqs[1],
+			expActor: &actor.Actor{},
+			deleted:  true,
+		},
 		{
 			req:      authedReqs[2],
 			expActor: &actor.Actor{},

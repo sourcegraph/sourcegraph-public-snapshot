@@ -1,8 +1,6 @@
 package eventlogger
 
-import (
-	"encoding/json"
-)
+import "encoding/json"
 
 // Payload represents context about a user event to be tracked
 type Payload struct {

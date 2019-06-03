@@ -7,7 +7,7 @@ import (
 )
 
 func TestGitHub_cloneURLToRepoName(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		conn schema.GitHubConnection
 		urls []urlToRepoName
 	}{{

@@ -18,9 +18,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-const (
-	maxSearchSuggestions = 100
-)
+const maxSearchSuggestions = 100
 
 type searchSuggestionsArgs struct {
 	First *int32
@@ -95,7 +93,6 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	suggesters = append(suggesters, showFileSuggestions)
 
 	showSymbolMatches := func(ctx context.Context) (results []*searchSuggestionResolver, err error) {
-
 		repoRevs, _, _, _, err := r.resolveRepositories(ctx, nil)
 		if err != nil {
 			return nil, err

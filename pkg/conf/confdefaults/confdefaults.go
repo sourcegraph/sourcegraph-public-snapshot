@@ -5,9 +5,7 @@
 // pkg/db/confdb, which we have a linter to protect against.
 package confdefaults
 
-import (
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-)
+import "github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 
 // TODO(slimsag): consider moving these into actual json files for improved
 // editing.

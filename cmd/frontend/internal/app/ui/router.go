@@ -102,9 +102,7 @@ func Router() *mux.Router {
 	return uirouter.Router
 }
 
-var (
-	mockServeRepo func(w http.ResponseWriter, r *http.Request)
-)
+var mockServeRepo func(w http.ResponseWriter, r *http.Request)
 
 func newRouter() *mux.Router {
 	r := mux.NewRouter()

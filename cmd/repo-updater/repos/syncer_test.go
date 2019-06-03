@@ -316,8 +316,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					r.Name = "old-name"
 				})},
 				now: clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{tc.repo.With(
-					repos.Opt.RepoModifiedAt(clock.Time(1))),
+				diff: repos.Diff{Modified: repos.Repos{
+					tc.repo.With(
+						repos.Opt.RepoModifiedAt(clock.Time(1))),
 				}},
 				err: "<nil>",
 			},
@@ -427,8 +428,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					r.DeletedAt = clock.Time(0)
 				})},
 				now: clock.Now,
-				diff: repos.Diff{Added: repos.Repos{tc.repo.With(
-					repos.Opt.RepoCreatedAt(clock.Time(1))),
+				diff: repos.Diff{Added: repos.Repos{
+					tc.repo.With(
+						repos.Opt.RepoCreatedAt(clock.Time(1))),
 				}},
 				err: "<nil>",
 			},
@@ -930,7 +932,7 @@ func TestDiff(t *testing.T) {
 			diff.Sort()
 			tc.diff.Sort()
 			if cDiff := cmp.Diff(diff, tc.diff); cDiff != "" {
-				//t.Logf("have: %s\nwant: %s\n", pp.Sprint(diff), pp.Sprint(tc.diff))
+				// t.Logf("have: %s\nwant: %s\n", pp.Sprint(diff), pp.Sprint(tc.diff))
 				t.Fatalf("unexpected diff:\n%s", cDiff)
 			}
 		})

@@ -1086,7 +1086,6 @@ func computeLatestCommitTimestamp(dir string) (time.Time, error) {
 	cmd := exec.Command("git", "rev-list", "--all", "--timestamp", "-n", "1")
 	cmd.Dir = dir
 	output, err := cmd.Output()
-
 	// If we don't have a more specific stamp, we'll return the current time,
 	// and possibly an error.
 	if err != nil {

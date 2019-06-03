@@ -92,7 +92,8 @@ func TestClient_GetRepository(t *testing.T) {
 	"html_url": "https://github.example.com/o/r",
 	"fork": true
 }
-`}
+`,
+	}
 	c := newTestClient(t, &mock)
 
 	want := Repository{
@@ -298,7 +299,8 @@ func TestClient_GetRepositoryByNodeID(t *testing.T) {
 		}
 	}
 }
-`}
+`,
+	}
 	c := newTestClient(t, &mock)
 
 	want := Repository{
@@ -349,7 +351,8 @@ func TestClient_GetRepositoryByNodeID_nonexistent(t *testing.T) {
 		"node": null
 	}
 }
-`}
+`,
+	}
 	c := newTestClient(t, &mock)
 
 	repo, err := c.GetRepositoryByNodeID(context.Background(), "", "i")
@@ -404,7 +407,8 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
     }
   ]
 }
-`}
+`,
+	}
 	c := newTestClient(t, &mock)
 
 	wantRepos := []*Repository{
@@ -456,7 +460,8 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
     }
   ]
 }
-`}
+`,
+	}
 	c := newTestClient(t, &mock)
 
 	// If we have incomplete results we want to fail. Our syncer requires all
@@ -704,7 +709,6 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			mock := mockHTTPResponseBody{responseBody: tc.mockResponseBody}
 			c := newTestClient(t, &mock)
 

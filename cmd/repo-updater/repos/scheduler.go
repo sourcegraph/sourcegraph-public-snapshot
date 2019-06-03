@@ -578,11 +578,13 @@ func (q *updateQueue) Less(i, j int) bool {
 	// Queue semantics for items with the same priority.
 	return qi.Seq < qj.Seq
 }
+
 func (q *updateQueue) Swap(i, j int) {
 	q.heap[i], q.heap[j] = q.heap[j], q.heap[i]
 	q.heap[i].Index = i
 	q.heap[j].Index = j
 }
+
 func (q *updateQueue) Push(x interface{}) {
 	n := len(q.heap)
 	item := x.(*repoUpdate)
@@ -591,6 +593,7 @@ func (q *updateQueue) Push(x interface{}) {
 	q.heap = append(q.heap, item)
 	q.index[item.Repo.ID] = item
 }
+
 func (q *updateQueue) Pop() interface{} {
 	n := len(q.heap)
 	item := q.heap[n-1]
@@ -728,11 +731,13 @@ func (s *schedule) Len() int { return len(s.heap) }
 func (s *schedule) Less(i, j int) bool {
 	return s.heap[i].Due.Before(s.heap[j].Due)
 }
+
 func (s *schedule) Swap(i, j int) {
 	s.heap[i], s.heap[j] = s.heap[j], s.heap[i]
 	s.heap[i].Index = i
 	s.heap[j].Index = j
 }
+
 func (s *schedule) Push(x interface{}) {
 	n := len(s.heap)
 	item := x.(*scheduledRepoUpdate)
@@ -740,6 +745,7 @@ func (s *schedule) Push(x interface{}) {
 	s.heap = append(s.heap, item)
 	s.index[item.Repo.ID] = item
 }
+
 func (s *schedule) Pop() interface{} {
 	n := len(s.heap)
 	item := s.heap[n-1]

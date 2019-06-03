@@ -772,7 +772,6 @@ func scanRepo(r *Repo, s scanner) error {
 		&sources,
 		&metadata,
 	)
-
 	if err != nil {
 		return err
 	}

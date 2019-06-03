@@ -1,8 +1,6 @@
 package conf
 
-import (
-	"github.com/sourcegraph/sourcegraph/schema"
-)
+import "github.com/sourcegraph/sourcegraph/schema"
 
 // AuthProviderType returns the type string for the auth provider.
 func AuthProviderType(p schema.AuthProviders) string {
