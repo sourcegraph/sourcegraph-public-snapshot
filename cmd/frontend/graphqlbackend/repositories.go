@@ -98,9 +98,13 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			// filtering by clone status.
 			// The trade-off here is memory/cpu vs. network roundtrips to
 			// database/gitserver and we choose smaller latency over smaller
-			// memory footprint
-			// At the end of this method we return the requested number of repos
-			opt2.Limit += 500
+			// memory footprint.
+			// At the end of this method we return the requested number of
+			// repos.
+			// As for the number: 1250 is the result of local benchmarks where
+			// it yielded the best performance/resources tradeoff, before
+			// diminishing returns set in
+			opt2.Limit += 1250
 		}
 
 		var indexed map[api.RepoName]bool
