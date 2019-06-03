@@ -9,17 +9,15 @@ import (
 
 // All field names.
 const (
-	FieldDefault   = ""
-	FieldCase      = "case"
-	FieldRepo      = "repo"
-	FieldRepoGroup = "repogroup"
-	FieldFile      = "file"
-	FieldFork      = "fork"
-	FieldArchived  = "archived"
-	FieldLang      = "lang"
-	FieldType      = "type"
-
-	// Custom fields to allow nested search
+	FieldDefault     = ""
+	FieldCase        = "case"
+	FieldRepo        = "repo"
+	FieldRepoGroup   = "repogroup"
+	FieldFile        = "file"
+	FieldFork        = "fork"
+	FieldArchived    = "archived"
+	FieldLang        = "lang"
+	FieldType        = "type"
 	FieldRepoHasFile = "repohasfile"
 
 	// For diff and commit search only:
