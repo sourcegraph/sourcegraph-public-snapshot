@@ -142,10 +142,9 @@ const DiffHunk: React.FunctionComponent<
                                 {decorationsForLine.filter(propertyIsDefined('after')).map((decoration, i) => {
                                     const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
                                     return (
-                                        <>
+                                        <React.Fragment key={i}>
                                             {' '}
                                             <LinkOrSpan
-                                                key={i}
                                                 to={decoration.after.linkURL}
                                                 data-tooltip={decoration.after.hoverMessage}
                                                 // tslint:disable-next-line: jsx-ban-props Needed for decorations
@@ -153,7 +152,7 @@ const DiffHunk: React.FunctionComponent<
                                             >
                                                 {decoration.after.contentText}
                                             </LinkOrSpan>
-                                        </>
+                                        </React.Fragment>
                                     )
                                 })}
                             </td>
