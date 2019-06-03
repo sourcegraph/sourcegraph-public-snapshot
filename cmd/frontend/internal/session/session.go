@@ -86,6 +86,9 @@ func (st *sessionsStore) New(r *http.Request, name string) (s *sessions.Session,
 
 func (st *sessionsStore) setSecureOption(s *sessions.Session) {
 	if s != nil {
+		if s.Options == nil {
+			s.Options = new(sessions.Options)
+		}
 		s.Options.Secure = st.secure()
 	}
 }
