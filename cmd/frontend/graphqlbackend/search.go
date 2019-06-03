@@ -761,11 +761,9 @@ func IndexedSearch() *searchbackend.Zoekt {
 		if zoektAddr != "" {
 			indexedSearch.Client = zoektrpc.Client(zoektAddr)
 		}
-		go func() {
-			conf.Watch(func() {
-				indexedSearch.SetEnabled(conf.SearchIndexEnabled())
-			})
-		}()
+		conf.Watch(func() {
+			indexedSearch.SetEnabled(conf.SearchIndexEnabled())
+		})
 	})
 	return indexedSearch
 }
