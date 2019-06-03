@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
-
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/search/backend"
 
@@ -741,6 +740,9 @@ var (
 
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
+
+	indexedSearchOnce sync.Once
+	indexedSearch     *backend.Zoekt
 )
 
 func SearcherURLs() *endpoint.Map {
@@ -755,12 +757,16 @@ func SearcherURLs() *endpoint.Map {
 }
 
 func IndexedSearch() *backend.Zoekt {
-	z := &backend.Zoekt{}
-	if zoektAddr != "" {
-		z.Client = zoektrpc.Client(zoektAddr)
-	}
-	conf.Watch(func() {
-		z.SetEnabled(conf.SearchIndexEnabled())
+	indexedSearchOnce.Do(func() {
+		indexedSearch = &backend.Zoekt{}
+		if zoektAddr != "" {
+			indexedSearch.Client = zoektrpc.Client(zoektAddr)
+		}
+		go func() {
+			conf.Watch(func() {
+				indexedSearch.SetEnabled(conf.SearchIndexEnabled())
+			})
+		}()
 	})
-	return z
+	return indexedSearch
 }
