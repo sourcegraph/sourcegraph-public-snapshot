@@ -113,6 +113,7 @@ func parseExpr(in []byte) (Q, int, error) {
 	b = b[len(tok.Input):]
 
 	text := string(tok.Text)
+
 	switch tok.Type {
 	case tokCase:
 		switch text {
@@ -139,7 +140,6 @@ func parseExpr(in []byte) (Q, int, error) {
 			return nil, 0, err
 		}
 		expr = q
-
 	case tokContent:
 		q, err := regexpQuery(text, true, false)
 		if err != nil {

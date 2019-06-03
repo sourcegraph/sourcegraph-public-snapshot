@@ -607,6 +607,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 
 	// Handle file: and -file: filters.
 	includePatterns, excludePatterns := r.query.RegexpPatterns(query.FieldFile)
+	filePatternsReposMustInclude, filePatternsReposMustExclude := r.query.RegexpPatterns(query.FieldRepoHasFile)
 
 	if opts != nil && opts.forceFileSearch {
 		for _, v := range r.query.Values(query.FieldDefault) {
@@ -628,6 +629,8 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		FileMatchLimit:               r.maxResults(),
 		Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
 		IncludePatterns:              includePatterns,
+		FilePatternsReposMustInclude: filePatternsReposMustInclude,
+		FilePatternsReposMustExclude: filePatternsReposMustExclude,
 		PathPatternsAreRegExps:       true,
 		PathPatternsAreCaseSensitive: r.query.IsCaseSensitive(),
 	}
