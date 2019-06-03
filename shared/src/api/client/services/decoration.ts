@@ -48,9 +48,6 @@ export function decorationStyleForTheme(
     isLightTheme: boolean
 ): ThemableDecorationStyle {
     const overrides = isLightTheme ? attachment.light : attachment.dark
-    if (!overrides) {
-        return attachment
-    }
     // Discard non-ThemableDecorationStyle properties so they aren't included in result.
     const { range, isWholeLine, after, light, dark, ...base } = attachment
     return { ...base, ...overrides }
@@ -64,9 +61,6 @@ export function decorationAttachmentStyleForTheme(
     isLightTheme: boolean
 ): ThemableDecorationAttachmentStyle {
     const overrides = isLightTheme ? attachment.light : attachment.dark
-    if (!overrides) {
-        return attachment
-    }
     // Discard non-ThemableDecorationAttachmentStyle properties so they aren't included in result.
     const { contentText, hoverMessage, linkURL, light, dark, ...base } = attachment
     return { ...base, ...overrides }
