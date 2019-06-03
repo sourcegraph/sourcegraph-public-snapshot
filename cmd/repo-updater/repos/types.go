@@ -706,15 +706,16 @@ func (r *Repo) Less(s *Repo) bool {
 		return cmp == -1
 	}
 
-	keys := func(m map[string]*SourceInfo) []string {
-		keys := make([]string, 0, len(m))
-		for k := range m {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		return keys
+	return sortedSliceLess(sourcesKeys(r.Sources), sourcesKeys(s.Sources))
+}
+
+func sourcesKeys(m map[string]*SourceInfo) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
 	}
-	return sortedSliceLess(keys(r.Sources), keys(s.Sources))
+	sort.Strings(keys)
+	return keys
 }
 
 // sortedSliceLess returns true if a < b
