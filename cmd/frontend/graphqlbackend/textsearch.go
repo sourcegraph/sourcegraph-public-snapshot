@@ -473,7 +473,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 		return nil, false, nil, err
 	}
 	finalQuery = zoektquery.NewAnd(newRepoSet, queryExceptRepos)
-	tr.LazyPrintf("after repoHasFile filters: nRepos=%d query=%v", len(newRepoSet.Set), finalQuery)
+	tr.LazyPrintf("after repohasfile filters: nRepos=%d query=%v", len(newRepoSet.Set), finalQuery)
 
 	t0 := time.Now()
 	resp, err := searcher.Search(ctx, finalQuery, &searchOpts)
