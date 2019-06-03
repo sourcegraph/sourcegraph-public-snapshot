@@ -2,6 +2,7 @@ package symbols
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,8 +12,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/env"
-
-	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 

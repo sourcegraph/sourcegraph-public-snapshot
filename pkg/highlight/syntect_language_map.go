@@ -2,7 +2,8 @@ package highlight
 
 // SyntectLanguageMap is a map that maps language identifiers that may be provided at the end of markdown code fences
 // to valid syntect file extensions.
-var SyntectLanguageMap = map[string]string{"txt": "txt",
+var SyntectLanguageMap = map[string]string{
+	"txt":                  "txt",
 	"asa":                  "asa",
 	"asp":                  "asp",
 	"actionscript":         "as",
@@ -343,4 +344,5 @@ var SyntectLanguageMap = map[string]string{"txt": "txt",
 	"svg":                  "svg",
 	"yaml":                 "yaml",
 	"yml":                  "yml",
-	"sublime-syntax":       "sublime-syntax"}
+	"sublime-syntax":       "sublime-syntax",
+}

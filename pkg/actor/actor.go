@@ -43,9 +43,7 @@ func (a *Actor) IsAuthenticated() bool {
 
 type key int
 
-const (
-	actorKey key = iota
-)
+const actorKey key = iota
 
 func FromContext(ctx context.Context) *Actor {
 	a, ok := ctx.Value(actorKey).(*Actor)

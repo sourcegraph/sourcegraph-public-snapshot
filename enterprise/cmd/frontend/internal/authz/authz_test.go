@@ -26,15 +26,19 @@ type gitlabAuthzProviderParams struct {
 func (m gitlabAuthzProviderParams) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
 	panic("should never be called")
 }
+
 func (m gitlabAuthzProviderParams) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
 	panic("should never be called")
 }
+
 func (m gitlabAuthzProviderParams) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
 	panic("should never be called")
 }
+
 func (m gitlabAuthzProviderParams) ServiceID() string {
 	panic("should never be called")
 }
+
 func (m gitlabAuthzProviderParams) ServiceType() string {
 	panic("should never be called")
 }

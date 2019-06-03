@@ -47,7 +47,6 @@ func Remove(input string, path ...string) (string, error) {
 		jsonx.PropertyPath(path...),
 		jsonx.FormatOptions{InsertSpaces: true, TabSize: 2},
 	)
-
 	if err != nil {
 		return input, err
 	}
@@ -63,7 +62,6 @@ func Edit(input string, v interface{}, path ...string) (string, error) {
 		nil,
 		jsonx.FormatOptions{InsertSpaces: true, TabSize: 2},
 	)
-
 	if err != nil {
 		return input, err
 	}

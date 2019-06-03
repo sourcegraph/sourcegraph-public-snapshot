@@ -260,17 +260,16 @@ func sendOrgInvitationNotification(ctx context.Context, org *types.Org, sender *
 	})
 }
 
-var (
-	emailTemplates = txemail.MustValidate(txtypes.Templates{
-		Subject: `{{.FromName}} invited you to join {{.OrgName}} on Sourcegraph`,
-		Text: `
+var emailTemplates = txemail.MustValidate(txtypes.Templates{
+	Subject: `{{.FromName}} invited you to join {{.OrgName}} on Sourcegraph`,
+	Text: `
 {{.FromName}} invited you to join the {{.OrgName}} organization on Sourcegraph.
 
 To accept the invitation, follow this link:
 
   {{.URL}}
 `,
-		HTML: `
+	HTML: `
 <p>
   <strong>{{.FromName}}</strong> invited you to join the
   <strong>{{.OrgName}}</strong> organization on Sourcegraph.
@@ -278,5 +277,4 @@ To accept the invitation, follow this link:
 
 <p><strong><a href="{{.URL}}">Join {{.OrgName}}</a></strong></p>
 `,
-	})
-)
+})

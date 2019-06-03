@@ -1,8 +1,6 @@
 package graphqlbackend
 
-import (
-	"time"
-)
+import "time"
 
 // GetConfiguredProductLicenseInfo is called to obtain the product subscription info when creating
 // the GraphQL resolver for the GraphQL type ProductLicenseInfo.

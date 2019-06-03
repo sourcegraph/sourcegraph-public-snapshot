@@ -76,17 +76,16 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var (
-	resetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
-		Subject: `Reset your Sourcegraph password`,
-		Text: `
+var resetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
+	Subject: `Reset your Sourcegraph password`,
+	Text: `
 Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph.
 
 To reset the password for {{.Username}} on Sourcegraph, follow this link:
 
   {{.URL}}
 `,
-		HTML: `
+	HTML: `
 <p>
   Somebody (likely you) requested a password reset for <strong>{{.Username}}</strong>
   on Sourcegraph.
@@ -94,8 +93,7 @@ To reset the password for {{.Username}} on Sourcegraph, follow this link:
 
 <p><strong><a href="{{.URL}}">Reset password for {{.Username}}</a></strong></p>
 `,
-	})
-)
+})
 
 // HandleResetPasswordCode resets the password if the correct code is provided.
 func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {

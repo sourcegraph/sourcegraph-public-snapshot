@@ -121,7 +121,6 @@ func tryInsertNew(ctx context.Context, dbh interface {
 				// Don't treat this as an error.
 				err = nil
 			}
-
 		}
 	}
 	return err

@@ -58,7 +58,6 @@ func TestDBUsersBillingCustomerID(t *testing.T) {
 			t.Errorf("got %v, want errcode.IsNotFound(err) == true", err)
 		}
 	})
-
 }
 
 func strptr(s string) *string {

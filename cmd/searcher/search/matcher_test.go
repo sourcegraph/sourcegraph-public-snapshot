@@ -90,7 +90,6 @@ func TestBytesToLowerASCII(t *testing.T) {
 					}
 				}
 			}
-
 		}
 	})
 }
@@ -596,7 +595,6 @@ func createZip(files map[string]string) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
-
 }
 
 // githubStore fetches from github and caches across test runs.

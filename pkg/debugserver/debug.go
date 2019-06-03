@@ -17,9 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var (
-	addr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address.")
-)
+var addr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address.")
 
 func init() {
 	err := json.Unmarshal([]byte(env.Get("SRC_PROF_SERVICES", "[]", "list of net/http/pprof http bind address.")), &Services)

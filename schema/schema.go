@@ -37,6 +37,7 @@ type AuthAccessTokens struct {
 type AuthProviderCommon struct {
 	DisplayName string `json:"displayName,omitempty"`
 }
+
 type AuthProviders struct {
 	Builtin       *BuiltinAuthProvider
 	Saml          *SAMLAuthProvider
@@ -67,6 +68,7 @@ func (v AuthProviders) MarshalJSON() ([]byte, error) {
 	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
+
 func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	var d struct {
 		DiscriminantProperty string `json:"type"`
@@ -106,6 +108,7 @@ type BitbucketServerConnection struct {
 	Url                         string                         `json:"url"`
 	Username                    string                         `json:"username"`
 }
+
 type BrandAssets struct {
 	Logo   string `json:"logo,omitempty"`
 	Symbol string `json:"symbol,omitempty"`
@@ -158,23 +161,28 @@ type Discussions struct {
 	AbuseEmails     []string `json:"abuseEmails,omitempty"`
 	AbuseProtection bool     `json:"abuseProtection,omitempty"`
 }
+
 type ExcludedAWSCodeCommitRepo struct {
 	Id   string `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 }
+
 type ExcludedBitbucketServerRepo struct {
 	Id      int    `json:"id,omitempty"`
 	Name    string `json:"name,omitempty"`
 	Pattern string `json:"pattern,omitempty"`
 }
+
 type ExcludedGitHubRepo struct {
 	Id   string `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 }
+
 type ExcludedGitLabProject struct {
 	Id   int    `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 }
+
 type ExcludedGitoliteRepo struct {
 	Name string `json:"name,omitempty"`
 }
@@ -190,6 +198,7 @@ type Extensions struct {
 	Disabled              *bool       `json:"disabled,omitempty"`
 	RemoteRegistry        interface{} `json:"remoteRegistry,omitempty"`
 }
+
 type ExternalIdentity struct {
 	AuthProviderID   string `json:"authProviderID"`
 	AuthProviderType string `json:"authProviderType"`
@@ -254,6 +263,7 @@ type GitLabConnection struct {
 	Token                       string                   `json:"token"`
 	Url                         string                   `json:"url"`
 }
+
 type GitLabProject struct {
 	Id   int    `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
@@ -303,6 +313,7 @@ func (v IdentityProvider) MarshalJSON() ([]byte, error) {
 	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
+
 func (v *IdentityProvider) UnmarshalJSON(data []byte) error {
 	var d struct {
 		DiscriminantProperty string `json:"type"`
@@ -325,11 +336,13 @@ func (v *IdentityProvider) UnmarshalJSON(data []byte) error {
 type Log struct {
 	Sentry *Sentry `json:"sentry,omitempty"`
 }
+
 type Notice struct {
 	Dismissible bool   `json:"dismissible,omitempty"`
 	Location    string `json:"location"`
 	Message     string `json:"message"`
 }
+
 type OAuthIdentity struct {
 	Type string `json:"type"`
 }
@@ -368,6 +381,7 @@ type PhabricatorConnection struct {
 	Token string   `json:"token,omitempty"`
 	Url   string   `json:"url,omitempty"`
 }
+
 type Repos struct {
 	Callsign string `json:"callsign"`
 	Path     string `json:"path"`
@@ -399,6 +413,7 @@ type SMTPServerConfig struct {
 	Port           int    `json:"port"`
 	Username       string `json:"username,omitempty"`
 }
+
 type SearchSavedQueries struct {
 	Description    string `json:"description"`
 	Key            string `json:"key"`
@@ -407,6 +422,7 @@ type SearchSavedQueries struct {
 	Query          string `json:"query"`
 	ShowOnHomepage bool   `json:"showOnHomepage,omitempty"`
 }
+
 type SearchScope struct {
 	Description string `json:"description,omitempty"`
 	Id          string `json:"id,omitempty"`
@@ -462,6 +478,7 @@ type SiteConfiguration struct {
 type SlackNotificationsConfig struct {
 	WebhookURL string `json:"webhookURL"`
 }
+
 type UsernameIdentity struct {
 	Type string `json:"type"`
 }

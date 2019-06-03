@@ -38,5 +38,4 @@ func TestGetTrackedRepo(t *testing.T) {
 			t.Errorf("Repo should be tracked: %v", r)
 		}
 	}
-
 }

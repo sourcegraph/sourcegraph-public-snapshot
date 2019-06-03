@@ -25,9 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
-var (
-	logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
-)
+var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 
 const port = "3180"
 

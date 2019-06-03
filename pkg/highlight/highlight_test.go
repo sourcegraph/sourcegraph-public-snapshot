@@ -20,6 +20,7 @@ func TestPreSpansToTable_Simple(t *testing.T) {
 		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
 	}
 }
+
 func TestPreSpansToTable_Complex(t *testing.T) {
 	input := `<pre style="background-color:#ffffff;">
 <span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> errcode
@@ -50,6 +51,7 @@ func TestPreSpansToTable_Complex(t *testing.T) {
 		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
 	}
 }
+
 func TestGeneratePlainTable(t *testing.T) {
 	input := `line 1
 line 2

@@ -13,9 +13,7 @@ import (
 // Perm is a type of permission (e.g., "read").
 type Perm string
 
-const (
-	Read Perm = "read"
-)
+const Read Perm = "read"
 
 // AuthzProvider defines a source of truth of which repositories a user is authorized to view. The
 // user is identified by an ExternalAccount instance. Examples of authz providers include the

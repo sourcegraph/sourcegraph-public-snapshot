@@ -43,7 +43,6 @@ func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSour
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}

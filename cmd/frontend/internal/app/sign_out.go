@@ -61,8 +61,7 @@ func renderSignoutPageTemplate(w http.ResponseWriter, r *http.Request, signoutUR
 	buf.WriteTo(w)
 }
 
-var (
-	signoutPageTemplate = template.Must(template.New("").Parse(`
+var signoutPageTemplate = template.Must(template.New("").Parse(`
 <style>
 .auth-box,
 .center {
@@ -169,4 +168,3 @@ a:target {
 </div>
 </div>
 `))
-)

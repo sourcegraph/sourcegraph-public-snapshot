@@ -88,7 +88,6 @@ func main() {
 		}
 
 	}
-
 }
 
 func TestReplace_badrequest(t *testing.T) {
@@ -118,7 +117,6 @@ func TestReplace_badrequest(t *testing.T) {
 			t.Fatalf("%v expected to have HTTP 400 response. Got %s", p, err)
 		}
 	}
-
 }
 
 func doReplace(u string, p *protocol.Request) (string, error) {

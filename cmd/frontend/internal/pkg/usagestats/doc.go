@@ -3,9 +3,7 @@ package usagestats
 // Usage data is stored in four categories of redis data structures.
 // Each key is prefixed by the value below.
 
-var (
-	keyPrefix = "user_activity:"
-)
+var keyPrefix = "user_activity:"
 
 //////////////////////////////////////////////////////
 // 1. Site-level aggregates
@@ -50,6 +48,4 @@ const (
 // monthly unique users for site admins.
 //
 
-const (
-	fUsersActive = "usersactive"
-)
+const fUsersActive = "usersactive"

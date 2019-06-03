@@ -169,14 +169,12 @@ func (c *Client) cachedGetRepository(ctx context.Context, token, key string, get
 	return repo, nil
 }
 
-var (
-	reposGitHubCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "repos",
-		Name:      "github_cache_hit",
-		Help:      "Counts cache hits and misses for GitHub repo metadata.",
-	}, []string{"type"})
-)
+var reposGitHubCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "repos",
+	Name:      "github_cache_hit",
+	Help:      "Counts cache hits and misses for GitHub repo metadata.",
+}, []string{"type"})
 
 func init() {
 	prometheus.MustRegister(reposGitHubCacheCounter)
@@ -205,6 +203,7 @@ func (c *Client) getRepositoryFromCache(ctx context.Context, token, key string) 
 
 	return &cached
 }
+
 func firstNonEmpty(strs ...string) string {
 	for _, s := range strs {
 		if s != "" {

@@ -75,6 +75,7 @@ func ServiceName(s string) Option {
 		o.serviceName = s
 	}
 }
+
 func Filter(f func(*log15.Record) bool) Option {
 	return func(o *Options) {
 		o.filters = append(o.filters, f)

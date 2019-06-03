@@ -8,12 +8,13 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+
+	"github.com/pkg/errors"
 )
 
 var numFiles = flag.Int("nf", 100, "number of files to write")
