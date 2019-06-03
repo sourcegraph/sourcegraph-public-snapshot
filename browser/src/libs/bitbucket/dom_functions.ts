@@ -52,7 +52,7 @@ const getDiffLineElementFromLineNumber = (codeView: HTMLElement, line: number, p
         if (!isNaN(lineNum) && lineNum === line) {
             const lineElem = lineNumElem.closest('.line') as HTMLElement | null
             if (!lineElem) {
-                throw new Error('Could not find line elem for line element')
+                throw new Error('Could not find lineElem from lineNumElem')
             }
 
             return lineElem
