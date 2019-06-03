@@ -44,10 +44,12 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 
 	// App handler (HTML pages).
 	appHandler := app.NewHandler()
-	appHandler = handlerutil.CSRFMiddleware(appHandler, globals.ExternalURL.Scheme == "https") // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
-	appHandler = authMiddlewares.App(appHandler)                                               // 🚨 SECURITY: auth middleware
-	appHandler = session.CookieMiddleware(appHandler)                                          // app accepts cookies
-	appHandler = httpapi.AccessTokenAuthMiddleware(appHandler)                                 // app accepts access tokens
+	appHandler = handlerutil.CSRFMiddleware(appHandler, func() bool {
+		return globals.ExternalURL().Scheme == "https"
+	}) // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
+	appHandler = authMiddlewares.App(appHandler)               // 🚨 SECURITY: auth middleware
+	appHandler = session.CookieMiddleware(appHandler)          // app accepts cookies
+	appHandler = httpapi.AccessTokenAuthMiddleware(appHandler) // app accepts access tokens
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
