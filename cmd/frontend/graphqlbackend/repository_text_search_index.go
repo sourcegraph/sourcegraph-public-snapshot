@@ -11,22 +11,26 @@ import (
 )
 
 func (r *repositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if !Search().Index.Enabled() {
+	if !IndexedSearch().Enabled() {
 		return nil
 	}
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
-		client: Search().Index.Client,
+		client: IndexedSearch().Client,
 	}
 }
 
 type repositoryTextSearchIndexResolver struct {
 	repo   *repositoryResolver
-	client zoekt.Searcher
+	client repoLister
 
 	once  sync.Once
 	entry *zoekt.RepoListEntry
 	err   error
+}
+
+type repoLister interface {
+	List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error)
 }
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {

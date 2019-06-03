@@ -214,7 +214,7 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 	for {
 		attempt++
 
-		searcherURL, err := Search().SearcherURLs.Get(consistentHashKey, excludedSearchURLs)
+		searcherURL, err := SearcherURLs().Get(consistentHashKey, excludedSearchURLs)
 		if err != nil {
 			return nil, false, err
 		}
@@ -222,7 +222,7 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 		// Fallback to a bad host if nothing is left
 		if searcherURL == "" {
 			tr.LazyPrintf("failed to find endpoint, trying again without excludes")
-			searcherURL, err = Search().SearcherURLs.Get(consistentHashKey, nil)
+			searcherURL, err = SearcherURLs().Get(consistentHashKey, nil)
 			if err != nil {
 				return nil, false, err
 			}
@@ -647,7 +647,7 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 // Additionally, it returns a mapping of `indexed` repositories to the exact
 // Git commit of HEAD that is indexed.
 func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, err error) {
-	if !Search().Index.Enabled() {
+	if !IndexedSearch().Enabled() {
 		return nil, repos, nil, nil
 	}
 	for _, repoRev := range repos {
@@ -669,7 +669,7 @@ func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	resp, err := Search().Index.ListAll(ctx)
+	resp, err := IndexedSearch().ListAll(ctx)
 	if err != nil {
 		return nil, repos, nil, err
 	}
@@ -748,11 +748,11 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		switch parseYesNoOnly(index) {
 		case Yes, True:
 			// default
-			if Search().Index.Enabled() {
+			if IndexedSearch().Enabled() {
 				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
 			}
 		case Only:
-			if !Search().Index.Enabled() {
+			if !IndexedSearch().Enabled() {
 				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
 			}
 			common.missing = make([]*types.Repo, len(searcherRepos))
@@ -809,7 +809,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		query := args.Pattern
 		k := zoektResultCountFactor(len(zoektRepos), query)
 		opts := zoektSearchOpts(k, query)
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, indexedRevisions, args.UseFullDeadline, Search().Index.Client, opts, time.Since)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, indexedRevisions, args.UseFullDeadline, IndexedSearch().Client, opts, time.Since)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
@@ -857,7 +857,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		// The number of searcher endpoints can change over time. Inform our
 		// limiter of the new limit, which is a multiple of the number of
 		// searchers.
-		eps, err := Search().SearcherURLs.Endpoints()
+		eps, err := SearcherURLs().Endpoints()
 		if err != nil {
 			return nil, common, err
 		}
