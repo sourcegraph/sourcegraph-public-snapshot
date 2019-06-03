@@ -227,6 +227,10 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 		}
 	}
 
+	// Ensure names are unique case-insensitively. We don't merge when finding
+	// a conflict on name, we deterministically pick which sourced repo to
+	// keep. Can't merge since they represent different repositories
+	// (different external ID).
 	byName := make(map[string]*Repo, len(byID))
 	for _, r := range byID {
 		k := strings.ToLower(r.Name)

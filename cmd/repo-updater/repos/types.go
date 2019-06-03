@@ -682,8 +682,19 @@ func (r *Repo) With(opts ...func(*Repo)) *Repo {
 }
 
 // Less compares Repos by the important fields (fields with constraints in our
-// DB). Additionally it will compare on Sources to give a determinstic order
+// DB). Additionally it will compare on Sources to give a deterministic order
 // on repos returned from a sourcer.
+//
+// NewDiff relies on Less to deterministically decide on the order to merge
+// repositories, as well as which repository to keep on conflicts.
+//
+// Context on using other fields such as timestamps to order/resolve
+// conflicts: We only want to rely on values that have constraints in our
+// database. Tmestamps have the following downsides:
+//
+//   - We need to assume the upstream codehost has reasonable values for them
+//   - Not all codehosts set them to relevant values (eg gitolite or other)
+//   - They could change often for codehosts that do set them.
 func (r *Repo) Less(s *Repo) bool {
 	if r.ID != s.ID {
 		return r.ID < s.ID
