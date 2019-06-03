@@ -58,15 +58,13 @@ func init() {
 	vfsutil.ArchiveCacheDir = filepath.Join(cacheDir, "frontend-archive-cache")
 }
 
-// configureExternalURL determines the external URL of the application.
-//
-// It returns an error in the event that the configured external URL is not
-// parsable.
-func configureExternalURL() (*url.URL, error) {
+// defaultExternalURL returns the default external URL of the application.
+func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 	addr := nginxAddr
 	if addr == "" {
 		addr = httpAddr
 	}
+
 	var hostPort string
 	if strings.HasPrefix(addr, ":") {
 		// Prepend localhost if HTTP listen addr is just a port.
@@ -74,18 +72,8 @@ func configureExternalURL() (*url.URL, error) {
 	} else {
 		hostPort = addr
 	}
-	externalURL := conf.Get().Critical.ExternalURL
-	if externalURL == "" {
-		externalURL = "http://<http-addr>"
-	}
-	externalURL = strings.Replace(externalURL, "<http-addr>", hostPort, -1)
 
-	u, err := url.Parse(externalURL)
-	if err != nil {
-		return nil, err
-	}
-
-	return u, nil
+	return &url.URL{Scheme: "http", Host: hostPort}
 }
 
 // Main is the main entrypoint for the frontend server program.
@@ -158,17 +146,7 @@ func Main() error {
 
 	siteid.Init()
 
-	var err error
-	globals.ExternalURL, err = configureExternalURL()
-	if err != nil {
-		// The user configured an unparsable external URL.
-		//
-		// Per critical configuration usage guidelines, bad config should NEVER
-		// take down a process, the process should just 'do nothing'. So we do
-		// that here.
-		log15.Crit("Bad externalURL preventing server from starting (please fix it in the management console and restart the server)", "error", err)
-		select {}
-	}
+	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 
 	goroutine.Go(func() { bg.MigrateAllSettingsMOTDToNotices(context.Background()) })
 	goroutine.Go(func() { bg.MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(context.Background()) })
@@ -234,7 +212,7 @@ func Main() error {
 		fmt.Println(logoColor)
 		fmt.Println(" ")
 	}
-	fmt.Printf("✱ Sourcegraph is ready at: %s\n", globals.ExternalURL)
+	fmt.Printf("✱ Sourcegraph is ready at: %s\n", globals.ExternalURL())
 
 	srv.Wait()
 	return nil

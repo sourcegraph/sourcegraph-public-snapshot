@@ -1,8 +1,6 @@
 package auth
 
-import (
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-)
+import "github.com/sourcegraph/sourcegraph/pkg/conf"
 
 func init() {
 	conf.ContributeValidator(validateConfig)

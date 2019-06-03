@@ -13,9 +13,8 @@ import (
 )
 
 // GitLab login errors
-var (
-	ErrUnableToGetGitLabUser = errors.New("github: unable to get GitLab User")
-)
+
+var ErrUnableToGetGitLabUser = errors.New("github: unable to get GitLab User")
 
 func LoginHandler(config *oauth2.Config, failure http.Handler) http.Handler {
 	return oauth2Login.LoginHandler(config, failure)

@@ -81,9 +81,7 @@ type changeLog struct {
 	changeSets []*changeSet
 }
 
-var (
-	newVersion string
-)
+var newVersion string
 
 // readLines() yields the lines of the file as a slice of byte-slices
 func readLines(path string) ([][]byte, error) {

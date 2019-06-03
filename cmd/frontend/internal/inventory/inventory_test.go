@@ -93,18 +93,23 @@ type fi struct {
 func (f fi) Name() string {
 	return f.Path
 }
+
 func (f fi) Size() int64 {
 	return int64(len(f.Contents))
 }
+
 func (f fi) IsDir() bool {
 	return false
 }
+
 func (f fi) Mode() os.FileMode {
 	return os.FileMode(0)
 }
+
 func (f fi) ModTime() time.Time {
 	return time.Now()
 }
+
 func (f fi) Sys() interface{} {
 	return interface{}(nil)
 }

@@ -16,7 +16,6 @@ import { PrivateRepoPublicSourcegraphComError } from '../shared/backend/errors'
 import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../shared/util/context'
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
-import { createBlobURLForBundle } from './worker'
 
 /**
  * Creates the {@link PlatformContext} for the browser extension.
@@ -121,10 +120,10 @@ export function createPlatformContext(
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },
-        createExtensionHost,
+        createExtensionHost: () => createExtensionHost(sourcegraphURL),
         getScriptURLForExtension: async bundleURL => {
             if (isInPage) {
-                return await createBlobURLForBundle(bundleURL)
+                return bundleURL
             }
             // We need to import the extension's JavaScript file (in importScripts in the Web Worker) from a blob:
             // URI, not its original http:/https: URL, because Chrome extensions are not allowed to be published

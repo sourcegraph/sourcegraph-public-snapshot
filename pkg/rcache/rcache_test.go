@@ -18,25 +18,29 @@ func TestCache_namespace(t *testing.T) {
 		entries []kvTTL
 	}
 
-	cases := []testcase{{
-		prefix: "a",
-		entries: []kvTTL{
-			{k: "k0", v: "v0", ttl: -1},
-			{k: "k1", v: "v1", ttl: 123},
-			{k: "k2", v: "v2", ttl: 456},
-		}}, {
-		prefix: "b",
-		entries: []kvTTL{
-			{k: "k0", v: "v0", ttl: 234},
-			{k: "k1", v: "v1", ttl: -1},
-			{k: "k2", v: "v2", ttl: -1},
-		}}, {
-		prefix: "c",
-		entries: []kvTTL{
-			{k: "k0", v: "v0", ttl: -1},
-			{k: "k1", v: "v1", ttl: 123},
-			{k: "k2", v: "v2", ttl: -1},
-		}},
+	cases := []testcase{
+		{
+			prefix: "a",
+			entries: []kvTTL{
+				{k: "k0", v: "v0", ttl: -1},
+				{k: "k1", v: "v1", ttl: 123},
+				{k: "k2", v: "v2", ttl: 456},
+			},
+		}, {
+			prefix: "b",
+			entries: []kvTTL{
+				{k: "k0", v: "v0", ttl: 234},
+				{k: "k1", v: "v1", ttl: -1},
+				{k: "k2", v: "v2", ttl: -1},
+			},
+		}, {
+			prefix: "c",
+			entries: []kvTTL{
+				{k: "k0", v: "v0", ttl: -1},
+				{k: "k1", v: "v1", ttl: 123},
+				{k: "k2", v: "v2", ttl: -1},
+			},
+		},
 	}
 
 	caches := make([]*Cache, len(cases))

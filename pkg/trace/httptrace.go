@@ -37,6 +37,7 @@ var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Help:      "The HTTP request latencies in seconds.",
 	Buckets:   UserLatencyBuckets,
 }, metricLabels)
+
 var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
 	Subsystem: "http",
@@ -75,7 +76,6 @@ func init() {
 			close(ravenReady)
 		})
 	}()
-
 }
 
 // Middleware captures and exports metrics to Prometheus, etc.

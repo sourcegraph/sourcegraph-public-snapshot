@@ -1,8 +1,6 @@
 package gitlab
 
-import (
-	"context"
-)
+import "context"
 
 // MockListProjects, if non-nil, will be called instead of every invocation of Client.ListProjects.
 var MockListProjects func(c *Client, ctx context.Context, urlStr string) (proj []*Project, nextPageURL *string, err error)

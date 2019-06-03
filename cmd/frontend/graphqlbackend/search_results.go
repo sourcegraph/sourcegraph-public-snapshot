@@ -569,7 +569,6 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		searchResultsStatsCache.Set(cacheKey, jsonRes)
 	}
 	return stats, nil
-
 }
 
 type getPatternInfoOptions struct {
@@ -1002,7 +1001,6 @@ func compareSearchResults(a, b *searchResultResolver) bool {
 	}
 
 	return arepo < brepo
-
 }
 
 func sortResults(r []*searchResultResolver) {
@@ -1012,9 +1010,11 @@ func sortResults(r []*searchResultResolver) {
 func (g *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
 	return g.repo, g.repo != nil
 }
+
 func (g *searchResultResolver) ToFileMatch() (*fileMatchResolver, bool) {
 	return g.fileMatch, g.fileMatch != nil
 }
+
 func (g *searchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return g.diff, g.diff != nil
 }

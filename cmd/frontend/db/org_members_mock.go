@@ -1,11 +1,10 @@
 package db
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-
-	"context"
 )
 
 type MockOrgMembers struct {

@@ -110,6 +110,4 @@ func hasAuthzBypass(ctx context.Context) bool {
 
 type contextKey int
 
-const (
-	authzBypass contextKey = iota
-)
+const authzBypass contextKey = iota

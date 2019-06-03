@@ -186,7 +186,6 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
 		phabs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
 			Kinds: []string{"PHABRICATOR"},
 		})
-
 		if err != nil {
 			log15.Error("unable to fetch Phabricator connections", "err", err)
 		}

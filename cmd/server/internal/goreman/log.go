@@ -87,7 +87,6 @@ func (l *clogger) writeLines() {
 			tick = nil
 		}
 	}
-
 }
 
 // write handler of logger.

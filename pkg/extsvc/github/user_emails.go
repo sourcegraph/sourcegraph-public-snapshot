@@ -1,8 +1,6 @@
 package github
 
-import (
-	"context"
-)
+import "context"
 
 type UserEmail struct {
 	Email      string `json:"email,omitempty"`

@@ -72,16 +72,14 @@ func ConnectToDB(dataSource string) error {
 	return nil
 }
 
-var (
-	startupTimeout = func() time.Duration {
-		str := env.Get("DB_STARTUP_TIMEOUT", "10s", "keep trying for this long to connect to PostgreSQL database before failing")
-		d, err := time.ParseDuration(str)
-		if err != nil {
-			log.Fatalln("DB_STARTUP_TIMEOUT:", err)
-		}
-		return d
-	}()
-)
+var startupTimeout = func() time.Duration {
+	str := env.Get("DB_STARTUP_TIMEOUT", "10s", "keep trying for this long to connect to PostgreSQL database before failing")
+	d, err := time.ParseDuration(str)
+	if err != nil {
+		log.Fatalln("DB_STARTUP_TIMEOUT:", err)
+	}
+	return d
+}()
 
 func openDBWithStartupWait(dataSource string) (db *sql.DB, err error) {
 	// Allow the DB to take up to 10s while it reports "pq: the database system is starting up".

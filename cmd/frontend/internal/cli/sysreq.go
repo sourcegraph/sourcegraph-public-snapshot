@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -10,8 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/sysreq"
-
-	"context"
 )
 
 const skipSysReqsEnvVar = "SRC_SKIP_REQS"

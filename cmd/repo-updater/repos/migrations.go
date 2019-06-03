@@ -165,7 +165,6 @@ func GithubSetDefaultRepositoryQueryMigration(clock func() time.Time) Migration 
 		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
 			Kinds: []string{"github"},
 		})
-
 		if err != nil {
 			return errors.Wrapf(err, "%s list-external-services", prefix)
 		}
@@ -220,7 +219,6 @@ func GitLabSetDefaultProjectQueryMigration(clock func() time.Time) Migration {
 		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
 			Kinds: []string{"gitlab"},
 		})
-
 		if err != nil {
 			return errors.Wrapf(err, "%s list-external-services", prefix)
 		}
@@ -266,7 +264,6 @@ func BitbucketServerSetDefaultRepositoryQueryMigration(clock func() time.Time) M
 		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
 			Kinds: []string{"bitbucketserver"},
 		})
-
 		if err != nil {
 			return errors.Wrapf(err, "%s list-external-services", prefix)
 		}
@@ -315,7 +312,6 @@ func BitbucketServerUsernameMigration(clock func() time.Time) Migration {
 		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
 			Kinds: []string{"bitbucketserver"},
 		})
-
 		if err != nil {
 			return errors.Wrapf(err, "%s list-external-services", prefix)
 		}
@@ -367,7 +363,6 @@ func BitbucketServerUsernameMigration(clock func() time.Time) Migration {
 // error and accept new external service configuration syncs, which allows the
 // user to fix the wrong credentials.
 func AWSCodeCommitSetBogusGitCredentialsMigration(clock func() time.Time) Migration {
-
 	return migrate(func(ctx context.Context, s Store) error {
 		const (
 			prefix = "migrate.aws-codecommit-set-bogus-git-credentials:"
@@ -379,7 +374,6 @@ func AWSCodeCommitSetBogusGitCredentialsMigration(clock func() time.Time) Migrat
 		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
 			Kinds: []string{"awscodecommit"},
 		})
-
 		if err != nil {
 			return errors.Wrapf(err, "%s list-external-services", prefix)
 		}

@@ -1,8 +1,6 @@
 package discussions
 
-import (
-	"strings"
-)
+import "strings"
 
 // LineRange represents a line range in a file.
 type LineRange struct {

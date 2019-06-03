@@ -71,15 +71,19 @@ type repositoryTextSearchIndexStatus struct {
 func (r *repositoryTextSearchIndexStatus) UpdatedAt() string {
 	return r.entry.IndexMetadata.IndexTime.Format(time.RFC3339)
 }
+
 func (r *repositoryTextSearchIndexStatus) ContentByteSize() int32 {
 	return int32(r.entry.Stats.ContentBytes)
 }
+
 func (r *repositoryTextSearchIndexStatus) ContentFilesCount() int32 {
 	return int32(r.entry.Stats.Documents)
 }
+
 func (r *repositoryTextSearchIndexStatus) IndexByteSize() int32 {
 	return int32(r.entry.Stats.IndexBytes)
 }
+
 func (r *repositoryTextSearchIndexStatus) IndexShardsCount() int32 {
 	return int32(r.entry.Stats.Shards + 1)
 }

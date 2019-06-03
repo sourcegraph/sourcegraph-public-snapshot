@@ -1,8 +1,6 @@
 package graphqlbackend
 
-import (
-	"context"
-)
+import "context"
 
 // GetProductNameWithBrand is called to obtain the full product name (e.g., "Sourcegraph OSS") from a
 // product license.

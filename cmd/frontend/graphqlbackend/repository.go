@@ -172,6 +172,7 @@ func (r *repositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.
 func (r *repositoryResolver) Icon() string {
 	return r.icon
 }
+
 func (r *repositoryResolver) Label() (*markdownResolver, error) {
 	text := "[" + string(r.repo.Name) + "](/" + string(r.repo.Name) + ")"
 	return &markdownResolver{text: text}, nil

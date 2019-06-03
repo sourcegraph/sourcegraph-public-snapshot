@@ -37,6 +37,7 @@ var reposRemoved = prometheus.NewCounter(prometheus.CounterOpts{
 	Name:      "repos_removed",
 	Help:      "number of repos removed during cleanup",
 })
+
 var reposRecloned = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "src",
 	Subsystem: "gitserver",

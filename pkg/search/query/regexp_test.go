@@ -68,11 +68,13 @@ func TestRegexpParse(t *testing.T) {
 			&Substring{Pattern: "baz"},
 			&Substring{Pattern: "bla"},
 		}}},
-		{"^[a-z](People)+barrabas$",
+		{
+			"^[a-z](People)+barrabas$",
 			&And{[]Q{
 				&Substring{Pattern: "People"},
 				&Substring{Pattern: "barrabas"},
-			}}},
+			}},
+		},
 	}
 
 	for _, c := range cases {

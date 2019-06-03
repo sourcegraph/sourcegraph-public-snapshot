@@ -68,7 +68,6 @@ func TestSearchResults(t *testing.T) {
 	})
 
 	t.Run("multiple terms", func(t *testing.T) {
-
 		var calledReposList bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
@@ -356,9 +355,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
 		t.Run(test.descr, func(t *testing.T) {
-
 			actualDynamicFilters := (&searchResultsResolver{results: test.searchResults}).DynamicFilters()
 			actualDynamicFilterStrs := make(map[string]struct{})
 

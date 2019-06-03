@@ -360,7 +360,6 @@ func Test_GitLab_Repos(t *testing.T) {
 					t.Errorf("For input %v, expected others to be %v, but got %v", c.repos, c.expOthers, others)
 				}
 			}
-
 		})
 	}
 }

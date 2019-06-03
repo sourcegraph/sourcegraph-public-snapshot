@@ -54,7 +54,6 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
 		IDs: []uint32{req.ID},
 	})
-
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -98,7 +97,6 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
 		IDs: []uint32{req.ID},
 	})
-
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return

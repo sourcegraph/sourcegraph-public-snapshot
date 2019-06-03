@@ -26,9 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
-var (
-	forceRunInterval = env.Get("FORCE_RUN_INTERVAL", "", "Force an interval to run saved queries at, instead of assuming query execution time * 30 (query that takes 2s to run, runs every 60s)")
-)
+var forceRunInterval = env.Get("FORCE_RUN_INTERVAL", "", "Force an interval to run saved queries at, instead of assuming query execution time * 30 (query that takes 2s to run, runs every 60s)")
 
 const port = "3183"
 

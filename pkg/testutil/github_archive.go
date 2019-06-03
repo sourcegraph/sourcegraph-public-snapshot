@@ -83,6 +83,7 @@ type gzipReadCloser struct {
 func (z *gzipReadCloser) Read(p []byte) (int, error) {
 	return z.r.Read(p)
 }
+
 func (z *gzipReadCloser) Close() error {
 	err := z.r.Close()
 	if err1 := z.f.Close(); err == nil {

@@ -29,7 +29,6 @@ func NewClient(ctx context.Context, url, token string, cli httpcli.Doer) (*Clien
 		APIToken: token,
 		Client:   httpcli.HeadersMiddleware("User-Agent", "sourcegraph/phabricator-client")(cli),
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +153,6 @@ func (r *Repo) UnmarshalJSON(data []byte) error {
 			URIs: apiURIsContainer{URIs: &uris},
 		},
 	})
-
 	if err != nil {
 		return err
 	}

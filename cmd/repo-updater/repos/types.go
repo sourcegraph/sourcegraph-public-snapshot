@@ -654,6 +654,12 @@ func (r *Repo) Clone() *Repo {
 		return nil
 	}
 	clone := *r
+	if r.Sources != nil {
+		clone.Sources = make(map[string]*SourceInfo, len(r.Sources))
+		for k, v := range r.Sources {
+			clone.Sources[k] = v
+		}
+	}
 	return &clone
 }
 
@@ -673,6 +679,56 @@ func (r *Repo) With(opts ...func(*Repo)) *Repo {
 	clone := r.Clone()
 	clone.Apply(opts...)
 	return clone
+}
+
+// Less compares Repos by the important fields (fields with constraints in our
+// DB). Additionally it will compare on Sources to give a deterministic order
+// on repos returned from a sourcer.
+//
+// NewDiff relies on Less to deterministically decide on the order to merge
+// repositories, as well as which repository to keep on conflicts.
+//
+// Context on using other fields such as timestamps to order/resolve
+// conflicts: We only want to rely on values that have constraints in our
+// database. Tmestamps have the following downsides:
+//
+//   - We need to assume the upstream codehost has reasonable values for them
+//   - Not all codehosts set them to relevant values (eg gitolite or other)
+//   - They could change often for codehosts that do set them.
+func (r *Repo) Less(s *Repo) bool {
+	if r.ID != s.ID {
+		return r.ID < s.ID
+	}
+	if r.Name != s.Name {
+		return r.Name < s.Name
+	}
+	if cmp := r.ExternalRepo.Compare(s.ExternalRepo); cmp != 0 {
+		return cmp == -1
+	}
+
+	return sortedSliceLess(sourcesKeys(r.Sources), sourcesKeys(s.Sources))
+}
+
+func sourcesKeys(m map[string]*SourceInfo) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// sortedSliceLess returns true if a < b
+func sortedSliceLess(a, b []string) bool {
+	for i, v := range a {
+		if i == len(b) {
+			return false
+		}
+		if v != b[i] {
+			return v < b[i]
+		}
+	}
+	return true
 }
 
 // Repos is an utility type with convenience methods for operating on lists of Repos.
@@ -720,13 +776,7 @@ func (rs Repos) Swap(i, j int) {
 }
 
 func (rs Repos) Less(i, j int) bool {
-	if rs[i].ID != rs[j].ID {
-		return rs[i].ID < rs[j].ID
-	}
-	if rs[i].Name != rs[j].Name {
-		return rs[i].Name < rs[j].Name
-	}
-	return rs[i].ExternalRepo.Compare(rs[j].ExternalRepo) == -1
+	return rs[i].Less(rs[j])
 }
 
 // Concat adds the given Repos to the end of rs.

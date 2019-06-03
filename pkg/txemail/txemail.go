@@ -29,7 +29,6 @@ type Message struct {
 
 // Render returns the rendered message contents without sending email.
 func Render(message Message) (*gophermail.Message, error) {
-
 	m := gophermail.Message{
 		From: mail.Address{
 			Name: "Sourcegraph",
