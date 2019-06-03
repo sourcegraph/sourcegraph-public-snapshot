@@ -10,6 +10,7 @@ import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { deleteSavedSearch, fetchSavedSearches } from '../../search/backend'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 
 interface NodeProps extends RouteComponentProps {
     savedSearch: GQL.ISavedSearch
@@ -54,7 +55,9 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
             <div className="saved-search-list-page__row list-group-item">
                 <div className="d-flex">
                     <MessageTextOutlineIcon className="saved-search-list-page__row--icon icon-inline" />
-                    <div>{this.props.savedSearch.description}</div>
+                    <Link to={'/search?' + buildSearchURLQuery(this.props.savedSearch.query)}>
+                        <div>{this.props.savedSearch.description}</div>
+                    </Link>
                 </div>
                 <div>
                     <Link
