@@ -81,7 +81,7 @@ describe('e2e test suite', function(this: any): void {
             browser = await puppeteer.launch(launchOpt)
             page = await browser.newPage()
             page.on('console', message =>
-                console.log('Browser console message:', util.inspect(message, { breakLength: Infinity }))
+                console.log('Browser console message:', util.inspect(message, { colors: true, depth: 2, breakLength: Infinity }))
             )
             await init()
         },
