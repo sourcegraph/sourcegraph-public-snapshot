@@ -2,7 +2,7 @@
   "name": "management-console",
   "private": true,
   "dependencies": {
-    "deasync": "^0.1.14",
+    "deasync": "^0.1.15",
     "react": "^16.8.6",
     "rxjs": "^6.5.2"
   },
