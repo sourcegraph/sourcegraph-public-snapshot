@@ -93,7 +93,7 @@ describe('e2e test suite', function(this: any): void {
                 selector: '.view-line',
                 newText:
                     '{"url": "https://github.myenterprise.com", "token": "second-token", "repositoryQuery": ["none"]}',
-                method: 'keyboard',
+                selectMethod: 'keyboard',
             })
             await driver.page.click('.e2e-update-external-service-button')
             // Must wait for the operation to complete, or else a "Discard changes?" dialog will pop up

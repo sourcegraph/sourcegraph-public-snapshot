@@ -16,56 +16,20 @@ export const gitHubToken = readEnvString({ variable: 'GITHUB_TOKEN' })
 export const baseURL = readEnvString({ variable: 'SOURCEGRAPH_BASE_URL', defaultValue: 'http://localhost:3080' })
 
 /**
- * Specifies how `replaceText` will select the content of the element. No
+ * Specifies how to select the content of the element. No
  * single method works in all cases:
  *
  * - Meta+A doesn't work in input boxes https://github.com/GoogleChrome/puppeteer/issues/1313
  * - selectall doesn't work in the Monaco editor
  */
-type ReplaceTextMethod = 'selectall' | 'keyboard'
+type SelectTextMethod = 'selectall' | 'keyboard'
 
-export async function newDriverForTest(): Promise<Driver> {
-    let args: string[] = []
-    if (process.getuid() === 0) {
-        // TODO don't run as root in CI
-        console.warn('Running as root, disabling sandbox')
-        args = ['--no-sandbox', '--disable-setuid-sandbox']
-    }
-    const launchOpt: LaunchOptions = {
-        args: [...args, '--window-size=1280,1024'],
-        headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
-    }
-    const browser = await puppeteer.launch(launchOpt)
-    const page = await browser.newPage()
-    page.on('console', message => {
-        if (message.text().indexOf('Download the React DevTools') !== -1) {
-            return
-        }
-        const seen = new WeakSet()
-        console.log(
-            'Browser console message:',
-            JSON.stringify(
-                {
-                    type: message.type(),
-                    text: message.text(),
-                    location: message.location(),
-                    args: message.args().length > 0 ? message.args() : undefined,
-                },
-                (key, value) => {
-                    if (typeof value === 'object' && value !== null) {
-                        if (seen.has(value)) {
-                            return
-                        }
-                        seen.add(value)
-                    }
-                    return value
-                },
-                2
-            )
-        )
-    })
-    return new Driver(browser, page)
-}
+/**
+ * Specifies how to enter text. Typing is preferred in cases where it's important to test
+ * the process of manually typing out the text to enter. Pasting is preferred in cases
+ * where typing would be too slow or we explicitly want to test paste behavior.
+ */
+type EnterTextMethod = 'type' | 'paste'
 
 export class Driver {
     constructor(public browser: puppeteer.Browser, public page: puppeteer.Page) {}
@@ -96,36 +60,51 @@ export class Driver {
         await this.browser.close()
     }
 
-    public async replaceText({
-        selector,
-        newText,
-        method = 'selectall',
-    }: {
-        selector: string
-        newText: string
-        method?: ReplaceTextMethod
-    }): Promise<void> {
-        const selectAllByMethod: Record<ReplaceTextMethod, () => Promise<void>> = {
-            selectall: async () => {
+    public async selectAll(method: SelectTextMethod = 'selectall'): Promise<void> {
+        switch (method) {
+            case 'selectall':
                 await this.page.evaluate(() => document.execCommand('selectall', false))
-            },
-            keyboard: async () => {
+                break
+            case 'keyboard':
                 const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
                 await this.page.keyboard.down(modifier)
                 await this.page.keyboard.press('a')
                 await this.page.keyboard.up(modifier)
-            },
+                break
         }
+    }
 
+    public async enterText(method: EnterTextMethod = 'type', text: string): Promise<void> {
+        switch (method) {
+            case 'type':
+                await this.page.keyboard.type(text)
+                break
+            case 'paste':
+                await this.paste(text)
+                break
+        }
+    }
+
+    public async replaceText({
+        selector,
+        newText,
+        selectMethod = 'selectall',
+        enterTextMethod = 'type',
+    }: {
+        selector: string
+        newText: string
+        selectMethod?: SelectTextMethod
+        enterTextMethod?: EnterTextMethod
+    }): Promise<void> {
         // The Monaco editor sometimes detaches nodes from the DOM, causing
         // `click()` to fail unpredictably.
         await retry(async () => {
             await this.page.waitForSelector(selector)
             await this.page.click(selector)
         })
-        await selectAllByMethod[method]()
+        await this.selectAll(selectMethod)
         await this.page.keyboard.press(Key.Backspace)
-        await this.page.keyboard.type(newText)
+        await this.enterText(enterTextMethod, newText)
     }
 
     public async ensureHasExternalService(
@@ -153,27 +132,26 @@ export class Driver {
 
         await (await this.page.waitForSelector(`.linked-external-service-card--${kind}`, { visible: true })).click()
 
-        await this.replaceText({ selector: '#e2e-external-service-form-display-name', newText: displayName })
+        await this.replaceText({
+            selector: '#e2e-external-service-form-display-name',
+            newText: displayName,
+            enterTextMethod: 'paste',
+        })
+        await setTimeout(() => null, 10000)
 
         // Type in a new external service configuration.
         await this.replaceText({
             selector: '.view-line',
             newText: config,
-            method: 'keyboard',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
         })
+        await setTimeout(() => null, 10000)
         await this.page.click('.e2e-add-external-service-button')
+        await setTimeout(() => null, 10000)
         await this.page.waitForNavigation()
 
         if (ensureRepos) {
-            // Wait for repositories to sync.
-            await this.page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
-            await retry(async () => {
-                await this.page.reload()
-                await this.page.waitForSelector(`.repository-node[data-e2e-repository='github.com/gorilla/mux']`, {
-                    timeout: 5000,
-                })
-            })
-
             // Clone the repositories
             for (const slug of ensureRepos) {
                 await this.page.goto(baseURL + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
@@ -182,6 +160,20 @@ export class Driver {
                 })
             }
         }
+    }
+
+    public async paste(value: string): Promise<void> {
+        await this.page.evaluate(
+            async d => {
+                // @ts-ignore
+                await navigator.clipboard.writeText(d.value)
+            },
+            { value }
+        )
+        const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
+        await this.page.keyboard.down(modifier)
+        await this.page.keyboard.press('v')
+        await this.page.keyboard.up(modifier)
     }
 
     public async assertWindowLocation(location: string, isAbsolute = false): Promise<any> {
@@ -232,4 +224,35 @@ export class Driver {
         // verify there are some references
         await this.page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item', { visible: true })
     }
+}
+
+export async function newDriverForTest(): Promise<Driver> {
+    let args: string[] = []
+    if (process.getuid() === 0) {
+        // TODO don't run as root in CI
+        console.warn('Running as root, disabling sandbox')
+        args = ['--no-sandbox', '--disable-setuid-sandbox']
+    }
+    const launchOpt: LaunchOptions = {
+        args: [...args, '--window-size=1280,1024'],
+        headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
+    }
+    const browser = await puppeteer.launch(launchOpt)
+    const page = await browser.newPage()
+    page.on('console', message => {
+        if (message.text().indexOf('Download the React DevTools') !== -1) {
+            return
+        }
+        const loc = message.location()
+        console.log(
+            'Browser console [' +
+                message.type() +
+                ':' +
+                loc.url +
+                (loc.lineNumber ? ':L' + loc.lineNumber + ':' + loc.columnNumber : '') +
+                ']:',
+            message.text()
+        )
+    })
+    return new Driver(browser, page)
 }
