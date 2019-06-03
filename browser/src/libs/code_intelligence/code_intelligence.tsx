@@ -621,7 +621,7 @@ export function handleCodeHost({
                                     filePath: fileInfo.baseFilePath,
                                 })
                             )
-                            // Make sure extensions get cleaned up un unsubscription
+                            // Make sure decorations get cleaned up on unsubscription
                             .pipe(finalize(update))
                             // The nested subscribe cannot be replaced with a switchMap()
                             // We manage the subscription correctly.
