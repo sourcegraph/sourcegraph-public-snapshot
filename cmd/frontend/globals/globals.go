@@ -37,9 +37,8 @@ func WatchExternalURL(defaultURL *url.URL) {
 			}
 		}
 
-		before := externalURL.Load().(*url.URL)
-		if !reflect.DeepEqual(before, after) {
-			externalURL.Store(after)
+		if before := ExternalURL(); !reflect.DeepEqual(before, after) {
+			SetExternalURL(after)
 			if before.Host != "example.com" {
 				log15.Info(
 					"globals.ExternalURL",
@@ -56,6 +55,11 @@ func WatchExternalURL(defaultURL *url.URL) {
 // Callers must not mutate the returned pointer.
 func ExternalURL() *url.URL {
 	return externalURL.Load().(*url.URL)
+}
+
+// SetExternalURL sets the fully-resolved, externally accessible frontend URL.
+func SetExternalURL(u *url.URL) {
+	externalURL.Store(u)
 }
 
 // ConfigurationServerFrontendOnly provides the contents of the site configuration
