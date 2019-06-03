@@ -571,3 +571,4 @@ func TestCompareSearchResults(t *testing.T) {
 		}
 	}
 }
+

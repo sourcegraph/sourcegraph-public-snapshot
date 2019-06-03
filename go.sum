@@ -633,6 +633,7 @@ golang.org/x/oauth2 v0.0.0-20190426200222-9f3314589c9a h1:nmml9VKepA01xC5LUDn/1v
 golang.org/x/oauth2 v0.0.0-20190426200222-9f3314589c9a/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
 golang.org/x/oauth2 v0.0.0-20190602172753-aaccbc9213b0 h1:CXghSJpU62ldyURqmA7kvki7OVzr5HSC57FwWi3/b5E=
 golang.org/x/oauth2 v0.0.0-20190602172753-aaccbc9213b0/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
+golang.org/x/oauth2 v0.0.0-20190604060849-0f29369cfe45 h1:TCfob1wf79EYzd0A5DtY8Fqx7lOBHNwfRM+Gjlhy0Fw=
 golang.org/x/oauth2 v0.0.0-20190604060849-0f29369cfe45/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
 golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20181108010431-42b317875d0f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=

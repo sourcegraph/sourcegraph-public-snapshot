@@ -4,8 +4,13 @@ import (
 	"context"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/leanovate/gopter"
+	"github.com/leanovate/gopter/gen"
+	"github.com/leanovate/gopter/prop"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -518,4 +523,148 @@ func init() {
 	// contacting them in tests.
 	zoektAddr = "127.0.0.1:101010"
 	searcherURL = "http://127.0.0.1:101010"
+}
+
+func Test_splitMatchesOnNewlines(t *testing.T) {
+	type args struct {
+		fileMatches []zoekt.FileMatch
+	}
+	tests := []struct {
+		name string
+		args args
+		want []zoekt.FileMatch
+	}{
+		{name: "empty", args: args{fileMatches: nil}, want: nil},
+		{
+			name: "no newlines",
+			args: args{
+				fileMatches: []zoekt.FileMatch{
+					{
+						LineMatches: []zoekt.LineMatch{
+							{
+								Line:       []byte("abc"),
+								LineStart:  0,
+								LineEnd:    len("abc"),
+								LineNumber: len("abc"),
+								LineFragments: []zoekt.LineFragmentMatch{
+									{
+										LineOffset:  0,
+										Offset:      0,
+										MatchLength: len("abc"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			// Same as the input
+			want: []zoekt.FileMatch{
+				{
+					LineMatches: []zoekt.LineMatch{
+						{
+							Line:       []byte("abc"),
+							LineStart:  0,
+							LineEnd:    len("abc"),
+							LineNumber: len("abc"),
+							LineFragments: []zoekt.LineFragmentMatch{
+								{
+									LineOffset:  0,
+									Offset:      0,
+									MatchLength: len("abc"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "one newline",
+			args: args{
+				fileMatches: []zoekt.FileMatch{
+					{
+						LineMatches: []zoekt.LineMatch{
+							{
+								Line:       []byte("a\nb"),
+								LineStart:  0,
+								LineEnd:    len("a\nb"),
+								LineNumber: len("a\nb"),
+								LineFragments: []zoekt.LineFragmentMatch{
+									{
+										LineOffset:  0,
+										Offset:      0,
+										MatchLength: len("a\nb"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []zoekt.FileMatch{
+				{
+					LineMatches: []zoekt.LineMatch{
+						{
+							Line:       []byte("a"),
+							LineStart:  0,
+							LineEnd:    len("a"),
+							LineNumber: len("a"),
+							LineFragments: []zoekt.LineFragmentMatch{
+								{
+									LineOffset:  0,
+									Offset:      0,
+									MatchLength: len("a"),
+								},
+							},
+						},
+						{
+							Line:       []byte("b"),
+							LineStart:  len("a\n"),
+							LineEnd:    len("a\nb"),
+							LineNumber: len("b"),
+							LineFragments: []zoekt.LineFragmentMatch{
+								{
+									LineOffset:  0,
+									Offset:      2,
+									MatchLength: len("b"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := splitMatchesOnNewlines(tt.args.fileMatches); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("splitMatchesOnNewlines() = \n%+v\nwant\n%+v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_fixupLineMatch(t *testing.T) {
+	t.Run("number of results is number of newlines plus one", func(t *testing.T) {
+		pp := gopter.DefaultTestParameters()
+		props := gopter.NewProperties(pp)
+		props.Property("results length", prop.ForAll(
+			func(s string, start int) bool {
+				lm := zoekt.LineMatch{
+					Line:          []byte(s),
+					LineStart:     start,
+					LineEnd:       start + len(s),
+					LineNumber:    len(s),
+					LineFragments: nil,
+				}
+				n := strings.Count(s, "\n")
+				lms := fixupLineMatch(lm)
+				return len(lms) == n+1
+			},
+			gen.RegexMatch(`^[abc123\n]*$`),
+			gen.IntRange(0, 100),
+		))
+		props.TestingRun(t)
+	})
 }

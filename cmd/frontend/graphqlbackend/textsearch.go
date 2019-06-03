@@ -529,8 +529,125 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 
 		limitHit = true
 	}
-	matches := make([]*fileMatchResolver, len(resp.Files))
-	for i, file := range resp.Files {
+
+	// Split the matches into lines.
+	fileMatches := splitMatchesOnNewlines(resp.Files)
+	matches, limitHit := fileMatchResolversFromFileMatches(fileMatches, maxLineMatches, limitHit, maxLineFragmentMatches, repoMap, indexedRevisions)
+	return matches, limitHit, reposLimitHit, nil
+}
+
+// splitMatchesOnNewlines splits line matches on any newlines they may contain.
+func splitMatchesOnNewlines(fms []zoekt.FileMatch) []zoekt.FileMatch {
+	var fms2 []zoekt.FileMatch
+	for _, fm := range fms {
+		// Copy all the fields other than LineMatches. We may have to break LineMatches down if there are newlines.
+		fm2 := fm
+		fm2.LineMatches = nil
+		for _, lm := range fm.LineMatches {
+			lms2 := fixupLineMatch(lm)
+			for _, lm2 := range lms2 {
+				fm2.LineMatches = append(fm2.LineMatches, lm2)
+			}
+		}
+		fms2 = append(fms2, fm2)
+	}
+	return fms2
+}
+
+// fixupLineMatch splits a line match on any newlines it may contain.
+func fixupLineMatch(lm zoekt.LineMatch) []zoekt.LineMatch {
+	var lms2 []zoekt.LineMatch
+	offset := 0
+	for i, b := range lm.Line {
+		if b == '\n' {
+			// Add the line match for the line that just ended.
+			lm2 := zoekt.LineMatch{
+				Line:       lm.Line[offset:i],
+				LineStart:  lm.LineStart + offset,
+				LineEnd:    lm.LineStart + i,
+				LineNumber: i - offset,
+			}
+			lm2.LineFragments = fixupFragments(lm.LineFragments, lm2)
+			lms2 = append(lms2, lm2)
+			// Start again on the next line.
+			offset = i + 1
+		}
+	}
+	lm2 := zoekt.LineMatch{
+		Line:       lm.Line[offset:len(lm.Line)],
+		LineStart:  lm.LineStart + offset,
+		LineEnd:    lm.LineEnd,
+		LineNumber: lm.LineEnd - (lm.LineStart + offset),
+	}
+	lm2.LineFragments = fixupFragments(lm.LineFragments, lm2)
+	lms2 = append(lms2, lm2)
+	return lms2
+}
+
+// fixupFragments filters and newline-splits a slice of line fragments.
+func fixupFragments(fs []zoekt.LineFragmentMatch, lm zoekt.LineMatch) []zoekt.LineFragmentMatch {
+	fs = filterFragments(fs, lm)
+	fs = splitFragments(fs, lm)
+	return fs
+}
+
+// splitFragments splits the line fragments across any newlines in the LineMatch containing them.
+func splitFragments(fs []zoekt.LineFragmentMatch, lm zoekt.LineMatch) []zoekt.LineFragmentMatch {
+	var fs2 []zoekt.LineFragmentMatch
+	for _, f := range fs {
+		fragOffset := 0
+		for i := f.LineOffset; i < f.LineOffset+f.MatchLength; i++ {
+			if lm.Line[i] == '\n' {
+				f2 := zoekt.LineFragmentMatch{
+					LineOffset:  f.LineOffset + fragOffset,
+					Offset:      f.Offset + uint32(fragOffset),
+					MatchLength: i - (f.LineOffset + fragOffset),
+				}
+				fs2 = append(fs2, f2)
+				fragOffset = i + 1
+			}
+		}
+		f2 := zoekt.LineFragmentMatch{
+			LineOffset:  f.LineOffset + fragOffset,
+			Offset:      f.Offset + uint32(fragOffset),
+			MatchLength: f.MatchLength - fragOffset,
+		}
+		fs2 = append(fs2, f2)
+	}
+	return fs2
+}
+
+// filterFragments removes any fragments outside the line match and truncates any that partially go outside it.
+func filterFragments(fs []zoekt.LineFragmentMatch, lm zoekt.LineMatch) []zoekt.LineFragmentMatch {
+	var fs2 []zoekt.LineFragmentMatch
+	for _, f := range fs {
+		// If the fragment f is outside the line:
+		if int(f.Offset)+f.MatchLength < lm.LineStart || lm.LineEnd <= int(f.Offset) {
+			// Skip it.
+			continue
+		}
+		// If f starts outside:
+		if f.Offset < uint32(lm.LineStart) {
+			// Truncate it on the left.
+			f = zoekt.LineFragmentMatch{
+				LineOffset:  0,
+				Offset:      uint32(lm.LineStart),
+				MatchLength: f.MatchLength - (lm.LineStart - int(f.Offset)),
+			}
+		}
+		// If f ends outside:
+		if int(f.Offset)+f.MatchLength > lm.LineEnd {
+			// Truncate it on the right.
+			f.MatchLength = lm.LineEnd - int(f.Offset)
+		}
+		fs2 = append(fs2, f)
+	}
+	return fs2
+}
+
+func fileMatchResolversFromFileMatches(fileMatches []zoekt.FileMatch, maxLineMatches int, limitHit bool, maxLineFragmentMatches int, repoMap map[api.RepoName]*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string) ([]*fileMatchResolver, bool) {
+	matches := make([]*fileMatchResolver, len(fileMatches))
+	for i, file := range fileMatches {
 		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {
 			file.LineMatches = file.LineMatches[:maxLineMatches]
@@ -566,8 +683,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 			commitID:     api.CommitID(indexedRevisions[repoRev]),
 		}
 	}
-
-	return matches, limitHit, reposLimitHit, nil
+	return matches, limitHit
 }
 
 // Returns a new repoSet which accounts for the `repohasfile` and `-repohasfile` flags that may have been passed in the query.
