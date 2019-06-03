@@ -150,6 +150,21 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 			ListOfFilePaths: []string{"test.md"},
 		},
 		{
+			Name: "multiple repohasfile filters",
+			Pattern: &search.PatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              nil,
+				ExcludePattern:               "",
+				FilePatternsReposMustInclude: []string{"t", "d"},
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query:           `f:"t" f:"d"`,
+			ListOfFilePaths: []string{"t", "d"},
+		},
+		{
 			Name: "single negated repohasfile filter",
 			Pattern: &search.PatternInfo{
 				IsRegExp:                     true,
@@ -163,6 +178,21 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 			},
 			Query:           `f:"test.md"`,
 			ListOfFilePaths: []string{"test.md"},
+		},
+		{
+			Name: "multiple negated repohasfile filter",
+			Pattern: &search.PatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              nil,
+				ExcludePattern:               "",
+				FilePatternsReposMustExclude: []string{"t", "d"},
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query:           `f:"t" f:"d"`,
+			ListOfFilePaths: []string{"t", "d"},
 		},
 	}
 	for _, tt := range cases {
