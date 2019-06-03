@@ -59,7 +59,7 @@ const getDiffLineElementFromLineNumber = (codeView: HTMLElement, line: number, p
         }
     }
 
-    throw new Error(`Could not locate line number element for line ${line}`)
+    throw new Error(`Could not locate line number element for line ${line}, part: ${part}`)
 }
 
 export const diffDOMFunctions: DOMFunctions = {
