@@ -135,7 +135,7 @@ interface BrandAssets {
  *
  * See https://github.com/webpack-contrib/worker-loader#integrating-with-typescript.
  */
-declare module 'worker-loader?inline!*' {
+declare module 'worker-loader?*' {
     class WebpackWorker extends Worker {
         constructor()
     }

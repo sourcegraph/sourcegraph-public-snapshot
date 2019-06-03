@@ -1,0 +1,16 @@
+<script type="text/javascript">
+    // Create extension host worker
+    const hostWorker = new Worker('/.assets/extension/scripts/extensionHostWorker.bundle.js')
+    // Forward extension host worker init message,
+    // making sur to transfer the endpoint MessagePort objects.
+    window.addEventListener('message', ({ data }) => {
+        const { type, payload } = data
+        switch (type) {
+            case 'workerInit':
+                hostWorker.postMessage(payload, Object.values(payload.endpoints))
+                break
+            default:
+                console.error('Unknown message type', type)
+        }
+    })
+</script>

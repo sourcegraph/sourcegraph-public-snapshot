@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed repository search patterns which contain `.*`. Previously our optimizer would ignore `.*`, which in some cases would lead to our repository search excluding some repositories from the results.
+- Fixed an issue where the Phabricator native integration would be broken on recent Phabricator versions. This fix depends on v1.2 of the [Phabricator extension](https://github.com/sourcegraph/phabricator-extension).
 
 ## 3.4.3 (unreleased)
 
