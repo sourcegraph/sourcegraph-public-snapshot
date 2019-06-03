@@ -186,7 +186,7 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 
 	names := make(map[string]bool, len(args.Names))
 	for _, name := range args.Names {
-		names[name] = true
+		names[strings.ToLower(name)] = true
 	}
 
 	ids := make(map[uint32]bool, len(args.IDs))
@@ -199,7 +199,7 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 	for _, r := range s.repoByID {
 		if !set[r] &&
 			(len(kinds) == 0 || kinds[strings.ToLower(r.ExternalRepo.ServiceType)]) &&
-			(len(names) == 0 || names[r.Name]) &&
+			(len(names) == 0 || names[strings.ToLower(r.Name)]) &&
 			(len(ids) == 0 || ids[r.ID]) {
 
 			repos = append(repos, r)

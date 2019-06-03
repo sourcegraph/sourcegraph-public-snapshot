@@ -160,6 +160,9 @@ func (d Diff) Repos() Repos {
 
 // NewDiff returns a diff from the given sourced and stored repos.
 func NewDiff(sourced, stored []*Repo) (diff Diff) {
+	// Sort sourced so we merge determinstically
+	sort.Sort(Repos(sourced))
+
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
 	for _, r := range sourced {
 		if !r.ExternalRepo.IsSet() {
@@ -171,9 +174,21 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 		}
 	}
 
+	// Ensure names are unique case-insensitively. We don't merge when finding
+	// a conflict on name, we deterministically pick which sourced repo to
+	// keep. Can't merge since they represent different repositories
+	// (different external ID).
 	byName := make(map[string]*Repo, len(byID))
 	for _, r := range byID {
-		byName[r.Name] = r
+		k := strings.ToLower(r.Name)
+		if old := byName[k]; old == nil {
+			byName[k] = r
+		} else if r.Less(old) {
+			delete(byID, old.ExternalRepo)
+			byName[k] = r
+		} else {
+			delete(byID, r.ExternalRepo)
+		}
 	}
 
 	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))
