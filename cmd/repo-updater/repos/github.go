@@ -174,24 +174,20 @@ func (s *GithubSource) excludes(r *github.Repository) bool {
 	return s.exclude[strings.ToLower(r.NameWithOwner)] || s.exclude[r.ID]
 }
 
-// RepositoryPager is a function that takes in a page number and returns
-type RepositoryPager func(page int) (repos []*github.Repository, hasNextPage bool, wait int, err error)
+type repositoryPager func(page int) (repos []*github.Repository, hasNextPage bool, wait int, err error)
 
-// exhaustRepositoryPager takes in a RepositoryPager and accumulates all the repositories from every page.
-func (s *GithubSource) exhaustRepositoryPager(ctx context.Context, pager RepositoryPager) (set map[int64]*github.Repository, err error) {
-	set = make(map[int64]*github.Repository)
+func (s *GithubSource) paginate(ctx context.Context, pager repositoryPager) (map[int64]*github.Repository, error) {
+	set := make(map[int64]*github.Repository)
 
 	hasNextPage := true
 	for page := 1; hasNextPage; page++ {
-		if err = ctx.Err(); err != nil {
-			return
+		if err := ctx.Err(); err != nil {
+			break
 		}
 
-		var pageRepos []*github.Repository
-		var wait int
-		pageRepos, hasNextPage, wait, err = pager(page)
+		pageRepos, hasNextPage, wait, err := pager(page)
 		if err != nil {
-			return
+			break
 		}
 
 		for _, r := range pageRepos {
@@ -203,12 +199,11 @@ func (s *GithubSource) exhaustRepositoryPager(ctx context.Context, pager Reposit
 		}
 	}
 
-	return
+	return set, nil
 }
 
-// listOrgRepositories handles the `orgs` option.
-func (s *GithubSource) listOrgRepositories(ctx context.Context, org string) (map[int64]*github.Repository, error) {
-	return s.exhaustRepositoryPager(
+func (s *GithubSource) listOrg(ctx context.Context, org string) (map[int64]*github.Repository, error) {
+	return s.paginate(
 		ctx,
 		func(page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 			repos, hasNextPage, rateLimitCost, err = s.client.ListOrgRepositories(ctx, org, page)
@@ -226,19 +221,28 @@ func (s *GithubSource) listOrgRepositories(ctx context.Context, org string) (map
 	)
 }
 
-// listSelectedRepositories handles the `repos` option.
-func (s *GithubSource) listSelectedRepositories(ctx context.Context, names []string) (set map[int64]*github.Repository, err error) {
-	set = make(map[int64]*github.Repository)
+func (s *GithubSource) listRepos(ctx context.Context) (map[int64]*github.Repository, error) {
+	set := make(map[int64]*github.Repository)
+	if err := s.fetchAllRepositoriesInBatches(ctx, set); err == nil {
+		return set, nil
+	} else {
+		// The way we fetch repositories in batches through the GraphQL API -
+		// using aliases to query multiple repositories in one query - is
+		// currently "undefined behaviour". Very rarely but unreproducibly it
+		// resulted in EOF errors while testing. And since we rely on fetching
+		// to work, we fall back to the (slower) sequential fetching in case we
+		// run into an GraphQL API error
+		log15.Warn("github sync: fetching in batches failed. falling back to sequential fetch", "error", err)
+	}
+
 	for _, nameWithOwner := range s.config.Repos {
-		if err = ctx.Err(); err != nil {
-			return
+		if err := ctx.Err(); err != nil {
+			return set, err
 		}
 
-		var owner, name string
-		owner, name, err = github.SplitRepositoryNameWithOwner(nameWithOwner)
+		owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 		if err != nil {
-			err = errors.New("Invalid GitHub repository: nameWithOwner=" + nameWithOwner)
-			return
+			return set, errors.New("Invalid GitHub repository: nameWithOwner=" + nameWithOwner)
 		}
 		var repo *github.Repository
 		repo, err = s.client.GetRepository(ctx, owner, name)
@@ -247,121 +251,125 @@ func (s *GithubSource) listSelectedRepositories(ctx context.Context, names []str
 			// 404 errors on external service config validation.
 			if github.IsNotFound(err) {
 				log15.Warn("skipping missing github.repos entry:", "name", nameWithOwner, "err", err)
-				err = nil
 				continue
 			}
-			err = errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner)
-			return
+			return set, errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner)
 		}
 		log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
 		set[repo.DatabaseID] = repo
 		time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 	}
-	return
+
+	return set, nil
 }
 
-// listQueryRepositories handles the `repositoryQuery` option.
-func (s *GithubSource) listQueryRepositories(ctx context.Context, query string) (set map[int64]*github.Repository, err error) {
-	switch query {
-	case "public":
-		set = make(map[int64]*github.Repository)
-		if s.githubDotCom {
-			err = errors.New(`unsupported configuration "public" for "repositoryQuery" for github.com`)
-			return
+func (s *GithubSource) listPublic(ctx context.Context) (map[int64]*github.Repository, error) {
+	set := make(map[int64]*github.Repository)
+	if s.githubDotCom {
+		return set, errors.New(`unsupported configuration "public" for "repositoryQuery" for github.com`)
+	}
+	var sinceRepoID int64
+	for {
+		if err := ctx.Err(); err != nil {
+			return set, err
 		}
-		var sinceRepoID int64
-		for {
-			if err = ctx.Err(); err != nil {
-				return
+
+		repos, err := s.client.ListPublicRepositories(ctx, sinceRepoID)
+		if err != nil {
+			return set, errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)
+		}
+		if len(repos) == 0 {
+			return set, nil
+		}
+		log15.Debug("github sync public", "repos", len(repos), "error", err)
+		for _, r := range repos {
+			set[r.DatabaseID] = r
+			if sinceRepoID < r.DatabaseID {
+				sinceRepoID = r.DatabaseID
+			}
+		}
+	}
+	return set, nil
+}
+
+func (s *GithubSource) listAffiliated(ctx context.Context) (map[int64]*github.Repository, error) {
+	return s.paginate(
+		ctx,
+		func(page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+			repos, hasNextPage, rateLimitCost, err = s.client.ListUserRepositories(ctx, page)
+			rateLimitRemaining, rateLimitReset, rateLimitRetry, _ := s.client.RateLimit.Get()
+			log15.Debug(
+				"github sync: ListAffiliated",
+				"repos", len(repos),
+				"rateLimitCost", rateLimitCost,
+				"rateLimitRemaining", rateLimitRemaining,
+				"rateLimitReset", rateLimitReset,
+				"retryAfter", rateLimitRetry,
+			)
+			return
+		},
+	)
+}
+
+func (s *GithubSource) listSearch(ctx context.Context, query string) (map[int64]*github.Repository, error) {
+	return s.paginate(
+		ctx,
+		func(page int) ([]*github.Repository, bool, int, error) {
+			reposPage, err := s.searchClient.ListRepositoriesForSearch(ctx, query, page)
+			if err != nil {
+				return nil, false, 0, errors.Wrapf(err, "failed to list GitHub repositories for search: page=%d, searchString=%q", page, query)
 			}
 
-			var repos []*github.Repository
-			repos, err = s.client.ListPublicRepositories(ctx, sinceRepoID)
-			if err != nil {
-				err = errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)
-				return
+			if reposPage.TotalCount > 1000 {
+				// GitHub's advanced repository search will only
+				// return 1000 results. We specially handle this case
+				// to ensure the admin gets a detailed error
+				// message. https://github.com/sourcegraph/sourcegraph/issues/2562
+				return nil, false, 0, errors.Errorf(`repositoryQuery %q would return %d results. GitHub's Search API only returns up to 1000 results. Please adjust your repository query into multiple queries such that each returns less than 1000 results. For example: {"repositoryQuery": %s}`, query, reposPage.TotalCount, exampleRepositoryQuerySplit(query))
 			}
-			if len(repos) == 0 {
-				return
+
+			repos, hasNextPage := reposPage.Repos, reposPage.HasNextPage
+			rateLimitRemaining, rateLimitReset, rateLimitRetry, ok := s.searchClient.RateLimit.Get()
+			log15.Debug(
+				"github sync: ListRepositoriesForSearch",
+				"searchString", query,
+				"repos", len(repos),
+				"rateLimitRemaining", rateLimitRemaining,
+				"rateLimitReset", rateLimitReset,
+				"retryAfter", rateLimitRetry,
+			)
+
+			// GitHub search has vastly different rate limits to
+			// the normal GitHub API (30req/m vs
+			// 5000req/h). RecommendedWaitForBackgroundOp has
+			// heuristics tuned for the normal API, part of which
+			// is to not sleep if we have ample rate limit left.
+			//
+			// So we only let the heuristic kick in if we have
+			// less than 5 requests left.
+			var rateLimitCost int
+			if rateLimitRetry > 0 || (ok && rateLimitRemaining < 5) {
+				rateLimitCost = 1
 			}
-			log15.Debug("github sync public", "repos", len(repos), "error", err)
-			for _, r := range repos {
-				fmt.Println(r.NameWithOwner)
-				set[r.DatabaseID] = r
-				if sinceRepoID < r.DatabaseID {
-					sinceRepoID = r.DatabaseID
-				}
-			}
-		}
+
+			return repos, hasNextPage, rateLimitCost, nil
+		},
+	)
+
+}
+
+func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string) (set map[int64]*github.Repository, err error) {
+	switch query {
+	case "public":
+		return s.listPublic(ctx)
 	case "affiliated":
-		set, err = s.exhaustRepositoryPager(
-			ctx,
-			func(page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
-				repos, hasNextPage, rateLimitCost, err = s.client.ListUserRepositories(ctx, page)
-				rateLimitRemaining, rateLimitReset, rateLimitRetry, _ := s.client.RateLimit.Get()
-				log15.Debug(
-					"github sync: ListUserRepositories",
-					"repos", len(repos),
-					"rateLimitCost", rateLimitCost,
-					"rateLimitRemaining", rateLimitRemaining,
-					"rateLimitReset", rateLimitReset,
-					"retryAfter", rateLimitRetry,
-				)
-				return
-			},
-		)
+		return s.listAffiliated(ctx)
 	case "none":
 		// nothing
 	default:
 		// Run the query as a GitHub advanced repository search
 		// (https://github.com/search/advanced).
-		set, err = s.exhaustRepositoryPager(
-			ctx,
-			func(page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
-				var reposPage github.RepositoryListPage
-				reposPage, err = s.searchClient.ListRepositoriesForSearch(ctx, query, page)
-				if err != nil {
-					err = errors.Wrapf(err, "failed to list GitHub repositories for search: page=%d, searchString=%q", page, query)
-					return
-				}
-
-				if reposPage.TotalCount > 1000 {
-					// GitHub's advanced repository search will only
-					// return 1000 results. We specially handle this case
-					// to ensure the admin gets a detailed error
-					// message. https://github.com/sourcegraph/sourcegraph/issues/2562
-					err = errors.Errorf(`repositoryQuery %q would return %d results. GitHub's Search API only returns up to 1000 results. Please adjust your repository query into multiple queries such that each returns less than 1000 results. For example: {"repositoryQuery": %s}`, query, reposPage.TotalCount, exampleRepositoryQuerySplit(query))
-					return
-				}
-
-				hasNextPage = reposPage.HasNextPage
-				repos = reposPage.Repos
-
-				rateLimitRemaining, rateLimitReset, rateLimitRetry, ok := s.searchClient.RateLimit.Get()
-				log15.Debug(
-					"github sync: ListRepositoriesForSearch",
-					"searchString", query,
-					"repos", len(repos),
-					"rateLimitRemaining", rateLimitRemaining,
-					"rateLimitReset", rateLimitReset,
-					"retryAfter", rateLimitRetry,
-				)
-
-				// GitHub search has vastly different rate limits to
-				// the normal GitHub API (30req/m vs
-				// 5000req/h). RecommendedWaitForBackgroundOp has
-				// heuristics tuned for the normal API, part of which
-				// is to not sleep if we have ample rate limit left.
-				//
-				// So we only let the heuristic kick in if we have
-				// less than 5 requests left.
-				if rateLimitRetry > 0 || (ok && rateLimitRemaining < 5) {
-					rateLimitCost = 1
-				}
-
-				return
-			},
-		)
+		return s.listSearch(ctx, query)
 	}
 	return
 }
@@ -370,9 +378,8 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 	set := make(map[int64]*github.Repository)
 	errs := new(multierror.Error)
 
-	// repositoryQuery
 	for _, repositoryQuery := range s.config.RepositoryQuery {
-		repos, err := s.listQueryRepositories(ctx, repositoryQuery)
+		repos, err := s.listRepositoryQuery(ctx, repositoryQuery)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			continue
@@ -382,18 +389,8 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 		}
 	}
 
-	// repos
-	err := s.fetchAllRepositoriesInBatches(ctx, set)
-	if err != nil {
-		// The way we fetch repositories in batches through the GraphQL API -
-		// using aliases to query multiple repositories in one query - is
-		// currently "undefined behaviour". Very rarely but unreproducibly it
-		// resulted in EOF errors while testing. And since we rely on fetching
-		// to work, we fall back to the (slower) sequential fetching in case we
-		// run into an GraphQL API error
-		log15.Warn("github sync: fetching in batches failed. falling back to sequential fetch", "error", err)
-
-		repos, err := s.listSelectedRepositories(ctx, s.config.Repos)
+	{
+		repos, err := s.listRepos(ctx)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 		}
@@ -403,9 +400,8 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 		}
 	}
 
-	// orgs
 	for _, org := range s.config.Orgs {
-		repos, err := s.listOrgRepositories(ctx, org)
+		repos, err := s.listOrg(ctx, org)
 		if err != nil {
 			errs = multierror.Append(errs, errors.Wrapf(err, "failed to list organization %s repos", org))
 			continue
@@ -416,7 +412,6 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 		}
 	}
 
-	// exclude
 	repos := make([]*github.Repository, 0, len(set))
 	for _, repo := range set {
 		if !s.excludes(repo) {

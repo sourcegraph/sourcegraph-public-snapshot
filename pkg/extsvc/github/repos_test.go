@@ -376,9 +376,9 @@ func TestClient_ListOrgRepositories(t *testing.T) {
   },
   {
     "node_id": "j",
-    "full_name": "a/b",
+    "full_name": "o/b",
     "description": "c",
-    "html_url": "https://github.example.com/a/b",
+    "html_url": "https://github.example.com/o/b",
     "fork": false
   }
 ]
@@ -395,14 +395,14 @@ func TestClient_ListOrgRepositories(t *testing.T) {
 		},
 		{
 			ID:            "j",
-			NameWithOwner: "a/b",
+			NameWithOwner: "o/b",
 			Description:   "c",
-			URL:           "https://github.example.com/a/b",
+			URL:           "https://github.example.com/o/b",
 			IsFork:        false,
 		},
 	}
 
-	repos, hasNextPage, _, err := c.ListOrgRepositories(context.Background(), "sourcegraph", 1)
+	repos, hasNextPage, _, err := c.ListOrg(context.Background(), "o", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
