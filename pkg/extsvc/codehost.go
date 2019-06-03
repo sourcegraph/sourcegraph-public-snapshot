@@ -7,17 +7,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-type CodeHost interface {
-	ServiceID() string
-	ServiceType() string
-	BaseURL() *url.URL
+type CodeHost struct {
+	ServiceID   string
+	ServiceType string
+	BaseURL     *url.URL
 }
 
-func IsHostOf(c CodeHost, repo *api.ExternalRepoSpec) bool {
+func NewCodeHost(baseURL *url.URL, serviceType string) *CodeHost {
+	return &CodeHost{
+		ServiceID:   NormalizeBaseURL(baseURL).String(),
+		ServiceType: serviceType,
+		BaseURL:     baseURL,
+	}
+}
+
+func IsHostOf(c *CodeHost, repo *api.ExternalRepoSpec) bool {
 	if repo == nil {
 		return false
 	}
-	return c.ServiceID() == repo.ServiceID && c.ServiceType() == repo.ServiceType
+	return c.ServiceID == repo.ServiceID && c.ServiceType == repo.ServiceType
 }
 
 // NormalizeBaseURL modifies the input and returns a normalized form of the a base URL with insignificant
