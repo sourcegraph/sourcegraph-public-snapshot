@@ -12,13 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/search/backend"
-
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/pkg/errors"
-	sgbackend "github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
@@ -28,7 +24,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -202,7 +201,7 @@ func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
 		}
 		repos := make([]*types.Repo, len(sampleRepoPaths))
 		for i, path := range sampleRepoPaths {
-			repo, err := sgbackend.Repos.GetByName(ctx, path)
+			repo, err := backend.Repos.GetByName(ctx, path)
 			if err != nil {
 				return nil, fmt.Errorf("get %q: %s", path, err)
 			}
@@ -416,7 +415,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 
 	tr.LazyPrintf("Repos.List - start")
-	repos, err := sgbackend.Repos.List(ctx, db.ReposListOptions{
+	repos, err := backend.Repos.List(ctx, db.ReposListOptions{
 		IncludePatterns: includePatterns,
 		ExcludePattern:  unionRegExps(excludePatterns),
 		Enabled:         true,
@@ -742,7 +741,7 @@ var (
 	searcherURLs     *endpoint.Map
 
 	indexedSearchOnce sync.Once
-	indexedSearch     *backend.Zoekt
+	indexedSearch     *searchbackend.Zoekt
 )
 
 func SearcherURLs() *endpoint.Map {
@@ -756,9 +755,9 @@ func SearcherURLs() *endpoint.Map {
 	return searcherURLs
 }
 
-func IndexedSearch() *backend.Zoekt {
+func IndexedSearch() *searchbackend.Zoekt {
 	indexedSearchOnce.Do(func() {
-		indexedSearch = &backend.Zoekt{}
+		indexedSearch = &searchbackend.Zoekt{}
 		if zoektAddr != "" {
 			indexedSearch.Client = zoektrpc.Client(zoektAddr)
 		}
