@@ -27,7 +27,7 @@ func init() {
 
 func TestGetOrCreateUser(t *testing.T) {
 	ghURL, _ := url.Parse("https://github.com")
-	codeHost := githubsvc.NewCodeHost(ghURL)
+	codeHost := extsvc.NewCodeHost(ghURL, githubsvc.ServiceType)
 	clientID := "client-id"
 
 	// Top-level mock data

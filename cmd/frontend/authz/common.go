@@ -17,7 +17,7 @@ func ToRepos(src []*types.Repo) (dst map[Repo]struct{}) {
 	return dst
 }
 
-func GetCodeHostRepos(c extsvc.CodeHost, repos map[Repo]struct{}) (mine map[Repo]struct{}, others map[Repo]struct{}) {
+func GetCodeHostRepos(c *extsvc.CodeHost, repos map[Repo]struct{}) (mine map[Repo]struct{}, others map[Repo]struct{}) {
 	mine, others = make(map[Repo]struct{}), make(map[Repo]struct{})
 	for repo := range repos {
 		if extsvc.IsHostOf(c, &repo.ExternalRepoSpec) {

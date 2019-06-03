@@ -37,7 +37,7 @@ type SudoProvider struct {
 
 	clientProvider    *gitlab.ClientProvider
 	clientURL         *url.URL
-	codeHost          *gitlab.CodeHost
+	codeHost          *extsvc.CodeHost
 	gitlabProvider    string
 	authnConfigID     providers.ConfigID
 	useNativeUsername bool
@@ -83,7 +83,7 @@ func NewSudoProvider(op SudoProviderOp) *SudoProvider {
 
 		clientProvider:    gitlab.NewClientProvider(op.BaseURL, nil),
 		clientURL:         op.BaseURL,
-		codeHost:          gitlab.NewCodeHost(op.BaseURL),
+		codeHost:          extsvc.NewCodeHost(op.BaseURL, gitlab.ServiceType),
 		cache:             op.MockCache,
 		authnConfigID:     op.AuthnConfigID,
 		gitlabProvider:    op.GitLabProvider,
@@ -110,11 +110,11 @@ func (p *SudoProvider) Validate() (problems []string) {
 }
 
 func (p *SudoProvider) ServiceID() string {
-	return p.codeHost.ServiceID()
+	return p.codeHost.ServiceID
 }
 
 func (p *SudoProvider) ServiceType() string {
-	return p.codeHost.ServiceType()
+	return p.codeHost.ServiceType
 }
 
 func (p *SudoProvider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
@@ -125,7 +125,7 @@ func (p *SudoProvider) Repos(ctx context.Context, repos map[authz.Repo]struct{})
 
 func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
 	accountID := "" // empty means public / unauthenticated to the code host
-	if account != nil && account.ServiceID == p.codeHost.ServiceID() && account.ServiceType == p.codeHost.ServiceType() {
+	if account != nil && account.ServiceID == p.codeHost.ServiceID && account.ServiceType == p.codeHost.ServiceType {
 		accountID = account.AccountID
 	}
 
@@ -196,7 +196,7 @@ func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAc
 		}
 		isAccessible, vis, isContentAccessible, err := p.fetchProjVis(ctx, sudo, projID)
 		if err != nil {
-			log15.Error("Failed to fetch visibility for GitLab project", "projectID", projID, "gitlabHost", p.codeHost.BaseURL().String(), "error", err)
+			log15.Error("Failed to fetch visibility for GitLab project", "projectID", projID, "gitlabHost", p.codeHost.BaseURL.String(), "error", err)
 			continue
 		}
 		if isAccessible {
@@ -321,8 +321,8 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 	glExternalAccount := extsvc.ExternalAccount{
 		UserID: user.ID,
 		ExternalAccountSpec: extsvc.ExternalAccountSpec{
-			ServiceType: p.codeHost.ServiceType(),
-			ServiceID:   p.codeHost.ServiceID(),
+			ServiceType: p.codeHost.ServiceType,
+			ServiceID:   p.codeHost.ServiceID,
 			AccountID:   strconv.Itoa(int(glUser.ID)),
 		},
 		ExternalAccountData: accountData,

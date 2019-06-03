@@ -23,7 +23,7 @@ import (
 )
 
 type sessionIssuerHelper struct {
-	*githubsvc.CodeHost
+	*extsvc.CodeHost
 	clientID    string
 	allowSignup bool
 }
@@ -67,8 +67,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				AvatarURL:       deref(ghUser.AvatarURL),
 			},
 			ExternalAccount: extsvc.ExternalAccountSpec{
-				ServiceType: s.ServiceType(),
-				ServiceID:   s.ServiceID(),
+				ServiceType: s.ServiceType,
+				ServiceID:   s.ServiceID,
 				ClientID:    s.clientID,
 				AccountID:   strconv.FormatInt(derefInt64(ghUser.ID), 10),
 			},
@@ -95,8 +95,8 @@ func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
 func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData {
 	return oauth.SessionData{
 		ID: providers.ConfigID{
-			ID:   s.ServiceID(),
-			Type: s.ServiceType(),
+			ID:   s.ServiceID,
+			Type: s.ServiceType,
 		},
 		AccessToken: token.AccessToken,
 		TokenType:   token.Type(),
@@ -121,7 +121,7 @@ func derefInt64(i *int64) int64 {
 // getVerifiedEmails returns the list of user emails that are verified. If the primary email is verified,
 // it will be the first email in the returned list. It only checks the first 100 user emails.
 func (s *sessionIssuerHelper) getVerifiedEmails(ctx context.Context, token *oauth2.Token) (verifiedEmails []string) {
-	apiURL, _ := githubsvc.APIRoot(s.BaseURL())
+	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
 	ghClient := githubsvc.NewClient(apiURL, "", nil)
 	emails, err := ghClient.GetAuthenticatedUserEmails(ctx, token.AccessToken)
 	if err != nil {
