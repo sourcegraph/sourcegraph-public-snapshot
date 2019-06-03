@@ -474,6 +474,18 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				},
 				err: "<nil>",
 			},
+			testCase{
+				name: "case insensitive name",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
+					tc.repo.Clone(),
+					tc.repo.With(repos.Opt.RepoName(strings.ToUpper(tc.repo.Name))),
+				)),
+				store:  s,
+				stored: repos.Repos{tc.repo.With(repos.Opt.RepoName(strings.ToUpper(tc.repo.Name)))},
+				now:    clock.Now,
+				diff:   repos.Diff{Modified: repos.Repos{tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(0)))}},
+				err:    "<nil>",
+			},
 			func() testCase {
 				var update interface{}
 				switch strings.ToLower(tc.repo.ExternalRepo.ServiceType) {
@@ -751,16 +763,16 @@ func TestDiff(t *testing.T) {
 		{
 			name: "modified",
 			store: repos.Repos{
-				{ExternalRepo: eid("1"), Description: "foo"},
-				{ExternalRepo: eid("2")},
+				{ExternalRepo: eid("1"), Name: "foo", Description: "foo"},
+				{ExternalRepo: eid("2"), Name: "bar"},
 			},
 			source: repos.Repos{
-				{ExternalRepo: eid("1"), Description: "bar"},
-				{ExternalRepo: eid("2"), URI: "2"},
+				{ExternalRepo: eid("1"), Name: "foo", Description: "bar"},
+				{ExternalRepo: eid("2"), Name: "bar", URI: "2"},
 			},
 			diff: repos.Diff{Modified: repos.Repos{
-				{ExternalRepo: eid("1"), Description: "bar"},
-				{ExternalRepo: eid("2"), URI: "2"},
+				{ExternalRepo: eid("1"), Name: "foo", Description: "bar"},
+				{ExternalRepo: eid("2"), Name: "bar", URI: "2"},
 			}},
 		},
 		{
@@ -903,6 +915,107 @@ func TestDiff(t *testing.T) {
 				Modified: repos.Repos{
 					{Name: "bar", ExternalRepo: eid("1"), Description: "bar"},
 					{Name: "foo", ExternalRepo: eid("2"), Description: "foo"},
+				},
+			},
+		},
+		{
+			name: "deterministic merging of source",
+			source: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1"), Description: "desc1", Sources: map[string]*repos.SourceInfo{"a": nil}},
+				{Name: "foo", ExternalRepo: eid("1"), Description: "desc2", Sources: map[string]*repos.SourceInfo{"b": nil}},
+			},
+			diff: repos.Diff{
+				Added: repos.Repos{
+					{Name: "foo", ExternalRepo: eid("1"), Description: "desc2", Sources: map[string]*repos.SourceInfo{"a": nil, "b": nil}},
+				},
+			},
+		},
+		{
+			name: "conflict on case insensitive name",
+			source: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1")},
+				{Name: "Foo", ExternalRepo: eid("2")},
+			},
+			diff: repos.Diff{
+				Added: repos.Repos{
+					{Name: "Foo", ExternalRepo: eid("2")},
+				},
+			},
+		},
+		{
+			name: "conflict on case insensitive name exists 1",
+			store: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1")},
+			},
+			source: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1")},
+				{Name: "Foo", ExternalRepo: eid("2")},
+			},
+			diff: repos.Diff{
+				Added: repos.Repos{
+					{Name: "Foo", ExternalRepo: eid("2")},
+				},
+				Deleted: repos.Repos{
+					{Name: "foo", ExternalRepo: eid("1")},
+				},
+			},
+		},
+		{
+			name: "conflict on case insensitive name exists 2",
+			store: repos.Repos{
+				{Name: "Foo", ExternalRepo: eid("2")},
+			},
+			source: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1")},
+				{Name: "Foo", ExternalRepo: eid("2")},
+			},
+			diff: repos.Diff{
+				Unmodified: repos.Repos{
+					{Name: "Foo", ExternalRepo: eid("2")},
+				},
+			},
+		},
+		{
+			name: "associate by name",
+			store: repos.Repos{
+				{Name: "foo"},
+				{Name: "baz"},
+			},
+			source: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1")},
+				{Name: "bar", ExternalRepo: eid("2")},
+			},
+			diff: repos.Diff{
+				Added: repos.Repos{
+					{Name: "bar", ExternalRepo: eid("2")},
+				},
+				Modified: repos.Repos{
+					{Name: "foo", ExternalRepo: eid("1")},
+				},
+				Deleted: repos.Repos{
+					{Name: "baz"},
+				},
+			},
+		},
+		{
+			name: "associate by name conflict",
+			store: repos.Repos{
+				{Name: "foo"},
+				{Name: "bar", ExternalRepo: eid("1")},
+			},
+			source: repos.Repos{
+				{Name: "foo", ExternalRepo: eid("1")},
+				{Name: "bar", ExternalRepo: eid("2")},
+			},
+			diff: repos.Diff{
+				Added: repos.Repos{
+					{Name: "bar", ExternalRepo: eid("2")},
+				},
+				Modified: repos.Repos{
+					{Name: "foo", ExternalRepo: eid("1")},
+				},
+				Deleted: repos.Repos{
+					{Name: "foo"},
 				},
 			},
 		},
