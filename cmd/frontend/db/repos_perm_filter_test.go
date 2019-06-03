@@ -35,6 +35,8 @@ type authzFilter_call struct {
 }
 
 func (r authzFilter_Test) run(t *testing.T) {
+	t.Helper()
+
 	t.Logf("Test case %q", r.description)
 	authz.SetProviders(r.authzAllowByDefault, r.authzProviders)
 
@@ -512,6 +514,69 @@ func Test_authzFilter(t *testing.T) {
 						"gitlab.mine/public/r0",
 					),
 					perm: authz.Read,
+				},
+			},
+		},
+		{
+			description:         "no authz providers, repos have external repo fields unset",
+			authzAllowByDefault: true,
+			authzProviders:      []authz.Provider{},
+			calls: []authzFilter_call{
+				{
+					description:      "admin can read",
+					user:             &types.User{ID: 1, SiteAdmin: true},
+					perm:             authz.Read,
+					repos:            []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+					expFilteredRepos: []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+				},
+				{
+					description:      "non-admin can read",
+					user:             &types.User{ID: 2},
+					perm:             authz.Read,
+					repos:            []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+					expFilteredRepos: []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+				},
+				{
+					description:      "unauthenticated user can read",
+					user:             nil,
+					perm:             authz.Read,
+					repos:            []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+					expFilteredRepos: []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+				},
+			},
+		},
+		{
+			description:         "some authz providers, repos have external repo fields unset",
+			authzAllowByDefault: true,
+			authzProviders: []authz.Provider{
+				&MockAuthzProvider{
+					serviceID:   "https://gitlab.mine/",
+					serviceType: "gitlab",
+					repos:       map[api.RepoName]struct{}{},
+					perms:       map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{},
+				},
+			},
+			calls: []authzFilter_call{
+				{
+					description:      "admin can read",
+					user:             &types.User{ID: 1, SiteAdmin: true},
+					perm:             authz.Read,
+					repos:            []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+					expFilteredRepos: []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+				},
+				{
+					description:      "non-admin can't read",
+					user:             &types.User{ID: 2},
+					perm:             authz.Read,
+					repos:            []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+					expFilteredRepos: []*types.Repo{},
+				},
+				{
+					description:      "unauthenticated user can't read",
+					user:             nil,
+					perm:             authz.Read,
+					repos:            []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+					expFilteredRepos: []*types.Repo{},
 				},
 			},
 		},
