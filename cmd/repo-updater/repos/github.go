@@ -174,8 +174,16 @@ func (s *GithubSource) excludes(r *github.Repository) bool {
 	return s.exclude[strings.ToLower(r.NameWithOwner)] || s.exclude[r.ID]
 }
 
+// repositoryPager is a function that returns repositories on a given `page`.
+// It also returns:
+// - `hasNextPage` bool: if there is a next page
+// - `wait` int: rate limit cost used to determine recommended delay before next call
+// - `err` error: if something goes wrong
 type repositoryPager func(page int) (repos []*github.Repository, hasNextPage bool, wait int, err error)
 
+// paginate returns all the repositories from the given repositoryPager.
+// It repeatedly calls `pager` with incrementing page count until it
+// returns false for hasNextPage.
 func (s *GithubSource) paginate(ctx context.Context, pager repositoryPager) (map[int64]*github.Repository, error) {
 	set := make(map[int64]*github.Repository)
 
@@ -202,6 +210,9 @@ func (s *GithubSource) paginate(ctx context.Context, pager repositoryPager) (map
 	return set, nil
 }
 
+// listOrg handles the `org` config option.
+// It returns all the repositories belonging to the given organization
+// by hitting the /orgs/:org/repos endpoint.
 func (s *GithubSource) listOrg(ctx context.Context, org string) (map[int64]*github.Repository, error) {
 	return s.paginate(
 		ctx,
@@ -221,6 +232,9 @@ func (s *GithubSource) listOrg(ctx context.Context, org string) (map[int64]*gith
 	)
 }
 
+// listRepos returns the valid repositories from the given list of repository names.
+// This is done by hitting the /repos/:owner/:name endpoint for each of the given
+// repository names.
 func (s *GithubSource) listRepos(ctx context.Context) (map[int64]*github.Repository, error) {
 	set := make(map[int64]*github.Repository)
 	if err := s.fetchAllRepositoriesInBatches(ctx, set); err == nil {
@@ -263,6 +277,8 @@ func (s *GithubSource) listRepos(ctx context.Context) (map[int64]*github.Reposit
 	return set, nil
 }
 
+// listPublic handles the `public` keyword of the `repositoryQuery` config option.
+// It returns the public repositories listed on the /repositories endpoint.
 func (s *GithubSource) listPublic(ctx context.Context) (map[int64]*github.Repository, error) {
 	set := make(map[int64]*github.Repository)
 	if s.githubDotCom {
@@ -292,6 +308,12 @@ func (s *GithubSource) listPublic(ctx context.Context) (map[int64]*github.Reposi
 	return set, nil
 }
 
+// listAffiliated handles the `affiliated` keyword of the `repositoryQuery` config option.
+// It returns the repositories affiliated with the client token by hitting the /user/repos
+// endpoint.
+//
+// Affiliation is present if the user: (1) owns the repo, (2) is apart of an org that
+// the repo belongs to, or (3) is a collaborator.
 func (s *GithubSource) listAffiliated(ctx context.Context) (map[int64]*github.Repository, error) {
 	return s.paginate(
 		ctx,
@@ -311,6 +333,9 @@ func (s *GithubSource) listAffiliated(ctx context.Context) (map[int64]*github.Re
 	)
 }
 
+// listSearch handles the `repositoryQuery` config option when a keyword is not present.
+// It returns the repositories resulting from from GitHub's advanced repository search
+// by hitting the /search/repositories endpoint.
 func (s *GithubSource) listSearch(ctx context.Context, query string) (map[int64]*github.Repository, error) {
 	return s.paginate(
 		ctx,
@@ -355,9 +380,15 @@ func (s *GithubSource) listSearch(ctx context.Context, query string) (map[int64]
 			return repos, hasNextPage, rateLimitCost, nil
 		},
 	)
-
 }
 
+// listRepositoryQuery handles the `repositoryQuery` config option.
+// The supported keywords to select repositories are:
+// - `public`: public repositories (from endpoint: /repositories)
+// - `affiliated`: repositories affiliated with client token (from endpoint: /user/repos)
+// - `none`: disables `repositoryQuery`
+// Inputs other than these three keywords will be queried using
+// GitHub advanced repository search (endpoint: /search/repositories)
 func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string) (set map[int64]*github.Repository, err error) {
 	switch query {
 	case "public":
@@ -371,9 +402,10 @@ func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string) (s
 		// (https://github.com/search/advanced).
 		return s.listSearch(ctx, query)
 	}
-	return
 }
 
+// listAllRepositories returns the repositories from the given `orgs`, `repos`, and
+// `repositoryQuery` config options excluding the ones specified by `exclude`.
 func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repository, error) {
 	set := make(map[int64]*github.Repository)
 	errs := new(multierror.Error)
