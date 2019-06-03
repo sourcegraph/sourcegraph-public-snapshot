@@ -437,7 +437,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1"}, PathPatternsAreRegExps: true},
 				searcher: &fakeSearcher{result: &zoekt.SearchResult{
 					Files: []zoekt.FileMatch{{
-						FileName:   "test.md",
+						FileName:   "1.md",
 						Repository: "github.com/test/1",
 						LineMatches: []zoekt.LineMatch{{
 							FileName: true,
@@ -456,23 +456,23 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustExclude: []string{"1"}, PathPatternsAreRegExps: true},
 				searcher: &fakeSearcher{result: &zoekt.SearchResult{
 					Files: []zoekt.FileMatch{{
-						FileName:   "test.md",
+						FileName:   "1.md",
 						Repository: "github.com/test/1",
 						LineMatches: []zoekt.LineMatch{{
 							FileName: true,
 						}}},
 					},
-					RepoURLs: map[string]string{"github.com/test/2": "github.com/test/2"}}},
+					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1"}}},
 				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
-				repoHasFileFlagIsInQuery:        true,
-				negatedRepoHasFileFlagIsInQuery: false,
+				repoHasFileFlagIsInQuery:        false,
+				negatedRepoHasFileFlagIsInQuery: true,
 			},
 			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/2": true}},
 		}}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(tt.args.ctx, tt.args.queryPatternInfo, tt.args.searcher, tt.args.repoSet, tt.args.repoHasFileFlagIsInQuery, tt.args.negatedRepoHasFileFlagIsInQuery)
+			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(tt.args.ctx, tt.args.queryPatternInfo, tt.args.searcher, tt.args.repoSet)
 			if err != nil {
 				t.Fatal(err)
 			}
