@@ -381,7 +381,7 @@ func (c *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
 	var connections []*schema.BitbucketServerConnection
-	if err := c.listConfigs(ctx, "BITBUCKET", &connections); err != nil {
+	if err := c.listConfigs(ctx, "BITBUCKETSERVER", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil
