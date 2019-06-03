@@ -13,7 +13,7 @@
   "devDependencies": {
     "monaco-editor": "^0.17.0",
     "parcel-bundler": "^1.11.0",
-    "sass": "^1.15.2",
+    "sass": "^1.20.3",
     "typescript": "^3.5.1"
   }
 }

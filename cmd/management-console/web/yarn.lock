@@ -4277,10 +4277,10 @@ safer-eval@^1.2.3:
   dependencies:
     clones "^1.1.0"
 
-sass@^1.15.2:
-  version "1.15.2"
-  resolved "https://registry.npmjs.org/sass/-/sass-1.15.2.tgz#539f464a61e29a9e4f560ec9dc2ccc5236db8474"
-  integrity sha512-YFncPpx3ewKEhMg9sWdCxKUpPN/jwVLa0Q9iO2tcV5Y5Z/YAlFV6k6JaQwq3tmbN6FXKjUYElXRHcG0g4D1zkQ==
+sass@^1.20.3:
+  version "1.20.3"
+  resolved "https://registry.npmjs.org/sass/-/sass-1.20.3.tgz#18284a7bac6eab9cbb80453288473194f29efb84"
+  integrity sha512-kvf+w5XT7FrmFrCKz1gPHqegufG+gxifC8oQesX/s8gkShdeiTqiuvP0c8TvfBwMAuI1YGOgobZQ2KIJGn//jA==
   dependencies:
     chokidar "^2.0.0"
 
