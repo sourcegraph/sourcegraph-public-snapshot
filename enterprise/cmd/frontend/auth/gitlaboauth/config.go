@@ -12,6 +12,10 @@ import (
 const PkgName = "gitlaboauth"
 
 func init() {
+	conf.ContributeValidator(func(cfg conf.Unified) (problems []string) {
+		_, problems = parseConfig(&cfg)
+		return problems
+	})
 	go func() {
 		conf.Watch(func() {
 			newProviders, _ := parseConfig(conf.Get())
@@ -24,10 +28,6 @@ func init() {
 				}
 				providers.Update(PkgName, newProvidersList)
 			}
-		})
-		conf.ContributeValidator(func(cfg conf.Unified) (problems []string) {
-			_, problems = parseConfig(&cfg)
-			return problems
 		})
 	}()
 }
