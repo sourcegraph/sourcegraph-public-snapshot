@@ -106,6 +106,7 @@ export const resolveRev = memoizeObservable(
                         mirrorInfo {
                             cloneInProgress
                             cloneProgress
+                            cloned
                         }
                         commit(rev: $rev) {
                             oid
@@ -137,6 +138,9 @@ export const resolveRev = memoizeObservable(
                         ctx.repoName,
                         data.repository.mirrorInfo.cloneProgress || undefined
                     )
+                }
+                if (!data.repository.mirrorInfo.cloned) {
+                    throw createCloneInProgressError(ctx.repoName, 'this repository is in the queue to be cloned')
                 }
                 if (!data.repository.commit) {
                     throw createRevNotFoundError(ctx.rev)
