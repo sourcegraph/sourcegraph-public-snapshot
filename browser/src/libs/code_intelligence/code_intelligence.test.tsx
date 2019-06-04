@@ -84,7 +84,7 @@ const createMockPlatformContext = (
                 data: {
                     repository: {
                         mirrorInfo: {
-                            cloneInProgress: false,
+                            cloned: true,
                         },
                         commit: {
                             oid: 'foo',
@@ -99,9 +99,6 @@ const createMockPlatformContext = (
             return of({
                 data: {
                     repository: {
-                        mirrorInfo: {
-                            cloneInProgress: false,
-                        },
                         commit: {
                             file: {
                                 content: '',
