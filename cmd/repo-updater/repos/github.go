@@ -194,9 +194,9 @@ func (s *GithubSource) paginate(ctx context.Context, pager repositoryPager) (map
 		}
 
 		var pageRepos []*github.Repository
-		var rateLimitCost int
+		var cost int
 		var err error
-		pageRepos, hasNextPage, rateLimitCost, err = pager(page)
+		pageRepos, hasNextPage, cost, err = pager(page)
 		if err != nil {
 			return set, err
 		}
@@ -205,8 +205,8 @@ func (s *GithubSource) paginate(ctx context.Context, pager repositoryPager) (map
 			set[r.DatabaseID] = r
 		}
 
-		if hasNextPage && rateLimitCost > 0 {
-			time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
+		if hasNextPage && cost > 0 {
+			time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(cost))
 		}
 	}
 
@@ -406,36 +406,37 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 	set := make(map[int64]*github.Repository)
 	errs := new(multierror.Error)
 
+	var list map[int64]*github.Repository
+	var err error
+
 	for _, repositoryQuery := range s.config.RepositoryQuery {
-		repos, err := s.listRepositoryQuery(ctx, repositoryQuery)
+		list, err = s.listRepositoryQuery(ctx, repositoryQuery)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			continue
 		}
-		for id, r := range repos {
+		for id, r := range list {
 			set[id] = r
 		}
 	}
 
-	{
-		repos, err := s.listRepos(ctx, s.config.Repos)
-		if err != nil {
-			errs = multierror.Append(errs, err)
-		}
+	list, err = s.listRepos(ctx, s.config.Repos)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
 
-		for id, r := range repos {
-			set[id] = r
-		}
+	for id, r := range list {
+		set[id] = r
 	}
 
 	for _, org := range s.config.Orgs {
-		repos, err := s.listOrg(ctx, org)
+		list, err = s.listOrg(ctx, org)
 		if err != nil {
 			errs = multierror.Append(errs, errors.Wrapf(err, "failed to list organization %s repos", org))
 			continue
 		}
 
-		for id, r := range repos {
+		for id, r := range list {
 			set[id] = r
 		}
 	}

@@ -492,8 +492,6 @@ func (c *Client) ListOrgRepositories(ctx context.Context, org string, page int) 
 	for _, restRepo := range restRepos {
 		repos = append(repos, convertRestRepo(restRepo))
 	}
-	// 🚨 SECURITY: must forward token here to ensure caching by token
-	c.addRepositoriesToCache("", repos)
 	return repos, len(repos) > 0, 1, nil
 }
 
