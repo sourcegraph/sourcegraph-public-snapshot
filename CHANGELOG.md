@@ -35,9 +35,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Improved performance of the /site-admin/repositories page significantly (prevents timeouts). #4063
-- Fixed an issue where Gitolite repositories would be inaccessible to non-admin users after upgrading to 3.3.0+ from an older version. #4263
-- Repository names are now treated as case-sensitive, fixing an issue where users saw `pq: duplicate key value violates unique constraint \"repo_name_unique\"` #4283
+- Improved performance of the /site-admin/repositories page significantly (prevents timeouts). [#4063](https://github.com/sourcegraph/sourcegraph/issues/4063)
+- Fixed an issue where Gitolite repositories would be inaccessible to non-admin users after upgrading to 3.3.0+ from an older version. [#4263](https://github.com/sourcegraph/sourcegraph/issues/4263)
+- Repository names are now treated as case-sensitive, fixing an issue where users saw `pq: duplicate key value violates unique constraint \"repo_name_unique\"` [#4283](https://github.com/sourcegraph/sourcegraph/issues/4283)
 
 ## 3.4.2
 
@@ -49,7 +49,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixed https://github.com/sourcegraph/sourcegraph/issues/4127
+- Fixed incorrect wording in site-admin onboarding. [#4127](https://github.com/sourcegraph/sourcegraph/issues/4127)
 
 ## 3.4.1
 
