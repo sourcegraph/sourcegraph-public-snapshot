@@ -60,12 +60,4 @@ pushd web
 # `-pix_fmt yuv420p` makes a QuickTime-compatible mp4.
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 > ffmpeg.log 2>&1 &
 env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
-
-if [ $? -ne 0 ]; then
-    echo "^^^ +++"
-    echo "Tests failed. Here's the output of docker inspect and docker logs:"
-    docker inspect "$CONTAINER"
-    docker logs --timestamps "$CONTAINER"
-    exit 1
-fi
 popd
