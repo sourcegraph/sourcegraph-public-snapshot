@@ -199,13 +199,9 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
  *
  * TODO ideally, this should only scrape the code view itself.
  */
-export function getFilePath(): string | undefined {
-    return document.evaluate(
-        "//clipboard-copy[contains(text(), 'Copy path')]/@value",
-        document,
-        null,
-        XPathResult.STRING_TYPE
-    ).stringValue
+export function getFilePath(): string | null {
+    const copyButton = document.querySelector('clipboard-copy[value]')
+    return copyButton && copyButton.getAttribute('value')
 }
 
 type GitHubURL =
