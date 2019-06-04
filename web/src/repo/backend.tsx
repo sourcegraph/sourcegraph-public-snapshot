@@ -140,7 +140,7 @@ export const resolveRev = memoizeObservable(
                     )
                 }
                 if (!data.repository.mirrorInfo.cloned) {
-                    throw createCloneInProgressError(ctx.repoName, 'this repository is in the queue to be cloned')
+                    throw createCloneInProgressError(ctx.repoName, 'queued for cloning')
                 }
                 if (!data.repository.commit) {
                     throw createRevNotFoundError(ctx.rev)
