@@ -49,7 +49,7 @@ describe('e2e test suite', function(this: any): void {
         () => driver.page
     )
 
-    describe('5. Search', () => {
+    describe('Search', () => {
         beforeAll(async () => {
             const repoSlugs = [
                 'auth0/go-jwt-middleware',
@@ -138,7 +138,7 @@ describe('e2e test suite', function(this: any): void {
         })
 
         test(
-            '5.1. Perform global text search for "alksdjflaksjdflkasjdf", expect 0 results.',
+            'Perform global text search for "alksdjflaksjdflkasjdf", expect 0 results.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=alksdjflaksjdflkasjdf')
                 await driver.page.waitForSelector('.search-results')
@@ -156,7 +156,7 @@ describe('e2e test suite', function(this: any): void {
             5 * 1000
         )
         test(
-            '5.1. Perform global text search for "error", expect a few results.',
+            'Perform global text search for "error", expect a few results.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=%22error+type:%22')
                 await driver.page.waitForFunction(
@@ -166,7 +166,7 @@ describe('e2e test suite', function(this: any): void {
             5 * 1000
         )
         test(
-            '5.1. Perform global text search for "error", expect many results.',
+            'Perform global text search for "error", expect many results.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=error')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.result-container').length > 10)
@@ -174,7 +174,7 @@ describe('e2e test suite', function(this: any): void {
             5 * 1000
         )
         test(
-            '5.1. Perform global text search for "error", expect many results.',
+            'Perform global text search for "error", expect many results.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=error')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.result-container').length > 10)
@@ -182,7 +182,7 @@ describe('e2e test suite', function(this: any): void {
             5 * 1000
         )
         test(
-            '5.1. Perform global text search for "error count:>1000", expect many results.',
+            'Perform global text search for "error count:>1000", expect many results.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=error+count:1000')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.result-container').length > 10)
