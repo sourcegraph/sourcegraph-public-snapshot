@@ -187,8 +187,8 @@ type repositoryPager func(page int) (repos []*github.Repository, hasNext bool, c
 func (s *GithubSource) paginate(ctx context.Context, pager repositoryPager) (map[int64]*github.Repository, error) {
 	set := make(map[int64]*github.Repository)
 
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
+	hasNext := true
+	for page := 1; hasNext; page++ {
 		if err := ctx.Err(); err != nil {
 			return set, err
 		}
@@ -196,7 +196,7 @@ func (s *GithubSource) paginate(ctx context.Context, pager repositoryPager) (map
 		var pageRepos []*github.Repository
 		var cost int
 		var err error
-		pageRepos, hasNextPage, cost, err = pager(page)
+		pageRepos, hasNext, cost, err = pager(page)
 		if err != nil {
 			return set, err
 		}
@@ -205,7 +205,7 @@ func (s *GithubSource) paginate(ctx context.Context, pager repositoryPager) (map
 			set[r.DatabaseID] = r
 		}
 
-		if hasNextPage && cost > 0 {
+		if hasNext && cost > 0 {
 			time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(cost))
 		}
 	}
