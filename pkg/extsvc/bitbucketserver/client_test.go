@@ -91,15 +91,15 @@ func TestClient_Users(t *testing.T) {
 			page: &bitbucketserver.PageToken{Limit: 1000},
 			filters: []bitbucketserver.UserFilter{
 				{
-					Permissions: []bitbucketserver.PermissionFilter{
-						{
-							Root: bitbucketserver.PermSysAdmin,
-						},
-						{
-							Root:           bitbucketserver.PermRepoRead,
-							ProjectKey:     "ORG",
-							RepositorySlug: "foo",
-						},
+					Permission: bitbucketserver.PermissionFilter{
+						Root: bitbucketserver.PermSysAdmin,
+					},
+				},
+				{
+					Permission: bitbucketserver.PermissionFilter{
+						Root:           bitbucketserver.PermRepoRead,
+						ProjectKey:     "ORG",
+						RepositorySlug: "foo",
 					},
 				},
 			},
@@ -117,12 +117,10 @@ func TestClient_Users(t *testing.T) {
 					Filter: "admin",
 				},
 				{
-					Permissions: []bitbucketserver.PermissionFilter{
-						{
-							Root:           bitbucketserver.PermRepoRead,
-							ProjectKey:     "ORG",
-							RepositorySlug: "foo",
-						},
+					Permission: bitbucketserver.PermissionFilter{
+						Root:           bitbucketserver.PermRepoRead,
+						ProjectKey:     "ORG",
+						RepositorySlug: "foo",
 					},
 				},
 			},

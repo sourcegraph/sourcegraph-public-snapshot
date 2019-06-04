@@ -80,6 +80,46 @@ func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
 	}
 }
 
+// UserFilters is a list of UserFilter that is ANDed together.
+type UserFilters []UserFilter
+
+// EncodeTo encodes the UserFilter to the given url.Values.
+func (fs UserFilters) EncodeTo(qry url.Values) {
+	var perm int
+	for _, f := range fs {
+		if f.Filter != "" {
+			qry.Set("filter", f.Filter)
+		}
+
+		if f.Group != "" {
+			qry.Set("group", f.Group)
+		}
+
+		if p := f.Permission; p != (PermissionFilter{}) {
+			perm++
+
+			q := fmt.Sprintf("permission.%d", perm)
+			qry.Set(q, string(p.Root))
+
+			if p.ProjectID != "" {
+				qry.Set(q+".projectId", p.ProjectID)
+			}
+
+			if p.ProjectKey != "" {
+				qry.Set(q+".projectKey", p.ProjectKey)
+			}
+
+			if p.RepositoryID != "" {
+				qry.Set(q+".repositoryId", p.RepositoryID)
+			}
+
+			if p.RepositorySlug != "" {
+				qry.Set(q+".repositorySlug", p.RepositorySlug)
+			}
+		}
+	}
+}
+
 // UserFilter defines a union type of filters to be used when listing users.
 type UserFilter struct {
 	// Filter filters the returned users to those whose username,
@@ -88,9 +128,9 @@ type UserFilter struct {
 	Filter string
 	// Group filters the returned users to those who are in the give group.
 	Group string
-	// Permissions filters the returned users to those having the given
+	// Permission filters the returned users to those having the given
 	// permissions.
-	Permissions []PermissionFilter
+	Permission PermissionFilter
 }
 
 // A PermissionFilter is a UserFilter used to list users that have specific
@@ -103,44 +143,10 @@ type PermissionFilter struct {
 	RepositorySlug string
 }
 
-// EncodeTo encodes the UserFilter to the given url.Values.
-func (f UserFilter) EncodeTo(qry url.Values) {
-	if f.Filter != "" {
-		qry.Set("filter", f.Filter)
-	}
-
-	if f.Group != "" {
-		qry.Set("group", f.Group)
-	}
-
-	for i, p := range f.Permissions {
-		q := fmt.Sprintf("permission.%d", i+1)
-		qry.Set(q, string(p.Root))
-
-		if p.ProjectID != "" {
-			qry.Set(q+".projectId", p.ProjectID)
-		}
-
-		if p.ProjectKey != "" {
-			qry.Set(q+".projectKey", p.ProjectKey)
-		}
-
-		if p.RepositoryID != "" {
-			qry.Set(q+".repositoryId", p.RepositoryID)
-		}
-
-		if p.RepositorySlug != "" {
-			qry.Set(q+".repositorySlug", p.RepositorySlug)
-		}
-	}
-}
-
 // Users retrieves a page of users, optionally run through provided filters.
-func (c *Client) Users(ctx context.Context, pageToken *PageToken, filters ...UserFilter) ([]*User, *PageToken, error) {
+func (c *Client) Users(ctx context.Context, pageToken *PageToken, fs ...UserFilter) ([]*User, *PageToken, error) {
 	qry := make(url.Values)
-	for _, f := range filters {
-		f.EncodeTo(qry)
-	}
+	UserFilters(fs).EncodeTo(qry)
 
 	var users []*User
 	next, err := c.page(ctx, "rest/api/1.0/users", qry, pageToken, &users)
