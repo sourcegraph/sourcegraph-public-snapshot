@@ -10,6 +10,19 @@ import { ExtDocuments } from './documents'
 
 const DEFAULT_DECORATION_TYPE = createDecorationType()
 
+/**
+ * Returns true if all of the objects properties are empty null, undefined, empty strings or objects that are also empty.
+ */
+const isEmptyObjectDeep = (value: any): boolean =>
+    Array.isArray(value)
+        ? value.every(isEmptyObjectDeep)
+        : typeof value === 'object' && value !== null
+        ? Object.values(value).every(isEmptyObjectDeep)
+        : !value
+
+const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextDocumentDecoration) =>
+    isEmptyObjectDeep(contents)
+
 /** @internal */
 export class ExtCodeEditor implements sourcegraph.CodeEditor {
     /** The URI of this editor's document. */
@@ -48,7 +61,11 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         // may not supply a decorationType
         decorationType = decorationType || DEFAULT_DECORATION_TYPE
         // tslint:disable-next-line: no-floating-promises
-        this.proxy.$setDecorations(this.resource, decorationType.key, decorations.map(fromTextDocumentDecoration))
+        this.proxy.$setDecorations(
+            this.resource,
+            decorationType.key,
+            decorations.map(fromTextDocumentDecoration).filter(decoration => !isDecorationEmpty(decoration))
+        )
     }
 
     public update(data: Pick<CodeEditorData, 'selections'>): void {

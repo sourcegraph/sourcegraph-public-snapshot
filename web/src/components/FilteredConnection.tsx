@@ -482,7 +482,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         let lastQuery: string | undefined
         let lastFilter: FilteredConnectionFilter | undefined
         this.subscriptions.add(
-            combineLatest(queryChanges, activeFilterChanges, refreshRequests.pipe(startWith<void>(undefined)))
+            combineLatest([queryChanges, activeFilterChanges, refreshRequests.pipe(startWith<void>(undefined))])
                 .pipe(
                     tap(([query, filter]) => {
                         if (this.props.shouldUpdateURLQuery) {
