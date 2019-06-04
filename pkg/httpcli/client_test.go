@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/kylelemons/godebug/pretty"
 )
@@ -168,6 +169,60 @@ func TestNewCertPool(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			err := NewCertPoolOpt(tc.pool)(tc.cli)
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Fatalf("have error: %q\nwant error: %q", have, want)
+			}
+
+			if tc.assert != nil {
+				tc.assert(t, tc.cli)
+			}
+		})
+	}
+}
+
+func TestNewIdleConnTimeoutOpt(t *testing.T) {
+	timeout := 33 * time.Second
+	for _, tc := range []struct {
+		name    string
+		cli     *http.Client
+		timeout time.Duration
+		assert  func(testing.TB, *http.Client)
+		err     string
+	}{
+		{
+			name: "sets default transport if nil",
+			cli:  &http.Client{},
+			assert: func(t testing.TB, cli *http.Client) {
+				if cli.Transport == nil {
+					t.Fatal("transport wasn't set")
+				}
+			},
+		},
+		{
+			name: "fails if transport isn't an http.Transport",
+			cli:  &http.Client{Transport: bogusTransport{}},
+			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport is not an *http.Transport",
+		},
+		{
+			name:    "IdleConnTimeout is set to what is given",
+			cli:     &http.Client{Transport: &http.Transport{}},
+			timeout: timeout,
+			assert: func(t testing.TB, cli *http.Client) {
+				have := cli.Transport.(*http.Transport).IdleConnTimeout
+				if want := timeout; !reflect.DeepEqual(have, want) {
+					t.Fatal(pretty.Compare(have, want))
+				}
+			},
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			err := NewIdleConnTimeoutOpt(tc.timeout)(tc.cli)
 
 			if tc.err == "" {
 				tc.err = "<nil>"

@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/gregjones/httpcache"
 	"github.com/hashicorp/go-multierror"
@@ -190,4 +191,23 @@ func TracedTransportOpt(cli *http.Client) error {
 
 	cli.Transport = &nethttp.Transport{RoundTripper: cli.Transport}
 	return nil
+}
+
+// NewIdleConnTimeoutOpt returns a Opt that sets the IdleConnTimeout of an
+// http.Client's transport.
+func NewIdleConnTimeoutOpt(timeout time.Duration) Opt {
+	return func(cli *http.Client) error {
+		if cli.Transport == nil {
+			cli.Transport = http.DefaultTransport
+		}
+
+		tr, ok := cli.Transport.(*http.Transport)
+		if !ok {
+			return errors.New("httpcli.NewIdleConnTimeoutOpt: http.Client.Transport is not an *http.Transport")
+		}
+
+		tr.IdleConnTimeout = timeout
+
+		return nil
+	}
 }
