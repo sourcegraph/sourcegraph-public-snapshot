@@ -130,6 +130,10 @@ func TestGithubSource_ListRepos(t *testing.T) {
 		t.Helper()
 
 		want := []string{
+			"github.com/kubernetes/kubeadm",
+			"github.com/kubernetes/kubectl",
+			"github.com/kubernetes/kubernetes",
+			"github.com/kubernetes/minikube",
 			"github.com/sourcegraph/about",
 			"github.com/sourcegraph/sourcegraph",
 		}
@@ -193,6 +197,9 @@ func TestGithubSource_ListRepos(t *testing.T) {
 					Repos: []string{
 						"sourcegraph/about",
 						"sourcegraph/sourcegraph",
+					},
+					Orgs: []string{
+						"kubernetes",
 					},
 				}),
 			}
