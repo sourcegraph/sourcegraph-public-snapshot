@@ -389,7 +389,7 @@ func (s *GithubSource) listSearch(ctx context.Context, query string) (map[int64]
 // - `none`: disables `repositoryQuery`
 // Inputs other than these three keywords will be queried using
 // GitHub advanced repository search (endpoint: /search/repositories)
-func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string) (set map[int64]*github.Repository, err error) {
+func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string) (map[int64]*github.Repository, error) {
 	switch query {
 	case "public":
 		return s.listPublic(ctx)
@@ -397,11 +397,12 @@ func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string) (s
 		return s.listAffiliated(ctx)
 	case "none":
 		// nothing
-	default:
-		// Run the query as a GitHub advanced repository search
-		// (https://github.com/search/advanced).
-		return s.listSearch(ctx, query)
+		return nil, nil
 	}
+
+	// Run the query as a GitHub advanced repository search
+	// (https://github.com/search/advanced).
+	return s.listSearch(ctx, query)
 }
 
 // listAllRepositories returns the repositories from the given `orgs`, `repos`, and

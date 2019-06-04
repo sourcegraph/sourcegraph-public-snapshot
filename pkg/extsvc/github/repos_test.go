@@ -402,7 +402,7 @@ func TestClient_ListOrgRepositories(t *testing.T) {
 		},
 	}
 
-	repos, hasNextPage, _, err := c.ListOrg(context.Background(), "o", 1)
+	repos, hasNextPage, _, err := c.ListOrgRepositories(context.Background(), "o", 1)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -48,7 +48,7 @@ const GitHubSchemaJSON = `{
       "examples": [["owner/name"], ["kubernetes/kubernetes", "golang/go", "facebook/react"]]
     },
     "orgs": {
-      "description": "An array of organization \"org name\" strings specifying which GitHub or GitHub Enterprise organizations to mirror all repositories from on Sourcegraph.",
+      "description": "An array of organization names identifying GitHub organizations whose repositories should be mirrored on Sourcegraph.",
       "type": "array",
       "items": { "type": "string", "pattern": "^[\\w-]+$" },
       "examples": [["name"], ["kubernetes", "golang", "facebook"]]
