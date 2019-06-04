@@ -141,12 +141,12 @@ describe('e2e test suite', function(this: any): void {
             'Perform global text search for "alksdjflaksjdflkasjdf", expect 0 results.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=alksdjflaksjdflkasjdf')
-                await driver.page.waitForSelector('.search-results')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.search-results').length >= 1)
+                await driver.page.waitForSelector('.e2e-search-results')
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-results').length >= 1)
                 await driver.page.evaluate(() => {
-                    const resultsElem = document.querySelector('.search-results')
+                    const resultsElem = document.querySelector('.e2e-search-results')
                     if (!resultsElem) {
-                        throw new Error('No .search-results element found')
+                        throw new Error('No .e2e-search-results element found')
                     }
                     if ((resultsElem as HTMLElement).innerText.indexOf('No results') === -1) {
                         throw new Error('Expected "No results" message, but didn\'t find it')
@@ -159,9 +159,7 @@ describe('e2e test suite', function(this: any): void {
             'Perform global text search for "error", expect a few results.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=%22error+type:%22')
-                await driver.page.waitForFunction(
-                    () => document.querySelectorAll('.file-match-children__item').length === 22
-                )
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
         )
@@ -169,7 +167,7 @@ describe('e2e test suite', function(this: any): void {
             'Perform global text search for "error", expect many results.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=error')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.result-container').length > 10)
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
         )
@@ -177,7 +175,7 @@ describe('e2e test suite', function(this: any): void {
             'Perform global text search for "error", expect many results.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=error')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.result-container').length > 10)
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
         )
@@ -185,7 +183,7 @@ describe('e2e test suite', function(this: any): void {
             'Perform global text search for "error count:>1000", expect many results.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=error+count:1000')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.result-container').length > 10)
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
         )
