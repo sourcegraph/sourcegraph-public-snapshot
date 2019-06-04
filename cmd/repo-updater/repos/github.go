@@ -60,7 +60,12 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		cf = NewHTTPClientFactory()
 	}
 
-	var opts []httpcli.Opt
+	opts := []httpcli.Opt{
+		// Use a 30s timeout to avoid running into EOF errors, because GitHub
+		// closes idle connections after 60s
+		httpcli.NewIdleConnTimeoutOpt(30 * time.Second),
+	}
+
 	if c.Certificate != "" {
 		pool, err := newCertPool(c.Certificate)
 		if err != nil {

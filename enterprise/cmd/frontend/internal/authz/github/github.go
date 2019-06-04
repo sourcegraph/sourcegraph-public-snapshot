@@ -19,7 +19,7 @@ import (
 // Provider implements authz.Provider for GitHub repository permissions.
 type Provider struct {
 	client   *github.Client
-	codeHost *github.CodeHost
+	codeHost *extsvc.CodeHost
 	cacheTTL time.Duration
 	cache    cache
 }
@@ -29,7 +29,7 @@ func NewProvider(githubURL *url.URL, baseToken string, cacheTTL time.Duration, m
 	client := github.NewClient(apiURL, baseToken, nil)
 
 	p := &Provider{
-		codeHost: github.NewCodeHost(githubURL),
+		codeHost: extsvc.NewCodeHost(githubURL, github.ServiceType),
 		client:   client,
 		cache:    mockCache,
 		cacheTTL: cacheTTL,
@@ -380,11 +380,11 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, current [
 }
 
 func (p *Provider) ServiceID() string {
-	return p.codeHost.ServiceID()
+	return p.codeHost.ServiceID
 }
 
 func (p *Provider) ServiceType() string {
-	return p.codeHost.ServiceType()
+	return p.codeHost.ServiceType
 }
 
 func (p *Provider) Validate() (problems []string) {

@@ -2,6 +2,7 @@ import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as os from 'os'
 import puppeteer, { LaunchOptions } from 'puppeteer'
 import { Key } from 'ts-key-enum'
+import * as util from 'util'
 import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
 
 export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue: false })
@@ -243,15 +244,9 @@ export async function newDriverForTest(): Promise<Driver> {
         if (message.text().indexOf('Download the React DevTools') !== -1) {
             return
         }
-        const loc = message.location()
         console.log(
-            'Browser console [' +
-                message.type() +
-                ':' +
-                loc.url +
-                (loc.lineNumber ? ':L' + loc.lineNumber + ':' + loc.columnNumber : '') +
-                ']:',
-            message.text()
+            'Browser console message:',
+            util.inspect(message, { colors: true, depth: 2, breakLength: Infinity })
         )
     })
     return new Driver(browser, page)

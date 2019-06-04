@@ -148,16 +148,6 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				http.Redirect(w, r, u.String(), http.StatusSeeOther)
 				return nil, nil
 			}
-			if errcode.IsNotFound(err) || errors.Cause(err) == repoupdater.ErrNotFound {
-				// Repo does not exist.
-				serveError(w, r, err, http.StatusNotFound)
-				return nil, nil
-			}
-			if errors.Cause(err) == repoupdater.ErrUnauthorized {
-				// Not authorized to access repository.
-				serveError(w, r, err, http.StatusUnauthorized)
-				return nil, nil
-			}
 			if git.IsRevisionNotFound(errors.Cause(err)) {
 				// Revision does not exist.
 				serveError(w, r, err, http.StatusNotFound)
@@ -175,6 +165,16 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				}
 				// Repo does not exist.
 				serveError(w, r, err, http.StatusNotFound)
+				return nil, nil
+			}
+			if errcode.IsNotFound(err) || errors.Cause(err) == repoupdater.ErrNotFound {
+				// Repo does not exist.
+				serveError(w, r, err, http.StatusNotFound)
+				return nil, nil
+			}
+			if errors.Cause(err) == repoupdater.ErrUnauthorized {
+				// Not authorized to access repository.
+				serveError(w, r, err, http.StatusUnauthorized)
 				return nil, nil
 			}
 			return nil, err
