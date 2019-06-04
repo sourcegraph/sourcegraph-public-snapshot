@@ -92,7 +92,7 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> => 
             repoName,
             filePath,
             commitID: getCommitIDFromPermalink(),
-            rev: revAndFilePath.slice(0, revAndFilePath.length - filePath.length),
+            rev: revAndFilePath.slice(0, -filePath.length),
         })
     } catch (error) {
         return throwError(error)
