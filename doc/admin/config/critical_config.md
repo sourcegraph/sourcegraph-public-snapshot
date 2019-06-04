@@ -63,7 +63,6 @@ lightstepAccessToken
 lightstepProject
 auth.userOrgMap
 auth.providers
-externalURL
 update.channel
 useJaeger
 ```
