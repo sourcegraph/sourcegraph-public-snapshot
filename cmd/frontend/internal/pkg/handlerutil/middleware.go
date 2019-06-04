@@ -40,7 +40,8 @@ func CSRFMiddleware(next http.Handler, isSecure func() bool) http.Handler {
 			mu.Lock()
 			// Check if other go-routines didn't get there first.
 			if h = v.Load().(handler); h.secure != secure {
-				v.Store(newHandler(secure))
+				h = newHandler(secure)
+				v.Store(h)
 			}
 			mu.Unlock()
 		}
