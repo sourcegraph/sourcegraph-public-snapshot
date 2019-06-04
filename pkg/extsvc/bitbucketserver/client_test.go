@@ -1,0 +1,217 @@
+package bitbucketserver_test
+
+import (
+	"context"
+	"encoding/json"
+	"flag"
+	"fmt"
+	"io/ioutil"
+	"net/url"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
+)
+
+var update = flag.Bool("update", false, "update testdata")
+
+func TestClient_Users(t *testing.T) {
+	cli, save := newClient(t, "Users")
+	defer save()
+
+	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+
+	for _, tc := range []struct {
+		name    string
+		ctx     context.Context
+		page    *bitbucketserver.PageToken
+		filters []bitbucketserver.UserFilter
+		next    *bitbucketserver.PageToken
+		err     string
+	}{
+		{
+			name: "timeout",
+			ctx:  timeout,
+			err:  "context deadline exceeded",
+		},
+		{
+			name: "pagination: first page",
+			page: &bitbucketserver.PageToken{Limit: 1},
+			next: &bitbucketserver.PageToken{
+				Size:          1,
+				Limit:         1,
+				NextPageStart: 1,
+			},
+		},
+		{
+			name: "pagination: last page",
+			page: &bitbucketserver.PageToken{
+				Size:          1,
+				Limit:         1,
+				NextPageStart: 1,
+			},
+			next: &bitbucketserver.PageToken{
+				Size:       1,
+				Start:      1,
+				Limit:      1,
+				IsLastPage: true,
+			},
+		},
+		{
+			name:    "filter by substring match in username, name and email address",
+			page:    &bitbucketserver.PageToken{Limit: 1000},
+			filters: []bitbucketserver.UserFilter{{Filter: "Doe"}}, // matches "John Doe" in name
+			next: &bitbucketserver.PageToken{
+				Size:       1,
+				Limit:      1000,
+				IsLastPage: true,
+			},
+		},
+		{
+			name:    "filter by group",
+			page:    &bitbucketserver.PageToken{Limit: 1000},
+			filters: []bitbucketserver.UserFilter{{Group: "admins"}},
+			next: &bitbucketserver.PageToken{
+				Size:       1,
+				Limit:      1000,
+				IsLastPage: true,
+			},
+		},
+		{
+			name: "filter by multiple permissions (AND)",
+			page: &bitbucketserver.PageToken{Limit: 1000},
+			filters: []bitbucketserver.UserFilter{
+				{
+					Permissions: []bitbucketserver.PermissionFilter{
+						{
+							Root: bitbucketserver.PermSysAdmin,
+						},
+						{
+							Root:           bitbucketserver.PermRepoRead,
+							ProjectKey:     "ORG",
+							RepositorySlug: "foo",
+						},
+					},
+				},
+			},
+			next: &bitbucketserver.PageToken{
+				Size:       1,
+				Limit:      1000,
+				IsLastPage: true,
+			},
+		},
+		{
+			name: "multiple filters (AND)",
+			page: &bitbucketserver.PageToken{Limit: 1000},
+			filters: []bitbucketserver.UserFilter{
+				{
+					Filter: "admin",
+				},
+				{
+					Permissions: []bitbucketserver.PermissionFilter{
+						{
+							Root:           bitbucketserver.PermRepoRead,
+							ProjectKey:     "ORG",
+							RepositorySlug: "foo",
+						},
+					},
+				},
+			},
+			next: &bitbucketserver.PageToken{
+				Size:       1,
+				Limit:      1000,
+				IsLastPage: true,
+			},
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			users, next, err := cli.Users(tc.ctx, tc.page, tc.filters...)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if have, want := next, tc.next; !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
+			}
+
+			if err != nil {
+				return
+			}
+
+			bs, err := json.MarshalIndent(users, "", "  ")
+			if err != nil {
+				t.Fatalf("failed to marshal users: %s", err)
+			}
+
+			path := fmt.Sprintf("testdata/golden/Users-%s.json", tc.name)
+			if *update {
+				if err = ioutil.WriteFile(path, bs, 0640); err != nil {
+					t.Fatalf("failed to update golden file %q: %s", path, err)
+				}
+			}
+
+			golden, err := ioutil.ReadFile(path)
+			if err != nil {
+				t.Fatalf("failed to read golden file %q: %s", path, err)
+			}
+
+			if have, want := string(bs), string(golden); have != want {
+				dmp := diffmatchpatch.New()
+				diffs := dmp.DiffMain(have, want, false)
+				t.Error(dmp.DiffPrettyText(diffs))
+			}
+		})
+	}
+}
+
+func newClient(t testing.TB, name string) (*bitbucketserver.Client, func()) {
+	t.Helper()
+
+	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
+	rec, err := httptestutil.NewRecorder(cassete, *update)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instanceURL == "" {
+		instanceURL = "http://localhost:7990"
+	}
+
+	u, err := url.Parse(instanceURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cli := bitbucketserver.NewClient(u, hc)
+	cli.Token = os.Getenv("BITBUCKET_SERVER_TOKEN")
+
+	return cli, func() {
+		if err := rec.Stop(); err != nil {
+			t.Errorf("failed to update test data: %s", err)
+		}
+	}
+}

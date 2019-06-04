@@ -1,0 +1,11 @@
+[
+  {
+    "name": "admin",
+    "emailAddress": "tomas@sourcegraph.com",
+    "id": 1,
+    "displayName": "admin",
+    "active": true,
+    "slug": "admin",
+    "type": "NORMAL"
+  }
+]

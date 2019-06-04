@@ -1,0 +1,227 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://localhost:7990/rest/api/1.0/users?limit=1
+    method: GET
+  response:
+    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"name":"admin","emailAddress":"tomas@sourcegraph.com","id":1,"displayName":"admin","active":true,"slug":"admin","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/admin"}]}}],"start":0,"nextPageStart":1}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 04 Jun 2019 15:00:21 GMT
+      Pragma:
+      - no-cache
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@XVPZ0Ox900x179x0'
+      X-Asen:
+      - SEN-L13362690
+      X-Asessionid:
+      - fsvgfg
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://localhost:7990/rest/api/1.0/users?limit=1&start=1
+    method: GET
+  response:
+    body: '{"size":1,"limit":1,"isLastPage":true,"values":[{"name":"john","emailAddress":"john@mycorp.org","id":52,"displayName":"John
+      Doe","active":true,"slug":"john","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/john"}]}}],"start":1}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 04 Jun 2019 15:00:21 GMT
+      Pragma:
+      - no-cache
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@XVPZ0Ox900x180x0'
+      X-Asen:
+      - SEN-L13362690
+      X-Asessionid:
+      - zi7ldo
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://localhost:7990/rest/api/1.0/users?filter=Doe&limit=1000
+    method: GET
+  response:
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"name":"john","emailAddress":"john@mycorp.org","id":52,"displayName":"John
+      Doe","active":true,"slug":"john","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/john"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 04 Jun 2019 15:00:21 GMT
+      Pragma:
+      - no-cache
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@XVPZ0Ox900x181x0'
+      X-Asen:
+      - SEN-L13362690
+      X-Asessionid:
+      - fxk9c6
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://localhost:7990/rest/api/1.0/users?group=admins&limit=1000
+    method: GET
+  response:
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"name":"admin","emailAddress":"tomas@sourcegraph.com","id":1,"displayName":"admin","active":true,"slug":"admin","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/admin"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 04 Jun 2019 15:00:21 GMT
+      Pragma:
+      - no-cache
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@XVPZ0Ox900x182x0'
+      X-Asen:
+      - SEN-L13362690
+      X-Asessionid:
+      - 54qlgg
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://localhost:7990/rest/api/1.0/users?limit=1000&permission.1=SYS_ADMIN&permission.2=REPO_READ&permission.2.projectKey=ORG&permission.2.repositorySlug=foo
+    method: GET
+  response:
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"name":"admin","emailAddress":"tomas@sourcegraph.com","id":1,"displayName":"admin","active":true,"slug":"admin","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/admin"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 04 Jun 2019 15:00:21 GMT
+      Pragma:
+      - no-cache
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@XVPZ0Ox900x183x0'
+      X-Asen:
+      - SEN-L13362690
+      X-Asessionid:
+      - 1hoso5i
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://localhost:7990/rest/api/1.0/users?filter=admin&limit=1000&permission.1=REPO_READ&permission.1.projectKey=ORG&permission.1.repositorySlug=foo
+    method: GET
+  response:
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"name":"admin","emailAddress":"tomas@sourcegraph.com","id":1,"displayName":"admin","active":true,"slug":"admin","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/admin"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 04 Jun 2019 15:00:21 GMT
+      Pragma:
+      - no-cache
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@XVPZ0Ox900x184x0'
+      X-Asen:
+      - SEN-L13362690
+      X-Asessionid:
+      - 17t3pj5
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
