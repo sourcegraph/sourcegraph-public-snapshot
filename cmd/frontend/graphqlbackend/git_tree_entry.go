@@ -46,7 +46,7 @@ func (r *gitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 		repoName, err := cloneURLToRepoName(ctx, submodule.URL())
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
-			return "", fmt.Errorf("failed to resolve submodule repository name from clone url: %s", submodule.URL())
+			return "", nil
 		}
 		return "/" + repoName + "@" + submodule.Commit(), nil
 	}
