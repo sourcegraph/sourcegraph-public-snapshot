@@ -1,14 +1,25 @@
-import { from, merge, Observable } from 'rxjs'
-import { concatAll, filter, map, mergeMap } from 'rxjs/operators'
+import { animationFrameScheduler, from, Observable, Subscription } from 'rxjs'
+import { concatAll, filter, mergeMap, observeOn, tap } from 'rxjs/operators'
 import { isDefined, isInstanceOf } from '../../../../shared/src/util/types'
 import { MutationRecordLike, querySelectorAllOrSelf } from '../../shared/util/dom'
+
+interface View {
+    element: HTMLElement
+}
+
+type ViewWithSubscriptions<V extends View> = V & {
+    /**
+     * Maintains subscriptions to resources that should be freed when the view is removed.
+     */
+    subscriptions: Subscription
+}
 
 /**
  * Finds and resolves elements matched by a MutationObserver to views.
  *
  * @template V The type of view, such as a code view.
  */
-export interface ViewResolver<V> {
+export interface ViewResolver<V extends View> {
     /**
      * The element selector (used with {@link Window#querySelectorAll}) that matches candidate
      * elements to be passed to {@link ViewResolver#resolveView}.
@@ -22,78 +33,72 @@ export interface ViewResolver<V> {
     resolveView: (element: HTMLElement) => V | null
 }
 
-interface AddedViewEvent {
-    type: 'added'
-}
-
-interface RemovedViewEvent {
-    type: 'removed'
-
-    /** The HTML element that was removed. */
-    element: HTMLElement
-}
-
-/**
- * An addition or removal of a view observed by a {@link MutationObserver}.
- *
- * @template V The type of view, such as a code view.
- */
-export type ViewEvent<V> = (AddedViewEvent & V) | RemovedViewEvent
-
 /**
  * Find all the views (e.g., code views) on a page using view resolvers (defined in
  * {@link CodeHost}).
  *
- * Emits every view that gets added or removed.
+ * Emits every view that gets added as a {@link ViewWithSubscriptions},
+ * and frees a view's resources when it gets removed from the page.
  *
  * At any given time, there can be any number of views on a page.
  *
  * @template V The type of view, such as a code view.
  */
-export function trackViews<V>(
+export function trackViews<V extends View>(
     viewResolvers: ViewResolver<V>[]
-): (mutations: Observable<MutationRecordLike[]>) => Observable<ViewEvent<V>> {
+): (mutations: Observable<MutationRecordLike[]>) => Observable<ViewWithSubscriptions<V>> {
+    const viewStates = new Map<HTMLElement, ViewWithSubscriptions<V>>()
     return mutations =>
         mutations.pipe(
+            observeOn(animationFrameScheduler),
             concatAll(),
+            // Inspect removed nodes for known views
+            tap(({ removedNodes }) => {
+                for (const node of removedNodes) {
+                    if (!(node instanceof HTMLElement)) {
+                        continue
+                    }
+                    const view = viewStates.get(node)
+                    if (view) {
+                        view.subscriptions.unsubscribe()
+                        viewStates.delete(node)
+                        continue
+                    }
+                    for (const viewElement of viewStates.keys()) {
+                        if (node.contains(viewElement)) {
+                            viewStates.get(viewElement)!.subscriptions.unsubscribe()
+                            viewStates.delete(viewElement)
+                        }
+                    }
+                }
+            }),
             mergeMap(mutation =>
-                merge(
-                    // Find all new code views within the added nodes
-                    // (MutationObservers don't emit all descendant nodes of an addded node recursively)
-                    from(mutation.addedNodes).pipe(
-                        filter(isInstanceOf(HTMLElement)),
-                        mergeMap(addedElement =>
-                            from(viewResolvers).pipe(
-                                mergeMap(spec =>
-                                    [...querySelectorAllOrSelf<HTMLElement>(addedElement, spec.selector)]
-                                        .map(element => {
-                                            const view = spec.resolveView(element)
-                                            return (
-                                                view && {
-                                                    ...view,
-                                                    type: 'added' as const,
-                                                }
-                                            )
-                                        })
-                                        .filter(isDefined)
+                // Find all new code views within the added nodes
+                // (MutationObservers don't emit all descendant nodes of an addded node recursively)
+                from(mutation.addedNodes).pipe(
+                    filter(isInstanceOf(HTMLElement)),
+                    mergeMap(addedElement =>
+                        from(viewResolvers).pipe(
+                            mergeMap(({ selector, resolveView }) =>
+                                [...querySelectorAllOrSelf<HTMLElement>(addedElement, selector)].map(
+                                    (element): ViewWithSubscriptions<V> | null => {
+                                        const view = resolveView(element)
+                                        return (
+                                            view && {
+                                                ...view,
+                                                subscriptions: new Subscription(),
+                                            }
+                                        )
+                                    }
                                 )
-                            )
-                        )
-                    ),
-                    // For removed nodes, find the removed elements, but don't resolve the kind (it's not relevant)
-                    from(mutation.removedNodes).pipe(
-                        filter(isInstanceOf(HTMLElement)),
-                        mergeMap(removedElement =>
-                            from(viewResolvers).pipe(
-                                mergeMap(
-                                    ({ selector }) =>
-                                        querySelectorAllOrSelf(removedElement, selector) as Iterable<HTMLElement>
-                                ),
-                                map(element => ({
-                                    element,
-                                    type: 'removed' as const,
-                                }))
-                            )
+                            ),
+                            filter(
+                                (view): view is ViewWithSubscriptions<V> =>
+                                    isDefined(view) && !viewStates.has(view.element)
+                            ),
+                            tap(view => {
+                                viewStates.set(view.element, view)
+                            })
                         )
                     )
                 )

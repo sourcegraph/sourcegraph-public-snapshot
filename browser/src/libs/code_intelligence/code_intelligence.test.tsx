@@ -615,10 +615,7 @@ describe('code_intelligence', () => {
             mutations.next([{ addedNodes: [], removedNodes: [codeView1] }])
             // One editor should have been removed, model should still exist
             editors = await from(services.editor.editors)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+                .pipe(take(1))
                 .toPromise()
             expect(editors).toEqual([
                 {
@@ -639,10 +636,7 @@ describe('code_intelligence', () => {
             mutations.next([{ addedNodes: [], removedNodes: [codeView2] }])
             // Second editor and model should have been removed
             editors = await from(services.editor.editors)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+                .pipe(take(1))
                 .toPromise()
             expect(editors).toEqual([])
             expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(false)
