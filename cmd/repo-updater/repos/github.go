@@ -306,7 +306,6 @@ func (s *GithubSource) listPublic(ctx context.Context) (map[int64]*github.Reposi
 			}
 		}
 	}
-	return set, nil
 }
 
 // listAffiliated handles the `affiliated` keyword of the `repositoryQuery` config option.
