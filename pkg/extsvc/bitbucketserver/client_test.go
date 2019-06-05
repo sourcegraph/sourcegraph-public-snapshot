@@ -2,10 +2,8 @@ package bitbucketserver_test
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -15,7 +13,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
@@ -91,11 +88,33 @@ func TestClient_Users(t *testing.T) {
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
 
+	users := map[string]*bitbucketserver.User{
+		"admin": {
+			Name:         "admin",
+			EmailAddress: "tomas@sourcegraph.com",
+			ID:           1,
+			DisplayName:  "admin",
+			Active:       true,
+			Slug:         "admin",
+			Type:         "NORMAL",
+		},
+		"john": {
+			Name:         "john",
+			EmailAddress: "john@mycorp.org",
+			ID:           52,
+			DisplayName:  "John Doe",
+			Active:       true,
+			Slug:         "john",
+			Type:         "NORMAL",
+		},
+	}
+
 	for _, tc := range []struct {
 		name    string
 		ctx     context.Context
 		page    *bitbucketserver.PageToken
 		filters []bitbucketserver.UserFilter
+		users   []*bitbucketserver.User
 		next    *bitbucketserver.PageToken
 		err     string
 	}{
@@ -105,8 +124,9 @@ func TestClient_Users(t *testing.T) {
 			err:  "context deadline exceeded",
 		},
 		{
-			name: "pagination: first page",
-			page: &bitbucketserver.PageToken{Limit: 1},
+			name:  "pagination: first page",
+			page:  &bitbucketserver.PageToken{Limit: 1},
+			users: []*bitbucketserver.User{users["admin"]},
 			next: &bitbucketserver.PageToken{
 				Size:          1,
 				Limit:         1,
@@ -120,6 +140,7 @@ func TestClient_Users(t *testing.T) {
 				Limit:         1,
 				NextPageStart: 1,
 			},
+			users: []*bitbucketserver.User{users["john"]},
 			next: &bitbucketserver.PageToken{
 				Size:       1,
 				Start:      1,
@@ -131,6 +152,7 @@ func TestClient_Users(t *testing.T) {
 			name:    "filter by substring match in username, name and email address",
 			page:    &bitbucketserver.PageToken{Limit: 1000},
 			filters: []bitbucketserver.UserFilter{{Filter: "Doe"}}, // matches "John Doe" in name
+			users:   []*bitbucketserver.User{users["john"]},
 			next: &bitbucketserver.PageToken{
 				Size:       1,
 				Limit:      1000,
@@ -141,6 +163,7 @@ func TestClient_Users(t *testing.T) {
 			name:    "filter by group",
 			page:    &bitbucketserver.PageToken{Limit: 1000},
 			filters: []bitbucketserver.UserFilter{{Group: "admins"}},
+			users:   []*bitbucketserver.User{users["admin"]},
 			next: &bitbucketserver.PageToken{
 				Size:       1,
 				Limit:      1000,
@@ -164,6 +187,7 @@ func TestClient_Users(t *testing.T) {
 					},
 				},
 			},
+			users: []*bitbucketserver.User{users["admin"]},
 			next: &bitbucketserver.PageToken{
 				Size:       1,
 				Limit:      1000,
@@ -185,6 +209,7 @@ func TestClient_Users(t *testing.T) {
 					},
 				},
 			},
+			users: []*bitbucketserver.User{users["admin"]},
 			next: &bitbucketserver.PageToken{
 				Size:       1,
 				Limit:      1000,
@@ -226,32 +251,8 @@ func TestClient_Users(t *testing.T) {
 				t.Error(cmp.Diff(have, want))
 			}
 
-			if err != nil {
-				return
-			}
-
-			bs, err := json.MarshalIndent(users, "", "  ")
-			if err != nil {
-				t.Fatalf("failed to marshal users: %s", err)
-			}
-
-			path := fmt.Sprintf("testdata/golden/Users-%s.json", normalize(tc.name))
-			if *update {
-				if err = ioutil.WriteFile(path, bs, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-				t.Skipf("Updated %s successfully. Skipping.", path)
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(bs), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
+			if have, want := users, tc.users; !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
 			}
 		})
 	}
