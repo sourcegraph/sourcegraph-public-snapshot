@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -268,12 +267,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		return errors.WithStack(&httpError{URL: req.URL, StatusCode: resp.StatusCode})
 	}
 
-	bs, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(bs, result)
+	return json.NewDecoder(resp.Body).Decode(result)
 }
 
 func parseQueryStrings(qs ...string) (url.Values, error) {
