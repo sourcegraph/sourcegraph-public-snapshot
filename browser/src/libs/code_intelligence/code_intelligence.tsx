@@ -582,7 +582,7 @@ export function handleCodeHost({
                     repoName: fileInfo.baseRepoName,
                     commitID: fileInfo.baseCommitID,
                 })
-                addRootRef(baseRootURI, fileInfo.baseRev || '')
+                addRootRef(baseRootURI, fileInfo.baseRev)
                 codeViewEvent.subscriptions.add(() => {
                     deleteRootRef(baseRootURI)
                     extensionsController.services.editor.removeEditor(editor)
