@@ -6,6 +6,7 @@ import {
     Hoverifier,
     HoverState,
 } from '@sourcegraph/codeintellify'
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { uniqBy } from 'lodash'
 import * as React from 'react'
@@ -16,6 +17,7 @@ import {
     concatAll,
     concatMap,
     filter,
+    finalize,
     map,
     mergeMap,
     observeOn,
@@ -25,6 +27,7 @@ import {
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { PartialCodeEditor } from '../../../../shared/src/api/client/context/context'
+import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
 import { CodeEditorData } from '../../../../shared/src/api/client/services/editorService'
 import { WorkspaceRootWithMetadata } from '../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
@@ -64,13 +67,7 @@ import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
-import {
-    applyDecorations,
-    DecorationMapByLine,
-    initializeExtensions,
-    renderCommandPalette,
-    renderGlobalDebug,
-} from './extensions'
+import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
 import { handleTextFields, TextField } from './text_fields'
 import { ViewResolver } from './views'
@@ -582,22 +579,54 @@ export function handleCodeHost({
                 }
 
                 // Apply decorations coming from extensions
-                let decorationsByLine: DecorationMapByLine = new Map()
-                if (!fileInfo.baseCommitID) {
+                {
+                    let decorationsByLine: DecorationMapByLine = new Map()
+                    const update = (decorations?: TextDocumentDecoration[] | null): void => {
+                        decorationsByLine = applyDecorations(
+                            domFunctions,
+                            element,
+                            decorations || [],
+                            decorationsByLine,
+                            fileInfo.baseCommitID ? 'head' : undefined
+                        )
+                    }
                     codeViewState.subscriptions.add(
                         extensionsController.services.textDocumentDecoration
                             .getDecorations(toTextDocumentIdentifier(fileInfo))
+                            // Make sure extensions get cleaned up un unsubscription
+                            .pipe(finalize(update))
                             // The nested subscribe cannot be replaced with a switchMap()
                             // We manage the subscription correctly.
                             // tslint:disable-next-line: rxjs-no-nested-subscribe
-                            .subscribe(decorations => {
-                                decorationsByLine = applyDecorations(
-                                    domFunctions,
-                                    element,
-                                    decorations || [],
-                                    decorationsByLine
-                                )
-                            })
+                            .subscribe(update)
+                    )
+                }
+                if (fileInfo.baseCommitID && fileInfo.baseFilePath) {
+                    let decorationsByLine: DecorationMapByLine = new Map()
+                    const update = (decorations?: TextDocumentDecoration[] | null): void => {
+                        decorationsByLine = applyDecorations(
+                            domFunctions,
+                            element,
+                            decorations || [],
+                            decorationsByLine,
+                            'base'
+                        )
+                    }
+                    codeViewState.subscriptions.add(
+                        extensionsController.services.textDocumentDecoration
+                            .getDecorations(
+                                toTextDocumentIdentifier({
+                                    repoName: fileInfo.baseRepoName || fileInfo.repoName, // not sure if all code hosts set baseRepoName
+                                    commitID: fileInfo.baseCommitID,
+                                    filePath: fileInfo.baseFilePath,
+                                })
+                            )
+                            // Make sure decorations get cleaned up on unsubscription
+                            .pipe(finalize(update))
+                            // The nested subscribe cannot be replaced with a switchMap()
+                            // We manage the subscription correctly.
+                            // tslint:disable-next-line: rxjs-no-nested-subscribe
+                            .subscribe(update)
                     )
                 }
 

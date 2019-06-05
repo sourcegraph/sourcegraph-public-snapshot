@@ -22,6 +22,7 @@ import { getHover } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { WebHoverOverlay } from '../../components/shared'
+import { ThemeProps } from '../../theme'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
@@ -65,7 +66,8 @@ interface Props
     extends RouteComponentProps<{ revspec: string }>,
         EventLoggerProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        ThemeProps {
     repo: GQL.IRepository
 
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
@@ -222,6 +224,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 queryConnection={this.queryDiffs}
                                 nodeComponent={FileDiffNode}
                                 nodeComponentProps={{
+                                    ...this.props,
                                     base: {
                                         repoName: this.props.repo.name,
                                         repoID: this.props.repo.id,
@@ -235,11 +238,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                         commitID: this.state.commitOrError.oid,
                                     },
                                     lineNumbers: true,
-                                    platformContext: this.props.platformContext,
-                                    location: this.props.location,
-                                    history: this.props.history,
                                     hoverifier: this.hoverifier,
-                                    extensionsController: this.props.extensionsController,
                                 }}
                                 updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}`}
                                 defaultFirst={25}

@@ -100,7 +100,7 @@ export function querySelectorAllOrSelf<E extends Element = Element>(
     element: Element,
     selectors: string
 ): ArrayLike<E> & Iterable<E>
-export function querySelectorAllOrSelf(element: Element, selectors: string): ArrayLike<Node> & Iterable<Element> {
+export function querySelectorAllOrSelf(element: Element, selectors: string): ArrayLike<Element> & Iterable<Element> {
     return element.matches(selectors) ? [element] : element.querySelectorAll(selectors)
 }
 

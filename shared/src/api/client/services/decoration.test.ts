@@ -135,7 +135,6 @@ describe('decorationStyleForTheme', () => {
 
     test('supports no theme overrides', () =>
         expect(decorationStyleForTheme({ range: FIXTURE_RANGE, backgroundColor: 'red' }, true)).toEqual({
-            range: FIXTURE_RANGE, // it's not necessary that range is included, but it saves an object allocation
             backgroundColor: 'red',
         }))
 

@@ -27,6 +27,7 @@ import {
 import { getHover } from '../../backend/features'
 import { HeroPage } from '../../components/HeroPage'
 import { WebHoverOverlay } from '../../components/shared'
+import { ThemeProps } from '../../theme'
 import { EventLoggerProps } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
@@ -47,7 +48,8 @@ interface RepositoryCompareAreaProps
         RepoHeaderContributionsLifecycleProps,
         PlatformContextProps,
         EventLoggerProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        ThemeProps {
     repo: GQL.IRepository
 }
 
@@ -197,6 +199,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                                             {...routeComponentProps}
                                             {...commonProps}
                                             hoverifier={this.hoverifier}
+                                            isLightTheme={this.props.isLightTheme}
                                             extensionsController={this.props.extensionsController}
                                         />
                                     )}

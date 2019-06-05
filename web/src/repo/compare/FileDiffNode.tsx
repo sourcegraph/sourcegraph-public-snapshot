@@ -10,10 +10,11 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import { ThemeProps } from '../../theme'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 
-export interface FileDiffNodeProps extends PlatformContextProps, ExtensionsControllerProps {
+export interface FileDiffNodeProps extends PlatformContextProps, ExtensionsControllerProps, ThemeProps {
     node: GQL.IFileDiff
 
     /** The base repository and revision. */
@@ -93,6 +94,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                     </div>
                     {this.state.expanded && (
                         <FileDiffHunks
+                            {...this.props}
                             className="file-diff-node__hunks"
                             fileDiffAnchor={anchor}
                             base={{
@@ -106,8 +108,6 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             hunks={node.hunks}
                             lineNumbers={this.props.lineNumbers}
                             platformContext={this.props.platformContext}
-                            history={this.props.history}
-                            location={this.props.location}
                             hoverifier={this.props.hoverifier}
                         />
                     )}
