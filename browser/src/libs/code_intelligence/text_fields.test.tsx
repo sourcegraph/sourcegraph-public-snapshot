@@ -96,7 +96,10 @@ describe('text_fields', () => {
             mutations.next([{ addedNodes: [], removedNodes: [textFieldElement] }])
             expect(
                 await from(services.editor.editors)
-                    .pipe(first())
+                    .pipe(
+                        skip(1),
+                        first()
+                    )
                     .toPromise()
             ).toEqual([])
         })

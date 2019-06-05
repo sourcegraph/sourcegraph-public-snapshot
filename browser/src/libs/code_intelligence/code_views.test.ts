@@ -1,14 +1,20 @@
-import { from, of, Subject } from 'rxjs'
+import { from, of, Subject, Subscription } from 'rxjs'
 import { switchMap, toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
 import { Omit } from 'utility-types'
+import { createBarrier } from '../../../../shared/src/api/integration-test/testHelpers'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { FileInfo } from './code_intelligence'
 import { CodeView, toCodeViewResolver, trackCodeViews } from './code_views'
 
 describe('code_views', () => {
+    let subscriptions = new Subscription()
     beforeEach(() => {
         document.body.innerHTML = ''
+    })
+    afterEach(() => {
+        subscriptions.unsubscribe()
+        subscriptions = new Subscription()
     })
     describe('trackCodeViews()', () => {
         const fileInfo: FileInfo = {
@@ -73,17 +79,24 @@ describe('code_views', () => {
                 .toPromise()
             expect(detected.map(({ subscriptions, ...rest }) => rest)).toEqual([{ ...codeViewSpec, element }])
         })
+
         it('should detect added code views added later', async () => {
             const selector = '.test-code-view'
             const subscriber = sinon.spy()
             const mutations = new Subject<MutationRecordLike[]>()
-            mutations
-                .pipe(
-                    trackCodeViews({
-                        codeViewResolvers: [toCodeViewResolver(selector, codeViewSpec)],
+            const { wait, done } = createBarrier()
+            subscriptions.add(
+                mutations
+                    .pipe(
+                        trackCodeViews({
+                            codeViewResolvers: [toCodeViewResolver(selector, codeViewSpec)],
+                        })
+                    )
+                    .subscribe(codeViews => {
+                        subscriber(codeViews)
+                        done()
                     })
-                )
-                .subscribe(subscriber)
+            )
             sinon.assert.notCalled(subscriber)
             mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
 
@@ -92,20 +105,26 @@ describe('code_views', () => {
             element.className = 'test-code-view'
             document.body.append(element)
             mutations.next([{ addedNodes: [element], removedNodes: [] }])
+            await wait
             sinon.assert.calledOnce(subscriber)
             expect(subscriber.args[0].map(({ subscriptions, ...rest }) => rest)).toEqual([{ ...codeViewSpec, element }])
         })
+
         it('should detect nested added code views added later', async () => {
             const selector = '.test-code-view'
             const subscriber = sinon.spy()
             const mutations = new Subject<MutationRecordLike[]>()
+            const { wait, done } = createBarrier()
             mutations
                 .pipe(
                     trackCodeViews({
                         codeViewResolvers: [toCodeViewResolver(selector, codeViewSpec)],
                     })
                 )
-                .subscribe(subscriber)
+                .subscribe(codeView => {
+                    done()
+                    subscriber(codeView)
+                })
             sinon.assert.notCalled(subscriber)
             mutations.next([{ addedNodes: [], removedNodes: [] }])
 
@@ -114,6 +133,7 @@ describe('code_views', () => {
             element.className = 'test-code-view'
             document.body.append(element)
             mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
+            await wait
             sinon.assert.calledOnce(subscriber)
             expect(subscriber.args[0].map(({ subscriptions, ...rest }) => rest)).toEqual([{ ...codeViewSpec, element }])
         })
