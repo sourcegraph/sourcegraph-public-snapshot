@@ -186,10 +186,9 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
  *
  * Implementation details:
  *
- * - This scrapes the file path from the "Copy path" button on GitHub blob
- *   pages:
+ * - This scrapes the file path from the permalink on GitHub blob pages:
  *
- *     <clipboard-copy value="foo/bar.go"> Copy path </clipboard-copy>
+ *     <a class="d-none js-permalink-shortcut" data-hotkey="y" href="/gorilla/mux/blob/ed099d42384823742bba0bf9a72b53b55c9e2e38/mux.go">Permalink</a>
  *
  * - We can't get the file path from the URL because the branch name can contain
  *   slashes which make the boundary between the branch name and file path
@@ -200,8 +199,27 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
  * TODO ideally, this should only scrape the code view itself.
  */
 export function getFilePath(): string | null {
-    const copyButton = document.querySelector('clipboard-copy[value]')
-    return copyButton && copyButton.getAttribute('value')
+    const permalink = document.querySelector('.js-permalink-shortcut')
+    if (!permalink) {
+        console.error(`Unable to determine the file path because no .js-permalink-shortcut element was found.`)
+        return null
+    }
+    const href = permalink.getAttribute('href')
+    if (!href) {
+        console.error(
+            `Unable to determine the file path because the .js-permalink-shortcut element did not have an href attribute.`
+        )
+        return null
+    }
+    // @ts-ignore these unused variables aid readability
+    const [_, _user, _repo, _blob, _commitID, ...path] = href.split('/')
+    if (path.length === 0) {
+        console.error(
+            `Unable to determine the file path because the .js-permalink-shortcut element's href attribute was ${href} (it is expected to be of the form /<user>/<repo>/blob/<commitID>/<path/to/file>).`
+        )
+        return null
+    }
+    return path.join('/')
 }
 
 type GitHubURL =
