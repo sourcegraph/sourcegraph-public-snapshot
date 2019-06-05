@@ -375,5 +375,35 @@ func updateFileIfDifferent(path string, content []byte) (bool, error) {
 	if err := f.Close(); err != nil {
 		return false, err
 	}
-	return true, os.Rename(f.Name(), path)
+	return true, renameAndSync(f.Name(), path)
+}
+
+// renameAndSync will do an os.Rename followed by fsync to ensure the rename
+// is recorded
+func renameAndSync(oldpath, newpath string) error {
+	err := os.Rename(oldpath, newpath)
+	if err != nil {
+		return err
+	}
+
+	oldparent, newparent := filepath.Dir(oldpath), filepath.Dir(newpath)
+	err = fsync(newparent)
+	if oldparent != newparent {
+		if err1 := fsync(oldparent); err == nil {
+			err = err1
+		}
+	}
+	return err
+}
+
+func fsync(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	err = f.Sync()
+	if err1 := f.Close(); err == nil {
+		err = err1
+	}
+	return err
 }

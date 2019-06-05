@@ -414,7 +414,7 @@ func (s *Server) removeRepoDirectory(dir string) error {
 		return err
 	}
 	defer os.RemoveAll(tmp)
-	if err := os.Rename(dir, filepath.Join(tmp, "repo")); err != nil {
+	if err := renameAndSync(dir, filepath.Join(tmp, "repo")); err != nil {
 		return err
 	}
 
