@@ -415,7 +415,7 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 	}
 
 	for _, repositoryQuery := range s.config.RepositoryQuery {
-		list, err = s.listRepositoryQuery(ctx, repositoryQuery)
+		list, err := s.listRepositoryQuery(ctx, repositoryQuery)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			continue
@@ -426,7 +426,7 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 	}
 
 	for _, org := range s.config.Orgs {
-		list, err = s.listOrg(ctx, org)
+		list, err := s.listOrg(ctx, org)
 		if err != nil {
 			errs = multierror.Append(errs, errors.Wrapf(err, "failed to list organization %s repos", org))
 			continue
