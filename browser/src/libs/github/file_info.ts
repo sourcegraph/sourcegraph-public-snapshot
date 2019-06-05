@@ -80,9 +80,6 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> => 
         const { revAndFilePath, repoName } = parsedURL
 
         const filePath = getFilePath()
-        if (!filePath) {
-            throw new Error(`Failed to find the file path.`)
-        }
         if (!revAndFilePath.endsWith(filePath)) {
             throw new Error(
                 `The file path ${filePath} should always be a suffix of revAndFilePath ${revAndFilePath}, but isn't in this case.`

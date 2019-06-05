@@ -198,26 +198,23 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
  *
  * TODO ideally, this should only scrape the code view itself.
  */
-export function getFilePath(): string | null {
+export function getFilePath(): string {
     const permalink = document.querySelector('.js-permalink-shortcut')
     if (!permalink) {
-        console.error(`Unable to determine the file path because no .js-permalink-shortcut element was found.`)
-        return null
+        throw new Error(`Unable to determine the file path because no .js-permalink-shortcut element was found.`)
     }
     const href = permalink.getAttribute('href')
     if (!href) {
-        console.error(
+        throw new Error(
             `Unable to determine the file path because the .js-permalink-shortcut element did not have an href attribute.`
         )
-        return null
     }
     // @ts-ignore these unused variables aid readability
     const [_, _user, _repo, _blob, _commitID, ...path] = href.split('/')
     if (path.length === 0) {
-        console.error(
+        throw new Error(
             `Unable to determine the file path because the .js-permalink-shortcut element's href attribute was ${href} (it is expected to be of the form /<user>/<repo>/blob/<commitID>/<path/to/file>).`
         )
-        return null
     }
     return path.join('/')
 }
