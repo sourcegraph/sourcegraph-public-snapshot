@@ -23,6 +23,67 @@ import (
 
 var update = flag.Bool("update", false, "update testdata")
 
+func TestUserFilters(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		fs   bitbucketserver.UserFilters
+		qry  url.Values
+	}{
+		{
+			name: "last one wins",
+			fs: bitbucketserver.UserFilters{
+				{Filter: "admin"},
+				{Filter: "tomas"}, // Last one wins
+			},
+			qry: url.Values{"filter": []string{"tomas"}},
+		},
+		{
+			name: "filters can be combined (AND)",
+			fs: bitbucketserver.UserFilters{
+				{Filter: "admin"},
+				{Group: "admins"},
+			},
+			qry: url.Values{
+				"filter": []string{"admin"},
+				"group":  []string{"admins"},
+			},
+		},
+		{
+			name: "permissions",
+			fs: bitbucketserver.UserFilters{
+				{
+					Permission: bitbucketserver.PermissionFilter{
+						Root:       bitbucketserver.PermProjectAdmin,
+						ProjectKey: "ORG",
+					},
+				},
+				{
+					Permission: bitbucketserver.PermissionFilter{
+						Root:           bitbucketserver.PermRepoWrite,
+						ProjectKey:     "ORG",
+						RepositorySlug: "foo",
+					},
+				},
+			},
+			qry: url.Values{
+				"permission.1":                []string{"PROJECT_ADMIN"},
+				"permission.1.projectKey":     []string{"ORG"},
+				"permission.2":                []string{"REPO_WRITE"},
+				"permission.2.projectKey":     []string{"ORG"},
+				"permission.2.repositorySlug": []string{"foo"},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			have := make(url.Values)
+			tc.fs.EncodeTo(have)
+			if want := tc.qry; !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
+			}
+		})
+	}
+}
+
 func TestClient_Users(t *testing.T) {
 	cli, save := newClient(t, "Users")
 	defer save()

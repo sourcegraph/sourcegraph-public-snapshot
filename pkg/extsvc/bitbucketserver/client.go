@@ -87,36 +87,11 @@ type UserFilters []UserFilter
 func (fs UserFilters) EncodeTo(qry url.Values) {
 	var perm int
 	for _, f := range fs {
-		if f.Filter != "" {
-			qry.Set("filter", f.Filter)
-		}
-
-		if f.Group != "" {
-			qry.Set("group", f.Group)
-		}
-
-		if p := f.Permission; p != (PermissionFilter{}) {
+		if f.Permission != (PermissionFilter{}) {
 			perm++
-
-			q := fmt.Sprintf("permission.%d", perm)
-			qry.Set(q, string(p.Root))
-
-			if p.ProjectID != "" {
-				qry.Set(q+".projectId", p.ProjectID)
-			}
-
-			if p.ProjectKey != "" {
-				qry.Set(q+".projectKey", p.ProjectKey)
-			}
-
-			if p.RepositoryID != "" {
-				qry.Set(q+".repositoryId", p.RepositoryID)
-			}
-
-			if p.RepositorySlug != "" {
-				qry.Set(q+".repositorySlug", p.RepositorySlug)
-			}
+			f.Permission.index = perm
 		}
+		f.EncodeTo(qry)
 	}
 }
 
@@ -133,6 +108,21 @@ type UserFilter struct {
 	Permission PermissionFilter
 }
 
+// EncodeTo encodes the UserFilter to the given url.Values.
+func (f UserFilter) EncodeTo(qry url.Values) {
+	if f.Filter != "" {
+		qry.Set("filter", f.Filter)
+	}
+
+	if f.Group != "" {
+		qry.Set("group", f.Group)
+	}
+
+	if f.Permission != (PermissionFilter{}) {
+		f.Permission.EncodeTo(qry)
+	}
+}
+
 // A PermissionFilter is a UserFilter used to list users that have specific
 // permissions.
 type PermissionFilter struct {
@@ -141,6 +131,35 @@ type PermissionFilter struct {
 	ProjectKey     string
 	RepositoryID   string
 	RepositorySlug string
+
+	index int
+}
+
+// EncodeTo encodes the PermissionFilter to the given url.Values.
+func (p PermissionFilter) EncodeTo(qry url.Values) {
+	q := "permission"
+
+	if p.index != 0 {
+		q += "." + strconv.Itoa(p.index)
+	}
+
+	qry.Set(q, string(p.Root))
+
+	if p.ProjectID != "" {
+		qry.Set(q+".projectId", p.ProjectID)
+	}
+
+	if p.ProjectKey != "" {
+		qry.Set(q+".projectKey", p.ProjectKey)
+	}
+
+	if p.RepositoryID != "" {
+		qry.Set(q+".repositoryId", p.RepositoryID)
+	}
+
+	if p.RepositorySlug != "" {
+		qry.Set(q+".repositorySlug", p.RepositorySlug)
+	}
 }
 
 // Users retrieves a page of users, optionally run through provided filters.
