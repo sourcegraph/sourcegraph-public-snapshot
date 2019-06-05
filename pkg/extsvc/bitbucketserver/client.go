@@ -79,6 +79,109 @@ func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
 	}
 }
 
+// UserFilters is a list of UserFilter that is ANDed together.
+type UserFilters []UserFilter
+
+// EncodeTo encodes the UserFilter to the given url.Values.
+func (fs UserFilters) EncodeTo(qry url.Values) {
+	var perm int
+	for _, f := range fs {
+		if f.Permission != (PermissionFilter{}) {
+			perm++
+			f.Permission.index = perm
+		}
+		f.EncodeTo(qry)
+	}
+}
+
+// UserFilter defines a sum type of filters to be used when listing users.
+type UserFilter struct {
+	// Filter filters the returned users to those whose username,
+	// name or email address contain this value.
+	// The API doesn't support exact matches.
+	Filter string
+	// Group filters the returned users to those who are in the give group.
+	Group string
+	// Permission filters the returned users to those having the given
+	// permissions.
+	Permission PermissionFilter
+}
+
+// EncodeTo encodes the UserFilter to the given url.Values.
+func (f UserFilter) EncodeTo(qry url.Values) {
+	if f.Filter != "" {
+		qry.Set("filter", f.Filter)
+	}
+
+	if f.Group != "" {
+		qry.Set("group", f.Group)
+	}
+
+	if f.Permission != (PermissionFilter{}) {
+		f.Permission.EncodeTo(qry)
+	}
+}
+
+// A PermissionFilter is a filter used to list users that have specific
+// permissions.
+type PermissionFilter struct {
+	Root           Perm
+	ProjectID      string
+	ProjectKey     string
+	RepositoryID   string
+	RepositorySlug string
+
+	index int
+}
+
+// EncodeTo encodes the PermissionFilter to the given url.Values.
+func (p PermissionFilter) EncodeTo(qry url.Values) {
+	q := "permission"
+
+	if p.index != 0 {
+		q += "." + strconv.Itoa(p.index)
+	}
+
+	qry.Set(q, string(p.Root))
+
+	if p.ProjectID != "" {
+		qry.Set(q+".projectId", p.ProjectID)
+	}
+
+	if p.ProjectKey != "" {
+		qry.Set(q+".projectKey", p.ProjectKey)
+	}
+
+	if p.RepositoryID != "" {
+		qry.Set(q+".repositoryId", p.RepositoryID)
+	}
+
+	if p.RepositorySlug != "" {
+		qry.Set(q+".repositorySlug", p.RepositorySlug)
+	}
+}
+
+// ErrUserFiltersLimit is returned by Client.Users when the UserFiltersLimit is exceeded.
+var ErrUserFiltersLimit = errors.Errorf("maximum of %d user filters exceeded", userFiltersLimit)
+
+// userFiltersLimit defines the maximum number of UserFilters that can
+// be passed to a single Client.Users call.
+const userFiltersLimit = 50
+
+// Users retrieves a page of users, optionally run through provided filters.
+func (c *Client) Users(ctx context.Context, pageToken *PageToken, fs ...UserFilter) ([]*User, *PageToken, error) {
+	if len(fs) > userFiltersLimit {
+		return nil, nil, ErrUserFiltersLimit
+	}
+
+	qry := make(url.Values)
+	UserFilters(fs).EncodeTo(qry)
+
+	var users []*User
+	next, err := c.page(ctx, "rest/api/1.0/users", qry, pageToken, &users)
+	return users, next, err
+}
+
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
 	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 	req, err := http.NewRequest("GET", u, nil)
@@ -91,54 +194,51 @@ func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, 
 }
 
 func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries ...string) ([]*Repo, *PageToken, error) {
-	qry := make(url.Values)
-	for k, vs := range pageToken.Values() {
-		qry[k] = append(qry[k], vs...)
-	}
-
-	for _, q := range searchQueries {
-		sq, err := url.ParseQuery(q)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		for k, vs := range sq {
-			qry[k] = append(qry[k], vs...)
-		}
-	}
-
-	u := fmt.Sprintf("rest/api/1.0/repos?%s", qry.Encode())
-	req, err := http.NewRequest("GET", u, nil)
+	qry, err := parseQueryStrings(searchQueries...)
 	if err != nil {
-		return nil, nil, err
-	}
-	var resp struct {
-		*PageToken
-		Values []*Repo
-	}
-	err = c.do(ctx, req, &resp)
-	if err != nil {
-		return nil, nil, err
+		return nil, pageToken, err
 	}
 
-	return resp.Values, resp.PageToken, nil
+	var repos []*Repo
+	next, err := c.page(ctx, "rest/api/1.0/repos", qry, pageToken, &repos)
+	return repos, next, err
 }
 
 func (c *Client) RecentRepos(ctx context.Context, pageToken *PageToken) ([]*Repo, *PageToken, error) {
-	u := fmt.Sprintf("rest/api/1.0/profile/recent/repos%s", pageToken.Query())
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		return nil, nil, err
+	var repos []*Repo
+	next, err := c.page(ctx, "rest/api/1.0/profile/recent/repos", nil, pageToken, &repos)
+	return repos, next, err
+}
+
+func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
+	if qry == nil {
+		qry = make(url.Values)
 	}
-	var resp struct {
+
+	for k, vs := range token.Values() {
+		qry[k] = append(qry[k], vs...)
+	}
+
+	u := url.URL{Path: path, RawQuery: qry.Encode()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var next PageToken
+	err = c.do(ctx, req, &struct {
 		*PageToken
-		Values []*Repo
-	}
-	err = c.do(ctx, req, &resp)
+		Values interface{} `json:"values"`
+	}{
+		PageToken: &next,
+		Values:    results,
+	})
+
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return resp.Values, resp.PageToken, nil
+
+	return &next, nil
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) error {
@@ -152,13 +252,11 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		req.SetBasicAuth(c.Username, c.Password)
 	}
 
-	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
+	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(),
+		req.WithContext(ctx),
 		nethttp.OperationName("Bitbucket Server"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
-
-	// Do not lose the context returned by TraceRequest
-	ctx = req.Context()
 
 	startWait := time.Now()
 	if err := c.RateLimit.Wait(ctx); err != nil {
@@ -169,7 +267,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		log15.Warn("Bitbucket self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
-	resp, err := c.httpClient.Do(req.WithContext(ctx))
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -181,6 +279,20 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	return json.NewDecoder(resp.Body).Decode(result)
+}
+
+func parseQueryStrings(qs ...string) (url.Values, error) {
+	vals := make(url.Values)
+	for _, q := range qs {
+		query, err := url.ParseQuery(q)
+		if err != nil {
+			return nil, err
+		}
+		for k, vs := range query {
+			vals[k] = append(vals[k], vs...)
+		}
+	}
+	return vals, nil
 }
 
 // categorize returns a category for an API URL. Used by metrics.
@@ -237,6 +349,9 @@ func (t *PageToken) Query() string {
 
 func (t *PageToken) Values() url.Values {
 	v := url.Values{}
+	if t == nil {
+		return v
+	}
 	if t.NextPageStart != 0 {
 		v.Set("start", strconv.Itoa(t.NextPageStart))
 	}
@@ -244,6 +359,37 @@ func (t *PageToken) Values() url.Values {
 		v.Set("limit", strconv.Itoa(t.Limit))
 	}
 	return v
+}
+
+// Perm represents a Bitbucket Server permission.
+type Perm string
+
+// Permission constants.
+const (
+	PermSysAdmin      Perm = "SYS_ADMIN"
+	PermAdmin         Perm = "ADMIN"
+	PermLicensedUser  Perm = "LICENSED_USER"
+	PermProjectCreate Perm = "PROJECT_CREATE"
+
+	PermProjectAdmin Perm = "PROJECT_ADMIN"
+	PermProjectWrite Perm = "PROJECT_WRITE"
+	PermProjectView  Perm = "PROJECT_VIEW"
+	PermProjectRead  Perm = "PROJECT_READ"
+
+	PermRepoAdmin Perm = "REPO_ADMIN"
+	PermRepoRead  Perm = "REPO_READ"
+	PermRepoWrite Perm = "REPO_WRITE"
+)
+
+// User account in a Bitbucket Server instance.
+type User struct {
+	Name         string `json:"name"`
+	EmailAddress string `json:"emailAddress"`
+	ID           int    `json:"id"`
+	DisplayName  string `json:"displayName"`
+	Active       bool   `json:"active"`
+	Slug         string `json:"slug"`
+	Type         string `json:"type"`
 }
 
 type Repo struct {
