@@ -209,8 +209,8 @@ export function getFilePath(): string {
             `Unable to determine the file path because the .js-permalink-shortcut element did not have an href attribute.`
         )
     }
-    // @ts-ignore these unused variables aid readability
-    const [_, _user, _repo, _blob, _commitID, ...path] = href.split('/')
+    // <empty>/<user>/<repo>/blob/<commitID>/<path/to/file>
+    const [, , , , , ...path] = href.split('/')
     if (path.length === 0) {
         throw new Error(
             `Unable to determine the file path because the .js-permalink-shortcut element's href attribute was ${href} (it is expected to be of the form /<user>/<repo>/blob/<commitID>/<path/to/file>).`
