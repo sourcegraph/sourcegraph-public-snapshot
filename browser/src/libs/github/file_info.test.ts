@@ -1,21 +1,18 @@
-import { startCase } from 'lodash'
 import { readFile } from 'mz/fs'
 import { getFilePath } from './util'
 
+const tests = [
+    ['github.com/blob/vanilla/page.html', 'shared/src/api/extension/types/url.ts'],
+    ['github.com/blob/refined-github/page.html', 'shared/src/api/extension/types/url.ts'],
+    ['ghe-2.14.11/blob/vanilla/page.html', 'bench_test.go'],
+    ['ghe-2.14.11/blob/refined-github/page.html', 'bench_test.go'],
+]
+
 describe('github/file_info', () => {
-    for (const version of ['github.com', 'ghe-2.14.11']) {
-        describe(version, () => {
-            for (const extension of ['vanilla', 'refined-github']) {
-                describe(startCase(extension), () => {
-                    it('finds the file path', async () => {
-                        document.body.innerHTML = await readFile(
-                            `${__dirname}/__fixtures__/${version}/blob/${extension}/page.html`,
-                            'utf-8'
-                        )
-                        expect(getFilePath()).toMatchSnapshot()
-                    })
-                })
-            }
+    for (const [fixture, expectedFilePath] of tests) {
+        it(`finds the file path in ${fixture}`, async () => {
+            document.body.innerHTML = await readFile(`${__dirname}/__fixtures__/${fixture}`, 'utf-8')
+            expect(getFilePath()).toBe(expectedFilePath)
         })
     }
 })

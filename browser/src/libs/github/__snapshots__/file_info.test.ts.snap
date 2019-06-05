@@ -1,9 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`github/file_info ghe-2.14.11 Refined Github finds the file path 1`] = `"bench_test.go"`;
-
-exports[`github/file_info ghe-2.14.11 Vanilla finds the file path 1`] = `"bench_test.go"`;
-
-exports[`github/file_info github.com Refined Github finds the file path 1`] = `"shared/src/api/extension/types/url.ts"`;
-
-exports[`github/file_info github.com Vanilla finds the file path 1`] = `"shared/src/api/extension/types/url.ts"`;
