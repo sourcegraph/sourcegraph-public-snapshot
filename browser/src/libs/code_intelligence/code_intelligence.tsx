@@ -539,7 +539,7 @@ export function handleCodeHost({
                 model,
             }
             const rootURI = toRootURI(fileInfo)
-            addRootRef(rootURI, fileInfo.rev || '')
+            addRootRef(rootURI, fileInfo.rev)
             codeViewEvent.subscriptions.add(() => {
                 deleteRootRef(rootURI)
                 extensionsController.services.editor.removeEditor(editorId)
