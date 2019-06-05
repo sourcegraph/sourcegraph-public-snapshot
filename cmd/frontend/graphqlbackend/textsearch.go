@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math"
 	"net/http"
 	"net/url"
@@ -530,8 +531,9 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 		limitHit = true
 	}
 
-	// Split the matches into lines.
+	log.Printf("zoekt results: %+v", resp.Files)
 	fileMatches := splitMatchesOnNewlines(resp.Files)
+	log.Printf("split results: %+v", fileMatches)
 	matches, limitHit := fileMatchResolversFromFileMatches(fileMatches, maxLineMatches, limitHit, maxLineFragmentMatches, repoMap, indexedRevisions)
 	return matches, limitHit, reposLimitHit, nil
 }
@@ -578,7 +580,9 @@ func fixupLineMatch(lm zoekt.LineMatch) []zoekt.LineMatch {
 		LineNumber: lm.LineEnd - (lm.LineStart + offset),
 	}
 	lm2.LineFragments = fixupFragments(lm.LineFragments, lm2)
-	lms2 = append(lms2, lm2)
+	if len(lm2.LineFragments) > 0 {
+		lms2 = append(lms2, lm2)
+	}
 	return lms2
 }
 
@@ -610,7 +614,9 @@ func splitFragments(fs []zoekt.LineFragmentMatch, lm zoekt.LineMatch) []zoekt.Li
 			Offset:      f.Offset + uint32(fragOffset),
 			MatchLength: f.MatchLength - fragOffset,
 		}
-		fs2 = append(fs2, f2)
+		if f2.MatchLength > 0 {
+			fs2 = append(fs2, f2)
+		}
 	}
 	return fs2
 }

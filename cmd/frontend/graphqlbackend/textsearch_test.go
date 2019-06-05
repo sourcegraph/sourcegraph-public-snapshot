@@ -635,6 +635,49 @@ func Test_splitMatchesOnNewlines(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "newline at end",
+			args: args{
+				fileMatches: []zoekt.FileMatch{
+					{
+						LineMatches: []zoekt.LineMatch{
+							{
+								Line:       []byte("a\n"),
+								LineStart:  0,
+								LineEnd:    len("a\n"),
+								LineNumber: len("a\n"),
+								LineFragments: []zoekt.LineFragmentMatch{
+									{
+										LineOffset:  0,
+										Offset:      0,
+										MatchLength: len("a\n"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []zoekt.FileMatch{
+				{
+					LineMatches: []zoekt.LineMatch{
+						{
+							Line:       []byte("a"),
+							LineStart:  0,
+							LineEnd:    len("a"),
+							LineNumber: len("a"),
+							LineFragments: []zoekt.LineFragmentMatch{
+								{
+									LineOffset:  0,
+									Offset:      0,
+									MatchLength: len("a"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
