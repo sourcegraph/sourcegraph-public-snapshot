@@ -3,9 +3,9 @@ version: 1
 interactions:
 - request:
     body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tviewerPermission\n}\n\tquery
-      {\nrepo0: repository(owner: \"sourcegraph\", name: \"sourcegraph\") { ... on
-      Repository { ...RepositoryFields } }\nrepo1: repository(owner: \"sourcegraph\",
-      name: \"about\") { ... on Repository { ...RepositoryFields } }\n}","variables":{}}'
+      {\nrepo0: repository(owner: \"sourcegraph\", name: \"about\") { ... on Repository
+      { ...RepositoryFields } }\nrepo1: repository(owner: \"sourcegraph\", name: \"sourcegraph\")
+      { ... on Repository { ...RepositoryFields } }\n}","variables":{}}'
     form: {}
     headers:
       Content-Type:
@@ -13,9 +13,9 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"repo0":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","databaseId":41288708,"nameWithOwner":"sourcegraph/sourcegraph","description":"Code
-      search and navigation tool (self-hosted)","url":"https://github.com/sourcegraph/sourcegraph","isPrivate":false,"isFork":false,"isArchived":false,"viewerPermission":"ADMIN"},"repo1":{"id":"MDEwOlJlcG9zaXRvcnkxNDk1MTg3ODM=","databaseId":149518783,"nameWithOwner":"sourcegraph/about","description":"Sourcegraph
-      blog, feature announcements, and website (about.sourcegraph.com)","url":"https://github.com/sourcegraph/about","isPrivate":false,"isFork":false,"isArchived":false,"viewerPermission":"ADMIN"}}}'
+    body: '{"data":{"repo0":{"id":"MDEwOlJlcG9zaXRvcnkxNDk1MTg3ODM=","databaseId":149518783,"nameWithOwner":"sourcegraph/about","description":"Sourcegraph
+      blog, feature announcements, and website (about.sourcegraph.com)","url":"https://github.com/sourcegraph/about","isPrivate":false,"isFork":false,"isArchived":false,"viewerPermission":"ADMIN"},"repo1":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","databaseId":41288708,"nameWithOwner":"sourcegraph/sourcegraph","description":"Code
+      search and navigation tool (self-hosted)","url":"https://github.com/sourcegraph/sourcegraph","isPrivate":false,"isFork":false,"isArchived":false,"viewerPermission":"ADMIN"}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -30,7 +30,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 29 May 2019 14:01:44 GMT
+      - Wed, 05 Jun 2019 18:23:11 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -39,6 +39,8 @@ interactions:
       - 200 OK
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding
       X-Accepted-Oauth-Scopes:
       - repo
       X-Content-Type-Options:
@@ -48,123 +50,7 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - EB1D:5FEA:239D60:5899B6:5CEE90C6
-      X-Oauth-Scopes:
-      - repo
-      X-Xss-Protection:
-      - 1; mode=block
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/kubernetes/repos?sort=pushed&page=1&per_page=100
-    method: GET
-  response:
-    body: '[ { "id": 20580498, "node_id": "MDEwOlJlcG9zaXRvcnkyMDU4MDQ5OA==", "name": "kubernetes", "full_name": "kubernetes/kubernetes", "private": false, "owner": { "login": "kubernetes", "id": 13629408, "node_id": "MDEyOk9yZ2FuaXphdGlvbjEzNjI5NDA4", "avatar_url": "https://avatars2.githubusercontent.com/u/13629408?v=4", "gravatar_id": "", "url": "https://api.github.com/users/kubernetes", "html_url": "https://github.com/kubernetes", "followers_url": "https://api.github.com/users/kubernetes/followers", "following_url": "https://api.github.com/users/kubernetes/following{/other_user}", "gists_url": "https://api.github.com/users/kubernetes/gists{/gist_id}", "starred_url": "https://api.github.com/users/kubernetes/starred{/owner}{/repo}", "subscriptions_url": "https://api.github.com/users/kubernetes/subscriptions", "organizations_url": "https://api.github.com/users/kubernetes/orgs", "repos_url": "https://api.github.com/users/kubernetes/repos", "events_url": "https://api.github.com/users/kubernetes/events{/privacy}", "received_events_url": "https://api.github.com/users/kubernetes/received_events", "type": "Organization", "site_admin": false }, "html_url": "https://github.com/kubernetes/kubernetes", "description": "Production-Grade Container Scheduling and Management", "fork": false, "url": "https://api.github.com/repos/kubernetes/kubernetes", "forks_url": "https://api.github.com/repos/kubernetes/kubernetes/forks", "keys_url": "https://api.github.com/repos/kubernetes/kubernetes/keys{/key_id}", "collaborators_url": "https://api.github.com/repos/kubernetes/kubernetes/collaborators{/collaborator}", "teams_url": "https://api.github.com/repos/kubernetes/kubernetes/teams", "hooks_url": "https://api.github.com/repos/kubernetes/kubernetes/hooks", "issue_events_url": "https://api.github.com/repos/kubernetes/kubernetes/issues/events{/number}", "events_url": "https://api.github.com/repos/kubernetes/kubernetes/events", "assignees_url": "https://api.github.com/repos/kubernetes/kubernetes/assignees{/user}", "branches_url": "https://api.github.com/repos/kubernetes/kubernetes/branches{/branch}", "tags_url": "https://api.github.com/repos/kubernetes/kubernetes/tags", "blobs_url": "https://api.github.com/repos/kubernetes/kubernetes/git/blobs{/sha}", "git_tags_url": "https://api.github.com/repos/kubernetes/kubernetes/git/tags{/sha}", "git_refs_url": "https://api.github.com/repos/kubernetes/kubernetes/git/refs{/sha}", "trees_url": "https://api.github.com/repos/kubernetes/kubernetes/git/trees{/sha}", "statuses_url": "https://api.github.com/repos/kubernetes/kubernetes/statuses/{sha}", "languages_url": "https://api.github.com/repos/kubernetes/kubernetes/languages", "stargazers_url": "https://api.github.com/repos/kubernetes/kubernetes/stargazers", "contributors_url": "https://api.github.com/repos/kubernetes/kubernetes/contributors", "subscribers_url": "https://api.github.com/repos/kubernetes/kubernetes/subscribers", "subscription_url": "https://api.github.com/repos/kubernetes/kubernetes/subscription", "commits_url": "https://api.github.com/repos/kubernetes/kubernetes/commits{/sha}", "git_commits_url": "https://api.github.com/repos/kubernetes/kubernetes/git/commits{/sha}", "comments_url": "https://api.github.com/repos/kubernetes/kubernetes/comments{/number}", "issue_comment_url": "https://api.github.com/repos/kubernetes/kubernetes/issues/comments{/number}", "contents_url": "https://api.github.com/repos/kubernetes/kubernetes/contents/{+path}", "compare_url": "https://api.github.com/repos/kubernetes/kubernetes/compare/{base}...{head}", "merges_url": "https://api.github.com/repos/kubernetes/kubernetes/merges", "archive_url": "https://api.github.com/repos/kubernetes/kubernetes/{archive_format}{/ref}", "downloads_url": "https://api.github.com/repos/kubernetes/kubernetes/downloads", "issues_url": "https://api.github.com/repos/kubernetes/kubernetes/issues{/number}", "pulls_url": "https://api.github.com/repos/kubernetes/kubernetes/pulls{/number}", "milestones_url": "https://api.github.com/repos/kubernetes/kubernetes/milestones{/number}", "notifications_url": "https://api.github.com/repos/kubernetes/kubernetes/notifications{?since,all,participating}", "labels_url": "https://api.github.com/repos/kubernetes/kubernetes/labels{/name}", "releases_url": "https://api.github.com/repos/kubernetes/kubernetes/releases{/id}", "deployments_url": "https://api.github.com/repos/kubernetes/kubernetes/deployments", "created_at": "2014-06-06T22:56:04Z", "updated_at": "2019-06-03T21:56:38Z", "pushed_at": "2019-06-03T22:00:39Z", "git_url": "git://github.com/kubernetes/kubernetes.git", "ssh_url": "git@github.com:kubernetes/kubernetes.git", "clone_url": "https://github.com/kubernetes/kubernetes.git", "svn_url": "https://github.com/kubernetes/kubernetes", "homepage": "https://kubernetes.io", "size": 871372, "stargazers_count": 53538, "watchers_count": 53538, "language": "Go", "has_issues": true, "has_projects": true, "has_downloads": true, "has_wiki": false, "has_pages": false, "forks_count": 18506, "mirror_url": null, "archived": false, "disabled": false, "open_issues_count": 3139, "license": { "key": "apache-2.0", "name": "Apache License 2.0", "spdx_id": "Apache-2.0", "url": "https://api.github.com/licenses/apache-2.0", "node_id": "MDc6TGljZW5zZTI=" }, "forks": 18506, "open_issues": 3139, "watchers": 53538, "default_branch": "master", "permissions": { "admin": false, "push": false, "pull": true } }, { "id": 56353740, "node_id": "MDEwOlJlcG9zaXRvcnk1NjM1Mzc0MA==", "name": "minikube", "full_name": "kubernetes/minikube", "private": false, "owner": { "login": "kubernetes", "id": 13629408, "node_id": "MDEyOk9yZ2FuaXphdGlvbjEzNjI5NDA4", "avatar_url": "https://avatars2.githubusercontent.com/u/13629408?v=4", "gravatar_id": "", "url": "https://api.github.com/users/kubernetes", "html_url": "https://github.com/kubernetes", "followers_url": "https://api.github.com/users/kubernetes/followers", "following_url": "https://api.github.com/users/kubernetes/following{/other_user}", "gists_url": "https://api.github.com/users/kubernetes/gists{/gist_id}", "starred_url": "https://api.github.com/users/kubernetes/starred{/owner}{/repo}", "subscriptions_url": "https://api.github.com/users/kubernetes/subscriptions", "organizations_url": "https://api.github.com/users/kubernetes/orgs", "repos_url": "https://api.github.com/users/kubernetes/repos", "events_url": "https://api.github.com/users/kubernetes/events{/privacy}", "received_events_url": "https://api.github.com/users/kubernetes/received_events", "type": "Organization", "site_admin": false }, "html_url": "https://github.com/kubernetes/minikube", "description": "Run Kubernetes locally", "fork": false, "url": "https://api.github.com/repos/kubernetes/minikube", "forks_url": "https://api.github.com/repos/kubernetes/minikube/forks", "keys_url": "https://api.github.com/repos/kubernetes/minikube/keys{/key_id}", "collaborators_url": "https://api.github.com/repos/kubernetes/minikube/collaborators{/collaborator}", "teams_url": "https://api.github.com/repos/kubernetes/minikube/teams", "hooks_url": "https://api.github.com/repos/kubernetes/minikube/hooks", "issue_events_url": "https://api.github.com/repos/kubernetes/minikube/issues/events{/number}", "events_url": "https://api.github.com/repos/kubernetes/minikube/events", "assignees_url": "https://api.github.com/repos/kubernetes/minikube/assignees{/user}", "branches_url": "https://api.github.com/repos/kubernetes/minikube/branches{/branch}", "tags_url": "https://api.github.com/repos/kubernetes/minikube/tags", "blobs_url": "https://api.github.com/repos/kubernetes/minikube/git/blobs{/sha}", "git_tags_url": "https://api.github.com/repos/kubernetes/minikube/git/tags{/sha}", "git_refs_url": "https://api.github.com/repos/kubernetes/minikube/git/refs{/sha}", "trees_url": "https://api.github.com/repos/kubernetes/minikube/git/trees{/sha}", "statuses_url": "https://api.github.com/repos/kubernetes/minikube/statuses/{sha}", "languages_url": "https://api.github.com/repos/kubernetes/minikube/languages", "stargazers_url": "https://api.github.com/repos/kubernetes/minikube/stargazers", "contributors_url": "https://api.github.com/repos/kubernetes/minikube/contributors", "subscribers_url": "https://api.github.com/repos/kubernetes/minikube/subscribers", "subscription_url": "https://api.github.com/repos/kubernetes/minikube/subscription", "commits_url": "https://api.github.com/repos/kubernetes/minikube/commits{/sha}", "git_commits_url": "https://api.github.com/repos/kubernetes/minikube/git/commits{/sha}", "comments_url": "https://api.github.com/repos/kubernetes/minikube/comments{/number}", "issue_comment_url": "https://api.github.com/repos/kubernetes/minikube/issues/comments{/number}", "contents_url": "https://api.github.com/repos/kubernetes/minikube/contents/{+path}", "compare_url": "https://api.github.com/repos/kubernetes/minikube/compare/{base}...{head}", "merges_url": "https://api.github.com/repos/kubernetes/minikube/merges", "archive_url": "https://api.github.com/repos/kubernetes/minikube/{archive_format}{/ref}", "downloads_url": "https://api.github.com/repos/kubernetes/minikube/downloads", "issues_url": "https://api.github.com/repos/kubernetes/minikube/issues{/number}", "pulls_url": "https://api.github.com/repos/kubernetes/minikube/pulls{/number}", "milestones_url": "https://api.github.com/repos/kubernetes/minikube/milestones{/number}", "notifications_url": "https://api.github.com/repos/kubernetes/minikube/notifications{?since,all,participating}", "labels_url": "https://api.github.com/repos/kubernetes/minikube/labels{/name}", "releases_url": "https://api.github.com/repos/kubernetes/minikube/releases{/id}", "deployments_url": "https://api.github.com/repos/kubernetes/minikube/deployments", "created_at": "2016-04-15T22:38:35Z", "updated_at": "2019-06-03T21:14:18Z", "pushed_at": "2019-06-03T20:31:04Z", "git_url": "git://github.com/kubernetes/minikube.git", "ssh_url": "git@github.com:kubernetes/minikube.git", "clone_url": "https://github.com/kubernetes/minikube.git", "svn_url": "https://github.com/kubernetes/minikube", "homepage": "", "size": 58871, "stargazers_count": 14336, "watchers_count": 14336, "language": "Go", "has_issues": true, "has_projects": true, "has_downloads": true, "has_wiki": true, "has_pages": false, "forks_count": 2230, "mirror_url": null, "archived": false, "disabled": false, "open_issues_count": 276, "license": { "key": "apache-2.0", "name": "Apache License 2.0", "spdx_id": "Apache-2.0", "url": "https://api.github.com/licenses/apache-2.0", "node_id": "MDc6TGljZW5zZTI=" }, "forks": 2230, "open_issues": 276, "watchers": 14336, "default_branch": "master", "permissions": { "admin": false, "push": false, "pull": true } }, { "id": 74496173, "node_id": "MDEwOlJlcG9zaXRvcnk3NDQ5NjE3Mw==", "name": "kubeadm", "full_name": "kubernetes/kubeadm", "private": false, "owner": { "login": "kubernetes", "id": 13629408, "node_id": "MDEyOk9yZ2FuaXphdGlvbjEzNjI5NDA4", "avatar_url": "https://avatars2.githubusercontent.com/u/13629408?v=4", "gravatar_id": "", "url": "https://api.github.com/users/kubernetes", "html_url": "https://github.com/kubernetes", "followers_url": "https://api.github.com/users/kubernetes/followers", "following_url": "https://api.github.com/users/kubernetes/following{/other_user}", "gists_url": "https://api.github.com/users/kubernetes/gists{/gist_id}", "starred_url": "https://api.github.com/users/kubernetes/starred{/owner}{/repo}", "subscriptions_url": "https://api.github.com/users/kubernetes/subscriptions", "organizations_url": "https://api.github.com/users/kubernetes/orgs", "repos_url": "https://api.github.com/users/kubernetes/repos", "events_url": "https://api.github.com/users/kubernetes/events{/privacy}", "received_events_url": "https://api.github.com/users/kubernetes/received_events", "type": "Organization", "site_admin": false }, "html_url": "https://github.com/kubernetes/kubeadm", "description": "Aggregator for issues filed against kubeadm", "fork": false, "url": "https://api.github.com/repos/kubernetes/kubeadm", "forks_url": "https://api.github.com/repos/kubernetes/kubeadm/forks", "keys_url": "https://api.github.com/repos/kubernetes/kubeadm/keys{/key_id}", "collaborators_url": "https://api.github.com/repos/kubernetes/kubeadm/collaborators{/collaborator}", "teams_url": "https://api.github.com/repos/kubernetes/kubeadm/teams", "hooks_url": "https://api.github.com/repos/kubernetes/kubeadm/hooks", "issue_events_url": "https://api.github.com/repos/kubernetes/kubeadm/issues/events{/number}", "events_url": "https://api.github.com/repos/kubernetes/kubeadm/events", "assignees_url": "https://api.github.com/repos/kubernetes/kubeadm/assignees{/user}", "branches_url": "https://api.github.com/repos/kubernetes/kubeadm/branches{/branch}", "tags_url": "https://api.github.com/repos/kubernetes/kubeadm/tags", "blobs_url": "https://api.github.com/repos/kubernetes/kubeadm/git/blobs{/sha}", "git_tags_url": "https://api.github.com/repos/kubernetes/kubeadm/git/tags{/sha}", "git_refs_url": "https://api.github.com/repos/kubernetes/kubeadm/git/refs{/sha}", "trees_url": "https://api.github.com/repos/kubernetes/kubeadm/git/trees{/sha}", "statuses_url": "https://api.github.com/repos/kubernetes/kubeadm/statuses/{sha}", "languages_url": "https://api.github.com/repos/kubernetes/kubeadm/languages", "stargazers_url": "https://api.github.com/repos/kubernetes/kubeadm/stargazers", "contributors_url": "https://api.github.com/repos/kubernetes/kubeadm/contributors", "subscribers_url": "https://api.github.com/repos/kubernetes/kubeadm/subscribers", "subscription_url": "https://api.github.com/repos/kubernetes/kubeadm/subscription", "commits_url": "https://api.github.com/repos/kubernetes/kubeadm/commits{/sha}", "git_commits_url": "https://api.github.com/repos/kubernetes/kubeadm/git/commits{/sha}", "comments_url": "https://api.github.com/repos/kubernetes/kubeadm/comments{/number}", "issue_comment_url": "https://api.github.com/repos/kubernetes/kubeadm/issues/comments{/number}", "contents_url": "https://api.github.com/repos/kubernetes/kubeadm/contents/{+path}", "compare_url": "https://api.github.com/repos/kubernetes/kubeadm/compare/{base}...{head}", "merges_url": "https://api.github.com/repos/kubernetes/kubeadm/merges", "archive_url": "https://api.github.com/repos/kubernetes/kubeadm/{archive_format}{/ref}", "downloads_url": "https://api.github.com/repos/kubernetes/kubeadm/downloads", "issues_url": "https://api.github.com/repos/kubernetes/kubeadm/issues{/number}", "pulls_url": "https://api.github.com/repos/kubernetes/kubeadm/pulls{/number}", "milestones_url": "https://api.github.com/repos/kubernetes/kubeadm/milestones{/number}", "notifications_url": "https://api.github.com/repos/kubernetes/kubeadm/notifications{?since,all,participating}", "labels_url": "https://api.github.com/repos/kubernetes/kubeadm/labels{/name}", "releases_url": "https://api.github.com/repos/kubernetes/kubeadm/releases{/id}", "deployments_url": "https://api.github.com/repos/kubernetes/kubeadm/deployments", "created_at": "2016-11-22T17:17:08Z", "updated_at": "2019-06-03T15:30:57Z", "pushed_at": "2019-06-03T12:18:17Z", "git_url": "git://github.com/kubernetes/kubeadm.git", "ssh_url": "git@github.com:kubernetes/kubeadm.git", "clone_url": "https://github.com/kubernetes/kubeadm.git", "svn_url": "https://github.com/kubernetes/kubeadm", "homepage": null, "size": 4401, "stargazers_count": 1252, "watchers_count": 1252, "language": "Go", "has_issues": true, "has_projects": true, "has_downloads": true, "has_wiki": true, "has_pages": false, "forks_count": 229, "mirror_url": null, "archived": false, "disabled": false, "open_issues_count": 85, "license": { "key": "apache-2.0", "name": "Apache License 2.0", "spdx_id": "Apache-2.0", "url": "https://api.github.com/licenses/apache-2.0", "node_id": "MDc6TGljZW5zZTI=" }, "forks": 229, "open_issues": 85, "watchers": 1252, "default_branch": "master", "permissions": { "admin": false, "push": false, "pull": true } }, { "id": 86742497, "node_id": "MDEwOlJlcG9zaXRvcnk4Njc0MjQ5Nw==", "name": "kubectl", "full_name": "kubernetes/kubectl", "private": false, "owner": { "login": "kubernetes", "id": 13629408, "node_id": "MDEyOk9yZ2FuaXphdGlvbjEzNjI5NDA4", "avatar_url": "https://avatars2.githubusercontent.com/u/13629408?v=4", "gravatar_id": "", "url": "https://api.github.com/users/kubernetes", "html_url": "https://github.com/kubernetes", "followers_url": "https://api.github.com/users/kubernetes/followers", "following_url": "https://api.github.com/users/kubernetes/following{/other_user}", "gists_url": "https://api.github.com/users/kubernetes/gists{/gist_id}", "starred_url": "https://api.github.com/users/kubernetes/starred{/owner}{/repo}", "subscriptions_url": "https://api.github.com/users/kubernetes/subscriptions", "organizations_url": "https://api.github.com/users/kubernetes/orgs", "repos_url": "https://api.github.com/users/kubernetes/repos", "events_url": "https://api.github.com/users/kubernetes/events{/privacy}", "received_events_url": "https://api.github.com/users/kubernetes/received_events", "type": "Organization", "site_admin": false }, "html_url": "https://github.com/kubernetes/kubectl", "description": "Issue tracker and mirror of kubectl code", "fork": false, "url": "https://api.github.com/repos/kubernetes/kubectl", "forks_url": "https://api.github.com/repos/kubernetes/kubectl/forks", "keys_url": "https://api.github.com/repos/kubernetes/kubectl/keys{/key_id}", "collaborators_url": "https://api.github.com/repos/kubernetes/kubectl/collaborators{/collaborator}", "teams_url": "https://api.github.com/repos/kubernetes/kubectl/teams", "hooks_url": "https://api.github.com/repos/kubernetes/kubectl/hooks", "issue_events_url": "https://api.github.com/repos/kubernetes/kubectl/issues/events{/number}", "events_url": "https://api.github.com/repos/kubernetes/kubectl/events", "assignees_url": "https://api.github.com/repos/kubernetes/kubectl/assignees{/user}", "branches_url": "https://api.github.com/repos/kubernetes/kubectl/branches{/branch}", "tags_url": "https://api.github.com/repos/kubernetes/kubectl/tags", "blobs_url": "https://api.github.com/repos/kubernetes/kubectl/git/blobs{/sha}", "git_tags_url": "https://api.github.com/repos/kubernetes/kubectl/git/tags{/sha}", "git_refs_url": "https://api.github.com/repos/kubernetes/kubectl/git/refs{/sha}", "trees_url": "https://api.github.com/repos/kubernetes/kubectl/git/trees{/sha}", "statuses_url": "https://api.github.com/repos/kubernetes/kubectl/statuses/{sha}", "languages_url": "https://api.github.com/repos/kubernetes/kubectl/languages", "stargazers_url": "https://api.github.com/repos/kubernetes/kubectl/stargazers", "contributors_url": "https://api.github.com/repos/kubernetes/kubectl/contributors", "subscribers_url": "https://api.github.com/repos/kubernetes/kubectl/subscribers", "subscription_url": "https://api.github.com/repos/kubernetes/kubectl/subscription", "commits_url": "https://api.github.com/repos/kubernetes/kubectl/commits{/sha}", "git_commits_url": "https://api.github.com/repos/kubernetes/kubectl/git/commits{/sha}", "comments_url": "https://api.github.com/repos/kubernetes/kubectl/comments{/number}", "issue_comment_url": "https://api.github.com/repos/kubernetes/kubectl/issues/comments{/number}", "contents_url": "https://api.github.com/repos/kubernetes/kubectl/contents/{+path}", "compare_url": "https://api.github.com/repos/kubernetes/kubectl/compare/{base}...{head}", "merges_url": "https://api.github.com/repos/kubernetes/kubectl/merges", "archive_url": "https://api.github.com/repos/kubernetes/kubectl/{archive_format}{/ref}", "downloads_url": "https://api.github.com/repos/kubernetes/kubectl/downloads", "issues_url": "https://api.github.com/repos/kubernetes/kubectl/issues{/number}", "pulls_url": "https://api.github.com/repos/kubernetes/kubectl/pulls{/number}", "milestones_url": "https://api.github.com/repos/kubernetes/kubectl/milestones{/number}", "notifications_url": "https://api.github.com/repos/kubernetes/kubectl/notifications{?since,all,participating}", "labels_url": "https://api.github.com/repos/kubernetes/kubectl/labels{/name}", "releases_url": "https://api.github.com/repos/kubernetes/kubectl/releases{/id}", "deployments_url": "https://api.github.com/repos/kubernetes/kubectl/deployments", "created_at": "2017-03-30T19:50:22Z", "updated_at": "2019-06-02T13:28:48Z", "pushed_at": "2019-06-02T13:28:49Z", "git_url": "git://github.com/kubernetes/kubectl.git", "ssh_url": "git@github.com:kubernetes/kubectl.git", "clone_url": "https://github.com/kubernetes/kubectl.git", "svn_url": "https://github.com/kubernetes/kubectl", "homepage": null, "size": 32564, "stargazers_count": 510, "watchers_count": 510, "language": null, "has_issues": true, "has_projects": true, "has_downloads": true, "has_wiki": true, "has_pages": false, "forks_count": 145, "mirror_url": null, "archived": false, "disabled": false, "open_issues_count": 88, "license": { "key": "apache-2.0", "name": "Apache License 2.0", "spdx_id": "Apache-2.0", "url": "https://api.github.com/licenses/apache-2.0", "node_id": "MDc6TGljZW5zZTI=" }, "forks": 145, "open_issues": 88, "watchers": 510, "default_branch": "master", "permissions": { "admin": false, "push": false, "pull": true } }]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
-        X-GitHub-Media-Type
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Wed, 29 May 2019 14:16:21 GMT
-      Etag:
-      - W/"e52e32a0c93bd85d17488978d3142052"
-      Last-Modified:
-      - Wed, 29 May 2019 10:47:16 GMT
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Status:
-      - 200 OK
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      X-Accepted-Oauth-Scopes:
-      - repo
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json
-      X-Github-Request-Id:
-      - C871:1A82:51819C:A320E5:5CEE9435
-      X-Oauth-Scopes:
-      - repo
-      X-Xss-Protection:
-      - 1; mode=block
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/kubernetes/repos?sort=pushed&page=2&per_page=100
-    method: GET
-  response:
-    body: '[]'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
-        X-GitHub-Media-Type
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Wed, 29 May 2019 14:16:21 GMT
-      Etag:
-      - W/"e52e32a0c93bd85d17488978d3142052"
-      Last-Modified:
-      - Wed, 29 May 2019 10:47:16 GMT
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Status:
-      - 200 OK
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      X-Accepted-Oauth-Scopes:
-      - repo
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json
-      X-Github-Request-Id:
-      - C871:1A82:51819C:A320E5:5CEE9435
+      - E435:99FC:FB2FDB:12EEA25:5CF8088F
       X-Oauth-Scopes:
       - repo
       X-Xss-Protection:

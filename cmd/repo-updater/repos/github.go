@@ -406,8 +406,13 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 	set := make(map[int64]*github.Repository)
 	errs := new(multierror.Error)
 
-	var list map[int64]*github.Repository
-	var err error
+	list, err := s.listRepos(ctx, s.config.Repos)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+	for id, r := range list {
+		set[id] = r
+	}
 
 	for _, repositoryQuery := range s.config.RepositoryQuery {
 		list, err = s.listRepositoryQuery(ctx, repositoryQuery)
@@ -418,15 +423,6 @@ func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repos
 		for id, r := range list {
 			set[id] = r
 		}
-	}
-
-	list, err = s.listRepos(ctx, s.config.Repos)
-	if err != nil {
-		errs = multierror.Append(errs, err)
-	}
-
-	for id, r := range list {
-		set[id] = r
 	}
 
 	for _, org := range s.config.Orgs {

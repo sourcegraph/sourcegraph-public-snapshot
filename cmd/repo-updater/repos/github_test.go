@@ -126,23 +126,17 @@ func TestGithubSource_GetRepo(t *testing.T) {
 }
 
 func TestGithubSource_ListRepos(t *testing.T) {
-	assertAllReposListed := func(t testing.TB, rs Repos) {
-		t.Helper()
+	assertAllReposListed := func(want []string) ReposAssertion {
+		return func(t testing.TB, rs Repos) {
+			t.Helper()
 
-		want := []string{
-			"github.com/kubernetes/kubeadm",
-			"github.com/kubernetes/kubectl",
-			"github.com/kubernetes/kubernetes",
-			"github.com/kubernetes/minikube",
-			"github.com/sourcegraph/about",
-			"github.com/sourcegraph/sourcegraph",
-		}
+			have := rs.Names()
+			sort.Strings(have)
+			sort.Strings(want)
 
-		have := rs.Names()
-		sort.Strings(have)
-
-		if !reflect.DeepEqual(have, want) {
-			t.Error(cmp.Diff(have, want))
+			if !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
+			}
 		}
 	}
 
@@ -150,18 +144,72 @@ func TestGithubSource_ListRepos(t *testing.T) {
 		name   string
 		assert ReposAssertion
 		mw     httpcli.Middleware
+		conf   *schema.GitHubConnection
 		err    string
 	}{
 		{
-			name:   "found",
-			assert: assertAllReposListed,
-			err:    "<nil>",
+			name: "found",
+			assert: assertAllReposListed([]string{
+				"github.com/sourcegraph/about",
+				"github.com/sourcegraph/sourcegraph",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{
+					"sourcegraph/about",
+					"sourcegraph/sourcegraph",
+				},
+			},
+			err: "<nil>",
 		},
 		{
-			name:   "graphql fallback",
-			mw:     githubGraphQLFailureMiddleware,
-			assert: assertAllReposListed,
-			err:    "<nil>",
+			name: "graphql fallback",
+			mw:   githubGraphQLFailureMiddleware,
+			assert: assertAllReposListed([]string{
+				"github.com/sourcegraph/about",
+				"github.com/sourcegraph/sourcegraph",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{
+					"sourcegraph/about",
+					"sourcegraph/sourcegraph",
+				},
+			},
+			err: "<nil>",
+		},
+		{
+			name: "orgs",
+			assert: assertAllReposListed([]string{
+				"github.com/gorilla/websocket",
+				"github.com/gorilla/handlers",
+				"github.com/gorilla/mux",
+				"github.com/gorilla/feeds",
+				"github.com/gorilla/sessions",
+				"github.com/gorilla/schema",
+				"github.com/gorilla/csrf",
+				"github.com/gorilla/rpc",
+				"github.com/gorilla/pat",
+				"github.com/gorilla/css",
+				"github.com/gorilla/site",
+				"github.com/gorilla/context",
+				"github.com/gorilla/securecookie",
+				"github.com/gorilla/http",
+				"github.com/gorilla/reverse",
+				"github.com/gorilla/muxy",
+				"github.com/gorilla/i18n",
+				"github.com/gorilla/template",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Orgs: []string{
+					"gorilla",
+				},
+			},
+			err: "<nil>",
 		},
 	}
 
@@ -190,18 +238,8 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind: "GITHUB",
-				Config: marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
-					Repos: []string{
-						"sourcegraph/about",
-						"sourcegraph/sourcegraph",
-					},
-					Orgs: []string{
-						"kubernetes",
-					},
-				}),
+				Kind:   "GITHUB",
+				Config: marshalJSON(t, tc.conf),
 			}
 
 			githubSrc, err := NewGithubSource(svc, cf)
