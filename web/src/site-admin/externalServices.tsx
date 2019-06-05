@@ -124,8 +124,8 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
             id: 'addOrgRepo',
             label: 'Add organization repositories',
             run: config => {
-                const value = 'org:<organization name>'
-                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+                const value = '<organization name>'
+                const edits = setProperty(config, ['orgs', -1], value, defaultFormattingOptions)
                 return { edits, selectText: '<organization name>' }
             },
         },
@@ -192,11 +192,11 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
 
   // SELECTING REPOSITORIES
   //
-  // There are 3 fields used to select repositories for searching and code intel:
+  // There are 4 fields used to select repositories for searching and code intel:
   //  - repositoryQuery (required)
+  //  - orgs
   //  - repos
   //  - exclude
-  //
 
   // repositoryQuery: List of strings, either a special keyword ("none" or "affiliated"), or
   // GitHub search qualifiers, e.g. "archived:false"
@@ -215,12 +215,17 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
   // "org:<name>" // set this to "none" to disable querying
   ],
 
+  // orgs: List of organizations whose repositories should be selected
+  // "orgs": [
+  //   "<org name>"
+  // ],
+
   // repos: Explicit list of repositories to select
   // "repos": [
   //   "<owner>/<repository>"
   // ],
 
-  // exclude: Repositories to exclude (overrides repositories from repositoryQuery and repos)
+  // exclude: Repositories to exclude (overrides repositories from repositoryQuery, orgs, and repos)
   // "exclude": [
   //   {
   //     "name": "<owner>/<repository>"
