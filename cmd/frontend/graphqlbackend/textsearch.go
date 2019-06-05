@@ -545,9 +545,7 @@ func splitMatchesOnNewlines(fms []zoekt.FileMatch) []zoekt.FileMatch {
 		fm2.LineMatches = nil
 		for _, lm := range fm.LineMatches {
 			lms2 := fixupLineMatch(lm)
-			for _, lm2 := range lms2 {
-				fm2.LineMatches = append(fm2.LineMatches, lm2)
-			}
+			fm2.LineMatches = append(fm2.LineMatches, lms2...)
 		}
 		fms2 = append(fms2, fm2)
 	}
