@@ -73,7 +73,7 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/json-iterator/go v1.1.6 // indirect
-	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
+	github.com/kardianos/osext v0.0.0-20190605193113-2bc1f35cddc0
 	github.com/karlseguin/expect v1.0.1 // indirect
 	github.com/karlseguin/typed v1.1.7 // indirect
 	github.com/karrick/tparse v2.4.2+incompatible
