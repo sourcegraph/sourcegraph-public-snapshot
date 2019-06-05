@@ -70,6 +70,10 @@ func (r *repositoryResolver) URI() string {
 	return r.repo.URI
 }
 
+func (r *repositoryResolver) FullName() string {
+	return r.repo.URI
+}
+
 func (r *repositoryResolver) Description() string {
 	return r.repo.Description
 }
