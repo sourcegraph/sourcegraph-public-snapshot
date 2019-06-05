@@ -225,6 +225,7 @@ func TestClient_Users(t *testing.T) {
 				if err = ioutil.WriteFile(path, bs, 0640); err != nil {
 					t.Fatalf("failed to update golden file %q: %s", path, err)
 				}
+				t.Skipf("Updated %s successfully. Skipping.", path)
 			}
 
 			golden, err := ioutil.ReadFile(path)
