@@ -14,7 +14,8 @@
         position: relative;
     }
 
-    &__aborted {
-        margin: 2rem;
+    &__aborted-alert {
+        margin-bottom: 0;
+        border: none;
     }
 }
