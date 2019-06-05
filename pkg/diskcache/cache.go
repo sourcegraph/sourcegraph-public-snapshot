@@ -179,12 +179,12 @@ func doFetch(ctx context.Context, path string, fetcher FetcherWithPath) (file *F
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temporary archive cache item")
 	}
+	f.Close()
 	defer os.Remove(tmpPath)
 
 	// We are now ready to actually fetch the file.
 	err = fetcher(ctx, tmpPath)
 	if err != nil {
-		f.Close()
 		return nil, errors.Wrap(err, "failed to fetch missing archive cache item")
 	}
 
