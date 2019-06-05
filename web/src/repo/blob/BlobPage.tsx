@@ -272,16 +272,6 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 {this.state.blobOrError.richHTML && renderMode === 'rendered' && (
                     <RenderedFile dangerousInnerHTML={this.state.blobOrError.richHTML} location={this.props.location} />
                 )}
-                {renderMode === 'code' && !this.state.blobOrError.highlight.aborted && (
-                    <Blob
-                        {...this.props}
-                        className="blob-page__blob"
-                        content={this.state.blobOrError.content}
-                        html={this.state.blobOrError.highlight.html}
-                        wrapCode={this.state.wrapCode}
-                        renderMode={renderMode}
-                    />
-                )}
                 {!this.state.blobOrError.richHTML && this.state.blobOrError.highlight.aborted && (
                     <div className="blob-page__aborted">
                         <div className="alert alert-info">
@@ -291,6 +281,17 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             </button>
                         </div>
                     </div>
+                )}
+                {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
+                {renderMode === 'code' && (
+                    <Blob
+                        {...this.props}
+                        className="blob-page__blob"
+                        content={this.state.blobOrError.content}
+                        html={this.state.blobOrError.highlight.html}
+                        wrapCode={this.state.wrapCode}
+                        renderMode={renderMode}
+                    />
                 )}
                 <BlobPanel
                     {...this.props}
