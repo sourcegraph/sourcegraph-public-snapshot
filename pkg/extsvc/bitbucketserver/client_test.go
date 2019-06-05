@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
+	"regexp"
 	"testing"
 	"time"
 
@@ -38,7 +38,7 @@ func TestUserFilters(t *testing.T) {
 			qry: url.Values{"filter": []string{"tomas"}},
 		},
 		{
-			name: "filters can be combined (AND)",
+			name: "filters can be combined",
 			fs: bitbucketserver.UserFilters{
 				{Filter: "admin"},
 				{Group: "admins"},
@@ -148,7 +148,7 @@ func TestClient_Users(t *testing.T) {
 			},
 		},
 		{
-			name: "filter by multiple permissions (AND)",
+			name: "filter by multiple ANDed permissions",
 			page: &bitbucketserver.PageToken{Limit: 1000},
 			filters: []bitbucketserver.UserFilter{
 				{
@@ -171,7 +171,7 @@ func TestClient_Users(t *testing.T) {
 			},
 		},
 		{
-			name: "multiple filters (AND)",
+			name: "multiple filters are ANDed",
 			page: &bitbucketserver.PageToken{Limit: 1000},
 			filters: []bitbucketserver.UserFilter{
 				{
@@ -220,7 +220,7 @@ func TestClient_Users(t *testing.T) {
 				t.Fatalf("failed to marshal users: %s", err)
 			}
 
-			path := fmt.Sprintf("testdata/golden/Users-%s.json", tc.name)
+			path := fmt.Sprintf("testdata/golden/Users-%s.json", normalize(tc.name))
 			if *update {
 				if err = ioutil.WriteFile(path, bs, 0640); err != nil {
 					t.Fatalf("failed to update golden file %q: %s", path, err)
@@ -245,7 +245,7 @@ func TestClient_Users(t *testing.T) {
 func newClient(t testing.TB, name string) (*bitbucketserver.Client, func()) {
 	t.Helper()
 
-	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
+	cassete := filepath.Join("testdata/vcr/", normalize(name))
 	rec, err := httptestutil.NewRecorder(cassete, *update)
 	if err != nil {
 		t.Fatal(err)
@@ -274,4 +274,10 @@ func newClient(t testing.TB, name string) (*bitbucketserver.Client, func()) {
 			t.Errorf("failed to update test data: %s", err)
 		}
 	}
+}
+
+var normalizer = regexp.MustCompile("[^A-Za-z0-9-]+")
+
+func normalize(path string) string {
+	return normalizer.ReplaceAllLiteralString(path, "-")
 }
