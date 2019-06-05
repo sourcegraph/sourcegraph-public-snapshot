@@ -1,6 +1,8 @@
 package migrations_test
 
 import (
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -47,5 +49,18 @@ func TestNeedsGenerate(t *testing.T) {
 	sort.Strings(got)
 	if !reflect.DeepEqual(got, want) {
 		t.Fatal("bindata out of date. Please run:\n  go generate github.com/sourcegraph/sourcegraph/migrations")
+	}
+}
+
+func TestJuiceCodeCoverage(t *testing.T) {
+	d, err := ioutil.TempDir("", t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(d)
+
+	err = migrations.RestoreAssets(d, "")
+	if err != nil {
+		t.Fatal(err)
 	}
 }
