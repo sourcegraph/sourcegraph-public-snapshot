@@ -43,11 +43,14 @@ func IsBinary(content []byte) bool {
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
-func Code(ctx context.Context, content []byte, filepath string, disableTimeout bool, isLightTheme bool) (template.HTML, bool, error) {
+func Code(ctx context.Context, content []byte, filepath string, disableTimeout bool, isLightTheme bool, simulateTimeout bool) (template.HTML, bool, error) {
 	if !disableTimeout {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
+	}
+	if simulateTimeout {
+		time.Sleep(4 * time.Second)
 	}
 
 	// Never pass binary files to the syntax highlighter.
