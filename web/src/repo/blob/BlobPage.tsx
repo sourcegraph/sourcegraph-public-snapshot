@@ -282,6 +282,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         </div>
                     </div>
                 )}
+                {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
                 {renderMode === 'code' && (
                     <Blob
                         {...this.props}
