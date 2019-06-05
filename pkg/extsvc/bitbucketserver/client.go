@@ -161,8 +161,19 @@ func (p PermissionFilter) EncodeTo(qry url.Values) {
 	}
 }
 
+// UserFiltersLimit defines the maximum number of UserFilters that can
+// be passed to a single Client.Users call.
+const UserFiltersLimit = 50
+
+// ErrUserFiltersLimit is returned by Client.Users when the UserFiltersLimit is exceeded.
+var ErrUserFiltersLimit = errors.Errorf("maximum of %d user filters exceeded", UserFiltersLimit)
+
 // Users retrieves a page of users, optionally run through provided filters.
 func (c *Client) Users(ctx context.Context, pageToken *PageToken, fs ...UserFilter) ([]*User, *PageToken, error) {
+	if len(fs) > UserFiltersLimit {
+		return nil, nil, ErrUserFiltersLimit
+	}
+
 	qry := make(url.Values)
 	UserFilters(fs).EncodeTo(qry)
 

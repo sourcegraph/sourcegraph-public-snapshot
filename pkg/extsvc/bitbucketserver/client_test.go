@@ -191,6 +191,21 @@ func TestClient_Users(t *testing.T) {
 				IsLastPage: true,
 			},
 		},
+		{
+			name: "maximum 50 permission filters",
+			page: &bitbucketserver.PageToken{Limit: 1000},
+			filters: func() (fs bitbucketserver.UserFilters) {
+				for i := 0; i < 51; i++ {
+					fs = append(fs, bitbucketserver.UserFilter{
+						Permission: bitbucketserver.PermissionFilter{
+							Root: bitbucketserver.PermSysAdmin,
+						},
+					})
+				}
+				return fs
+			}(),
+			err: bitbucketserver.ErrUserFiltersLimit.Error(),
+		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
