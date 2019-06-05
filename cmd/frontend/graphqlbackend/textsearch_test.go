@@ -689,16 +689,33 @@ func Test_splitMatchesOnNewlines(t *testing.T) {
 }
 
 func Test_fixupLineMatch(t *testing.T) {
-	t.Run("number of results is number of newlines plus one", func(t *testing.T) {
+	t.Run("line number stays the same", func(t *testing.T) {
+		s := "b"
+		lm := zoekt.LineMatch{
+			Line:          []byte(s),
+			LineStart:     1,
+			LineEnd:       1+len(s),
+			LineNumber:    1,
+			LineFragments: []zoekt.LineFragmentMatch{ { MatchLength: 1 } },
+		}
+		lms := fixupLineMatch(lm)
+		if len(lms) != 1 {
+			t.Fatalf("got %d line matches, want exactly 1", len(lms))
+		}
+		lm2 := lms[0]
+		if lm2.LineNumber != lm.LineNumber {
+			t.Errorf("output LineNumber = %d, want %d", lm2.LineNumber, lm.LineNumber)
+		}
+	})
+	t.Run("property tests", func(t *testing.T) {
 		pp := gopter.DefaultTestParameters()
 		props := gopter.NewProperties(pp)
-		props.Property("results length", prop.ForAll(
+		props.Property("number of results is number of newlines plus one", prop.ForAll(
 			func(s string, start int) bool {
 				lm := zoekt.LineMatch{
 					Line:          []byte(s),
 					LineStart:     start,
 					LineEnd:       start + len(s),
-					LineNumber:    len(s),
 					LineFragments: nil,
 				}
 				n := strings.Count(s, "\n")
@@ -707,6 +724,22 @@ func Test_fixupLineMatch(t *testing.T) {
 			},
 			gen.RegexMatch(`^[abc123\n]*$`),
 			gen.IntRange(0, 100),
+		))
+		props.Property("line number stays the same for line matches without newlines", prop.ForAll(
+			func(s string, start, lnum int) bool {
+				lm := zoekt.LineMatch{
+					Line:          []byte(s),
+					LineStart:     start,
+					LineEnd:       start + len(s),
+					LineNumber:    lnum,
+					LineFragments: []zoekt.LineFragmentMatch{ { MatchLength: 1 } },
+				}
+				lms := fixupLineMatch(lm)
+				return len(lms) == 1 && lms[0].LineNumber == lm.LineNumber
+			},
+			gen.RegexMatch(`^[abc123]+$`),
+			gen.IntRange(0, 100),
+			gen.IntRange(1, 100),
 		))
 		props.TestingRun(t)
 	})
