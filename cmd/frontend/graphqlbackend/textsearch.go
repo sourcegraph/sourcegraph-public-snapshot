@@ -558,6 +558,7 @@ func splitMatchesOnNewlines(fms []zoekt.FileMatch) []zoekt.FileMatch {
 func fixupLineMatch(lm zoekt.LineMatch) []zoekt.LineMatch {
 	var lms2 []zoekt.LineMatch
 	offset := 0
+	lnum := lm.LineNumber
 	for i, b := range lm.Line {
 		if b == '\n' {
 			// Add the line match for the line that just ended.
@@ -565,19 +566,20 @@ func fixupLineMatch(lm zoekt.LineMatch) []zoekt.LineMatch {
 				Line:       lm.Line[offset:i],
 				LineStart:  lm.LineStart + offset,
 				LineEnd:    lm.LineStart + i,
-				LineNumber: i - offset,
+				LineNumber: lnum,
 			}
 			lm2.LineFragments = fixupFragments(lm.LineFragments, lm2)
 			lms2 = append(lms2, lm2)
 			// Start again on the next line.
 			offset = i + 1
+			lnum++
 		}
 	}
 	lm2 := zoekt.LineMatch{
 		Line:       lm.Line[offset:len(lm.Line)],
 		LineStart:  lm.LineStart + offset,
 		LineEnd:    lm.LineEnd,
-		LineNumber: lm.LineEnd - (lm.LineStart + offset),
+		LineNumber: lnum,
 	}
 	lm2.LineFragments = fixupFragments(lm.LineFragments, lm2)
 	if len(lm2.LineFragments) > 0 {
