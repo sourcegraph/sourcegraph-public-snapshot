@@ -94,7 +94,7 @@ func (fs UserFilters) EncodeTo(qry url.Values) {
 	}
 }
 
-// UserFilter defines a union type of filters to be used when listing users.
+// UserFilter defines a sum type of filters to be used when listing users.
 type UserFilter struct {
 	// Filter filters the returned users to those whose username,
 	// name or email address contain this value.
@@ -122,7 +122,7 @@ func (f UserFilter) EncodeTo(qry url.Values) {
 	}
 }
 
-// A PermissionFilter is a UserFilter used to list users that have specific
+// A PermissionFilter is a filter used to list users that have specific
 // permissions.
 type PermissionFilter struct {
 	Root           Perm
