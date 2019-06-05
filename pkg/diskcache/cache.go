@@ -188,11 +188,23 @@ func doFetch(ctx context.Context, path string, fetcher FetcherWithPath) (file *F
 		return nil, errors.Wrap(err, "failed to fetch missing archive cache item")
 	}
 
+	// Sync the contents to disk. If we crash we don't want to leave behind
+	// invalid zip files due to unwritten OS buffers.
+	if err := fsync(tmpPath); err != nil {
+		return nil, errors.Wrap(err, "failed to sync cache item to disk")
+	}
+
 	// Put the partially written file in the correct place and open
 	err = os.Rename(tmpPath, path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to put cache item in place")
 	}
+
+	// Sync the directory. We need to ensure the rename is recorded to disk.
+	if err := fsync(filepath.Dir(path)); err != nil {
+		return nil, errors.Wrap(err, "failed to sync cache directory to disk")
+	}
+
 	f, err = os.Open(path)
 	if err != nil {
 		return nil, err
@@ -287,4 +299,16 @@ func touch(path string) {
 	if err := os.Chtimes(path, t, t); err != nil {
 		log.Printf("failed to touch %s: %s", path, err)
 	}
+}
+
+func fsync(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	err = f.Sync()
+	if err1 := f.Close(); err == nil {
+		err = err1
+	}
+	return err
 }
