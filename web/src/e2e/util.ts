@@ -227,7 +227,7 @@ export class Driver {
     }
 }
 
-export async function newDriverForTest(): Promise<Driver> {
+export async function createDriverForTest(): Promise<Driver> {
     let args: string[] = []
     if (process.getuid() === 0) {
         // TODO don't run as root in CI

@@ -2,7 +2,7 @@ import * as path from 'path'
 import puppeteer from 'puppeteer'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 import { retry } from '../util/e2e-test-utils'
-import { baseURL, Driver, gitHubToken, newDriverForTest, percySnapshot } from './util'
+import { baseURL, createDriverForTest, Driver, gitHubToken, percySnapshot } from './util'
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -52,7 +52,7 @@ describe('e2e test suite', function(this: any): void {
     // Start browser.
     beforeAll(
         async () => {
-            driver = await newDriverForTest()
+            driver = await createDriverForTest()
             await init()
         },
         // Cloning the repositories takes ~1 minute, so give initialization 2

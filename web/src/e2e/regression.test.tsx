@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
-import { baseURL, Driver, gitHubToken, newDriverForTest } from './util'
+import { baseURL, createDriverForTest, Driver, gitHubToken } from './util'
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -26,7 +26,7 @@ describe('e2e test suite', function(this: any): void {
     // Start browser.
     beforeAll(
         async () => {
-            driver = await newDriverForTest()
+            driver = await createDriverForTest()
             await init()
         },
         // Cloning the repositories takes ~1 minute, so give initialization 2
@@ -156,10 +156,10 @@ describe('e2e test suite', function(this: any): void {
             5 * 1000
         )
         test(
-            'Perform global text search for "error", expect a few results.',
+            'Perform global text search for "error type:", expect a few results.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=%22error+type:%22')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 5)
             },
             5 * 1000
         )
