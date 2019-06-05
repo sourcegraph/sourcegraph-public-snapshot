@@ -472,6 +472,7 @@ export function handleCodeHost({
         observeOn(animationFrameScheduler)
     )
 
+    /** Map from workspace URI to number of editors referencing it */
     const rootRefCounts = new Map<string, number>()
 
     /**
