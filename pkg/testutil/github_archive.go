@@ -55,7 +55,17 @@ func FetchTarFromGithub(ctx context.Context, repo gitserver.Repo, commit api.Com
 		return nil, err
 	}
 
+	// Ensure contents are written to disk
+	if err := fsync(tmpPath); err != nil {
+		return nil, err
+	}
+
 	if err := os.Rename(tmpPath, path); err != nil {
+		return nil, err
+	}
+
+	// Ensure rename is written to disk
+	if err := fsync(filepath.Dir(path)); err != nil {
 		return nil, err
 	}
 
@@ -73,6 +83,18 @@ func openGzipReader(name string) (io.ReadCloser, error) {
 		return nil, err
 	}
 	return &gzipReadCloser{f: f, r: r}, nil
+}
+
+func fsync(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	err = f.Sync()
+	if err1 := f.Close(); err == nil {
+		err = err1
+	}
+	return err
 }
 
 type gzipReadCloser struct {
