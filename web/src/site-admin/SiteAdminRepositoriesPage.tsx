@@ -1,4 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
@@ -58,6 +59,11 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                         )}
                     </div>
                     <div className="repository-node__actions">
+                        {!this.props.node.mirrorInfo.cloneInProgress && !this.props.node.mirrorInfo.cloned && (
+                            <Link className="btn btn-sm btn-secondary" to={this.props.node.url}>
+                                <CloudDownloadIcon className="icon-inline" /> Clone now
+                            </Link>
+                        )}{' '}
                         {
                             <Link
                                 className="btn btn-secondary btn-sm"
