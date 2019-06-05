@@ -1,5 +1,5 @@
 import { from, of, Subject } from 'rxjs'
-import { bufferCount, switchMap, toArray } from 'rxjs/operators'
+import { switchMap, toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
 import { Omit } from 'utility-types'
 import { MutationRecordLike } from '../../shared/util/dom'
@@ -38,7 +38,7 @@ describe('code_views', () => {
                     toArray()
                 )
                 .toPromise()
-            expect(detected.map(({ subscriptions, ...rest }) => ({ ...rest }))).toEqual([{ ...codeViewSpec, element }])
+            expect(detected.map(({ subscriptions, ...rest }) => rest)).toEqual([{ ...codeViewSpec, element }])
         })
         it('should detect added code views from resolver', async () => {
             const element = document.createElement('div')
@@ -54,7 +54,7 @@ describe('code_views', () => {
                     toArray()
                 )
                 .toPromise()
-            expect(detected.map(({ subscriptions, ...rest }) => ({ ...rest }))).toEqual([{ ...codeViewSpec, element }])
+            expect(detected.map(({ subscriptions, ...rest }) => rest)).toEqual([{ ...codeViewSpec, element }])
             sinon.assert.calledOnce(resolveView)
             sinon.assert.calledWith(resolveView, element)
         })
@@ -71,7 +71,7 @@ describe('code_views', () => {
                     toArray()
                 )
                 .toPromise()
-            expect(detected.map(({ subscriptions, ...rest }) => ({ ...rest }))).toEqual([{ ...codeViewSpec, element }])
+            expect(detected.map(({ subscriptions, ...rest }) => rest)).toEqual([{ ...codeViewSpec, element }])
         })
         it('should detect added code views added later', async () => {
             const selector = '.test-code-view'
@@ -93,9 +93,7 @@ describe('code_views', () => {
             document.body.append(element)
             mutations.next([{ addedNodes: [element], removedNodes: [] }])
             sinon.assert.calledOnce(subscriber)
-            expect(subscriber.args[0].map(({ subscriptions, ...rest }) => ({ ...rest }))).toEqual([
-                { ...codeViewSpec, element },
-            ])
+            expect(subscriber.args[0].map(({ subscriptions, ...rest }) => rest)).toEqual([{ ...codeViewSpec, element }])
         })
         it('should detect nested added code views added later', async () => {
             const selector = '.test-code-view'
@@ -117,9 +115,7 @@ describe('code_views', () => {
             document.body.append(element)
             mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
             sinon.assert.calledOnce(subscriber)
-            expect(subscriber.args[0].map(({ subscriptions, ...rest }) => ({ ...rest }))).toEqual([
-                { ...codeViewSpec, element },
-            ])
+            expect(subscriber.args[0].map(({ subscriptions, ...rest }) => rest)).toEqual([{ ...codeViewSpec, element }])
         })
         it('should detect nested removed code views', async () => {
             const selector = '.test-code-view'
@@ -136,8 +132,7 @@ describe('code_views', () => {
                     trackCodeViews({
                         codeViewResolvers: [toCodeViewResolver(selector, codeViewSpec)],
                     }),
-                    bufferCount(1),
-                    switchMap(async ([view]) => new Promise(resolve => view.subscriptions.add(resolve)))
+                    switchMap(async view => new Promise(resolve => view.subscriptions.add(resolve)))
                 )
                 .toPromise()
         })

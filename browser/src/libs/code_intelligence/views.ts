@@ -1,4 +1,4 @@
-import { animationFrameScheduler, from, Observable, Subscription } from 'rxjs'
+import { asyncScheduler, defer, from, Observable, Subscription } from 'rxjs'
 import { concatAll, filter, mergeMap, observeOn, tap } from 'rxjs/operators'
 import { isDefined, isInstanceOf } from '../../../../shared/src/util/types'
 import { MutationRecordLike, querySelectorAllOrSelf } from '../../shared/util/dom'
@@ -47,61 +47,61 @@ export interface ViewResolver<V extends View> {
 export function trackViews<V extends View>(
     viewResolvers: ViewResolver<V>[]
 ): (mutations: Observable<MutationRecordLike[]>) => Observable<ViewWithSubscriptions<V>> {
-    const viewStates = new Map<HTMLElement, ViewWithSubscriptions<V>>()
     return mutations =>
-        mutations.pipe(
-            observeOn(animationFrameScheduler),
-            concatAll(),
-            // Inspect removed nodes for known views
-            tap(({ removedNodes }) => {
-                for (const node of removedNodes) {
-                    if (!(node instanceof HTMLElement)) {
-                        continue
-                    }
-                    const view = viewStates.get(node)
-                    if (view) {
-                        view.subscriptions.unsubscribe()
-                        viewStates.delete(node)
-                        continue
-                    }
-                    for (const viewElement of viewStates.keys()) {
-                        if (node.contains(viewElement)) {
-                            viewStates.get(viewElement)!.subscriptions.unsubscribe()
-                            viewStates.delete(viewElement)
+        defer(() => {
+            const viewStates = new Map<HTMLElement, ViewWithSubscriptions<V>>()
+            return mutations.pipe(
+                observeOn(asyncScheduler),
+                concatAll(),
+                // Inspect removed nodes for known views
+                tap(({ removedNodes }) => {
+                    for (const node of removedNodes) {
+                        if (!(node instanceof HTMLElement)) {
+                            continue
+                        }
+                        const view = viewStates.get(node)
+                        if (view) {
+                            view.subscriptions.unsubscribe()
+                            viewStates.delete(node)
+                            continue
+                        }
+                        for (const [viewElement, view] of viewStates.entries()) {
+                            if (node.contains(viewElement)) {
+                                view.subscriptions.unsubscribe()
+                                viewStates.delete(viewElement)
+                            }
                         }
                     }
-                }
-            }),
-            mergeMap(mutation =>
-                // Find all new code views within the added nodes
-                // (MutationObservers don't emit all descendant nodes of an addded node recursively)
-                from(mutation.addedNodes).pipe(
-                    filter(isInstanceOf(HTMLElement)),
-                    mergeMap(addedElement =>
-                        from(viewResolvers).pipe(
-                            mergeMap(({ selector, resolveView }) =>
-                                [...querySelectorAllOrSelf<HTMLElement>(addedElement, selector)].map(
-                                    (element): ViewWithSubscriptions<V> | null => {
-                                        const view = resolveView(element)
-                                        return (
-                                            view && {
-                                                ...view,
-                                                subscriptions: new Subscription(),
-                                            }
-                                        )
-                                    }
-                                )
-                            ),
-                            filter(
-                                (view): view is ViewWithSubscriptions<V> =>
-                                    isDefined(view) && !viewStates.has(view.element)
-                            ),
-                            tap(view => {
-                                viewStates.set(view.element, view)
-                            })
+                }),
+                mergeMap(mutation =>
+                    // Find all new code views within the added nodes
+                    // (MutationObservers don't emit all descendant nodes of an addded node recursively)
+                    from(mutation.addedNodes).pipe(
+                        filter(isInstanceOf(HTMLElement)),
+                        mergeMap(addedElement =>
+                            from(viewResolvers).pipe(
+                                mergeMap(({ selector, resolveView }) =>
+                                    [...querySelectorAllOrSelf<HTMLElement>(addedElement, selector)].map(
+                                        (element): ViewWithSubscriptions<V> | null => {
+                                            const view = resolveView(element)
+                                            return (
+                                                view && {
+                                                    ...view,
+                                                    subscriptions: new Subscription(),
+                                                }
+                                            )
+                                        }
+                                    )
+                                ),
+                                filter(isDefined),
+                                filter(view => !viewStates.has(view.element)),
+                                tap(view => {
+                                    viewStates.set(view.element, view)
+                                })
+                            )
                         )
                     )
                 )
             )
-        )
+        })
 }
