@@ -125,6 +125,35 @@ func TestGithubSource_GetRepo(t *testing.T) {
 	}
 }
 
+func TestGithubSource_RegOrg(t *testing.T) {
+	testCases := []struct {
+		str   string
+		match string
+		size  int
+	}{
+		{str: "org:gorilla", match: "gorilla", size: 2},
+		{str: "org:golang-migrate", match: "golang-migrate", size: 2},
+		{str: "sourcegraph", size: 0},
+		{str: "org:-sourcegraph", size: 0},
+	}
+
+	for _, tc := range testCases {
+		got := regOrg.FindStringSubmatch(tc.str)
+		size := len(got)
+		if size != tc.size {
+			t.Errorf("error:\nhave: %d\nwant: %d", size, tc.size)
+		}
+
+		if size == 0 {
+			continue
+		}
+
+		if got[1] != tc.match {
+			t.Errorf("error:\nhave: %s\nwant: %s", got[1], tc.match)
+		}
+	}
+}
+
 func TestGithubSource_ListRepos(t *testing.T) {
 	assertAllReposListed := func(want []string) ReposAssertion {
 		return func(t testing.TB, rs Repos) {
@@ -207,6 +236,39 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
 				Orgs: []string{
 					"gorilla",
+				},
+			},
+			err: "<nil>",
+		},
+		{
+			name: "orgs repository query",
+			assert: assertAllReposListed([]string{
+				"github.com/gorilla/websocket",
+				"github.com/gorilla/handlers",
+				"github.com/gorilla/mux",
+				"github.com/gorilla/feeds",
+				"github.com/gorilla/sessions",
+				"github.com/gorilla/schema",
+				"github.com/gorilla/csrf",
+				"github.com/gorilla/rpc",
+				"github.com/gorilla/pat",
+				"github.com/gorilla/css",
+				"github.com/gorilla/site",
+				"github.com/gorilla/context",
+				"github.com/gorilla/securecookie",
+				"github.com/gorilla/http",
+				"github.com/gorilla/reverse",
+				"github.com/gorilla/muxy",
+				"github.com/gorilla/i18n",
+				"github.com/gorilla/template",
+				"github.com/golang-migrate/migrate",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				RepositoryQuery: []string{
+					"org:gorilla",
+					"org:golang-migrate",
 				},
 			},
 			err: "<nil>",
