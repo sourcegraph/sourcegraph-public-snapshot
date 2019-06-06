@@ -696,7 +696,12 @@ func Test_fixupLineMatch(t *testing.T) {
 			LineStart:     1,
 			LineEnd:       1+len(s),
 			LineNumber:    1,
-			LineFragments: []zoekt.LineFragmentMatch{ { MatchLength: 1 } },
+			LineFragments: []zoekt.LineFragmentMatch{
+				{
+					MatchLength: len(s),
+					Offset: 1,
+				},
+			},
 		}
 		lms := fixupLineMatch(lm)
 		if len(lms) != 1 {
@@ -732,7 +737,12 @@ func Test_fixupLineMatch(t *testing.T) {
 					LineStart:     start,
 					LineEnd:       start + len(s),
 					LineNumber:    lnum,
-					LineFragments: []zoekt.LineFragmentMatch{ { MatchLength: 1 } },
+					LineFragments: []zoekt.LineFragmentMatch{
+						{
+							MatchLength: 1,
+							Offset: 1,
+						},
+					},
 				}
 				lms := fixupLineMatch(lm)
 				return len(lms) == 1 && lms[0].LineNumber == lm.LineNumber
