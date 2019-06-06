@@ -1,4 +1,4 @@
-import { animationFrameScheduler, merge, Observable, of, Subject, Unsubscribable } from 'rxjs'
+import { animationFrameScheduler, merge, Observable, of, Subject, Unsubscribable, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, mapTo, mergeMap, observeOn, tap, throttleTime } from 'rxjs/operators'
 import { LinkPreviewProviderRegistry } from '../../../../shared/src/api/client/services/linkPreview'
 import { applyLinkPreview } from '../../../../shared/src/components/linkPreviews/linkPreviews'
@@ -44,12 +44,33 @@ export function handleContentViews(
     /** Pause DOM MutationObserver while we are making changes to avoid duplicating work. */
     const pauseMutationObserver = new Subject<boolean>()
 
+    /**
+     * Map from content view element to linkPreview subscriptions
+     *
+     * These subscriptions are maintained separately from `contentViewEvent.subscription`,
+     * as they need to be unsubscribed when a content view is updated.
+     */
+    const linkPreviewSubscriptions = new Map<HTMLElement, Subscription>()
+
     return contentViews
         .pipe(
             mergeMap(contentViewEvent =>
                 merge(
                     of(contentViewEvent).pipe(
-                        map(contentViewEvent => ({ type: 'added' as const, ...contentViewEvent }))
+                        tap(() => {
+                            console.log('Content view added', { contentViewEvent })
+                            linkPreviewSubscriptions.set(contentViewEvent.element, new Subscription())
+                            contentViewEvent.subscriptions.add(() => {
+                                console.log('Content view removed', { contentViewEvent })
+
+                                // Clean up current link preview subscriptions when the content view is removed
+                                const subscriptions = linkPreviewSubscriptions.get(contentViewEvent.element)
+                                if (!subscriptions) {
+                                    throw new Error('No linkPreview subscriptions')
+                                }
+                                subscriptions.unsubscribe()
+                            })
+                        })
                     ),
 
                     /**
@@ -64,19 +85,25 @@ export function handleContentViews(
                         observeOn(animationFrameScheduler),
                         map(() => contentViewEvent.element.innerHTML),
                         distinctUntilChanged(),
-                        mapTo({ type: 'updated' as const, ...contentViewEvent }),
+                        tap(() => console.log('Content view updated', { contentViewEvent })),
+                        mapTo(contentViewEvent),
                         throttleTime(2000, undefined, { leading: true, trailing: true }) // reduce the harm from an infinite loop bug
                     )
                 )
             ),
-            tap(contentViewEvent => {
-                console.log(`Content view ${contentViewEvent.type}`, { contentViewEvent })
-                contentViewEvent.subscriptions.add(() => console.log(`Content view removed`, { contentViewEvent }))
-                const { element } = contentViewEvent
+            tap(({ element }) => {
+                // Reset link preview subscriptions
+                let subscriptions = linkPreviewSubscriptions.get(element)
+                if (!subscriptions) {
+                    throw new Error('No linkPreview subscriptions')
+                }
+                subscriptions.unsubscribe()
+                subscriptions = new Subscription()
+                linkPreviewSubscriptions.set(element, subscriptions)
 
                 // Add link preview content.
                 for (const link of element.querySelectorAll<HTMLAnchorElement>('a[href]')) {
-                    contentViewEvent.subscriptions.add(
+                    subscriptions.add(
                         extensionsController.services.linkPreviews
                             .provideLinkPreview(link.href)
                             // The nested subscribe cannot be replaced with a switchMap()
