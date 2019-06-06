@@ -37,6 +37,9 @@ type Repo struct {
 	CreatedAt time.Time
 	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
 	UpdatedAt *time.Time
+
+	// Metadata contains the original code host metadata associated with this repo.
+	Metadata interface{}
 }
 
 // ExternalService is a connection to an external service.

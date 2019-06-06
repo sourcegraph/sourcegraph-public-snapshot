@@ -86,4 +86,7 @@ type Repo struct {
 
 	// ExternalRepoSpec uniquely identifies the external repo that is the source of the repo.
 	api.ExternalRepoSpec
+
+	// Metadata is the original code-host repository metadata .
+	Metadata interface{}
 }
