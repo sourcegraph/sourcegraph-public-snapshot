@@ -1,5 +1,6 @@
 import * as React from 'react'
 import _VisibilitySensor from 'react-visibility-sensor'
+import sinon from 'sinon'
 export class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: boolean) => void }> {
     constructor(props: { onChange?: (isVisible: boolean) => void }) {
         super(props)
@@ -23,7 +24,9 @@ jest.mock(
 )
 
 import { cleanup, getAllByText, getByText, render } from 'react-testing-library'
+import { of } from 'rxjs'
 import {
+    HIGHLIGHTED_FILE_LINES,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
 } from '../../../web/src/search/testHelpers'
@@ -103,5 +106,25 @@ describe('CodeExcerpt', () => {
         for (const span of highlightedSpans) {
             expect(span.textContent === 'test')
         }
+    })
+
+    it('does not disable the highlighting timeout', () => {
+        /*
+            Because disabling the timeout should only ever be done in response
+            to the user asking us to do so, something that we do not do for
+            code excerpts because falling back to plaintext rendering is most
+            ideal.
+        */
+        const fetchHighlightedFileLines = sinon.spy(ctx => of(HIGHLIGHTED_FILE_LINES))
+        const highlightRange = [{ line: 12, character: 7, highlightLength: 4 }]
+        render(
+            <CodeExcerpt
+                {...defaultProps}
+                highlightRanges={highlightRange}
+                fetchHighlightedFileLines={fetchHighlightedFileLines}
+            />
+        )
+        sinon.assert.calledOnce(fetchHighlightedFileLines)
+        sinon.assert.calledWithMatch(fetchHighlightedFileLines, { disableTimeout: false })
     })
 })
