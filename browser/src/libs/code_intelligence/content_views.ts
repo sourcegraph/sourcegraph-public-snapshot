@@ -1,4 +1,4 @@
-import { animationFrameScheduler, merge, Observable, of, Subject, Unsubscribable, Subscription } from 'rxjs'
+import { animationFrameScheduler, merge, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, map, mapTo, mergeMap, observeOn, tap, throttleTime } from 'rxjs/operators'
 import { LinkPreviewProviderRegistry } from '../../../../shared/src/api/client/services/linkPreview'
 import { applyLinkPreview } from '../../../../shared/src/components/linkPreviews/linkPreviews'
