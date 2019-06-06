@@ -144,7 +144,7 @@ func (s *Store) WaitUntilInitialized() {
 			// deadlock, so ask Go to dump all goroutine stack traces.
 			debug.SetTraceback("all")
 			if IsDev(DeployType()) {
-				panic("deadlock detected: you have called conf.Get or conf.Watch before the frontend has been initialized (you may need to use a goroutine)")
+				panic("potential deadlock detected: the frontend's configuration server hasn't started after 30s indicating a deadlock may be happening. A common cause of this is calling conf.Get or conf.Watch before the frontend has started fully (e.g. inside an init function) and if that is the case you may need to invoke those functions in a separate goroutine.")
 			}
 			panic(fmt.Sprintf("(bug) frontend configuration server failed to start after %v, this may indicate the DB is inaccessible", deadlockTimeout))
 		}
