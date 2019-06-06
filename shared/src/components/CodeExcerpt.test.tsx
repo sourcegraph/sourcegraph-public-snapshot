@@ -115,7 +115,7 @@ describe('CodeExcerpt', () => {
             code excerpts because falling back to plaintext rendering is most
             ideal.
         */
-        const fetchHighlightedFileLines = sinon.fake.returns(of(HIGHLIGHTED_FILE_LINES))
+        const fetchHighlightedFileLines = sinon.spy(() => of(HIGHLIGHTED_FILE_LINES))
         const highlightRange = [{ line: 12, character: 7, highlightLength: 4 }]
         render(
             <CodeExcerpt
