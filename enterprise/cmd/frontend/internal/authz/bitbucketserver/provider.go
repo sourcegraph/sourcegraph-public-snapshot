@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Provider is an implementation of AuthzProvider that provides repository permissions as
@@ -31,6 +32,10 @@ type bitbucketServerAPI interface {
 
 var _ authz.Provider = ((*Provider)(nil))
 
+// NewProvider returns a new Bitbucket Server authorization provider that uses
+// the given bitbucketserver.Client to talk to a Bitbucket Server API that is
+// the source of truth for permissions. It assumes usernames of Sourcegraph accounts
+// match 1-1 with usernames of Bitbucket Server API users.
 func NewProvider(cli *bitbucketserver.Client) *Provider {
 	return &Provider{
 		api:      cli,
@@ -50,13 +55,33 @@ func (p *Provider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mi
 	return authz.GetCodeHostRepos(p.codeHost, repos)
 }
 
-func (p *Provider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
-	return nil, nil
-}
+func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
+	var user bitbucketserver.User
+	if acct != nil && acct.ServiceID == p.codeHost.ServiceID &&
+		acct.ServiceType == p.codeHost.ServiceType {
+		if err := json.Unmarshal(*acct.AccountData, &user); err != nil {
+			return nil, err
+		}
+	}
 
-// repos returns all Bitbucket Server repos that for which the given user has the given permission.
-func (p *Provider) repos(username string, perm bitbucketserver.Perm) ([]*bitbucketserver.Repo, error) {
-	return nil, nil
+	unverified, _ := p.Repos(ctx, repos)
+	perms := make(map[api.RepoName]map[authz.Perm]bool, len(unverified))
+
+	for repo := range unverified {
+		ok, err := p.authorized(ctx, &user, authz.Read, &repo)
+		if err != nil {
+			log15.Error(
+				"Failed to verify authorization for Bitbucket user",
+				"user", user.Name,
+				"perm", authz.Read,
+				"repo", repo.RepoName,
+				"error", err,
+			)
+		}
+		perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: ok}
+	}
+
+	return perms, nil
 }
 
 // FetchAccount satisfies the authz.Provider interface.
@@ -88,12 +113,40 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 	}, nil
 }
 
-func (p *Provider) user(ctx context.Context, username string) (*bitbucketserver.User, error) {
+func (p *Provider) authorized(ctx context.Context, user *bitbucketserver.User, perm authz.Perm, repo *authz.Repo) (bool, error) {
+	meta, _ := repo.Metadata.(*bitbucketserver.Repo)
+	if user.Name == "" { // Anonymous user
+		if meta == nil || !meta.Public { // No metadata synced yet by repo-updater.
+			return false, nil
+		}
+		return true, nil
+	}
+
+	// Authenticated user
+	_, err := p.user(ctx, user.Name,
+		bitbucketserver.UserFilter{
+			Permission: bitbucketserver.PermissionFilter{
+				Root:         bitbucketServerPerm(perm),
+				RepositoryID: repo.ExternalRepoSpec.ID,
+			},
+		},
+	)
+
+	if err == errNoResults {
+		return false, nil
+	}
+
+	return err == nil, err
+}
+
+var errNoResults = errors.New("no user found matching the given filters")
+
+func (p *Provider) user(ctx context.Context, username string, fs ...bitbucketserver.UserFilter) (*bitbucketserver.User, error) {
 	t := &bitbucketserver.PageToken{Limit: 10000}
-	f := bitbucketserver.UserFilter{Filter: username}
+	fs = append(fs, bitbucketserver.UserFilter{Filter: username})
 
 	for t.HasMore() {
-		users, next, err := p.api.Users(ctx, t, f)
+		users, next, err := p.api.Users(ctx, t, fs...)
 		if err != nil {
 			return nil, err
 		}
@@ -107,5 +160,13 @@ func (p *Provider) user(ctx context.Context, username string) (*bitbucketserver.
 		t = next
 	}
 
-	return nil, errors.Errorf("Bitbucket Server user with username=%q not found", username)
+	return nil, errNoResults
+}
+
+func bitbucketServerPerm(p authz.Perm) bitbucketserver.Perm {
+	switch p {
+	case authz.Read:
+		return bitbucketserver.PermRepoRead
+	}
+	panic("unknown permission")
 }

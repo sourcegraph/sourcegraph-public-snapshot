@@ -45,7 +45,7 @@ func TestProvider_FetchAccount(t *testing.T) {
 			},
 			user: &types.User{Username: "john"},
 			acct: nil,
-			err:  `Bitbucket Server user with username="john" not found`,
+			err:  `no user found matching the given filters`,
 		},
 		{
 			name: "user found by exact username match",
