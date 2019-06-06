@@ -125,31 +125,27 @@ func TestGithubSource_GetRepo(t *testing.T) {
 	}
 }
 
-func TestGithubSource_RegOrg(t *testing.T) {
-	testCases := []struct {
-		str   string
-		match string
-		size  int
-	}{
-		{str: "org:gorilla", match: "gorilla", size: 2},
-		{str: "org:golang-migrate", match: "golang-migrate", size: 2},
-		{str: "sourcegraph", size: 0},
-		{str: "org:-sourcegraph", size: 0},
+func TestMatchOrg(t *testing.T) {
+	testCases := map[string]string{
+		"":                     "",
+		"org:":                 "",
+		"org:gorilla":          "gorilla",
+		"org:golang-migrate":   "golang-migrate",
+		"org:sourcegraph-":     "",
+		"org: sourcegraph":     "",
+		"org:$ourcegr@ph":      "",
+		"sourcegraph":          "",
+		"org:-sourcegraph":     "",
+		"org:source graph":     "",
+		"org:source org:graph": "",
+		"org:SOURCEGRAPH":      "SOURCEGRAPH",
+		"org:Game-club-3d-game-birds-gameapp-makerCo":  "Game-club-3d-game-birds-gameapp-makerCo",
+		"org:thisorgnameisfartoolongtomatchthisregexp": "",
 	}
 
-	for _, tc := range testCases {
-		got := regOrg.FindStringSubmatch(tc.str)
-		size := len(got)
-		if size != tc.size {
-			t.Errorf("error:\nhave: %d\nwant: %d", size, tc.size)
-		}
-
-		if size == 0 {
-			continue
-		}
-
-		if got[1] != tc.match {
-			t.Errorf("error:\nhave: %s\nwant: %s", got[1], tc.match)
+	for str, want := range testCases {
+		if got := matchOrg(str); got != want {
+			t.Errorf("error:\nhave: %s\nwant: %s", got, want)
 		}
 	}
 }

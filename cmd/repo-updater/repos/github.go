@@ -384,7 +384,20 @@ func (s *GithubSource) listSearch(ctx context.Context, query string) (map[int64]
 }
 
 // regOrg is a regular expression that matches the pattern `org:<org-name>`
-var regOrg = regexp.MustCompile(`^org:(?P<org>[a-z0-9](?:-?[a-z0-9]){0,38})$`)
+// `<org-name>` follows the GitHub username convention:
+// - only hyphens and alphanumeric characters allowed.
+// - cannot begin/end with hyphen.
+// - up to 38 characters.
+var regOrg = regexp.MustCompile(`^org:(?P<org>[a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38})$`)
+
+// matchOrg extracts the org name from the pattern `org:<org-name>` if it exists.
+func matchOrg(q string) string {
+	match := regOrg.FindStringSubmatch(q)
+	if len(match) != 2 {
+		return ""
+	}
+	return match[1]
+}
 
 // listRepositoryQuery handles the `repositoryQuery` config option.
 // The supported keywords to select repositories are:
@@ -405,8 +418,11 @@ func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string) (m
 	}
 
 	// Special-casing for `org:<org-name>`
-	if match := regOrg.FindStringSubmatch(query); len(match) != 0 {
-		return s.listOrg(ctx, match[1])
+	// to directly use GitHub's org repo
+	// list API instead of the limited
+	// search API.
+	if org := matchOrg(query); org != "" {
+		return s.listOrg(ctx, org)
 	}
 
 	// Run the query as a GitHub advanced repository search
