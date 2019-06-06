@@ -43,6 +43,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Repository names are now treated as case-sensitive, fixing an issue where users saw `pq: duplicate key value violates unique constraint \"repo_name_unique\"` [#4283](https://github.com/sourcegraph/sourcegraph/issues/4283)
 - Fixed an issue with `sourcegraph/server` Docker deployments where syntax highlighting could produce `server closed idle connection` errors. [#4269](https://github.com/sourcegraph/sourcegraph/issues/4269)
 - Repositories containing submodules not on Sourcegraph will now load without error [#2947](https://github.com/sourcegraph/sourcegraph/issues/2947)
+- HTTP metrics in Prometheus/Grafana now distinguish between different types of GraphQL requests.
 
 ## 3.4.2
 
