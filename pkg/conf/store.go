@@ -2,7 +2,9 @@ package conf
 
 import (
 	"fmt"
+	"os"
 	"runtime/debug"
+	"strconv"
 	"sync"
 	"time"
 
@@ -126,6 +128,10 @@ func (s *Store) WaitUntilInitialized() {
 		deadlockTimeout := 5 * time.Minute
 		if IsDev(DeployType()) {
 			deadlockTimeout = 30 * time.Second
+			disable, _ := strconv.ParseBool(os.Getenv("DISABLE_CONF_DEADLOCK_DETECTOR"))
+			if disable {
+				deadlockTimeout = 24 * 365 * time.Hour
+			}
 		}
 
 		select {
