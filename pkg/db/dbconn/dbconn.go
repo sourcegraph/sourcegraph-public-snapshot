@@ -206,6 +206,7 @@ func configureConnectionPool(db *sql.DB) {
 	}
 	db.SetMaxOpenConns(maxOpen)
 	db.SetMaxIdleConns(maxOpen)
+	db.SetConnMaxLifetime(time.Minute)
 }
 
 func NewMigrate(db *sql.DB) *migrate.Migrate {
