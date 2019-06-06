@@ -2578,10 +2578,10 @@
     "@types/react" "*"
     "@types/storybook__react" "*"
 
-"@types/storybook__addon-options@4.0.1":
-  version "4.0.1"
-  resolved "https://registry.npmjs.org/@types/storybook__addon-options/-/storybook__addon-options-4.0.1.tgz#1f5b52ae64b8223ad1c1da394da0e51e89951592"
-  integrity sha512-o7MCVMfof+7O6iMeTJIRWnxUXnMEwAgpmom04OXe9d7CucllfRmIXgVqo9lPBgaxEvzOF/7brc8Hd0RkCysM+A==
+"@types/storybook__addon-options@4.0.2":
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/@types/storybook__addon-options/-/storybook__addon-options-4.0.2.tgz#72f905c2751f42758504cba3db3e0c32b047ae7b"
+  integrity sha512-xbgsn9p5Zh8iymhoBBr1Pn4QLzJiS+WH2dlsLKNoJzypqyWWGSUr/3D5Cv8safpCyvMoZW0NpnxILFUUOy35KQ==
   dependencies:
     "@types/storybook__react" "*"
 
