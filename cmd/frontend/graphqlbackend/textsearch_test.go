@@ -692,14 +692,14 @@ func Test_fixupLineMatch(t *testing.T) {
 	t.Run("line number stays the same", func(t *testing.T) {
 		s := "b"
 		lm := zoekt.LineMatch{
-			Line:          []byte(s),
-			LineStart:     1,
-			LineEnd:       1+len(s),
-			LineNumber:    1,
+			Line:       []byte(s),
+			LineStart:  1,
+			LineEnd:    1 + len(s),
+			LineNumber: 1,
 			LineFragments: []zoekt.LineFragmentMatch{
 				{
 					MatchLength: len(s),
-					Offset: 1,
+					Offset:      1,
 				},
 			},
 		}
@@ -733,14 +733,14 @@ func Test_fixupLineMatch(t *testing.T) {
 		props.Property("line number stays the same for line matches without newlines", prop.ForAll(
 			func(s string, start, lnum int) bool {
 				lm := zoekt.LineMatch{
-					Line:          []byte(s),
-					LineStart:     start,
-					LineEnd:       start + len(s),
-					LineNumber:    lnum,
+					Line:       []byte(s),
+					LineStart:  start,
+					LineEnd:    start + len(s),
+					LineNumber: lnum,
 					LineFragments: []zoekt.LineFragmentMatch{
 						{
 							MatchLength: 1,
-							Offset: 1,
+							Offset:      1,
 						},
 					},
 				}
