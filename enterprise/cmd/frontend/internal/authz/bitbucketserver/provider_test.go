@@ -48,7 +48,7 @@ func TestProvider_FetchAccount(t *testing.T) {
 			err:  `Bitbucket Server user with username="john" not found`,
 		},
 		{
-			name: "user found",
+			name: "user found by exact username match",
 			api: fakeBitbucketServerAPI{
 				users: []*bitbucketserver.User{
 					{ID: 1, EmailAddress: "john.doe@mycorp.com"},
@@ -107,12 +107,12 @@ type fakeBitbucketServerAPI struct {
 
 func (api fakeBitbucketServerAPI) Users(
 	ctx context.Context,
-	_ *bitbucketserver.PageToken,
+	pt *bitbucketserver.PageToken,
 	fs ...bitbucketserver.UserFilter,
 ) (
 	users []*bitbucketserver.User,
 	_ *bitbucketserver.PageToken,
-	errr error,
+	err error,
 ) {
 	for _, u := range api.users {
 		for _, f := range fs {
@@ -121,7 +121,29 @@ func (api fakeBitbucketServerAPI) Users(
 			}
 		}
 	}
-	return users, &bitbucketserver.PageToken{IsLastPage: true}, api.usersErr
+
+	// Pretend like the maxium allowed limit is 1 so that
+	// we exercise the pagination logic.
+	next := &bitbucketserver.PageToken{Limit: 1}
+
+	lo, hi := pt.NextPageStart, pt.NextPageStart+1
+	if lo > len(users) {
+		next.IsLastPage = true
+		return nil, next, nil
+	}
+
+	if hi > len(users) {
+		hi = len(users)
+		next.IsLastPage = true
+	} else {
+		next.NextPageStart = hi
+	}
+
+	page := users[lo:hi]
+	next.Size = len(page)
+	next.Start = lo
+
+	return page, next, api.usersErr
 }
 
 func (fakeBitbucketServerAPI) match(f bitbucketserver.UserFilter, u *bitbucketserver.User) bool {
