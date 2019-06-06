@@ -182,29 +182,38 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
 }
 
 /**
- * Scrapes the branch name from the branch select menu element
- * present on GitHub blob pages.
+ * Returns the file path for the current page. Must be on a blob page.
+ *
+ * Implementation details:
+ *
+ * - This scrapes the file path from the permalink on GitHub blob pages:
+ *
+ *     <a class="d-none js-permalink-shortcut" data-hotkey="y" href="/gorilla/mux/blob/ed099d42384823742bba0bf9a72b53b55c9e2e38/mux.go">Permalink</a>
+ *
+ * - We can't get the file path from the URL because the branch name can contain
+ *   slashes which make the boundary between the branch name and file path
+ *   ambiguous. For example:
+ *
+ *     https://github.com/sourcegraph/sourcegraph/blob/bext/release/cmd/frontend/internal/session/session.go
+ *
+ * TODO ideally, this should only scrape the code view itself.
  */
-export function getBranchName(): string {
-    const branchSelectMenu = document.querySelector('.branch-select-menu') as HTMLElement
-    if (!branchSelectMenu) {
-        throw new Error('Could not find .branch-select-menu')
+export function getFilePath(): string {
+    const permalink = document.querySelector<HTMLAnchorElement>('a.js-permalink-shortcut')
+    if (!permalink) {
+        throw new Error(`Unable to determine the file path because no a.js-permalink-shortcut element was found.`)
     }
-    const cssTruncateTarget = branchSelectMenu.querySelector('span.css-truncate-target') as HTMLElement
-    if (!cssTruncateTarget) {
-        throw new Error('Could not find span.css-truncate-target')
+    const url = new URL(permalink.href)
+    // <empty>/<user>/<repo>/blob/<commitID>/<path/to/file>
+    const [, , , , , ...path] = url.pathname.split('/')
+    if (path.length === 0) {
+        throw new Error(
+            `Unable to determine the file path because the a.js-permalink-shortcut element's href's path was ${
+                url.pathname
+            } (it is expected to be of the form /<user>/<repo>/blob/<commitID>/<path/to/file>).`
+        )
     }
-    if (!cssTruncateTarget.innerText.endsWith('…')) {
-        // The branch name is not truncated
-        return cssTruncateTarget.innerText
-    }
-    // When the branch name is truncated, it is stored in full
-    // in the select menu button's title attribute.
-    const selectButton = cssTruncateTarget.closest('.select-menu-button') as HTMLElement
-    if (!selectButton) {
-        throw new Error('Could not find .select-menu-button')
-    }
-    return selectButton.title
+    return path.join('/')
 }
 
 type GitHubURL =
