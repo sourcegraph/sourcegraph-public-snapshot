@@ -225,6 +225,9 @@ func NewMigrate(db *sql.DB) *migrate.Migrate {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// In case another process was faster and runs migrations, we will wait
+	// this long
+	m.LockTimeout = 5 * time.Minute
 
 	return m
 }
