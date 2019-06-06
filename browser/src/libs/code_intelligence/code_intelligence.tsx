@@ -500,7 +500,7 @@ export function handleCodeHost({
     const deleteRootRef = (uri: string) => {
         const currentRefCount = rootRefCounts.get(uri)
         if (!currentRefCount) {
-            throw new Error('No preexisting root refs')
+            throw new Error(`No preexisting root refs for uri ${uri}`)
         }
         const updatedRefCount = currentRefCount - 1
         if (updatedRefCount === 0) {
