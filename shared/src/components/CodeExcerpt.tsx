@@ -66,7 +66,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                             commitID,
                             filePath,
                             isLightTheme,
-                            disableTimeout: true,
+                            disableTimeout: false,
                         })
                     ),
                     catchError(error => [asError(error)])
