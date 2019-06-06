@@ -9,10 +9,12 @@ const tests = [
 ]
 
 describe('github/file_info', () => {
-    for (const [fixture, expectedFilePath] of tests) {
-        it(`getFilePath() finds the file path in ${fixture}`, async () => {
-            document.body.innerHTML = await readFile(`${__dirname}/__fixtures__/${fixture}`, 'utf-8')
-            expect(getFilePath()).toBe(expectedFilePath)
-        })
-    }
+    describe('getFilePath()', () => {
+        for (const [fixture, expectedFilePath] of tests) {
+            it(`finds the file path in ${fixture}`, async () => {
+                document.body.innerHTML = await readFile(`${__dirname}/__fixtures__/${fixture}`, 'utf-8')
+                expect(getFilePath()).toBe(expectedFilePath)
+            })
+        }
+    })
 })
