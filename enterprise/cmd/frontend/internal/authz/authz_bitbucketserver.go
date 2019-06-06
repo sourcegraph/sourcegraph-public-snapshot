@@ -6,7 +6,9 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	bbsauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -46,7 +48,7 @@ func bitbucketServerProvider(
 		return nil, nil
 	}
 
-	_, err := url.Parse(instanceURL)
+	baseURL, err := url.Parse(instanceURL)
 	if err != nil {
 		return nil, fmt.Errorf("Could not parse URL for BitbucketServer instance %q: %s", instanceURL, err)
 	}
@@ -58,7 +60,8 @@ func bitbucketServerProvider(
 
 	switch idp := a.IdentityProvider; {
 	case idp.Username != nil:
-		return nil, nil // TODO
+		cli := bitbucketserver.NewClient(baseURL, nil)
+		return bbsauthz.NewProvider(cli), nil
 	default:
 		return nil, fmt.Errorf("No identityProvider was specified")
 	}
