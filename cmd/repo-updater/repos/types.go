@@ -731,6 +731,15 @@ func sortedSliceLess(a, b []string) bool {
 	return true
 }
 
+// pick deterministically chooses between a and b a repo to keep and
+// discard. It is used when resolving conflicts on sourced repositories.
+func pick(a *Repo, b *Repo) (keep, discard *Repo) {
+	if a.Less(b) {
+		return a, b
+	}
+	return b, a
+}
+
 // Repos is an utility type with convenience methods for operating on lists of Repos.
 type Repos []*Repo
 
