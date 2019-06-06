@@ -125,6 +125,6 @@ describe('CodeExcerpt', () => {
             />
         )
         sinon.assert.calledOnce(fetchHighlightedFileLines)
-        expect(fetchHighlightedFileLines.args[0][0].disableTimeout === false).toBe(true)
+        sinon.assert.calledWithMatch(fetchHighlightedFileLines, { disableTimeout: false })
     })
 })
