@@ -481,7 +481,7 @@ export function handleCodeHost({
      * Will only cause `workspace.roots` to emit if no root with
      * the given `uri` existed.
      */
-    const addRootRef = (uri: string, inputRevision: string): void => {
+    const addRootRef = (uri: string, inputRevision: string | undefined): void => {
         rootRefCounts.set(uri, (rootRefCounts.get(uri) || 0) + 1)
         if (rootRefCounts.get(uri) === 1) {
             extensionsController.services.workspace.roots.next([
