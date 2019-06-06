@@ -24,13 +24,13 @@ jest.mock(
 )
 
 import { cleanup, getAllByText, getByText, render } from 'react-testing-library'
+import { of } from 'rxjs'
 import {
+    HIGHLIGHTED_FILE_LINES,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
-    HIGHLIGHTED_FILE_LINES,
 } from '../../../web/src/search/testHelpers'
 import { CodeExcerpt } from './CodeExcerpt'
-import { of } from 'rxjs'
 
 describe('CodeExcerpt', () => {
     afterAll(cleanup)
