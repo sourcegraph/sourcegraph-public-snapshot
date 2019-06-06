@@ -23,7 +23,7 @@ func bitbucketServerProviders(
 ) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		if p, err := bitbucketServerProvider(c.Authorization, c.Url, c.Token, cfg.Critical.AuthProviders); err != nil {
+		if p, err := bitbucketServerProvider(c.Authorization, c.Url, c.Username, c.Token, cfg.Critical.AuthProviders); err != nil {
 			seriousProblems = append(seriousProblems, err.Error())
 		} else if p != nil {
 			authzProviders = append(authzProviders, p)
@@ -41,7 +41,7 @@ func bitbucketServerProviders(
 
 func bitbucketServerProvider(
 	a *schema.BitbucketServerAuthorization,
-	instanceURL, token string,
+	instanceURL, username, token string,
 	ps []schema.AuthProviders,
 ) (authz.Provider, error) {
 	if a == nil {
@@ -61,6 +61,8 @@ func bitbucketServerProvider(
 	switch idp := a.IdentityProvider; {
 	case idp.Username != nil:
 		cli := bitbucketserver.NewClient(baseURL, nil)
+		cli.Username = username
+		cli.Token = token
 		return bbsauthz.NewProvider(cli), nil
 	default:
 		return nil, fmt.Errorf("No identityProvider was specified")
@@ -70,6 +72,6 @@ func bitbucketServerProvider(
 // ValidateBitbucketServerAuthz validates the authorization fields of the given BitbucketServer external
 // service config.
 func ValidateBitbucketServerAuthz(c *schema.BitbucketServerConnection, ps []schema.AuthProviders) error {
-	_, err := bitbucketServerProvider(c.Authorization, c.Url, c.Token, ps)
+	_, err := bitbucketServerProvider(c.Authorization, c.Url, c.Username, c.Token, ps)
 	return err
 }
