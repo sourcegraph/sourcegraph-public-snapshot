@@ -236,11 +236,10 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 		k := strings.ToLower(r.Name)
 		if old := byName[k]; old == nil {
 			byName[k] = r
-		} else if r.Less(old) {
-			delete(byID, old.ExternalRepo)
-			byName[k] = r
 		} else {
-			delete(byID, r.ExternalRepo)
+			keep, discard := pick(r, old)
+			byName[k] = keep
+			delete(byID, discard.ExternalRepo)
 		}
 	}
 
