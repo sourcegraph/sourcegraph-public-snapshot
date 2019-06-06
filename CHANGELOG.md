@@ -26,7 +26,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed repository search patterns which contain `.*`. Previously our optimizer would ignore `.*`, which in some cases would lead to our repository search excluding some repositories from the results.
 - Fixed an issue where the Phabricator native integration would be broken on recent Phabricator versions. This fix depends on v1.2 of the [Phabricator extension](https://github.com/sourcegraph/phabricator-extension).
 - Fixed an issue where the "Empty repository" banner would be shown on a repository page when starting to clone a repository.
-- Repositories containing submodules not on Sourcegraph will now load without error (#2947)
 - Prevent data inconsistency on cached archives due to restarts. (#4366)
 
 ## 3.4.3 (unreleased)
@@ -43,6 +42,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where Gitolite repositories would be inaccessible to non-admin users after upgrading to 3.3.0+ from an older version. [#4263](https://github.com/sourcegraph/sourcegraph/issues/4263)
 - Repository names are now treated as case-sensitive, fixing an issue where users saw `pq: duplicate key value violates unique constraint \"repo_name_unique\"` [#4283](https://github.com/sourcegraph/sourcegraph/issues/4283)
 - Fixed an issue with `sourcegraph/server` Docker deployments where syntax highlighting could produce `server closed idle connection` errors. [#4269](https://github.com/sourcegraph/sourcegraph/issues/4269)
+- Repositories containing submodules not on Sourcegraph will now load without error [#2947](https://github.com/sourcegraph/sourcegraph/issues/2947)
 
 ## 3.4.2
 
