@@ -1,4 +1,4 @@
-import { of, Subscription } from 'rxjs'
+import { of } from 'rxjs'
 import { toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
 import { Omit } from 'utility-types'
@@ -6,13 +6,8 @@ import { FileInfo } from './code_intelligence'
 import { CodeView, toCodeViewResolver, trackCodeViews } from './code_views'
 
 describe('code_views', () => {
-    let subscriptions = new Subscription()
     beforeEach(() => {
         document.body.innerHTML = ''
-    })
-    afterEach(() => {
-        subscriptions.unsubscribe()
-        subscriptions = new Subscription()
     })
     describe('trackCodeViews()', () => {
         const fileInfo: FileInfo = {
