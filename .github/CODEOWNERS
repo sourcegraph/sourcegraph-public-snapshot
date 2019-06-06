@@ -191,7 +191,7 @@ Dockerfile @sourcegraph/distribution
 
 # Documentation and homepage
 README.md @sqs
-/doc/ @sqs
+/doc/ @sqs @ryan-blunden
 /doc/dev/product/ @christinaforney
 /doc/dev/teams.md @beyang @nicksnyder
 /web/src/enterprise/dotcom/welcome/ @sqs
