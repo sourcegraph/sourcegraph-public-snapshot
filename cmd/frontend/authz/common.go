@@ -8,7 +8,7 @@ import (
 func ToRepos(src []*types.Repo) (dst map[Repo]struct{}) {
 	dst = make(map[Repo]struct{})
 	for _, r := range src {
-		rp := Repo{RepoName: r.Name, Metadata: r.Metadata}
+		rp := Repo{RepoName: r.Name}
 		if r.ExternalRepo != nil {
 			rp.ExternalRepoSpec = *r.ExternalRepo
 		}

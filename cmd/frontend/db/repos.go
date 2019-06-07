@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
@@ -15,11 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
@@ -123,8 +117,7 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 
 const getRepoByQueryFmtstr = `
 SELECT id, name, COALESCE(uri, ''), description, language, created_at,
-  updated_at, external_id, external_service_type, external_service_id,
-  metadata
+  updated_at, external_id, external_service_type, external_service_id
 FROM repo
 WHERE deleted_at IS NULL AND enabled = true AND %s`
 
@@ -140,7 +133,6 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 	for rows.Next() {
 		var repo types.Repo
 		var spec dbExternalRepoSpec
-		var metadata json.RawMessage
 
 		if err := rows.Scan(
 			&repo.ID,
@@ -151,32 +143,11 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 			&repo.CreatedAt,
 			&repo.UpdatedAt,
 			&spec.id, &spec.serviceType, &spec.serviceID,
-			&metadata,
 		); err != nil {
 			return nil, err
 		}
 
 		repo.ExternalRepo = spec.toAPISpec()
-
-		typ := strings.ToLower(repo.ExternalRepo.ServiceType)
-		switch typ {
-		case "github":
-			repo.Metadata = new(github.Repository)
-		case "gitlab":
-			repo.Metadata = new(gitlab.Project)
-		case "bitbucketserver":
-			repo.Metadata = new(bitbucketserver.Repo)
-		case "awscodecommit":
-			repo.Metadata = new(awscodecommit.Repository)
-		case "gitolite":
-			repo.Metadata = new(gitolite.Repo)
-		}
-
-		if repo.Metadata != nil {
-			if err := json.Unmarshal(metadata, repo.Metadata); err != nil {
-				return nil, errors.Wrapf(err, "failed to unmarshal %q metadata", typ)
-			}
-		}
 
 		repos = append(repos, &repo)
 	}
