@@ -208,9 +208,7 @@ export function getFilePath(): string {
     const [, , , , , ...path] = url.pathname.split('/')
     if (path.length === 0) {
         throw new Error(
-            `Unable to determine the file path because the a.js-permalink-shortcut element's href's path was ${
-                url.pathname
-            } (it is expected to be of the form /<user>/<repo>/blob/<commitID>/<path/to/file>).`
+            `Unable to determine the file path because the a.js-permalink-shortcut element's href's path was ${url.pathname} (it is expected to be of the form /<user>/<repo>/blob/<commitID>/<path/to/file>).`
         )
     }
     return path.join('/')

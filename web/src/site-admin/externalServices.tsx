@@ -803,31 +803,27 @@ const externalServiceAddVariants: Partial<
 }
 
 export const ALL_EXTERNAL_SERVICE_ADD_VARIANTS: AddExternalServiceMetadata[] = flatMap(
-    map(
-        ALL_EXTERNAL_SERVICES,
-        (
-            service: ExternalServiceKindMetadata,
-            kindString: string
-        ): AddExternalServiceMetadata | AddExternalServiceMetadata[] => {
-            const kind = kindString as GQL.ExternalServiceKind
-            if (externalServiceAddVariants[kind]) {
-                const patches = externalServiceAddVariants[kind]
-                return map(patches, (patch, variantString) => {
-                    const variant = variantString as ExternalServiceVariant
-                    return {
-                        ...service,
-                        serviceKind: kind,
-                        variant,
-                        ...patch,
-                    }
-                })
-            }
-            return {
-                ...service,
-                serviceKind: kind,
-            }
+    map(ALL_EXTERNAL_SERVICES, (service: ExternalServiceKindMetadata, kindString: string):
+        | AddExternalServiceMetadata
+        | AddExternalServiceMetadata[] => {
+        const kind = kindString as GQL.ExternalServiceKind
+        if (externalServiceAddVariants[kind]) {
+            const patches = externalServiceAddVariants[kind]
+            return map(patches, (patch, variantString) => {
+                const variant = variantString as ExternalServiceVariant
+                return {
+                    ...service,
+                    serviceKind: kind,
+                    variant,
+                    ...patch,
+                }
+            })
         }
-    )
+        return {
+            ...service,
+            serviceKind: kind,
+        }
+    })
 )
 
 export function getExternalService(

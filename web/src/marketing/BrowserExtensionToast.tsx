@@ -61,9 +61,7 @@ abstract class BrowserExtensionToast extends React.Component<Props, State> {
             <Toast
                 icon={<img className="logo-icon" src={this.props.browserLogoAsset} />}
                 title="Get Sourcegraph on GitHub"
-                subtitle={`Get code intelligence while browsing GitHub and reading PRs with the Sourcegraph ${
-                    this.props.browserName
-                } extension`}
+                subtitle={`Get code intelligence while browsing GitHub and reading PRs with the Sourcegraph ${this.props.browserName} extension`}
                 cta={
                     <a
                         target="_blank"

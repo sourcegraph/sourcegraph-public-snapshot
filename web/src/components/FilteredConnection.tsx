@@ -374,7 +374,7 @@ interface FilteredConnectionState<C extends Connection<N>, N> extends Connection
 /**
  * See https://facebook.github.io/relay/graphql/connections.htm.
  */
-export interface Connection<N> {
+export interface Connection<N,> {
     /**
      * The list of items (nodes) in this connection's current page.
      */
