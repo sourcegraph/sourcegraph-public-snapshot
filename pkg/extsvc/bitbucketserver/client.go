@@ -2,7 +2,9 @@ package bitbucketserver
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -10,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gomodule/oauth1/oauth"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -59,6 +62,10 @@ type Client struct {
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
 	// of rate limiting in HTTP response headers).
 	RateLimit *rate.Limiter
+
+	// OAuth client used to authenticate requests, if set via SetOAuth.
+	// Takes precedence over Token and Username / Password authentication.
+	oauth *oauth.Client
 }
 
 // NewClient returns a new Bitbucket Server API client at url. If a nil
@@ -77,6 +84,44 @@ func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
 		URL:        url,
 		RateLimit:  rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests),
 	}
+}
+
+// SetOAuth enables OAuth authentication in a Client, using the given consumer
+// key to identify with the Bitbucket Server API and the request signing RSA key
+// to authenticate requests. It parse the given PEM encoded private key,
+// returning an error in case of failure.
+//
+// When using OAuth authentication, it's possible to impersonate any Bitbucket
+// Server API user by passing a ?user_id=$username query parameter. This requires
+// the Application Link in the Bitbucket Server API to be configured with 2 legged
+// OAuth and for it to allow user impersonation.
+func (c *Client) SetOAuth(consumerKey string, signingKey []byte) error {
+	block, _ := pem.Decode(signingKey)
+	if block == nil {
+		return errors.New("failed to parse PEM block containing the signing key")
+	}
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return err
+	}
+
+	c.oauth = &oauth.Client{
+		Credentials:     oauth.Credentials{Token: consumerKey},
+		PrivateKey:      key,
+		SignatureMethod: oauth.RSASHA1,
+	}
+
+	return nil
+}
+
+// Sudo returns a copy of the Client authenticated as the Bitbucket Server user with
+// the given username. This only works when using OAuth authentication and if the
+// Application Link in Bitbucket Server is configured to allow user impersonation.
+func (c *Client) Sudo(username string) *Client {
+	sudo := *c
+	sudo.Username = username
+	return &sudo
 }
 
 // UserFilters is a list of UserFilter that is ANDed together.
@@ -245,11 +290,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	req.URL = c.URL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
-	// Authenticate request, preferring token.
-	if c.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+c.Token)
-	} else if c.Username != "" || c.Password != "" {
-		req.SetBasicAuth(c.Username, c.Password)
+	if err := c.authenticate(req); err != nil {
+		return err
 	}
 
 	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(),
@@ -279,6 +321,33 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	return json.NewDecoder(resp.Body).Decode(result)
+}
+
+func (c *Client) authenticate(req *http.Request) error {
+	// Authenticate request, in order of preference.
+	if c.oauth != nil {
+		if err := c.oauth.SetAuthorizationHeader(
+			req.Header,
+			&oauth.Credentials{Token: ""}, // Token must be empty
+			req.Method,
+			req.URL,
+			nil,
+		); err != nil {
+			return err
+		}
+
+		if c.Username != "" {
+			qry := req.URL.Query()
+			qry.Set("user_id", c.Username)
+			req.URL.RawQuery = qry.Encode()
+		}
+	} else if c.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Token)
+	} else if c.Username != "" || c.Password != "" {
+		req.SetBasicAuth(c.Username, c.Password)
+	}
+
+	return nil
 }
 
 func parseQueryStrings(qs ...string) (url.Values, error) {
