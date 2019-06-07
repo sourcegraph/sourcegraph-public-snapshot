@@ -218,4 +218,5 @@ export const bitbucketServerCodeHost: CodeHost = {
         className: 'aui-button',
         iconClassName: 'aui-icon',
     },
+    codeViewsRequireTokenization: false,
 }

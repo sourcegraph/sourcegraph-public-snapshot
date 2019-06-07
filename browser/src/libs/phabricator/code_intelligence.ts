@@ -186,4 +186,5 @@ export const phabricatorCodeHost: CodeHost = {
     hoverOverlayClassProps: {
         actionItemClassName: 'button grey hover-overlay-action-item--phabricator',
     },
+    codeViewsRequireTokenization: true,
 }
