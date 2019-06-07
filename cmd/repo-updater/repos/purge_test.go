@@ -3,48 +3,37 @@ package repos
 import (
 	"testing"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 )
 
-func Test_shouldKeep(t *testing.T) {
-	type args struct {
-		info *protocol.RepoInfo
-	}
-	tests := []struct {
-		name     string
-		args     args
-		wantKeep bool
-	}{
-		{
-			name: "don't keep in the case of nil info",
-			args: args{info: nil},
-			// If we don't know anything about it then the answer will never change, so if we keep it then
-			// we will have to keep it forever.
-			wantKeep: false,
-		},
-		{
-			name: "don't keep in the case of default fields",
-			args: args{info: &protocol.RepoInfo{}},
-			// We shouldn't keep in this case for the same reason as "nil info" above.
-			wantKeep: false,
-		},
-		{
-			name:     "keep if it was just cloned",
-			args:     args{info: &protocol.RepoInfo{CloneTime: timePointer(time.Now())}},
-			wantKeep: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, _ := shouldKeep(tt.args.info)
-			if got != tt.wantKeep {
-				t.Errorf("shouldKeep() got = %v, want %v", got, tt.wantKeep)
-			}
-		})
-	}
-}
+func Test_isSaturdayNight(t *testing.T) {
+	cases := map[string]bool{
+		"2012-11-01T22:08:41+00:00": false,
+		"2012-11-03T22:08:41+00:00": true,
 
-func timePointer(t time.Time) *time.Time {
-	return &t
+		// Boundary conditions
+		"2012-11-03T21:59:59+00:00": false,
+		"2012-11-03T22:00:00+00:00": true,
+		"2012-11-03T22:59:59+00:00": true,
+		"2012-11-03T23:00:00+00:00": false,
+
+		// Not 10am
+		"2012-11-03T10:05:00+00:00": false,
+
+		// Time zone matters
+		"2012-11-03T21:59:59+02:00": false,
+		"2012-11-03T22:00:00+02:00": true,
+	}
+	for ts, want := range cases {
+		tm, err := time.Parse(time.RFC3339, ts)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := isSaturdayNight(tm); want != got {
+			if got {
+				t.Errorf("%s (%s) should not be saturday night", ts, tm.Format("Mon 15:04"))
+			} else {
+				t.Errorf("%s (%s) should be saturday night", ts, tm.Format("Mon 15:04"))
+			}
+		}
+	}
 }
