@@ -181,6 +181,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * CSS classes for the completion widget to customize styling
      */
     completionWidgetClassProps?: CompletionWidgetClassProps
+
+    /**
+     * Whether or not code views need to be tokenized. Defaults to false.
+     */
+    codeViewsRequireTokenization?: boolean
 }
 
 export interface FileInfo {
