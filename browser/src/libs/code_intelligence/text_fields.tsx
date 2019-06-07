@@ -34,11 +34,6 @@ export function handleTextFields(
         trackViews(textFieldResolvers || []),
         observeOn(animationFrameScheduler)
     )
-    interface TextFieldState {
-        subscriptions: Subscription
-    }
-    /** Map from text field element to the state associated with it (to be updated or removed) */
-    const textFieldStates = new Map<HTMLElement, TextFieldState>()
 
     // Don't use lodash.uniqueId because that makes it harder to hard-code expected URI values in
     // test code (because the URIs would change depending on test execution order).
@@ -46,31 +41,12 @@ export function handleTextFields(
     const nextModelUri = () => `${COMMENT_URI_SCHEME}://${seq++}`
 
     return textFields.subscribe(textFieldEvent => {
-        console.log(`Text field ${textFieldEvent.type}`, { textFieldEvent })
-
-        // Handle added or removed text fields.
-        if (textFieldEvent.type === 'added' && !textFieldStates.has(textFieldEvent.element)) {
-            const textFieldState: TextFieldState = {
-                subscriptions: new Subscription(),
-            }
-            textFieldStates.set(textFieldEvent.element, textFieldState)
-
-            // Start 2-way syncing the text field with an editor and model.
-            textFieldState.subscriptions.add(
-                synchronizeTextField(
-                    { extensionsController },
-                    { completionWidgetClassProps },
-                    nextModelUri,
-                    textFieldEvent
-                )
-            )
-        } else if (textFieldEvent.type === 'removed') {
-            const textFieldState = textFieldStates.get(textFieldEvent.element)
-            if (textFieldState) {
-                textFieldState.subscriptions.unsubscribe()
-                textFieldStates.delete(textFieldEvent.element)
-            }
-        }
+        console.log('Text field added', { textFieldEvent })
+        textFieldEvent.subscriptions.add(() => console.log('Text field removed', { textFieldEvent }))
+        // Start 2-way syncing the text field with an editor and model.
+        textFieldEvent.subscriptions.add(
+            synchronizeTextField({ extensionsController }, { completionWidgetClassProps }, nextModelUri, textFieldEvent)
+        )
     })
 }
 
