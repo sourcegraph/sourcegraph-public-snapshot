@@ -385,10 +385,10 @@ func (s *GithubSource) listSearch(ctx context.Context, query string) (map[int64]
 
 // regOrg is a regular expression that matches the pattern `org:<org-name>`
 // `<org-name>` follows the GitHub username convention:
-// - only hyphens and alphanumeric characters allowed.
+// - only single hyphens and alphanumeric characters allowed.
 // - cannot begin/end with hyphen.
 // - up to 38 characters.
-var regOrg = regexp.MustCompile(`^org:(?P<org>[a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38})$`)
+var regOrg = regexp.MustCompile(`^org:([a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38})$`)
 
 // matchOrg extracts the org name from the pattern `org:<org-name>` if it exists.
 func matchOrg(q string) string {

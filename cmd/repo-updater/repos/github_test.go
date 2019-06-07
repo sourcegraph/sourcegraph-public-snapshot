@@ -132,6 +132,7 @@ func TestMatchOrg(t *testing.T) {
 		"org:gorilla":          "gorilla",
 		"org:golang-migrate":   "golang-migrate",
 		"org:sourcegraph-":     "",
+		"org:source--graph":    "",
 		"org: sourcegraph":     "",
 		"org:$ourcegr@ph":      "",
 		"sourcegraph":          "",
