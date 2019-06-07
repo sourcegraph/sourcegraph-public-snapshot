@@ -732,6 +732,27 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * A repository.
+     */
+    interface Repository {
+        /**
+         * The name of the repository on the Sourcegraph instance.
+         *
+         * This field may be `null` in the browser extension when visiting private repositories
+         * if {@link internal#sourcegraphURL} is Sourcegraph.com.
+         */
+        readonly name: string | null
+        /**
+         * The type of external service where this repository resides.
+         */
+        readonly externalServiceType: 'github' | 'gitlab' | 'bitbucketServer' | 'awscodecommit' | 'gitolite' | 'other'
+        /**
+         * The url of this repository on its code host, eg. `https://github/sourcegraph/sourcegraph`
+         */
+        readonly url: URL
+    }
+
+    /**
      * A workspace root is a directory that has been added to a workspace. A workspace can have zero or more roots.
      * Often, each root is the root directory of a repository.
      */
@@ -744,6 +765,11 @@ declare module 'sourcegraph' {
          * @example git://github.com/sourcegraph/sourcegraph?sha#mydir1/mydir2
          */
         readonly uri: URL
+
+        /**
+         * The root's associated repository, if any.
+         */
+        readonly repository?: Repository
     }
 
     /**
