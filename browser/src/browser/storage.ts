@@ -25,9 +25,8 @@ export const observeStorageKey = <K extends keyof StorageItems>(
         fromBrowserEvent(storage.onChanged).pipe(
             filter(([, name]) => areaName === name),
             map(([changes]) => changes),
-            filter(
-                (changes): changes is { [k in K]: browser.storage.StorageChange<StorageItems[k]> } =>
-                    changes.hasOwnProperty(key)
+            filter((changes): changes is { [k in K]: browser.storage.StorageChange<StorageItems[k]> } =>
+                changes.hasOwnProperty(key)
             ),
             map(changes => changes[key].newValue)
         )

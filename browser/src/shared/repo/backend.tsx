@@ -85,7 +85,7 @@ export const resolveRev = memoizeObservable(
     makeRepoURI
 )
 
-export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observable<T> {
+export function retryWhenCloneInProgressError<T,>(): (v: Observable<T>) => Observable<T> {
     return (maybeErrors: Observable<T>) =>
         maybeErrors.pipe(
             retryWhen(errors =>

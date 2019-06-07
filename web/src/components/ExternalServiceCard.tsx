@@ -54,9 +54,7 @@ export class ExternalServiceCard extends React.PureComponent<ExternalServiceCard
         if (this.props.to) {
             return (
                 <LinkOrButton
-                    className={`external-service-card--${this.props.iconBrandColor} linked-external-service-card--${
-                        this.props.iconBrandColor
-                    } linked-external-service-card`}
+                    className={`external-service-card--${this.props.iconBrandColor} linked-external-service-card--${this.props.iconBrandColor} linked-external-service-card`}
                     to={this.props.to}
                 >
                     {cardContent}

@@ -210,9 +210,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     private randomizePassword = () => {
         if (
             !window.confirm(
-                `Reset the password for ${
-                    this.props.node.username
-                } to a random password? The user must reset their password to sign in again.`
+                `Reset the password for ${this.props.node.username} to a random password? The user must reset their password to sign in again.`
             )
         ) {
             return

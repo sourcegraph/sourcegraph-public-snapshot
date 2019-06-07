@@ -179,9 +179,7 @@ function extensionsWithMatchedActivationEvent(
                 const match = /^sourcegraph\/lang-(.*)$/.exec(x.id)
                 if (match) {
                     console.warn(
-                        `Extension ${x.id} has been renamed to sourcegraph/${match[1]}. It's safe to remove ${
-                            x.id
-                        } from your settings.`
+                        `Extension ${x.id} has been renamed to sourcegraph/${match[1]}. It's safe to remove ${x.id} from your settings.`
                     )
                 } else {
                     console.warn(`Extension ${x.id} was not found. Remove it from settings to suppress this warning.`)

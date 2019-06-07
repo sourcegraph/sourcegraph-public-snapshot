@@ -181,18 +181,16 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                                         previewLoading: false,
                                     })
                                 ),
-                                catchError(
-                                    (error): Update[] => {
-                                        console.error(error)
-                                        return [
-                                            state => ({
-                                                ...state,
-                                                error: new Error('Error rendering Markdown: ' + error.message),
-                                                previewLoading: false,
-                                            }),
-                                        ]
-                                    }
-                                )
+                                catchError((error): Update[] => {
+                                    console.error(error)
+                                    return [
+                                        state => ({
+                                            ...state,
+                                            error: new Error('Error rendering Markdown: ' + error.message),
+                                            previewLoading: false,
+                                        }),
+                                    ]
+                                })
                             )
                         )
                     )
@@ -226,18 +224,16 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                                     })
                                 ),
                                 tap(() => editorResets.next()),
-                                catchError(
-                                    (error): Update[] => {
-                                        console.error(error)
-                                        return [
-                                            state => ({
-                                                ...state,
-                                                error: asError(error),
-                                                submitting: false,
-                                            }),
-                                        ]
-                                    }
-                                )
+                                catchError((error): Update[] => {
+                                    console.error(error)
+                                    return [
+                                        state => ({
+                                            ...state,
+                                            error: asError(error),
+                                            submitting: false,
+                                        }),
+                                    ]
+                                })
                             )
                         )
                     )
