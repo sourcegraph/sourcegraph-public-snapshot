@@ -100,7 +100,7 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
                 dom: diffDomFunctions,
                 positionEvents: this.codeElements.pipe(
                     filter(isDefined),
-                    findPositionsFromEvents({ domFunctions: diffDomFunctions, tokenize: false })
+                    findPositionsFromEvents({ domFunctions: diffDomFunctions })
                 ),
                 positionJumps: NEVER, // TODO support diff URLs
                 resolveContext: hoveredToken => {
