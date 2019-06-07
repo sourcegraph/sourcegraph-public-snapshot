@@ -5,17 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"net/url"
-	"os"
-	"path/filepath"
 	"reflect"
-	"regexp"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -82,7 +77,7 @@ func TestUserFilters(t *testing.T) {
 }
 
 func TestClient_Users(t *testing.T) {
-	cli, save := newClient(t, "Users")
+	cli, save := bitbucketserver.NewTestClient(t, "Users", *update)
 	defer save()
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
@@ -256,44 +251,4 @@ func TestClient_Users(t *testing.T) {
 			}
 		})
 	}
-}
-
-func newClient(t testing.TB, name string) (*bitbucketserver.Client, func()) {
-	t.Helper()
-
-	cassete := filepath.Join("testdata/vcr/", normalize(name))
-	rec, err := httptestutil.NewRecorder(cassete, *update)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
-	if instanceURL == "" {
-		instanceURL = "http://localhost:7990"
-	}
-
-	u, err := url.Parse(instanceURL)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cli := bitbucketserver.NewClient(u, hc)
-	cli.Token = os.Getenv("BITBUCKET_SERVER_TOKEN")
-
-	return cli, func() {
-		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
-		}
-	}
-}
-
-var normalizer = regexp.MustCompile("[^A-Za-z0-9-]+")
-
-func normalize(path string) string {
-	return normalizer.ReplaceAllLiteralString(path, "-")
 }

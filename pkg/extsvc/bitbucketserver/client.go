@@ -1,11 +1,13 @@
 package bitbucketserver
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -227,6 +229,35 @@ func (c *Client) Users(ctx context.Context, pageToken *PageToken, fs ...UserFilt
 	return users, next, err
 }
 
+// CreateUser creates the given User returning an error in case of failure.
+func (c *Client) CreateUser(ctx context.Context, u *User) error {
+	qry := url.Values{
+		"name":              {u.Name},
+		"password":          {u.Password},
+		"displayName":       {u.DisplayName},
+		"emailAddress":      {u.EmailAddress},
+		"addToDefaultGroup": {"false"},
+	}
+
+	err := c.send(ctx, "POST", "rest/api/1.0/admin/users", qry, nil, u)
+	if err != nil {
+		return err
+	}
+
+	return c.send(ctx, "PUT", "rest/api/1.0/admin/users", qry, u, u)
+}
+
+// CreateRepo creates the given Repo returning an error in case of failure.
+func (c *Client) CreateRepo(ctx context.Context, r *Repo) error {
+	path := "rest/api/1.0/projects/" + r.Project.Key + "/repos"
+	return c.send(ctx, "POST", path, nil, r, r)
+}
+
+// CreateProject creates the given Project returning an error in case of failure.
+func (c *Client) CreateProject(ctx context.Context, p *Project) error {
+	return c.send(ctx, "POST", "rest/api/1.0/projects", nil, p, p)
+}
+
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
 	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 	req, err := http.NewRequest("GET", u, nil)
@@ -286,6 +317,28 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	return &next, nil
 }
 
+func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result interface{}) error {
+	if qry == nil {
+		qry = make(url.Values)
+	}
+
+	var body io.ReadWriter
+	if payload != nil {
+		body = new(bytes.Buffer)
+		if err := json.NewEncoder(body).Encode(payload); err != nil {
+			return err
+		}
+	}
+
+	u := url.URL{Path: path, RawQuery: qry.Encode()}
+	req, err := http.NewRequest(method, u.String(), body)
+	if err != nil {
+		return err
+	}
+
+	return c.do(ctx, req, result)
+}
+
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) error {
 	req.URL = c.URL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -316,7 +369,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return errors.WithStack(&httpError{URL: req.URL, StatusCode: resp.StatusCode})
 	}
 
@@ -452,13 +505,14 @@ const (
 
 // User account in a Bitbucket Server instance.
 type User struct {
-	Name         string `json:"name"`
-	EmailAddress string `json:"emailAddress"`
-	ID           int    `json:"id"`
-	DisplayName  string `json:"displayName"`
-	Active       bool   `json:"active"`
-	Slug         string `json:"slug"`
-	Type         string `json:"type"`
+	Name         string `json:"name,omitempty"`
+	Password     string `json:"-"`
+	EmailAddress string `json:"emailAddress,omitempty"`
+	ID           int    `json:"id,omitempty"`
+	DisplayName  string `json:"displayName,omitempty"`
+	Active       bool   `json:"active,omitempty"`
+	Slug         string `json:"slug,omitempty"`
+	Type         string `json:"type,omitempty"`
 }
 
 type Repo struct {

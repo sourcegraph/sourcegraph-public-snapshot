@@ -2,15 +2,16 @@ package bitbucketserver
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"flag"
 	"fmt"
+	"os"
 	"reflect"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -18,17 +19,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 )
 
+var update = flag.Bool("update", false, "update testdata")
+
 func TestProvider_RepoPerms(t *testing.T) {
-	codeHost := extsvc.CodeHost{
-		ServiceType: bitbucketserver.ServiceType,
-		ServiceID:   "https://bitbucketserver.mycorp.com",
+	cli, save := bitbucketserver.NewTestClient(t, "RepoPerms", *update)
+	defer save()
+
+	key, err := base64.StdEncoding.DecodeString(os.Getenv("BITBUCKET_SERVER_KEY"))
+	if err == nil {
+		if err := cli.SetOAuth("sourcegraph", key); err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	externalRepo := func(id string) api.ExternalRepoSpec {
+	codeHost := extsvc.CodeHost{
+		ServiceType: bitbucketserver.ServiceType,
+		ServiceID:   os.Getenv("BITBUCKET_SERVER_URL"),
+	}
+
+	externalRepo := func(r *bitbucketserver.Repo) api.ExternalRepoSpec {
 		return api.ExternalRepoSpec{
 			ServiceType: codeHost.ServiceType,
 			ServiceID:   codeHost.ServiceID,
-			ID:          id,
+			ID:          strconv.Itoa(r.ID),
 		}
 	}
 
@@ -46,9 +59,26 @@ func TestProvider_RepoPerms(t *testing.T) {
 		}
 	}
 
+	ctx := context.Background()
+	users := map[string]*bitbucketserver.User{}
+
+	for _, u := range []*bitbucketserver.User{
+		{Name: "john1", DisplayName: "Mr. John 1", EmailAddress: "john1@mycorp.com"},
+		{Name: "john2", DisplayName: "Mr. John 2", EmailAddress: "john2@mycorp.com"},
+		{Name: "john3", DisplayName: "Mr. John 3", EmailAddress: "john3@mycorp.com"},
+	} {
+		u.Password = "password"
+		if err := cli.CreateUser(ctx, u); err != nil {
+			t.Fatal(err)
+		}
+		users[u.Name] = u
+	}
+
+	// projects := map[string]*bitbucketserver.Project{}
+	repos := map[string]*bitbucketserver.Repo{}
+
 	for _, tc := range []struct {
 		name  string
-		api   fakeBitbucketServerAPI
 		ctx   context.Context
 		acct  *extsvc.ExternalAccount
 		repos []authz.Repo
@@ -61,17 +91,15 @@ func TestProvider_RepoPerms(t *testing.T) {
 			repos: []authz.Repo{
 				{
 					RepoName:         "foo",
-					ExternalRepoSpec: externalRepo("foo"),
+					ExternalRepoSpec: externalRepo(repos["foo"]),
 				},
 				{
 					RepoName:         "bar",
-					ExternalRepoSpec: externalRepo("bar"),
-					Metadata:         &bitbucketserver.Repo{Public: false},
+					ExternalRepoSpec: externalRepo(repos["bar"]),
 				},
 				{
 					RepoName:         "baz",
-					ExternalRepoSpec: externalRepo("baz"),
-					Metadata:         &bitbucketserver.Repo{Public: true},
+					ExternalRepoSpec: externalRepo(repos["baz"]),
 				},
 			},
 			perms: map[api.RepoName]map[authz.Perm]bool{
@@ -82,33 +110,19 @@ func TestProvider_RepoPerms(t *testing.T) {
 		},
 		{
 			name: "authenticated user",
-			api: fakeBitbucketServerAPI{
-				perms: map[string]map[string]bitbucketserver.Perm{
-					"john": {
-						"foo": bitbucketserver.PermRepoRead,
-						"bar": bitbucketserver.PermRepoRead,
-					},
-				},
-				users: []*bitbucketserver.User{
-					{ID: 1, EmailAddress: "john.doe@mycorp.com"},
-					{ID: 2, DisplayName: "mr. john"},
-					{ID: 3, Name: "john-doe"},
-					{ID: 4, Name: "john"}, // This one should be returned.
-				},
-			},
-			acct: externalAccount(&bitbucketserver.User{ID: 4, Name: "john"}),
+			acct: externalAccount(users["john4"]),
 			repos: []authz.Repo{
 				{
 					RepoName:         "foo",
-					ExternalRepoSpec: externalRepo("foo"),
+					ExternalRepoSpec: externalRepo(repos["foo"]),
 				},
 				{
 					RepoName:         "bar",
-					ExternalRepoSpec: externalRepo("bar"),
+					ExternalRepoSpec: externalRepo(repos["bar"]),
 				},
 				{
 					RepoName:         "baz",
-					ExternalRepoSpec: externalRepo("baz"),
+					ExternalRepoSpec: externalRepo(repos["baz"]),
 				},
 			},
 			perms: map[api.RepoName]map[authz.Perm]bool{
@@ -120,29 +134,19 @@ func TestProvider_RepoPerms(t *testing.T) {
 		{
 			// When failing to contact the API, block access by default.
 			name: "authenticated user - errors",
-			api: fakeBitbucketServerAPI{
-				err: errors.New("boom"),
-				perms: map[string]map[string]bitbucketserver.Perm{
-					"john": {
-						"foo": bitbucketserver.PermRepoRead,
-						"bar": bitbucketserver.PermRepoRead,
-					},
-				},
-				users: []*bitbucketserver.User{{ID: 4, Name: "john"}},
-			},
-			acct: externalAccount(&bitbucketserver.User{ID: 4, Name: "john"}),
+			acct: externalAccount(users["john4"]),
 			repos: []authz.Repo{
 				{
 					RepoName:         "foo",
-					ExternalRepoSpec: externalRepo("foo"),
+					ExternalRepoSpec: externalRepo(repos["foo"]),
 				},
 				{
 					RepoName:         "bar",
-					ExternalRepoSpec: externalRepo("bar"),
+					ExternalRepoSpec: externalRepo(repos["bar"]),
 				},
 				{
 					RepoName:         "baz",
-					ExternalRepoSpec: externalRepo("baz"),
+					ExternalRepoSpec: externalRepo(repos["baz"]),
 				},
 			},
 			perms: map[api.RepoName]map[authz.Perm]bool{
@@ -166,7 +170,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 				repos[r] = struct{}{}
 			}
 
-			p := Provider{api: tc.api, codeHost: &codeHost}
+			p := Provider{client: cli, codeHost: &codeHost}
 			perms, err := p.RepoPerms(tc.ctx, tc.acct, repos)
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
@@ -181,6 +185,9 @@ func TestProvider_RepoPerms(t *testing.T) {
 }
 
 func TestProvider_FetchAccount(t *testing.T) {
+	cli, save := bitbucketserver.NewTestClient(t, "FetchAccount", *update)
+	defer save()
+
 	codeHost := extsvc.CodeHost{
 		ServiceType: bitbucketserver.ServiceType,
 		ServiceID:   "https://bitbucketserver.mycorp.com",
@@ -188,7 +195,6 @@ func TestProvider_FetchAccount(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		api  fakeBitbucketServerAPI
 		ctx  context.Context
 		user *types.User
 		acct *extsvc.ExternalAccount
@@ -201,27 +207,12 @@ func TestProvider_FetchAccount(t *testing.T) {
 		},
 		{
 			name: "user not found",
-			api: fakeBitbucketServerAPI{
-				users: []*bitbucketserver.User{
-					{EmailAddress: "john.doe@mycorp.com"},
-					{DisplayName: "mr. john"},
-					{Name: "john-doe"},
-				},
-			},
 			user: &types.User{Username: "john"},
 			acct: nil,
 			err:  `no user found matching the given filters`,
 		},
 		{
 			name: "user found by exact username match",
-			api: fakeBitbucketServerAPI{
-				users: []*bitbucketserver.User{
-					{ID: 1, EmailAddress: "john.doe@mycorp.com"},
-					{ID: 2, DisplayName: "mr. john"},
-					{ID: 3, Name: "john-doe"},
-					{ID: 4, Name: "john"}, // This one should be returned.
-				},
-			},
 			user: &types.User{ID: 42, Username: "john"},
 			acct: &extsvc.ExternalAccount{
 				UserID: 42,
@@ -251,7 +242,7 @@ func TestProvider_FetchAccount(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			p := Provider{api: tc.api, codeHost: &codeHost}
+			p := Provider{client: cli, codeHost: &codeHost}
 			acct, err := p.FetchAccount(tc.ctx, tc.user, nil)
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
@@ -263,73 +254,6 @@ func TestProvider_FetchAccount(t *testing.T) {
 			}
 		})
 	}
-}
-
-type fakeBitbucketServerAPI struct {
-	// username -> repo id -> permission
-	perms map[string]map[string]bitbucketserver.Perm
-	users []*bitbucketserver.User
-	err   error // Error to be returned in a Users call
-}
-
-func (api fakeBitbucketServerAPI) Users(
-	ctx context.Context,
-	pt *bitbucketserver.PageToken,
-	fs ...bitbucketserver.UserFilter,
-) (
-	users []*bitbucketserver.User,
-	_ *bitbucketserver.PageToken,
-	err error,
-) {
-	for _, u := range api.users {
-		ok := true
-		for _, f := range fs {
-			ok = ok && api.match(f, u)
-		}
-		if ok {
-			users = append(users, u)
-		}
-	}
-
-	// Pretend like the maxium allowed limit is 1 so that
-	// we exercise the pagination logic.
-	next := &bitbucketserver.PageToken{Limit: 1}
-
-	lo, hi := pt.NextPageStart, pt.NextPageStart+1
-	if lo > len(users) {
-		next.IsLastPage = true
-		return nil, next, nil
-	}
-
-	if hi > len(users) {
-		hi = len(users)
-		next.IsLastPage = true
-	} else {
-		next.NextPageStart = hi
-	}
-
-	page := users[lo:hi]
-	next.Size = len(page)
-	next.Start = lo
-
-	return page, next, api.err
-}
-
-func (api fakeBitbucketServerAPI) match(f bitbucketserver.UserFilter, u *bitbucketserver.User) bool {
-	if f.Filter != "" {
-		return strings.Contains(u.Name, f.Filter) ||
-			strings.Contains(u.EmailAddress, f.Filter) ||
-			strings.Contains(u.DisplayName, f.Filter)
-	}
-
-	if f.Permission != (bitbucketserver.PermissionFilter{}) {
-		if repos := api.perms[u.Name]; repos != nil {
-			return repos[f.Permission.RepositoryID] == f.Permission.Root
-		}
-		return false
-	}
-
-	panic("filter not handled")
 }
 
 func marshalJSON(v interface{}) []byte {
