@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"testing"
@@ -57,6 +58,17 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			}
 		}
 	}
+
+	const bogusPrivateKey = `-----BEGIN RSA PRIVATE KEY-----
+MIIBPAIBAAJBAPJHijktmT1IKaGta5Eep3AZ9CeOeL8jPDIFT7wQgKZmt3EFqDhB
+Own+QUHJuK9fovRDNJeVL2oY5BOIz4rw/G0CAwEAAQJBAMA+J92K4wcPVYlmc+3o
+pu96iJNCp2jy6na+ZDBT3+EoIJ5TRFvswGi/Lu3e8XQl1L3S3mnoLOJVMq1tmLN2
+HcECIQD+wZy/7FV1PAmviWyiXVIDO2g5bNiBengJCxEksbkUmQIhAPN2VZs3zPQp
+MDTooNRWrytEmTDDdjgb8ZsNWX/RODb1AiBecJnSUCNSBYK1ryU1f5DSn+hAOYh9
+X1A2UgL17mhlKQIhAO+bL6dCZKiLfNElfVtdMKqBqc6PH+MaxU6W9dVQoGWdAiEA
+mtfypOsa1bKhEL84nZ/ivEbBriRGjP2kyDDv3RX4WBk=
+-----END RSA PRIVATE KEY-----
+`
 
 	// Test table
 	for _, tc := range []struct {
@@ -450,20 +462,65 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind: "BITBUCKETSERVER",
-			desc: "username identity provider",
+			desc: "missing oauth in authorization",
 			config: `
+			{
+				"authorization": {}
+			}
+			`,
+			assert: includes("oauth: oauth is required"),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "missing oauth fields",
+			config: `
+			{
+				"authorization": {
+					"oauth": {},
+				}
+			}
+			`,
+			assert: includes(
+				"consumerKey: consumerKey is required",
+				"signingKey: signingKey is required",
+			),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "invalid oauth fields",
+			config: `
+			{
+				"authorization": {
+					"oauth": {
+						"consumerKey": "",
+						"signingKey": "foo"
+					},
+				}
+			}
+			`,
+			assert: includes(
+				"authorization.oauth.consumerKey: String length must be greater than or equal to 1",
+				"authorization.oauth.signingKey: Does not match pattern '^-----BEGIN RSA PRIVATE KEY-----\n'",
+			),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "username identity provider",
+			config: fmt.Sprintf(`
 			{
 				"url": "https://bitbucketserver.corp.com",
 				"username": "admin",
 				"token": "super-secret-token",
 				"repositoryQuery": ["none"],
 				"authorization": {
-					"identityProvider": {
-						"type": "username"
-					}
+					"identityProvider": { "type": "username" },
+					"oauth": {
+						"consumerKey": "sourcegraph",
+						"signingKey": %q,
+					},
 				}
 			}
-			`,
+			`, bogusPrivateKey),
 			assert: equals("<nil>"),
 		},
 		{

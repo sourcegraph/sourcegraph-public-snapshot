@@ -137,7 +137,7 @@ const BitbucketServerSchemaJSON = `{
       "description": "If non-null, enforces Bitbucket Server repository permissions.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["identityProvider"],
+      "required": ["identityProvider", "oauth"],
       "properties": {
         "identityProvider": {
           "description": "The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user.",
@@ -153,6 +153,26 @@ const BitbucketServerSchemaJSON = `{
           "oneOf": [{ "$ref": "#/definitions/UsernameIdentity" }],
           "!go": {
             "taggedUnionType": true
+          }
+        },
+        "oauth": {
+          "title": "BitbucketServerOAuth",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["consumerKey", "signingKey"],
+          "description": "OAuth configuration specified when creating the Bitbucket Server Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.",
+          "properties": {
+            "consumerKey": {
+              "description": "The OAuth consumer key specified when creating the Bitbucket Server Application Link with incoming authentication.",
+              "type": "string",
+              "minLength": 1
+            },
+            "signingKey": {
+              "description": "The OAuth PEM encoded RSA private key used to generate the correspondent public key specified when creating the Bitbucket Server Application Link with incoming authentication.",
+              "type": "string",
+              "pattern": "^-----BEGIN RSA PRIVATE KEY-----\n",
+              "examples": ["-----BEGIN RSA PRIVATE KEY-----\n..."]
+            }
           }
         },
         "ttl": {

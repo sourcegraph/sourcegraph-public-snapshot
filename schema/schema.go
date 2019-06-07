@@ -94,6 +94,7 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
 type BitbucketServerAuthorization struct {
 	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
+	Oauth            BitbucketServerOAuth            `json:"oauth"`
 	Ttl              string                          `json:"ttl,omitempty"`
 }
 
@@ -139,6 +140,11 @@ func (v *BitbucketServerIdentityProvider) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"username"})
 }
 
+// BitbucketServerOAuth description: OAuth configuration specified when creating the Bitbucket Server Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
+type BitbucketServerOAuth struct {
+	ConsumerKey string `json:"consumerKey"`
+	SigningKey  string `json:"signingKey"`
+}
 type BitbucketServerUsernameIdentity struct {
 	Type string `json:"type"`
 }
