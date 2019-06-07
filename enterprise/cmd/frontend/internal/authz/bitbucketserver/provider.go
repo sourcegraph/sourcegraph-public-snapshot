@@ -12,22 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Provider is an implementation of AuthzProvider that provides repository permissions as
 // determined from a Bitbucket Server instance API.
 type Provider struct {
-	api      bitbucketServerAPI
+	client   *bitbucketserver.Client
 	codeHost *extsvc.CodeHost
-}
-
-// bitbucketServerAPI captures the client interface to a Bitbucket Server API.
-type bitbucketServerAPI interface {
-	// Users retrieves a page of Bitbucket Server users matching
-	// the given filters.
-	Users(context.Context, *bitbucketserver.PageToken, ...bitbucketserver.UserFilter) (
-		[]*bitbucketserver.User, *bitbucketserver.PageToken, error)
 }
 
 var _ authz.Provider = ((*Provider)(nil))
@@ -38,16 +29,12 @@ var _ authz.Provider = ((*Provider)(nil))
 // match 1-1 with usernames of Bitbucket Server API users.
 func NewProvider(cli *bitbucketserver.Client) *Provider {
 	return &Provider{
-		api:      cli,
+		client:   cli,
 		codeHost: extsvc.NewCodeHost(cli.URL, bitbucketserver.ServiceType),
 	}
 }
 
-func (p *Provider) Validate() (problems []string) {
-	// TODO(tsenart): Validate that the access token has the right permissions with the API
-	return nil
-}
-
+func (p *Provider) Validate() []string  { return nil }
 func (p *Provider) ServiceID() string   { return p.codeHost.ServiceID }
 func (p *Provider) ServiceType() string { return p.codeHost.ServiceType }
 
@@ -64,21 +51,21 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		}
 	}
 
-	unverified, _ := p.Repos(ctx, repos)
-	perms := make(map[api.RepoName]map[authz.Perm]bool, len(unverified))
+	unverified := make(map[string]api.RepoName, len(repos))
+	for repo := range repos {
+		unverified[repo.ExternalRepoSpec.ID] = repo.RepoName
+	}
 
-	for repo := range unverified {
-		ok, err := p.authorized(ctx, &user, authz.Read, &repo)
-		if err != nil {
-			log15.Error(
-				"Failed to verify authorization for Bitbucket user",
-				"user", user.Name,
-				"perm", authz.Read,
-				"repo", repo.RepoName,
-				"error", err,
-			)
+	authorized, err := p.repos(ctx, user.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	perms := make(map[api.RepoName]map[authz.Perm]bool, len(authorized))
+	for _, r := range authorized {
+		if name, ok := unverified[strconv.Itoa(r.ID)]; ok {
+			perms[name] = map[authz.Perm]bool{authz.Read: true}
 		}
-		perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: ok}
 	}
 
 	return perms, nil
@@ -113,40 +100,43 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 	}, nil
 }
 
-func (p *Provider) authorized(ctx context.Context, user *bitbucketserver.User, perm authz.Perm, repo *authz.Repo) (bool, error) {
-	meta, _ := repo.Metadata.(*bitbucketserver.Repo)
-	if user.Name == "" { // Anonymous user
-		if meta == nil || !meta.Public { // No metadata synced yet by repo-updater.
-			return false, nil
+var errNoResults = errors.New("no results returned by the Bitbucket Server API")
+
+// repos returns all repositories for which the given user has the permission to read.
+// when no username is given, only public repos are returned.
+func (p *Provider) repos(ctx context.Context, username string) (all []*bitbucketserver.Repo, err error) {
+	t := &bitbucketserver.PageToken{Limit: 10000}
+	c := p.client
+
+	var filters []string
+	if username != "" {
+		filters = append(filters, "?visibility=public")
+	} else {
+		c = c.Sudo(username)
+	}
+
+	for t.HasMore() {
+		repos, next, err := c.Repos(ctx, t, filters...)
+		if err != nil {
+			return nil, err
 		}
-		return true, nil
+		all = append(all, repos...)
+		t = next
 	}
 
-	// Authenticated user
-	_, err := p.user(ctx, user.Name,
-		bitbucketserver.UserFilter{
-			Permission: bitbucketserver.PermissionFilter{
-				Root:         bitbucketServerPerm(perm),
-				RepositoryID: repo.ExternalRepoSpec.ID,
-			},
-		},
-	)
-
-	if err == errNoResults {
-		return false, nil
+	if len(all) == 0 {
+		err = errNoResults
 	}
 
-	return err == nil, err
+	return all, err
 }
-
-var errNoResults = errors.New("no user found matching the given filters")
 
 func (p *Provider) user(ctx context.Context, username string, fs ...bitbucketserver.UserFilter) (*bitbucketserver.User, error) {
 	t := &bitbucketserver.PageToken{Limit: 10000}
 	fs = append(fs, bitbucketserver.UserFilter{Filter: username})
 
 	for t.HasMore() {
-		users, next, err := p.api.Users(ctx, t, fs...)
+		users, next, err := p.client.Users(ctx, t, fs...)
 		if err != nil {
 			return nil, err
 		}
@@ -161,12 +151,4 @@ func (p *Provider) user(ctx context.Context, username string, fs ...bitbucketser
 	}
 
 	return nil, errNoResults
-}
-
-func bitbucketServerPerm(p authz.Perm) bitbucketserver.Perm {
-	switch p {
-	case authz.Read:
-		return bitbucketserver.PermRepoRead
-	}
-	panic("unknown permission")
 }
