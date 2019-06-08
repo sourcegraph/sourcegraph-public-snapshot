@@ -300,6 +300,7 @@ export function initCodeIntelligence({
             getHover: ({ line, character, part, ...rest }) => getHover({ ...rest, position: { line, character } }),
             getActions: context => getHoverActions({ extensionsController, platformContext }, context),
             pinningEnabled: true,
+            tokenize: codeHost.codeViewsRequireTokenization,
         }
     )
 
@@ -670,7 +671,12 @@ export function handleCodeHost({
             codeViewEvent.subscriptions.add(
                 hoverifier.hoverify({
                     dom: domFunctions,
-                    positionEvents: of(element).pipe(findPositionsFromEvents(domFunctions)),
+                    positionEvents: of(element).pipe(
+                        findPositionsFromEvents({
+                            domFunctions,
+                            tokenize: codeHost.codeViewsRequireTokenization !== false,
+                        })
+                    ),
                     resolveContext,
                     adjustPosition,
                 })
