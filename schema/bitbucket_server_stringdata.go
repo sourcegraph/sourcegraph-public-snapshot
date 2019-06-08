@@ -168,10 +168,9 @@ const BitbucketServerSchemaJSON = `{
               "minLength": 1
             },
             "signingKey": {
-              "description": "The OAuth PEM encoded RSA private key used to generate the correspondent public key specified when creating the Bitbucket Server Application Link with incoming authentication.",
+              "description": "Base64 encoding of the OAuth PEM encoded RSA private key used to generate the public key specified when creating the Bitbucket Server Application Link with incoming authentication.",
               "type": "string",
-              "pattern": "^-----BEGIN RSA PRIVATE KEY-----\n",
-              "examples": ["-----BEGIN RSA PRIVATE KEY-----\n..."]
+              "minLength": 1
             }
           }
         },

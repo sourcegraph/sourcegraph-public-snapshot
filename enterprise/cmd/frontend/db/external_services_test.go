@@ -59,16 +59,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		}
 	}
 
-	const bogusPrivateKey = `-----BEGIN RSA PRIVATE KEY-----
-MIIBPAIBAAJBAPJHijktmT1IKaGta5Eep3AZ9CeOeL8jPDIFT7wQgKZmt3EFqDhB
-Own+QUHJuK9fovRDNJeVL2oY5BOIz4rw/G0CAwEAAQJBAMA+J92K4wcPVYlmc+3o
-pu96iJNCp2jy6na+ZDBT3+EoIJ5TRFvswGi/Lu3e8XQl1L3S3mnoLOJVMq1tmLN2
-HcECIQD+wZy/7FV1PAmviWyiXVIDO2g5bNiBengJCxEksbkUmQIhAPN2VZs3zPQp
-MDTooNRWrytEmTDDdjgb8ZsNWX/RODb1AiBecJnSUCNSBYK1ryU1f5DSn+hAOYh9
-X1A2UgL17mhlKQIhAO+bL6dCZKiLfNElfVtdMKqBqc6PH+MaxU6W9dVQoGWdAiEA
-mtfypOsa1bKhEL84nZ/ivEbBriRGjP2kyDDv3RX4WBk=
------END RSA PRIVATE KEY-----
-`
+	const bogusPrivateKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
 
 	// Test table
 	for _, tc := range []struct {
@@ -493,15 +484,30 @@ mtfypOsa1bKhEL84nZ/ivEbBriRGjP2kyDDv3RX4WBk=
 				"authorization": {
 					"oauth": {
 						"consumerKey": "",
-						"signingKey": "foo"
+						"signingKey": ""
 					},
 				}
 			}
 			`,
 			assert: includes(
 				"authorization.oauth.consumerKey: String length must be greater than or equal to 1",
-				"authorization.oauth.signingKey: Does not match pattern '^-----BEGIN RSA PRIVATE KEY-----\n'",
+				"authorization.oauth.consumerKey: String length must be greater than or equal to 1",
 			),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "invalid oauth signingKey",
+			config: `
+			{
+				"authorization": {
+					"oauth": {
+						"consumerKey": "sourcegraph",
+						"signingKey": "not-base-64-encoded"
+					},
+				}
+			}
+			`,
+			assert: includes("authorization.oauth.signingKey: illegal base64 data at input byte 3"),
 		},
 		{
 			kind: "BITBUCKETSERVER",

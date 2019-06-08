@@ -2,7 +2,6 @@ package bitbucketserver
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -25,8 +24,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 	cli, save := bitbucketserver.NewTestClient(t, "RepoPerms", *update)
 	defer save()
 
-	key, err := base64.StdEncoding.DecodeString(os.Getenv("BITBUCKET_SERVER_KEY"))
-	if err == nil {
+	if key := os.Getenv("BITBUCKET_SERVER_KEY"); key != "" {
 		if err := cli.SetOAuth("sourcegraph", key); err != nil {
 			t.Fatal(err)
 		}

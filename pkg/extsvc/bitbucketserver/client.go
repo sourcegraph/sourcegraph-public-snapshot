@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -90,15 +91,20 @@ func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
 
 // SetOAuth enables OAuth authentication in a Client, using the given consumer
 // key to identify with the Bitbucket Server API and the request signing RSA key
-// to authenticate requests. It parse the given PEM encoded private key,
+// to authenticate requests. It parses the given Base64 encoded PEM encoded private key,
 // returning an error in case of failure.
 //
 // When using OAuth authentication, it's possible to impersonate any Bitbucket
 // Server API user by passing a ?user_id=$username query parameter. This requires
 // the Application Link in the Bitbucket Server API to be configured with 2 legged
 // OAuth and for it to allow user impersonation.
-func (c *Client) SetOAuth(consumerKey string, signingKey []byte) error {
-	block, _ := pem.Decode(signingKey)
+func (c *Client) SetOAuth(consumerKey, signingKey string) error {
+	pemKey, err := base64.StdEncoding.DecodeString(signingKey)
+	if err != nil {
+		return err
+	}
+
+	block, _ := pem.Decode(pemKey)
 	if block == nil {
 		return errors.New("failed to parse PEM block containing the signing key")
 	}

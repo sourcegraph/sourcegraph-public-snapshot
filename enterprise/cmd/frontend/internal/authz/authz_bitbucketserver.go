@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	bbsauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -48,27 +50,32 @@ func bitbucketServerProvider(
 		return nil, nil
 	}
 
+	errs := new(multierror.Error)
+
+	_, err := parseTTL(a.Ttl)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
 	baseURL, err := url.Parse(instanceURL)
 	if err != nil {
-		return nil, fmt.Errorf("Could not parse URL for BitbucketServer instance %q: %s", instanceURL, err)
+		errs = multierror.Append(errs, err)
 	}
 
-	_, err = parseTTL(a.Ttl)
-	if err != nil {
-		return nil, err
+	cli := bitbucketserver.NewClient(baseURL, nil)
+	if err = cli.SetOAuth(a.Oauth.ConsumerKey, a.Oauth.SigningKey); err != nil {
+		errs = multierror.Append(errs, errors.Wrap(err, "authorization.oauth.signingKey"))
 	}
 
+	var p authz.Provider
 	switch idp := a.IdentityProvider; {
 	case idp.Username != nil:
-		cli := bitbucketserver.NewClient(baseURL, nil)
-		err := cli.SetOAuth(a.Oauth.ConsumerKey, []byte(a.Oauth.SigningKey))
-		if err != nil {
-			return nil, err
-		}
-		return bbsauthz.NewProvider(cli), nil
+		p = bbsauthz.NewProvider(cli)
 	default:
-		return nil, fmt.Errorf("No identityProvider was specified")
+		errs = multierror.Append(errs, errors.Errorf("No identityProvider was specified"))
 	}
+
+	return p, errs.ErrorOrNil()
 }
 
 // ValidateBitbucketServerAuthz validates the authorization fields of the given BitbucketServer external
