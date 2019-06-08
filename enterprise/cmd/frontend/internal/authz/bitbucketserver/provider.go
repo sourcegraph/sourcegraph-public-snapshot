@@ -57,7 +57,7 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 	}
 
 	authorized, err := p.repos(ctx, user.Name)
-	if err != nil {
+	if err != nil && err != errNoResults {
 		return nil, err
 	}
 
@@ -109,7 +109,7 @@ func (p *Provider) repos(ctx context.Context, username string) (all []*bitbucket
 	c := p.client
 
 	var filters []string
-	if username != "" {
+	if username == "" {
 		filters = append(filters, "?visibility=public")
 	} else {
 		c = c.Sudo(username)

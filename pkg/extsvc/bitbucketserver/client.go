@@ -385,6 +385,12 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 func (c *Client) authenticate(req *http.Request) error {
 	// Authenticate request, in order of preference.
 	if c.oauth != nil {
+		if c.Username != "" {
+			qry := req.URL.Query()
+			qry.Set("user_id", c.Username)
+			req.URL.RawQuery = qry.Encode()
+		}
+
 		if err := c.oauth.SetAuthorizationHeader(
 			req.Header,
 			&oauth.Credentials{Token: ""}, // Token must be empty
@@ -393,12 +399,6 @@ func (c *Client) authenticate(req *http.Request) error {
 			nil,
 		); err != nil {
 			return err
-		}
-
-		if c.Username != "" {
-			qry := req.URL.Query()
-			qry.Set("user_id", c.Username)
-			req.URL.RawQuery = qry.Encode()
 		}
 	} else if c.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.Token)
