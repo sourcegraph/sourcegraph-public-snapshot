@@ -19,6 +19,7 @@ import (
 type Provider struct {
 	client   *bitbucketserver.Client
 	codeHost *extsvc.CodeHost
+	pageSize int // Page size to use in paginated requests.
 }
 
 var _ authz.Provider = ((*Provider)(nil))
@@ -105,7 +106,7 @@ var errNoResults = errors.New("no results returned by the Bitbucket Server API")
 // repos returns all repositories for which the given user has the permission to read.
 // when no username is given, only public repos are returned.
 func (p *Provider) repos(ctx context.Context, username string) (all []*bitbucketserver.Repo, err error) {
-	t := &bitbucketserver.PageToken{Limit: 10000}
+	t := &bitbucketserver.PageToken{Limit: p.pageSize}
 	c := p.client
 
 	var filters []string
@@ -132,7 +133,7 @@ func (p *Provider) repos(ctx context.Context, username string) (all []*bitbucket
 }
 
 func (p *Provider) user(ctx context.Context, username string, fs ...bitbucketserver.UserFilter) (*bitbucketserver.User, error) {
-	t := &bitbucketserver.PageToken{Limit: 10000}
+	t := &bitbucketserver.PageToken{Limit: p.pageSize}
 	fs = append(fs, bitbucketserver.UserFilter{Filter: username})
 
 	for t.HasMore() {

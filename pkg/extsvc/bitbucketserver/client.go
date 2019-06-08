@@ -242,21 +242,88 @@ func (c *Client) CreateUser(ctx context.Context, u *User) error {
 		"password":          {u.Password},
 		"displayName":       {u.DisplayName},
 		"emailAddress":      {u.EmailAddress},
-		"addToDefaultGroup": {"false"},
+		"addToDefaultGroup": {"true"},
 	}
 
-	err := c.send(ctx, "POST", "rest/api/1.0/admin/users", qry, nil, u)
-	if err != nil {
-		return err
-	}
+	return c.send(ctx, "POST", "rest/api/1.0/admin/users", qry, nil, nil)
+}
 
-	return c.send(ctx, "PUT", "rest/api/1.0/admin/users", qry, u, u)
+// LoadUser loads the given User returning an error in case of failure.
+func (c *Client) LoadUser(ctx context.Context, u *User) error {
+	return c.send(ctx, "GET", "rest/api/1.0/users/"+u.Slug, nil, nil, u)
+}
+
+// LoadGroup loads the given Group returning an error in case of failure.
+func (c *Client) LoadGroup(ctx context.Context, g *Group) error {
+	qry := url.Values{"filter": {g.Name}}
+	return c.send(ctx, "GET", "rest/api/1.0/admin/groups", qry, nil, &struct {
+		Values []*Group `json:"values"`
+	}{
+		Values: []*Group{g},
+	})
+}
+
+// CreateGroup creates the given Group returning an error in case of failure.
+func (c *Client) CreateGroup(ctx context.Context, g *Group) error {
+	qry := url.Values{"name": {g.Name}}
+	return c.send(ctx, "POST", "rest/api/1.0/admin/groups", qry, g, g)
+}
+
+// CreateGroupMembership creates the given Group's membership returning an error in case of failure.
+func (c *Client) CreateGroupMembership(ctx context.Context, g *Group) error {
+	type membership struct {
+		Group string   `json:"group"`
+		Users []string `json:"users"`
+	}
+	m := &membership{Group: g.Name, Users: g.Users}
+	return c.send(ctx, "POST", "rest/api/1.0/admin/groups/add-users", nil, m, nil)
+}
+
+// CreateUserRepoPermission creates the given permission returning an error in case of failure.
+func (c *Client) CreateUserRepoPermission(ctx context.Context, p *UserRepoPermission) error {
+	path := "rest/api/1.0/projects/" + p.Repo.Project.Key + "/repos/" + p.Repo.Slug + "/permissions/users"
+	return c.createPermission(ctx, path, p.User.Name, p.Perm)
+}
+
+// CreateUserProjectPermission creates the given permission returning an error in case of failure.
+func (c *Client) CreateUserProjectPermission(ctx context.Context, p *UserProjectPermission) error {
+	path := "rest/api/1.0/projects/" + p.Project.Key + "/permissions/users"
+	return c.createPermission(ctx, path, p.User.Name, p.Perm)
+}
+
+// CreateGroupProjectPermission creates the given permission returning an error in case of failure.
+func (c *Client) CreateGroupProjectPermission(ctx context.Context, p *GroupProjectPermission) error {
+	path := "rest/api/1.0/projects/" + p.Project.Key + "/permissions/groups"
+	return c.createPermission(ctx, path, p.Group.Name, p.Perm)
+}
+
+// CreateGroupRepoPermission creates the given permission returning an error in case of failure.
+func (c *Client) CreateGroupRepoPermission(ctx context.Context, p *GroupRepoPermission) error {
+	path := "rest/api/1.0/projects/" + p.Repo.Project.Key + "/repos/" + p.Repo.Slug + "/permissions/groups"
+	return c.createPermission(ctx, path, p.Group.Name, p.Perm)
+}
+
+func (c *Client) createPermission(ctx context.Context, path, name string, p Perm) error {
+	qry := url.Values{
+		"name":       {name},
+		"permission": {string(p)},
+	}
+	return c.send(ctx, "PUT", path, qry, nil, nil)
 }
 
 // CreateRepo creates the given Repo returning an error in case of failure.
 func (c *Client) CreateRepo(ctx context.Context, r *Repo) error {
 	path := "rest/api/1.0/projects/" + r.Project.Key + "/repos"
-	return c.send(ctx, "POST", path, nil, r, r)
+	return c.send(ctx, "POST", path, nil, r, &struct {
+		Values []*Repo `json:"values"`
+	}{
+		Values: []*Repo{r},
+	})
+}
+
+// LoadProject loads the given Project returning an error in case of failure.
+func (c *Client) LoadProject(ctx context.Context, p *Project) error {
+	return c.send(ctx, "GET", "rest/api/1.0/projects/"+p.Key, nil, nil, p)
 }
 
 // CreateProject creates the given Project returning an error in case of failure.
@@ -379,7 +446,11 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		return errors.WithStack(&httpError{URL: req.URL, StatusCode: resp.StatusCode})
 	}
 
-	return json.NewDecoder(resp.Body).Decode(result)
+	if result != nil {
+		return json.NewDecoder(resp.Body).Decode(result)
+	}
+
+	return nil
 }
 
 func (c *Client) authenticate(req *http.Request) error {
@@ -519,6 +590,44 @@ type User struct {
 	Active       bool   `json:"active,omitempty"`
 	Slug         string `json:"slug,omitempty"`
 	Type         string `json:"type,omitempty"`
+}
+
+// Group of users in a Bitbucket Server instance.
+type Group struct {
+	Name  string   `json:"name,omitempty"`
+	Users []string `json:"users,omitempty"`
+}
+
+// A UserRepoPermission of a User to perform certain actions
+// on a Repo.
+type UserRepoPermission struct {
+	User *User
+	Perm Perm
+	Repo *Repo
+}
+
+// A GroupRepoPermission of a Group to perform certain actions
+// on a Repo.
+type GroupRepoPermission struct {
+	Group *Group
+	Perm  Perm
+	Repo  *Repo
+}
+
+// A UserProjectPermission of a User to perform certain actions
+// on a Project.
+type UserProjectPermission struct {
+	User    *User
+	Perm    Perm
+	Project *Project
+}
+
+// A GroupProjectPermission of a Group to perform certain actions
+// on a Project.
+type GroupProjectPermission struct {
+	Group   *Group
+	Perm    Perm
+	Project *Project
 }
 
 type Repo struct {
