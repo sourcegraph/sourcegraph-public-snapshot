@@ -43,6 +43,9 @@ func (p *Provider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mi
 	return authz.GetCodeHostRepos(p.codeHost, repos)
 }
 
+// RepoPerms returns the permissions the given external account has in relation to the given set of repos.
+// It performs a single HTTP request against the Bitbucket Server API which returns all repositories
+// the authenticated user has permissions to read.
 func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
 	var user bitbucketserver.User
 	if acct != nil && acct.ServiceID == p.codeHost.ServiceID &&
