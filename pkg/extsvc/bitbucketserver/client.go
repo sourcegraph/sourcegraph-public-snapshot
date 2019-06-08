@@ -349,15 +349,15 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	req.URL = c.URL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
-	if err := c.authenticate(req); err != nil {
-		return err
-	}
-
 	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(),
 		req.WithContext(ctx),
 		nethttp.OperationName("Bitbucket Server"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
+
+	if err := c.authenticate(req); err != nil {
+		return err
+	}
 
 	startWait := time.Now()
 	if err := c.RateLimit.Wait(ctx); err != nil {
