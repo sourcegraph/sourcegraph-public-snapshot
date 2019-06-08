@@ -59,10 +59,10 @@ func ProvidersFromConfig(
 	if bitbucketServers, err := s.ListBitbucketServerConnections(ctx); err != nil {
 		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load Bitbucket Server external service configs: %s", err))
 	} else {
-		ps, problems, warnings := bitbucketServerProviders(ctx, cfg, bitbucketServers)
+		ps, problems, warns := bitbucketServerProviders(ctx, cfg, bitbucketServers)
 		authzProviders = append(authzProviders, ps...)
 		seriousProblems = append(seriousProblems, problems...)
-		warnings = append(warnings, warnings...)
+		warnings = append(warnings, warns...)
 	}
 
 	return allowAccessByDefault, authzProviders, seriousProblems, warnings
