@@ -63,6 +63,8 @@ func Test_providersFromConfig(t *testing.T) {
 		}
 	}
 
+	const bogusKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
+
 	tests := []struct {
 		description                  string
 		cfg                          conf.Unified
@@ -349,7 +351,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders:            nil,
+			expAuthzProviders:            providersEqual(),
 		},
 		{
 			description: "Bitbucket Server TTL error",
@@ -362,6 +364,10 @@ func Test_providersFromConfig(t *testing.T) {
 								Type: "username",
 							},
 						},
+						Oauth: schema.BitbucketServerOAuth{
+							ConsumerKey: "sourcegraph",
+							SigningKey:  bogusKey,
+						},
 						Ttl: "invalid",
 					},
 					Url:      "https://bitbucketserver.mycorp.org",
@@ -370,7 +376,32 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"authorization.ttl: time: invalid duration invalid"},
+			expSeriousProblems:           []string{"1 error occurred:\n\t* authorization.ttl: time: invalid duration invalid\n\n"},
+		},
+		{
+			description: "Bitbucket Server Oauth config error",
+			cfg:         conf.Unified{},
+			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+				{
+					Authorization: &schema.BitbucketServerAuthorization{
+						IdentityProvider: schema.BitbucketServerIdentityProvider{
+							Username: &schema.BitbucketServerUsernameIdentity{
+								Type: "username",
+							},
+						},
+						Oauth: schema.BitbucketServerOAuth{
+							ConsumerKey: "sourcegraph",
+							SigningKey:  "Invalid Key",
+						},
+						Ttl: "15m",
+					},
+					Url:      "https://bitbucketserver.mycorp.org",
+					Username: "admin",
+					Token:    "secret-token",
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"1 error occurred:\n\t* authorization.oauth.signingKey: illegal base64 data at input byte 7\n\n"},
 		},
 		{
 			description: "Bitbucket Server exact username matching",
@@ -382,6 +413,10 @@ func Test_providersFromConfig(t *testing.T) {
 							Username: &schema.BitbucketServerUsernameIdentity{
 								Type: "username",
 							},
+						},
+						Oauth: schema.BitbucketServerOAuth{
+							ConsumerKey: "sourcegraph",
+							SigningKey:  bogusKey,
 						},
 						Ttl: "15m",
 					},
