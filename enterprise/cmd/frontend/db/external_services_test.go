@@ -491,7 +491,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			`,
 			assert: includes(
 				"authorization.oauth.consumerKey: String length must be greater than or equal to 1",
-				"authorization.oauth.consumerKey: String length must be greater than or equal to 1",
+				"authorization.oauth.signingKey: String length must be greater than or equal to 1",
 			),
 		},
 		{
