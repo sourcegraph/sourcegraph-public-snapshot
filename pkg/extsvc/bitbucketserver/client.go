@@ -412,7 +412,7 @@ func (c *Client) authenticate(req *http.Request) error {
 func parseQueryStrings(qs ...string) (url.Values, error) {
 	vals := make(url.Values)
 	for _, q := range qs {
-		query, err := url.ParseQuery(q)
+		query, err := url.ParseQuery(strings.TrimPrefix(q, "?"))
 		if err != nil {
 			return nil, err
 		}
