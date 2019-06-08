@@ -115,7 +115,7 @@ type BitbucketServerConnection struct {
 	Username                    string                         `json:"username"`
 }
 
-// BitbucketServerIdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user.
+// BitbucketServerIdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
 type BitbucketServerIdentityProvider struct {
 	Username *BitbucketServerUsernameIdentity
 }

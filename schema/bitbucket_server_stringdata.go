@@ -140,7 +140,7 @@ const BitbucketServerSchemaJSON = `{
       "required": ["identityProvider", "oauth"],
       "properties": {
         "identityProvider": {
-          "description": "The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user.",
+          "description": "The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server accounts and ` + "`" + `auth.enableUsernameChanges` + "`" + ` must be set to false for security reasons.",
           "title": "BitbucketServerIdentityProvider",
           "type": "object",
           "required": ["type"],
