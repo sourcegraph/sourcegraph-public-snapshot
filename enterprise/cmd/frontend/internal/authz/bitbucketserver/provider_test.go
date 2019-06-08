@@ -400,7 +400,7 @@ func newProvider(t *testing.T, name string) (*Provider, func()) {
 	}
 
 	if codeHost.ServiceID == "" {
-		codeHost.ServiceID = "http://localhost:7990"
+		codeHost.ServiceID = "http://127.0.0.1:7990"
 	}
 
 	return &Provider{
