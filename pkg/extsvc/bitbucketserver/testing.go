@@ -29,7 +29,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://localhost:7990"
+		instanceURL = "http://127.0.0.1:7990"
 	}
 
 	u, err := url.Parse(instanceURL)
