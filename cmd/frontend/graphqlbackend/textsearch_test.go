@@ -126,11 +126,11 @@ func queryEqual(a zoektquery.Q, b zoektquery.Q) bool {
 	return zoektquery.Map(a, sortChildren).String() == zoektquery.Map(b, sortChildren).String()
 }
 
-func TestQueryToZoektFileOnlyQuery(t *testing.T) {
+func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 	cases := []struct {
 		Name    string
 		Pattern *search.PatternInfo
-		Query   string
+		Query   []string
 		// This should be the same value passed in to either FilePatternsReposMustInclude or FilePatternsReposMustExclude
 		ListOfFilePaths []string
 	}{
@@ -146,7 +146,7 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query:           `f:"test.md"`,
+			Query:           []string{`f:"test.md"`},
 			ListOfFilePaths: []string{"test.md"},
 		},
 		{
@@ -161,7 +161,7 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query:           `f:"t" f:"d"`,
+			Query:           []string{`f:"t"`, `f:"d"`},
 			ListOfFilePaths: []string{"t", "d"},
 		},
 		{
@@ -176,7 +176,7 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query:           `f:"test.md"`,
+			Query:           []string{`f:"test.md"`},
 			ListOfFilePaths: []string{"test.md"},
 		},
 		{
@@ -191,23 +191,31 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query:           `f:"t" f:"d"`,
+			Query:           []string{`f:"t"`, `f:"d"`},
 			ListOfFilePaths: []string{"t", "d"},
 		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			q, err := zoektquery.Parse(tt.Query)
-			if err != nil {
-				t.Fatalf("failed to parse %q: %v", tt.Query, err)
+			queries := []zoektquery.Q{}
+			for _, query := range tt.Query {
+				q, err := zoektquery.Parse(query)
+				if err != nil {
+					t.Fatalf("failed to parse %q: %v", tt.Query, err)
+				}
+				queries = append(queries, q)
 			}
-			got, err := queryToZoektFileOnlyQuery(tt.Pattern, tt.ListOfFilePaths)
+
+			got, err := queryToZoektFileOnlyQueries(tt.Pattern, tt.ListOfFilePaths)
 			if err != nil {
 				t.Fatal("queryToZoektQuery failed:", err)
 			}
-			if !queryEqual(got, q) {
-				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), q.String())
+			for i, gotQuery := range got {
+				if !queryEqual(gotQuery, queries[i]) {
+					t.Fatalf("mismatched queries\ngot  %s\nwant %s", gotQuery.String(), queries[i].String())
+				}
 			}
+
 		})
 	}
 }

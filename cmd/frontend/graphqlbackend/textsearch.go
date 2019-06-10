@@ -576,11 +576,11 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 	repoHasFileFlagIsInQuery := len(query.FilePatternsReposMustInclude) > 0
 	negatedRepoHasFileFlagIsInQuery := len(query.FilePatternsReposMustExclude) > 0
 
-	filesToIncludeQuery, err := queryToZoektFileOnlyQuery(query, query.FilePatternsReposMustInclude)
+	// Construct queries which search for repos containing the files passed into `repohasfile`
+	filesToIncludeQueries, err := queryToZoektFileOnlyQueries(query, query.FilePatternsReposMustInclude)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("FILES TO INCLUDE QUERY", filesToIncludeQuery)
 
 	newSearchOpts := zoekt.SearchOptions{
 		ShardMaxMatchCount: 1,
@@ -590,45 +590,42 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 	newSearchOpts.SetDefaults()
 
 	if repoHasFileFlagIsInQuery {
+		// Set newRepoSet to an empty map if the `repohasflag` exists.
 		newRepoSet = make(map[string]bool)
-		for i, q := range filesToIncludeQuery {
+
+		for i, q := range filesToIncludeQueries {
+			// Execute a new Zoekt search for each file passed in to a `repohasfile` flag.
 			includeResp, err := searcher.Search(ctx, q, &newSearchOpts)
 			if err != nil {
 				return nil, err
 			}
+
 			for repoURL := range includeResp.RepoURLs {
 				if i == 0 {
+					// For the results from the first file query, add each repo that is in the result set to newRepoSet.
 					newRepoSet[repoURL] = true
 				} else {
-					if newRepoSet[repoURL] != true {
-						continue
-					}
-				}
-				for existing := range newRepoSet {
-					if _, ok := includeResp.RepoURLs[existing]; !ok {
-						delete(newRepoSet, existing)
+					// Then, for all following file queries, if there are repositories already existing in newRepoSEt that do not appear in
+					// the result set for the current file query, remove them so that we only include repos that have at least
+					// one match for each `repohasfile` value in newRepoSet.
+					for existing := range newRepoSet {
+						if _, ok := includeResp.RepoURLs[existing]; !ok {
+							delete(newRepoSet, existing)
+						}
 					}
 				}
 			}
 		}
-		// includeResp, err := searcher.Search(ctx, filesToIncludeQuery, &newSearchOpts)
-		// if err != nil {
-		// 	return nil, err
-		// }
-		// Set newRepoSet to an empty map if the `repohasflag` exists
-
-		// For each repo that had a result in the include set, add it to our new repoSet.
-
 	}
 
-	// Construct a query which just searches for repos that contain the file passed into `-repohasfile`
-	filesToExcludeQuery, err := queryToZoektFileOnlyQuery(query, query.FilePatternsReposMustExclude)
+	// Construct queries which search for repos containing the files passed into `-repohasfile`
+	filesToExcludeQueries, err := queryToZoektFileOnlyQueries(query, query.FilePatternsReposMustExclude)
 	if err != nil {
 		return nil, err
 	}
 
 	if negatedRepoHasFileFlagIsInQuery {
-		for _, q := range filesToExcludeQuery {
+		for _, q := range filesToExcludeQueries {
 			excludeResp, err := searcher.Search(ctx, q, &newSearchOpts)
 			if err != nil {
 				return nil, err
@@ -726,30 +723,22 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
 }
 
-// queryToZoektFileOnlyQuery constructs a Zoekt query that searches for a file pattern(s).
+// queryToZoektFileOnlyQueries constructs a list of Zoekt queries that search for a file pattern(s).
 // `listOfFilePaths` specifies which field on `query` should be the list of file patterns to look for.
-func queryToZoektFileOnlyQuery(query *search.PatternInfo, listOfFilePaths []string) ([]zoektquery.Q, error) {
-	var fileRegexes []zoektquery.Q
+//  A separate zoekt query is created for each file path that should be searched.
+func queryToZoektFileOnlyQueries(query *search.PatternInfo, listOfFilePaths []string) ([]zoektquery.Q, error) {
 	var zoektQueries []zoektquery.Q
 	if !query.PathPatternsAreRegExps {
 		return nil, errors.New("zoekt only supports regex path patterns")
 	}
 	for _, p := range listOfFilePaths {
-		// if multiple file paths, instead of combining it into one query, we have to create a
-		// new zoekt query for each file path.
 		q, err := fileRe(p, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
-		fileRegexes = append(fileRegexes, q)
+		zoektQueries = append(zoektQueries, zoektquery.Simplify(q))
 	}
-	fmt.Println("FILE REGEXES", fileRegexes)
-	for _, f := range fileRegexes {
-		query := zoektquery.Simplify(f)
-		fmt.Println("SIMPLIFIED QUERY", query)
-		zoektQueries = append(zoektQueries, query)
-	}
-	fmt.Println("ZOEKT QUERIES", zoektQueries)
+
 	return zoektQueries, nil
 }
 
