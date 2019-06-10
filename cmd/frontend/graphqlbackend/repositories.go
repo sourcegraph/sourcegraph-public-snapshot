@@ -175,7 +175,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if opt2.LimitOffset == nil {
 				break
 			} else {
-				if len(r.repos) >= r.opt.Limit {
+				if len(r.repos) > r.opt.Limit {
 					// Cut off the repos we additionally loaded to save
 					// roundtrips to `gitserver` and only return the number
 					// that was requested.
