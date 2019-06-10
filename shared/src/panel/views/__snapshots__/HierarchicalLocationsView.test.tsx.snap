@@ -13,7 +13,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
         partialVisibility={true}
       >
         <div
-          className="result-container"
+          className="e2e-search-result result-container"
           data-testid="result-container"
         >
           <div
@@ -225,7 +225,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         partialVisibility={true}
       >
         <div
-          className="result-container"
+          className="e2e-search-result result-container"
           data-testid="result-container"
         >
           <div
@@ -393,7 +393,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
         partialVisibility={true}
       >
         <div
-          className="result-container"
+          className="e2e-search-result result-container"
           data-testid="result-container"
         >
           <div
