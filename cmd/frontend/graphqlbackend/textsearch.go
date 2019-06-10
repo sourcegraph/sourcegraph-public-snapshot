@@ -580,6 +580,7 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("FILES TO INCLUDE QUERY", filesToIncludeQuery)
 
 	newSearchOpts := zoekt.SearchOptions{
 		ShardMaxMatchCount: 1,
@@ -589,16 +590,34 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 	newSearchOpts.SetDefaults()
 
 	if repoHasFileFlagIsInQuery {
-		includeResp, err := searcher.Search(ctx, filesToIncludeQuery, &newSearchOpts)
-		if err != nil {
-			return nil, err
+		newRepoSet = make(map[string]bool)
+		for i, q := range filesToIncludeQuery {
+			includeResp, err := searcher.Search(ctx, q, &newSearchOpts)
+			if err != nil {
+				return nil, err
+			}
+			for repoURL := range includeResp.RepoURLs {
+				if i == 0 {
+					newRepoSet[repoURL] = true
+				} else {
+					if newRepoSet[repoURL] != true {
+						continue
+					}
+				}
+				for existing := range newRepoSet {
+					if _, ok := includeResp.RepoURLs[existing]; !ok {
+						delete(newRepoSet, existing)
+					}
+				}
+			}
 		}
+		// includeResp, err := searcher.Search(ctx, filesToIncludeQuery, &newSearchOpts)
+		// if err != nil {
+		// 	return nil, err
+		// }
 		// Set newRepoSet to an empty map if the `repohasflag` exists
-		newRepoSet = make(map[string]bool, len(includeResp.RepoURLs))
+
 		// For each repo that had a result in the include set, add it to our new repoSet.
-		for repoURL := range includeResp.RepoURLs {
-			newRepoSet[repoURL] = true
-		}
 
 	}
 
@@ -609,14 +628,16 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 	}
 
 	if negatedRepoHasFileFlagIsInQuery {
-		excludeResp, err := searcher.Search(ctx, filesToExcludeQuery, &newSearchOpts)
-		if err != nil {
-			return nil, err
-		}
-		for repoURL := range excludeResp.RepoURLs {
-			// For each repo that had a result in the exclude set, if it exists in the repoSet, set the value to false so we don't search over it.
-			if newRepoSet[repoURL] {
-				delete(newRepoSet, repoURL)
+		for _, q := range filesToExcludeQuery {
+			excludeResp, err := searcher.Search(ctx, q, &newSearchOpts)
+			if err != nil {
+				return nil, err
+			}
+			for repoURL := range excludeResp.RepoURLs {
+				// For each repo that had a result in the exclude set, if it exists in the repoSet, set the value to false so we don't search over it.
+				if newRepoSet[repoURL] {
+					delete(newRepoSet, repoURL)
+				}
 			}
 		}
 	}
@@ -705,23 +726,31 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
 }
 
-// queryToZoekFileOnlyQuery constructs a Zoekt query that searches for a file pattern(s).
+// queryToZoektFileOnlyQuery constructs a Zoekt query that searches for a file pattern(s).
 // `listOfFilePaths` specifies which field on `query` should be the list of file patterns to look for.
-func queryToZoektFileOnlyQuery(query *search.PatternInfo, listOfFilePaths []string) (zoektquery.Q, error) {
-	var and []zoektquery.Q
-
+func queryToZoektFileOnlyQuery(query *search.PatternInfo, listOfFilePaths []string) ([]zoektquery.Q, error) {
+	var fileRegexes []zoektquery.Q
+	var zoektQueries []zoektquery.Q
 	if !query.PathPatternsAreRegExps {
 		return nil, errors.New("zoekt only supports regex path patterns")
 	}
 	for _, p := range listOfFilePaths {
+		// if multiple file paths, instead of combining it into one query, we have to create a
+		// new zoekt query for each file path.
 		q, err := fileRe(p, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
-		and = append(and, q)
+		fileRegexes = append(fileRegexes, q)
 	}
-
-	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
+	fmt.Println("FILE REGEXES", fileRegexes)
+	for _, f := range fileRegexes {
+		query := zoektquery.Simplify(f)
+		fmt.Println("SIMPLIFIED QUERY", query)
+		zoektQueries = append(zoektQueries, query)
+	}
+	fmt.Println("ZOEKT QUERIES", zoektQueries)
+	return zoektQueries, nil
 }
 
 // zoektIndexedRepos splits the input repo list into two parts: (1) the
