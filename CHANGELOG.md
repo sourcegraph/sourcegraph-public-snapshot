@@ -28,6 +28,18 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where the "Empty repository" banner would be shown on a repository page when starting to clone a repository.
 - Prevent data inconsistency on cached archives due to restarts. (#4366)
 
+## 3.4.4 (unreleased)
+
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+- Fixed an out of bounds error in the GraphQL repository query. (#4426)
+
 ## 3.4.3
 
 ### Added
