@@ -36,17 +36,17 @@ describe('e2e test suite', function(this: any): void {
             'sourcegraph/go-vcs',
         ]
         await driver.ensureLoggedIn()
-        await driver.ensureHasExternalService(
-            'github',
-            'e2e-test-github',
-            JSON.stringify({
+        await driver.ensureHasExternalService({
+            kind: 'github',
+            displayName: 'e2e-test-github',
+            config: JSON.stringify({
                 url: 'https://github.com',
                 token: gitHubToken,
                 repos: repoSlugs,
                 repositoryQuery: ['none'],
             }),
-            repoSlugs
-        )
+            ensureRepos: repoSlugs,
+        })
     }
 
     // Start browser.
@@ -78,11 +78,12 @@ describe('e2e test suite', function(this: any): void {
     describe('External services', () => {
         test('External service add, edit, delete', async () => {
             const displayName = 'e2e-github-test-2'
-            await driver.ensureHasExternalService(
-                'github',
+            await driver.ensureHasExternalService({
+                kind: 'github',
                 displayName,
-                '{"url": "https://github.myenterprise.com", "token": "initial-token", "repositoryQuery": ["none"]}'
-            )
+                config:
+                    '{"url": "https://github.myenterprise.com", "token": "initial-token", "repositoryQuery": ["none"]}',
+            })
             await driver.page.goto(baseURL + '/site-admin/external-services')
             await (await driver.page.waitForSelector(
                 `[data-e2e-external-service-name="${displayName}"] .e2e-edit-external-service-button`

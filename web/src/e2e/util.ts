@@ -108,12 +108,17 @@ export class Driver {
         await this.enterText(enterTextMethod, newText)
     }
 
-    public async ensureHasExternalService(
-        kind: string,
-        displayName: string,
-        config: string,
+    public async ensureHasExternalService({
+        kind,
+        displayName,
+        config,
+        ensureRepos,
+    }: {
+        kind: string
+        displayName: string
+        config: string
         ensureRepos?: string[]
-    ): Promise<void> {
+    }): Promise<void> {
         await this.page.goto(baseURL + '/site-admin/external-services')
         await this.page.waitFor('.e2e-filtered-connection')
         await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })

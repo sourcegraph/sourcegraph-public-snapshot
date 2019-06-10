@@ -124,17 +124,17 @@ describe('e2e test suite', function(this: any): void {
                 'google/ko',
                 'freedomofdevelopers/fod',
             ]
-            await driver.ensureHasExternalService(
-                'github',
-                'GitHub (search regression test)',
-                JSON.stringify({
+            await driver.ensureHasExternalService({
+                kind: 'github',
+                displayName: 'GitHub (search regression test)',
+                config: JSON.stringify({
                     url: 'https://github.com',
                     token: gitHubToken,
                     repos: repoSlugs,
                     repositoryQuery: ['none'],
                 }),
-                [repoSlugs[repoSlugs.length - 1]]
-            )
+                ensureRepos: [repoSlugs[repoSlugs.length - 1]],
+            })
         })
 
         test(
