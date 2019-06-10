@@ -44,6 +44,8 @@ const (
 	GoSymbolURL = "go-symbol-url"
 
 	UI = "ui"
+
+	AdditionalServices = "additional-services"
 )
 
 // Router returns the frontend app router.

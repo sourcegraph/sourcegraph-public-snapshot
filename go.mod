@@ -7,6 +7,7 @@ require (
 	github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
 	github.com/boj/redistore v0.0.0-20160128113310-fc113767cd6b
 	github.com/certifi/gocertifi v0.0.0-20190105021324-abcd57078448 // indirect
+	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/coreos/go-oidc v0.0.0-20171002155002-a93f71fdfe73
 	github.com/coreos/go-semver v0.2.0
@@ -63,10 +64,12 @@ require (
 	github.com/gorilla/schema v1.0.2
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.1.4-0.20181015005113-68d1edeb366b
+	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/goware/urlx v0.2.0
 	github.com/graph-gophers/graphql-go v0.0.0-20190204230732-e582242c92cc
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc
 	github.com/hashicorp/go-multierror v1.0.0
+	github.com/hashrocket/ws v0.2.1 // indirect
 	github.com/honeycombio/libhoney-go v1.8.1
 	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6 // indirect
 	github.com/jmoiron/sqlx v1.2.0
