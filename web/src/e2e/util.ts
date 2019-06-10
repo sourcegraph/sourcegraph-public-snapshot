@@ -138,7 +138,6 @@ export class Driver {
             newText: displayName,
             enterTextMethod: 'paste',
         })
-        await setTimeout(() => null, 10000)
 
         // Type in a new external service configuration.
         await this.replaceText({
@@ -147,9 +146,7 @@ export class Driver {
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
         })
-        await setTimeout(() => null, 10000)
         await this.page.click('.e2e-add-external-service-button')
-        await setTimeout(() => null, 10000)
         await this.page.waitForNavigation()
 
         if (ensureRepos) {
