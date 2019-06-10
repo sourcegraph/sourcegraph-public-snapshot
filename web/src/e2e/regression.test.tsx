@@ -16,7 +16,7 @@ process.on('rejectionHandled', error => {
     console.error('Caught rejectionHandled:', error)
 })
 
-describe('e2e test suite', function(this: any): void {
+describe('regression test suite', function(this: any): void {
     let driver: Driver
 
     async function init(): Promise<void> {
