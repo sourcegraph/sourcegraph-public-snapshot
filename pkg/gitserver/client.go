@@ -683,3 +683,72 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	return res.Rev, json.NewDecoder(resp.Body).Decode(&res)
 }
+
+// MockCloneQueueStatus mocks (*Client).CloneQueueStatus for tests.
+var MockCloneQueueStatus func(context.Context) (*protocol.CloneQueueStatusResponse, error)
+
+func (c *Client) CloneQueueStatus(ctx context.Context) (*protocol.CloneQueueStatusResponse, error) {
+	if MockCloneQueueStatus != nil {
+		return MockCloneQueueStatus(ctx)
+	}
+
+	type singleStatus struct {
+		resp *protocol.CloneQueueStatusResponse
+		err  error
+	}
+
+	addrs := c.Addrs(ctx)
+
+	ch := make(chan singleStatus, len(addrs))
+	for _, addr := range addrs {
+		go func(addr string) {
+			resp, err := c.getCloneQueueStatus(ctx, addr)
+			ch <- singleStatus{resp, err}
+		}(addr)
+	}
+
+	err := new(multierror.Error)
+	combinedStatus := new(protocol.CloneQueueStatusResponse)
+
+	for i := 0; i < cap(ch); i++ {
+		s := <-ch
+		if s.err != nil {
+			err = multierror.Append(err, s.err)
+			continue
+		}
+		combinedStatus.Current += s.resp.Current
+		combinedStatus.Maximum += s.resp.Maximum
+	}
+
+	return combinedStatus, err.ErrorOrNil()
+}
+
+func (c *Client) getCloneQueueStatus(ctx context.Context, addr string) (*protocol.CloneQueueStatusResponse, error) {
+	req, err := http.NewRequest("GET", "http://"+addr+"/clone-queue-status", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := ioutil.ReadAll(resp.Body)
+		log15.Warn("gitserver clone-queue-status error:", string(b))
+
+		err := &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "clone-queue-status",
+			Err: fmt.Errorf("clone-queue-status: http status %d %s", resp.StatusCode, string(b)),
+		}
+
+		return nil, err
+	}
+
+	var status protocol.CloneQueueStatusResponse
+
+	return &status, json.NewDecoder(resp.Body).Decode(&status)
+}
