@@ -35,10 +35,24 @@ func NewProvider(cli *bitbucketserver.Client) *Provider {
 	}
 }
 
-func (p *Provider) Validate() []string  { return nil }
-func (p *Provider) ServiceID() string   { return p.codeHost.ServiceID }
+// Validate validates that the Provider has access to the Bitbucket Server API
+// with the OAuth credentials it was configured with.
+func (p *Provider) Validate() []string {
+	_, err := p.client.UserPermissions(context.Background(), p.client.Username)
+	if err != nil {
+		return []string{err.Error()}
+	}
+	return nil
+}
+
+// ServiceID returns the absolute URL that identifies the Bitbucket Server instance
+// this provider is configured with.
+func (p *Provider) ServiceID() string { return p.codeHost.ServiceID }
+
+// ServiceType returns the type of this Provider, namely, "bitbucketServer".
 func (p *Provider) ServiceType() string { return p.codeHost.ServiceType }
 
+// Repos returns all Bitbucket Server repos as mine, and all others as others.
 func (p *Provider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
 	return authz.GetCodeHostRepos(p.codeHost, repos)
 }
