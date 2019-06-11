@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"testing"
@@ -57,6 +58,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			}
 		}
 	}
+
+	const bogusPrivateKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
 
 	// Test table
 	for _, tc := range []struct {
@@ -435,6 +438,96 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				]
 			}`,
 			assert: equals(`<nil>`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "invalid authorization ttl",
+			config: `{"authorization": {"ttl": "foo"}}`,
+			assert: includes(`authorization.ttl: time: invalid duration foo`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "valid authorization ttl 0",
+			config: `{"authorization": {"ttl": "0"}}`,
+			assert: excludes(`authorization.ttl: time: invalid duration 0`),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "missing oauth in authorization",
+			config: `
+			{
+				"authorization": {}
+			}
+			`,
+			assert: includes("oauth: oauth is required"),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "missing oauth fields",
+			config: `
+			{
+				"authorization": {
+					"oauth": {},
+				}
+			}
+			`,
+			assert: includes(
+				"consumerKey: consumerKey is required",
+				"signingKey: signingKey is required",
+			),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "invalid oauth fields",
+			config: `
+			{
+				"authorization": {
+					"oauth": {
+						"consumerKey": "",
+						"signingKey": ""
+					},
+				}
+			}
+			`,
+			assert: includes(
+				"authorization.oauth.consumerKey: String length must be greater than or equal to 1",
+				"authorization.oauth.signingKey: String length must be greater than or equal to 1",
+			),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "invalid oauth signingKey",
+			config: `
+			{
+				"authorization": {
+					"oauth": {
+						"consumerKey": "sourcegraph",
+						"signingKey": "not-base-64-encoded"
+					},
+				}
+			}
+			`,
+			assert: includes("authorization.oauth.signingKey: illegal base64 data at input byte 3"),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "username identity provider",
+			config: fmt.Sprintf(`
+			{
+				"url": "https://bitbucketserver.corp.com",
+				"username": "admin",
+				"token": "super-secret-token",
+				"repositoryQuery": ["none"],
+				"authorization": {
+					"identityProvider": { "type": "username" },
+					"oauth": {
+						"consumerKey": "sourcegraph",
+						"signingKey": %q,
+					},
+				}
+			}
+			`, bogusPrivateKey),
+			assert: equals("<nil>"),
 		},
 		{
 			kind:   "GITHUB",

@@ -1,34 +1,69 @@
-package bitbucketserver_test
+package bitbucketserver
 
 import (
 	"context"
 	"flag"
 	"fmt"
 	"net/url"
-	"os"
-	"path/filepath"
 	"reflect"
-	"regexp"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
 )
 
 var update = flag.Bool("update", false, "update testdata")
 
+func TestParseQueryStrings(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		qs   []string
+		vals url.Values
+		err  string
+	}{
+		{
+			name: "ignores query separator",
+			qs:   []string{"?foo=bar&baz=boo"},
+			vals: url.Values{"foo": {"bar"}, "baz": {"boo"}},
+		},
+		{
+			name: "ignores query separator by itself",
+			qs:   []string{"?"},
+			vals: url.Values{},
+		},
+		{
+			name: "perserves multiple values",
+			qs:   []string{"?foo=bar&foo=baz", "foo=boo"},
+			vals: url.Values{"foo": {"bar", "baz", "boo"}},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			vals, err := parseQueryStrings(tc.qs...)
+
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if have, want := vals, tc.vals; !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
+			}
+		})
+	}
+}
+
 func TestUserFilters(t *testing.T) {
 	for _, tc := range []struct {
 		name string
-		fs   bitbucketserver.UserFilters
+		fs   UserFilters
 		qry  url.Values
 	}{
 		{
 			name: "last one wins",
-			fs: bitbucketserver.UserFilters{
+			fs: UserFilters{
 				{Filter: "admin"},
 				{Filter: "tomas"}, // Last one wins
 			},
@@ -36,7 +71,7 @@ func TestUserFilters(t *testing.T) {
 		},
 		{
 			name: "filters can be combined",
-			fs: bitbucketserver.UserFilters{
+			fs: UserFilters{
 				{Filter: "admin"},
 				{Group: "admins"},
 			},
@@ -47,16 +82,16 @@ func TestUserFilters(t *testing.T) {
 		},
 		{
 			name: "permissions",
-			fs: bitbucketserver.UserFilters{
+			fs: UserFilters{
 				{
-					Permission: bitbucketserver.PermissionFilter{
-						Root:       bitbucketserver.PermProjectAdmin,
+					Permission: PermissionFilter{
+						Root:       PermProjectAdmin,
 						ProjectKey: "ORG",
 					},
 				},
 				{
-					Permission: bitbucketserver.PermissionFilter{
-						Root:           bitbucketserver.PermRepoWrite,
+					Permission: PermissionFilter{
+						Root:           PermRepoWrite,
 						ProjectKey:     "ORG",
 						RepositorySlug: "foo",
 					},
@@ -82,13 +117,13 @@ func TestUserFilters(t *testing.T) {
 }
 
 func TestClient_Users(t *testing.T) {
-	cli, save := newClient(t, "Users")
+	cli, save := NewTestClient(t, "Users", *update)
 	defer save()
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
 
-	users := map[string]*bitbucketserver.User{
+	users := map[string]*User{
 		"admin": {
 			Name:         "admin",
 			EmailAddress: "tomas@sourcegraph.com",
@@ -112,10 +147,10 @@ func TestClient_Users(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
 		ctx     context.Context
-		page    *bitbucketserver.PageToken
-		filters []bitbucketserver.UserFilter
-		users   []*bitbucketserver.User
-		next    *bitbucketserver.PageToken
+		page    *PageToken
+		filters []UserFilter
+		users   []*User
+		next    *PageToken
 		err     string
 	}{
 		{
@@ -125,9 +160,9 @@ func TestClient_Users(t *testing.T) {
 		},
 		{
 			name:  "pagination: first page",
-			page:  &bitbucketserver.PageToken{Limit: 1},
-			users: []*bitbucketserver.User{users["admin"]},
-			next: &bitbucketserver.PageToken{
+			page:  &PageToken{Limit: 1},
+			users: []*User{users["admin"]},
+			next: &PageToken{
 				Size:          1,
 				Limit:         1,
 				NextPageStart: 1,
@@ -135,13 +170,13 @@ func TestClient_Users(t *testing.T) {
 		},
 		{
 			name: "pagination: last page",
-			page: &bitbucketserver.PageToken{
+			page: &PageToken{
 				Size:          1,
 				Limit:         1,
 				NextPageStart: 1,
 			},
-			users: []*bitbucketserver.User{users["john"]},
-			next: &bitbucketserver.PageToken{
+			users: []*User{users["john"]},
+			next: &PageToken{
 				Size:       1,
 				Start:      1,
 				Limit:      1,
@@ -150,10 +185,10 @@ func TestClient_Users(t *testing.T) {
 		},
 		{
 			name:    "filter by substring match in username, name and email address",
-			page:    &bitbucketserver.PageToken{Limit: 1000},
-			filters: []bitbucketserver.UserFilter{{Filter: "Doe"}}, // matches "John Doe" in name
-			users:   []*bitbucketserver.User{users["john"]},
-			next: &bitbucketserver.PageToken{
+			page:    &PageToken{Limit: 1000},
+			filters: []UserFilter{{Filter: "Doe"}}, // matches "John Doe" in name
+			users:   []*User{users["john"]},
+			next: &PageToken{
 				Size:       1,
 				Limit:      1000,
 				IsLastPage: true,
@@ -161,10 +196,10 @@ func TestClient_Users(t *testing.T) {
 		},
 		{
 			name:    "filter by group",
-			page:    &bitbucketserver.PageToken{Limit: 1000},
-			filters: []bitbucketserver.UserFilter{{Group: "admins"}},
-			users:   []*bitbucketserver.User{users["admin"]},
-			next: &bitbucketserver.PageToken{
+			page:    &PageToken{Limit: 1000},
+			filters: []UserFilter{{Group: "admins"}},
+			users:   []*User{users["admin"]},
+			next: &PageToken{
 				Size:       1,
 				Limit:      1000,
 				IsLastPage: true,
@@ -172,23 +207,23 @@ func TestClient_Users(t *testing.T) {
 		},
 		{
 			name: "filter by multiple ANDed permissions",
-			page: &bitbucketserver.PageToken{Limit: 1000},
-			filters: []bitbucketserver.UserFilter{
+			page: &PageToken{Limit: 1000},
+			filters: []UserFilter{
 				{
-					Permission: bitbucketserver.PermissionFilter{
-						Root: bitbucketserver.PermSysAdmin,
+					Permission: PermissionFilter{
+						Root: PermSysAdmin,
 					},
 				},
 				{
-					Permission: bitbucketserver.PermissionFilter{
-						Root:           bitbucketserver.PermRepoRead,
+					Permission: PermissionFilter{
+						Root:           PermRepoRead,
 						ProjectKey:     "ORG",
 						RepositorySlug: "foo",
 					},
 				},
 			},
-			users: []*bitbucketserver.User{users["admin"]},
-			next: &bitbucketserver.PageToken{
+			users: []*User{users["admin"]},
+			next: &PageToken{
 				Size:       1,
 				Limit:      1000,
 				IsLastPage: true,
@@ -196,21 +231,21 @@ func TestClient_Users(t *testing.T) {
 		},
 		{
 			name: "multiple filters are ANDed",
-			page: &bitbucketserver.PageToken{Limit: 1000},
-			filters: []bitbucketserver.UserFilter{
+			page: &PageToken{Limit: 1000},
+			filters: []UserFilter{
 				{
 					Filter: "admin",
 				},
 				{
-					Permission: bitbucketserver.PermissionFilter{
-						Root:           bitbucketserver.PermRepoRead,
+					Permission: PermissionFilter{
+						Root:           PermRepoRead,
 						ProjectKey:     "ORG",
 						RepositorySlug: "foo",
 					},
 				},
 			},
-			users: []*bitbucketserver.User{users["admin"]},
-			next: &bitbucketserver.PageToken{
+			users: []*User{users["admin"]},
+			next: &PageToken{
 				Size:       1,
 				Limit:      1000,
 				IsLastPage: true,
@@ -218,18 +253,18 @@ func TestClient_Users(t *testing.T) {
 		},
 		{
 			name: "maximum 50 permission filters",
-			page: &bitbucketserver.PageToken{Limit: 1000},
-			filters: func() (fs bitbucketserver.UserFilters) {
+			page: &PageToken{Limit: 1000},
+			filters: func() (fs UserFilters) {
 				for i := 0; i < 51; i++ {
-					fs = append(fs, bitbucketserver.UserFilter{
-						Permission: bitbucketserver.PermissionFilter{
-							Root: bitbucketserver.PermSysAdmin,
+					fs = append(fs, UserFilter{
+						Permission: PermissionFilter{
+							Root: PermSysAdmin,
 						},
 					})
 				}
 				return fs
 			}(),
-			err: bitbucketserver.ErrUserFiltersLimit.Error(),
+			err: ErrUserFiltersLimit.Error(),
 		},
 	} {
 		tc := tc
@@ -256,44 +291,4 @@ func TestClient_Users(t *testing.T) {
 			}
 		})
 	}
-}
-
-func newClient(t testing.TB, name string) (*bitbucketserver.Client, func()) {
-	t.Helper()
-
-	cassete := filepath.Join("testdata/vcr/", normalize(name))
-	rec, err := httptestutil.NewRecorder(cassete, *update)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
-	if instanceURL == "" {
-		instanceURL = "http://localhost:7990"
-	}
-
-	u, err := url.Parse(instanceURL)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cli := bitbucketserver.NewClient(u, hc)
-	cli.Token = os.Getenv("BITBUCKET_SERVER_TOKEN")
-
-	return cli, func() {
-		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
-		}
-	}
-}
-
-var normalizer = regexp.MustCompile("[^A-Za-z0-9-]+")
-
-func normalize(path string) string {
-	return normalizer.ReplaceAllLiteralString(path, "-")
 }

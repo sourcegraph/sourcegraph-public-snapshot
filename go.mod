@@ -31,6 +31,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/felixfbecker/stringscore v0.0.0-20170928081130-e71a9f1b0749
 	github.com/felixge/httpsnoop v1.0.0
+	github.com/garyburd/go-oauth v0.0.0-20180319155456-bca2e7f09a17
 	github.com/garyburd/redigo v1.6.0
 	github.com/gchaincl/sqlhooks v1.1.0
 	github.com/getsentry/raven-go v0.2.0
@@ -49,6 +50,7 @@ require (
 	github.com/golangplus/bytes v0.0.0-20160111154220-45c989fe5450 // indirect
 	github.com/golangplus/fmt v0.0.0-20150411045040-2a5d6d7d2995 // indirect
 	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e // indirect
+	github.com/gomodule/oauth1 v0.0.0-20181215000758-9a59ed3b0a84
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/google/go-cmp v0.2.0
 	github.com/google/go-github v17.0.0+incompatible
