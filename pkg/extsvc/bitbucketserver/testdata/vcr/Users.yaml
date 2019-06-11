@@ -7,10 +7,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/users?limit=1
+    url: http://127.0.0.1:7990/rest/api/1.0/users?limit=1
     method: GET
   response:
-    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"name":"admin","emailAddress":"tomas@sourcegraph.com","id":1,"displayName":"admin","active":true,"slug":"admin","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/admin"}]}}],"start":0,"nextPageStart":1}'
+    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"name":"admin","emailAddress":"tomas@sourcegraph.com","id":1,"displayName":"admin","active":true,"slug":"admin","type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/users/admin"}]}}],"start":0,"nextPageStart":1}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -44,11 +44,11 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/users?limit=1&start=1
+    url: http://127.0.0.1:7990/rest/api/1.0/users?limit=1&start=1
     method: GET
   response:
     body: '{"size":1,"limit":1,"isLastPage":true,"values":[{"name":"john","emailAddress":"john@mycorp.org","id":52,"displayName":"John
-      Doe","active":true,"slug":"john","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/john"}]}}],"start":1}'
+      Doe","active":true,"slug":"john","type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/users/john"}]}}],"start":1}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -82,11 +82,11 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/users?filter=Doe&limit=1000
+    url: http://127.0.0.1:7990/rest/api/1.0/users?filter=Doe&limit=1000
     method: GET
   response:
     body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"name":"john","emailAddress":"john@mycorp.org","id":52,"displayName":"John
-      Doe","active":true,"slug":"john","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/john"}]}}],"start":0}'
+      Doe","active":true,"slug":"john","type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/users/john"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -120,10 +120,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/users?group=admins&limit=1000
+    url: http://127.0.0.1:7990/rest/api/1.0/users?group=admins&limit=1000
     method: GET
   response:
-    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"name":"admin","emailAddress":"tomas@sourcegraph.com","id":1,"displayName":"admin","active":true,"slug":"admin","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/admin"}]}}],"start":0}'
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"name":"admin","emailAddress":"tomas@sourcegraph.com","id":1,"displayName":"admin","active":true,"slug":"admin","type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/users/admin"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -157,10 +157,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/users?limit=1000&permission.1=SYS_ADMIN&permission.2=REPO_READ&permission.2.projectKey=ORG&permission.2.repositorySlug=foo
+    url: http://127.0.0.1:7990/rest/api/1.0/users?limit=1000&permission.1=SYS_ADMIN&permission.2=REPO_READ&permission.2.projectKey=ORG&permission.2.repositorySlug=foo
     method: GET
   response:
-    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"name":"admin","emailAddress":"tomas@sourcegraph.com","id":1,"displayName":"admin","active":true,"slug":"admin","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/admin"}]}}],"start":0}'
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"name":"admin","emailAddress":"tomas@sourcegraph.com","id":1,"displayName":"admin","active":true,"slug":"admin","type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/users/admin"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -194,10 +194,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/users?filter=admin&limit=1000&permission.1=REPO_READ&permission.1.projectKey=ORG&permission.1.repositorySlug=foo
+    url: http://127.0.0.1:7990/rest/api/1.0/users?filter=admin&limit=1000&permission.1=REPO_READ&permission.1.projectKey=ORG&permission.1.repositorySlug=foo
     method: GET
   response:
-    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"name":"admin","emailAddress":"tomas@sourcegraph.com","id":1,"displayName":"admin","active":true,"slug":"admin","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/admin"}]}}],"start":0}'
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"name":"admin","emailAddress":"tomas@sourcegraph.com","id":1,"displayName":"admin","active":true,"slug":"admin","type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/users/admin"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache

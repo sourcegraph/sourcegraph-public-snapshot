@@ -7,11 +7,11 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/users/engineer2
+    url: http://127.0.0.1:7990/rest/api/1.0/users/engineer2
     method: GET
   response:
     body: '{"name":"engineer2","emailAddress":"engineer2@mycorp.com","id":4,"displayName":"Mr.
-      Engineer 2","active":true,"slug":"engineer2","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/engineer2"}]}}'
+      Engineer 2","active":true,"slug":"engineer2","type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/users/engineer2"}]}}'
     headers:
       Cache-Control:
       - no-cache, no-transform
@@ -40,11 +40,11 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/users/scientist
+    url: http://127.0.0.1:7990/rest/api/1.0/users/scientist
     method: GET
   response:
     body: '{"name":"scientist","emailAddress":"scientist@mycorp.com","id":2,"displayName":"Ms.
-      Scientist","active":true,"slug":"scientist","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/scientist"}]}}'
+      Scientist","active":true,"slug":"scientist","type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/users/scientist"}]}}'
     headers:
       Cache-Control:
       - no-cache, no-transform
@@ -73,11 +73,11 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/users/ceo
+    url: http://127.0.0.1:7990/rest/api/1.0/users/ceo
     method: GET
   response:
     body: '{"name":"ceo","emailAddress":"ceo@mycorp.com","id":5,"displayName":"Mrs.
-      CEO","active":true,"slug":"ceo","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/ceo"}]}}'
+      CEO","active":true,"slug":"ceo","type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/users/ceo"}]}}'
     headers:
       Cache-Control:
       - no-cache, no-transform
@@ -106,11 +106,11 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/users/engineer1
+    url: http://127.0.0.1:7990/rest/api/1.0/users/engineer1
     method: GET
   response:
     body: '{"name":"engineer1","emailAddress":"engineer1@mycorp.com","id":3,"displayName":"Mr.
-      Engineer 1","active":true,"slug":"engineer1","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/engineer1"}]}}'
+      Engineer 1","active":true,"slug":"engineer1","type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/users/engineer1"}]}}'
     headers:
       Cache-Control:
       - no-cache, no-transform
@@ -139,7 +139,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/admin/groups?filter=engineers
+    url: http://127.0.0.1:7990/rest/api/1.0/admin/groups?filter=engineers
     method: GET
   response:
     body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"name":"engineers","deletable":true}],"start":0}'
@@ -171,7 +171,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/admin/groups?filter=scientists
+    url: http://127.0.0.1:7990/rest/api/1.0/admin/groups?filter=scientists
     method: GET
   response:
     body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"name":"scientists","deletable":true}],"start":0}'
@@ -203,7 +203,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/admin/groups?filter=secret-project
+    url: http://127.0.0.1:7990/rest/api/1.0/admin/groups?filter=secret-project
     method: GET
   response:
     body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"name":"secret-project","deletable":true}],"start":0}'
@@ -235,7 +235,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/admin/groups?filter=management
+    url: http://127.0.0.1:7990/rest/api/1.0/admin/groups?filter=management
     method: GET
   response:
     body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"name":"management","deletable":true}],"start":0}'
@@ -267,10 +267,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/SECRET
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/SECRET
     method: GET
   response:
-    body: '{"key":"SECRET","id":1,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/projects/SECRET"}]}}'
+    body: '{"key":"SECRET","id":1,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SECRET"}]}}'
     headers:
       Cache-Control:
       - no-cache, no-transform
@@ -299,10 +299,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/SUPERSECRET
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/SUPERSECRET
     method: GET
   response:
-    body: '{"key":"SUPERSECRET","id":2,"name":"Super Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/projects/SUPERSECRET"}]}}'
+    body: '{"key":"SUPERSECRET","id":2,"name":"Super Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SUPERSECRET"}]}}'
     headers:
       Cache-Control:
       - no-cache, no-transform
@@ -331,10 +331,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/PRIVATE
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/PRIVATE
     method: GET
   response:
-    body: '{"key":"PRIVATE","id":3,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/projects/PRIVATE"}]}}'
+    body: '{"key":"PRIVATE","id":3,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE"}]}}'
     headers:
       Cache-Control:
       - no-cache, no-transform
@@ -363,10 +363,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/PUBLIC
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/PUBLIC
     method: GET
   response:
-    body: '{"key":"PUBLIC","id":4,"name":"Public","public":true,"type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/projects/PUBLIC"}]}}'
+    body: '{"key":"PUBLIC","id":4,"name":"Public","public":true,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC"}]}}'
     headers:
       Cache-Control:
       - no-cache, no-transform
@@ -395,10 +395,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/SECRET/repos/secret-repo
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/SECRET/repos/secret-repo
     method: GET
   response:
-    body: '{"slug":"secret-repo","id":1,"name":"secret-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SECRET","id":1,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/projects/SECRET"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@localhost:7999/secret/secret-repo.git","name":"ssh"},{"href":"http://localhost:7990/scm/secret/secret-repo.git","name":"http"}],"self":[{"href":"http://localhost:7990/projects/SECRET/repos/secret-repo/browse"}]}}'
+    body: '{"slug":"secret-repo","id":1,"name":"secret-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SECRET","id":1,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SECRET"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@127.0.0.1:7999/secret/secret-repo.git","name":"ssh"},{"href":"http://127.0.0.1:7990/scm/secret/secret-repo.git","name":"http"}],"self":[{"href":"http://127.0.0.1:7990/projects/SECRET/repos/secret-repo/browse"}]}}'
     headers:
       Cache-Control:
       - no-cache, no-transform
@@ -427,11 +427,11 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/SUPERSECRET/repos/super-secret-repo
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/SUPERSECRET/repos/super-secret-repo
     method: GET
   response:
     body: '{"slug":"super-secret-repo","id":4,"name":"super-secret-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SUPERSECRET","id":2,"name":"Super
-      Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/projects/SUPERSECRET"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@localhost:7999/supersecret/super-secret-repo.git","name":"ssh"},{"href":"http://localhost:7990/scm/supersecret/super-secret-repo.git","name":"http"}],"self":[{"href":"http://localhost:7990/projects/SUPERSECRET/repos/super-secret-repo/browse"}]}}'
+      Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SUPERSECRET"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@127.0.0.1:7999/supersecret/super-secret-repo.git","name":"ssh"},{"href":"http://127.0.0.1:7990/scm/supersecret/super-secret-repo.git","name":"http"}],"self":[{"href":"http://127.0.0.1:7990/projects/SUPERSECRET/repos/super-secret-repo/browse"}]}}'
     headers:
       Cache-Control:
       - no-cache, no-transform
@@ -460,10 +460,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/PUBLIC/repos/public-repo
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/PUBLIC/repos/public-repo
     method: GET
   response:
-    body: '{"slug":"public-repo","id":2,"name":"public-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PUBLIC","id":4,"name":"Public","public":true,"type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/projects/PUBLIC"}]}},"public":false,"links":{"clone":[{"href":"http://localhost:7990/scm/public/public-repo.git","name":"http"},{"href":"ssh://git@localhost:7999/public/public-repo.git","name":"ssh"}],"self":[{"href":"http://localhost:7990/projects/PUBLIC/repos/public-repo/browse"}]}}'
+    body: '{"slug":"public-repo","id":2,"name":"public-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PUBLIC","id":4,"name":"Public","public":true,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/public/public-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/public/public-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC/repos/public-repo/browse"}]}}'
     headers:
       Cache-Control:
       - no-cache, no-transform
@@ -492,10 +492,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/PRIVATE/repos/private-repo
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/PRIVATE/repos/private-repo
     method: GET
   response:
-    body: '{"slug":"private-repo","id":3,"name":"private-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PRIVATE","id":3,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/projects/PRIVATE"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@localhost:7999/private/private-repo.git","name":"ssh"},{"href":"http://localhost:7990/scm/private/private-repo.git","name":"http"}],"self":[{"href":"http://localhost:7990/projects/PRIVATE/repos/private-repo/browse"}]}}'
+    body: '{"slug":"private-repo","id":3,"name":"private-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PRIVATE","id":3,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@127.0.0.1:7999/private/private-repo.git","name":"ssh"},{"href":"http://127.0.0.1:7990/scm/private/private-repo.git","name":"http"}],"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE/repos/private-repo/browse"}]}}'
     headers:
       Cache-Control:
       - no-cache, no-transform
@@ -524,7 +524,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/PRIVATE/permissions/groups?name=engineers&permission=PROJECT_WRITE
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/PRIVATE/permissions/groups?name=engineers&permission=PROJECT_WRITE
     method: PUT
   response:
     body: ""
@@ -558,7 +558,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/PUBLIC/permissions/groups?name=engineers&permission=PROJECT_WRITE
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/PUBLIC/permissions/groups?name=engineers&permission=PROJECT_WRITE
     method: PUT
   response:
     body: ""
@@ -592,7 +592,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/PRIVATE/permissions/groups?name=scientists&permission=PROJECT_READ
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/PRIVATE/permissions/groups?name=scientists&permission=PROJECT_READ
     method: PUT
   response:
     body: ""
@@ -626,7 +626,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/SECRET/permissions/groups?name=secret-project&permission=PROJECT_WRITE
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/SECRET/permissions/groups?name=secret-project&permission=PROJECT_WRITE
     method: PUT
   response:
     body: ""
@@ -660,7 +660,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/SECRET/permissions/groups?name=management&permission=PROJECT_READ
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/SECRET/permissions/groups?name=management&permission=PROJECT_READ
     method: PUT
   response:
     body: ""
@@ -694,7 +694,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/PRIVATE/permissions/groups?name=management&permission=PROJECT_READ
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/PRIVATE/permissions/groups?name=management&permission=PROJECT_READ
     method: PUT
   response:
     body: ""
@@ -728,7 +728,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/projects/SUPERSECRET/repos/super-secret-repo/permissions/users?name=ceo&permission=REPO_WRITE
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/SUPERSECRET/repos/super-secret-repo/permissions/users?name=ceo&permission=REPO_WRITE
     method: PUT
   response:
     body: ""
@@ -762,7 +762,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/users?filter=john&limit=1
+    url: http://127.0.0.1:7990/rest/api/1.0/users?filter=john&limit=1
     method: GET
   response:
     body: '{"size":0,"limit":1,"isLastPage":true,"values":[],"start":0}'
@@ -794,11 +794,11 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://localhost:7990/rest/api/1.0/users?filter=ceo&limit=1
+    url: http://127.0.0.1:7990/rest/api/1.0/users?filter=ceo&limit=1
     method: GET
   response:
     body: '{"size":1,"limit":1,"isLastPage":true,"values":[{"name":"ceo","emailAddress":"ceo@mycorp.com","id":5,"displayName":"Mrs.
-      CEO","active":true,"slug":"ceo","type":"NORMAL","links":{"self":[{"href":"http://localhost:7990/users/ceo"}]}}],"start":0}'
+      CEO","active":true,"slug":"ceo","type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/users/ceo"}]}}],"start":0}'
     headers:
       Cache-Control:
       - no-cache, no-transform
