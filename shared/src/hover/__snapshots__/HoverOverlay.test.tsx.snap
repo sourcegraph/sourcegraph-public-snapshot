@@ -37,7 +37,7 @@ exports[`HoverOverlay actions and hover error 1`] = `
       className="hover-overlay__row hover-overlay__hover-error alert alert-danger"
     >
       <h4>
-        <AlertCircleOutlineIcon
+        <Memo(AlertCircleOutlineIcon)
           className="icon-inline"
         />
          Error:
@@ -357,7 +357,7 @@ exports[`HoverOverlay hover error 1`] = `
       className="hover-overlay__row hover-overlay__hover-error alert alert-danger"
     >
       <h4>
-        <AlertCircleOutlineIcon
+        <Memo(AlertCircleOutlineIcon)
           className="icon-inline"
         />
          Error:
@@ -388,7 +388,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
       className="hover-overlay__row hover-overlay__hover-error alert alert-danger"
     >
       <h4>
-        <AlertCircleOutlineIcon
+        <Memo(AlertCircleOutlineIcon)
           className="icon-inline"
         />
          Error:

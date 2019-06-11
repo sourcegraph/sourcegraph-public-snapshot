@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	neturl "net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -54,7 +55,7 @@ func (r *gitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return r.urlPath(url), nil
+	return r.urlPath(url)
 }
 
 func (r *gitTreeEntryResolver) CanonicalURL() (string, error) {
@@ -62,21 +63,26 @@ func (r *gitTreeEntryResolver) CanonicalURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return r.urlPath(url), nil
+	return r.urlPath(url)
 }
 
-func (r *gitTreeEntryResolver) urlPath(prefix string) string {
+func (r *gitTreeEntryResolver) urlPath(prefix string) (string, error) {
 	if r.IsRoot() {
-		return prefix
+		return prefix, nil
 	}
 
-	url := prefix + "/-/"
-	if r.IsDirectory() {
-		url += "tree"
-	} else {
-		url += "blob"
+	u, err := neturl.Parse(prefix)
+	if err != nil {
+		return "", err
 	}
-	return url + "/" + r.path
+
+	typ := "blob"
+	if r.IsDirectory() {
+		typ = "tree"
+	}
+
+	u.Path = path.Join(u.Path, "-", typ, r.path)
+	return u.String(), nil
 }
 
 func (r *gitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
