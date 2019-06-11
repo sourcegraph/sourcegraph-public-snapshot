@@ -814,7 +814,7 @@ type Query {
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomQuery!
     # Lists all status messages
-    statusMessages: [StatusMessage]!
+    statusMessages: [StatusMessage!]!
 }
 
 # A query and an associated number of times it occurred.
