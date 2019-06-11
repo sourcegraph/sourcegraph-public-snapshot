@@ -2,7 +2,7 @@
 
 Sourcegraph can be configured to enforce repository permissions from code hosts.
 
-Currently, GitHub, GitHub Enterprise, and GitLab permissions are supported. Check the [roadmap](../../dev/roadmap.md) for plans to
+Currently, GitHub, GitHub Enterprise, GitLab and Bitbucket Server permissions are supported. Check the [roadmap](../../dev/roadmap.md) for plans to
 support other code hosts. If your desired code host is not yet on the roadmap, please [open a
 feature request](https://github.com/sourcegraph/sourcegraph/issues/new?template=feature_request.md).
 
@@ -99,3 +99,69 @@ because Sourcegraph usernames are mutable.
   }
 }
 ```
+
+## Bitbucket Server
+
+Enforcing Bitbucket Server permissions can be configured via the `authorization` setting in its external service configuration.
+
+#### Prerequisites
+
+1. You have the exact same user accounts, **with matching usernames**, in Sourcegraph and Bitbucket Server. This can be accomplished by configuring an [external authentication provider](../auth.md) that mirrors user accounts from a central directory like LDAP or Active Directory. The same should be done on Bitbucket Server with [external user directories](https://confluence.atlassian.com/bitbucketserver/external-user-directories-776640394.html).
+2. Ensure you have set `auth.enableUsernameChanges` to **`false`** in the [Critical site config](../config/critical_config.md) to prevent users from changing their usernames and **escalating their privileges**.
+
+
+#### Setup
+
+This section walks you through the process of setting up an *Application Link between Sourcegraph and Bitbucket Server* and configuring the Bitbucket External service with `authorization` settings. It assumes the above prerequisites are met.
+
+As an admin user, go to the "Application Links" page. You can use the sidebar navigation in the admin dashboard, or go directly to [https://bitbucketserver.mycorp.org/plugins/servlet/applinks/listApplicationLinks](https://bitbucketserver.mycorp.org/plugins/servlet/applinks/listApplicationLinks).
+
+<img src="https://imgur.com/Hg4bzOf.png" width="800">
+
+---
+
+Write Sourcegraph's external URL in the text area (e.g. `https://sourcegraph.mycorp.org`) and click **Create new link**. Click **Continue** even if Bitbucket Server warns you about the given URL not responding.
+
+<img src="https://imgur.com/x6vFKIL.png" width="800">
+
+---
+
+Write `Sourcegraph` as the *Application Name* and select `Generic Application` as the *Application Type*. Leave everything else unset and click **Continue**.
+
+<img src="https://imgur.com/161rbB9.png" width="800">
+
+---
+
+
+Now click the edit button in the `Sourcegraph` Application Link that you just created and select the `Incoming Authentication` panel.
+
+<img src="https://imgur.com/sMGmzhH.png" width="800">
+
+---
+
+
+Generate a *Consumer Key* in your terminal with `echo sourcegraph$(cat /dev/urandom | tr -dc "[:alnum:]" | head -c 32)`. Copy this command's output and paste it in the *Consumer Key* field. Write `Sourcegraph` in the *Consumer Name* field.
+
+<img src="https://imgur.com/1kK2Y5x.png" width="800">
+
+---
+
+Generate an RSA key pair in your terminal with `openssl genrsa -out sourcegraph.pem 4096 && openssl rsa -in sourcegraph.pem -pubout > sourcegraph.pub`. Copy the contents of `sourcegraph.pub` and paste them in the *Public Key* field.
+
+<img src="https://imgur.com/YHm1uSr.png" width="600">
+
+---
+
+Scroll to the bottom and check the *Allow 2-Legged OAuth* checkbox, then write your admin account's username in the *Execute as* field and, lastly, check the *Allow user impersonation through 2-Legged OAuth* checkbox. Press **Save**.
+
+<img src="https://imgur.com/1qxEAye.png" width="800">
+
+---
+
+Go to your Sourcegraph's external services page (i.e. `https://sourcegraph.mycorp.org/site-admin/external-services`) and either edit or create a new *Bitbucket Server* external service. Click on the *Enforce permissions* quick action on top of the configuration editor. Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 -w0 sourcegraph.pem` to the `oauth.signingKey` field. Finally, **save the configuration**.
+
+<img src="https://imgur.com/ucetesA.png" width="800">
+
+---
+
+You're done! :tada:
