@@ -111,6 +111,7 @@ func HasCommitSince(ctx context.Context, repo gitserver.Repo, date string) (bool
 
 	n, err := CommitCount(ctx, repo, CommitsOptions{
 		After: date,
+		Range: "HEAD",
 	})
 	return n > 0, err
 }
@@ -215,7 +216,7 @@ func CommitCount(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
-	args, err := commitLogArgs([]string{"rev-list", "HEAD", "--count"}, opt)
+	args, err := commitLogArgs([]string{"rev-list", "--count"}, opt)
 	if err != nil {
 		return 0, err
 	}
