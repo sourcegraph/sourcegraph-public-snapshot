@@ -30,6 +30,7 @@ interface Props
     history: H.History
     authenticatedUser: GQL.IUser | null
     showDotComMarketing: boolean
+    isSourcegraphDotCom: boolean
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -111,7 +112,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         )}
                     </>
                 )}
-                {!window.context.sourcegraphDotComMode &&
+                {!this.props.isSourcegraphDotCom &&
                     this.props.authenticatedUser &&
                     this.props.authenticatedUser.siteAdmin && (
                         <li className="nav-item">
