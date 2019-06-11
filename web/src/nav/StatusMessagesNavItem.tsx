@@ -34,7 +34,7 @@ interface State {
     isOpen: boolean
 }
 
-const refreshInternalMs = 3000
+const refreshIntervalMs = 3000
 
 export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     private notificationUpdates = new Subject<void>()
@@ -47,7 +47,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             this.notificationUpdates.pipe(switchMap(() => fetchAllStatusMessages())).subscribe(messages => {
                 this.setState({ messages })
-                setTimeout(() => this.notificationUpdates.next(), refreshInternalMs)
+                setTimeout(() => this.notificationUpdates.next(), refreshIntervalMs)
             })
         )
         this.notificationUpdates.next()
