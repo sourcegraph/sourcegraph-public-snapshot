@@ -1,6 +1,49 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`UserNavItem nothing cloning 1`] = `
+exports[`UserNavItem no messages 1`] = `
+<div
+  className="nav-link py-0 btn-group"
+  onKeyDown={[Function]}
+>
+  <a
+    aria-expanded={false}
+    aria-haspopup={true}
+    className="bg-transparent d-flex align-items-center nav-link"
+    href="#"
+    onClick={[Function]}
+  >
+    <svg
+      className="mdi-icon icon-inline"
+      fill="currentColor"
+      height={24}
+      viewBox="0 0 24 24"
+      width={24}
+    >
+      <path
+        d="M20,12C20,16.42 16.42,20 12,20C7.58,20 4,16.42 4,12C4,7.58 7.58,4 12,4C12.76,4 13.5,4.11 14.2,4.31L15.77,2.74C14.61,2.26 13.34,2 12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12M7.91,10.08L6.5,11.5L11,16L21,6L19.59,4.58L11,13.17L7.91,10.08Z"
+      />
+    </svg>
+  </a>
+  <div
+    aria-hidden={true}
+    className="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+    role="menu"
+    tabIndex="-1"
+  >
+    <button
+      className="dropdown-item"
+      onClick={[Function]}
+      role="menuitem"
+      tabIndex="0"
+      type="button"
+    >
+      All repositories up to date
+    </button>
+  </div>
+</div>
+`;
+
+exports[`UserNavItem one CURRENTLYCLONING message 1`] = `
 <div
   className="nav-link py-0 btn-group"
   onKeyDown={[Function]}
