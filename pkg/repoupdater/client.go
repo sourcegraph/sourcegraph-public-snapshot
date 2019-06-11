@@ -257,15 +257,8 @@ func (c *Client) ExcludeRepo(ctx context.Context, id uint32) (*protocol.ExcludeR
 	return &res, nil
 }
 
-// MockStatusMessages mocks (*Client).StatusMessages for tests.
-var MockStatusMessages func(context.Context) (*protocol.StatusMessagesResponse, error)
-
 // StatusMessages returns an array of status messages
 func (c *Client) StatusMessages(ctx context.Context) (*protocol.StatusMessagesResponse, error) {
-	if MockStatusMessages != nil {
-		return MockStatusMessages(ctx)
-	}
-
 	resp, err := c.httpGet(ctx, "status-messages")
 	if err != nil {
 		return nil, err
@@ -326,6 +319,20 @@ func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, e
 		nethttp.OperationName("RepoUpdater Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
+
+	if c.HTTPClient != nil {
+		return c.HTTPClient.Do(req)
+	}
+	return http.DefaultClient.Do(req)
+}
+
+func (c *Client) httpGet(ctx context.Context, method string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", c.URL+"/"+method, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req = req.WithContext(ctx)
 
 	if c.HTTPClient != nil {
 		return c.HTTPClient.Do(req)
