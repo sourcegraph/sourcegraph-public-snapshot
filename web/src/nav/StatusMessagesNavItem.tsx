@@ -2,8 +2,8 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import CheckboxMarkedCircleOutlineIcon from 'mdi-react/CheckboxMarkedCircleOutlineIcon'
 import React from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { Observable, Subject, Subscription } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { Observable, Subscription, timer } from 'rxjs'
+import { concatMap, map } from 'rxjs/operators'
 import { Link } from '../../../shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -37,7 +37,6 @@ interface State {
 const REFRESH_INTERVAL_MS = 3000
 
 export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
-    private notificationUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
     private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
@@ -49,12 +48,10 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         }
 
         this.subscriptions.add(
-            this.notificationUpdates.pipe(switchMap(() => fetchAllStatusMessages())).subscribe(messages => {
-                this.setState({ messages })
-                setTimeout(() => this.notificationUpdates.next(), REFRESH_INTERVAL_MS)
-            })
+            timer(0, REFRESH_INTERVAL_MS)
+                .pipe(concatMap(fetchAllStatusMessages))
+                .subscribe(messages => this.setState({ messages }))
         )
-        this.notificationUpdates.next()
     }
 
     public componentWillUnmount(): void {
@@ -75,9 +72,8 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const types = this.state.messages.map(n => n.type)
         const hasMessages = this.state.messages.length > 0
-        const currentlyCloning = types.some(t => t === GQL.StatusMessageType.CURRENTLYCLONING)
+        const currentlyCloning = this.state.messages.some(({ type }) => type === GQL.StatusMessageType.CURRENTLYCLONING)
         return (
             <ButtonDropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="nav-link py-0">
                 <DropdownToggle caret={false} className="bg-transparent d-flex align-items-center" nav={true}>
@@ -90,7 +86,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu">
                     {hasMessages ? (
-                        this.state.messages.map(m => this.renderMessage(m))
+                        this.state.messages.map(this.renderMessage.bind(this))
                     ) : (
                         <DropdownItem>All repositories up to date</DropdownItem>
                     )}
