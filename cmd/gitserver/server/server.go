@@ -232,6 +232,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
 	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
 	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
+	mux.HandleFunc("/clone-queue-status", s.handleCloneQueueStatus)
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -629,6 +630,19 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Exec-Error", errorString(execErr))
 	w.Header().Set("X-Exec-Exit-Status", status)
 	w.Header().Set("X-Exec-Stderr", string(stderr))
+}
+
+func (s *Server) handleCloneQueueStatus(w http.ResponseWriter, r *http.Request) {
+	max, current := s.queryCloneLimiter()
+	resp := protocol.CloneQueueStatusReponse{
+		Maximum: max,
+		Current: current,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // setGitAttributes writes our global gitattributes to
