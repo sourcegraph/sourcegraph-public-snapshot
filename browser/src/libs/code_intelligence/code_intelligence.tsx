@@ -181,6 +181,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * CSS classes for the completion widget to customize styling
      */
     completionWidgetClassProps?: CompletionWidgetClassProps
+
+    /**
+     * Whether or not code views need to be tokenized. Defaults to false.
+     */
+    codeViewsRequireTokenization?: boolean
 }
 
 export interface FileInfo {
@@ -295,6 +300,7 @@ export function initCodeIntelligence({
             getHover: ({ line, character, part, ...rest }) => getHover({ ...rest, position: { line, character } }),
             getActions: context => getHoverActions({ extensionsController, platformContext }, context),
             pinningEnabled: true,
+            tokenize: codeHost.codeViewsRequireTokenization,
         }
     )
 
@@ -665,7 +671,12 @@ export function handleCodeHost({
             codeViewEvent.subscriptions.add(
                 hoverifier.hoverify({
                     dom: domFunctions,
-                    positionEvents: of(element).pipe(findPositionsFromEvents(domFunctions)),
+                    positionEvents: of(element).pipe(
+                        findPositionsFromEvents({
+                            domFunctions,
+                            tokenize: codeHost.codeViewsRequireTokenization !== false,
+                        })
+                    ),
                     resolveContext,
                     adjustPosition,
                 })
