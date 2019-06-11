@@ -111,11 +111,13 @@ export class NavLinks extends React.PureComponent<Props> {
                         )}
                     </>
                 )}
-                {this.props.authenticatedUser && this.props.authenticatedUser.siteAdmin && (
-                    <li className="nav-item">
-                        <StatusMessagesNavItem />
-                    </li>
-                )}
+                {!window.context.sourcegraphDotComMode &&
+                    this.props.authenticatedUser &&
+                    this.props.authenticatedUser.siteAdmin && (
+                        <li className="nav-item">
+                            <StatusMessagesNavItem />
+                        </li>
+                    )}
                 {this.props.location.pathname !== '/welcome' && (
                     <li className="nav-item">
                         <WebCommandListPopoverButton
