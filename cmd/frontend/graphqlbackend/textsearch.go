@@ -573,8 +573,8 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 // Returns a new repoSet which accounts for the `repohasfile` and `-repohasfile` flags that may have been passed in the query.
 func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.PatternInfo, searcher zoekt.Searcher, repoSet zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
 	newRepoSet := repoSet.Set
-	repoHasFileFlagIsInQuery := len(query.FilePatternsReposMustInclude) > 0
-	negatedRepoHasFileFlagIsInQuery := len(query.FilePatternsReposMustExclude) > 0
+	flagIsInQuery := len(query.FilePatternsReposMustInclude) > 0
+	negatedFlagIsInQuery := len(query.FilePatternsReposMustExclude) > 0
 
 	// Construct queries which search for repos containing the files passed into `repohasfile`
 	filesToIncludeQueries, err := queryToZoektFileOnlyQueries(query, query.FilePatternsReposMustInclude)
@@ -589,7 +589,7 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 	}
 	newSearchOpts.SetDefaults()
 
-	if repoHasFileFlagIsInQuery {
+	if flagIsInQuery {
 		// Set newRepoSet to an empty map if the `repohasflag` exists.
 		newRepoSet = make(map[string]bool)
 
@@ -597,7 +597,7 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 			// Execute a new Zoekt search for each file passed in to a `repohasfile` flag.
 			includeResp, err := searcher.Search(ctx, q, &newSearchOpts)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "searching for %v", q.String())
 			}
 
 			for repoURL := range includeResp.RepoURLs {
@@ -624,7 +624,7 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 		return nil, err
 	}
 
-	if negatedRepoHasFileFlagIsInQuery {
+	if negatedFlagIsInQuery {
 		for _, q := range filesToExcludeQueries {
 			excludeResp, err := searcher.Search(ctx, q, &newSearchOpts)
 			if err != nil {

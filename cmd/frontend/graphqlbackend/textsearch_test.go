@@ -489,6 +489,37 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
 		},
 		{
+			name: "returns filtered repoSet when multiple repoHasFileFlags are in query",
+			args: args{
+				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1", "2"}, PathPatternsAreRegExps: true},
+				searcher: &fakeSearcher{result: &zoekt.SearchResult{
+					Files: []zoekt.FileMatch{{
+						FileName:   "1.md",
+						Repository: "github.com/test/1",
+						LineMatches: []zoekt.LineMatch{{
+							FileName: true,
+						}}},
+						{
+							FileName:   "2.md",
+							Repository: "github.com/test/1",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}}},
+						{
+							FileName:   "1.md",
+							Repository: "github.com/test/2",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}}},
+					},
+					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1"}}},
+				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
+				repoHasFileFlagIsInQuery:        true,
+				negatedRepoHasFileFlagIsInQuery: false,
+			},
+			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+		},
+		{
 			name: "returns filtered repoSet when negated repoHasFileFlag is in query",
 			args: args{
 				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustExclude: []string{"1"}, PathPatternsAreRegExps: true},
