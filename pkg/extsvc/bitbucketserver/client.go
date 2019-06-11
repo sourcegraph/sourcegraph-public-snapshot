@@ -129,7 +129,7 @@ func (c *Client) SetOAuth(consumerKey, signingKey string) error {
 // Application Link in Bitbucket Server is configured to allow user impersonation,
 // returning an error otherwise.
 func (c *Client) Sudo(username string) (*Client, error) {
-	if c.oauth == nil {
+	if c.Oauth == nil {
 		return nil, errors.New("bitbucketserver.Client: OAuth not configured")
 	}
 
