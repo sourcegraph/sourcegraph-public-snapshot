@@ -125,11 +125,16 @@ func (c *Client) SetOAuth(consumerKey, signingKey string) error {
 
 // Sudo returns a copy of the Client authenticated as the Bitbucket Server user with
 // the given username. This only works when using OAuth authentication and if the
-// Application Link in Bitbucket Server is configured to allow user impersonation.
-func (c *Client) Sudo(username string) *Client {
+// Application Link in Bitbucket Server is configured to allow user impersonation,
+// returning an error otherwise.
+func (c *Client) Sudo(username string) (*Client, error) {
+	if c.oauth == nil {
+		return nil, errors.New("bitbucketserver.Client: OAuth not configured")
+	}
+
 	sudo := *c
 	sudo.Username = username
-	return &sudo
+	return &sudo, nil
 }
 
 // UserFilters is a list of UserFilter that is ANDed together.

@@ -115,8 +115,8 @@ func (p *Provider) repos(ctx context.Context, username string) (all []*bitbucket
 	var filters []string
 	if username == "" {
 		filters = append(filters, "?visibility=public")
-	} else {
-		c = c.Sudo(username)
+	} else if c, err = c.Sudo(username); err != nil {
+		return nil, err
 	}
 
 	for t.HasMore() {
