@@ -634,7 +634,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleCloneQueueStatus(w http.ResponseWriter, r *http.Request) {
 	max, current := s.queryCloneLimiter()
-	resp := protocol.CloneQueueStatusReponse{
+	resp := protocol.CloneQueueStatusResponse{
 		Maximum: max,
 		Current: current,
 	}
