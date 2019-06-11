@@ -44,6 +44,10 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     public state: State = { isOpen: false, messages: [] }
 
     public componentDidMount(): void {
+        if (this.props.messages) {
+            this.setState({ messages: this.props.messages })
+        }
+
         this.subscriptions.add(
             this.notificationUpdates.pipe(switchMap(() => fetchAllStatusMessages())).subscribe(messages => {
                 this.setState({ messages })
