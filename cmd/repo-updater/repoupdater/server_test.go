@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	gitprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -537,6 +538,72 @@ func TestServer_RepoExternalServices(t *testing.T) {
 
 			if have, want := res, tc.svcs; !reflect.DeepEqual(have, want) {
 				t.Errorf("response:\n%s", cmp.Diff(have, want))
+			}
+		})
+	}
+}
+
+func TestServer_StatusMessages(t *testing.T) {
+	testCases := []struct {
+		name             string
+		cloneQueueStatus *gitprotocol.CloneQueueStatusResponse
+		res              *protocol.StatusMessagesResponse
+		err              string
+	}{
+		{
+			name:             "nothing cloning",
+			cloneQueueStatus: &gitprotocol.CloneQueueStatusResponse{Current: 0, Maximum: 10},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{},
+			},
+		},
+		{
+			name:             "repositories cloning",
+			cloneQueueStatus: &gitprotocol.CloneQueueStatusResponse{Current: 5, Maximum: 10},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						Type:    protocol.CurrentlyCloningStatusMessage,
+						Message: "Currently cloning 5 repositories in parallel...",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		ctx := context.Background()
+
+		t.Run(tc.name, func(t *testing.T) {
+
+			gitserverCalled := false
+			gitserver.MockCloneQueueStatus = func(_ context.Context) (*gitprotocol.CloneQueueStatusResponse, error) {
+				gitserverCalled = true
+				return tc.cloneQueueStatus, nil
+			}
+			defer func() { gitserver.MockCloneQueueStatus = nil }()
+
+			s := &Server{}
+			srv := httptest.NewServer(s.Handler())
+			defer srv.Close()
+			cli := repoupdater.Client{URL: srv.URL}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			res, err := cli.StatusMessages(ctx)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if !gitserverCalled {
+				t.Errorf("gitserver not called to construct status message")
+			}
+
+			if have, want := res, tc.res; !reflect.DeepEqual(have, want) {
+				t.Errorf("response: %s", cmp.Diff(have, want))
 			}
 		})
 	}
