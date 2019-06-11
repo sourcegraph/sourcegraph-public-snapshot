@@ -4,9 +4,9 @@ import { setLinkComponent } from '../../../shared/src/components/Link'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 
-describe('UserNavItem', () => {
+describe('StatusMessagesNavItem', () => {
     setLinkComponent((props: any) => <a {...props} />)
-    afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
+    afterAll(() => setLinkComponent(null)) // reset global env for other tests
 
     test('no messages', () => {
         expect(renderer.create(<StatusMessagesNavItem messages={[]} />).toJSON()).toMatchSnapshot()

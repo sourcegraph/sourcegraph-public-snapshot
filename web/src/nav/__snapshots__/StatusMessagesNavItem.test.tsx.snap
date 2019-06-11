@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`UserNavItem no messages 1`] = `
+exports[`StatusMessagesNavItem no messages 1`] = `
 <div
   className="nav-link py-0 btn-group"
   onKeyDown={[Function]}
@@ -43,7 +43,7 @@ exports[`UserNavItem no messages 1`] = `
 </div>
 `;
 
-exports[`UserNavItem one CURRENTLYCLONING message 1`] = `
+exports[`StatusMessagesNavItem one CURRENTLYCLONING message 1`] = `
 <div
   className="nav-link py-0 btn-group"
   onKeyDown={[Function]}
