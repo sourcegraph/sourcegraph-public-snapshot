@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -447,12 +448,21 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 
 	defer resp.Body.Close()
 
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return errors.WithStack(&httpError{URL: req.URL, StatusCode: resp.StatusCode})
+		return errors.WithStack(&httpError{
+			URL:        req.URL,
+			StatusCode: resp.StatusCode,
+			Body:       bs,
+		})
 	}
 
 	if result != nil {
-		return json.NewDecoder(resp.Body).Decode(result)
+		return json.Unmarshal(bs, result)
 	}
 
 	return nil
@@ -687,10 +697,11 @@ func IsNotFound(err error) bool {
 type httpError struct {
 	StatusCode int
 	URL        *url.URL
+	Body       []byte
 }
 
 func (e *httpError) Error() string {
-	return fmt.Sprintf("unexpected %d response from BitBucket Server REST API at %s", e.StatusCode, e.URL)
+	return fmt.Sprintf("Bitbucket API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
 }
 
 func (e *httpError) Unauthorized() bool {
