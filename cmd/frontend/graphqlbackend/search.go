@@ -245,6 +245,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	archivedStr, _ := r.query.StringValue(query.FieldArchived)
 	archived := parseYesNoOnly(archivedStr)
 
+	commitSince, _ := r.query.StringValue(query.FieldRepoHasCommitSince)
+
 	tr.LazyPrintf("resolveRepositories - start")
 	repoRevs, missingRepoRevs, repoResults, overLimit, err = resolveRepositories(ctx, resolveRepoOp{
 		repoFilters:      repoFilters,
@@ -254,6 +256,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		noForks:          fork == No || fork == False,
 		onlyArchived:     archived == Only || archived == True,
 		noArchived:       archived == No || archived == False,
+		commitSince:      commitSince,
 	})
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
@@ -367,6 +370,7 @@ type resolveRepoOp struct {
 	onlyForks        bool
 	noArchived       bool
 	onlyArchived     bool
+	commitSince      string
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, repoResolvers []*searchSuggestionResolver, overLimit bool, err error) {
@@ -437,6 +441,12 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	tr.LazyPrintf("Associate/validate revs - start")
 	for _, repo := range repos {
 		repoRev := &search.RepositoryRevisions{Repo: repo}
+		if op.commitSince != "" {
+			ok, err := git.HasCommitSince(ctx, repoRev.GitserverRepo(), op.commitSince)
+			if err == nil && !ok {
+				continue
+			}
+		}
 
 		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
 

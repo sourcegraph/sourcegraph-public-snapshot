@@ -104,6 +104,17 @@ func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*C
 	return commitLog(ctx, repo, opt)
 }
 
+func HasCommitSince(ctx context.Context, repo gitserver.Repo, date string) (bool, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: HasCommitSince")
+	span.SetTag("Date", date)
+	defer span.Finish()
+
+	n, err := CommitCount(ctx, repo, CommitsOptions{
+		After: date,
+	})
+	return n > 0, err
+}
+
 func isBadObjectErr(output, obj string) bool {
 	return string(output) == "fatal: bad object "+obj
 }
@@ -204,7 +215,7 @@ func CommitCount(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
-	args, err := commitLogArgs([]string{"rev-list", "--count"}, opt)
+	args, err := commitLogArgs([]string{"rev-list", "HEAD", "--count"}, opt)
 	if err != nil {
 		return 0, err
 	}
