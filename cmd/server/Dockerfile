@@ -44,7 +44,7 @@ RUN apk update && apk add --no-cache \
     # https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/postgresql.md#version-requirements
     'bash=4.4.19-r1' 'postgresql-contrib=11.3-r0' 'postgresql=11.3-r0' \
     'redis=3.2.12-r0' bind-tools ca-certificates git@edge \
-    mailcap nginx openssh-client su-exec tini
+    mailcap nginx openssh-client pcre-dev su-exec tini
 
 # hadolint ignore=DL3022
 COPY --from=comby/comby:0.5.0 /usr/local/bin/comby /usr/local/bin/comby
