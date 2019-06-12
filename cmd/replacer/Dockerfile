@@ -7,6 +7,7 @@ RUN apk --no-cache add pcre-dev
 COPY --from=comby/comby:0.5.0 /usr/local/bin/comby /usr/local/bin/comby
 
 EXPOSE 3185
+ENV CACHE_DIR=/mnt/cache/replacer
 USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/replacer"]
 COPY replacer /usr/local/bin/
