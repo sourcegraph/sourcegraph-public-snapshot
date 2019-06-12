@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -45,9 +46,13 @@ func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolve
 
 	fileFilter, _ := args.Query.RegexpPatterns(query.FieldFile)
 	var fileFilterText string
-	// FIXME(RVT): Validate this at least a bit.
 	if len(fileFilter) > 0 {
 		fileFilterText = fileFilter[0]
+	}
+	// only file names or files with extensions in the following characterset are allowed
+	var IsAlphanumericWithPeriod = regexp.MustCompile(`^[a-zA-Z_.]+$`).MatchString
+	if !IsAlphanumericWithPeriod(fileFilterText) {
+		return nil, nil, errors.New("Note: the 'file:' filter cannot contain regex when using the 'replace:' filter. Only alphanumeric characters or '.'")
 	}
 	log15.Info(fmt.Sprintf("file filter is %s", fileFilterText))
 
@@ -191,12 +196,6 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 			seenMatches[text] = struct{}{}
 			lines := strings.Split(raw.Diff, "\n")
 			for i, line := range lines {
-				if len(line) == 0 || len(line) == 1 {
-					continue
-				}
-				if line[1] == ' ' {
-					continue
-				}
 				if pos := strings.Index(line, text); pos != -1 {
 					hs = append(hs, &highlightedRange{
 						line:      int32(i) - 1,

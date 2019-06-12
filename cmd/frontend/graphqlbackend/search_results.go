@@ -453,7 +453,6 @@ loop:
 				addPoint(t)
 			})
 		case r.codemod != nil:
-			// FIXME(RVT): Skip
 			continue
 		default:
 			panic("SearchResults.Sparkline unexpected union type state")
