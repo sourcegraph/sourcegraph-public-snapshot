@@ -60,7 +60,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     private renderMessage(message: GQL.IStatusMessage): JSX.Element | null {
         switch (message.type) {
-            case GQL.StatusMessageType.CURRENTLYCLONING:
+            case GQL.StatusMessageType.CLONING:
                 return (
                     <Link to="/site-admin/repositories?filter=cloning" className="dropdown-item">
                         {message.message}
@@ -73,11 +73,11 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const hasMessages = this.state.messages.length > 0
-        const currentlyCloning = this.state.messages.some(({ type }) => type === GQL.StatusMessageType.CURRENTLYCLONING)
+        const cloning = this.state.messages.some(({ type }) => type === GQL.StatusMessageType.CLONING)
         return (
             <ButtonDropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="nav-link py-0">
                 <DropdownToggle caret={false} className="bg-transparent d-flex align-items-center" nav={true}>
-                    {currentlyCloning ? (
+                    {cloning ? (
                         <LoadingSpinner className="icon-inline" data-tooltip="Updating repositories..." />
                     ) : (
                         <CheckboxMarkedCircleOutlineIcon className="icon-inline" />

@@ -11,10 +11,10 @@ describe('StatusMessagesNavItem', () => {
     test('no messages', () => {
         expect(renderer.create(<StatusMessagesNavItem messages={[]} />).toJSON()).toMatchSnapshot()
     })
-    test('one CURRENTLYCLONING message', () => {
+    test('one CLONING message', () => {
         const message: GQL.IStatusMessage = {
             __typename: 'StatusMessage',
-            type: GQL.StatusMessageType.CURRENTLYCLONING,
+            type: GQL.StatusMessageType.CLONING,
             message: 'Currently cloning repositories...',
         }
         expect(renderer.create(<StatusMessagesNavItem messages={[message]} />).toJSON()).toMatchSnapshot()

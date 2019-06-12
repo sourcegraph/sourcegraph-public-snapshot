@@ -43,7 +43,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
 </div>
 `;
 
-exports[`StatusMessagesNavItem one CURRENTLYCLONING message 1`] = `
+exports[`StatusMessagesNavItem one CLONING message 1`] = `
 <div
   className="nav-link py-0 btn-group"
   onKeyDown={[Function]}
