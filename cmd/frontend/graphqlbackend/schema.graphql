@@ -487,6 +487,10 @@ input DiscussionCommentUpdateInput {
     # The ID of the comment to update.
     commentID: ID!
 
+    # When non-null, indicates that the comment's content should be updated. Only site admins and the
+    # original author can perform this action.
+    contents: String
+
     # When non-null, indicates that the thread should be deleted. Only admins
     # can perform this action.
     delete: Boolean

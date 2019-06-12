@@ -734,10 +734,16 @@ func (r *discussionThreadsConnectionResolver) PageInfo(ctx context.Context) (*gr
 	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(threads) > r.opt.Limit), nil
 }
 
+var mockViewerCanUseDiscussions func() error
+
 // viewerCanUseDiscussions returns an error if the user in the context cannot
 // use code discussions, e.g. due to the extension not being installed or
 // enabled.
 func viewerCanUseDiscussions(ctx context.Context) error {
+	if mockViewerCanUseDiscussions != nil {
+		return mockViewerCanUseDiscussions()
+	}
+
 	merged, err := viewerFinalSettings(ctx)
 	if err != nil {
 		return err

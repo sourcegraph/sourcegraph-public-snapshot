@@ -127,6 +127,10 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 }
 
 func (t *discussionThreads) Get(ctx context.Context, threadID int64) (*types.DiscussionThread, error) {
+	if Mocks.DiscussionThreads.Get != nil {
+		return Mocks.DiscussionThreads.Get(threadID)
+	}
+
 	threads, err := t.List(ctx, &DiscussionThreadsListOptions{
 		ThreadIDs: []int64{threadID},
 	})

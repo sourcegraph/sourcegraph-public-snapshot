@@ -215,6 +215,10 @@ func (c *discussionComments) List(ctx context.Context, opts *DiscussionCommentsL
 }
 
 func (c *discussionComments) Get(ctx context.Context, commentID int64) (*types.DiscussionComment, error) {
+	if Mocks.DiscussionComments.Get != nil {
+		return Mocks.DiscussionComments.Get(commentID)
+	}
+
 	comments, err := c.List(ctx, &DiscussionCommentsListOptions{
 		CommentID: &commentID,
 	})

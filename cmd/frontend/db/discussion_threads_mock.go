@@ -8,6 +8,7 @@ import (
 )
 
 type MockDiscussionThreads struct {
+	Get    func(int64) (*types.DiscussionThread, error)
 	Create func(ctx context.Context, newThread *types.DiscussionThread) (*types.DiscussionThread, error)
 	Update func(ctx context.Context, threadID int64, opts *DiscussionThreadsUpdateOptions) (*types.DiscussionThread, error)
 	List   func(ctx context.Context, opt *DiscussionThreadsListOptions) ([]*types.DiscussionThread, error)
