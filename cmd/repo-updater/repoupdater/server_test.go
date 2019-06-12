@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	gitprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -430,7 +429,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			s := &Server{Store: tc.store}
+			s := &Server{Store: tc.store, Scheduler: &fakeScheduler{}}
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 			cli := repoupdater.Client{URL: srv.URL}
@@ -545,26 +544,27 @@ func TestServer_RepoExternalServices(t *testing.T) {
 
 func TestServer_StatusMessages(t *testing.T) {
 	testCases := []struct {
-		name             string
-		cloneQueueStatus *gitprotocol.CloneQueueStatusResponse
-		res              *protocol.StatusMessagesResponse
-		err              string
+		name         string
+		reposInQueue repos.Repos
+		res          *protocol.StatusMessagesResponse
+		err          string
 	}{
 		{
-			name:             "nothing cloning",
-			cloneQueueStatus: &gitprotocol.CloneQueueStatusResponse{Current: 0, Maximum: 10},
+			name: "nothing cloning",
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
 		},
 		{
-			name:             "repositories cloning",
-			cloneQueueStatus: &gitprotocol.CloneQueueStatusResponse{Current: 5, Maximum: 10},
+			name: "repositories cloning",
+			reposInQueue: repos.Repos{
+				{ID: 1}, {ID: 2}, {ID: 3},
+			},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
 						Type:    protocol.CloningStatusMessage,
-						Message: "Currently cloning 5 repositories in parallel...",
+						Message: "Currently updating 3 repositories...",
 					},
 				},
 			},
@@ -576,8 +576,8 @@ func TestServer_StatusMessages(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			gitserverClient := &fakeGitserverClient{cloneQueueStatus: tc.cloneQueueStatus}
-			s := &Server{GitserverClient: gitserverClient}
+			scheduler := &fakeScheduler{queue: tc.reposInQueue}
+			s := &Server{Scheduler: scheduler}
 
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
@@ -914,14 +914,20 @@ func (s *fakeGithubDotComSource) GetRepo(ctx context.Context, nameWithOwner stri
 	return s.repo.Clone(), s.err
 }
 
-type fakeGitserverClient struct {
-	cloneQueueStatus *gitprotocol.CloneQueueStatusResponse
-	err              error
+type fakeScheduler struct {
+	queue repos.Repos
 }
 
-func (s *fakeGitserverClient) CloneQueueStatus(_ context.Context) (*gitprotocol.CloneQueueStatusResponse, error) {
-	qs := *s.cloneQueueStatus
-	return &qs, s.err
+func (s *fakeScheduler) UpdateQueueLen() int {
+	if s.queue != nil {
+		return s.queue.Len()
+	}
+	return 0
+}
+
+func (s *fakeScheduler) UpdateOnce(_ uint32, _ api.RepoName, _ string) {}
+func (s *fakeScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult {
+	return &protocol.RepoUpdateSchedulerInfoResult{}
 }
 
 func formatJSON(s string) string {

@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	gitprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -30,8 +29,10 @@ type Server struct {
 	GithubDotComSource interface {
 		GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error)
 	}
-	GitserverClient interface {
-		CloneQueueStatus(context.Context) (*gitprotocol.CloneQueueStatusResponse, error)
+	Scheduler interface {
+		UpdateQueueLen() int
+		UpdateOnce(id uint32, name api.RepoName, url string)
+		ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult
 	}
 }
 
@@ -197,7 +198,7 @@ func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	result := repos.Scheduler.ScheduleInfo(args.ID)
+	result := s.Scheduler.ScheduleInfo(args.ID)
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -257,7 +258,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	repos.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
+	s.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
 
 	respond(w, http.StatusOK, &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
@@ -374,20 +375,14 @@ func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
 }
 
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
-	cloneStatus, err := s.GitserverClient.CloneQueueStatus(r.Context())
-	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
 	resp := protocol.StatusMessagesResponse{
 		Messages: []protocol.StatusMessage{},
 	}
 
-	current := cloneStatus.Current
-	if current != 0 {
+	enqueued := s.Scheduler.UpdateQueueLen()
+	if enqueued != 0 {
 		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Message: fmt.Sprintf("Currently cloning %d repositories in parallel...", current),
+			Message: fmt.Sprintf("Currently updating %d repositories...", enqueued),
 			Type:    protocol.CloningStatusMessage,
 		})
 	}

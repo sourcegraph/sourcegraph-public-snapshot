@@ -112,10 +112,7 @@ func main() {
 		}
 	}
 
-	server := repoupdater.Server{
-		Store:           store,
-		GitserverClient: gitserver.DefaultClient,
-	}
+	server := repoupdater.Server{Store: store, Scheduler: repos.Scheduler}
 
 	var handler http.Handler
 	{
