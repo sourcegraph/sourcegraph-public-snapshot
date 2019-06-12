@@ -15,10 +15,11 @@ import {
 
 /**
  * @return Observable that emits if the repo exists on the instance.
+ *         Emits the repo name on the Sourcegraph instance as affected by `repositoryPathPattern`.
  *         Errors with a `RepoNotFoundError` if the repo is not found
  */
 export const resolveRepo = memoizeObservable(
-    ({ repoName, requestGraphQL }: RepoSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<void> =>
+    ({ repoName, requestGraphQL }: RepoSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
         requestGraphQL<GQL.IQuery>({
             request: gql`
                 query ResolveRepo($repoName: String!) {
@@ -36,6 +37,7 @@ export const resolveRepo = memoizeObservable(
                 if (!repository) {
                     throw new RepoNotFoundError(repoName)
                 }
+                return repository.name
             }, catchError((err, caught) => caught))
         ),
     makeRepoURI

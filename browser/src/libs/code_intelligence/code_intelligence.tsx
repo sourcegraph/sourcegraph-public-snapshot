@@ -93,6 +93,7 @@ import {
     registerNativeTooltipContributions,
 } from './native_tooltips'
 import { handleTextFields, TextField } from './text_fields'
+import { resolveRepoNames } from './util/file_info'
 import { ViewResolver } from './views'
 
 registerHighlightContributions()
@@ -537,6 +538,7 @@ export function handleCodeHost({
         trackCodeViews(codeHost),
         mergeMap(codeViewEvent =>
             codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
+                mergeMap(fileInfo => resolveRepoNames(fileInfo, platformContext.requestGraphQL)),
                 mergeMap(fileInfo =>
                     fetchFileContents(fileInfo, platformContext.requestGraphQL).pipe(
                         map(fileInfoWithContents => ({
