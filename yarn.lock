@@ -1520,8 +1520,7 @@
   integrity sha512-Te7F1RQJLBH4C8wQ2xz0nPC2vpe13F80V+Yv+c3GySOoh4DcLNN4P5u51Kh4aZPqeS5DJ7CKvHyX2SM/1EBXNg==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.0.0"
 
 "@sourcegraph/prettierrc@^3.0.1":
   version "3.0.1"
@@ -1547,10 +1546,10 @@
   resolved "https://registry.npmjs.org/@sourcegraph/tsconfig/-/tsconfig-4.0.0.tgz#dd2a406f90760bb789fd89fde4bd0a8d681f2767"
   integrity sha512-jxrhKbek4yu1HUDpUhqR9hAGFiUgaJ9NIM+c8JEkAnvpW67ab1AUFWb82aSVfZWX1UVqfR84AMr7xP3E8LlL+A==
 
-"@sourcegraph/tslint-config@^13.2.0":
-  version "13.2.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/tslint-config/-/tslint-config-13.2.0.tgz#20ad2061b4d995ded19d9bcb07ef3442db3f4441"
-  integrity sha512-knU6XbReHqUWyOMRJuPty/PglbpgVdlMp6B89IgNRnXF0x2DGox4ygpHAjGBjHzyjgMPXSBteFqPPLMROTibBQ==
+"@sourcegraph/tslint-config@^13.3.0":
+  version "13.3.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/tslint-config/-/tslint-config-13.3.0.tgz#b8bcd95352cdcd523da16e6fb81dbeb27fa27c51"
+  integrity sha512-IVq6kJGvRLZWGIkCjvAfqCGILdj9shfo/hNzV4w0fPF3DOZRIKzrdaTNfH9rS+enplcWVLQUbnxMFLqJXiYAcA==
   dependencies:
     rxjs-tslint-rules "^4.23.0"
     tslint-config-prettier "^1.18.0"
@@ -13647,8 +13646,7 @@ source-map@^0.7.2:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "23.0.1"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
