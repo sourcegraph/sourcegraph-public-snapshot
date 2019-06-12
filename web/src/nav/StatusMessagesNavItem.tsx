@@ -84,7 +84,11 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         const hasMessages = this.state.messages.length > 0
         const cloning = this.state.messages.some(({ type }) => type === GQL.StatusMessageType.CLONING)
         return (
-            <ButtonDropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="nav-link py-0">
+            <ButtonDropdown
+                isOpen={this.state.isOpen}
+                toggle={this.toggleIsOpen}
+                className="nav-link py-0 status-messages-nav-item__nav-link"
+            >
                 <DropdownToggle caret={false} className="bg-transparent d-flex align-items-center" nav={true}>
                     {cloning ? (
                         <CloudSyncIcon

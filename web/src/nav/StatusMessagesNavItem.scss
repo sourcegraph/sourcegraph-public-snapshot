@@ -1,4 +1,9 @@
 .status-messages-nav-item {
+    &__nav-link {
+        @media only percy {
+            visibility: hidden;
+        }
+    }
     &__dropdown-menu {
         min-width: 22rem;
         max-width: 22rem;
@@ -10,8 +15,5 @@
         &-link {
             margin-bottom: 0;
         }
-    }
-    @media only percy {
-        visibility: hidden;
     }
 }
