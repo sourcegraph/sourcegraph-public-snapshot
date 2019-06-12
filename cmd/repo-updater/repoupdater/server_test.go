@@ -576,12 +576,9 @@ func TestServer_StatusMessages(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			gitserver.MockCloneQueueStatus = func(_ context.Context) (*gitprotocol.CloneQueueStatusResponse, error) {
-				return tc.cloneQueueStatus, nil
-			}
-			defer func() { gitserver.MockCloneQueueStatus = nil }()
+			gitserverClient := &fakeGitserverClient{cloneQueueStatus: tc.cloneQueueStatus}
+			s := &Server{GitserverClient: gitserverClient}
 
-			s := &Server{}
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 			cli := repoupdater.Client{URL: srv.URL}
@@ -915,6 +912,16 @@ type fakeGithubDotComSource struct {
 
 func (s *fakeGithubDotComSource) GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error) {
 	return s.repo.Clone(), s.err
+}
+
+type fakeGitserverClient struct {
+	cloneQueueStatus *gitprotocol.CloneQueueStatusResponse
+	err              error
+}
+
+func (s *fakeGitserverClient) CloneQueueStatus(_ context.Context) (*gitprotocol.CloneQueueStatusResponse, error) {
+	qs := *s.cloneQueueStatus
+	return &qs, s.err
 }
 
 func formatJSON(s string) string {

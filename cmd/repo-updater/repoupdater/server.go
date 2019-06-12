@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	gitprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -29,6 +29,9 @@ type Server struct {
 	*repos.Syncer
 	GithubDotComSource interface {
 		GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error)
+	}
+	GitserverClient interface {
+		CloneQueueStatus(context.Context) (*gitprotocol.CloneQueueStatusResponse, error)
 	}
 }
 
@@ -371,7 +374,7 @@ func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
 }
 
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
-	cloneStatus, err := gitserver.DefaultClient.CloneQueueStatus(r.Context())
+	cloneStatus, err := s.GitserverClient.CloneQueueStatus(r.Context())
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return

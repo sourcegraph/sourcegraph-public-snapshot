@@ -684,14 +684,7 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	return res.Rev, json.NewDecoder(resp.Body).Decode(&res)
 }
 
-// MockCloneQueueStatus mocks (*Client).CloneQueueStatus for tests.
-var MockCloneQueueStatus func(context.Context) (*protocol.CloneQueueStatusResponse, error)
-
 func (c *Client) CloneQueueStatus(ctx context.Context) (*protocol.CloneQueueStatusResponse, error) {
-	if MockCloneQueueStatus != nil {
-		return MockCloneQueueStatus(ctx)
-	}
-
 	type singleStatus struct {
 		resp *protocol.CloneQueueStatusResponse
 		err  error
