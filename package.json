@@ -236,5 +236,8 @@
     "webext-domain-permission-toggle": "^0.1.0",
     "webextension-polyfill": "^0.4.0",
     "whatwg-url": "^7.0.0"
+  },
+  "resolutions": {
+    "history": "4.5.1"
   }
 }
