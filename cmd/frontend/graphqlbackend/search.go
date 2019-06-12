@@ -503,11 +503,11 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 }
 
 func optimizeRepoPatternWithHeuristics(repoPattern string) string {
-	// Optimization: make the "." in "github.com" a literal dot
-	// so that the regexp can be optimized more effectively.
-	if strings.HasPrefix(string(repoPattern), "github.com") {
+	if envvar.SourcegraphDotComMode() && strings.HasPrefix(string(repoPattern), "github.com") {
 		repoPattern = "^" + repoPattern
 	}
+	// Optimization: make the "." in "github.com" a literal dot
+	// so that the regexp can be optimized more effectively.
 	repoPattern = strings.Replace(string(repoPattern), "github.com", `github\.com`, -1)
 	return repoPattern
 }

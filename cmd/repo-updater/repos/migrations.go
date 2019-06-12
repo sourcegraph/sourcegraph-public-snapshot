@@ -33,14 +33,11 @@ func (m Migration) Run(ctx context.Context, s Store) error {
 //
 // This migration must be rolled-out together with the UI changes that remove the admin's
 // ability to explicitly enabled / disable individual repos.
-func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, kinds ...string) Migration {
+func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time) Migration {
 	return migrate(func(ctx context.Context, s Store) error {
 		const prefix = "migrate.repos-enabled-state-deprecation:"
 
-		es, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
-			Kinds: kinds,
-		})
-
+		es, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{})
 		if err != nil {
 			return errors.Wrapf(err, "%s list-external-services", prefix)
 		}
@@ -50,113 +47,93 @@ func EnabledStateDeprecationMigration(sourcer Sourcer, clock func() time.Time, k
 			return errors.Wrapf(err, "%s list-sources", prefix)
 		}
 
-		var sourced Repos
-		{
-			ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
-			sourced, err = srcs.ListRepos(ctx)
-			cancel()
-		}
-
-		if err != nil {
-			return errors.Wrapf(err, "%s sources.list-repos", prefix)
-		}
-
-		stored, err := s.ListRepos(ctx, StoreListReposArgs{
-			Kinds: kinds,
-		})
-
+		stored, err := s.ListRepos(ctx, StoreListReposArgs{})
 		if err != nil {
 			return errors.Wrapf(err, "%s store.list-repos", prefix)
 		}
 
-		type service struct {
-			svc     *ExternalService
-			exclude Repos
-		}
-
-		all := srcs.ExternalServices()
-		svcs := make(map[int64]*service, len(all))
-		upserts := make(ExternalServices, 0, len(all))
-
-		for _, e := range all {
-			// Skip any injected sources that are not persisted.
-			if e.ID != 0 {
-				svcs[e.ID] = &service{svc: e}
-				upserts = append(upserts, e)
+		var disabled Repos
+		for _, r := range stored {
+			if !r.Enabled {
+				disabled = append(disabled, r)
 			}
 		}
 
-		group := func(pred func(*Repo) bool, bucket func(*service) *Repos, repos ...Repos) error {
-			for _, rs := range repos {
+		all := srcs.ExternalServices()
+		svcs := make(ExternalServices, 0, len(all))
+		exclude := make(map[int64]*Repos, len(all))
+
+		for _, e := range all {
+			if e.ID != 0 {
+				var excluded Repos
+				exclude[e.ID] = &excluded
+				svcs = append(svcs, e)
+			}
+		}
+
+		if len(disabled) > 0 { // Only source and diff if there are disabled repos stored.
+			var sourced Repos
+			{
+				ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
+				sourced, err = srcs.ListRepos(ctx)
+				cancel()
+			}
+
+			if err != nil {
+				return errors.Wrapf(err, "%s sources.list-repos", prefix)
+			}
+
+			diff := NewDiff(sourced, stored)
+			for _, rs := range []Repos{diff.Added, diff.Modified, diff.Unmodified} {
 				for _, r := range rs {
-					if !pred(r) {
+					if r.Enabled {
 						continue
 					}
 
-					es := make(map[int64]*service, len(r.Sources))
+					es := make(map[int64]*Repos, len(r.Sources))
 					for _, si := range r.Sources {
 						id := si.ExternalServiceID()
-						if e := svcs[id]; e != nil {
+						if e := exclude[id]; e != nil {
 							es[id] = e
 						}
 					}
 
 					if len(es) == 0 {
-						es = svcs
+						es = exclude
 					}
 
 					for _, e := range es {
-						b := bucket(e)
-						*b = append(*b, r)
+						*e = append(*e, r)
 					}
 				}
 			}
-
-			return nil
-		}
-
-		diff := NewDiff(sourced, stored)
-
-		err = group(
-			func(r *Repo) bool { return !r.Enabled },
-			func(s *service) *Repos { return &s.exclude },
-			diff.Added, diff.Modified, diff.Unmodified,
-		)
-
-		if err != nil {
-			return err
 		}
 
 		now := clock()
 		for _, e := range svcs {
-			if err = removeInitalRepositoryEnablement(e.svc, now); err != nil {
+			if err = removeInitalRepositoryEnablement(e, now); err != nil {
 				return errors.Wrapf(err, "%s remove-initial-repository-enablement", prefix)
 			}
 
-			if len(e.exclude) > 0 {
-				if err = e.svc.Exclude(e.exclude...); err != nil {
+			if rs := exclude[e.ID]; rs != nil && len(*rs) > 0 {
+				if err = e.Exclude(*rs...); err != nil {
 					return errors.Wrapf(err, "%s exclude", prefix)
 				}
-				e.svc.UpdatedAt = now
+				e.UpdatedAt = now
 
-				log15.Info(prefix+" exclude", "service", e.svc.DisplayName, "repos", len(e.exclude))
+				log15.Info(prefix+" exclude", "service", e.DisplayName, "repos", len(*rs))
 			}
 		}
 
-		if err = s.UpsertExternalServices(ctx, upserts...); err != nil {
+		if err = s.UpsertExternalServices(ctx, svcs...); err != nil {
 			return errors.Wrapf(err, "%s upsert-external-services", prefix)
 		}
 
-		var deleted Repos
-		for _, r := range stored {
-			if !r.Enabled {
-				r.DeletedAt = now
-				r.Enabled = true
-				deleted = append(deleted, r)
-			}
+		for _, r := range disabled {
+			r.DeletedAt = now
 		}
 
-		if err = s.UpsertRepos(ctx, deleted...); err != nil {
+		if err = s.UpsertRepos(ctx, disabled...); err != nil {
 			return errors.Wrapf(err, "%s upsert-repos", prefix)
 		}
 
@@ -365,6 +342,70 @@ func BitbucketServerUsernameMigration(clock func() time.Time) Migration {
 			}
 
 			edited, err := jsonc.Edit(svc.Config, username, "username")
+			if err != nil {
+				return errors.Wrapf(err, "%s edit-json", prefix)
+			}
+
+			svc.Config = edited
+			svc.UpdatedAt = now
+		}
+
+		if err = s.UpsertExternalServices(ctx, svcs...); err != nil {
+			return errors.Wrapf(err, "%s upsert-external-services", prefix)
+		}
+
+		return nil
+	})
+}
+
+// AWSCodeCommitSetBogusGitCredentialsMigration returns a Migration that
+// changes all configurations of AWS CodeCommit external services to have the
+// `gitCredentials` setting set to bogus defaults. This will only happen if the
+// `gitCredentials` fields is empty or missing either `username` or `password`.
+//
+// This is done so that repo-updater can boot up without an "invalid config"
+// error and accept new external service configuration syncs, which allows the
+// user to fix the wrong credentials.
+func AWSCodeCommitSetBogusGitCredentialsMigration(clock func() time.Time) Migration {
+
+	return migrate(func(ctx context.Context, s Store) error {
+		const (
+			prefix = "migrate.aws-codecommit-set-bogus-git-credentials:"
+
+			defaultUsername = "insert-git-credentials-username-here"
+			defaultPassword = "insert-git-credentials-password-here"
+		)
+
+		svcs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
+			Kinds: []string{"awscodecommit"},
+		})
+
+		if err != nil {
+			return errors.Wrapf(err, "%s list-external-services", prefix)
+		}
+
+		now := clock()
+		for _, svc := range svcs {
+			var c schema.AWSCodeCommitConnection
+			if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+				return errors.Errorf("%s external service id=%d config unmarshaling error: %s", prefix, svc.ID, err)
+			}
+
+			gitCredentials := c.GitCredentials
+
+			if gitCredentials.Username != "" && gitCredentials.Password != "" {
+				continue
+			}
+
+			if gitCredentials.Username == "" {
+				gitCredentials.Username = defaultUsername
+			}
+
+			if gitCredentials.Password == "" {
+				gitCredentials.Password = defaultPassword
+			}
+
+			edited, err := jsonc.Edit(svc.Config, gitCredentials, "gitCredentials")
 			if err != nil {
 				return errors.Wrapf(err, "%s edit-json", prefix)
 			}

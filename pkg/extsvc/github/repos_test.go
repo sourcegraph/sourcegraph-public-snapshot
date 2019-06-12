@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
+	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -130,6 +132,138 @@ func TestClient_GetRepository(t *testing.T) {
 	}
 }
 
+func TestClient_GetRepositoriesByNodeFromAPI(t *testing.T) {
+	tests := []struct {
+		responseBody string
+		want         map[string]*Repository
+		nodeIDs      []string
+	}{
+		{
+			responseBody: `
+{
+  "data": {
+    "nodes": [
+      {
+		"id": "i0",
+		"nameWithOwner": "o/r0",
+		"description": "d0",
+		"url": "https://github.example.com/o/r0",
+		"isFork": false
+      },
+      {
+		"id": "i1",
+		"nameWithOwner": "o/r1",
+		"description": "d1",
+		"url": "https://github.example.com/o/r1",
+		"isFork": false
+      },
+      {
+		"id": "i2",
+		"nameWithOwner": "o/r2",
+		"description": "d2",
+		"url": "https://github.example.com/o/r2",
+		"isFork": false
+      }
+    ]
+  }
+}
+`,
+			want: map[string]*Repository{
+				"i0": {
+					ID:            "i0",
+					NameWithOwner: "o/r0",
+					Description:   "d0",
+					URL:           "https://github.example.com/o/r0",
+				},
+				"i1": {
+					ID:            "i1",
+					NameWithOwner: "o/r1",
+					Description:   "d1",
+					URL:           "https://github.example.com/o/r1",
+				},
+				"i2": {
+					ID:            "i2",
+					NameWithOwner: "o/r2",
+					Description:   "d2",
+					URL:           "https://github.example.com/o/r2",
+				},
+			},
+			nodeIDs: []string{"i0", "i1", "i2"},
+		},
+		{
+			responseBody: `
+{
+  "data": {
+    "nodes": [
+      {
+		"id": "i0",
+		"nameWithOwner": "o/r0",
+		"description": "d0",
+		"url": "https://github.example.com/o/r0",
+		"isFork": false
+      },
+      {
+		"id": "i1",
+		"nameWithOwner": "o/r1",
+		"description": "d1",
+		"url": "https://github.example.com/o/r1",
+		"isFork": false
+      },
+      null
+    ]
+  },
+  "errors": [
+    {
+      "type": "NOT_FOUND",
+      "path": [
+        "nodes",
+        2
+      ],
+      "locations": [
+        {
+          "line": 2,
+          "column": 3
+        }
+      ],
+      "message": "Could not resolve to a node with the global id of 'asdf'"
+    }
+  ]
+}
+`,
+			want: map[string]*Repository{
+				"i0": {
+					ID:            "i0",
+					NameWithOwner: "o/r0",
+					Description:   "d0",
+					URL:           "https://github.example.com/o/r0",
+				},
+				"i1": {
+					ID:            "i1",
+					NameWithOwner: "o/r1",
+					Description:   "d1",
+					URL:           "https://github.example.com/o/r1",
+				},
+			},
+			nodeIDs: []string{"i0", "i1", "asdf"},
+		},
+	}
+
+	for _, test := range tests {
+		mock := mockHTTPResponseBody{
+			responseBody: test.responseBody,
+		}
+		c := newTestClient(t, &mock)
+		gotRepos, err := c.GetRepositoriesByNodeIDFromAPI(context.Background(), "", test.nodeIDs)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(gotRepos, test.want) {
+			dmp := diffmatchpatch.New()
+			t.Error("gotRepos != test.want", dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(test.want), spew.Sdump(gotRepos), false)))
+		}
+	}
+}
+
 // TestClient_GetRepository_nonexistent tests the behavior of GetRepository when called
 // on a repository that does not exist.
 func TestClient_GetRepository_nonexistent(t *testing.T) {
@@ -139,6 +273,9 @@ func TestClient_GetRepository_nonexistent(t *testing.T) {
 	repo, err := c.GetRepository(context.Background(), "owner", "repo")
 	if !IsNotFound(err) {
 		t.Errorf("got err == %v, want IsNotFound(err) == true", err)
+	}
+	if err != ErrNotFound {
+		t.Errorf("got err == %q, want ErrNotFound", err)
 	}
 	if repo != nil {
 		t.Error("repo != nil")
@@ -324,10 +461,9 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 	// If we have incomplete results we want to fail. Our syncer requires all
 	// repositories to be returned, otherwise it will delete the missing
 	// repositories.
-	want := `github repository search returned incomplete results. This is an ephemeral error: query="org:sourcegraph" page=1 total=2`
 	_, err := c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
 
-	if have := fmt.Sprint(err); want != have {
+	if have, want := err, ErrIncompleteResults; want != have {
 		t.Errorf("\nhave: %s\nwant: %s", have, want)
 	}
 }

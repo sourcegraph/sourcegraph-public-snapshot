@@ -12,7 +12,6 @@
     "release": "yarn release:chrome",
     "release:chrome": "webstore upload --auto-publish --source build/bundles/chrome-bundle.zip --extension-id dgjhfomjieaadpoljlnidmbgkdffpack --client-id $GOOGLE_CLIENT_ID --client-secret $GOOGLE_CLIENT_SECRET --refresh-token $GOOGLE_REFRESH_TOKEN",
     "release:ff": "./scripts/release-ff.sh",
-    "graphql": "get-graphql-schema http://localhost:3080/.api/graphql --json | gql2ts -o app/gqlschema.d.ts",
     "lint": "yarn run tslint && yarn run stylelint",
     "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json './**/*.ts?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",

@@ -13,9 +13,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 )
 
 func TestSyncer_Sync(t *testing.T) {
@@ -131,8 +133,26 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(bitbucketServerService.URN()),
 	)
 
-	otherService := &repos.ExternalService{
+	awsCodeCommitService := &repos.ExternalService{
 		ID:   30,
+		Kind: "AWSCODECOMMIT",
+	}
+
+	awsCodeCommitRepo := (&repos.Repo{
+		Name:     "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+		Metadata: &awscodecommit.Repository{},
+		Enabled:  true,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
+			ServiceType: "awscodecommit",
+		},
+	}).With(
+		repos.Opt.RepoSources(awsCodeCommitService.URN()),
+	)
+
+	otherService := &repos.ExternalService{
+		ID:   40,
 		Kind: "OTHER",
 	}
 
@@ -146,6 +166,24 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		},
 	}).With(
 		repos.Opt.RepoSources(otherService.URN()),
+	)
+
+	gitoliteService := &repos.ExternalService{
+		ID:   50,
+		Kind: "GITOLITE",
+	}
+
+	gitoliteRepo := (&repos.Repo{
+		Name:     "gitolite.mycorp.com/foo",
+		Metadata: &gitolite.Repo{},
+		Enabled:  true,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "foo",
+			ServiceID:   "git@gitolite.mycorp.com",
+			ServiceType: "gitolite",
+		},
+	}).With(
+		repos.Opt.RepoSources(gitoliteService.URN()),
 	)
 
 	clock := repos.NewFakeClock(time.Now(), 0)
@@ -169,7 +207,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		{repo: githubRepo, svc: githubService},
 		{repo: gitlabRepo, svc: gitlabService},
 		{repo: bitbucketServerRepo, svc: bitbucketServerService},
+		{repo: awsCodeCommitRepo, svc: awsCodeCommitService},
 		{repo: otherRepo, svc: otherService},
+		{repo: gitoliteRepo, svc: gitoliteService},
 	} {
 		svcdup := tc.svc.With(repos.Opt.ExternalServiceID(tc.svc.ID + 1))
 		testCases = append(testCases,
@@ -316,6 +356,68 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
+				name: "repo inserted with same name as another repo that gets deleted",
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(tc.svc.Clone(), nil,
+						tc.repo,
+					),
+				),
+				store: s,
+				stored: repos.Repos{
+					tc.repo.With(repos.Opt.RepoExternalID("another-id")),
+				},
+				now: clock.Now,
+				diff: repos.Diff{
+					Added: repos.Repos{
+						tc.repo.With(
+							repos.Opt.RepoCreatedAt(clock.Time(1)),
+							repos.Opt.RepoModifiedAt(clock.Time(1)),
+						),
+					},
+					Deleted: repos.Repos{
+						tc.repo.With(func(r *repos.Repo) {
+							r.ExternalRepo.ID = "another-id"
+							r.Sources = map[string]*repos.SourceInfo{}
+							r.DeletedAt = clock.Time(0)
+							r.UpdatedAt = clock.Time(0)
+						}),
+					},
+				},
+				err: "<nil>",
+			},
+			testCase{
+				name: "repo inserted with same name as repo without id",
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(tc.svc.Clone(), nil,
+						tc.repo,
+					),
+				),
+				store: s,
+				stored: repos.Repos{
+					tc.repo.With(repos.Opt.RepoName("old-name")), // same external id as sourced
+					tc.repo.With(repos.Opt.RepoExternalID("")),   // same name as sourced
+				}.With(repos.Opt.RepoCreatedAt(clock.Time(1))),
+				now: clock.Now,
+				diff: repos.Diff{
+					Modified: repos.Repos{
+						tc.repo.With(
+							repos.Opt.RepoCreatedAt(clock.Time(1)),
+							repos.Opt.RepoModifiedAt(clock.Time(1)),
+						),
+					},
+					Deleted: repos.Repos{
+						tc.repo.With(func(r *repos.Repo) {
+							r.ExternalRepo.ID = ""
+							r.Sources = map[string]*repos.SourceInfo{}
+							r.DeletedAt = clock.Time(0)
+							r.UpdatedAt = clock.Time(0)
+							r.CreatedAt = clock.Time(0)
+						}),
+					},
+				},
+				err: "<nil>",
+			},
+			testCase{
 				name:    "renamed repo which was deleted is detected and added",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   s,
@@ -379,7 +481,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					update = &gitlab.Project{Archived: true}
 				case "bitbucketserver":
 					update = &bitbucketserver.Repo{Public: true}
-				case "other":
+				case "awscodecommit":
+					update = &awscodecommit.Repository{Description: "new description"}
+				case "other", "gitolite":
 					return testCase{}
 				default:
 					panic("test must be extended with new external service kind")
@@ -435,7 +539,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				if st != nil && len(tc.stored) > 0 {
-					if err := st.UpsertRepos(ctx, tc.stored...); err != nil {
+					if err := st.UpsertRepos(ctx, tc.stored.Clone()...); err != nil {
 						t.Fatalf("failed to prepare store: %v", err)
 					}
 				}
@@ -443,28 +547,166 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				syncer := repos.NewSyncer(st, tc.sourcer, nil, now)
 				diff, err := syncer.Sync(ctx)
 
-				var want repos.Repos
-				want.Concat(diff.Added, diff.Modified, diff.Unmodified)
-				sort.Sort(want)
-
-				diff.Repos().Apply(repos.Opt.RepoID(0))
-
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
 				}
+
 				if err != nil {
 					return
 				}
 
-				if diff := cmp.Diff(diff, tc.diff); diff != "" {
-					// t.Logf("have: %s\nwant: %s\n", pp.Sprint(have), pp.Sprint(want))
-					t.Fatalf("unexpected diff:\n%s", diff)
+				for _, d := range []struct {
+					name       string
+					have, want repos.Repos
+				}{
+					{"added", diff.Added, tc.diff.Added},
+					{"deleted", diff.Deleted, tc.diff.Deleted},
+					{"modified", diff.Modified, tc.diff.Modified},
+					{"unmodified", diff.Unmodified, tc.diff.Unmodified},
+				} {
+					t.Logf("diff.%s", d.name)
+					repos.Assert.ReposEqual(d.want...)(t, d.have)
 				}
 
 				if st != nil {
+					var want repos.Repos
+					want.Concat(diff.Added, diff.Modified, diff.Unmodified)
+					sort.Sort(want)
+
 					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{})
 					repos.Assert.ReposEqual(want...)(t, have)
 				}
+			}))
+		}
+	}
+}
+
+func TestSync_SyncSubset(t *testing.T) {
+	t.Parallel()
+
+	testSyncSubset(new(repos.FakeStore))(t)
+}
+
+func testSyncSubset(s repos.Store) func(*testing.T) {
+	clock := repos.NewFakeClock(time.Now(), time.Second)
+
+	repo := &repos.Repo{
+		ID:          0, // explicitly make default value for sourced repo
+		Name:        "github.com/foo/bar",
+		Description: "The description",
+		Language:    "barlang",
+		Enabled:     true,
+		Archived:    false,
+		Fork:        false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			ServiceType: "github",
+			ServiceID:   "https://github.com/",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:123": {
+				ID:       "extsvc:123",
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+		Metadata: &github.Repository{
+			ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			URL:           "github.com/foo/bar",
+			DatabaseID:    1234,
+			Description:   "The description",
+			NameWithOwner: "foo/bar",
+		},
+	}
+
+	testCases := []struct {
+		name    string
+		sourced repos.Repos
+		stored  repos.Repos
+		assert  repos.ReposAssertion
+	}{{
+		name:   "no sourced",
+		stored: repos.Repos{repo.With(repos.Opt.RepoCreatedAt(clock.Time(2)))},
+		assert: repos.Assert.ReposEqual(repo.With(repos.Opt.RepoCreatedAt(clock.Time(2)))),
+	}, {
+		name:    "insert",
+		sourced: repos.Repos{repo},
+		assert:  repos.Assert.ReposEqual(repo.With(repos.Opt.RepoCreatedAt(clock.Time(2)))),
+	}, {
+		name:    "update",
+		sourced: repos.Repos{repo},
+		stored:  repos.Repos{repo.With(repos.Opt.RepoCreatedAt(clock.Time(2)))},
+		assert: repos.Assert.ReposEqual(repo.With(
+			repos.Opt.RepoModifiedAt(clock.Time(2)),
+			repos.Opt.RepoCreatedAt(clock.Time(2)))),
+	}, {
+		name:    "update name",
+		sourced: repos.Repos{repo},
+		stored: repos.Repos{repo.With(
+			repos.Opt.RepoName("old/name"),
+			repos.Opt.RepoCreatedAt(clock.Time(2)))},
+		assert: repos.Assert.ReposEqual(repo.With(
+			repos.Opt.RepoModifiedAt(clock.Time(2)),
+			repos.Opt.RepoCreatedAt(clock.Time(2)))),
+	}, {
+		name:    "delete conflicting name",
+		sourced: repos.Repos{repo},
+		stored: repos.Repos{repo.With(
+			repos.Opt.RepoExternalID("old id"),
+			repos.Opt.RepoCreatedAt(clock.Time(2)))},
+		assert: repos.Assert.ReposEqual(repo.With(
+			repos.Opt.RepoCreatedAt(clock.Time(2)))),
+	}, {
+		name:    "rename and delete conflicting name",
+		sourced: repos.Repos{repo},
+		stored: repos.Repos{
+			repo.With(
+				repos.Opt.RepoExternalID("old id"),
+				repos.Opt.RepoCreatedAt(clock.Time(2))),
+			repo.With(
+				repos.Opt.RepoName("old name"),
+				repos.Opt.RepoCreatedAt(clock.Time(2))),
+		},
+		assert: repos.Assert.ReposEqual(repo.With(
+			repos.Opt.RepoCreatedAt(clock.Time(2)))),
+	}}
+
+	return func(t *testing.T) {
+		t.Helper()
+
+		for _, tc := range testCases {
+			if tc.name == "" {
+				continue
+			}
+
+			tc := tc
+			ctx := context.Background()
+
+			t.Run(tc.name, transact(ctx, s, func(t testing.TB, st repos.Store) {
+				defer func() {
+					if err := recover(); err != nil {
+						t.Fatalf("%q panicked: %v", tc.name, err)
+					}
+				}()
+
+				if len(tc.stored) > 0 {
+					if err := st.UpsertRepos(ctx, tc.stored.Clone()...); err != nil {
+						t.Fatalf("failed to prepare store: %v", err)
+					}
+				}
+
+				clock := clock
+				syncer := repos.NewSyncer(st, nil, nil, clock.Now)
+				_, err := syncer.SyncSubset(ctx, tc.sourced.Clone()...)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, err := st.ListRepos(ctx, repos.StoreListReposArgs{})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				tc.assert(t, have)
 			}))
 		}
 	}
@@ -505,11 +747,18 @@ func TestDiff(t *testing.T) {
 			diff:  repos.Diff{Deleted: repos.Repos{{ExternalRepo: eid("1")}}},
 		},
 		{
-			name:   "modified",
-			store:  repos.Repos{{ExternalRepo: eid("1"), Description: "foo"}},
-			source: repos.Repos{{ExternalRepo: eid("1"), Description: "bar"}},
+			name: "modified",
+			store: repos.Repos{
+				{ExternalRepo: eid("1"), Description: "foo"},
+				{ExternalRepo: eid("2")},
+			},
+			source: repos.Repos{
+				{ExternalRepo: eid("1"), Description: "bar"},
+				{ExternalRepo: eid("2"), URI: "2"},
+			},
 			diff: repos.Diff{Modified: repos.Repos{
 				{ExternalRepo: eid("1"), Description: "bar"},
+				{ExternalRepo: eid("2"), URI: "2"},
 			}},
 		},
 		{

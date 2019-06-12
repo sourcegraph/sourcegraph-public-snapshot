@@ -8,6 +8,7 @@ const BitbucketServerSchemaJSON = `{
   "$id": "bitbucket_server.schema.json#",
   "title": "BitbucketServerConnection",
   "description": "Configuration for a connection to Bitbucket Server.",
+  "allowComments": true,
   "type": "object",
   "additionalProperties": false,
   "required": ["username", "url", "repositoryQuery"],

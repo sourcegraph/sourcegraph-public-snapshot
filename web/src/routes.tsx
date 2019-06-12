@@ -2,49 +2,12 @@ import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { LayoutProps } from './Layout'
 import { parseSearchURLQuery } from './search'
-const SearchPage = React.lazy(async () => ({
-    default: (await import('./search/input/SearchPage')).SearchPage,
-}))
-const SearchResults = React.lazy(async () => ({
-    default: (await import('./search/results/SearchResults')).SearchResults,
-}))
-const SavedQueriesPage = React.lazy(async () => ({
-    default: (await import('./search/saved-queries/SavedQueries')).SavedQueriesPage,
-}))
-const SiteAdminArea = React.lazy(async () => ({
-    default: (await import('./site-admin/SiteAdminArea')).SiteAdminArea,
-}))
-const UserArea = React.lazy(async () => ({
-    default: (await import('./user/area/UserArea')).UserArea,
-}))
-const APIConsole = React.lazy(async () => ({ default: (await import('./api/APIConsole')).APIConsole }))
-const ResetPasswordPage = React.lazy(async () => ({
-    default: (await import('./auth/ResetPasswordPage')).ResetPasswordPage,
-}))
-const SignInPage = React.lazy(async () => ({ default: (await import('./auth/SignInPage')).SignInPage }))
-const SignUpPage = React.lazy(async () => ({ default: (await import('./auth/SignUpPage')).SignUpPage }))
-const DiscussionsPage = React.lazy(async () => ({
-    default: (await import('./discussions/DiscussionsPage')).DiscussionsPage,
-}))
-const ExploreArea = React.lazy(async () => ({ default: (await import('./explore/ExploreArea')).ExploreArea }))
-const ExtensionsArea = React.lazy(async () => ({
-    default: (await import('./extensions/ExtensionsArea')).ExtensionsArea,
-}))
-const SurveyPage = React.lazy(async () => ({ default: (await import('./marketing/SurveyPage')).SurveyPage }))
-const OpenPage = React.lazy(async () => ({ default: (await import('./open/OpenPage')).OpenPage }))
-const OrgsArea = React.lazy(async () => ({ default: (await import('./org/OrgsArea')).OrgsArea }))
-const RepoContainer = React.lazy(async () => ({ default: (await import('./repo/RepoContainer')).RepoContainer }))
-const ScopePage = React.lazy(async () => ({ default: (await import('./search/input/ScopePage')).ScopePage }))
-const SiteInitPage = React.lazy(async () => ({ default: (await import('./site-admin/SiteInitPage')).SiteInitPage }))
-const RedirectToUserPage = React.lazy(async () => ({
-    default: (await import('./user/settings/RedirectToUserPage')).RedirectToUserPage,
-}))
-const RedirectToUserSettings = React.lazy(async () => ({
-    default: (await import('./user/settings/RedirectToUserSettings')).RedirectToUserSettings,
-}))
-const SnippetsPage = React.lazy(async () => ({
-    default: (await import('./snippets/SnippetsPage')).SnippetsPage,
-}))
+import { lazyComponent } from './util/lazyComponent'
+
+const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
+const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
+const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
+const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 
 export interface LayoutRouteComponentProps extends RouteComponentProps<any>, LayoutProps {}
 
@@ -64,7 +27,7 @@ export interface LayoutRouteProps {
  */
 export const repoRevRoute: LayoutRouteProps = {
     path: '/:repoRevAndRest+',
-    render: props => <RepoContainer {...props} />,
+    render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
 }
 
 /**
@@ -96,39 +59,45 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/search/searches',
-        render: props => <SavedQueriesPage {...props} />,
+        render: lazyComponent(
+            () => import('./search/saved-searches/RedirectToUserSavedSearches'),
+            'RedirectToUserSavedSearches'
+        ),
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/open',
-        render: props => <OpenPage {...props} />,
+        render: lazyComponent(() => import('./open/OpenPage'), 'OpenPage'),
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/sign-in',
-        render: props => <SignInPage {...props} />,
+        render: lazyComponent(() => import('./auth/SignInPage'), 'SignInPage'),
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/sign-up',
-        render: props => <SignUpPage {...props} />,
+        render: lazyComponent(
+            async () => ({ SignUpPage: (await import('./auth/SignUpPage')).SignUpPage }),
+            'SignUpPage'
+        ),
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/settings',
-        render: props => <RedirectToUserSettings {...props} />,
+        render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
     },
     {
         path: '/user',
-        render: props => <RedirectToUserPage {...props} />,
+        render: lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage'),
     },
     {
         path: '/organizations',
-        render: props => <OrgsArea {...props} />,
+        render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
     },
     {
         path: '/search',
@@ -138,7 +107,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/site-admin/init',
         exact: true,
-        render: props => <SiteInitPage {...props} />,
+        render: lazyComponent(() => import('./site-admin/SiteInitPage'), 'SiteInitPage'),
         forceNarrowWidth: false,
     },
     {
@@ -154,37 +123,37 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/password-reset',
-        render: props => <ResetPasswordPage {...props} />,
+        render: lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/explore',
-        render: props => <ExploreArea {...props} />,
+        render: lazyComponent(() => import('./explore/ExploreArea'), 'ExploreArea'),
         exact: true,
     },
     {
         path: '/discussions',
-        render: props => <DiscussionsPage {...props} />,
+        render: lazyComponent(() => import('./discussions/DiscussionsPage'), 'DiscussionsPage'),
         exact: true,
     },
     {
         path: '/search/scope/:id',
-        render: props => <ScopePage {...props} />,
+        render: lazyComponent(() => import('./search/input/ScopePage'), 'ScopePage'),
         exact: true,
     },
     {
         path: '/api/console',
-        render: props => <APIConsole {...props} />,
+        render: lazyComponent(() => import('./api/APIConsole'), 'APIConsole'),
         exact: true,
     },
     {
         path: '/users/:username',
-        render: props => <UserArea {...props} />,
+        render: lazyComponent(() => import('./user/area/UserArea'), 'UserArea'),
     },
     {
         path: '/survey/:score?',
-        render: props => <SurveyPage {...props} />,
+        render: lazyComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
     },
     {
         path: '/extensions',
@@ -207,7 +176,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/snippets',
-        render: props => <SnippetsPage {...props} />,
+        render: lazyComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
     },
     repoRevRoute,
 ]

@@ -11,9 +11,9 @@
     "exiasr.hadolint",
     "bierner.markdown-mermaid",
     "zignd.html-css-class-completion",
-    "orta.vscode-jest"
+    "orta.vscode-jest",
   ],
   "unwantedRecommendations": [
-    "eg2.tslint" // deprecated
-  ]
+    "eg2.tslint", // deprecated
+  ],
 }

@@ -252,7 +252,14 @@ func (c *Client) requestGraphQL(ctx context.Context, token, query string, vars m
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("POST", "/graphql", bytes.NewReader(reqBody))
+
+	// GitHub.com GraphQL endpoint is api.github.com/graphql. GitHub Enterprise is /api/graphql (the
+	// REST endpoint is /api/v3, necessitating the "..").
+	graphqlEndpoint := "/graphql"
+	if !c.githubDotCom {
+		graphqlEndpoint = "../graphql"
+	}
+	req, err := http.NewRequest("POST", graphqlEndpoint, bytes.NewReader(reqBody))
 	if err != nil {
 		return err
 	}
@@ -263,15 +270,19 @@ func (c *Client) requestGraphQL(ctx context.Context, token, query string, vars m
 	if err := c.do(ctx, token, req, &respBody); err != nil {
 		return err
 	}
+
+	// If the GraphQL response has errors, still attempt to unmarshal the data portion, as some
+	// requests may expect errors but have useful responses (e.g., querying a list of repositories,
+	// some of which you expect to 404).
 	if len(respBody.Errors) > 0 {
-		return respBody.Errors
+		err = respBody.Errors
 	}
 	if result != nil && respBody.Data != nil {
-		if err := unmarshal(respBody.Data, result); err != nil {
-			return err
+		if err0 := unmarshal(respBody.Data, result); err0 != nil && err == nil {
+			return err0
 		}
 	}
-	return nil
+	return err
 }
 
 // unmarshal wraps json.Unmarshal, but includes extra context in the case of
@@ -352,9 +363,9 @@ func IsRateLimitExceeded(err error) bool {
 // graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by
 // requestGraphQL. See https://facebook.github.io/graphql/#sec-Errors.
 type graphqlErrors []struct {
-	Message   string   `json:"message"`
-	Type      string   `json:"type"`
-	Path      []string `json:"path"`
+	Message   string        `json:"message"`
+	Type      string        `json:"type"`
+	Path      []interface{} `json:"path"`
 	Locations []struct {
 		Line   int `json:"line"`
 		Column int `json:"column"`
@@ -385,3 +396,6 @@ func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
 	}
 	return baseURL.ResolveReference(&url.URL{Path: "api"}), false
 }
+
+// ErrIncompleteResults is returned when the GitHub Search API returns an `incomplete_results: true` field in their response
+var ErrIncompleteResults = errors.New("github repository search returned incomplete results. This is an ephemeral error from GitHub, so does not indicate a problem with your configuration. See https://developer.github.com/changes/2014-04-07-understanding-search-results-and-potential-timeouts/ for more information")

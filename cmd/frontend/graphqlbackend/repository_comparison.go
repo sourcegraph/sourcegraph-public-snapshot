@@ -127,20 +127,12 @@ type fileDiffConnectionResolver struct {
 func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, error) {
 	do := func() ([]*diff.FileDiff, error) {
 		var rangeSpec string
-		hOid, err := r.cmp.head.OID()
-		if err != nil {
-			return nil, err
-		}
+		hOid := r.cmp.head.OID()
 		if r.cmp.base == nil {
-
 			// Rare case: the base is the empty tree, in which case we need ".." not "..." because the latter only works for commits.
 			rangeSpec = string(r.cmp.baseRevspec) + ".." + string(hOid)
 		} else {
-			bOid, err := r.cmp.base.OID()
-			if err != nil {
-				return nil, err
-			}
-			rangeSpec = string(bOid) + "..." + string(hOid)
+			rangeSpec = string(r.cmp.base.OID()) + "..." + string(hOid)
 		}
 		if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
 			// This should not be possible since r.head is a SHA returned by ResolveRevision, but be

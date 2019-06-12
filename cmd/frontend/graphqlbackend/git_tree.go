@@ -43,11 +43,7 @@ func (r *gitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	if err != nil {
 		return nil, err
 	}
-	oid, err := r.commit.OID()
-	if err != nil {
-		return nil, err
-	}
-	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(oid), r.path, r.isRecursive || args.Recursive)
+	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.path, r.isRecursive || args.Recursive)
 	if err != nil {
 		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value
 			// empty tree is not an error

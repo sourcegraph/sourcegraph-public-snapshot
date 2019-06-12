@@ -8,6 +8,7 @@ const PhabricatorSchemaJSON = `{
   "$id": "phabricator.schema.json#",
   "title": "PhabricatorConnection",
   "description": "Configuration for a connection to Phabricator.",
+  "allowComments": true,
   "type": "object",
   "additionalProperties": false,
   "anyOf": [{ "required": ["token"] }, { "required": ["repos"] }],

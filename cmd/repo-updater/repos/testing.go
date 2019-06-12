@@ -2,11 +2,9 @@ package repos
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"sort"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -63,10 +61,15 @@ type FakeStore struct {
 	repoIDSeq uint32
 	svcByID   map[int64]*ExternalService
 	repoByID  map[uint32]*Repo
+	parent    *FakeStore
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
 func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
+	if s.parent != nil {
+		return nil, errors.New("already in transaction")
+	}
+
 	svcByID := make(map[int64]*ExternalService, len(s.svcByID))
 	for id, svc := range s.svcByID {
 		svcByID[id] = svc.Clone()
@@ -89,12 +92,22 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 		svcByID:   svcByID,
 		repoIDSeq: s.repoIDSeq,
 		repoByID:  repoByID,
+		parent:    s,
 	}, nil
 }
 
 // Done fakes the implementation of a TxStore's Done method by always discarding all state
 // changes made during the transaction.
-func (s *FakeStore) Done(...*error) {}
+func (s *FakeStore) Done(e ...*error) {
+	if len(e) > 0 && e[0] != nil && *e[0] != nil {
+		return
+	}
+
+	// Transaction succeeded. Copy maps into parent
+	p := s.parent
+	s.parent = nil
+	*p = *s
+}
 
 // ListExternalServices lists all stored external services that match the given args.
 func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
@@ -194,14 +207,33 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		ids[id] = true
 	}
 
+	externalRepos := make(map[api.ExternalRepoSpec]bool, len(args.ExternalRepos))
+	for _, spec := range args.ExternalRepos {
+		externalRepos[spec] = true
+	}
+
 	set := make(map[*Repo]bool, len(s.repoByID))
 	repos := make(Repos, 0, len(s.repoByID))
 	for _, r := range s.repoByID {
-		if !set[r] &&
-			(len(kinds) == 0 || kinds[strings.ToLower(r.ExternalRepo.ServiceType)]) &&
-			(len(names) == 0 || names[r.Name]) &&
-			(len(ids) == 0 || ids[r.ID]) {
+		if set[r] {
+			continue
+		}
 
+		var preds []bool
+		if len(kinds) > 0 {
+			preds = append(preds, kinds[strings.ToLower(r.ExternalRepo.ServiceType)])
+		}
+		if len(names) > 0 {
+			preds = append(preds, names[r.Name])
+		}
+		if len(ids) > 0 {
+			preds = append(preds, ids[r.ID])
+		}
+		if len(externalRepos) > 0 {
+			preds = append(preds, externalRepos[r.ExternalRepo])
+		}
+
+		if (args.UseOr && evalOr(preds...)) || (!args.UseOr && evalAnd(preds...)) {
 			repos = append(repos, r)
 			set[r] = true
 		}
@@ -215,6 +247,27 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 	}
 
 	return repos, nil
+}
+
+func evalOr(bs ...bool) bool {
+	if len(bs) == 0 {
+		return true
+	}
+	for _, b := range bs {
+		if b {
+			return true
+		}
+	}
+	return false
+}
+
+func evalAnd(bs ...bool) bool {
+	for _, b := range bs {
+		if !b {
+			return false
+		}
+	}
+	return true
 }
 
 // UpsertRepos upserts all the given repos in the store.
@@ -244,11 +297,11 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 	}
 
 	for _, r := range updates {
-		if repo := s.repoByID[r.ID]; repo == nil {
-			inserts = append(inserts, r)
-		} else {
-			repo.Update(r)
+		repo := s.repoByID[r.ID]
+		if repo == nil {
+			return errors.Errorf("upserting repo with non-existant ID: id=%v", r.ID)
 		}
+		repo.Update(r)
 	}
 
 	for _, r := range inserts {
@@ -257,6 +310,29 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 		s.repoByID[r.ID] = r
 	}
 
+	return s.checkConstraints()
+}
+
+// checkConstraints ensures the FakeStore has not violated any constraints we
+// maintain on our DB.
+//
+// Constraints:
+// - name is unique case insensitively
+// - external repo is unique if set
+func (s *FakeStore) checkConstraints() error {
+	seenName := map[string]bool{}
+	seenExternalRepo := map[api.ExternalRepoSpec]bool{}
+	for _, r := range s.repoByID {
+		name := strings.ToLower(r.Name)
+		if seenName[name] {
+			return errors.Errorf("duplicate repo name: %s", name)
+		}
+		seenName[name] = true
+		if r.ExternalRepo.IsSet() && seenExternalRepo[r.ExternalRepo] {
+			return errors.Errorf("duplicate external repo spec: %v", r.ExternalRepo)
+		}
+		seenExternalRepo[r.ExternalRepo] = true
+	}
 	return nil
 }
 
@@ -280,12 +356,10 @@ var Assert = struct {
 }{
 	ReposEqual: func(rs ...*Repo) ReposAssertion {
 		want := append(Repos{}, rs...).With(Opt.RepoID(0))
-		sort.Sort(want)
 		return func(t testing.TB, have Repos) {
 			t.Helper()
-			have = append(Repos{}, have...)
-			have.Apply(Opt.RepoID(0)) // Exclude auto-generated IDs from equality tests
-			sort.Sort(have)
+			// Exclude auto-generated IDs from equality tests
+			have = append(Repos{}, have...).With(Opt.RepoID(0))
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("repos: %s", cmp.Diff(have, want))
 			}
@@ -307,8 +381,8 @@ var Assert = struct {
 		want := append(ExternalServices{}, es...).With(Opt.ExternalServiceID(0))
 		return func(t testing.TB, have ExternalServices) {
 			t.Helper()
-			have = append(ExternalServices{}, have...)
-			have.Apply(Opt.ExternalServiceID(0)) // Exclude auto-generated IDs from equality tests
+			// Exclude auto-generated IDs from equality tests
+			have = append(ExternalServices{}, have...).With(Opt.ExternalServiceID(0))
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("external services: %s", cmp.Diff(have, want))
 			}
@@ -445,115 +519,4 @@ func (c FakeClock) Time(step int) time.Time {
 	// We truncate to microsecond precision because Postgres' timestamptz type
 	// doesn't handle nanoseconds.
 	return c.epoch.Add(time.Duration(step) * c.step).UTC().Truncate(time.Microsecond)
-}
-
-// FakeInternalAPI implements the InternalAPI interface with the given in memory data.
-// It's safe for concurrent use.
-type FakeInternalAPI struct {
-	mu     sync.RWMutex
-	svcs   map[string][]*api.ExternalService
-	repos  map[api.RepoName]*api.Repo
-	repoID api.RepoID
-}
-
-// NewFakeInternalAPI returns a new FakeInternalAPI initialized with the given data.
-func NewFakeInternalAPI(svcs []*api.ExternalService, repos []*api.Repo) *FakeInternalAPI {
-	fa := FakeInternalAPI{
-		svcs:  map[string][]*api.ExternalService{},
-		repos: map[api.RepoName]*api.Repo{},
-	}
-
-	for _, svc := range svcs {
-		fa.svcs[svc.Kind] = append(fa.svcs[svc.Kind], svc)
-	}
-
-	for _, repo := range repos {
-		fa.repos[repo.Name] = repo
-	}
-
-	return &fa
-}
-
-// ExternalServicesList lists external services of the given Kind. A non-existent kind
-// will result in an error being returned.
-func (a *FakeInternalAPI) ExternalServicesList(
-	_ context.Context,
-	req api.ExternalServicesListRequest,
-) ([]*api.ExternalService, error) {
-
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-
-	var svcs []*api.ExternalService
-	for _, kind := range req.Kinds {
-		svcs = append(svcs, a.svcs[kind]...)
-	}
-
-	sort.Slice(svcs, func(i, j int) bool { return svcs[i].ID < svcs[j].ID })
-
-	return svcs, nil
-}
-
-// ReposList returns the list of all repos in the API.
-func (a *FakeInternalAPI) ReposList() []*api.Repo {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-
-	repos := make([]*api.Repo, 0, len(a.repos))
-	for _, repo := range a.repos {
-		repos = append(repos, repo)
-	}
-
-	return repos
-}
-
-// ReposCreateIfNotExists creates the given repo if it doesn't exist. Repos with
-// with an empty name are invalid and will result in an error to be returned.
-func (a *FakeInternalAPI) ReposCreateIfNotExists(
-	ctx context.Context,
-	req api.RepoCreateOrUpdateRequest,
-) (*api.Repo, error) {
-
-	if req.RepoName == "" {
-		return nil, errors.New("invalid empty repo name")
-	}
-
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	repo, ok := a.repos[req.RepoName]
-	if !ok {
-		a.repoID++
-		repo = &api.Repo{
-			ID:           a.repoID,
-			Name:         req.RepoName,
-			Enabled:      req.Enabled,
-			ExternalRepo: req.ExternalRepo,
-		}
-		a.repos[req.RepoName] = repo
-	}
-
-	return repo, nil
-}
-
-// ReposUpdateMetadata updates the metadata of repo with the given name.
-// Non-existent repos return an error.
-func (a *FakeInternalAPI) ReposUpdateMetadata(
-	ctx context.Context,
-	repoName api.RepoName,
-	description string,
-	fork, archived bool,
-) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	_, ok := a.repos[repoName]
-	if !ok {
-		return fmt.Errorf("repo %q not found", repoName)
-	}
-
-	// Fake success, no updates needed because the returned types (api.Repo)
-	// don't include these fields.
-
-	return nil
 }

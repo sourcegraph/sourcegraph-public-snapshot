@@ -139,7 +139,12 @@ type nullString struct{ s *string }
 
 // Scan implements the Scanner interface.
 func (nt *nullString) Scan(value interface{}) error {
-	*nt.s, _ = value.(string)
+	switch v := value.(type) {
+	case []byte:
+		*nt.s = string(v)
+	case string:
+		*nt.s = v
+	}
 	return nil
 }
 

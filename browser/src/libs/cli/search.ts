@@ -1,18 +1,21 @@
+import { take } from 'rxjs/operators'
+import { PlatformContext } from '../../../../shared/src/platform/context'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { storage } from '../../browser/storage'
 import { createSuggestionFetcher } from '../../shared/backend/search'
-import { sourcegraphUrl } from '../../shared/util/context'
+import { observeSourcegraphURL } from '../../shared/util/context'
 
 const isURL = /^https?:\/\//
 
-class SearchCommand {
+export class SearchCommand {
     public description = 'Enter a search query'
 
-    private suggestionFetcher = createSuggestionFetcher(20)
+    private suggestionFetcher = createSuggestionFetcher(20, this.requestGraphQL)
 
     private prev: { query: string; suggestions: browser.omnibox.SuggestResult[] } = { query: '', suggestions: [] }
 
-    public getSuggestions = (query: string): Promise<browser.omnibox.SuggestResult[]> =>
+    constructor(private requestGraphQL: PlatformContext['requestGraphQL']) {}
+
+    public getSuggestions = async (query: string): Promise<browser.omnibox.SuggestResult[]> =>
         new Promise(resolve => {
             if (this.prev.query === query) {
                 resolve(this.prev.suggestions)
@@ -21,9 +24,12 @@ class SearchCommand {
 
             this.suggestionFetcher({
                 query,
-                handler: suggestions => {
+                handler: async suggestions => {
+                    const sourcegraphURL = await observeSourcegraphURL(true) // isExtension=true, this feature is only supported in the browser extension
+                        .pipe(take(1))
+                        .toPromise()
                     const built = suggestions.map(({ title, url, urlLabel }) => ({
-                        content: `${sourcegraphUrl}${url}`,
+                        content: `${sourcegraphURL}${url}`,
                         description: `${title} - ${urlLabel}`,
                     }))
 
@@ -38,9 +44,13 @@ class SearchCommand {
         })
 
     public action = async (query: string, disposition?: string): Promise<void> => {
-        const { sourcegraphURL: url } = await storage.sync.get()
+        const sourcegraphURL = await observeSourcegraphURL(true) // isExtension=true, this feature is only supported in the browser extension
+            .pipe(take(1))
+            .toPromise()
         const props = {
-            url: isURL.test(query) ? query : `${url}/search?${buildSearchURLQuery(query)}&utm_source=omnibox`,
+            url: isURL.test(query)
+                ? query
+                : `${sourcegraphURL}/search?${buildSearchURLQuery(query)}&utm_source=omnibox`,
         }
 
         switch (disposition) {
@@ -57,5 +67,3 @@ class SearchCommand {
         }
     }
 }
-
-export default new SearchCommand()

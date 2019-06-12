@@ -42,30 +42,11 @@ func needsRepositoryConfiguration(ctx context.Context) (bool, error) {
 }
 
 func (r *siteResolver) NoRepositoriesEnabled(ctx context.Context) (bool, error) {
-	if envvar.SourcegraphDotComMode() {
-		return false, nil
-	}
-
-	// 🚨 SECURITY: The site alerts may contain sensitive data, so only site
-	// admins may view them.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return false, err
-	}
-
-	return noRepositoriesEnabled(ctx)
-}
-
-func noRepositoriesEnabled(ctx context.Context) (bool, error) {
-	// Fastest way to see if even a single enabled repository exists.
-	repos, err := db.Repos.List(ctx, db.ReposListOptions{
-		Enabled:     true,
-		Disabled:    false,
-		LimitOffset: &db.LimitOffset{Limit: 1},
-	})
-	if err != nil {
-		return false, err
-	}
-	return len(repos) == 0, nil
+	// With 3.4 the Enabled/Disabled fields on repositories have been
+	// deprecated with the result being that all repositories are "enabled" by
+	// default.
+	// So instead of removing this flag and breaking the API we always return false
+	return false, nil
 }
 
 func (*siteResolver) DisableBuiltInSearches() bool {

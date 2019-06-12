@@ -233,29 +233,30 @@ func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
 
 func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 	// List settings for all users, orgs, etc.
-	settings, err := db.Settings.ListAll(r.Context(), "")
+	settings, err := db.SavedSearches.ListAll(r.Context())
 	if err != nil {
-		return errors.Wrap(err, "db.Settings.ListAll")
+		return errors.Wrap(err, "db.SavedSearches.ListAll")
 	}
 
 	queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
-	for _, settings := range settings {
-		var config api.PartialConfigSavedQueries
-		if err := jsonc.Unmarshal(settings.Contents, &config); err != nil {
-			return err
+	for _, s := range settings {
+		var spec api.SavedQueryIDSpec
+		if s.Config.UserID != nil {
+			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: s.Config.UserID}, Key: s.Config.Key}
+		} else if s.Config.OrgID != nil {
+			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{Org: s.Config.OrgID}, Key: s.Config.Key}
 		}
-		for _, query := range config.SavedQueries {
-			spec := api.SavedQueryIDSpec{Subject: settings.Subject, Key: query.Key}
-			queries = append(queries, api.SavedQuerySpecAndConfig{
-				Spec:   spec,
-				Config: query,
-			})
-		}
+
+		queries = append(queries, api.SavedQuerySpecAndConfig{
+			Spec:   spec,
+			Config: s.Config,
+		})
 	}
 
 	if err := json.NewEncoder(w).Encode(queries); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
+
 	return nil
 }
 
@@ -265,7 +266,7 @@ func serveSavedQueriesGetInfo(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	info, err := db.SavedQueries.Get(r.Context(), query)
+	info, err := db.QueryRunnerState.Get(r.Context(), query)
 	if err != nil {
 		return errors.Wrap(err, "SavedQueries.Get")
 	}
@@ -281,7 +282,7 @@ func serveSavedQueriesSetInfo(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	err = db.SavedQueries.Set(r.Context(), &db.SavedQueryInfo{
+	err = db.QueryRunnerState.Set(r.Context(), &db.SavedQueryInfo{
 		Query:        info.Query,
 		LastExecuted: info.LastExecuted,
 		LatestResult: info.LatestResult,
@@ -301,7 +302,7 @@ func serveSavedQueriesDeleteInfo(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	err = db.SavedQueries.Delete(r.Context(), query)
+	err = db.QueryRunnerState.Delete(r.Context(), query)
 	if err != nil {
 		return errors.Wrap(err, "SavedQueries.Delete")
 	}

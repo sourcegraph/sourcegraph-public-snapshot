@@ -4,7 +4,7 @@ import {
     EXTENSION_CATEGORIES,
     ExtensionCategory,
     ExtensionManifest,
-} from '../../../../shared/src/schema/extension.schema'
+} from '../../../../shared/src/schema/extensionSchema'
 import { Settings } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { quoteIfNeeded } from '../../search'

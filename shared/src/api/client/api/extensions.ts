@@ -1,5 +1,4 @@
 import { ProxyResult } from '@sourcegraph/comlink'
-import { isEqual } from 'lodash'
 import { from, Subscription } from 'rxjs'
 import { bufferCount, startWith } from 'rxjs/operators'
 import { ExtExtensionsAPI } from '../../extension/api/extensions'
@@ -30,7 +29,7 @@ export class ClientExtensions {
                     const next: ExecutableExtension[] = []
                     if (oldExtensions) {
                         for (const x of oldExtensions) {
-                            const newIndex = toActivate.findIndex(({ id }) => isEqual(x.id, id))
+                            const newIndex = toActivate.findIndex(({ id }) => x.id === id)
                             if (newIndex === -1) {
                                 // Extension is no longer activated
                                 toDeactivate.push(x)

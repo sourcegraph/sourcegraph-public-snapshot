@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
 
@@ -27,6 +29,9 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
+	}
 
 	externalService := &types.ExternalService{
 		Kind:        args.Input.Kind,
@@ -34,15 +39,16 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 		Config:      args.Input.Config,
 	}
 
-	if err := db.ExternalServices.Create(ctx, externalService); err != nil {
+	if err := db.ExternalServices.Create(ctx, conf.Get, externalService); err != nil {
 		return nil, err
 	}
 
+	res := &externalServiceResolver{externalService: externalService}
 	if err := syncExternalService(ctx, externalService); err != nil {
-		return nil, errors.Wrap(err, "warning: external service created, but sync request failed")
+		res.warning = fmt.Sprintf("External service created, but we encountered a problem while syncing the external service: %s", err)
 	}
 
-	return &externalServiceResolver{externalService: externalService}, nil
+	return res, nil
 }
 
 func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
@@ -60,6 +66,9 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	// 🚨 SECURITY: Only site admins are allowed to update the user.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
+	}
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
 	if args.Input.Config != nil && strings.TrimSpace(*args.Input.Config) == "" {
@@ -79,16 +88,17 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	res := &externalServiceResolver{externalService: externalService}
 	if err = syncExternalService(ctx, externalService); err != nil {
-		return nil, errors.Wrap(err, "warning: external service updated, but sync request failed")
+		res.warning = fmt.Sprintf("External service updated, but we encountered a problem while syncing the external service: %s", err)
 	}
 
-	return &externalServiceResolver{externalService: externalService}, nil
+	return res, nil
 }
 
 // Eagerly trigger a repo-updater sync.
 func syncExternalService(ctx context.Context, svc *types.ExternalService) error {
-	res, err := repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
+	_, err := repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
 		ID:          svc.ID,
 		Kind:        svc.Kind,
 		DisplayName: svc.DisplayName,
@@ -102,7 +112,7 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 		return err
 	}
 
-	return res.Error
+	return nil
 }
 
 func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
@@ -111,6 +121,9 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 	// 🚨 SECURITY: Only site admins can delete external services.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
+	}
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
 	id, err := unmarshalExternalServiceID(args.ExternalService)

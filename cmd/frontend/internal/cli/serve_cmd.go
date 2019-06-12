@@ -97,9 +97,11 @@ func Main() error {
 	if err := dbconn.ConnectToDB(""); err != nil {
 		log.Fatal(err)
 	}
+	if err := handleConfigOverrides(); err != nil {
+		log.Fatal("applying config overrides:", err)
+	}
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
 	conf.MustValidateDefaults()
-	handleConfigOverrides()
 
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
@@ -169,6 +171,7 @@ func Main() error {
 	}
 
 	goroutine.Go(func() { bg.MigrateAllSettingsMOTDToNotices(context.Background()) })
+	goroutine.Go(func() { bg.MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(context.Background()) })
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
 	if hooks.AfterDBInit != nil {

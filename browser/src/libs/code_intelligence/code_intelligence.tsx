@@ -9,7 +9,7 @@ import {
 import * as H from 'history'
 import { uniqBy } from 'lodash'
 import * as React from 'react'
-import { render } from 'react-dom'
+import { render as reactDOMRender } from 'react-dom'
 import { animationFrameScheduler, EMPTY, from, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
 import {
     catchError,
@@ -20,9 +20,11 @@ import {
     mergeMap,
     observeOn,
     switchMap,
+    take,
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
+import { PartialCodeEditor } from '../../../../shared/src/api/client/context/context'
 import { CodeEditorData } from '../../../../shared/src/api/client/services/editorService'
 import { WorkspaceRootWithMetadata } from '../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
@@ -35,7 +37,7 @@ import { getHoverActions, registerHoverContributions } from '../../../../shared/
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../shared/src/util/types'
 import {
     FileSpec,
@@ -52,7 +54,8 @@ import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
 import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
-import { sourcegraphUrl } from '../../shared/util/context'
+import { EventLogger } from '../../shared/tracking/eventLogger'
+import { observeSourcegraphURL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
@@ -61,7 +64,13 @@ import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
-import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
+import {
+    applyDecorations,
+    DecorationMapByLine,
+    initializeExtensions,
+    renderCommandPalette,
+    renderGlobalDebug,
+} from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
 import { handleTextFields, TextField } from './text_fields'
 import { ViewResolver } from './views'
@@ -89,7 +98,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
 /**
  * The context the code host is in on the current page.
  */
-export type CodeHostContext = RepoSpec & Partial<RevSpec>
+export type CodeHostContext = RepoSpec & Partial<RevSpec> & { privateRepository: boolean }
 
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {
@@ -159,6 +168,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
 
     /** Construct the URL to the specified file. */
     urlToFile?: (
+        sourcegraphURL: string,
         location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
     ) => string
 
@@ -218,7 +228,8 @@ export interface FileInfo {
 }
 
 interface CodeIntelligenceProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL'> {
+    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL'>,
+        TelemetryProps {
     codeHost: CodeHost
     extensionsController: Controller
     showGlobalDebug?: boolean
@@ -248,7 +259,11 @@ export function initCodeIntelligence({
     codeHost,
     platformContext,
     extensionsController,
-}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController'>): {
+    render,
+    telemetryService,
+}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
+    render: typeof reactDOMRender
+}): {
     hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
 } {
@@ -314,7 +329,7 @@ export function initCodeIntelligence({
                 <HoverOverlay
                     {...hoverOverlayProps}
                     {...codeHost.hoverOverlayClassProps}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryService={telemetryService}
                     hoverRef={nextOverlayElement}
                     extensionsController={extensionsController}
                     platformContext={platformContext}
@@ -350,12 +365,20 @@ export function handleCodeHost({
     extensionsController,
     platformContext,
     showGlobalDebug,
-}: CodeIntelligenceProps & { mutations: Observable<MutationRecordLike[]> }): Subscription {
+    sourcegraphURL,
+    telemetryService,
+    render,
+}: CodeIntelligenceProps & {
+    mutations: Observable<MutationRecordLike[]>
+    sourcegraphURL: string
+    render: typeof reactDOMRender
+}): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
+    const { requestGraphQL } = platformContext
 
     const ensureRepoExists = (context: CodeHostContext) =>
-        resolveRev(context).pipe(
+        resolveRev({ ...context, requestGraphQL }).pipe(
             retryWhenCloneInProgressError(),
             map(rev => !!rev),
             catchError(() => [false])
@@ -369,7 +392,13 @@ export function handleCodeHost({
         filter(isInstanceOf(HTMLElement))
     )
 
-    const { hoverifier, subscription } = initCodeIntelligence({ codeHost, extensionsController, platformContext })
+    const { hoverifier, subscription } = initCodeIntelligence({
+        codeHost,
+        extensionsController,
+        platformContext,
+        telemetryService,
+        render,
+    })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
 
@@ -387,6 +416,8 @@ export function handleCodeHost({
                         extensionsController,
                         history,
                         platformContext,
+                        telemetryService,
+                        render,
                         ...codeHost.commandPaletteClassProps,
                     })
                 )
@@ -398,7 +429,7 @@ export function handleCodeHost({
     // so we don't need to subscribe to mutations.
     if (showGlobalDebug) {
         const mount = createGlobalDebugMount()
-        renderGlobalDebug({ extensionsController, platformContext, history })(mount)
+        renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
     }
 
     // Render view on Sourcegraph button
@@ -412,7 +443,7 @@ export function handleCodeHost({
                 )
                 .subscribe(
                     renderViewContextOnSourcegraph({
-                        sourcegraphUrl,
+                        sourcegraphURL,
                         getContext,
                         viewOnSourcegraphButtonClassProps,
                         ensureRepoExists,
@@ -427,9 +458,9 @@ export function handleCodeHost({
         trackCodeViews(codeHost),
         mergeMap(codeViewEvent => {
             if (codeViewEvent.type === 'added') {
-                return codeViewEvent.resolveFileInfo(codeViewEvent.element).pipe(
+                return codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
                     mergeMap(fileInfo =>
-                        fetchFileContents(fileInfo).pipe(
+                        fetchFileContents(fileInfo, platformContext.requestGraphQL).pipe(
                             map(fileInfoWithContents => ({
                                 fileInfo: fileInfoWithContents,
                                 ...codeViewEvent,
@@ -462,7 +493,7 @@ export function handleCodeHost({
 
             // Handle added or removed view component, workspace root and subscriptions
             if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.element)) {
-                const { element, fileInfo, adjustPosition, getToolbarMount, toolbarButtonProps } = codeViewEvent
+                const { element, fileInfo, getPositionAdjuster, getToolbarMount, toolbarButtonProps } = codeViewEvent
                 const uri = toURIWithPath(fileInfo)
                 const languageId = getModeFromPath(fileInfo.filePath)
                 const model = { uri, languageId, text: fileInfo.content }
@@ -478,6 +509,11 @@ export function handleCodeHost({
                     isActive: true,
                 }
                 const editorId = extensionsController.services.editor.addEditor(editorData)
+                const scope: PartialCodeEditor = {
+                    ...editorData,
+                    ...editorId,
+                    model,
+                }
                 const codeViewState: CodeViewState = {
                     subscriptions: new Subscription(),
                     roots: [{ uri: toRootURI(fileInfo), inputRevision: fileInfo.rev || '' }],
@@ -546,7 +582,7 @@ export function handleCodeHost({
                 }
 
                 // Apply decorations coming from extensions
-                let decoratedLines: number[] = []
+                let decorationsByLine: DecorationMapByLine = new Map()
                 if (!fileInfo.baseCommitID) {
                     codeViewState.subscriptions.add(
                         extensionsController.services.textDocumentDecoration
@@ -555,11 +591,11 @@ export function handleCodeHost({
                             // We manage the subscription correctly.
                             // tslint:disable-next-line: rxjs-no-nested-subscribe
                             .subscribe(decorations => {
-                                decoratedLines = applyDecorations(
+                                decorationsByLine = applyDecorations(
                                     domFunctions,
                                     element,
                                     decorations || [],
-                                    decoratedLines
+                                    decorationsByLine
                                 )
                             })
                     )
@@ -577,6 +613,7 @@ export function handleCodeHost({
                             ? fileInfo.baseRev || fileInfo.baseCommitID!
                             : fileInfo.rev || fileInfo.commitID,
                 })
+                const adjustPosition = getPositionAdjuster && getPositionAdjuster(platformContext.requestGraphQL)
                 codeViewState.subscriptions.add(
                     hoverifier.hoverify({
                         dom: domFunctions,
@@ -595,12 +632,13 @@ export function handleCodeHost({
                         <CodeViewToolbar
                             {...fileInfo}
                             {...codeHost.codeViewToolbarClassProps}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
+                            sourcegraphURL={sourcegraphURL}
+                            telemetryService={telemetryService}
                             platformContext={platformContext}
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
                             location={H.createLocation(window.location)}
-                            scope={{ ...editorData, model }}
+                            scope={scope}
                         />,
                         mount
                     )
@@ -653,10 +691,15 @@ export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(cod
 export async function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
+    isExtension: boolean,
     showGlobalDebug = SHOW_DEBUG()
 ): Promise<Subscription> {
     const subscriptions = new Subscription()
-    const { platformContext, extensionsController } = initializeExtensions(codeHost)
+    const sourcegraphURL = await observeSourcegraphURL(isExtension)
+        .pipe(take(1))
+        .toPromise()
+    const { platformContext, extensionsController } = initializeExtensions(codeHost, sourcegraphURL, isExtension)
+    const telemetryService = new EventLogger(isExtension, platformContext.requestGraphQL)
     subscriptions.add(extensionsController)
     subscriptions.add(
         handleCodeHost({
@@ -665,6 +708,9 @@ export async function injectCodeIntelligenceToCodeHost(
             extensionsController,
             platformContext,
             showGlobalDebug,
+            sourcegraphURL,
+            telemetryService,
+            render: reactDOMRender,
         })
     )
     return subscriptions

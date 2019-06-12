@@ -20,9 +20,11 @@ import (
 	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
+	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -67,8 +69,6 @@ func TestNewSourcer(t *testing.T) {
 		UpdatedAt:   now,
 	}
 
-	githubDotCom := ExternalService{Kind: "GITHUB"}
-
 	gitlab := ExternalService{
 		Kind:        "GITHUB",
 		DisplayName: "Github - Test",
@@ -102,12 +102,6 @@ func TestNewSourcer(t *testing.T) {
 			name: "deleted external services are excluded",
 			svcs: ExternalServices{&github, &gitlab},
 			srcs: sources(&github),
-			err:  "<nil>",
-		},
-		{
-			name: "github.com is added when not existent",
-			svcs: ExternalServices{},
-			srcs: sources(&githubDotCom),
 			err:  "<nil>",
 		},
 	} {
@@ -185,6 +179,18 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "GITOLITE",
 				Config: marshalJSON(t, &schema.GitoliteConnection{
 					Host: "ssh://git@127.0.0.1:2222",
+				}),
+			},
+			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
 				}),
 			},
 			{
@@ -276,6 +282,34 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
+			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
+					Exclude: []*schema.ExcludedAWSCodeCommitRepo{
+						{Name: "stRIPE-gO"},
+						{Id: "020a4751-0f46-4e19-82bf-07d0989b67dd"},                // ID of `test`
+						{Name: "test2", Id: "2686d63d-bff4-4a3e-a94f-3e6df904238d"}, // ID of `test2`
+					},
+				}),
+			},
+			{
+				Kind: "GITOLITE",
+				Config: marshalJSON(t, &schema.GitoliteConnection{
+					Prefix:    "gitolite.mycorp.com/",
+					Host:      "ssh://git@127.0.0.1:2222",
+					Blacklist: `gitolite\.mycorp\.com\/foo`,
+					Exclude: []*schema.ExcludedGitoliteRepo{
+						{Name: "bar"},
+					},
+				}),
+			},
 		}
 
 		testCases = append(testCases, testCase{
@@ -310,6 +344,15 @@ func TestSources_ListRepos(t *testing.T) {
 					case *schema.BitbucketServerConnection:
 						for _, e := range cfg.Exclude {
 							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id), pattern: e.Pattern})
+						}
+					case *schema.AWSCodeCommitConnection:
+						for _, e := range cfg.Exclude {
+							ex = append(ex, excluded{name: e.Name, id: e.Id})
+						}
+					case *schema.GitoliteConnection:
+						ex = append(ex, excluded{pattern: cfg.Blacklist})
+						for _, e := range cfg.Exclude {
+							ex = append(ex, excluded{name: e.Name})
 						}
 					}
 
@@ -398,6 +441,18 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
+			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
+				}),
+			},
 		}
 
 		testCases = append(testCases, testCase{
@@ -427,6 +482,14 @@ func TestSources_ListRepos(t *testing.T) {
 						want = []string{
 							"gitlab.com/gitlab-org/gitlab-ce",
 							"gitlab.com/gnachman/iterm2",
+						}
+					case "AWSCODECOMMIT":
+						want = []string{
+							"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"empty-repo",
+							"stripe-go",
+							"test",
+							"test2",
 						}
 					case "OTHER":
 						want = []string{
@@ -477,6 +540,27 @@ func TestSources_ListRepos(t *testing.T) {
 					Repos:                 []string{"org/baz"},
 				}),
 			},
+			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
+					RepositoryPathPattern: "a/b/c/{name}",
+				}),
+			},
+			{
+				Kind: "GITOLITE",
+				Config: marshalJSON(t, &schema.GitoliteConnection{
+					// Prefix serves as a sort of repositoryPathPattern for Gitolite
+					Prefix: "gitolite.mycorp.com/",
+					Host:   "ssh://git@127.0.0.1:2222",
+				}),
+			},
 		}
 
 		testCases = append(testCases, testCase{
@@ -486,26 +570,113 @@ func TestSources_ListRepos(t *testing.T) {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
-					have := rs.Names()
-
-					var want []string
-					switch s.Kind {
-					case "GITHUB":
-						want = []string{
-							"github.com/a/b/c/tsenart/vegeta",
-						}
-					case "GITLAB":
-						want = []string{
-							"gitlab.com/a/b/c/gnachman/iterm2",
-						}
-					case "BITBUCKETSERVER":
-						want = []string{
-							"127.0.0.1/a/b/c/ORG/baz",
-						}
+					haveNames := rs.Names()
+					var haveURIs []string
+					for _, r := range rs {
+						haveURIs = append(haveURIs, r.URI)
 					}
 
-					if !reflect.DeepEqual(have, want) {
-						t.Error(cmp.Diff(have, want))
+					var wantNames, wantURIs []string
+					switch s.Kind {
+					case "GITHUB":
+						wantNames = []string{
+							"github.com/a/b/c/tsenart/vegeta",
+						}
+						wantURIs = []string{
+							"github.com/tsenart/vegeta",
+						}
+					case "GITLAB":
+						wantNames = []string{
+							"gitlab.com/a/b/c/gnachman/iterm2",
+						}
+						wantURIs = []string{
+							"gitlab.com/gnachman/iterm2",
+						}
+					case "BITBUCKETSERVER":
+						wantNames = []string{
+							"127.0.0.1/a/b/c/ORG/baz",
+						}
+						wantURIs = []string{
+							"127.0.0.1/ORG/baz",
+						}
+					case "AWSCODECOMMIT":
+						wantNames = []string{
+							"a/b/c/empty-repo",
+							"a/b/c/stripe-go",
+							"a/b/c/test2",
+							"a/b/c/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"a/b/c/test",
+						}
+						wantURIs = []string{
+							"empty-repo",
+							"stripe-go",
+							"test2",
+							"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"test",
+						}
+					case "GITOLITE":
+						wantNames = []string{
+							"gitolite.mycorp.com/bar",
+							"gitolite.mycorp.com/baz",
+							"gitolite.mycorp.com/foo",
+							"gitolite.mycorp.com/gitolite-admin",
+							"gitolite.mycorp.com/testing",
+						}
+						wantURIs = wantNames
+					}
+
+					if !reflect.DeepEqual(haveNames, wantNames) {
+						t.Error(cmp.Diff(haveNames, wantNames))
+					}
+					if !reflect.DeepEqual(haveURIs, wantURIs) {
+						t.Error(cmp.Diff(haveURIs, wantURIs))
+					}
+				}
+			},
+			err: "<nil>",
+		})
+	}
+	{
+		svcs := ExternalServices{
+			{
+				Kind: "AWSCODECOMMIT",
+				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
+					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
+					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
+					Region:          "us-west-1",
+					GitCredentials: schema.AWSCodeCommitGitCredentials{
+						Username: "git-username",
+						Password: "git-password",
+					},
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "yielded repos have authenticated CloneURLs",
+			svcs: svcs,
+			assert: func(s *ExternalService) ReposAssertion {
+				return func(t testing.TB, rs Repos) {
+					t.Helper()
+
+					urls := []string{}
+					for _, r := range rs {
+						urls = append(urls, r.CloneURLs()...)
+					}
+
+					switch s.Kind {
+					case "AWSCODECOMMIT":
+						want := []string{
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/empty-repo",
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/test2",
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/test",
+						}
+
+						if have := urls; !reflect.DeepEqual(have, want) {
+							t.Error(cmp.Diff(have, want))
+						}
 					}
 				}
 			},
@@ -604,6 +775,102 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 }
 
+func TestGithubSource_GetRepo(t *testing.T) {
+	testCases := []struct {
+		name          string
+		nameWithOwner string
+		assert        func(*testing.T, *Repo)
+		err           string
+	}{
+		{
+			name:          "invalid name",
+			nameWithOwner: "thisIsNotANameWithOwner",
+			err:           `Invalid GitHub repository: nameWithOwner=thisIsNotANameWithOwner: invalid GitHub repository "owner/name" string: "thisIsNotANameWithOwner"`,
+		},
+		{
+			name:          "not found",
+			nameWithOwner: "foobarfoobarfoobar/please-let-this-not-exist",
+			err:           `GitHub repository not found`,
+		},
+		{
+			name:          "found",
+			nameWithOwner: "sourcegraph/sourcegraph",
+			assert: func(t *testing.T, have *Repo) {
+				t.Helper()
+
+				want := &Repo{
+					Name:        "github.com/sourcegraph/sourcegraph",
+					Description: "Code search and navigation tool (self-hosted)",
+					Enabled:     true,
+					URI:         "github.com/sourcegraph/sourcegraph",
+					ExternalRepo: api.ExternalRepoSpec{
+						ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+						ServiceType: "github",
+						ServiceID:   "https://github.com/",
+					},
+					Sources: map[string]*SourceInfo{
+						"extsvc:github:0": {
+							ID:       "extsvc:github:0",
+							CloneURL: "https://github.com/sourcegraph/sourcegraph",
+						},
+					},
+					Metadata: &github.Repository{
+						ID:            "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+						DatabaseID:    41288708,
+						NameWithOwner: "sourcegraph/sourcegraph",
+						Description:   "Code search and navigation tool (self-hosted)",
+						URL:           "https://github.com/sourcegraph/sourcegraph",
+					},
+				}
+
+				if !reflect.DeepEqual(have, want) {
+					t.Errorf("response: %s", cmp.Diff(have, want))
+				}
+			},
+			err: "<nil>",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GITHUB-DOT-COM/" + tc.name
+
+		t.Run(tc.name, func(t *testing.T) {
+			// The GithubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			svc := &ExternalService{
+				Kind: "GITHUB",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url: "https://github.com",
+				}),
+			}
+
+			githubSrc, err := NewGithubSource(svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			repo, err := githubSrc.GetRepo(context.Background(), tc.nameWithOwner)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if tc.assert != nil {
+				tc.assert(t, repo)
+			}
+		})
+	}
+}
+
 func newClientFactory(t testing.TB, name string) (*httpcli.Factory, func(testing.TB)) {
 	cassete := filepath.Join("testdata", "sources", strings.Replace(name, " ", "-", -1))
 	rec := newRecorder(t, cassete, update(name))
@@ -688,4 +955,12 @@ func marshalJSON(t testing.TB, v interface{}) string {
 	}
 
 	return string(bs)
+}
+
+func getAWSEnv(envVar string) string {
+	s := os.Getenv(envVar)
+	if s == "" {
+		s = fmt.Sprintf("BOGUS-%s", envVar)
+	}
+	return s
 }

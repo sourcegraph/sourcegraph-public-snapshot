@@ -1,8 +1,8 @@
 {{define "root"}}
 <html>
     <head>
-        <title>{{with .Content}}{{.Doc.Title}}
-            {{else}}Error{{end}} - Sourcegraph docs</title>
+        <title>{{with .Content}}{{.Doc.Title}}{{if gt (len .Breadcrumbs ) 0}} - Sourcegraph docs{{end}}{{else}}Error{{end}}</title>
+        <link rel="icon" type="image/png" href="https://about.sourcegraph.com/sourcegraph-mark.png"/>
         <link rel="stylesheet" href="{{asset "sourcegraph.css"}}?9" />
         <link rel="stylesheet" href="{{asset "layout.css"}}?9" />
         <link rel="stylesheet" href="{{asset "content.css"}}?9" />
@@ -27,10 +27,10 @@
                             <details-menu aria-label="Sourcegraph version" class="dropdown-menu" aria-labelledby="Version Dropdown">
 
                                 {{/* Update these after each release. */}}
-                                {{$previousReleaseRevspec := "v3.2.4"}}
-                                {{$previousReleaseVersion := "3.2"}}
-                                {{$currentReleaseRevspec := "v3.3.7"}}
-                                {{$currentReleaseVersion := "3.3"}}
+                                {{$previousReleaseRevspec := "v3.3.8"}}
+                                {{$previousReleaseVersion := "3.3"}}
+                                {{$currentReleaseRevspec := "v3.4.1"}}
+                                {{$currentReleaseVersion := "3.4"}}
                                 {{$nextReleaseVersion := "master"}}
                                 <a rel="nofollow" class="dropdown-item monospace-text {{if eq .ContentVersion ""}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
                                 <a rel="nofollow" class=" dropdown-item monospace-text {{if eq $currentReleaseVersion .ContentVersion ""}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch">current</span></a>
@@ -126,7 +126,6 @@
                             <ul class="content-nav-section-group">
                                 <li><a href="/admin/ssl_https_self_signed_cert_nginx">Adding SSL (HTTPS) to Sourcegraph with a self-signed certificate</a></li>
                                 <li><a href="/admin/extensions">Administration of Sourcegraph extensions and the extension registry</a></li>
-                                <li><a href="/admin/faq">Adminstration FAQ</a></li>
                                 <li><a href="/admin/external_service">External services</a></li>
                                 <li class="content-nav-no-hover">
                                     <ul class="content-nav-section-subsection">
@@ -199,6 +198,8 @@
                                 </li>
                                 <li><a href="/admin/user_data_deletion">User data deletion</a></li>
                                 <li><a href="/admin/external_database">Using external databases with Sourcegraph</a></li>
+                                <li><a href="/admin/faq">Adminstration FAQ</a></li>
+                                <li><a href="/admin/troubleshooting">Adminstration troubleshooting</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -313,11 +314,12 @@
                                 <li><a href="/dev/local_development">Getting started with developing Sourcegraph</a></li>
                                 <li><a href="/dev/incidents">Incidents</a></li>
                                 <li><a href="/dev/issues">Issues</a></li>
-                                <li><a href="/dev/release_issue_template">MAJOR.MINOR Release (YYYY-MM-20)</a></li>
-                                <li><a href="/dev/patch_release_issue_template">MAJOR.MINOR.PATCH Release</a></li>
+                                <li><a href="/dev/release_issue_template">MAJOR.MINOR release (YYYY-MM-20)</a></li>
+                                <li><a href="/dev/patch_release_issue_template">MAJOR.MINOR.PATCH release</a></li>
+                                <li><a href="/dev/devrel_release_issue_template">MAJOR.MINOR release: DevRel tasks</a></li>
                                 <li><a href="/dev/architecture-mermaid">N# Sourcegraph Architecture diagram</a></li>
                                 <li><a href="/dev/postgresql">PostgreSQL storage tips</a></li>
-                                <li><a href="/dev/phabricator_gitolite">Print info from gitolite</a></li>
+                                <li><a href="/dev/phabricator_gitolite">Print info from Gitolite</a></li>
                                 <li><a href="/dev/product">Product</a></li>
                                 <li><a href="/dev/releases">Releases</a></li>
                                 <li><a href="/dev/retrospectives">Retrospectives</a></li>

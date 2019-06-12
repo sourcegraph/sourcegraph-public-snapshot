@@ -49,15 +49,25 @@ type Mutation {
     updateExternalService(input: UpdateExternalServiceInput!): ExternalService!
     # Delete an external service. Only site admins may perform this mutation.
     deleteExternalService(externalService: ID!): EmptyResponse!
-    # Enables or disables a repository. A disabled repository is only
-    # accessible to site admins and never appears in search results.
+    # DEPRECATED: All repositories are accessible or deleted. To prevent a
+    # repository from being accessed on Sourcegraph add it to the external
+    # service exclude configuration. This mutation will be removed in 3.6.
+    #
+    # Enables or disables a repository. A disabled repository is only accessible
+    # to site admins and never appears in search results.
     #
     # Only site admins may perform this mutation.
     setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
+        @deprecated(reason: "update external service exclude setting.")
+    # DEPRECATED: All repositories are accessible or deleted. To prevent a
+    # repository from being accessed on Sourcegraph add it to the external
+    # service exclude configuration.
+    #
     # Enables or disables all site repositories.
     #
     # Only site admins may perform this mutation.
     setAllRepositoriesEnabled(enabled: Boolean!): EmptyResponse
+        @deprecated(reason: "update external service exclude setting.")
     # Tests the connection to a mirror repository's original source repository. This is an
     # expensive and slow operation, so it should only be used for interactive diagnostics.
     #
@@ -77,11 +87,19 @@ type Mutation {
         # The mirror repository to update.
         repository: ID!
     ): EmptyResponse!
-    # Schedules all repositories to be updated from their original source repositories. Updating
-    # occurs automatically, so this should not normally be needed.
+    # DEPRECATED: All repositories are scheduled for updates periodically. This
+    # mutation will be removed in 3.6.
+    #
+    # Schedules all repositories to be updated from their original source
+    # repositories. Updating occurs automatically, so this should not normally
+    # be needed.
     #
     # Only site admins may perform this mutation.
-    updateAllMirrorRepositories: EmptyResponse!
+    updateAllMirrorRepositories: EmptyResponse! @deprecated(reason: "syncer ensures all repositories are up to date.")
+    # DEPRECATED: All repositories are accessible or deleted. To prevent a
+    # repository from being accessed on Sourcegraph add it to the external
+    # service exclude configuration. It will be deleted. This mutation will be removed in 3.6.
+    #
     # Deletes a repository and all data associated with it, irreversibly.
     #
     # If the repository was added because it was present in the site configuration (directly,
@@ -90,7 +108,7 @@ type Mutation {
     # use setRepositoryEnabled to disable the repository instead of deleteRepository.
     #
     # Only site admins may perform this mutation.
-    deleteRepository(repository: ID!): EmptyResponse
+    deleteRepository(repository: ID!): EmptyResponse @deprecated(reason: "update external service exclude setting.")
     # Creates a new user account.
     #
     # Only site admins may perform this mutation.
@@ -309,6 +327,27 @@ type Mutation {
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomMutation!
+    # Creates a saved search.
+    createSavedSearch(
+        description: String!
+        query: String!
+        notifyOwner: Boolean!
+        notifySlack: Boolean!
+        orgID: ID
+        userID: ID
+    ): SavedSearch!
+    # Updates a saved search
+    updateSavedSearch(
+        id: ID!
+        description: String!
+        query: String!
+        notifyOwner: Boolean!
+        notifySlack: Boolean!
+        orgID: ID
+        userID: ID
+    ): SavedSearch!
+    # Deletes a saved search
+    deleteSavedSearch(id: ID!): EmptyResponse
 }
 
 # A new external service.
@@ -523,26 +562,6 @@ type SettingsMutation {
         # entire previous settings value will be overwritten by this new value.
         contents: String!
     ): UpdateSettingsPayload
-    # Create a saved query.
-    createSavedQuery(
-        description: String!
-        query: String!
-        showOnHomepage: Boolean = false
-        notify: Boolean = false
-        notifySlack: Boolean = false
-        disableSubscriptionNotifications: Boolean = false
-    ): SavedQuery!
-    # Update the saved query with the given ID in settings.
-    updateSavedQuery(
-        id: ID!
-        description: String
-        query: String
-        showOnHomepage: Boolean = false
-        notify: Boolean = false
-        notifySlack: Boolean = false
-    ): SavedQuery!
-    # Delete the saved query with the given ID in the settings.
-    deleteSavedQuery(id: ID!, disableSubscriptionNotifications: Boolean = false): EmptyResponse
 }
 
 # An edit to a JSON property in a settings JSON object. The JSON property to edit can be nested.
@@ -667,8 +686,12 @@ type Query {
         # Return repositories whose names are in the list.
         names: [String!]
         # Include enabled repositories.
+        #
+        # DEPRECATED: All repositories are enabled. Will be removed in 3.6.
         enabled: Boolean = true
         # Include disabled repositories.
+        #
+        # DEPRECATED: No repositories are disabled. Will be removed in 3.6.
         disabled: Boolean = false
         # Include cloned repositories.
         cloned: Boolean = true
@@ -775,8 +798,8 @@ type Query {
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
     ): Search
-    # All saved queries configured for the current user, merged from all configurations.
-    savedQueries: [SavedQuery!]!
+    # All saved searches configured for the current user, merged from all configurations.
+    savedSearches: [SavedSearch!]!
     # All repository groups for the current user, merged from all configurations.
     repoGroups: [RepoGroup!]!
     # The current site.
@@ -793,10 +816,6 @@ type Query {
     ): [QueryCount!]!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
-    # Queries which are for internal use only.
-    #
-    # FOR INTERNAL USE ONLY.
-    internal: InternalQuery!
     # Queries that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
@@ -810,16 +829,6 @@ type QueryCount {
 
     # The number of times the search query was made.
     count: Int!
-}
-
-# Queries which are for internal use only.
-type InternalQuery {
-    # Indicates that there are repositories which are managed via enable/disable state.
-    # This field will disappear in 3.4. See https://github.com/sourcegraph/sourcegraph/issues/2025
-    #
-    # Only site admins can query this field.
-    # FOR INTERNAL USE ONLY.
-    allowEnableDisable: Boolean!
 }
 
 # Configuration details for the browser extension, editor extensions, etc.
@@ -971,28 +980,24 @@ type SearchAlert {
 }
 
 # A saved search query, defined in settings.
-type SavedQuery {
-    # The unique ID of the saved query.
+type SavedSearch implements Node {
+    # The unique ID of this saved query.
     id: ID!
-    # The subject whose settings this saved query was defined in.
-    subject: SettingsSubject!
-    # The unique key of this saved query (unique only among all other saved
-    # queries of the same subject).
-    key: String
-    # The 0-indexed index of this saved query in the subject's settings.
-    index: Int!
     # The description.
     description: String!
     # The query.
     query: String!
-    # DEPRECATED: Sourcegraph no longer shows saved searches on the homepage. This resolver will be removed in a future release.
-    #
-    # Whether or not to show on the homepage.
-    showOnHomepage: Boolean!
-    # Whether or not to notify.
+    # Whether or not to notify the owner of the saved search via email. This owner is either
+    # a single user, or every member of an organization that owns the saved search.
     notify: Boolean!
     # Whether or not to notify on Slack.
     notifySlack: Boolean!
+    # The user ID of the owner if the owner is a user.
+    userID: ID
+    # The organization ID of the owner if the owner is an org.
+    orgID: ID
+    # The Slack webhook URL associated with this saved search, if any.
+    slackWebhookURL: String
 }
 
 # A search query description.
@@ -1106,6 +1111,12 @@ type ExternalService implements Node {
     createdAt: String!
     # When the external service was last updated.
     updatedAt: String!
+    # This is an optional field that's populated when we ran into errors on the
+    # backend side when trying to create/update an ExternalService, but the
+    # create/update still succeeded.
+    # It is a field on ExternalService instead of a separate thing in order to
+    # not break the API and stay backwards compatible.
+    warning: String
 }
 
 # A list of repositories.
@@ -1136,17 +1147,20 @@ type Repository implements Node & GenericSearchResultInterface {
     # - my-code-host.example.com/myrepo
     # - myrepo
     name: String!
-    # An alias for name.
-    uri: String! @deprecated(reason: "use name instead")
+    # URI is the full name for this repository (e.g., "github.com/user/repo").
+    # See the documentation for the name field.
+    uri: String!
     # The repository's description.
     description: String!
     # The primary programming language in the repository.
     language: String!
+    # DEPRECATED: All repositories are enabled. This field will be removed in 3.6.
+    #
     # Whether the repository is enabled. A disabled repository should only be accessible to site admins.
     #
     # NOTE: Disabling a repository does not provide any additional security. This field is merely a
     # guideline to UI implementations.
-    enabled: Boolean!
+    enabled: Boolean! @deprecated(reason: "Always true. All repositories are enabled.")
     # The date when this repository was created on Sourcegraph.
     createdAt: String!
     # The date when this repository's metadata was last updated on Sourcegraph.
@@ -2371,7 +2385,6 @@ type Org implements Node & SettingsSubject {
     url: String!
     # The URL to the organization's settings.
     settingsURL: String
-    # A list of extensions published by this organization in the extension registry.
 }
 
 # The result of Mutation.inviteUserToOrganization.
@@ -2736,8 +2749,14 @@ type Site implements SettingsSubject {
     # Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
     # Only applies if the site does not have a valid license.
     freeUsersExceeded: Boolean!
+
+    # DEPRECATED: This field is always false and will be removed in future
+    # releases. All repositories are enabled by default starting with
+    # Sourcegraph 3.4
+    #
     # Whether the site has zero access-enabled repositories.
     noRepositoriesEnabled: Boolean!
+        @deprecated(reason: "All repositories are enabled by default now. This field is always false.")
     # Alerts to display to the viewer.
     alerts: [Alert!]!
     # BACKCOMPAT: Always returns true.

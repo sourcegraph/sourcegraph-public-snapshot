@@ -136,6 +136,11 @@ func (r *nodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
 	return NodeToRegistryExtension(r.node)
 }
 
+func (r *nodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
+	n, ok := r.node.(*savedSearchResolver)
+	return n, ok
+}
+
 func (r *nodeResolver) ToSite() (*siteResolver, bool) {
 	n, ok := r.node.(*siteResolver)
 	return n, ok
@@ -208,8 +213,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return gitCommitByID(ctx, id)
 	case "RegistryExtension":
 		return RegistryExtensionByID(ctx, id)
-	case "SavedQuery":
-		return savedQueryByID(ctx, id)
+	case "SavedSearch":
+		return savedSearchByID(ctx, id)
 	case "Site":
 		return siteByGQLID(ctx, id)
 	default:

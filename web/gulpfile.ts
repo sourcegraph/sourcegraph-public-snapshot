@@ -41,7 +41,6 @@ export async function webpackDevServer(): Promise<void> {
         proxy: {
             '/': {
                 target: 'http://localhost:3081',
-                ws: true,
                 // Avoid crashing on "read ECONNRESET".
                 onError: err => console.error(err),
                 onProxyReqWs: (_proxyReq, _req, socket) =>

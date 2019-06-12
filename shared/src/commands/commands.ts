@@ -4,7 +4,8 @@ import { concat, from, of, Subscription, Unsubscribable } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { Services } from '../api/client/services'
 import { KeyPath, SettingsEdit } from '../api/client/services/settings'
-import { ActionContributionClientCommandUpdateConfiguration } from '../api/protocol'
+import { ActionContributionClientCommandUpdateConfiguration, Evaluated } from '../api/protocol'
+import { gql } from '../graphql/graphql'
 import { PlatformContext } from '../platform/context'
 
 /**
@@ -14,7 +15,7 @@ import { PlatformContext } from '../platform/context'
  */
 export function registerBuiltinClientCommands(
     { settings: settingsService, commands: commandRegistry, textDocumentLocations }: Services,
-    context: Pick<PlatformContext, 'queryGraphQL'>
+    context: Pick<PlatformContext, 'requestGraphQL'>
 ): Unsubscribable {
     const subscription = new Subscription()
 
@@ -68,7 +69,9 @@ export function registerBuiltinClientCommands(
         commandRegistry.registerCommand({
             command: 'updateConfiguration',
             run: (...anyArgs: any[]): Promise<void> => {
-                const args = anyArgs as ActionContributionClientCommandUpdateConfiguration['commandArguments']
+                const args = anyArgs as Evaluated<
+                    ActionContributionClientCommandUpdateConfiguration
+                >['commandArguments']
                 return settingsService.update(convertUpdateConfigurationCommandArgs(args))
             },
         })
@@ -87,7 +90,15 @@ export function registerBuiltinClientCommands(
                 // is set to `true`. It is up to the client (e.g. browser
                 // extension) to check that parameter and prevent the request
                 // from being sent to Sourcegraph.com.
-                from(context.queryGraphQL(query, variables, true)).toPromise(),
+                from(
+                    context.requestGraphQL({
+                        request: gql`
+                            ${query}
+                        `,
+                        variables,
+                        mightContainPrivateInfo: true,
+                    })
+                ).toPromise(),
         })
     )
 
@@ -120,7 +131,7 @@ export function urlForOpenPanel(viewID: string, urlHash: string): string {
  * to {@link SettingsUpdate}.
  */
 export function convertUpdateConfigurationCommandArgs(
-    args: ActionContributionClientCommandUpdateConfiguration['commandArguments']
+    args: Evaluated<ActionContributionClientCommandUpdateConfiguration>['commandArguments']
 ): SettingsEdit {
     if (!isArray(args) || !(args.length >= 2 && args.length <= 4)) {
         throw new Error(
@@ -149,6 +160,5 @@ export function convertUpdateConfigurationCommandArgs(
         throw new Error(`invalid updateConfiguration arguments: ${JSON.stringify(args)} (3rd element must be null)`)
     }
 
-    const valueIsJSONEncoded = args.length === 4 && args[3] === 'json'
-    return { path: keyPath, value: valueIsJSONEncoded ? JSON.parse(args[1]) : args[1] }
+    return { path: keyPath, value: args.length === 4 && args[3] === 'json' ? JSON.parse(args[1]) : args[1] }
 }

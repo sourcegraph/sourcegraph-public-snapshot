@@ -147,6 +147,15 @@ func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject
 		// No configuration has been set for this subject yet.
 		return nil, nil
 	}
+	if settings[0].Contents == "" {
+		// On some instances user, org, and global settings are an invalid
+		// empty string / null.
+		//
+		// This happens particularly on instances that ran old versions of
+		// Sourcegraph where we didn't enforce that settings contents had to be
+		// non-empty for correctness.
+		settings[0].Contents = "{}"
+	}
 	return settings[0], nil
 }
 

@@ -10,9 +10,12 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -26,8 +29,6 @@ type Store interface {
 
 // StoreListReposArgs is a query arguments type used by
 // the ListRepos method of Store implementations.
-//
-// Each defined argument must map to a disjunct (i.e. AND) filter predicate.
 type StoreListReposArgs struct {
 	// Names of repos to list. When zero-valued, this is omitted from the predicate set.
 	Names []string
@@ -35,10 +36,15 @@ type StoreListReposArgs struct {
 	IDs []uint32
 	// Kinds of repos to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
+	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
+	ExternalRepos []api.ExternalRepoSpec
 	// Limit the total number of repos returned. Zero means no limit
 	Limit int64
 	// PerPage determines the number of repos returned on each page. Zero means it defaults to 10000.
 	PerPage int64
+
+	// UseOr decides between ANDing or ORing the predicates together.
+	UseOr bool
 }
 
 // StoreListExternalServicesArgs is a query arguments type used by
@@ -181,10 +187,6 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 
 	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
 
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
-	}
-
 	return func(cursor, limit int64) *sqlf.Query {
 		return sqlf.Sprintf(
 			listExternalServicesQueryFmtstr,
@@ -284,6 +286,7 @@ const listReposQueryFmtstr = `
 SELECT
   id,
   name,
+  uri,
   description,
   language,
   created_at,
@@ -300,6 +303,7 @@ SELECT
 FROM repo
 WHERE id > %s
 AND %s
+AND deleted_at IS NULL
 ORDER BY id ASC LIMIT %s
 `
 
@@ -333,13 +337,30 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 			sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ",")))
 	}
 
-	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
+	if len(args.ExternalRepos) > 0 {
+		er := make([]*sqlf.Query, 0, len(args.ExternalRepos))
+		for _, spec := range args.ExternalRepos {
+			er = append(er, sqlf.Sprintf("(external_id = NULLIF(BTRIM(%s), '') AND external_service_type = NULLIF(BTRIM(%s), '') AND external_service_id = NULLIF(BTRIM(%s), ''))", spec.ID, spec.ServiceType, spec.ServiceID))
+		}
+		preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	var predQ *sqlf.Query
+	if args.UseOr {
+		predQ = sqlf.Join(preds, "\n OR ")
+	} else {
+		predQ = sqlf.Join(preds, "\n AND ")
+	}
 
 	return func(cursor, limit int64) *sqlf.Query {
 		return sqlf.Sprintf(
 			listReposQueryFmtstr,
 			cursor,
-			sqlf.Join(preds, "\n AND "),
+			sqlf.Sprintf("(%s)", predQ),
 			limit,
 		)
 	}
@@ -453,6 +474,7 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 	type record struct {
 		ID                  uint32          `json:"id"`
 		Name                string          `json:"name"`
+		URI                 *string         `json:"uri,omitempty"`
 		Description         string          `json:"description"`
 		Language            string          `json:"language"`
 		CreatedAt           time.Time       `json:"created_at"`
@@ -483,6 +505,7 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 		records = append(records, record{
 			ID:                  r.ID,
 			Name:                r.Name,
+			URI:                 nullStringColumn(r.URI),
 			Description:         r.Description,
 			Language:            r.Language,
 			CreatedAt:           r.CreatedAt.UTC(),
@@ -526,6 +549,7 @@ WITH batch AS (
   AS (
       id                    integer,
       name                  citext,
+      uri                   citext,
       description           text,
       language              text,
       created_at            timestamptz,
@@ -549,6 +573,7 @@ updated AS (
   UPDATE repo
   SET
     name                  = batch.name,
+    uri                   = batch.uri,
     description           = batch.description,
     language              = batch.language,
     created_at            = COALESCE(batch.created_at, repo.created_at),
@@ -569,6 +594,7 @@ updated AS (
 SELECT
   updated.id,
   updated.name,
+  updated.uri,
   updated.description,
   updated.language,
   updated.created_at,
@@ -598,6 +624,7 @@ var insertReposQuery = batchReposQueryFmtstr + `,
 inserted AS (
   INSERT INTO repo (
     name,
+    uri,
     description,
     language,
     created_at,
@@ -614,6 +641,7 @@ inserted AS (
   )
   SELECT
     name,
+    NULLIF(BTRIM(uri), ''),
     description,
     language,
     created_at,
@@ -633,6 +661,7 @@ inserted AS (
 SELECT
   inserted.id,
   inserted.name,
+  inserted.uri,
   inserted.description,
   inserted.language,
   inserted.created_at,
@@ -728,6 +757,7 @@ func scanRepo(r *Repo, s scanner) error {
 	err := s.Scan(
 		&r.ID,
 		&r.Name,
+		&nullString{&r.URI},
 		&r.Description,
 		&r.Language,
 		&r.CreatedAt,
@@ -759,6 +789,10 @@ func scanRepo(r *Repo, s scanner) error {
 		r.Metadata = new(gitlab.Project)
 	case "bitbucketserver":
 		r.Metadata = new(bitbucketserver.Repo)
+	case "awscodecommit":
+		r.Metadata = new(awscodecommit.Repository)
+	case "gitolite":
+		r.Metadata = new(gitolite.Repo)
 	default:
 		return nil
 	}

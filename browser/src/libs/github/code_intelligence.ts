@@ -2,6 +2,7 @@ import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/co
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
+import { PlatformContext } from '../../../../shared/src/platform/context'
 import {
     FileSpec,
     PositionSpec,
@@ -86,12 +87,10 @@ const singleFileCodeView: Omit<CodeView, 'element'> = {
  * Some code snippets get leading white space trimmed. This adjusts based on
  * this. See an example here https://github.com/sourcegraph/browser-extensions/issues/188.
  */
-const adjustPositionForSnippet: PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
-    direction,
-    codeView,
-    position,
-}) =>
-    fetchBlobContentLines(position).pipe(
+const getSnippetPositionAdjuster = (
+    requestGraphQL: PlatformContext['requestGraphQL']
+): PositionAdjuster<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> => ({ direction, codeView, position }) =>
+    fetchBlobContentLines({ ...position, requestGraphQL }).pipe(
         map(lines => {
             const codeElement = singleFileDOMFunctions.getCodeElementFromLineNumber(
                 codeView,
@@ -120,17 +119,16 @@ const adjustPositionForSnippet: PositionAdjuster<RepoSpec & RevSpec & FileSpec &
 
 const searchResultCodeViewResolver = toCodeViewResolver('.code-list-item', {
     dom: searchCodeSnippetDOMFunctions,
-    adjustPosition: adjustPositionForSnippet,
+    getPositionAdjuster: getSnippetPositionAdjuster,
     resolveFileInfo: resolveSnippetFileInfo,
     toolbarButtonProps,
 })
 
-const commentSnippetCodeViewResolver = toCodeViewResolver('.js-comment-body', {
+const snippetCodeView: Omit<CodeView, 'element'> = {
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveSnippetFileInfo,
-    adjustPosition: adjustPositionForSnippet,
-    toolbarButtonProps,
-})
+    getPositionAdjuster: getSnippetPositionAdjuster,
+}
 
 export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolbarMount']> = (
     codeViewElement: HTMLElement
@@ -155,14 +153,26 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
 }
 
 /**
- * The modern single file blob view.
+ * Matches the modern single-file code view, or snippets embedded in comments.
  *
  */
 export const fileLineContainerResolver: ViewResolver<CodeView> = {
     selector: '.js-file-line-container',
     resolveView: (fileLineContainer: HTMLElement): CodeView | null => {
-        const { filePath } = parseURL()
-        if (!filePath) {
+        const embeddedBlobWrapper = fileLineContainer.closest('.blob-wrapper-embedded')
+        if (embeddedBlobWrapper) {
+            // This is a snippet embedded in a comment.
+            // Resolve to `.blob-wrapper-embedded`'s parent element,
+            // the smallest element that contains both the code and
+            // the HTML anchor allowing to resolve the file info.
+            const element = embeddedBlobWrapper.parentElement!
+            return {
+                element,
+                ...snippetCodeView,
+            }
+        }
+        const { pageType } = parseURL()
+        if (pageType !== 'blob') {
             // this is not a single-file code view
             return null
         }
@@ -192,9 +202,9 @@ const genericCodeViewResolver: ViewResolver<CodeView> = {
         }
 
         const files = document.getElementsByClassName('file')
-        const { filePath } = parseURL()
+        const { pageType } = parseURL()
         const isSingleCodeFile =
-            files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
+            files.length === 1 && pageType === 'blob' && document.getElementsByClassName('diff-view').length === 0
 
         if (isSingleCodeFile) {
             return { element: elem, ...singleFileCodeView }
@@ -253,15 +263,17 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
 
 export const githubCodeHost: CodeHost = {
     name: 'github',
-    codeViewResolvers: [
-        genericCodeViewResolver,
-        fileLineContainerResolver,
-        searchResultCodeViewResolver,
-        commentSnippetCodeViewResolver,
-    ],
+    codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     textFieldResolvers: [commentTextFieldResolver],
-    getContext: parseURL,
+    getContext: () => {
+        const header = document.querySelector('.repohead-details-container')
+        const repoHeaderHasPrivateMarker = !!(header && header.querySelector('.private'))
+        return {
+            ...parseURL(),
+            privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
+        }
+    },
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     viewOnSourcegraphButtonClassProps: {
         className: 'btn btn-sm tooltipped tooltipped-s',
@@ -303,12 +315,13 @@ export const githubCodeHost: CodeHost = {
     setElementTooltip,
     linkPreviewContentClass: 'text-small text-gray p-1 mx-1 border rounded-1 bg-gray text-gray-dark',
     urlToFile: (
+        sourcegraphURL: string,
         location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
     ) => {
         if (location.viewState) {
             // A view state means that a panel must be shown, and panels are currently only supported on
             // Sourcegraph (not code hosts).
-            return toAbsoluteBlobURL(location)
+            return toAbsoluteBlobURL(sourcegraphURL, location)
         }
 
         const rev = location.rev || 'HEAD'

@@ -8,6 +8,7 @@ const OtherExternalServiceSchemaJSON = `{
   "$id": "other_external_service.schema.json#",
   "title": "OtherExternalServiceConnection",
   "description": "Configuration for a Connection to Git repositories for which an external service integration isn't yet available.",
+  "allowComments": true,
   "type": "object",
   "additionalProperties": false,
   "required": ["repos"],

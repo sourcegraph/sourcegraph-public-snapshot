@@ -1,12 +1,18 @@
 import * as H from 'history'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 
+/**
+ * @param activation If set, records the DidSearch activation event for the new user activation
+ * flow.
+ */
 export function submitSearch(
     history: H.History,
     query: string,
-    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter'
+    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter',
+    activation?: ActivationProps['activation']
 ): void {
     // Go to search results page
     const path = '/search?' + buildSearchURLQuery(query)
@@ -18,6 +24,9 @@ export function submitSearch(
         },
     })
     history.push(path, { ...history.location.state, query })
+    if (activation) {
+        activation.update({ DidSearch: true })
+    }
 }
 
 /**

@@ -1,23 +1,22 @@
-const RENDER = jest.fn()
-jest.mock('react-dom', () => ({
-    createPortal: jest.fn(el => el),
-    render: RENDER,
-    unmountComponentAtNode: jest.fn(),
-}))
-
 import { Range } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
-import { BehaviorSubject, from, NEVER, of, Subject, Subscription } from 'rxjs'
+import { BehaviorSubject, from, NEVER, Observable, of, Subject, Subscription, throwError } from 'rxjs'
 import { filter, skip, switchMap, take } from 'rxjs/operators'
 import { Services } from '../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../shared/src/extensions/controller'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
+import { IMutation, IQuery } from '../../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../../shared/src/platform/context'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { isDefined } from '../../../../shared/src/util/types'
+import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { createGlobalDebugMount, createOverlayMount, FileInfo, handleCodeHost } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
+
+const RENDER = jest.fn()
 
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
     const call = RENDER.mock.calls.find(call => call[1] === mount)
@@ -36,14 +35,87 @@ const createMockController = (services: Services): Controller => ({
 })
 
 const createMockPlatformContext = (
-    partialMocks?: Partial<PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile'>>
-): PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile'> => ({
-    platformContext: {
-        forceUpdateTooltip: jest.fn(),
-        urlToFile: jest.fn(),
-        sideloadedExtensionURL: new Subject<string | null>(),
-        ...partialMocks,
+    partialMocks?: Partial<Pick<PlatformContext, 'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile'>>
+): Pick<PlatformContext, 'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile' | 'requestGraphQL'> => ({
+    forceUpdateTooltip: jest.fn(),
+    urlToFile: jest.fn(),
+    // Mock implementation of `requestGraphQL()` that returns successful
+    // responses for `ResolveRev` and `BlobContent` queries, so that
+    // code views can be resolved
+    requestGraphQL: <R extends IQuery | IMutation>({
+        request,
+    }: {
+        request: string
+    }): Observable<SuccessGraphQLResult<R>> => {
+        if (request.trim().startsWith('query SiteProductVersion')) {
+            // tslint:disable-next-line: no-object-literal-type-assertion
+            return of({
+                data: {
+                    site: {
+                        productVersion: 'dev',
+                        buildVersion: 'dev',
+                        hasCodeIntelligence: true,
+                    },
+                },
+                errors: undefined,
+            } as SuccessGraphQLResult<R>)
+        }
+        if (request.trim().startsWith('query CurrentUser')) {
+            // tslint:disable-next-line: no-object-literal-type-assertion
+            return of({
+                data: {
+                    currentUser: {
+                        id: 'u1',
+                        displayName: 'Alice',
+                        username: 'alice',
+                        avatarURL: null,
+                        url: 'https://example.com/alice',
+                        settingsURL: 'https://example.com/alice/settings',
+                        emails: [{ email: 'alice@example.com' }],
+                        siteAdmin: false,
+                    },
+                },
+                errors: undefined,
+            } as SuccessGraphQLResult<R>)
+        }
+        if (request.trim().startsWith('query ResolveRev')) {
+            // tslint:disable-next-line: no-object-literal-type-assertion
+            return of({
+                data: {
+                    repository: {
+                        mirrorInfo: {
+                            cloneInProgress: false,
+                        },
+                        commit: {
+                            oid: 'foo',
+                        },
+                    },
+                },
+                errors: undefined,
+            } as SuccessGraphQLResult<R>)
+        }
+        if (request.trim().startsWith('query BlobContent')) {
+            // tslint:disable-next-line: no-object-literal-type-assertion
+            return of({
+                data: {
+                    repository: {
+                        mirrorInfo: {
+                            cloneInProgress: false,
+                        },
+                        commit: {
+                            file: {
+                                content: '',
+                            },
+                        },
+                    },
+                },
+                errors: undefined,
+            } as SuccessGraphQLResult<R>)
+        }
+        return throwError(new Error('GraphQL request failed'))
     },
+    sideloadedExtensionURL: new Subject<string | null>(),
+    ...partialMocks,
 })
 
 describe('code_intelligence', () => {
@@ -96,7 +168,10 @@ describe('code_intelligence', () => {
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: false,
-                    ...createMockPlatformContext(),
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
                 })
             )
             const overlayMount = document.body.querySelector('.hover-overlay-mount')
@@ -120,7 +195,10 @@ describe('code_intelligence', () => {
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: false,
-                    ...createMockPlatformContext(),
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
                 })
             )
             const renderedCommandPalette = elementRenderedAtMount(commandPaletteMount)
@@ -139,7 +217,10 @@ describe('code_intelligence', () => {
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    ...createMockPlatformContext(),
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
                 })
             )
             const globalDebugMount = document.body.querySelector('.global-debug')
@@ -176,16 +257,18 @@ describe('code_intelligence', () => {
                                 getToolbarMount: () => toolbarMount,
                             }),
                         ],
-                        selectionsChanges: () => of([]),
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    ...createMockPlatformContext(),
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
                 })
             )
             const editors = await from(services.editor.editors)
                 .pipe(
-                    skip(2),
+                    skip(1),
                     take(1)
                 )
                 .toPromise()
@@ -196,7 +279,7 @@ describe('code_intelligence', () => {
                     resource: 'git://foo?1#/bar.ts',
                     model: {
                         uri: 'git://foo?1#/bar.ts',
-                        text: undefined,
+                        text: '',
                         languageId: 'typescript',
                     },
                     selections: [],
@@ -238,11 +321,13 @@ describe('code_intelligence', () => {
                                 resolveFileInfo: codeView => of(fileInfo),
                             }),
                         ],
-                        selectionsChanges: () => of([]),
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    ...createMockPlatformContext(),
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
                 })
             )
             const activeEditor = await from(extensionAPI.app.activeWindowChanges)
@@ -324,16 +409,18 @@ describe('code_intelligence', () => {
                                 resolveFileInfo: codeView => of(fileInfo),
                             }),
                         ],
-                        selectionsChanges: () => of([]),
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    ...createMockPlatformContext(),
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
                 })
             )
             let editors = await from(services.editor.editors)
                 .pipe(
-                    skip(3),
+                    skip(2),
                     take(1)
                 )
                 .toPromise()
@@ -343,7 +430,7 @@ describe('code_intelligence', () => {
                     isActive: true,
                     model: {
                         languageId: 'typescript',
-                        text: undefined,
+                        text: '',
                         uri: 'git://foo?1#/bar.ts',
                     },
                     resource: 'git://foo?1#/bar.ts',
@@ -355,7 +442,7 @@ describe('code_intelligence', () => {
                     isActive: true,
                     model: {
                         languageId: 'typescript',
-                        text: undefined,
+                        text: '',
                         uri: 'git://foo?1#/bar.ts',
                     },
                     resource: 'git://foo?1#/bar.ts',
@@ -379,7 +466,7 @@ describe('code_intelligence', () => {
                     isActive: true,
                     model: {
                         languageId: 'typescript',
-                        text: undefined,
+                        text: '',
                         uri: 'git://foo?1#/bar.ts',
                     },
                     resource: 'git://foo?1#/bar.ts',

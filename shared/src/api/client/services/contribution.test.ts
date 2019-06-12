@@ -1,16 +1,17 @@
+import { noop } from 'lodash'
 import { Observable, of, Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { ContributableMenu, Contributions, EvaluatedContributions } from '../../protocol'
+import { ContributableMenu, Contributions, Evaluated } from '../../protocol'
 import { Context, ContributionScope } from '../context/context'
-import { EMPTY_COMPUTED_CONTEXT } from '../context/expr/evaluator'
+import { EMPTY_COMPUTED_CONTEXT, parse, parseTemplate } from '../context/expr/evaluator'
 import {
-    contextFilter,
     ContributionRegistry,
     ContributionsEntry,
     evaluateContributions,
     filterContributions,
     mergeContributions,
+    parseContributionExpressions,
 } from './contribution'
 import { CodeEditor } from './editorService'
 import { createTestEditorService } from './editorService.test'
@@ -18,22 +19,42 @@ import { createTestEditorService } from './editorService.test'
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_CONTRIBUTIONS_1: Contributions = {
-    actions: [{ id: '1.a', command: 'c', title: '1.A' }, { id: '1.b', command: 'c', title: '1.B' }],
+    actions: [
+        { id: '1.a', command: 'c', title: parseTemplate('1.A') },
+        { id: '1.b', command: 'c', title: parseTemplate('1.B') },
+    ],
     menus: {
         [ContributableMenu.CommandPalette]: [{ action: '1.a' }],
         [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
     },
 }
+const FIXTURE_CONTRIBUTIONS_1_EVALUATED: Evaluated<Contributions> = {
+    actions: [{ id: '1.a', command: 'c', title: '1.A' }, { id: '1.b', command: 'c', title: '1.B' }],
+    menus: {
+        [ContributableMenu.CommandPalette]: [{ action: '1.a', when: undefined }],
+        [ContributableMenu.GlobalNav]: [{ action: '1.a', when: undefined }, { action: '1.b', when: undefined }],
+    },
+}
 
 const FIXTURE_CONTRIBUTIONS_2: Contributions = {
-    actions: [{ id: '2.a', command: 'c', title: '2.A' }, { id: '2.b', command: 'c', title: '2.B' }],
+    actions: [
+        { id: '2.a', command: 'c', title: parseTemplate('2.A') },
+        { id: '2.b', command: 'c', title: parseTemplate('2.B') },
+    ],
     menus: {
         [ContributableMenu.CommandPalette]: [{ action: '2.a' }],
         [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
     },
 }
+const FIXTURE_CONTRIBUTIONS_2_EVALUATED: Evaluated<Contributions> = {
+    actions: [{ id: '2.a', command: 'c', title: '2.A' }, { id: '2.b', command: 'c', title: '2.B' }],
+    menus: {
+        [ContributableMenu.CommandPalette]: [{ action: '2.a', when: undefined }],
+        [ContributableMenu.EditorTitle]: [{ action: '2.a', when: undefined }, { action: '2.b', when: undefined }],
+    },
+}
 
-const FIXTURE_CONTRIBUTIONS_MERGED: EvaluatedContributions = {
+const FIXTURE_CONTRIBUTIONS_MERGED: Evaluated<Contributions> = {
     actions: [
         { id: '1.a', command: 'c', title: '1.A' },
         { id: '1.b', command: 'c', title: '1.B' },
@@ -41,9 +62,9 @@ const FIXTURE_CONTRIBUTIONS_MERGED: EvaluatedContributions = {
         { id: '2.b', command: 'c', title: '2.B' },
     ],
     menus: {
-        [ContributableMenu.CommandPalette]: [{ action: '1.a' }, { action: '2.a' }],
-        [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
-        [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
+        [ContributableMenu.CommandPalette]: [{ action: '1.a', when: undefined }, { action: '2.a', when: undefined }],
+        [ContributableMenu.GlobalNav]: [{ action: '1.a', when: undefined }, { action: '1.b', when: undefined }],
+        [ContributableMenu.EditorTitle]: [{ action: '2.a', when: undefined }, { action: '2.b', when: undefined }],
     },
 }
 
@@ -105,53 +126,55 @@ describe('ContributionRegistry', () => {
             const registry = new (class extends ContributionRegistry {
                 public getContributionsFromEntries(
                     entries: Observable<ContributionsEntry[]>
-                ): Observable<EvaluatedContributions> {
+                ): Observable<Evaluated<Contributions>> {
                     return super.getContributionsFromEntries(entries, undefined)
                 }
             })(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
-            scheduler().run(({ cold, expectObservable }) =>
-                expectObservable(
-                    registry.getContributionsFromEntries(
-                        cold<ContributionsEntry[]>('-a-b-c-|', {
-                            a: [{ contributions: FIXTURE_CONTRIBUTIONS_1 }],
-                            b: [{ contributions: FIXTURE_CONTRIBUTIONS_1 }, { contributions: {} }],
-                            c: [{ contributions: FIXTURE_CONTRIBUTIONS_1 }, { contributions: FIXTURE_CONTRIBUTIONS_2 }],
-                        })
-                    )
-                ).toBe('-a---c-|', {
-                    a: FIXTURE_CONTRIBUTIONS_1,
+            scheduler().run(({ cold, expectObservable }) => {
+                type Marble = 'a' | 'b' | 'c'
+                const values: Record<Marble, ContributionsEntry[]> = {
+                    a: [{ contributions: FIXTURE_CONTRIBUTIONS_1 }],
+                    b: [{ contributions: FIXTURE_CONTRIBUTIONS_1 }, { contributions: {} }],
+                    c: [{ contributions: FIXTURE_CONTRIBUTIONS_1 }, { contributions: FIXTURE_CONTRIBUTIONS_2 }],
+                }
+                const expected: Record<Exclude<Marble, 'b'>, Evaluated<Contributions>> = {
+                    a: FIXTURE_CONTRIBUTIONS_1_EVALUATED,
                     c: FIXTURE_CONTRIBUTIONS_MERGED,
-                })
-            )
+                }
+                expectObservable(registry.getContributionsFromEntries(cold('-a-b-c-|', values))).toBe(
+                    '-a---c-|',
+                    expected
+                )
+            })
         })
 
-        test('supports registration of an observable', () => {
+        it('supports registration of an observable', () => {
             const registry = new (class extends ContributionRegistry {
                 public getContributionsFromEntries(
                     entries: Observable<ContributionsEntry[]>
-                ): Observable<EvaluatedContributions> {
+                ): Observable<Evaluated<Contributions>> {
                     return super.getContributionsFromEntries(entries, undefined)
                 }
             })(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
-            scheduler().run(({ cold, expectObservable }) =>
-                expectObservable(
-                    registry.getContributionsFromEntries(
-                        cold<ContributionsEntry[]>('-a-----|', {
-                            a: [
-                                {
-                                    contributions: cold<Contributions | Contributions[]>('--b-c-|', {
-                                        b: FIXTURE_CONTRIBUTIONS_1,
-                                        c: [FIXTURE_CONTRIBUTIONS_2],
-                                    }),
-                                },
-                            ],
-                        })
-                    )
-                ).toBe('---b-c-|', {
+            scheduler().run(({ cold, expectObservable }) => {
+                type Marble = 'b' | 'c'
+                const values: Record<Marble, Contributions | Contributions[]> = {
                     b: FIXTURE_CONTRIBUTIONS_1,
-                    c: FIXTURE_CONTRIBUTIONS_2,
+                    c: [FIXTURE_CONTRIBUTIONS_2],
+                }
+                const entries = cold<ContributionsEntry[]>('-a-----|', {
+                    a: [
+                        {
+                            contributions: cold('--b-c-|', values),
+                        },
+                    ],
                 })
-            )
+                const expected: Record<Marble, Evaluated<Contributions>> = {
+                    b: FIXTURE_CONTRIBUTIONS_1_EVALUATED,
+                    c: FIXTURE_CONTRIBUTIONS_2_EVALUATED,
+                }
+                expectObservable(registry.getContributionsFromEntries(entries)).toBe('---b-c-|', expected)
+            })
         })
 
         test('emits when context changes and filters on context', () => {
@@ -177,22 +200,25 @@ describe('ContributionRegistry', () => {
 
                     public getContributionsFromEntries(
                         entries: Observable<ContributionsEntry[]>
-                    ): Observable<EvaluatedContributions> {
+                    ): Observable<Evaluated<Contributions>> {
                         return super.getContributionsFromEntries(entries, undefined)
                     }
                 })()
+                const values: Record<'a' | 'b', Evaluated<Contributions>> = {
+                    a: { menus: { commandPalette: [] } },
+                    b: { menus: { commandPalette: [{ action: 'a', when: true }] } },
+                }
                 expectObservable(
                     registry.getContributionsFromEntries(
-                        of([
+                        of<ContributionsEntry[]>([
                             {
-                                contributions: { menus: { commandPalette: [{ action: 'a', when: 'x == y' }] } },
+                                contributions: {
+                                    menus: { commandPalette: [{ action: 'a', when: parse('x == y') }] },
+                                },
                             },
-                        ] as ContributionsEntry[])
+                        ])
                     )
-                ).toBe('-a-b-|', {
-                    a: { menus: { commandPalette: [] } } as Contributions,
-                    b: { menus: { commandPalette: [{ action: 'a', when: 'x == y' }] } } as Contributions,
-                })
+                ).toBe('-a-b-|', values)
             })
         })
 
@@ -214,32 +240,36 @@ describe('ContributionRegistry', () => {
                     public getContributionsFromEntries(
                         entries: Observable<ContributionsEntry[]>,
                         scope?: ContributionScope
-                    ): Observable<EvaluatedContributions> {
-                        return super.getContributionsFromEntries(entries, scope, undefined, () => void 0 /* noop log */)
+                    ): Observable<Evaluated<Contributions>> {
+                        return super.getContributionsFromEntries(entries, scope, undefined, noop)
                     }
                 })()
                 expectObservable(
                     registry.getContributionsFromEntries(
-                        of([
+                        of<ContributionsEntry[]>([
                             {
                                 // Expression "!" will cause an error to be thrown.
-                                contributions: { menus: { commandPalette: [{ action: 'a1', when: '!' }] } },
+                                contributions: {
+                                    menus: { commandPalette: [{ action: 'a1', when: parse('nonExistingVar') }] },
+                                },
                             },
                             {
-                                contributions: { menus: { commandPalette: [{ action: 'a2' }] } },
+                                contributions: {
+                                    menus: { commandPalette: [{ action: 'a2' }] },
+                                },
                             },
-                        ] as ContributionsEntry[])
+                        ])
                     )
                 ).toBe('a', {
-                    a: { menus: { commandPalette: [{ action: 'a2' }] } } as Contributions,
+                    a: { menus: { commandPalette: [{ action: 'a2' }] } },
                 })
             })
         })
     })
 })
 
-describe('mergeContributions', () => {
-    const FIXTURE_CONTRIBUTIONS_1: EvaluatedContributions = {
+describe('mergeContributions()', () => {
+    const FIXTURE_CONTRIBUTIONS_1: Evaluated<Contributions> = {
         actions: [{ id: '1.a', command: 'c', title: '1.A' }, { id: '1.b', command: 'c', title: '1.B' }],
         menus: {
             [ContributableMenu.CommandPalette]: [{ action: '1.a' }],
@@ -247,14 +277,14 @@ describe('mergeContributions', () => {
         },
     }
 
-    const FIXTURE_CONTRIBUTIONS_2: EvaluatedContributions = {
+    const FIXTURE_CONTRIBUTIONS_2: Evaluated<Contributions> = {
         actions: [{ id: '2.a', command: 'c', title: '2.A' }, { id: '2.b', command: 'c', title: '2.B' }],
         menus: {
             [ContributableMenu.CommandPalette]: [{ action: '2.a' }],
             [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
         },
     }
-    const FIXTURE_CONTRIBUTIONS_MERGED: EvaluatedContributions = {
+    const FIXTURE_CONTRIBUTIONS_MERGED: Evaluated<Contributions> = {
         actions: [
             { id: '1.a', command: 'c', title: '1.A' },
             { id: '1.b', command: 'c', title: '1.B' },
@@ -268,103 +298,87 @@ describe('mergeContributions', () => {
         },
     }
 
-    test('handles an empty array', () => expect(mergeContributions([])).toEqual({}))
-    test('handles a single item', () =>
-        expect(mergeContributions([FIXTURE_CONTRIBUTIONS_1])).toEqual(FIXTURE_CONTRIBUTIONS_1))
-    test('handles multiple items', () =>
+    test('handles an empty array', () => {
+        expect(mergeContributions([])).toEqual({})
+    })
+    test('handles a single item', () => {
+        expect(mergeContributions([FIXTURE_CONTRIBUTIONS_1])).toEqual(FIXTURE_CONTRIBUTIONS_1)
+    })
+    test('handles multiple items', () => {
         expect(
             mergeContributions([FIXTURE_CONTRIBUTIONS_1, FIXTURE_CONTRIBUTIONS_2, {}, { actions: [] }, { menus: {} }])
-        ).toEqual(FIXTURE_CONTRIBUTIONS_MERGED))
+        ).toEqual(FIXTURE_CONTRIBUTIONS_MERGED)
+    })
 })
 
 const FIXTURE_CONTEXT = new Map<string, any>(
     Object.entries({
         a: true,
         b: false,
+        replaceMe: 'x',
     })
 )
 
-describe('contextFilter', () => {
-    test('filters', () =>
-        expect(
-            contextFilter(
-                FIXTURE_CONTEXT,
-                [{ x: 1 }, { x: 2, when: 'a' }, { x: 3, when: 'a' }, { x: 4, when: 'b' }],
-                x => x === 'a'
-            )
-        ).toEqual([{ x: 1 }, { x: 2, when: 'a' }, { x: 3, when: 'a' }]))
-})
+describe('filterContributions()', () => {
+    it('handles empty contributions', () => {
+        expect(filterContributions({})).toEqual({})
+    })
 
-describe('filterContributions', () => {
-    test('handles empty contributions', () =>
-        expect(filterContributions(EMPTY_COMPUTED_CONTEXT, {})).toEqual({} as Contributions))
-
-    test('handles empty menu contributions', () =>
-        expect(filterContributions(EMPTY_COMPUTED_CONTEXT, { menus: {} })).toEqual({
+    it('handles empty menu contributions', () => {
+        const expected: Evaluated<Contributions> = {
             menus: {},
-        } as Contributions))
+        }
+        expect(filterContributions({ menus: {} })).toEqual(expected)
+    })
 
-    test('handles empty array of menu contributions', () =>
-        expect(filterContributions(EMPTY_COMPUTED_CONTEXT, { menus: { commandPalette: [] } })).toEqual({
+    it('handles empty array of menu contributions', () => {
+        const expected: Evaluated<Contributions> = {
             menus: { commandPalette: [] },
-        } as Contributions))
+        }
+        expect(filterContributions({ menus: { commandPalette: [] } })).toEqual(expected)
+    })
 
-    test('handles non-empty contributions', () =>
-        expect(
-            filterContributions(
-                FIXTURE_CONTEXT,
-                {
-                    actions: [{ id: 'a1', command: 'c' }, { id: 'a2', command: 'c' }, { id: 'a3', command: 'c' }],
-                    menus: {
-                        [ContributableMenu.CommandPalette]: [
-                            { action: 'a1', when: 'a' },
-                            { action: 'a2', when: 'b' },
-                            { action: 'a3' },
-                        ],
-                        [ContributableMenu.GlobalNav]: [
-                            { action: 'a1', when: 'a' },
-                            { action: 'a2' },
-                            { action: 'a3', when: 'b' },
-                        ],
-                    },
-                },
-                x => x === 'a'
-            )
-        ).toEqual({
+    it('handles non-empty contributions', () => {
+        const expected: Evaluated<Contributions> = {
             actions: [{ id: 'a1', command: 'c' }, { id: 'a2', command: 'c' }, { id: 'a3', command: 'c' }],
             menus: {
-                [ContributableMenu.CommandPalette]: [{ action: 'a1', when: 'a' }, { action: 'a3' }],
-                [ContributableMenu.GlobalNav]: [{ action: 'a1', when: 'a' }, { action: 'a2' }],
+                [ContributableMenu.CommandPalette]: [{ action: 'a1', when: true }, { action: 'a3' }],
+                [ContributableMenu.GlobalNav]: [{ action: 'a1', when: true }, { action: 'a2' }],
             },
-        } as Contributions))
-
-    test('throws an error if an error occurs during evaluation', () => {
-        const input: Contributions = {
-            actions: [{ id: 'a', command: 'c', title: 'a' }],
-            menus: { commandPalette: [{ action: 'a', when: 'a' }] },
         }
-        expect(() =>
-            filterContributions(FIXTURE_CONTEXT, input, () => {
-                throw new Error('')
+        expect(
+            filterContributions({
+                actions: [{ id: 'a1', command: 'c' }, { id: 'a2', command: 'c' }, { id: 'a3', command: 'c' }],
+                menus: {
+                    [ContributableMenu.CommandPalette]: [
+                        { action: 'a1', when: true },
+                        { action: 'a2', when: false },
+                        { action: 'a3' },
+                    ],
+                    [ContributableMenu.GlobalNav]: [
+                        { action: 'a1', when: true },
+                        { action: 'a2' },
+                        { action: 'a3', when: false },
+                    ],
+                },
             })
-        ).toThrow()
+        ).toEqual(expected)
     })
 })
 
 // tslint:disable:no-invalid-template-strings
-describe('evaluateContributions', () => {
-    const TEST_TEMPLATE_EVALUATOR = {
-        evaluateTemplate: () => 'x',
-        needsEvaluation: (template: string) => template === 'a',
-    }
+describe('evaluateContributions()', () => {
+    test('handles empty contributions', () => {
+        const expected: Evaluated<Contributions> = {}
+        expect(evaluateContributions(EMPTY_COMPUTED_CONTEXT, {})).toEqual(expected)
+    })
 
-    test('handles empty contributions', () =>
-        expect(evaluateContributions(EMPTY_COMPUTED_CONTEXT, {})).toEqual({} as Contributions))
-
-    test('handles empty array of command contributions', () =>
-        expect(evaluateContributions(EMPTY_COMPUTED_CONTEXT, { actions: [] })).toEqual({
+    test('handles empty array of command contributions', () => {
+        const expected: Evaluated<Contributions> = {
             actions: [],
-        } as Contributions))
+        }
+        expect(evaluateContributions(EMPTY_COMPUTED_CONTEXT, { actions: [] })).toEqual(expected)
+    })
 
     test('handles non-empty contributions', () => {
         const input: Contributions = {
@@ -372,24 +386,42 @@ describe('evaluateContributions', () => {
                 {
                     id: 'a1',
                     command: 'c1',
-                    commandArguments: ['a', 'b', 'a'],
-                    title: 'a',
-                    category: 'a',
-                    description: 'a',
-                    iconURL: 'a',
+                    commandArguments: [
+                        parseTemplate('${replaceMe}'),
+                        parseTemplate('b'),
+                        parseTemplate('${replaceMe}'),
+                    ],
+                    title: parseTemplate('${replaceMe}'),
+                    category: parseTemplate('${replaceMe}'),
+                    description: parseTemplate('${replaceMe}'),
+                    iconURL: parseTemplate('${replaceMe}'),
                     actionItem: {
-                        label: 'a',
-                        description: 'a',
-                        iconDescription: 'a',
-                        iconURL: 'a',
+                        label: parseTemplate('${replaceMe}'),
+                        description: parseTemplate('${replaceMe}'),
+                        iconDescription: parseTemplate('${replaceMe}'),
+                        iconURL: parseTemplate('${replaceMe}'),
                     },
                 },
-                { id: 'a2', command: 'c2', title: 'a', category: 'b' },
-                { id: 'a3', command: 'c3', title: 'b', category: 'b', actionItem: { label: 'a', description: 'b' } },
+                {
+                    id: 'a2',
+                    command: 'c2',
+                    title: parseTemplate('${replaceMe}'),
+                    category: parseTemplate('b'),
+                },
+                {
+                    id: 'a3',
+                    command: 'c3',
+                    title: parseTemplate('b'),
+                    category: parseTemplate('b'),
+                    actionItem: {
+                        label: parseTemplate('${replaceMe}'),
+                        description: parseTemplate('b'),
+                    },
+                },
             ],
         }
         const origInput = JSON.parse(JSON.stringify(input))
-        expect(evaluateContributions(FIXTURE_CONTEXT, input, TEST_TEMPLATE_EVALUATOR)).toEqual({
+        const expected: Evaluated<Contributions> = {
             actions: [
                 {
                     id: 'a1',
@@ -409,55 +441,68 @@ describe('evaluateContributions', () => {
                 { id: 'a2', command: 'c2', title: 'x', category: 'b' },
                 { id: 'a3', command: 'c3', title: 'b', category: 'b', actionItem: { label: 'x', description: 'b' } },
             ],
-        } as Contributions)
+        }
+        expect(evaluateContributions(FIXTURE_CONTEXT, input)).toEqual(expected)
         expect(input).toEqual(origInput)
     })
 
     test('supports commandArguments with the first element non-evaluated', () => {
-        expect(
-            evaluateContributions(
-                FIXTURE_CONTEXT,
+        const expected: Evaluated<Contributions> = {
+            actions: [
                 {
-                    actions: [{ id: 'a', command: 'c', commandArguments: ['b', 'a', 'b', 'a'] }],
+                    id: 'x',
+                    command: 'c',
+                    commandArguments: ['b', 'x', 'b', 'x'],
                 },
-                TEST_TEMPLATE_EVALUATOR
-            )
-        ).toEqual({
-            actions: [{ id: 'a', command: 'c', commandArguments: ['b', 'x', 'b', 'x'] }],
-        } as Contributions)
-    })
-
-    const TEST_THROW_EVALUATOR = {
-        evaluateTemplate: () => {
-            throw new Error('')
-        },
-        needsEvaluation: () => true,
-    }
-
-    test('does not evaluate the `id` or `command` values', () => {
+            ],
+        }
         expect(
-            evaluateContributions(
-                FIXTURE_CONTEXT,
-                {
-                    actions: [{ id: 'a', command: 'c' }],
-                },
-                TEST_THROW_EVALUATOR
-            )
-        ).toEqual({
-            actions: [{ id: 'a', command: 'c' }],
-        } as Contributions)
-    })
-
-    test('throws an error if an error occurs during evaluation', () => {
-        const input: Contributions = { actions: [{ id: 'a', command: 'c', title: 'a' }] }
-        expect(() => evaluateContributions(FIXTURE_CONTEXT, input, TEST_THROW_EVALUATOR)).toThrow()
+            evaluateContributions(FIXTURE_CONTEXT, {
+                actions: [
+                    {
+                        id: 'x',
+                        command: 'c',
+                        commandArguments: [
+                            parseTemplate('b'),
+                            parseTemplate('${replaceMe}'),
+                            parseTemplate('b'),
+                            parseTemplate('${replaceMe}'),
+                        ],
+                    },
+                ],
+            })
+        ).toEqual(expected)
     })
 
     test('evaluates `actionItem.pressed` if present', () => {
-        const input: Contributions = { actions: [{ id: 'a', command: 'c', title: 'a', actionItem: { pressed: 'a' } }] }
+        const input: Contributions = {
+            actions: [
+                {
+                    id: 'a',
+                    command: 'c',
+                    title: parseTemplate('a'),
+                    actionItem: {
+                        pressed: parse('a'),
+                    },
+                },
+            ],
+        }
         expect(evaluateContributions(FIXTURE_CONTEXT, input)).toEqual({
             actions: [{ id: 'a', command: 'c', title: 'a', actionItem: { pressed: true } }],
         })
+    })
+})
+
+describe('parseContributionExpressions()', () => {
+    it('should not parse the `id` or `command` values', () => {
+        const expected: Contributions = {
+            actions: [{ id: '${replaceMe}', command: '${c}' }],
+        }
+        expect(
+            parseContributionExpressions({
+                actions: [{ id: '${replaceMe}', command: '${c}' }],
+            })
+        ).toEqual(expected)
     })
 })
 // tslint:enable:no-invalid-template-strings

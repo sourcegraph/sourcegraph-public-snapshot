@@ -6,48 +6,12 @@ import (
 )
 
 var (
-	githubUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "time_last_github_sync",
-		Help:      "The last time a comprehensive GitHub sync finished",
-	}, []string{"id"})
-	gitlabUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "time_last_gitlab_sync",
-		Help:      "The last time a comprehensive GitLab sync finished",
-	}, []string{"id"})
-	awsCodeCommitUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "time_last_awscodecommit_sync",
-		Help:      "The last time a comprehensive AWS Code Commit sync finished",
-	}, []string{"id"})
 	phabricatorUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "time_last_phabricator_sync",
 		Help:      "The last time a comprehensive Phabricator sync finished",
 	}, []string{"id"})
-	bitbucketServerUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "time_last_bitbucketserver_sync",
-		Help:      "The last time a comprehensive Bitbucket Server sync finished",
-	}, []string{"id"})
-
-	// gitoliteUpdateTime is an ugly duckling as repo-updater just
-	// hits a HTTP endpoint on the frontend that returns after
-	// updating all Gitolite connections. As as result, we cannot
-	// apply an "id" label to differentiate update times for different
-	// Gitolite connections, so this is a Gauge instead of a GaugeVec.
-	gitoliteUpdateTime = promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "time_last_gitolite_sync",
-		Help:      "The last time a comprehensive Gitolite sync finished",
-	})
 
 	lastSync = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",

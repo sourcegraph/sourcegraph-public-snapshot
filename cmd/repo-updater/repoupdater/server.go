@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -25,12 +24,10 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
-	// Kinds of external services synced with the new syncer
-	Kinds []string
 	repos.Store
 	*repos.Syncer
-	InternalAPI interface {
-		ReposUpdateMetadata(ctx context.Context, repo api.RepoName, description string, fork, archived bool) error
+	GithubDotComSource interface {
+		GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error)
 	}
 }
 
@@ -92,13 +89,6 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
-	var resp protocol.ExcludeRepoResponse
-
-	if len(s.Kinds) == 0 {
-		respond(w, http.StatusOK, &resp)
-		return
-	}
-
 	var req protocol.ExcludeRepoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respond(w, http.StatusInternalServerError, err)
@@ -106,8 +96,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
-		IDs:   []uint32{req.ID},
-		Kinds: s.Kinds,
+		IDs: []uint32{req.ID},
 	})
 
 	if err != nil {
@@ -115,6 +104,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var resp protocol.ExcludeRepoResponse
 	if len(rs) == 0 {
 		log15.Warn("exclude-repo: repo not found. skipping", "repo.id", req.ID)
 		respond(w, http.StatusOK, resp)
@@ -133,13 +123,9 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 
 	for _, e := range es {
 		if err := e.Exclude(rs...); err != nil {
-			break
+			respond(w, http.StatusInternalServerError, err)
+			return
 		}
-	}
-
-	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
 	}
 
 	err = s.Store.UpsertExternalServices(r.Context(), es...)
@@ -284,28 +270,23 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if s.Syncer == nil {
-		log15.Debug("server.external-service-sync", "syncer", "disabled")
-		return
-	}
-
-	for _, kind := range s.Kinds {
-		if req.ExternalService.Kind != kind {
-			continue
+	_, err := s.Syncer.Sync(r.Context(), req.ExternalService.Kind)
+	switch {
+	case err == nil:
+		log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
+		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
+			ExternalService: req.ExternalService,
+		})
+	case err == github.ErrIncompleteResults:
+		log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		syncResult := &protocol.ExternalServiceSyncResult{
+			ExternalService: req.ExternalService,
+			Error:           err.Error(),
 		}
-
-		_, err := s.Syncer.Sync(r.Context(), kind)
-		switch {
-		case err == nil:
-			log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
-			_ = json.NewEncoder(w).Encode(&protocol.ExternalServiceSyncResult{
-				ExternalService: req.ExternalService,
-				Error:           err,
-			})
-		default:
-			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		respond(w, http.StatusOK, syncResult)
+	default:
+		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -330,90 +311,63 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	type getfn struct {
-		kind string
-		fn   func(context.Context, protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error)
-	}
-
-	var fns []getfn
-
-	if s.Syncer != nil {
-		fns = append(fns, getfn{"SYNCER", func(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoInfo, bool, error) {
-			repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
-				Names: []string{string(args.Repo)},
-			})
-
-			if err != nil || len(repos) != 1 {
-				return nil, false, err
-			}
-
-			info, err := newRepoInfo(repos[0])
-			if err != nil {
-				return nil, false, err
-			}
-
-			return info, true, nil
-		}})
-	} else {
-		fns = append(fns,
-			getfn{"GITHUB", repos.GetGitHubRepository},
-			getfn{"GITLAB", repos.GetGitLabRepository},
-			getfn{"BITBUCKETSERVER", repos.GetBitbucketServerRepository},
-		)
-	}
-
-	fns = append(fns,
-		getfn{"AWSCODECOMMIT", repos.GetAWSCodeCommitRepository},
-		getfn{"GITOLITE", repos.GetGitoliteRepository},
-	)
-
-	var (
-		repo          *protocol.RepoInfo
-		authoritative bool
-	)
-
-	// Find the authoritative source of the repository being looked up.
-	for _, get := range fns {
-		if repo, authoritative, err = get.fn(ctx, args); authoritative {
-			log15.Debug("repoupdater.lookup-repo", "source", get.kind)
-			tr.LazyPrintf("authorative: %s", get.kind)
-			break
-		}
-	}
-
+	var repo *repos.Repo
 	result = &protocol.RepoLookupResult{}
-	if authoritative {
-		if isNotFound(err) {
+
+	if s.shouldGetGithubDotComRepo(args) {
+		nameWithOwner := strings.TrimPrefix(string(args.Repo), "github.com/")
+		repo, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
+		if err != nil {
+			if github.IsNotFound(err) {
+				result.ErrorNotFound = true
+				return result, nil
+			}
+			if isUnauthorized(err) {
+				result.ErrorUnauthorized = true
+				return result, nil
+			}
+			if isTemporarilyUnavailable(err) {
+				result.ErrorTemporarilyUnavailable = true
+				return result, nil
+			}
+			return nil, err
+		}
+
+		_, err = s.Syncer.SyncSubset(ctx, repo)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+			Names: []string{string(args.Repo)},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if len(repos) != 1 {
 			result.ErrorNotFound = true
-			err = nil
-		} else if isUnauthorized(err) {
-			result.ErrorUnauthorized = true
-			err = nil
-		} else if isTemporarilyUnavailable(err) {
-			result.ErrorTemporarilyUnavailable = true
-			err = nil
+			return result, nil
 		}
-		if err != nil {
-			return nil, err
-		}
-		if repo != nil {
-			go func() {
-				err := s.InternalAPI.ReposUpdateMetadata(context.Background(), repo.Name, repo.Description, repo.Fork, repo.Archived)
-				if err != nil {
-					log15.Warn("Error updating repo metadata", "repo", repo.Name, "err", err)
-				}
-			}()
-		}
-		if err != nil {
-			return nil, err
-		}
-		result.Repo = repo
-		return result, nil
+		repo = repos[0]
 	}
 
-	// No configured code hosts are authoritative for this repository.
-	result.ErrorNotFound = true
+	repoInfo, err := newRepoInfo(repo)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Repo = repoInfo
 	return result, nil
+}
+
+func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
+	if s.GithubDotComSource == nil {
+		return false
+	}
+
+	repoName := strings.ToLower(string(args.Repo))
+	return strings.HasPrefix(repoName, "github.com/")
 }
 
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
@@ -462,32 +416,38 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Commit: pathAppend(root, "/commits/{commit}"),
 		}
+	case "awscodecommit":
+		repo := r.Metadata.(*awscodecommit.Repository)
+		if repo.ARN == "" {
+			break
+		}
+
+		splittedARN := strings.Split(strings.TrimPrefix(repo.ARN, "arn:aws:codecommit:"), ":")
+		if len(splittedARN) == 0 {
+			break
+		}
+		region := splittedARN[0]
+		webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codecommit/home#/repository/%s", region, repo.Name)
+		info.Links = &protocol.RepoLinks{
+			Root:   webURL,
+			Tree:   webURL + "/browse/{rev}/--/{path}",
+			Blob:   webURL + "/browse/{rev}/--/{path}",
+			Commit: webURL + "/commit/{commit}",
+		}
 	}
 
 	return &info, nil
 }
 
-func isNotFound(err error) bool {
-	// TODO(sqs): reduce duplication
-	return github.IsNotFound(err) || gitlab.IsNotFound(err) || awscodecommit.IsNotFound(err) || errcode.IsNotFound(err)
+func pathAppend(base, p string) string {
+	return strings.TrimRight(base, "/") + p
 }
 
 func isUnauthorized(err error) bool {
-	// TODO(sqs): reduce duplication
-	if awscodecommit.IsUnauthorized(err) || errcode.IsUnauthorized(err) {
-		return true
-	}
 	code := github.HTTPErrorCode(err)
-	if code == 0 {
-		code = gitlab.HTTPErrorCode(err)
-	}
 	return code == http.StatusUnauthorized || code == http.StatusForbidden
 }
 
 func isTemporarilyUnavailable(err error) bool {
-	return err == repos.ErrGitHubAPITemporarilyUnavailable || github.IsRateLimitExceeded(err)
-}
-
-func pathAppend(base, p string) string {
-	return strings.TrimRight(base, "/") + p
+	return github.IsRateLimitExceeded(err)
 }

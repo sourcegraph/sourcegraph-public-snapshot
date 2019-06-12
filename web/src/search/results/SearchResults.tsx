@@ -4,7 +4,7 @@ import * as React from 'react'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { parseSearchURLQuery } from '..'
-import { EvaluatedContributions } from '../../../../shared/src/api/protocol'
+import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -53,7 +53,7 @@ interface SearchResultsState {
     showSavedQueryModal: boolean
     didSaveQuery: boolean
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
-    contributions?: EvaluatedContributions
+    contributions?: Evaluated<Contributions>
 }
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {

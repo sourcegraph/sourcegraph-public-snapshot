@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -36,9 +34,8 @@ type gitCommitResolver struct {
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
 	inputRev *string
 
-	oid    gitObjectID
-	oidErr error
-	once   sync.Once
+	// oid MUST be specified and a 40-character Git SHA.
+	oid gitObjectID
 
 	author    signatureResolver
 	committer *signatureResolver
@@ -78,86 +75,15 @@ func unmarshalGitCommitID(id graphql.ID) (repoID graphql.ID, commitID gitObjectI
 }
 
 func (r *gitCommitResolver) ID() graphql.ID {
-	oid, _ := r.OID()
-	return marshalGitCommitID(r.repo.ID(), oid)
+	return marshalGitCommitID(r.repo.ID(), r.oid)
 }
 
 func (r *gitCommitResolver) Repository() *repositoryResolver { return r.repo }
 
-func (r *gitCommitResolver) OID() (gitObjectID, error) {
-	r.once.Do(func() {
-		if r.oid != "" {
-			return // We already have an oid because the creator of this *gitCommitResolver specified it.
-		}
+func (r *gitCommitResolver) OID() gitObjectID { return r.oid }
 
-		// Try fetching it from the Redis cache to avoid doing lots of work
-		// previously done (as this method is called very often, e.g. multiple
-		// times per search result).
-		start := time.Now()
-		result, ok := oidResolutionCache.Get(string(r.repo.repo.ID))
-		oidResolutionCacheLookupDuration.Observe(time.Since(start).Seconds())
-		if ok {
-			oidResolutionCounter.WithLabelValues("hit").Inc()
-			r.oid = gitObjectID(result)
-			return
-		}
-
-		// The cache doesn't have it, so compute it and update the cache if we
-		// resolved it successfully.
-		start = time.Now()
-		r.resolveCommitIODUncached()
-		oidResolutionDuration.Observe(time.Since(start).Seconds())
-		if r.oidErr == nil {
-			oidResolutionCounter.WithLabelValues("miss").Inc()
-			oidResolutionCache.Set(string(r.repo.repo.ID), string(r.oid))
-		} else {
-			oidResolutionCounter.WithLabelValues("miss_error").Inc()
-		}
-	})
-	return r.oid, r.oidErr
-}
-
-func (r *gitCommitResolver) resolveCommitIODUncached() {
-	if r.oid != "" || r.oidErr != nil {
-		// Possible scenarios for this case:
-		//
-		// - We already have an r.oid because the creator of this *gitCommitResolver specified it.
-		// - We already have an r.oid because we were called before.
-		// - We don't have an r.oid but have an r.oidErr from being called before.
-		//
-		// In any case, there is no point in doing the work again, so we return
-		// now.
-		return
-	}
-
-	// Commit OID is the empty string denoting the default branch. Find out
-	// what is the latest commit indexed by zoekt.
-
-	indexInfo := r.repo.TextSearchIndex()
-
-	ctx := context.Background()
-
-	var refs []*repositoryTextSearchIndexedRef
-	refs, r.oidErr = indexInfo.Refs(ctx)
-	if r.oidErr != nil {
-		return
-	}
-
-	for _, ref := range refs {
-		current, _ := ref.Current(ctx)
-		if current {
-			r.oid = ref.indexedCommit
-			break
-		}
-	}
-}
-
-func (r *gitCommitResolver) AbbreviatedOID() (string, error) {
-	commit, err := r.OID()
-	if err != nil {
-		return "", err
-	}
-	return string(commit)[:7], err
+func (r *gitCommitResolver) AbbreviatedOID() string {
+	return string(r.oid)[:7]
 }
 func (r *gitCommitResolver) Author() *signatureResolver    { return &r.author }
 func (r *gitCommitResolver) Committer() *signatureResolver { return r.committer }
@@ -184,27 +110,15 @@ func (r *gitCommitResolver) Parents(ctx context.Context) ([]*gitCommitResolver, 
 }
 
 func (r *gitCommitResolver) URL() (string, error) {
-	rev, err := r.inputRevOrImmutableRev()
-	if err != nil {
-		return "", err
-	}
-	return r.repo.URL() + "/-/commit/" + string(rev), nil
+	return r.repo.URL() + "/-/commit/" + string(r.inputRevOrImmutableRev()), nil
 }
 
 func (r *gitCommitResolver) CanonicalURL() (string, error) {
-	oid, err := r.OID()
-	if err != nil {
-		return "", err
-	}
-	return r.repo.URL() + "/-/commit/" + string(oid), nil
+	return r.repo.URL() + "/-/commit/" + string(r.oid), nil
 }
 
 func (r *gitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	oid, err := r.OID()
-	if err != nil {
-		return nil, err
-	}
-	return externallink.Commit(ctx, r.repo.repo, api.CommitID(oid))
+	return externallink.Commit(ctx, r.repo.repo, api.CommitID(r.oid))
 }
 
 func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
@@ -215,11 +129,7 @@ func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	oid, err := r.OID()
-	if err != nil {
-		return nil, err
-	}
-	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(oid), args.Path)
+	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -241,11 +151,7 @@ func (r *gitCommitResolver) Blob(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	oid, err := r.OID()
-	if err != nil {
-		return nil, err
-	}
-	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(oid), args.Path)
+	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -266,11 +172,7 @@ func (r *gitCommitResolver) File(ctx context.Context, args *struct {
 }
 
 func (r *gitCommitResolver) Languages(ctx context.Context) ([]string, error) {
-	oid, err := r.OID()
-	if err != nil {
-		return nil, err
-	}
-	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(oid))
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid))
 	if err != nil {
 		return nil, err
 	}
@@ -287,12 +189,8 @@ func (r *gitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	Query *string
 	Path  *string
 }) (*gitCommitConnectionResolver, error) {
-	oid, err := r.OID()
-	if err != nil {
-		return nil, nil
-	}
 	return &gitCommitConnectionResolver{
-		revisionRange: string(oid),
+		revisionRange: string(r.oid),
 		first:         args.ConnectionArgs.First,
 		query:         args.Query,
 		path:          args.Path,
@@ -307,11 +205,7 @@ func (r *gitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	oid, err := r.OID()
-	if err != nil {
-		return nil, err
-	}
-	counts, err := git.GetBehindAhead(ctx, *cachedRepo, args.Revspec, string(oid))
+	counts, err := git.GetBehindAhead(ctx, *cachedRepo, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}
@@ -328,12 +222,11 @@ func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 
 // inputRevOrImmutableRev returns the input revspec, if it is provided and nonempty. Otherwise it returns the
 // canonical OID for the revision.
-func (r *gitCommitResolver) inputRevOrImmutableRev() (string, error) {
+func (r *gitCommitResolver) inputRevOrImmutableRev() string {
 	if r.inputRev != nil && *r.inputRev != "" {
-		return escapeRevspecForURL(*r.inputRev), nil
+		return escapeRevspecForURL(*r.inputRev)
 	}
-	oid, err := r.OID()
-	return string(oid), err
+	return string(r.oid)
 }
 
 // repoRevURL returns the URL path prefix to use when constructing URLs to resources at this
@@ -347,11 +240,7 @@ func (r *gitCommitResolver) repoRevURL() (string, error) {
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
 	} else {
-		oid, err := r.OID()
-		if err != nil {
-			return "", err
-		}
-		rev = string(oid)
+		rev = string(r.oid)
 	}
 	if rev != "" {
 		return url + "@" + escapeRevspecForURL(rev), nil
@@ -360,11 +249,7 @@ func (r *gitCommitResolver) repoRevURL() (string, error) {
 }
 
 func (r *gitCommitResolver) canonicalRepoRevURL() (string, error) {
-	oid, err := r.OID()
-	if err != nil {
-		return "", err
-	}
-	return r.repo.URL() + "@" + string(oid), nil
+	return r.repo.URL() + "@" + string(r.oid), nil
 }
 
 // gitCommitBody returns the first line of the Git commit message.
