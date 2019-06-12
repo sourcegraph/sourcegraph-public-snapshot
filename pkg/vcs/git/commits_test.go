@@ -75,6 +75,16 @@ func TestRepository_HasCommitSince(t *testing.T) {
 		},
 		{
 			commitDates: []string{
+				"2016-01-02T15:04:05Z",
+				"2017-01-02T15:04:05Z",
+				"2017-01-02T15:04:06Z",
+			},
+			after:   "1 year ago",
+			revspec: "master",
+			want:    false,
+		},
+		{
+			commitDates: []string{
 				"2006-01-02T15:04:05Z",
 				"2007-01-02T15:04:05Z",
 				"2008-01-02T15:04:05Z",
@@ -102,16 +112,6 @@ func TestRepository_HasCommitSince(t *testing.T) {
 			after:   "10 years ago",
 			revspec: "HEAD",
 			want:    true,
-		},
-		{
-			commitDates: []string{
-				"2016-01-02T15:04:05Z",
-				"2017-01-02T15:04:05Z",
-				"2017-01-02T15:04:06Z",
-			},
-			after:   "1 year ago",
-			revspec: "master",
-			want:    false,
 		},
 	}
 
