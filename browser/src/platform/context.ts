@@ -133,10 +133,10 @@ export function createPlatformContext(
             const blobURL = await background.createBlobURL(bundleURL)
             return blobURL
         },
-        urlToFile: location => {
-            if (urlToFile) {
+        urlToFile: ({ rawRepoName, ...location }) => {
+            if (rawRepoName && urlToFile) {
                 // Construct URL to file on code host, if possible.
-                return urlToFile(sourcegraphURL, location)
+                return urlToFile(sourcegraphURL, { rawRepoName, ...location })
             }
             // Otherwise fall back to linking to Sourcegraph (with an absolute URL).
             return `${sourcegraphURL}${toPrettyBlobURL(location)}`

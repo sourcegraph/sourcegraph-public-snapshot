@@ -61,6 +61,7 @@ import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../shared/s
 import {
     FileSpec,
     PositionSpec,
+    RawRepoSpec,
     RepoSpec,
     ResolvedRevSpec,
     RevSpec,
@@ -203,7 +204,12 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     /** Construct the URL to the specified file. */
     urlToFile?: (
         sourcegraphURL: string,
-        location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
+        location: RepoSpec &
+            RawRepoSpec &
+            RevSpec &
+            FileSpec &
+            Partial<PositionSpec> &
+            Partial<ViewStateSpec> & { part?: DiffPart }
     ) => string
 
     /**
