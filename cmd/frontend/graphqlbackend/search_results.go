@@ -263,17 +263,17 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	}
 
 	for _, result := range sr.results {
-		if result.fileMatch != nil {
+		if fm := result.fileMatchLike(); fm != nil {
 			rev := ""
-			if result.fileMatch.inputRev != nil {
-				rev = *result.fileMatch.inputRev
+			if fm.inputRev != nil {
+				rev = *fm.inputRev
 			}
-			addRepoFilter(string(result.fileMatch.repo.Name), rev, len(result.fileMatch.LineMatches()))
-			addLangFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
-			addFileFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
+			addRepoFilter(string(fm.repo.Name), rev, len(fm.LineMatches()))
+			addLangFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
+			addFileFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
 
-			if len(result.fileMatch.symbols) > 0 {
-				add("type:symbol", "type:symbol", 1, result.fileMatch.JLimitHit, "symbol")
+			if len(fm.symbols) > 0 {
+				add("type:symbol", "type:symbol", 1, fm.JLimitHit, "symbol")
 			}
 		}
 
@@ -451,6 +451,9 @@ loop:
 				}
 				addPoint(t)
 			})
+		case r.codemod != nil:
+			// FIXME(RVT): Skip
+			continue
 		default:
 			panic("SearchResults.Sparkline unexpected union type state")
 		}
@@ -726,6 +729,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	var resultTypes []string
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
+	} else if len(r.query.Values(query.FieldReplace)) > 0 {
+		resultTypes = []string{"codemod"}
 	} else {
 		resultTypes, _ = r.query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
@@ -920,6 +925,30 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					commonMu.Unlock()
 				}
 			})
+		case "codemod":
+			wg := waitGroup(true)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+
+				codemodResults, codemodCommon, err := callCodemod(ctx, &args)
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "codemod search failed"))
+					multiErrMu.Unlock()
+				}
+				if codemodResults != nil {
+					resultsMu.Lock()
+					results = append(results, codemodResults...)
+					resultsMu.Unlock()
+				}
+				if codemodCommon != nil {
+					commonMu.Lock()
+					common.update(*codemodCommon)
+					commonMu.Unlock()
+				}
+			})
 		}
 	}
 
@@ -961,7 +990,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		results:             results,
 		alert:               alert,
 	}
-
 	return &resultsResolver, multiErr.ErrorOrNil()
 }
 
@@ -978,12 +1006,30 @@ type searchResultResolver struct {
 	repo      *repositoryResolver         // repo name match
 	fileMatch *fileMatchResolver          // text match
 	diff      *commitSearchResultResolver // diff or commit match
+	codemod   *codemodResultResolver      // codemod match (and replacement, if any)
+}
+
+// fileMatchLike returns r's fileMatch or, if possible, the equivalent fileMatch of its actual
+// result type. It is used by callers that want to analyze this result (e.g., a codemod result) as
+// though it were a fileMatch.
+func (r *searchResultResolver) fileMatchLike() *fileMatchResolver {
+	switch {
+	case r.fileMatch != nil:
+		return r.fileMatch
+	case r.codemod != nil:
+		return &fileMatchResolver{
+			JPath: r.codemod.path,
+			uri:   r.codemod.fileURL,
+			repo:  r.codemod.commit.repo.repo,
+		}
+	}
+	return nil
 }
 
 // getSearchResultURIs returns the repo name and file uri respectiveley
 func getSearchResultURIs(c *searchResultResolver) (string, string) {
-	if c.fileMatch != nil {
-		return string(c.fileMatch.repo.Name), c.fileMatch.JPath
+	if fm := c.fileMatchLike(); fm != nil {
+		return string(fm.repo.Name), fm.JPath
 	}
 	if c.repo != nil {
 		return string(c.repo.repo.Name), ""
@@ -1022,6 +1068,48 @@ func (g *searchResultResolver) ToCommitSearchResult() (*commitSearchResultResolv
 	return g.diff, g.diff != nil
 }
 
+// codemodResultResolver is a resolver for the GraphQL type `CodemodResult`
+type codemodResultResolver struct {
+	commit  *gitCommitResolver
+	path    string
+	fileURL string
+	diff    string
+	matches []*searchResultMatchResolver
+}
+
+func (r *codemodResultResolver) Icon() string {
+	return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' style='width:24px;height:24px' viewBox='0 0 24 24'%3E%3Cpath fill='%23a2b0cd' d='M11,6C12.38,6 13.63,6.56 14.54,7.46L12,10H18V4L15.95,6.05C14.68,4.78 12.93,4 11,4C7.47,4 4.57,6.61 4.08,10H6.1C6.56,7.72 8.58,6 11,6M16.64,15.14C17.3,14.24 17.76,13.17 17.92,12H15.9C15.44,14.28 13.42,16 11,16C9.62,16 8.37,15.44 7.46,14.54L10,12H4V18L6.05,15.95C7.32,17.22 9.07,18 11,18C12.55,18 14,17.5 15.14,16.64L20,21.5L21.5,20L16.64,15.14Z' /%3E%3C/svg%3E"
+}
+func (r *codemodResultResolver) Label() (*markdownResolver, error) {
+	commitURL, err := r.commit.URL()
+	if err != nil {
+		return nil, err
+	}
+	text := fmt.Sprintf("[%s](%s) › [%s](%s)", r.commit.repo.Name(), commitURL, r.path, r.fileURL)
+	return &markdownResolver{text: text}, nil
+}
+
+func (r *codemodResultResolver) URL() string {
+	return ""
+}
+
+func (r *codemodResultResolver) Detail() (*markdownResolver, error) {
+	// FIXME(RVT): this might work now.
+	// diff, err := diff.ParseFileDiff(r.diff)
+	// if err != nil {return nil, err}
+	// diff.Stat()
+	log15.Info("codemodResolve Detail")
+	return &markdownResolver{text: strconv.Itoa(len(r.matches))}, nil
+}
+
+func (r *codemodResultResolver) Matches() []*searchResultMatchResolver {
+	return r.matches
+}
+
+func (g *searchResultResolver) ToCodemodResult() (*codemodResultResolver, bool) {
+	return g.codemod, g.codemod != nil
+}
+
 func (g *searchResultResolver) resultCount() int32 {
 	switch {
 	case g.fileMatch != nil:
@@ -1031,6 +1119,8 @@ func (g *searchResultResolver) resultCount() int32 {
 		return 1 // 1 to count "empty" results like type:path results
 	case g.diff != nil:
 		return 1
+	case g.codemod != nil:
+		return int32(len(g.codemod.matches))
 	default:
 		return 1
 	}

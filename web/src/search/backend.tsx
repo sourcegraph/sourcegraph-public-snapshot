@@ -101,6 +101,29 @@ export function search(
                                     ... on CommitSearchResult {
                                         ${genericSearchResultInterfaceFields}
                                     }
+                                    ... on CodemodResult {
+                                        __typename
+                                        label {
+                                            html
+                                        }
+                                        url
+                                        icon
+                                        detail {
+                                            html
+                                        }
+                                        matches {
+                                            url
+                                            body {
+                                                text
+                                                html
+                                            }
+                                            highlights {
+                                                line
+                                                character
+                                                length
+                                            }
+                                        }
+                                    }
                                 }
                                 alert {
                                     title

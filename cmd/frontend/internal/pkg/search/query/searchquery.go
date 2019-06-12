@@ -32,6 +32,7 @@ const (
 	FieldCount   = "count" // Searches that specify `count:` will fetch at least that number of results, or the full result set
 	FieldMax     = "max"   // Deprecated alias for count
 	FieldTimeout = "timeout"
+	FieldReplace = "replace"
 )
 
 var (
@@ -63,6 +64,7 @@ var (
 			FieldCount:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldMax:     {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldTimeout: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldReplace: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 		},
 		FieldAliases: map[string]string{
 			"r":        FieldRepo,
