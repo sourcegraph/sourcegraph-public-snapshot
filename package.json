@@ -159,7 +159,7 @@
     "optimize-css-assets-webpack-plugin": "^5.0.1",
     "p-retry": "^4.1.0",
     "postcss-loader": "^3.0.0",
-    "prettier": "^1.18.1",
+    "prettier": "^1.18.2",
     "puppeteer": "1.17.0",
     "react-docgen-typescript-webpack-plugin": "^1.1.0",
     "react-test-renderer": "^16.8.6",

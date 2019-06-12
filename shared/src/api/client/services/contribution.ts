@@ -181,7 +181,7 @@ export function mergeContributions(contributions: Evaluated<Contributions>[]): E
             } else {
                 for (const [menu, items] of Object.entries(c.menus) as [
                     ContributableMenu,
-                    Evaluated<MenuItemContribution>[],
+                    Evaluated<MenuItemContribution>[]
                 ][]) {
                     const mergedItems = merged.menus[menu]
                     if (!mergedItems) {
