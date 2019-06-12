@@ -169,3 +169,18 @@ type ExternalServiceSyncResult struct {
 	ExternalService api.ExternalService
 	Error           string
 }
+
+type StatusMessageType string
+
+const (
+	CloningStatusMessage StatusMessageType = "CLONING"
+)
+
+type StatusMessage struct {
+	Message string            `json:"message"`
+	Type    StatusMessageType `json:"type"`
+}
+
+type StatusMessagesResponse struct {
+	Messages []StatusMessage `json:"messages"`
+}

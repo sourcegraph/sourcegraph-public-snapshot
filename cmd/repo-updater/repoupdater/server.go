@@ -29,6 +29,11 @@ type Server struct {
 	GithubDotComSource interface {
 		GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error)
 	}
+	Scheduler interface {
+		UpdateQueueLen() int
+		UpdateOnce(id uint32, name api.RepoName, url string)
+		ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult
+	}
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -40,6 +45,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
+	mux.HandleFunc("/status-messages", s.handleStatusMessages)
 	return mux
 }
 
@@ -192,7 +198,7 @@ func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	result := repos.Scheduler.ScheduleInfo(args.ID)
+	result := s.Scheduler.ScheduleInfo(args.ID)
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -252,7 +258,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	repos.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
+	s.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
 
 	respond(w, http.StatusOK, &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
@@ -366,6 +372,24 @@ func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
 
 	repoName := strings.ToLower(string(args.Repo))
 	return strings.HasPrefix(repoName, "github.com/")
+}
+
+func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
+	resp := protocol.StatusMessagesResponse{
+		Messages: []protocol.StatusMessage{},
+	}
+
+	enqueued := s.Scheduler.UpdateQueueLen()
+	if enqueued != 0 {
+		resp.Messages = append(resp.Messages, protocol.StatusMessage{
+			Message: fmt.Sprintf("Currently updating %d repositories...", enqueued),
+			Type:    protocol.CloningStatusMessage,
+		})
+	}
+
+	log15.Debug("TRACE handleStatusMessages", "messages", resp.Messages)
+
+	respond(w, http.StatusOK, resp)
 }
 
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {

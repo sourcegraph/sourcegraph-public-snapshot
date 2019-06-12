@@ -429,7 +429,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			s := &Server{Store: tc.store}
+			s := &Server{Store: tc.store, Scheduler: &fakeScheduler{}}
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 			cli := repoupdater.Client{URL: srv.URL}
@@ -537,6 +537,63 @@ func TestServer_RepoExternalServices(t *testing.T) {
 
 			if have, want := res, tc.svcs; !reflect.DeepEqual(have, want) {
 				t.Errorf("response:\n%s", cmp.Diff(have, want))
+			}
+		})
+	}
+}
+
+func TestServer_StatusMessages(t *testing.T) {
+	testCases := []struct {
+		name         string
+		reposInQueue repos.Repos
+		res          *protocol.StatusMessagesResponse
+		err          string
+	}{
+		{
+			name: "nothing cloning",
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{},
+			},
+		},
+		{
+			name: "repositories cloning",
+			reposInQueue: repos.Repos{
+				{ID: 1}, {ID: 2}, {ID: 3},
+			},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						Type:    protocol.CloningStatusMessage,
+						Message: "Currently updating 3 repositories...",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		ctx := context.Background()
+
+		t.Run(tc.name, func(t *testing.T) {
+			scheduler := &fakeScheduler{queue: tc.reposInQueue}
+			s := &Server{Scheduler: scheduler}
+
+			srv := httptest.NewServer(s.Handler())
+			defer srv.Close()
+			cli := repoupdater.Client{URL: srv.URL}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			res, err := cli.StatusMessages(ctx)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if have, want := res, tc.res; !reflect.DeepEqual(have, want) {
+				t.Errorf("response: %s", cmp.Diff(have, want))
 			}
 		})
 	}
@@ -855,6 +912,22 @@ type fakeGithubDotComSource struct {
 
 func (s *fakeGithubDotComSource) GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error) {
 	return s.repo.Clone(), s.err
+}
+
+type fakeScheduler struct {
+	queue repos.Repos
+}
+
+func (s *fakeScheduler) UpdateQueueLen() int {
+	if s.queue != nil {
+		return s.queue.Len()
+	}
+	return 0
+}
+
+func (s *fakeScheduler) UpdateOnce(_ uint32, _ api.RepoName, _ string) {}
+func (s *fakeScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult {
+	return &protocol.RepoUpdateSchedulerInfoResult{}
 }
 
 func formatJSON(s string) string {

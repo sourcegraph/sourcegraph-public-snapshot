@@ -813,6 +813,8 @@ type Query {
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomQuery!
+    # Lists all status messages
+    statusMessages: [StatusMessage!]!
 }
 
 # A query and an associated number of times it occurred.
@@ -3654,5 +3656,18 @@ type ProductSubscriptionEvent {
     description: String
     # A URL where the user can see more information about the event.
     url: String
+}
+
+# The type of a StatusMessage
+enum StatusMessageType {
+    CLONING
+}
+
+# A status message
+type StatusMessage {
+    # The message of this status message
+    message: String!
+    # The type.
+    type: StatusMessageType!
 }
 `
