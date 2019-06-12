@@ -16,7 +16,7 @@ func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*StatusMessageRe
 		return nil, err
 	}
 
-	result, err := repoupdater.DefaultClient.StatusMessages(context.Background())
+	result, err := repoupdater.DefaultClient.StatusMessages(ctx)
 	if err != nil {
 		return nil, err
 	}
