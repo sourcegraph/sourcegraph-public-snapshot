@@ -34,14 +34,10 @@ exports[`StatusMessagesNavItem no messages 1`] = `
     <div
       className="status-messages-nav-item__entry"
     >
-      <h4
-        className="status-messages-nav-item__entry-title"
-      >
+      <h4>
         Repositories up to date
       </h4>
-      <p
-        className="status-messages-nav-item__entry-copy"
-      >
+      <p>
         All repositories hosted on the configured external services are up to date.
       </p>
     </div>
@@ -49,7 +45,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
 </div>
 `;
 
-exports[`StatusMessagesNavItem one CLONING message - not site admin 1`] = `
+exports[`StatusMessagesNavItem one CLONING message as non-site admin 1`] = `
 <div
   className="nav-link py-0 status-messages-nav-item__nav-link btn-group"
   onKeyDown={[Function]}
@@ -83,14 +79,10 @@ exports[`StatusMessagesNavItem one CLONING message - not site admin 1`] = `
     <div
       className="status-messages-nav-item__entry"
     >
-      <h4
-        className="status-messages-nav-item__entry-title"
-      >
+      <h4>
         Repositories updating
       </h4>
-      <p
-        className="status-messages-nav-item__entry-copy"
-      >
+      <p>
         Currently cloning repositories...
       </p>
     </div>
@@ -98,7 +90,7 @@ exports[`StatusMessagesNavItem one CLONING message - not site admin 1`] = `
 </div>
 `;
 
-exports[`StatusMessagesNavItem one CLONING message - site admin 1`] = `
+exports[`StatusMessagesNavItem one CLONING message as site admin 1`] = `
 <div
   className="nav-link py-0 status-messages-nav-item__nav-link btn-group"
   onKeyDown={[Function]}
@@ -132,14 +124,10 @@ exports[`StatusMessagesNavItem one CLONING message - site admin 1`] = `
     <div
       className="status-messages-nav-item__entry"
     >
-      <h4
-        className="status-messages-nav-item__entry-title"
-      >
+      <h4>
         Repositories updating
       </h4>
-      <p
-        className="status-messages-nav-item__entry-copy"
-      >
+      <p>
         Currently cloning repositories...
       </p>
       <p

@@ -12,7 +12,7 @@ import { queryGraphQL } from '../backend/graphql'
 function fetchAllStatusMessages(): Observable<GQL.IStatusMessage[]> {
     return queryGraphQL(
         gql`
-            query {
+            query StatusMessages {
                 statusMessages {
                     message
                     type
@@ -69,8 +69,8 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             case GQL.StatusMessageType.CLONING:
                 return (
                     <div key={message.message} className="status-messages-nav-item__entry">
-                        <h4 className="status-messages-nav-item__entry-title">Repositories updating</h4>
-                        <p className="status-messages-nav-item__entry-copy">{message.message}</p>
+                        <h4>Repositories updating</h4>
+                        <p>{message.message}</p>
                         {this.props.isSiteAdmin && (
                             <p className="status-messages-nav-item__entry-link">
                                 <Link to={'/site-admin/external-services'}>Configure external services</Link>
@@ -96,28 +96,26 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     {cloning ? (
                         <CloudSyncIcon
                             className="icon-inline"
-                            {...(!this.state.isOpen && { 'data-tooltip': 'Updating repositories...' })}
+                            data-tooltip={this.state.isOpen ? undefined : 'Updating repositories...'}
                         />
                     ) : (
                         <CloudCheckIcon
                             className="icon-inline"
-                            {...(!this.state.isOpen && { 'data-tooltip': 'Repositories up to date' })}
+                            data-tooltip={this.state.isOpen ? undefined : 'Repositories up to date'}
                         />
                     )}
                 </DropdownToggle>
 
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu">
                     {hasMessages ? (
-                        this.state.messages.map(this.renderMessage.bind(this))
+                        this.state.messages.map(m => this.renderMessage(m))
                     ) : (
                         <div className="status-messages-nav-item__entry">
-                            <h4 className="status-messages-nav-item__entry-title">Repositories up to date</h4>
-                            <p className="status-messages-nav-item__entry-copy">
-                                All repositories hosted on the configured external services are up to date.
-                            </p>
+                            <h4>Repositories up to date</h4>
+                            <p>All repositories hosted on the configured external services are up to date.</p>
                             {this.props.isSiteAdmin && (
                                 <p className="status-messages-nav-item__entry-link">
-                                    <Link to={'/site-admin/external-services'}>Configure external services</Link>
+                                    <Link to="/site-admin/external-services">Configure external services</Link>
                                 </p>
                             )}
                         </div>
