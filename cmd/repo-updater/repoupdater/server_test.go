@@ -576,10 +576,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-
-			gitserverCalled := false
 			gitserver.MockCloneQueueStatus = func(_ context.Context) (*gitprotocol.CloneQueueStatusResponse, error) {
-				gitserverCalled = true
 				return tc.cloneQueueStatus, nil
 			}
 			defer func() { gitserver.MockCloneQueueStatus = nil }()
@@ -596,10 +593,6 @@ func TestServer_StatusMessages(t *testing.T) {
 			res, err := cli.StatusMessages(ctx)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("have err: %q, want: %q", have, want)
-			}
-
-			if !gitserverCalled {
-				t.Errorf("gitserver not called to construct status message")
 			}
 
 			if have, want := res, tc.res; !reflect.DeepEqual(have, want) {
