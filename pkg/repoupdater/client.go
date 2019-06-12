@@ -287,15 +287,6 @@ func (c *Client) StatusMessages(ctx context.Context) (*protocol.StatusMessagesRe
 }
 
 func (c *Client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
-
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -306,17 +297,7 @@ func (c *Client) httpPost(ctx context.Context, method string, payload interface{
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req = req.WithContext(ctx)
-	req, ht := nethttp.TraceRequest(span.Tracer(), req,
-		nethttp.OperationName("RepoUpdater Client"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
-
-	if c.HTTPClient != nil {
-		return c.HTTPClient.Do(req)
-	}
-	return http.DefaultClient.Do(req)
+	return c.do(ctx, req)
 }
 
 func (c *Client) httpGet(ctx context.Context, method string) (*http.Response, error) {
@@ -325,7 +306,26 @@ func (c *Client) httpGet(ctx context.Context, method string) (*http.Response, er
 		return nil, err
 	}
 
+	return c.do(ctx, req)
+}
+
+func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.do")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
+	req.Header.Set("Content-Type", "application/json")
+
 	req = req.WithContext(ctx)
+	req, ht := nethttp.TraceRequest(span.Tracer(), req,
+		nethttp.OperationName("RepoUpdater Client"),
+		nethttp.ClientTrace(false))
+	defer ht.Finish()
 
 	if c.HTTPClient != nil {
 		return c.HTTPClient.Do(req)
