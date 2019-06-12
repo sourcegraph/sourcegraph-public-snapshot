@@ -605,7 +605,7 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 					// For the results from the first file query, add each repo that is in the result set to newRepoSet.
 					newRepoSet[repoURL] = true
 				} else {
-					// Then, for all following file queries, if there are repositories already existing in newRepoSEt that do not appear in
+					// Then, for all following file queries, if there are repositories already existing in newRepoSet that do not appear in
 					// the result set for the current file query, remove them so that we only include repos that have at least
 					// one match for each `repohasfile` value in newRepoSet.
 					for existing := range newRepoSet {
