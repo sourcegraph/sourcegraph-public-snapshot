@@ -16,8 +16,8 @@ func TestStatusMessages(t *testing.T) {
 	resetMocks()
 	t.Run("unauthenticated", func(t *testing.T) {
 		result, err := (&schemaResolver{}).StatusMessages(context.Background())
-		if err == nil {
-			t.Error("err == nil")
+		if want := backend.ErrNotAuthenticated; err != want {
+			t.Errorf("got err %v, want %v", err, want)
 		}
 		if result != nil {
 			t.Errorf("got result %v, want nil", result)
@@ -45,9 +45,7 @@ func TestStatusMessages(t *testing.T) {
 		}
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 
-		repoupdaterCalled := false
 		repoupdater.MockStatusMessages = func(_ context.Context) (*protocol.StatusMessagesResponse, error) {
-			repoupdaterCalled = true
 			res := &protocol.StatusMessagesResponse{Messages: []protocol.StatusMessage{}}
 			return res, nil
 		}
@@ -71,10 +69,6 @@ func TestStatusMessages(t *testing.T) {
 			`,
 			},
 		})
-
-		if !repoupdaterCalled {
-			t.Error("!repoupdaterCalled")
-		}
 	})
 
 	t.Run("messages", func(t *testing.T) {
@@ -83,9 +77,7 @@ func TestStatusMessages(t *testing.T) {
 		}
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 
-		repoupdaterCalled := false
 		repoupdater.MockStatusMessages = func(_ context.Context) (*protocol.StatusMessagesResponse, error) {
-			repoupdaterCalled = true
 			res := &protocol.StatusMessagesResponse{Messages: []protocol.StatusMessage{
 				{
 					Type:    protocol.CurrentlyCloningStatusMessage,
@@ -119,9 +111,5 @@ func TestStatusMessages(t *testing.T) {
 			`,
 			},
 		})
-
-		if !repoupdaterCalled {
-			t.Error("!repoupdaterCalled")
-		}
 	})
 }
