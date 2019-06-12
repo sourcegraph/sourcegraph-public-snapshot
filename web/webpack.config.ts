@@ -59,6 +59,14 @@ const config: webpack.Configuration = {
                 },
             }),
         ],
+
+        ...(mode === 'development'
+            ? {
+                  removeAvailableModules: false,
+                  removeEmptyChunks: false,
+                  splitChunks: false,
+              }
+            : {}),
     },
     entry: {
         // Enterprise vs. OSS builds use different entrypoints. For app (TypeScript), a single entrypoint is used
