@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"golang.org/x/net/context/ctxhttp"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {
@@ -48,16 +47,15 @@ func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolve
 	var fileFilterText string
 	if len(fileFilter) > 0 {
 		fileFilterText = fileFilter[0]
+		// only file names or files with extensions in the following characterset are allowed
+		var IsAlphanumericWithPeriod = regexp.MustCompile(`^[a-zA-Z_.]+$`).MatchString
+		if !IsAlphanumericWithPeriod(fileFilterText) {
+			return nil, nil, errors.New("Note: the 'file:' filter cannot contain regex when using the 'replace:' filter. Only alphanumeric characters or '.'")
+		}
 	}
-	// only file names or files with extensions in the following characterset are allowed
-	var IsAlphanumericWithPeriod = regexp.MustCompile(`^[a-zA-Z_.]+$`).MatchString
-	if !IsAlphanumericWithPeriod(fileFilterText) {
-		return nil, nil, errors.New("Note: the 'file:' filter cannot contain regex when using the 'replace:' filter. Only alphanumeric characters or '.'")
-	}
-	log15.Info(fmt.Sprintf("file filter is %s", fileFilterText))
 
 	var err error
-	tr, ctx := trace.New(ctx, "callCodemod", fmt.Sprintf("pattern: %+v, replace: %+v, files: %+v, numRepoRevs: %d", matchPattern, replacementText, fileFilterText, len(args.Repos)))
+	tr, ctx := trace.New(ctx, "callCodemod", fmt.Sprintf("pattern: %+v, replace: %+v, fileFilter: %+v, numRepoRevs: %d", matchPattern, replacementText, fileFilterText, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
