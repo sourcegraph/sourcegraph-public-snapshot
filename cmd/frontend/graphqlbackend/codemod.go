@@ -43,8 +43,16 @@ func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolve
 		replacementText = replacementValues[0]
 	}
 
+	fileFilter, _ := args.Query.RegexpPatterns(query.FieldFile)
+	var fileFilterText string
+	// FIXME(RVT): Validate this at least a bit.
+	if len(fileFilter) > 0 {
+		fileFilterText = fileFilter[0]
+	}
+	log15.Info(fmt.Sprintf("file filter is %s", fileFilterText))
+
 	var err error
-	tr, ctx := trace.New(ctx, "callCodemod", fmt.Sprintf("pattern: %+v, replace: %+v, numRepoRevs: %d", matchPattern, replacementText, len(args.Repos)))
+	tr, ctx := trace.New(ctx, "callCodemod", fmt.Sprintf("pattern: %+v, replace: %+v, files: %+v, numRepoRevs: %d", matchPattern, replacementText, fileFilterText, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -63,7 +71,7 @@ func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolve
 		wg.Add(1)
 		go func(repoRev search.RepositoryRevisions) {
 			defer wg.Done()
-			results, searchErr := callCodemodInRepo(ctx, repoRev, matchPattern, replacementText)
+			results, searchErr := callCodemodInRepo(ctx, repoRev, matchPattern, replacementText, fileFilterText)
 			if ctx.Err() == context.Canceled {
 				// Our request has been canceled (either because another one of args.repos had a
 				// fatal error, or otherwise), so we can just ignore these results.
@@ -100,7 +108,7 @@ func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolve
 
 var replacerURL = env.Get("REPLACER_URL", "http://replacer:3185", "replacer server URL")
 
-func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, matchPattern, replacementText string) (results []*codemodResultResolver, err error) {
+func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, matchPattern, replacementText string, fileFilterText string) (results []*codemodResultResolver, err error) {
 	tr, ctx := trace.New(ctx, "callCodemodInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v, replace: %+v", repoRevs, matchPattern, replacementText))
 	defer func() {
 		tr.LazyPrintf("%d results", len(results))
@@ -126,6 +134,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 	q.Set("commit", string(commit))
 	q.Set("matchtemplate", matchPattern)
 	q.Set("rewritetemplate", replacementText)
+	q.Set("fileextension", fileFilterText)
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequest("GET", u.String(), nil)
@@ -249,6 +258,5 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 			matches: matches,
 		}
 	}
-	log15.Info(fmt.Sprintf("returning results from callCodemodInRepo: %d", len(results)))
 	return results, nil
 }

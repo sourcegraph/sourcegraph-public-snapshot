@@ -21,6 +21,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
@@ -1094,12 +1095,12 @@ func (r *codemodResultResolver) URL() string {
 }
 
 func (r *codemodResultResolver) Detail() (*markdownResolver, error) {
-	// FIXME(RVT): this might work now.
-	// diff, err := diff.ParseFileDiff(r.diff)
-	// if err != nil {return nil, err}
-	// diff.Stat()
-	log15.Info("codemodResolve Detail")
-	return &markdownResolver{text: strconv.Itoa(len(r.matches))}, nil
+	diff, err := diff.ParseFileDiff([]byte(r.diff))
+	if err != nil {
+		return nil, err
+	}
+	stat := diff.Stat()
+	return &markdownResolver{text: stat.String()}, nil
 }
 
 func (r *codemodResultResolver) Matches() []*searchResultMatchResolver {
