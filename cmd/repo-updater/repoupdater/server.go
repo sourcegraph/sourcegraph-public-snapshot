@@ -373,7 +373,7 @@ func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 	cloneStatus, err := gitserver.DefaultClient.CloneQueueStatus(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -391,10 +391,7 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 
 	log15.Debug("TRACE handleStatusMessages", "messages", resp.Messages)
 
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	respond(w, http.StatusOK, resp)
 }
 
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
