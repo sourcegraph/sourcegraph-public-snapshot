@@ -102,27 +102,7 @@ export function search(
                                         ${genericSearchResultInterfaceFields}
                                     }
                                     ... on CodemodResult {
-                                        __typename
-                                        label {
-                                            html
-                                        }
-                                        url
-                                        icon
-                                        detail {
-                                            html
-                                        }
-                                        matches {
-                                            url
-                                            body {
-                                                text
-                                                html
-                                            }
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
-                                        }
+                                        ${genericSearchResultInterfaceFields}
                                     }
                                 }
                                 alert {
