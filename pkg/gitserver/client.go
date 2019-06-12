@@ -735,8 +735,12 @@ func (c *Client) getCloneQueueStatus(ctx context.Context, addr string) (*protoco
 	}
 	defer resp.Body.Close()
 
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		b, _ := ioutil.ReadAll(resp.Body)
 		log15.Warn("gitserver clone-queue-status error:", string(b))
 
 		err := &url.Error{
@@ -750,5 +754,5 @@ func (c *Client) getCloneQueueStatus(ctx context.Context, addr string) (*protoco
 
 	var status protocol.CloneQueueStatusResponse
 
-	return &status, json.NewDecoder(resp.Body).Decode(&status)
+	return &status, json.Unmarshal(b, &status)
 }
