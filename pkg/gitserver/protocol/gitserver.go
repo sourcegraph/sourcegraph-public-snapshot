@@ -181,14 +181,3 @@ type CreatePatchFromPatchResponse struct {
 	// Rev is the tag that the staging object can be found at
 	Rev string
 }
-
-// CloneQueueStatusResponse is the response to a clone queue status request that
-// includes how many repositories are currently being cloned and what the
-// configured maximum number of concurrent cloning processes is
-type CloneQueueStatusResponse struct {
-	// Current is the number of repositories currently being cloned
-	Current int `json:"current"`
-	// Maximum is the maximum number of repositories that can be cloned at the
-	// same time
-	Maximum int `json:"maximum"`
-}
