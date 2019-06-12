@@ -104,13 +104,13 @@ because Sourcegraph usernames are mutable.
 
 Enforcing Bitbucket Server permissions can be configured via the `authorization` setting in its external service configuration.
 
-#### Prerequisites
+### Prerequisites
 
 1. You have the exact same user accounts, **with matching usernames**, in Sourcegraph and Bitbucket Server. This can be accomplished by configuring an [external authentication provider](../auth.md) that mirrors user accounts from a central directory like LDAP or Active Directory. The same should be done on Bitbucket Server with [external user directories](https://confluence.atlassian.com/bitbucketserver/external-user-directories-776640394.html).
 2. Ensure you have set `auth.enableUsernameChanges` to **`false`** in the [Critical site config](../config/critical_config.md) to prevent users from changing their usernames and **escalating their privileges**.
 
 
-#### Setup
+### Setup
 
 This section walks you through the process of setting up an *Application Link between Sourcegraph and Bitbucket Server* and configuring the Bitbucket External service with `authorization` settings. It assumes the above prerequisites are met.
 
@@ -140,7 +140,7 @@ Now click the edit button in the `Sourcegraph` Application Link that you just cr
 ---
 
 
-Generate a *Consumer Key* in your terminal with `echo sourcegraph$(cat /dev/urandom | tr -dc "[:alnum:]" | head -c 32)`. Copy this command's output and paste it in the *Consumer Key* field. Write `Sourcegraph` in the *Consumer Name* field.
+Generate a *Consumer Key* in your terminal with `echo sourcegraph$(openssl rand -hex 16)`. Copy this command's output and paste it in the *Consumer Key* field. Write `Sourcegraph` in the *Consumer Name* field.
 
 <img src="https://imgur.com/1kK2Y5x.png" width="800">
 
@@ -158,7 +158,7 @@ Scroll to the bottom and check the *Allow 2-Legged OAuth* checkbox, then write y
 
 ---
 
-Go to your Sourcegraph's external services page (i.e. `https://sourcegraph.mycorp.org/site-admin/external-services`) and either edit or create a new *Bitbucket Server* external service. Click on the *Enforce permissions* quick action on top of the configuration editor. Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 -w0 sourcegraph.pem` to the `oauth.signingKey` field. Finally, **save the configuration**.
+Go to your Sourcegraph's external services page (i.e. `https://sourcegraph.mycorp.org/site-admin/external-services`) and either edit or create a new *Bitbucket Server* external service. Click on the *Enforce permissions* quick action on top of the configuration editor. Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 sourcegraph.pem | tr -d '\n'` to the `oauth.signingKey` field. Finally, **save the configuration**.
 
 <img src="https://imgur.com/ucetesA.png" width="800">
 

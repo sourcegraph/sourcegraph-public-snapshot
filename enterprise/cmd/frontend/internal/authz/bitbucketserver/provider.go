@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
@@ -38,10 +39,14 @@ func NewProvider(cli *bitbucketserver.Client) *Provider {
 // Validate validates that the Provider has access to the Bitbucket Server API
 // with the OAuth credentials it was configured with.
 func (p *Provider) Validate() []string {
-	_, err := p.client.UserPermissions(context.Background(), p.client.Username)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := p.client.UserPermissions(ctx, p.client.Username)
 	if err != nil {
 		return []string{err.Error()}
 	}
+
 	return nil
 }
 
