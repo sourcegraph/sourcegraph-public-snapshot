@@ -9,7 +9,7 @@ import (
 )
 
 func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*StatusMessageResolver, error) {
-	var notifications []*StatusMessageResolver
+	var messages []*StatusMessageResolver
 
 	// 🚨 SECURITY: Only site admins can see status messages.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -22,13 +22,13 @@ func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*StatusMessageRe
 	}
 
 	for _, rn := range result.Messages {
-		notifications = append(notifications, NewStatusMessage(&types.StatusMessage{
+		messages = append(messages, NewStatusMessage(&types.StatusMessage{
 			Message: rn.Message,
 			Type:    string(rn.Type),
 		}))
 	}
 
-	return notifications, nil
+	return messages, nil
 }
 
 type StatusMessageResolver struct {
