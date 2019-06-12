@@ -14,6 +14,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - The `orgs` setting in [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github) allows admins to select all repositories from the specified organizations to be synced.
+- The `commitsince` search filter allows users to exclude stale repositories that don't contain commits past a specified date from their search query.
 
 ### Changed
 
