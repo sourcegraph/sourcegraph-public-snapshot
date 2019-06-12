@@ -335,7 +335,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   // See the list of parameters at:
   // https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
   "repositoryQuery": [
-  //   "?name=<repo>\u0026projectname=<project>" // set this to "none" to disable querying
+  //   "?" // An empty query string means no filters, so all visible repos to the configured token.
   ],
 
   // repos: Explicit list of repositories to select
