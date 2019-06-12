@@ -160,6 +160,7 @@ func main() {
 
 		pipeline.AddStep(":go:",
 			bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
+			bk.Cmd("bash <(curl -sL get.comby.dev) > /dev/null"), // for replacer tests
 			bk.Cmd("go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -race ./..."),
 			bk.ArtifactPaths("coverage.txt"))
 
