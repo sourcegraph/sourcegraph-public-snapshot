@@ -42,6 +42,11 @@ const isEnterpriseBuild = !!process.env.ENTERPRISE
 const enterpriseDir = path.resolve(__dirname, 'src', 'enterprise')
 const sourceRoots = [path.resolve(__dirname, 'src'), path.resolve(rootDir, 'shared')]
 
+const styleEntrypoints = [
+    path.join(__dirname, 'src', 'main.scss'),
+    isEnterpriseBuild ? path.join(__dirname, 'src', 'enterprise.scss') : null,
+].filter((path): path is string => !!path)
+
 const config: webpack.Configuration = {
     context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
     mode,
@@ -72,11 +77,14 @@ const config: webpack.Configuration = {
         // Enterprise vs. OSS builds use different entrypoints. For app (TypeScript), a single entrypoint is used
         // (enterprise or OSS). For style (SCSS), the OSS entrypoint is always used, and the enterprise entrypoint
         // is appended for enterprise builds.
-        app: isEnterpriseBuild ? path.join(enterpriseDir, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
-        style: [
-            path.join(__dirname, 'src', 'main.scss'),
-            isEnterpriseBuild ? path.join(__dirname, 'src', 'enterprise.scss') : null,
-        ].filter((path): path is string => !!path),
+        app: [
+            isEnterpriseBuild ? path.join(enterpriseDir, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
+
+            // In development, use style-loader for CSS and include the styles in the app
+            // entrypoint. The style.bundle.css file will be empty.
+            ...(mode === 'development' ? styleEntrypoints : []),
+        ],
+        style: mode === 'production' ? styleEntrypoints : [path.join(__dirname, 'src', 'util', 'empty.css')],
 
         'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
         'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
@@ -138,12 +146,14 @@ const config: webpack.Configuration = {
                 type: 'javascript/auto',
             },
             {
+                include: path.join(__dirname, 'src', 'util', 'empty.css'),
+                use: [MiniCssExtractPlugin.loader, 'css-loader'],
+            },
+            {
                 test: /\.(sass|scss)$/,
                 use: [
-                    MiniCssExtractPlugin.loader,
-                    {
-                        loader: 'css-loader',
-                    },
+                    mode === 'production' ? MiniCssExtractPlugin.loader : 'style-loader',
+                    'css-loader',
                     {
                         loader: 'postcss-loader',
                         options: {
