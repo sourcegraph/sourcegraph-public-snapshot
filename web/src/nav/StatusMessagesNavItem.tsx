@@ -88,9 +88,9 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             <ButtonDropdown
                 isOpen={this.state.isOpen}
                 toggle={this.toggleIsOpen}
-                className="nav-link py-0 status-messages-nav-item__nav-link"
+                className="nav-link py-0 px-0 status-messages-nav-item__nav-link"
             >
-                <DropdownToggle caret={false} className="bg-transparent d-flex align-items-center" nav={true}>
+                <DropdownToggle caret={false} className="btn btn-icon" nav={true}>
                     {cloning ? (
                         <CloudSyncIcon
                             className="icon-inline"
