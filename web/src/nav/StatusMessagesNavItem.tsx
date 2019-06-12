@@ -1,5 +1,5 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import CheckboxMarkedCircleOutlineIcon from 'mdi-react/CheckboxMarkedCircleOutlineIcon'
+import CloudCheckIcon from 'mdi-react/CloudCheckIcon'
+import CloudSyncIcon from 'mdi-react/CloudSyncIcon'
 import React from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable, Subscription, timer } from 'rxjs'
@@ -36,6 +36,11 @@ interface State {
 
 const REFRESH_INTERVAL_MS = 3000
 
+/**
+ * Displays a status icon in the navbar reflecting the completion of backend
+ * tasks such as repository cloning, and exposes a dropdown menu containing
+ * more information on these tasks.
+ */
 export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
@@ -62,9 +67,13 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         switch (message.type) {
             case GQL.StatusMessageType.CLONING:
                 return (
-                    <Link to="/site-admin/repositories?filter=cloning" className="dropdown-item">
-                        {message.message}
-                    </Link>
+                    <div key={message.message} className="status-messages-nav-item__entry">
+                        <h4 className="status-messages-nav-item__entry-title">Repositories updating</h4>
+                        <p className="status-messages-nav-item__entry-copy">{message.message}</p>
+                        <p className="status-messages-nav-item__entry-link">
+                            <Link to={'/site-admin/external-services'}>Configure external services</Link>
+                        </p>
+                    </div>
                 )
             default:
                 return <DropdownItem>{message.message}</DropdownItem>
@@ -78,9 +87,15 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             <ButtonDropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="nav-link py-0">
                 <DropdownToggle caret={false} className="bg-transparent d-flex align-items-center" nav={true}>
                     {cloning ? (
-                        <LoadingSpinner className="icon-inline" data-tooltip="Updating repositories..." />
+                        <CloudSyncIcon
+                            className="icon-inline"
+                            {...(!this.state.isOpen && { 'data-tooltip': 'Updating repositories...' })}
+                        />
                     ) : (
-                        <CheckboxMarkedCircleOutlineIcon className="icon-inline" />
+                        <CloudCheckIcon
+                            className="icon-inline"
+                            {...(!this.state.isOpen && { 'data-tooltip': 'Repositories up to date' })}
+                        />
                     )}
                 </DropdownToggle>
 
@@ -88,7 +103,15 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     {hasMessages ? (
                         this.state.messages.map(this.renderMessage.bind(this))
                     ) : (
-                        <DropdownItem>All repositories up to date</DropdownItem>
+                        <div className="status-messages-nav-item__entry">
+                            <h4 className="status-messages-nav-item__entry-title">Repositories up to date</h4>
+                            <p className="status-messages-nav-item__entry-copy">
+                                All repositories hosted on the configured external services are up to date.
+                            </p>
+                            <p className="status-messages-nav-item__entry-link">
+                                <Link to={'/site-admin/external-services'}>Configure external services</Link>
+                            </p>
+                        </div>
                     )}
                 </DropdownMenu>
             </ButtonDropdown>

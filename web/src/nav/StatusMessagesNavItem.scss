@@ -4,4 +4,14 @@
         max-width: 22rem;
         padding: 0.5rem 1rem;
     }
+    &__entry {
+        padding: 0.5rem 1rem;
+        white-space: normal;
+        &-link {
+            margin-bottom: 0;
+        }
+    }
+    @media only percy {
+        visibility: hidden;
+    }
 }
