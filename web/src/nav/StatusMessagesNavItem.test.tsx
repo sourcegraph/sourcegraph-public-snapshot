@@ -6,7 +6,7 @@ import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 
 describe('StatusMessagesNavItem', () => {
     setLinkComponent(props => <a {...props} />)
-    afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
+    afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 
     test('no messages', () => {
         expect(renderer.create(<StatusMessagesNavItem messages={[]} />).toJSON()).toMatchSnapshot()
