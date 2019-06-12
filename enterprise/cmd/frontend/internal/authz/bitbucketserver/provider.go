@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -21,6 +22,9 @@ type Provider struct {
 	client   *bitbucketserver.Client
 	codeHost *extsvc.CodeHost
 	pageSize int // Page size to use in paginated requests.
+	store    store
+	ttl      time.Duration
+	clock    func() time.Time
 }
 
 var _ authz.Provider = ((*Provider)(nil))
@@ -66,29 +70,42 @@ func (p *Provider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mi
 // It performs a single HTTP request against the Bitbucket Server API which returns all repositories
 // the authenticated user has permissions to read.
 func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
-	var user bitbucketserver.User
+	var (
+		user   bitbucketserver.User
+		acctID int32
+	)
+
 	if acct != nil && acct.ServiceID == p.codeHost.ServiceID &&
 		acct.ServiceType == p.codeHost.ServiceType {
+		acctID = acct.ID
 		if err := json.Unmarshal(*acct.AccountData, &user); err != nil {
 			return nil, err
 		}
 	}
 
-	unverified := make(map[string]api.RepoName, len(repos))
-	for repo := range repos {
-		unverified[repo.ExternalRepoSpec.ID] = repo.RepoName
+	var unverified roaring.Bitmap
+	names := make(map[uint32]api.RepoName, len(repos))
+	for r := range repos {
+		id, err := strconv.ParseUint(r.ExternalRepoSpec.ID, 10, 32)
+		if err != nil {
+			return nil, err
+		}
+
+		unverified.Add(uint32(id))
+		names[uint32(id)] = r.RepoName
 	}
 
-	authorized, err := p.repos(ctx, user.Name)
+	authorized, err := p.authorized(ctx, acctID, user.Name, &unverified)
 	if err != nil && err != errNoResults {
 		return nil, err
 	}
 
-	perms := make(map[api.RepoName]map[authz.Perm]bool, len(authorized))
-	for _, r := range authorized {
-		if name, ok := unverified[strconv.Itoa(r.ID)]; ok {
-			perms[name] = map[authz.Perm]bool{authz.Read: true}
-		}
+	iter := authorized.Iterator()
+	perms := make(map[api.RepoName]map[authz.Perm]bool, authorized.GetCardinality())
+
+	for iter.HasNext() {
+		perms[names[iter.Next()]] =
+			map[authz.Perm]bool{authz.Read: true}
 	}
 
 	return perms, nil
@@ -123,10 +140,47 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 	}, nil
 }
 
+func (p *Provider) authorized(ctx context.Context, acctID int32, username string, unverified *roaring.Bitmap) (*roaring.Bitmap, error) {
+	perms := Permissions{
+		AccountID: acctID,
+		Perm:      authz.Read,
+		Type:      "repos",
+	}
+
+	// TODO: Wrap in serializable transaction to control cache filling concurrency.
+
+	if err := p.store.LoadPermissions(ctx, &perms); err != nil {
+		return nil, err
+	}
+
+	now := p.now()
+
+	if now.Equal(perms.ExpiredAt) || now.After(perms.ExpiredAt) { // Cache expired
+		repos, err := p.repos(ctx, username)
+		if err != nil {
+			return nil, err
+		}
+
+		perms.IDs = roaring.NewBitmap()
+		for _, r := range repos {
+			perms.IDs.Add(uint32(r.ID))
+		}
+
+		perms.UpdatedAt = now
+		perms.ExpiredAt = now.Add(p.ttl)
+
+		if err := p.store.UpsertPermissions(ctx, &perms); err != nil {
+			return nil, err
+		}
+	}
+
+	return roaring.And(unverified, perms.IDs), nil
+}
+
 var errNoResults = errors.New("no results returned by the Bitbucket Server API")
 
-// repos returns all repositories for which the given user has the permission to read.
-// when no username is given, only public repos are returned.
+// repos returns all repositories for which the given user has the permission to read from
+// the Bitbucket Server API. when no username is given, only public repos are returned.
 func (p *Provider) repos(ctx context.Context, username string) (all []*bitbucketserver.Repo, err error) {
 	t := &bitbucketserver.PageToken{Limit: p.pageSize}
 	c := p.client
@@ -174,4 +228,11 @@ func (p *Provider) user(ctx context.Context, username string, fs ...bitbucketser
 	}
 
 	return nil, errNoResults
+}
+
+func (p *Provider) now() time.Time {
+	if p.clock != nil {
+		return p.clock()
+	}
+	return time.Now()
 }
