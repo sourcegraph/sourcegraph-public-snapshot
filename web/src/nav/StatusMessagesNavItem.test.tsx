@@ -11,12 +11,22 @@ describe('StatusMessagesNavItem', () => {
     test('no messages', () => {
         expect(renderer.create(<StatusMessagesNavItem messages={[]} />).toJSON()).toMatchSnapshot()
     })
-    test('one CLONING message', () => {
+    test('one CLONING message - not site admin', () => {
         const message: GQL.IStatusMessage = {
             __typename: 'StatusMessage',
             type: GQL.StatusMessageType.CLONING,
             message: 'Currently cloning repositories...',
         }
         expect(renderer.create(<StatusMessagesNavItem messages={[message]} />).toJSON()).toMatchSnapshot()
+    })
+    test('one CLONING message - site admin', () => {
+        const message: GQL.IStatusMessage = {
+            __typename: 'StatusMessage',
+            type: GQL.StatusMessageType.CLONING,
+            message: 'Currently cloning repositories...',
+        }
+        expect(
+            renderer.create(<StatusMessagesNavItem messages={[message]} isSiteAdmin={true} />).toJSON()
+        ).toMatchSnapshot()
     })
 })

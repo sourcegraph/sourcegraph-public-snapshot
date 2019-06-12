@@ -27,6 +27,7 @@ function fetchAllStatusMessages(): Observable<GQL.IStatusMessage[]> {
 
 interface Props {
     messages?: GQL.IStatusMessage[]
+    isSiteAdmin?: boolean
 }
 
 interface State {
@@ -70,9 +71,11 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     <div key={message.message} className="status-messages-nav-item__entry">
                         <h4 className="status-messages-nav-item__entry-title">Repositories updating</h4>
                         <p className="status-messages-nav-item__entry-copy">{message.message}</p>
-                        <p className="status-messages-nav-item__entry-link">
-                            <Link to={'/site-admin/external-services'}>Configure external services</Link>
-                        </p>
+                        {this.props.isSiteAdmin && (
+                            <p className="status-messages-nav-item__entry-link">
+                                <Link to={'/site-admin/external-services'}>Configure external services</Link>
+                            </p>
+                        )}
                     </div>
                 )
             default:
@@ -112,9 +115,11 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             <p className="status-messages-nav-item__entry-copy">
                                 All repositories hosted on the configured external services are up to date.
                             </p>
-                            <p className="status-messages-nav-item__entry-link">
-                                <Link to={'/site-admin/external-services'}>Configure external services</Link>
-                            </p>
+                            {this.props.isSiteAdmin && (
+                                <p className="status-messages-nav-item__entry-link">
+                                    <Link to={'/site-admin/external-services'}>Configure external services</Link>
+                                </p>
+                            )}
                         </div>
                     )}
                 </DropdownMenu>

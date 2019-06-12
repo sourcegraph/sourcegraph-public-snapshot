@@ -116,7 +116,7 @@ export class NavLinks extends React.PureComponent<Props> {
                     this.props.authenticatedUser &&
                     this.props.authenticatedUser.siteAdmin && (
                         <li className="nav-item">
-                            <StatusMessagesNavItem />
+                            <StatusMessagesNavItem isSiteAdmin={this.props.authenticatedUser.siteAdmin} />
                         </li>
                     )}
                 {this.props.location.pathname !== '/welcome' && (
