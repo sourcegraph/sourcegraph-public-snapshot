@@ -148,7 +148,7 @@ Generate a *Consumer Key* in your terminal with `echo sourcegraph$(cat /dev/uran
 
 Generate an RSA key pair in your terminal with `openssl genrsa -out sourcegraph.pem 4096 && openssl rsa -in sourcegraph.pem -pubout > sourcegraph.pub`. Copy the contents of `sourcegraph.pub` and paste them in the *Public Key* field.
 
-<img src="https://imgur.com/YHm1uSr.png" width="600">
+<img src="https://imgur.com/YHm1uSr.png" width="800">
 
 ---
 
