@@ -563,7 +563,7 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Type:    protocol.CurrentlyCloningStatusMessage,
+						Type:    protocol.CloningStatusMessage,
 						Message: "Currently cloning 5 repositories in parallel...",
 					},
 				},

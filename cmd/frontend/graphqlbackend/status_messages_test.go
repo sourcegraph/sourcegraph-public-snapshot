@@ -80,7 +80,7 @@ func TestStatusMessages(t *testing.T) {
 		repoupdater.MockStatusMessages = func(_ context.Context) (*protocol.StatusMessagesResponse, error) {
 			res := &protocol.StatusMessagesResponse{Messages: []protocol.StatusMessage{
 				{
-					Type:    protocol.CurrentlyCloningStatusMessage,
+					Type:    protocol.CloningStatusMessage,
 					Message: "Currently cloning 5 repositories in parallel...",
 				},
 			}}
@@ -103,7 +103,7 @@ func TestStatusMessages(t *testing.T) {
 				{
 					"statusMessages": [
 					{
-						"type": "CURRENTLYCLONING",
+						"type": "CLONING",
 						"message": "Currently cloning 5 repositories in parallel..."
 					}
 					]

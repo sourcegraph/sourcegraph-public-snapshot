@@ -3661,7 +3661,7 @@ type ProductSubscriptionEvent {
 
 # The type of a StatusMessage
 enum StatusMessageType {
-    CURRENTLYCLONING
+    CLONING
 }
 
 # A status message

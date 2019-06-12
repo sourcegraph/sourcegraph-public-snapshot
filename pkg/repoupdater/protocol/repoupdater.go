@@ -173,7 +173,7 @@ type ExternalServiceSyncResult struct {
 type StatusMessageType string
 
 const (
-	CurrentlyCloningStatusMessage StatusMessageType = "CURRENTLYCLONING"
+	CloningStatusMessage StatusMessageType = "CLONING"
 )
 
 type StatusMessage struct {
