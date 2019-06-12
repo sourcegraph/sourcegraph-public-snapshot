@@ -500,24 +500,24 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 							FileName: true,
 						}}},
 						{
-							FileName:   "2.md",
-							Repository: "github.com/test/1",
-							LineMatches: []zoekt.LineMatch{{
-								FileName: true,
-							}}},
-						{
 							FileName:   "1.md",
 							Repository: "github.com/test/2",
 							LineMatches: []zoekt.LineMatch{{
 								FileName: true,
 							}}},
+						{
+							FileName:   "2.md",
+							Repository: "github.com/test/2",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}}},
 					},
-					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1"}}},
+					RepoURLs: map[string]string{"github.com/test/2": "github.com/test/2"}}},
 				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
 				repoHasFileFlagIsInQuery:        true,
 				negatedRepoHasFileFlagIsInQuery: false,
 			},
-			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/2": true}},
 		},
 		{
 			name: "returns filtered repoSet when negated repoHasFileFlag is in query",
