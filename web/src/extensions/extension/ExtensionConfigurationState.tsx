@@ -18,4 +18,6 @@ export const ExtensionConfigurationState: React.FunctionComponent<{
         ) : (
             <span className={`text-muted ${className}`}>Disabled</span>
         )
-    ) : null
+    ) : (
+        <span className={`text-muted ${className}`}>Disabled</span>
+    )
