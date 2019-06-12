@@ -2,7 +2,7 @@ import CloudCheckIcon from 'mdi-react/CloudCheckIcon'
 import CloudSyncIcon from 'mdi-react/CloudSyncIcon'
 import React from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { Observable, Subscription, timer } from 'rxjs'
+import { Observable, SchedulerLike, Subscription, timer } from 'rxjs'
 import { concatMap, map } from 'rxjs/operators'
 import { Link } from '../../../shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
@@ -47,6 +47,10 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
 
 interface Props {
     fetchMessages: () => Observable<GQL.IStatusMessage[]>
+
+    /** Scheduler for the refresh timer */
+    scheduler?: SchedulerLike
+
     isSiteAdmin?: boolean
 }
 
@@ -65,18 +69,14 @@ const REFRESH_INTERVAL_MS = 3000
 export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
-    private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
     public state: State = { isOpen: false, messages: [] }
+
+    private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            timer(0, REFRESH_INTERVAL_MS)
-                .pipe(
-                    concatMap(() => {
-                        console.log('calling fetchmessages')
-                        return this.props.fetchMessages()
-                    })
-                )
+            timer(0, REFRESH_INTERVAL_MS, this.props.scheduler)
+                .pipe(concatMap(() => this.props.fetchMessages()))
                 .subscribe(messages => this.setState({ messages }))
         )
     }

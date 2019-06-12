@@ -1,6 +1,7 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { of } from 'rxjs'
+import { of, queueScheduler } from 'rxjs'
+import { TestScheduler } from 'rxjs/testing'
 import { setLinkComponent } from '../../../shared/src/components/Link'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
@@ -11,7 +12,9 @@ describe('StatusMessagesNavItem', () => {
 
     test('no messages', () => {
         const fetchMessages = () => of([])
-        expect(renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} />).toJSON()).toMatchSnapshot()
+        expect(
+            renderer.create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />).toJSON()
+        ).toMatchSnapshot()
     })
 
     describe('one CLONING message', () => {
@@ -23,12 +26,24 @@ describe('StatusMessagesNavItem', () => {
 
         const fetchMessages = () => of([message])
         test('as non-site admin', () => {
-            expect(renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} />).toJSON()).toMatchSnapshot()
+            expect(
+                renderer
+                    .create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />)
+                    .toJSON()
+            ).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={true} />).toJSON()
+                renderer
+                    .create(
+                        <StatusMessagesNavItem
+                            scheduler={queueScheduler}
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={true}
+                        />
+                    )
+                    .toJSON()
             ).toMatchSnapshot()
         })
     })
