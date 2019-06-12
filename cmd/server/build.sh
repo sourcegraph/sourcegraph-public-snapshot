@@ -33,6 +33,7 @@ for pkg in $server_pkg \
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
     github.com/sourcegraph/sourcegraph/cmd/query-runner \
+    github.com/sourcegraph/sourcegraph/cmd/replacer \
     github.com/sourcegraph/sourcegraph/cmd/repo-updater \
     github.com/sourcegraph/sourcegraph/cmd/searcher \
     github.com/google/zoekt/cmd/zoekt-archive-index \

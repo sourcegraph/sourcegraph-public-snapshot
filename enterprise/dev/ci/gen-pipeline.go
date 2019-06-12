@@ -307,6 +307,7 @@ func main() {
 		"gitserver",
 		"management-console",
 		"query-runner",
+		"replacer",
 		"repo-updater",
 		"searcher",
 		"server",

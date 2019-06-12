@@ -20,7 +20,7 @@ for pkg in github.com/sourcegraph/sourcegraph/cmd/replacer; do
     go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
 
-docker build -f cmd/docker/Dockerfile -t $IMAGE $OUTPUT \
+docker build -f cmd/replacer/Dockerfile -t $IMAGE $OUTPUT \
     --build-arg COMMIT_SHA \
     --build-arg DATE \
     --build-arg VERSION
