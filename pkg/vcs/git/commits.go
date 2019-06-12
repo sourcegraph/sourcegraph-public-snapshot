@@ -104,15 +104,13 @@ func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*C
 	return commitLog(ctx, repo, opt)
 }
 
+// HasCommitSince indicates the staleness of a repository. It returns a boolean indicating if a repository
+// contains a commit past a specified date.
 func HasCommitSince(ctx context.Context, repo gitserver.Repo, date string, revspec string) (bool, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: HasCommitSince")
 	span.SetTag("Date", date)
 	span.SetTag("RevSpec", revspec)
 	defer span.Finish()
-
-	if revspec == "" {
-		revspec = "HEAD"
-	}
 
 	n, err := CommitCount(ctx, repo, CommitsOptions{
 		After: date,
@@ -220,6 +218,10 @@ func CommitCount(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
+
+	if opt.Range == "" {
+		opt.Range = "HEAD"
+	}
 
 	args, err := commitLogArgs([]string{"rev-list", "--count"}, opt)
 	if err != nil {
