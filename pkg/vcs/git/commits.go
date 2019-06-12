@@ -104,14 +104,19 @@ func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*C
 	return commitLog(ctx, repo, opt)
 }
 
-func HasCommitSince(ctx context.Context, repo gitserver.Repo, date string) (bool, error) {
+func HasCommitSince(ctx context.Context, repo gitserver.Repo, date string, revspec string) (bool, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: HasCommitSince")
 	span.SetTag("Date", date)
+	span.SetTag("RevSpec", revspec)
 	defer span.Finish()
+
+	if revspec == "" {
+		revspec = "HEAD"
+	}
 
 	n, err := CommitCount(ctx, repo, CommitsOptions{
 		After: date,
-		Range: "HEAD",
+		Range: revspec,
 	})
 	return n > 0, err
 }

@@ -441,12 +441,6 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	tr.LazyPrintf("Associate/validate revs - start")
 	for _, repo := range repos {
 		repoRev := &search.RepositoryRevisions{Repo: repo}
-		if op.commitSince != "" {
-			ok, err := git.HasCommitSince(ctx, repoRev.GitserverRepo(), op.commitSince)
-			if err == nil && !ok {
-				continue
-			}
-		}
 
 		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
 
@@ -491,6 +485,14 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 				// If err != nil and is not one of the err values checked for above, cloning and other errors will be handled later, so just ignore an error
 				// if there is one.
 			}
+
+			if op.commitSince != "" {
+				ok, err := git.HasCommitSince(ctx, repoRev.GitserverRepo(), op.commitSince, rev.RevSpec)
+				if err == nil && !ok {
+					continue
+				}
+			}
+
 			repoRev.Revs = append(repoRev.Revs, rev)
 		}
 
@@ -498,6 +500,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			repoResolver,
 			math.MaxInt32,
 		))
+
 		repoRevisions = append(repoRevisions, repoRev)
 	}
 	tr.LazyPrintf("Associate/validate revs - done")
