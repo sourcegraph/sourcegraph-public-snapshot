@@ -1,12 +1,15 @@
+import { startCase } from 'lodash'
+import CloudAlertIcon from 'mdi-react/CloudAlertIcon'
 import CloudCheckIcon from 'mdi-react/CloudCheckIcon'
 import CloudSyncIcon from 'mdi-react/CloudSyncIcon'
 import React from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable, SchedulerLike, Subscription, timer } from 'rxjs'
-import { concatMap, map } from 'rxjs/operators'
+import { catchError, concatMap, map } from 'rxjs/operators'
 import { Link } from '../../../shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 
 export function fetchAllStatusMessages(): Observable<GQL.IStatusMessage[]> {
@@ -55,7 +58,7 @@ interface Props {
 }
 
 interface State {
-    messages: GQL.IStatusMessage[]
+    messagesOrError: GQL.IStatusMessage[] | ErrorLike
     isOpen: boolean
 }
 
@@ -69,15 +72,15 @@ const REFRESH_INTERVAL_MS = 3000
 export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
-    public state: State = { isOpen: false, messages: [] }
+    public state: State = { isOpen: false, messagesOrError: [] }
 
     private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
     public componentDidMount(): void {
         this.subscriptions.add(
             timer(0, REFRESH_INTERVAL_MS, this.props.scheduler)
-                .pipe(concatMap(() => this.props.fetchMessages()))
-                .subscribe(messages => this.setState({ messages }))
+                .pipe(concatMap(() => this.props.fetchMessages().pipe(catchError(err => [asError(err)]))))
+                .subscribe(messagesOrError => this.setState({ messagesOrError }))
         )
     }
 
@@ -102,8 +105,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const hasMessages = this.state.messages.length > 0
-        const cloning = this.state.messages.some(({ type }) => type === GQL.StatusMessageType.CLONING)
         return (
             <ButtonDropdown
                 isOpen={this.state.isOpen}
@@ -111,7 +112,9 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 className="nav-link py-0 px-0 status-messages-nav-item__nav-link"
             >
                 <DropdownToggle caret={false} className="btn btn-icon" nav={true}>
-                    {cloning ? (
+                    {isErrorLike(this.state.messagesOrError) ? (
+                        <CloudAlertIcon className="icon-inline" />
+                    ) : this.state.messagesOrError.some(({ type }) => type === GQL.StatusMessageType.CLONING) ? (
                         <CloudSyncIcon
                             className="icon-inline"
                             data-tooltip={this.state.isOpen ? undefined : 'Updating repositories...'}
@@ -125,8 +128,10 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 </DropdownToggle>
 
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu">
-                    {hasMessages ? (
-                        this.state.messages.map(m => this.renderMessage(m))
+                    {isErrorLike(this.state.messagesOrError) ? (
+                        <div className="alert alert-danger">{startCase(this.state.messagesOrError.message)}</div>
+                    ) : this.state.messagesOrError.length > 0 ? (
+                        this.state.messagesOrError.map(m => this.renderMessage(m))
                     ) : (
                         <StatusMessagesNavItemEntry
                             title="Repositories up to date"
