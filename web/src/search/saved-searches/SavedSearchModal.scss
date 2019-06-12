@@ -14,3 +14,10 @@
         margin-bottom: 0.5rem;
     }
 }
+
+.theme-dark {
+    .saved-search-modal-form {
+        background: $color-bg-1;
+        border: 1px solid #2b3750;
+    }
+}

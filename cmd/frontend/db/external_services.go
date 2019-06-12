@@ -27,8 +27,9 @@ import (
 // The enterprise code registers additional validators at run-time and sets the
 // global instance in stores.go
 type ExternalServicesStore struct {
-	GitHubValidators []func(*schema.GitHubConnection) error
-	GitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error
+	GitHubValidators          []func(*schema.GitHubConnection) error
+	GitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
+	BitbucketServerValidators []func(*schema.BitbucketServerConnection, []schema.AuthProviders) error
 }
 
 // ExternalServiceKinds contains a map of all supported kinds of
@@ -126,6 +127,13 @@ func (e *ExternalServicesStore) ValidateConfig(kind, config string, ps []schema.
 		}
 		err = e.validateGitlabConnection(&c, ps)
 
+	case "BITBUCKETSERVER":
+		var c schema.BitbucketServerConnection
+		if err = json.Unmarshal(normalized, &c); err != nil {
+			return err
+		}
+		err = e.validateBitbucketServerConnection(&c, ps)
+
 	case "OTHER":
 		var c schema.OtherExternalServiceConnection
 		if err = json.Unmarshal(normalized, &c); err != nil {
@@ -177,6 +185,14 @@ func (e *ExternalServicesStore) validateGithubConnection(c *schema.GitHubConnect
 func (e *ExternalServicesStore) validateGitlabConnection(c *schema.GitLabConnection, ps []schema.AuthProviders) error {
 	err := new(multierror.Error)
 	for _, validate := range e.GitLabValidators {
+		err = multierror.Append(err, validate(c, ps))
+	}
+	return err.ErrorOrNil()
+}
+
+func (e *ExternalServicesStore) validateBitbucketServerConnection(c *schema.BitbucketServerConnection, ps []schema.AuthProviders) error {
+	err := new(multierror.Error)
+	for _, validate := range e.BitbucketServerValidators {
 		err = multierror.Append(err, validate(c, ps))
 	}
 	return err.ErrorOrNil()
@@ -365,7 +381,7 @@ func (c *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
 	var connections []*schema.BitbucketServerConnection
-	if err := c.listConfigs(ctx, "BITBUCKET", &connections); err != nil {
+	if err := c.listConfigs(ctx, "BITBUCKETSERVER", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil

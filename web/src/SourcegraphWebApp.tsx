@@ -31,6 +31,7 @@ import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { createPlatformContext } from './platform/context'
 import { fetchHighlightedFileLines } from './repo/backend'
+import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
@@ -45,6 +46,8 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 
+import './SourcegraphWebApp.scss'
+
 export interface SourcegraphWebAppProps extends KeybindingsProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
@@ -58,6 +61,7 @@ export interface SourcegraphWebAppProps extends KeybindingsProps {
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
+    repoContainerRoutes: ReadonlyArray<RepoContainerRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
     routes: ReadonlyArray<LayoutRouteProps>

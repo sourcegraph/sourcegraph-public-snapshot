@@ -8,7 +8,6 @@ import {
 } from '@sourcegraph/codeintellify'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
-import { uniqBy } from 'lodash'
 import * as React from 'react'
 import { render as reactDOMRender } from 'react-dom'
 import { animationFrameScheduler, EMPTY, from, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
@@ -29,7 +28,6 @@ import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { PartialCodeEditor } from '../../../../shared/src/api/client/context/context'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
 import { CodeEditorData } from '../../../../shared/src/api/client/services/editorService'
-import { WorkspaceRootWithMetadata } from '../../../../shared/src/api/client/services/workspaceService'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { CommandListClassProps } from '../../../../shared/src/commandPalette/CommandList'
 import { CompletionWidgetClassProps } from '../../../../shared/src/components/completion/CompletionWidget'
@@ -183,6 +181,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * CSS classes for the completion widget to customize styling
      */
     completionWidgetClassProps?: CompletionWidgetClassProps
+
+    /**
+     * Whether or not code views need to be tokenized. Defaults to false.
+     */
+    codeViewsRequireTokenization?: boolean
 }
 
 export interface FileInfo {
@@ -297,6 +300,7 @@ export function initCodeIntelligence({
             getHover: ({ line, character, part, ...rest }) => getHover({ ...rest, position: { line, character } }),
             getActions: context => getHoverActions({ extensionsController, platformContext }, context),
             pinningEnabled: true,
+            tokenize: codeHost.codeViewsRequireTokenization,
         }
     )
 
@@ -453,21 +457,18 @@ export function handleCodeHost({
     /** A stream of added or removed code views */
     const codeViews = mutations.pipe(
         trackCodeViews(codeHost),
-        mergeMap(codeViewEvent => {
-            if (codeViewEvent.type === 'added') {
-                return codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
-                    mergeMap(fileInfo =>
-                        fetchFileContents(fileInfo, platformContext.requestGraphQL).pipe(
-                            map(fileInfoWithContents => ({
-                                fileInfo: fileInfoWithContents,
-                                ...codeViewEvent,
-                            }))
-                        )
+        mergeMap(codeViewEvent =>
+            codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
+                mergeMap(fileInfo =>
+                    fetchFileContents(fileInfo, platformContext.requestGraphQL).pipe(
+                        map(fileInfoWithContents => ({
+                            fileInfo: fileInfoWithContents,
+                            ...codeViewEvent,
+                        }))
                     )
                 )
-            }
-            return [codeViewEvent]
-        }),
+            )
+        ),
         catchError(err => {
             if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
                 return EMPTY
@@ -477,213 +478,230 @@ export function handleCodeHost({
         observeOn(animationFrameScheduler)
     )
 
-    interface CodeViewState {
-        subscriptions: Subscription
-        roots: WorkspaceRootWithMetadata[]
+    /** Map from workspace URI to number of editors referencing it */
+    const rootRefCounts = new Map<string, number>()
+
+    /**
+     * Adds root referenced by a code editor to the worskpace.
+     *
+     * Will only cause `workspace.roots` to emit if no root with
+     * the given `uri` existed.
+     */
+    const addRootRef = (uri: string, inputRevision: string | undefined): void => {
+        rootRefCounts.set(uri, (rootRefCounts.get(uri) || 0) + 1)
+        if (rootRefCounts.get(uri) === 1) {
+            extensionsController.services.workspace.roots.next([
+                ...extensionsController.services.workspace.roots.value,
+                { uri, inputRevision },
+            ])
+        }
     }
-    /** Map from code view element to the state associated with it (to be updated or removed) */
-    const codeViewStates = new Map<Element, CodeViewState>()
+
+    /**
+     * Deletes a reference to a workspace root from a code editor.
+     *
+     * Will only cause `workspace.roots` to emit if the root
+     * with the given `uri` has no more references.
+     */
+    const deleteRootRef = (uri: string) => {
+        const currentRefCount = rootRefCounts.get(uri)
+        if (!currentRefCount) {
+            throw new Error(`No preexisting root refs for uri ${uri}`)
+        }
+        const updatedRefCount = currentRefCount - 1
+        if (updatedRefCount === 0) {
+            extensionsController.services.workspace.roots.next(
+                extensionsController.services.workspace.roots.value.filter(root => root.uri !== uri)
+            )
+        } else {
+            rootRefCounts.set(uri, updatedRefCount)
+        }
+    }
 
     subscriptions.add(
         codeViews.subscribe(codeViewEvent => {
-            console.log(`Code view ${codeViewEvent.type}`)
+            console.log('Code view added')
+            codeViewEvent.subscriptions.add(() => console.log('Code view removed'))
 
-            // Handle added or removed view component, workspace root and subscriptions
-            if (codeViewEvent.type === 'added' && !codeViewStates.has(codeViewEvent.element)) {
-                const { element, fileInfo, getPositionAdjuster, getToolbarMount, toolbarButtonProps } = codeViewEvent
-                const uri = toURIWithPath(fileInfo)
-                const languageId = getModeFromPath(fileInfo.filePath)
-                const model = { uri, languageId, text: fileInfo.content }
+            const { element, fileInfo, getPositionAdjuster, getToolbarMount, toolbarButtonProps } = codeViewEvent
+            const uri = toURIWithPath(fileInfo)
+            const languageId = getModeFromPath(fileInfo.filePath)
+            const model = { uri, languageId, text: fileInfo.content }
+            // Only add the model if it doesn't exist
+            // (there may be several code views on the page pointing to the same model)
+            if (!extensionsController.services.model.hasModel(uri)) {
+                extensionsController.services.model.addModel(model)
+            }
+            const editorData: CodeEditorData = {
+                type: 'CodeEditor' as const,
+                resource: uri,
+                selections: codeViewEvent.getSelections ? codeViewEvent.getSelections(codeViewEvent.element) : [],
+                isActive: true,
+            }
+            const editorId = extensionsController.services.editor.addEditor(editorData)
+            const scope: PartialCodeEditor = {
+                ...editorData,
+                ...editorId,
+                model,
+            }
+            const rootURI = toRootURI(fileInfo)
+            addRootRef(rootURI, fileInfo.rev)
+            codeViewEvent.subscriptions.add(() => {
+                deleteRootRef(rootURI)
+                extensionsController.services.editor.removeEditor(editorId)
+            })
+
+            if (codeViewEvent.observeSelections) {
+                codeViewEvent.subscriptions.add(
+                    // This nested subscription is necessary, it is managed correctly through `codeViewEvent.subscriptions`
+                    // tslint:disable-next-line: rxjs-no-nested-subscribe
+                    codeViewEvent.observeSelections(codeViewEvent.element).subscribe(selections => {
+                        extensionsController.services.editor.setSelections(editorId, selections)
+                    })
+                )
+            }
+
+            // When codeView is a diff (and not an added file), add BASE too.
+            if (fileInfo.baseContent && fileInfo.baseRepoName && fileInfo.baseCommitID && fileInfo.baseFilePath) {
+                const uri = toURIWithPath({
+                    repoName: fileInfo.baseRepoName,
+                    commitID: fileInfo.baseCommitID,
+                    filePath: fileInfo.baseFilePath,
+                })
                 // Only add the model if it doesn't exist
                 // (there may be several code views on the page pointing to the same model)
                 if (!extensionsController.services.model.hasModel(uri)) {
-                    extensionsController.services.model.addModel(model)
+                    extensionsController.services.model.addModel({
+                        uri,
+                        languageId: getModeFromPath(fileInfo.baseFilePath),
+                        text: fileInfo.baseContent,
+                    })
                 }
-                const editorData: CodeEditorData = {
+                const editor = extensionsController.services.editor.addEditor({
                     type: 'CodeEditor' as const,
                     resource: uri,
-                    selections: codeViewEvent.getSelections ? codeViewEvent.getSelections(codeViewEvent.element) : [],
+                    // There is no notion of a selection on diff views yet, so this is empty.
+                    selections: [],
                     isActive: true,
-                }
-                const editorId = extensionsController.services.editor.addEditor(editorData)
-                const scope: PartialCodeEditor = {
-                    ...editorData,
-                    ...editorId,
-                    model,
-                }
-                const codeViewState: CodeViewState = {
-                    subscriptions: new Subscription(),
-                    roots: [{ uri: toRootURI(fileInfo), inputRevision: fileInfo.rev || '' }],
-                }
-                codeViewState.subscriptions.add(() => {
-                    extensionsController.services.editor.removeEditor(editorId)
                 })
-                codeViewStates.set(element, codeViewState)
-
-                if (codeViewEvent.observeSelections) {
-                    codeViewState.subscriptions.add(
-                        // This nested subscription is necessary, it is managed correctly through `codeViewState.subscriptions`
-                        // tslint:disable-next-line: rxjs-no-nested-subscribe
-                        codeViewEvent.observeSelections(codeViewEvent.element).subscribe(selections => {
-                            extensionsController.services.editor.setSelections(editorId, selections)
-                        })
-                    )
-                }
-
-                // When codeView is a diff (and not an added file), add BASE too.
-                if (fileInfo.baseContent && fileInfo.baseRepoName && fileInfo.baseCommitID && fileInfo.baseFilePath) {
-                    const uri = toURIWithPath({
-                        repoName: fileInfo.baseRepoName,
-                        commitID: fileInfo.baseCommitID,
-                        filePath: fileInfo.baseFilePath,
-                    })
-                    // Only add the model if it doesn't exist
-                    // (there may be several code views on the page pointing to the same model)
-                    if (!extensionsController.services.model.hasModel(uri)) {
-                        extensionsController.services.model.addModel({
-                            uri,
-                            languageId: getModeFromPath(fileInfo.baseFilePath),
-                            text: fileInfo.baseContent,
-                        })
-                    }
-                    const editor = extensionsController.services.editor.addEditor({
-                        type: 'CodeEditor' as const,
-                        resource: uri,
-                        // There is no notion of a selection on diff views yet, so this is empty.
-                        selections: [],
-                        isActive: true,
-                    })
-                    codeViewState.subscriptions.add(() => {
-                        extensionsController.services.editor.removeEditor(editor)
-                    })
-                    codeViewState.roots.push({
-                        uri: toRootURI({
-                            repoName: fileInfo.baseRepoName,
-                            commitID: fileInfo.baseCommitID,
-                        }),
-                        inputRevision: fileInfo.baseRev || '',
-                    })
-                }
-
-                const domFunctions = {
-                    ...codeViewEvent.dom,
-                    // If any parent element has the sourcegraph-extension-element
-                    // class then that element does not have any code. We
-                    // must check for "any parent element" because extensions
-                    // create their DOM changes before the blob is tokenized
-                    // into multiple elements.
-                    getCodeElementFromTarget: (target: HTMLElement): HTMLElement | null =>
-                        target.closest('.sourcegraph-extension-element') !== null
-                            ? null
-                            : codeViewEvent.dom.getCodeElementFromTarget(target),
-                }
-
-                // Apply decorations coming from extensions
-                {
-                    let decorationsByLine: DecorationMapByLine = new Map()
-                    const update = (decorations?: TextDocumentDecoration[] | null): void => {
-                        decorationsByLine = applyDecorations(
-                            domFunctions,
-                            element,
-                            decorations || [],
-                            decorationsByLine,
-                            fileInfo.baseCommitID ? 'head' : undefined
-                        )
-                    }
-                    codeViewState.subscriptions.add(
-                        extensionsController.services.textDocumentDecoration
-                            .getDecorations(toTextDocumentIdentifier(fileInfo))
-                            // Make sure extensions get cleaned up un unsubscription
-                            .pipe(finalize(update))
-                            // The nested subscribe cannot be replaced with a switchMap()
-                            // We manage the subscription correctly.
-                            // tslint:disable-next-line: rxjs-no-nested-subscribe
-                            .subscribe(update)
-                    )
-                }
-                if (fileInfo.baseCommitID && fileInfo.baseFilePath) {
-                    let decorationsByLine: DecorationMapByLine = new Map()
-                    const update = (decorations?: TextDocumentDecoration[] | null): void => {
-                        decorationsByLine = applyDecorations(
-                            domFunctions,
-                            element,
-                            decorations || [],
-                            decorationsByLine,
-                            'base'
-                        )
-                    }
-                    codeViewState.subscriptions.add(
-                        extensionsController.services.textDocumentDecoration
-                            .getDecorations(
-                                toTextDocumentIdentifier({
-                                    repoName: fileInfo.baseRepoName || fileInfo.repoName, // not sure if all code hosts set baseRepoName
-                                    commitID: fileInfo.baseCommitID,
-                                    filePath: fileInfo.baseFilePath,
-                                })
-                            )
-                            // Make sure decorations get cleaned up on unsubscription
-                            .pipe(finalize(update))
-                            // The nested subscribe cannot be replaced with a switchMap()
-                            // We manage the subscription correctly.
-                            // tslint:disable-next-line: rxjs-no-nested-subscribe
-                            .subscribe(update)
-                    )
-                }
-
-                // Add hover code intelligence
-                const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({
-                    part,
-                }) => ({
-                    repoName: part === 'base' ? fileInfo.baseRepoName || fileInfo.repoName : fileInfo.repoName,
-                    commitID: part === 'base' ? fileInfo.baseCommitID! : fileInfo.commitID,
-                    filePath: part === 'base' ? fileInfo.baseFilePath || fileInfo.filePath : fileInfo.filePath,
-                    rev:
-                        part === 'base'
-                            ? fileInfo.baseRev || fileInfo.baseCommitID!
-                            : fileInfo.rev || fileInfo.commitID,
+                const baseRootURI = toRootURI({
+                    repoName: fileInfo.baseRepoName,
+                    commitID: fileInfo.baseCommitID,
                 })
-                const adjustPosition = getPositionAdjuster && getPositionAdjuster(platformContext.requestGraphQL)
-                codeViewState.subscriptions.add(
-                    hoverifier.hoverify({
-                        dom: domFunctions,
-                        positionEvents: of(element).pipe(findPositionsFromEvents(domFunctions)),
-                        resolveContext,
-                        adjustPosition,
-                    })
-                )
-
-                element.classList.add('sg-mounted')
-
-                // Render toolbar
-                if (getToolbarMount) {
-                    const mount = getToolbarMount(element)
-                    render(
-                        <CodeViewToolbar
-                            {...fileInfo}
-                            {...codeHost.codeViewToolbarClassProps}
-                            sourcegraphURL={sourcegraphURL}
-                            telemetryService={telemetryService}
-                            platformContext={platformContext}
-                            extensionsController={extensionsController}
-                            buttonProps={toolbarButtonProps}
-                            location={H.createLocation(window.location)}
-                            scope={scope}
-                        />,
-                        mount
-                    )
-                }
-            } else if (codeViewEvent.type === 'removed') {
-                const codeViewState = codeViewStates.get(codeViewEvent.element)
-                if (codeViewState) {
-                    codeViewState.subscriptions.unsubscribe()
-                    codeViewStates.delete(codeViewEvent.element)
-                }
+                addRootRef(baseRootURI, fileInfo.baseRev)
+                codeViewEvent.subscriptions.add(() => {
+                    deleteRootRef(baseRootURI)
+                    extensionsController.services.editor.removeEditor(editor)
+                })
             }
 
-            // Apply added/removed roots
-            extensionsController.services.workspace.roots.next(
-                uniqBy([...codeViewStates.values()].flatMap(state => state.roots), root => root.uri)
+            const domFunctions = {
+                ...codeViewEvent.dom,
+                // If any parent element has the sourcegraph-extension-element
+                // class then that element does not have any code. We
+                // must check for "any parent element" because extensions
+                // create their DOM changes before the blob is tokenized
+                // into multiple elements.
+                getCodeElementFromTarget: (target: HTMLElement): HTMLElement | null =>
+                    target.closest('.sourcegraph-extension-element') !== null
+                        ? null
+                        : codeViewEvent.dom.getCodeElementFromTarget(target),
+            }
+
+            // Apply decorations coming from extensions
+            {
+                let decorationsByLine: DecorationMapByLine = new Map()
+                const update = (decorations?: TextDocumentDecoration[] | null): void => {
+                    decorationsByLine = applyDecorations(
+                        domFunctions,
+                        element,
+                        decorations || [],
+                        decorationsByLine,
+                        fileInfo.baseCommitID ? 'head' : undefined
+                    )
+                }
+                codeViewEvent.subscriptions.add(
+                    extensionsController.services.textDocumentDecoration
+                        .getDecorations(toTextDocumentIdentifier(fileInfo))
+                        // Make sure extensions get cleaned up un unsubscription
+                        .pipe(finalize(update))
+                        // The nested subscribe cannot be replaced with a switchMap()
+                        // We manage the subscription correctly.
+                        // tslint:disable-next-line: rxjs-no-nested-subscribe
+                        .subscribe(update)
+                )
+            }
+            if (fileInfo.baseCommitID && fileInfo.baseFilePath) {
+                let decorationsByLine: DecorationMapByLine = new Map()
+                const update = (decorations?: TextDocumentDecoration[] | null): void => {
+                    decorationsByLine = applyDecorations(
+                        domFunctions,
+                        element,
+                        decorations || [],
+                        decorationsByLine,
+                        'base'
+                    )
+                }
+                codeViewEvent.subscriptions.add(
+                    extensionsController.services.textDocumentDecoration
+                        .getDecorations(
+                            toTextDocumentIdentifier({
+                                repoName: fileInfo.baseRepoName || fileInfo.repoName, // not sure if all code hosts set baseRepoName
+                                commitID: fileInfo.baseCommitID,
+                                filePath: fileInfo.baseFilePath,
+                            })
+                        )
+                        // Make sure decorations get cleaned up on unsubscription
+                        .pipe(finalize(update))
+                        // The nested subscribe cannot be replaced with a switchMap()
+                        // We manage the subscription correctly.
+                        // tslint:disable-next-line: rxjs-no-nested-subscribe
+                        .subscribe(update)
+                )
+            }
+
+            // Add hover code intelligence
+            const resolveContext: ContextResolver<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec> = ({ part }) => ({
+                repoName: part === 'base' ? fileInfo.baseRepoName || fileInfo.repoName : fileInfo.repoName,
+                commitID: part === 'base' ? fileInfo.baseCommitID! : fileInfo.commitID,
+                filePath: part === 'base' ? fileInfo.baseFilePath || fileInfo.filePath : fileInfo.filePath,
+                rev: part === 'base' ? fileInfo.baseRev || fileInfo.baseCommitID! : fileInfo.rev || fileInfo.commitID,
+            })
+            const adjustPosition = getPositionAdjuster && getPositionAdjuster(platformContext.requestGraphQL)
+            codeViewEvent.subscriptions.add(
+                hoverifier.hoverify({
+                    dom: domFunctions,
+                    positionEvents: of(element).pipe(
+                        findPositionsFromEvents({
+                            domFunctions,
+                            tokenize: codeHost.codeViewsRequireTokenization !== false,
+                        })
+                    ),
+                    resolveContext,
+                    adjustPosition,
+                })
             )
+
+            element.classList.add('sg-mounted')
+
+            // Render toolbar
+            if (getToolbarMount) {
+                const mount = getToolbarMount(element)
+                render(
+                    <CodeViewToolbar
+                        {...fileInfo}
+                        {...codeHost.codeViewToolbarClassProps}
+                        sourcegraphURL={sourcegraphURL}
+                        telemetryService={telemetryService}
+                        platformContext={platformContext}
+                        extensionsController={extensionsController}
+                        buttonProps={toolbarButtonProps}
+                        location={H.createLocation(window.location)}
+                        scope={scope}
+                    />,
+                    mount
+                )
+            }
         })
     )
 

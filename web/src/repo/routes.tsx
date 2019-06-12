@@ -4,6 +4,7 @@ import { getModeFromPath } from '../../../shared/src/languages'
 import { isLegacyFragment, parseHash } from '../../../shared/src/util/url'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
+import { RepoContainerRoute } from './RepoContainer'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevContainerContext, RepoRevContainerRoute } from './RepoRevContainer'
 
@@ -12,6 +13,74 @@ const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCo
 const FilePathBreadcrumb = lazyComponent(() => import('./FilePathBreadcrumb'), 'FilePathBreadcrumb')
 const RepoRevSidebar = lazyComponent(() => import('./RepoRevSidebar'), 'RepoRevSidebar')
 const TreePage = lazyComponent(() => import('./TreePage'), 'TreePage')
+
+const RepositoryGitDataContainer = lazyComponent(
+    () => import('./RepositoryGitDataContainer'),
+    'RepositoryGitDataContainer'
+)
+const RepositoryCommitPage = lazyComponent(() => import('./commit/RepositoryCommitPage'), 'RepositoryCommitPage')
+const RepositoryBranchesArea = lazyComponent(
+    () => import('./branches/RepositoryBranchesArea'),
+    'RepositoryBranchesArea'
+)
+const RepositoryReleasesArea = lazyComponent(
+    () => import('./releases/RepositoryReleasesArea'),
+    'RepositoryReleasesArea'
+)
+const RepoSettingsArea = lazyComponent(() => import('./settings/RepoSettingsArea'), 'RepoSettingsArea')
+const RepositoryCompareArea = lazyComponent(() => import('./compare/RepositoryCompareArea'), 'RepositoryCompareArea')
+const RepositoryStatsArea = lazyComponent(() => import('./stats/RepositoryStatsArea'), 'RepositoryStatsArea')
+
+export const repoContainerRoutes: ReadonlyArray<RepoContainerRoute> = [
+    {
+        path: '/-/commit/:revspec+',
+        render: context => (
+            <RepositoryGitDataContainer repoName={context.repo.name}>
+                <RepositoryCommitPage {...context} />
+            </RepositoryGitDataContainer>
+        ),
+    },
+    {
+        path: '/-/branches',
+        render: context => (
+            <RepositoryGitDataContainer repoName={context.repo.name}>
+                <RepositoryBranchesArea {...context} />
+            </RepositoryGitDataContainer>
+        ),
+    },
+    {
+        path: '/-/tags',
+        render: context => (
+            <RepositoryGitDataContainer repoName={context.repo.name}>
+                <RepositoryReleasesArea {...context} />
+            </RepositoryGitDataContainer>
+        ),
+    },
+    {
+        path: '/-/compare/:spec*',
+        render: context => (
+            <RepositoryGitDataContainer repoName={context.repo.name}>
+                <RepositoryCompareArea {...context} />
+            </RepositoryGitDataContainer>
+        ),
+    },
+    {
+        path: '/-/stats',
+        render: context => (
+            <RepositoryGitDataContainer repoName={context.repo.name}>
+                <RepositoryStatsArea {...context} />
+            </RepositoryGitDataContainer>
+        ),
+    },
+    {
+        path: '/-/settings',
+        render: context => (
+            <RepositoryGitDataContainer repoName={context.repo.name}>
+                <RepoSettingsArea {...context} />
+            </RepositoryGitDataContainer>
+        ),
+    },
+]
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevContent = localStorage.getItem('hideRepoRevContent')

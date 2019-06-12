@@ -437,6 +437,28 @@ func TestExternalService_Exclude(t *testing.T) {
 	}
 }
 
+// Our uses of pick happen from iterating through a map. So we can't guarantee
+// that we test both pick(a, b) and pick(b, a) without writing this specific
+// test.
+func TestPick(t *testing.T) {
+	eid := func(id string) api.ExternalRepoSpec {
+		return api.ExternalRepoSpec{
+			ID:          id,
+			ServiceType: "fake",
+			ServiceID:   "https://fake.com",
+		}
+	}
+	a := &Repo{Name: "bar", ExternalRepo: eid("1")}
+	b := &Repo{Name: "bar", ExternalRepo: eid("2")}
+
+	for _, args := range [][2]*Repo{{a, b}, {b, a}} {
+		keep, discard := pick(args[0], args[1])
+		if keep != a || discard != b {
+			t.Errorf("unexpected pick(%v, %v)", args[0], args[1])
+		}
+	}
+}
+
 func formatJSON(t testing.TB, s string) string {
 	formatted, err := jsonc.Format(s, true, 2)
 	if err != nil {

@@ -31,6 +31,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/felixfbecker/stringscore v0.0.0-20170928081130-e71a9f1b0749
 	github.com/felixge/httpsnoop v1.0.0
+	github.com/garyburd/go-oauth v0.0.0-20180319155456-bca2e7f09a17
 	github.com/garyburd/redigo v1.6.0
 	github.com/gchaincl/sqlhooks v1.1.0
 	github.com/getsentry/raven-go v0.2.0
@@ -49,10 +50,12 @@ require (
 	github.com/golangplus/bytes v0.0.0-20160111154220-45c989fe5450 // indirect
 	github.com/golangplus/fmt v0.0.0-20150411045040-2a5d6d7d2995 // indirect
 	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e // indirect
+	github.com/gomodule/oauth1 v0.0.0-20181215000758-9a59ed3b0a84
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/google/go-cmp v0.2.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.0.0
+	github.com/google/pprof v0.0.0-20190515194954-54271f7e092f // indirect
 	github.com/google/uuid v1.1.0
 	github.com/google/zoekt v0.0.0-20180530125106-8e284ca7e964
 	github.com/gorilla/context v1.1.1
@@ -67,6 +70,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/honeycombio/libhoney-go v1.8.1
+	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/joho/godotenv v1.3.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
@@ -148,7 +152,7 @@ require (
 	golang.org/x/net v0.0.0-20190322120337-addf6b3196f6
 	golang.org/x/oauth2 v0.0.0-20190604060849-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190602191015-112230192c58
-	golang.org/x/sys v0.0.0-20190602172818-4c4f7f33c9ed
+	golang.org/x/sys v0.0.0-20190608051445-5b15430b70e3
 	golang.org/x/time v0.0.0-20190401211219-9d24e82272b4
 	golang.org/x/tools v0.0.0-20190322203728-c1a832b0ad89
 	google.golang.org/api v0.1.0 // indirect
@@ -167,7 +171,7 @@ require (
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20190116094554-c742ce874aa3
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20190604124741-8479bbcbe671
 	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0

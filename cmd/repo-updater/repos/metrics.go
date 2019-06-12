@@ -53,12 +53,6 @@ var (
 		Name:      "purge_failed",
 		Help:      "Incremented each time we try and fail to remove a repository clone.",
 	})
-	purgeSkipped = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "purge_skipped",
-		Help:      "Incremented each time we skip a repository clone to remove.",
-	})
 
 	schedError = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",

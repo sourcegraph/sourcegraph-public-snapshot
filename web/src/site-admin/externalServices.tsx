@@ -124,8 +124,8 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
             id: 'addOrgRepo',
             label: 'Add organization repositories',
             run: config => {
-                const value = 'org:<organization name>'
-                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+                const value = '<organization name>'
+                const edits = setProperty(config, ['orgs', -1], value, defaultFormattingOptions)
                 return { edits, selectText: '<organization name>' }
             },
         },
@@ -192,11 +192,11 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
 
   // SELECTING REPOSITORIES
   //
-  // There are 3 fields used to select repositories for searching and code intel:
+  // There are 4 fields used to select repositories for searching and code intel:
   //  - repositoryQuery (required)
+  //  - orgs
   //  - repos
   //  - exclude
-  //
 
   // repositoryQuery: List of strings, either a special keyword ("none" or "affiliated"), or
   // GitHub search qualifiers, e.g. "archived:false"
@@ -215,12 +215,17 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
   // "org:<name>" // set this to "none" to disable querying
   ],
 
+  // orgs: List of organizations whose repositories should be selected
+  // "orgs": [
+  //   "<org name>"
+  // ],
+
   // repos: Explicit list of repositories to select
   // "repos": [
   //   "<owner>/<repository>"
   // ],
 
-  // exclude: Repositories to exclude (overrides repositories from repositoryQuery and repos)
+  // exclude: Repositories to exclude (overrides repositories from repositoryQuery, orgs, and repos)
   // "exclude": [
   //   {
   //     "name": "<owner>/<repository>"
@@ -798,31 +803,27 @@ const externalServiceAddVariants: Partial<
 }
 
 export const ALL_EXTERNAL_SERVICE_ADD_VARIANTS: AddExternalServiceMetadata[] = flatMap(
-    map(
-        ALL_EXTERNAL_SERVICES,
-        (
-            service: ExternalServiceKindMetadata,
-            kindString: string
-        ): AddExternalServiceMetadata | AddExternalServiceMetadata[] => {
-            const kind = kindString as GQL.ExternalServiceKind
-            if (externalServiceAddVariants[kind]) {
-                const patches = externalServiceAddVariants[kind]
-                return map(patches, (patch, variantString) => {
-                    const variant = variantString as ExternalServiceVariant
-                    return {
-                        ...service,
-                        serviceKind: kind,
-                        variant,
-                        ...patch,
-                    }
-                })
-            }
-            return {
-                ...service,
-                serviceKind: kind,
-            }
+    map(ALL_EXTERNAL_SERVICES, (service: ExternalServiceKindMetadata, kindString: string):
+        | AddExternalServiceMetadata
+        | AddExternalServiceMetadata[] => {
+        const kind = kindString as GQL.ExternalServiceKind
+        if (externalServiceAddVariants[kind]) {
+            const patches = externalServiceAddVariants[kind]
+            return map(patches, (patch, variantString) => {
+                const variant = variantString as ExternalServiceVariant
+                return {
+                    ...service,
+                    serviceKind: kind,
+                    variant,
+                    ...patch,
+                }
+            })
         }
-    )
+        return {
+            ...service,
+            serviceKind: kind,
+        }
+    })
 )
 
 export function getExternalService(

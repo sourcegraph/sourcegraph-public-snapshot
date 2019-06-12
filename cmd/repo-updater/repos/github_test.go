@@ -125,20 +125,44 @@ func TestGithubSource_GetRepo(t *testing.T) {
 	}
 }
 
-func TestGithubSource_ListRepos(t *testing.T) {
-	assertAllReposListed := func(t testing.TB, rs Repos) {
-		t.Helper()
+func TestMatchOrg(t *testing.T) {
+	testCases := map[string]string{
+		"":                     "",
+		"org:":                 "",
+		"org:gorilla":          "gorilla",
+		"org:golang-migrate":   "golang-migrate",
+		"org:sourcegraph-":     "",
+		"org:source--graph":    "",
+		"org: sourcegraph":     "",
+		"org:$ourcegr@ph":      "",
+		"sourcegraph":          "",
+		"org:-sourcegraph":     "",
+		"org:source graph":     "",
+		"org:source org:graph": "",
+		"org:SOURCEGRAPH":      "SOURCEGRAPH",
+		"org:Game-club-3d-game-birds-gameapp-makerCo":  "Game-club-3d-game-birds-gameapp-makerCo",
+		"org:thisorgnameisfartoolongtomatchthisregexp": "",
+	}
 
-		want := []string{
-			"github.com/sourcegraph/about",
-			"github.com/sourcegraph/sourcegraph",
+	for str, want := range testCases {
+		if got := matchOrg(str); got != want {
+			t.Errorf("error:\nhave: %s\nwant: %s", got, want)
 		}
+	}
+}
 
-		have := rs.Names()
-		sort.Strings(have)
+func TestGithubSource_ListRepos(t *testing.T) {
+	assertAllReposListed := func(want []string) ReposAssertion {
+		return func(t testing.TB, rs Repos) {
+			t.Helper()
 
-		if !reflect.DeepEqual(have, want) {
-			t.Error(cmp.Diff(have, want))
+			have := rs.Names()
+			sort.Strings(have)
+			sort.Strings(want)
+
+			if !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
+			}
 		}
 	}
 
@@ -146,18 +170,105 @@ func TestGithubSource_ListRepos(t *testing.T) {
 		name   string
 		assert ReposAssertion
 		mw     httpcli.Middleware
+		conf   *schema.GitHubConnection
 		err    string
 	}{
 		{
-			name:   "found",
-			assert: assertAllReposListed,
-			err:    "<nil>",
+			name: "found",
+			assert: assertAllReposListed([]string{
+				"github.com/sourcegraph/about",
+				"github.com/sourcegraph/sourcegraph",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{
+					"sourcegraph/about",
+					"sourcegraph/sourcegraph",
+				},
+			},
+			err: "<nil>",
 		},
 		{
-			name:   "graphql fallback",
-			mw:     githubGraphQLFailureMiddleware,
-			assert: assertAllReposListed,
-			err:    "<nil>",
+			name: "graphql fallback",
+			mw:   githubGraphQLFailureMiddleware,
+			assert: assertAllReposListed([]string{
+				"github.com/sourcegraph/about",
+				"github.com/sourcegraph/sourcegraph",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Repos: []string{
+					"sourcegraph/about",
+					"sourcegraph/sourcegraph",
+				},
+			},
+			err: "<nil>",
+		},
+		{
+			name: "orgs",
+			assert: assertAllReposListed([]string{
+				"github.com/gorilla/websocket",
+				"github.com/gorilla/handlers",
+				"github.com/gorilla/mux",
+				"github.com/gorilla/feeds",
+				"github.com/gorilla/sessions",
+				"github.com/gorilla/schema",
+				"github.com/gorilla/csrf",
+				"github.com/gorilla/rpc",
+				"github.com/gorilla/pat",
+				"github.com/gorilla/css",
+				"github.com/gorilla/site",
+				"github.com/gorilla/context",
+				"github.com/gorilla/securecookie",
+				"github.com/gorilla/http",
+				"github.com/gorilla/reverse",
+				"github.com/gorilla/muxy",
+				"github.com/gorilla/i18n",
+				"github.com/gorilla/template",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				Orgs: []string{
+					"gorilla",
+				},
+			},
+			err: "<nil>",
+		},
+		{
+			name: "orgs repository query",
+			assert: assertAllReposListed([]string{
+				"github.com/gorilla/websocket",
+				"github.com/gorilla/handlers",
+				"github.com/gorilla/mux",
+				"github.com/gorilla/feeds",
+				"github.com/gorilla/sessions",
+				"github.com/gorilla/schema",
+				"github.com/gorilla/csrf",
+				"github.com/gorilla/rpc",
+				"github.com/gorilla/pat",
+				"github.com/gorilla/css",
+				"github.com/gorilla/site",
+				"github.com/gorilla/context",
+				"github.com/gorilla/securecookie",
+				"github.com/gorilla/http",
+				"github.com/gorilla/reverse",
+				"github.com/gorilla/muxy",
+				"github.com/gorilla/i18n",
+				"github.com/gorilla/template",
+				"github.com/golang-migrate/migrate",
+			}),
+			conf: &schema.GitHubConnection{
+				Url:   "https://github.com",
+				Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
+				RepositoryQuery: []string{
+					"org:gorilla",
+					"org:golang-migrate",
+				},
+			},
+			err: "<nil>",
 		},
 	}
 
@@ -186,15 +297,8 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			lg.SetHandler(log15.DiscardHandler())
 
 			svc := &ExternalService{
-				Kind: "GITHUB",
-				Config: marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
-					Repos: []string{
-						"sourcegraph/about",
-						"sourcegraph/sourcegraph",
-					},
-				}),
+				Kind:   "GITHUB",
+				Config: marshalJSON(t, tc.conf),
 			}
 
 			githubSrc, err := NewGithubSource(svc, cf)

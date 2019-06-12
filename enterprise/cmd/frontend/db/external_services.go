@@ -16,5 +16,8 @@ func NewExternalServicesStore() *db.ExternalServicesStore {
 		GitLabValidators: []func(*schema.GitLabConnection, []schema.AuthProviders) error{
 			authz.ValidateGitLabAuthz,
 		},
+		BitbucketServerValidators: []func(*schema.BitbucketServerConnection, []schema.AuthProviders) error{
+			authz.ValidateBitbucketServerAuthz,
+		},
 	}
 }

@@ -115,4 +115,5 @@ export const gitlabCodeHost: CodeHost = {
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn',
     },
+    codeViewsRequireTokenization: true,
 }

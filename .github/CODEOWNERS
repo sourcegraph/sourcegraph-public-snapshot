@@ -2,21 +2,132 @@
 # Each line is a file pattern followed by one or more owners.
 # https://help.github.com/articles/about-codeowners/
 
-*git*/* @sourcegraph/core-services
-/web/src/ @felixfbecker
+# Top-level catch-alls (these are weaker confidence and might need to be reassigned at some point)
+/enterprise/cmd/frontend @beyang @slimsag
+/enterprise/cmd/server @beyang @slimsag
+/enterprise/dev @beyang
+/cmd/frontend/docsite @sqs
+/cmd/frontend/shared @beyang @slimsag
+/cmd/frontend/backend @beyang @slimsag
+/cmd/frontend/internal/app/assets @slimsag
+/cmd/frontend/internal/app/templates @slimsag
+/cmd/frontend/internal/app/canonicalurl @beyang
+/cmd/frontend/internal/app/*.go @slimsag
+/cmd/frontend/internal/app/assetsutil @slimsag
+/cmd/frontend/internal/app/ui @slimsag
+/cmd/frontend/internal/app/returnto @beyang
+/cmd/frontend/internal/app/pkg @beyang @slimsag
+/cmd/frontend/internal/app/router @slimsag
+/cmd/frontend/internal/app/errorutil @beyang @slimsag
+/cmd/frontend/internal/goroutine @slimsag
+/cmd/frontend/internal/inventory @beyang @slimsag
+/cmd/frontend/internal/cli/middleware @beyang @slimsag
+/cmd/frontend/internal/cli @slimsag @beyang
+/cmd/frontend/internal/pkg/siteid @beyang
+/cmd/frontend/internal/pkg/suspiciousnames @beyang
+/cmd/frontend/internal/pkg/markdown @slimsag
+/cmd/frontend/internal/pkg/handlerutil @slimsag @beyang
+/cmd/frontend/internal/httpapi @slimsag
+/cmd/frontend/types @slimsag
+/cmd/frontend/hooks @beyang @slimsag
+/cmd/frontend/internal/ @beyang @slimsag
+/pkg/randstring/ @beyang
+/pkg/pubsub/ @beyang
+/pkg/repotrackutil/ @beyang
+/pkg/atomicvalue/ @beyang
+/pkg/testutil/ @beyang
+/pkg/debugserver/ @beyang
+/pkg/vfsutil/ @slimsag
+/pkg/gituri/ @beyang
+/pkg/db/ @keegancsmith
+/pkg/processrestart @slimsag @keegancsmith
+/pkg/honey @keegancsmith
+/pkg/ratelimit @beyang
+/pkg/registry @chrismwendt
+/pkg/slack @slimsag
+/pkg/prefixsuffixsaver @beyang
+/pkg/gosrc @beyang
+/pkg/txemail @slimsag
+/gulpfile.ts @beyang
+/client @sqs
+/renovate.json @felixfbecker
+/.stylelintrc.json @felixfbecker
+/graphql-schema-linter.config.js @felixfbecker
+/.prettierignore @felixfbecker
+/.github @beyang
+/.gitmodules @beyang
+/.gitattributes @beyang
+/.yarnrc @felixfbecker
+/CHANGELOG.md @beyang
+/pkg/httputil @beyang
+/pkg/diskcache @beyang
+/pkg/sysreq @beyang
+/pkg/errcode @beyang
+/pkg/routevar @beyang
+/pkg/env @beyang
+/pkg/pathmatch @beyang
+/pkg/version @beyang
+/pkg/httptestutil @beyang
+/pkg/mutablelimiter @beyang
+/pkg/buildkite @ggilmore
+/pkg/httpcli @sourcegraph/core-services
+/packages @beyang
+/cmd/frontend @beyang
+/dev @beyang
+/.buildkite @beyang
+/.storybook @felixfbecker
+/CONTRIBUTING.md @beyang @nicksnyder @slimsag
+/.dockerignore @beyang
+/.mailmap @beyang
+/tsconfig.json @felixfbecker
+/jest.config.base.js @felixfbecker
+/tslint.json @felixfbecker
+/enterprise/cmd @beyang
+/enterprise/pkg @beyang
+/enterprise @beyang
+/doc.go @beyang
+/.gitignore @beyang
+/prettier.config.js @felixfbecker
+/.editorconfig @felixfbecker
+/jest.config.js @felixfbecker
+/go.mod @beyang
+/cmd @beyang @slimsag
+/pkg @beyang @slimsag
+/enterprise/cmd/frontend/internal/registry @sqs @beyang
+
+# Frontend
+/shared @sourcegraph/code-nav
+/web @felixfbecker @lguychard
+/ui @felixfbecker @lguychard
+/enterprise/ui @felixfbecker @lguychard
+/cmd/frontend/internal/app/jscontext @slimsag
+/packages/@sourcegraph @sourcegraph/code-nav
+/web/src/site-admin/externalServices.tsx @beyang
+/shared/src/components/activation/ @beyang
+
+# Tracking
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
 /web/src/tracking/ @dadlerj
+**/tracking @dadlerj
+/cmd/frontend/internal/pkg/usagestats @dadlerj
+/pkg/eventlogger @dadlerj
+
+# Auth
 /cmd/frontend/authz/ @beyang
 /cmd/frontend/auth/ @beyang
 /cmd/frontend/internal/auth/ @beyang
 /cmd/frontend/internal/session/ @beyang
-/cmd/frontend/backend/ @beyang
-/cmd/frontend/db/ @beyang
 /cmd/frontend/external/session/session.go @beyang
 /enterprise/cmd/frontend/internal/authz @beyang
 /enterprise/cmd/frontend/auth @beyang
+/enterprise/dev/auth-provider @beyang
+/cmd/frontend/graphqlbackend/*session* @beyang
+/cmd/frontend/graphqlbackend/*auth* @beyang
+/cmd/frontend/graphqlbackend/access_token.go @beyang
+/pkg/actor/ @beyang
 
 # Core Services
+*git*/* @sourcegraph/core-services
 /cmd/gitserver/ @sourcegraph/core-services
 /cmd/repo-updater/ @sourcegraph/core-services
 /migrations/ @sourcegraph/core-services
@@ -25,11 +136,34 @@
 /pkg/trace/ @sourcegraph/core-services
 /pkg/tracer/ @sourcegraph/core-services
 /pkg/vcs/ @sourcegraph/core-services
+/cmd/frontend/db @sourcegraph/core-services
+/cmd/frontend/graphqlbackend @sourcegraph/core-services @slimsag
+/cmd/frontend/globals @sourcegraph/core-services @slimsag
+/enterprise/cmd/frontend/internal/graphqlbackend @sourcegraph/core-services @slimsag
+/enterprise/cmd/frontend/db @sourcegraph/core-services
+/schema @sourcegraph/core-services
+/cmd/frontend/internal/bg @sourcegraph/core-services @slimsag
+/cmd/github-proxy @sourcegraph/core-services
+/pkg/api/ @sourcegraph/core-services
+/pkg/jsonc @tsenart @slimsag
+/pkg/extsvc @sourcegraph/core-services
 
-# Search
+# Code nav
+/cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-nav
+/enterprise/cmd/frontend/internal/symbols @sourcegraph/code-nav
+
+# Search and code mod
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
 */search/**/* @sourcegraph/code-search
 /cmd/searcher/ @sourcegraph/code-search
+/cmd/frontend/db/*search* @sourcegraph/code-search
+/cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
+/cmd/frontend/internal/pkg/search @sourcegraph/code-search
+/cmd/symbols @sourcegraph/code-search
+/cmd/query-runner @sourcegraph/code-search
+/cmd/replacer @rvantonder
+/pkg/symbols/ @sourcegraph/code-search
+/pkg/search @sourcegraph/code-search
 
 # Saved searches
 /web/src/SavedQuery.tsx @attfarhan
@@ -38,13 +172,26 @@
 /web/src/SavedQueryUpdateForm.tsx @attfarhan
 /web/src/SavedQueryForm.tsx @attfarhan
 /web/src/SavedQueryRow.tsx @attfarhan
+/cmd/frontend/types/saved_searches.go @attfarhan
 
-# Deployment
-Dockerfile @ggilmore
+# Deployment and distribution
+Dockerfile @sourcegraph/distribution
+/docker-images @sourcegraph/distribution
+/enterprise/docs/deployment.md @sourcegraph/distribution
+**/build.sh @sourcegraph/distribution
+/cmd/frontend/envvar @sourcegraph/distribution
+/cmd/server @sourcegraph/distribution
+/pkg/conf @slimsag
+/pkg/db/confdb @slimsag
+/pkg/db/globalstatedb @slimsag
+
+# Licensing and billing
+/enterprise/cmd/frontend/internal/dotcom @sourcegraph/distribution
+/enterprise/cmd/frontend/internal/licensing @sourcegraph/distribution
 
 # Documentation and homepage
 README.md @sqs
-/doc/ @sqs
+/doc/ @sqs @ryan-blunden
 /doc/dev/product/ @christinaforney
 /doc/dev/teams.md @beyang @nicksnyder
 /web/src/enterprise/dotcom/welcome/ @sqs
@@ -52,16 +199,50 @@ README.md @sqs
 # Browser extensions
 /browser/ @felixfbecker @lguychard
 
-# Sourcegraph extension API
-/packages/sourcegraph-extension-api/ @lguychard
+# Extension API
+/packages/sourcegraph-extension-api/ @sourcegraph/code-nav
+/packages/@sourcegraph/extension-api-types @sourcegraph/code-nav
+/cmd/frontend/registry @felixfbecker
 
-# pkg
-/pkg/endpoint/ @keegancsmith
+# Backend shared packages
+/pkg/endpoint/ @keegancsmith @slimsag
 /pkg/rcache/ @keegancsmith
 /pkg/redispool/ @keegancsmith
 /pkg/store/ @keegancsmith
+/pkg/metrics @keegancsmith @slimsag
+
+# Management console
+/cmd/management-console @slimsag
+/enterprise/cmd/management-console @slimsag
+
+# Code discussions
+**/*discussion* @slimsag
+/web/src/discussions @slimsag
+/web/src/repo/blob/discussions @slimsag
+/cmd/frontend/types/discussions.go @slimsag
+/cmd/frontend/internal/pkg/discussions @slimsag
+/cmd/frontend/graphqlbackend/discussion* @slimsag
+/cmd/frontend/db/discussion* @slimsag
+
+# Development
+/dev/fakehub @ijt
+/dev/repogen @ijt
+/.vscode @felixfbecker
+
+# Misc and special overrides
+/LICENSE* @sqs @beyang @slimsag
+/enterprise/pkg/license @sqs @beyang
+/cmd/frontend/external/session @beyang
+/cmd/frontend/external @beyang
+/babel.config.js @sqs @felixfbecker
+/enterprise/docs @sqs
+/cmd/loadtest @beyang
+/pkg/legacyconf/ @slimsag
+/pkg/hubspot/ @dadlerj
+/pkg/highlight/ @slimsag
 
 # Don't set any reviewers for these,
 # configure by package through Renovate config (see renovate.json)
 **/package.json
 **/yarn.lock
+/go.sum

@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- The `orgs` setting in [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github) allows admins to select all repositories from the specified organizations to be synced.
+
 ### Changed
 
 - The saved searches UI has changed. There is now a Saved searches page in the user and organizations settings area. A saved search appears in the settings area of the user or organization it is associated with.
@@ -24,10 +26,21 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed repository search patterns which contain `.*`. Previously our optimizer would ignore `.*`, which in some cases would lead to our repository search excluding some repositories from the results.
 - Fixed an issue where the Phabricator native integration would be broken on recent Phabricator versions. This fix depends on v1.2 of the [Phabricator extension](https://github.com/sourcegraph/phabricator-extension).
 - Fixed an issue where the "Empty repository" banner would be shown on a repository page when starting to clone a repository.
-- Repositories containing submodules not on Sourcegraph will now load without error (#2947)
 - Prevent data inconsistency on cached archives due to restarts. (#4366)
 
-## 3.4.3 (unreleased)
+## 3.4.4 (unreleased)
+
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+- Fixed an out of bounds error in the GraphQL repository query. (#4426)
+
+## 3.4.3
 
 ### Added
 
@@ -40,6 +53,10 @@ All notable changes to Sourcegraph are documented in this file.
 - Improved performance of the /site-admin/repositories page significantly (prevents timeouts). [#4063](https://github.com/sourcegraph/sourcegraph/issues/4063)
 - Fixed an issue where Gitolite repositories would be inaccessible to non-admin users after upgrading to 3.3.0+ from an older version. [#4263](https://github.com/sourcegraph/sourcegraph/issues/4263)
 - Repository names are now treated as case-sensitive, fixing an issue where users saw `pq: duplicate key value violates unique constraint \"repo_name_unique\"` [#4283](https://github.com/sourcegraph/sourcegraph/issues/4283)
+- Fixed an issue with `sourcegraph/server` Docker deployments where syntax highlighting could produce `server closed idle connection` errors. [#4269](https://github.com/sourcegraph/sourcegraph/issues/4269)
+- Repositories containing submodules not on Sourcegraph will now load without error [#2947](https://github.com/sourcegraph/sourcegraph/issues/2947)
+- HTTP metrics in Prometheus/Grafana now distinguish between different types of GraphQL requests.
+- Fixed an issue where syntax highlighting taking too long would result in errors or wait long amounts of time without properly falling back to plaintext rendering after a few seconds. [#4267](https://github.com/sourcegraph/sourcegraph/issues/4267) [#4268](https://github.com/sourcegraph/sourcegraph/issues/4268)
 
 ## 3.4.2
 

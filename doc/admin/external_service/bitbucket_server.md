@@ -29,8 +29,6 @@ Bitbucket Server versions older than v5.5 require specifying a less secure usern
 
 Sourcegraph by default clones repositories from your Bitbucket Server via HTTP(S), using the access token or account credentials you provide in the configuration. The [`username`](bitbucket_server.md#configuration) field is always used when cloning, so it is required.
 
-SSH cloning is not used, so you don't need to configure SSH cloning.
-
 ## Configuration
 
 Bitbucket Server external service connections support the following configuration options, which are specified in the JSON editor in the site admin external services area.

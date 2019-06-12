@@ -4,14 +4,11 @@ import { cleanup, fireEvent, render } from 'react-testing-library'
 import _VisibilitySensor from 'react-visibility-sensor'
 import { MockVisibilitySensor } from './CodeExcerpt.test'
 
-jest.mock(
-    'react-visibility-sensor',
-    (): typeof _VisibilitySensor => ({ children, onChange }) => (
-        <>
-            <MockVisibilitySensor onChange={onChange} children={children} />
-        </>
-    )
-)
+jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
+    <>
+        <MockVisibilitySensor onChange={onChange} children={children} />
+    </>
+))
 
 import sinon from 'sinon'
 import {
