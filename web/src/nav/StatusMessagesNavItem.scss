@@ -2,6 +2,7 @@
     &__nav-link {
         @media only percy {
             visibility: hidden;
+            display: none;
         }
     }
     &__dropdown-menu {
