@@ -64,7 +64,9 @@ describe('content_views', () => {
                                                 ],
                                             }),
                                             // Support checking that the provider's observable was unsubscribed.
-                                            new Observable<LinkPreviewMerged>(() => () => unsubscribed.next())
+                                            new Observable<LinkPreviewMerged>(() => () => {
+                                                unsubscribed.next()
+                                            })
                                         )
                                     },
                                 },

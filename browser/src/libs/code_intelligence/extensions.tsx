@@ -8,12 +8,14 @@ import {
 } from '../../../../shared/src/commandPalette/CommandList'
 import { Notifications } from '../../../../shared/src/notifications/Notifications'
 
-import { DOMFunctions } from '@sourcegraph/codeintellify'
+import { DiffPart } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import {
     decorationAttachmentStyleForTheme,
+    DecorationMapByLine,
     decorationStyleForTheme,
+    groupDecorationsByLine,
 } from '../../../../shared/src/api/client/services/decoration'
 import {
     createController as createExtensionsController,
@@ -25,6 +27,7 @@ import { createPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { CodeHost } from './code_intelligence'
+import { DOMFunctions } from './code_views'
 
 /**
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.
@@ -89,35 +92,17 @@ export const renderGlobalDebug = ({
 
 const IS_LIGHT_THEME = true // assume all code hosts have a light theme (correct for now)
 
-/**
- * @returns Map from line number to non-empty array of TextDocumentDecoration for that line
- */
-const groupByLine = (decorations: TextDocumentDecoration[]): Map<number, TextDocumentDecoration[]> => {
-    const grouped = new Map<number, TextDocumentDecoration[]>()
-    for (const d of decorations) {
-        const lineNumber = d.range.start.line + 1
-        const decorationsForLine = grouped.get(lineNumber)
-        if (!decorationsForLine) {
-            grouped.set(lineNumber, [d])
-        } else {
-            decorationsForLine.push(d)
-        }
-    }
-    return grouped
-}
-
-/**
- * Cleans up the line decorations in one line
- */
-const cleanupDecorationsForLine = (codeElement: HTMLElement): void => {
+const cleanupDecorationsForCodeElement = (codeElement: HTMLElement, part: DiffPart | undefined): void => {
     codeElement.style.backgroundColor = null
-    const previousAttachments = codeElement.querySelectorAll('.line-decoration-attachment')
+    const previousAttachments = codeElement.querySelectorAll(`.line-decoration-attachment[data-part=${part}]`)
     for (const attachment of previousAttachments) {
         attachment.remove()
     }
 }
 
-export type DecorationMapByLine = Map<number, TextDocumentDecoration[]>
+const cleanupDecorationsForLineElement = (lineElement: HTMLElement): void => {
+    lineElement.style.backgroundColor = null
+}
 
 /**
  * Applies a decoration to a code view. This doesn't work with diff views yet.
@@ -128,15 +113,20 @@ export const applyDecorations = (
     dom: DOMFunctions,
     codeView: HTMLElement,
     decorations: TextDocumentDecoration[],
-    previousDecorations: DecorationMapByLine
+    previousDecorations: DecorationMapByLine,
+    part?: DiffPart
 ): DecorationMapByLine => {
-    const decorationsByLine = groupByLine(decorations)
+    const decorationsByLine = groupDecorationsByLine(decorations)
     // Clean up lines that now don't have decorations anymore
     for (const lineNumber of previousDecorations.keys()) {
         if (!decorationsByLine.has(lineNumber)) {
-            const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
+            const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber, part)
             if (codeElement) {
-                cleanupDecorationsForLine(codeElement)
+                cleanupDecorationsForCodeElement(codeElement, part)
+            }
+            const lineElement = dom.getLineElementFromLineNumber(codeView, lineNumber, part)
+            if (lineElement) {
+                cleanupDecorationsForLineElement(lineElement)
             }
         }
     }
@@ -146,18 +136,41 @@ export const applyDecorations = (
             // No change in this line
             continue
         }
-        const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber)
+
+        const codeElement = dom.getCodeElementFromLineNumber(codeView, lineNumber, part)
         if (!codeElement) {
-            throw new Error(`Unable to find code element for line ${lineNumber}`)
+            if (part === undefined) {
+                throw new Error(`Unable to find code element for line ${lineNumber}`)
+            }
+            // In diffs it's normal that many lines are not visible
+            continue
         }
-        // Clean up previous decorations if this line had some
-        if (previousDecorationsForLine) {
-            cleanupDecorationsForLine(codeElement)
+        const lineElement = dom.getLineElementFromLineNumber(codeView, lineNumber, part)
+        if (!lineElement) {
+            if (part === undefined) {
+                throw new Error(`Could not find line element for line ${lineNumber}`)
+            }
+            // In diffs it's normal that many lines are not visible
+            continue
         }
+
+        // Clean up previous decorations
+        // Sometimes these can be there even if we cleaned them up if
+        // the code host snapshotted the DOM before removal of the code view
+        // (happens on GitHub when switching tabs on a PR)
+        cleanupDecorationsForCodeElement(codeElement, part)
+        cleanupDecorationsForLineElement(lineElement)
+
         for (const decoration of decorationsForLine) {
             const style = decorationStyleForTheme(decoration, IS_LIGHT_THEME)
             if (style.backgroundColor) {
-                codeElement.style.backgroundColor = style.backgroundColor
+                let backgroundElement: HTMLElement
+                if (decoration.isWholeLine) {
+                    backgroundElement = lineElement
+                } else {
+                    backgroundElement = codeElement
+                }
+                backgroundElement.style.backgroundColor = style.backgroundColor
             }
 
             if (decoration.after) {
@@ -180,11 +193,15 @@ export const applyDecorations = (
                 }
 
                 const after = document.createElement('span')
+                after.style.color = style.color || null
                 after.style.backgroundColor = style.backgroundColor || null
                 after.textContent = decoration.after.contentText || null
-                after.title = decoration.after.hoverMessage || ''
+                if (decoration.after.hoverMessage) {
+                    after.title = decoration.after.hoverMessage
+                }
 
                 const annotation = decoration.after.linkURL ? linkTo(decoration.after.linkURL)(after) : after
+                annotation.dataset.part = String(part)
                 annotation.className = 'sourcegraph-extension-element line-decoration-attachment'
                 codeElement.appendChild(annotation)
             }

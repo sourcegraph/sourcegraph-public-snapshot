@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -91,7 +92,8 @@ func TestClient_GetRepository(t *testing.T) {
 	"html_url": "https://github.example.com/o/r",
 	"fork": true
 }
-`}
+`,
+	}
 	c := newTestClient(t, &mock)
 
 	want := Repository{
@@ -297,7 +299,8 @@ func TestClient_GetRepositoryByNodeID(t *testing.T) {
 		}
 	}
 }
-`}
+`,
+	}
 	c := newTestClient(t, &mock)
 
 	want := Repository{
@@ -348,7 +351,8 @@ func TestClient_GetRepositoryByNodeID_nonexistent(t *testing.T) {
 		"node": null
 	}
 }
-`}
+`,
+	}
 	c := newTestClient(t, &mock)
 
 	repo, err := c.GetRepositoryByNodeID(context.Background(), "", "i")
@@ -357,6 +361,56 @@ func TestClient_GetRepositoryByNodeID_nonexistent(t *testing.T) {
 	}
 	if repo != nil {
 		t.Error("repo != nil")
+	}
+}
+
+func TestClient_ListOrgRepositories(t *testing.T) {
+	mock := mockHTTPResponseBody{
+		responseBody: `[
+  {
+    "node_id": "i",
+    "full_name": "o/r",
+    "description": "d",
+    "html_url": "https://github.example.com/o/r",
+    "fork": true
+  },
+  {
+    "node_id": "j",
+    "full_name": "o/b",
+    "description": "c",
+    "html_url": "https://github.example.com/o/b",
+    "fork": false
+  }
+]
+`}
+
+	c := newTestClient(t, &mock)
+	wantRepos := []*Repository{
+		{
+			ID:            "i",
+			NameWithOwner: "o/r",
+			Description:   "d",
+			URL:           "https://github.example.com/o/r",
+			IsFork:        true,
+		},
+		{
+			ID:            "j",
+			NameWithOwner: "o/b",
+			Description:   "c",
+			URL:           "https://github.example.com/o/b",
+			IsFork:        false,
+		},
+	}
+
+	repos, hasNextPage, _, err := c.ListOrgRepositories(context.Background(), "o", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !repoListsAreEqual(repos, wantRepos) {
+		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(wantRepos))
+	}
+	if !hasNextPage {
+		t.Errorf("got hasNextPage: false want: true")
 	}
 }
 
@@ -403,7 +457,8 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
     }
   ]
 }
-`}
+`,
+	}
 	c := newTestClient(t, &mock)
 
 	wantRepos := []*Repository{
@@ -455,7 +510,8 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
     }
   ]
 }
-`}
+`,
+	}
 	c := newTestClient(t, &mock)
 
 	// If we have incomplete results we want to fail. Our syncer requires all
@@ -525,5 +581,209 @@ func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
 	}
 	if want := (&Repository{ID: "id1"}); !reflect.DeepEqual(got, want) {
 		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestClient_buildGetRepositoriesBatchQuery(t *testing.T) {
+	repos := []string{
+		"sourcegraph/grapher-tutorial",
+		"sourcegraph/clojure-grapher",
+		"sourcegraph/programming-challenge",
+		"sourcegraph/annotate",
+		"sourcegraph/sourcegraph-sublime-old",
+		"sourcegraph/makex",
+		"sourcegraph/pydep",
+		"sourcegraph/vcsstore",
+		"sourcegraph/contains.dot",
+	}
+
+	wantIncluded := `
+repo0: repository(owner: "sourcegraph", name: "grapher-tutorial") { ... on Repository { ...RepositoryFields } }
+repo1: repository(owner: "sourcegraph", name: "clojure-grapher") { ... on Repository { ...RepositoryFields } }
+repo2: repository(owner: "sourcegraph", name: "programming-challenge") { ... on Repository { ...RepositoryFields } }
+repo3: repository(owner: "sourcegraph", name: "annotate") { ... on Repository { ...RepositoryFields } }
+repo4: repository(owner: "sourcegraph", name: "sourcegraph-sublime-old") { ... on Repository { ...RepositoryFields } }
+repo5: repository(owner: "sourcegraph", name: "makex") { ... on Repository { ...RepositoryFields } }
+repo6: repository(owner: "sourcegraph", name: "pydep") { ... on Repository { ...RepositoryFields } }
+repo7: repository(owner: "sourcegraph", name: "vcsstore") { ... on Repository { ...RepositoryFields } }
+repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repository { ...RepositoryFields } }`
+
+	mock := mockHTTPResponseBody{responseBody: ""}
+	c := newTestClient(t, &mock)
+	query, err := c.buildGetReposBatchQuery(context.Background(), repos)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(query, wantIncluded) {
+		t.Fatalf("query does not contain repository query. query=%q, want=%q", query, wantIncluded)
+	}
+}
+
+func TestClient_GetReposByNameWithOwner(t *testing.T) {
+	namesWithOwners := []string{
+		"sourcegraph/grapher-tutorial",
+		"sourcegraph/clojure-grapher",
+	}
+
+	grapherTutorialRepo := &Repository{
+		ID:               "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+		DatabaseID:       14601798,
+		NameWithOwner:    "sourcegraph/grapher-tutorial",
+		Description:      "monkey language",
+		URL:              "https://github.com/sourcegraph/grapher-tutorial",
+		IsPrivate:        true,
+		IsFork:           false,
+		IsArchived:       true,
+		ViewerPermission: "ADMIN",
+	}
+
+	clojureGrapherRepo := &Repository{
+		ID:               "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
+		DatabaseID:       15756908,
+		NameWithOwner:    "sourcegraph/clojure-grapher",
+		Description:      "clojure grapher",
+		URL:              "https://github.com/sourcegraph/clojure-grapher",
+		IsPrivate:        true,
+		IsFork:           false,
+		IsArchived:       true,
+		ViewerPermission: "ADMIN",
+	}
+
+	testCases := []struct {
+		name             string
+		mockResponseBody string
+		wantRepos        []*Repository
+		err              string
+	}{
+
+		{
+			name: "found",
+			mockResponseBody: `
+{
+  "data": {
+    "repo_sourcegraph_grapher_tutorial": {
+      "id": "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+      "databaseId": 14601798,
+      "nameWithOwner": "sourcegraph/grapher-tutorial",
+      "description": "monkey language",
+      "url": "https://github.com/sourcegraph/grapher-tutorial",
+      "isPrivate": true,
+      "isFork": false,
+      "isArchived": true,
+      "viewerPermission": "ADMIN"
+    },
+    "repo_sourcegraph_clojure_grapher": {
+      "id": "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
+	  "databaseId": 15756908,
+      "nameWithOwner": "sourcegraph/clojure-grapher",
+      "description": "clojure grapher",
+      "url": "https://github.com/sourcegraph/clojure-grapher",
+      "isPrivate": true,
+      "isFork": false,
+      "isArchived": true,
+      "viewerPermission": "ADMIN"
+    }
+  }
+}
+`,
+			wantRepos: []*Repository{grapherTutorialRepo, clojureGrapherRepo},
+		},
+		{
+			name: "not found",
+			mockResponseBody: `
+{
+  "data": {
+    "repo_sourcegraph_grapher_tutorial": {
+      "id": "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+      "databaseId": 14601798,
+      "nameWithOwner": "sourcegraph/grapher-tutorial",
+      "description": "monkey language",
+      "url": "https://github.com/sourcegraph/grapher-tutorial",
+      "isPrivate": true,
+      "isFork": false,
+      "isArchived": true,
+      "viewerPermission": "ADMIN"
+    },
+    "repo_sourcegraph_clojure_grapher": null
+  },
+  "errors": [
+    {
+      "type": "NOT_FOUND",
+      "path": [
+        "repo_sourcegraph_clojure_grapher"
+      ],
+      "locations": [
+        {
+          "line": 13,
+          "column": 3
+        }
+      ],
+      "message": "Could not resolve to a Repository with the name 'clojure-grapher'."
+    }
+  ]
+}
+`,
+			wantRepos: []*Repository{grapherTutorialRepo},
+		},
+		{
+			name: "error",
+			mockResponseBody: `
+{
+  "errors": [
+    {
+      "path": [
+        "fragment RepositoryFields",
+        "foobar"
+      ],
+      "extensions": {
+        "code": "undefinedField",
+        "typeName": "Repository",
+        "fieldName": "foobar"
+      },
+      "locations": [
+        {
+          "line": 10,
+          "column": 3
+        }
+      ],
+      "message": "Field 'foobar' doesn't exist on type 'Repository'"
+    }
+  ]
+}
+`,
+			wantRepos: []*Repository{},
+			err:       "error in GraphQL response: Field 'foobar' doesn't exist on type 'Repository'",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mock := mockHTTPResponseBody{responseBody: tc.mockResponseBody}
+			c := newTestClient(t, &mock)
+
+			repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
+			if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); tc.err != "" && have != want {
+				t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+			}
+
+			if mock.count != 1 {
+				t.Errorf("mock.count == %d", mock.count)
+			}
+			if want, have := len(tc.wantRepos), len(repos); want != have {
+				t.Errorf("wrong number of repos. want=%d, have=%d", want, have)
+			}
+
+			newSortFunc := func(s []*Repository) func(int, int) bool {
+				return func(i, j int) bool { return s[i].ID < s[j].ID }
+			}
+
+			sort.Slice(tc.wantRepos, newSortFunc(tc.wantRepos))
+			sort.Slice(repos, newSortFunc(repos))
+
+			if !repoListsAreEqual(repos, tc.wantRepos) {
+				t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(tc.wantRepos))
+			}
+		})
 	}
 }

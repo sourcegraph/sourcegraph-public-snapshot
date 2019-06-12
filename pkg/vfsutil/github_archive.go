@@ -26,6 +26,7 @@ var ghFetch = prometheus.NewCounter(prometheus.CounterOpts{
 	Name:      "github_fetch_total",
 	Help:      "Total number of fetches by GitHubRepoVFS.",
 })
+
 var ghFetchFailed = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "vfsutil",
 	Subsystem: "vfs",

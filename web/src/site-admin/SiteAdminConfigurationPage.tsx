@@ -236,7 +236,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 </div>
                 <p>
                     View and edit the Sourcegraph site configuration. See{' '}
-                    <Link to="/help/admin/site_config">documentation</Link> for more information.
+                    <Link to="/help/admin/config/site_config">documentation</Link> for more information.
                 </p>
                 <div className="mb-3">
                     <SiteAdminManagementConsolePassword />

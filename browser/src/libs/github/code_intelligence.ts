@@ -351,4 +351,5 @@ export const githubCodeHost: CodeHost = {
             : ''
         return `https://${location.repoName}/blob/${rev}/${location.filePath}${fragment}`
     },
+    codeViewsRequireTokenization: true,
 }

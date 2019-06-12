@@ -35,7 +35,7 @@ func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, us
 		login = userInfo.Email
 	}
 	email := userInfo.Email
-	var displayName = claims.GivenName
+	displayName := claims.GivenName
 	if displayName == "" {
 		if claims.Name == "" {
 			displayName = claims.Name

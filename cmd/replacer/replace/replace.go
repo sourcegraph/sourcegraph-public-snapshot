@@ -112,7 +112,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Deadline hit", http.StatusRequestTimeout)
 		return
 	}
-
 }
 
 func (s *Service) replace(ctx context.Context, p *protocol.Request, w http.ResponseWriter, r *http.Request) (deadlineHit bool, err error) {
@@ -204,7 +203,6 @@ func (s *Service) replace(ctx context.Context, p *protocol.Request, w http.Respo
 	}
 
 	cmd, err := t.command(&p.RewriteSpecification, zipPath)
-
 	if err != nil {
 		log15.Info("Invalid command: " + err.Error())
 		return

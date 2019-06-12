@@ -56,7 +56,7 @@ export const resolveRev = memoizeObservable(
                     query ResolveRev($repoName: String!, $rev: String!) {
                         repository(name: $repoName) {
                             mirrorInfo {
-                                cloneInProgress
+                                cloned
                             }
                             commit(rev: $rev) {
                                 oid
@@ -73,7 +73,7 @@ export const resolveRev = memoizeObservable(
                 if (!repository) {
                     throw new RepoNotFoundError(ctx.repoName)
                 }
-                if (repository.mirrorInfo.cloneInProgress) {
+                if (!repository.mirrorInfo.cloned) {
                     throw new CloneInProgressError(ctx.repoName)
                 }
                 if (!repository.commit) {

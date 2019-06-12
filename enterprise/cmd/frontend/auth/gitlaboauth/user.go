@@ -10,9 +10,7 @@ import (
 // unexported key type prevents collisions
 type key int
 
-const (
-	userKey key = iota
-)
+const userKey key = iota
 
 // WithUser returns a copy of ctx that stores the GitLab User.
 func WithUser(ctx context.Context, user *gitlab.User) context.Context {

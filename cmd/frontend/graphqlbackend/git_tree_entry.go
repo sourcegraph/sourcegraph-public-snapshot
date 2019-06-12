@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	neturl "net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -46,7 +47,7 @@ func (r *gitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 		repoName, err := cloneURLToRepoName(ctx, submodule.URL())
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
-			return "", fmt.Errorf("failed to resolve submodule repository name from clone url: %s", submodule.URL())
+			return "", nil
 		}
 		return "/" + repoName + "@" + submodule.Commit(), nil
 	}
@@ -54,7 +55,7 @@ func (r *gitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return r.urlPath(url), nil
+	return r.urlPath(url)
 }
 
 func (r *gitTreeEntryResolver) CanonicalURL() (string, error) {
@@ -62,21 +63,26 @@ func (r *gitTreeEntryResolver) CanonicalURL() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return r.urlPath(url), nil
+	return r.urlPath(url)
 }
 
-func (r *gitTreeEntryResolver) urlPath(prefix string) string {
+func (r *gitTreeEntryResolver) urlPath(prefix string) (string, error) {
 	if r.IsRoot() {
-		return prefix
+		return prefix, nil
 	}
 
-	url := prefix + "/-/"
-	if r.IsDirectory() {
-		url += "tree"
-	} else {
-		url += "blob"
+	u, err := neturl.Parse(prefix)
+	if err != nil {
+		return "", err
 	}
-	return url + "/" + r.path
+
+	typ := "blob"
+	if r.IsDirectory() {
+		typ = "tree"
+	}
+
+	u.Path = path.Join(u.Path, "-", typ, r.path)
+	return u.String(), nil
 }
 
 func (r *gitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
@@ -178,6 +184,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 
 	return "", nil
 }
+
 func createFileInfo(path string, isDir bool) os.FileInfo {
 	return fileInfo{path: path, isDir: isDir}
 }

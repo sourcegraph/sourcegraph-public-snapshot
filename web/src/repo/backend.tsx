@@ -58,7 +58,6 @@ export const fetchRepository = memoizeObservable(
                             serviceType
                         }
                         description
-                        enabled
                         viewerCanAdminister
                         redirectURL
                         defaultBranch {
@@ -107,6 +106,7 @@ export const resolveRev = memoizeObservable(
                         mirrorInfo {
                             cloneInProgress
                             cloneProgress
+                            cloned
                         }
                         commit(rev: $rev) {
                             oid
@@ -138,6 +138,9 @@ export const resolveRev = memoizeObservable(
                         ctx.repoName,
                         data.repository.mirrorInfo.cloneProgress || undefined
                     )
+                }
+                if (!data.repository.mirrorInfo.cloned) {
+                    throw createCloneInProgressError(ctx.repoName, 'queued for cloning')
                 }
                 if (!data.repository.commit) {
                     throw createRevNotFoundError(ctx.rev)
@@ -214,9 +217,6 @@ export const fetchHighlightedFileLines = memoizeObservable(
             map(result => {
                 if (result.isDirectory) {
                     return []
-                }
-                if (result.highlightedFile.aborted) {
-                    throw new Error('aborted fetching highlighted contents')
                 }
                 let parsed = result.highlightedFile.html.substr('<table>'.length)
                 parsed = parsed.substr(0, parsed.length - '</table>'.length)

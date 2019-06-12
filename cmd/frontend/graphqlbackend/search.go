@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
+	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -24,7 +24,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -49,8 +52,6 @@ func maxReposToSearch() int {
 	}
 }
 
-var nestedRx = regexp.MustCompile(`^!(hier|nested)!`)
-
 // Search provides search results and suggestions.
 func (r *schemaResolver) Search(args *struct {
 	Query string
@@ -62,23 +63,15 @@ func (r *schemaResolver) Search(args *struct {
 }, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
-	nested := nestedRx.MatchString(args.Query)
-	query2 := nestedRx.ReplaceAllString(args.Query, "")
-	tr.LogFields(otlog.Bool("nested", nested), otlog.String("query", args.Query), otlog.String("query2", query2))
-	if nested {
-		return newSearcherResolver(query2)
-	}
-
 	// TODO(ijt): remove this potential goroutine leak.
 	go r.addQueryToSearchesTable(args.Query)
-
-	query, err := query.ParseAndCheck(args.Query)
+	q, err := query.ParseAndCheck(args.Query)
 	if err != nil {
 		log15.Debug("graphql search failed to parse", "query", args.Query, "error", err)
 		return nil, err
 	}
 	return &searchResolver{
-		query: query,
+		query: q,
 	}, nil
 }
 
@@ -739,3 +732,38 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev search.Reposito
 }
 
 var errMultipleRevsNotSupported = errors.New("not yet supported: searching multiple revs in the same repo")
+
+var (
+	zoektAddr   = env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")
+	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
+
+	searcherURLsOnce sync.Once
+	searcherURLs     *endpoint.Map
+
+	indexedSearchOnce sync.Once
+	indexedSearch     *searchbackend.Zoekt
+)
+
+func SearcherURLs() *endpoint.Map {
+	searcherURLsOnce.Do(func() {
+		if len(strings.Fields(searcherURL)) == 0 {
+			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
+		} else {
+			searcherURLs = endpoint.New(searcherURL)
+		}
+	})
+	return searcherURLs
+}
+
+func IndexedSearch() *searchbackend.Zoekt {
+	indexedSearchOnce.Do(func() {
+		indexedSearch = &searchbackend.Zoekt{}
+		if zoektAddr != "" {
+			indexedSearch.Client = zoektrpc.Client(zoektAddr)
+		}
+		conf.Watch(func() {
+			indexedSearch.SetEnabled(conf.SearchIndexEnabled())
+		})
+	})
+	return indexedSearch
+}

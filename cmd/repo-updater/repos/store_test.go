@@ -289,7 +289,6 @@ func testStoreUpsertExternalServices(store repos.Store) func(*testing.T) {
 			have, err := tx.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
 				Kinds: svcs.Kinds(),
 			})
-
 			if err != nil {
 				t.Fatalf("ListExternalServices error: %s", err)
 			}
@@ -494,7 +493,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			have, err := tx.ListRepos(ctx, repos.StoreListReposArgs{
 				Kinds: kinds,
 			})
-
 			if err != nil {
 				t.Fatalf("ListRepos error: %s", err)
 			}
@@ -534,7 +532,6 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			} else if diff := pretty.Compare(have, repos.Repos{}); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
-
 		}))
 	}
 }

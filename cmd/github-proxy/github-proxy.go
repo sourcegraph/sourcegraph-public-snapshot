@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/gorilla/handlers"
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,9 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
-var (
-	logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
-)
+var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 
 const port = "3180"
 
@@ -90,6 +89,13 @@ func main() {
 		}
 	})
 
+	// Use a custom client/transport because GitHub closes keep-alive
+	// connections after 60s. In order to avoid running into EOF errors, we use
+	// a IdleConnTimeout of 30s, so connections are only kept around for <30s
+	client := &http.Client{Transport: &http.Transport{
+		IdleConnTimeout: 30 * time.Second,
+	}}
+
 	var h http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		q2 := r.URL.Query()
 		h2 := make(http.Header)
@@ -120,10 +126,10 @@ func main() {
 		}
 
 		requestMu.Lock()
-		resp, err := http.DefaultClient.Do(req2)
+		resp, err := client.Do(req2)
 		requestMu.Unlock()
 		if err != nil {
-			log.Print(err)
+			log15.Warn("proxy error", "err", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

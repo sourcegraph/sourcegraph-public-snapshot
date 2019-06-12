@@ -1,15 +1,26 @@
 import { testToolbarMountGetter } from '../code_intelligence/code_intelligence_test_utils'
-import { diffCodeView } from './code_intelligence'
+import { commitCodeView, diffCodeView } from './code_intelligence'
 
 describe('phabricator/code_intelligence', () => {
     describe('diffCodeView', () => {
         describe('getToolbarMount()', () => {
-            testToolbarMountGetter(
-                `${__dirname}/__fixtures__/code-views/diff-side-by-side.html`,
-                diffCodeView.getToolbarMount
-            )
+            for (const view of ['split', 'unified']) {
+                testToolbarMountGetter(
+                    `${__dirname}/__fixtures__/code-views/differential/${view}.html`,
+                    diffCodeView.getToolbarMount
+                )
+            }
         })
     })
-    // TODO sourceCodeView
-    // TODO commitCodeView
+    describe('commitCodeView', () => {
+        describe('getToolbarMount()', () => {
+            for (const view of ['split', 'unified']) {
+                testToolbarMountGetter(
+                    `${__dirname}/__fixtures__/code-views/commit/${view}.html`,
+                    commitCodeView.getToolbarMount
+                )
+            }
+        })
+    })
+    // TODO sourceCodeView, currently not possible because code view element does not contain toolbar
 })

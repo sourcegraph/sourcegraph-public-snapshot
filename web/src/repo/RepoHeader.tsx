@@ -139,7 +139,6 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLo
 
               name: string
               url: string
-              enabled: boolean
               viewerCanAdminister: boolean
           }
 
@@ -209,18 +208,6 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         {repoDir ? `${repoDir}/` : ''}
                         <span className="repo-header__repo-basename">{repoBase}</span>
                     </PopoverButton>
-                    {!this.props.repo.enabled && (
-                        <div
-                            className="alert alert-danger repo-header__alert"
-                            data-tooltip={
-                                this.props.repo.viewerCanAdminister
-                                    ? 'Only site admins can access disabled repositories. Go to Settings to enable it.'
-                                    : 'Ask the site admin to enable this repository to view and search it.'
-                            }
-                        >
-                            Repository disabled
-                        </div>
-                    )}
                 </div>
                 {navActions.map((a, i) => (
                     <div className="navbar-nav" key={a.element.key || i}>

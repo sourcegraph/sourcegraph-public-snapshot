@@ -607,8 +607,8 @@ func (t *discussionThreads) createTargetRepo(ctx context.Context, tr *types.Disc
 	q := sqlf.Sprintf("INSERT INTO discussion_threads_target_repo(%v) VALUES (%v) RETURNING id", sqlf.Join(fields, ",\n"), sqlf.Join(values, ","))
 
 	// To debug query building, uncomment these lines:
-	//fmt.Println(q.Query(sqlf.PostgresBindVar))
-	//fmt.Println(q.Args())
+	// fmt.Println(q.Query(sqlf.PostgresBindVar))
+	// fmt.Println(q.Args())
 
 	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&tr.ID)
 	if err != nil {

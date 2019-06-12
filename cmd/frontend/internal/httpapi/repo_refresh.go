@@ -17,8 +17,7 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	repoMeta, err := repoupdater.DefaultClient.RepoLookup(context.Background(), protocol.RepoLookupArgs{
-		Repo:         repo.Name,
-		ExternalRepo: repo.ExternalRepo,
+		Repo: repo.Name,
 	})
 	if err != nil {
 		return err

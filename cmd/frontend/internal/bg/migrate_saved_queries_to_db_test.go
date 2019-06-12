@@ -155,9 +155,9 @@ func TestDoMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(t *testi
 		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("got %v, want %v", got, want)
 		}
-
 	})
 }
+
 func TestMigrateSavedQueryIntoDB(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -532,5 +532,4 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 			t.Fatalf("got2 %v, want2 %v", got2, want2)
 		}
 	})
-
 }

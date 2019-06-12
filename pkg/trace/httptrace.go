@@ -37,6 +37,7 @@ var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Help:      "The HTTP request latencies in seconds.",
 	Buckets:   UserLatencyBuckets,
 }, metricLabels)
+
 var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
 	Subsystem: "http",
@@ -75,7 +76,6 @@ func init() {
 			close(ravenReady)
 		})
 	}()
-
 }
 
 // Middleware captures and exports metrics to Prometheus, etc.
@@ -109,6 +109,15 @@ func Middleware(next http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, userKey, &userID)
 
 		m := httpsnoop.CaptureMetrics(next, rw, r.WithContext(ctx))
+
+		if routeName == "graphql" {
+			// We use the query to denote the type of a GraphQL request, e.g. /.api/graphql?Repositories
+			if r.URL.RawQuery != "" {
+				routeName = "graphql: " + r.URL.RawQuery
+			} else {
+				routeName = "graphql: unknown"
+			}
+		}
 
 		// route name is only known after the request has been handled
 		span.SetOperationName("Serve: " + routeName)

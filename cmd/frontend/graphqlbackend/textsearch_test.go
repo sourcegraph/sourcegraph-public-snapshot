@@ -126,6 +126,92 @@ func queryEqual(a zoektquery.Q, b zoektquery.Q) bool {
 	return zoektquery.Map(a, sortChildren).String() == zoektquery.Map(b, sortChildren).String()
 }
 
+func TestQueryToZoektFileOnlyQuery(t *testing.T) {
+	cases := []struct {
+		Name    string
+		Pattern *search.PatternInfo
+		Query   string
+		// This should be the same value passed in to either FilePatternsReposMustInclude or FilePatternsReposMustExclude
+		ListOfFilePaths []string
+	}{
+		{
+			Name: "single repohasfile filter",
+			Pattern: &search.PatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              nil,
+				ExcludePattern:               "",
+				FilePatternsReposMustInclude: []string{"test.md"},
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query:           `f:"test.md"`,
+			ListOfFilePaths: []string{"test.md"},
+		},
+		{
+			Name: "multiple repohasfile filters",
+			Pattern: &search.PatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              nil,
+				ExcludePattern:               "",
+				FilePatternsReposMustInclude: []string{"t", "d"},
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query:           `f:"t" f:"d"`,
+			ListOfFilePaths: []string{"t", "d"},
+		},
+		{
+			Name: "single negated repohasfile filter",
+			Pattern: &search.PatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              nil,
+				ExcludePattern:               "",
+				FilePatternsReposMustExclude: []string{"test.md"},
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query:           `f:"test.md"`,
+			ListOfFilePaths: []string{"test.md"},
+		},
+		{
+			Name: "multiple negated repohasfile filter",
+			Pattern: &search.PatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "foo",
+				IncludePatterns:              nil,
+				ExcludePattern:               "",
+				FilePatternsReposMustExclude: []string{"t", "d"},
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: false,
+			},
+			Query:           `f:"t" f:"d"`,
+			ListOfFilePaths: []string{"t", "d"},
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			q, err := zoektquery.Parse(tt.Query)
+			if err != nil {
+				t.Fatalf("failed to parse %q: %v", tt.Query, err)
+			}
+			got, err := queryToZoektFileOnlyQuery(tt.Pattern, tt.ListOfFilePaths)
+			if err != nil {
+				t.Fatal("queryToZoektQuery failed:", err)
+			}
+			if !queryEqual(got, q) {
+				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), q.String())
+			}
+		})
+	}
+}
+
 func TestSearchFilesInRepos(t *testing.T) {
 	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
@@ -358,4 +444,78 @@ func Test_zoektSearchHEAD(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
+	type args struct {
+		ctx                             context.Context
+		queryPatternInfo                *search.PatternInfo
+		searcher                        zoekt.Searcher
+		repoSet                         zoektquery.RepoSet
+		repoHasFileFlagIsInQuery        bool
+		negatedRepoHasFileFlagIsInQuery bool
+	}
+
+	tests := []struct {
+		name        string
+		args        args
+		wantRepoSet *zoektquery.RepoSet
+	}{
+		{
+			name: "returns filtered repoSet when repoHasFileFlag is in query",
+			args: args{
+				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1"}, PathPatternsAreRegExps: true},
+				searcher: &fakeSearcher{result: &zoekt.SearchResult{
+					Files: []zoekt.FileMatch{{
+						FileName:   "1.md",
+						Repository: "github.com/test/1",
+						LineMatches: []zoekt.LineMatch{{
+							FileName: true,
+						}}},
+					},
+					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1"}}},
+				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
+				repoHasFileFlagIsInQuery:        true,
+				negatedRepoHasFileFlagIsInQuery: false,
+			},
+			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+		},
+		{
+			name: "returns filtered repoSet when negated repoHasFileFlag is in query",
+			args: args{
+				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustExclude: []string{"1"}, PathPatternsAreRegExps: true},
+				searcher: &fakeSearcher{result: &zoekt.SearchResult{
+					Files: []zoekt.FileMatch{{
+						FileName:   "1.md",
+						Repository: "github.com/test/1",
+						LineMatches: []zoekt.LineMatch{{
+							FileName: true,
+						}}},
+					},
+					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1"}}},
+				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
+				repoHasFileFlagIsInQuery:        false,
+				negatedRepoHasFileFlagIsInQuery: true,
+			},
+			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/2": true}},
+		}}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(tt.args.ctx, tt.args.queryPatternInfo, tt.args.searcher, tt.args.repoSet)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(gotRepoSet, tt.wantRepoSet) {
+				t.Errorf("createNewRepoSetWithRepoHasFileInputs() gotRepoSet = %v, want %v", gotRepoSet, tt.wantRepoSet)
+			}
+		})
+	}
+}
+
+func init() {
+	// Set both URLs to something that will fail in tests. We shouldn't be
+	// contacting them in tests.
+	zoektAddr = "127.0.0.1:101010"
+	searcherURL = "http://127.0.0.1:101010"
 }

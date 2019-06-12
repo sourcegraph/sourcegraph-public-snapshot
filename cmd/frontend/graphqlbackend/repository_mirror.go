@@ -65,8 +65,7 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 	{
 		// Look up the remote URL in repo-updater.
 		result, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{
-			Repo:         r.repository.repo.Name,
-			ExternalRepo: r.repository.repo.ExternalRepo,
+			Repo: r.repository.repo.Name,
 		})
 		if err != nil {
 			return "", err

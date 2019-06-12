@@ -16,7 +16,6 @@ import (
 )
 
 func TestRepository_FileSystem_Symlinks(t *testing.T) {
-
 	t.Parallel()
 
 	gitCommands := []string{

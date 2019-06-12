@@ -1,14 +1,16 @@
+import { getFixtureBody } from '../code_intelligence/code_intelligence_test_utils'
 import { getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView } from './scrape'
-import * as testCodeViews from './test-code-views'
 
 describe('Bitbucket scrape.ts', () => {
     describe('getDiffFileInfoFromMultiFileDiffCodeView()', () => {
-        it('should get the FileInfo for an added file', () => {
+        it('should get the FileInfo for an added file', async () => {
             jsdom.reconfigure({
                 url: 'https://bitbucket.test/projects/SOURCEGRAPH/repos/mux/pull-requests/1/diff#dir/new_file.go',
             })
-            const codeView = document.createElement('div')
-            codeView.innerHTML = testCodeViews.pr.added
+            const codeView = await getFixtureBody({
+                htmlFixturePath: `${__dirname}/__fixtures__/code-views/pull-request/split/added.html`,
+                isFullDocument: false,
+            })
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
                 baseFilePath: undefined,
@@ -19,12 +21,14 @@ describe('Bitbucket scrape.ts', () => {
                 repoName: 'bitbucket.test/SOURCEGRAPH/mux',
             })
         })
-        it('should get the FileInfo for a modified file', () => {
+        it('should get the FileInfo for a modified file', async () => {
             jsdom.reconfigure({
                 url: 'https://bitbucket.test/projects/SOURCEGRAPH/repos/mux/pull-requests/1/diff#dir/mux.go',
             })
-            const codeView = document.createElement('div')
-            codeView.innerHTML = testCodeViews.pr.modified
+            const codeView = await getFixtureBody({
+                htmlFixturePath: `${__dirname}/__fixtures__/code-views/pull-request/split/modified.html`,
+                isFullDocument: false,
+            })
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
                 baseFilePath: 'dir/mux.go',
@@ -35,12 +39,14 @@ describe('Bitbucket scrape.ts', () => {
                 repoName: 'bitbucket.test/SOURCEGRAPH/mux',
             })
         })
-        it('should get the FileInfo for a deleted file', () => {
+        it('should get the FileInfo for a deleted file', async () => {
             jsdom.reconfigure({
                 url: 'https://bitbucket.test/projects/SOURCEGRAPH/repos/mux/pull-requests/1/diff#dir/old_test.go',
             })
-            const codeView = document.createElement('div')
-            codeView.innerHTML = testCodeViews.pr.deleted
+            const codeView = await getFixtureBody({
+                htmlFixturePath: `${__dirname}/__fixtures__/code-views/pull-request/split/deleted.html`,
+                isFullDocument: false,
+            })
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
                 baseFilePath: 'dir/old_test.go',
@@ -51,12 +57,14 @@ describe('Bitbucket scrape.ts', () => {
                 repoName: 'bitbucket.test/SOURCEGRAPH/mux',
             })
         })
-        it('should get the FileInfo for a copied file', () => {
+        it('should get the FileInfo for a copied file', async () => {
             jsdom.reconfigure({
                 url: 'https://bitbucket.test/projects/SOURCEGRAPH/repos/mux/pull-requests/1/diff#dir/mux.1.go',
             })
-            const codeView = document.createElement('div')
-            codeView.innerHTML = testCodeViews.pr.copied
+            const codeView = await getFixtureBody({
+                htmlFixturePath: `${__dirname}/__fixtures__/code-views/pull-request/split/copied.html`,
+                isFullDocument: false,
+            })
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
                 baseFilePath: 'dir/mux.go',
@@ -67,12 +75,14 @@ describe('Bitbucket scrape.ts', () => {
                 repoName: 'bitbucket.test/SOURCEGRAPH/mux',
             })
         })
-        it('should get the FileInfo for a renamed file', () => {
+        it('should get the FileInfo for a renamed file', async () => {
             jsdom.reconfigure({
                 url: 'https://bitbucket.test/projects/SOURCEGRAPH/repos/mux/pull-requests/1/diff#dir/mux_test_moved.go',
             })
-            const codeView = document.createElement('div')
-            codeView.innerHTML = testCodeViews.pr.renamed
+            const codeView = await getFixtureBody({
+                htmlFixturePath: `${__dirname}/__fixtures__/code-views/pull-request/split/renamed.html`,
+                isFullDocument: false,
+            })
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
                 baseFilePath: 'dir/mux_test.go',
@@ -83,12 +93,14 @@ describe('Bitbucket scrape.ts', () => {
                 repoName: 'bitbucket.test/SOURCEGRAPH/mux',
             })
         })
-        it('should get the FileInfo for a moved file', () => {
+        it('should get the FileInfo for a moved file', async () => {
             jsdom.reconfigure({
                 url: 'https://bitbucket.test/projects/SOURCEGRAPH/repos/mux/pull-requests/1/diff#dir/test-dir/route.go',
             })
-            const codeView = document.createElement('div')
-            codeView.innerHTML = testCodeViews.pr.moved
+            const codeView = await getFixtureBody({
+                htmlFixturePath: `${__dirname}/__fixtures__/code-views/pull-request/split/moved.html`,
+                isFullDocument: false,
+            })
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
                 baseFilePath: 'dir/route.go',

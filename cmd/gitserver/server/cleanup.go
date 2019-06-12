@@ -37,6 +37,7 @@ var reposRemoved = prometheus.NewCounter(prometheus.CounterOpts{
 	Name:      "repos_removed",
 	Help:      "number of repos removed during cleanup",
 })
+
 var reposRecloned = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "src",
 	Subsystem: "gitserver",
@@ -413,7 +414,7 @@ func (s *Server) removeRepoDirectory(dir string) error {
 		return err
 	}
 	defer os.RemoveAll(tmp)
-	if err := os.Rename(dir, filepath.Join(tmp, "repo")); err != nil {
+	if err := renameAndSync(dir, filepath.Join(tmp, "repo")); err != nil {
 		return err
 	}
 

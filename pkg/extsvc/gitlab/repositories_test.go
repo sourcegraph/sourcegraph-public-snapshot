@@ -25,7 +25,8 @@ func TestListTree(t *testing.T) {
     "mode": "040000"
   }
 ]
-`}
+`,
+	}
 	c := newTestClient(t)
 	c.httpClient = &mock
 
@@ -77,5 +78,4 @@ func TestListTree(t *testing.T) {
 	if !reflect.DeepEqual(tree, want) {
 		t.Errorf("got tree %+v, want %+v", tree, &want)
 	}
-
 }

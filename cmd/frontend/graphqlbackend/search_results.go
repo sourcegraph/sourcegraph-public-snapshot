@@ -155,13 +155,15 @@ func (sr *searchResultsResolver) Results() []*searchResultResolver {
 	return sr.results
 }
 
-func (sr *searchResultsResolver) ResultCount() int32 {
+func (sr *searchResultsResolver) MatchCount() int32 {
 	var totalResults int32
 	for _, result := range sr.results {
 		totalResults += result.resultCount()
 	}
 	return totalResults
 }
+
+func (sr *searchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
 
 func (sr *searchResultsResolver) ApproximateResultCount() string {
 	count := sr.ResultCount()
@@ -567,7 +569,6 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		searchResultsStatsCache.Set(cacheKey, jsonRes)
 	}
 	return stats, nil
-
 }
 
 type getPatternInfoOptions struct {
@@ -606,6 +607,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 
 	// Handle file: and -file: filters.
 	includePatterns, excludePatterns := r.query.RegexpPatterns(query.FieldFile)
+	filePatternsReposMustInclude, filePatternsReposMustExclude := r.query.RegexpPatterns(query.FieldRepoHasFile)
 
 	if opts != nil && opts.forceFileSearch {
 		for _, v := range r.query.Values(query.FieldDefault) {
@@ -627,6 +629,8 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		FileMatchLimit:               r.maxResults(),
 		Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
 		IncludePatterns:              includePatterns,
+		FilePatternsReposMustInclude: filePatternsReposMustInclude,
+		FilePatternsReposMustExclude: filePatternsReposMustExclude,
 		PathPatternsAreRegExps:       true,
 		PathPatternsAreCaseSensitive: r.query.IsCaseSensitive(),
 	}
@@ -1000,7 +1004,6 @@ func compareSearchResults(a, b *searchResultResolver) bool {
 	}
 
 	return arepo < brepo
-
 }
 
 func sortResults(r []*searchResultResolver) {
@@ -1010,9 +1013,11 @@ func sortResults(r []*searchResultResolver) {
 func (g *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
 	return g.repo, g.repo != nil
 }
+
 func (g *searchResultResolver) ToFileMatch() (*fileMatchResolver, bool) {
 	return g.fileMatch, g.fileMatch != nil
 }
+
 func (g *searchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return g.diff, g.diff != nil
 }

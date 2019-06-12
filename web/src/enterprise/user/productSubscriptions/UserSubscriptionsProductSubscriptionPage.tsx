@@ -141,9 +141,7 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                                     <div className="card-footer">
                                         <a
                                             href={mailtoSales({
-                                                subject: `Change payment method for subscription ${
-                                                    this.state.productSubscriptionOrError.name
-                                                }`,
+                                                subject: `Change payment method for subscription ${this.state.productSubscriptionOrError.name}`,
                                             })}
                                         >
                                             Contact sales
@@ -157,9 +155,7 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                                         No billing information is associated with this subscription.{' '}
                                         <a
                                             href={mailtoSales({
-                                                subject: `Billing for subscription ${
-                                                    this.state.productSubscriptionOrError.name
-                                                }`,
+                                                subject: `Billing for subscription ${this.state.productSubscriptionOrError.name}`,
                                             })}
                                         >
                                             Contact sales

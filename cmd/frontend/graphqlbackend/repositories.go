@@ -23,8 +23,8 @@ func (r *schemaResolver) Repositories(args *struct {
 	graphqlutil.ConnectionArgs
 	Query           *string
 	Names           *[]string
-	Enabled         bool
-	Disabled        bool
+	Enabled         bool // deprecated
+	Disabled        bool // deprecated
 	Cloned          bool
 	CloneInProgress bool
 	NotCloned       bool
@@ -33,9 +33,14 @@ func (r *schemaResolver) Repositories(args *struct {
 	OrderBy         string
 	Descending      bool
 }) (*repositoryConnectionResolver, error) {
+	// New call sites don't specify Enable and Disable. Assume if disabled
+	// isn't specified we want Enabled since all repos are enabled.
+	if !args.Disabled {
+		args.Enabled = true
+	}
+
 	opt := db.ReposListOptions{
-		Enabled:  args.Enabled,
-		Disabled: args.Disabled,
+		Enabled: args.Enabled,
 		OrderBy: db.RepoListOrderBy{{
 			Field:      toDBRepoListColumn(args.OrderBy),
 			Descending: args.Descending,
@@ -93,11 +98,22 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		if opt2.LimitOffset != nil {
 			tmp := *opt2.LimitOffset
 			opt2.LimitOffset = &tmp
-			opt2.Limit++ // so we can detect if there is a next page
+			// We purposefully load more repos into memory than requested in
+			// order to save roundtrips to gitserver in case we need to do
+			// filtering by clone status.
+			// The trade-off here is memory/cpu vs. network roundtrips to
+			// database/gitserver and we choose smaller latency over smaller
+			// memory footprint.
+			// At the end of this method we return the requested number of
+			// repos.
+			// As for the number: 1250 is the result of local benchmarks where
+			// it yielded the best performance/resources tradeoff, before
+			// diminishing returns set in
+			opt2.Limit += 1250
 		}
 
 		var indexed map[api.RepoName]bool
-		searchIndexEnabled := Search().Index.Enabled()
+		searchIndexEnabled := IndexedSearch().Enabled()
 		isIndexed := func(repo api.RepoName) bool {
 			if !searchIndexEnabled {
 				return true // do not need index
@@ -107,7 +123,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		if searchIndexEnabled && (!r.indexed || !r.notIndexed) {
 			listCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 			defer cancel()
-			indexedRepos, err := Search().Index.ListAll(listCtx)
+			indexedRepos, err := IndexedSearch().ListAll(listCtx)
 			if err != nil {
 				r.err = err
 				return
@@ -129,20 +145,20 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if !r.cloned || !r.cloneInProgress || !r.notCloned {
 				// Query gitserver to filter by repository clone status.
 				repoNames := make([]api.RepoName, len(repos))
-				lookup := make(map[api.RepoName]*types.Repo)
 				for i, repo := range repos {
 					repoNames[i] = repo.Name
-					lookup[repo.Name] = repo
 				}
-				keepRepos := repos[:0]
-				info, err := gitserver.DefaultClient.RepoInfo(ctx, repoNames...)
+				response, err := gitserver.DefaultClient.RepoInfo(ctx, repoNames...)
 				if err != nil {
 					r.err = err
 					return
 				}
-				for repoName, info := range info.Results {
-					if (r.cloned && info.Cloned && !info.CloneInProgress) || (r.cloneInProgress && info.CloneInProgress) || (r.notCloned && !info.Cloned && !info.CloneInProgress) {
-						keepRepos = append(keepRepos, lookup[repoName])
+				keepRepos := repos[:0]
+				for _, repo := range repos {
+					if info := response.Results[repo.Name]; info == nil {
+						continue
+					} else if (r.cloned && info.Cloned && !info.CloneInProgress) || (r.cloneInProgress && info.CloneInProgress) || (r.notCloned && !info.Cloned && !info.CloneInProgress) {
+						keepRepos = append(keepRepos, repo)
 					}
 				}
 				repos = keepRepos
@@ -160,13 +176,20 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 
 			r.repos = append(r.repos, repos...)
+
 			if opt2.LimitOffset == nil {
 				break
 			} else {
-				if len(r.repos) >= opt2.Limit {
+				if len(r.repos) > r.opt.Limit {
+					// Cut off the repos we additionally loaded to save
+					// roundtrips to `gitserver` and only return the number
+					// that was requested.
+					// But, when possible, we add one more so we can detect if
+					// there is a "next page" that could be loaded
+					r.repos = r.repos[:r.opt.Limit+1]
 					break
 				}
-				if reposFromDB < opt2.Limit {
+				if reposFromDB < r.opt.Limit {
 					break
 				}
 				opt2.Offset += opt2.Limit

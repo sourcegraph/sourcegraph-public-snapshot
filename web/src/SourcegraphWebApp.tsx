@@ -7,12 +7,12 @@ import { combineLatest, from, fromEventPattern, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
+    Controller as ExtensionsController,
     createController as createExtensionsController,
-    ExtensionsControllerProps,
 } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
-import { PlatformContextProps } from '../../shared/src/platform/context'
+import { PlatformContext } from '../../shared/src/platform/context'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
@@ -31,6 +31,7 @@ import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { createPlatformContext } from './platform/context'
 import { fetchHighlightedFileLines } from './repo/backend'
+import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
@@ -58,12 +59,13 @@ export interface SourcegraphWebAppProps extends KeybindingsProps {
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
+    repoContainerRoutes: ReadonlyArray<RepoContainerRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
     routes: ReadonlyArray<LayoutRouteProps>
 }
 
-interface SourcegraphWebAppState extends PlatformContextProps, SettingsCascadeProps, ExtensionsControllerProps {
+interface SourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
 
     /** The currently authenticated user (or null if the viewer is anonymous). */
@@ -117,18 +119,18 @@ const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : wit
  * The root component
  */
 export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
-    private subscriptions = new Subscription()
-    private darkThemeMediaList = window.matchMedia('(prefers-color-scheme: dark)')
+    private readonly subscriptions = new Subscription()
+    private readonly darkThemeMediaList = window.matchMedia('(prefers-color-scheme: dark)')
+    private readonly platformContext: PlatformContext = createPlatformContext()
+    private readonly extensionsController: ExtensionsController = createExtensionsController(this.platformContext)
 
     constructor(props: SourcegraphWebAppProps) {
         super(props)
-        const platformContext = createPlatformContext()
+        this.subscriptions.add(this.extensionsController)
         this.state = {
             themePreference: readStoredThemePreference(),
             systemIsLightTheme: !this.darkThemeMediaList.matches,
             navbarSearchQuery: '',
-            platformContext,
-            extensionsController: createExtensionsController(platformContext),
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
         }
@@ -153,7 +155,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         )
 
         this.subscriptions.add(
-            combineLatest(from(this.state.platformContext.settings), authenticatedUser.pipe(startWith(null))).subscribe(
+            combineLatest([from(this.platformContext.settings), authenticatedUser.pipe(startWith(null))]).subscribe(
                 ([cascade, authenticatedUser]) => {
                     this.setState(() => {
                         if (authenticatedUser) {
@@ -168,10 +170,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             )
         )
 
-        this.subscriptions.add(this.state.extensionsController)
-
         this.subscriptions.add(
-            from(this.state.platformContext.settings).subscribe(settingsCascade => this.setState({ settingsCascade }))
+            from(this.platformContext.settings).subscribe(settingsCascade => this.setState({ settingsCascade }))
         )
 
         // React to OS theme change
@@ -255,8 +255,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                     fetchHighlightedFileLines={fetchHighlightedFileLines}
                                     searchRequest={search}
                                     // Extensions
-                                    platformContext={this.state.platformContext}
-                                    extensionsController={this.state.extensionsController}
+                                    platformContext={this.platformContext}
+                                    extensionsController={this.extensionsController}
                                     telemetryService={eventLogger}
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                 />
@@ -264,7 +264,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                         />
                     </BrowserRouter>
                     <Tooltip key={1} />
-                    <Notifications key={2} extensionsController={this.state.extensionsController} />
+                    <Notifications key={2} extensionsController={this.extensionsController} />
                 </ShortcutProvider>
             </ErrorBoundary>
         )

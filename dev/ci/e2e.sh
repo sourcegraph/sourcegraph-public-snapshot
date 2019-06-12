@@ -8,6 +8,14 @@ if [ -z "$IMAGE" ]; then
     exit 1
 fi
 
+URL="http://localhost:7080"
+
+if curl --output /dev/null --silent --head --fail $URL; then
+    echo "❌ Can't run a new Sourcegraph instance on $URL because another instance is already running."
+    echo "❌ The last time this happened, there was a runaway e2e test run on the same Buildkite agent and the fix was to delete the pod and rebuild."
+    exit 1
+fi
+
 # Switch the default Docker host to the dedicated e2e testing host
 BUILD_DOCKER_HOST="$DOCKER_HOST"
 BUILD_DOCKER_PASSWORD="$DOCKER_PASSWORD"
@@ -34,8 +42,6 @@ docker exec "$CONTAINER" apk add --no-cache socat
 # can hit it. This is similar to port-forwarding via SSH tunneling, but uses
 # docker exec as the transport.
 socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat stdio 'tcp:localhost:7080'" &
-
-URL="http://localhost:7080"
 
 set +e
 timeout 30s bash -c "until curl --output /dev/null --silent --head --fail $URL; do

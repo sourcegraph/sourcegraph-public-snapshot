@@ -80,14 +80,12 @@ func (c *Client) cachedGetRepository(ctx context.Context, arn string) (*Reposito
 	return repo, nil
 }
 
-var (
-	reposCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "repos",
-		Name:      "awscodecommit_cache_hit",
-		Help:      "Counts cache hits and misses for AWS CodeCommit repo metadata.",
-	}, []string{"type"})
-)
+var reposCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "repos",
+	Name:      "awscodecommit_cache_hit",
+	Help:      "Counts cache hits and misses for AWS CodeCommit repo metadata.",
+}, []string{"type"})
 
 func init() {
 	prometheus.MustRegister(reposCacheCounter)

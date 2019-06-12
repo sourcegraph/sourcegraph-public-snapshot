@@ -58,7 +58,7 @@ const (
 // files is done by the store.
 //
 // If there is no more low-hanging fruit and perf is not acceptable, we could
-// consider an using ripgrep directly (modify it to search zip archives).
+// consider using ripgrep directly (modify it to search zip archives).
 //
 // TODO(keegan) return search statistics
 type readerGrep struct {

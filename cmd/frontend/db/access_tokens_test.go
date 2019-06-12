@@ -78,7 +78,6 @@ func TestAccessTokens_Create(t *testing.T) {
 	if want := 0; len(ts) != want {
 		t.Errorf("got %d access tokens, want %d", len(ts), want)
 	}
-
 }
 
 func TestAccessTokens_List(t *testing.T) {

@@ -767,7 +767,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 
 		if overwrite {
 			// remove the current repo by putting it into our temporary directory
-			err := os.Rename(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
+			err := renameAndSync(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
 			if err != nil && !os.IsNotExist(err) {
 				return errors.Wrapf(err, "failed to remove old clone")
 			}
@@ -776,7 +776,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		if err := os.MkdirAll(filepath.Dir(dstPath), os.ModePerm); err != nil {
 			return err
 		}
-		if err := os.Rename(tmpPath, dstPath); err != nil {
+		if err := renameAndSync(tmpPath, dstPath); err != nil {
 			return err
 		}
 
@@ -1086,7 +1086,6 @@ func computeLatestCommitTimestamp(dir string) (time.Time, error) {
 	cmd := exec.Command("git", "rev-list", "--all", "--timestamp", "-n", "1")
 	cmd.Dir = dir
 	output, err := cmd.Output()
-
 	// If we don't have a more specific stamp, we'll return the current time,
 	// and possibly an error.
 	if err != nil {

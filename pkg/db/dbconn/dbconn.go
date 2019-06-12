@@ -72,16 +72,14 @@ func ConnectToDB(dataSource string) error {
 	return nil
 }
 
-var (
-	startupTimeout = func() time.Duration {
-		str := env.Get("DB_STARTUP_TIMEOUT", "10s", "keep trying for this long to connect to PostgreSQL database before failing")
-		d, err := time.ParseDuration(str)
-		if err != nil {
-			log.Fatalln("DB_STARTUP_TIMEOUT:", err)
-		}
-		return d
-	}()
-)
+var startupTimeout = func() time.Duration {
+	str := env.Get("DB_STARTUP_TIMEOUT", "10s", "keep trying for this long to connect to PostgreSQL database before failing")
+	d, err := time.ParseDuration(str)
+	if err != nil {
+		log.Fatalln("DB_STARTUP_TIMEOUT:", err)
+	}
+	return d
+}()
 
 func openDBWithStartupWait(dataSource string) (db *sql.DB, err error) {
 	// Allow the DB to take up to 10s while it reports "pq: the database system is starting up".
@@ -208,6 +206,7 @@ func configureConnectionPool(db *sql.DB) {
 	}
 	db.SetMaxOpenConns(maxOpen)
 	db.SetMaxIdleConns(maxOpen)
+	db.SetConnMaxLifetime(time.Minute)
 }
 
 func NewMigrate(db *sql.DB) *migrate.Migrate {
@@ -226,6 +225,9 @@ func NewMigrate(db *sql.DB) *migrate.Migrate {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// In case another process was faster and runs migrations, we will wait
+	// this long
+	m.LockTimeout = 5 * time.Minute
 
 	return m
 }

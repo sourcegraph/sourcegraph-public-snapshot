@@ -68,7 +68,6 @@ func TestCreateSavedSearch(t *testing.T) {
 		OrgID       *graphql.ID
 		UserID      *graphql.ID
 	}{Description: "test query", Query: "test type:diff", NotifyOwner: true, NotifySlack: false, OrgID: nil, UserID: &userID})
-
 	if err != nil {
 		t.Fatal(err)
 	}

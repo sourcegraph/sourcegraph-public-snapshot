@@ -143,15 +143,36 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 
 var leftParenRx = regexp.MustCompile(`([^\\]|^)\($`)
 var squareBraceRx = regexp.MustCompile(`([^\\]|^)\[$`)
-var leftRightParenRx = regexp.MustCompile(`([^\\]|^)\(\)`)
 
 // autoFix escapes various patterns that are very likely not meant to be
 // treated as regular expressions.
 func autoFix(pat string) string {
 	pat = leftParenRx.ReplaceAllString(pat, `$1\(`)
 	pat = squareBraceRx.ReplaceAllString(pat, `$1\[`)
-	pat = leftRightParenRx.ReplaceAllString(pat, `$1\(\)`)
+	pat = escapeAll(pat, "()", `\(\)`)
 	return pat
+}
+
+// escapeAll replaces all instances of old with new. However, it will not
+// replace old if it is already escaped.
+func escapeAll(s, old, new string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for len(s) > 0 {
+		i := strings.Index(s, old)
+		if i == -1 {
+			b.WriteString(s)
+			break
+		}
+		b.WriteString(s[:i])
+		if i == 0 || s[i-1] != '\\' {
+			b.WriteString(new)
+		} else {
+			b.WriteString(old)
+		}
+		s = s[i+len(old):]
+	}
+	return b.String()
 }
 
 // unquoteString is like strings.Unquote except that it supports single-quoted

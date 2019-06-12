@@ -11,22 +11,26 @@ import (
 )
 
 func (r *repositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if !Search().Index.Enabled() {
+	if !IndexedSearch().Enabled() {
 		return nil
 	}
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
-		client: Search().Index.Client,
+		client: IndexedSearch().Client,
 	}
 }
 
 type repositoryTextSearchIndexResolver struct {
 	repo   *repositoryResolver
-	client zoekt.Searcher
+	client repoLister
 
 	once  sync.Once
 	entry *zoekt.RepoListEntry
 	err   error
+}
+
+type repoLister interface {
+	List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error)
 }
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {
@@ -67,15 +71,19 @@ type repositoryTextSearchIndexStatus struct {
 func (r *repositoryTextSearchIndexStatus) UpdatedAt() string {
 	return r.entry.IndexMetadata.IndexTime.Format(time.RFC3339)
 }
+
 func (r *repositoryTextSearchIndexStatus) ContentByteSize() int32 {
 	return int32(r.entry.Stats.ContentBytes)
 }
+
 func (r *repositoryTextSearchIndexStatus) ContentFilesCount() int32 {
 	return int32(r.entry.Stats.Documents)
 }
+
 func (r *repositoryTextSearchIndexStatus) IndexByteSize() int32 {
 	return int32(r.entry.Stats.IndexBytes)
 }
+
 func (r *repositoryTextSearchIndexStatus) IndexShardsCount() int32 {
 	return int32(r.entry.Stats.Shards + 1)
 }

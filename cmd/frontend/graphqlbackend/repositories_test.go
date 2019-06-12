@@ -10,8 +10,8 @@ import (
 
 func TestRepositories(t *testing.T) {
 	resetMocks()
-	db.Mocks.Repos.MockList(t, "repo1", "repo2")
-	db.Mocks.Repos.Count = func(context.Context, db.ReposListOptions) (int, error) { return 2, nil }
+	db.Mocks.Repos.MockList(t, "repo1", "repo2", "repo3")
+	db.Mocks.Repos.Count = func(context.Context, db.ReposListOptions) (int, error) { return 3, nil }
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Schema: GraphQLSchema,
@@ -20,6 +20,7 @@ func TestRepositories(t *testing.T) {
 					repositories {
 						nodes { name }
 						totalCount
+						pageInfo { hasNextPage }
 					}
 				}
 			`,
@@ -27,14 +28,34 @@ func TestRepositories(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{
-								"name": "repo1"
-							},
-							{
-								"name": "repo2"
-							}
+							{ "name": "repo1" },
+							{ "name": "repo2" },
+							{ "name": "repo3" }
 						],
-						"totalCount": null
+						"totalCount": null,
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+		},
+		{
+			Schema: GraphQLSchema,
+			Query: `
+				{
+					repositories(first: 2) {
+						nodes { name }
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo1" },
+							{ "name": "repo2" }
+						],
+						"pageInfo": {"hasNextPage": true}
 					}
 				}
 			`,

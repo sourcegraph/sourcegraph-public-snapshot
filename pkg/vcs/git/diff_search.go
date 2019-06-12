@@ -107,12 +107,10 @@ type Highlight struct {
 	Length    int // the length of the highlight, in characters (on the same line)
 }
 
-var (
-	validRawLogDiffSearchFormatArgs = [][]string{
-		{"--no-merges", "-z", "--decorate=full", "--patch", logFormatWithRefs},
-		{"--no-merges", "-z", "--decorate=full", logFormatWithRefs},
-	}
-)
+var validRawLogDiffSearchFormatArgs = [][]string{
+	{"--no-merges", "-z", "--decorate=full", "--patch", logFormatWithRefs},
+	{"--no-merges", "-z", "--decorate=full", logFormatWithRefs},
+}
 
 func isValidRawLogDiffSearchFormatArgs(formatArgs []string) bool {
 	for _, validArgs := range validRawLogDiffSearchFormatArgs {

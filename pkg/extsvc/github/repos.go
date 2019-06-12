@@ -9,7 +9,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // SplitRepositoryNameWithOwner splits a GitHub repository's "owner/name" string into "owner" and "name", with
@@ -42,6 +44,7 @@ func (c *Client) repositoryFieldsGraphQLFragment() string {
 		return `
 fragment RepositoryFields on Repository {
 	id
+	databaseId
 	nameWithOwner
 	description
 	url
@@ -58,6 +61,7 @@ fragment RepositoryFields on Repository {
 	return `
 fragment RepositoryFields on Repository {
 	id
+	databaseId
 	nameWithOwner
 	description
 	url
@@ -165,14 +169,12 @@ func (c *Client) cachedGetRepository(ctx context.Context, token, key string, get
 	return repo, nil
 }
 
-var (
-	reposGitHubCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "repos",
-		Name:      "github_cache_hit",
-		Help:      "Counts cache hits and misses for GitHub repo metadata.",
-	}, []string{"type"})
-)
+var reposGitHubCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "repos",
+	Name:      "github_cache_hit",
+	Help:      "Counts cache hits and misses for GitHub repo metadata.",
+}, []string{"type"})
 
 func init() {
 	prometheus.MustRegister(reposGitHubCacheCounter)
@@ -201,6 +203,7 @@ func (c *Client) getRepositoryFromCache(ctx context.Context, token, key string) 
 
 	return &cached
 }
+
 func firstNonEmpty(strs ...string) string {
 	for _, s := range strs {
 		if s != "" {
@@ -379,6 +382,76 @@ query Repositories($ids: [ID!]!) {
 	return repos, nil
 }
 
+// ErrBatchTooLarge is when the requested batch of GitHub repositories to fetch
+// is too large and goes over the limit of what can be requested in a single
+// GraphQL call
+var ErrBatchTooLarge = errors.New("requested batch of GitHub repositories too large")
+
+// GetReposByNameWithOwner fetches the specified repositories (namesWithOwners)
+// from the GitHub GraphQL API and returns a slice of repositories.
+// If a repository is not found, it will return an error.
+//
+// The maximum number of repositories to be fetched is 30. If more
+// namesWithOwners are given, the method returns an error. 30 is not a official
+// limit of the API, but based on the observation that the GitHub GraphQL does
+// not return results when more than 37 aliases are specified in a query. 30 is
+// the conservative step back from 37.
+//
+// This method does not cache.
+func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ...string) ([]*Repository, error) {
+	if len(namesWithOwners) > 30 {
+		return nil, ErrBatchTooLarge
+	}
+
+	query, err := c.buildGetReposBatchQuery(ctx, namesWithOwners)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]*Repository
+	err = c.requestGraphQL(ctx, "", query, map[string]interface{}{}, &result)
+	if err != nil {
+		if gqlErrs, ok := err.(graphqlErrors); ok {
+			for _, err2 := range gqlErrs {
+				if err2.Type == graphqlErrTypeNotFound {
+					log15.Warn("GitHub repository not found", "error", err2)
+					continue
+				}
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	repos := make([]*Repository, 0, len(result))
+	for _, r := range result {
+		if r != nil {
+			repos = append(repos, r)
+		}
+	}
+	return repos, nil
+}
+
+func (c *Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []string) (string, error) {
+	var b strings.Builder
+	b.WriteString(c.repositoryFieldsGraphQLFragment())
+	b.WriteString("query {\n")
+
+	for i, pair := range namesWithOwners {
+		owner, name, err := SplitRepositoryNameWithOwner(pair)
+		if err != nil {
+			return "", err
+		}
+		fmt.Fprintf(&b, "repo%d: repository(owner: %q, name: %q) { ", i, owner, name)
+		b.WriteString("... on Repository { ...RepositoryFields } }\n")
+	}
+
+	b.WriteString("}")
+
+	return b.String(), nil
+}
+
 func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
 	repos, err := c.getPublicRepositories(ctx, sinceRepoID)
 	if err != nil {
@@ -403,6 +476,22 @@ func (c *Client) ListUserRepositories(ctx context.Context, page int) (repos []*R
 	}
 	// 🚨 SECURITY: must forward token here to ensure caching by token
 	c.addRepositoriesToCache("", repos)
+	return repos, len(repos) > 0, 1, nil
+}
+
+// ListOrgRepositories lists GitHub repositories from the specified organization.
+// org is the name of the organization. page is the page of results to return.
+// Pages are 1-indexed (so the first call should be for page 1).
+func (c *Client) ListOrgRepositories(ctx context.Context, org string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+	var restRepos []restRepository
+	path := fmt.Sprintf("orgs/%s/repos?sort=pushed&page=%d&per_page=100", org, page)
+	if err := c.requestGet(ctx, "", path, &restRepos); err != nil {
+		return nil, false, 1, err
+	}
+	repos = make([]*Repository, 0, len(restRepos))
+	for _, restRepo := range restRepos {
+		repos = append(repos, convertRestRepo(restRepo))
+	}
 	return repos, len(repos) > 0, 1, nil
 }
 

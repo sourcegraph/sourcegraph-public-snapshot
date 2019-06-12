@@ -125,6 +125,7 @@ var gitserverFetchTotal = prometheus.NewCounter(prometheus.CounterOpts{
 	Name:      "gitserver_fetch_total",
 	Help:      "Total number of fetches to GitServer.",
 })
+
 var gitserverFetchFailedTotal = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "vfsutil",
 	Subsystem: "vfs",

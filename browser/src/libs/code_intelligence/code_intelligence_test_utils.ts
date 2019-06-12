@@ -1,14 +1,17 @@
-import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
+import { DiffPart } from '@sourcegraph/codeintellify'
 import assert from 'assert'
 import { readFile } from 'mz/fs'
-import Simmer from 'simmerjs'
+import Simmer, { Options as SimmerOptions } from 'simmerjs'
 import { SetIntersection } from 'utility-types'
 import { CodeHost, MountGetter } from './code_intelligence'
-import { CodeView } from './code_views'
+import { CodeView, DOMFunctions } from './code_views'
 
 const mountGetterKeys = ['getCommandPaletteMount', 'getViewContextOnSourcegraphMount'] as const
 type MountGetterKey = (typeof mountGetterKeys)[number]
 
+/**
+ * @param containerHtmlFixturePaths Paths to full-document fixtures keyed by the mount getter function name
+ */
 export function testCodeHostMountGetters<C extends CodeHost>(
     codeHost: C,
     containerHtmlFixturePaths: string | Record<SetIntersection<MountGetterKey, keyof C>, string>
@@ -116,43 +119,72 @@ export function testMountGetter(
     }
 }
 
-interface DiffLine {
+interface Line {
     lineNumber: number
+    /**
+     * The part of the diff, if the code view is a diff code view.
+     */
     diffPart?: DiffPart
 }
 
-export interface DiffDOMFunctionsTest {
+export interface DOMFunctionsTest {
     htmlFixturePath: string
+
     /**
      * Descriptors for lines in the diff that will be tested
      */
-    diffLineCases: DiffLine[]
-    url: string // TODO DOM functions should not rely on global state like the URL
+    lineCases: Line[]
+
+    url?: string // TODO DOM functions should not rely on global state like the URL
+
+    /**
+     * Whether the code view is a diff code view and the first character the a diff indicator
+     */
     firstCharacterIsDiffIndicator: boolean
 }
 
 export function testDOMFunctions(
     domFunctions: DOMFunctions,
-    { htmlFixturePath, diffLineCases: codeElements, url, firstCharacterIsDiffIndicator }: DiffDOMFunctionsTest
+    { htmlFixturePath, lineCases: codeElements, url, firstCharacterIsDiffIndicator }: DOMFunctionsTest
 ): void {
     let codeViewElement: HTMLElement
     beforeEach(async () => {
-        jsdom.reconfigure({ url })
+        if (url) {
+            jsdom.reconfigure({ url })
+        }
         codeViewElement = await getFixtureBody({ htmlFixturePath, isFullDocument: false })
     })
     for (const { diffPart, lineNumber } of codeElements) {
-        describe(`line number ${lineNumber} in ${diffPart} diff part`, () => {
+        describe(`line number ${lineNumber}` + (diffPart !== undefined ? ` in ${diffPart} diff part` : ''), () => {
+            const simmerOptions: SimmerOptions = {
+                depth: 20,
+                specificityThreshold: 500,
+                selectorMaxLength: 1000,
+            }
+
+            describe('getLineElementFromLineNumber()', () => {
+                it(`should return the right line element given the line number`, async () => {
+                    const codeElement = domFunctions.getLineElementFromLineNumber(codeViewElement, lineNumber, diffPart)
+                    expect(codeElement).toBeDefined()
+                    expect(codeElement).not.toBeNull()
+                    // Generate CSS selector for element
+                    const simmer = new Simmer(codeViewElement, simmerOptions)
+                    const selector = simmer(codeElement!)
+                    expect(selector).toBeTruthy()
+                    expect({ selector, content: codeElement!.textContent!.trim() }).toMatchSnapshot()
+                })
+            })
+
             describe('getCodeElementFromLineNumber()', () => {
                 it(`should return the right code element given the line number`, async () => {
                     const codeElement = domFunctions.getCodeElementFromLineNumber(codeViewElement, lineNumber, diffPart)
                     expect(codeElement).toBeDefined()
                     expect(codeElement).not.toBeNull()
-                    // if the codeElement contains more than one line, something is off
-                    expect(codeElement!.textContent!.includes('\n')).toBe(false)
                     // Generate CSS selector for element
-                    const simmer = new Simmer(codeViewElement)
+                    const simmer = new Simmer(codeViewElement, simmerOptions)
                     const selector = simmer(codeElement!)
-                    expect({ selector, content: codeElement!.textContent }).toMatchSnapshot()
+                    expect(selector).toBeTruthy()
+                    expect({ selector, content: codeElement!.textContent!.trim() }).toMatchSnapshot()
                 })
             })
 

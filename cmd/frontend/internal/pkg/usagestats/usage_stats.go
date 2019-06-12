@@ -468,7 +468,7 @@ func usersSince(userList []string, dayStart time.Time, userField string) (map[st
 	c := pool.Get()
 	defer c.Close()
 
-	var userIDs = map[string]bool{}
+	userIDs := map[string]bool{}
 	for _, uid := range userList {
 		userKey := keyPrefix + uid
 		err := c.Send("HGET", userKey, userField)

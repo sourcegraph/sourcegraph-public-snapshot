@@ -454,9 +454,9 @@ export function shouldDisplayPerformanceWarning(deployType: DeployType): Observa
     return queryGraphQL(
         gql`
             query ManyReposWarning($first: Int) {
-                repositories(enabled: true, first: $first) {
+                repositories(first: $first) {
                     nodes {
-                        enabled
+                        id
                     }
                 }
             }

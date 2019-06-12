@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	bbsauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -26,15 +27,19 @@ type gitlabAuthzProviderParams struct {
 func (m gitlabAuthzProviderParams) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
 	panic("should never be called")
 }
+
 func (m gitlabAuthzProviderParams) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
 	panic("should never be called")
 }
+
 func (m gitlabAuthzProviderParams) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
 	panic("should never be called")
 }
+
 func (m gitlabAuthzProviderParams) ServiceID() string {
 	panic("should never be called")
 }
+
 func (m gitlabAuthzProviderParams) ServiceType() string {
 	panic("should never be called")
 }
@@ -50,12 +55,23 @@ func Test_providersFromConfig(t *testing.T) {
 		return gitlabAuthzProviderParams{SudoOp: op}
 	}
 
+	providersEqual := func(want ...authz.Provider) func(*testing.T, []authz.Provider) {
+		return func(t *testing.T, have []authz.Provider) {
+			if !reflect.DeepEqual(have, want) {
+				t.Errorf("authzProviders: (actual) %+v != (expected) %+v", asJSON(t, have), asJSON(t, want))
+			}
+		}
+	}
+
+	const bogusKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
+
 	tests := []struct {
 		description                  string
 		cfg                          conf.Unified
 		gitlabConnections            []*schema.GitLabConnection
+		bitbucketServerConnections   []*schema.BitbucketServerConnection
 		expAuthzAllowAccessByDefault bool
-		expAuthzProviders            []authz.Provider
+		expAuthzProviders            func(*testing.T, []authz.Provider)
 		expSeriousProblems           []string
 	}{
 		{
@@ -84,14 +100,14 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: []authz.Provider{
+			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.GitLabOAuthAuthzProviderOp{
 						BaseURL:  mustURLParse(t, "https://gitlab.mine"),
 						CacheTTL: 48 * time.Hour,
 					},
 				},
-			},
+			),
 		},
 		{
 			description: "1 GitLab connection with authz enabled, 1 GitLab auth provider but doesn't match",
@@ -185,7 +201,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: []authz.Provider{
+			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.GitLabOAuthAuthzProviderOp{
 						BaseURL:  mustURLParse(t, "https://gitlab.mine"),
@@ -198,7 +214,7 @@ func Test_providersFromConfig(t *testing.T) {
 						CacheTTL: 3 * time.Hour,
 					},
 				},
-			},
+			),
 		},
 		{
 			description: "1 GitLab connection with authz disabled",
@@ -280,7 +296,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: []authz.Provider{
+			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					SudoOp: gitlab.SudoProviderOp{
 						BaseURL: mustURLParse(t, "https://gitlab.mine"),
@@ -294,7 +310,7 @@ func Test_providersFromConfig(t *testing.T) {
 						UseNativeUsername: false,
 					},
 				},
-			},
+			),
 		},
 		{
 			description: "exact username matching",
@@ -313,7 +329,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: []authz.Provider{
+			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					SudoOp: gitlab.SudoProviderOp{
 						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
@@ -322,6 +338,102 @@ func Test_providersFromConfig(t *testing.T) {
 						UseNativeUsername: true,
 					},
 				},
+			),
+		},
+		{
+			description: "1 BitbucketServer connection with authz disabled",
+			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+				{
+					Authorization: nil,
+					Url:           "https://bitbucket.mycorp.org",
+					Username:      "admin",
+					Token:         "secret-token",
+				},
+			},
+			expAuthzAllowAccessByDefault: true,
+			expAuthzProviders:            providersEqual(),
+		},
+		{
+			description: "Bitbucket Server TTL error",
+			cfg:         conf.Unified{},
+			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+				{
+					Authorization: &schema.BitbucketServerAuthorization{
+						IdentityProvider: schema.BitbucketServerIdentityProvider{
+							Username: &schema.BitbucketServerUsernameIdentity{
+								Type: "username",
+							},
+						},
+						Oauth: schema.BitbucketServerOAuth{
+							ConsumerKey: "sourcegraph",
+							SigningKey:  bogusKey,
+						},
+						Ttl: "invalid",
+					},
+					Url:      "https://bitbucketserver.mycorp.org",
+					Username: "admin",
+					Token:    "secret-token",
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"1 error occurred:\n\t* authorization.ttl: time: invalid duration invalid\n\n"},
+		},
+		{
+			description: "Bitbucket Server Oauth config error",
+			cfg:         conf.Unified{},
+			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+				{
+					Authorization: &schema.BitbucketServerAuthorization{
+						IdentityProvider: schema.BitbucketServerIdentityProvider{
+							Username: &schema.BitbucketServerUsernameIdentity{
+								Type: "username",
+							},
+						},
+						Oauth: schema.BitbucketServerOAuth{
+							ConsumerKey: "sourcegraph",
+							SigningKey:  "Invalid Key",
+						},
+						Ttl: "15m",
+					},
+					Url:      "https://bitbucketserver.mycorp.org",
+					Username: "admin",
+					Token:    "secret-token",
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"1 error occurred:\n\t* authorization.oauth.signingKey: illegal base64 data at input byte 7\n\n"},
+		},
+		{
+			description: "Bitbucket Server exact username matching",
+			cfg:         conf.Unified{},
+			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+				{
+					Authorization: &schema.BitbucketServerAuthorization{
+						IdentityProvider: schema.BitbucketServerIdentityProvider{
+							Username: &schema.BitbucketServerUsernameIdentity{
+								Type: "username",
+							},
+						},
+						Oauth: schema.BitbucketServerOAuth{
+							ConsumerKey: "sourcegraph",
+							SigningKey:  bogusKey,
+						},
+						Ttl: "15m",
+					},
+					Url:      "https://bitbucketserver.mycorp.org",
+					Username: "admin",
+					Token:    "secret-token",
+				},
+			},
+			expAuthzAllowAccessByDefault: true,
+			expAuthzProviders: func(t *testing.T, have []authz.Provider) {
+				if len(have) == 0 {
+					t.Fatalf("no providers")
+				}
+
+				if _, ok := have[0].(*bbsauthz.Provider); !ok {
+					t.Fatalf("no Bitbucket Server authz provider returned")
+				}
 			},
 		},
 	}
@@ -329,13 +441,17 @@ func Test_providersFromConfig(t *testing.T) {
 	for _, test := range tests {
 		t.Logf("Test %q", test.description)
 
-		store := fakeStore{gitlabs: test.gitlabConnections}
+		store := fakeStore{
+			gitlabs:          test.gitlabConnections,
+			bitbucketServers: test.bitbucketServerConnections,
+		}
+
 		allowAccessByDefault, authzProviders, seriousProblems, _ := ProvidersFromConfig(context.Background(), &test.cfg, &store)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
 		}
-		if !reflect.DeepEqual(authzProviders, test.expAuthzProviders) {
-			t.Errorf("authzProviders: (actual) %+v != (expected) %+v", asJSON(t, authzProviders), asJSON(t, test.expAuthzProviders))
+		if test.expAuthzProviders != nil {
+			test.expAuthzProviders(t, authzProviders)
 		}
 		if !reflect.DeepEqual(seriousProblems, test.expSeriousProblems) {
 			t.Errorf("seriousProblems: (actual) %+v != (expected) %+v", asJSON(t, seriousProblems), asJSON(t, test.expSeriousProblems))
@@ -360,8 +476,9 @@ func asJSON(t *testing.T, v interface{}) string {
 }
 
 type fakeStore struct {
-	gitlabs []*schema.GitLabConnection
-	githubs []*schema.GitHubConnection
+	gitlabs          []*schema.GitLabConnection
+	githubs          []*schema.GitHubConnection
+	bitbucketServers []*schema.BitbucketServerConnection
 }
 
 func (s fakeStore) ListGitHubConnections(context.Context) ([]*schema.GitHubConnection, error) {
@@ -370,4 +487,8 @@ func (s fakeStore) ListGitHubConnections(context.Context) ([]*schema.GitHubConne
 
 func (s fakeStore) ListGitLabConnections(context.Context) ([]*schema.GitLabConnection, error) {
 	return s.gitlabs, nil
+}
+
+func (s fakeStore) ListBitbucketServerConnections(context.Context) ([]*schema.BitbucketServerConnection, error) {
+	return s.bitbucketServers, nil
 }

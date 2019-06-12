@@ -1,4 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
@@ -38,7 +39,6 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
             <li
                 className="repository-node list-group-item py-2"
                 data-e2e-repository={this.props.node.name}
-                data-e2e-enabled={this.props.node.enabled}
                 data-e2e-cloned={this.props.node.mirrorInfo.cloned}
             >
                 <div className="d-flex align-items-center justify-content-between">
@@ -49,18 +49,21 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                                 <LoadingSpinner className="icon-inline" /> Cloning
                             </small>
                         )}
-                        {this.props.node.enabled &&
-                            !this.props.node.mirrorInfo.cloneInProgress &&
-                            !this.props.node.mirrorInfo.cloned && (
-                                <small
-                                    className="ml-2 text-muted"
-                                    data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
-                                >
-                                    <CloudOutlineIcon className="icon-inline" /> Not yet cloned
-                                </small>
-                            )}
+                        {!this.props.node.mirrorInfo.cloneInProgress && !this.props.node.mirrorInfo.cloned && (
+                            <small
+                                className="ml-2 text-muted"
+                                data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
+                            >
+                                <CloudOutlineIcon className="icon-inline" /> Not yet cloned
+                            </small>
+                        )}
                     </div>
                     <div className="repository-node__actions">
+                        {!this.props.node.mirrorInfo.cloneInProgress && !this.props.node.mirrorInfo.cloned && (
+                            <Link className="btn btn-sm btn-secondary" to={this.props.node.url}>
+                                <CloudDownloadIcon className="icon-inline" /> Clone now
+                            </Link>
+                        )}{' '}
                         {
                             <Link
                                 className="btn btn-secondary btn-sm"
@@ -96,24 +99,24 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
             label: 'All',
             id: 'all',
             tooltip: 'Show all repositories',
-            args: { enabled: true, disabled: true },
+            args: {},
         },
         {
             label: 'Cloned',
             id: 'cloned',
             tooltip: 'Show cloned repositories only',
-            args: { disabled: true, cloned: true, cloneInProgress: false, notCloned: false },
+            args: { cloned: true, cloneInProgress: false, notCloned: false },
         },
         {
             label: 'Cloning',
             id: 'cloning',
             tooltip: 'Show only repositories that are currently being cloned',
-            args: { disabled: true, cloned: false, cloneInProgress: true, notCloned: false },
+            args: { cloned: false, cloneInProgress: true, notCloned: false },
         },
         {
             label: 'Not cloned',
             id: 'not-cloned',
-            tooltip: 'Show only enabled repositories that have not been cloned yet',
+            tooltip: 'Show only repositories that have not been cloned yet',
             args: { cloned: false, cloneInProgress: false, notCloned: true },
         },
         {

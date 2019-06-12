@@ -63,6 +63,7 @@ func (s *Store) Open(ctx context.Context, key string, fetcher Fetcher) (file *Fi
 		}
 		file, err := os.OpenFile(path, os.O_WRONLY, 0600)
 		if err != nil {
+			readCloser.Close()
 			return errors.Wrap(err, "failed to open temporary archive cache item")
 		}
 		err = copyAndClose(file, readCloser)
@@ -172,19 +173,26 @@ func doFetch(ctx context.Context, path string, fetcher FetcherWithPath) (file *F
 	}
 
 	// We write to a temporary path to prevent another Open finding a
-	// partially written file.
+	// partially written file. We ensure the file is writeable and truncate
+	// it.
 	tmpPath := path + ".part"
 	f, err = os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temporary archive cache item")
 	}
+	f.Close()
 	defer os.Remove(tmpPath)
 
 	// We are now ready to actually fetch the file.
 	err = fetcher(ctx, tmpPath)
 	if err != nil {
-		f.Close()
 		return nil, errors.Wrap(err, "failed to fetch missing archive cache item")
+	}
+
+	// Sync the contents to disk. If we crash we don't want to leave behind
+	// invalid zip files due to unwritten OS buffers.
+	if err := fsync(tmpPath); err != nil {
+		return nil, errors.Wrap(err, "failed to sync cache item to disk")
 	}
 
 	// Put the partially written file in the correct place and open
@@ -192,6 +200,12 @@ func doFetch(ctx context.Context, path string, fetcher FetcherWithPath) (file *F
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to put cache item in place")
 	}
+
+	// Sync the directory. We need to ensure the rename is recorded to disk.
+	if err := fsync(filepath.Dir(path)); err != nil {
+		return nil, errors.Wrap(err, "failed to sync cache directory to disk")
+	}
+
 	f, err = os.Open(path)
 	if err != nil {
 		return nil, err
@@ -286,4 +300,16 @@ func touch(path string) {
 	if err := os.Chtimes(path, t, t); err != nil {
 		log.Printf("failed to touch %s: %s", path, err)
 	}
+}
+
+func fsync(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	err = f.Sync()
+	if err1 := f.Close(); err == nil {
+		err = err1
+	}
+	return err
 }

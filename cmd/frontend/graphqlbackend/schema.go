@@ -894,13 +894,17 @@ type SearchResults {
     # The results. Inside each SearchResult there may be multiple matches, e.g.
     # a FileMatch may contain multiple line matches.
     results: [SearchResult!]!
-    # The total number of results, taking into account the SearchResult type.
-    # This is different than the length of the results array in that e.g. the
-    # results array may contain two file matches and this resultCount would
-    # report 6 ("3 line matches per file").
+    # The total number of matches returned by this search. This is different
+    # than the length of the results array in that e.g. a single results array
+    # entry may contain multiple matches. For example, the results array may
+    # contain two file matches and this field would report 6 ("3 line matches
+    # per file") while the length of the results array would report 3
+    # ("3 FileMatch results").
     #
     # Typically, 'approximateResultCount', not this field, is shown to users.
-    resultCount: Int!
+    matchCount: Int!
+    # DEPRECATED: Renamed to 'matchCount' for less ambiguity.
+    resultCount: Int! @deprecated(reason: "renamed to matchCount for less ambiguity")
     # The approximate number of results. This is like the length of the results
     # array, except it can indicate the number of results regardless of whether
     # or not the limit was hit. Currently, this is represented as e.g. "5+"

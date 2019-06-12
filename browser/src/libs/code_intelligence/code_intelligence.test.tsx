@@ -1,3 +1,4 @@
+import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
@@ -84,7 +85,7 @@ const createMockPlatformContext = (
                 data: {
                     repository: {
                         mirrorInfo: {
-                            cloneInProgress: false,
+                            cloned: true,
                         },
                         commit: {
                             oid: 'foo',
@@ -99,12 +100,9 @@ const createMockPlatformContext = (
             return of({
                 data: {
                     repository: {
-                        mirrorInfo: {
-                            cloneInProgress: false,
-                        },
                         commit: {
                             file: {
-                                content: '',
+                                content: 'Hello World',
                             },
                         },
                     },
@@ -251,6 +249,7 @@ describe('code_intelligence', () => {
                                 dom: {
                                     getCodeElementFromTarget: jest.fn(),
                                     getCodeElementFromLineNumber: jest.fn(),
+                                    getLineElementFromLineNumber: jest.fn(),
                                     getLineNumberFromCodeElement: jest.fn(),
                                 },
                                 resolveFileInfo: codeView => of(fileInfo),
@@ -279,7 +278,7 @@ describe('code_intelligence', () => {
                     resource: 'git://foo?1#/bar.ts',
                     model: {
                         uri: 'git://foo?1#/bar.ts',
-                        text: '',
+                        text: 'Hello World',
                         languageId: 'typescript',
                     },
                     selections: [],
@@ -291,89 +290,249 @@ describe('code_intelligence', () => {
             expect(toolbar).not.toBeUndefined()
         })
 
-        test('decorates a code view', async () => {
-            const { extensionAPI, services } = await integrationTestContext(undefined, {
-                roots: [],
-                editors: [],
-            })
-            const codeView = createTestElement()
-            codeView.id = 'code'
-            const fileInfo: FileInfo = {
-                repoName: 'foo',
-                filePath: '/bar.ts',
-                commitID: '1',
-            }
-            const line = document.createElement('div')
-            codeView.appendChild(line)
-            subscriptions.add(
-                handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
-                    codeHost: {
-                        name: 'test',
-                        check: () => true,
-                        codeViewResolvers: [
-                            toCodeViewResolver('#code', {
-                                dom: {
-                                    getCodeElementFromTarget: jest.fn(),
-                                    getCodeElementFromLineNumber: () => line,
-                                    getLineNumberFromCodeElement: jest.fn(),
-                                },
-                                resolveFileInfo: codeView => of(fileInfo),
-                            }),
-                        ],
-                    },
-                    extensionsController: createMockController(services),
-                    showGlobalDebug: true,
-                    platformContext: createMockPlatformContext(),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
+        describe('Decorations', () => {
+            it('decorates a code view', async () => {
+                const { extensionAPI, services } = await integrationTestContext(undefined, {
+                    roots: [],
+                    editors: [],
                 })
-            )
-            const activeEditor = await from(extensionAPI.app.activeWindowChanges)
-                .pipe(
-                    filter(isDefined),
-                    switchMap(window => window.activeViewComponentChanges),
-                    filter(isDefined),
-                    take(1)
+                const codeView = createTestElement()
+                codeView.id = 'code'
+                const fileInfo: FileInfo = {
+                    repoName: 'foo',
+                    filePath: '/bar.ts',
+                    commitID: '1',
+                }
+                // For this test, we pretend bar.ts only has one line of code
+                const line = document.createElement('div')
+                codeView.appendChild(line)
+                subscriptions.add(
+                    handleCodeHost({
+                        mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                        codeHost: {
+                            name: 'test',
+                            check: () => true,
+                            codeViewResolvers: [
+                                toCodeViewResolver('#code', {
+                                    dom: {
+                                        getCodeElementFromTarget: () => line,
+                                        getCodeElementFromLineNumber: () => line,
+                                        getLineElementFromLineNumber: () => line,
+                                        getLineNumberFromCodeElement: () => 1,
+                                    },
+                                    resolveFileInfo: codeView => of(fileInfo),
+                                }),
+                            ],
+                        },
+                        extensionsController: createMockController(services),
+                        showGlobalDebug: true,
+                        platformContext: createMockPlatformContext(),
+                        sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                        telemetryService: NOOP_TELEMETRY_SERVICE,
+                        render: RENDER,
+                    })
                 )
-                .toPromise()
-            const decorationType = extensionAPI.app.createDecorationType()
-            const decorated = () =>
-                services.textDocumentDecoration
-                    .getDecorations({ uri: 'git://foo?1#/bar.ts' })
+                const activeEditor = await from(extensionAPI.app.activeWindowChanges)
                     .pipe(
-                        filter(decorations => Boolean(decorations && decorations.length > 0)),
+                        filter(isDefined),
+                        switchMap(window => window.activeViewComponentChanges),
+                        filter(isDefined),
                         take(1)
                     )
                     .toPromise()
+                const decorationType = extensionAPI.app.createDecorationType()
+                const decorated = () =>
+                    services.textDocumentDecoration
+                        .getDecorations({ uri: 'git://foo?1#/bar.ts' })
+                        .pipe(
+                            filter(decorations => Boolean(decorations && decorations.length > 0)),
+                            take(1)
+                        )
+                        .toPromise()
 
-            // Set decorations and verify that a decoration attachment has been added
-            activeEditor.setDecorations(decorationType, [
-                {
-                    range: new Range(0, 0, 0, 0),
-                    after: {
-                        contentText: 'test decoration',
+                // Set decorations and verify that a decoration attachment has been added
+                activeEditor.setDecorations(decorationType, [
+                    {
+                        range: new Range(0, 0, 0, 0),
+                        after: {
+                            contentText: 'test decoration',
+                        },
                     },
-                },
-            ])
-            await decorated()
-            expect(line.querySelectorAll('.line-decoration-attachment').length).toBe(1)
-            expect(line.querySelector('.line-decoration-attachment')!.textContent).toEqual('test decoration')
+                ])
+                await decorated()
+                expect(line.querySelectorAll('.line-decoration-attachment')).toHaveLength(1)
+                expect(line.querySelector('.line-decoration-attachment')!.textContent).toEqual('test decoration')
 
-            // Decorate the code view again, and verify that previous decorations
-            // are cleaned up and replaced by the new decorations.
-            activeEditor.setDecorations(decorationType, [
-                {
-                    range: new Range(0, 0, 0, 0),
-                    after: {
-                        contentText: 'test decoration 2',
+                // Decorate the code view again, and verify that previous decorations
+                // are cleaned up and replaced by the new decorations.
+                activeEditor.setDecorations(decorationType, [
+                    {
+                        range: new Range(0, 0, 0, 0),
+                        after: {
+                            contentText: 'test decoration 2',
+                        },
                     },
-                },
-            ])
-            await decorated()
-            expect(line.querySelectorAll('.line-decoration-attachment').length).toBe(1)
-            expect(line.querySelector('.line-decoration-attachment')!.textContent).toEqual('test decoration 2')
+                ])
+                await decorated()
+                expect(line.querySelectorAll('.line-decoration-attachment').length).toBe(1)
+                expect(line.querySelector('.line-decoration-attachment')!.textContent).toEqual('test decoration 2')
+            })
+
+            it('decorates a diff code view', async () => {
+                const { extensionAPI, services } = await integrationTestContext(undefined, {
+                    roots: [],
+                    editors: [],
+                })
+                const codeView = createTestElement()
+                codeView.id = 'code'
+                const fileInfo: FileInfo = {
+                    repoName: 'foo',
+                    filePath: '/bar.ts',
+                    commitID: '2',
+                    baseRepoName: 'foo',
+                    baseFilePath: '/bar.ts',
+                    baseCommitID: '1',
+                }
+                codeView.innerHTML =
+                    '<div line="1" part="head"><span class="code-element"></span></div>\n' +
+                    '<div line="2" part="base"><span class="code-element"></span></div>\n' +
+                    '<div line="2" part="head"><span class="code-element"></span></div>\n' +
+                    '<div line="4" part="head"><span class="code-element"></span></div>\n' +
+                    '<div line="5" part="base"><span class="code-element"></span></div>\n'
+                const dom = {
+                    getCodeElementFromTarget: (target: HTMLElement) => target.closest('.code-element') as HTMLElement,
+                    getCodeElementFromLineNumber: (codeView: HTMLElement, line: number, part?: DiffPart) =>
+                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${part}"] > .code-element`),
+                    getLineElementFromLineNumber: (codeView: HTMLElement, line: number, part?: DiffPart) =>
+                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${part}"]`),
+                    getLineNumberFromCodeElement: (codeElement: HTMLElement) =>
+                        parseInt(codeElement.parentElement!.getAttribute('line')!, 10),
+                }
+                subscriptions.add(
+                    handleCodeHost({
+                        mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                        codeHost: {
+                            name: 'test',
+                            check: () => true,
+                            codeViewResolvers: [
+                                toCodeViewResolver('#code', {
+                                    dom,
+                                    resolveFileInfo: () => of(fileInfo),
+                                }),
+                            ],
+                        },
+                        extensionsController: createMockController(services),
+                        showGlobalDebug: true,
+                        platformContext: createMockPlatformContext({}),
+                        sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                        telemetryService: NOOP_TELEMETRY_SERVICE,
+                        render: RENDER,
+                    })
+                )
+                await from(extensionAPI.app.activeWindowChanges)
+                    .pipe(
+                        filter(isDefined),
+                        switchMap(window => window.activeViewComponentChanges),
+                        filter(isDefined),
+                        take(2)
+                    )
+                    .toPromise()
+                const decorationType = extensionAPI.app.createDecorationType()
+                const decorated = (commit: string) =>
+                    services.textDocumentDecoration
+                        .getDecorations({ uri: `git://foo?${commit}#/bar.ts` })
+                        .pipe(
+                            skip(1),
+                            take(1)
+                        )
+                        .toPromise()
+
+                // Set decorations and verify that a decoration attachment has been added
+                const editors = extensionAPI.app.activeWindow!.visibleViewComponents
+                expect(editors).toHaveLength(2)
+
+                const baseEditor = editors.find(e => e.document.uri === 'git://foo?1#/bar.ts')!
+                const baseDecorations = [
+                    {
+                        range: new Range(0, 0, 0, 0),
+                        isWholeLine: true,
+                        backgroundColor: 'red',
+                        after: {
+                            contentText: 'test decoration base line 1',
+                        },
+                    },
+                    {
+                        range: new Range(1, 0, 1, 0),
+                        isWholeLine: true,
+                        backgroundColor: 'red',
+                        after: {
+                            contentText: 'test decoration base line 2',
+                        },
+                    },
+                    {
+                        range: new Range(4, 0, 4, 0),
+                        isWholeLine: true,
+                        backgroundColor: 'red',
+                        after: {
+                            contentText: 'test decoration base line 5',
+                        },
+                    },
+                ]
+                baseEditor.setDecorations(decorationType, baseDecorations)
+
+                const headEditor = editors.find(e => e.document.uri === 'git://foo?2#/bar.ts')!
+                const headDecorations = [
+                    {
+                        range: new Range(0, 0, 0, 0),
+                        isWholeLine: true,
+                        after: {
+                            contentText: 'test decoration head line 1',
+                        },
+                    },
+                    {
+                        range: new Range(1, 0, 1, 0),
+                        isWholeLine: true,
+                        backgroundColor: 'blue',
+                        after: {
+                            contentText: 'test decoration head line 2',
+                        },
+                    },
+                    {
+                        range: new Range(6, 0, 6, 0),
+                        isWholeLine: true,
+                        after: {
+                            contentText: 'test decoration not visible',
+                        },
+                    },
+                ]
+                headEditor.setDecorations(decorationType, headDecorations)
+
+                await Promise.all([decorated('1'), decorated('2')])
+
+                expect(codeView).toMatchSnapshot()
+
+                // Decorate the code view again, and verify that previous decorations
+                // are cleaned up and replaced by the new decorations.
+                // Remove decoration in first and second line
+                baseEditor.setDecorations(decorationType, baseDecorations.slice(2))
+                await decorated('1')
+                expect(codeView).toMatchSnapshot()
+
+                // Change decoration in first line
+                headEditor.setDecorations(decorationType, [
+                    headDecorations[0],
+                    {
+                        ...headDecorations[1],
+                        after: {
+                            ...headDecorations[1].after,
+                            contentText: 'test decoration head line 2 changed',
+                        },
+                    },
+                    headDecorations[2],
+                ])
+                await decorated('2')
+                expect(codeView).toMatchSnapshot()
+            })
         })
 
         test('removes code views and models', async () => {
@@ -404,6 +563,7 @@ describe('code_intelligence', () => {
                                 dom: {
                                     getCodeElementFromTarget: jest.fn(),
                                     getCodeElementFromLineNumber: jest.fn(),
+                                    getLineElementFromLineNumber: jest.fn(),
                                     getLineNumberFromCodeElement: jest.fn(),
                                 },
                                 resolveFileInfo: codeView => of(fileInfo),
@@ -430,7 +590,7 @@ describe('code_intelligence', () => {
                     isActive: true,
                     model: {
                         languageId: 'typescript',
-                        text: '',
+                        text: 'Hello World',
                         uri: 'git://foo?1#/bar.ts',
                     },
                     resource: 'git://foo?1#/bar.ts',
@@ -442,7 +602,7 @@ describe('code_intelligence', () => {
                     isActive: true,
                     model: {
                         languageId: 'typescript',
-                        text: '',
+                        text: 'Hello World',
                         uri: 'git://foo?1#/bar.ts',
                     },
                     resource: 'git://foo?1#/bar.ts',
@@ -466,7 +626,7 @@ describe('code_intelligence', () => {
                     isActive: true,
                     model: {
                         languageId: 'typescript',
-                        text: '',
+                        text: 'Hello World',
                         uri: 'git://foo?1#/bar.ts',
                     },
                     resource: 'git://foo?1#/bar.ts',

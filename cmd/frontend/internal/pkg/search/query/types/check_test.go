@@ -186,6 +186,10 @@ func Test_autoFix(t *testing.T) {
 			{"[)(]", `[)(]`},
 			{"[(]", `[(]`},
 			{"[()]", `[\(\)]`},
+
+			// From quick check with initial seed 1557931765714982622
+			{"()()", `\(\)\(\)`},
+			{"}?}${}.?3]}{()()", `}?}${}.?3]}{\(\)\(\)`},
 		}
 		for _, tt := range tests {
 			t.Run(tt.pat, func(t *testing.T) {

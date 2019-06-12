@@ -9,15 +9,16 @@ import (
 
 // All field names.
 const (
-	FieldDefault   = ""
-	FieldCase      = "case"
-	FieldRepo      = "repo"
-	FieldRepoGroup = "repogroup"
-	FieldFile      = "file"
-	FieldFork      = "fork"
-	FieldArchived  = "archived"
-	FieldLang      = "lang"
-	FieldType      = "type"
+	FieldDefault     = ""
+	FieldCase        = "case"
+	FieldRepo        = "repo"
+	FieldRepoGroup   = "repogroup"
+	FieldFile        = "file"
+	FieldFork        = "fork"
+	FieldArchived    = "archived"
+	FieldLang        = "lang"
+	FieldType        = "type"
+	FieldRepoHasFile = "repohasfile"
 
 	// For diff and commit search only:
 	FieldBefore    = "before"
@@ -48,6 +49,8 @@ var (
 			FieldArchived:  {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldLang:      {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
 			FieldType:      stringFieldType,
+
+			FieldRepoHasFile: regexpNegatableFieldType,
 
 			FieldBefore:    stringFieldType,
 			FieldAfter:     stringFieldType,

@@ -5,6 +5,7 @@ package shared
 
 import (
 	"encoding/json"
+	"flag"
 	"log"
 	"os"
 	"path/filepath"
@@ -58,6 +59,7 @@ var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL")
 // Main is the main server command function which is shared between Sourcegraph
 // server's open-source and enterprise variant.
 func Main() {
+	flag.Parse()
 	log.SetFlags(0)
 
 	// Ensure CONFIG_DIR and DATA_DIR
@@ -142,7 +144,7 @@ func Main() {
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
 		`repo-updater: repo-updater`,
-		`syntect_server: sh -c 'env QUIET=true ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_PORT=9238 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' ROCKET_ENV=production syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
+		`syntect_server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
 	}
 	procfile = append(procfile, ProcfileAdditions...)
 	if line, err := maybeRedisProcFile(); err != nil {

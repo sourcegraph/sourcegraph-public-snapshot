@@ -24,7 +24,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
                       externalServices {
                           totalCount
                       }
-                      repositories(enabled: true) {
+                      repositories {
                           totalCount
                       }
                       viewerSettings {
@@ -84,7 +84,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
 const fetchReferencesLink = (): Observable<string | null> =>
     queryGraphQL(gql`
         query {
-            repositories(enabled: true, cloned: true, first: 100, indexed: true) {
+            repositories(cloned: true, first: 100, indexed: true) {
                 nodes {
                     url
                     gitRefs {

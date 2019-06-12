@@ -262,6 +262,7 @@ func ua(accountID, token string) *extsvc.ExternalAccount {
 	})
 	return &a
 }
+
 func rp(name, ghid, serviceID string) authz.Repo {
 	return authz.Repo{
 		RepoName: api.RepoName(name),

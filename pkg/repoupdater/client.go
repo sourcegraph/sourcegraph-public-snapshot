@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 
@@ -92,11 +93,6 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		}
 		span.Finish()
 	}()
-	if args.ExternalRepo != nil {
-		span.SetTag("ExternalRepo.ID", args.ExternalRepo.ID)
-		span.SetTag("ExternalRepo.ServiceType", args.ExternalRepo.ServiceType)
-		span.SetTag("ExternalRepo.ServiceID", args.ExternalRepo.ServiceID)
-	}
 	if args.Repo != "" {
 		span.SetTag("Repo", string(args.Repo))
 	}
@@ -107,9 +103,10 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	}
 	defer resp.Body.Close()
 
-	stack := fmt.Sprintf("RepoLookup: %+v", args)
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Wrap(fmt.Errorf("http status %d", resp.StatusCode), stack)
+		// best-effort inclusion of body in error message
+		body, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 200))
+		return nil, errors.Errorf("RepoLookup for %+v failed with http status %d: %s", args, resp.StatusCode, string(body))
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&result)

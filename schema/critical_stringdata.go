@@ -226,7 +226,7 @@ const CriticalSchemaJSON = `{
         },
         "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
         "serviceProviderIssuer": {
-          "description": "The name of this SAML Service Provider, which is used by the Identity Provider to identify this Service Provider. It defaults to https://sourcegraph.example.com/.auth/saml/metadata (where https://sourcegraph.example.com is replaced with this Sourcegraph instance's \"externalURL\"). It is only necessary to explicitly set the issuer if you are using multiple SAML authentication providers.",
+          "description": "The SAML Service Provider name, used to identify this Service Provider. This is required if the \"externalURL\" field is not set (as the SAML metadata endpoint is computed as \"<externalURL>.auth/saml/metadata\"), or when using multiple SAML authentication providers.",
           "type": "string"
         },
         "identityProviderMetadataURL": {

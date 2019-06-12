@@ -1,8 +1,6 @@
 package licensing
 
-import (
-	"strings"
-)
+import "strings"
 
 const (
 	// EnterpriseStarterTag is the license tag for Enterprise Starter (which includes only a subset

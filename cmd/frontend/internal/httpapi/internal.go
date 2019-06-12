@@ -395,14 +395,7 @@ func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(globals.ExternalURL.String()); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
-}
-
-func serveGitServerAddrs(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(conf.SrcGitServers); err != nil {
+	if err := json.NewEncoder(w).Encode(globals.ExternalURL().String()); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil

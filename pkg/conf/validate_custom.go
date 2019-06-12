@@ -32,7 +32,6 @@ func validateCustomRaw(normalizedInput conftypes.RawUnified) (problems []string,
 // validateCustom validates the site config using custom validation steps that are not
 // able to be expressed in the JSON Schema.
 func validateCustom(cfg Unified) (problems []string) {
-
 	invalid := func(msg string) {
 		problems = append(problems, msg)
 	}

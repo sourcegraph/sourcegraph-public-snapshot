@@ -93,7 +93,7 @@ export class ResultContainer extends React.PureComponent<Props, State> {
         const Icon = this.props.icon
         const stringIcon = this.props.stringIcon ? this.props.stringIcon : undefined
         return (
-            <div className="result-container" data-testid="result-container">
+            <div className="e2e-search-result result-container" data-testid="result-container">
                 <div
                     className={
                         'result-container__header' +

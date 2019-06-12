@@ -256,9 +256,9 @@ func (m *mockGitLab) ListUsers(c *gitlab.Client, ctx context.Context, urlStr str
 		return nil, nil, err
 	}
 	p := page - 1
-	var (
-		pagedUsers []*gitlab.User
-	)
+
+	var pagedUsers []*gitlab.User
+
 	if perPage*p > len(matchingUsers)-1 {
 		pagedUsers = nil
 	} else if perPage*(p+1) > len(matchingUsers)-1 {
@@ -283,9 +283,11 @@ func (m mockCache) Get(key string) ([]byte, bool) {
 	v, ok := m[key]
 	return []byte(v), ok
 }
+
 func (m mockCache) Set(key string, b []byte) {
 	m[key] = string(b)
 }
+
 func (m mockCache) Delete(key string) {
 	delete(m, key)
 }

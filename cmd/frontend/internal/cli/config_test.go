@@ -1,6 +1,11 @@
 package cli
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+
+	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+)
 
 func TestPostgresDSN(t *testing.T) {
 	cases := []struct {
@@ -58,12 +63,20 @@ func TestPostgresDSN(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			have := doPostgresDSN("testuser", func(e string) string {
+			have := postgresDSN("testuser", func(e string) string {
 				return tc.env[e]
 			})
 			if have != tc.dsn {
 				t.Errorf("unexpected computed DSN\nhave: %s\nwant: %s", have, tc.dsn)
 			}
 		})
+	}
+}
+
+func TestServiceConnections(t *testing.T) {
+	// We only test that we get something non-empty back.
+	sc := serviceConnections()
+	if reflect.DeepEqual(sc, conftypes.ServiceConnections{}) {
+		t.Fatal("expected non-empty service connections")
 	}
 }

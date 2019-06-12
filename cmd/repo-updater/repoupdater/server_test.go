@@ -319,7 +319,6 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			svcs, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
 				IDs: ids,
 			})
-
 			if err != nil {
 				t.Fatalf("failed to read from store: %v", err)
 			}
@@ -450,6 +449,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		})
 	}
 }
+
 func TestServer_RepoExternalServices(t *testing.T) {
 	service1 := &repos.ExternalService{
 		ID:          1,

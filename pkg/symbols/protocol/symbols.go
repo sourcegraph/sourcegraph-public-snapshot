@@ -1,8 +1,6 @@
 package protocol
 
-import (
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-)
+import "github.com/sourcegraph/sourcegraph/pkg/api"
 
 // SearchArgs are the arguments to perform a search on the symbols service.
 type SearchArgs struct {

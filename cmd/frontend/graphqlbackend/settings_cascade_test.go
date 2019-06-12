@@ -33,7 +33,8 @@ func TestMergeSettings(t *testing.T) {
 			want:    `{"a":1}`,
 		},
 		"single with comments": {
-			configs: []string{`
+			configs: []string{
+				`
 /* comment */
 {
 	// comment

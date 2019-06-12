@@ -1,11 +1,37 @@
-import { DOMFunctions } from '@sourcegraph/codeintellify'
+import { DiffPart } from '@sourcegraph/codeintellify'
+import { DOMFunctions } from '../code_intelligence/code_views'
 
-const getLineNumberCell = (codeElement: HTMLElement) => {
+const getLineNumberCellFromCodeElement = (codeElement: HTMLElement) => {
     let elem: HTMLElement | null = codeElement
     while ((elem && elem.tagName !== 'TH') || (elem && !elem.textContent)) {
         elem = elem.previousElementSibling as HTMLElement | null
     }
     return elem
+}
+
+const getDiffLineNumberElementFromLineNumber = (
+    codeView: HTMLElement,
+    line: number,
+    part?: DiffPart
+): HTMLElement | null => {
+    const lineNumberCells = codeView.querySelectorAll<HTMLTableHeaderCellElement>(
+        `th:nth-of-type(${part === 'base' ? 1 : 2})`
+    )
+    for (const lineNumberCell of lineNumberCells) {
+        if (lineNumberCell.textContent && parseInt(lineNumberCell.textContent, 10) === line) {
+            return lineNumberCell
+        }
+    }
+    return null
+}
+
+const getDiffCodeElementFromLineNumber = (codeView: HTMLElement, line: number, part?: DiffPart): HTMLElement | null => {
+    const lineNumberCell = getDiffLineNumberElementFromLineNumber(codeView, line, part)
+    let codeElement: HTMLElement | null = lineNumberCell
+    while (codeElement && (codeElement.tagName !== 'TD' || codeElement.classList.contains('copy'))) {
+        codeElement = codeElement.nextElementSibling as HTMLElement | null
+    }
+    return codeElement
 }
 
 /**
@@ -20,30 +46,19 @@ export const diffDomFunctions: DOMFunctions = {
         const td = target.closest('td')
         if (
             td &&
-            (td.classList.contains('show-more') || td.classList.contains('show-context') || !getLineNumberCell(td))
+            (td.classList.contains('show-more') ||
+                td.classList.contains('show-context') ||
+                !getLineNumberCellFromCodeElement(td))
         ) {
             return null
         }
 
         return td
     },
-    getCodeElementFromLineNumber: (codeView, line, part) => {
-        const lineNumberCells = codeView.querySelectorAll(`th:nth-of-type(${part === 'base' ? 1 : 2})`)
-        for (const lineNumberCell of lineNumberCells) {
-            if (lineNumberCell.textContent && parseInt(lineNumberCell.textContent, 10) === line) {
-                let codeElement = lineNumberCell as HTMLElement | null
-                while (codeElement && (codeElement.tagName !== 'TD' || codeElement.classList.contains('copy'))) {
-                    codeElement = codeElement.nextElementSibling as HTMLElement | null
-                }
-
-                return codeElement
-            }
-        }
-
-        return null
-    },
+    getCodeElementFromLineNumber: getDiffCodeElementFromLineNumber,
+    getLineElementFromLineNumber: getDiffCodeElementFromLineNumber,
     getLineNumberFromCodeElement: codeElement => {
-        const elem = getLineNumberCell(codeElement)
+        const elem = getLineNumberCellFromCodeElement(codeElement)
 
         if (elem === null) {
             throw new Error('could not find line number element from code element')
@@ -90,16 +105,22 @@ export const diffDomFunctions: DOMFunctions = {
     },
 }
 
+const getDiffusionCodeElementFromLineNumber = (
+    codeView: HTMLElement,
+    line: number,
+    part?: DiffPart
+): HTMLElement | null => {
+    const row = codeView.querySelector<HTMLTableRowElement>(`tr:nth-of-type(${line})`)
+    if (!row) {
+        throw new Error(`unable to find row ${line} from code view`)
+    }
+    return row.querySelector('td')
+}
+
 export const diffusionDOMFns: DOMFunctions = {
     getCodeElementFromTarget: target => target.closest('td'),
-    getCodeElementFromLineNumber: (codeView, line) => {
-        const row = codeView.querySelector(`tr:nth-of-type(${line})`)
-        if (!row) {
-            throw new Error(`unable to find row ${line} from code view`)
-        }
-
-        return row.querySelector<HTMLElement>('td')
-    },
+    getCodeElementFromLineNumber: getDiffusionCodeElementFromLineNumber,
+    getLineElementFromLineNumber: getDiffusionCodeElementFromLineNumber,
     getLineNumberFromCodeElement: codeElement => {
         let lineCell = codeElement as HTMLElement | null
         while (
@@ -117,7 +138,20 @@ export const diffusionDOMFns: DOMFunctions = {
         if (!lineAnchor) {
             throw new Error('could not find line number anchor from code element')
         }
-        return parseInt(lineAnchor.textContent || '', 10)
+        // In recent Phabricator versions, the line number is stored in the `data-n`
+        // attribute, and the textContent is empty.
+        if (lineAnchor.dataset.n !== undefined) {
+            const lineNumber = parseInt(lineAnchor.dataset.n, 10)
+            if (isNaN(lineNumber)) {
+                throw new Error(`Could not parse lineNumber from data-n attribute: ${lineAnchor.dataset.n}`)
+            }
+            return lineNumber
+        }
+        const lineNumber = parseInt(lineAnchor.textContent || '', 10)
+        if (isNaN(lineNumber)) {
+            throw new Error(`Could not parse lineNumber from lineAnchor.textContent: ${lineAnchor.textContent}`)
+        }
+        return lineNumber
     },
     isFirstCharacterDiffIndicator: () => false,
 }

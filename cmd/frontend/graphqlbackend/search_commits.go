@@ -44,6 +44,7 @@ func (r *commitSearchResultResolver) DiffPreview() *highlightedString    { retur
 func (r *commitSearchResultResolver) Icon() string {
 	return r.icon
 }
+
 func (r *commitSearchResultResolver) Label() *markdownResolver {
 	return &markdownResolver{text: r.label}
 }
@@ -321,9 +322,9 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 
 func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (string, []*highlightedRange) {
 	// A map of line number to number of lines that have been ignored before the particular line number.
-	var lineByCountIgnored = make(map[int]int32)
+	lineByCountIgnored := make(map[int]int32)
 	// The line numbers of lines that were ignored.
-	var ignoredLineNumbers = make(map[int]bool)
+	ignoredLineNumbers := make(map[int]bool)
 
 	lines := strings.Split(rawDiffResult, "\n")
 	var finalLines []string

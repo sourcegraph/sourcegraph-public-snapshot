@@ -6,24 +6,21 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func TestServeHome(t *testing.T) {
-	globalstatedb.Mock.Get = func(ctx context.Context) (*globalstatedb.State, error) {
-		return &globalstatedb.State{SiteID: "a"}, nil
-	}
-	defer func() { globalstatedb.Mock.Get = nil }()
-	siteid.Init()
-
-	globals.ConfigurationServerFrontendOnly = &conf.Server{}
-	defer func() { globals.ConfigurationServerFrontendOnly = nil }()
-
 	check := func(t *testing.T, wantRedirectLocation string) {
 		t.Helper()
 
@@ -69,4 +66,97 @@ func TestRepoShortName(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewCommon_repo_error(t *testing.T) {
+	cases := []struct {
+		name string
+		rev  string
+		err  error
+
+		want string
+		code int
+	}{{
+		name: "cloning",
+		err:  &vcs.RepoNotExistError{CloneInProgress: true},
+		code: 200,
+	}, {
+		name: "repo-404",
+		err:  &vcs.RepoNotExistError{Repo: "repo-404"},
+		want: "repository does not exist: repo-404",
+		code: 404,
+	}, {
+		name: "rev-404",
+		rev:  "@marco",
+		err:  &git.RevisionNotFoundError{Repo: "rev-404", Spec: "marco"},
+		want: "revision not found: rev-404@marco",
+		code: 404,
+	}, {
+		name: "repoupdater-not-found",
+		err:  repoupdater.ErrNotFound,
+		want: repoupdater.ErrNotFound.Error(),
+		code: 404,
+	}, {
+		name: "repoupdater-unauthorized",
+		err:  repoupdater.ErrUnauthorized,
+		want: repoupdater.ErrUnauthorized.Error(),
+		code: 401,
+	}, {
+		name: "github.com/sourcegraphtest/Always500Test",
+		want: "error caused by Always500Test repo name",
+		code: 500,
+	}}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			backend.Mocks.Repos.MockGetByName(t, api.RepoName(tt.name), 1)
+			backend.Mocks.Repos.MockGet(t, 1)
+			backend.Mocks.Repos.ResolveRev = func(context.Context, *types.Repo, string) (api.CommitID, error) {
+				if tt.err != nil {
+					return "", tt.err
+				}
+				return api.CommitID("deadbeef"), nil
+			}
+
+			req, err := http.NewRequest("GET", "/", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req = mux.SetURLVars(req, map[string]string{
+				"Repo": tt.name,
+				"Rev":  tt.rev,
+			})
+
+			code := 200
+			got := ""
+			serveError := func(w http.ResponseWriter, r *http.Request, err error, statusCode int) {
+				got = err.Error()
+				code = statusCode
+			}
+
+			_, err = newCommon(httptest.NewRecorder(), req, "test", serveError)
+			if err != nil {
+				if got != "" || code != 200 {
+					t.Fatal("serveError called and error returned from newCommon")
+				}
+				code = 500
+				got = err.Error()
+			}
+
+			if tt.want != got {
+				t.Errorf("unexpected error.\ngot:  %s\nwant: %s", got, tt.want)
+			}
+			if tt.code != code {
+				t.Errorf("unexpected status code: got=%d want=%d", code, tt.code)
+			}
+		})
+	}
+}
+
+func init() {
+	globals.ConfigurationServerFrontendOnly = &conf.Server{}
+	globalstatedb.Mock.Get = func(ctx context.Context) (*globalstatedb.State, error) {
+		return &globalstatedb.State{SiteID: "a"}, nil
+	}
+	siteid.Init()
 }

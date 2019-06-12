@@ -17,10 +17,13 @@ type PatternInfo struct {
 	FileMatchLimit  int32
 
 	// We do not support IsMultiline
-	//IsMultiline     bool
+	// IsMultiline     bool
 	IncludePattern  string
 	IncludePatterns []string
 	ExcludePattern  string
+
+	FilePatternsReposMustInclude []string
+	FilePatternsReposMustExclude []string
 
 	PathPatternsAreRegExps       bool
 	PathPatternsAreCaseSensitive bool
