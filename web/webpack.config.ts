@@ -7,6 +7,7 @@ import OptimizeCssAssetsPlugin from 'optimize-css-assets-webpack-plugin'
 import * as path from 'path'
 import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
+import { isDefined } from '../shared/src/util/types'
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 console.error('Using mode', mode)
@@ -23,7 +24,7 @@ const enterpriseDir = path.resolve(__dirname, 'src', 'enterprise')
 const styleEntrypoints = [
     path.join(__dirname, 'src', 'main.scss'),
     isEnterpriseBuild ? path.join(__dirname, 'src', 'enterprise.scss') : null,
-].filter((path): path is string => !!path)
+].filter(isDefined)
 
 const config: webpack.Configuration = {
     context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
