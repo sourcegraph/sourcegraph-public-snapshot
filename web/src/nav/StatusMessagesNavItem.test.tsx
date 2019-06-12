@@ -5,7 +5,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 
 describe('StatusMessagesNavItem', () => {
-    setLinkComponent((props: any) => <a {...props} />)
+    setLinkComponent(props => <a {...props} />)
     afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
 
     test('no messages', () => {
