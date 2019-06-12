@@ -78,8 +78,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         )}
                     </div>
                 )
-            default:
-                return <DropdownItem>{message.message}</DropdownItem>
         }
     }
 
