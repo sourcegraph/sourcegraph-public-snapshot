@@ -14,7 +14,7 @@ import { isDiscussionsEnabled } from '../discussions'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
-import { StatusMessagesNavItem } from './StatusMessagesNavItem'
+import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
 
 interface Props
@@ -116,7 +116,10 @@ export class NavLinks extends React.PureComponent<Props> {
                     this.props.authenticatedUser &&
                     this.props.authenticatedUser.siteAdmin && (
                         <li className="nav-item">
-                            <StatusMessagesNavItem isSiteAdmin={this.props.authenticatedUser.siteAdmin} />
+                            <StatusMessagesNavItem
+                                fetchMessages={fetchAllStatusMessages}
+                                isSiteAdmin={this.props.authenticatedUser.siteAdmin}
+                            />
                         </li>
                     )}
                 {this.props.location.pathname !== '/welcome' && (

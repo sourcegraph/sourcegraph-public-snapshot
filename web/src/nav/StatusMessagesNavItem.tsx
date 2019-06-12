@@ -1,7 +1,7 @@
 import CloudCheckIcon from 'mdi-react/CloudCheckIcon'
 import CloudSyncIcon from 'mdi-react/CloudSyncIcon'
 import React from 'react'
-import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable, Subscription, timer } from 'rxjs'
 import { concatMap, map } from 'rxjs/operators'
 import { Link } from '../../../shared/src/components/Link'
@@ -9,7 +9,7 @@ import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../backend/graphql'
 
-function fetchAllStatusMessages(): Observable<GQL.IStatusMessage[]> {
+export function fetchAllStatusMessages(): Observable<GQL.IStatusMessage[]> {
     return queryGraphQL(
         gql`
             query StatusMessages {
@@ -25,8 +25,28 @@ function fetchAllStatusMessages(): Observable<GQL.IStatusMessage[]> {
     )
 }
 
+interface StatusMessageEntryProps {
+    title: string
+    text: string
+    showLink?: boolean
+    linkTo: string
+    linkText: string
+}
+
+const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => (
+    <div key={props.text} className="status-messages-nav-item__entry">
+        <h4>{props.title}</h4>
+        <p>{props.text}</p>
+        {props.showLink && (
+            <p className="status-messages-nav-item__entry-link">
+                <Link to={props.linkTo}>Configure external services</Link>
+            </p>
+        )}
+    </div>
+)
+
 interface Props {
-    messages?: GQL.IStatusMessage[]
+    fetchMessages: () => Observable<GQL.IStatusMessage[]>
     isSiteAdmin?: boolean
 }
 
@@ -49,13 +69,14 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     public state: State = { isOpen: false, messages: [] }
 
     public componentDidMount(): void {
-        if (this.props.messages) {
-            this.setState({ messages: this.props.messages })
-        }
-
         this.subscriptions.add(
             timer(0, REFRESH_INTERVAL_MS)
-                .pipe(concatMap(fetchAllStatusMessages))
+                .pipe(
+                    concatMap(() => {
+                        console.log('calling fetchmessages')
+                        return this.props.fetchMessages()
+                    })
+                )
                 .subscribe(messages => this.setState({ messages }))
         )
     }
@@ -68,15 +89,14 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         switch (message.type) {
             case GQL.StatusMessageType.CLONING:
                 return (
-                    <div key={message.message} className="status-messages-nav-item__entry">
-                        <h4>Repositories updating</h4>
-                        <p>{message.message}</p>
-                        {this.props.isSiteAdmin && (
-                            <p className="status-messages-nav-item__entry-link">
-                                <Link to={'/site-admin/external-services'}>Configure external services</Link>
-                            </p>
-                        )}
-                    </div>
+                    <StatusMessagesNavItemEntry
+                        key={message.message}
+                        title="Repositories updating"
+                        text={message.message}
+                        showLink={this.props.isSiteAdmin}
+                        linkTo="/site-admin/external-services"
+                        linkText="Configure external services"
+                    />
                 )
         }
     }
@@ -108,15 +128,13 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     {hasMessages ? (
                         this.state.messages.map(m => this.renderMessage(m))
                     ) : (
-                        <div className="status-messages-nav-item__entry">
-                            <h4>Repositories up to date</h4>
-                            <p>All repositories hosted on the configured external services are up to date.</p>
-                            {this.props.isSiteAdmin && (
-                                <p className="status-messages-nav-item__entry-link">
-                                    <Link to="/site-admin/external-services">Configure external services</Link>
-                                </p>
-                            )}
-                        </div>
+                        <StatusMessagesNavItemEntry
+                            title="Repositories up to date"
+                            text="All repositories hosted on the configured external services are up to date."
+                            showLink={this.props.isSiteAdmin}
+                            linkTo="/site-admin/external-services"
+                            linkText="Configure external services"
+                        />
                     )}
                 </DropdownMenu>
             </ButtonDropdown>

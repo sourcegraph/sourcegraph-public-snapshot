@@ -1,5 +1,6 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
+import { from } from 'rxjs'
 import { setLinkComponent } from '../../../shared/src/components/Link'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
@@ -9,7 +10,8 @@ describe('StatusMessagesNavItem', () => {
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 
     test('no messages', () => {
-        expect(renderer.create(<StatusMessagesNavItem messages={[]} />).toJSON()).toMatchSnapshot()
+        const fetchMessages = () => from([])
+        expect(renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} />).toJSON()).toMatchSnapshot()
     })
 
     describe('one CLONING message', () => {
@@ -18,13 +20,18 @@ describe('StatusMessagesNavItem', () => {
             type: GQL.StatusMessageType.CLONING,
             message: 'Currently cloning repositories...',
         }
+
+        const fetchMessages = () => {
+            console.log('here')
+            return from([[message]])
+        }
         test('as non-site admin', () => {
-            expect(renderer.create(<StatusMessagesNavItem messages={[message]} />).toJSON()).toMatchSnapshot()
+            expect(renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} />).toJSON()).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                renderer.create(<StatusMessagesNavItem messages={[message]} isSiteAdmin={true} />).toJSON()
+                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={true} />).toJSON()
             ).toMatchSnapshot()
         })
     })
