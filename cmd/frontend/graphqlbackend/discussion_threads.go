@@ -270,6 +270,7 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *struct {
 	Input *struct {
 		ThreadID graphql.ID
+		Title    *string
 		Archive  *bool
 		Delete   *bool
 	}
@@ -299,6 +300,7 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 	thread, err := db.DiscussionThreads.Update(ctx, threadID, &db.DiscussionThreadsUpdateOptions{
 		Archive: args.Input.Archive,
 		Delete:  delete,
+		Title:   args.Input.Title,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionThreads.Update")
