@@ -16,6 +16,14 @@ $media-xl: 1200px;
 @import './global-styles/colors';
 
 // Bootstrap configuration before Bootstrap is imported
+
+// Disable superfluous visual effects.
+$enable-rounded: false;
+$enable-transitions: false;
+
+// Less spacing.
+$spacer: 0.5rem;
+
 $border-radius: 2px;
 $border-radius-sm: 1px;
 $border-radius-lg: 4px;
