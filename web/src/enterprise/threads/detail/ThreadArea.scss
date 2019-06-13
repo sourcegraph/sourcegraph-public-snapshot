@@ -1,0 +1,25 @@
+@import './changes/ThreadChangesList';
+@import './overview/ThreadOverview';
+@import './inbox/ThreadInboxItemsList';
+@import './ThreadAreaNavbar';
+@import './sidebar/ThreadAreaSidebar';
+
+.thread-area {
+    &__sidebar {
+        background-color: var(--navbar-bg);
+    }
+
+    // TODO!(sqs): hacky
+    .markdown {
+        pre {
+            padding: 0 0.25rem;
+        }
+    }
+
+    .text-purple {
+        color: $oc-violet-7;
+    }
+    .bg-purple {
+        background-color: $oc-violet-9;
+    }
+}

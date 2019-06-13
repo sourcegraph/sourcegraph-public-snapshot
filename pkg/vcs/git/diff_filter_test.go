@@ -64,7 +64,7 @@ index a29bdeb434d874c9b1d8969c40c42161b03fafdc..c0d0fb45c382919737f8d0c20aaf57cf
 			if err != nil {
 				t.Fatal(err)
 			}
-			rawDiff, highlights, err := filterAndHighlightDiff([]byte(test.rawDiff), query, true, pathMatcher)
+			rawDiff, highlights, err := FilterAndHighlightDiff([]byte(test.rawDiff), query, true, pathMatcher)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -1,18 +1,23 @@
 import { PlatformContext } from '../../platform/context'
 import { ReferenceParams } from '../protocol'
 import { createContextService } from './context/contextService'
+import { CheckTemplateRegistry } from './services/checkTemplates'
+import { CodeActionProviderRegistry } from './services/codeActions'
 import { CommandRegistry } from './services/command'
 import { CompletionItemProviderRegistry } from './services/completion'
 import { ContributionRegistry } from './services/contribution'
 import { TextDocumentDecorationProviderRegistry } from './services/decoration'
+import { createDiagnosticsService } from './services/diagnosticsService'
 import { createEditorService } from './services/editorService'
 import { ExtensionsService } from './services/extensionsService'
+import { createFileSystemService } from './services/fileSystemService'
 import { TextDocumentHoverProviderRegistry } from './services/hover'
 import { LinkPreviewProviderRegistry } from './services/linkPreview'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from './services/location'
 import { createModelService } from './services/modelService'
 import { NotificationsService } from './services/notifications'
 import { QueryTransformerRegistry } from './services/queryTransformer'
+import { SearchProviderRegistry } from './services/searchProviders'
 import { createSettingsService } from './services/settings'
 import { ViewProviderRegistry } from './services/view'
 import { createWorkspaceService } from './services/workspaceService'
@@ -33,8 +38,11 @@ export class Services {
         >
     ) {}
 
+    public readonly codeActions = new CodeActionProviderRegistry()
     public readonly commands = new CommandRegistry()
     public readonly context = createContextService(this.platformContext)
+    public readonly diagnostics = createDiagnosticsService()
+    public readonly fileSystem = createFileSystemService(this.platformContext)
     public readonly workspace = createWorkspaceService()
     public readonly model = createModelService()
     public readonly editor = createEditorService(this.model)
@@ -49,6 +57,8 @@ export class Services {
     public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
     public readonly queryTransformer = new QueryTransformerRegistry()
+    public readonly searchProviders = new SearchProviderRegistry()
     public readonly views = new ViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
+    public readonly checkTemplates = new CheckTemplateRegistry()
 }

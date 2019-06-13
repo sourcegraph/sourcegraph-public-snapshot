@@ -1,6 +1,6 @@
 // Entry point for the web app
 
-@import './SourcegraphWebApp.scss'; // Need .scss extension because of https://github.com/webpack-contrib/sass-loader/issues/556
+@import './SourcegraphWebApp';
 
 // Enterprise styles
 @import './enterprise/extensions/registry/RegistryArea';
@@ -9,3 +9,5 @@
 @import './enterprise/productSubscription/ProductCertificate';
 @import './enterprise/productSubscription/TrueUpStatusSummary';
 @import './enterprise/user/productSubscriptions/PaymentTokenFormControl';
+@import './enterprise/threads/global/ThreadsArea';
+@import './enterprise/threads/global/nav/ThreadsNavItem';

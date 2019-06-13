@@ -7,7 +7,6 @@ import OptimizeCssAssetsPlugin from 'optimize-css-assets-webpack-plugin'
 import * as path from 'path'
 import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
-import { isDefined } from '../shared/src/util/types'
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 console.error('Using mode', mode)
@@ -20,11 +19,6 @@ const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
 const isEnterpriseBuild = !!process.env.ENTERPRISE
 const enterpriseDir = path.resolve(__dirname, 'src', 'enterprise')
-
-const styleEntrypoints = [
-    path.join(__dirname, 'src', 'main.scss'),
-    isEnterpriseBuild ? path.join(__dirname, 'src', 'enterprise.scss') : null,
-].filter(isDefined)
 
 const config: webpack.Configuration = {
     context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
@@ -60,12 +54,7 @@ const config: webpack.Configuration = {
         app: [
             'react-hot-loader/patch',
             isEnterpriseBuild ? path.join(enterpriseDir, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
-
-            // In development, use style-loader for CSS and include the styles in the app
-            // entrypoint. The style.bundle.css file will be empty.
-            ...(mode === 'development' ? styleEntrypoints : []),
         ],
-        style: mode === 'production' ? styleEntrypoints : [path.join(__dirname, 'src', 'util', 'empty.css')],
 
         'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
         'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',

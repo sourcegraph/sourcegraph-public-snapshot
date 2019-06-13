@@ -1,4 +1,6 @@
-import { take } from 'rxjs/operators'
+import { from } from 'rxjs'
+import { first, take } from 'rxjs/operators'
+import { TextSearchResult } from 'sourcegraph'
 import { integrationTestContext } from './testHelpers'
 
 describe('search (integration)', () => {
@@ -50,5 +52,16 @@ describe('search (integration)', () => {
                 .pipe(take(1))
                 .toPromise()
         ).toEqual('foo bar qux')
+    })
+
+    describe('findTextInFiles', () => {
+        test('', async () => {
+            const { extensionAPI } = await integrationTestContext()
+            const results = await from(extensionAPI.search.findTextInFiles({ pattern: 'p', type: 'regexp' }))
+                .pipe(first())
+                .toPromise()
+            expect(results.length).toBe(1)
+            expect(results[0].uri.toString()).toBe('file:///SR1')
+        })
     })
 })

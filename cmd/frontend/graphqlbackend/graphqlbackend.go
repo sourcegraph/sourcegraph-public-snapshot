@@ -114,6 +114,16 @@ func (r *NodeResolver) ToGitRef() (*gitRefResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToLabel() (Label, bool) {
+	n, ok := r.Node.(Label)
+	return n, ok
+}
+
+func (r *NodeResolver) ToProject() (Project, bool) {
+	n, ok := r.Node.(Project)
+	return n, ok
+}
+
 func (r *NodeResolver) ToRepository() (*repositoryResolver, bool) {
 	n, ok := r.Node.(*repositoryResolver)
 	return n, ok
@@ -195,7 +205,7 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":
-		return discussionThreadByID(ctx, id)
+		return DiscussionThreadByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)
@@ -212,12 +222,16 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 		return externalServiceByID(ctx, id)
 	case "GitRef":
 		return gitRefByID(ctx, id)
+	case "Label":
+		return LabelByID(ctx, id)
+	case "Project":
+		return ProjectByID(ctx, id)
 	case "Repository":
 		return repositoryByID(ctx, id)
 	case "User":
 		return UserByID(ctx, id)
 	case "Org":
-		return orgByID(ctx, id)
+		return OrgByID(ctx, id)
 	case "OrganizationInvitation":
 		return orgInvitationByID(ctx, id)
 	case "GitCommit":

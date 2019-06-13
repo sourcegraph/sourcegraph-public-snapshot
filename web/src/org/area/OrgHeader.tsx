@@ -42,6 +42,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({ org, navItems, match
                                         </li>
                                     )
                             )}
+                            <NamespaceAreaHeaderLinks url={match.url} />
                         </ul>
                         <div className="flex-1" />
                         {org.viewerPendingInvitation && org.viewerPendingInvitation.respondURL && (

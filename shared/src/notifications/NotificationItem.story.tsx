@@ -7,6 +7,8 @@ import { interval } from 'rxjs'
 import { map, startWith } from 'rxjs/operators'
 import { NotificationType as NotificationTypeType } from 'sourcegraph'
 import { NotificationItem } from './NotificationItem'
+
+import '../../../web/src/global-styles/index'
 import './NotificationItem.scss'
 
 const onDismiss = action('onDismiss')

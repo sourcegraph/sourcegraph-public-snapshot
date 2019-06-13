@@ -1,7 +1,9 @@
 import { ProxyInput, ProxyResult, proxyValue } from '@sourcegraph/comlink'
+import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Unsubscribable } from 'rxjs'
 import {
+    CodeActionProvider,
     CompletionItemProvider,
     DefinitionProvider,
     DocumentSelector,
@@ -9,13 +11,16 @@ import {
     Location,
     LocationProvider,
     ReferenceProvider,
+    CodeAction,
 } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
+import { CodeActionsParams } from '../../client/services/codeActions'
 import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
 import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 import { ExtDocuments } from './documents'
-import { fromHover, fromLocation, toPosition } from './types'
+import { fromCodeAction, fromHover, fromLocation, toPosition } from './types'
+import { WorkspaceEdit } from '../../types/workspaceEdit'
 
 /** @internal */
 export class ExtLanguageFeatures {
@@ -90,6 +95,28 @@ export class ExtLanguageFeatures {
             )
         )
         return syncSubscription(this.proxy.$registerCompletionItemProvider(selector, providerFunction))
+    }
+
+    public registerCodeActionProvider(selector: DocumentSelector, provider: CodeActionProvider): Unsubscribable {
+        const providerFunction: ProxyInput<
+            Parameters<ClientLanguageFeaturesAPI['$registerCodeActionProvider']>[1]
+        > = proxyValue(async ({ textDocument, range: rangeOrSelection, context }: CodeActionsParams) =>
+            toProxyableSubscribable(
+                provider.provideCodeActions(
+                    await this.documents.getSync(textDocument.uri),
+                    Selection.isSelection(rangeOrSelection)
+                        ? Selection.fromPlain(rangeOrSelection)
+                        : Range.fromPlain(rangeOrSelection),
+                    {
+                        ...context,
+                        diagnostics: context.diagnostics.map(d => ({ ...d, range: Range.fromPlain(d.range) })),
+                    }
+                ),
+                (items: null | undefined | (CodeAction & { edit?: WorkspaceEdit })[]) =>
+                    items ? items.map(fromCodeAction) : items
+            )
+        )
+        return syncSubscription(this.proxy.$registerCodeActionProvider(selector, providerFunction))
     }
 }
 

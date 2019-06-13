@@ -3,17 +3,22 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { parseSearchURLQuery } from '..'
+import { parseSearchURLQuery, USE_SEARCH_EXP } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
+import { Resizable } from '../../../../shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
+import { CodemodPanelViewRegistration } from '../../enterprise/codemod/panel/CodemodPanelViews'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../theme'
 import { EventLogger } from '../../tracking/eventLogger'
+import { SearchContextBar } from '../contextBar/SearchContextBar'
 import {
     isSearchResults,
     submitSearch,
@@ -26,7 +31,12 @@ import { SearchResultsList } from './SearchResultsList'
 
 const UI_PAGE_SIZE = 75
 
-export interface SearchResultsProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps, ThemeProps {
+export interface SearchResultsProps
+    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip'>,
+        SettingsCascadeProps,
+        TelemetryProps,
+        ThemeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -167,7 +177,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         return (
             <div className="e2e-search-results search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
-                <SearchResultsFilterBars
+                {!USE_SEARCH_EXP && (
+                    <SearchResultsFilterBars
                     navbarSearchQuery={this.props.navbarSearchQuery}
                     results={this.state.resultsOrError}
                     filters={filters}
@@ -176,26 +187,48 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     onFilterClick={this.onDynamicFilterClicked}
                     onShowMoreResultsClick={this.showMoreResults}
                     calculateShowMoreResultsCount={this.calculateCount}
-                />
-                <SearchResultsList
-                    resultsOrError={this.state.resultsOrError}
-                    onShowMoreResultsClick={this.showMoreResults}
-                    onExpandAllResultsToggle={this.onExpandAllResultsToggle}
-                    allExpanded={this.state.allExpanded}
-                    showSavedQueryModal={this.state.showSavedQueryModal}
-                    onSaveQueryClick={this.showSaveQueryModal}
-                    onSavedQueryModalClose={this.onModalClose}
-                    onDidCreateSavedQuery={this.onDidCreateSavedQuery}
-                    didSave={this.state.didSaveQuery}
-                    location={this.props.location}
-                    history={this.props.history}
-                    authenticatedUser={this.props.authenticatedUser}
-                    settingsCascade={this.props.settingsCascade}
-                    isLightTheme={this.props.isLightTheme}
-                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                    fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                    deployType={this.props.deployType}
-                />
+                    />
+                )}
+                <div className="d-flex flex-wrap flex-1 overflow-hidden">
+                    {USE_SEARCH_EXP && (
+                        <Resizable
+                            className="h-100 search-results__resizable"
+                            handlePosition="right"
+                            storageKey="search-context-bar-resizable"
+                            defaultSize={200}
+                            element={
+                                <SearchContextBar
+                                    {...this.props}
+                                    results={this.state.resultsOrError}
+                                    filters={filters}
+                                    extensionFilters={extensionFilters}
+                                    onFilterClick={this.onDynamicFilterClicked}
+                                    className="flex-1 overflow-auto"
+                                />
+                            }
+                        />
+                    )}
+                    <SearchResultsList
+                        {...this.props}
+                        resultsOrError={this.state.resultsOrError}
+                        onShowMoreResultsClick={this.showMoreResults}
+                        onExpandAllResultsToggle={this.onExpandAllResultsToggle}
+                        allExpanded={this.state.allExpanded}
+                        showSavedQueryModal={this.state.showSavedQueryModal}
+                        onSaveQueryClick={this.showSaveQueryModal}
+                        onSavedQueryModalClose={this.onModalClose}
+                        onDidCreateSavedQuery={this.onDidCreateSavedQuery}
+                        didSave={this.state.didSaveQuery}
+                        location={this.props.location}
+                        history={this.props.history}
+                        authenticatedUser={this.props.authenticatedUser}
+                        settingsCascade={this.props.settingsCascade}
+                        isLightTheme={this.props.isLightTheme}
+                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                        fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                        deployType={this.props.deployType}
+                    />
+                </div>
             </div>
         )
     }

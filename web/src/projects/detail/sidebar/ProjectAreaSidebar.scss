@@ -1,0 +1,19 @@
+.project-area-sidebar {
+    &--collapsed {
+        width: 3.5rem;
+    }
+    &--expanded {
+        width: 12rem;
+    }
+
+    &__nav-link {
+        &:hover {
+            background-color: var(--navbar-link-hover-bg);
+        }
+        &--active {
+            font-weight: bold;
+            background-color: var(--navbar-link-active-bg);
+            color: var(--body-color);
+        }
+    }
+}

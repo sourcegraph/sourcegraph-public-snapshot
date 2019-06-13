@@ -88,6 +88,7 @@ export function search(
                                             }
                                         }
                                         repository {
+                                            id
                                             name
                                             url
                                         }

@@ -110,7 +110,7 @@ body {
     --sans-serif: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif,
         Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
     --code-font-family: SFMono-Regular, Consolas, Menlo, DejaVu Sans Mono, Monaco, 'Lucida Console', monospace;
-    --font-size-base: 1rem;
+    --font-size-base: 0.875rem;
     --link-decoration: none;
     --link-hover-decoration: none;
     --input-bg: var(--bg-deep);
@@ -122,14 +122,17 @@ body {
 
 .theme-light {
     @include color-variants(secondary, $secondary-light, #000000);
+    $link-color: #566e9f;
 
     --body-color: #{$gray-19};
     --body-bg: #fbfdff;
     --navbar-bg: #{$color-light-bg-2};
+    --navbar-link-hover-bg: #{rgba($link-color, 0.08)};
+    --navbar-link-active-bg: #{rgba($link-color, 0.1)};
     --bg-deep: #{$color-light-bg-2};
     --bg-muted: #{$color-light-bg-2};
     --text-muted: #{$color-light-text-2};
-    --link-color: #566e9f;
+    --link-color: #{$link-color};
     --link-hover-color: #1d2535;
     --border-color: #{$color-light-border};
     --input-bg: #{$color-light-bg-1};
@@ -140,6 +143,8 @@ body {
     --body-color: #ffffff;
     --body-bg: #04070e;
     --navbar-bg: #{$color-bg-2};
+    --navbar-link-hover-bg: rgba(0, 0, 0, 0.1);
+    --navbar-link-active-bg: rgba(0, 0, 0, 0.25);
     --bg-deep: #{$color-bg-2};
     --bg-muted: #{$color-bg-4};
     --text-muted: #{$color-text-1};
@@ -156,6 +161,8 @@ body {
     --body-color: #ffffff;
     --body-bg: #000000;
     --navbar-bg: #000000;
+    --navbar-link-hover-bg: rgba(0, 0, 0, 0.1);
+    --navbar-link-active-bg: rgba(0, 0, 0, 0.25);
     --bg-deep: #111111;
     --bg-muted: #1b1b1b;
     --text-muted: #cccccc;

@@ -46,4 +46,34 @@ describe('Documents (integration)', () => {
             assertToJSON(values, [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }] as TextDocument[])
         })
     })
+
+    describe('workspace.openTextDocument', () => {
+        test('opens a document that was not already open', async () => {
+            const {
+                services: { model: modelService, fileSystem },
+                extensionAPI,
+            } = await integrationTestContext(undefined, { editors: [], roots: [] })
+            fileSystem.setProvider(async () => 't')
+            const values = collectSubscribableValues(extensionAPI.workspace.openedTextDocuments)
+            expect(modelService.hasModel('file:///f')).toBeFalsy()
+            const doc = await extensionAPI.workspace.openTextDocument(new URL('file:///f'))
+            expect(doc).toMatchObject<Pick<TextDocument, 'uri' | 'text'>>({ uri: 'file:///f', text: 't' })
+            expect(modelService.hasModel('file:///f')).toBeTruthy()
+            expect(values).toEqual([doc])
+        })
+
+        test('returns a document that was already open', async () => {
+            const {
+                services: { model: modelService, fileSystem },
+                extensionAPI,
+            } = await integrationTestContext()
+            fileSystem.setProvider(async () => 't')
+            const values = collectSubscribableValues(extensionAPI.workspace.openedTextDocuments)
+            expect(modelService.hasModel('file:///f')).toBeTruthy()
+            const doc = await extensionAPI.workspace.openTextDocument(new URL('file:///f'))
+            expect(doc).toMatchObject<Pick<TextDocument, 'uri' | 'text'>>({ uri: 'file:///f', text: 't' })
+            expect(modelService.hasModel('file:///f')).toBeTruthy()
+            expect(values).toEqual([])
+        })
+    })
 })

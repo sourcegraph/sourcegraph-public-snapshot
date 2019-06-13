@@ -1,4 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "files": ["src/sourcegraph.d.ts"],
+  "compilerOptions": {
+    "skipLibCheck": false,
+  },
 }

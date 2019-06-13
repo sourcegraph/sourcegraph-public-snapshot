@@ -1,3 +1,16 @@
+html {
+    // Base for layout rem values
+    font-size: 16px;
+}
+
+// stylelint-disable-next-line selector-max-id
+// TODO!(sqs): is this needed?
+html,
+body,
+#root {
+    height: 100%;
+}
+
 *,
 *::before,
 *::after {
@@ -7,6 +20,7 @@
 body {
     margin: 0;
     line-height: $line-height-base;
+    font-size: var(--font-size-base);
 }
 
 ul,
@@ -25,16 +39,17 @@ dd {
     margin-left: 0;
 }
 
-a {
-    text-decoration: var(--link-decoration);
-    &:hover {
-        text-decoration: var(--link-hover-decoration);
-    }
-}
-
 p {
     margin-top: 0;
     margin-bottom: $spacer * 2;
+}
+
+textarea {
+    font-family: var(--sans-serif);
+}
+
+hr {
+    border-color: var(--border-color);
 }
 
 .table {

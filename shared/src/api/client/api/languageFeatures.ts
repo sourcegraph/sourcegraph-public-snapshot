@@ -1,8 +1,11 @@
 import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Hover, Location } from '@sourcegraph/extension-api-types'
-import { CompletionList, DocumentSelector, Unsubscribable } from 'sourcegraph'
+import { map } from 'rxjs/operators'
+import { CodeAction, CompletionList, DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
+import { toCodeAction } from '../../extension/api/types'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
+import { CodeActionsParams, ProvideCodeActionsSignature } from '../services/codeActions'
 import { ProvideCompletionItemSignature } from '../services/completion'
 import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
@@ -46,6 +49,13 @@ export interface ClientLanguageFeaturesAPI extends ProxyValue {
             ((params: TextDocumentPositionParams) => ProxySubscribable<CompletionList | null | undefined>) & ProxyValue
         >
     ): Unsubscribable & ProxyValue
+
+    $registerCodeActionProvider(
+        selector: DocumentSelector,
+        providerFunction: ProxyResult<
+            ((params: CodeActionsParams) => ProxySubscribable<CodeAction[] | null | undefined>) & ProxyValue
+        >
+    ): Unsubscribable & ProxyValue
 }
 
 /** @internal */
@@ -63,6 +73,10 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
         private completionItemsRegistry: FeatureProviderRegistry<
             TextDocumentRegistrationOptions,
             ProvideCompletionItemSignature
+        >,
+        private codeActionsRegistry: FeatureProviderRegistry<
+            TextDocumentRegistrationOptions,
+            ProvideCodeActionsSignature
         >
     ) {}
 
@@ -128,6 +142,23 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
         return proxyValue(
             this.completionItemsRegistry.registerProvider({ documentSelector }, params =>
                 wrapRemoteObservable(providerFunction(params))
+            )
+        )
+    }
+
+    public $registerCodeActionProvider(
+        documentSelector: DocumentSelector,
+        providerFunction: ProxyResult<
+            ((params: CodeActionsParams) => ProxySubscribable<CodeAction[] | null | undefined>) & ProxyValue
+        >
+    ): Unsubscribable & ProxyValue {
+        return proxyValue(
+            this.codeActionsRegistry.registerProvider({ documentSelector }, params =>
+                wrapRemoteObservable(providerFunction({ ...params, range: (params.range as any).toJSON() })).pipe(
+                    map(codeActions =>
+                        codeActions ? codeActions.map(codeAction => toCodeAction(codeAction)) : codeActions
+                    )
+                )
             )
         )
     }

@@ -10,8 +10,12 @@ import (
 // It intentionally does not try to e.g. alleviate null fields.
 type DiscussionThread struct {
 	ID           int64
+	ProjectID    int64
 	AuthorUserID int32
 	Title        string
+	Settings     *string
+	IsCheck      bool
+	IsActive     bool
 	CreatedAt    time.Time
 	ArchivedAt   *time.Time
 	UpdatedAt    time.Time
@@ -35,6 +39,8 @@ type DiscussionThreadTargetRepo struct {
 	LinesBefore    *[]string
 	Lines          *[]string
 	LinesAfter     *[]string
+
+	IsIgnored bool
 }
 
 // HasSelection tells if the selection fields are present or not. If one field

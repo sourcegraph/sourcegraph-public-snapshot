@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -30,10 +31,10 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	ID graphql.ID
 }) (*OrgResolver, error) {
-	return orgByID(ctx, args.ID)
+	return OrgByID(ctx, args.ID)
 }
 
-func orgByID(ctx context.Context, id graphql.ID) (*OrgResolver, error) {
+func OrgByID(ctx context.Context, id graphql.ID) (*OrgResolver, error) {
 	orgID, err := UnmarshalOrgID(id)
 	if err != nil {
 		return nil, err
@@ -168,6 +169,10 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (o *OrgResolver) Projects(ctx context.Context, args *graphqlutil.ConnectionArgs) (ProjectConnection, error) {
+	return ProjectsInNamespace(ctx, o.ID(), args)
 }
 
 func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {

@@ -9,14 +9,17 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import { parseSearchURLQuery } from '..'
+import { parseSearchURLQuery, USE_SEARCH_EXP } from '..'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
 import { VirtualList } from '../../../../shared/src/components/VirtualList'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined } from '../../../../shared/src/util/types'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
@@ -30,12 +33,18 @@ import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
 
-export interface SearchResultsListProps extends SettingsCascadeProps, ThemeProps {
+export interface SearchResultsListProps
+    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip'>,
+        TelemetryProps,
+        SettingsCascadeProps,
+        ThemeProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
     isSourcegraphDotCom: boolean
     deployType: DeployType
+    className?: string
 
     // Result list
     resultsOrError?: GQL.ISearchResults | ErrorLike
@@ -302,7 +311,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     </div>
                 )}
 
-                <div className="search-results-list" ref={this.setScrollableElementRef}>
+                <div className={`search-results-list ${this.props.className || ''}`} ref={this.setScrollableElementRef}>
                     {/* Saved Queries Form */}
                     {this.props.showSavedQueryModal && (
                         <ModalContainer
@@ -334,18 +343,14 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                             return (
                                 <>
                                     {/* Info Bar */}
-                                    <SearchResultsInfoBar
-                                        authenticatedUser={this.props.authenticatedUser}
-                                        results={results}
-                                        allExpanded={this.props.allExpanded}
-                                        didSave={this.props.didSave}
-                                        onDidCreateSavedQuery={this.props.onDidCreateSavedQuery}
-                                        onExpandAllResultsToggle={this.props.onExpandAllResultsToggle}
-                                        onSaveQueryClick={this.props.onSaveQueryClick}
-                                        onShowMoreResultsClick={this.props.onShowMoreResultsClick}
-                                        showDotComMarketing={this.props.isSourcegraphDotCom}
-                                        displayPerformanceWarning={this.state.displayPerformanceWarning}
-                                    />
+                                    {!USE_SEARCH_EXP && (
+                                        <SearchResultsInfoBar
+                                            {...this.props}
+                                            results={results}
+                                            showDotComMarketing={this.props.isSourcegraphDotCom}
+                                            displayPerformanceWarning={this.state.displayPerformanceWarning}
+                                        />
+                                    )}
 
                                     {/* Results */}
                                     <VirtualList
@@ -457,11 +462,11 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     )}
 
                     <div className="pb-4" />
-                    {this.props.resultsOrError !== undefined && (
+                    {/* TODO!(sqs) {this.props.resultsOrError !== undefined && (
                         <Link className="mb-4 p-3" to="/help/user/search">
                             Not seeing expected results?
                         </Link>
-                    )}
+                    )}*/}
                 </div>
             </React.Fragment>
         )
@@ -531,6 +536,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         } else {
             checkpoint = parseInt(at, 10)
         }
+        if (Number.isNaN(checkpoint)) {
+            checkpoint = 0
+        }
 
         // If checkpoint is `0`, remove it.
         if (checkpoint === 0) {
@@ -548,14 +556,16 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
         const { hash, ...loc } = this.props.location
 
-        let newHash = ''
-        if (checkpoint > 0) {
-            newHash = `#${checkpoint}`
+        const hashParams = new URLSearchParams(hash.slice('#'.length))
+        if (checkpoint === 0) {
+            hashParams.delete('at')
+        } else {
+            hashParams.set('at', checkpoint.toString())
         }
 
         this.props.history.replace({
             ...loc,
-            hash: newHash,
+            hash: `#${hashParams}`,
         })
     }
 

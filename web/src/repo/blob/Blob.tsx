@@ -33,6 +33,8 @@ import {
 import { getHover } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { isDiscussionsEnabled } from '../../discussions'
+import { USE_CODEMOD } from '../../enterprise/codemod'
+import { EditorAddSelectionToThread } from '../../enterprise/threads/contributions/editorAddSelectionToThread/EditorAddSelectionToThread'
 import { ThemeProps } from '../../theme'
 import { EventLoggerProps } from '../../tracking/eventLogger'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
@@ -519,15 +521,23 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                                 />
                             )
                         })}
-                {isDiscussionsEnabled(this.props.settingsCascade) &&
-                    this.state.selectedPosition &&
-                    this.state.selectedPosition.line !== undefined && (
-                        <DiscussionsGutterOverlay
+                {this.state.selectedPosition &&
+                    this.state.selectedPosition.line !== undefined &&
+                    (USE_CODEMOD ? (
+                        <EditorAddSelectionToThread
                             overlayPosition={this.state.discussionsGutterOverlayPosition}
                             selectedPosition={this.state.selectedPosition}
                             {...this.props}
                         />
-                    )}
+                    ) : (
+                        isDiscussionsEnabled(this.props.settingsCascade) && (
+                            <DiscussionsGutterOverlay
+                                overlayPosition={this.state.discussionsGutterOverlayPosition}
+                                selectedPosition={this.state.selectedPosition}
+                                {...this.props}
+                            />
+                        )
+                    ))}
             </div>
         )
     }

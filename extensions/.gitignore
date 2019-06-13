@@ -1,0 +1,3 @@
+.cache/
+**/dist/extension.js
+**/dist/extension.map

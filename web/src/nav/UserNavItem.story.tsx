@@ -6,6 +6,8 @@ import { MemoryRouter } from 'react-router'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference } from '../theme'
 import { UserNavItem } from './UserNavItem'
+
+import '../global-styles/dropdown'
 import './UserNavItem.scss'
 
 const onThemePreferenceChange = action('onThemePreferenceChange')

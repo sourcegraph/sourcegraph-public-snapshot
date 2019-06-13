@@ -1,0 +1,8 @@
+.threads-nav-item {
+    &__dropdown-menu {
+        max-width: 18rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}

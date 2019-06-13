@@ -1,0 +1,50 @@
+{
+  "name": "check-search",
+  "description": "Use a search query to define a Check (for matching or replacement)",
+  "publisher": "sourcegraph",
+  "activationEvents": [
+    "*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph",
+    "dir": "extensions/enterprise/check-search"
+  },
+  "contributes": {
+    "configuration": {
+      "title": "HubSpot configuration",
+      "type": "object",
+      "required": [
+        "hubspot.apiKey"
+      ],
+      "properties": {
+        "hubspot.apiKey": {
+          "description": "HubSpot API key (HubSpot user menu > Integrations > Integrations > API key)",
+          "type": "string",
+          "examples": [
+            "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+          ]
+        }
+      }
+    }
+  },
+  "main": "dist/extension.js",
+  "scripts": {
+    "tslint": "tslint -p tsconfig.json './src/**/*.ts'",
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "parcel build --out-file dist/extension.js src/extension.ts",
+    "serve": "parcel serve --no-hmr --out-file dist/extension.js src/extension.ts",
+    "watch:typecheck": "tsc -p tsconfig.json -w",
+    "watch:build": "tsc -p tsconfig.dist.json -w",
+    "sourcegraph:prepublish": "yarn run build"
+  },
+  "browserslist": [
+    "last 1 Chrome versions",
+    "last 1 Firefox versions",
+    "last 1 Edge versions",
+    "last 1 Safari versions"
+  ],
+  "devDependencies": {
+    "sourcegraph": "link:../../../packages/sourcegraph-extension-api"
+  }
+}

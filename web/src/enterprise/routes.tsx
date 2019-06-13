@@ -20,5 +20,21 @@ export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
         exact: true,
         render: () => <Redirect to="/subscriptions/new" />,
     },
+    {
+        path: '/threads',
+        render: lazyComponent(() => import('./threads/global/ThreadsArea'), 'ThreadsArea'),
+    },
+    {
+        path: '/checks',
+        render: lazyComponent(() => import('./checks/global/ChecksArea'), 'ChecksArea'),
+    },
+    {
+        path: '/changes',
+        render: lazyComponent(() => import('./changes/global/ChangesArea'), 'ChangesArea'),
+    },
+    {
+        path: '/activity',
+        render: lazyComponent(() => import('./activity/global/ActivityArea'), 'ActivityArea'),
+    },
     ...routes,
 ]

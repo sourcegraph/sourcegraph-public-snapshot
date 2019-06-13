@@ -9,3 +9,11 @@
 @each $name, $color in $theme-colors {
     @include color-variant($name);
 }
+
+.bg-body {
+    background-color: var(--body-bg) !important;
+}
+
+.bg-transparent {
+    background-color: transparent !important;
+}

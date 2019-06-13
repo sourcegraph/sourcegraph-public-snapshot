@@ -90,7 +90,7 @@ func TestDiscussionThreads_Targets(t *testing.T) {
 	}
 
 	// List targets.
-	targets, err := DiscussionThreads.ListTargets(ctx, thread.ID)
+	targets, err := DiscussionThreads.ListTargets(ctx, DiscussionThreadsListTargetsOptions{ThreadID: thread.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +103,7 @@ func TestDiscussionThreads_Targets(t *testing.T) {
 	if err := DiscussionThreads.RemoveTarget(ctx, target1.ID); err != nil {
 		t.Fatal(err)
 	}
-	targets, err = DiscussionThreads.ListTargets(ctx, thread.ID)
+	targets, err = DiscussionThreads.ListTargets(ctx, DiscussionThreadsListTargetsOptions{ThreadID: thread.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
