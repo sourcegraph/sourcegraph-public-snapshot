@@ -141,6 +141,7 @@ export class NavLinks extends React.PureComponent<Props> {
                             authenticatedUser={this.props.authenticatedUser}
                             showDotComMarketing={this.props.showDotComMarketing}
                             showDiscussions={isDiscussionsEnabled(this.props.settingsCascade)}
+                            switchThemeKeybinding={this.props.keybindings.switchTheme}
                         />
                     </li>
                 )}

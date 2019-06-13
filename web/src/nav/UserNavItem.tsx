@@ -1,3 +1,4 @@
+import { Shortcut, ShortcutProps } from '@slimsag/react-shortcuts'
 import * as H from 'history'
 import React from 'react'
 import { Link } from 'react-router-dom'
@@ -11,6 +12,7 @@ interface Props extends ThemeProps, ThemePreferenceProps {
     authenticatedUser: GQL.IUser
     showDotComMarketing: boolean
     showDiscussions: boolean
+    switchThemeKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
 }
 
 interface State {
@@ -95,6 +97,10 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                                 </small>
                             </div>
                         )}
+                        {this.props.switchThemeKeybinding &&
+                            this.props.switchThemeKeybinding.map((keybinding, i) => (
+                                <Shortcut key={i} {...keybinding} onMatch={this.onThemeCycle} />
+                            ))}
                     </div>
                     {this.props.authenticatedUser.organizations.nodes.length > 0 && (
                         <>
@@ -144,5 +150,11 @@ export class UserNavItem extends React.PureComponent<Props, State> {
 
     private onThemeChange: React.ChangeEventHandler<HTMLSelectElement> = event => {
         this.props.onThemePreferenceChange(event.target.value as ThemePreference)
+    }
+
+    private onThemeCycle = () => {
+        this.props.onThemePreferenceChange(
+            this.props.themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark
+        )
     }
 }
