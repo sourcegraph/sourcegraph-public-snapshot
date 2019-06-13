@@ -174,8 +174,18 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             rules: [],
         })
 
-        this.disposables.push(monaco.editor.onDidCreateEditor(editor => this.onDidCreateEditor(editor)))
-        this.disposables.push(monaco.editor.onDidCreateModel(model => this.onDidCreateModel(model)))
+        // Only listen to 1 event each to avoid receiving events from other Monaco editors on the
+        // same page (if there are multiple).
+        const editorDisposable = monaco.editor.onDidCreateEditor(editor => {
+            this.onDidCreateEditor(editor)
+            editorDisposable.dispose()
+        })
+        this.disposables.push(editorDisposable)
+        const modelDisposable = monaco.editor.onDidCreateModel(model => {
+            this.onDidCreateModel(model)
+            modelDisposable.dispose()
+        })
+        this.disposables.push(modelDisposable)
     }
 
     private onDidCreateEditor(editor: monaco.editor.ICodeEditor): void {
