@@ -9,34 +9,22 @@
         padding: 0.25rem 0.5rem;
         overflow-x: auto;
         overflow-y: hidden;
-        background-color: #0e121b;
 
         &-clickable {
             cursor: pointer;
         }
 
         &:hover {
-            background-color: #151d28;
             text-decoration: none;
         }
 
         &:not(:first-child) {
-            border-top: 1px solid #2a3a51;
-        }
-
-        .theme-light & {
-            background-color: $color-light-bg-1;
-            border-color: $color-light-border;
-
-            &:hover {
-                background-color: $color-light-bg-4;
-                text-decoration: none;
-            }
+            border-top: 1px solid var(--border-color);
         }
     }
 
     &__code {
-        border-bottom: solid 1px #2a3a51;
+        border-bottom: solid 1px var(--border-color);
         font-size: 12px;
         padding: 0.5rem 1.25rem;
         margin-bottom: 0;
@@ -51,9 +39,6 @@
                 padding-right: 0.325rem;
                 display: inline-block;
             }
-        }
-        .theme-light & {
-            border-bottom-color: $color-light-border;
         }
     }
 }
