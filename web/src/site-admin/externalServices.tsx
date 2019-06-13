@@ -330,13 +330,11 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   //  - repos
   //  - exclude
 
-  // repositoryQuery: List of strings, either a special keyword "none" (which disables querying),
-  // or repository search query parameters, e.g "?name=<repo name>&projectname=<project>&visibility=private".
-  // See the list of parameters at:
-  // https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
-  "repositoryQuery": [
-  //   "?name=<repo>\u0026projectname=<project>" // set this to "none" to disable querying
-  ],
+  // repositoryQuery: List of strings: a special keyword "none" (which disables querying),
+  // "all" (which selects all repositories visible to the given token), or any repository
+  // search query parameters (e.g "?name=<repo name>&projectname=<project>&visibility=private")
+  // See the list of parameters at: https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
+  "repositoryQuery": [],
 
   // repos: Explicit list of repositories to select
   // "repos": [
