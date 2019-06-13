@@ -257,16 +257,36 @@ func (c *Client) ExcludeRepo(ctx context.Context, id uint32) (*protocol.ExcludeR
 	return &res, nil
 }
 
-func (c *Client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.httpPost")
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
+// MockStatusMessages mocks (*Client).StatusMessages for tests.
+var MockStatusMessages func(context.Context) (*protocol.StatusMessagesResponse, error)
 
+// StatusMessages returns an array of status messages
+func (c *Client) StatusMessages(ctx context.Context) (*protocol.StatusMessagesResponse, error) {
+	if MockStatusMessages != nil {
+		return MockStatusMessages(ctx)
+	}
+
+	resp, err := c.httpGet(ctx, "status-messages")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var res protocol.StatusMessagesResponse
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return nil, errors.New(string(bs))
+	} else if err = json.Unmarshal(bs, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *Client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -277,7 +297,30 @@ func (c *Client) httpPost(ctx context.Context, method string, payload interface{
 		return nil, err
 	}
 
+	return c.do(ctx, req)
+}
+
+func (c *Client) httpGet(ctx context.Context, method string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", c.URL+"/"+method, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.do(ctx, req)
+}
+
+func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.do")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	req.Header.Set("Content-Type", "application/json")
+
 	req = req.WithContext(ctx)
 	req, ht := nethttp.TraceRequest(span.Tracer(), req,
 		nethttp.OperationName("RepoUpdater Client"),

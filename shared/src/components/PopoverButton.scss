@@ -67,7 +67,7 @@ TODO(sqs): Suffix with "2" to avoid conflict with sourcegraph/sourcegraph compon
     background-color: var(--dropdown-bg);
     border: solid 1px var(--dropdown-border-color);
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-    z-index: 250; // higher than .global-navbar
+    z-index: 1060; // higher than .global-navbar, equal to bootstrap $zindex-popover
     margin-left: 1px;
     margin-top: -1px;
 }

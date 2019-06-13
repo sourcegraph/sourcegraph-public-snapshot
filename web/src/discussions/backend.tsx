@@ -90,7 +90,7 @@ export function createThread(input: GQL.IDiscussionThreadCreateInput): Observabl
         { input }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.discussions || !data.discussions.createThread) {
+            if (!data || !data.discussions || !data.discussions.createThread || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.discussions.createThread
@@ -150,7 +150,7 @@ export function fetchDiscussionThreads(opts: {
         opts
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.discussionThreads) {
+            if (!data || !data.discussionThreads || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.discussionThreads
@@ -188,7 +188,8 @@ export function fetchDiscussionThreadAndComments(threadID: GQL.ID): Observable<G
                 !data ||
                 !data.discussionThreads ||
                 !data.discussionThreads.nodes ||
-                data.discussionThreads.nodes.length !== 1
+                data.discussionThreads.nodes.length !== 1 ||
+                (errors && errors.length > 0)
             ) {
                 throw createAggregateError(errors)
             }
@@ -224,7 +225,7 @@ export function addCommentToThread(threadID: GQL.ID, contents: string): Observab
         { threadID, contents }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.discussions || !data.discussions.addCommentToThread) {
+            if (!data || !data.discussions || !data.discussions.addCommentToThread || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.discussions.addCommentToThread
@@ -259,7 +260,7 @@ export function updateComment(input: GQL.IDiscussionCommentUpdateInput): Observa
         { input }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.discussions || !data.discussions.updateComment) {
+            if (!data || !data.discussions || !data.discussions.updateComment || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.discussions.updateComment

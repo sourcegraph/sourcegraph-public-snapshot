@@ -1,0 +1,10 @@
+/*
+This CSS file is intentionally empty in development mode.
+
+In production mode, we use https://github.com/webpack-contrib/mini-css-extract-plugin to extract CSS
+to a separate CSS file for better caching and faster client rendering.
+
+In development, we do NOT use mini-css-extract-plugin because it slows down Webpack (initial builds
+by ~5s and incremental reloads by ~2s). To avoid the browser console log reporting noisy 404s, this
+empty file is used as the Webpack style entrypoint.
+*/

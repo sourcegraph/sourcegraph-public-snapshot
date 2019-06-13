@@ -1,9 +1,13 @@
 package graphqlbackend
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
+	"github.com/graph-gophers/graphql-go/gqltesting"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
@@ -93,4 +97,60 @@ func TestDiscussionSelectionRelativeTo(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDiscussionsMutations_UpdateThread(t *testing.T) {
+	resetMocks()
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) { return &types.User{}, nil }
+	mockViewerCanUseDiscussions = func() error { return nil }
+	defer func() { mockViewerCanUseDiscussions = nil }()
+	const (
+		wantThreadID = 123
+		wantTitle    = "b"
+	)
+	db.Mocks.DiscussionThreads.Get = func(threadID int64) (*types.DiscussionThread, error) {
+		if threadID != wantThreadID {
+			t.Errorf("got threadID %v, want %v", threadID, wantThreadID)
+		}
+		return &types.DiscussionThread{}, nil
+	}
+	db.Mocks.DiscussionThreads.Update = func(_ context.Context, threadID int64, opts *db.DiscussionThreadsUpdateOptions) (*types.DiscussionThread, error) {
+		if threadID != wantThreadID {
+			t.Errorf("got threadID %v, want %v", threadID, wantThreadID)
+		}
+		if opts == nil || opts.Title == nil || *opts.Title != wantTitle {
+			var title string
+			if opts != nil && opts.Title != nil {
+				title = *opts.Title
+			}
+			t.Errorf("got title %v, want %v", title, wantTitle)
+		}
+		return &types.DiscussionThread{ID: wantThreadID, Title: wantTitle}, nil
+	}
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Context: backend.WithAuthzBypass(context.Background()),
+			Schema:  GraphQLSchema,
+			Query: `
+                                mutation($title: String!) {
+                                        discussions {
+                                                updateThread(input: {threadID: "123", title: $title}) {
+                                                        title
+                                                }
+                                        }
+                                }
+                        `,
+			Variables: map[string]interface{}{"title": wantTitle},
+			ExpectedResult: `
+                                {
+                                        "discussions": {
+                                                "updateThread": {
+                                                        "title": "` + wantTitle + `"
+                                                }
+                                        }
+                                }
+                        `,
+		},
+	})
 }

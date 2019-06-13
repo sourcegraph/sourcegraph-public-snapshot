@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, { useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -7,31 +7,25 @@ import { UserAreaRouteContext } from './UserArea'
 
 interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {}
 
-interface State {}
-
 /**
  * The user overview page.
  */
-export class UserOverviewPage extends React.PureComponent<Props, State> {
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('UserOverview')
-    }
+export const UserOverviewPage: React.FunctionComponent<Props> = props => {
+    useEffect(() => eventLogger.logViewEvent('UserOverview'))
 
-    public render(): JSX.Element | null {
-        return (
-            <div className="user-page user-overview-page">
-                <PageTitle title={this.props.user.username} />
-                <p>
-                    {this.props.user.displayName ? (
-                        <>
-                            {this.props.user.displayName} ({this.props.user.username})
-                        </>
-                    ) : (
-                        this.props.user.username
-                    )}{' '}
-                    started using Sourcegraph <Timestamp date={this.props.user.createdAt} />.
-                </p>
-            </div>
-        )
-    }
+    return (
+        <div className="user-page user-overview-page">
+            <PageTitle title={props.user.username} />
+            <p>
+                {props.user.displayName ? (
+                    <>
+                        {props.user.displayName} ({props.user.username})
+                    </>
+                ) : (
+                    props.user.username
+                )}{' '}
+                started using Sourcegraph <Timestamp date={props.user.createdAt} />.
+            </p>
+        </div>
+    )
 }

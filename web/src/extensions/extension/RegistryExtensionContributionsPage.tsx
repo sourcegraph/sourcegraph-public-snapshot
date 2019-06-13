@@ -147,7 +147,7 @@ export class RegistryExtensionContributionsPage extends React.PureComponent<Prop
                     {this.props.extension.manifest === null ? (
                         <ExtensionNoManifestAlert extension={this.props.extension} />
                     ) : isErrorLike(this.props.extension.manifest) ? (
-                        <div className="alert alert-error">
+                        <div className="alert alert-danger">
                             Error parsing extension manifest: {this.props.extension.manifest.message}
                         </div>
                     ) : (

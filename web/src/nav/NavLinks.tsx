@@ -14,6 +14,7 @@ import { isDiscussionsEnabled } from '../discussions'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
+import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
 
 interface Props
@@ -29,6 +30,8 @@ interface Props
     history: H.History
     authenticatedUser: GQL.IUser | null
     showDotComMarketing: boolean
+    isSourcegraphDotCom: boolean
+    showStatusIndicator: boolean
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -110,12 +113,26 @@ export class NavLinks extends React.PureComponent<Props> {
                         )}
                     </>
                 )}
+                {!this.props.isSourcegraphDotCom &&
+                    this.props.showStatusIndicator &&
+                    this.props.authenticatedUser &&
+                    this.props.authenticatedUser.siteAdmin && (
+                        <li className="nav-item">
+                            <StatusMessagesNavItem
+                                fetchMessages={fetchAllStatusMessages}
+                                isSiteAdmin={this.props.authenticatedUser.siteAdmin}
+                            />
+                        </li>
+                    )}
                 {this.props.location.pathname !== '/welcome' && (
-                    <WebCommandListPopoverButton
-                        {...this.props}
-                        menu={ContributableMenu.CommandPalette}
-                        toggleVisibilityKeybinding={this.props.keybindings.commandPalette}
-                    />
+                    <li className="nav-item">
+                        <WebCommandListPopoverButton
+                            {...this.props}
+                            className="nav-link"
+                            menu={ContributableMenu.CommandPalette}
+                            toggleVisibilityKeybinding={this.props.keybindings.commandPalette}
+                        />
+                    </li>
                 )}
                 {this.props.authenticatedUser && (
                     <li className="nav-item">

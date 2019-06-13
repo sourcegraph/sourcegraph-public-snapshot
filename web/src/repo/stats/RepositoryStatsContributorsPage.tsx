@@ -54,7 +54,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
         <div className="repository-contributor-node list-group-item py-2">
             <div className="repository-contributor-node__person">
                 <UserAvatar className="icon-inline mr-2" user={node.person} />
-                <PersonLink userClassName="font-weight-bold" {...node.person} />
+                <PersonLink userClassName="font-weight-bold" user={node.person.user || node.person.displayName} />
             </div>
             <div className="repository-contributor-node__commits">
                 <div className="repository-contributor-node__commit">

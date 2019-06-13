@@ -465,20 +465,27 @@ input DiscussionThreadCreateInput {
 # Describes an update mutation to an existing thread.
 input DiscussionThreadUpdateInput {
     # The ID of the thread to update.
-    ThreadID: ID!
+    threadID: ID!
+
+    # When non-null, indicates that the thread's title should be updated to the specified value.
+    title: String
 
     # When non-null, indicates that the thread should be archived.
-    Archive: Boolean
+    archive: Boolean
 
     # When non-null, indicates that the thread should be deleted. Only admins
     # can perform this action.
-    Delete: Boolean
+    delete: Boolean
 }
 
 # Describes an update mutation to an existing comment in a thread.
 input DiscussionCommentUpdateInput {
     # The ID of the comment to update.
     commentID: ID!
+
+    # When non-null, indicates that the comment's content should be updated. Only site admins and the
+    # original author can perform this action.
+    contents: String
 
     # When non-null, indicates that the thread should be deleted. Only admins
     # can perform this action.
@@ -813,6 +820,8 @@ type Query {
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomQuery!
+    # Lists all status messages
+    statusMessages: [StatusMessage!]!
 }
 
 # A query and an associated number of times it occurred.
@@ -1144,9 +1153,8 @@ type Repository implements Node & GenericSearchResultInterface {
     # - my-code-host.example.com/myrepo
     # - myrepo
     name: String!
-    # URI is the full name for this repository (e.g., "github.com/user/repo").
-    # See the documentation for the name field.
-    uri: String!
+    # DEPRECATED: Use name.
+    uri: String! @deprecated(reason: "Use name.")
     # The repository's description.
     description: String!
     # The primary programming language in the repository.
@@ -3655,5 +3663,18 @@ type ProductSubscriptionEvent {
     description: String
     # A URL where the user can see more information about the event.
     url: String
+}
+
+# The type of a StatusMessage
+enum StatusMessageType {
+    CLONING
+}
+
+# A status message
+type StatusMessage {
+    # The message of this status message
+    message: String!
+    # The type.
+    type: StatusMessageType!
 }
 `

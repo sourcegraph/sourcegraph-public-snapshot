@@ -177,8 +177,7 @@ func TestSources_ListRepos(t *testing.T) {
 					Url:   "http://127.0.0.1:7990",
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 					RepositoryQuery: []string{
-						"?visibility=private",
-						"?visibility=public",
+						"all",
 					},
 				}),
 			},

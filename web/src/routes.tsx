@@ -80,10 +80,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/sign-up',
-        render: lazyComponent(
-            async () => ({ SignUpPage: (await import('./auth/SignUpPage')).SignUpPage }),
-            'SignUpPage'
-        ),
+        render: lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage'),
         exact: true,
         forceNarrowWidth: true,
     },

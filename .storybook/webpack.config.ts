@@ -29,6 +29,8 @@ export default ({ config }: { config: webpack.Configuration }) => {
                 },
             },
         ],
+        // Make sure Storybook styles get handled by the Storybook config
+        exclude: /node_modules\/@storybook\//,
     })
 
     return config

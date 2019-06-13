@@ -71,6 +71,19 @@ func TestDiscussionComments_Create(t *testing.T) {
 		t.Fatal("expected to get created comment", err)
 	}
 
+	// Update the comment.
+	const wantCommentContents = "x"
+	if _, err := DiscussionComments.Update(ctx, comment.ID, &DiscussionCommentsUpdateOptions{
+		Contents: strPtr(wantCommentContents),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if comment, err := DiscussionComments.Get(ctx, comment.ID); err != nil {
+		t.Fatal("expected to get created comment", err)
+	} else if comment.Contents != wantCommentContents {
+		t.Errorf("got comment contents %q, want %q", comment.Contents, wantCommentContents)
+	}
+
 	// Test deleting the repo cascade deletes
 	err = Repos.Delete(ctx, repo.ID)
 	if err != nil {
