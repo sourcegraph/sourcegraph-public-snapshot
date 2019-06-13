@@ -1,16 +1,30 @@
 import * as comlink from '@sourcegraph/comlink'
-import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
+import {
+    Location,
+    MarkupKind,
+    Position,
+    Range,
+    Selection,
+    CheckScope,
+    NotificationScope,
+    CheckCompletion,
+    CheckResult,
+    DiagnosticSeverity,
+} from '@sourcegraph/extension-api-classes'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
 import { NotificationType } from '../client/services/notifications'
+import { TextEdit } from '../types/textEdit'
+import { WorkspaceEdit } from '../types/workspaceEdit'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { ExtCommands } from './api/commands'
 import { ExtConfiguration } from './api/configuration'
 import { ExtContent } from './api/content'
 import { ExtContext } from './api/context'
 import { createDecorationType } from './api/decorations'
+import { createExtDiagnostics } from './api/diagnostics'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
 import { ExtLanguageFeatures } from './api/languageFeatures'
@@ -18,6 +32,8 @@ import { ExtRoots } from './api/roots'
 import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
+import { createExtNotifications } from './api/notifications'
+import { createExtChecks } from './api/checks'
 
 /**
  * Required information when initializing an extension host.
@@ -125,7 +141,7 @@ function createExtensionAPI(
         await proxy.ping()
     }
     const context = new ExtContext(proxy.context)
-    const documents = new ExtDocuments(sync)
+    const documents = new ExtDocuments(proxy.documents, sync)
 
     const extensions = new ExtExtensions()
     subscription.add(extensions)
@@ -138,6 +154,9 @@ function createExtensionAPI(
     const search = new ExtSearch(proxy.search)
     const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
+    const notifications = createExtNotifications(proxy.notifications)
+    const checks = createExtChecks(proxy.checks)
+    const diagnostics = createExtDiagnostics(proxy.diagnostics)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -167,6 +186,13 @@ function createExtensionAPI(
         Location,
         MarkupKind,
         NotificationType,
+        TextEdit,
+        DiagnosticSeverity,
+        WorkspaceEdit,
+        NotificationScope,
+        CheckScope,
+        CheckCompletion,
+        CheckResult,
         app: {
             activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {
@@ -190,6 +216,17 @@ function createExtensionAPI(
             },
             onDidChangeRoots: roots.changes,
             rootChanges: roots.changes,
+            openTextDocument: uri => documents.openTextDocument(uri),
+            registerDiagnosticProvider: (type, provider) => diagnostics.registerDiagnosticProvider(type, provider),
+        },
+
+        checks: {
+            registerCheckProvider: (type, providerFactory) => checks.registerCheckProvider(type, providerFactory),
+        },
+
+        notifications: {
+            registerNotificationProvider: (type, provider) =>
+                notifications.registerNotificationProvider(type, provider),
         },
 
         configuration: {
@@ -236,17 +273,25 @@ function createExtensionAPI(
                 selector: sourcegraph.DocumentSelector,
                 provider: sourcegraph.CompletionItemProvider
             ) => languageFeatures.registerCompletionItemProvider(selector, provider),
+
+            registerCodeActionProvider: (
+                selector: sourcegraph.DocumentSelector,
+                provider: sourcegraph.CodeActionProvider
+            ) => languageFeatures.registerCodeActionProvider(selector, provider),
         },
 
         search: {
+            findTextInFiles: (query, options) => search.findTextInFiles(query, options),
             registerQueryTransformer: (provider: sourcegraph.QueryTransformer) =>
                 search.registerQueryTransformer(provider),
+            registerTextSearchProvider: () => {
+                throw new Error('TODO!(sqs): not implemented')
+            },
         },
 
         commands: {
-            registerCommand: (command: string, callback: (...args: any[]) => any) =>
-                commands.registerCommand({ command, callback }),
-
+            registerCommand: (command, callback) => commands.registerCommand({ command, callback }),
+            registerActionEditCommand: (command, callback) => commands.registerActionEditCommand({ command, callback }),
             executeCommand: (command: string, ...args: any[]) => commands.executeCommand(command, args),
         },
 

@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -65,6 +66,7 @@ func (t *discussionThreads) AddTarget(ctx context.Context, tr *types.DiscussionT
 		field("lines", strings.Join(*tr.Lines, "\n"))
 		field("lines_after", strings.Join(*tr.LinesAfter, "\n"))
 	}
+	field("is_ignored", tr.IsIgnored)
 	q := sqlf.Sprintf("INSERT INTO discussion_threads_target_repo(%v) VALUES (%v) RETURNING id", sqlf.Join(fields, ",\n"), sqlf.Join(values, ","))
 
 	// To debug query building, uncomment these lines:
@@ -88,12 +90,42 @@ func (t *discussionThreads) RemoveTarget(ctx context.Context, targetID int64) er
 	return err
 }
 
-// ListTargets returns a list of targets for a thread.
-func (t *discussionThreads) ListTargets(ctx context.Context, threadID int64) ([]*types.DiscussionThreadTargetRepo, error) {
-	if Mocks.DiscussionThreads.ListTargets != nil {
-		return Mocks.DiscussionThreads.ListTargets(threadID)
+// SetTargetIsIgnored sets whether a target is ignored.
+func (t *discussionThreads) SetTargetIsIgnored(ctx context.Context, targetID int64, isIgnored bool) error {
+	if Mocks.DiscussionThreads.SetTargetIsIgnored != nil {
+		return Mocks.DiscussionThreads.SetTargetIsIgnored(targetID, isIgnored)
 	}
-	return t.getTargetsBySQL(ctx, sqlf.Sprintf(`WHERE thread_id=%v`, threadID))
+
+	_, err := dbconn.Global.ExecContext(ctx, `UPDATE discussion_threads_target_repo SET is_ignored=$2 WHERE id=$1`, targetID, isIgnored)
+	return err
+}
+
+type DiscussionThreadsListTargetsOptions struct {
+	ThreadID int64
+
+	RepoID api.RepoID
+	Path   string
+	// TODO!(sqs): add branch, revision, lines
+}
+
+// ListTargets returns a list of targets for a thread.
+func (t *discussionThreads) ListTargets(ctx context.Context, opt DiscussionThreadsListTargetsOptions) ([]*types.DiscussionThreadTargetRepo, error) {
+	if Mocks.DiscussionThreads.ListTargets != nil {
+		return Mocks.DiscussionThreads.ListTargets(opt)
+	}
+
+	conds := []*sqlf.Query{sqlf.Sprintf("true")}
+	if opt.ThreadID != 0 {
+		conds = append(conds, sqlf.Sprintf("thread_id=%v", opt.ThreadID))
+	}
+	if opt.RepoID != 0 {
+		conds = append(conds, sqlf.Sprintf("repo_id=%v", opt.RepoID))
+	}
+	if opt.Path != "" {
+		conds = append(conds, sqlf.Sprintf("path=%v", opt.Path))
+	}
+
+	return t.getTargetsBySQL(ctx, sqlf.Sprintf(`WHERE %s`, sqlf.Join(conds, " AND ")))
 }
 
 func (t *discussionThreads) getTargetsBySQL(ctx context.Context, queryPart *sqlf.Query) ([]*types.DiscussionThreadTargetRepo, error) {
@@ -111,7 +143,8 @@ func (t *discussionThreads) getTargetsBySQL(ctx context.Context, queryPart *sqlf
 			t.end_character,
 			t.lines_before,
 			t.lines,
-			t.lines_after
+			t.lines_after,
+			t.is_ignored
 		FROM discussion_threads_target_repo t `+queryPart.Query(sqlf.PostgresBindVar), queryPart.Args()...)
 	if err != nil {
 		return nil, err
@@ -138,6 +171,7 @@ func (t *discussionThreads) getTargetsBySQL(ctx context.Context, queryPart *sqlf
 			&linesBefore,
 			&lines,
 			&linesAfter,
+			&tr.IsIgnored,
 		)
 		if err != nil {
 			return nil, err

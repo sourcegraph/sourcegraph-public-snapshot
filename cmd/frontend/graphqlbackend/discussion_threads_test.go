@@ -21,9 +21,9 @@ func TestDiscussionThread_Target(t *testing.T) {
 	}
 
 	t.Run("no target", func(t *testing.T) {
-		db.Mocks.DiscussionThreads.ListTargets = func(threadID int64) ([]*types.DiscussionThreadTargetRepo, error) {
-			if threadID != wantThreadID {
-				t.Fatalf("got threadID %v, want %v", threadID, wantThreadID)
+		db.Mocks.DiscussionThreads.ListTargets = func(opt db.DiscussionThreadsListTargetsOptions) ([]*types.DiscussionThreadTargetRepo, error) {
+			if opt.ThreadID != wantThreadID {
+				t.Fatalf("got threadID %v, want %v", opt.ThreadID, wantThreadID)
 			}
 			return []*types.DiscussionThreadTargetRepo{}, nil
 		}
@@ -59,9 +59,9 @@ func TestDiscussionThread_Target(t *testing.T) {
 		})
 	})
 	t.Run("first target from multiple", func(t *testing.T) {
-		db.Mocks.DiscussionThreads.ListTargets = func(threadID int64) ([]*types.DiscussionThreadTargetRepo, error) {
-			if threadID != wantThreadID {
-				t.Fatalf("got threadID %v, want %v", threadID, wantThreadID)
+		db.Mocks.DiscussionThreads.ListTargets = func(opt db.DiscussionThreadsListTargetsOptions) ([]*types.DiscussionThreadTargetRepo, error) {
+			if opt.ThreadID != wantThreadID {
+				t.Fatalf("got threadID %v, want %v", opt.ThreadID, wantThreadID)
 			}
 			return []*types.DiscussionThreadTargetRepo{{Path: strptr("foo/bar")}, {Path: strptr("qux")}}, nil
 		}

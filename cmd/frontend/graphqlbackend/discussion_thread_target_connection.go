@@ -9,13 +9,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
+type discussionThreadTargetConnectionArgs struct {
+	graphqlutil.ConnectionArgs
+	IsIgnored *bool
+}
+
 // discussionThreadTargetConnectionResolver resolves a list of discussion thread targets.
 //
 // 🚨 SECURITY: When instantiating an discussionThreadTargetConnectionResolver value, the caller
 // MUST check permissions.
 type discussionThreadTargetConnectionResolver struct {
 	threadID int64
-	args     *graphqlutil.ConnectionArgs
+	args     *discussionThreadTargetConnectionArgs
 
 	// cache results because they are used by multiple fields
 	once    sync.Once
@@ -25,7 +30,16 @@ type discussionThreadTargetConnectionResolver struct {
 
 func (r *discussionThreadTargetConnectionResolver) compute(ctx context.Context) ([]*types.DiscussionThreadTargetRepo, error) {
 	r.once.Do(func() {
-		r.targets, r.err = db.DiscussionThreads.ListTargets(ctx, r.threadID)
+		r.targets, r.err = db.DiscussionThreads.ListTargets(ctx, db.DiscussionThreadsListTargetsOptions{ThreadID: r.threadID})
+		if r.args.IsIgnored != nil {
+			keep := r.targets[:0]
+			for _, t := range r.targets {
+				if t.IsIgnored == *r.args.IsIgnored {
+					keep = append(keep, t)
+				}
+			}
+			r.targets = keep
+		}
 	})
 	return r.targets, r.err
 }

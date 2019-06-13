@@ -132,26 +132,19 @@ func handleConfigOverrides() error {
 						Kind:        key,
 						DisplayName: fmt.Sprintf("%s #%d", key, i+1),
 						Config:      string(marshaledCfg),
-					}] = true
+					}] = struct{}{}
 				}
 			}
-			// Now eliminate operations from toAdd/toRemove where the config
-			// file and DB describe an equivalent external service.
+			// Now eliminate operations from toAdd/toRemove where the config file and DB describe an
+			// equivalent external service.
 			isEquiv := func(a, b *types.ExternalService) bool {
 				return a.Kind == b.Kind && a.DisplayName == b.DisplayName && a.Config == b.Config
 			}
-			shouldUpdate := func(a, b *types.ExternalService) bool {
-				return a.Kind == b.Kind && a.DisplayName == b.DisplayName && a.Config != b.Config
-			}
 			for a := range toAdd {
 				for b := range toRemove {
-					if isEquiv(a, b) { // Nothing changed
+					if isEquiv(a, b) {
 						delete(toAdd, a)
 						delete(toRemove, b)
-					} else if shouldUpdate(a, b) {
-						delete(toAdd, a)
-						delete(toRemove, b)
-						toUpdate[b.ID] = a
 					}
 				}
 			}

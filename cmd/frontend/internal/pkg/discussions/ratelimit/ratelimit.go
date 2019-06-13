@@ -176,7 +176,7 @@ func TimeUntilUserCanCreateThread(ctx context.Context, userID int32, newThreadTi
 	}
 	var actions []action
 	for _, t := range threads {
-		targets, err := db.DiscussionThreads.ListTargets(ctx, t.ID)
+		targets, err := db.DiscussionThreads.ListTargets(ctx, db.DiscussionThreadsListTargetsOptions{ThreadID: t.ID})
 		if err != nil {
 			log15.Error("discussions: failed to determine ratelimit for thread creation", "error", err)
 			return one800DBError

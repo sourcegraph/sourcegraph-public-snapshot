@@ -33,15 +33,19 @@ type RepositoryResolver struct {
 	matches     []*searchResultMatchResolver
 }
 
-func NewRepositoryResolver(repo *RepositoryResolver) *RepositoryResolver {
-	return &RepositoryResolver{repo}
+func NewRepositoryResolver(repo *types.Repo) *RepositoryResolver {
+	return &RepositoryResolver{repo: repo}
 }
-
-type RepositoryResolver struct{ *RepositoryResolver }
 
 var RepositoryByID = repositoryByID
 
+var MockRepositoryByID func(graphql.ID) (*RepositoryResolver, error)
+
 func repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, error) {
+	if MockRepositoryByID != nil {
+		return MockRepositoryByID(id)
+	}
+
 	var repoID api.RepoID
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
@@ -61,6 +65,8 @@ func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryRes
 	return &RepositoryResolver{repo: repo}, nil
 }
 
+var RepositoryByDBID = repositoryByIDInt32
+
 func (r *RepositoryResolver) ID() graphql.ID {
 	return marshalRepositoryID(r.repo.ID)
 }
@@ -71,6 +77,14 @@ func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
 }
+
+var MarshalRepositoryID = marshalRepositoryID
+
+var UnmarshalRepositoryID = unmarshalRepositoryID
+
+func (r *RepositoryResolver) DBID() api.RepoID { return r.repo.ID }
+
+func (r *RepositoryResolver) DBExternalRepo() api.ExternalRepoSpec { return r.repo.ExternalRepo }
 
 func (r *RepositoryResolver) Name() string {
 	return string(r.repo.Name)

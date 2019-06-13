@@ -1,0 +1,32 @@
+.diagnostics-changesets-bar {
+    &--flash-border {
+        animation: flash-border 0.3s 1 ease-in-out;
+    }
+    &--flash-bg {
+        animation: flash-bg 0.3s 1 ease-in-out;
+    }
+}
+
+@keyframes flash-border {
+    0% {
+        border-color: transparent;
+    }
+    50% {
+        border-color: map-get($theme-colors, 'success');
+    }
+    100% {
+        border-color: transparent;
+    }
+}
+
+@keyframes flash-bg {
+    0% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: rgba(map-get($theme-colors, 'success'), 0.5);
+    }
+    100% {
+        background-color: transparent;
+    }
+}

@@ -3,5 +3,5 @@
     width: 28rem;
     top: 82px;
     right: 0;
-    z-index: 90;
+    z-index: 9000; // TODO!(sqs): rijnard has a pr merged into master that fixed this, undo this change
 }

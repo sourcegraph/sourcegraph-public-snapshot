@@ -43,6 +43,7 @@ const (
 	routeRepoCompare    = "repo-compare"
 	routeRepoStats      = "repo-stats"
 	routeRepoGraph      = "repo-graph"
+	routeChanges        = "changes"
 	routeThreads        = "threads"
 	routeTree           = "tree"
 	routeBlob           = "blob"
@@ -113,7 +114,6 @@ func newRouter() *mux.Router {
 
 	// Top-level routes.
 	r.Path("/").Methods("GET").Name(routeHome)
-	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/start").Methods("GET").Name(routeStart)
 	r.PathPrefix("/welcome").Methods("GET").Name(routeWelcome)
 	r.Path("/search").Methods("GET").Name(routeSearch)
@@ -141,6 +141,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/explore").Methods("GET").Name(routeExplore)
 	r.PathPrefix("/snippets").Methods("GET").Name(routeSnippets)
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
+	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -225,6 +226,7 @@ func initRouter() {
 	router.Get(routeHelp).HandlerFunc(serveHelp)
 	router.Get(routeSnippets).Handler(handler(serveBrandedPageString("Snippets")))
 	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions")))
+	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads - Sourcegraph")))
 
 	router.Get(routeUserSettings).Handler(handler(serveBrandedPageString("User settings")))
 	router.Get(routeUserRedirect).Handler(handler(serveBrandedPageString("User")))

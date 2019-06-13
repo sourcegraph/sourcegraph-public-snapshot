@@ -51,6 +51,9 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 	if newThread.ID != 0 {
 		return nil, errors.New("newThread.ID must be zero")
 	}
+	if newThread.ProjectID == 0 {
+		return nil, errors.New("newThread.ProjectID must be set")
+	}
 	if strings.TrimSpace(newThread.Title) == "" {
 		return nil, errors.New("newThread.Title must be present (and not whitespace)")
 	}
@@ -76,11 +79,13 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 	newThread.CreatedAt = time.Now()
 	newThread.UpdatedAt = newThread.CreatedAt
 	err := dbconn.Global.QueryRowContext(ctx, `INSERT INTO discussion_threads(
+		project_id,
 		author_user_id,
 		title,
 		created_at,
 		updated_at
-	) VALUES ($1, $2, $3, $4) RETURNING id`,
+	) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		newThread.ProjectID,
 		newThread.AuthorUserID,
 		newThread.Title,
 		newThread.CreatedAt,
@@ -184,6 +189,10 @@ type DiscussionThreadsListOptions struct {
 	// LimitOffset specifies SQL LIMIT and OFFSET counts. It may be nil (no limit / offset).
 	*LimitOffset
 
+	// IsOpen, when non-nil, specifies that only threads that are open (true) or closed (false)
+	// should be returned.
+	IsOpen *bool
+
 	// TitleQuery, when non-nil, specifies that only threads whose title
 	// matches this string should be returned.
 	TitleQuery    *string
@@ -280,6 +289,18 @@ func (opts *DiscussionThreadsListOptions) SetFromQuery(ctx context.Context, quer
 
 	var reported bool
 	operators := map[string]func(value string){
+		// TODO!(sqs): port to Thread
+		//
+		// syntax: "is:open"/"is:closed"/"is:thread"
+		// "is": func(value string) {
+		// 	if t := strings.ToUpper(value); types.IsValidThreadType(t) {
+		// 		opts.Type = types.ThreadType(t)
+		// 	}
+		// 	if s := strings.ToUpper(value); types.IsValidThreadStatus(s) {
+		// 		opts.Status = types.ThreadStatus(s)
+		// 	}
+		// },
+
 		// syntax: `title:"some title"` or "title:sometitle"
 		// Primarily exists for the negation mode.
 		"title": func(value string) {
@@ -497,11 +518,21 @@ func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds 
 		// just do prefix/suffix fuzziness for now.
 		conds = append(conds, sqlf.Sprintf("title NOT ILIKE %v", "%"+*opts.NotTitleQuery+"%"))
 	}
-	if len(opts.ThreadIDs) > 0 {
-		conds = append(conds, sqlf.Sprintf("id = ANY(%v)", pq.Array(opts.ThreadIDs)))
+	if opts.ThreadIDs != nil {
+		// TODO!(sqs): make other XyzIDs fields consider a non-nil empty slice to be "no matches" rather than "all matches".
+		if len(opts.ThreadIDs) > 0 {
+			conds = append(conds, sqlf.Sprintf("id = ANY(%v)", pq.Array(opts.ThreadIDs)))
+		} else {
+			conds = append(conds, sqlf.Sprintf("FALSE"))
+		}
 	}
-	if len(opts.NotThreadIDs) > 0 {
-		conds = append(conds, sqlf.Sprintf("id != ANY(%v)", pq.Array(opts.NotThreadIDs)))
+	if opts.NotThreadIDs != nil {
+		// TODO!(sqs): make other XyzIDs fields consider a non-nil empty slice to be "no matches" rather than "all matches".
+		if len(opts.NotThreadIDs) > 0 {
+			conds = append(conds, sqlf.Sprintf("id != ANY(%v)", pq.Array(opts.NotThreadIDs)))
+		} else {
+			conds = append(conds, sqlf.Sprintf("FALSE"))
+		}
 	}
 	if len(opts.AuthorUserIDs) > 0 {
 		conds = append(conds, sqlf.Sprintf("author_user_id = ANY(%v)", pq.Array(opts.AuthorUserIDs)))
@@ -560,6 +591,7 @@ func (t *discussionThreads) getBySQL(ctx context.Context, query string, args ...
 	rows, err := dbconn.Global.QueryContext(ctx, `
 		SELECT
 			t.id,
+			t.project_id,
 			t.author_user_id,
 			t.title,
 			t.created_at,
@@ -576,6 +608,7 @@ func (t *discussionThreads) getBySQL(ctx context.Context, query string, args ...
 		var thread types.DiscussionThread
 		err := rows.Scan(
 			&thread.ID,
+			&thread.ProjectID,
 			&thread.AuthorUserID,
 			&thread.Title,
 			&thread.CreatedAt,

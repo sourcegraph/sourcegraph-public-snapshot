@@ -1,4 +1,7 @@
-$btn-padding: $spacer;
+$btn-padding-x: $spacer;
+$btn-padding-y: $spacer * 0.65;
+$btn-sm-factor: $sm-factor * 0.8;
+$btn-lg-factor: $lg-factor;
 
 .btn {
     display: inline-flex;
@@ -6,29 +9,39 @@ $btn-padding: $spacer;
     align-items: center;
     user-select: none;
     border: $btn-border-width solid transparent;
-    cursor: pointer;
     font-weight: normal;
     line-height: $line-height-base;
     vertical-align: middle;
 
     // Make buttons equal height as inputs.
     $input-extra-border-width: $input-border-width - $btn-border-width;
-    padding: calc(#{$btn-padding} + #{$input-extra-border-width});
+    padding: calc(#{$btn-padding-y} + #{$input-extra-border-width})
+        calc(#{$btn-padding-x} + #{$input-extra-border-width});
     font-size: var(--font-size-base);
     &.btn-sm {
-        padding: calc(#{$btn-padding * $sm-factor} + #{$input-extra-border-width});
-        font-size: var(--font-size-sm);
+        padding: calc(#{$btn-padding-y * $btn-sm-factor} + #{$input-extra-border-width})
+            calc(#{$btn-padding-x * $btn-sm-factor} + #{$input-extra-border-width});
+        font-size: var(--font-size-sm) !important;
     }
     &.btn-lg {
-        padding: calc(#{$btn-padding * $lg-factor} + #{$input-extra-border-width});
-        font-size: var(--font-size-lg);
+        padding: calc(#{$btn-padding-y * $btn-lg-factor} + #{$input-extra-border-width})
+            calc(#{$btn-padding-x * $btn-lg-factor} + #{$input-extra-border-width});
+        font-size: var(--font-size-lg) !important;
     }
 
-    &:hover {
-        text-decoration: none;
+    &:not(:disabled, .disabled) {
+        cursor: pointer;
+        &:hover {
+            text-decoration: none;
+        }
+        &.focus-visible {
+            @include focus-ring(-1px, 1px);
+        }
     }
-    &:focus {
-        @include focus-ring(-1px, 1px);
+    &:disabled,
+    &.disabled {
+        filter: grayscale(35%);
+        opacity: 0.5;
     }
 }
 
@@ -37,12 +50,14 @@ $btn-padding: $spacer;
         background-color: var(--#{$name});
         border-color: var(--#{$name});
         &,
-        &:hover {
+        &:hover:not(:disabled, .disabled) {
             color: var(--#{$name}-contrast);
         }
         &:hover,
-        &:focus {
-            background-color: var(--#{$name}-hover);
+        &.focus-visible {
+            &:not(:disabled, .disabled) {
+                background-color: var(--#{$name}-hover);
+            }
         }
     }
 }
@@ -56,7 +71,7 @@ $btn-padding: $spacer;
     background-color: transparent;
 
     &:hover,
-    &:focus {
+    &.focus-visible {
         color: var(--link-hover-color);
         text-decoration: var(--link-hover-decoration);
     }
@@ -83,4 +98,8 @@ $btn-padding: $spacer;
     .icon {
         @extend .icon-inline;
     }
+}
+
+.btn-group {
+    display: inline-flex;
 }

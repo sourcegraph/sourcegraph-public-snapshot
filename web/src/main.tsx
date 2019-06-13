@@ -5,8 +5,6 @@
 
 import '../../shared/src/polyfills'
 
-import 'focus-visible'
-
 import './sentry'
 
 import React from 'react'
@@ -17,6 +15,7 @@ import { extensionAreaRoutes } from './extensions/extension/routes'
 import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
 import { extensionsAreaRoutes } from './extensions/routes'
 import { keybindings } from './keybindings'
+import './main.scss'
 import { orgAreaHeaderNavItems } from './org/area/navitems'
 import { orgAreaRoutes } from './org/area/routes'
 import { repoHeaderActionButtons } from './repo/repoHeaderActionButtons'

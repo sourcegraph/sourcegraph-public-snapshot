@@ -6,6 +6,8 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
+import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
+import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -23,11 +25,13 @@ export interface FileDiffNodeProps extends PlatformContextProps, ExtensionsContr
     /** The head repository and revision. */
     head: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
 
+    showRepository?: boolean
+
     lineNumbers: boolean
     className?: string
     location: H.Location
     history: H.History
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    hoverifier?: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
 }
 
 interface State {
@@ -72,6 +76,11 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                                 className="file-diff-node__header-stat"
                             />
                             <Link to={{ ...this.props.location, hash: anchor }} className="file-diff-node__header-path">
+                                {this.props.showRepository && (
+                                    <span className="text-muted mr-2">
+                                        {displayRepoName(this.props.base.repoName)}@{this.props.base.rev}
+                                    </span>
+                                )}
                                 {path}
                             </Link>
                         </div>

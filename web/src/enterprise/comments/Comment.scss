@@ -1,0 +1,11 @@
+.comment {
+    .markdown {
+        > ul,
+        > ol,
+        > p {
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+    }
+}

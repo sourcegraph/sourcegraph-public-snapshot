@@ -27,7 +27,7 @@ interface Props {
 
 interface State {
     /** The product subscription status, or an error, or undefined while loading. */
-    statusOrError?: GQL.IProductSubscriptionStatus | ErrorLike
+    checkOrError?: GQL.IProductSubscriptionStatus | ErrorLike
 }
 
 /**
@@ -43,7 +43,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
             this.queryProductLicenseInfo()
                 .pipe(
                     catchError(err => [asError(err)]),
-                    map(v => ({ statusOrError: v }))
+                    map(v => ({ checkOrError: v }))
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
@@ -54,13 +54,13 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (this.state.statusOrError === undefined) {
+        if (this.state.checkOrError === undefined) {
             return null
         }
-        if (isErrorLike(this.state.statusOrError)) {
+        if (isErrorLike(this.state.checkOrError)) {
             return (
                 <div className="alert alert-danger">
-                    Error checking product license: {this.state.statusOrError.message}
+                    Error checking product license: {this.state.checkOrError.message}
                 </div>
             )
         }
@@ -71,7 +71,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
             actualUserCountDate,
             noLicenseWarningUserCount,
             license,
-        } = this.state.statusOrError
+        } = this.state.checkOrError
 
         // No license means Sourcegraph Core. For that, show the user that they can use this for free
         // forever, and show them how to upgrade.

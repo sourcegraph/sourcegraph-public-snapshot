@@ -3,10 +3,14 @@ import { ClientCommandsAPI } from './commands'
 import { ClientConfigurationAPI } from './configuration'
 import { ClientContentAPI } from './content'
 import { ClientContextAPI } from './context'
+import { ClientDiagnosticsAPI } from './diagnostics'
+import { ClientDocumentsAPI } from './documents'
 import { ClientLanguageFeaturesAPI } from './languageFeatures'
 import { ClientSearchAPI } from './search'
 import { ClientViewsAPI } from './views'
 import { ClientWindowsAPI } from './windows'
+import { ClientChecksAPI } from './checks'
+import { ClientNotificationsAPI } from './notifications'
 
 /**
  * The API that is exposed from the client (main thread) to the extension host (worker)
@@ -23,4 +27,8 @@ export interface ClientAPI {
     codeEditor: ClientCodeEditorAPI
     views: ClientViewsAPI
     content: ClientContentAPI
+    diagnostics: ClientDiagnosticsAPI
+    documents: ClientDocumentsAPI
+    checks: ClientChecksAPI
+    notifications: ClientNotificationsAPI
 }

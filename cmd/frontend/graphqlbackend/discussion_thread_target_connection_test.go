@@ -17,9 +17,9 @@ func TestDiscussionThreadTargetConnection(t *testing.T) {
 	db.Mocks.DiscussionThreads.List = func(_ context.Context, opt *db.DiscussionThreadsListOptions) ([]*types.DiscussionThread, error) {
 		return []*types.DiscussionThread{{ID: wantThreadID}}, nil
 	}
-	db.Mocks.DiscussionThreads.ListTargets = func(threadID int64) ([]*types.DiscussionThreadTargetRepo, error) {
-		if threadID != wantThreadID {
-			t.Fatalf("got threadID %v, want %v", threadID, wantThreadID)
+	db.Mocks.DiscussionThreads.ListTargets = func(opt db.DiscussionThreadsListTargetsOptions) ([]*types.DiscussionThreadTargetRepo, error) {
+		if opt.ThreadID != wantThreadID {
+			t.Fatalf("got threadID %v, want %v", opt.ThreadID, wantThreadID)
 		}
 		return []*types.DiscussionThreadTargetRepo{{Path: strptr("foo/bar")}, {Path: strptr("qux")}, {Path: strptr("zap")}}, nil
 	}

@@ -7,6 +7,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+
+	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/projects"
+	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/repos/git"
 )
 
 // Main is the main function that runs the frontend process.

@@ -3,28 +3,75 @@ body {
 }
 
 h1,
+.h1,
 h2,
+.h2,
 h3,
+.h3,
 h4,
+.h4,
 h5,
-h6 {
+.h5,
+h6,
+.h6 {
     margin-top: 0;
     margin-bottom: #{$spacer * 2};
 }
 
+h1,
+.h1 {
+    font-size: calc(var(--font-size-base) * 2);
+}
+
+h2,
+.h2 {
+    font-size: calc(var(--font-size-base) * 1.5);
+}
+
+h3,
+.h3 {
+    font-size: calc(var(--font-size-base) * 1.25);
+}
+
+h4,
+.h4 {
+    font-size: calc(var(--font-size-base) * 1.125);
+}
+
+h5,
+.h5 {
+    font-size: calc(var(--font-size-base));
+}
+
+h6,
+.h6 {
+    font-size: calc(var(--font-size-base));
+}
+
 a {
     color: var(--link-color);
+    text-decoration: var(--link-decoration);
 
     &:hover {
         color: var(--link-hover-color);
+        text-decoration: var(--link-hover-decoration);
     }
-    &:not(:hover) {
-        text-decoration: none;
-    }
+}
+
+.font-size-base {
+    font-size: var(--font-size-base);
 }
 
 .small {
     font-size: var(--font-size-sm);
+}
+
+.text-left {
+    text-align: left;
+}
+
+.text-center {
+    text-align: center;
 }
 
 .text-muted {
@@ -33,4 +80,28 @@ a {
 
 .text-monospace {
     font-family: var(--code-font-family);
+}
+
+.font-weight-normal {
+    font-weight: normal !important;
+}
+
+.font-weight-bold {
+    font-weight: bold !important;
+}
+
+.font-style-italic {
+    font-style: italic;
+}
+
+.stretched-link {
+    &::after {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1;
+        content: '';
+    }
 }

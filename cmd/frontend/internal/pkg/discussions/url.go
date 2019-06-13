@@ -31,42 +31,47 @@ func URLToInlineComment(ctx context.Context, thread *types.DiscussionThread, com
 }
 
 func urlToInline(ctx context.Context, t *types.DiscussionThread, c *types.DiscussionComment) (*url.URL, error) {
-	var u *url.URL
-
-	// TODO(sqs): This only takes the 1st target. Support multiple targets.
-	targets, err := db.DiscussionThreads.ListTargets(ctx, t.ID)
+	targets, err := db.DiscussionThreads.ListTargets(ctx, db.DiscussionThreadsListTargetsOptions{ThreadID: t.ID})
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionThreads.ListTargets")
 	}
-	switch {
-	case len(targets) > 0:
-		// TODO(slimsag:discussions): future: Consider how to handle cases like:
-		// - repo renames
-		// - file paths not existing on the default branch (or at all).
-
-		target := targets[0]
-		repo, err := db.Repos.Get(ctx, target.RepoID)
-		if err != nil {
-			return nil, errors.Wrap(err, "db.Repos.Get")
-		}
-		if target.Path == nil {
-			return nil, nil // Can't generate a link to this yet, we don't have a UI for it yet.
-		}
-		u = &url.URL{Path: path.Join("/", string(repo.Name), "/-/blob/", *target.Path)}
-
-		fragment := url.Values{}
-		fragment.Set("tab", "discussions")
-		fragment.Set("threadID", strconv.FormatInt(t.ID, 10))
+	// TODO(sqs): This only takes the 1st target. Support multiple targets.
+	if len(targets) > 0 {
+		var commentID *int64
 		if c != nil {
-			fragment.Set("commentID", strconv.FormatInt(c.ID, 10))
+			commentID = &c.ID
 		}
-		encFragment := fragment.Encode()
-		if target.StartLine != nil {
-			encFragment = fmt.Sprintf("L%d&%s", *target.StartLine+1, encFragment)
-		}
-		u.Fragment = encFragment
-	default:
-		return nil, nil // can't generate a link to this target type
+		return URLToInlineTarget(ctx, targets[0], &t.ID, commentID)
 	}
+	return nil, nil // can't generate a link to this target type
+}
+
+// URLToInlineTarget returns a URL to the discussion thread target's inline view (i.e., in a file).
+func URLToInlineTarget(ctx context.Context, target *types.DiscussionThreadTargetRepo, threadID, commentID *int64) (*url.URL, error) {
+	// TODO(slimsag:discussions): future: Consider how to handle cases like:
+	// - repo renames
+	// - file paths not existing on the default branch (or at all).
+	repo, err := db.Repos.Get(ctx, target.RepoID)
+	if err != nil {
+		return nil, errors.Wrap(err, "db.Repos.Get")
+	}
+	if target.Path == nil {
+		return nil, nil // Can't generate a link to this yet, we don't have a UI for it yet.
+	}
+	u := &url.URL{Path: path.Join("/", string(repo.Name), "/-/blob/", *target.Path)}
+
+	fragment := url.Values{}
+	fragment.Set("tab", "discussions")
+	if threadID != nil {
+		fragment.Set("threadID", strconv.FormatInt(*threadID, 10))
+	}
+	if commentID != nil {
+		fragment.Set("commentID", strconv.FormatInt(*commentID, 10))
+	}
+	encFragment := fragment.Encode()
+	if target.StartLine != nil {
+		encFragment = fmt.Sprintf("L%d&%s", *target.StartLine+1, encFragment)
+	}
+	u.Fragment = encFragment
 	return u, nil
 }

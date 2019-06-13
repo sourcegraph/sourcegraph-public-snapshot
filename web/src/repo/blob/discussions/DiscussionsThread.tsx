@@ -103,7 +103,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
 
             const desiredHash = this.urlHashWithLine(
                 thread,
-                target,
+                target && target.__typename === 'DiscussionThreadTargetRepo' ? target : undefined,
                 commentIDWithoutKind ? { idWithoutKind: commentIDWithoutKind } : undefined
             )
             if (!hashesEqual(desiredHash, location.hash)) {

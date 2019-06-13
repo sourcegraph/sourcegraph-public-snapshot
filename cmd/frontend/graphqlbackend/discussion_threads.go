@@ -191,6 +191,7 @@ func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx contex
 
 func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *struct {
 	Input *struct {
+		Project  graphql.ID
 		Title    *string
 		Contents string
 		Target   *discussionThreadTargetInput
@@ -228,9 +229,17 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		}
 	}
 
+	// 🚨 SECURITY: Ensure the viewer can view the project (which is a requirement for creating a
+	// thread in it).
+	project, err := ProjectByID(ctx, args.Input.Project)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create the thread.
 	newThread := &types.DiscussionThread{
 		AuthorUserID: currentUser.user.ID,
+		ProjectID:    project.DBID(),
 		Title:        *args.Input.Title,
 	}
 	thread, err := db.DiscussionThreads.Create(ctx, newThread)
@@ -268,6 +277,7 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 	Input *struct {
 		ThreadID graphql.ID
 		Title    *string
+		Settings *string
 		Archive  *bool
 		Delete   *bool
 	}
@@ -389,7 +399,7 @@ func (schemaResolver) DiscussionThread(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	return discussionThreadByID(ctx, marshalDiscussionThreadID(dbID))
+	return DiscussionThreadByID(ctx, marshalDiscussionThreadID(dbID))
 }
 
 type discussionThreadTargetRepoSelectionResolver struct {
@@ -482,7 +492,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 		return nil, err
 	}
 	currentPath := *r.t.Path
-	fileDiffs, err := comparison.FileDiffs(&struct{ First *int32 }{}).Nodes(ctx)
+	fileDiffs, err := comparison.FileDiffs(&graphqlutil.ConnectionArgs{}).Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -659,8 +669,8 @@ func unmarshalDiscussionThreadID(id graphql.ID) (dbID int64, err error) {
 	return
 }
 
-// discussionThreadByID looks up a DiscussionThread by its GraphQL ID.
-func discussionThreadByID(ctx context.Context, id graphql.ID) (*discussionThreadResolver, error) {
+// DiscussionThreadByID looks up a DiscussionThread by its GraphQL ID.
+func DiscussionThreadByID(ctx context.Context, id graphql.ID) (*discussionThreadResolver, error) {
 	dbID, err := unmarshalDiscussionThreadID(id)
 	if err != nil {
 		return nil, err
@@ -684,8 +694,10 @@ func (d *discussionThreadResolver) ID() graphql.ID {
 	return marshalDiscussionThreadID(d.t.ID)
 }
 
-func (d *discussionThreadResolver) IDWithoutKind() string {
-	return strconv.FormatInt(d.t.ID, 10)
+func (d *discussionThreadResolver) DBID() int64 { return d.t.ID }
+
+func (d *discussionThreadResolver) Project(ctx context.Context) (Project, error) {
+	return ProjectByDBID(ctx, d.t.ProjectID)
 }
 
 func (d *discussionThreadResolver) Author(ctx context.Context) (*UserResolver, error) {
@@ -694,13 +706,13 @@ func (d *discussionThreadResolver) Author(ctx context.Context) (*UserResolver, e
 
 func (d *discussionThreadResolver) Title() string { return d.t.Title }
 
-func (d *discussionThreadResolver) Targets(ctx context.Context, args *graphqlutil.ConnectionArgs) *discussionThreadTargetConnectionResolver {
+func (d *discussionThreadResolver) Targets(ctx context.Context, args *discussionThreadTargetConnectionArgs) *discussionThreadTargetConnectionResolver {
 	return &discussionThreadTargetConnectionResolver{threadID: d.t.ID, args: args}
 }
 
 func (d *discussionThreadResolver) Target(ctx context.Context) (*discussionThreadTargetResolver, error) {
 	// TODO(sqs): This only takes the 1st target. Support multiple targets.
-	targets, err := db.DiscussionThreads.ListTargets(ctx, d.t.ID)
+	targets, err := db.DiscussionThreads.ListTargets(ctx, db.DiscussionThreadsListTargetsOptions{ThreadID: d.t.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -748,6 +760,10 @@ func (d *discussionThreadResolver) Comments(ctx context.Context, args *struct {
 	opt := &db.DiscussionCommentsListOptions{ThreadID: &d.t.ID}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &discussionCommentsConnectionResolver{opt: opt}
+}
+
+func (d *discussionThreadResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
+	return d, true
 }
 
 // discussionThreadsConnectionResolver resolves a list of discussion comments.

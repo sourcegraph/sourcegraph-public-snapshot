@@ -1,14 +1,9 @@
 @import './Suggestion';
+@import './query/QueryInputInlineOptions';
 
 .query-input2 {
     flex: 1 1 auto;
     position: relative;
-
-    &__input {
-        // Right side is flush with SearchButton.
-        border-top-right-radius: 0;
-        border-bottom-right-radius: 0;
-    }
 
     &__suggestions {
         position: absolute;
@@ -47,5 +42,16 @@
         padding-left: 0.25rem;
         bottom: 0.375rem;
         background-color: $color-bg-4;
+    }
+}
+
+.query-input3 {
+    background-color: var(--input-bg);
+    min-height: 39px; // TODO!(sqs): hack to get same height as button
+    padding-top: $input-padding-x/2; // TODO!(sqs): hack to vertically center
+    padding-bottom: $input-padding-x/2; // TODO!(sqs): hack to vertically center
+
+    &__global {
+        max-width: 32rem;
     }
 }

@@ -1,9 +1,10 @@
 import * as React from 'react'
-import { pluralize } from '../../../../shared/src/util/strings'
+import { numberWithCommas, pluralize } from '../../../../shared/src/util/strings'
 
 const NUM_SQUARES = 5
 
 /** Displays a diff stat (visual representation of added, changed, and deleted lines in a diff). */
+// TODO!(sqs): this is buggy - 2 changes + 2 deletions (with no additions) shows up as 2 green, 1 orange, 1 red, 1 gray
 export const DiffStat: React.FunctionComponent<{
     /** Number of additions (added lines). */
     added: number
@@ -14,8 +15,11 @@ export const DiffStat: React.FunctionComponent<{
     /** Number of deletions (deleted lines). */
     deleted: number
 
-    className: string
-}> = ({ added, changed, deleted, className }) => {
+    /* Show +/- numbers, not just the total change count. */
+    expandedCounts?: boolean
+
+    className?: string
+}> = ({ added, changed, deleted, expandedCounts = false, className = '' }) => {
     const total = added + changed + deleted
     const numSquares = Math.min(NUM_SQUARES, total)
     let addedSquares = allocateSquares(added, total)
@@ -54,17 +58,27 @@ export const DiffStat: React.FunctionComponent<{
 
     const labels: string[] = []
     if (added > 0) {
-        labels.push(`${added} ${pluralize('addition', added)}`)
+        labels.push(`${numberWithCommas(added)} ${pluralize('addition', added)}`)
     }
     if (changed > 0) {
-        labels.push(`${changed} ${pluralize('change', changed)}`)
+        labels.push(`${numberWithCommas(changed)} ${pluralize('change', changed)}`)
     }
     if (deleted > 0) {
-        labels.push(`${deleted} ${pluralize('deletion', deleted)}`)
+        labels.push(`${numberWithCommas(deleted)} ${pluralize('deletion', deleted)}`)
     }
     return (
         <div className={`diff-stat ${className}`} data-tooltip={labels.join(', ')}>
-            <small className="diff-stat__total">{total}</small>
+            {expandedCounts ? (
+                <span className="diff-stat__total font-weight-bold">
+                    <span className="diff-stat__text-added mr-1">+{numberWithCommas(added)}</span>
+                    {changed > 0 && (
+                        <span className="diff-stat__text-changed mr-1">&bull;{numberWithCommas(changed)}</span>
+                    )}
+                    <span className="diff-stat__text-deleted mr-1">&minus;{numberWithCommas(deleted)}</span>
+                </span>
+            ) : (
+                <small className="diff-stat__total">{numberWithCommas(total)}</small>
+            )}
             {squares.map((verb, i) => (
                 <div key={i} className={`diff-stat__square diff-stat__${verb}`} />
             ))}

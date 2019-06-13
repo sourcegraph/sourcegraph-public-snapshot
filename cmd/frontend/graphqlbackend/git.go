@@ -24,12 +24,13 @@ type GitResolver interface {
 }
 
 type GitCreateRefFromPatchInput struct {
-	Repository graphql.ID
-	Name       string
-	BaseCommit GitObjectID
-	Patch      string
+	Repository    graphql.ID
+	Name          string
+	BaseCommit    GitObjectID
+	Patch         string
+	CommitMessage string
 }
 
 type GitCreateRefFromPatchPayload interface {
-	Ref(ctx context.Context) (*GitRefResolver, error)
+	Ref() *GitRefResolver
 }

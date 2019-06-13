@@ -202,6 +202,7 @@ const services = {
     },
 }
 
-export const extensionsController: Pick<Controller, 'services'> = {
+export const extensionsController: Pick<Controller, 'executeCommand' | 'services'> = {
+    executeCommand: async () => void 0,
     services: services as any,
 }

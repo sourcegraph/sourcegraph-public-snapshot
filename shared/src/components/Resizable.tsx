@@ -25,6 +25,9 @@ interface Props<C extends React.ReactElement<any> = React.ReactElement<any>> {
      * The element that is resizable on its right side.
      */
     element: C
+
+    /** Element styles. */
+    style?: React.CSSProperties
 }
 
 const isHorizontal = (handlePosition: Props['handlePosition']): boolean =>

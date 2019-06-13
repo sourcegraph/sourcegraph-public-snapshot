@@ -73,6 +73,9 @@
             align-items: center;
         }
     }
+    &__row--active &__row-contents {
+        color: white;
+    }
 
     &__row-label {
         margin-left: 0.25rem;

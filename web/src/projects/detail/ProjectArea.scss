@@ -1,0 +1,7 @@
+@import './sidebar/ProjectAreaSidebar';
+
+.project-area {
+    &__sidebar {
+        background-color: var(--navbar-bg);
+    }
+}

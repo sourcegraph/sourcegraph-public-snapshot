@@ -4,6 +4,8 @@ import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { RepositoryIcon } from '../../../../shared/src/components/icons'
+import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -13,9 +15,6 @@ import { GitCommitNodeByline } from './GitCommitNodeByline'
 
 export interface GitCommitNodeProps {
     node: GQL.IGitCommit
-
-    /** The repository that contains this commit. */
-    repoName: string
 
     /** An optional additional CSS class name to apply to this element. */
     className?: string
@@ -31,6 +30,9 @@ export interface GitCommitNodeProps {
 
     /** Show the full 40-character SHA and parents on their own row. */
     showSHAAndParentsRow?: boolean
+
+    /** Show the repository that this commit is from. */
+    showRepository?: boolean
 
     /** Fragment to show at the end to the right of the SHA. */
     afterElement?: React.ReactFragment
@@ -97,6 +99,14 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                     .className || ''}`}
             >
                 <div className="git-commit-node__row git-commit-node__main">
+                    {this.props.showRepository && (
+                        <RepoLink
+                            to={this.props.node.repository.url}
+                            repoName={this.props.node.repository.name}
+                            icon={RepositoryIcon}
+                            className="mr-3"
+                        />
+                    )}
                     {!this.props.compact ? (
                         <>
                             <div className="git-commit-node__signature">
@@ -121,7 +131,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                                 this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
                                             }
                                         >
-                                            <ContentCopyIcon className="icon-inline" />
+                                            <ContentCopyIcon className="icon-inline small" />
                                         </button>
                                     </div>
                                 )}
@@ -131,7 +141,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                         to={this.props.node.tree.canonicalURL}
                                         data-tooltip="View files at this commit"
                                     >
-                                        <FileDocumentIcon className="icon-inline" />
+                                        <FileDocumentIcon className="icon-inline small" />
                                     </Link>
                                 )}
                             </div>
@@ -179,7 +189,8 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                         <Link
                                             key={i}
                                             className="git-ref-tag-2 git-commit-node__sha-and-parents-parent"
-                                            to={`/${this.props.repoName}/-/commit/${parent.oid}`}
+                                            // TODO!(sqs): ensure all users of GitCommitNode have this field filled
+                                            to={parent.url}
                                         >
                                             <code>{parent.abbreviatedOID}</code>
                                         </Link>

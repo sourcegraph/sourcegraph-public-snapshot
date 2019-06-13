@@ -9,6 +9,7 @@ import '../sentry'
 
 import React from 'react'
 import { render } from 'react-dom'
+import '../enterprise.scss'
 import { keybindings } from '../keybindings'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 import { enterpriseExploreSections } from './explore/exploreSections'

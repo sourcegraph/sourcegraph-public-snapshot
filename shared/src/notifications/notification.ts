@@ -1,12 +1,13 @@
 import { Observable } from 'rxjs'
 import { NotificationType, Progress } from 'sourcegraph'
+import { Action } from '../api/types/action'
 
 /**
  * A notification message to display to the user.
  */
 export interface Notification {
     /** The message of the notification. */
-    message?: string
+    message: string
 
     /**
      * The type of the message.
@@ -21,4 +22,9 @@ export interface Notification {
      * If this Observable errors, the notification will be changed to an error type.
      */
     progress?: Observable<Progress>
+
+    /**
+     * Actions associated with this notification.
+     */
+    actions?: readonly Action[]
 }

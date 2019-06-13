@@ -1,3 +1,5 @@
+$list-group-border-width: 1px;
+
 .list-group {
     display: flex;
     flex-direction: column;
@@ -9,10 +11,27 @@
 
 .list-group-item {
     padding: $spacer;
+    display: block;
+    margin-bottom: -$list-group-border-width;
+    border: $list-group-border-width solid var(--border-color);
+
+    &:last-child {
+        margin-bottom: 0;
+    }
 
     &.active {
         color: var(--primary-contrast);
         background-color: var(--primary);
+    }
+}
+
+.list-group-flush {
+    > .list-group-item {
+        border-right: 0;
+        border-left: 0;
+        &:last-child {
+            margin-bottom: -$list-group-border-width;
+        }
     }
 }
 

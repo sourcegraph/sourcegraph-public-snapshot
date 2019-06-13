@@ -258,7 +258,7 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	}
 
 	for _, result := range sr.results {
-		if fm, ok := result.ToFileMatch(); ok {
+		if fm := fileMatchLike(result); fm != nil {
 			rev := ""
 			if fm.inputRev != nil {
 				rev = *fm.inputRev
@@ -541,6 +541,12 @@ func roundStr(s string) string {
 type searchResultsStats struct {
 	JApproximateResultCount string
 	JSparkline              []int32
+
+	sr *searchResolver
+
+	once   sync.Once
+	srs    *searchResultsResolver
+	srsErr error
 }
 
 func (srs *searchResultsStats) ApproximateResultCount() string { return srs.JApproximateResultCount }
@@ -580,6 +586,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err := json.Unmarshal(jsonRes, &stats); err != nil {
 			return nil, err
 		}
+		stats.sr = r
 		return stats, nil
 	}
 
@@ -623,6 +630,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	stats = &searchResultsStats{
 		JApproximateResultCount: v.ApproximateResultCount(),
 		JSparkline:              sparkline,
+		sr:                      r,
 	}
 
 	// Store in the cache if we got non-zero results. If we got zero results,
@@ -1106,6 +1114,23 @@ func compareSearchResults(a, b searchResultResolver) bool {
 
 func sortResults(r []searchResultResolver) {
 	sort.Slice(r, func(i, j int) bool { return compareSearchResults(r[i], r[j]) })
+}
+
+// fileMatchLike returns r's fileMatch or, if possible, the equivalent fileMatch of its actual
+// result type. It is used by callers that want to analyze this result (e.g., a codemod result) as
+// though it were a fileMatch.
+func fileMatchLike(r searchResultResolver) *fileMatchResolver {
+	if fm, ok := r.ToFileMatch(); ok {
+		return fm
+	}
+	if cmr, ok := r.ToCodemodResult(); ok {
+		return &fileMatchResolver{
+			JPath: cmr.path,
+			uri:   cmr.fileURL,
+			repo:  cmr.commit.repo.repo,
+		}
+	}
+	return nil
 }
 
 // regexpPatternMatchingExprsInOrder returns a regexp that matches lines that contain

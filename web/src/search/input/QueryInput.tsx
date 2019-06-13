@@ -18,7 +18,16 @@ import { Key } from 'ts-key-enum'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { fetchSuggestions } from '../backend'
+import { QueryInput3 } from './QueryInput3'
 import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
+
+/**
+ * Whether the experimental token text query input field is enabled.
+ *
+ * To enable this, run `localStorage.tokenTextQueryInputExp=true;location.reload()` in your browser's JavaScript
+ * console.
+ */
+const USE_TOKEN_TEXT_QUERY_INPUT = localStorage.getItem('tokenTextQueryInputExp') !== null
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -26,7 +35,7 @@ import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
  */
 export const queryUpdates = new Subject<string>()
 
-interface Props {
+export interface QueryInputProps {
     location: H.Location
     history: H.History
 
@@ -73,10 +82,10 @@ interface State {
     selectedSuggestion: number
 }
 
-export class QueryInput extends React.Component<Props, State> {
+class QueryInput2 extends React.Component<QueryInputProps, State> {
     private static SUGGESTIONS_QUERY_MIN_LENGTH = 2
 
-    private componentUpdates = new Subject<Props>()
+    private componentUpdates = new Subject<QueryInputProps>()
 
     /** Subscriptions to unsubscribe from on component unmount */
     private subscriptions = new Subscription()
@@ -105,7 +114,7 @@ export class QueryInput extends React.Component<Props, State> {
     /** Only used to keep track if the user has typed a single character into the input field so we can log an event once. */
     private hasLoggedFirstInput = false
 
-    constructor(props: Props) {
+    constructor(props: QueryInputProps) {
         super(props)
 
         this.state = {
@@ -123,7 +132,7 @@ export class QueryInput extends React.Component<Props, State> {
                     distinctUntilChanged(),
                     debounceTime(200),
                     switchMap(query => {
-                        if (query.length < QueryInput.SUGGESTIONS_QUERY_MIN_LENGTH) {
+                        if (query.length < QueryInput2.SUGGESTIONS_QUERY_MIN_LENGTH) {
                             return [{ suggestions: [], selectedSuggestion: -1 }]
                         }
                         const fullQuery = [this.props.prependQueryForSuggestions, this.props.value]
@@ -239,7 +248,7 @@ export class QueryInput extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public componentDidUpdate(prevProps: Props, prevState: State): void {
+    public componentDidUpdate(prevProps: QueryInputProps, prevState: State): void {
         this.componentUpdates.next(this.props)
         // Check if selected suggestion is out of view
         scrollIntoView(this.suggestionListElement, this.selectedSuggestionElement)
@@ -247,7 +256,7 @@ export class QueryInput extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         const showSuggestions =
-            this.props.value.length >= QueryInput.SUGGESTIONS_QUERY_MIN_LENGTH &&
+            this.props.value.length >= QueryInput2.SUGGESTIONS_QUERY_MIN_LENGTH &&
             this.state.inputFocused &&
             !this.state.hideSuggestions &&
             this.state.suggestions.length !== 0
@@ -388,3 +397,5 @@ export class QueryInput extends React.Component<Props, State> {
         }))
     }
 }
+
+export const QueryInput = USE_TOKEN_TEXT_QUERY_INPUT ? QueryInput3 : QueryInput2

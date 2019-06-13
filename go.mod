@@ -73,7 +73,7 @@ require (
 	github.com/gorilla/sessions v1.1.4-0.20181015005113-68d1edeb366b
 	github.com/gostaticanalysis/analysisutil v0.0.3 // indirect
 	github.com/goware/urlx v0.2.0
-	github.com/graph-gophers/graphql-go v0.0.0-20190204230732-e582242c92cc
+	github.com/graph-gophers/graphql-go v0.0.0-20190724201507-010347b5f9e6
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hashicorp/golang-lru v0.5.3 // indirect

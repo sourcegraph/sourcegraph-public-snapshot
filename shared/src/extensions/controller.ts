@@ -8,8 +8,10 @@ import { ExtensionsService } from '../api/client/services/extensionsService'
 import { NotificationType } from '../api/client/services/notifications'
 import { InitData } from '../api/extension/extensionHost'
 import { registerBuiltinClientCommands } from '../commands/commands'
+import { registerFileSystemContributions } from '../fileSystem/contributions'
 import { Notification } from '../notifications/notification'
 import { PlatformContext } from '../platform/context'
+import { registerSearchContributions } from '../search/contributions'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { isDefined } from '../util/types'
 
@@ -55,6 +57,25 @@ export interface ExtensionsControllerProps<K extends keyof Controller = keyof Co
 }
 
 /**
+ * A sparse subset of {@link ExtensionsControllerProps} that includes only what's necessary for
+ * showing a notification.
+ */
+export interface ExtensionsControllerNotificationProps {
+    extensionsController: {
+        services: {
+            notifications: {
+                showMessages: Pick<
+                    ExtensionsControllerProps<
+                        'services'
+                    >['extensionsController']['services']['notifications']['showMessages'],
+                    'next'
+                >
+            }
+        }
+    }
+}
+
+/**
  * Creates the controller, which handles all communication between the client application and extensions.
  *
  * There should only be a single controller for the entire client application. The controller's model represents
@@ -76,6 +97,8 @@ export function createController(context: PlatformContext): Controller {
 
     subscriptions.add(registerBuiltinClientCommands(services, context))
     subscriptions.add(registerExtensionContributions(services.contribution, services.extensions))
+    subscriptions.add(registerSearchContributions(services, context))
+    subscriptions.add(registerFileSystemContributions(services, context))
 
     // Show messages (that don't need user input) as global notifications.
     subscriptions.add(

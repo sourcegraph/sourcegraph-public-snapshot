@@ -1,4 +1,4 @@
-$input-padding: $spacer;
+@import './variables';
 
 .form-inline {
     display: flex;
@@ -11,13 +11,15 @@ $input-padding: $spacer;
 
 .form-control {
     width: 100%;
-    height: calc(#{$line-height-base * 1rem} + #{$input-padding * 2} + #{$input-border-width * 2});
+    :not(textarea) {
+        height: calc(#{$line-height-base * 1rem} + #{$input-padding-y * 2} + #{$input-border-width * 2});
+    }
     line-height: $line-height-base;
     font-size: var(--font-size-base);
     color: var(--body-color);
     background-color: var(--input-bg);
     border: $input-border-width solid var(--border-color);
-    padding: $input-padding;
+    padding: $input-padding-y $input-padding-x;
 
     &::placeholder {
         color: var(--text-muted);
@@ -29,13 +31,17 @@ $input-padding: $spacer;
     }
 }
 
+.form-check {
+    margin-right: map-get($spacers, 2);
+}
+
 .form-group {
-    margin-bottom: $spacer * 1.5;
+    margin-bottom: map-get($spacers, 3);
 }
 
 .form-text {
     display: block;
-    margin-top: $spacer * 0.25;
+    margin-top: map-get($spacers, 1);
 }
 
 // TODO!(sqs): fix these after rebasing onto web-ui
@@ -45,15 +51,14 @@ $input-padding: $spacer;
 //
 // Use this class on the prepends or appends.
 .bg-form-control {
-    background-color: $input-bg !important;
+    background-color: var(--input-bg) !important;
 }
 // Use this class on the .input-group when the text field is focused. (You'll need onFocus/onBlur
 // listeners on the text field to toggle this class on the .input-group.)
 .form-control-focus {
-    // Duplicated from Bootstrap @mixin form-control-focus.
-    color: $input-focus-color;
-    background-color: $input-focus-bg;
-    border-color: $input-focus-border-color !important;
-    outline: 0;
-    box-shadow: $input-focus-box-shadow;
+    color: var(--body-color);
+    @include focus-ring(-1px);
+    .form-control {
+        outline: 0 !important;
+    }
 }

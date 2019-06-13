@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
+	graphql "github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
@@ -79,6 +79,16 @@ func (r *NodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToCampaign() (Campaign, bool) {
+	n, ok := r.Node.(Campaign)
+	return n, ok
+}
+
+func (r *NodeResolver) ToCommentReply() (CommentReply, bool) {
+	n, ok := r.Node.(CommentReply)
+	return n, ok
+}
+
 func (r *NodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
 	n, ok := r.Node.(*discussionCommentResolver)
 	return n, ok
@@ -126,6 +136,21 @@ func (r *NodeResolver) ToProject() (Project, bool) {
 
 func (r *NodeResolver) ToRepository() (*RepositoryResolver, bool) {
 	n, ok := r.Node.(*RepositoryResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToRule() (Rule, bool) {
+	n, ok := r.Node.(Rule)
+	return n, ok
+}
+
+func (r *NodeResolver) ToThread() (Thread, bool) {
+	n, ok := r.Node.(Thread)
+	return n, ok
+}
+
+func (r *NodeResolver) ToThreadDiagnosticEdge() (ThreadDiagnosticEdge, bool) {
+	n, ok := r.Node.(ThreadDiagnosticEdge)
 	return n, ok
 }
 
@@ -202,6 +227,10 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
+	case GQLTypeCampaign:
+		return CampaignByID(ctx, id)
+	case "CommentReply":
+		return CommentReplyByID(ctx, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":
@@ -222,12 +251,16 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 		return externalServiceByID(ctx, id)
 	case "GitRef":
 		return gitRefByID(ctx, id)
-	case "Label":
+	case GQLTypeLabel:
 		return LabelByID(ctx, id)
 	case "Project":
 		return ProjectByID(ctx, id)
 	case "Repository":
 		return repositoryByID(ctx, id)
+	case GQLTypeRule:
+		return RuleByID(ctx, id)
+	case GQLTypeThreadDiagnosticEdge:
+		return ThreadDiagnosticEdgeByID(ctx, id)
 	case "User":
 		return UserByID(ctx, id)
 	case "Org":
@@ -242,6 +275,8 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 		return savedSearchByID(ctx, id)
 	case "Site":
 		return siteByGQLID(ctx, id)
+	case GQLTypeThread:
+		return ThreadByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

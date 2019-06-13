@@ -1,7 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import React, { useCallback } from 'react'
 import { Tooltip } from './Tooltip'
-import './Tooltip.scss'
+
+import '../../global-styles/tooltip'
 
 const { add } = storiesOf('Tooltip', module).addDecorator(story => (
     // tslint:disable-next-line: jsx-ban-props

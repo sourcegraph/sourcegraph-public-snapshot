@@ -112,7 +112,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                     setUpdateOrError(asError(err))
                 }
             },
-            [manifest, bundle]
+            [extension.id, manifest, bundle, onDidUpdateExtension]
         )
 
         return !extension.registryExtension || !extension.registryExtension.viewerCanAdminister ? (

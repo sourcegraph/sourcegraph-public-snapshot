@@ -178,9 +178,10 @@ func Main() error {
 	}
 	log15.Debug("HTTP running", "on", httpAddr)
 	srv.GoServe(l, &http.Server{
-		Handler:      externalHandler,
-		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 60 * time.Second,
+		Handler: externalHandler,
+		// TODO!(sqs): longer for big campaigns
+		ReadTimeout:  475 * time.Second,
+		WriteTimeout: 460 * time.Second,
 	})
 
 	if httpAddrInternal != "" {

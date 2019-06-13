@@ -7,7 +7,7 @@ import { Link, LinkProps } from 'react-router-dom'
  * current URL, such as https://example.com/a/b/https://example.com/c/d.
  */
 export const RouterLinkOrAnchor: React.FunctionComponent<LinkProps> = props =>
-    typeof props.to === 'string' && /^https?:\/\//.test(props.to) ? (
+    typeof props.to === 'string' && /^(https?|mailto):/.test(props.to) ? (
         <a href={props.to} {...props} />
     ) : (
         <Link {...props} />

@@ -26,7 +26,13 @@ export class ExtRoots implements ExtRootsAPI, ProxyValue {
     public readonly changes = new Subject<void>()
 
     public $acceptRoots(roots: clientType.WorkspaceRoot[]): void {
-        this.roots = Object.freeze(roots.map(plain => ({ ...plain, uri: new URL(plain.uri) })))
+        this.roots = Object.freeze(
+            roots.map(plain => ({
+                ...plain,
+                uri: new URL(plain.uri),
+                baseUri: plain.baseUri ? new URL(plain.baseUri) : undefined,
+            }))
+        )
         this.changes.next()
     }
 }
