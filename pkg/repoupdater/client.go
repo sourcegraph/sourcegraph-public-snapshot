@@ -257,8 +257,15 @@ func (c *Client) ExcludeRepo(ctx context.Context, id uint32) (*protocol.ExcludeR
 	return &res, nil
 }
 
+// MockStatusMessages mocks (*Client).StatusMessages for tests.
+var MockStatusMessages func(context.Context) (*protocol.StatusMessagesResponse, error)
+
 // StatusMessages returns an array of status messages
 func (c *Client) StatusMessages(ctx context.Context) (*protocol.StatusMessagesResponse, error) {
+	if MockStatusMessages != nil {
+		return MockStatusMessages(ctx)
+	}
+
 	resp, err := c.httpGet(ctx, "status-messages")
 	if err != nil {
 		return nil, err
