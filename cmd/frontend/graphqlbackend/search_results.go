@@ -483,20 +483,27 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 
 // longerTime returns a suggested longer time to wait if the given duration wasn't long enough.
 func longerTime(N int, dt time.Duration) time.Duration {
-	Ndt := time.Duration(N) * dt
-	dceil := func(x float64) time.Duration {
-		return time.Duration(math.Ceil(x))
+	dt2 := func() time.Duration {
+		Ndt := time.Duration(N) * dt
+		dceil := func(x float64) time.Duration {
+			return time.Duration(math.Ceil(x))
+		}
+		switch {
+		case math.Floor(Ndt.Hours()) > 0:
+			return dceil(Ndt.Hours()) * time.Hour
+		case math.Floor(Ndt.Minutes()) > 0:
+			return dceil(Ndt.Minutes()) * time.Minute
+		case math.Floor(Ndt.Seconds()) > 0:
+			return dceil(Ndt.Seconds()) * time.Second
+		default:
+			return 0
+		}
+	}()
+	lowest := 2 * time.Second
+	if dt2 < lowest {
+		return lowest
 	}
-	switch {
-	case math.Floor(Ndt.Hours()) > 0:
-		return dceil(Ndt.Hours()) * time.Hour
-	case math.Floor(Ndt.Minutes()) > 0:
-		return dceil(Ndt.Minutes()) * time.Minute
-	case math.Floor(Ndt.Seconds()) > 0:
-		return dceil(Ndt.Seconds()) * time.Second
-	default:
-		return 2 * time.Second
-	}
+	return dt2
 }
 
 type searchResultsStats struct {
