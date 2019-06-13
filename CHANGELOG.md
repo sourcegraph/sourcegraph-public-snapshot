@@ -31,25 +31,13 @@ All notable changes to Sourcegraph are documented in this file.
 - Prevent data inconsistency on cached archives due to restarts. (#4366)
 - On the /extensions page, the UI is now less ambiguous when an extension has not been activated. (#4446)
 
-## 3.4.4 (unreleased)
-
-### Added
-
-### Changed
-
-### Removed
+## 3.4.4
 
 ### Fixed
 
 - Fixed an out of bounds error in the GraphQL repository query. (#4426)
 
 ## 3.4.3
-
-### Added
-
-### Changed
-
-### Removed
 
 ### Fixed
 
@@ -62,12 +50,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where syntax highlighting taking too long would result in errors or wait long amounts of time without properly falling back to plaintext rendering after a few seconds. [#4267](https://github.com/sourcegraph/sourcegraph/issues/4267) [#4268](https://github.com/sourcegraph/sourcegraph/issues/4268)
 
 ## 3.4.2
-
-### Added
-
-### Changed
-
-### Removed
 
 ### Fixed
 
