@@ -116,7 +116,7 @@ func main() {
 	}
 
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint all:stylelint all:typecheck graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint-eslint all:stylelint all:typecheck graphql-lint"))
 
 	// Browser extension build
 	pipeline.AddStep(":webpack::chrome:",

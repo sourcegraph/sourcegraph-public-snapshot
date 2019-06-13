@@ -167,7 +167,7 @@ export const EditorTextField: React.FunctionComponent<Props> = ({
             textAreaRef
         )
         return () => subscription.unsubscribe()
-    }, [editorId])
+    }, [editorId, editorService, onValueChange, textAreaRef])
 
     return (
         <textarea

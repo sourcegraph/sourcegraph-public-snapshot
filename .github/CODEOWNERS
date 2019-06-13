@@ -58,6 +58,7 @@
 /.gitmodules @beyang
 /.gitattributes @beyang
 /.yarnrc @felixfbecker
+/.eslintrc.js @felixfbecker
 /CHANGELOG.md @beyang
 /pkg/httputil @beyang
 /pkg/diskcache @beyang
