@@ -170,5 +170,9 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
         path: '/snippets',
         render: lazyComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
     },
+    {
+        path: '/p/:idWithoutKind',
+        render: lazyComponent(() => import('./projects/detail/ProjectArea'), 'ProjectArea'),
+    },
     repoRevRoute,
 ]

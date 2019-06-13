@@ -1,9 +1,34 @@
+.d-none {
+    display: none !important;
+}
+
 .d-flex {
     display: flex !important;
 }
 
+.d-inline-flex {
+    display: inline-flex !important;
+}
+
 .d-block {
     display: block !important;
+}
+
+@media only screen and (min-width: 700px) {
+    .d-sm-none {
+        display: none !important;
+    }
+    .d-sm-flex {
+        display: flex !important;
+    }
+}
+@media only screen and (min-width: 1000px) {
+    .d-lg-none {
+        display: none !important;
+    }
+    .d-lg-inline-block {
+        display: inline-block !important;
+    }
 }
 
 .flex-column {
@@ -30,12 +55,24 @@
     align-items: center !important;
 }
 
+.align-items-start {
+    align-items: flex-start !important;
+}
+
+.justify-content-center {
+    justify-content: center !important;
+}
+
 .justify-content-between {
     justify-content: space-between !important;
 }
 
 .w-100 {
     width: 100% !important;
+}
+
+.overflow-hidden {
+    overflow: hidden !important;
 }
 
 .position-relative {
@@ -69,7 +106,7 @@ $spacers: (
     1: $spacer * 0.25,
     2: $spacer * 0.5,
     3: $spacer,
-    4: $spacer * 1.5,
+    4: $spacer * 2,
     5: $spacer * 3,
 );
 
@@ -81,7 +118,7 @@ $spacers: (
     @each $key, $value in $spacers {
         .#{$class-name-prefix + '-' + $key} {
             @each $css-property in $css-properties {
-                #{$css-property}: $value;
+                #{$css-property}: $value !important;
             }
         }
     }
@@ -104,6 +141,9 @@ $spacers: (
 @mixin generate-border-classes($direction-suffix) {
     .border#{$direction-suffix} {
         border#{$direction-suffix}: 1px solid var(--border-color);
+    }
+    .border#{$direction-suffix}-0 {
+        border#{$direction-suffix}: none;
     }
 }
 @include generate-border-classes('');

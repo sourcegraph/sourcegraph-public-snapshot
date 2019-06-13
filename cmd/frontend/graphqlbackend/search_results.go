@@ -267,7 +267,7 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	}
 
 	for _, result := range sr.results {
-		if fm, ok := result.ToFileMatch(); ok {
+		if fm := fileMatchLike(result); fm != nil {
 			rev := ""
 			if fm.inputRev != nil {
 				rev = *fm.inputRev
@@ -806,6 +806,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	var resultTypes []string
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
+	} else if len(r.query.Values(query.FieldReplace)) > 0 {
+		resultTypes = []string{"codemod"}
 	} else {
 		resultTypes, _ = r.query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
@@ -1000,6 +1002,30 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					commonMu.Unlock()
 				}
 			})
+		case "codemod":
+			wg := waitGroup(true)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+
+				codemodResults, codemodCommon, err := callCodemod(ctx, &args)
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "codemod search failed"))
+					multiErrMu.Unlock()
+				}
+				if codemodResults != nil {
+					resultsMu.Lock()
+					results = append(results, codemodResults...)
+					resultsMu.Unlock()
+				}
+				if codemodCommon != nil {
+					commonMu.Lock()
+					common.update(*codemodCommon)
+					commonMu.Unlock()
+				}
+			})
 		}
 	}
 
@@ -1064,6 +1090,7 @@ type searchResultResolver interface {
 	ToRepository() (*repositoryResolver, bool)
 	ToFileMatch() (*fileMatchResolver, bool)
 	ToCommitSearchResult() (*commitSearchResultResolver, bool)
+	ToCodemodResult() (*codemodResultResolver, bool)
 
 	// SearchResultURIs returns the repo name and file uri respectiveley
 	searchResultURIs() (string, string)
@@ -1085,6 +1112,23 @@ func compareSearchResults(a, b searchResultResolver) bool {
 
 func sortResults(r []searchResultResolver) {
 	sort.Slice(r, func(i, j int) bool { return compareSearchResults(r[i], r[j]) })
+}
+
+// fileMatchLike returns r's fileMatch or, if possible, the equivalent fileMatch of its actual
+// result type. It is used by callers that want to analyze this result (e.g., a codemod result) as
+// though it were a fileMatch.
+func fileMatchLike(r searchResultResolver) *fileMatchResolver {
+	if fm, ok := r.ToFileMatch(); ok {
+		return fm
+	}
+	if cmr, ok := r.ToCodemodResult(); ok {
+		return &fileMatchResolver{
+			JPath: cmr.path,
+			uri:   cmr.fileURL,
+			repo:  cmr.commit.repo.repo,
+		}
+	}
+	return nil
 }
 
 // regexpPatternMatchingExprsInOrder returns a regexp that matches lines that contain

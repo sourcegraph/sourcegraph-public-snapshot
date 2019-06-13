@@ -1,4 +1,5 @@
 import * as H from 'history'
+import BellIcon from 'mdi-react/BellIcon'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
@@ -9,8 +10,12 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { LinkWithIconOnlyTooltip } from '../components/LinkWithIconOnlyTooltip'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { isDiscussionsEnabled } from '../discussions'
+import { ChangesIcon } from '../enterprise/changes/icons'
+import { ChecksNavItem } from '../enterprise/checks/global/nav/ChecksNavItem'
+import { ThreadsNavItem } from '../enterprise/threads/global/nav/ThreadsNavItem'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
@@ -32,6 +37,7 @@ interface Props
     showDotComMarketing: boolean
     isSourcegraphDotCom: boolean
     showStatusIndicator: boolean
+    className?: string
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -43,7 +49,7 @@ export class NavLinks extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         return (
-            <ul className="nav-links nav align-items-center pl-2 pr-1">
+            <ul className={`nav-links nav align-items-center pl-2 pr-1 ${this.props.className || ''}`}>
                 {/* Show "Search" link on small screens when GlobalNavbar hides the SearchNavbarItem. */}
                 {this.props.location.pathname !== '/search' && (
                     <li className="nav-item d-sm-none">
@@ -59,11 +65,32 @@ export class NavLinks extends React.PureComponent<Props> {
                     </li>
                 )}
                 {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
-                    <li className="nav-item">
-                        <Link to="/explore" className="nav-link">
-                            Explore
-                        </Link>
-                    </li>
+                    // TODO!(sqs): only show these on enterprise
+                    <>
+                        <li className="nav-item">
+                            <ChecksNavItem className="px-2" />
+                        </li>
+                        <li className="nav-item mr-1">
+                            <ThreadsNavItem className="px-2" />
+                        </li>
+                        <li className="nav-item">
+                            <Link
+                                to="/notifications"
+                                data-tooltip="Notifications"
+                                className="nav-link btn btn-link px-2 text-decoration-none"
+                            >
+                                <BellIcon className="icon-inline" />
+                            </Link>
+                        </li>
+                        <li className="nav-item d-none">
+                            <LinkWithIconOnlyTooltip
+                                to="/changes"
+                                text="Changes"
+                                icon={ChangesIcon}
+                                className="nav-link btn btn-link px-2 text-decoration-none"
+                            />
+                        </li>
+                    </>
                 )}
                 {!this.props.authenticatedUser && (
                     <>

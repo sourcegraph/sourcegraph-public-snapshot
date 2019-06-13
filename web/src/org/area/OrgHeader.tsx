@@ -3,6 +3,7 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { NamespaceAreaHeaderLinks } from '../../namespaces/NamespaceAreaHeaderLinks'
 import { OrgAvatar } from '../OrgAvatar'
 import { OrgAreaPageProps } from './OrgArea'
 
@@ -56,6 +57,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({ org, match, classNam
                                     </NavLink>
                                 </li>
                             )}
+                            <NamespaceAreaHeaderLinks url={match.url} />
                         </ul>
                         <div className="flex-1" />
                         {org.viewerPendingInvitation && org.viewerPendingInvitation.respondURL && (

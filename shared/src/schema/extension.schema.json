@@ -184,6 +184,12 @@
               },
               "type": "array"
             },
+            "search/results/toolbar": {
+              "items": {
+                "$ref": "#/properties/contributes/definitions/MenuItemContribution"
+              },
+              "type": "array"
+            },
             "help": {
               "items": {
                 "$ref": "#/properties/contributes/definitions/MenuItemContribution"

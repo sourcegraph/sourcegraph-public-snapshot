@@ -19,9 +19,9 @@ func compilePathMatcher(options PathOptions) (pathmatch.PathMatcher, error) {
 	)
 }
 
-// filterAndHighlightDiff returns the raw diff with query matches highlighted
+// FilterAndHighlightDiff returns the raw diff with query matches highlighted
 // and only hunks that satisfy the query (if onlyMatchingHunks) and path matcher.
-func filterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHunks bool, pathMatcher pathmatch.PathMatcher) ([]byte, []Highlight, error) {
+func FilterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHunks bool, pathMatcher pathmatch.PathMatcher) ([]byte, []Highlight, error) {
 	const (
 		maxFiles          = 5
 		maxHunksPerFile   = 3

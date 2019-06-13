@@ -1,0 +1,11 @@
+// Selection highlight is the background color for matched/highlighted tokens,
+// e.g. for search results, for identifying the token currently being hovered over,
+// or identifying the token the references panel is toggled for
+.selection-highlight {
+    background-color: rgba(255, 192, 120, 0.5);
+}
+// Same as above, but indicates highlighting for a fixed hover (vs. e.g.
+// an ephemeral mouseover on some token).
+.selection-highlight-sticky {
+    background-color: rgba(255, 192, 120, 0.5);
+}

@@ -118,6 +118,7 @@ func (fm *fileMatchResolver) ToFileMatch() (*fileMatchResolver, bool)   { return
 func (fm *fileMatchResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
 }
+func (fm *fileMatchResolver) ToCodemodResult() (*codemodResultResolver, bool) { return nil, false }
 
 func (fm *fileMatchResolver) searchResultURIs() (string, string) {
 	return string(fm.repo.Name), fm.JPath

@@ -66,7 +66,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="extension-status card border-0">
+            <div className="extension-status card border bg-body">
                 <div className="card-header">Active extensions (DEBUG)</div>
                 {this.state.extensionsOrError ? (
                     isErrorLike(this.state.extensionsOrError) ? (
@@ -145,7 +145,11 @@ export class ExtensionStatusPopover extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <>
-                <button type="button" id="extension-status-popover" className="btn btn-link text-decoration-none px-2">
+                <button
+                    type="button"
+                    id="extension-status-popover"
+                    className="btn btn-link btn-sm text-decoration-none pt-2 pr-1 pb-1 pl-2"
+                >
                     <span className="text-muted">Ext</span> <MenuUpIcon className="icon-inline" />
                 </button>
                 <UncontrolledPopover placement="auto-end" target="extension-status-popover">

@@ -31,7 +31,7 @@ interface PartFileInfo {
 
 interface FileHunksProps extends PlatformContextProps, ExtensionsControllerProps, ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
-    fileDiffAnchor: string
+    fileDiffAnchor?: string
 
     /** The base repository, revision, and file. */
     base: PartFileInfo
@@ -45,10 +45,10 @@ interface FileHunksProps extends PlatformContextProps, ExtensionsControllerProps
     /** Whether to show line numbers. */
     lineNumbers: boolean
 
-    className: string
+    className?: string
     location: H.Location
     history: H.History
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    hoverifier?: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
 }
 
 interface FileDiffHunksState {
@@ -169,7 +169,7 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
 
     public render(): JSX.Element | null {
         return (
-            <div className={`file-diff-hunks ${this.props.className}`} ref={this.nextBlobElement}>
+            <div className={`file-diff-hunks ${this.props.className || ''}`} ref={this.nextBlobElement}>
                 {this.props.hunks.length === 0 ? (
                     <div className="text-muted m-2">No changes</div>
                 ) : (

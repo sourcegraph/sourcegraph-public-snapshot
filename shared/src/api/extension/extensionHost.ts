@@ -1,5 +1,7 @@
 import * as comlink from '@sourcegraph/comlink'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
+import { WorkspaceEdit } from '../types/workspaceEdit'
+import { TextEdit } from '../types/textEdit'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
@@ -11,6 +13,7 @@ import { ExtConfiguration } from './api/configuration'
 import { ExtContent } from './api/content'
 import { ExtContext } from './api/context'
 import { createDecorationType } from './api/decorations'
+import { ExtDiagnostics } from './api/diagnostics'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
 import { ExtLanguageFeatures } from './api/languageFeatures'
@@ -18,6 +21,7 @@ import { ExtRoots } from './api/roots'
 import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
+import { DiagnosticSeverity } from '../types/diagnosticCollection'
 
 /**
  * Required information when initializing an extension host.
@@ -125,7 +129,7 @@ function createExtensionAPI(
         await proxy.ping()
     }
     const context = new ExtContext(proxy.context)
-    const documents = new ExtDocuments(sync)
+    const documents = new ExtDocuments(proxy.documents, sync)
 
     const extensions = new ExtExtensions()
     subscription.add(extensions)
@@ -138,6 +142,9 @@ function createExtensionAPI(
     const search = new ExtSearch(proxy.search)
     const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
+
+    const diagnostics = new ExtDiagnostics(proxy.diagnostics)
+    subscription.add(diagnostics)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -167,6 +174,9 @@ function createExtensionAPI(
         Location,
         MarkupKind,
         NotificationType,
+        TextEdit,
+        DiagnosticSeverity,
+        WorkspaceEdit,
         app: {
             activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {
@@ -190,6 +200,7 @@ function createExtensionAPI(
             },
             onDidChangeRoots: roots.changes,
             rootChanges: roots.changes,
+            openTextDocument: uri => documents.openTextDocument(uri),
         },
 
         configuration: {
@@ -236,9 +247,19 @@ function createExtensionAPI(
                 selector: sourcegraph.DocumentSelector,
                 provider: sourcegraph.CompletionItemProvider
             ) => languageFeatures.registerCompletionItemProvider(selector, provider),
+
+            registerCodeActionProvider: (
+                selector: sourcegraph.DocumentSelector,
+                provider: sourcegraph.CodeActionProvider
+            ) => languageFeatures.registerCodeActionProvider(selector, provider),
+
+            diagnosticsChanges: diagnostics.diagnosticsChanges,
+            getDiagnostics: diagnostics.getDiagnostics.bind(diagnostics),
+            createDiagnosticCollection: name => diagnostics.createDiagnosticCollection(name),
         },
 
         search: {
+            findTextInFiles: (query, options) => search.findTextInFiles(query, options),
             registerQueryTransformer: (provider: sourcegraph.QueryTransformer) =>
                 search.registerQueryTransformer(provider),
         },

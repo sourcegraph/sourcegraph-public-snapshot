@@ -82,6 +82,7 @@ export function search(
                                             }
                                         }
                                         repository {
+                                            id
                                             name
                                             url
                                         }
@@ -99,6 +100,9 @@ export function search(
                                         }
                                     }
                                     ... on CommitSearchResult {
+                                        ${genericSearchResultInterfaceFields}
+                                    }
+                                    ... on CodemodResult {
                                         ${genericSearchResultInterfaceFields}
                                     }
                                 }

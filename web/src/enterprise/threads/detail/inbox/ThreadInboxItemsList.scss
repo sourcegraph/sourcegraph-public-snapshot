@@ -1,0 +1,6 @@
+.thread-inbox-items-list {
+    &__item-header {
+        // The item headers should be BELOW the navbar.
+        z-index: $zindex-sticky - 1;
+    }
+}

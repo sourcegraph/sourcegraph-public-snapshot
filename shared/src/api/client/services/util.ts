@@ -1,7 +1,7 @@
 import { compact, flatten } from 'lodash'
 
 /** Flattens and compacts the argument. If it is null or if the result is empty, it returns null. */
-export function flattenAndCompact<T>(value: (T | T[] | null)[] | null): T[] | null {
+export function flattenAndCompact<T>(value: (T | T[] | null | undefined)[] | null): T[] | null {
     if (value === null) {
         return null
     }

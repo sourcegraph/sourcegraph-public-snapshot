@@ -67,6 +67,9 @@ func (r *commitSearchResultResolver) ToFileMatch() (*fileMatchResolver, bool)   
 func (r *commitSearchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return r, true
 }
+func (r *commitSearchResultResolver) ToCodemodResult() (*codemodResultResolver, bool) {
+	return nil, false
+}
 
 func (r *commitSearchResultResolver) searchResultURIs() (string, string) {
 	// Diffs aren't going to be returned with other types of results

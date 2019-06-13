@@ -348,6 +348,75 @@ type Mutation {
     ): SavedSearch!
     # Deletes a saved search
     deleteSavedSearch(id: ID!): EmptyResponse
+    # Mutations related to projects.
+    projects: ProjectsMutation!
+    # Mutations related to labels.
+    labels: LabelsMutation!
+}
+
+# Mutations related to projects.
+type ProjectsMutation {
+    # Create a project associated with a project. Returns the newly created project.
+    createProject(input: CreateProjectInput!): Project!
+    # Update a project. Returns the updated project.
+    updateProject(input: UpdateProjectInput!): Project!
+    # Delete a project and all of its resources.
+    deleteProject(project: ID!): EmptyResponse
+}
+
+# Input arguments for creating a project.
+input CreateProjectInput {
+    # The ID of the namespace where this project is defined.
+    namespace: ID!
+    # The name of the project.
+    name: String!
+}
+
+# Input arguments for updating a project.
+input UpdateProjectInput {
+    # The ID of the project to update.
+    id: ID!
+    # The new name of the project (if non-null).
+    name: String
+}
+
+# Mutations related to labels.
+type LabelsMutation {
+    # Create a label associated with a project. Returns the newly created label.
+    createLabel(input: CreateLabelInput!): Label!
+    # Update a label. Returns the updated label.
+    updateLabel(input: UpdateLabelInput!): Label!
+    # Delete a label. All objects that were labeled with this label remain (and are not deleted when
+    # the label is deleted).
+    deleteLabel(label: ID!): EmptyResponse
+    # Add labels to a labelable object. Returns the object.
+    addLabelsToLabelable(labelable: ID!, labels: [ID!]!): Labelable!
+    # Remove labels from a labelable object. Returns the object.
+    removeLabelsFromLabelable(labelable: ID!, labels: [ID!]!): Labelable!
+}
+
+# Input arguments for creating a label.
+input CreateLabelInput {
+    # The ID of the project where this label is defined.
+    project: ID!
+    # The name of the label.
+    name: String!
+    # The (optional) description of the label.
+    description: String
+    # The hex color code for the label, without the '#' prefix. For example, "cdf6ee".
+    color: String!
+}
+
+# Input arguments for updating a label.
+input UpdateLabelInput {
+    # The ID of the label to update.
+    id: ID!
+    # The new name of the label (if non-null).
+    name: String
+    # The new description of the label. If it is the non-null empty string, the description is set to null.
+    description: String
+    # The new hex color code for the label (if non-null).
+    color: String
 }
 
 # A new external service.
@@ -415,6 +484,24 @@ input DiscussionThreadTargetRepoSelectionInput {
     linesAfter: [String!]
 }
 
+# The types of discussion threads.
+enum ThreadType {
+    # A normal discussion thread.
+    THREAD
+    # A check.
+    CHECK
+}
+
+# The statuses of discussion threads.
+enum ThreadStatus {
+    # Open (for threads) or active (for checks).
+    OPEN_ACTIVE
+    # Inactive (for checks only). In this state, checks do not perform any "write" operations.
+    INACTIVE
+    # Closed (for threads and checks).
+    CLOSED
+}
+
 # A discussion thread that is centered around:
 #
 # - A repository.
@@ -463,6 +550,9 @@ input DiscussionThreadTargetInput {
 
 # Describes the creation of a new thread around some target (e.g. a file in a repo).
 input DiscussionThreadCreateInput {
+    # The ID of the project in which to create this discussion thread.
+    project: ID!
+
     # An explicitly chosen title for the discussion thread. Otherwise, the title
     # will be chosen based on the 'contents' (e.g. the first line).
     title: String
@@ -472,6 +562,19 @@ input DiscussionThreadCreateInput {
 
     # The first target of this discussion thread, if any.
     target: DiscussionThreadTargetInput
+
+    # The settings for the thread.
+    settings: String
+
+    # The type of thread to create.
+    type: ThreadType!
+
+    # The initial status of the thread upon creation.
+    #
+    # For threads (DiscussionThreadCreateInput#type == ThreadType.CHECK), the default status is
+    # ThreadStatus.OPEN_ACTIVE. For checks (DiscussionThreadCreateInput#type == ThreadType.CHECK),
+    # the default status is ThreadStatus.INACTIVE.
+    status: ThreadStatus
 }
 
 # Describes an update mutation to an existing thread.
@@ -482,8 +585,14 @@ input DiscussionThreadUpdateInput {
     # When non-null, indicates that the thread's title should be updated to the specified value.
     title: String
 
+    # When non-null, indicates that the thread's settings should be updated to the specified value.
+    settings: String
+
     # When non-null, indicates that the thread should be archived.
     archive: Boolean
+
+    # When non-null, indicates that the check should be activated (true) or deactivated (false).
+    active: Boolean
 
     # When non-null, indicates that the thread should be deleted. Only admins
     # can perform this action.
@@ -515,6 +624,18 @@ input DiscussionCommentUpdateInput {
     clearReports: Boolean
 }
 
+# Describes an update to target in a thread.
+input DiscussionThreadTargetUpdateInput {
+    # The ID of the target to update.
+    targetID: ID!
+
+    # When non-null, removes the target.
+    remove: Boolean
+
+    # When non-null, updates the ignored status of the target.
+    isIgnored: Boolean
+}
+
 # Mutations for discussions.
 type DiscussionsMutation {
     # Creates a new thread. Returns the new thread.
@@ -525,12 +646,13 @@ type DiscussionsMutation {
     # Returns null if the thread was deleted.
     updateThread(input: DiscussionThreadUpdateInput!): DiscussionThread
 
-    # Adds a target to an existing thread. Returns the new target.
+    # Adds a target to an existing thread. Returns the new target. If the target already exists in
+    # the thread, it is not added a 2nd time and the existing target is returned.
     addTargetToThread(threadID: ID!, target: DiscussionThreadTargetInput!): DiscussionThreadTarget!
 
     # Updates an existing target in a thread. Returns the updated target, or null if the target was
-    # removed (which is currently the only supported update operation).
-    updateTargetInThread(targetID: ID!, remove: Boolean): DiscussionThreadTarget
+    # removed.
+    updateTargetInThread(input: DiscussionThreadTargetUpdateInput!): DiscussionThreadTarget
 
     # Adds a new comment to a thread. Returns the updated thread.
     addCommentToThread(threadID: ID!, contents: String!): DiscussionThread!
@@ -847,6 +969,19 @@ type Query {
     dotcom: DotcomQuery!
     # Lists all status messages
     statusMessages: [StatusMessage!]!
+    # Look up a namespace by ID.
+    namespace(id: ID!): Namespace
+    # Look up a project.
+    project(idWithoutKind: String!): Project
+}
+
+# An object that can be labeled.
+interface Labelable {
+    # A list of labels associated with this object.
+    labels(
+        # Returns the first n labels from the list.
+        first: Int
+    ): LabelConnection!
 }
 
 # A query and an associated number of times it occurred.
@@ -885,7 +1020,7 @@ type Search {
 }
 
 # A search result.
-union SearchResult = FileMatch | CommitSearchResult | Repository
+union SearchResult = FileMatch | CommitSearchResult | Repository | CodemodResult
 
 # An object representing a markdown string.
 type Markdown {
@@ -1077,6 +1212,20 @@ type CommitSearchResult implements GenericSearchResultInterface {
     messagePreview: HighlightedString
     # The matching portion of the diff, if any.
     diffPreview: HighlightedString
+}
+
+# The result of a code modification query.
+type CodemodResult implements GenericSearchResultInterface {
+    # URL to an icon that is displayed with every search result.
+    icon: String!
+    # A markdown string that is rendered prominently.
+    label: Markdown!
+    # The URL of the result.
+    url: String!
+    # A markdown string that is rendered less prominently.
+    detail: Markdown!
+    # A list of matches in this search result.
+    matches: [SearchResultMatch!]!
 }
 
 # A search result that is a diff between two diffable Git objects.
@@ -2125,6 +2274,17 @@ type Hunk {
     commit: GitCommit!
 }
 
+# A namespace contains projects.
+interface Namespace {
+    # The globally unique ID of this namespace.
+    id: ID!
+    # The projects in this namespace.
+    projects(
+        # Return the first n projects from the list.
+        first: Int
+    ): ProjectConnection!
+}
+
 # A list of users.
 type UserConnection {
     # A list of users.
@@ -2137,7 +2297,7 @@ type UserConnection {
 }
 
 # A user.
-type User implements Node & SettingsSubject {
+type User implements Node & SettingsSubject & Namespace {
     # The unique ID for the user.
     id: ID!
     # The user's username.
@@ -2230,6 +2390,11 @@ type User implements Node & SettingsSubject {
     #
     # FOR INTERNAL USE ONLY.
     databaseID: Int!
+    # The projects owned by this user.
+    projects(
+        # Return the first n projects from the list.
+        first: Int
+    ): ProjectConnection!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -2383,7 +2548,7 @@ type OrgConnection {
 }
 
 # An organization, which is a group of users.
-type Org implements Node & SettingsSubject {
+type Org implements Node & SettingsSubject & Namespace {
     # The unique ID for the organization.
     id: ID!
     # The organization's name. This is unique among all organizations on this Sourcegraph site.
@@ -2419,6 +2584,11 @@ type Org implements Node & SettingsSubject {
     url: String!
     # The URL to the organization's settings.
     settingsURL: String
+    # The projects owned by this organization.
+    projects(
+        # Return the first n projects from the list.
+        first: Int
+    ): ProjectConnection!
 }
 
 # The result of Mutation.inviteUserToOrganization.
@@ -2559,6 +2729,12 @@ type DiscussionThreadTargetRepo {
     # failed) null is returned and it should be assumed the selection does not
     # exist in this revision.
     relativeSelection(rev: String!): DiscussionSelectionRange
+
+    # Whether this target was marked as ignored by the user.
+    isIgnored: Boolean!
+
+    # The URL to this target, or null if there is no URL.
+    url: String
 }
 
 # The target of a discussion thread. Today, the only possible target is a
@@ -2571,7 +2747,7 @@ type DiscussionThreadTargetRepo {
 union DiscussionThreadTarget = DiscussionThreadTargetRepo | EmptyResponse
 
 # A discussion thread around some target (e.g. a file in a repo).
-type DiscussionThread implements Node {
+type DiscussionThread implements Node & Labelable {
     # The discussion thread ID (globally unique).
     id: ID!
 
@@ -2579,6 +2755,9 @@ type DiscussionThread implements Node {
     # among all GraphQL nodes. For example, this is a string like "123" (and DiscussionThread#id is
     # a string like "RGlzY3Vzc2l...").
     idWithoutKind: String!
+
+    # The project that this discussion thread is associated with.
+    project: Project!
 
     # The user who authored this discussion thread.
     author: User!
@@ -2593,10 +2772,25 @@ type DiscussionThread implements Node {
     targets(
         # Returns the first n targets from the list.
         first: Int
+        # If false, only non-ignored targets are returned. If null (default), all targets are
+        # returned. If true, only ignored targets are returned.
+        isIgnored: Boolean
     ): DiscussionThreadTargetConnection!
 
     # The first target of this discussion thread.
     target: DiscussionThreadTarget @deprecated(reason: "use targets instead")
+
+    # The settings for this discussion thread.
+    settings: String!
+
+    # The status of this discussion thread.
+    status: ThreadStatus!
+
+    # The type of this discussion thread.
+    type: ThreadType!
+
+    # The URL where this thread can be viewed in isolation.
+    url: String!
 
     # The URL at which this thread can be viewed inline (i.e. in the file blob view).
     #
@@ -2618,6 +2812,12 @@ type DiscussionThread implements Node {
         # Returns the first n comments from the list.
         first: Int
     ): DiscussionCommentConnection!
+
+    # A list of labels associated with this thread.
+    labels(
+        # Returns the first n labels from the list.
+        first: Int
+    ): LabelConnection!
 }
 
 # A comment made within a discussion thread.
@@ -3740,4 +3940,59 @@ type StatusMessage {
     message: String!
     # The type.
     type: StatusMessageType!
+}
+
+# A project is a container of labels.
+type Project implements Node {
+    # The globally unique ID of this project.
+    id: ID!
+    # The ID of this project that is unique among all other projects but not among all GraphQL
+    # nodes.
+    idWithoutKind: String!
+    # The name of this project.
+    name: String!
+    # The namespace where this project is defined.
+    namespace: Namespace!
+    # The labels defined by this project. This is the set of labels that may be applied to the
+    # project's labelable resources.
+    labels(
+        # Return the first n labels from the list.
+        first: Int
+    ): LabelConnection!
+    # The URL to this project.
+    url: String!
+}
+
+# A list of projects.
+type ProjectConnection {
+    # A list of projects.
+    nodes: [Project!]!
+    # The total number of projects in the connection.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A label that can be applied to other objects.
+type Label implements Node {
+    # The globally unique ID of this label.
+    id: ID!
+    # The name of this label.
+    name: String!
+    # The (optional) description of this label.
+    description: String
+    # The hex color code for the label, without the '#' prefix. For example, "cdf6ee".
+    color: String!
+    # The project where this label is defined.
+    project: Project!
+}
+
+# A list of labels.
+type LabelConnection {
+    # A list of labels.
+    nodes: [Label!]!
+    # The total number of labels in the connection.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
 }

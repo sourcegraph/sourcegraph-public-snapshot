@@ -3,7 +3,7 @@ import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { SlackNotificationsConfig } from '../schema/settings.schema'
 import { ConfigInsertionFunction } from '../settings/MonacoSettingsEditor'
 
-const defaultFormattingOptions: FormattingOptions = {
+export const defaultFormattingOptions: FormattingOptions = {
     eol: '\n',
     insertSpaces: true,
     tabSize: 2,

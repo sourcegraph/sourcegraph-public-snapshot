@@ -7,6 +7,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -15,6 +16,7 @@ import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
+import { NamespaceProps } from '../../namespaces'
 import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
@@ -68,6 +70,7 @@ export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}
 
 interface UserAreaProps
     extends RouteComponentProps<{ username: string }>,
+        ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
@@ -95,7 +98,13 @@ interface UserAreaState {
 /**
  * Properties passed to all page components in the user area.
  */
-export interface UserAreaRouteContext extends PlatformContextProps, SettingsCascadeProps, ThemeProps, ActivationProps {
+export interface UserAreaRouteContext
+    extends PlatformContextProps,
+        SettingsCascadeProps,
+        ThemeProps,
+        ActivationProps,
+        NamespaceProps,
+        ExtensionsControllerProps {
     /** The user area main URL. */
     url: string
 
@@ -188,6 +197,8 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             activation: this.props.activation,
             userSettingsAreaRoutes: this.props.userSettingsAreaRoutes,
             userSettingsSideBarItems: this.props.userSettingsSideBarItems,
+            extensionsController: this.props.extensionsController,
+            namespace: this.state.userOrError,
         }
         return (
             <div className="user-area w-100">

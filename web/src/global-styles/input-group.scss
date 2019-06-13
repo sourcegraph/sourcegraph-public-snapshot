@@ -1,3 +1,5 @@
+@import './variables';
+
 .input-group {
     display: flex;
     flex-wrap: wrap;
@@ -14,9 +16,13 @@
     display: flex;
 }
 
-.input-group-prepend {
-    margin-right: -$input-border-width;
-}
-.input-group-append {
-    margin-left: -$input-border-width;
+.input-group-text {
+    display: flex;
+    align-items: center;
+    padding: $input-padding;
+    font-size: var(--font-size-base);
+    line-height: $line-height-base;
+    text-align: center;
+    white-space: nowrap;
+    border: $input-border-width solid var(--border-color);
 }

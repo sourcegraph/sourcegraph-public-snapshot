@@ -1,0 +1,14 @@
+.query-input-inline-options {
+    background-color: var(--input-bg);
+    margin-top: 0.125rem;
+
+    &__option {
+        &-on {
+            color: var(--input-color) !important;
+        }
+        &-off {
+            color: var(--text-muted) !important;
+            opacity: 0.5;
+        }
+    }
+}

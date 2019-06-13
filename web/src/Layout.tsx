@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { Suspense } from 'react'
+import React, { Suspense, useEffect } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
-import { Observable } from 'rxjs'
+import { Observable, Subscription } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
 import { FetchFileCtx } from '../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
@@ -13,6 +13,8 @@ import { ErrorLike } from '../../shared/src/util/errors'
 import { parseHash } from '../../shared/src/util/url'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { GlobalContributions } from './contributions'
+import { registerChecksContributions } from './enterprise/checks/contributions'
+import { registerCodemodContributions } from './enterprise/codemod/contributions'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
@@ -95,6 +97,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
+
+    useEffect(() => {
+        const subscription = new Subscription()
+        subscription.add(registerCodemodContributions(props))
+        subscription.add(registerChecksContributions(props))
+        return () => subscription.unsubscribe()
+    })
 
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {

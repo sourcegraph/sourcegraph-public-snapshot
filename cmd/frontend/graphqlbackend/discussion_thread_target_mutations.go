@@ -54,7 +54,7 @@ func (r *discussionsMutationResolver) AddTargetToThread(ctx context.Context, arg
 		return nil, errors.New("no current user")
 	}
 
-	threadID, err := unmarshalDiscussionID(args.ThreadID)
+	threadID, err := unmarshalDiscussionThreadID(args.ThreadID)
 	if err != nil {
 		return nil, err
 	}
@@ -64,15 +64,35 @@ func (r *discussionsMutationResolver) AddTargetToThread(ctx context.Context, arg
 	}
 	target.ThreadID = threadID
 
+	// Avoid adding duplicates.
+	{
+		targets, err := db.DiscussionThreads.ListTargets(ctx, db.DiscussionThreadsListTargetsOptions{
+			ThreadID: threadID,
+			RepoID:   target.RepoID,
+			Path:     *target.Path,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "DiscussionThreads.ListTargets")
+		}
+		if len(targets) > 0 {
+			return &discussionThreadTargetResolver{t: targets[0]}, nil
+		}
+	}
+
 	if _, err := db.DiscussionThreads.AddTarget(ctx, target); err != nil {
 		return nil, errors.Wrap(err, "DiscussionThreads.AddTarget")
 	}
 	return &discussionThreadTargetResolver{t: target}, nil
 }
 
+type discussionThreadUpdateTargetInput struct {
+	TargetID  graphql.ID
+	Remove    *bool
+	IsIgnored *bool
+}
+
 func (r *discussionsMutationResolver) UpdateTargetInThread(ctx context.Context, args *struct {
-	TargetID graphql.ID
-	Remove   *bool
+	Input discussionThreadUpdateTargetInput
 }) (*discussionThreadTargetResolver, error) {
 	// 🚨 SECURITY: Only signed in users may update a target in a thread.
 	currentUser, err := CurrentUser(ctx)
@@ -83,15 +103,20 @@ func (r *discussionsMutationResolver) UpdateTargetInThread(ctx context.Context, 
 		return nil, errors.New("no current user")
 	}
 
-	targetID, err := unmarshalDiscussionThreadTargetID(args.TargetID)
+	targetID, err := unmarshalDiscussionThreadTargetID(args.Input.TargetID)
 	if err != nil {
 		return nil, err
 	}
-	if args.Remove != nil && *args.Remove {
+	if args.Input.Remove != nil && *args.Input.Remove {
 		if err := db.DiscussionThreads.RemoveTarget(ctx, targetID); err != nil {
 			return nil, errors.Wrap(err, "DiscussionThreads.RemoveTarget")
 		}
 		return nil, nil
+	}
+	if args.Input.IsIgnored != nil {
+		if err := db.DiscussionThreads.SetTargetIsIgnored(ctx, targetID, *args.Input.IsIgnored); err != nil {
+			return nil, errors.Wrap(err, "DiscussionThreads.SetTargetIsIgnored")
+		}
 	}
 
 	target, err := db.DiscussionThreads.GetTarget(ctx, targetID)

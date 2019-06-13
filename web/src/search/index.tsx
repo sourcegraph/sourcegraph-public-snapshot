@@ -26,3 +26,9 @@ export function quoteIfNeeded(s: string): string {
     }
     return s
 }
+
+/**
+ * To enable the search UX experiment, run `localStorage.searchExp=true;location.reload()` in your
+ * browser's JavaScript console.
+ */
+export const USE_SEARCH_EXP = localStorage.getItem('searchExp') !== null

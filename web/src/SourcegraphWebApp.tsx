@@ -1,4 +1,5 @@
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
+import 'focus-visible'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { hot } from 'react-hot-loader/root'
@@ -47,7 +48,7 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 
-import './SourcegraphWebApp.scss'
+import './util/empty.css'
 
 export interface SourcegraphWebAppProps extends KeybindingsProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>

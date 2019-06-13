@@ -16,6 +16,10 @@ $table-border-width: 1px;
         border-bottom: (2 * $table-border-width) solid var(--border-color);
     }
 
+    th {
+        text-align: left;
+    }
+
     tbody + tbody {
         border-top: (2 * $table-border-width) solid var(--border-color);
     }

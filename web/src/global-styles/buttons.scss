@@ -84,3 +84,7 @@ $btn-padding: $spacer;
         @extend .icon-inline;
     }
 }
+
+.btn-group {
+    display: inline-flex;
+}

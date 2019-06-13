@@ -1,6 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { escapeRegExp, upperFirst } from 'lodash'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
@@ -263,6 +264,10 @@ export class TreePage extends React.PureComponent<Props, State> {
                                             to={`/${this.props.repoName}/-/stats/contributors`}
                                         >
                                             <UserIcon className="icon-inline" /> Contributors
+                                        </Link>
+                                        {/* TODO(sqs): Inject via enterprise */}
+                                        <Link className={`btn btn-secondary`} to={`/${this.props.repoName}/-/checks`}>
+                                            <CheckCircleIcon className="icon-inline" /> Checks
                                         </Link>
                                     </div>
                                 </header>

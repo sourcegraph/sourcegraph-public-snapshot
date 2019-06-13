@@ -218,7 +218,7 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 		codeContextText string
 		codeContextHTML template.HTML
 	)
-	targets, err := db.DiscussionThreads.ListTargets(ctx, n.thread.ID)
+	targets, err := db.DiscussionThreads.ListTargets(ctx, db.DiscussionThreadsListTargetsOptions{ThreadID: n.thread.ID})
 	if err != nil {
 		return errors.Wrap(err, "DiscussionThreads.ListTargets")
 	}

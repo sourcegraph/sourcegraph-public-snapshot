@@ -25,6 +25,9 @@ interface Props<C extends React.ReactElement<any> = React.ReactElement<any>> {
      * The element that is resizable on its right side.
      */
     element: C
+
+    /** Element styles. */
+    style?: React.CSSProperties
 }
 
 const isHorizontal = (handlePosition: Props['handlePosition']) =>
@@ -91,7 +94,10 @@ export class Resizable<C extends React.ReactElement<any>> extends React.PureComp
                 className={`resizable resizable--${this.props.handlePosition} ${this.props.className || ''}`}
                 ref={this.setContainerRef}
                 // tslint:disable-next-line jsx-ban-props
-                style={{ [isHorizontal(this.props.handlePosition) ? 'width' : 'height']: `${this.state.size}px` }}
+                style={{
+                    ...this.props.style,
+                    [isHorizontal(this.props.handlePosition) ? 'width' : 'height']: `${this.state.size}px`,
+                }}
             >
                 <div
                     className={`resizable__ghost ${this.state.resizing ? 'resizable__ghost--resizing' : ''}`}

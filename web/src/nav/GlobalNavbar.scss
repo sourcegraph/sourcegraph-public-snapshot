@@ -41,6 +41,7 @@
 
     &__search-box-container {
         min-width: 12rem;
+        max-width: 30rem;
         flex: 1 0 auto;
         margin-right: $spacer;
         display: flex;
