@@ -3,31 +3,12 @@
     overflow: hidden;
     padding-bottom: 0;
 
-    &-background {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-image: -webkit-linear-gradient(top, rgba(14, 18, 27, 0), rgba(14, 18, 27, 1)),
-            url(/.assets/img/onboarding-bg-dark.png);
-        background-image: -moz-linear-gradient(top, rgba(14, 18, 27, 0), rgba(14, 18, 27, 1)),
-            url(/.assets/img/onboarding-bg-dark.png);
-        background-image: linear-gradient(to bottom, rgba(14, 18, 27, 0), rgba(14, 18, 27, 1)),
-            url(/.assets/img/onboarding-bg-dark.png);
-        z-index: 995;
-        background-position: center;
-        background-size: 110%;
-        background-repeat: no-repeat;
-    }
-
     &-item {
         box-sizing: border-box;
         position: relative;
         margin-top: -1px;
         margin-bottom: -1px;
         padding: 0;
-        transition: all 250ms ease;
         white-space: normal;
         z-index: 996;
 
@@ -39,7 +20,6 @@
             left: 0.75rem;
             background-color: $dropdown-border-color;
             content: '';
-            transition: all 250ms ease;
             z-index: 996;
         }
         &:before {
@@ -56,30 +36,11 @@
             margin-bottom: -1px;
             z-index: 997;
 
-            box-shadow: 0 0 14px 12px rgba(43, 55, 80, 0.2);
             &:before,
             &:after {
                 background-color: var(--card-cap-bg);
                 z-index: 997;
                 opacity: 0;
-            }
-        }
-    }
-}
-.theme-light {
-    .activation-dropdown {
-        &-background {
-            background-image: -webkit-linear-gradient(top, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1)),
-                url(/.assets/img/onboarding-bg.png);
-            background-image: -moz-linear-gradient(top, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1)),
-                url(/.assets/img/onboarding-bg.png);
-            background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1)),
-                url(/.assets/img/onboarding-bg.png);
-        }
-        &-item {
-            @include hover-focus {
-                box-shadow: 0 0 8px 0 rgba(202, 210, 226, 0.35);
-                background-color: var(--theme-bg-plain);
             }
         }
     }

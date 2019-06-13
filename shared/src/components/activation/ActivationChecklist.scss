@@ -5,7 +5,6 @@
         margin-top: -1px;
         margin-bottom: -1px;
         z-index: 10;
-        transition: all 250ms ease;
 
         &:before,
         &:after {
@@ -15,7 +14,6 @@
             left: 0.75rem;
             background-color: $dropdown-border-color;
             content: '';
-            transition: all 250ms ease;
             z-index: 19;
         }
         &:before {
@@ -34,7 +32,6 @@
 
             z-index: 997;
 
-            box-shadow: 0 0 14px 12px rgba(43, 55, 80, 0.4);
             &:before,
             &:after {
                 background-color: var(--card-cap-bg);
@@ -44,17 +41,7 @@
         }
     }
 }
-.theme-light {
-    .activation-checklist__item {
-        @include hover-focus {
-            box-shadow: 0 0 8px 0 rgba(202, 210, 226, 0.35);
-            background-color: var(--theme-bg-plain);
-        }
-    }
-    .activation-item__checkbox--todo {
-        color: $dropdown-border-color;
-    }
-}
+
 .activation-item {
     cursor: pointer;
     // Padding-right prevents text from overlapping icon.
