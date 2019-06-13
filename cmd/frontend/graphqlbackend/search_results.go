@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"path"
 	"regexp"
 	"sort"
@@ -464,11 +465,41 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 	start := time.Now()
 	rr, err := r.doResults(ctx, "")
 	if err != nil {
-		log15.Debug("graphql search failed", "query", r.rawQuery(), "duration", time.Since(start), "error", err)
+		if err == context.DeadlineExceeded {
+			dt := time.Now().Sub(start)
+			dt2 := longerTime(dt)
+			// Tidy up the original duration so it displays like 3ms rather than
+			// 3.12345ms. The user doesn't need to know the exact duration,
+			// just a rough idea and a good suggestion for something else
+			// to try for the timeout.
+			dt = dt2/2
+			err = fmt.Errorf("deadline exceeded after about %s; try adding timeout:%s", dt, dt2)
+		}
 		return nil, err
 	}
-	log15.Debug("graphql search success", "query", r.rawQuery(), "count", rr.ResultCount(), "duration", time.Since(start))
 	return rr, nil
+}
+
+// longerTime returns a suggested longer time to wait if the given duration wasn't long enough.
+func longerTime(dt time.Duration) time.Duration {
+	Ndt := time.Duration(2) * dt
+	dceil := func(x float64) time.Duration {
+		return time.Duration(math.Ceil(x))
+	}
+	switch {
+	case math.Floor(Ndt.Hours()) > 0:
+		return dceil(Ndt.Hours()) * time.Hour
+	case math.Floor(Ndt.Minutes()) > 0:
+		return dceil(Ndt.Minutes()) * time.Minute
+	case math.Floor(Ndt.Seconds()) > 0:
+		return dceil(Ndt.Seconds()) * time.Second
+	default:
+		msec := dceil(float64(Ndt)/float64(time.Millisecond)) * time.Millisecond
+		if msec == 0 {
+			return time.Millisecond
+		}
+		return msec
+	}
 }
 
 type searchResultsStats struct {

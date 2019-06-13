@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
@@ -568,6 +570,18 @@ func TestCompareSearchResults(t *testing.T) {
 		got := compareSearchResults(test.a, test.b)
 		if got != test.aIsLess {
 			t.Errorf("[%d] incorrect comparison. got %t, expected %t", i, got, test.aIsLess)
+		}
+	}
+}
+
+func Test_longerTime(t *testing.T) {
+	for dt := time.Millisecond; dt < time.Hour; dt *= 2 {
+		dt2 := longerTime(dt)
+		if dt2 < 2*dt {
+			t.Fatalf("longerTime(%v)=%v < 2*%v, want more", dt, dt2, dt)
+		}
+		if strings.Contains(dt2.String(), ".") {
+			t.Fatalf("longerTime(%v).String() = %q contains an unwanted decimal point, want a nice round duration", dt, dt2)
 		}
 	}
 }
