@@ -3,7 +3,7 @@
 
     border-width: 0 0 1px 0;
     border-style: solid;
-    border-color: #2b3750;
+    border-color: var(--border-color);
     &:first-child {
         border-top-width: 1px;
     }
@@ -18,7 +18,7 @@
         display: flex;
         align-items: center;
         white-space: nowrap;
-        $background-color: #1c2736;
+        $background-color: $card-cap-bg;
 
         background-color: $background-color;
 
@@ -34,21 +34,12 @@
             overflow: hidden;
         }
 
-        &:hover {
-            background-color: darken($background-color, 0.05);
-        }
-
         p {
             margin-bottom: 0;
         }
 
         &:not(:only-of-type) {
-            border-bottom: 1px solid #2a3a51;
-        }
-
-        .theme-light & {
-            background-color: $color-light-bg-1;
-            border-color: $color-light-border;
+            border-bottom: 1px solid var(--border-color);
         }
     }
 
@@ -62,17 +53,6 @@
 }
 
 .theme-light {
-    .result-container {
-        border-color: $color-light-border;
-        &__header {
-            background-color: $color-light-bg-2;
-
-            &:hover {
-                background-color: $color-light-bg-4;
-            }
-        }
-    }
-
     .icon-inline__filtered {
         filter: brightness(0%);
     }
