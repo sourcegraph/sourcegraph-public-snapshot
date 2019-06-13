@@ -25,6 +25,8 @@ interface Props
 
     canEdit?: boolean
 
+    className?: string
+
     onSave?: (value: string) => void
     onChange?: (value: string) => void
     onDirtyChange?: (dirty: boolean) => void
@@ -80,7 +82,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
         const isDirty = this.isDirty
         const effectiveValue = this.effectiveValue
         return (
-            <>
+            <div className={this.props.className || ''}>
                 {this.props.actions && (
                     <div className="site-admin-configuration-page__action-groups">
                         <div className="site-admin-configuration-page__action-groups">
@@ -119,7 +121,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                         monacoRef={this.monacoRef}
                     />
                 </React.Suspense>
-            </>
+            </div>
         )
     }
 
