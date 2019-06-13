@@ -61,6 +61,13 @@
         white-space: nowrap;
     }
 
+    p,
+    pre {
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
     blockquote {
         padding: 0 1rem;
         color: #93a9c8;
