@@ -481,10 +481,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 		return nil, false, nil, err
 	}
 	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
-		timeoutToTry := 2 * searchOpts.MaxWallTime
-		if timeoutToTry <= 0 {
-			timeoutToTry = 10 * time.Second
-		}
+		timeoutToTry := longerTime(2, searchOpts.MaxWallTime)
 		err2 := errors.Errorf("no results found before timeout in index search (try timeout:%v)", timeoutToTry)
 		return nil, false, nil, err2
 	}
