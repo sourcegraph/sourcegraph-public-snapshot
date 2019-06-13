@@ -131,6 +131,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                             history={this.props.history}
                                             steps={this.props.activation.steps}
                                             completed={this.props.activation.completed}
+                                            className="border-top"
                                         />
                                     )}
                                 </Collapsible>
