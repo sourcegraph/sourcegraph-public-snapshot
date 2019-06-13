@@ -29,6 +29,7 @@ interface Props
     authenticatedUser: GQL.IUser | null
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
+    isSourcegraphDotCom: boolean
 
     /**
      * Whether to use the low-profile form of the navbar, which has no border or background. Used on the search
@@ -102,6 +103,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         const logo = (
             <img className={`global-navbar__logo ${showFullLogo ? 'global-navbar__logo--full' : ''}`} src={logoSrc} />
         )
+
         return (
             <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg'}`}>
                 {this.props.lowProfile ? (
@@ -126,7 +128,13 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                         )}
                     </>
                 )}
-                {!this.state.authRequired && <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />}
+                {!this.state.authRequired && (
+                    <NavLinks
+                        {...this.props}
+                        showStatusIndicator={!!window.context.showStatusIndicator}
+                        showDotComMarketing={showDotComMarketing}
+                    />
+                )}
             </div>
         )
     }

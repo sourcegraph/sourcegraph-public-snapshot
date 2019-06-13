@@ -1,6 +1,7 @@
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
+import { hot } from 'react-hot-loader/root'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, fromEventPattern, Subscription } from 'rxjs'
@@ -45,6 +46,8 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+
+import './SourcegraphWebApp.scss'
 
 export interface SourcegraphWebAppProps extends KeybindingsProps {
     exploreSections: ReadonlyArray<ExploreSectionDescriptor>
@@ -116,9 +119,12 @@ setLinkComponent(RouterLinkOrAnchor)
 const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : withActivation(Layout)
 
 /**
- * The root component
+ * The root component.
+ *
+ * This is the non-hot-reload component. It is wrapped in `hot(...)` below to make it
+ * hot-reloadable in development.
  */
-export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
+class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
     private readonly darkThemeMediaList = window.matchMedia('(prefers-color-scheme: dark)')
     private readonly platformContext: PlatformContext = createPlatformContext()
@@ -214,7 +220,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 subtitle = (
                     <div className="app__error">
                         {subtitle}
-                        {subtitle && <hr />}
+                        {subtitle && <hr className="my-3" />}
                         <pre>{errorMessage}</pre>
                     </div>
                 )
@@ -278,3 +284,5 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.setState({ navbarSearchQuery })
     }
 }
+
+export const SourcegraphWebApp = hot(ColdSourcegraphWebApp)

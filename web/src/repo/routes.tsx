@@ -100,7 +100,12 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                 filePath: string | undefined
             }>) => {
             const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
-            const filePath = match.params.filePath || '' // empty string is root
+
+            // The decoding depends on the pinned `history` version.
+            // See https://github.com/sourcegraph/sourcegraph/issues/4408
+            // and https://github.com/ReactTraining/history/issues/505
+            const filePath = decodeURIComponent(match.params.filePath || '') // empty string is root
+
             const mode = getModeFromPath(filePath)
 
             // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
@@ -114,7 +119,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                 return <Redirect to={window.location.pathname + window.location.search + formatHash(hash, newHash)} />
             }
 
-            const repoRevProps = { repoID, repoDescription, repoName, commitID }
+            const repoRevProps = { repoID, repoDescription, repoName, commitID, filePath }
 
             return (
                 <>
@@ -140,7 +145,6 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                         {...context}
                         {...repoRevProps}
                         className="repo-rev-container__sidebar"
-                        filePath={match.params.filePath || '' || ''}
                         isDir={objectType === 'tree'}
                         defaultBranch={defaultBranch || 'HEAD'}
                     />
@@ -150,14 +154,13 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                 <BlobPage
                                     {...context}
                                     {...repoRevProps}
-                                    filePath={match.params.filePath || ''}
                                     mode={mode}
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }
                                 />
                             ) : (
-                                <TreePage {...context} {...repoRevProps} filePath={match.params.filePath || ''} />
+                                <TreePage {...context} {...repoRevProps} />
                             )}
                         </div>
                     )}

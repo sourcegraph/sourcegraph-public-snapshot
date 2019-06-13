@@ -20,6 +20,39 @@ import (
 
 var update = flag.Bool("update", false, "update testdata")
 
+func TestProvider_Validate(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		client   func(*bitbucketserver.Client)
+		problems []string
+	}{
+		{
+			name: "no-problems-when-authenticated-as-admin",
+		},
+		{
+			name:   "problems-when-authenticated-as-non-admin",
+			client: func(c *bitbucketserver.Client) { c.Oauth = nil },
+			problems: []string{
+				`Bitbucket API HTTP error: code=401 url="http://127.0.0.1:7990/rest/api/1.0/admin/permissions/users?filter=" body="{\"errors\":[{\"context\":null,\"message\":\"You are not permitted to access this resource\",\"exceptionName\":\"com.atlassian.bitbucket.AuthorisationException\"}]}"`,
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p, save := newProvider(t, "Validate/"+tc.name)
+			defer save()
+
+			if tc.client != nil {
+				tc.client(p.client)
+			}
+
+			problems := p.Validate()
+			if have, want := problems, tc.problems; !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
+			}
+		})
+	}
+}
+
 func TestProvider_RepoPerms(t *testing.T) {
 	p, save := newProvider(t, "RepoPerms")
 	defer save()
@@ -384,13 +417,18 @@ func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc
 func newProvider(t *testing.T, name string) (*Provider, func()) {
 	cli, save := bitbucketserver.NewTestClient(t, name, *update)
 
-	key := os.Getenv("BITBUCKET_SERVER_KEY")
-	if key == "" {
+	signingKey := os.Getenv("BITBUCKET_SERVER_SIGNING_KEY")
+	if signingKey == "" {
 		// Bogus key
-		key = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
+		signingKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
 	}
 
-	if err := cli.SetOAuth("sourcegraph", key); err != nil {
+	consumerKey := os.Getenv("BITBUCKET_SERVER_CONSUMER_KEY")
+	if consumerKey == "" {
+		consumerKey = "sourcegraph"
+	}
+
+	if err := cli.SetOAuth(consumerKey, signingKey); err != nil {
 		t.Fatal(err)
 	}
 

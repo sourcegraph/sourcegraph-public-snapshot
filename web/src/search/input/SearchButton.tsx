@@ -7,9 +7,6 @@ import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap
 interface Props {
     /** Hide the "help" icon and dropdown. */
     noHelp?: boolean
-
-    /** Never show the "Search" button label. */
-    noLabel?: boolean
 }
 
 interface State {
@@ -27,9 +24,8 @@ export class SearchButton extends React.Component<Props, State> {
         const docsURLPrefix = window.context.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
         return (
             <div className="search-button d-flex">
-                <button className="btn btn-primary search-button__btn" type="submit">
-                    <SearchIcon className="icon-inline" />
-                    {!this.props.noLabel && <span className="search-button__label">Search</span>}
+                <button className="btn btn-primary search-button__btn" type="submit" aria-label="Search">
+                    <SearchIcon className="icon-inline" aria-hidden="true" />
                 </button>
                 <Dropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="d-flex">
                     {!this.props.noHelp && (
@@ -38,8 +34,9 @@ export class SearchButton extends React.Component<Props, State> {
                                 tag="span"
                                 caret={false}
                                 className="px-2 btn btn-link d-flex align-items-center"
+                                aria-label="Quick help for search"
                             >
-                                <HelpCircleOutlineIcon className="icon-inline small" />
+                                <HelpCircleOutlineIcon className="icon-inline small" aria-hidden="true" />
                             </DropdownToggle>
                             <DropdownMenu right={true} className="pb-0">
                                 <DropdownItem header={true}>

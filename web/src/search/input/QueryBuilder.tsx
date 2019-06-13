@@ -243,9 +243,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                     />
                                 </>
                             )}
-                            <div className="query-builder__rule-container">
-                                <hr className="query-builder__rule" />
-                            </div>
+                            <hr className="my-3" />
                             <QueryBuilderInputRow
                                 onInputChange={this.fieldsChanged}
                                 placeholder="(read|write)File"

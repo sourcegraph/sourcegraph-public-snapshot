@@ -112,7 +112,7 @@ func main() {
 		}
 	}
 
-	server := repoupdater.Server{Store: store}
+	server := repoupdater.Server{Store: store, Scheduler: repos.Scheduler}
 
 	var handler http.Handler
 	{

@@ -278,3 +278,7 @@ func IsBuiltinSignupAllowed() bool {
 func Branding() *schema.Branding {
 	return Get().Branding
 }
+
+func ShowStatusIndicator() bool {
+	return Get().ExperimentalFeatures.StatusIndicator == "enabled"
+}

@@ -258,8 +258,11 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context) ([]*bitbuckets
 	}()
 
 	for _, q := range s.config.RepositoryQuery {
-		if q == "none" {
+		switch q {
+		case "none":
 			continue
+		case "all":
+			q = "" // No filters.
 		}
 
 		wg.Add(1)

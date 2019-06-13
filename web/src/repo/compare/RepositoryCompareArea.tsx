@@ -160,7 +160,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
         let spec: { base: string | null; head: string | null } | null | undefined
         if (this.props.match.params.spec) {
-            spec = parseComparisonSpec(this.props.match.params.spec)
+            spec = parseComparisonSpec(decodeURIComponent(this.props.match.params.spec))
         }
 
         const commonProps: RepositoryCompareAreaPageProps = {
