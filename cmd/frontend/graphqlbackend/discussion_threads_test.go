@@ -135,7 +135,7 @@ func TestDiscussionsMutations_UpdateThread(t *testing.T) {
 			Query: `
                                 mutation($title: String!) {
                                         discussions {
-                                                updateThread(input: {ThreadID: "123", title: $title}) {
+                                                updateThread(input: {threadID: "123", title: $title}) {
                                                         title
                                                 }
                                         }
