@@ -336,6 +336,22 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 		return nil, false, err
 	}
 
+	repoHasFileFlagIsInQuery := len(info.FilePatternsReposMustInclude) > 0
+	if repoHasFileFlagIsInQuery {
+		// search for file in repo, if file is in repo, actually search through it.
+		for _, pattern := range info.FilePatternsReposMustInclude {
+			repoHasFileOnlyPattern := search.PatternInfo{IsRegExp: true, FileMatchLimit: 30, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			matches, limitHit, err := textSearch(ctx, gitserverRepo, commit, &repoHasFileOnlyPattern, fetchTimeout)
+			if err != nil {
+				return nil, false, err
+			}
+			if len(matches) <= 0 {
+				// Return with no matches if the repo does not match the patterns in `repohasfile`.
+				return matches, limitHit, err
+			}
+		}
+
+	}
 	matches, limitHit, err = textSearch(ctx, gitserverRepo, commit, info, fetchTimeout)
 
 	workspace := fileMatchURI(repo.Name, rev, "")
