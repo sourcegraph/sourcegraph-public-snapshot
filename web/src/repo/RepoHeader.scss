@@ -18,13 +18,6 @@
             padding: 0.425rem 0.175rem;
             user-select: none;
         }
-
-        // More padding between contributed action items
-        &__action-items {
-            .nav-item .nav-link {
-                padding: 0.425rem 0.175rem;
-            }
-        }
     }
 
     &__repo {
