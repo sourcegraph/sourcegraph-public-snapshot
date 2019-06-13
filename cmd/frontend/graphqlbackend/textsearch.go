@@ -597,7 +597,12 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 		newRepoSet = make(map[string]bool, len(includeResp.RepoURLs))
 		// For each repo that had a result in the include set, add it to our new repoSet.
 		for repoURL := range includeResp.RepoURLs {
-			newRepoSet[repoURL] = true
+			// Only add repoURLs that exist in the original repoSet, since
+			// repoSet is already filtered down to repositories that adhere to
+			// fit the `repo` filters in the query.
+			if repoSet.Set[repoURL] {
+				newRepoSet[repoURL] = true
+			}
 		}
 
 	}
