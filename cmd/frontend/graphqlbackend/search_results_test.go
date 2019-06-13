@@ -575,9 +575,10 @@ func TestCompareSearchResults(t *testing.T) {
 }
 
 func Test_longerTime(t *testing.T) {
+	N := 2
 	for dt := time.Millisecond; dt < time.Hour; dt *= 2 {
-		dt2 := longerTime(dt)
-		if dt2 < 2*dt {
+		dt2 := longerTime(N, dt)
+		if dt2 < time.Duration(N)*dt {
 			t.Fatalf("longerTime(%v)=%v < 2*%v, want more", dt, dt2, dt)
 		}
 		if strings.Contains(dt2.String(), ".") {

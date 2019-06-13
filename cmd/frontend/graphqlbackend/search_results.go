@@ -467,12 +467,13 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			dt := time.Now().Sub(start)
-			dt2 := longerTime(dt)
+			N := 2
+			dt2 := longerTime(N, dt)
 			// Tidy up the original duration so it displays like 3ms rather than
 			// 3.12345ms. The user doesn't need to know the exact duration,
 			// just a rough idea and a good suggestion for something else
 			// to try for the timeout.
-			dt = dt2/2
+			dt = dt2/time.Duration(N)
 			err = fmt.Errorf("deadline exceeded after about %s; try adding timeout:%s", dt, dt2)
 		}
 		return nil, err
@@ -481,8 +482,8 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 }
 
 // longerTime returns a suggested longer time to wait if the given duration wasn't long enough.
-func longerTime(dt time.Duration) time.Duration {
-	Ndt := time.Duration(2) * dt
+func longerTime(N int, dt time.Duration) time.Duration {
+	Ndt := time.Duration(N) * dt
 	dceil := func(x float64) time.Duration {
 		return time.Duration(math.Ceil(x))
 	}
