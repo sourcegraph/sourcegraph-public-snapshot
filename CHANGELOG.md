@@ -29,6 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where the Phabricator native integration would be broken on recent Phabricator versions. This fix depends on v1.2 of the [Phabricator extension](https://github.com/sourcegraph/phabricator-extension).
 - Fixed an issue where the "Empty repository" banner would be shown on a repository page when starting to clone a repository.
 - Prevent data inconsistency on cached archives due to restarts. (#4366)
+- On the /extensions page, the UI is now less ambiguous when an extension has not been activated. (#4446)
 
 ## 3.4.4 (unreleased)
 
