@@ -4,14 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
-	"regexp"
-	"sort"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
-
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -32,7 +24,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/inconshreveable/log15.v2"
+	"math"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
 )
 
 // This file contains the root resolver for search. It currently has a lot of
@@ -63,31 +60,13 @@ func (r *schemaResolver) Search(args *struct {
 }, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
-	// TODO(ijt): remove this potential goroutine leak.
-	go r.addQueryToSearchesTable(args.Query)
 	q, err := query.ParseAndCheck(args.Query)
 	if err != nil {
-		log15.Debug("graphql search failed to parse", "query", args.Query, "error", err)
 		return nil, err
 	}
 	return &searchResolver{
 		query: q,
 	}, nil
-}
-
-func (r *schemaResolver) addQueryToSearchesTable(q string) {
-	rs := r.recentSearches
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	if rs == nil {
-		return
-	}
-	if err := rs.Log(ctx, q); err != nil {
-		log15.Error("adding query to searches table", "error", err)
-	}
-	if err := rs.Cleanup(ctx, 1e5); err != nil {
-		log15.Error("deleting excess rows from searches table", "error", err)
-	}
 }
 
 func asString(v *searchquerytypes.Value) string {

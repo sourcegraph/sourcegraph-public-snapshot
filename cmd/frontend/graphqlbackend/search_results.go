@@ -460,15 +460,29 @@ loop:
 	return sparkline, nil
 }
 
+var queryLogChan = make(chan queryLogItem, 100)
+
+type queryLogItem struct {
+	query string
+	err   error
+}
+
 func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
-	start := time.Now()
-	rr, err := r.doResults(ctx, "")
-	if err != nil {
-		log15.Debug("graphql search failed", "query", r.rawQuery(), "duration", time.Since(start), "error", err)
-		return nil, err
+	srr, err := func() (*searchResultsResolver, error) {
+		rr, err := r.doResults(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		return rr, nil
+	}()
+
+	// Log the query if not too many have piled up to be logged.
+	select {
+	case queryLogChan <- queryLogItem{r.rawQuery(), err}:
+	default:
 	}
-	log15.Debug("graphql search success", "query", r.rawQuery(), "count", rr.ResultCount(), "duration", time.Since(start))
-	return rr, nil
+
+	return srr, err
 }
 
 type searchResultsStats struct {

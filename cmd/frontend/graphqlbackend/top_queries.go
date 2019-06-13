@@ -2,13 +2,15 @@ package graphqlbackend
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 
 	"github.com/pkg/errors"
 )
 
 // TopQueries returns the top most frequent recent queries.
 func (s *schemaResolver) TopQueries(ctx context.Context, args *struct{ Limit int32 }) ([]queryCountResolver, error) {
-	queries, counts, err := s.recentSearches.Top(ctx, args.Limit)
+	rs := &db.RecentSearches{}
+	queries, counts, err := rs.Top(ctx, args.Limit)
 	if err != nil {
 		return nil, errors.Wrapf(err, "asking table for top %d search queries", args.Limit)
 	}

@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -50,13 +52,25 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 
 func init() {
 	var err error
-	sr := &schemaResolver{
-		recentSearches: &db.RecentSearches{},
-	}
-	GraphQLSchema, err = graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
+	GraphQLSchema, err = graphql.ParseSchema(Schema, &schemaResolver{}, graphql.Tracer(prometheusTracer{}))
 	if err != nil {
 		panic(err)
 	}
+
+	// Start a goroutine to log queries to the db.
+	go func() {
+		for {
+			q := <-queryLogChan
+			rs := &db.RecentSearches{}
+			ctx := context.Background()
+			if err := rs.Log(ctx, q.query); err != nil {
+				log15.Error("adding query to searches table", "error", err)
+			}
+			if err := rs.Cleanup(ctx, 1e5); err != nil {
+				log15.Error("deleting excess rows from searches table", "error", err)
+			}
+		}
+	}()
 }
 
 // EmptyResponse is a type that can be used in the return signature for graphql queries
@@ -162,11 +176,8 @@ type stringLogger interface {
 
 // schemaResolver handles all GraphQL queries for Sourcegraph.  To do this, it
 // uses subresolvers, some of which are globals and some of which are fields on
-// schemaResolver. Eventually, they should all be fields (i.e., dependency
-// injected), but that is being done gradually. Currently, only `recentSearches` is dependency-injected.
-type schemaResolver struct {
-	recentSearches stringLogger
-}
+// schemaResolver.
+type schemaResolver struct{}
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
