@@ -495,12 +495,7 @@ func longerTime(N int, dt time.Duration) time.Duration {
 	case math.Floor(Ndt.Seconds()) > 0:
 		return dceil(Ndt.Seconds()) * time.Second
 	default:
-		lowest := 2 * time.Second
-		dt2 := dceil(float64(Ndt)/float64(time.Millisecond)) * time.Millisecond
-		if dt2 < lowest {
-			return lowest
-		}
-		return dt2
+		return 2 * time.Second
 	}
 }
 
