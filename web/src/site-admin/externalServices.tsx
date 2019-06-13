@@ -405,6 +405,24 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
                     return { edits, selectText: value }
                 },
             },
+            {
+                id: 'enablePermissions',
+                label: 'Enforce permissions',
+                run: config => {
+                    const value = {
+                        COMMENT_SENTINEL: true,
+                        identityProvider: { type: 'username' },
+                        oauth: {
+                            consumerKey: '<consumer key>',
+                            signingKey: '<signing key>',
+                        },
+                        ttl: '5m',
+                    }
+                    const comment = `// Follow setup instructions in https://docs.sourcegraph.com/admin/repo/permissions#bitbucket_server`
+                    const edit = editWithComment(config, ['authorization'], value, comment)
+                    return { edits: [edit], selectText: comment }
+                },
+            },
         ],
     },
     [GQL.ExternalServiceKind.GITLAB]: {

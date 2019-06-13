@@ -21,6 +21,12 @@ There are four fields for configuring which repositories are mirrored:
 - [`exclude`](bitbucket_server.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, and `repositoryQuery` fields.
 - ['excludePersonalRepositories'](bitbucket_server.md#configuration)<br>With this enabled, Sourcegraph will exclude any personal repositories from being imported, even if it has access to them.
 
+## Repository permissions
+
+By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use
+Bitbucket Server's repository permissions, see [Repository permissions](../repo/permissions.md#bitbucket_server).
+
+
 ### Authentication for older Bitbucket Server versions
 
 Bitbucket Server versions older than v5.5 require specifying a less secure username and password combination, as those versions of Bitbucket Server do not support [personal access tokens](https://confluence.atlassian.com/bitbucketserver/personal-access-tokens-939515499.html).
