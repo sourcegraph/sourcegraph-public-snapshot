@@ -31,12 +31,7 @@ export interface ExternalServiceKindMetadata {
     /**
      * Icon to show in the external service "button"
      */
-    icon: JSX.Element | string
-
-    /**
-     * Color to display next to the icon in the external service "button"
-     */
-    iconBrandColor: 'github' | 'aws' | 'bitbucket' | 'gitlab' | 'gitolite' | 'phabricator' | 'git'
+    icon: React.ComponentType<{ className?: string }>
 
     /**
      * A short description that will appear in the external service "button" under the title
@@ -68,8 +63,6 @@ export interface ExternalServiceKindMetadata {
      */
     defaultConfig: string
 }
-
-const ICON_SIZE = 45
 
 const defaultFormattingOptions: FormattingOptions = {
     eol: '\n',
@@ -108,7 +101,7 @@ const editorActionComments = {
 
 export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
     title: 'GitHub repositories',
-    icon: <GithubCircleIcon size={ICON_SIZE} />,
+    icon: GithubCircleIcon,
     jsonSchema: githubSchemaJSON,
     editorActions: [
         {
@@ -169,7 +162,6 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
             },
         },
     ],
-    iconBrandColor: 'github',
     shortDescription: 'Add GitHub.com repositories',
     longDescription: (
         <span>
@@ -238,8 +230,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     [GQL.ExternalServiceKind.GITHUB]: GITHUB_EXTERNAL_SERVICE,
     [GQL.ExternalServiceKind.AWSCODECOMMIT]: {
         title: 'AWS CodeCommit repositories',
-        icon: <AmazonIcon size={ICON_SIZE} />,
-        iconBrandColor: 'aws',
+        icon: AmazonIcon,
         shortDescription: 'Add AWS CodeCommit repositories.',
         jsonSchema: awsCodeCommitSchemaJSON,
         defaultDisplayName: 'AWS CodeCommit',
@@ -306,8 +297,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.BITBUCKETSERVER]: {
         title: 'Bitbucket Server repositories',
-        icon: <BitbucketIcon size={ICON_SIZE} />,
-        iconBrandColor: 'bitbucket',
+        icon: BitbucketIcon,
         shortDescription: 'Add Bitbucket Server repositories.',
         jsonSchema: bitbucketServerSchemaJSON,
         defaultDisplayName: 'Bitbucket Server',
@@ -425,8 +415,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.GITLAB]: {
         title: 'GitLab projects',
-        icon: <GitLabIcon size={ICON_SIZE} />,
-        iconBrandColor: 'gitlab',
+        icon: GitLabIcon,
         shortDescription: 'Add GitLab projects.',
         jsonSchema: gitlabSchemaJSON,
         defaultDisplayName: 'GitLab',
@@ -608,8 +597,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.GITOLITE]: {
         title: 'Gitolite repositories',
-        icon: <GitIcon size={ICON_SIZE} />,
-        iconBrandColor: 'gitolite',
+        icon: GitIcon,
         shortDescription: 'Add Gitolite repositories.',
         jsonSchema: gitoliteSchemaJSON,
         defaultDisplayName: 'Gitolite',
@@ -644,8 +632,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.PHABRICATOR]: {
         title: 'Phabricator connection',
-        icon: <PhabricatorIcon size={ICON_SIZE} />,
-        iconBrandColor: 'phabricator',
+        icon: PhabricatorIcon,
         shortDescription:
             'Associate Phabricator repositories with existing repositories on Sourcegraph. Mirroring is not supported.',
         jsonSchema: phabricatorSchemaJSON,
@@ -694,8 +681,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.OTHER]: {
         title: 'Single Git repositories',
-        icon: <GitIcon size={ICON_SIZE} />,
-        iconBrandColor: 'git',
+        icon: GitIcon,
         shortDescription: 'Add single Git repositories by clone URL.',
         jsonSchema: otherExternalServiceSchemaJSON,
         defaultDisplayName: 'Git repositories',
