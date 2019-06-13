@@ -221,6 +221,8 @@
 // 1528395578_.up.sql (714B)
 // 1528395579_.down.sql (35B)
 // 1528395579_.up.sql (175B)
+// 1528395580_create_external_permissions_table.down.sql (60B)
+// 1528395580_create_external_permissions_table.up.sql (393B)
 
 package migrations
 
@@ -4709,6 +4711,46 @@ func _1528395579_UpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395580_create_external_permissions_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xf5\x50\x5e\xda\x3c\x00\x00\x00")
+
+func _1528395580_create_external_permissions_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395580_create_external_permissions_tableDownSql,
+		"1528395580_create_external_permissions_table.down.sql",
+	)
+}
+
+func _1528395580_create_external_permissions_tableDownSql() (*asset, error) {
+	bytes, err := _1528395580_create_external_permissions_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395580_create_external_permissions_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xcf, 0x36, 0x8e, 0xa3, 0xbe, 0x64, 0xdf, 0xf4, 0x23, 0x8, 0x41, 0xf5, 0x81, 0x85, 0xe5, 0xe4, 0x1a, 0xa9, 0xe2, 0x6b, 0xe6, 0x1b, 0x1d, 0x9e, 0x3f, 0x4b, 0x52, 0x8, 0xf6, 0xa, 0xeb, 0x4c}}
+	return a, nil
+}
+
+var __1528395580_create_external_permissions_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x90\xcd\x6a\xc3\x30\x10\x84\xef\x7a\x8a\x39\x3a\xe0\x37\xf0\xc9\x71\xb6\xc5\xe0\xc8\xd4\x91\xcf\x42\xb1\x97\xa2\x52\xff\xd4\x5a\x41\xd2\xa7\x2f\x29\xa9\x93\x42\x9b\xab\x66\xf4\x31\xdf\x6e\xe9\xb9\xd4\x99\x52\x45\x43\xb9\x21\x98\x7c\x5b\x11\xf8\x24\xbc\x8c\xee\xdd\xce\xbc\x0c\x3e\x04\x3f\x8d\x01\x89\x02\x5c\xd7\x4d\x71\x14\xeb\x7b\xc0\x8f\xc2\xaf\xbc\x40\xd7\x06\xba\xad\x2a\x34\xf4\x44\x0d\xe9\x82\x0e\x88\x81\x17\xbb\x52\xae\xbf\x02\x12\xdf\x6f\x52\x05\xdc\xb0\x80\xf0\x49\x56\xc6\x25\x9c\x8e\x6f\xdc\x89\x95\xf3\xcc\xff\x86\xbe\x0f\xc0\xf1\x2c\xec\x7e\xa5\x71\xee\x9d\x70\x6f\x9d\x00\xe2\x07\x0e\xe2\x86\x59\x3e\xd7\x8e\xda\x64\x4a\xe5\x95\xa1\xe6\x81\xa8\xca\x77\x3b\x14\xb5\x3e\x98\x26\x2f\xb5\xf9\xb3\xf3\xa3\xf4\xfd\x66\xaf\xa3\xe2\xe8\x3f\x22\xab\x56\x97\x2f\x2d\x21\xb9\xdd\x2a\xbd\x13\x4e\xef\xfd\x2e\x73\x8a\x7a\xbf\x2f\x4d\xa6\xbe\x02\x00\x00\xff\xff\x34\x78\x47\xce\x89\x01\x00\x00")
+
+func _1528395580_create_external_permissions_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395580_create_external_permissions_tableUpSql,
+		"1528395580_create_external_permissions_table.up.sql",
+	)
+}
+
+func _1528395580_create_external_permissions_tableUpSql() (*asset, error) {
+	bytes, err := _1528395580_create_external_permissions_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395580_create_external_permissions_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x51, 0x2b, 0xaf, 0x58, 0x22, 0x45, 0xdd, 0x99, 0xd9, 0xc6, 0x17, 0xe6, 0xb2, 0xfc, 0xdc, 0x36, 0xf8, 0x79, 0xfe, 0xe4, 0x55, 0x60, 0xf0, 0x4, 0x21, 0xb7, 0x99, 0x95, 0x30, 0xbd, 0xae, 0xfe}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5241,6 +5283,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395579_.down.sql": _1528395579_DownSql,
 
 	"1528395579_.up.sql": _1528395579_UpSql,
+
+	"1528395580_create_external_permissions_table.down.sql": _1528395580_create_external_permissions_tableDownSql,
+
+	"1528395580_create_external_permissions_table.up.sql": _1528395580_create_external_permissions_tableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5505,6 +5551,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395578_.up.sql":                                          {_1528395578_UpSql, map[string]*bintree{}},
 	"1528395579_.down.sql":                                        {_1528395579_DownSql, map[string]*bintree{}},
 	"1528395579_.up.sql":                                          {_1528395579_UpSql, map[string]*bintree{}},
+	"1528395580_create_external_permissions_table.down.sql":       {_1528395580_create_external_permissions_tableDownSql, map[string]*bintree{}},
+	"1528395580_create_external_permissions_table.up.sql":         {_1528395580_create_external_permissions_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

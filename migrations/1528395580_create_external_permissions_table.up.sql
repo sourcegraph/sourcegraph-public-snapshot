@@ -5,8 +5,7 @@ CREATE TABLE external_permissions (
   permission  text NOT NULL,
   object_type text NOT NULL,
   object_ids  bytea NOT NULL,
-  updated_at  timestamptz NOT NULL,
-  expired_at  timestamptz NOT NULL
+  updated_at  timestamptz NOT NULL
 );
 
 ALTER TABLE external_permissions

@@ -38,8 +38,10 @@ func TestProvider_Validate(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			p, save := newProvider(t, "Validate/"+tc.name)
+			cli, save := newClient(t, "Validate/"+tc.name)
 			defer save()
+
+			p := newProvider(t, cli, nil)
 
 			if tc.client != nil {
 				tc.client(p.client)
@@ -54,11 +56,13 @@ func TestProvider_Validate(t *testing.T) {
 }
 
 func TestProvider_RepoPerms(t *testing.T) {
-	p, save := newProvider(t, "RepoPerms")
+	cli, save := newClient(t, "RepoPerms")
 	defer save()
 
 	f := newFixtures()
-	f.load(t, p.client)
+	f.load(t, cli)
+
+	p := newProvider(t, cli, nil)
 
 	h := codeHost{CodeHost: p.codeHost}
 
@@ -166,11 +170,13 @@ func TestProvider_RepoPerms(t *testing.T) {
 }
 
 func TestProvider_FetchAccount(t *testing.T) {
-	p, save := newProvider(t, "FetchAccount")
+	cli, save := newClient(t, "FetchAccount")
 	defer save()
 
 	f := newFixtures()
-	f.load(t, p.client)
+	f.load(t, cli)
+
+	p := newProvider(t, cli, nil)
 
 	h := codeHost{CodeHost: p.codeHost}
 
@@ -414,7 +420,7 @@ func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc
 	}
 }
 
-func newProvider(t *testing.T, name string) (*Provider, func()) {
+func newClient(t *testing.T, name string) (*bitbucketserver.Client, func()) {
 	cli, save := bitbucketserver.NewTestClient(t, name, *update)
 
 	signingKey := os.Getenv("BITBUCKET_SERVER_SIGNING_KEY")
@@ -432,6 +438,10 @@ func newProvider(t *testing.T, name string) (*Provider, func()) {
 		t.Fatal(err)
 	}
 
+	return cli, save
+}
+
+func newProvider(t *testing.T, cli *bitbucketserver.Client, s *store) *Provider {
 	codeHost := extsvc.CodeHost{
 		ServiceType: bitbucketserver.ServiceType,
 		ServiceID:   os.Getenv("BITBUCKET_SERVER_URL"),
@@ -445,5 +455,6 @@ func newProvider(t *testing.T, name string) (*Provider, func()) {
 		client:   cli,
 		codeHost: &codeHost,
 		pageSize: 1, // Exercise pagination
-	}, save
+		store:    s,
+	}
 }

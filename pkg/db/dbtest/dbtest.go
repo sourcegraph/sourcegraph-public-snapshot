@@ -60,7 +60,7 @@ func NewDB(t testing.TB, dsn string) (*sql.DB, func()) {
 }
 
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
-	db, err := dbutil.NewDB(cfg.String())
+	db, err := dbutil.NewDB(cfg.String(), t.Name())
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}

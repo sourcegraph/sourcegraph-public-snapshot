@@ -257,7 +257,6 @@ func (c *Client) UserPermissions(ctx context.Context, username string) (perms []
 	}{
 		Values: ps,
 	})
-
 	if err != nil {
 		return nil, err
 	}

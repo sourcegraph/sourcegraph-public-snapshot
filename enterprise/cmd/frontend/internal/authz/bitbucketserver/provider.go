@@ -3,11 +3,11 @@ package bitbucketserver
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"strconv"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -22,21 +22,23 @@ type Provider struct {
 	client   *bitbucketserver.Client
 	codeHost *extsvc.CodeHost
 	pageSize int // Page size to use in paginated requests.
-	store    store
-	ttl      time.Duration
-	clock    func() time.Time
+	store    *store
 }
 
 var _ authz.Provider = ((*Provider)(nil))
+
+var clock = func() time.Time { return time.Now().UTC() }
 
 // NewProvider returns a new Bitbucket Server authorization provider that uses
 // the given bitbucketserver.Client to talk to a Bitbucket Server API that is
 // the source of truth for permissions. It assumes usernames of Sourcegraph accounts
 // match 1-1 with usernames of Bitbucket Server API users.
-func NewProvider(cli *bitbucketserver.Client) *Provider {
+func NewProvider(cli *bitbucketserver.Client, db *sql.DB, ttl time.Duration) *Provider {
 	return &Provider{
 		client:   cli,
 		codeHost: extsvc.NewCodeHost(cli.URL, bitbucketserver.ServiceType),
+		pageSize: 1000,
+		store:    newStore(db, ttl, clock, newCache(ttl, clock)),
 	}
 }
 
@@ -83,32 +85,41 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		}
 	}
 
-	var unverified roaring.Bitmap
-	names := make(map[uint32]api.RepoName, len(repos))
+	ids := make(map[int]authz.Repo, len(repos))
 	for r := range repos {
-		id, err := strconv.ParseUint(r.ExternalRepoSpec.ID, 10, 32)
-		if err != nil {
+		if id, _ := strconv.Atoi(r.ExternalRepoSpec.ID); id != 0 {
+			ids[id] = r
+		}
+	}
+
+	update := func() ([]uint32, error) {
+		visible, err := p.repos(ctx, user.Name)
+		if err != nil && err != errNoResults {
 			return nil, err
 		}
 
-		unverified.Add(uint32(id))
-		names[uint32(id)] = r.RepoName
+		authorized := make([]uint32, 0, len(repos))
+		for _, r := range visible {
+			if repo, ok := ids[r.ID]; ok {
+				authorized = append(authorized, uint32(repo.ID))
+			}
+		}
+
+		return authorized, nil
 	}
 
-	authorized, err := p.authorized(ctx, acctID, user.Name, &unverified)
-	if err != nil && err != errNoResults {
+	ps := &Permissions{
+		AccountID: acctID,
+		Perm:      authz.Read,
+		Type:      "repos",
+	}
+
+	err := p.store.LoadPermissions(ctx, &ps, update)
+	if err != nil {
 		return nil, err
 	}
 
-	iter := authorized.Iterator()
-	perms := make(map[api.RepoName]map[authz.Perm]bool, authorized.GetCardinality())
-
-	for iter.HasNext() {
-		perms[names[iter.Next()]] =
-			map[authz.Perm]bool{authz.Read: true}
-	}
-
-	return perms, nil
+	return ps.Authorized(repos), nil
 }
 
 // FetchAccount satisfies the authz.Provider interface.
@@ -138,43 +149,6 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 			AccountData: (*json.RawMessage)(&accountData),
 		},
 	}, nil
-}
-
-func (p *Provider) authorized(ctx context.Context, acctID int32, username string, unverified *roaring.Bitmap) (*roaring.Bitmap, error) {
-	perms := Permissions{
-		AccountID: acctID,
-		Perm:      authz.Read,
-		Type:      "repos",
-	}
-
-	// TODO: Wrap in serializable transaction to control cache filling concurrency.
-
-	if err := p.store.LoadPermissions(ctx, &perms); err != nil {
-		return nil, err
-	}
-
-	now := p.now()
-
-	if now.Equal(perms.ExpiredAt) || now.After(perms.ExpiredAt) { // Cache expired
-		repos, err := p.repos(ctx, username)
-		if err != nil {
-			return nil, err
-		}
-
-		perms.IDs = roaring.NewBitmap()
-		for _, r := range repos {
-			perms.IDs.Add(uint32(r.ID))
-		}
-
-		perms.UpdatedAt = now
-		perms.ExpiredAt = now.Add(p.ttl)
-
-		if err := p.store.UpsertPermissions(ctx, &perms); err != nil {
-			return nil, err
-		}
-	}
-
-	return roaring.And(unverified, perms.IDs), nil
 }
 
 var errNoResults = errors.New("no results returned by the Bitbucket Server API")
@@ -228,11 +202,4 @@ func (p *Provider) user(ctx context.Context, username string, fs ...bitbucketser
 	}
 
 	return nil, errNoResults
-}
-
-func (p *Provider) now() time.Time {
-	if p.clock != nil {
-		return p.clock()
-	}
-	return time.Now()
 }

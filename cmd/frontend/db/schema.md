@@ -131,6 +131,22 @@ Referenced by:
 
 ```
 
+# Table "public.external_permissions"
+```
+   Column    |           Type           | Modifiers 
+-------------+--------------------------+-----------
+ account_id  | integer                  | not null
+ permission  | text                     | not null
+ object_type | text                     | not null
+ object_ids  | bytea                    | not null
+ updated_at  | timestamp with time zone | not null
+Indexes:
+    "external_permissions_account_perm_object_unique" UNIQUE CONSTRAINT, btree (account_id, permission, object_type)
+Foreign-key constraints:
+    "external_permissions_account_id_fkey" FOREIGN KEY (account_id) REFERENCES user_external_accounts(id)
+
+```
+
 # Table "public.external_services"
 ```
     Column    |           Type           |                           Modifiers                            
@@ -568,6 +584,8 @@ Indexes:
     "user_external_accounts_account" UNIQUE, btree (service_type, service_id, client_id, account_id) WHERE deleted_at IS NULL
 Foreign-key constraints:
     "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+Referenced by:
+    TABLE "external_permissions" CONSTRAINT "external_permissions_account_id_fkey" FOREIGN KEY (account_id) REFERENCES user_external_accounts(id)
 
 ```
 

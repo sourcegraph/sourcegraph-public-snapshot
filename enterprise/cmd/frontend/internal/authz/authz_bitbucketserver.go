@@ -2,6 +2,7 @@ package authz
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/url"
 
@@ -16,6 +17,7 @@ import (
 
 func bitbucketServerProviders(
 	ctx context.Context,
+	db *sql.DB,
 	cfg *conf.Unified,
 	conns []*schema.BitbucketServerConnection,
 ) (
@@ -25,7 +27,7 @@ func bitbucketServerProviders(
 ) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		if p, err := bitbucketServerProvider(c.Authorization, c.Url, cfg.Critical.AuthProviders); err != nil {
+		if p, err := bitbucketServerProvider(db, c.Authorization, c.Url, cfg.Critical.AuthProviders); err != nil {
 			seriousProblems = append(seriousProblems, err.Error())
 		} else if p != nil {
 			authzProviders = append(authzProviders, p)
@@ -42,6 +44,7 @@ func bitbucketServerProviders(
 }
 
 func bitbucketServerProvider(
+	db *sql.DB,
 	a *schema.BitbucketServerAuthorization,
 	instanceURL string,
 	ps []schema.AuthProviders,
@@ -67,10 +70,15 @@ func bitbucketServerProvider(
 		errs = multierror.Append(errs, errors.Wrap(err, "authorization.oauth.signingKey"))
 	}
 
+	ttl, err := parseTTL(a.Ttl)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
 	var p authz.Provider
 	switch idp := a.IdentityProvider; {
 	case idp.Username != nil:
-		p = bbsauthz.NewProvider(cli)
+		p = bbsauthz.NewProvider(cli, db, ttl)
 	default:
 		errs = multierror.Append(errs, errors.Errorf("No identityProvider was specified"))
 	}
@@ -81,6 +89,6 @@ func bitbucketServerProvider(
 // ValidateBitbucketServerAuthz validates the authorization fields of the given BitbucketServer external
 // service config.
 func ValidateBitbucketServerAuthz(c *schema.BitbucketServerConnection, ps []schema.AuthProviders) error {
-	_, err := bitbucketServerProvider(c.Authorization, c.Url, ps)
+	_, err := bitbucketServerProvider(nil, c.Authorization, c.Url, ps)
 	return err
 }

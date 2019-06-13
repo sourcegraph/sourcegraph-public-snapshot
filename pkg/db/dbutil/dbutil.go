@@ -9,6 +9,9 @@ import (
 	"strconv"
 	"time"
 
+	// Register driver
+	_ "github.com/lib/pq"
+
 	migr "github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
@@ -67,7 +70,7 @@ type TxBeginner interface {
 }
 
 // NewDB returns a new *sql.DB from the given dsn (data source name).
-func NewDB(dsn string) (*sql.DB, error) {
+func NewDB(dsn, app string) (*sql.DB, error) {
 	cfg, err := url.Parse(dsn)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse dsn")
@@ -79,7 +82,7 @@ func NewDB(dsn string) (*sql.DB, error) {
 	qry.Set("timezone", "UTC")
 
 	// Force application name.
-	qry.Set("application_name", "repo-updater")
+	qry.Set("application_name", app)
 
 	// Set max open and idle connections
 	maxOpen, _ := strconv.Atoi(qry.Get("max_conns"))
