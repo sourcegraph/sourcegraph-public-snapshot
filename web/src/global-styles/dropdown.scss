@@ -11,6 +11,7 @@ $dropdown-header-color: var(--dropdown-header-color);
 $dropdown-item-padding-y: 0.25rem;
 $dropdown-item-padding-x: 0.5rem;
 $dropdown-padding-y: $dropdown-item-padding-y;
+$zindex-dropdown: $zindex-sticky + 1;
 
 @import 'bootstrap/scss/dropdown';
 
