@@ -245,6 +245,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	archivedStr, _ := r.query.StringValue(query.FieldArchived)
 	archived := parseYesNoOnly(archivedStr)
 
+	commitSince, _ := r.query.StringValue(query.FieldCommitSince)
+
 	tr.LazyPrintf("resolveRepositories - start")
 	repoRevs, missingRepoRevs, repoResults, overLimit, err = resolveRepositories(ctx, resolveRepoOp{
 		repoFilters:      repoFilters,
@@ -254,6 +256,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		noForks:          fork == No || fork == False,
 		onlyArchived:     archived == Only || archived == True,
 		noArchived:       archived == No || archived == False,
+		commitSince:      commitSince,
 	})
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
@@ -367,6 +370,7 @@ type resolveRepoOp struct {
 	onlyForks        bool
 	noArchived       bool
 	onlyArchived     bool
+	commitSince      string
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, repoResolvers []*searchSuggestionResolver, overLimit bool, err error) {
@@ -481,6 +485,14 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 				// If err != nil and is not one of the err values checked for above, cloning and other errors will be handled later, so just ignore an error
 				// if there is one.
 			}
+
+			if op.commitSince != "" {
+				ok, err := git.HasCommitSince(ctx, repoRev.GitserverRepo(), op.commitSince, rev.RevSpec)
+				if err == nil && !ok {
+					continue
+				}
+			}
+
 			repoRev.Revs = append(repoRev.Revs, rev)
 		}
 
@@ -488,6 +500,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			repoResolver,
 			math.MaxInt32,
 		))
+
 		repoRevisions = append(repoRevisions, repoRev)
 	}
 	tr.LazyPrintf("Associate/validate revs - done")

@@ -19,6 +19,7 @@ const (
 	FieldLang        = "lang"
 	FieldType        = "type"
 	FieldRepoHasFile = "repohasfile"
+	FieldCommitSince = "commitsince"
 
 	// For diff and commit search only:
 	FieldBefore    = "before"
@@ -51,6 +52,7 @@ var (
 			FieldType:      stringFieldType,
 
 			FieldRepoHasFile: regexpNegatableFieldType,
+			FieldCommitSince: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 
 			FieldBefore:    stringFieldType,
 			FieldAfter:     stringFieldType,

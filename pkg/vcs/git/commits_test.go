@@ -1,6 +1,7 @@
 package git_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -49,6 +50,81 @@ func TestRepository_GetCommit(t *testing.T) {
 		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
 		if _, err := git.GetCommit(ctx, test.repo, nil, nonexistentCommitID); !git.IsRevisionNotFound(err) {
 			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
+		}
+	}
+}
+
+func TestRepository_HasCommitSince(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		commitDates []string
+		after       string
+		revspec     string
+		want        bool
+	}{
+		{
+			commitDates: []string{
+				"2006-01-02T15:04:05Z",
+				"2007-01-02T15:04:05Z",
+				"2008-01-02T15:04:05Z",
+			},
+			after:   "2006-01-02T15:04:05Z",
+			revspec: "master",
+			want:    true,
+		},
+		{
+			commitDates: []string{
+				"2016-01-02T15:04:05Z",
+				"2017-01-02T15:04:05Z",
+				"2017-01-02T15:04:06Z",
+			},
+			after:   "1 year ago",
+			revspec: "master",
+			want:    false,
+		},
+		{
+			commitDates: []string{
+				"2006-01-02T15:04:05Z",
+				"2007-01-02T15:04:05Z",
+				"2008-01-02T15:04:05Z",
+			},
+			after:   "2010-01-02T15:04:05Z",
+			revspec: "HEAD",
+			want:    false,
+		},
+		{
+			commitDates: []string{
+				"2006-01-02T15:04:05Z",
+				"2007-01-02T15:04:05Z",
+				"2007-01-02T15:04:06Z",
+			},
+			after:   "2007-01-02T15:04:05Z",
+			revspec: "HEAD",
+			want:    true,
+		},
+		{
+			commitDates: []string{
+				"2016-01-02T15:04:05Z",
+				"2017-01-02T15:04:05Z",
+				"2017-01-02T15:04:06Z",
+			},
+			after:   "10 years ago",
+			revspec: "HEAD",
+			want:    true,
+		},
+	}
+
+	for _, tc := range testCases {
+		gitCommands := make([]string, len(tc.commitDates))
+		for i, date := range tc.commitDates {
+			gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
+		}
+
+		repo := makeGitRepository(t, gitCommands...)
+		got, err := git.HasCommitSince(ctx, repo, tc.after, tc.revspec)
+		if err != nil || got != tc.want {
+			t.Errorf("got %t hascommitsince, want %t", got, tc.want)
 		}
 	}
 }
