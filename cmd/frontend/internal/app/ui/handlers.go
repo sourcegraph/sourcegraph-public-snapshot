@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 
+	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -49,6 +50,9 @@ type Metadata struct {
 	// Description is the description of the page for Twitter cards, OpenGraph,
 	// etc. e.g. "View this link in Sourcegraph Editor."
 	Description string
+
+	// ShowPreview toggles Twitter/Slack/OpenGraph/etc previews.
+	ShowPreview bool
 }
 
 type Common struct {
@@ -59,6 +63,7 @@ type Common struct {
 	Title    string
 	Error    *pageError
 
+	ShowPreview                  bool
 	InjectSourcegraphTracker     bool
 	InjectGoogleAnalyticsTracker bool
 
@@ -94,11 +99,12 @@ func repoShortName(name api.RepoName) string {
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has an incomplete RevSpec.
 func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError func(w http.ResponseWriter, r *http.Request, err error, statusCode int)) (*Common, error) {
+	path := strings.TrimPrefix(r.URL.Path, "/")
 	injectTelligentTracker := false
 	injectGoogleAnalyticsTracker := false
 	if envvar.SourcegraphDotComMode() {
 		injectTelligentTracker = true
-		if strings.TrimPrefix(r.URL.Path, "/") == routeWelcome {
+		if path == routeWelcome {
 			injectGoogleAnalyticsTracker = true
 		}
 	}
@@ -116,6 +122,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		Metadata: &Metadata{
 			Title:       "Sourcegraph",
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
+			ShowPreview: path == uirouter.RouteSignIn && r.URL.RawQuery == "returnTo=%2F",
 		},
 
 		InjectSourcegraphTracker:     injectTelligentTracker,
