@@ -16,6 +16,7 @@ import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeHost, MountGetter } from '../code_intelligence'
 import { CodeView, toCodeViewResolver } from '../code_intelligence/code_views'
+import { NativeTooltip } from '../code_intelligence/native_tooltips'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../code_intelligence/util/selections'
 import { ViewResolver } from '../code_intelligence/views'
 import { markdownBodyViewResolver } from './content_views'
@@ -261,11 +262,17 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
     return mount
 }
 
+const nativeTooltipResolver: ViewResolver<NativeTooltip> = {
+    selector: '.js-tagsearch-popover',
+    resolveView: element => ({ element }),
+}
+
 export const githubCodeHost: CodeHost = {
     name: 'github',
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     textFieldResolvers: [commentTextFieldResolver],
+    nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
         const header = document.querySelector('.repohead-details-container')
         const repoHeaderHasPrivateMarker = !!(header && header.querySelector('.private'))

@@ -22,6 +22,7 @@ import {
     observeOn,
     switchMap,
     take,
+    tap,
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
@@ -70,6 +71,12 @@ import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
+import {
+    handleNativeTooltips,
+    NativeTooltip,
+    nativeTooltipsEnabledFromSettings,
+    registerNativeTooltipContributions,
+} from './native_tooltips'
 import { handleTextFields, TextField } from './text_fields'
 import { ViewResolver } from './views'
 
@@ -147,6 +154,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Resolve {@link TextField}s from the DOM.
      */
     textFieldResolvers?: ViewResolver<TextField>[]
+
+    /**
+     * Resolves {@link NativeTooltip}s from the DOM.
+     */
+    nativeTooltipResolvers?: ViewResolver<NativeTooltip>[]
 
     /**
      * Adjust the position of the hover overlay. Useful for fixed headers or other
@@ -230,8 +242,10 @@ export interface FileInfo {
     baseRev?: string
 }
 
-interface CodeIntelligenceProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL'>,
+export interface CodeIntelligenceProps
+    extends PlatformContextProps<
+            'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings'
+        >,
         TelemetryProps {
     codeHost: CodeHost
     extensionsController: Controller
@@ -521,6 +535,15 @@ export function handleCodeHost({
         }
     }
 
+    const nativeTooltipsEnabled = codeHost.nativeTooltipResolvers
+        ? nativeTooltipsEnabledFromSettings(platformContext.settings)
+        : of(true)
+
+    if (codeHost.nativeTooltipResolvers) {
+        subscriptions.add(handleNativeTooltips(mutations, nativeTooltipsEnabled, codeHost.nativeTooltipResolvers))
+        subscriptions.add(registerNativeTooltipContributions(extensionsController))
+    }
+
     subscriptions.add(
         codeViews.subscribe(codeViewEvent => {
             console.log('Code view added')
@@ -671,19 +694,30 @@ export function handleCodeHost({
                 rev: part === 'base' ? fileInfo.baseRev || fileInfo.baseCommitID! : fileInfo.rev || fileInfo.commitID,
             })
             const adjustPosition = getPositionAdjuster && getPositionAdjuster(platformContext.requestGraphQL)
+            let hoverSubscription = new Subscription()
             codeViewEvent.subscriptions.add(
-                hoverifier.hoverify({
-                    dom: domFunctions,
-                    positionEvents: of(element).pipe(
-                        findPositionsFromEvents({
-                            domFunctions,
-                            tokenize: codeHost.codeViewsRequireTokenization !== false,
+                nativeTooltipsEnabled
+                    .pipe(
+                        tap(useNativeTooltips => {
+                            hoverSubscription.unsubscribe()
+                            if (!useNativeTooltips) {
+                                hoverSubscription = hoverifier.hoverify({
+                                    dom: domFunctions,
+                                    positionEvents: of(element).pipe(
+                                        findPositionsFromEvents({
+                                            domFunctions,
+                                            tokenize: codeHost.codeViewsRequireTokenization !== false,
+                                        })
+                                    ),
+                                    resolveContext,
+                                    adjustPosition,
+                                })
+                            }
                         })
-                    ),
-                    resolveContext,
-                    adjustPosition,
-                })
+                    )
+                    .subscribe()
             )
+            codeViewEvent.subscriptions.add(() => hoverSubscription.unsubscribe())
 
             element.classList.add('sg-mounted')
 
