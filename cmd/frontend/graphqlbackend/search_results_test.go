@@ -584,5 +584,9 @@ func Test_longerTime(t *testing.T) {
 		if strings.Contains(dt2.String(), ".") {
 			t.Fatalf("longerTime(%v).String() = %q contains an unwanted decimal point, want a nice round duration", dt, dt2)
 		}
+		lowest := 2 * time.Second
+		if dt2 < lowest {
+			t.Fatalf("longerTime(%v) = %v < %s, too short", dt, dt2, lowest)
+		}
 	}
 }
