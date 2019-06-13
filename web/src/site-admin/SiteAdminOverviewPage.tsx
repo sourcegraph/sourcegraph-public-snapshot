@@ -12,7 +12,7 @@ import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { numberWithCommas, pluralize } from '../../../shared/src/util/strings'
 import { queryGraphQL } from '../backend/graphql'
-import { OverviewItem, OverviewList } from '../components/Overview'
+import { Collapsible } from '../components/Collapsible'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
@@ -103,7 +103,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
             setupPercentage = percentageDone(this.props.activation.completed)
         }
         return (
-            <div className="site-admin-overview-page pt-3">
+            <div className="site-admin-overview-page py-3">
                 <PageTitle title="Overview - Admin" />
                 <div className="mb-3">
                     <SiteAdminManagementConsolePassword />
@@ -116,78 +116,69 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                     </div>
                 )}
                 {!this.state.info && <LoadingSpinner className="icon-inline" />}
-                <OverviewList>
+                <div className="list-group">
                     {this.state.info && (
                         <>
                             {this.props.activation && this.props.activation.completed && (
-                                <OverviewItem
+                                <Collapsible
                                     title={`${setupPercentage < 100 ? 'Set up Sourcegraph' : 'Status'}`}
                                     defaultExpanded={setupPercentage < 100}
-                                    list={true}
+                                    className="list-group-item"
+                                    titleClassName="h5 mb-0 font-weight-normal"
                                 >
-                                    <div>
-                                        {this.props.activation.completed && (
-                                            <ActivationChecklist
-                                                history={this.props.history}
-                                                steps={this.props.activation.steps}
-                                                completed={this.props.activation.completed}
-                                            />
-                                        )}
-                                    </div>
-                                </OverviewItem>
+                                    {this.props.activation.completed && (
+                                        <ActivationChecklist
+                                            history={this.props.history}
+                                            steps={this.props.activation.steps}
+                                            completed={this.props.activation.completed}
+                                        />
+                                    )}
+                                </Collapsible>
                             )}
                             {this.state.info.repositories !== null && (
-                                <OverviewItem link="/explore" actions="Jump to explore page" title="Explore" />
-                            )}
-                            {this.state.info.repositories !== null && (
-                                <OverviewItem
-                                    link="/site-admin/repositories"
-                                    actions="View all repositories"
-                                    title={`${numberWithCommas(this.state.info.repositories)} ${pluralize(
-                                        'repository',
-                                        this.state.info.repositories,
-                                        'repositories'
-                                    )}`}
-                                />
+                                <Link
+                                    to="/site-admin/repositories"
+                                    className="list-group-item list-group-item-action h5 font-weight-normal"
+                                >
+                                    {numberWithCommas(this.state.info.repositories)}{' '}
+                                    {pluralize('repository', this.state.info.repositories, 'repositories')}
+                                </Link>
                             )}
                             {this.state.info.users > 1 && (
-                                <OverviewItem
-                                    link="/site-admin/users"
-                                    actions="View or create users"
-                                    title={`${numberWithCommas(this.state.info.users)} ${pluralize(
-                                        'user',
-                                        this.state.info.users
-                                    )}`}
-                                />
+                                <Link
+                                    to="/site-admin/users"
+                                    className="list-group-item list-group-item-action h5 font-weight-normal"
+                                >
+                                    {numberWithCommas(this.state.info.users)} {pluralize('user', this.state.info.users)}
+                                </Link>
                             )}
                             {this.state.info.orgs > 1 && (
-                                <OverviewItem
-                                    link="/site-admin/organizations"
-                                    actions="View or create organizations"
-                                    title={`${numberWithCommas(this.state.info.orgs)} ${pluralize(
-                                        'organization',
-                                        this.state.info.orgs
-                                    )}`}
-                                />
+                                <Link
+                                    to="/site-admin/organizations"
+                                    className="list-group-item list-group-item-action h5 font-weight-normal"
+                                >
+                                    {numberWithCommas(this.state.info.orgs)}{' '}
+                                    {pluralize('organization', this.state.info.orgs)}
+                                </Link>
                             )}
                             {this.state.info.users > 1 && (
-                                <OverviewItem
-                                    link="/site-admin/surveys"
-                                    actions="View all user surveys"
-                                    title={`${numberWithCommas(this.state.info.surveyResponses.totalCount)} ${pluralize(
-                                        'user survey response',
-                                        this.state.info.surveyResponses.totalCount
-                                    )}`}
-                                />
+                                <Link
+                                    to="/site-admin/surveys"
+                                    className="list-group-item list-group-item-action h5 font-weight-normal"
+                                >
+                                    {numberWithCommas(this.state.info.surveyResponses.totalCount)}{' '}
+                                    {pluralize('user survey response', this.state.info.surveyResponses.totalCount)}
+                                </Link>
                             )}
                             {this.state.info.users > 1 && this.state.stats && (
-                                <OverviewItem
+                                <Collapsible
                                     title={`${this.state.stats.waus[1].userCount} ${pluralize(
                                         'active user',
                                         this.state.stats.waus[1].userCount
                                     )} last week`}
                                     defaultExpanded={true}
-                                    list={true}
+                                    className="list-group-item"
+                                    titleClassName="h5 mb-0 font-weight-normal"
                                 >
                                     {this.state.error && (
                                         <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>
@@ -214,11 +205,11 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                             }
                                         />
                                     )}
-                                </OverviewItem>
+                                </Collapsible>
                             )}
                         </>
                     )}
-                </OverviewList>
+                </div>
             </div>
         )
     }
