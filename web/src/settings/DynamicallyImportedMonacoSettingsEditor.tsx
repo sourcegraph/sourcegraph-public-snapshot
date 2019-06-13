@@ -14,7 +14,7 @@ import { ThemeProps } from '../theme'
 const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 interface Props
-    extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema'>,
+    extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'language'>,
         ThemeProps {
     value: string
 
