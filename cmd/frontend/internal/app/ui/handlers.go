@@ -51,7 +51,7 @@ type Metadata struct {
 	// etc. e.g. "View this link in Sourcegraph Editor."
 	Description string
 
-	// ShowPreview toggles Twitter/Slack/OpenGraph/etc previews.
+	// ShowPreview controls whether or not OpenGraph/Twitter card/etc metadata is rendered.
 	ShowPreview bool
 }
 
@@ -63,7 +63,6 @@ type Common struct {
 	Title    string
 	Error    *pageError
 
-	ShowPreview                  bool
 	InjectSourcegraphTracker     bool
 	InjectGoogleAnalyticsTracker bool
 
