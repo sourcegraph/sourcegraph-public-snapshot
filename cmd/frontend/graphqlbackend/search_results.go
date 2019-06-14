@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"path"
 	"regexp"
 	"sort"
@@ -468,7 +469,7 @@ type queryLogItem struct {
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
-	srr, err := r.doResults(ctx, "")
+	rr, err := r.resultsWithTimeoutSuggestion(ctx)
 
 	// Log the query if not too many have piled up to be logged.
 	select {
@@ -476,7 +477,75 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 	default:
 	}
 
-	return srr, err
+	return rr, nil
+}
+
+// resultsWithTimeoutSuggestion calls doResults, and in case of deadline
+// exceeded returns a search alert with a did-you-mean link for the same
+// query with a longer timeout.
+func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*searchResultsResolver, error) {
+	start := time.Now()
+	rr, err := r.doResults(ctx, "")
+	if err != nil {
+		if err == context.DeadlineExceeded {
+			dt := time.Since(start)
+			dt2 := longer(2, dt)
+			rr = &searchResultsResolver{
+				alert: &searchAlert{
+					title:       "Timeout",
+					description: fmt.Sprintf("Deadline exceeded after about %s.", roundStr(dt.String())),
+					proposedQueries: []*searchQueryDescription{
+						{
+							description: "query with longer timeout",
+							query:       fmt.Sprintf("timeout:%v %s", dt2, omitQueryFields(r, query.FieldTimeout)),
+						},
+					},
+				},
+			}
+			return rr, nil
+		}
+		return nil, err
+	}
+	return rr, nil
+}
+
+// longer returns a suggested longer time to wait if the given duration wasn't long enough.
+func longer(N int, dt time.Duration) time.Duration {
+	dt2 := func() time.Duration {
+		Ndt := time.Duration(N) * dt
+		dceil := func(x float64) time.Duration {
+			return time.Duration(math.Ceil(x))
+		}
+		switch {
+		case math.Floor(Ndt.Hours()) > 0:
+			return dceil(Ndt.Hours()) * time.Hour
+		case math.Floor(Ndt.Minutes()) > 0:
+			return dceil(Ndt.Minutes()) * time.Minute
+		case math.Floor(Ndt.Seconds()) > 0:
+			return dceil(Ndt.Seconds()) * time.Second
+		default:
+			return 0
+		}
+	}()
+	lowest := 2 * time.Second
+	if dt2 < lowest {
+		return lowest
+	}
+	return dt2
+}
+
+var decimalRx = regexp.MustCompile(`\d+\.\d+`)
+
+// roundStr rounds the first number containing a decimal within a string
+func roundStr(s string) string {
+	return decimalRx.ReplaceAllStringFunc(s, func(ns string) string {
+		f, err := strconv.ParseFloat(ns, 64)
+		if err != nil {
+			return s
+		}
+		f = math.Round(f)
+		return fmt.Sprintf("%d", int(f))
+	})
 }
 
 type searchResultsStats struct {
