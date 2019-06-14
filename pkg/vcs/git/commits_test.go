@@ -124,7 +124,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 		repo := makeGitRepository(t, gitCommands...)
 		got, err := git.HasCommitAfter(ctx, repo, tc.after, tc.revspec)
 		if err != nil || got != tc.want {
-			t.Errorf("got %t hascommitsince, want %t", got, tc.want)
+			t.Errorf("got %t hascommitafter, want %t", got, tc.want)
 		}
 	}
 }

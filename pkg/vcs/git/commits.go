@@ -107,7 +107,7 @@ func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*C
 // HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 // contains a commit past a specified date.
 func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revspec string) (bool, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: HasCommitSince")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: HasCommitAfter")
 	span.SetTag("Date", date)
 	span.SetTag("RevSpec", revspec)
 	defer span.Finish()
