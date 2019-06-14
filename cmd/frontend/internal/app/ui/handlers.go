@@ -49,6 +49,9 @@ type Metadata struct {
 	// Description is the description of the page for Twitter cards, OpenGraph,
 	// etc. e.g. "View this link in Sourcegraph Editor."
 	Description string
+
+	// ShowPreview controls whether or not OpenGraph/Twitter card/etc metadata is rendered.
+	ShowPreview bool
 }
 
 type Common struct {
@@ -98,7 +101,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 	injectGoogleAnalyticsTracker := false
 	if envvar.SourcegraphDotComMode() {
 		injectTelligentTracker = true
-		if strings.TrimPrefix(r.URL.Path, "/") == routeWelcome {
+		if r.URL.Path == "/welcome" {
 			injectGoogleAnalyticsTracker = true
 		}
 	}
@@ -116,6 +119,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		Metadata: &Metadata{
 			Title:       "Sourcegraph",
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
+			ShowPreview: r.URL.Path == "/sign-in" && r.URL.RawQuery == "returnTo=%2F",
 		},
 
 		InjectSourcegraphTracker:     injectTelligentTracker,
