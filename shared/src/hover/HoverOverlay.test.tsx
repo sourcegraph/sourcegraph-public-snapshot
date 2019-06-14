@@ -117,6 +117,21 @@ describe('HoverOverlay', () => {
         ).toMatchSnapshot()
     })
 
+    test('actions, hover and alert present', () => {
+        expect(
+            renderShallow(
+                <HoverOverlay
+                    {...commonProps}
+                    actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
+                    hoverOrError={{
+                        contents: [{ kind: MarkupKind.Markdown, value: 'v' }],
+                        alerts: [{ type: 'a', content: 'b *c* `d`' }],
+                    }}
+                />
+            )
+        ).toMatchSnapshot()
+    })
+
     test('actions present, hover loading', () => {
         expect(
             renderShallow(

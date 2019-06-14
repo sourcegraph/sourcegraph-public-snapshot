@@ -95,3 +95,6 @@ export function registerNativeTooltipContributions(extensionsController: {
         },
     })
 }
+
+export const nativeTooltipsAlert = (codeHostName: string) =>
+    `Sourcegraph has hidden ${codeHostName}'s native hover tooltips. You can toggle this at any time: to enable the native tooltips run “Code host: prefer non-Sourcegraph hover tooltips” from the command palette or set \`"codeHost.useNativeTooltips": true\` in your user settings.`

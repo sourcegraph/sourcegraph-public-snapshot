@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { castArray, isEqual } from 'lodash'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
+import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
 import * as React from 'react'
 import { MarkupContent } from 'sourcegraph'
 import { ActionItem, ActionItemAction, ActionItemComponentProps } from '../actions/ActionItem'
@@ -22,7 +23,7 @@ const transformMouseEvent = (handler: (event: MouseEvent) => void) => (event: Re
 
 export type HoverContext = RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
 
-export type HoverData = HoverMerged
+export type HoverData = HoverMerged & HoverAlerts
 
 export interface HoverOverlayClassProps {
     /** An optional class name to apply to the outermost element of the HoverOverlay */
@@ -31,6 +32,28 @@ export interface HoverOverlayClassProps {
 
     actionItemClassName?: string
     actionItemPressedClassName?: string
+}
+
+/**
+ * A dismissable alert to be displayed in the hover overlay.
+ */
+export interface HoverAlert {
+    /**
+     * The type of the alert, eg. `'nativeTooltips'`
+     */
+    type: string
+    /**
+     * The content of the alert, will be rendered as Markdown.
+     */
+    content: string
+}
+
+/**
+ * One or more dismissable that should be displayed before the hover content.
+ * Alerts are only displayed in a non-empty hover.
+ */
+export interface HoverAlerts {
+    alerts?: HoverAlert[]
 }
 
 export interface HoverOverlayProps
@@ -43,6 +66,8 @@ export interface HoverOverlayProps
 
     /** Called when the close button is clicked */
     onCloseButtonClick?: (event: MouseEvent) => void
+    /** Called when an alert is dismissed, with the type of the dismissed alert. */
+    onAlertDismissed?: (alertType: string) => void
 }
 
 const isEmptyHover = ({
@@ -81,7 +106,9 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
             className = '',
             actionItemClassName,
             actionItemPressedClassName,
+            onAlertDismissed,
         } = this.props
+        const onAlertDismissedCallback = (alertType: string) => () => onAlertDismissed && onAlertDismissed(alertType)
 
         if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
             return null
@@ -170,6 +197,24 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
                             })
                     )}
                 </div>
+                {hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError) && hoverOrError.alerts && (
+                    <div className="hover-overlay__alerts">
+                        {hoverOrError.alerts.map(({ content, type }, i) => (
+                            <div
+                                className="hover-overlay__row hover-overlay__content alert-info"
+                                key={i}
+                                onClick={onAlertDismissedCallback(type)}
+                            >
+                                <HelpCircleIcon className="icon-inline" />
+                                &nbsp;
+                                <small
+                                    className="hover-overlay__alert-content"
+                                    dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+                                ></small>
+                            </div>
+                        ))}
+                    </div>
+                )}
                 {actionsOrError !== undefined &&
                     actionsOrError !== null &&
                     actionsOrError !== LOADING &&

@@ -268,11 +268,11 @@ const nativeTooltipResolver: ViewResolver<NativeTooltip> = {
 }
 
 export const githubCodeHost: CodeHost = {
-    name: 'github',
+    name: 'GitHub',
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     textFieldResolvers: [commentTextFieldResolver],
-    nativeTooltipResolvers: [nativeTooltipResolver],
+    nativeTooltipResolvers: checkIsGitHubDotCom() ? [nativeTooltipResolver] : undefined,
     getContext: () => {
         const header = document.querySelector('.repohead-details-container')
         const repoHeaderHasPrivateMarker = !!(header && header.querySelector('.private'))

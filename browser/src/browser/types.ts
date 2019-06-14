@@ -59,6 +59,9 @@ export interface StorageItems {
      */
     clientSettings: string
     sideloadedExtensionURL: string | null
+    dismissedHoverAlerts: {
+        [alertType: string]: boolean
+    }
 }
 
 interface ClientConfigurationDetails {
@@ -86,6 +89,7 @@ export const defaultStorageItems: StorageItems = {
     },
     clientSettings: '',
     sideloadedExtensionURL: null,
+    dismissedHoverAlerts: {},
 }
 
 /**

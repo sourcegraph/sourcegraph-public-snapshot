@@ -10,7 +10,17 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import * as React from 'react'
 import { render as reactDOMRender } from 'react-dom'
-import { animationFrameScheduler, EMPTY, from, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
+import {
+    animationFrameScheduler,
+    combineLatest,
+    EMPTY,
+    from,
+    Observable,
+    of,
+    Subject,
+    Subscription,
+    Unsubscribable,
+} from 'rxjs'
 import {
     catchError,
     concatAll,
@@ -29,7 +39,6 @@ import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { PartialCodeEditor } from '../../../../shared/src/api/client/context/context'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
 import { CodeEditorData } from '../../../../shared/src/api/client/services/editorService'
-import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
@@ -39,7 +48,12 @@ import { ApplyLinkPreviewOptions } from '../../../../shared/src/components/linkP
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '../../../../shared/src/hover/actions'
-import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '../../../../shared/src/hover/HoverOverlay'
+import {
+    HoverContext,
+    HoverData,
+    HoverOverlay,
+    HoverOverlayClassProps,
+} from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
@@ -71,6 +85,7 @@ import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
+import { getActiveHoverAlerts, onHoverAlertDismissed } from './hover_alerts'
 import {
     handleNativeTooltips,
     NativeTooltip,
@@ -281,7 +296,7 @@ export function initCodeIntelligence({
 }: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
     render: typeof reactDOMRender
 }): {
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverData, ActionItemAction>
     subscription: Unsubscribable
 } {
     const subscription = new Subscription()
@@ -305,23 +320,27 @@ export function initCodeIntelligence({
     )
 
     // Code views come and go, but there is always a single hoverifier on the page
-    const hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>(
-        {
-            closeButtonClicks,
-            hoverOverlayElements,
-            hoverOverlayRerenders: containerComponentUpdates.pipe(
-                withLatestFrom(hoverOverlayElements),
-                map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
-                filter(propertyIsDefined('hoverOverlayElement'))
+    const hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverData, ActionItemAction>({
+        closeButtonClicks,
+        hoverOverlayElements,
+        hoverOverlayRerenders: containerComponentUpdates.pipe(
+            withLatestFrom(hoverOverlayElements),
+            map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
+            filter(propertyIsDefined('hoverOverlayElement'))
+        ),
+        getHover: ({ line, character, part, ...rest }) =>
+            combineLatest([
+                getHover({ ...rest, position: { line, character } }),
+                getActiveHoverAlerts(codeHost.name),
+            ]).pipe(
+                map(([hoverMerged, alerts]): HoverData | null => (hoverMerged ? { ...hoverMerged, alerts } : null))
             ),
-            getHover: ({ line, character, part, ...rest }) => getHover({ ...rest, position: { line, character } }),
-            getActions: context => getHoverActions({ extensionsController, platformContext }, context),
-            pinningEnabled: true,
-            tokenize: codeHost.codeViewsRequireTokenization,
-        }
-    )
+        getActions: context => getHoverActions({ extensionsController, platformContext }, context),
+        pinningEnabled: true,
+        tokenize: codeHost.codeViewsRequireTokenization,
+    })
 
-    class HoverOverlayContainer extends React.Component<{}, HoverState<HoverContext, HoverMerged, ActionItemAction>> {
+    class HoverOverlayContainer extends React.Component<{}, HoverState<HoverContext, HoverData, ActionItemAction>> {
         private subscription = new Subscription()
         constructor(props: {}) {
             super(props)
@@ -353,10 +372,11 @@ export function initCodeIntelligence({
                     platformContext={platformContext}
                     location={H.createLocation(window.location)}
                     onCloseButtonClick={nextCloseButtonClick}
+                    onAlertDismissed={onHoverAlertDismissed}
                 />
             ) : null
         }
-        private getHoverOverlayProps(): HoverState<HoverContext, HoverMerged, ActionItemAction>['hoverOverlayProps'] {
+        private getHoverOverlayProps(): HoverState<HoverContext, HoverData, ActionItemAction>['hoverOverlayProps'] {
             if (!this.state.hoverOverlayProps) {
                 return undefined
             }
