@@ -189,7 +189,8 @@ export const checkIsBitbucket = (): boolean =>
     !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
 
 export const bitbucketServerCodeHost: CodeHost = {
-    name: 'bitbucket-server',
+    type: 'bitbucket-server',
+    name: 'Bitbucket Server',
     check: checkIsBitbucket,
     codeViewResolvers: [codeViewResolver],
     getCommandPaletteMount,

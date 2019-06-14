@@ -268,7 +268,8 @@ const nativeTooltipResolver: ViewResolver<NativeTooltip> = {
 }
 
 export const githubCodeHost: CodeHost = {
-    name: 'GitHub',
+    type: 'github',
+    name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     textFieldResolvers: [commentTextFieldResolver],

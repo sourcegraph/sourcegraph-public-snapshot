@@ -4,7 +4,7 @@ import { HoverAlert } from '../../../../shared/src/hover/HoverOverlay'
 import { observeStorageKey, storage } from '../../browser/storage'
 import { nativeTooltipsAlert } from './native_tooltips'
 
-const getAllHoverAlerts = (codeHostName: string): HoverAlert[] => [
+const getAllHoverAlerts = (codeHostName?: string): HoverAlert[] => [
     { type: 'nativeTooltips', content: nativeTooltipsAlert(codeHostName) },
 ]
 
@@ -12,7 +12,7 @@ const getAllHoverAlerts = (codeHostName: string): HoverAlert[] => [
  * Returns an Osbervable of all hover alerts that have not yet
  * been dismissed by the user.
  */
-export function getActiveHoverAlerts(codeHostName: string): Observable<HoverAlert[]> {
+export function getActiveHoverAlerts(codeHostName?: string): Observable<HoverAlert[]> {
     const allAlerts = getAllHoverAlerts(codeHostName)
     return observeStorageKey('sync', 'dismissedHoverAlerts').pipe(
         map(dismissedAlerts => (dismissedAlerts ? allAlerts.filter(({ type }) => !dismissedAlerts[type]) : allAlerts))

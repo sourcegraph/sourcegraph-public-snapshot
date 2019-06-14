@@ -205,6 +205,12 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
                                 key={i}
                                 onClick={onAlertDismissedCallback(type)}
                             >
+                                <button
+                                    className={classNames('hover-overlay__close-button')}
+                                    onClick={onAlertDismissedCallback(type)}
+                                >
+                                    <CloseIcon className="icon-inline" />
+                                </button>
                                 <HelpCircleIcon className="icon-inline" />
                                 &nbsp;
                                 <small

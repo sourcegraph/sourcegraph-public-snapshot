@@ -120,10 +120,18 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
  */
 export type CodeHostContext = RepoSpec & Partial<RevSpec> & { privateRepository: boolean }
 
+type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'gitlab'
+
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {
     /**
-     * The name of the code host. This will be added as a className to the overlay mount.
+     * The type of the code host. This will be added as a className to the overlay mount.
+     * Use {@link CodeHost#name} if you need a human-readable name for the code host to display in the UI.
+     */
+    type: CodeHostType
+
+    /**
+     * A human-readable name for the code host, to be displayed in the UI.
      */
     name: string
 
@@ -391,7 +399,7 @@ export function initCodeIntelligence({
 
     // This renders to document.body, which we can assume is never removed,
     // so we don't need to subscribe to mutations.
-    const overlayMount = createOverlayMount(codeHost.name)
+    const overlayMount = createOverlayMount(codeHost.type)
     render(<HoverOverlayContainer />, overlayMount)
 
     return { hoverifier, subscription }

@@ -174,7 +174,8 @@ export const phabricatorCodeHost: CodeHost = {
         diffusionSourceCodeViewResolver,
         phabSourceCodeViewResolver,
     ],
-    name: 'phabricator',
+    type: 'phabricator',
+    name: 'Phabricator',
     check: checkIsPhabricator,
 
     // TODO: handle parsing selected line number from Phabricator href,
