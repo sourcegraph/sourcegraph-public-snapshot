@@ -54,7 +54,7 @@ func TestRepository_GetCommit(t *testing.T) {
 	}
 }
 
-func TestRepository_HasCommitSince(t *testing.T) {
+func TestRepository_HasCommitAfter(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
@@ -122,9 +122,9 @@ func TestRepository_HasCommitSince(t *testing.T) {
 		}
 
 		repo := makeGitRepository(t, gitCommands...)
-		got, err := git.HasCommitSince(ctx, repo, tc.after, tc.revspec)
+		got, err := git.HasCommitAfter(ctx, repo, tc.after, tc.revspec)
 		if err != nil || got != tc.want {
-			t.Errorf("got %t hascommitsince, want %t", got, tc.want)
+			t.Errorf("got %t hascommitafter, want %t", got, tc.want)
 		}
 	}
 }
