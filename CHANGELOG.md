@@ -13,6 +13,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Indexed search now supports matching consecutive literal newlines, with queries like e.g. `foo\nbar.*` to search over multiple lines. [#4138](https://github.com/sourcegraph/sourcegraph/issues/4138)
 - The `orgs` setting in [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github) allows admins to select all repositories from the specified organizations to be synced.
 - A new experimental search filter `repohascommitafter:"30 days ago"` allows users to exclude stale repositories that don't contain commits (to the branch being searched over) past a specified date from their search query.
 - The `authorization` setting in the [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#permissions) enables Sourcegraph to enforce the repository permissions defined in Bitbucket Server.
@@ -26,7 +27,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Indexed search results containing newlines are now displayed correctly. [#4138](https://github.com/sourcegraph/sourcegraph/issues/4138)
 - Fixed repository search patterns which contain `.*`. Previously our optimizer would ignore `.*`, which in some cases would lead to our repository search excluding some repositories from the results.
 - Fixed an issue where the Phabricator native integration would be broken on recent Phabricator versions. This fix depends on v1.2 of the [Phabricator extension](https://github.com/sourcegraph/phabricator-extension).
 - Fixed an issue where the "Empty repository" banner would be shown on a repository page when starting to clone a repository.
