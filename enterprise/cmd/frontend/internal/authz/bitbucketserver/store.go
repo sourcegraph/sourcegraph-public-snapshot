@@ -17,9 +17,9 @@ import (
 
 // A store of Permissions with in-memory caching, safe for concurrent use.
 //
-// We use Postgres as a persistent cache with ACID guarantees for concurrency
-// control of cache filling events on expiration of entries in order to avoid
-// a thundering herd against the upstream code host when a single Sourcegraph
+// We use Postgres as a persistent cache with ACID guarantees and row-level locking
+// for concurrency control of cache filling events on expiration of entries in order
+// to avoid a thundering herd against the upstream code host when a single Sourcegraph
 // user (bot or not) is performing many concurrent requests.
 //
 // The second in-memory read-through layer avoids the round-trip and serialization
@@ -41,10 +41,10 @@ func newStore(db dbutil.DB, ttl time.Duration, clock func() time.Time, cache *ca
 	}
 }
 
-// Permissions of an external account to perform an action on the
-// given bit set of object IDs of the defined type.
+// Permissions of a user to perform an action on the
+// given set of object IDs of the defined type.
 type Permissions struct {
-	AccountID int32
+	UserID    int32
 	Perm      authz.Perm
 	Type      string
 	IDs       *roaring.Bitmap
@@ -81,9 +81,9 @@ func (s *store) LoadPermissions(
 	ps := *p
 
 	stored := &Permissions{
-		AccountID: ps.AccountID,
-		Perm:      ps.Perm,
-		Type:      ps.Type,
+		UserID: ps.UserID,
+		Perm:   ps.Perm,
+		Type:   ps.Type,
 	}
 
 	now := s.clock()
@@ -142,7 +142,7 @@ func (s *store) load(ctx context.Context, p *Permissions) error {
 func (s *store) loadQuery(p *Permissions) *sqlf.Query {
 	return sqlf.Sprintf(
 		loadQueryFmtStr,
-		p.AccountID,
+		p.UserID,
 		p.Perm,
 		p.Type,
 	)
@@ -150,9 +150,9 @@ func (s *store) loadQuery(p *Permissions) *sqlf.Query {
 
 const loadQueryFmtStr = `
 -- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:postgresStore.LoadPermissions
-SELECT object_ids, updated_at
-FROM external_permissions
-WHERE account_id = %s AND permission = %s AND object_type = %s
+SELECT %s object_ids, updated_at
+FROM user_permissions
+WHERE user_id = %s AND permission = %s AND object_type = %s
 `
 
 func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uint32, error)) (err error) {
@@ -247,7 +247,7 @@ func (s *store) upsertQuery(p *Permissions) (*sqlf.Query, error) {
 
 	return sqlf.Sprintf(
 		upsertQueryFmtStr,
-		p.AccountID,
+		p.UserID,
 		p.Perm,
 		p.Type,
 		ids,
@@ -256,13 +256,13 @@ func (s *store) upsertQuery(p *Permissions) (*sqlf.Query, error) {
 }
 
 const upsertQueryFmtStr = `
--- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:postgresStore.UpsertPermissions
-INSERT INTO external_permissions
-  (account_id, permission, object_type, object_ids, updated_at)
+-- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.upsert
+INSERT INTO user_permissions
+  (user_id, permission, object_type, object_ids, updated_at)
 VALUES
   (%s, %s, %s, %s, %s)
 ON CONFLICT ON CONSTRAINT
-  external_permissions_account_perm_object_unique
+  user_permissions_perm_object_unique
 DO UPDATE SET
   object_ids = excluded.object_ids,
   updated_at = excluded.updated_at
@@ -285,9 +285,9 @@ func newCache(ttl time.Duration, clock func() time.Time) *cache {
 }
 
 type cacheKey struct {
-	AccountID int32
-	Perm      authz.Perm
-	Type      string
+	UserID int32
+	Perm   authz.Perm
+	Type   string
 }
 
 // load sets the given Permissions pointer with a matching cached
@@ -325,8 +325,8 @@ func newCacheKey(p *Permissions) cacheKey {
 	}
 
 	return cacheKey{
-		AccountID: p.AccountID,
-		Perm:      p.Perm,
-		Type:      p.Type,
+		UserID: p.UserID,
+		Perm:   p.Perm,
+		Type:   p.Type,
 	}
 }

@@ -221,8 +221,8 @@
 // 1528395578_.up.sql (714B)
 // 1528395579_.down.sql (35B)
 // 1528395579_.up.sql (175B)
-// 1528395580_create_external_permissions_table.down.sql (60B)
-// 1528395580_create_external_permissions_table.up.sql (393B)
+// 1528395580_create_user_permissions_table.down.sql (60B)
+// 1528395580_create_user_permissions_table.up.sql (353B)
 
 package migrations
 
@@ -4711,43 +4711,43 @@ func _1528395579_UpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395580_create_external_permissions_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xf5\x50\x5e\xda\x3c\x00\x00\x00")
+var __1528395580_create_user_permissions_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xf5\x50\x5e\xda\x3c\x00\x00\x00")
 
-func _1528395580_create_external_permissions_tableDownSqlBytes() ([]byte, error) {
+func _1528395580_create_user_permissions_tableDownSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395580_create_external_permissions_tableDownSql,
-		"1528395580_create_external_permissions_table.down.sql",
+		__1528395580_create_user_permissions_tableDownSql,
+		"1528395580_create_user_permissions_table.down.sql",
 	)
 }
 
-func _1528395580_create_external_permissions_tableDownSql() (*asset, error) {
-	bytes, err := _1528395580_create_external_permissions_tableDownSqlBytes()
+func _1528395580_create_user_permissions_tableDownSql() (*asset, error) {
+	bytes, err := _1528395580_create_user_permissions_tableDownSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395580_create_external_permissions_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	info := bindataFileInfo{name: "1528395580_create_user_permissions_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xcf, 0x36, 0x8e, 0xa3, 0xbe, 0x64, 0xdf, 0xf4, 0x23, 0x8, 0x41, 0xf5, 0x81, 0x85, 0xe5, 0xe4, 0x1a, 0xa9, 0xe2, 0x6b, 0xe6, 0x1b, 0x1d, 0x9e, 0x3f, 0x4b, 0x52, 0x8, 0xf6, 0xa, 0xeb, 0x4c}}
 	return a, nil
 }
 
-var __1528395580_create_external_permissions_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x90\xcd\x6a\xc3\x30\x10\x84\xef\x7a\x8a\x39\x3a\xe0\x37\xf0\xc9\x71\xb6\xc5\xe0\xc8\xd4\x91\xcf\x42\xb1\x97\xa2\x52\xff\xd4\x5a\x41\xd2\xa7\x2f\x29\xa9\x93\x42\x9b\xab\x66\xf4\x31\xdf\x6e\xe9\xb9\xd4\x99\x52\x45\x43\xb9\x21\x98\x7c\x5b\x11\xf8\x24\xbc\x8c\xee\xdd\xce\xbc\x0c\x3e\x04\x3f\x8d\x01\x89\x02\x5c\xd7\x4d\x71\x14\xeb\x7b\xc0\x8f\xc2\xaf\xbc\x40\xd7\x06\xba\xad\x2a\x34\xf4\x44\x0d\xe9\x82\x0e\x88\x81\x17\xbb\x52\xae\xbf\x02\x12\xdf\x6f\x52\x05\xdc\xb0\x80\xf0\x49\x56\xc6\x25\x9c\x8e\x6f\xdc\x89\x95\xf3\xcc\xff\x86\xbe\x0f\xc0\xf1\x2c\xec\x7e\xa5\x71\xee\x9d\x70\x6f\x9d\x00\xe2\x07\x0e\xe2\x86\x59\x3e\xd7\x8e\xda\x64\x4a\xe5\x95\xa1\xe6\x81\xa8\xca\x77\x3b\x14\xb5\x3e\x98\x26\x2f\xb5\xf9\xb3\xf3\xa3\xf4\xfd\x66\xaf\xa3\xe2\xe8\x3f\x22\xab\x56\x97\x2f\x2d\x21\xb9\xdd\x2a\xbd\x13\x4e\xef\xfd\x2e\x73\x8a\x7a\xbf\x2f\x4d\xa6\xbe\x02\x00\x00\xff\xff\x34\x78\x47\xce\x89\x01\x00\x00")
+var __1528395580_create_user_permissions_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x90\x4d\x6a\xc3\x40\x0c\x85\xf7\x3a\xc5\x5b\x3a\xe0\x1b\x78\x35\x71\xd4\x62\x70\xc6\x74\x32\x5e\x1b\xa7\x23\xca\x14\xec\xb8\x1e\x19\x9a\x9e\xbe\x38\x0d\x69\x4a\x89\x56\x42\xdf\xd3\xcf\xd3\x96\x9f\x2b\x5b\x10\x95\x8e\x8d\x67\x78\xb3\xad\x19\x4b\x92\xb9\x9b\x64\x1e\x62\x4a\xf1\x34\x26\x64\x84\x9f\x62\x0c\x58\x23\x8e\x2a\x6f\x32\xc3\x36\x1e\xb6\xad\x6b\x38\x7e\x62\xc7\xb6\xe4\xc3\x45\x97\x90\xc5\xb0\xc9\x09\xf8\x9d\x02\xa8\x7c\xea\xad\x65\x85\xa7\xe3\xbb\xbc\x6a\xa7\xe7\x49\x1e\xc2\x18\x12\x70\x3c\xab\xf4\x7f\xe8\x32\x85\x5e\x25\x74\xbd\x02\x1a\x07\x49\xda\x0f\x93\x7e\xdd\x34\xb4\x29\x88\x4c\xed\xd9\x3d\xf0\x44\x66\xb7\x43\xd9\xd8\x83\x77\xa6\xb2\xfe\x1f\xbf\xe4\xdd\xf5\x88\x65\x8c\x1f\x8b\x50\x6b\xab\x97\x96\x91\x5d\x5f\x91\xdf\xb9\xcb\xef\xcd\xac\xbb\xcb\x66\xbf\xaf\x7c\x41\xdf\x01\x00\x00\xff\xff\x12\xcd\x08\x75\x61\x01\x00\x00")
 
-func _1528395580_create_external_permissions_tableUpSqlBytes() ([]byte, error) {
+func _1528395580_create_user_permissions_tableUpSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395580_create_external_permissions_tableUpSql,
-		"1528395580_create_external_permissions_table.up.sql",
+		__1528395580_create_user_permissions_tableUpSql,
+		"1528395580_create_user_permissions_table.up.sql",
 	)
 }
 
-func _1528395580_create_external_permissions_tableUpSql() (*asset, error) {
-	bytes, err := _1528395580_create_external_permissions_tableUpSqlBytes()
+func _1528395580_create_user_permissions_tableUpSql() (*asset, error) {
+	bytes, err := _1528395580_create_user_permissions_tableUpSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395580_create_external_permissions_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x51, 0x2b, 0xaf, 0x58, 0x22, 0x45, 0xdd, 0x99, 0xd9, 0xc6, 0x17, 0xe6, 0xb2, 0xfc, 0xdc, 0x36, 0xf8, 0x79, 0xfe, 0xe4, 0x55, 0x60, 0xf0, 0x4, 0x21, 0xb7, 0x99, 0x95, 0x30, 0xbd, 0xae, 0xfe}}
+	info := bindataFileInfo{name: "1528395580_create_user_permissions_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x80, 0x58, 0xe7, 0x2, 0xe6, 0x42, 0xac, 0x6c, 0x56, 0x8a, 0xaa, 0x3d, 0xe7, 0x72, 0x7d, 0xa5, 0x70, 0xee, 0xfa, 0xcf, 0x82, 0x8b, 0xb4, 0xbd, 0x55, 0x30, 0x13, 0x82, 0x27, 0x3b, 0x5c, 0x85}}
 	return a, nil
 }
 
@@ -5284,9 +5284,9 @@ var _bindata = map[string]func() (*asset, error){
 
 	"1528395579_.up.sql": _1528395579_UpSql,
 
-	"1528395580_create_external_permissions_table.down.sql": _1528395580_create_external_permissions_tableDownSql,
+	"1528395580_create_user_permissions_table.down.sql": _1528395580_create_user_permissions_tableDownSql,
 
-	"1528395580_create_external_permissions_table.up.sql": _1528395580_create_external_permissions_tableUpSql,
+	"1528395580_create_user_permissions_table.up.sql": _1528395580_create_user_permissions_tableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5551,8 +5551,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395578_.up.sql":                                          {_1528395578_UpSql, map[string]*bintree{}},
 	"1528395579_.down.sql":                                        {_1528395579_DownSql, map[string]*bintree{}},
 	"1528395579_.up.sql":                                          {_1528395579_UpSql, map[string]*bintree{}},
-	"1528395580_create_external_permissions_table.down.sql":       {_1528395580_create_external_permissions_tableDownSql, map[string]*bintree{}},
-	"1528395580_create_external_permissions_table.up.sql":         {_1528395580_create_external_permissions_tableUpSql, map[string]*bintree{}},
+	"1528395580_create_user_permissions_table.down.sql":           {_1528395580_create_user_permissions_tableDownSql, map[string]*bintree{}},
+	"1528395580_create_user_permissions_table.up.sql":             {_1528395580_create_user_permissions_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

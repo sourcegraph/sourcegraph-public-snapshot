@@ -73,16 +73,18 @@ func (p *Provider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mi
 // the authenticated user has permissions to read.
 func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
 	var (
-		user   bitbucketserver.User
-		acctID int32
+		userName string
+		userID   int32
 	)
 
-	if acct != nil && acct.ServiceID == p.codeHost.ServiceID &&
-		acct.ServiceType == p.codeHost.ServiceType {
-		acctID = acct.ID
+	if acct != nil && acct.ServiceID == p.codeHost.ServiceID && acct.ServiceType == p.codeHost.ServiceType {
+		var user bitbucketserver.User
 		if err := json.Unmarshal(*acct.AccountData, &user); err != nil {
 			return nil, err
 		}
+
+		userID = acct.UserID
+		userName = user.Name
 	}
 
 	ids := make(map[int]authz.Repo, len(repos))
@@ -93,7 +95,7 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 	}
 
 	update := func() ([]uint32, error) {
-		visible, err := p.repos(ctx, user.Name)
+		visible, err := p.repos(ctx, userName)
 		if err != nil && err != errNoResults {
 			return nil, err
 		}
@@ -109,9 +111,9 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 	}
 
 	ps := &Permissions{
-		AccountID: acctID,
-		Perm:      authz.Read,
-		Type:      "repos",
+		UserID: userID,
+		Perm:   authz.Read,
+		Type:   "repos",
 	}
 
 	err := p.store.LoadPermissions(ctx, &ps, update)
