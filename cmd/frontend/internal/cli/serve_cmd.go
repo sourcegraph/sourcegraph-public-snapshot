@@ -150,7 +150,7 @@ func Main() error {
 
 	goroutine.Go(func() { bg.MigrateAllSettingsMOTDToNotices(context.Background()) })
 	goroutine.Go(func() { bg.MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(context.Background()) })
-	goroutine.Go(func() { bg.LogQueries(context.Background()) })
+	goroutine.Go(func() { bg.LogSearchQueries(context.Background()) })
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
 	if hooks.AfterDBInit != nil {

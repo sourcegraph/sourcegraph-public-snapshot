@@ -14,7 +14,7 @@ type QueryLogItem struct {
 }
 
 // LogQueries pulls queries from QueryLogChan and logs them to the recent_searches table in the db.
-func LogQueries(ctx context.Context) {
+func LogSearchQueries(ctx context.Context) {
 	rs := &db.RecentSearches{}
 	for {
 		q := <-QueryLogChan
