@@ -32,7 +32,6 @@ import {
     observeOn,
     switchMap,
     take,
-    tap,
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'

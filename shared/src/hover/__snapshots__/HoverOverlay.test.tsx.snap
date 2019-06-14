@@ -368,22 +368,35 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
     className="hover-overlay__alerts"
   >
     <div
-      className="hover-overlay__row hover-overlay__content alert-info"
-      onClick={[Function]}
+      className="hover-overlay__row hover-overlay__alert alert-info"
     >
-      <Memo(HelpCircleIcon)
-        className="icon-inline"
-      />
-       
-      <small
-        className="hover-overlay__alert-content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>b <em>c</em> <code>d</code></p>
+      <div
+        className="hover-overlay__alert-logo"
+      >
+        <Memo(HelpCircleIcon)
+          className="icon-inline"
+        />
+      </div>
+      <div
+        className="hover-ovlerlay__alert-content"
+      >
+        <small
+          dangerouslySetInnerHTML={
+            Object {
+              "__html": "<p>b <em>c</em> <code>d</code></p>
 ",
+            }
           }
-        }
-      />
+        />
+      </div>
+      <button
+        className="hover-overlay__alert-close-button"
+        onClick={[Function]}
+      >
+        <Memo(CloseIcon)
+          className="icon-inline"
+        />
+      </button>
     </div>
   </div>
   <div

@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash'
 import { from, Observable, Unsubscribable } from 'rxjs'
-import { distinctUntilChanged, filter, map, publishReplay, refCount, tap } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map, publishReplay, refCount } from 'rxjs/operators'
 import { parseTemplate } from '../../../../shared/src/api/client/context/expr/evaluator'
 import { Services } from '../../../../shared/src/api/client/services'
 import { PlatformContext } from '../../../../shared/src/platform/context'

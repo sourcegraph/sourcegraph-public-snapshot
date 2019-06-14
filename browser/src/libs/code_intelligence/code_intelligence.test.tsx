@@ -167,6 +167,7 @@ describe('code_intelligence', () => {
                     mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                     codeHost: {
                         type: 'github',
+                        name: 'GitHub',
                         check: () => true,
                         codeViewResolvers: [],
                     },
@@ -193,6 +194,7 @@ describe('code_intelligence', () => {
                     mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                     codeHost: {
                         type: 'github',
+                        name: 'GitHub',
                         check: () => true,
                         getCommandPaletteMount: () => commandPaletteMount,
                         codeViewResolvers: [],
@@ -216,6 +218,7 @@ describe('code_intelligence', () => {
                     mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                     codeHost: {
                         type: 'github',
+                        name: 'GitHub',
                         check: () => true,
                         codeViewResolvers: [],
                     },
@@ -249,6 +252,7 @@ describe('code_intelligence', () => {
                     mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                     codeHost: {
                         type: 'github',
+                        name: 'GitHub',
                         check: () => true,
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
@@ -317,6 +321,7 @@ describe('code_intelligence', () => {
                         mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                         codeHost: {
                             type: 'github',
+                            name: 'GitHub',
                             check: () => true,
                             codeViewResolvers: [
                                 toCodeViewResolver('#code', {
@@ -419,6 +424,7 @@ describe('code_intelligence', () => {
                         mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                         codeHost: {
                             type: 'github',
+                            name: 'GitHub',
                             check: () => true,
                             codeViewResolvers: [
                                 toCodeViewResolver('#code', {
@@ -563,6 +569,7 @@ describe('code_intelligence', () => {
                     mutations,
                     codeHost: {
                         type: 'github',
+                        name: 'GitHub',
                         check: () => true,
                         codeViewResolvers: [
                             toCodeViewResolver('.code', {
