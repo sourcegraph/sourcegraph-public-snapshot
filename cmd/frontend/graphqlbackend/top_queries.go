@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 
 	"github.com/pkg/errors"

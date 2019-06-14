@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"math"
 	"path"
 	"regexp"
@@ -13,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"

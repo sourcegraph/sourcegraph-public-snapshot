@@ -4,6 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -24,12 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"math"
-	"regexp"
-	"sort"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 // This file contains the root resolver for search. It currently has a lot of
