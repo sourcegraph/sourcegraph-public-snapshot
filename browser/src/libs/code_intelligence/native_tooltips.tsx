@@ -49,7 +49,7 @@ export function nativeTooltipsEnabledFromSettings(settings: PlatformContext['set
         filter(isDefined),
         filter((s: Settings | ErrorLike): s is Settings => !isErrorLike(s)),
         map(s => !!s['codeHost.useNativeTooltips']),
-        distinctUntilChanged(isEqual),
+        distinctUntilChanged((a, b) => isEqual(a, b)),
         publishReplay(1),
         refCount()
     )
