@@ -79,7 +79,6 @@ func (s *store) LoadPermissions(
 	}
 
 	ps := *p
-
 	stored := &Permissions{
 		UserID: ps.UserID,
 		Perm:   ps.Perm,
@@ -87,9 +86,8 @@ func (s *store) LoadPermissions(
 	}
 
 	now := s.clock()
-
 	for {
-		if err = s.load(ctx, stored); err != nil {
+		if err = s.load(ctx, stored, false); err != nil {
 			return err
 		}
 
@@ -97,22 +95,23 @@ func (s *store) LoadPermissions(
 			break
 		}
 
-		// TODO: Avoid loading the permissions again when
-		// the update succeeds.
 		if err = s.update(ctx, stored, update); err != nil {
 			return err
+		}
+
+		if now.Before(stored.UpdatedAt.Add(s.ttl)) {
+			break
 		}
 	}
 
 	s.cache.update(stored)
-
 	*p = stored
 
 	return nil
 }
 
-func (s *store) load(ctx context.Context, p *Permissions) error {
-	q := s.loadQuery(p)
+func (s *store) load(ctx context.Context, p *Permissions, update bool) error {
+	q := s.loadQuery(p, update)
 
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -139,9 +138,16 @@ func (s *store) load(ctx context.Context, p *Permissions) error {
 	return p.IDs.UnmarshalBinary(ids)
 }
 
-func (s *store) loadQuery(p *Permissions) *sqlf.Query {
+func (s *store) loadQuery(p *Permissions, update bool) *sqlf.Query {
+	var lock string
+	if update {
+		lock = " UPDATE" // Exclusive write lock (one writer)
+	} else {
+		lock = " SHARE" // Shared read lock (many readers)
+	}
+
 	return sqlf.Sprintf(
-		loadQueryFmtStr,
+		loadQueryFmtStr+lock,
 		p.UserID,
 		p.Perm,
 		p.Type,
@@ -149,10 +155,11 @@ func (s *store) loadQuery(p *Permissions) *sqlf.Query {
 }
 
 const loadQueryFmtStr = `
--- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:postgresStore.LoadPermissions
-SELECT %s object_ids, updated_at
+-- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.load
+SELECT object_ids, updated_at
 FROM user_permissions
 WHERE user_id = %s AND permission = %s AND object_type = %s
+FOR
 `
 
 func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uint32, error)) (err error) {
@@ -162,7 +169,7 @@ func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uin
 	}
 
 	defer func() {
-		if isSerializationError(err) {
+		if isTransactionError(err) {
 			err = nil
 		}
 
@@ -173,7 +180,7 @@ func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uin
 
 	txs := store{db: tx}
 
-	if err = txs.load(ctx, p); err != nil {
+	if err = txs.load(ctx, p, true); err != nil {
 		return err
 	}
 
@@ -198,7 +205,7 @@ func (s *store) tx(ctx context.Context) (*sql.Tx, error) {
 	case *sql.Tx:
 		return t, nil
 	case *sql.DB:
-		return t.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
+		return t.BeginTx(ctx, nil)
 	default:
 		panic("can't open transaction with unknown implementation of dbutil.DB")
 	}
@@ -218,7 +225,7 @@ func (s *store) upsert(ctx context.Context, p *Permissions) error {
 	return rows.Close()
 }
 
-func isSerializationError(err error) bool {
+func isTransactionError(err error) bool {
 	switch e := errors.Cause(err).(type) {
 	case *pq.Error:
 		switch e.Code.Class() {
