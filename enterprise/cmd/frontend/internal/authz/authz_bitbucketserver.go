@@ -55,7 +55,7 @@ func bitbucketServerProvider(
 
 	errs := new(multierror.Error)
 
-	_, err := parseTTL(a.Ttl)
+	ttl, err := parseTTL(a.Ttl)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
@@ -68,11 +68,6 @@ func bitbucketServerProvider(
 	cli := bitbucketserver.NewClient(baseURL, nil)
 	if err = cli.SetOAuth(a.Oauth.ConsumerKey, a.Oauth.SigningKey); err != nil {
 		errs = multierror.Append(errs, errors.Wrap(err, "authorization.oauth.signingKey"))
-	}
-
-	ttl, err := parseTTL(a.Ttl)
-	if err != nil {
-		errs = multierror.Append(errs, err)
 	}
 
 	var p authz.Provider
