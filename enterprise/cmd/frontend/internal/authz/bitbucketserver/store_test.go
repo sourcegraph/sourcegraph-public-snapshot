@@ -13,7 +13,80 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
 )
+
+func BenchmarkStore(b *testing.B) {
+	b.StopTimer()
+	b.ResetTimer()
+
+	db, cleanup := dbtest.NewDB(b, *dsn)
+	defer cleanup()
+
+	clock := func() time.Time { return time.Now().UTC() }
+	ids := make([]uint32, 30000)
+	for i := range ids {
+		ids[i] = uint32(i)
+	}
+
+	update := func() ([]uint32, error) {
+		time.Sleep(2 * time.Second) // Emulate slow code host
+		return ids, nil
+	}
+
+	ctx := context.Background()
+
+	b.Run("ttl=0", func(b *testing.B) {
+		ttl := time.Duration(0)
+		s := newStore(db, ttl, clock, newCache(ttl, clock))
+		ps := &Permissions{
+			UserID: 99,
+			Perm:   authz.Read,
+			Type:   "repos",
+		}
+
+		for i := 0; i < b.N; i++ {
+			err := s.LoadPermissions(ctx, &ps, update)
+			if err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+
+	b.Run("ttl=60s/no-in-memory-cache", func(b *testing.B) {
+		ttl := 60 * time.Second
+		s := newStore(db, ttl, clock, nil)
+		ps := &Permissions{
+			UserID: 99,
+			Perm:   authz.Read,
+			Type:   "repos",
+		}
+
+		for i := 0; i < b.N; i++ {
+			err := s.LoadPermissions(ctx, &ps, update)
+			if err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+
+	b.Run("ttl=60s/in-memory-cache", func(b *testing.B) {
+		ttl := 60 * time.Second
+		s := newStore(db, ttl, clock, newCache(ttl, clock))
+		ps := &Permissions{
+			UserID: 99,
+			Perm:   authz.Read,
+			Type:   "repos",
+		}
+
+		for i := 0; i < b.N; i++ {
+			err := s.LoadPermissions(ctx, &ps, update)
+			if err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+}
 
 func testStore(db *sql.DB) func(*testing.T) {
 	equal := func(t testing.TB, name string, have, want interface{}) {

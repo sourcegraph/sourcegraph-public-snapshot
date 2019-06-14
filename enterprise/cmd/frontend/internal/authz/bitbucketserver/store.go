@@ -285,6 +285,10 @@ type cacheKey struct {
 // Permissions. If no cached Permissions are found or if they are
 // now expired,
 func (c *cache) load(p **Permissions) (hit bool) {
+	if c == nil {
+		return false
+	}
+
 	k := newCacheKey(*p)
 
 	c.mu.RLock()
@@ -300,6 +304,10 @@ func (c *cache) load(p **Permissions) (hit bool) {
 }
 
 func (c *cache) update(p *Permissions) {
+	if c == nil {
+		return
+	}
+
 	k := newCacheKey(p)
 	c.mu.Lock()
 	c.cache[k] = p
