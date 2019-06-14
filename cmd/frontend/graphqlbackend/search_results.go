@@ -467,7 +467,7 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 
 	// Log the query if not too many have piled up to be logged.
 	select {
-	case bg.QueryLogChan <- bg.QueryLogItem{r.rawQuery(), err}:
+	case bg.QueryLogChan <- bg.QueryLogItem{Query: r.rawQuery(), Err: err}:
 	default:
 	}
 
