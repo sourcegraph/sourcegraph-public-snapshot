@@ -292,6 +292,46 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 }
 
+func TestShouldRepoBeSearched(t *testing.T) {
+	mockTextSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+		repoName := repo.Name
+		switch repoName {
+		case "foo/one":
+			return []*fileMatchResolver{
+				{
+					uri: "git://" + string(repoName) + "?1a2b3c#" + "main.go",
+				},
+			}, false, nil
+		case "foo/no-filematch":
+			return []*fileMatchResolver{}, false, nil
+		default:
+			return nil, false, errors.New("Unexpected repo")
+		}
+	}
+	defer func() { mockTextSearch = nil }()
+	info := &search.PatternInfo{
+		FileMatchLimit:               defaultMaxSearchResults,
+		Pattern:                      "foo",
+		FilePatternsReposMustInclude: []string{"main"},
+	}
+
+	shouldBeSearched, err := shouldRepoBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/one", URL: "http://example.com/foo/one"}, "1a2b3c", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !shouldBeSearched {
+		t.Errorf("expected repo to be searched, got shouldn't be searched")
+	}
+
+	shouldBeSearched, err = shouldRepoBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/no-filematch", URL: "http://example.com/foo/no-filematch"}, "1a2b3c", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if shouldBeSearched {
+		t.Errorf("expected repo to not be searched, got should be searched")
+	}
+}
+
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {

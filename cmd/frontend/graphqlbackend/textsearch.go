@@ -342,7 +342,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 		return nil, false, err
 	}
 
-	shouldBeSearched, err := repoShouldBeSearched(ctx, info, gitserverRepo, commit, fetchTimeout)
+	shouldBeSearched, err := shouldRepoBeSearched(ctx, info, gitserverRepo, commit, fetchTimeout)
 	if err != nil {
 		return nil, false, err
 	}
@@ -363,9 +363,9 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	return matches, limitHit, err
 }
 
-// repoShouldBeSearched determines whether a repository should be searched in, based on whether the repository
+// shouldRepoBeSearched determines whether a repository should be searched in, based on whether the repository
 // fits in the subset of repositories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
-func repoShouldBeSearched(ctx context.Context, info *search.PatternInfo, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
+func shouldRepoBeSearched(ctx context.Context, info *search.PatternInfo, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
 	shouldBeSearched := true
 	repoHasFileFlagIsInQuery := len(info.FilePatternsReposMustInclude) > 0
 	if repoHasFileFlagIsInQuery {
@@ -379,7 +379,10 @@ func repoShouldBeSearched(ctx context.Context, info *search.PatternInfo, gitserv
 			if len(matches) <= 0 {
 				// repo shouldn't be searched if it doesn't match the patterns in `repohasfile`.
 				shouldBeSearched = false
+			} else {
+				fmt.Println("SHOULD BE SEARCHED", matches[0].JPath)
 			}
+
 		}
 	}
 	negatedRepoHasFileFlagIsInQuery := len(info.FilePatternsReposMustExclude) > 0
