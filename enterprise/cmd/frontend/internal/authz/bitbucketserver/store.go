@@ -8,7 +8,6 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -85,9 +84,24 @@ func (s *store) LoadPermissions(
 		Type:   ps.Type,
 	}
 
+	tx, err := s.tx(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	txs := store{db: tx, clock: s.clock}
 	now := s.clock()
+
 	for {
-		if err = s.load(ctx, stored, false); err != nil {
+		if err = txs.load(ctx, stored, false); err != nil {
 			return err
 		}
 
@@ -95,7 +109,7 @@ func (s *store) LoadPermissions(
 			break
 		}
 
-		if err = s.update(ctx, stored, update); err != nil {
+		if err = txs.update(ctx, stored, update); err != nil {
 			return err
 		}
 
@@ -141,9 +155,9 @@ func (s *store) load(ctx context.Context, p *Permissions, update bool) error {
 func (s *store) loadQuery(p *Permissions, update bool) *sqlf.Query {
 	var lock string
 	if update {
-		lock = " UPDATE" // Exclusive write lock (one writer)
+		lock = "FOR UPDATE" // Exclusive write lock (one writer)
 	} else {
-		lock = " SHARE" // Shared read lock (many readers)
+		lock = "FOR SHARE" // Shared read lock (many readers)
 	}
 
 	return sqlf.Sprintf(
@@ -159,29 +173,16 @@ const loadQueryFmtStr = `
 SELECT object_ids, updated_at
 FROM user_permissions
 WHERE user_id = %s AND permission = %s AND object_type = %s
-FOR
 `
 
 func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uint32, error)) (err error) {
-	tx, err := s.tx(ctx)
-	if err != nil {
+	if err = s.load(ctx, p, true); err != nil {
 		return err
 	}
 
-	defer func() {
-		if isTransactionError(err) {
-			err = nil
-		}
-
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
-
-	txs := store{db: tx}
-
-	if err = txs.load(ctx, p, true); err != nil {
-		return err
+	now := s.clock()
+	if now.Before(p.UpdatedAt.Add(s.ttl)) {
+		return nil // Updated by another tx
 	}
 
 	// Slow cache update operation, synchronized via a serializable transaction.
@@ -193,11 +194,11 @@ func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uin
 	p.IDs = roaring.BitmapOf(ids...)
 	p.UpdatedAt = s.clock()
 
-	if err = txs.upsert(ctx, p); err != nil {
+	if err = s.upsert(ctx, p); err != nil {
 		return err
 	}
 
-	return tx.Commit()
+	return nil
 }
 
 func (s *store) tx(ctx context.Context) (*sql.Tx, error) {
@@ -223,23 +224,6 @@ func (s *store) upsert(ctx context.Context, p *Permissions) error {
 	}
 
 	return rows.Close()
-}
-
-func isTransactionError(err error) bool {
-	switch e := errors.Cause(err).(type) {
-	case *pq.Error:
-		switch e.Code.Class() {
-		case "40":
-			// Class 40 — Transaction Rollback
-			// 40000    transaction_rollback
-			// 40002    transaction_integrity_constraint_violation
-			// 40001    serialization_failure
-			// 40003    statement_completion_unknown
-			// 40P01    deadlock_detected
-			return true
-		}
-	}
-	return false
 }
 
 func (s *store) upsertQuery(p *Permissions) (*sqlf.Query, error) {
