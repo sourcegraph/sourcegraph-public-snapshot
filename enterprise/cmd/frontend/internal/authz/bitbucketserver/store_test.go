@@ -3,45 +3,75 @@ package bitbucketserver
 import (
 	"context"
 	"database/sql"
+	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 )
 
-func testStore(db *sql.DB) func(t *testing.T) {
+func testStore(db *sql.DB) func(*testing.T) {
+	equal := func(t testing.TB, name string, have, want interface{}) {
+		t.Helper()
+		if !reflect.DeepEqual(have, want) {
+			t.Errorf("%q: %s", name, cmp.Diff(have, want))
+		}
+	}
+
 	return func(t *testing.T) {
-		t.Run("nothing stored nor cached", transact(db, func(tx *sql.Tx) {
-			now := time.Now().UTC()
-			ttl := time.Second
-			clock := func() time.Time { return now }
+		now := time.Now().UTC()
+		ttl := time.Second
+		clock := func() time.Time { return now }
 
-			s := newStore(tx, ttl, clock, newCache(ttl, clock))
+		s := newStore(db, ttl, clock, newCache(ttl, clock))
 
-			calls := 0
-			ids := []uint32{1, 2, 3}
-			update := func() ([]uint32, error) {
-				calls++
-				return ids, nil
-			}
+		ids := []uint32{1, 2, 3}
+		e := error(nil)
+		update := func() ([]uint32, error) { return ids, e }
 
+		ctx := context.Background()
+		load := func() *Permissions {
 			ps := &Permissions{
-				UserID: 0,
+				UserID: 42,
 				Perm:   authz.Read,
 				Type:   "repos",
 			}
 
-			ctx := context.Background()
 			err := s.LoadPermissions(ctx, &ps, update)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			for _, id := range ids {
-				if !ps.IDs.Contains(id) {
-					t.Errorf("id %d missing from Permissions.IDs", id)
-				}
-			}
-		}))
+			return ps
+		}
+
+		t.Run("not cached nor stored", func(t *testing.T) {
+			ps := load()
+			equal(t, "ids", ps.IDs.ToArray(), ids)
+		})
+
+		ids = append(ids, 4, 5, 6)
+
+		t.Run("cached and stored", func(t *testing.T) {
+			// Still cached, no update should have happened even
+			// if the permissions would have changed.
+			ps := load()
+			equal(t, "ids", ps.IDs.ToArray(), ids[:3])
+		})
+
+		t.Run("not cached but stored", func(t *testing.T) {
+			// Clear in-memory cache, still no update should have happened,
+			// but permissions get loaded from the store.
+			s.cache.cache = map[cacheKey]*Permissions{}
+			ps := load()
+			equal(t, "ids", ps.IDs.ToArray(), ids[:3])
+		})
+
+		t.Run("cache expired, update called", func(t *testing.T) {
+			now = now.Add(ttl)
+			ps := load()
+			equal(t, "ids", ps.IDs.ToArray(), ids)
+		})
 	}
 }

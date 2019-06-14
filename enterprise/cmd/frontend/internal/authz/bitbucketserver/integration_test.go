@@ -1,8 +1,6 @@
 package bitbucketserver
 
 import (
-	"context"
-	"database/sql"
 	"flag"
 	"testing"
 
@@ -29,18 +27,5 @@ func TestIntegration(t *testing.T) {
 		{"Provider/RepoPerms", testProviderRepoPerms(db)},
 	} {
 		t.Run(tc.name, tc.test)
-	}
-}
-
-func transact(db *sql.DB, test func(*sql.Tx)) func(*testing.T) {
-	return func(t *testing.T) {
-		tx, err := db.BeginTx(context.Background(), nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		defer tx.Rollback()
-
-		test(tx)
 	}
 }
