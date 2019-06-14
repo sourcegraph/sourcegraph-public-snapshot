@@ -192,10 +192,10 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
         return (
             <div className="user-area area--vertical">
                 <UserAreaHeader
-                    className="area--vertical__header"
                     {...this.props}
                     {...context}
                     navItems={this.props.userAreaHeaderNavItems}
+                    className="border-bottom mt-4"
                 />
                 <div className="area--vertical__content">
                     <div className="area--vertical__content-inner">
