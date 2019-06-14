@@ -467,8 +467,7 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			dt := time.Since(start)
-			N := 2
-			dt2 := longerTime(N, dt)
+			dt2 := longerTime(2, dt)
 			rr = &searchResultsResolver{
 				alert: &searchAlert{
 					title:       "Timeout",
