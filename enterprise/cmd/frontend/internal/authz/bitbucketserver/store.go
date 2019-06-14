@@ -87,34 +87,16 @@ func (s *store) LoadPermissions(
 		Type:   ps.Type,
 	}
 
-	// Open a transaction for concurrency control.
-	tx, err := s.tx(ctx)
-	if err != nil {
-		return err
-	}
-
-	// Either rollback or commit this transaction, when we're done.
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		} else {
-			err = tx.Commit()
-		}
-	}()
-
-	// Make another store with this underlying transaction.
-	txs := store{db: tx, clock: s.clock}
-	now := s.clock()
-
 	// Load the permissions with a read lock.
-	if err = txs.load(ctx, stored, false); err != nil {
+	if err = s.load(ctx, stored, false); err != nil {
 		return err
 	}
 
 	// Did these permissions expire? If so, it's time for a slow
 	// cache filling event.
+	now := s.clock()
 	if expired := !now.Before(stored.UpdatedAt.Add(s.ttl)); expired {
-		if err = txs.update(ctx, stored, update); err != nil {
+		if err = s.update(ctx, stored, update); err != nil {
 			return err
 		}
 	}
@@ -122,7 +104,6 @@ func (s *store) LoadPermissions(
 	// At this point we have fresh permissions in `stored`, either because
 	// we loaded them or updated them. So we store them in our read-through
 	// cache and update the passed Permissions pointer!
-
 	s.cache.update(stored)
 	*p = stored
 
@@ -152,6 +133,8 @@ func (s *store) load(ctx context.Context, p *Permissions, update bool) error {
 
 	if p.IDs == nil {
 		p.IDs = roaring.NewBitmap()
+	} else {
+		p.IDs.Clear()
 	}
 
 	return p.IDs.UnmarshalBinary(ids)
@@ -181,6 +164,24 @@ WHERE user_id = %s AND permission = %s AND object_type = %s
 `
 
 func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uint32, error)) (err error) {
+	// Open a transaction for concurrency control.
+	tx, err := s.tx(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Either rollback or commit this transaction, when we're done.
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	// Make another store with this underlying transaction.
+	txs := store{db: tx, clock: s.clock}
+
 	// We're here because we need to update our permissions. In order
 	// to prevent multiple concurrent (and distributed) cache fills,
 	// which would hammer the upstream code host, we acquire an exclusive
@@ -188,7 +189,7 @@ func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uin
 	//
 	// This means other processes will block until the cache fill succeeds,
 	// which is the desired behaviour.
-	if err = s.load(ctx, p, true); err != nil {
+	if err = txs.load(ctx, p, true); err != nil {
 		return err
 	}
 
@@ -211,7 +212,7 @@ func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uin
 	p.UpdatedAt = now
 
 	// Write back the updated permissions to the database.
-	return s.upsert(ctx, p)
+	return txs.upsert(ctx, p)
 }
 
 func (s *store) tx(ctx context.Context) (*sql.Tx, error) {

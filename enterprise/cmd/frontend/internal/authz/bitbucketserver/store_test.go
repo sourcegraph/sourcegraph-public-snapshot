@@ -173,8 +173,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 				err error
 			}
 
-			ch := make(chan op, 25)
-			for i := 1; i <= cap(ch); i++ {
+			ch := make(chan op, 30)
+			for i := 0; i < cap(ch); i++ {
 				go func(i int) {
 					s := newStore(db, ttl, clock, newCache(ttl, clock))
 					ps, err := load(s)
