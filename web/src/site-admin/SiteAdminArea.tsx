@@ -68,9 +68,9 @@ export const SiteAdminArea = withAuthenticatedUser(
             }
 
             return (
-                <div className="site-admin-area area">
-                    <SiteAdminSidebar className="area__sidebar" groups={this.props.sideBarGroups} />
-                    <div className="area__content">
+                <div className="site-admin-area d-flex container">
+                    <SiteAdminSidebar className="flex-0 mr-3" groups={this.props.sideBarGroups} />
+                    <div className="flex-1">
                         <ErrorBoundary location={this.props.location}>
                             <Switch>
                                 {this.props.routes.map(
