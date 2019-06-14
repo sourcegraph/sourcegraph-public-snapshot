@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -462,6 +464,21 @@ loop:
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
+	rr, err := r.resultsWithTimeoutSuggestion(ctx)
+
+	// Log the query if not too many have piled up to be logged.
+	select {
+	case bg.QueryLogChan <- bg.QueryLogItem{Query: r.rawQuery(), Err: err}:
+	default:
+	}
+
+	return rr, nil
+}
+
+// resultsWithTimeoutSuggestion calls doResults, and in case of deadline
+// exceeded returns a search alert with a did-you-mean link for the same
+// query with a longer timeout.
+func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*searchResultsResolver, error) {
 	start := time.Now()
 	rr, err := r.doResults(ctx, "")
 	if err != nil {

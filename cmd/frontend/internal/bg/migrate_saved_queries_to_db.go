@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 type savedQuery struct {
