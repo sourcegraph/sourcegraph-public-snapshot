@@ -183,7 +183,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         }
 
         return (
-            <div className="registry-extension-area area--vertical">
+            <div className="registry-extension-area">
                 <ExtensionAreaHeader {...this.props} {...context} navItems={this.props.extensionAreaHeaderNavItems} />
                 <div className="container pt-3">
                     <ErrorBoundary location={this.props.location}>
