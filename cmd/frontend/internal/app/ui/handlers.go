@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"strings"
 
-	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -98,12 +97,11 @@ func repoShortName(name api.RepoName) string {
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has an incomplete RevSpec.
 func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError func(w http.ResponseWriter, r *http.Request, err error, statusCode int)) (*Common, error) {
-	path := strings.TrimPrefix(r.URL.Path, "/")
 	injectTelligentTracker := false
 	injectGoogleAnalyticsTracker := false
 	if envvar.SourcegraphDotComMode() {
 		injectTelligentTracker = true
-		if path == routeWelcome {
+		if r.URL.Path == "/welcome" {
 			injectGoogleAnalyticsTracker = true
 		}
 	}
@@ -121,7 +119,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		Metadata: &Metadata{
 			Title:       "Sourcegraph",
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
-			ShowPreview: path == uirouter.RouteSignIn && r.URL.RawQuery == "returnTo=%2F",
+			ShowPreview: r.URL.Path == "/sign-in" && r.URL.RawQuery == "returnTo=%2F",
 		},
 
 		InjectSourcegraphTracker:     injectTelligentTracker,
