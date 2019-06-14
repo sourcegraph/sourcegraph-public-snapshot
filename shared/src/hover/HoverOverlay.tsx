@@ -200,23 +200,19 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
                 {hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError) && hoverOrError.alerts && (
                     <div className="hover-overlay__alerts">
                         {hoverOrError.alerts.map(({ content, type }, i) => (
-                            <div
-                                className="hover-overlay__row hover-overlay__content alert-info"
-                                key={i}
-                                onClick={onAlertDismissedCallback(type)}
-                            >
+                            <div className="hover-overlay__row hover-overlay__alert alert-info" key={i}>
+                                <div className="hover-overlay__alert-logo">
+                                    <HelpCircleIcon className="icon-inline" />
+                                </div>
+                                <div className="hover-ovlerlay__alert-content">
+                                    <small dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
+                                </div>
                                 <button
-                                    className={classNames('hover-overlay__close-button')}
+                                    className="hover-overlay__alert-close-button"
                                     onClick={onAlertDismissedCallback(type)}
                                 >
                                     <CloseIcon className="icon-inline" />
                                 </button>
-                                <HelpCircleIcon className="icon-inline" />
-                                &nbsp;
-                                <small
-                                    className="hover-overlay__alert-content"
-                                    dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
-                                ></small>
                             </div>
                         ))}
                     </div>

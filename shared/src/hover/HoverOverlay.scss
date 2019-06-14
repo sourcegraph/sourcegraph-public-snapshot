@@ -4,7 +4,6 @@
     position: absolute;
     min-width: 6rem;
     max-width: 32rem;
-    max-height: 15rem;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -44,18 +43,26 @@
     }
 
     &__alert {
-        flex: 1 1 auto;
+        padding: 0.5rem;
+        display: flex;
+        align-items: baseline;
     }
 
-    &__alert-content {
-        p {
-            display: inline;
-        }
+    &__alert-logo {
+        padding: 0 0.5rem 0 0;
+    }
+
+    &__alert-close-button {
+        border: none;
+        background: transparent;
+        color: #0c5360;
+        padding-left: 0.5rem;
     }
 
     // __content elements are a subset of the __row elements
     // (the ones that contain markdown or code, but not errors or the actions)
     &__content {
+        max-height: 15rem;
         padding: 0.5rem;
         overflow-x: auto;
         word-wrap: normal;
