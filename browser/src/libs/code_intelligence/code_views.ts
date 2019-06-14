@@ -8,7 +8,7 @@ import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared
 import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, isErrorLike } from '../../shared/backend/errors'
 import { ButtonProps } from '../../shared/components/CodeViewToolbar'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
-import { CodeHost, FileInfo } from './code_intelligence'
+import { CodeHost, FileInfo, FileInfoWithRepoNames } from './code_intelligence'
 import { ensureRevisionsAreCloned } from './util/file_info'
 import { trackViews, ViewResolver } from './views'
 
@@ -81,7 +81,7 @@ export const toCodeViewResolver = (selector: string, spec: Omit<CodeView, 'eleme
 export const trackCodeViews = ({ codeViewResolvers }: Pick<CodeHost, 'codeViewResolvers'>) =>
     trackViews<CodeView>(codeViewResolvers)
 
-export interface FileInfoWithContents extends FileInfo {
+export interface FileInfoWithContents extends FileInfoWithRepoNames {
     content?: string
     baseContent?: string
     headHasFileContents?: boolean
@@ -89,7 +89,7 @@ export interface FileInfoWithContents extends FileInfo {
 }
 
 export const fetchFileContents = (
-    info: FileInfo,
+    info: FileInfoWithRepoNames,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfoWithContents> =>
     ensureRevisionsAreCloned(info, requestGraphQL).pipe(

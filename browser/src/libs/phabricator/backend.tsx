@@ -269,7 +269,7 @@ const createPhabricatorRepo = memoizeObservable(
 
 interface PhabricatorRepoDetails {
     callsign: string
-    repoName: string
+    rawRepoName: string
 }
 
 export function getRepoDetailsFromCallsign(
@@ -303,7 +303,7 @@ export function getRepoDetailsFromCallsign(
                     if (details) {
                         return createPhabricatorRepo({
                             callsign,
-                            repoName: details.repoName,
+                            repoName: details.rawRepoName,
                             phabricatorURL: window.location.origin,
                             requestGraphQL,
                         }).subscribe(() => resolve(details))
@@ -380,7 +380,7 @@ function getRepoDetailsFromRepoPHID(
                     if (details) {
                         return createPhabricatorRepo({
                             callsign: repo.fields.callsign,
-                            repoName: details.repoName,
+                            repoName: details.rawRepoName,
                             phabricatorURL: window.location.origin,
                             requestGraphQL,
                         })
@@ -412,7 +412,7 @@ async function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabr
                 if (mapping.callsign === repo.fields.callsign) {
                     return {
                         callsign: repo.fields.callsign,
-                        repoName: mapping.path,
+                        rawRepoName: mapping.path,
                     }
                 }
             }
@@ -434,7 +434,7 @@ async function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabr
             if (mapping.callsign === repo.fields.callsign) {
                 return {
                     callsign: repo.fields.callsign,
-                    repoName: mapping.path,
+                    rawRepoName: mapping.path,
                 }
             }
         }
@@ -456,8 +456,8 @@ function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {
         return null
     }
     const rawURI = uri.fields.uri.raw
-    const repoName = normalizeRepoName(rawURI)
-    return { callsign: repo.fields.callsign, repoName }
+    const rawRepoName = normalizeRepoName(rawURI)
+    return { callsign: repo.fields.callsign, rawRepoName }
 }
 
 interface ResolveStagingOptions extends Pick<PlatformContext, 'requestGraphQL'> {
@@ -656,7 +656,7 @@ export function resolveDiffRev(
 
                     if (!stagingDetails.unconfigured) {
                         // Ensure the staging repo exists before resolving. Otherwise create the patch.
-                        resolveRepo({ repoName: stagingDetails.repoName, requestGraphQL }).subscribe(
+                        resolveRepo({ rawRepoName: stagingDetails.repoName, requestGraphQL }).subscribe(
                             () =>
                                 resolve({
                                     commitID: stagingDetails.ref.commit,

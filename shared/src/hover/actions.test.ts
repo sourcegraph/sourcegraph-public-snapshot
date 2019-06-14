@@ -50,6 +50,7 @@ function testWorkspaceService(
 // Use toPrettyBlobURL as the urlToFile passed to these functions because it results in the most readable/familiar
 // expected test output.
 const urlToFile = toPrettyBlobURL
+const requestGraphQL = jest.fn()
 
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
@@ -78,7 +79,7 @@ describe('getHoverActionsContext', () => {
                                     },
                                 },
                             },
-                            platformContext: { urlToFile },
+                            platformContext: { urlToFile, requestGraphQL },
                         },
                         FIXTURE_HOVER_CONTEXT
                     )
@@ -142,7 +143,7 @@ describe('getHoverActionsContext', () => {
                                     },
                                 },
                             },
-                            platformContext: { urlToFile },
+                            platformContext: { urlToFile, requestGraphQL },
                         },
                         FIXTURE_HOVER_CONTEXT
                     )
@@ -181,7 +182,7 @@ describe('getDefinitionURL', () => {
     test('emits null if the locations result is null', async () =>
         expect(
             getDefinitionURL(
-                { urlToFile },
+                { urlToFile, requestGraphQL },
                 {
                     workspace: testWorkspaceService(),
                     textDocumentDefinition: { getLocations: () => of(of(null)) },
@@ -195,7 +196,7 @@ describe('getDefinitionURL', () => {
     test('emits null if the locations result is empty', async () =>
         expect(
             getDefinitionURL(
-                { urlToFile },
+                { urlToFile, requestGraphQL },
                 {
                     workspace: testWorkspaceService(),
                     textDocumentDefinition: { getLocations: () => of(of([])) },
@@ -211,7 +212,7 @@ describe('getDefinitionURL', () => {
             test('emits the definition URL the user input revision (not commit SHA) of the root', async () =>
                 expect(
                     getDefinitionURL(
-                        { urlToFile },
+                        { urlToFile, requestGraphQL },
                         {
                             workspace: testWorkspaceService(),
                             textDocumentDefinition: {
@@ -229,7 +230,7 @@ describe('getDefinitionURL', () => {
             test('emits the definition URL with range', async () =>
                 expect(
                     getDefinitionURL(
-                        { urlToFile },
+                        { urlToFile, requestGraphQL },
                         {
                             workspace: testWorkspaceService(),
                             textDocumentDefinition: {
@@ -245,7 +246,7 @@ describe('getDefinitionURL', () => {
             test('emits the definition URL without range', async () =>
                 expect(
                     getDefinitionURL(
-                        { urlToFile },
+                        { urlToFile, requestGraphQL },
                         {
                             workspace: testWorkspaceService(),
                             textDocumentDefinition: {
@@ -264,7 +265,7 @@ describe('getDefinitionURL', () => {
     test('emits the definition panel URL if there is more than 1 location result', async () =>
         expect(
             getDefinitionURL(
-                { urlToFile },
+                { urlToFile, requestGraphQL },
                 {
                     workspace: testWorkspaceService([{ uri: 'git://r?c', inputRevision: 'v' }]),
                     textDocumentDefinition: {
@@ -299,7 +300,7 @@ describe('registerHoverContributions()', () => {
                 textDocumentDefinition,
             },
         },
-        platformContext: { urlToFile },
+        platformContext: { urlToFile, requestGraphQL },
         history,
     })
     afterAll(() => subscription.unsubscribe())

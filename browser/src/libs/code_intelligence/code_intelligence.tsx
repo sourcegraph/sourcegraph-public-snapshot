@@ -120,7 +120,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
 /**
  * The context the code host is in on the current page.
  */
-export type CodeHostContext = RepoSpec & Partial<RevSpec> & { privateRepository: boolean }
+export type CodeHostContext = RawRepoSpec & Partial<RevSpec> & { privateRepository: boolean }
 
 type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'gitlab'
 
@@ -238,7 +238,7 @@ export interface FileInfo {
      * The path for the repo the file belongs to. If a `baseRepoName` is provided, this value
      * is treated as the head repo name.
      */
-    repoName: string
+    rawRepoName: string
     /**
      * The path for the file path for a given `codeView`. If a `baseFilePath` is provided, this value
      * is treated as the head file path.
@@ -257,7 +257,7 @@ export interface FileInfo {
      * The repo name for the BASE side of a diff. This is useful for Phabricator
      * staging areas since they are separate repos.
      */
-    baseRepoName?: string
+    baseRawRepoName?: string
     /**
      * The base file path.
      */
@@ -449,8 +449,8 @@ export function handleCodeHost({
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
 
-    const ensureRepoExists = (context: CodeHostContext) =>
-        resolveRev({ ...context, requestGraphQL }).pipe(
+    const ensureRepoExists = ({ rawRepoName, rev }: CodeHostContext) =>
+        resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
             retryWhenCloneInProgressError(),
             map(rev => !!rev),
             catchError(() => [false])

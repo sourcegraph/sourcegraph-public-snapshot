@@ -1,4 +1,4 @@
-import { RepoSpec } from '../../../../shared/src/util/url'
+import { RawRepoSpec } from '../../../../shared/src/util/url'
 import { DiffResolvedRevSpec } from '../../shared/repo'
 
 /**
@@ -18,7 +18,7 @@ export function getFileContainers(): HTMLCollectionOf<HTMLElement> {
  * getDeltaFileName returns the path of the file container. It assumes
  * the file container is for a diff (i.e. a commit or pull request view).
  */
-export function getDeltaFileName(container: HTMLElement): { headFilePath: string; baseFilePath: string | null } {
+export function getDeltaFileName(container: HTMLElement): { headFilePath: string; baseFilePath: string | undefined } {
     const info = container.querySelector('.file-info') as HTMLElement
 
     if (info.title) {
@@ -29,7 +29,7 @@ export function getDeltaFileName(container: HTMLElement): { headFilePath: string
     return getPathNamesFromElement(link)
 }
 
-function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; baseFilePath: string | null } {
+function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; baseFilePath: string | undefined } {
     const elements = element.title.split(' → ')
     if (elements.length > 1) {
         return { headFilePath: elements[1], baseFilePath: elements[0] }
@@ -215,8 +215,8 @@ export function getFilePath(): string {
 }
 
 type GitHubURL =
-    | ({ pageType: 'tree' | 'commit' | 'pull' | 'compare' | 'other' } & RepoSpec)
-    | ({ pageType: 'blob'; revAndFilePath: string } & RepoSpec)
+    | ({ pageType: 'tree' | 'commit' | 'pull' | 'compare' | 'other' } & RawRepoSpec)
+    | ({ pageType: 'blob'; revAndFilePath: string } & RawRepoSpec)
 
 export function isDiffPageType(pageType: GitHubURL['pageType']): boolean {
     switch (pageType) {
@@ -235,12 +235,12 @@ export function parseURL(loc: Pick<Location, 'host' | 'pathname'> = window.locat
     if (!user || !ghRepoName) {
         throw new Error(`Could not parse repoName from GitHub url: ${window.location}`)
     }
-    const repoName = `${host}/${user}/${ghRepoName}`
+    const rawRepoName = `${host}/${user}/${ghRepoName}`
     switch (pageType) {
         case 'blob':
             return {
                 pageType,
-                repoName,
+                rawRepoName,
                 revAndFilePath: rest.join('/'),
             }
         case 'tree':
@@ -249,9 +249,9 @@ export function parseURL(loc: Pick<Location, 'host' | 'pathname'> = window.locat
         case 'compare':
             return {
                 pageType,
-                repoName,
+                rawRepoName,
             }
         default:
-            return { pageType: 'other', repoName }
+            return { pageType: 'other', rawRepoName }
     }
 }

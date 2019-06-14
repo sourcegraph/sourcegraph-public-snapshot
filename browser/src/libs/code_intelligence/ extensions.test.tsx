@@ -7,7 +7,7 @@ describe('Extensions controller', () => {
         const { extensionsController } = initializeExtensions(
             {
                 urlToFile: () => '',
-                getContext: () => ({ repoName: 'foo', privateRepository: true }),
+                getContext: () => ({ rawRepoName: 'foo', privateRepository: true }),
             },
             DEFAULT_SOURCEGRAPH_URL,
             false

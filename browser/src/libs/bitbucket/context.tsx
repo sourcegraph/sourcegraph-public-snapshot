@@ -1,10 +1,10 @@
-import { RepoSpec, RevSpec } from '../../../../shared/src/util/url'
+import { RawRepoSpec, RevSpec } from '../../../../shared/src/util/url'
 import { CodeHostContext } from '../code_intelligence/code_intelligence'
 
 // example pathname: /projects/TEST/repos/some-repo/browse/src/extension.ts
 const PATH_REGEX = /^\/projects\/([^\/]+)\/repos\/([^\/]+)\//
 
-function getRepoSpecFromLocation(location: Pick<Location, 'hostname' | 'pathname'>): RepoSpec {
+function getRawRepoSpecFromLocation(location: Pick<Location, 'hostname' | 'pathname'>): RawRepoSpec {
     const { hostname, pathname } = location
     const match = pathname.match(PATH_REGEX)
     if (!match) {
@@ -12,7 +12,7 @@ function getRepoSpecFromLocation(location: Pick<Location, 'hostname' | 'pathname
     }
     const [, projectName, repoName] = match
     return {
-        repoName: `${hostname}/${projectName}/${repoName}`,
+        rawRepoName: `${hostname}/${projectName}/${repoName}`,
     }
 }
 
@@ -41,7 +41,7 @@ function getRevSpecFromRevisionSelector(): RevSpec {
 }
 
 export function getContext(): CodeHostContext {
-    const repoSpec = getRepoSpecFromLocation(window.location)
+    const repoSpec = getRawRepoSpecFromLocation(window.location)
     let revSpec: Partial<RevSpec> = {}
     try {
         revSpec = getRevSpecFromRevisionSelector()

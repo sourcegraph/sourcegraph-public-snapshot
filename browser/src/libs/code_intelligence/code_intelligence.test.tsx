@@ -244,7 +244,7 @@ describe('code_intelligence', () => {
             const toolbarMount = document.createElement('div')
             codeView.appendChild(toolbarMount)
             const fileInfo: FileInfo = {
-                repoName: 'foo',
+                rawRepoName: 'foo',
                 filePath: '/bar.ts',
                 commitID: '1',
             }
@@ -310,7 +310,7 @@ describe('code_intelligence', () => {
                 const codeView = createTestElement()
                 codeView.id = 'code'
                 const fileInfo: FileInfo = {
-                    repoName: 'foo',
+                    rawRepoName: 'foo',
                     filePath: '/bar.ts',
                     commitID: '1',
                 }
@@ -398,10 +398,10 @@ describe('code_intelligence', () => {
                 const codeView = createTestElement()
                 codeView.id = 'code'
                 const fileInfo: FileInfo = {
-                    repoName: 'foo',
+                    rawRepoName: 'foo',
                     filePath: '/bar.ts',
                     commitID: '2',
-                    baseRepoName: 'foo',
+                    baseRawRepoName: 'foo',
                     baseFilePath: '/bar.ts',
                     baseCommitID: '1',
                 }
@@ -558,7 +558,7 @@ describe('code_intelligence', () => {
             const codeView2 = createTestElement()
             codeView2.className = 'code'
             const fileInfo: FileInfo = {
-                repoName: 'foo',
+                rawRepoName: 'foo',
                 filePath: '/bar.ts',
                 commitID: '1',
             }

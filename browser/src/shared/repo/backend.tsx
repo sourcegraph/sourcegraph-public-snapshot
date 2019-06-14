@@ -4,7 +4,7 @@ import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
-import { FileSpec, makeRepoURI, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import { FileSpec, makeRepoURI, RepoSpec, ResolvedRevSpec, RevSpec, RawRepoSpec } from '../../../../shared/src/util/url'
 import {
     CloneInProgressError,
     createAggregateError,
@@ -19,28 +19,28 @@ import {
  *         Errors with a `RepoNotFoundError` if the repo is not found
  */
 export const resolveRepo = memoizeObservable(
-    ({ repoName, requestGraphQL }: RepoSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
+    ({ rawRepoName, requestGraphQL }: RawRepoSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
         requestGraphQL<GQL.IQuery>({
             request: gql`
-                query ResolveRepo($repoName: String!) {
-                    repository(name: $repoName) {
+                query ResolveRepo($rawRepoName: String!) {
+                    repository(name: $rawRepoName) {
                         name
                     }
                 }
             `,
-            variables: { repoName },
+            variables: { rawRepoName },
             // This request may leak private repository names
             mightContainPrivateInfo: true,
         }).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => {
                 if (!repository) {
-                    throw new RepoNotFoundError(repoName)
+                    throw new RepoNotFoundError(rawRepoName)
                 }
                 return repository.name
             }, catchError((err, caught) => caught))
         ),
-    makeRepoURI
+    ({ rawRepoName }) => rawRepoName
 )
 
 /**

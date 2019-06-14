@@ -13,10 +13,10 @@ export const resolveRevisionFileInfo = (
 ): Observable<FileInfo> =>
     from(getPhabricatorState(window.location, requestGraphQL)).pipe(
         filter((state): state is RevisionState => state !== null && state.mode === PhabricatorMode.Revision),
-        map(state => ({
-            repoName: state.repoName,
-            commitID: state.headCommitID,
-            baseCommitID: state.baseCommitID,
+        map(({ rawRepoName, headCommitID, baseCommitID }) => ({
+            rawRepoName,
+            commitID: headCommitID,
+            baseCommitID,
         })),
         map(info => ({
             ...info,
@@ -29,82 +29,65 @@ export const resolveDiffFileInfo = (
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
     from(getPhabricatorState(window.location, requestGraphQL)).pipe(
-        filter(state => state !== null && state.mode === PhabricatorMode.Differential),
-        map(state => state as DifferentialState),
-        map(state => {
+        filter((state): state is DifferentialState => state !== null && state.mode === PhabricatorMode.Differential),
+        switchMap(state => {
             const { filePath, baseFilePath } = getFilepathFromFileForDiff(codeView)
-
-            return {
-                ...state,
-                filePath,
-                baseFilePath,
-            }
-        }),
-        switchMap(info => {
             const resolveBaseCommitID = resolveDiffRev(
                 {
-                    repoName: info.baseRepoName,
-                    differentialID: info.differentialID,
-                    diffID: (info.leftDiffID || info.diffID)!,
-                    leftDiffID: info.leftDiffID,
-                    useDiffForBase: Boolean(info.leftDiffID), // if ?vs and base is not `on` i.e. the initial commit)
+                    repoName: state.baseRawRepoName,
+                    differentialID: state.differentialID,
+                    diffID: (state.leftDiffID || state.diffID)!,
+                    leftDiffID: state.leftDiffID,
+                    useDiffForBase: Boolean(state.leftDiffID), // if ?vs and base is not `on` i.e. the initial commit)
                     useBaseForDiff: false,
-                    filePath: info.baseFilePath || info.filePath,
+                    filePath: baseFilePath || filePath,
                     isBase: true,
                 },
                 requestGraphQL
             ).pipe(
                 map(({ commitID, stagingRepoName }) => ({
                     baseCommitID: commitID,
-                    baseRepoName: stagingRepoName || info.baseRepoName,
+                    baseRawRepoName: stagingRepoName || state.baseRawRepoName,
                 })),
                 catchError(err => {
                     throw err
                 })
             )
-
             const resolveHeadCommitID = resolveDiffRev(
                 {
-                    repoName: info.headRepoName,
-                    differentialID: info.differentialID,
-                    diffID: info.diffID!,
-                    leftDiffID: info.leftDiffID,
+                    repoName: state.headRawRepoName,
+                    differentialID: state.differentialID,
+                    diffID: state.diffID!,
+                    leftDiffID: state.leftDiffID,
                     useDiffForBase: false,
                     useBaseForDiff: false,
-                    filePath: info.filePath,
+                    filePath,
                     isBase: false,
                 },
                 requestGraphQL
             ).pipe(
                 map(({ commitID, stagingRepoName }) => ({
-                    headCommitID: commitID,
-                    headRepoName: stagingRepoName || info.headRepoName,
+                    commitID,
+                    rawRepoName: stagingRepoName || state.headRawRepoName,
                 })),
                 catchError(err => {
                     throw err
                 })
             )
-
             return zip(resolveBaseCommitID, resolveHeadCommitID).pipe(
-                map(([{ baseCommitID, baseRepoName }, { headCommitID, headRepoName }]) => ({
-                    baseCommitID,
-                    headCommitID,
-                    ...info,
-                    baseRepoName,
-                    headRepoName,
-                }))
+                map(
+                    ([{ baseCommitID, baseRawRepoName }, { commitID, rawRepoName }]): FileInfo => ({
+                        ...state,
+                        baseCommitID,
+                        commitID,
+                        filePath,
+                        baseFilePath,
+                        baseRawRepoName,
+                        rawRepoName,
+                    })
+                )
             )
-        }),
-        map(info => ({
-            repoName: info.headRepoName,
-            filePath: info.filePath,
-            commitID: info.headCommitID,
-            rev: info.headRev,
-            baseRepoName: info.baseRepoName,
-            baseFilePath: info.baseFilePath || info.filePath,
-            baseCommitID: info.baseCommitID,
-            baseRev: info.baseRev,
-        }))
+        })
     )
 
 export const resolveDiffusionFileInfo = (
