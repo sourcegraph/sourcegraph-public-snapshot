@@ -595,22 +595,22 @@ func Test_longerTime(t *testing.T) {
 func Test_roundStr(t *testing.T) {
 	tests := []struct {
 		name string
-		s string
+		s    string
 		want string
 	}{
 		{
 			name: "empty",
-			s: "",
+			s:    "",
 			want: "",
 		},
 		{
 			name: "simple",
-			s: "19s",
+			s:    "19s",
 			want: "19s",
 		},
 		{
 			name: "decimal",
-			s: "19.99s",
+			s:    "19.99s",
 			want: "20s",
 		},
 	}
