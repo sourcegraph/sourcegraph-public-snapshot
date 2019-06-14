@@ -63,7 +63,6 @@ type Common struct {
 	Title    string
 	Error    *pageError
 
-	ShowPreview                  bool
 	InjectSourcegraphTracker     bool
 	InjectGoogleAnalyticsTracker bool
 
