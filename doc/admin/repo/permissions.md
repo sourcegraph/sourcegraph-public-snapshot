@@ -114,13 +114,13 @@ Enforcing Bitbucket Server permissions can be configured via the `authorization`
 
 This section walks you through the process of setting up an *Application Link between Sourcegraph and Bitbucket Server* and configuring the Bitbucket Server external service with `authorization` settings. It assumes the above prerequisites are met.
 
-As an admin user, go to the "Application Links" page. You can use the sidebar navigation in the admin dashboard, or go directly to [https://bitbucketserver.mycorp.org/plugins/servlet/applinks/listApplicationLinks](https://bitbucketserver.mycorp.org/plugins/servlet/applinks/listApplicationLinks).
+As an admin user, go to the "Application Links" page. You can use the sidebar navigation in the admin dashboard, or go directly to [https://bitbucketserver.example.com/plugins/servlet/applinks/listApplicationLinks](https://bitbucketserver.example.com/plugins/servlet/applinks/listApplicationLinks).
 
 <img src="https://imgur.com/Hg4bzOf.png" width="800">
 
 ---
 
-Write Sourcegraph's external URL in the text area (e.g. `https://sourcegraph.mycorp.org`) and click **Create new link**. Click **Continue** even if Bitbucket Server warns you about the given URL not responding.
+Write Sourcegraph's external URL in the text area (e.g. `https://sourcegraph.example.com`) and click **Create new link**. Click **Continue** even if Bitbucket Server warns you about the given URL not responding.
 
 <img src="https://imgur.com/x6vFKIL.png" width="800">
 
@@ -158,7 +158,7 @@ Scroll to the bottom and check the *Allow 2-Legged OAuth* checkbox, then write y
 
 ---
 
-Go to your Sourcegraph's external services page (i.e. `https://sourcegraph.mycorp.org/site-admin/external-services`) and either edit or create a new *Bitbucket Server* external service. Click on the *Enforce permissions* quick action on top of the configuration editor. Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 sourcegraph.pem | tr -d '\n'` to the `oauth.signingKey` field. Finally, **save the configuration**.
+Go to your Sourcegraph's external services page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server* external service. Click on the *Enforce permissions* quick action on top of the configuration editor. Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 sourcegraph.pem | tr -d '\n'` to the `oauth.signingKey` field. Finally, **save the configuration**.
 
 <img src="https://imgur.com/ucetesA.png" width="800">
 
