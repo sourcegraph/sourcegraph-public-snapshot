@@ -467,7 +467,7 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			dt := time.Since(start)
-			dt2 := longerTime(2, dt)
+			dt2 := longer(2, dt)
 			rr = &searchResultsResolver{
 				alert: &searchAlert{
 					title:       "Timeout",
@@ -487,8 +487,8 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 	return rr, nil
 }
 
-// longerTime returns a suggested longer time to wait if the given duration wasn't long enough.
-func longerTime(N int, dt time.Duration) time.Duration {
+// longer returns a suggested longer time to wait if the given duration wasn't long enough.
+func longer(N int, dt time.Duration) time.Duration {
 	dt2 := func() time.Duration {
 		Ndt := time.Duration(N) * dt
 		dceil := func(x float64) time.Duration {
