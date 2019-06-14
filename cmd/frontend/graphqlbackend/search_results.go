@@ -466,15 +466,22 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 	rr, err := r.doResults(ctx, "")
 	if err != nil {
 		if err == context.DeadlineExceeded {
-			dt := time.Now().Sub(start)
+			dt := time.Since(start)
 			N := 2
 			dt2 := longerTime(N, dt)
-			// Tidy up the original duration so it displays like 3ms rather than
-			// 3.12345ms. The user doesn't need to know the exact duration,
-			// just a rough idea and a good suggestion for something else
-			// to try for the timeout.
-			dt = dt2 / time.Duration(N)
-			err = fmt.Errorf("deadline exceeded after about %s; try adding timeout:%s", dt, dt2)
+			rr = &searchResultsResolver{
+				alert: &searchAlert{
+					title:       "timeout",
+					description: fmt.Sprintf("deadline exceeded after about %s", roundStr(dt.String())),
+					proposedQueries: []*searchQueryDescription{
+						{
+							description: "query with longer timeout",
+							query:       fmt.Sprintf("timeout:%v %s", dt2, omitQueryFields(r, query.FieldTimeout)),
+						},
+					},
+				},
+			}
+			return rr, nil
 		}
 		return nil, err
 	}
@@ -504,6 +511,20 @@ func longerTime(N int, dt time.Duration) time.Duration {
 		return lowest
 	}
 	return dt2
+}
+
+var decimalRx = regexp.MustCompile(`\d+\.\d+`)
+
+// roundStr rounds the first number containing a decimal within a string
+func roundStr(s string) string {
+	return decimalRx.ReplaceAllStringFunc(s, func(ns string) string {
+		f, err := strconv.ParseFloat(ns, 64)
+		if err != nil {
+			return s
+		}
+		f = math.Round(f)
+		return fmt.Sprintf("%d", int(f))
+	})
 }
 
 type searchResultsStats struct {
