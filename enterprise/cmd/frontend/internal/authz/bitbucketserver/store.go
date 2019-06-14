@@ -16,10 +16,8 @@ import (
 
 // A store of Permissions with in-memory caching, safe for concurrent use.
 //
-// We use Postgres as a persistent cache with ACID guarantees and row-level locking
-// for concurrency control of cache filling events on expiration of entries in order
-// to avoid a thundering herd against the upstream code host when a single Sourcegraph
-// user (bot or not) is performing many concurrent requests.
+// It leverages Postgres row locking for concurrency control of cache fill events,
+// so that many concurrent requests during an expiration don't overload the Bitbucket Server API.
 //
 // The second in-memory read-through layer avoids the round-trip and serialization
 // costs associated with talking to Postgres, further speeding up the steady state
@@ -73,9 +71,14 @@ func (s *store) LoadPermissions(
 		return nil
 	}
 
+	// Do we have unexpired permissions cached in-memory?
 	if s.cache.load(p) {
-		return nil
+		return nil // Yes, in-memory cache hit!
 	}
+
+	// Nope, in-memory cache miss. Sad. Do we have unexpired
+	// permissions stored in the Postgres user_permissions table?
+	// Let's find out...
 
 	ps := *p
 	stored := &Permissions{
@@ -84,11 +87,13 @@ func (s *store) LoadPermissions(
 		Type:   ps.Type,
 	}
 
+	// Open a transaction for concurrency control.
 	tx, err := s.tx(ctx)
 	if err != nil {
 		return err
 	}
 
+	// Either rollback or commit this transaction, when we're done.
 	defer func() {
 		if err != nil {
 			_ = tx.Rollback()
@@ -97,18 +102,26 @@ func (s *store) LoadPermissions(
 		}
 	}()
 
+	// Make another store with this underlying transaction.
 	txs := store{db: tx, clock: s.clock}
 	now := s.clock()
 
+	// Load the permissions with a read lock.
 	if err = txs.load(ctx, stored, false); err != nil {
 		return err
 	}
 
-	if !now.Before(stored.UpdatedAt.Add(s.ttl)) {
+	// Did these permissions expire? If so, it's time for a slow
+	// cache filling event.
+	if expired := !now.Before(stored.UpdatedAt.Add(s.ttl)); expired {
 		if err = txs.update(ctx, stored, update); err != nil {
 			return err
 		}
 	}
+
+	// At this point we have fresh permissions in `stored`, either because
+	// we loaded them or updated them. So we store them in our read-through
+	// cache and update the passed Permissions pointer!
 
 	s.cache.update(stored)
 	*p = stored
@@ -168,29 +181,37 @@ WHERE user_id = %s AND permission = %s AND object_type = %s
 `
 
 func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uint32, error)) (err error) {
+	// We're here because we need to update our permissions. In order
+	// to prevent multiple concurrent (and distributed) cache fills,
+	// which would hammer the upstream code host, we acquire an exclusive
+	// write lock over the Postgres row for these permissions.
+	//
+	// This means other processes will block until the cache fill succeeds,
+	// which is the desired behaviour.
 	if err = s.load(ctx, p, true); err != nil {
 		return err
 	}
 
+	// We have acquired an exclusive write lock over these permissions,
+	// but maybe another process already finished the cache fill event.
+	// If so, we don't have to update it again until it expires.
 	now := s.clock()
 	if now.Before(p.UpdatedAt.Add(s.ttl)) {
-		return nil // Updated by another tx
+		return nil // Updated by another process!
 	}
 
-	// Slow cache update operation, synchronized via a serializable transaction.
+	// Slow cache update operation, talks to the code host.
 	var ids []uint32
 	if ids, err = update(); err != nil {
 		return err
 	}
 
+	// Create a set of the given ids and update the timestamp.
 	p.IDs = roaring.BitmapOf(ids...)
-	p.UpdatedAt = s.clock()
+	p.UpdatedAt = now
 
-	if err = s.upsert(ctx, p); err != nil {
-		return err
-	}
-
-	return nil
+	// Write back the updated permissions to the database.
+	return s.upsert(ctx, p)
 }
 
 func (s *store) tx(ctx context.Context) (*sql.Tx, error) {

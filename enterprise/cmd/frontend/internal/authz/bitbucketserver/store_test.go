@@ -146,6 +146,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 			ps, err := load(s)
 			equal(t, "err", err, nil)
 			equal(t, "ids", ps.IDs.ToArray(), ids[:3])
+			equal(t, "cache",
+				s.cache.cache[newCacheKey(ps)],
+				ps,
+			)
 		}
 
 		{
