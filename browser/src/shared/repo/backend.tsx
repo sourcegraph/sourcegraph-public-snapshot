@@ -4,7 +4,7 @@ import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
-import { FileSpec, makeRepoURI, RepoSpec, ResolvedRevSpec, RevSpec, RawRepoSpec } from '../../../../shared/src/util/url'
+import { FileSpec, makeRepoURI, RawRepoSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import {
     CloneInProgressError,
     createAggregateError,

@@ -51,8 +51,10 @@ const createMockPlatformContext = (
     // code views can be resolved
     requestGraphQL: <R extends IQuery | IMutation>({
         request,
+        variables,
     }: {
         request: string
+        variables: { [k: string]: any }
     }): Observable<SuccessGraphQLResult<R>> => {
         if (request.trim().startsWith('query SiteProductVersion')) {
             // tslint:disable-next-line: no-object-literal-type-assertion
@@ -111,6 +113,17 @@ const createMockPlatformContext = (
                                 content: 'Hello World',
                             },
                         },
+                    },
+                },
+                errors: undefined,
+            } as SuccessGraphQLResult<R>)
+        }
+        if (request.trim().startsWith('query ResolveRepo')) {
+            // tslint:disable-next-line: no-object-literal-type-assertion
+            return of({
+                data: {
+                    repository: {
+                        name: variables.rawRepoName,
                     },
                 },
                 errors: undefined,

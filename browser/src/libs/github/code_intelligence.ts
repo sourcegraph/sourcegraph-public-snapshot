@@ -327,7 +327,7 @@ export const githubCodeHost: CodeHost = {
     linkPreviewContentClass: 'text-small text-gray p-1 mx-1 border rounded-1 bg-gray text-gray-dark',
     urlToFile: (
         sourcegraphURL: string,
-        location: RepoSpec &
+        location: Partial<RepoSpec> &
             RawRepoSpec &
             RevSpec &
             FileSpec &
@@ -337,20 +337,26 @@ export const githubCodeHost: CodeHost = {
         if (location.viewState) {
             // A view state means that a panel must be shown, and panels are currently only supported on
             // Sourcegraph (not code hosts).
-            return toAbsoluteBlobURL(sourcegraphURL, location)
+            return toAbsoluteBlobURL(sourcegraphURL, {
+                ...location,
+                repoName: location.repoName || location.rawRepoName,
+            })
         }
 
         // Make sure the location is also on this github instance, return an absolute URL otherwise.
         const sameCodeHost = location.rawRepoName.includes(window.location.origin)
         if (!sameCodeHost) {
-            return toAbsoluteBlobURL(sourcegraphURL, location)
+            return toAbsoluteBlobURL(sourcegraphURL, {
+                ...location,
+                repoName: location.repoName || location.rawRepoName,
+            })
         }
 
         const rev = location.rev || 'HEAD'
         // If we're provided options, we can make the j2d URL more specific.
-        const { repoName } = parseURL()
+        const { rawRepoName } = parseURL()
 
-        const sameRepo = repoName === location.rawRepoName
+        const sameRepo = rawRepoName === location.rawRepoName
         // Stay on same page in PR if possible.
         if (sameRepo && location.part) {
             const containers = getFileContainers()

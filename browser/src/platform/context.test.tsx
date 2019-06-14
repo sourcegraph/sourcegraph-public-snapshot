@@ -9,7 +9,7 @@ describe('Platform Context', () => {
             const { requestGraphQL } = createPlatformContext(
                 {
                     urlToFile: () => '',
-                    getContext: () => ({ repoName: 'foo', privateRepository: true }),
+                    getContext: () => ({ rawRepoName: 'foo', privateRepository: true }),
                 },
                 DEFAULT_SOURCEGRAPH_URL,
                 false
