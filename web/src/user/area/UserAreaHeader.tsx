@@ -6,21 +6,21 @@ import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { UserAvatar } from '../UserAvatar'
 import { UserAreaRouteContext } from './UserArea'
 
-interface UserAreaHeaderProps extends UserAreaRouteContext, RouteComponentProps<{}> {
+interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
     navItems: ReadonlyArray<UserAreaHeaderNavItem>
-    className: string
+    className?: string
 }
 
-export type UserAreaHeaderContext = Pick<UserAreaHeaderProps, 'user'>
+export type UserAreaHeaderContext = Pick<Props, 'user'>
 
 export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAreaHeaderContext> {}
 
 /**
  * Header for the user area.
  */
-export const UserAreaHeader: React.FunctionComponent<UserAreaHeaderProps> = (props: UserAreaHeaderProps) => (
-    <div className={`user-area-header area-header ${props.className}`}>
-        <div className={`${props.className}-inner`}>
+export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, className = '', ...props }) => (
+    <div className={`user-area-header ${className}`}>
+        <div className="container">
             {props.user && (
                 <>
                     <h2 className="user-area-header__title">
@@ -34,29 +34,31 @@ export const UserAreaHeader: React.FunctionComponent<UserAreaHeaderProps> = (pro
                             props.user.username
                         )}
                     </h2>
-                    <div className="area-header__nav">
-                        <div className="area-header__nav-links">
-                            {props.navItems.map(
+                    <div className="d-flex align-items-end justify-content-between">
+                        <ul className="nav nav-tabs">
+                            {navItems.map(
                                 ({ to, label, exact, icon: Icon, condition = () => true }) =>
                                     condition(props) && (
-                                        <NavLink
-                                            key={label}
-                                            to={props.url + to}
-                                            className="btn area-header__nav-link"
-                                            activeClassName="area-header__nav-link--active"
-                                            exact={exact}
-                                        >
-                                            {Icon && <Icon className="icon-inline" />} {label}
-                                        </NavLink>
+                                        <li key={label} className="nav-item">
+                                            <NavLink
+                                                to={url + to}
+                                                className="nav-link"
+                                                activeClassName="active"
+                                                exact={exact}
+                                            >
+                                                {Icon && <Icon className="icon-inline" />} {label}
+                                            </NavLink>
+                                        </li>
                                     )
                             )}
-                        </div>
+                        </ul>
+                        <div className="border-bottom flex-1" />
                         {props.user.organizations.nodes.length > 0 && (
-                            <div className="area-header__nav-actions">
-                                <small className="area-header__nav-actions-label">Organizations</small>
+                            <div className="d-flex align-items-center border-bottom pb-1">
+                                <small className="mr-2">Organizations</small>
                                 {props.user.organizations.nodes.map(org => (
                                     <Link
-                                        className="area-header__nav-action"
+                                        className="mr-2"
                                         key={org.id}
                                         to={orgURL(org.name)}
                                         data-tooltip={org.displayName || org.name}

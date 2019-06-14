@@ -116,23 +116,24 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                 </div>
                             )}
                         </div>
-                        <div className="area-header__nav mt-3">
-                            <div className="area-header__nav-links">
+                        <div className="mt-3">
+                            <ul className="nav nav-tabs">
                                 {props.navItems.map(
                                     ({ to, label, exact, icon: Icon, condition = () => true }) =>
                                         condition(props) && (
-                                            <NavLink
-                                                key={label}
-                                                to={props.url + to}
-                                                className="btn area-header__nav-link"
-                                                activeClassName="area-header__nav-link--active"
-                                                exact={exact}
-                                            >
-                                                {Icon && <Icon className="icon-inline" />} {label}
-                                            </NavLink>
+                                            <li key={label} className="nav-item">
+                                                <NavLink
+                                                    to={props.url + to}
+                                                    className="nav-link"
+                                                    activeClassName="active"
+                                                    exact={exact}
+                                                >
+                                                    {Icon && <Icon className="icon-inline" />} {label}
+                                                </NavLink>
+                                            </li>
                                         )
                                 )}
-                            </div>
+                            </ul>
                         </div>
                     </>
                 )}
