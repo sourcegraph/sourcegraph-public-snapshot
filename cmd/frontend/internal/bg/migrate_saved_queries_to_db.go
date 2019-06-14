@@ -23,28 +23,6 @@ type savedQueryField struct {
 	SavedQueries []savedQuery `json:"search.savedQueries"`
 }
 
-var QueryLogChan = make(chan QueryLogItem, 100)
-
-type QueryLogItem struct {
-	Query string
-	Err   error
-}
-
-// LogQueries pulls queries from QueryLogChan and logs them to the recent_searches table in the db.
-func LogQueries(ctx context.Context) {
-	for {
-		q := <-QueryLogChan
-		rs := &db.RecentSearches{}
-		ctx := context.Background()
-		if err := rs.Log(ctx, q.Query); err != nil {
-			log15.Error("adding query to searches table", "error", err)
-		}
-		if err := rs.Cleanup(ctx, 1e5); err != nil {
-			log15.Error("deleting excess rows from searches table", "error", err)
-		}
-	}
-}
-
 // MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase migrates saved searches from the `search.SavedQueries` value in
 // site settings into the `saved_searches` PostgreSQL table, and migrates organization Slack webhook URLs from the
 // `notifications.slack` value in site settings to the `slack_webhook_url` column in the `saved_searches` table.
