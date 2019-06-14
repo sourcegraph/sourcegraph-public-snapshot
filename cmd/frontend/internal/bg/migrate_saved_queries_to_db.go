@@ -2,14 +2,13 @@ package bg
 
 import (
 	"context"
-
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 type savedQuery struct {
@@ -22,6 +21,27 @@ type savedQuery struct {
 
 type savedQueryField struct {
 	SavedQueries []savedQuery `json:"search.savedQueries"`
+}
+
+var QueryLogChan = make(chan QueryLogItem, 100)
+
+type QueryLogItem struct {
+	query string
+	err   error
+}
+
+func LogQueries(ctx context.Context) {
+	for {
+		q := <-QueryLogChan
+		rs := &db.RecentSearches{}
+		ctx := context.Background()
+		if err := rs.Log(ctx, q.query); err != nil {
+			log15.Error("adding query to searches table", "error", err)
+		}
+		if err := rs.Cleanup(ctx, 1e5); err != nil {
+			log15.Error("deleting excess rows from searches table", "error", err)
+		}
+	}
 }
 
 // MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase migrates saved searches from the `search.SavedQueries` value in

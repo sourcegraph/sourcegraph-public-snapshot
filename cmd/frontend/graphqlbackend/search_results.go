@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"math"
 	"path"
 	"regexp"
@@ -461,19 +462,12 @@ loop:
 	return sparkline, nil
 }
 
-var queryLogChan = make(chan queryLogItem, 100)
-
-type queryLogItem struct {
-	query string
-	err   error
-}
-
 func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
 
 	// Log the query if not too many have piled up to be logged.
 	select {
-	case queryLogChan <- queryLogItem{r.rawQuery(), err}:
+	case bg.QueryLogChan <- bg.QueryLogItem{r.rawQuery(), err}:
 	default:
 	}
 

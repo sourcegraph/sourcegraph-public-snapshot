@@ -3,11 +3,8 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"strconv"
 	"time"
-
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -57,21 +54,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-
-	// Start a goroutine to log queries to the db.
-	goroutine.Go(func() {
-		for {
-			q := <-queryLogChan
-			rs := &db.RecentSearches{}
-			ctx := context.Background()
-			if err := rs.Log(ctx, q.query); err != nil {
-				log15.Error("adding query to searches table", "error", err)
-			}
-			if err := rs.Cleanup(ctx, 1e5); err != nil {
-				log15.Error("deleting excess rows from searches table", "error", err)
-			}
-		}
-	})
 }
 
 // EmptyResponse is a type that can be used in the return signature for graphql queries

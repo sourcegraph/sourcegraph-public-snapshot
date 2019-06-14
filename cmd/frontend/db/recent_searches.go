@@ -13,9 +13,6 @@ type RecentSearches struct{}
 // Log inserts the query q into to the recent_searches table in the db.
 func (rs *RecentSearches) Log(ctx context.Context, q string) error {
 	insert := `INSERT INTO recent_searches (query) VALUES ($1)`
-	if dbconn.Global == nil {
-		return errors.New("nil db connection")
-	}
 	res, err := dbconn.Global.ExecContext(ctx, insert, q)
 	if err != nil {
 		return errors.Errorf("inserting %q into recent_searches table: %v", q, err)
@@ -52,9 +49,6 @@ DELETE FROM recent_searches
 // List returns all the search queries in the recent_searches table.
 func (rs *RecentSearches) List(ctx context.Context) ([]string, error) {
 	sel := `SELECT query FROM recent_searches`
-	if dbconn.Global == nil {
-		return nil, errors.New("nil db connection")
-	}
 	rows, err := dbconn.Global.QueryContext(ctx, sel)
 	var qs []string
 	if err != nil {
