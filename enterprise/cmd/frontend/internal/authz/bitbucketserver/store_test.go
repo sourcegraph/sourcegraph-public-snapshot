@@ -9,7 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 )
 
@@ -37,7 +39,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 		}
 
 		ctx := context.Background()
-		load := func(s *store) *Permissions {
+		load := func(s *store) (*Permissions, error) {
 			ps := &Permissions{
 				UserID: 42,
 				Perm:   authz.Read,
@@ -45,55 +47,60 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 
 			err := s.LoadPermissions(ctx, &ps, update)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			return ps
+			return ps, err
 		}
 
-		t.Run("not cached nor stored", func(t *testing.T) {
-			ps := load(s)
+		{
+			// not cached nor stored
+			ps, err := load(s)
+			equal(t, "err", err, nil)
 			equal(t, "ids", ps.IDs.ToArray(), ids)
-		})
+		}
 
 		ids = append(ids, 4, 5, 6)
 
-		t.Run("cached and stored", func(t *testing.T) {
+		{
 			// Still cached, no update should have happened even
 			// if the permissions would have changed.
-			ps := load(s)
+			ps, err := load(s)
+			equal(t, "err", err, nil)
 			equal(t, "ids", ps.IDs.ToArray(), ids[:3])
-		})
+		}
 
-		t.Run("not cached but stored", func(t *testing.T) {
-			// Clear in-memory cache, still no update should have happened,
-			// but permissions get loaded from the store.
+		{
+			// Not cached but stored.  Clear in-memory cache, still
+			// no update should have happened, but permissions get
+			// loaded from the store.
 			s.cache.cache = map[cacheKey]*Permissions{}
-			ps := load(s)
+			ps, err := load(s)
+			equal(t, "err", err, nil)
 			equal(t, "ids", ps.IDs.ToArray(), ids[:3])
-		})
+		}
 
-		t.Run("cache expired, update called", func(t *testing.T) {
+		{
+			// Cache expired, update called
 			now = now.Add(ttl)
-			ps := load(s)
+			ps, err := load(s)
+			equal(t, "err", err, nil)
 			equal(t, "ids", ps.IDs.ToArray(), ids)
-		})
+		}
 
 		ids = ids[:3]
 
-		t.Run("cache expired, no concurrent updates", func(t *testing.T) {
+		{
+			// Cache expired, no concurrent updates
 			now = now.Add(2 * ttl)
 
 			want := atomic.LoadUint64(&calls) + 1
 
 			var wg sync.WaitGroup
-			for i := 1; i <= 10; i++ {
+			for i := 1; i <= 25; i++ {
 				wg.Add(1)
 				go func(i int) {
 					s := newStore(db, ttl, clock, newCache(ttl, clock))
 					defer wg.Done()
-					ps := load(s)
+					ps, err := load(s)
+					equal(t, "err", err, nil)
 					equal(t, "ids", ps.IDs.ToArray(), ids)
 				}(i)
 			}
@@ -101,6 +108,15 @@ func testStore(db *sql.DB) func(*testing.T) {
 			wg.Wait()
 
 			equal(t, "updates", atomic.LoadUint64(&calls), want)
-		})
+		}
+
+		{
+			// Cache expired, error updating
+			now = now.Add(ttl)
+			e = errors.New("boom")
+			ps, err := load(s)
+			equal(t, "err", err, e)
+			equal(t, "ids", ps.IDs, (*roaring.Bitmap)(nil))
+		}
 	}
 }
