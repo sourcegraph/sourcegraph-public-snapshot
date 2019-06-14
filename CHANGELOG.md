@@ -14,8 +14,9 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - The `orgs` setting in [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github) allows admins to select all repositories from the specified organizations to be synced.
+- A new experimental search filter `commitsince:"30 days ago"` allows users to exclude stale repositories that don't contain commits (to the branch being searched over) past a specified date from their search query.
 - The `authorization` setting in the [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#permissions) enables Sourcegraph to enforce the repository permissions defined in Bitbucket Server.
-- A new status icon in the navigation bar allows admins to quickly see whether the configured repositories are up to date or how many are currently being updated in the background
+- A new, experimental status indicator in the navigation bar allows admins to quickly see whether the configured repositories are up to date or how many are currently being updated in the background. You can enable the status indicator with the following site configuration: `"experimentalFeatures": { "statusIndicator": "enabled" }`.
 
 ### Changed
 
@@ -29,26 +30,15 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where the Phabricator native integration would be broken on recent Phabricator versions. This fix depends on v1.2 of the [Phabricator extension](https://github.com/sourcegraph/phabricator-extension).
 - Fixed an issue where the "Empty repository" banner would be shown on a repository page when starting to clone a repository.
 - Prevent data inconsistency on cached archives due to restarts. (#4366)
+- On the /extensions page, the UI is now less ambiguous when an extension has not been activated. (#4446)
 
-## 3.4.4 (unreleased)
-
-### Added
-
-### Changed
-
-### Removed
+## 3.4.4
 
 ### Fixed
 
 - Fixed an out of bounds error in the GraphQL repository query. (#4426)
 
 ## 3.4.3
-
-### Added
-
-### Changed
-
-### Removed
 
 ### Fixed
 
@@ -61,12 +51,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where syntax highlighting taking too long would result in errors or wait long amounts of time without properly falling back to plaintext rendering after a few seconds. [#4267](https://github.com/sourcegraph/sourcegraph/issues/4267) [#4268](https://github.com/sourcegraph/sourcegraph/issues/4268)
 
 ## 3.4.2
-
-### Added
-
-### Changed
-
-### Removed
 
 ### Fixed
 

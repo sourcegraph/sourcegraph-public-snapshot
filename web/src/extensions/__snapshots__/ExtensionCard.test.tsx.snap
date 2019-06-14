@@ -73,7 +73,13 @@ exports[`ExtensionCard renders 1`] = `
         />
         <li
           className="nav-item"
-        />
+        >
+          <span
+            className="text-muted "
+          >
+            Disabled
+          </span>
+        </li>
       </ul>
     </div>
   </div>

@@ -112,7 +112,7 @@ Enforcing Bitbucket Server permissions can be configured via the `authorization`
 
 ### Setup
 
-This section walks you through the process of setting up an *Application Link between Sourcegraph and Bitbucket Server* and configuring the Bitbucket External service with `authorization` settings. It assumes the above prerequisites are met.
+This section walks you through the process of setting up an *Application Link between Sourcegraph and Bitbucket Server* and configuring the Bitbucket Server external service with `authorization` settings. It assumes the above prerequisites are met.
 
 As an admin user, go to the "Application Links" page. You can use the sidebar navigation in the admin dashboard, or go directly to [https://bitbucketserver.mycorp.org/plugins/servlet/applinks/listApplicationLinks](https://bitbucketserver.mycorp.org/plugins/servlet/applinks/listApplicationLinks).
 

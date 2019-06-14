@@ -113,7 +113,8 @@ func main() {
 		}
 	}
 
-	server := repoupdater.Server{Store: store, Scheduler: repos.Scheduler}
+	scheduler := repos.NewUpdateScheduler()
+	server := repoupdater.Server{Store: store, Scheduler: scheduler}
 
 	var handler http.Handler
 	{
@@ -163,7 +164,7 @@ func main() {
 			if !envvar.SourcegraphDotComMode() {
 				rs := diff.Repos()
 				if !conf.Get().DisableAutoGitUpdates {
-					repos.Scheduler.Update(rs...)
+					scheduler.Update(rs...)
 				}
 
 				go func() {
@@ -183,7 +184,7 @@ func main() {
 	}
 
 	// Git fetches scheduler
-	go repos.RunScheduler(ctx)
+	go repos.RunScheduler(ctx, scheduler)
 
 	host := ""
 	if env.InsecureDev {
@@ -199,7 +200,7 @@ func main() {
 		Name: "Repo Updater State",
 		Path: "/repo-updater-state",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			d, err := json.MarshalIndent(repos.Scheduler.DebugDump(), "", "  ")
+			d, err := json.MarshalIndent(scheduler.DebugDump(), "", "  ")
 			if err != nil {
 				http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
 				return

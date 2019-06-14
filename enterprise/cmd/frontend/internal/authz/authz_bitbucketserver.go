@@ -27,7 +27,7 @@ func bitbucketServerProviders(
 ) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		if p, err := bitbucketServerProvider(db, c.Authorization, c.Url, cfg.Critical.AuthProviders); err != nil {
+		if p, err := bitbucketServerProvider(db, c.Authorization, c.Url, c.Username, cfg.Critical.AuthProviders); err != nil {
 			seriousProblems = append(seriousProblems, err.Error())
 		} else if p != nil {
 			authzProviders = append(authzProviders, p)
@@ -46,7 +46,7 @@ func bitbucketServerProviders(
 func bitbucketServerProvider(
 	db *sql.DB,
 	a *schema.BitbucketServerAuthorization,
-	instanceURL string,
+	instanceURL, username string,
 	ps []schema.AuthProviders,
 ) (authz.Provider, error) {
 	if a == nil {
@@ -66,6 +66,8 @@ func bitbucketServerProvider(
 	}
 
 	cli := bitbucketserver.NewClient(baseURL, nil)
+	cli.Username = username
+
 	if err = cli.SetOAuth(a.Oauth.ConsumerKey, a.Oauth.SigningKey); err != nil {
 		errs = multierror.Append(errs, errors.Wrap(err, "authorization.oauth.signingKey"))
 	}
@@ -84,6 +86,6 @@ func bitbucketServerProvider(
 // ValidateBitbucketServerAuthz validates the authorization fields of the given BitbucketServer external
 // service config.
 func ValidateBitbucketServerAuthz(c *schema.BitbucketServerConnection, ps []schema.AuthProviders) error {
-	_, err := bitbucketServerProvider(nil, c.Authorization, c.Url, ps)
+	_, err := bitbucketServerProvider(nil, c.Authorization, c.Url, c.Username, ps)
 	return err
 }

@@ -16,8 +16,6 @@ Site admins can [add Bitbucket Server repositories to Sourcegraph](../admin/exte
 
 Site admins can [configure Sourcegraph to respect Bitbucket Server's repository access permissions](../admin/external_service/bitbucket_server.md#repository-permissions).
 
-[Browser extension](#browser-extension) | ✅
-
 ## Browser extension
 
 The [Sourcegraph browser extension](browser_extension.md) supports Bitbucket Server. When installed in your web browser, it adds hover tooltips, go-to-definition, find-references, and code search to files and pull requests viewed on Bitbucket Server.
