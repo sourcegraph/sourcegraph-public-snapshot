@@ -341,7 +341,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	if repoHasFileFlagIsInQuery {
 		// search for file in repo, if file is in repo, actually search through it.
 		for _, pattern := range info.FilePatternsReposMustInclude {
-			repoHasFileOnlyPattern := search.PatternInfo{IsRegExp: true, FileMatchLimit: 30, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			repoHasFileOnlyPattern := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 			matches, limitHit, err := textSearch(ctx, gitserverRepo, commit, &repoHasFileOnlyPattern, fetchTimeout)
 			if err != nil {
 				return nil, false, err
@@ -355,7 +355,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	negatedRepoHasFileFlagIsInQuery := len(info.FilePatternsReposMustExclude) > 0
 	if negatedRepoHasFileFlagIsInQuery {
 		for _, pattern := range info.FilePatternsReposMustExclude {
-			repoHasFileOnlyPattern := search.PatternInfo{IsRegExp: true, FileMatchLimit: 30, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			repoHasFileOnlyPattern := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 			matches, limitHit, err := textSearch(ctx, gitserverRepo, commit, &repoHasFileOnlyPattern, fetchTimeout)
 			if err != nil {
 				return nil, false, err
