@@ -2,6 +2,7 @@ package bitbucketserver
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,11 +10,13 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 )
@@ -41,7 +44,7 @@ func TestProvider_Validate(t *testing.T) {
 			cli, save := newClient(t, "Validate/"+tc.name)
 			defer save()
 
-			p := newProvider(t, cli, nil)
+			p := newProvider(cli, nil, 0)
 
 			if tc.client != nil {
 				tc.client(p.client)
@@ -56,26 +59,33 @@ func TestProvider_Validate(t *testing.T) {
 }
 
 func TestProvider_RepoPerms(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	cli, save := newClient(t, "RepoPerms")
 	defer save()
 
 	f := newFixtures()
 	f.load(t, cli)
 
-	p := newProvider(t, cli, nil)
+	db, cleanup := dbtest.NewDB(t, *dsn)
+	defer cleanup()
+
+	p := newProvider(cli, db, 0)
 
 	h := codeHost{CodeHost: p.codeHost}
 
-	for _, tc := range []struct {
+	for i, tc := range []struct {
 		name  string
 		ctx   context.Context
-		acct  *extsvc.ExternalAccount
+		user  *bitbucketserver.User
 		perms map[api.RepoName]map[authz.Perm]bool
 		err   string
 	}{
 		{
 			name: "anonymous user",
-			acct: nil,
+			user: nil,
 			perms: map[api.RepoName]map[authz.Perm]bool{
 				// Because repo is public
 				"public-repo": {authz.Read: true},
@@ -83,7 +93,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 		},
 		{
 			name: "authenticated user: engineer1",
-			acct: h.externalAccount(2, f.users["engineer1"]),
+			user: f.users["engineer1"],
 			perms: map[api.RepoName]map[authz.Perm]bool{
 				// Because repo is public
 				"public-repo": {authz.Read: true},
@@ -98,7 +108,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 		},
 		{
 			name: "authenticated user: engineer2",
-			acct: h.externalAccount(3, f.users["engineer2"]),
+			user: f.users["engineer2"],
 			perms: map[api.RepoName]map[authz.Perm]bool{
 				// Because repo is public
 				"public-repo": {authz.Read: true},
@@ -109,7 +119,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 		},
 		{
 			name: "authenticated user: scientist",
-			acct: h.externalAccount(4, f.users["scientist"]),
+			user: f.users["scientist"],
 			perms: map[api.RepoName]map[authz.Perm]bool{
 				// Because repo is public
 				"public-repo": {authz.Read: true},
@@ -124,7 +134,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 		},
 		{
 			name: "authenticated user: ceo",
-			acct: h.externalAccount(5, f.users["ceo"]),
+			user: f.users["ceo"],
 			perms: map[api.RepoName]map[authz.Perm]bool{
 				// Because repo is public
 				"public-repo": {authz.Read: true},
@@ -151,12 +161,18 @@ func TestProvider_RepoPerms(t *testing.T) {
 			repos := make(map[authz.Repo]struct{}, len(f.repos))
 			for _, r := range f.repos {
 				repos[authz.Repo{
+					ID:               api.RepoID(r.ID + 42), // Make them different
 					RepoName:         api.RepoName(r.Name),
 					ExternalRepoSpec: h.externalRepo(r),
 				}] = struct{}{}
 			}
 
-			perms, err := p.RepoPerms(tc.ctx, tc.acct, repos)
+			var acct *extsvc.ExternalAccount
+			if tc.user != nil {
+				acct = h.externalAccount(int32(i), tc.user)
+			}
+
+			perms, err := p.RepoPerms(tc.ctx, acct, repos)
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
@@ -176,7 +192,7 @@ func TestProvider_FetchAccount(t *testing.T) {
 	f := newFixtures()
 	f.load(t, cli)
 
-	p := newProvider(t, cli, nil)
+	p := newProvider(cli, nil, 0)
 
 	h := codeHost{CodeHost: p.codeHost}
 
@@ -441,20 +457,8 @@ func newClient(t *testing.T, name string) (*bitbucketserver.Client, func()) {
 	return cli, save
 }
 
-func newProvider(t *testing.T, cli *bitbucketserver.Client, s *store) *Provider {
-	codeHost := extsvc.CodeHost{
-		ServiceType: bitbucketserver.ServiceType,
-		ServiceID:   os.Getenv("BITBUCKET_SERVER_URL"),
-	}
-
-	if codeHost.ServiceID == "" {
-		codeHost.ServiceID = "http://127.0.0.1:7990"
-	}
-
-	return &Provider{
-		client:   cli,
-		codeHost: &codeHost,
-		pageSize: 1, // Exercise pagination
-		store:    s,
-	}
+func newProvider(cli *bitbucketserver.Client, db *sql.DB, ttl time.Duration) *Provider {
+	p := NewProvider(cli, db, ttl)
+	p.pageSize = 1 // Exercise pagination
+	return p
 }

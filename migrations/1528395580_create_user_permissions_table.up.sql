@@ -1,7 +1,7 @@
 BEGIN;
 
 CREATE TABLE user_permissions (
-  user_id     integer NOT NULL REFERENCES users (id),
+  user_id     integer NOT NULL,
   permission  text NOT NULL,
   object_type text NOT NULL,
   object_ids  bytea NOT NULL,

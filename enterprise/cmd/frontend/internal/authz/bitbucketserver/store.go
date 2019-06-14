@@ -56,7 +56,7 @@ type Permissions struct {
 func (p *Permissions) Authorized(repos map[authz.Repo]struct{}) map[api.RepoName]map[authz.Perm]bool {
 	perms := make(map[api.RepoName]map[authz.Perm]bool, len(repos))
 	for r := range repos {
-		if p.IDs.Contains(uint32(r.ID)) {
+		if r.ID != 0 && p.IDs.Contains(uint32(r.ID)) {
 			perms[r.RepoName] = map[authz.Perm]bool{p.Perm: true}
 		}
 	}
