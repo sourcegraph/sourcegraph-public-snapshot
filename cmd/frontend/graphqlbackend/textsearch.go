@@ -337,7 +337,6 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	}
 
 	repoHasFileFlagIsInQuery := len(info.FilePatternsReposMustInclude) > 0
-
 	if repoHasFileFlagIsInQuery {
 		// search for file in repo, if file is in repo, actually search through it.
 		for _, pattern := range info.FilePatternsReposMustInclude {
@@ -361,7 +360,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 				return nil, false, err
 			}
 			if len(matches) > 0 {
-				// Return with no matches if the repo does match the patterns in `-repohasfile`.
+				// Return with no matches if the repo has matches for the patterns in `-repohasfile`.
 				return []*fileMatchResolver{}, limitHit, err
 			}
 		}
