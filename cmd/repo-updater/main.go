@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -58,7 +59,7 @@ func main() {
 			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
 		}
 	})
-	db, err := repos.NewDB(dsn)
+	db, err := dbutil.NewDB(dsn, "repo-updater")
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}

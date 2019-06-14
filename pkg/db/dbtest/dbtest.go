@@ -1,8 +1,7 @@
-package repos_test
+package dbtest
 
 import (
 	"database/sql"
-	"flag"
 	"math/rand"
 	"net/url"
 	"os"
@@ -11,28 +10,24 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 )
 
-var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
-
-func init() {
-	flag.Parse()
-}
-
-func testDatabase(t testing.TB) (*sql.DB, func()) {
+// NewDB returns a connection to a clean, new temporary testing database
+// with the same schema as Sourcegraph's production Postgres database.
+func NewDB(t testing.TB, dsn string) (*sql.DB, func()) {
 	var err error
 	var config *url.URL
-	if *dsn == "" {
+	if dsn == "" {
 		config, err = url.Parse("postgres://127.0.0.1/?sslmode=disable&timezone=UTC")
 		if err != nil {
-			t.Fatalf("failed to parse dsn %q: %s", *dsn, err)
+			t.Fatalf("failed to parse dsn %q: %s", dsn, err)
 		}
 		updateDSNFromEnv(config)
 	} else {
-		config, err = url.Parse(*dsn)
+		config, err = url.Parse(dsn)
 		if err != nil {
-			t.Fatalf("failed to parse dsn %q: %s", *dsn, err)
+			t.Fatalf("failed to parse dsn %q: %s", dsn, err)
 		}
 	}
 
@@ -45,7 +40,7 @@ func testDatabase(t testing.TB) (*sql.DB, func()) {
 	config.Path = "/" + dbname
 	testDB := dbConn(t, config)
 
-	if err = repos.MigrateDB(testDB); err != nil {
+	if err = dbutil.MigrateDB(testDB); err != nil {
 		t.Fatalf("failed to apply migrations: %s", err)
 	}
 
@@ -65,7 +60,7 @@ func testDatabase(t testing.TB) (*sql.DB, func()) {
 }
 
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
-	db, err := repos.NewDB(cfg.String())
+	db, err := dbutil.NewDB(cfg.String(), t.Name())
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}

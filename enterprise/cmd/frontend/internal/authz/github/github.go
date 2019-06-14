@@ -231,7 +231,7 @@ func (p *Provider) fetchAndSetUserRepos(ctx context.Context, userAccount *extsvc
 	repoIDs := make([]string, len(repos))
 	i := 0
 	for repo := range repos {
-		repoIDs[i] = repo.ID
+		repoIDs[i] = repo.ExternalRepoSpec.ID
 		i++
 	}
 
