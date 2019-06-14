@@ -6,7 +6,7 @@ import { Services } from '../../../../shared/src/api/client/services'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { Settings } from '../../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { isDefined } from '../../../../shared/src/util/types'
+import { isDefined, isNot } from '../../../../shared/src/util/types'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { CodeHost } from './code_intelligence'
 import { trackViews } from './views'
@@ -47,7 +47,7 @@ export function nativeTooltipsEnabledFromSettings(settings: PlatformContext['set
     return from(settings).pipe(
         map(({ final }) => final),
         filter(isDefined),
-        filter((s: Settings | ErrorLike): s is Exclude<typeof s, ErrorLike> => !isErrorLike(s)),
+        filter(isNot<ErrorLike | Settings, ErrorLike>(isErrorLike)),
         map(s => !!s['codeHost.useNativeTooltips']),
         distinctUntilChanged((a, b) => isEqual(a, b)),
         publishReplay(1),
