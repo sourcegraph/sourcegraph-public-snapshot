@@ -100,21 +100,13 @@ func (s *store) LoadPermissions(
 	txs := store{db: tx, clock: s.clock}
 	now := s.clock()
 
-	for {
-		if err = txs.load(ctx, stored, false); err != nil {
-			return err
-		}
+	if err = txs.load(ctx, stored, false); err != nil {
+		return err
+	}
 
-		if now.Before(stored.UpdatedAt.Add(s.ttl)) {
-			break
-		}
-
+	if !now.Before(stored.UpdatedAt.Add(s.ttl)) {
 		if err = txs.update(ctx, stored, update); err != nil {
 			return err
-		}
-
-		if now.Before(stored.UpdatedAt.Add(s.ttl)) {
-			break
 		}
 	}
 
