@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 )
@@ -58,130 +57,125 @@ func TestProvider_Validate(t *testing.T) {
 	}
 }
 
-func TestProvider_RepoPerms(t *testing.T) {
-	if testing.Short() {
-		t.SkipNow()
-	}
+func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		cli, save := newClient(t, "RepoPerms")
+		defer save()
 
-	cli, save := newClient(t, "RepoPerms")
-	defer save()
+		f := newFixtures()
+		f.load(t, cli)
 
-	f := newFixtures()
-	f.load(t, cli)
+		p := newProvider(cli, db, 0)
 
-	db, cleanup := dbtest.NewDB(t, *dsn)
-	defer cleanup()
+		h := codeHost{CodeHost: p.codeHost}
 
-	p := newProvider(cli, db, 0)
-
-	h := codeHost{CodeHost: p.codeHost}
-
-	for i, tc := range []struct {
-		name  string
-		ctx   context.Context
-		user  *bitbucketserver.User
-		perms map[api.RepoName]map[authz.Perm]bool
-		err   string
-	}{
-		{
-			name: "anonymous user",
-			user: nil,
-			perms: map[api.RepoName]map[authz.Perm]bool{
-				// Because repo is public
-				"public-repo": {authz.Read: true},
+		for i, tc := range []struct {
+			name  string
+			ctx   context.Context
+			user  *bitbucketserver.User
+			perms map[api.RepoName]map[authz.Perm]bool
+			err   string
+		}{
+			{
+				name: "anonymous user",
+				user: nil,
+				perms: map[api.RepoName]map[authz.Perm]bool{
+					// Because repo is public
+					"public-repo": {authz.Read: true},
+				},
 			},
-		},
-		{
-			name: "authenticated user: engineer1",
-			user: f.users["engineer1"],
-			perms: map[api.RepoName]map[authz.Perm]bool{
-				// Because repo is public
-				"public-repo": {authz.Read: true},
-				// Because of engineer1 has a secret-project group membership
-				// and secret-project group has PROJECT_READ perm on SECRET project
-				// which secret-repo belongs to.
-				"secret-repo": {authz.Read: true},
-				// Because engineers group has PROJECT_WRITE perm on PRIVATE project
-				// which private-repo belongs to.
-				"private-repo": {authz.Read: true},
+			{
+				name: "authenticated user: engineer1",
+				user: f.users["engineer1"],
+				perms: map[api.RepoName]map[authz.Perm]bool{
+					// Because repo is public
+					"public-repo": {authz.Read: true},
+					// Because of engineer1 has a secret-project group membership
+					// and secret-project group has PROJECT_READ perm on SECRET project
+					// which secret-repo belongs to.
+					"secret-repo": {authz.Read: true},
+					// Because engineers group has PROJECT_WRITE perm on PRIVATE project
+					// which private-repo belongs to.
+					"private-repo": {authz.Read: true},
+				},
 			},
-		},
-		{
-			name: "authenticated user: engineer2",
-			user: f.users["engineer2"],
-			perms: map[api.RepoName]map[authz.Perm]bool{
-				// Because repo is public
-				"public-repo": {authz.Read: true},
-				// Because engineers group has PROJECT_WRITE perm on PRIVATE project
-				// which private-repo belongs to.
-				"private-repo": {authz.Read: true}, // Because of engineers group membership
+			{
+				name: "authenticated user: engineer2",
+				user: f.users["engineer2"],
+				perms: map[api.RepoName]map[authz.Perm]bool{
+					// Because repo is public
+					"public-repo": {authz.Read: true},
+					// Because engineers group has PROJECT_WRITE perm on PRIVATE project
+					// which private-repo belongs to.
+					"private-repo": {authz.Read: true}, // Because of engineers group membership
+				},
 			},
-		},
-		{
-			name: "authenticated user: scientist",
-			user: f.users["scientist"],
-			perms: map[api.RepoName]map[authz.Perm]bool{
-				// Because repo is public
-				"public-repo": {authz.Read: true},
-				// Because of scientist1 has a secret-project group membership
-				// and secret-project group has PROJECT_READ perm on SECRET project
-				// which secret-repo belongs to.
-				"secret-repo": {authz.Read: true},
-				// Because scientists group has PROJECT_READ perm on PRIVATE project
-				// which private-repo belongs to.
-				"private-repo": {authz.Read: true},
+			{
+				name: "authenticated user: scientist",
+				user: f.users["scientist"],
+				perms: map[api.RepoName]map[authz.Perm]bool{
+					// Because repo is public
+					"public-repo": {authz.Read: true},
+					// Because of scientist1 has a secret-project group membership
+					// and secret-project group has PROJECT_READ perm on SECRET project
+					// which secret-repo belongs to.
+					"secret-repo": {authz.Read: true},
+					// Because scientists group has PROJECT_READ perm on PRIVATE project
+					// which private-repo belongs to.
+					"private-repo": {authz.Read: true},
+				},
 			},
-		},
-		{
-			name: "authenticated user: ceo",
-			user: f.users["ceo"],
-			perms: map[api.RepoName]map[authz.Perm]bool{
-				// Because repo is public
-				"public-repo": {authz.Read: true},
-				// Because management group has PROJECT_READ perm on PRIVATE project
-				// which private-repo belongs to.
-				"secret-repo": {authz.Read: true},
-				// Because ceo has REPO_WRITE perm on super-secret-repo.
-				"super-secret-repo": {authz.Read: true},
-				// Because management group has PROJECT_READ perm on PRIVATE project
-				// which private-repo belongs to.
-				"private-repo": {authz.Read: true},
+			{
+				name: "authenticated user: ceo",
+				user: f.users["ceo"],
+				perms: map[api.RepoName]map[authz.Perm]bool{
+					// Because repo is public
+					"public-repo": {authz.Read: true},
+					// Because management group has PROJECT_READ perm on PRIVATE project
+					// which private-repo belongs to.
+					"secret-repo": {authz.Read: true},
+					// Because ceo has REPO_WRITE perm on super-secret-repo.
+					"super-secret-repo": {authz.Read: true},
+					// Because management group has PROJECT_READ perm on PRIVATE project
+					// which private-repo belongs to.
+					"private-repo": {authz.Read: true},
+				},
 			},
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			if tc.ctx == nil {
-				tc.ctx = context.Background()
-			}
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				if tc.ctx == nil {
+					tc.ctx = context.Background()
+				}
 
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
+				if tc.err == "" {
+					tc.err = "<nil>"
+				}
 
-			repos := make(map[authz.Repo]struct{}, len(f.repos))
-			for _, r := range f.repos {
-				repos[authz.Repo{
-					ID:               api.RepoID(r.ID + 42), // Make them different
-					RepoName:         api.RepoName(r.Name),
-					ExternalRepoSpec: h.externalRepo(r),
-				}] = struct{}{}
-			}
+				repos := make(map[authz.Repo]struct{}, len(f.repos))
+				for _, r := range f.repos {
+					repos[authz.Repo{
+						ID:               api.RepoID(r.ID + 42), // Make them different
+						RepoName:         api.RepoName(r.Name),
+						ExternalRepoSpec: h.externalRepo(r),
+					}] = struct{}{}
+				}
 
-			var acct *extsvc.ExternalAccount
-			if tc.user != nil {
-				acct = h.externalAccount(int32(i), tc.user)
-			}
+				var acct *extsvc.ExternalAccount
+				if tc.user != nil {
+					acct = h.externalAccount(int32(i), tc.user)
+				}
 
-			perms, err := p.RepoPerms(tc.ctx, acct, repos)
+				perms, err := p.RepoPerms(tc.ctx, acct, repos)
 
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
-			}
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				}
 
-			if have, want := perms, tc.perms; !reflect.DeepEqual(have, want) {
-				t.Error(cmp.Diff(have, want))
-			}
-		})
+				if have, want := perms, tc.perms; !reflect.DeepEqual(have, want) {
+					t.Error(cmp.Diff(have, want))
+				}
+			})
+		}
 	}
 }
 
