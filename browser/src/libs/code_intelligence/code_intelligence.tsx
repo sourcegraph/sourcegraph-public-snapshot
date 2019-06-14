@@ -716,26 +716,22 @@ export function handleCodeHost({
             const adjustPosition = getPositionAdjuster && getPositionAdjuster(platformContext.requestGraphQL)
             let hoverSubscription = new Subscription()
             codeViewEvent.subscriptions.add(
-                nativeTooltipsEnabled
-                    .pipe(
-                        tap(useNativeTooltips => {
-                            hoverSubscription.unsubscribe()
-                            if (!useNativeTooltips) {
-                                hoverSubscription = hoverifier.hoverify({
-                                    dom: domFunctions,
-                                    positionEvents: of(element).pipe(
-                                        findPositionsFromEvents({
-                                            domFunctions,
-                                            tokenize: codeHost.codeViewsRequireTokenization !== false,
-                                        })
-                                    ),
-                                    resolveContext,
-                                    adjustPosition,
+                nativeTooltipsEnabled.subscribe(useNativeTooltips => {
+                    hoverSubscription.unsubscribe()
+                    if (!useNativeTooltips) {
+                        hoverSubscription = hoverifier.hoverify({
+                            dom: domFunctions,
+                            positionEvents: of(element).pipe(
+                                findPositionsFromEvents({
+                                    domFunctions,
+                                    tokenize: codeHost.codeViewsRequireTokenization !== false,
                                 })
-                            }
+                            ),
+                            resolveContext,
+                            adjustPosition,
                         })
-                    )
-                    .subscribe()
+                    }
+                })
             )
             codeViewEvent.subscriptions.add(() => hoverSubscription.unsubscribe())
 

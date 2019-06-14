@@ -35,17 +35,10 @@ export function handleNativeTooltips(
     return nativeTooltips.subscribe(({ element, subscriptions }) => {
         subscriptions.add(
             nativeTooltipsEnabled
-                .pipe(
-                    tap(enabled => {
-                        if (enabled) {
-                            element.classList.remove(NATIVE_TOOLTIP_HIDDEN)
-                        } else {
-                            element.classList.add(NATIVE_TOOLTIP_HIDDEN)
-                        }
-                    })
-                )
                 // This subscription is correctly handled through the view's subscriptions.
-                .subscribe()
+                .subscribe(enabled => {
+                    element.classList.toggle(NATIVE_TOOLTIP_HIDDEN, !enabled)
+                })
         )
     })
 }
