@@ -37,9 +37,6 @@ DELETE FROM recent_searches
 		 OFFSET GREATEST(0, (SELECT (SELECT COUNT(*) FROM recent_searches) - $1))
 		 LIMIT 1)
 `
-	if dbconn.Global == nil {
-		return errors.New("nil db connection")
-	}
 	if _, err := dbconn.Global.ExecContext(ctx, enforceLimit, limit); err != nil {
 		return errors.Errorf("deleting excess rows in recent_searches table: %v", err)
 	}
