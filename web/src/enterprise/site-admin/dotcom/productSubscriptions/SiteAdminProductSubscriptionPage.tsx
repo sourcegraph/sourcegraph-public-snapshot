@@ -148,7 +148,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
             <div className="site-admin-product-subscription-page">
                 <PageTitle title="Product subscription" />
                 <div className="mb-2">
-                    <Link to="/site-admin/dotcom/product/subscriptions" className="btn btn-outline-link btn-sm">
+                    <Link to="/site-admin/dotcom/product/subscriptions" className="btn btn-link btn-sm">
                         <ArrowLeftIcon className="icon-inline" /> All subscriptions
                     </Link>
                 </div>
@@ -163,7 +163,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                         <h2>Product subscription {this.state.productSubscriptionOrError.name}</h2>
                         <div className="mb-3">
                             <button
-                                className="btn btn-outline-danger"
+                                className="btn btn-danger"
                                 onClick={this.archiveProductSubscription}
                                 disabled={this.state.archivalOrError === null}
                             >
@@ -237,7 +237,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                                     </button>
                                 ) : (
                                     <button
-                                        className="btn btn-outline-primary btn-sm"
+                                        className="btn btn-primary btn-sm"
                                         onClick={this.toggleShowGenerate}
                                     >
                                         <AddIcon className="icon-inline" /> Generate new license manually

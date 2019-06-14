@@ -102,11 +102,6 @@ $theme-colors-light: (
             border-right-color: #e4e9f1 !important;
         }
     }
-    // A .btn-outline-link button class that displays an unsaturated outline around a link.
-    .btn.btn-outline-link {
-        color: $link-color !important;
-        @include button-outline-variant(#ced4da);
-    }
     .input-group {
         .form-control {
             margin-right: 1rem;
