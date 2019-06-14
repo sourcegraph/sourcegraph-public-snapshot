@@ -26,16 +26,17 @@ type savedQueryField struct {
 var QueryLogChan = make(chan QueryLogItem, 100)
 
 type QueryLogItem struct {
-	query string
-	err   error
+	Query string
+	Err   error
 }
 
+// LogQueries pulls queries from QueryLogChan and logs them to the recent_searches table in the db.
 func LogQueries(ctx context.Context) {
 	for {
 		q := <-QueryLogChan
 		rs := &db.RecentSearches{}
 		ctx := context.Background()
-		if err := rs.Log(ctx, q.query); err != nil {
+		if err := rs.Log(ctx, q.Query); err != nil {
 			log15.Error("adding query to searches table", "error", err)
 		}
 		if err := rs.Cleanup(ctx, 1e5); err != nil {
