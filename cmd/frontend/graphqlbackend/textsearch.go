@@ -379,8 +379,6 @@ func shouldRepoBeSearched(ctx context.Context, info *search.PatternInfo, gitserv
 			if len(matches) <= 0 {
 				// repo shouldn't be searched if it doesn't match the patterns in `repohasfile`.
 				shouldBeSearched = false
-			} else {
-				fmt.Println("SHOULD BE SEARCHED", matches[0].JPath)
 			}
 
 		}
