@@ -468,13 +468,7 @@ type queryLogItem struct {
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
-	srr, err := func() (*searchResultsResolver, error) {
-		rr, err := r.doResults(ctx, "")
-		if err != nil {
-			return nil, err
-		}
-		return rr, nil
-	}()
+	srr, err := r.doResults(ctx, "")
 
 	// Log the query if not too many have piled up to be logged.
 	select {
