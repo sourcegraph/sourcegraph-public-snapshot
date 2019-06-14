@@ -22,7 +22,6 @@ func BenchmarkStore(b *testing.B) {
 	db, cleanup := dbtest.NewDB(b, *dsn)
 	defer cleanup()
 
-	clock := func() time.Time { return time.Now().UTC() }
 	ids := make([]uint32, 30000)
 	for i := range ids {
 		ids[i] = uint32(i)
@@ -98,7 +97,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		now := time.Now().UTC()
 		ttl := time.Second
-		clock := func() time.Time { return now }
+		clock := func() time.Time { return now.Truncate(time.Microsecond) }
 
 		s := newStore(db, ttl, clock, newCache(ttl, clock))
 
