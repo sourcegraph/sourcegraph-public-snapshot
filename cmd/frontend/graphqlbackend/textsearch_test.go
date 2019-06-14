@@ -300,6 +300,46 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 }
 
+func TestShouldRepoBeSearched(t *testing.T) {
+	mockTextSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+		repoName := repo.Name
+		switch repoName {
+		case "foo/one":
+			return []*fileMatchResolver{
+				{
+					uri: "git://" + string(repoName) + "?1a2b3c#" + "main.go",
+				},
+			}, false, nil
+		case "foo/no-filematch":
+			return []*fileMatchResolver{}, false, nil
+		default:
+			return nil, false, errors.New("Unexpected repo")
+		}
+	}
+	defer func() { mockTextSearch = nil }()
+	info := &search.PatternInfo{
+		FileMatchLimit:               defaultMaxSearchResults,
+		Pattern:                      "foo",
+		FilePatternsReposMustInclude: []string{"main"},
+	}
+
+	shouldBeSearched, err := shouldRepoBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/one", URL: "http://example.com/foo/one"}, "1a2b3c", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !shouldBeSearched {
+		t.Errorf("expected repo to be searched, got shouldn't be searched")
+	}
+
+	shouldBeSearched, err = shouldRepoBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/no-filematch", URL: "http://example.com/foo/no-filematch"}, "1a2b3c", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if shouldBeSearched {
+		t.Errorf("expected repo to not be searched, got should be searched")
+	}
+}
+
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
@@ -537,7 +577,33 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				negatedRepoHasFileFlagIsInQuery: true,
 			},
 			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/2": true}},
-		}}
+		},
+		{
+			name: "returns a new repoSet that includes at most the repos from original repoSet",
+			args: args{
+				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1"}, PathPatternsAreRegExps: true},
+				searcher: &fakeSearcher{result: &zoekt.SearchResult{
+					Files: []zoekt.FileMatch{{
+						FileName:   "1.md",
+						Repository: "github.com/test/1",
+						LineMatches: []zoekt.LineMatch{{
+							FileName: true,
+						}}},
+						{
+							FileName:   "1.md",
+							Repository: "github.com/test/2",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}}},
+					},
+					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1", "github.com/test/2": "github.com/test/2"}}},
+				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+				repoHasFileFlagIsInQuery:        false,
+				negatedRepoHasFileFlagIsInQuery: true,
+			},
+			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+		},
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

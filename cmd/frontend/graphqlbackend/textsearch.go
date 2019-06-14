@@ -140,9 +140,15 @@ func (lm *lineMatch) LimitHit() bool {
 	return lm.JLimitHit
 }
 
+var mockTextSearch func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
+
 // textSearch searches repo@commit with p.
 // Note: the returned matches do not set fileMatch.uri
 func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+	if mockTextSearch != nil {
+		return mockTextSearch(ctx, repo, commit, p, fetchTimeout)
+	}
+
 	tr, ctx := trace.New(ctx, "searcher.client", fmt.Sprintf("%s@%s", repo.Name, commit))
 	defer func() {
 		tr.SetError(err)
@@ -336,6 +342,14 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 		return nil, false, err
 	}
 
+	shouldBeSearched, err := shouldRepoBeSearched(ctx, info, gitserverRepo, commit, fetchTimeout)
+	if err != nil {
+		return nil, false, err
+	}
+	if !shouldBeSearched {
+		return matches, false, err
+	}
+
 	matches, limitHit, err = textSearch(ctx, gitserverRepo, commit, info, fetchTimeout)
 
 	workspace := fileMatchURI(repo.Name, rev, "")
@@ -347,6 +361,44 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	}
 
 	return matches, limitHit, err
+}
+
+// shouldRepoBeSearched determines whether a repository should be searched in, based on whether the repository
+// fits in the subset of repositories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
+func shouldRepoBeSearched(ctx context.Context, info *search.PatternInfo, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
+	shouldBeSearched := true
+	repoHasFileFlagIsInQuery := len(info.FilePatternsReposMustInclude) > 0
+	if repoHasFileFlagIsInQuery {
+		// search for file in repo, if file is in repo, actually search through it.
+		for _, pattern := range info.FilePatternsReposMustInclude {
+			repoHasFileOnlyPattern := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			matches, _, err := textSearch(ctx, gitserverRepo, commit, &repoHasFileOnlyPattern, fetchTimeout)
+			if err != nil {
+				return false, err
+			}
+			if len(matches) <= 0 {
+				// repo shouldn't be searched if it doesn't match the patterns in `repohasfile`.
+				shouldBeSearched = false
+			}
+
+		}
+	}
+	negatedRepoHasFileFlagIsInQuery := len(info.FilePatternsReposMustExclude) > 0
+	if negatedRepoHasFileFlagIsInQuery {
+		for _, pattern := range info.FilePatternsReposMustExclude {
+			repoHasFileOnlyPattern := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			matches, _, err := textSearch(ctx, gitserverRepo, commit, &repoHasFileOnlyPattern, fetchTimeout)
+			if err != nil {
+				return false, err
+			}
+			if len(matches) > 0 {
+				// repo shouldn't be searched if it has file matches for the patterns in `-repohasfile`.
+				shouldBeSearched = false
+			}
+		}
+	}
+
+	return shouldBeSearched, nil
 }
 
 func fileMatchURI(name api.RepoName, ref, path string) string {
@@ -600,7 +652,13 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 			for repoURL := range includeResp.RepoURLs {
 				if i == 0 {
 					// For the results from the first file query, add each repo that is in the result set to newRepoSet.
-					newRepoSet[repoURL] = true
+					//
+					// Only add repoURLs that exist in the original repoSet, since
+					// repoSet is already filtered down to repositories that adhere to
+					// fit the `repo` filters in the query.
+					if repoSet.Set[repoURL] {
+						newRepoSet[repoURL] = true
+					}
 				} else {
 					// Then, for all following file queries, if there are repositories already existing in newRepoSet that do not appear in
 					// the result set for the current file query, remove them so that we only include repos that have at least
