@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"reflect"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -92,7 +91,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 	equal := func(t testing.TB, name string, have, want interface{}) {
 		t.Helper()
 		if !reflect.DeepEqual(have, want) {
-			t.Errorf("%q: %s", name, cmp.Diff(have, want))
+			t.Fatalf("%q: %s", name, cmp.Diff(have, want))
 		}
 	}
 
@@ -166,19 +165,29 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			want := atomic.LoadUint64(&calls) + 1
 
-			var wg sync.WaitGroup
-			for i := 1; i <= 25; i++ {
-				wg.Add(1)
+			type op struct {
+				ps  *Permissions
+				err error
+			}
+
+			ch := make(chan op, 25)
+			for i := 1; i <= cap(ch); i++ {
 				go func(i int) {
 					s := newStore(db, ttl, clock, newCache(ttl, clock))
-					defer wg.Done()
 					ps, err := load(s)
-					equal(t, "err", err, nil)
-					equal(t, "ids", ps.IDs.ToArray(), ids)
+					ch <- op{ps, err}
 				}(i)
 			}
 
-			wg.Wait()
+			results := make([]op, 0, cap(ch))
+			for i := 0; i < cap(ch); i++ {
+				results = append(results, <-ch)
+			}
+
+			for _, r := range results {
+				equal(t, "err", r.err, nil)
+				equal(t, "ids", r.ps.IDs.ToArray(), ids)
+			}
 
 			equal(t, "updates", atomic.LoadUint64(&calls), want)
 		}
