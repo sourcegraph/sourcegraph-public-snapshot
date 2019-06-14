@@ -582,8 +582,6 @@ Foreign-key constraints:
  updated_at  | timestamp with time zone | not null
 Indexes:
     "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
-Foreign-key constraints:
-    "user_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
 ```
 
@@ -634,6 +632,5 @@ Referenced by:
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
-    TABLE "user_permissions" CONSTRAINT "user_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
 ```
