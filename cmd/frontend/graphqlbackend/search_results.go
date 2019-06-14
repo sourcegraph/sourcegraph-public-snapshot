@@ -472,7 +472,7 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 			rr = &searchResultsResolver{
 				alert: &searchAlert{
 					title:       "Timeout",
-					description: fmt.Sprintf("Deadline exceeded after about %s", roundStr(dt.String())),
+					description: fmt.Sprintf("Deadline exceeded after about %s.", roundStr(dt.String())),
 					proposedQueries: []*searchQueryDescription{
 						{
 							description: "query with longer timeout",
