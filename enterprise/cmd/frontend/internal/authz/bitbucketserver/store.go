@@ -196,7 +196,7 @@ func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uin
 	// but maybe another process already finished the cache fill event.
 	// If so, we don't have to update it again until it expires.
 	now := s.clock()
-	if now.Before(p.UpdatedAt.Add(s.ttl)) {
+	if now.Before(p.UpdatedAt.Add(s.ttl)) { // Valid!
 		return nil // Updated by another process!
 	}
 
