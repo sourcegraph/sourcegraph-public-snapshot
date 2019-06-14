@@ -47,7 +47,7 @@ export function nativeTooltipsEnabledFromSettings(settings: PlatformContext['set
     return from(settings).pipe(
         map(({ final }) => final),
         filter(isDefined),
-        filter((s: Settings | ErrorLike): s is Settings => !isErrorLike(s)),
+        filter((s: Settings | ErrorLike): s is Exclude<typeof s, ErrorLike> => !isErrorLike(s)),
         map(s => !!s['codeHost.useNativeTooltips']),
         distinctUntilChanged((a, b) => isEqual(a, b)),
         publishReplay(1),
