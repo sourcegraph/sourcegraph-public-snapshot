@@ -245,7 +245,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	archivedStr, _ := r.query.StringValue(query.FieldArchived)
 	archived := parseYesNoOnly(archivedStr)
 
-	commitAfter, _ := r.query.StringValue(query.FieldCommitAfter)
+	commitAfter, _ := r.query.StringValue(query.FieldRepoHasCommitAfter)
 
 	tr.LazyPrintf("resolveRepositories - start")
 	repoRevs, missingRepoRevs, repoResults, overLimit, err = resolveRepositories(ctx, resolveRepoOp{
