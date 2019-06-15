@@ -184,7 +184,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
             <div className="extensions-list">
                 <Form onSubmit={this.onSubmit} className="form-inline">
                     <input
-                        className="form-control flex-grow-1 mr-1 mb-2"
+                        className="form-control flex-1 mr-2 mb-2"
                         type="search"
                         placeholder="Search extensions..."
                         name="query"
@@ -196,7 +196,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                         autoCapitalize="off"
                         spellCheck={false}
                     />
-                    <div className="mb-2">
+                    <div className="d-flex mb-2">
                         <ExtensionsQueryInputToolbar
                             query={this.state.query}
                             onQueryChange={this.onQueryChangeImmediate}

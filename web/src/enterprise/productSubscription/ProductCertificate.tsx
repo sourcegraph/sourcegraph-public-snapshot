@@ -31,7 +31,7 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
     className = '',
 }) => (
     <>
-        <div className={`product-certificate card ${className || ''}`}>
+        <div className={`product-certificate card position-relative ${className || ''}`}>
             <div className="card-body d-flex align-items-center">
                 <img className="product-certificate__logo mr-1 p-2" src="/.assets/img/sourcegraph-mark.svg" />
                 <div>
