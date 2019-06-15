@@ -22,9 +22,9 @@ export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderP
 ) => (
     <div className="container">
         {props.isPrimaryHeader && (
-            <div className="navbar navbar-expand px-0">
+            <div className="d-flex align-items-center mt-3">
                 <h2 className="mb-0">Extensions</h2>
-                <div className="spacer" />
+                <div className="flex-1" />
                 <ul className="navbar-nav nav">
                     {props.actionButtons.map(
                         ({ condition = () => true, to, icon: Icon, label, tooltip }) =>

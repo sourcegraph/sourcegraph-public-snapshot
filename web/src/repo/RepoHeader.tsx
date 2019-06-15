@@ -188,7 +188,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
             encodedRev: this.props.rev,
         }
         return (
-            <nav className="repo-header navbar navbar-expand">
+            <nav className="repo-header d-flex align-items-center">
                 <div className="d-flex align-items-center">
                     <Link
                         to={
@@ -213,12 +213,12 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     </UncontrolledPopover>
                 </div>
                 {navActions.map((a, i) => (
-                    <div className="navbar-nav" key={a.element.key || i}>
+                    <div className="d-flex" key={a.element.key || i}>
                         <ChevronRightIcon className="icon-inline repo-header__icon-chevron" />
                         {a.element}
                     </div>
                 ))}
-                <ul className="navbar-nav">
+                <ul className="nav">
                     {leftActions.map((a, i) => (
                         <li className="nav-item" key={a.element.key || i}>
                             {a.element}
@@ -226,10 +226,10 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     ))}
                 </ul>
                 <div className="repo-header__spacer" />
-                <ul className="navbar-nav navbar-nav__action-items">
+                <ul className="navbar-nav__action-items">
                     <WebActionsNavItems {...this.props} menu={ContributableMenu.EditorTitle} />
                 </ul>
-                <ul className="navbar-nav">
+                <ul className="nav">
                     {this.props.actionButtons.map(
                         ({ condition = () => true, label, tooltip, icon: Icon, to }) =>
                             condition(context) && (
