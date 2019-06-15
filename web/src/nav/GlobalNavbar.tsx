@@ -80,29 +80,19 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        let logoSrc: string
-        const showFullLogo = this.props.location.pathname === '/welcome'
-        if (showFullLogo) {
-            logoSrc = this.props.isLightTheme
-                ? '/.assets/img/sourcegraph-light-head-logo.svg'
-                : '/.assets/img/sourcegraph-head-logo.svg'
-        } else {
-            logoSrc = '/.assets/img/sourcegraph-mark.svg'
-            const { branding } = window.context
-            if (branding) {
-                if (this.props.isLightTheme) {
-                    if (branding.light && branding.light.symbol) {
-                        logoSrc = branding.light.symbol
-                    }
-                } else if (branding.dark && branding.dark.symbol) {
-                    logoSrc = branding.dark.symbol
+        let logoSrc = '/.assets/img/sourcegraph-mark.svg'
+        const { branding } = window.context
+        if (branding) {
+            if (this.props.isLightTheme) {
+                if (branding.light && branding.light.symbol) {
+                    logoSrc = branding.light.symbol
                 }
+            } else if (branding.dark && branding.dark.symbol) {
+                logoSrc = branding.dark.symbol
             }
         }
 
-        const logo = (
-            <img className={`global-navbar__logo ${showFullLogo ? 'global-navbar__logo--full' : ''}`} src={logoSrc} />
-        )
+        const logo = <img className="global-navbar__logo" src={logoSrc} />
 
         return (
             <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg'}`}>
@@ -117,7 +107,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                 {logo}
                             </Link>
                         )}
-                        {!this.state.authRequired && this.props.location.pathname !== '/welcome' && (
+                        {!this.state.authRequired && (
                             <div className="global-navbar__search-box-container d-none d-sm-flex">
                                 <SearchNavbarItem
                                     {...this.props}

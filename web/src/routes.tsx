@@ -41,7 +41,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
         path: '/',
         render: (props: any) =>
             window.context.sourcegraphDotComMode && !props.user ? (
-                <Redirect to="/welcome" />
+                <Redirect to="https://about.sourcegraph.com" />
             ) : (
                 <Redirect to="/search" />
             ),
