@@ -192,14 +192,14 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             namespace: this.state.userOrError,
         }
         return (
-            <div className="user-area w-100">
+            <div className="user-area w-100 d-flex flex-column">
                 <UserAreaHeader
                     {...this.props}
                     {...context}
                     navItems={this.props.userAreaHeaderNavItems}
-                    className="border-bottom mt-4"
+                    className="flex-0 border-bottom mt-4"
                 />
-                <div className="container mt-3">
+                <div className="container mt-3 flex-1 d-flex flex-column">
                     <ErrorBoundary location={this.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
