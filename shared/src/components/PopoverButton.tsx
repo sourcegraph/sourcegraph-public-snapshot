@@ -85,7 +85,7 @@ export class PopoverButton extends React.PureComponent<PopoverButtonProps, Popov
                 isOpen={isOpen}
                 toggle={this.toggleVisibility}
                 target={this.rootRef}
-                className={`popover-button2__popover ${this.props.popoverClassName || ''}`}
+                innerClassName={`popover-button__popover ${this.props.popoverClassName || ''}`}
                 // This popover is manually triggered. Must remove default "click" trigger so that
                 // in link mode (this.props.link), only caret (not link) opens the popover.
                 trigger=""
@@ -97,27 +97,25 @@ export class PopoverButton extends React.PureComponent<PopoverButtonProps, Popov
 
         return (
             <div
-                className={`popover-button2 ${isOpen ? 'popover-button2--open' : ''} ${this.props.className || ''} ${
-                    this.props.link ? 'popover-button2__container' : 'popover-button2__btn popover-button2__anchor'
+                className={`popover-button ${isOpen ? 'popover-button--open' : ''} ${this.props.className || ''} ${
+                    this.props.link ? 'popover-button__container' : 'popover-button__btn popover-button__anchor'
                 }`}
                 ref={this.setRootRef}
             >
                 <LinkOrSpan
                     className={
-                        this.props.link
-                            ? 'popover-button2__btn popover-button2__btn--link'
-                            : 'popover-button2__container'
+                        this.props.link ? 'popover-button__btn popover-button__btn--link' : 'popover-button__container'
                     }
                     to={this.props.link}
                     onClick={this.props.link ? this.hide : this.toggleVisibility}
                 >
                     {this.props.children}{' '}
-                    {!this.props.link && <MenuDownIcon className="icon-inline popover-button2__icon" />}
+                    {!this.props.link && <MenuDownIcon className="icon-inline popover-button__icon" />}
                 </LinkOrSpan>
                 {this.props.link ? (
-                    <div className="popover-button2__anchor">
+                    <div className="popover-button__anchor">
                         <div onClick={this.toggleVisibility}>
-                            <MenuDownIcon className="icon-inline popover-button2__icon popover-button2__icon--outside" />
+                            <MenuDownIcon className="icon-inline popover-button__icon popover-button__icon--outside" />
                         </div>
                         {popoverAnchor}
                     </div>

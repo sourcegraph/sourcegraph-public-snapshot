@@ -4,12 +4,12 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { LinkOrButton } from '../../../shared/src/components/LinkOrButton'
+import { PopoverButton } from '../../../shared/src/components/PopoverButton'
 import { displayRepoName, splitPath } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { PopoverButton } from '../components/PopoverButton'
 import { WebActionsNavItems } from '../components/shared'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { ActionButtonDescriptor } from '../util/contributions'
@@ -190,7 +190,6 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 <div className="navbar-nav">
                     <PopoverButton
                         className="repo-header__section-btn repo-header__repo"
-                        globalKeyBinding="r"
                         link={
                             this.props.resolvedRev && !isErrorLike(this.props.resolvedRev)
                                 ? this.props.resolvedRev.rootTreeURL

@@ -6,13 +6,13 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
+import { PopoverButton } from '../../../shared/src/components/PopoverButton'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
-import { PopoverButton } from '../components/PopoverButton'
 import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME } from '../marketing/util'
@@ -228,7 +228,6 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         <PopoverButton
                             key="repo-rev"
                             className="repo-header__section-btn repo-header__rev"
-                            globalKeyBinding="v"
                             popoverElement={
                                 <RevisionsPopover
                                     repo={this.props.repo.id}
