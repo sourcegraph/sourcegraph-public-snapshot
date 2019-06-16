@@ -1,3 +1,7 @@
+:root {
+    --toggle-width: 2.125rem;
+}
+
 .toggle {
     background: none;
     border: none;
@@ -6,8 +10,7 @@
     outline: none !important;
     padding: 0;
     position: relative;
-    width: 2rem;
-    z-index: 0;
+    width: var(--toggle-width);
 }
 
 .toggle__bar {
@@ -25,7 +28,6 @@
     width: 100%;
 
     position: absolute;
-    z-index: 0;
 }
 
 .toggle__bar--active {
@@ -44,7 +46,6 @@
     margin-top: 2px;
 
     position: relative;
-    z-index: 1;
 }
 
 .toggle__knob--active {

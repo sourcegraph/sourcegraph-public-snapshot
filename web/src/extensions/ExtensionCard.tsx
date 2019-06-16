@@ -1,8 +1,8 @@
 import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { Path } from '../../../shared/src/components/Path'
+import { Toggle } from '../../../shared/src/components/Toggle'
 import { ConfiguredRegistryExtension, isExtensionEnabled } from '../../../shared/src/extensions/extension'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -27,6 +27,13 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
 }
 
+const preventDefaultIfToggleClicked: React.MouseEventHandler<HTMLElement> = e => {
+    const target = e.target
+    if (target instanceof HTMLElement && !!target.closest(`.${Toggle.CLASS_NAME}`)) {
+        e.preventDefault()
+    }
+}
+
 /** Displays an extension as a card. */
 export class ExtensionCard extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
@@ -45,9 +52,11 @@ export class ExtensionCard extends React.PureComponent<Props> {
         return (
             <div className="d-flex">
                 <div className="extension-card card">
-                    <LinkOrSpan
-                        to={node.registryExtension && node.registryExtension.url}
-                        className="card-body extension-card__body d-flex flex-column"
+                    <div
+                        className="card-body extension-card__body d-flex flex-column position-relative"
+                        // Prevent toggle clicks from propagating to the stretched-link (and
+                        // navigating to the extension detail page).
+                        onClick={preventDefaultIfToggleClicked}
                     >
                         <div className="d-flex">
                             {manifest &&
@@ -57,22 +66,43 @@ export class ExtensionCard extends React.PureComponent<Props> {
                                 /^data:image\/png(;base64)?,/.test(manifest.icon) && (
                                     <img className="extension-card__icon mr-2" src={manifest.icon} />
                                 )}
-                            <div className="text-truncate">
+                            <div className="text-truncate w-100">
                                 <div className="d-flex align-items-center">
-                                    <h4 className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal">
-                                        <Path
-                                            path={
-                                                node.registryExtension
-                                                    ? node.registryExtension.extensionIDWithoutRegistry
-                                                    : node.id
-                                            }
-                                        />
+                                    <h4 className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal flex-1">
+                                        <LinkOrSpan
+                                            to={node.registryExtension && node.registryExtension.url}
+                                            className="stretched-link"
+                                        >
+                                            <Path
+                                                path={
+                                                    node.registryExtension
+                                                        ? node.registryExtension.extensionIDWithoutRegistry
+                                                        : node.id
+                                                }
+                                            />
+                                        </LinkOrSpan>
                                     </h4>
                                     {node.registryExtension && node.registryExtension.isWorkInProgress && (
                                         <WorkInProgressBadge
                                             viewerCanAdminister={node.registryExtension.viewerCanAdminister}
                                         />
                                     )}
+                                    {props.subject &&
+                                        (props.subject.viewerCanAdminister ? (
+                                            <ExtensionToggle
+                                                extension={node}
+                                                settingsCascade={this.props.settingsCascade}
+                                                platformContext={this.props.platformContext}
+                                                className="extension-card__toggle"
+                                            />
+                                        ) : (
+                                            <ExtensionConfigurationState
+                                                isAdded={isExtensionAdded(props.settingsCascade.final, node.id)}
+                                                isEnabled={isExtensionEnabled(props.settingsCascade.final, node.id)}
+                                                enabledIconOnly={true}
+                                                className="small"
+                                            />
+                                        ))}
                                 </div>
                                 <div className="mt-1">
                                     {node.manifest ? (
@@ -95,33 +125,6 @@ export class ExtensionCard extends React.PureComponent<Props> {
                                 </div>
                             </div>
                         </div>
-                    </LinkOrSpan>
-                    <div className="card-footer extension-card__footer py-0 pl-0">
-                        <ul className="nav align-items-center">
-                            {node.registryExtension && node.registryExtension.url && (
-                                <li className="nav-item">
-                                    <Link to={node.registryExtension.url} className="nav-link px-2" tabIndex={-1}>
-                                        Details
-                                    </Link>
-                                </li>
-                            )}
-                            <li className="extension-card__spacer" />
-                            {props.subject &&
-                                (props.subject.viewerCanAdminister ? (
-                                    <ExtensionToggle
-                                        extension={node}
-                                        settingsCascade={this.props.settingsCascade}
-                                        platformContext={this.props.platformContext}
-                                    />
-                                ) : (
-                                    <li className="nav-item">
-                                        <ExtensionConfigurationState
-                                            isAdded={isExtensionAdded(props.settingsCascade.final, node.id)}
-                                            isEnabled={isExtensionEnabled(props.settingsCascade.final, node.id)}
-                                        />
-                                    </li>
-                                ))}
-                        </ul>
                     </div>
                 </div>
             </div>
