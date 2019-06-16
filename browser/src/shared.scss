@@ -3,7 +3,6 @@
 @import '../../shared/src/actions/ActionItem';
 @import '../../shared/src/commandPalette/CommandList';
 @import '../../shared/src/components/completion/CompletionWidget.scss';
-@import '../../shared/src/components/PopoverButton';
 @import '../../shared/src/components/Toggle';
 @import '../../shared/src/extensions/ExtensionStatus';
 @import '../../shared/src/notifications/NotificationItem';
@@ -25,6 +24,11 @@ $body-color-dark: #f2f4f8;
 
 .command-palette-button {
     align-self: center;
+
+    > .command-list-popover-button {
+        user-select: none;
+        position: relative;
+    }
 }
 
 .command-list {
@@ -35,6 +39,12 @@ $body-color-dark: #f2f4f8;
     a {
         cursor: pointer;
     }
+}
+
+.command-list-popover {
+    z-index: 1100; // high enough to prevent most things from obscuring it
+    border: 1px solid var(--dropdown-border-color);
+    border-radius: 3px;
 }
 
 .sourcegraph-extensions-global {
