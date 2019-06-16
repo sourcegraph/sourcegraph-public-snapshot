@@ -609,7 +609,7 @@ li.content-nav-no-hover:hover {
     border-right: 1px solid #eaecee;
     padding-left: env(safe-area-inset-left);
 }
-/* These ul styles are copied to https://github.com/sourcegraph/sourcegraph DocSitePage.scss. They should be kept in sync. */
+
 .page-nav > ul {
     padding-left: var(--spacing);
 }
