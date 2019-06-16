@@ -47,7 +47,7 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
 
     private static getAddURL(serviceToAdd: AddExternalServiceMetadata): string {
         const params = new URLSearchParams()
-        params.append('kind', serviceToAdd.serviceKind.toLowerCase())
+        params.append('kind', serviceToAdd.kind.toLowerCase())
         if (serviceToAdd.variant) {
             params.append('variant', serviceToAdd.variant)
         }

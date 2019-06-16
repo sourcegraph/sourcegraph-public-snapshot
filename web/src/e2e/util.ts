@@ -136,7 +136,9 @@ export class Driver {
 
         await (await this.page.waitForSelector('.e2e-goto-add-external-service-page', { visible: true })).click()
 
-        await (await this.page.waitForSelector(`.linked-external-service-card--${kind}`, { visible: true })).click()
+        await (await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
+            visible: true,
+        })).click()
 
         await this.replaceText({
             selector: '#e2e-external-service-form-display-name',
