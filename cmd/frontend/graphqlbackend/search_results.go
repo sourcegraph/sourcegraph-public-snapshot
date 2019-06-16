@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	"math"
 	"path"
 	"regexp"
@@ -481,6 +482,8 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*searchResultsResolver, error) {
 	start := time.Now()
 	rr, err := r.doResults(ctx, "")
+
+	// Show a did-you-mean if the deadline was exceeded.
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			dt := time.Since(start)
@@ -501,7 +504,59 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*sea
 		}
 		return nil, err
 	}
+
+	// Maybe show a did-you-mean for a quoted (literal) version of the query
+	// if there are no results and it wasn't already quoted.
+	if len(rr.results) == 0 && queryMightBeBetterQuoted(r.query) {
+		rr = &searchResultsResolver{
+			alert: &searchAlert{
+				title:       "Try quoted",
+				description: fmt.Sprintf("No results found"),
+				proposedQueries: []*searchQueryDescription{
+					{
+						description: "quoted query",
+						query:       quote(r.query),
+					},
+				},
+			},
+		}
+		return rr, nil
+	}
 	return rr, nil
+}
+
+func queryMightBeBetterQuoted(q *query.Query) bool {
+	ret := false
+	for _, e := range q.Syntax.Expr {
+		ret = ret || exprMightBeBetterQuoted(e)
+	}
+	return ret
+}
+
+func exprMightBeBetterQuoted(e *syntax.Expr) bool {
+	switch e.ValueType {
+	case syntax.TokenPattern:
+		return true
+	case syntax.TokenLiteral:
+		rxChars := `^[](){}.*+$`
+		return strings.ContainsAny(e.Value, rxChars)
+	}
+	return false
+}
+
+func quote(q *query.Query) string {
+	exs2 := make([]*syntax.Expr, len(q.Syntax.Expr))
+	for i, e := range q.Syntax.Expr {
+		e2 := *e
+		if exprMightBeBetterQuoted(e) {
+			e2.ValueType = syntax.TokenQuoted
+			e2.Value = fmt.Sprintf("%q", e2.Value)
+		}
+		exs2[i] = &e2
+	}
+	q2 := *q
+	q2.Syntax.Expr = exs2
+	return q2.Syntax.String()
 }
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.

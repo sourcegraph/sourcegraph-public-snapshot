@@ -11,6 +11,10 @@ type Query struct {
 	Expr  []*Expr // expressions in this query
 }
 
+func (q *Query) String() string {
+	return ExprString(q.Expr)
+}
+
 // An Expr describes an expression in a query.
 type Expr struct {
 	Pos       int       // the starting character position of the query expression
