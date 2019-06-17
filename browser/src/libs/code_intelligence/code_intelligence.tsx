@@ -765,7 +765,7 @@ export function handleCodeHost({
                     }
                 })
             )
-            codeViewEvent.subscriptions.add(() => hoverSubscription.unsubscribe())
+            codeViewEvent.subscriptions.add(hoverSubscription)
 
             element.classList.add('sg-mounted')
 
