@@ -161,20 +161,16 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                 {this.props.activation &&
                     this.props.activation.completed &&
                     percentageDone(this.props.activation.completed) < 100 && (
-                        <div className="user-settings-profile-page__activation-container">
-                            <div className="user-settings-profile-page__activation-header">
-                                <h3 className="user-settings-profile-page__activation-title">Almost there!</h3>
-                                <p className="user-settings-profile-page__activation-copy">
-                                    Complete the steps below to finish onboarding to Sourcegraph.
-                                </p>
+                        <div className="card mb-3">
+                            <div className="card-body">
+                                <h3 className="mb-0">Almost there!</h3>
+                                <p className="mb-0">Complete the steps below to finish onboarding to Sourcegraph.</p>
                             </div>
-                            <div className="user-settings-profile-page__checklist-container">
-                                <ActivationChecklist
-                                    history={this.props.history}
-                                    steps={this.props.activation.steps}
-                                    completed={this.props.activation.completed}
-                                />
-                            </div>
+                            <ActivationChecklist
+                                history={this.props.history}
+                                steps={this.props.activation.steps}
+                                completed={this.props.activation.completed}
+                            />
                         </div>
                     )}
 
