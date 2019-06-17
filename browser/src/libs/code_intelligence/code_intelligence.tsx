@@ -48,6 +48,7 @@ import { Controller } from '../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '../../../../shared/src/hover/actions'
 import {
+    HoverAlert,
     HoverContext,
     HoverData,
     HoverOverlay,
@@ -300,8 +301,10 @@ export function initCodeIntelligence({
     extensionsController,
     render,
     telemetryService,
+    hoverAlerts,
 }: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
     render: typeof reactDOMRender
+    hoverAlerts: Observable<HoverAlert<ExtensionHoverAlertType>>[]
 }): {
     hoverifier: Hoverifier<
         RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
@@ -346,7 +349,7 @@ export function initCodeIntelligence({
         getHover: ({ line, character, part, ...rest }) =>
             combineLatest([
                 getHover({ ...rest, position: { line, character } }),
-                getActiveHoverAlerts(codeHost.name),
+                getActiveHoverAlerts(hoverAlerts),
             ]).pipe(
                 map(([hoverMerged, alerts]): HoverData<ExtensionHoverAlertType> | null =>
                     hoverMerged ? { ...hoverMerged, alerts } : null
@@ -454,12 +457,26 @@ export function handleCodeHost({
         filter(isInstanceOf(HTMLElement))
     )
 
+    const nativeTooltipsEnabled = codeHost.nativeTooltipResolvers
+        ? nativeTooltipsEnabledFromSettings(platformContext.settings)
+        : of(true)
+
+    const hoverAlerts: Observable<HoverAlert<ExtensionHoverAlertType>>[] = []
+
+    if (codeHost.nativeTooltipResolvers) {
+        const { subscription, nativeTooltipsAlert } = handleNativeTooltips(mutations, nativeTooltipsEnabled, codeHost)
+        subscriptions.add(subscription)
+        hoverAlerts.push(nativeTooltipsAlert)
+        subscriptions.add(registerNativeTooltipContributions(extensionsController))
+    }
+
     const { hoverifier, subscription } = initCodeIntelligence({
         codeHost,
         extensionsController,
         platformContext,
         telemetryService,
         render,
+        hoverAlerts,
     })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
@@ -577,15 +594,6 @@ export function handleCodeHost({
         } else {
             rootRefCounts.set(uri, updatedRefCount)
         }
-    }
-
-    const nativeTooltipsEnabled = codeHost.nativeTooltipResolvers
-        ? nativeTooltipsEnabledFromSettings(platformContext.settings)
-        : of(true)
-
-    if (codeHost.nativeTooltipResolvers) {
-        subscriptions.add(handleNativeTooltips(mutations, nativeTooltipsEnabled, codeHost.nativeTooltipResolvers))
-        subscriptions.add(registerNativeTooltipContributions(extensionsController))
     }
 
     subscriptions.add(

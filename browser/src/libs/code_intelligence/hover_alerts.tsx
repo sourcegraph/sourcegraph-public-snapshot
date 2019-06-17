@@ -1,30 +1,30 @@
 import { Observable } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { catchError, map, startWith, switchMap } from 'rxjs/operators'
 import { HoverAlert } from '../../../../shared/src/hover/HoverOverlay'
+import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { observeStorageKey, storage } from '../../browser/storage'
 import { StorageItems } from '../../browser/types'
-import { nativeTooltipsAlert } from './native_tooltips'
 
 export type ExtensionHoverAlertType = 'nativeTooltips'
-
-const getAllHoverAlerts = (codeHostName?: string): HoverAlert<ExtensionHoverAlertType>[] => [
-    { type: 'nativeTooltips', content: nativeTooltipsAlert(codeHostName) },
-]
 
 /**
  * Returns an Osbervable of all hover alerts that have not yet
  * been dismissed by the user.
  */
 export function getActiveHoverAlerts(
-    codeHostName?: string
+    allAlerts: Observable<HoverAlert<ExtensionHoverAlertType>>[]
 ): Observable<HoverAlert<ExtensionHoverAlertType>[] | undefined> {
-    const allAlerts = getAllHoverAlerts(codeHostName)
     return observeStorageKey('sync', 'dismissedHoverAlerts').pipe(
-        map(dismissedAlerts => (dismissedAlerts ? allAlerts.filter(({ type }) => !dismissedAlerts[type]) : allAlerts)),
+        switchMap(dismissedAlerts =>
+            combineLatestOrDefault(allAlerts).pipe(
+                map(alerts => (dismissedAlerts ? alerts.filter(({ type }) => !dismissedAlerts[type]) : alerts))
+            )
+        ),
         catchError(err => {
             console.error('Error getting hover alerts', err)
             return [undefined]
-        })
+        }),
+        startWith([])
     )
 }
 /**
