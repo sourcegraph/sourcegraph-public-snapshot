@@ -32,9 +32,11 @@ func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResol
 	srr := &searchResultsResolver{
 		alert: &searchAlert{
 			title:           "Try quoted",
-			description:     r.err.Error(),
 			proposedQueries: sqds,
 		},
+	}
+	if r.err != nil {
+		srr.alert.description = r.err.Error()
 	}
 	return srr, nil
 }
