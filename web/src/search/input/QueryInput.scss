@@ -8,6 +8,8 @@
         // Right side is flush with SearchButton.
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
+
+        resize: none;
     }
 
     &__suggestions {

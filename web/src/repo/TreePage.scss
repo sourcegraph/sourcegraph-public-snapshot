@@ -23,6 +23,7 @@
         max-width: 64rem;
         &-search {
             display: flex;
+            align-items: flex-start;
             .search-help {
                 margin-left: 0.25rem;
                 // stylelint-disable-next-line declaration-property-unit-whitelist

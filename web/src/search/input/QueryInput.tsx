@@ -18,6 +18,7 @@ import {
     toArray,
 } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
+import { MultilineTextField } from '../../../../shared/src/components/multilineTextField/MultilineTextField'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { fetchSuggestions } from '../backend'
@@ -88,7 +89,7 @@ export class QueryInput extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     /** Emits on keydown events in the input field */
-    private inputKeyDowns = new Subject<React.KeyboardEvent<HTMLInputElement>>()
+    private inputKeyDowns = new Subject<React.KeyboardEvent<HTMLTextAreaElement>>()
 
     /** Emits new input values */
     private inputValues = new Subject<string>()
@@ -100,7 +101,7 @@ export class QueryInput extends React.Component<Props, State> {
     private suggestionsHidden = new Subject<void>()
 
     /** Only used for selection and focus management */
-    private inputElement?: HTMLInputElement
+    private inputElement?: HTMLTextAreaElement
 
     /** Only used for scroll state management */
     private suggestionListElement?: HTMLElement
@@ -280,7 +281,7 @@ export class QueryInput extends React.Component<Props, State> {
 
         return (
             <div className="query-input">
-                <input
+                <MultilineTextField
                     className="form-control query-input__input rounded-left e2e-query-input"
                     value={this.props.value}
                     autoFocus={this.props.autoFocus === true}
@@ -291,7 +292,8 @@ export class QueryInput extends React.Component<Props, State> {
                     spellCheck={false}
                     autoCapitalize="off"
                     placeholder={this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder}
-                    ref={ref => (this.inputElement = ref!)}
+                    // tslint:disable-next-line: jsx-no-lambda for ref
+                    inputRef={ref => (this.inputElement = ref)}
                     name="query"
                     autoComplete="off"
                 />
@@ -350,7 +352,7 @@ export class QueryInput extends React.Component<Props, State> {
         }
     }
 
-    private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+    private onInputChange: React.ChangeEventHandler<HTMLTextAreaElement> = event => {
         if (!this.hasLoggedFirstInput) {
             eventLogger.log('SearchInitiated')
             this.hasLoggedFirstInput = true
@@ -358,17 +360,17 @@ export class QueryInput extends React.Component<Props, State> {
         this.inputValues.next(event.currentTarget.value)
     }
 
-    private onInputFocus: React.FocusEventHandler<HTMLInputElement> = event => {
+    private onInputFocus: React.FocusEventHandler<HTMLTextAreaElement> = event => {
         this.inputFocuses.next()
         this.setState({ inputFocused: true })
     }
 
-    private onInputBlur: React.FocusEventHandler<HTMLInputElement> = event => {
+    private onInputBlur: React.FocusEventHandler<HTMLTextAreaElement> = event => {
         this.suggestionsHidden.next()
         this.setState({ inputFocused: false, loading: false, hideSuggestions: true })
     }
 
-    private onInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = event => {
+    private onInputKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = event => {
         event.persist()
         this.inputKeyDowns.next(event)
         switch (event.key) {
