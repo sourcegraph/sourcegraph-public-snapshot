@@ -7,12 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 )
 
-type Args struct {
-	MatchTemplate   string
-	RewriteTemplate string
-	FileFilter      string
-}
-
 func TestCodemod_validateArgsNoRegex(t *testing.T) {
 	q, _ := query.ParseAndCheck("re.*gex")
 	_, _, _, err := validateQuery(q)
