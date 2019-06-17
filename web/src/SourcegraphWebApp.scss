@@ -280,4 +280,4 @@ body,
 @import './components/SearchResultMatch';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
-@import './extensions/shared';
+@import '../../shared/src/index';
