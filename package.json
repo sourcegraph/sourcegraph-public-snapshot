@@ -125,7 +125,7 @@
     "@types/textarea-caret": "3.0.0",
     "@types/uuid": "3.4.4",
     "@types/webpack": "4.4.32",
-    "@types/webpack-dev-server": "3.1.5",
+    "@types/webpack-dev-server": "3.1.6",
     "@types/whatwg-url": "6.4.0",
     "@typescript-eslint/eslint-plugin": "^1.10.2",
     "@typescript-eslint/parser": "^1.10.2",
@@ -188,7 +188,7 @@
     "typescript": "^3.5.1",
     "utc-version": "^2.0.0",
     "webpack": "^4.33.0",
-    "webpack-dev-server": "^3.3.1",
+    "webpack-dev-server": "^3.7.1",
     "worker-loader": "^2.0.0",
     "yarn-deduplicate": "^1.1.1"
   },
