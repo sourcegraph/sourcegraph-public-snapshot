@@ -544,6 +544,8 @@ func exprMightBeBetterQuoted(e *syntax.Expr) bool {
 	return false
 }
 
+// quote quotes any sub-expressions of the given query that look like they
+// would give a different result that way.
 func quote(q *query.Query) string {
 	exs2 := make([]*syntax.Expr, len(q.Syntax.Expr))
 	for i, e := range q.Syntax.Expr {

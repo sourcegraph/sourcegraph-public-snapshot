@@ -63,11 +63,81 @@ func (r *schemaResolver) Search(args *struct {
 	defer tr.Finish()
 	q, err := query.ParseAndCheck(args.Query)
 	if err != nil {
-		return nil, err
+		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
 	}
 	return &searchResolver{
 		query: q,
 	}, nil
+}
+
+type didYouMeanQuotedResolver struct {
+	query string
+	err   error
+}
+
+func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResolver, error) {
+	pqs := []*searchQueryDescription {
+		{
+			description: "query quoted entirely",
+			query:       fmt.Sprintf("%q", r.query),
+		},
+	}
+	q2 := quotedRawQuery(r.query)
+	if q2 != pqs[0].query {
+		pqs = append(pqs, &searchQueryDescription{
+			description: "query quoted by parts",
+			query: q2,
+		})
+	}
+	// TODO: Try also quoting the query entirely, other than the fields.
+
+	srr := &searchResultsResolver{
+		alert: &searchAlert{
+			title:       "Try quoted",
+			description: r.err.Error(),
+			proposedQueries: pqs,
+		},
+	}
+	return srr, nil
+}
+
+func quotedRawQuery(q string) string {
+	rx := regexp.MustCompile(`\s+`)
+	parts := rx.Split(q, -1)
+	for i, p := range parts {
+		p = strings.TrimSpace(p)
+		if partNeedsQuoting(p) {
+			parts[i] = fmt.Sprintf("%q", p)
+		}
+	}
+	return strings.Join(parts, " ")
+}
+
+func partNeedsQuoting(p string) bool {
+	if strings.HasPrefix(p, ":") {
+		// like := for example
+		return true
+	}
+	if strings.Count(p, ":") == 1 {
+		// Looks like a field such as file:foo or repo:bar.
+		return false
+	}
+	if p == "" {
+		return false
+	}
+	if strings.HasPrefix(p, `"`) && strings.HasSuffix(p, `"`) {
+		return false
+	}
+	return true
+}
+
+func (r *didYouMeanQuotedResolver) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
+	return nil, nil
+}
+
+func (r *didYouMeanQuotedResolver) Stats(context.Context) (*searchResultsStats, error) {
+	srs := &searchResultsStats{}
+	return srs, nil
 }
 
 func asString(v *searchquerytypes.Value) string {
