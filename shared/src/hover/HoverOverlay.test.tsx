@@ -125,7 +125,16 @@ describe('HoverOverlay', () => {
                     actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
                     hoverOrError={{
                         contents: [{ kind: MarkupKind.Markdown, value: 'v' }],
-                        alerts: [{ type: 'a', content: 'b *c* `d`' }],
+                        alerts: [
+                            {
+                                type: 'a' as const,
+                                content: (
+                                    <>
+                                        b <small>c</small> <code>d</code>
+                                    </>
+                                ),
+                            },
+                        ],
                     }}
                 />
             )

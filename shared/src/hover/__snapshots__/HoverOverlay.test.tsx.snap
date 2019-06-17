@@ -368,35 +368,40 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
     className="hover-overlay__alerts"
   >
     <div
-      className="hover-overlay__row hover-overlay__alert alert-info"
+      className="hover-overlay__row hover-overlay__alert"
     >
       <div
-        className="hover-overlay__alert-logo"
+        className="hover-overlay__alert-content"
       >
         <Memo(HelpCircleIcon)
           className="icon-inline"
         />
+         
+        <small>
+          <React.Fragment>
+            b 
+            <small>
+              c
+            </small>
+             
+            <code>
+              d
+            </code>
+          </React.Fragment>
+        </small>
       </div>
       <div
-        className="hover-ovlerlay__alert-content"
+        className="hover-overlay__alert-actions"
       >
-        <small
-          dangerouslySetInnerHTML={
-            Object {
-              "__html": "<p>b <em>c</em> <code>d</code></p>
-",
-            }
-          }
-        />
+        <button
+          className="hover-overlay__alert-close-button"
+          onClick={[Function]}
+        >
+          <small>
+            Dismiss
+          </small>
+        </button>
       </div>
-      <button
-        className="hover-overlay__alert-close-button"
-        onClick={[Function]}
-      >
-        <Memo(CloseIcon)
-          className="icon-inline"
-        />
-      </button>
     </div>
   </div>
   <div
