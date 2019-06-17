@@ -6,6 +6,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { USE_CODEMOD } from '../enterprise/codemod'
 
 const genericSearchResultInterfaceFields = gql`
   __typename
@@ -39,8 +40,13 @@ export function search(
      * Emits whenever a search is executed, and whenever an extension registers a query transformer.
      */
     return extensionsController.services.queryTransformer.transformQuery(query).pipe(
-        switchMap(query =>
-            queryGraphQL(
+        switchMap(query => {
+            const codemodActive = USE_CODEMOD
+                ? `... on CodemodResult {
+                ${genericSearchResultInterfaceFields}
+            }`
+                : ''
+            return queryGraphQL(
                 gql`
                     query Search($query: String!) {
                         search(query: $query) {
@@ -101,9 +107,7 @@ export function search(
                                     ... on CommitSearchResult {
                                         ${genericSearchResultInterfaceFields}
                                     }
-                                    ... on CodemodResult {
-                                        ${genericSearchResultInterfaceFields}
-                                    }
+                                    ${codemodActive}
                                 }
                                 alert {
                                     title
@@ -128,7 +132,7 @@ export function search(
                 }),
                 catchError(error => [asError(error)])
             )
-        )
+        })
     )
 }
 
