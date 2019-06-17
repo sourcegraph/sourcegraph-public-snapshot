@@ -51,7 +51,7 @@ export interface ModelService {
 }
 
 /**
- * Creates a new instance of {@link createModelService}.
+ * Creates a new instance of {@link ModelService}.
  */
 export function createModelService(): ModelService {
     const models = new BehaviorSubject<readonly TextModel[]>([])
