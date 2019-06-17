@@ -1,4 +1,5 @@
 import { isEqual } from 'lodash'
+import * as React from 'react'
 import { from, Observable, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, map, publishReplay, refCount } from 'rxjs/operators'
 import { parseTemplate } from '../../../../shared/src/api/client/context/expr/evaluator'
@@ -89,6 +90,10 @@ export function registerNativeTooltipContributions(extensionsController: {
     })
 }
 
-export const nativeTooltipsAlert = (codeHostName?: string) =>
-    `Sourcegraph has hidden ${codeHostName ||
-        'the code host'}'s native hover tooltips. You can toggle this at any time: to enable the native tooltips run “Code host: prefer non-Sourcegraph hover tooltips” from the command palette or set \`"codeHost.useNativeTooltips": true\` in your user settings.`
+export const nativeTooltipsAlert = (codeHostName?: string): React.ReactElement => (
+    <>
+        `Sourcegraph has hidden {codeHostName || 'the code host'}'s native hover tooltips. You can toggle this at any
+        time: to enable the native tooltips run “Code host: prefer non-Sourcegraph hover tooltips” from the command
+        palette or set <code>"codeHost.useNativeTooltips": true`</code> in your user settings.`
+    </>
+)

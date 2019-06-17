@@ -43,9 +43,9 @@ export interface HoverAlert<T extends string> {
      */
     type: T
     /**
-     * The content of the alert, will be rendered as Markdown.
+     * The content of the alert
      */
-    content: string
+    content: React.ReactElement
 }
 
 /**
@@ -204,7 +204,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                 <div className="hover-overlay__alert-content">
                                     <HelpCircleIcon className="icon-inline" />
                                     &nbsp;
-                                    <small dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
+                                    <small>{content}</small>
                                 </div>
                                 <div className="hover-overlay__alert-actions">
                                     <button
