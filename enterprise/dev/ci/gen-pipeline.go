@@ -102,44 +102,44 @@ func main() {
 		}
 	}
 
-	if !isBextReleaseBranch {
-		pipeline.AddStep(":docker:",
-			bk.Cmd("pushd enterprise"),
-			bk.Cmd("./cmd/server/pre-build.sh"),
-			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
-			bk.Env("VERSION", version),
-			bk.Cmd("./cmd/server/build.sh"),
-			bk.Cmd("popd"))
+	// if !isBextReleaseBranch {
+	// 	pipeline.AddStep(":docker:",
+	// 		bk.Cmd("pushd enterprise"),
+	// 		bk.Cmd("./cmd/server/pre-build.sh"),
+	// 		bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
+	// 		bk.Env("VERSION", version),
+	// 		bk.Cmd("./cmd/server/build.sh"),
+	// 		bk.Cmd("popd"))
 
-		pipeline.AddStep(":white_check_mark:",
-			bk.Cmd("./dev/check/all.sh"))
-	}
+	// 	pipeline.AddStep(":white_check_mark:",
+	// 		bk.Cmd("./dev/check/all.sh"))
+	// }
 
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript: :graphql:",
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint all:stylelint all:typecheck graphql-lint"))
 
-	// Browser extension build
-	pipeline.AddStep(":webpack::chrome:",
-		bk.Cmd("dev/ci/yarn-build.sh browser"))
+	// // Browser extension build
+	// pipeline.AddStep(":webpack::chrome:",
+	// 	bk.Cmd("dev/ci/yarn-build.sh browser"))
 
-	if !isBextReleaseBranch {
-		// Webapp build
-		pipeline.AddStep(":webpack::globe_with_meridians:",
-			bk.Cmd("dev/ci/yarn-build.sh web"),
-			bk.Env("NODE_ENV", "production"),
-			bk.Env("ENTERPRISE", "0"))
+	// if !isBextReleaseBranch {
+	// 	// Webapp build
+	// 	pipeline.AddStep(":webpack::globe_with_meridians:",
+	// 		bk.Cmd("dev/ci/yarn-build.sh web"),
+	// 		bk.Env("NODE_ENV", "production"),
+	// 		bk.Env("ENTERPRISE", "0"))
 
-		// Webapp enterprise build
-		pipeline.AddStep(":webpack::globe_with_meridians::moneybag:",
-			bk.Cmd("dev/ci/yarn-build.sh web"),
-			bk.Env("NODE_ENV", "production"),
-			bk.Env("ENTERPRISE", "1"))
+	// 	// Webapp enterprise build
+	// 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag:",
+	// 		bk.Cmd("dev/ci/yarn-build.sh web"),
+	// 		bk.Env("NODE_ENV", "production"),
+	// 		bk.Env("ENTERPRISE", "1"))
 
-		// Webapp tests
-		pipeline.AddStep(":jest::globe_with_meridians:",
-			bk.Cmd("dev/ci/yarn-test.sh web"),
-			bk.ArtifactPaths("web/coverage/coverage-final.json"))
-	}
+	// 	// Webapp tests
+	// 	pipeline.AddStep(":jest::globe_with_meridians:",
+	// 		bk.Cmd("dev/ci/yarn-test.sh web"),
+	// 		bk.ArtifactPaths("web/coverage/coverage-final.json"))
+	// }
 
 	// Browser extension tests
 	pipeline.AddStep(":jest::chrome:",
@@ -191,10 +191,10 @@ func main() {
 
 	pipeline.AddWait()
 
-	pipeline.AddStep(":codecov:",
-		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
-		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
+	// pipeline.AddStep(":codecov:",
+	// 	bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
+	// 	bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
+	// 	bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
 
 	// addDockerImageStep adds a build step for a given app.
 	// If the app is not in the cmd directory, it is assumed to be from the open source repo.
