@@ -36,9 +36,9 @@ export function handleNativeTooltips(
             type: 'nativeTooltips' as const,
             content: (
                 <>
-                    `Sourcegraph has hidden {name || 'the code host'}'s native hover tooltips. You can toggle this at
-                    any time: to enable the native tooltips run “Code host: prefer non-Sourcegraph hover tooltips” from
-                    the command palette or set <code>"codeHost.useNativeTooltips": true`</code> in your user settings.`
+                    Sourcegraph has hidden {name || 'the code host'}'s native hover tooltips. You can toggle this at any
+                    time: to enable the native tooltips run “Code host: prefer non-Sourcegraph hover tooltips” from the
+                    command palette or set <code>"codeHost.useNativeTooltips": true`</code> in your user settings.
                 </>
             ),
         }),
@@ -49,7 +49,7 @@ export function handleNativeTooltips(
         nativeTooltipsAlert,
         subscription: nativeTooltips.subscribe(({ element, subscriptions }) => {
             subscriptions.add(
-                // This subscription is correctly handled through the view's subscriptions.
+                // This subscription is correctly handled through the view's `subscriptions`
                 // tslint:disable-next-line rxjs-no-nested-subscribe
                 nativeTooltipsEnabled.subscribe(enabled => {
                     element.classList.toggle(NATIVE_TOOLTIP_HIDDEN, !enabled)
@@ -83,7 +83,6 @@ export function registerNativeTooltipContributions(extensionsController: {
                     category: parseTemplate('Code host'),
                     commandArguments: [
                         parseTemplate('codeHost.useNativeTooltips'),
-                        // tslint:disable-next-line no-invalid-template-strings
                         parseTemplate('${!config.codeHost.useNativeTooltips}'),
                         null,
                         parseTemplate('json'),
