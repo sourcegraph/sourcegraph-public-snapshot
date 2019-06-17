@@ -83,7 +83,7 @@ server {
     server_name _;
 
     location / {
-        return 301 https://yourdomain.com$request_uri;
+        return 301 https://sourcegraph.example.com$request_uri;
     }
 }
 ```
