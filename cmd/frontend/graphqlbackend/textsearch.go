@@ -365,40 +365,41 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 
 // shouldRepoBeSearched determines whether a repository should be searched in, based on whether the repository
 // fits in the subset of repositories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
-func shouldRepoBeSearched(ctx context.Context, info *search.PatternInfo, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
-	shouldBeSearched := true
-	repoHasFileFlagIsInQuery := len(info.FilePatternsReposMustInclude) > 0
-	if repoHasFileFlagIsInQuery {
-		// search for file in repo, if file is in repo, actually search through it.
-		for _, pattern := range info.FilePatternsReposMustInclude {
-			repoHasFileOnlyPattern := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-			matches, _, err := textSearch(ctx, gitserverRepo, commit, &repoHasFileOnlyPattern, fetchTimeout)
-			if err != nil {
-				return false, err
-			}
-			if len(matches) <= 0 {
-				// repo shouldn't be searched if it doesn't match the patterns in `repohasfile`.
-				shouldBeSearched = false
-			}
-
+func shouldRepoBeSearched(ctx context.Context, searchPattern *search.PatternInfo, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (shouldBeSearched bool, err error) {
+	shouldBeSearched = true
+	flagInQuery := len(searchPattern.FilePatternsReposMustInclude) > 0
+	if flagInQuery {
+		shouldBeSearched, err = searchRepoForHasFileFlagPatterns(ctx, true, searchPattern.FilePatternsReposMustInclude, gitserverRepo, commit, fetchTimeout)
+		if err != nil {
+			return shouldBeSearched, err
 		}
 	}
-	negatedRepoHasFileFlagIsInQuery := len(info.FilePatternsReposMustExclude) > 0
-	if negatedRepoHasFileFlagIsInQuery {
-		for _, pattern := range info.FilePatternsReposMustExclude {
-			repoHasFileOnlyPattern := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-			matches, _, err := textSearch(ctx, gitserverRepo, commit, &repoHasFileOnlyPattern, fetchTimeout)
-			if err != nil {
-				return false, err
-			}
-			if len(matches) > 0 {
-				// repo shouldn't be searched if it has file matches for the patterns in `-repohasfile`.
-				shouldBeSearched = false
-			}
+	negFlagInQuery := len(searchPattern.FilePatternsReposMustExclude) > 0
+	if negFlagInQuery {
+		shouldBeSearched, err = searchRepoForHasFileFlagPatterns(ctx, false, searchPattern.FilePatternsReposMustExclude, gitserverRepo, commit, fetchTimeout)
+		if err != nil {
+			return shouldBeSearched, err
 		}
 	}
-
 	return shouldBeSearched, nil
+}
+
+// searchRepoForHasFileFlagPatterns searches in a repository for matches for the patterns in the `repohasfile` or `-repohasfile` flags, and returns
+// whether or not the repoShouldBeSearched in or not, based on whether matches were returned.
+func searchRepoForHasFileFlagPatterns(ctx context.Context, include bool, repoHasFileFlag []string, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
+	for _, pattern := range repoHasFileFlag {
+		p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		matches, _, err := textSearch(ctx, gitserverRepo, commit, &p, fetchTimeout)
+		if err != nil {
+			return false, err
+		}
+		if include && len(matches) > 0 || !include && len(matches) == 0 {
+			// repo shouldn't be searched if it has file matches for the patterns in `-repohasfile`.
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 func fileMatchURI(name api.RepoName, ref, path string) string {
