@@ -1,7 +1,7 @@
 import { Selection } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
-import { BehaviorSubject, combineLatest, Subscribable } from 'rxjs'
-import { distinctUntilChanged, map, publishReplay, refCount } from 'rxjs/operators'
+import { BehaviorSubject, combineLatest, from, Subscribable, throwError } from 'rxjs'
+import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { TextDocumentPositionParams } from '../../protocol'
 import { ModelService, TextModel } from './modelService'
 /**
@@ -26,30 +26,30 @@ export interface CodeEditorData {
 }
 
 /**
- * Picks from `CodeEditor` only the properties that should be considered to determine if two editors are equal.
+ * Describes a code editor that has been added to the {@link EditorService}. To get the editor's
+ * model, use {@link EditorService#observeEditorAndModel} or look up the model in the
+ * {@link ModelService}.
  */
-const pickCodeEditorEqualityData = ({
-    editorId,
-    type,
-    isActive,
-    resource,
-    selections,
-}: CodeEditor): EditorId & CodeEditorData => ({
-    editorId,
-    type,
-    resource,
-    selections,
-    isActive,
-})
+export interface CodeEditor extends EditorId, CodeEditorData {}
 
 /**
- * Describes a code editor that has been added to the {@link EditorService}.
+ * A code editor with some fields from its model.
  */
-export interface CodeEditor extends EditorId, CodeEditorData {
+export interface CodeEditorWithPartialModel extends CodeEditor {
     /**
-     * The model that represents the editor's document (and includes its contents).
+     * The code editor's model. See {@link EditorService#editorsAndModels} for why the model text is
+     * omitted. The model's URI is always equal to {@link CodeEditor#resource}, so it is also
+     * omitted (to avoid confusion).
      */
-    readonly model: TextModel
+    model: Pick<TextModel, 'languageId'>
+}
+
+/**
+ * A code editor with its full model, including the model text.
+ */
+export interface CodeEditorWithModel extends CodeEditor {
+    /** The code editor's model. */
+    model: TextModel
 }
 
 /**
@@ -57,10 +57,19 @@ export interface CodeEditor extends EditorId, CodeEditorData {
  */
 export interface EditorService {
     /**
-     * All code editors, with each editor's model.
-     * Emits the current value upon subscription.
+     * All code editors. Emits the current value upon subscription and whenever any editor changes.
      */
     readonly editors: Subscribable<readonly CodeEditor[]>
+
+    /**
+     * All code editors, with each editor's model (minus its text). Emits the current value upon
+     * subscription and whenever any editor or model changes.
+     *
+     * The model text is omitted for performance reasons and because there are not currently any
+     * callers that need to observe all editors and their model text. Only the model's URI and
+     * language are included.
+     */
+    readonly editorsAndModels: Subscribable<readonly CodeEditorWithPartialModel[]>
 
     /**
      * Add an editor.
@@ -70,6 +79,15 @@ export interface EditorService {
      * {@link EditorService} methods to operate on this editor).
      */
     addEditor(editor: CodeEditorData): EditorId
+
+    /**
+     * Observe an editor and its model for changes, including changes to the model's content.
+     *
+     * @param editor The editor to observe.
+     * @returns An observable that emits when the editor or its model changes. If no such editor
+     * exists, or if the editor is removed, it emits an error.
+     */
+    observeEditorAndModel(editor: EditorId): Subscribable<CodeEditorWithModel>
 
     /**
      * Reports whether an editor with the given URI has been added.
@@ -102,6 +120,27 @@ export interface EditorService {
 }
 
 /**
+ * Picks from {@link CodeEditorWithModel} only the properties that should be considered to determine
+ * if two editors are equal. It is useful because it removes the model's text from the object (which
+ * is present on the object but not noted in the type).
+ */
+const pickCodeEditorWithModelEqualityData = ({
+    editorId,
+    type,
+    isActive,
+    resource,
+    selections,
+    model: { languageId },
+}: CodeEditorWithPartialModel): CodeEditorWithPartialModel => ({
+    editorId,
+    type,
+    resource,
+    selections,
+    isActive,
+    model: { languageId },
+})
+
+/**
  * Creates a {@link EditorService} instance.
  */
 export function createEditorService(modelService: Pick<ModelService, 'models' | 'removeModel'>): EditorService {
@@ -116,36 +155,45 @@ export function createEditorService(modelService: Pick<ModelService, 'models' | 
     ): TextModel => {
         const model = models.find(m => m.uri === resource)
         if (!model) {
+            // This error indicates the presence of a bug. The model should never be removed before
+            // all editors using the model are removed.
             throw new Error(`editor model not found: ${resource}`)
         }
         return model
     }
 
-    type AddedCodeEditor = Pick<CodeEditor, Exclude<keyof CodeEditor, 'model'>>
-    const editors = new BehaviorSubject<readonly AddedCodeEditor[]>([])
+    const editors = new BehaviorSubject<readonly CodeEditor[]>([])
     const getEditor = (editorId: EditorId['editorId']) => editors.value.find(e => e.editorId === editorId)
     const exists = (editorId: EditorId['editorId']) => !!getEditor(editorId)
     return {
-        editors: combineLatest(editors, modelService.models).pipe(
+        editors,
+        editorsAndModels: combineLatest([editors, modelService.models]).pipe(
             map(([editors, models]) =>
                 editors.map(editor => ({ ...editor, model: findModelForEditor(models, editor) }))
             ),
-            // `models` can emit but not result in any editor having a different model
-            // Make sure to exclude Editor.models from the comparison
             distinctUntilChanged((a, b) =>
-                isEqual(a.map(pickCodeEditorEqualityData), b.map(pickCodeEditorEqualityData))
-            ),
-            // Perf optimization: avoid running the comparison for every subscriber
-            // This does not change the behaviour of the Observable.
-            publishReplay(1),
-            refCount()
+                isEqual(a.map(pickCodeEditorWithModelEqualityData), b.map(pickCodeEditorWithModelEqualityData))
+            )
         ),
         addEditor: data => {
             const editorId = nextId()
-            const editor: AddedCodeEditor = { ...data, editorId }
+            const editor: CodeEditor = { ...data, editorId }
             editors.next([...editors.value, editor])
             return { editorId }
         },
+        observeEditorAndModel: ({ editorId }) =>
+            editors.pipe(
+                map(editors => editors.find(e => e.editorId === editorId)),
+                switchMap(editor =>
+                    editor
+                        ? from(modelService.models).pipe(
+                              map(models => findModelForEditor(models, editor)),
+                              distinctUntilChanged(),
+                              map(model => ({ ...editor, model }))
+                          )
+                        : throwError(new Error(`editor not found: ${editorId}`))
+                )
+            ),
         hasEditor: ({ editorId }) => exists(editorId),
         setSelections({ editorId }: EditorId, selections: Selection[]): void {
             if (!exists(editorId)) {
@@ -163,8 +211,7 @@ export function createEditorService(modelService: Pick<ModelService, 'models' | 
             }
             const nextEditors = editors.value.filter(e => e.editorId !== editorId)
             editors.next(editors.value.filter(e => e.editorId !== editorId))
-            // If no other editor points to the same resouce,
-            // remove the resource.
+            // If no other editor points to the same resource, remove the resource.
             if (!nextEditors.some(e => e.resource === editor.resource)) {
                 modelService.removeModel(editor.resource)
             }

@@ -2,7 +2,7 @@ import { from, of, Subscribable, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ConfiguredExtension } from '../../../extensions/extension'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditor, EditorService } from './editorService'
+import { CodeEditorWithPartialModel, EditorService } from './editorService'
 import { createTestEditorService } from './editorService.test'
 import { ExecutableExtension, ExtensionsService } from './extensionsService'
 import { SettingsService } from './settings'
@@ -12,11 +12,11 @@ const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 class TestExtensionsService extends ExtensionsService {
     constructor(
         mockConfiguredExtensions: ConfiguredExtension[],
-        editorService: Pick<EditorService, 'editors'>,
+        editorService: Pick<EditorService, 'editorsAndModels'>,
         settingsService: Pick<SettingsService, 'data'>,
         extensionActivationFilter: (
             enabledExtensions: ConfiguredExtension[],
-            editors: readonly CodeEditor[]
+            editors: readonly CodeEditorWithPartialModel[]
         ) => ConfiguredExtension[],
         sideloadedExtensionURL: Subscribable<string | null>,
         fetchSideloadedExtension: (baseUrl: string) => Subscribable<ConfiguredExtension | null>
@@ -46,7 +46,7 @@ describe('activeExtensions', () => {
                     new TestExtensionsService(
                         [],
                         createTestEditorService(
-                            cold<readonly CodeEditor[]>('-a-|', {
+                            cold<readonly CodeEditorWithPartialModel[]>('-a-|', {
                                 a: [],
                             })
                         ),
@@ -69,13 +69,13 @@ describe('activeExtensions', () => {
                     new TestExtensionsService(
                         [{ id: 'x', manifest, rawManifest: null }, { id: 'y', manifest, rawManifest: null }],
                         createTestEditorService(
-                            cold<readonly CodeEditor[]>('-a-b-|', {
+                            cold<readonly CodeEditorWithPartialModel[]>('-a-b-|', {
                                 a: [
                                     {
                                         type: 'CodeEditor',
                                         editorId: 'editor#0',
                                         resource: 'u',
-                                        model: { languageId: 'x', text: '', uri: 'u' },
+                                        model: { languageId: 'x' },
                                         selections: [],
                                         isActive: true,
                                     },
@@ -85,7 +85,7 @@ describe('activeExtensions', () => {
                                         type: 'CodeEditor',
                                         editorId: 'editor#1',
                                         resource: 'u2',
-                                        model: { languageId: 'y', text: '', uri: 'u2' },
+                                        model: { languageId: 'y' },
                                         selections: [],
                                         isActive: true,
                                     },
@@ -119,7 +119,7 @@ describe('activeExtensions', () => {
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
                         createTestEditorService(
-                            cold<readonly CodeEditor[]>('a-|', {
+                            cold<readonly CodeEditorWithPartialModel[]>('a-|', {
                                 a: [],
                             })
                         ),
@@ -164,7 +164,7 @@ describe('activeExtensions', () => {
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
                         createTestEditorService(
-                            cold<readonly CodeEditor[]>('a-|', {
+                            cold<readonly CodeEditorWithPartialModel[]>('a-|', {
                                 a: [],
                             })
                         ),

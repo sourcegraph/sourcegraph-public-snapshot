@@ -73,11 +73,6 @@ describe('text_fields', () => {
                     editorId: 'editor#0',
                     isActive: true,
                     resource: 'comment://0',
-                    model: {
-                        uri: 'comment://0',
-                        text: 'abc',
-                        languageId: 'plaintext',
-                    },
                     selections: [
                         {
                             anchor: { line: 0, character: 2 },
