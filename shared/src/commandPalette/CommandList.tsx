@@ -20,14 +20,23 @@ import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
 /**
- * Customizable CSS classes for elements of the the command list
+ * Customizable CSS classes for elements of the the command list button.
  */
-export interface CommandListClassProps {
+export interface CommandListPopoverButtonClassProps {
     /** The class name for the root button element of {@link CommandListPopoverButton}. */
     buttonClassName?: string
+    buttonElement?: 'span' | 'a'
+    buttonOpenClassName?: string
 
+    showCaret?: boolean
     popoverClassName?: string
     popoverInnerClassName?: string
+}
+
+/**
+ * Customizable CSS classes for elements of the the command list.
+ */
+export interface CommandListClassProps {
     inputClassName?: string
     formClassName?: string
     listItemClassName?: string
@@ -40,10 +49,7 @@ export interface CommandListClassProps {
 }
 
 export interface CommandListProps
-    extends Pick<
-            CommandListClassProps,
-            Exclude<keyof CommandListClassProps, 'buttonClassName' | 'popoverClassName' | 'popoverInnerClassName'>
-        >,
+    extends CommandListClassProps,
         ExtensionsControllerProps<'services' | 'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip'>,
         TelemetryProps {
@@ -300,12 +306,18 @@ export function filterAndRankItems(
     return sortBy(scoredItems, 'recentIndex', 'score', ({ item }) => item.action.id).map(({ item }) => item)
 }
 
-export interface CommandListPopoverButtonProps extends CommandListProps, CommandListClassProps {
+export interface CommandListPopoverButtonProps
+    extends CommandListProps,
+        CommandListPopoverButtonClassProps,
+        CommandListClassProps {
     toggleVisibilityKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
 }
 
 export const CommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = ({
     buttonClassName = '',
+    buttonElement: ButtonElement = 'span',
+    buttonOpenClassName = '',
+    showCaret = true,
     popoverClassName = '',
     popoverInnerClassName = '',
     toggleVisibilityKeybinding,
@@ -318,9 +330,14 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
     const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
 
     return (
-        <span role="button" className={`command-list-popover-button ${buttonClassName}`} id={id} onClick={toggleIsOpen}>
+        <ButtonElement
+            role="button"
+            className={`command-list-popover-button ${buttonClassName} ${isOpen ? buttonOpenClassName : ''}`}
+            id={id}
+            onClick={toggleIsOpen}
+        >
             <MenuIcon className="icon-inline" />
-            {isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
+            {showCaret && (isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />)}
             {/* Need to use TooltipPopoverWrapper to apply classNames to inner element, see https://github.com/reactstrap/reactstrap/issues/1484 */}
             <TooltipPopoverWrapper
                 isOpen={isOpen}
@@ -339,6 +356,6 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
                 toggleVisibilityKeybinding.map((keybinding, i) => (
                     <Shortcut key={i} {...keybinding} onMatch={toggleIsOpen} />
                 ))}
-        </span>
+        </ButtonElement>
     )
 }

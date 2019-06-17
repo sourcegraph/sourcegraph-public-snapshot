@@ -29,7 +29,10 @@ import { PartialCodeEditor } from '../../../../shared/src/api/client/context/con
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
 import { CodeEditorData } from '../../../../shared/src/api/client/services/editorService'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
-import { CommandListClassProps } from '../../../../shared/src/commandPalette/CommandList'
+import {
+    CommandListClassProps,
+    CommandListPopoverButtonClassProps,
+} from '../../../../shared/src/commandPalette/CommandList'
 import { CompletionWidgetClassProps } from '../../../../shared/src/components/completion/CompletionWidget'
 import { ApplyLinkPreviewOptions } from '../../../../shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '../../../../shared/src/extensions/controller'
@@ -170,7 +173,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     /**
      * CSS classes for the command palette to customize styling
      */
-    commandPaletteClassProps?: CommandListClassProps
+    commandPaletteClassProps?: CommandListPopoverButtonClassProps & CommandListClassProps
 
     /**
      * CSS classes for the code view toolbar to customize styling
