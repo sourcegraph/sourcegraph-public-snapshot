@@ -240,22 +240,27 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
+	log15.Info("handleEnqueueRepoUpdate 0")
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log15.Info("handleEnqueueRepoUpdate 0 ERROR", "err", err)
 		respond(w, http.StatusBadRequest, err)
 		return
 	}
 
 	t := time.Now()
 	args := repos.StoreListReposArgs{Names: []string{string(req.Repo)}}
+	log15.Info("handleEnqueueRepoUpdate 1", "args", args, "storeType", fmt.Sprintf("%T", s.Store))
 	rs, err := s.Store.ListRepos(r.Context(), args)
 	if err != nil {
+		log15.Info("handleEnqueueRepoUpdate 1 ERROR", "err", err)
 		respond(w, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos"))
 		return
 	}
 
 	if len(rs) != 1 {
 		err := errors.Errorf("repo %q not found in store", req.Repo)
+		log15.Info("handleEnqueueRepoUpdate 1b ERROR", "err", err)
 		respond(w, http.StatusNotFound, err)
 		return
 	}
@@ -267,14 +272,16 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	log15.Info("handleEnqueueRepoUpdate 2", "repo", repo, "req", req)
 	repos.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
+	log15.Info("handleEnqueueRepoUpdate 3", "repo", repo, "req", req)
 
 	result := &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
 		Name: repo.Name,
 		URL:  req.URL,
 	}
-	log15.Debug("TRACE enqueueRepoUpdate", "args", &args, "result", result, "duration", time.Since(t))
+	log15.Info("handleEnqueueRepoUpdate 4", "args", &args, "result", result, "duration", time.Since(t))
 	respond(w, http.StatusOK, result)
 }
 
