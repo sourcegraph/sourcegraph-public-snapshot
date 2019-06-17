@@ -20,7 +20,7 @@ describe('HoverOverlay', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: async () => void 0 }
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => void 0 }
     const history = H.createMemoryHistory({ keyLength: 0 })
-    const commonProps: HoverOverlayProps<string> = {
+    const commonProps = {
         location: history.location,
         telemetryService: NOOP_TELEMETRY_SERVICE,
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
