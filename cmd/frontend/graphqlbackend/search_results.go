@@ -511,14 +511,9 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*sea
 	if len(rr.results) == 0 && queryMightBeBetterQuoted(r.query) {
 		rr = &searchResultsResolver{
 			alert: &searchAlert{
-				title:       "Try quoted",
-				description: fmt.Sprintf("No results found"),
-				proposedQueries: []*searchQueryDescription{
-					{
-						description: "quoted query",
-						query:       quote(r.query),
-					},
-				},
+				title:           "Try quoted",
+				description:     fmt.Sprintf("No results found"),
+				proposedQueries: proposedQuotedQueries(r.rawQuery()),
 			},
 		}
 		return rr, nil

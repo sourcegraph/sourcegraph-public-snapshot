@@ -3,9 +3,10 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"github.com/davecgh/go-spew/spew"
 	"reflect"
 	"testing"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func Test_didYouMeanQuotedResolver_Results(t *testing.T) {
@@ -45,11 +46,11 @@ func Test_didYouMeanQuotedResolver_Results(t *testing.T) {
 			name: `fmt.Sprintf("`,
 			fields: fields{
 				query: `fmt.Sprintf("`,
-				err: errors.New(`type error at character 0: error parsing regexp: missing closing ):`),
+				err:   errors.New(`type error at character 0: error parsing regexp: missing closing ):`),
 			},
 			want: &searchResultsResolver{
 				alert: &searchAlert{
-					title: "Try quoted",
+					title:       "Try quoted",
 					description: `type error at character 0: error parsing regexp: missing closing ):`,
 					proposedQueries: []*searchQueryDescription{
 						{
