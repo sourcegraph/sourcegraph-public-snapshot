@@ -24,6 +24,22 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
+type rawCodemodResult struct {
+	URI                  string `json:"uri"`
+	RewrittenSource      string `json:"rewritten_source"`
+	InPlaceSubstitutions []struct {
+		Range struct {
+			Start struct{ Offset int64 }
+			End   struct{ Offset int64 }
+		}
+		ReplacementContent string `json:"replacement_content"`
+		Environment        []struct {
+			Value string
+		}
+	} `json:"in_place_substitutions"`
+	Diff string
+}
+
 func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {
 	matchValues := args.Query.Values(query.FieldDefault)
 	var matchPatterns []string
@@ -110,6 +126,20 @@ func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolve
 
 var replacerURL = env.Get("REPLACER_URL", "http://replacer:3185", "replacer server URL")
 
+func toMatchResolver(fileURL string, raw *rawCodemodResult) []*searchResultMatchResolver {
+	var highlights []*highlightedRange
+	matchBody, matchHighlights := cleanDiffPreview(highlights, raw.Diff)
+	_ = matchBody[strings.Index(matchBody, "@@"):]
+
+	return []*searchResultMatchResolver{
+		{
+			url:        fileURL,
+			body:       "```diff\n" + raw.Diff[strings.Index(raw.Diff, "@@"):] + "\n```",
+			highlights: matchHighlights,
+		},
+	}
+}
+
 func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, matchPattern, replacementText string, fileFilterText string) (results []*codemodResultResolver, err error) {
 	tr, ctx := trace.New(ctx, "callCodemodInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v, replace: %+v", repoRevs, matchPattern, replacementText))
 	defer func() {
@@ -168,56 +198,16 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 		return nil, errors.WithStack(&searcherError{StatusCode: resp.StatusCode, Message: string(body)})
 	}
 
-	type rawCodemodResult struct {
-		URI                  string `json:"uri"`
-		RewrittenSource      string `json:"rewritten_source"`
-		InPlaceSubstitutions []struct {
-			Range struct {
-				Start struct{ Offset int64 }
-				End   struct{ Offset int64 }
-			}
-			ReplacementContent string `json:"replacement_content"`
-			Environment        []struct {
-				Value string
-			}
-		} `json:"in_place_substitutions"`
-		Diff string
-	}
-
-	computeCodemodResultMatches := func(fileURL string, raw *rawCodemodResult) ([]*searchResultMatchResolver, error) {
-		var highlights []*highlightedRange
-		matchBody, matchHighlights := cleanDiffPreview(highlights, raw.Diff)
-		_ = matchBody[strings.Index(matchBody, "@@"):]
-
-		return []*searchResultMatchResolver{
-			{
-				url:        fileURL,
-				body:       "```diff\n" + raw.Diff[strings.Index(raw.Diff, "@@"):] + "\n```",
-				highlights: matchHighlights,
-			},
-		}, nil
-	}
-
-	var rawResults []*rawCodemodResult
 	decoder := json.NewDecoder(resp.Body)
 	for decoder.More() {
-		var rawResult *rawCodemodResult
-		if err := decoder.Decode(&rawResult); err != nil {
-			return nil, errors.Wrap(err, "replacer response invalid")
+		var raw *rawCodemodResult
+		if err := decoder.Decode(&raw); err != nil {
+			return nil, errors.Wrap(err, "Replacer response invalid.")
 		}
-		if len(rawResult.InPlaceSubstitutions) == 0 {
-			continue
-		}
-		rawResults = append(rawResults, rawResult)
-	}
-	results = make([]*codemodResultResolver, len(rawResults))
-	for i, raw := range rawResults {
+
 		fileURL := fileMatchURI(repoRevs.Repo.Name, repoRevs.Revs[0].RevSpec, raw.URI)
-		matches, err := computeCodemodResultMatches(fileURL, raw)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("invalid result (%d)", i))
-		}
-		results[i] = &codemodResultResolver{
+		matches := toMatchResolver(fileURL, raw)
+		result := &codemodResultResolver{
 			commit: &gitCommitResolver{
 				repo:     &repositoryResolver{repo: repoRevs.Repo},
 				inputRev: &repoRevs.Revs[0].RevSpec,
@@ -227,6 +217,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 			diff:    raw.Diff,
 			matches: matches,
 		}
+		results = append(results, result)
 	}
 	return results, nil
 }
