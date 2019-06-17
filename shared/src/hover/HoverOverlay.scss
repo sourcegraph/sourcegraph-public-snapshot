@@ -48,12 +48,6 @@
         flex-direction: column;
     }
 
-    &__alert-content {
-        p {
-            display: inline;
-        }
-    }
-
     &__alert-actions {
         align-self: flex-end;
         margin-top: 0.25rem;
