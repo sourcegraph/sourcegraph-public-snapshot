@@ -108,7 +108,6 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
             actionItemPressedClassName,
             onAlertDismissed,
         } = this.props
-        const onAlertDismissedCallback = (alertType: A) => () => onAlertDismissed && onAlertDismissed(alertType)
 
         if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
             return null
@@ -209,7 +208,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                 <div className="hover-overlay__alert-actions">
                                     <button
                                         className="hover-overlay__alert-close-button"
-                                        onClick={onAlertDismissedCallback(type)}
+                                        onClick={this.onAlertDismissedCallback(type)}
                                     >
                                         <small>Dismiss</small>
                                     </button>
@@ -248,6 +247,14 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                     )}
             </div>
         )
+    }
+
+    private onAlertDismissedCallback(alertType: A): () => void {
+        return () => {
+            if (this.props.onAlertDismissed) {
+                this.props.onAlertDismissed(alertType)
+            }
+        }
     }
 
     private logTelemetryEvent(): void {
