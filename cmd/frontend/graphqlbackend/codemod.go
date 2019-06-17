@@ -24,24 +24,26 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-type rawCodemodResult struct {
-	URI                  string `json:"uri"`
-	RewrittenSource      string `json:"rewritten_source"`
-	InPlaceSubstitutions []struct {
-		Range struct {
-			Start struct{ Offset int64 }
-			End   struct{ Offset int64 }
-		}
-		ReplacementContent string `json:"replacement_content"`
-		Environment        []struct {
-			Value string
-		}
-	} `json:"in_place_substitutions"`
-	Diff string
+type inPlaceSubstitution struct {
+	Range struct {
+		Start struct{ Offset int64 }
+		End   struct{ Offset int64 }
+	}
+	ReplacementContent string `json:"replacement_content"`
+	Environment        []struct {
+		Value string
+	}
 }
 
-func validateArgs(args *search.Args) (string, string, string, error) {
-	matchValues := args.Query.Values(query.FieldDefault)
+type rawCodemodResult struct {
+	URI                  string                `json:"uri"`
+	RewrittenSource      string                `json:"rewritten_source"`
+	InPlaceSubstitutions []inPlaceSubstitution `json:"in_place_substitutions"`
+	Diff                 string
+}
+
+func validateQuery(q *query.Query) (string, string, string, error) {
+	matchValues := q.Values(query.FieldDefault)
 	var matchTemplates []string
 	for _, v := range matchValues {
 		if v.String != nil && *v.String != "" {
@@ -53,13 +55,13 @@ func validateArgs(args *search.Args) (string, string, string, error) {
 	}
 	matchTemplate := strings.Join(matchTemplates, " ")
 
-	replacementValues, _ := args.Query.StringValues(query.FieldReplace)
+	replacementValues, _ := q.StringValues(query.FieldReplace)
 	var rewriteTemplate string
 	if len(replacementValues) > 0 {
 		rewriteTemplate = replacementValues[0]
 	}
 
-	fileFilter, _ := args.Query.RegexpPatterns(query.FieldFile)
+	fileFilter, _ := q.RegexpPatterns(query.FieldFile)
 	var fileFilterText string
 	if len(fileFilter) > 0 {
 		fileFilterText = fileFilter[0]
@@ -73,7 +75,7 @@ func validateArgs(args *search.Args) (string, string, string, error) {
 }
 
 func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {
-	matchTemplate, rewriteTemplate, fileFilter, err := validateArgs(args)
+	matchTemplate, rewriteTemplate, fileFilter, err := validateQuery(args.Query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -134,18 +136,20 @@ func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolve
 
 var replacerURL = env.Get("REPLACER_URL", "http://replacer:3185", "replacer server URL")
 
-func toMatchResolver(fileURL string, raw *rawCodemodResult) []*searchResultMatchResolver {
-	var highlights []*highlightedRange
-	matchBody, matchHighlights := cleanDiffPreview(highlights, raw.Diff)
-	_ = matchBody[strings.Index(matchBody, "@@"):]
+func toMatchResolver(fileURL string, raw *rawCodemodResult) ([]*searchResultMatchResolver, error) {
+	if !strings.Contains(raw.Diff, "@@") {
+		return nil, errors.Errorf("Invalid diff does not contain expected @@: %v", raw.Diff)
+	}
+	strippedDiff := raw.Diff[strings.Index(raw.Diff, "@@"):]
 
 	return []*searchResultMatchResolver{
-		{
-			url:        fileURL,
-			body:       "```diff\n" + raw.Diff[strings.Index(raw.Diff, "@@"):] + "\n```",
-			highlights: matchHighlights,
+			{
+				url:        fileURL,
+				body:       "```diff\n" + strippedDiff + "\n```",
+				highlights: nil,
+			},
 		},
-	}
+		nil
 }
 
 func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, matchPattern, replacementText string, fileFilter string) (results []*codemodResultResolver, err error) {
@@ -211,7 +215,10 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 		}
 
 		fileURL := fileMatchURI(repoRevs.Repo.Name, repoRevs.Revs[0].RevSpec, raw.URI)
-		matches := toMatchResolver(fileURL, raw)
+		matches, err := toMatchResolver(fileURL, raw)
+		if err != nil {
+			return nil, err
+		}
 		result := &codemodResultResolver{
 			commit: &gitCommitResolver{
 				repo:     &repositoryResolver{repo: repoRevs.Repo},
