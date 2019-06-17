@@ -73,19 +73,17 @@ async function main(): Promise<void> {
 
     // Add style sheet and wait for it to load to avoid rendering unstyled elements (which causes an
     // annoying flash/jitter when the stylesheet loads shortly thereafter).
-    await new Promise(resolve => {
-        if (!isSourcegraphServer && !document.getElementById('ext-style-sheet')) {
-            const styleSheet = document.createElement('link')
-            styleSheet.id = 'ext-style-sheet'
-            styleSheet.rel = 'stylesheet'
-            styleSheet.type = 'text/css'
-            styleSheet.href = browser.extension.getURL('css/style.bundle.css')
-            styleSheet.onload = () => resolve()
+    if (!isSourcegraphServer && !document.getElementById('ext-style-sheet')) {
+        const styleSheet = document.createElement('link')
+        styleSheet.id = 'ext-style-sheet'
+        styleSheet.rel = 'stylesheet'
+        styleSheet.type = 'text/css'
+        styleSheet.href = browser.extension.getURL('css/style.bundle.css')
+        await new Promise(resolve => {
+            styleSheet.onload = resolve
             document.head.appendChild(styleSheet)
-        } else {
-            resolve()
-        }
-    })
+        })
+    }
 
     // Add a marker to the DOM that the extension is loaded
     injectSourcegraphApp(extensionMarker)
