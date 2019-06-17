@@ -201,18 +201,19 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
                     <div className="hover-overlay__alerts">
                         {hoverOrError.alerts.map(({ content, type }, i) => (
                             <div className="hover-overlay__row hover-overlay__alert alert-info" key={i}>
-                                <div className="hover-overlay__alert-logo">
+                                <div className="hover-overlay__alert-content">
                                     <HelpCircleIcon className="icon-inline" />
-                                </div>
-                                <div className="hover-ovlerlay__alert-content">
+                                    &nbsp;
                                     <small dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
                                 </div>
-                                <button
-                                    className="hover-overlay__alert-close-button"
-                                    onClick={onAlertDismissedCallback(type)}
-                                >
-                                    <CloseIcon className="icon-inline" />
-                                </button>
+                                <div className="hover-overlay__alert-actions">
+                                    <button
+                                        className="hover-overlay__alert-close-button"
+                                        onClick={onAlertDismissedCallback(type)}
+                                    >
+                                        <small>Dismiss</small>
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
