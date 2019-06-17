@@ -273,7 +273,7 @@ export const githubCodeHost: CodeHost = {
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     textFieldResolvers: [commentTextFieldResolver],
-    nativeTooltipResolvers: checkIsGitHubDotCom() ? [nativeTooltipResolver] : undefined,
+    nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
         const header = document.querySelector('.repohead-details-container')
         const repoHeaderHasPrivateMarker = !!(header && header.querySelector('.private'))

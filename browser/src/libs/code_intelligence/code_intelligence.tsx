@@ -52,7 +52,6 @@ import {
     HoverData,
     HoverOverlay,
     HoverOverlayClassProps,
-    HoverOverlayProps,
 } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -85,7 +84,7 @@ import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
-import { getActiveHoverAlerts, onHoverAlertDismissed } from './hover_alerts'
+import { ExtensionHoverAlertType, getActiveHoverAlerts, onHoverAlertDismissed } from './hover_alerts'
 import {
     handleNativeTooltips,
     NativeTooltip,
@@ -304,7 +303,11 @@ export function initCodeIntelligence({
 }: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
     render: typeof reactDOMRender
 }): {
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverData, ActionItemAction>
+    hoverifier: Hoverifier<
+        RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
+        HoverData<ExtensionHoverAlertType>,
+        ActionItemAction
+    >
     subscription: Unsubscribable
 } {
     const subscription = new Subscription()
@@ -328,7 +331,11 @@ export function initCodeIntelligence({
     )
 
     // Code views come and go, but there is always a single hoverifier on the page
-    const hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverData, ActionItemAction>({
+    const hoverifier = createHoverifier<
+        RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
+        HoverData<ExtensionHoverAlertType>,
+        ActionItemAction
+    >({
         closeButtonClicks,
         hoverOverlayElements,
         hoverOverlayRerenders: containerComponentUpdates.pipe(
@@ -341,14 +348,19 @@ export function initCodeIntelligence({
                 getHover({ ...rest, position: { line, character } }),
                 getActiveHoverAlerts(codeHost.name),
             ]).pipe(
-                map(([hoverMerged, alerts]): HoverData | null => (hoverMerged ? { ...hoverMerged, alerts } : null))
+                map(([hoverMerged, alerts]): HoverData<ExtensionHoverAlertType> | null =>
+                    hoverMerged ? { ...hoverMerged, alerts } : null
+                )
             ),
         getActions: context => getHoverActions({ extensionsController, platformContext }, context),
         pinningEnabled: true,
         tokenize: codeHost.codeViewsRequireTokenization,
     })
 
-    class HoverOverlayContainer extends React.Component<{}, HoverState<HoverContext, HoverData, ActionItemAction>> {
+    class HoverOverlayContainer extends React.Component<
+        {},
+        HoverState<HoverContext, HoverData<ExtensionHoverAlertType>, ActionItemAction>
+    > {
         private subscription = new Subscription()
         constructor(props: {}) {
             super(props)
@@ -380,11 +392,15 @@ export function initCodeIntelligence({
                     platformContext={platformContext}
                     location={H.createLocation(window.location)}
                     onCloseButtonClick={nextCloseButtonClick}
-                    onAlertDismissed={onHoverAlertDismissed as HoverOverlayProps['onAlertDismissed']}
+                    onAlertDismissed={onHoverAlertDismissed}
                 />
             ) : null
         }
-        private getHoverOverlayProps(): HoverState<HoverContext, HoverData, ActionItemAction>['hoverOverlayProps'] {
+        private getHoverOverlayProps(): HoverState<
+            HoverContext,
+            HoverData<ExtensionHoverAlertType>,
+            ActionItemAction
+        >['hoverOverlayProps'] {
             if (!this.state.hoverOverlayProps) {
                 return undefined
             }

@@ -10,7 +10,7 @@ import { HoverMerged } from '../api/client/types/hover'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 
-const renderShallow = (element: React.ReactElement<HoverOverlayProps>): React.ReactElement<any> => {
+const renderShallow = (element: React.ReactElement<HoverOverlayProps<string>>): React.ReactElement<any> => {
     const renderer = createRenderer()
     renderer.render(element)
     return renderer.getRenderOutput()
@@ -20,7 +20,7 @@ describe('HoverOverlay', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: async () => void 0 }
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => void 0 }
     const history = H.createMemoryHistory({ keyLength: 0 })
-    const commonProps: HoverOverlayProps = {
+    const commonProps: HoverOverlayProps<string> = {
         location: history.location,
         telemetryService: NOOP_TELEMETRY_SERVICE,
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,

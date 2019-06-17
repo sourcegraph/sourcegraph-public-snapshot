@@ -15,7 +15,9 @@ const getAllHoverAlerts = (codeHostName?: string): HoverAlert<ExtensionHoverAler
  * Returns an Osbervable of all hover alerts that have not yet
  * been dismissed by the user.
  */
-export function getActiveHoverAlerts(codeHostName?: string): Observable<HoverAlert[] | undefined> {
+export function getActiveHoverAlerts(
+    codeHostName?: string
+): Observable<HoverAlert<ExtensionHoverAlertType>[] | undefined> {
     const allAlerts = getAllHoverAlerts(codeHostName)
     return observeStorageKey('sync', 'dismissedHoverAlerts').pipe(
         map(dismissedAlerts => (dismissedAlerts ? allAlerts.filter(({ type }) => !dismissedAlerts[type]) : allAlerts)),
