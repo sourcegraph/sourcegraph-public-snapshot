@@ -1,8 +1,10 @@
 import { isEqual, upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { UncontrolledPopover } from 'reactstrap'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
@@ -12,7 +14,6 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
-import { PopoverButton } from '../components/PopoverButton'
 import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME } from '../marketing/util'
@@ -225,11 +226,18 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     position="nav"
                     priority={100}
                     element={
-                        <PopoverButton
-                            key="repo-rev"
-                            className="repo-header__section-btn repo-header__rev"
-                            globalKeyBinding="v"
-                            popoverElement={
+                        <div className="d-flex align-items-center" key="repo-rev">
+                            <span className="e2e-revision">
+                                {(this.props.rev && this.props.rev === this.props.resolvedRevOrError.commitID
+                                    ? this.props.resolvedRevOrError.commitID.slice(0, 7)
+                                    : this.props.rev) ||
+                                    this.props.resolvedRevOrError.defaultBranch ||
+                                    'HEAD'}
+                            </span>
+                            <button type="button" id="repo-rev-popover" className="btn btn-link px-0">
+                                <MenuDownIcon className="icon-inline" />
+                            </button>
+                            <UncontrolledPopover placement="bottom-start" target="repo-rev-popover" trigger="legacy">
                                 <RevisionsPopover
                                     repo={this.props.repo.id}
                                     repoName={this.props.repo.name}
@@ -239,15 +247,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                     history={this.props.history}
                                     location={this.props.location}
                                 />
-                            }
-                            hideOnChange={`${this.props.repo.id}:${this.props.rev || ''}`}
-                        >
-                            {(this.props.rev && this.props.rev === this.props.resolvedRevOrError.commitID
-                                ? this.props.resolvedRevOrError.commitID.slice(0, 7)
-                                : this.props.rev) ||
-                                this.props.resolvedRevOrError.defaultBranch ||
-                                'HEAD'}
-                        </PopoverButton>
+                            </UncontrolledPopover>
+                        </div>
                     }
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />

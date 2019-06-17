@@ -223,6 +223,14 @@ body,
     flex: 1;
 }
 
+// Our simple popovers only need these styles. We don't want the caret or special font sizes from
+// Bootstrap's popover CSS.
+.popover-inner {
+    background-color: var(--body-bg);
+    border: solid 1px var(--border-color);
+    border-radius: $border-radius;
+}
+
 // Pages
 @import './Layout';
 @import './api/APIConsole';
@@ -254,7 +262,6 @@ body,
 @import './components/DecoratedTextLines';
 @import './components/HeroPage';
 @import './components/ModalPage';
-@import './components/PopoverButton';
 @import './components/RadioButtons';
 @import './components/Select';
 @import './components/tooltip/Tooltip';

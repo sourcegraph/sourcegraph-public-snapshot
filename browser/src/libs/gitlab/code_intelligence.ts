@@ -104,6 +104,7 @@ export const gitlabCodeHost: CodeHost = {
         inputClassName: 'dropdown-input-field',
         resultsContainerClassName: 'dropdown-content',
         selectedActionItemClassName: 'is-focused',
+        noResultsClassName: 'px-3',
     },
     codeViewToolbarClassProps: {
         className: 'code-view-toolbar--gitlab',
