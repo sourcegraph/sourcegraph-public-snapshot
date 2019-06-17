@@ -190,37 +190,35 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             userSettingsSideBarItems: this.props.userSettingsSideBarItems,
         }
         return (
-            <div className="user-area area--vertical">
+            <div className="user-area w-100">
                 <UserAreaHeader
-                    className="area--vertical__header"
                     {...this.props}
                     {...context}
                     navItems={this.props.userAreaHeaderNavItems}
+                    className="border-bottom mt-4"
                 />
-                <div className="area--vertical__content">
-                    <div className="area--vertical__content-inner">
-                        <ErrorBoundary location={this.props.location}>
-                            <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
-                                <Switch>
-                                    {this.props.userAreaRoutes.map(
-                                        ({ path, exact, render, condition = () => true }) =>
-                                            condition(context) && (
-                                                <Route
-                                                    path={this.props.match.url + path}
-                                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                    exact={exact}
-                                                    // tslint:disable-next-line:jsx-no-lambda
-                                                    render={routeComponentProps =>
-                                                        render({ ...context, ...routeComponentProps })
-                                                    }
-                                                />
-                                            )
-                                    )}
-                                    <Route key="hardcoded-key" component={NotFoundPage} />
-                                </Switch>
-                            </React.Suspense>
-                        </ErrorBoundary>
-                    </div>
+                <div className="container mt-3">
+                    <ErrorBoundary location={this.props.location}>
+                        <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                            <Switch>
+                                {this.props.userAreaRoutes.map(
+                                    ({ path, exact, render, condition = () => true }) =>
+                                        condition(context) && (
+                                            <Route
+                                                path={this.props.match.url + path}
+                                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                                exact={exact}
+                                                // tslint:disable-next-line:jsx-no-lambda
+                                                render={routeComponentProps =>
+                                                    render({ ...context, ...routeComponentProps })
+                                                }
+                                            />
+                                        )
+                                )}
+                                <Route key="hardcoded-key" component={NotFoundPage} />
+                            </Switch>
+                        </React.Suspense>
+                    </ErrorBoundary>
                 </div>
             </div>
         )

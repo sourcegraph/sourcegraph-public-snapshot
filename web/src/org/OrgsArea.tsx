@@ -24,22 +24,14 @@ interface Props extends RouteComponentProps<any>, PlatformContextProps, Settings
 /**
  * Renders a layout of a sidebar and a content area to display organization-related pages.
  */
-export class OrgsArea extends React.Component<Props> {
-    public render(): JSX.Element | null {
-        return (
-            <div className="orgs-area">
-                <div className="orgs-area__content">
-                    <Switch>
-                        <Route path={`${this.props.match.url}/new`} component={NewOrganizationPage} exact={true} />
-                        <Route path={`${this.props.match.url}/:name`} render={this.renderOrgArea} />
-                        <Route component={NotFoundPage} />
-                    </Switch>
-                </div>
-            </div>
-        )
-    }
-
-    private renderOrgArea = (routeComponentProps: RouteComponentProps<any>) => (
-        <OrgArea {...this.props} {...routeComponentProps} />
-    )
-}
+export const OrgsArea: React.FunctionComponent<Props> = props => (
+    <Switch>
+        <Route path={`${props.match.url}/new`} component={NewOrganizationPage} exact={true} />
+        <Route
+            path={`${props.match.url}/:name`}
+            // tslint:disable-next-line: jsx-no-lambda
+            render={routeComponentProps => <OrgArea {...props} {...routeComponentProps} />}
+        />
+        <Route component={NotFoundPage} />
+    </Switch>
+)

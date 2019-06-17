@@ -46,7 +46,7 @@ export class RegistryArea extends React.Component<Props> {
         }
 
         return (
-            <div className="registry-area area--vertical">
+            <div className="registry-area">
                 <Switch>
                     <Route
                         path={`${this.props.match.url}/new`}
