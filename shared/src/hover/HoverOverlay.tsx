@@ -37,11 +37,11 @@ export interface HoverOverlayClassProps {
 /**
  * A dismissable alert to be displayed in the hover overlay.
  */
-export interface HoverAlert {
+export interface HoverAlert<T extends string = string> {
     /**
      * The type of the alert, eg. `'nativeTooltips'`
      */
-    type: string
+    type: T
     /**
      * The content of the alert, will be rendered as Markdown.
      */

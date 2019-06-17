@@ -2,9 +2,12 @@ import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { HoverAlert } from '../../../../shared/src/hover/HoverOverlay'
 import { observeStorageKey, storage } from '../../browser/storage'
+import { StorageItems } from '../../browser/types'
 import { nativeTooltipsAlert } from './native_tooltips'
 
-const getAllHoverAlerts = (codeHostName?: string): HoverAlert[] => [
+export type ExtensionHoverAlertType = 'nativeTooltips'
+
+const getAllHoverAlerts = (codeHostName?: string): HoverAlert<ExtensionHoverAlertType>[] => [
     { type: 'nativeTooltips', content: nativeTooltipsAlert(codeHostName) },
 ]
 
@@ -25,9 +28,9 @@ export function getActiveHoverAlerts(codeHostName?: string): Observable<HoverAle
 /**
  * Marks a hovewr alert as dismissed in sync storage.
  */
-export async function onHoverAlertDismissed(alertType: string): Promise<void> {
+export async function onHoverAlertDismissed(alertType: ExtensionHoverAlertType): Promise<void> {
     try {
-        const partialStorageItems = {
+        const partialStorageItems: Pick<StorageItems, 'dismissedHoverAlerts'> = {
             dismissedHoverAlerts: {},
             ...(await storage.sync.get('dismissedHoverAlerts')),
         }

@@ -1,5 +1,6 @@
 import { GraphQLResult } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { ExtensionHoverAlertType } from '../libs/code_intelligence/hover_alerts'
 import { DEFAULT_SOURCEGRAPH_URL } from '../shared/util/context'
 
 interface RepoLocations {
@@ -60,7 +61,7 @@ export interface StorageItems {
     clientSettings: string
     sideloadedExtensionURL: string | null
     dismissedHoverAlerts: {
-        [alertType: string]: boolean
+        [alertType in ExtensionHoverAlertType]?: boolean
     }
 }
 

@@ -52,6 +52,7 @@ import {
     HoverData,
     HoverOverlay,
     HoverOverlayClassProps,
+    HoverOverlayProps,
 } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -379,7 +380,7 @@ export function initCodeIntelligence({
                     platformContext={platformContext}
                     location={H.createLocation(window.location)}
                     onCloseButtonClick={nextCloseButtonClick}
-                    onAlertDismissed={onHoverAlertDismissed}
+                    onAlertDismissed={onHoverAlertDismissed as HoverOverlayProps['onAlertDismissed']}
                 />
             ) : null
         }
