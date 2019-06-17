@@ -81,25 +81,25 @@ func main() {
 		!strings.HasPrefix(branch, "master-dry-run/") &&
 		!strings.HasPrefix(branch, "docker-images-patch/")
 	if isPR {
-		output, err := exec.Command("git", "diff", "--name-only", "origin/master...").Output()
+		_, err := exec.Command("git", "diff", "--name-only", "origin/master...").Output()
 		if err != nil {
 			panic(err)
 		}
 
-		onlyDocsChange := true
-		for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
-			if !strings.HasPrefix(line, "doc") && line != "CHANGELOG.md" {
-				onlyDocsChange = false
-				break
-			}
-		}
+		// onlyDocsChange := true
+		// for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
+		// 	if !strings.HasPrefix(line, "doc") && line != "CHANGELOG.md" {
+		// 		onlyDocsChange = false
+		// 		break
+		// 	}
+		// }
 
-		if onlyDocsChange {
-			pipeline.AddStep(":memo:",
-				bk.Cmd("./dev/ci/yarn-run.sh prettier-check"),
-				bk.Cmd("./dev/check/docsite.sh"))
-			return
-		}
+		// if onlyDocsChange {
+		// 	pipeline.AddStep(":memo:",
+		// 		bk.Cmd("./dev/ci/yarn-run.sh prettier-check"),
+		// 		bk.Cmd("./dev/check/docsite.sh"))
+		// 	return
+		// }
 	}
 
 	// if !isBextReleaseBranch {
@@ -115,8 +115,8 @@ func main() {
 	// 		bk.Cmd("./dev/check/all.sh"))
 	// }
 
-	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint all:stylelint all:typecheck graphql-lint"))
+	// pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript: :graphql:",
+	// 	bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint all:stylelint all:typecheck graphql-lint"))
 
 	// // Browser extension build
 	// pipeline.AddStep(":webpack::chrome:",
