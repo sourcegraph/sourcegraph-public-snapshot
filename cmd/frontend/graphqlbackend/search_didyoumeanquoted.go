@@ -17,9 +17,9 @@ func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResol
 	// Make a map from various quotings of the query to their descriptions.
 	// This should take care of deduplicating them.
 	qq2d := make(map[string]string)
-	qq2d[q.WithPartsQuoted().String()] = "query with parts quoted"
 	qq2d[q.WithNonFieldPartsQuoted().String()] = "query with parts quoted, except for fields"
 	qq2d[q.WithNonFieldsQuoted().String()] = "query quoted, except for fields"
+	qq2d[q.WithPartsQuoted().String()] = "query with parts quoted"
 	qq2d[fmt.Sprintf("%q", r.query)] = "query quoted entirely"
 	var sqds []*searchQueryDescription
 	for qq, desc := range qq2d {
