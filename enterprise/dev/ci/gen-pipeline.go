@@ -175,19 +175,19 @@ func main() {
 
 	pipeline.AddWait()
 
-	if !isBextReleaseBranch {
-		pipeline.AddStep(":chromium:",
-			// Avoid crashing the sourcegraph/server containers. See
-			// https://github.com/sourcegraph/sourcegraph/issues/2657
-			bk.ConcurrencyGroup("e2e"),
-			bk.Concurrency(1),
+	// if !isBextReleaseBranch {
+	// 	pipeline.AddStep(":chromium:",
+	// 		// Avoid crashing the sourcegraph/server containers. See
+	// 		// https://github.com/sourcegraph/sourcegraph/issues/2657
+	// 		bk.ConcurrencyGroup("e2e"),
+	// 		bk.Concurrency(1),
 
-			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
-			bk.Env("VERSION", version),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("./dev/ci/e2e.sh"),
-			bk.ArtifactPaths("./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log"))
-	}
+	// 		bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
+	// 		bk.Env("VERSION", version),
+	// 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+	// 		bk.Cmd("./dev/ci/e2e.sh"),
+	// 		bk.ArtifactPaths("./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log"))
+	// }
 
 	pipeline.AddWait()
 
@@ -264,17 +264,17 @@ func main() {
 	}
 
 	addBrowserExtensionReleaseSteps := func() {
-		// Run e2e tests
-		pipeline.AddStep(":chromium:",
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd browser"),
-			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s run test-e2e"),
-			bk.Cmd("popd"),
-			bk.ArtifactPaths("./puppeteer/*.png"))
+		// // Run e2e tests
+		// pipeline.AddStep(":chromium:",
+		// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+		// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		// 	bk.Cmd("pushd browser"),
+		// 	bk.Cmd("yarn -s run build"),
+		// 	bk.Cmd("yarn -s run test-e2e"),
+		// 	bk.Cmd("popd"),
+		// 	bk.ArtifactPaths("./puppeteer/*.png"))
 
-		pipeline.AddWait()
+		// pipeline.AddWait()
 
 		// Release to the Chrome Webstore
 		pipeline.AddStep(":chrome:",
