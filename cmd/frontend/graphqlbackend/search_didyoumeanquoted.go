@@ -3,8 +3,9 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	"sort"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 )
 
 type didYouMeanQuotedResolver struct {
@@ -49,4 +50,3 @@ func (r *didYouMeanQuotedResolver) Stats(context.Context) (*searchResultsStats, 
 	srs := &searchResultsStats{}
 	return srs, nil
 }
-

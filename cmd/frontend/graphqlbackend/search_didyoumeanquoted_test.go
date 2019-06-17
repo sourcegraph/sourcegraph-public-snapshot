@@ -20,16 +20,16 @@ func Test_didYouMeanQuotedResolver_Results(t *testing.T) {
 	}{
 		{
 			name: "empty",
-			fields: fields {
+			fields: fields{
 				query: "",
 			},
 			want: &searchResultsResolver{
 				alert: &searchAlert{
-					title:           "Try quoted",
-					proposedQueries: []*searchQueryDescription {
+					title: "Try quoted",
+					proposedQueries: []*searchQueryDescription{
 						{
 							description: "query quoted entirely",
-							query: `""`,
+							query:       `""`,
 						},
 					},
 				},
