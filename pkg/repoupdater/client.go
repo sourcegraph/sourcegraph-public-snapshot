@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var repoupdaterURL = env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL")
@@ -144,7 +143,6 @@ var MockEnqueueRepoUpdate func(ctx context.Context, repo gitserver.Repo) (*proto
 // EnqueueRepoUpdate requests that the named repository be updated in the near
 // future. It does not wait for the update.
 func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) (*protocol.RepoUpdateResponse, error) {
-	log15.Info("Client.EnqueueRepoUpdate 0", "repo", repo)
 	if MockEnqueueRepoUpdate != nil {
 		return MockEnqueueRepoUpdate(ctx, repo)
 	}
@@ -156,28 +154,22 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) (*p
 
 	resp, err := c.httpPost(ctx, "enqueue-repo-update", req)
 	if err != nil {
-		log15.Info("Client.EnqueueRepoUpdate 0 ERROR", "req", req, "err", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
-	log15.Info("Client.EnqueueRepoUpdate 1", "req", req, "resp", resp)
 
 	bs, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
-	log15.Info("Client.EnqueueRepoUpdate 2", "bs", string(bs))
 
 	var res protocol.RepoUpdateResponse
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		log15.Info("Client.EnqueueRepoUpdate 2a ERROR", "resp", resp)
 		return nil, errors.New(string(bs))
 	} else if err = json.Unmarshal(bs, &res); err != nil {
-		log15.Info("Client.EnqueueRepoUpdate 2b ERROR", "resp", resp, "err", err)
 		return nil, err
 	}
 
-	log15.Info("Client.EnqueueRepoUpdate 3", "res", res)
 	return &res, nil
 }
 
