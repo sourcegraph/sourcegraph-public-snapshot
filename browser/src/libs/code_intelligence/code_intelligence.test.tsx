@@ -181,7 +181,7 @@ describe('code_intelligence', () => {
             )
             const overlayMount = document.body.querySelector('.hover-overlay-mount')
             expect(overlayMount).toBeDefined()
-            expect(overlayMount!.className).toBe('hover-overlay-mount hover-overlay-mount__test')
+            expect(overlayMount!.className).toBe('hover-overlay-mount hover-overlay-mount__github')
             const renderedOverlay = elementRenderedAtMount(overlayMount!)
             expect(renderedOverlay).not.toBeUndefined()
         })
