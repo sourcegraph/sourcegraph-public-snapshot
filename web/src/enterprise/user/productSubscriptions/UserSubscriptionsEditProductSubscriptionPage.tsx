@@ -130,10 +130,7 @@ export class UserSubscriptionsEditProductSubscriptionPage extends React.Componen
                     </div>
                 ) : (
                     <>
-                        <Link
-                            to={this.state.productSubscriptionOrError.url}
-                            className="btn btn-outline-link btn-sm mb-3"
-                        >
+                        <Link to={this.state.productSubscriptionOrError.url} className="btn btn-link btn-sm mb-3">
                             <ArrowLeftIcon className="icon-inline" /> Subscription
                         </Link>
                         <h2>Upgrade or change subscription {this.state.productSubscriptionOrError.name}</h2>

@@ -49,6 +49,9 @@ type Metadata struct {
 	// Description is the description of the page for Twitter cards, OpenGraph,
 	// etc. e.g. "View this link in Sourcegraph Editor."
 	Description string
+
+	// ShowPreview controls whether or not OpenGraph/Twitter card/etc metadata is rendered.
+	ShowPreview bool
 }
 
 type Common struct {
@@ -59,8 +62,7 @@ type Common struct {
 	Title    string
 	Error    *pageError
 
-	InjectSourcegraphTracker     bool
-	InjectGoogleAnalyticsTracker bool
+	InjectSourcegraphTracker bool
 
 	// The fields below have zero values when not on a repo page.
 	Repo         *types.Repo
@@ -94,15 +96,6 @@ func repoShortName(name api.RepoName) string {
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has an incomplete RevSpec.
 func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError func(w http.ResponseWriter, r *http.Request, err error, statusCode int)) (*Common, error) {
-	injectTelligentTracker := false
-	injectGoogleAnalyticsTracker := false
-	if envvar.SourcegraphDotComMode() {
-		injectTelligentTracker = true
-		if strings.TrimPrefix(r.URL.Path, "/") == routeWelcome {
-			injectGoogleAnalyticsTracker = true
-		}
-	}
-
 	common := &Common{
 		Injected: InjectedHTML{
 			HeadTop:    template.HTML(conf.Get().Critical.HtmlHeadTop),
@@ -116,10 +109,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		Metadata: &Metadata{
 			Title:       "Sourcegraph",
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
+			ShowPreview: r.URL.Path == "/sign-in" && r.URL.RawQuery == "returnTo=%2F",
 		},
 
-		InjectSourcegraphTracker:     injectTelligentTracker,
-		InjectGoogleAnalyticsTracker: injectGoogleAnalyticsTracker,
+		InjectSourcegraphTracker: envvar.SourcegraphDotComMode(),
 	}
 
 	if _, ok := mux.Vars(r)["Repo"]; ok {
@@ -263,22 +256,6 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusUnauthorized)
 	}
 
-	return renderTemplate(w, "app.html", common)
-}
-
-func serveWelcome(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, "Sourcegraph", serveError)
-	if err != nil {
-		return err
-	}
-	if common == nil {
-		return nil // request was handled
-	}
-
-	if !envvar.SourcegraphDotComMode() {
-		// The welcome page only exists on Sourcegraph.com.
-		w.WriteHeader(http.StatusNotFound)
-	}
 	return renderTemplate(w, "app.html", common)
 }
 

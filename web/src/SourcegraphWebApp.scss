@@ -40,7 +40,7 @@ $pink: $oc-pink-7;
 $red: $oc-red-7;
 $orange: $oc-orange-7;
 $yellow: $oc-yellow-7;
-$green: $oc-green-7;
+$green: $oc-green-9;
 $teal: $oc-teal-7;
 $cyan: $oc-cyan-7;
 
@@ -129,6 +129,11 @@ $progress-border-radius: 0;
 $progress-bg: transparent;
 $progress-height: auto;
 
+$hr-border-color: var(--border-color);
+$hr-margin-y: 0.25rem;
+
+$code-bg: var(--body-bg);
+
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
@@ -206,14 +211,6 @@ body,
     }
 }
 
-hr {
-    margin-top: 1.5rem;
-    margin-bottom: 1.5rem;
-    background-color: #93a9c8;
-    height: 0.0625rem;
-    border: none;
-}
-
 .form-control::placeholder {
     opacity: 0.5;
 }
@@ -224,6 +221,14 @@ hr {
 
 .flex-1 {
     flex: 1;
+}
+
+// Our simple popovers only need these styles. We don't want the caret or special font sizes from
+// Bootstrap's popover CSS.
+.popover-inner {
+    background-color: var(--body-bg);
+    border: solid 1px var(--border-color);
+    border-radius: $border-radius;
 }
 
 // Pages
@@ -241,7 +246,6 @@ hr {
 @import './settings/SettingsFile';
 @import './site-admin/SiteInitPage';
 @import './site-admin/SiteAdmin';
-@import './site-admin/SiteAdminOverviewPage';
 @import './tree/Tree';
 @import './nav/GlobalNavbar';
 @import './nav/NavLinks';
@@ -249,20 +253,15 @@ hr {
 @import './auth/SignInPage';
 @import './auth/SignUpPage';
 @import './repo/GitRefTag';
-@import './repo/Repository';
 @import './repo/RepoContainer';
 @import './repo/settings/RepoSettingsArea';
 @import './components/completion/CompletionWidgetDropdown';
 @import './components/CopyableText';
-@import './components/ExternalServiceCard';
 @import './components/FilteredConnection';
 @import './components/SaveToolbar';
 @import './components/DecoratedTextLines';
 @import './components/HeroPage';
 @import './components/ModalPage';
-@import './components/MonacoEditor';
-@import './components/PopoverButton';
-@import './components/Overview';
 @import './components/RadioButtons';
 @import './components/Select';
 @import './components/tooltip/Tooltip';
@@ -281,6 +280,4 @@ hr {
 @import './components/SearchResultMatch';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
-@import './extensions/shared';
-@import './integrations/explore/IntegrationsExploreSection';
-@import './repo/explore/RepositoriesExploreSection';
+@import '../../shared/src/index';

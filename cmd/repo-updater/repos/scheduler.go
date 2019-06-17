@@ -16,9 +16,6 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// Scheduler schedules repo updates.
-var Scheduler = newUpdateScheduler()
-
 // schedulerConfig tracks the active scheduler configuration.
 type schedulerConfig struct {
 	running               bool
@@ -26,7 +23,7 @@ type schedulerConfig struct {
 }
 
 // RunScheduler runs the worker that schedules git fetches of synced repositories in git-server.
-func RunScheduler(ctx context.Context) {
+func RunScheduler(ctx context.Context, scheduler *updateScheduler) {
 	var (
 		have schedulerConfig
 		stop context.CancelFunc
@@ -56,9 +53,9 @@ func RunScheduler(ctx context.Context) {
 		var ctx2 context.Context
 		ctx2, stop = context.WithCancel(ctx)
 
-		go Scheduler.runUpdateLoop(ctx2)
+		go scheduler.runUpdateLoop(ctx2)
 		if want.autoGitUpdatesEnabled {
-			go Scheduler.runScheduleLoop(ctx2)
+			go scheduler.runScheduleLoop(ctx2)
 		}
 
 		log15.Debug(
@@ -127,7 +124,7 @@ type sourceRepoMap map[api.RepoName]*configuredRepo2
 const notifyChanBuffer = 1
 
 // newUpdateScheduler returns a new scheduler.
-func newUpdateScheduler() *updateScheduler {
+func NewUpdateScheduler() *updateScheduler {
 	return &updateScheduler{
 		sourceRepos: make(map[string]sourceRepoMap),
 		updateQueue: &updateQueue{
@@ -428,6 +425,14 @@ func (s *updateScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerI
 	s.updateQueue.mu.Unlock()
 
 	return &result
+}
+
+func (s *updateScheduler) UpdateQueueLen() int {
+	s.updateQueue.mu.Lock()
+	queueLen := len(s.updateQueue.index)
+	s.updateQueue.mu.Unlock()
+
+	return queueLen
 }
 
 // updateQueue is a priority queue of repos to update.

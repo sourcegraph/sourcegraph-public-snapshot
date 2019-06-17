@@ -81,6 +81,9 @@ type Provider interface {
 }
 
 type Repo struct {
+	// ID of the repo on Sourcegraph
+	ID api.RepoID
+
 	// RepoName is the unique name of the repo on Sourcegraph.
 	RepoName api.RepoName
 

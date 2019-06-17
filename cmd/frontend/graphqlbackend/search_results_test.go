@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
@@ -569,5 +571,54 @@ func TestCompareSearchResults(t *testing.T) {
 		if got != test.aIsLess {
 			t.Errorf("[%d] incorrect comparison. got %t, expected %t", i, got, test.aIsLess)
 		}
+	}
+}
+
+func Test_longer(t *testing.T) {
+	N := 2
+	noise := time.Nanosecond
+	for dt := time.Millisecond + noise; dt < time.Hour; dt += time.Millisecond {
+		dt2 := longer(N, dt)
+		if dt2 < time.Duration(N)*dt {
+			t.Fatalf("longer(%v)=%v < 2*%v, want more", dt, dt2, dt)
+		}
+		if strings.Contains(dt2.String(), ".") {
+			t.Fatalf("longer(%v).String() = %q contains an unwanted decimal point, want a nice round duration", dt, dt2)
+		}
+		lowest := 2 * time.Second
+		if dt2 < lowest {
+			t.Fatalf("longer(%v) = %v < %s, too short", dt, dt2, lowest)
+		}
+	}
+}
+
+func Test_roundStr(t *testing.T) {
+	tests := []struct {
+		name string
+		s    string
+		want string
+	}{
+		{
+			name: "empty",
+			s:    "",
+			want: "",
+		},
+		{
+			name: "simple",
+			s:    "19s",
+			want: "19s",
+		},
+		{
+			name: "decimal",
+			s:    "19.99s",
+			want: "20s",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := roundStr(tt.s); got != tt.want {
+				t.Errorf("roundStr() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

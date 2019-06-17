@@ -422,8 +422,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                   scalable Kubernetes cluster deployment option.
                                                               </>,
                                                               window.context.likelyDockerOnMac
-                                                                  ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS'
-                                                                  : 'Run Sourcegraph on a server with more CPU and memory, or faster disk IO',
+                                                                  ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS.'
+                                                                  : 'Run Sourcegraph on a server with more CPU and memory, or faster disk IO.',
                                                           ]
                                                         : []),
                                                 ])}

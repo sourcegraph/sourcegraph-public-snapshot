@@ -126,11 +126,11 @@ func queryEqual(a zoektquery.Q, b zoektquery.Q) bool {
 	return zoektquery.Map(a, sortChildren).String() == zoektquery.Map(b, sortChildren).String()
 }
 
-func TestQueryToZoektFileOnlyQuery(t *testing.T) {
+func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 	cases := []struct {
 		Name    string
 		Pattern *search.PatternInfo
-		Query   string
+		Query   []string
 		// This should be the same value passed in to either FilePatternsReposMustInclude or FilePatternsReposMustExclude
 		ListOfFilePaths []string
 	}{
@@ -146,7 +146,7 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query:           `f:"test.md"`,
+			Query:           []string{`f:"test.md"`},
 			ListOfFilePaths: []string{"test.md"},
 		},
 		{
@@ -161,7 +161,7 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query:           `f:"t" f:"d"`,
+			Query:           []string{`f:"t"`, `f:"d"`},
 			ListOfFilePaths: []string{"t", "d"},
 		},
 		{
@@ -176,7 +176,7 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query:           `f:"test.md"`,
+			Query:           []string{`f:"test.md"`},
 			ListOfFilePaths: []string{"test.md"},
 		},
 		{
@@ -191,23 +191,31 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query:           `f:"t" f:"d"`,
+			Query:           []string{`f:"t"`, `f:"d"`},
 			ListOfFilePaths: []string{"t", "d"},
 		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			q, err := zoektquery.Parse(tt.Query)
-			if err != nil {
-				t.Fatalf("failed to parse %q: %v", tt.Query, err)
+			queries := []zoektquery.Q{}
+			for _, query := range tt.Query {
+				q, err := zoektquery.Parse(query)
+				if err != nil {
+					t.Fatalf("failed to parse %q: %v", tt.Query, err)
+				}
+				queries = append(queries, q)
 			}
-			got, err := queryToZoektFileOnlyQuery(tt.Pattern, tt.ListOfFilePaths)
+
+			got, err := queryToZoektFileOnlyQueries(tt.Pattern, tt.ListOfFilePaths)
 			if err != nil {
 				t.Fatal("queryToZoektQuery failed:", err)
 			}
-			if !queryEqual(got, q) {
-				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), q.String())
+			for i, gotQuery := range got {
+				if !queryEqual(gotQuery, queries[i]) {
+					t.Fatalf("mismatched queries\ngot  %s\nwant %s", gotQuery.String(), queries[i].String())
+				}
 			}
+
 		})
 	}
 }
@@ -289,6 +297,46 @@ func TestSearchFilesInRepos(t *testing.T) {
 	_, _, err = searchFilesInRepos(context.Background(), args)
 	if !git.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
+	}
+}
+
+func TestShouldRepoBeSearched(t *testing.T) {
+	mockTextSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+		repoName := repo.Name
+		switch repoName {
+		case "foo/one":
+			return []*fileMatchResolver{
+				{
+					uri: "git://" + string(repoName) + "?1a2b3c#" + "main.go",
+				},
+			}, false, nil
+		case "foo/no-filematch":
+			return []*fileMatchResolver{}, false, nil
+		default:
+			return nil, false, errors.New("Unexpected repo")
+		}
+	}
+	defer func() { mockTextSearch = nil }()
+	info := &search.PatternInfo{
+		FileMatchLimit:               defaultMaxSearchResults,
+		Pattern:                      "foo",
+		FilePatternsReposMustInclude: []string{"main"},
+	}
+
+	shouldBeSearched, err := shouldRepoBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/one", URL: "http://example.com/foo/one"}, "1a2b3c", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !shouldBeSearched {
+		t.Errorf("expected repo to be searched, got shouldn't be searched")
+	}
+
+	shouldBeSearched, err = shouldRepoBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/no-filematch", URL: "http://example.com/foo/no-filematch"}, "1a2b3c", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if shouldBeSearched {
+		t.Errorf("expected repo to not be searched, got should be searched")
 	}
 }
 
@@ -481,6 +529,37 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
 		},
 		{
+			name: "returns filtered repoSet when multiple repoHasFileFlags are in query",
+			args: args{
+				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1", "2"}, PathPatternsAreRegExps: true},
+				searcher: &fakeSearcher{result: &zoekt.SearchResult{
+					Files: []zoekt.FileMatch{{
+						FileName:   "1.md",
+						Repository: "github.com/test/1",
+						LineMatches: []zoekt.LineMatch{{
+							FileName: true,
+						}}},
+						{
+							FileName:   "1.md",
+							Repository: "github.com/test/2",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}}},
+						{
+							FileName:   "2.md",
+							Repository: "github.com/test/2",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}}},
+					},
+					RepoURLs: map[string]string{"github.com/test/2": "github.com/test/2"}}},
+				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
+				repoHasFileFlagIsInQuery:        true,
+				negatedRepoHasFileFlagIsInQuery: false,
+			},
+			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/2": true}},
+		},
+		{
 			name: "returns filtered repoSet when negated repoHasFileFlag is in query",
 			args: args{
 				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustExclude: []string{"1"}, PathPatternsAreRegExps: true},
@@ -498,7 +577,33 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				negatedRepoHasFileFlagIsInQuery: true,
 			},
 			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/2": true}},
-		}}
+		},
+		{
+			name: "returns a new repoSet that includes at most the repos from original repoSet",
+			args: args{
+				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1"}, PathPatternsAreRegExps: true},
+				searcher: &fakeSearcher{result: &zoekt.SearchResult{
+					Files: []zoekt.FileMatch{{
+						FileName:   "1.md",
+						Repository: "github.com/test/1",
+						LineMatches: []zoekt.LineMatch{{
+							FileName: true,
+						}}},
+						{
+							FileName:   "1.md",
+							Repository: "github.com/test/2",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}}},
+					},
+					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1", "github.com/test/2": "github.com/test/2"}}},
+				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+				repoHasFileFlagIsInQuery:        false,
+				negatedRepoHasFileFlagIsInQuery: true,
+			},
+			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+		},
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

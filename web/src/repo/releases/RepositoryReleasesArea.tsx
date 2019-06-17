@@ -61,14 +61,14 @@ export class RepositoryReleasesArea extends React.Component<Props> {
         }
 
         return (
-            <div className="repository-graph-area area--vertical">
+            <div className="repository-graph-area">
                 <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="tags">Tags</RepoHeaderBreadcrumbNavItem>}
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                <div className="area--vertical__content">
-                    <div className="area--vertical__content-inner">
+                <div className="container">
+                    <div className="container-inner">
                         <Switch>
                             <Route
                                 path={`${this.props.routePrefix}/-/tags`}

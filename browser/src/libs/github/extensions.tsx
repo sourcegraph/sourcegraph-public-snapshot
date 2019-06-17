@@ -27,7 +27,7 @@ export const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTM
             rightNeighbor = rightNeighbor.previousElementSibling!
         }
         const mount = document.createElement('div')
-        mount.classList.add('Header-item', className)
+        mount.classList.add('Header-item', 'mr-0', 'mr-lg-3', className)
         rightNeighbor.insertAdjacentElement('beforebegin', mount)
         return mount
     }

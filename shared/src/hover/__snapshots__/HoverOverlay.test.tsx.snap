@@ -120,6 +120,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
       location={
         Object {
           "hash": "",
+          "key": undefined,
           "pathname": "/",
           "search": "",
           "state": undefined,
@@ -247,6 +248,7 @@ exports[`HoverOverlay actions present 1`] = `
       location={
         Object {
           "hash": "",
+          "key": undefined,
           "pathname": "/",
           "search": "",
           "state": undefined,
@@ -313,6 +315,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
       location={
         Object {
           "hash": "",
+          "key": undefined,
           "pathname": "/",
           "search": "",
           "state": undefined,
@@ -417,6 +420,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
       location={
         Object {
           "hash": "",
+          "key": undefined,
           "pathname": "/",
           "search": "",
           "state": undefined,

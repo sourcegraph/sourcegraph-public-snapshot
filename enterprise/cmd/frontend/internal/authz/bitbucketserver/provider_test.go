@@ -2,6 +2,7 @@ package bitbucketserver
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
@@ -20,124 +22,171 @@ import (
 
 var update = flag.Bool("update", false, "update testdata")
 
-func TestProvider_RepoPerms(t *testing.T) {
-	p, save := newProvider(t, "RepoPerms")
-	defer save()
-
-	f := newFixtures()
-	f.load(t, p.client)
-
-	h := codeHost{CodeHost: p.codeHost}
-
+func TestProvider_Validate(t *testing.T) {
 	for _, tc := range []struct {
-		name  string
-		ctx   context.Context
-		acct  *extsvc.ExternalAccount
-		perms map[api.RepoName]map[authz.Perm]bool
-		err   string
+		name     string
+		client   func(*bitbucketserver.Client)
+		problems []string
 	}{
 		{
-			name: "anonymous user",
-			acct: nil,
-			perms: map[api.RepoName]map[authz.Perm]bool{
-				// Because repo is public
-				"public-repo": {authz.Read: true},
-			},
+			name: "no-problems-when-authenticated-as-admin",
 		},
 		{
-			name: "authenticated user: engineer1",
-			acct: h.externalAccount(2, f.users["engineer1"]),
-			perms: map[api.RepoName]map[authz.Perm]bool{
-				// Because repo is public
-				"public-repo": {authz.Read: true},
-				// Because of engineer1 has a secret-project group membership
-				// and secret-project group has PROJECT_READ perm on SECRET project
-				// which secret-repo belongs to.
-				"secret-repo": {authz.Read: true},
-				// Because engineers group has PROJECT_WRITE perm on PRIVATE project
-				// which private-repo belongs to.
-				"private-repo": {authz.Read: true},
-			},
-		},
-		{
-			name: "authenticated user: engineer2",
-			acct: h.externalAccount(3, f.users["engineer2"]),
-			perms: map[api.RepoName]map[authz.Perm]bool{
-				// Because repo is public
-				"public-repo": {authz.Read: true},
-				// Because engineers group has PROJECT_WRITE perm on PRIVATE project
-				// which private-repo belongs to.
-				"private-repo": {authz.Read: true}, // Because of engineers group membership
-			},
-		},
-		{
-			name: "authenticated user: scientist",
-			acct: h.externalAccount(4, f.users["scientist"]),
-			perms: map[api.RepoName]map[authz.Perm]bool{
-				// Because repo is public
-				"public-repo": {authz.Read: true},
-				// Because of scientist1 has a secret-project group membership
-				// and secret-project group has PROJECT_READ perm on SECRET project
-				// which secret-repo belongs to.
-				"secret-repo": {authz.Read: true},
-				// Because scientists group has PROJECT_READ perm on PRIVATE project
-				// which private-repo belongs to.
-				"private-repo": {authz.Read: true},
-			},
-		},
-		{
-			name: "authenticated user: ceo",
-			acct: h.externalAccount(5, f.users["ceo"]),
-			perms: map[api.RepoName]map[authz.Perm]bool{
-				// Because repo is public
-				"public-repo": {authz.Read: true},
-				// Because management group has PROJECT_READ perm on PRIVATE project
-				// which private-repo belongs to.
-				"secret-repo": {authz.Read: true},
-				// Because ceo has REPO_WRITE perm on super-secret-repo.
-				"super-secret-repo": {authz.Read: true},
-				// Because management group has PROJECT_READ perm on PRIVATE project
-				// which private-repo belongs to.
-				"private-repo": {authz.Read: true},
+			name:   "problems-when-authenticated-as-non-admin",
+			client: func(c *bitbucketserver.Client) { c.Oauth = nil },
+			problems: []string{
+				`Bitbucket API HTTP error: code=401 url="http://127.0.0.1:7990/rest/api/1.0/admin/permissions/users?filter=" body="{\"errors\":[{\"context\":null,\"message\":\"You are not permitted to access this resource\",\"exceptionName\":\"com.atlassian.bitbucket.AuthorisationException\"}]}"`,
 			},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.ctx == nil {
-				tc.ctx = context.Background()
+			cli, save := newClient(t, "Validate/"+tc.name)
+			defer save()
+
+			p := newProvider(cli, nil, 0)
+
+			if tc.client != nil {
+				tc.client(p.client)
 			}
 
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			repos := make(map[authz.Repo]struct{}, len(f.repos))
-			for _, r := range f.repos {
-				repos[authz.Repo{
-					RepoName:         api.RepoName(r.Name),
-					ExternalRepoSpec: h.externalRepo(r),
-				}] = struct{}{}
-			}
-
-			perms, err := p.RepoPerms(tc.ctx, tc.acct, repos)
-
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
-			}
-
-			if have, want := perms, tc.perms; !reflect.DeepEqual(have, want) {
+			problems := p.Validate()
+			if have, want := problems, tc.problems; !reflect.DeepEqual(have, want) {
 				t.Error(cmp.Diff(have, want))
 			}
 		})
 	}
 }
 
+func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		cli, save := newClient(t, "RepoPerms")
+		defer save()
+
+		f := newFixtures()
+		f.load(t, cli)
+
+		p := newProvider(cli, db, 0)
+
+		h := codeHost{CodeHost: p.codeHost}
+
+		for i, tc := range []struct {
+			name  string
+			ctx   context.Context
+			user  *bitbucketserver.User
+			perms map[api.RepoName]map[authz.Perm]bool
+			err   string
+		}{
+			{
+				name: "anonymous user",
+				user: nil,
+				perms: map[api.RepoName]map[authz.Perm]bool{
+					// Because repo is public
+					"public-repo": {authz.Read: true},
+				},
+			},
+			{
+				name: "authenticated user: engineer1",
+				user: f.users["engineer1"],
+				perms: map[api.RepoName]map[authz.Perm]bool{
+					// Because repo is public
+					"public-repo": {authz.Read: true},
+					// Because of engineer1 has a secret-project group membership
+					// and secret-project group has PROJECT_READ perm on SECRET project
+					// which secret-repo belongs to.
+					"secret-repo": {authz.Read: true},
+					// Because engineers group has PROJECT_WRITE perm on PRIVATE project
+					// which private-repo belongs to.
+					"private-repo": {authz.Read: true},
+				},
+			},
+			{
+				name: "authenticated user: engineer2",
+				user: f.users["engineer2"],
+				perms: map[api.RepoName]map[authz.Perm]bool{
+					// Because repo is public
+					"public-repo": {authz.Read: true},
+					// Because engineers group has PROJECT_WRITE perm on PRIVATE project
+					// which private-repo belongs to.
+					"private-repo": {authz.Read: true}, // Because of engineers group membership
+				},
+			},
+			{
+				name: "authenticated user: scientist",
+				user: f.users["scientist"],
+				perms: map[api.RepoName]map[authz.Perm]bool{
+					// Because repo is public
+					"public-repo": {authz.Read: true},
+					// Because of scientist1 has a secret-project group membership
+					// and secret-project group has PROJECT_READ perm on SECRET project
+					// which secret-repo belongs to.
+					"secret-repo": {authz.Read: true},
+					// Because scientists group has PROJECT_READ perm on PRIVATE project
+					// which private-repo belongs to.
+					"private-repo": {authz.Read: true},
+				},
+			},
+			{
+				name: "authenticated user: ceo",
+				user: f.users["ceo"],
+				perms: map[api.RepoName]map[authz.Perm]bool{
+					// Because repo is public
+					"public-repo": {authz.Read: true},
+					// Because management group has PROJECT_READ perm on PRIVATE project
+					// which private-repo belongs to.
+					"secret-repo": {authz.Read: true},
+					// Because ceo has REPO_WRITE perm on super-secret-repo.
+					"super-secret-repo": {authz.Read: true},
+					// Because management group has PROJECT_READ perm on PRIVATE project
+					// which private-repo belongs to.
+					"private-repo": {authz.Read: true},
+				},
+			},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				if tc.ctx == nil {
+					tc.ctx = context.Background()
+				}
+
+				if tc.err == "" {
+					tc.err = "<nil>"
+				}
+
+				repos := make(map[authz.Repo]struct{}, len(f.repos))
+				for _, r := range f.repos {
+					repos[authz.Repo{
+						ID:               api.RepoID(r.ID + 42), // Make them different
+						RepoName:         api.RepoName(r.Name),
+						ExternalRepoSpec: h.externalRepo(r),
+					}] = struct{}{}
+				}
+
+				var acct *extsvc.ExternalAccount
+				if tc.user != nil {
+					acct = h.externalAccount(int32(i), tc.user)
+				}
+
+				perms, err := p.RepoPerms(tc.ctx, acct, repos)
+
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				}
+
+				if have, want := perms, tc.perms; !reflect.DeepEqual(have, want) {
+					t.Error(cmp.Diff(have, want))
+				}
+			})
+		}
+	}
+}
+
 func TestProvider_FetchAccount(t *testing.T) {
-	p, save := newProvider(t, "FetchAccount")
+	cli, save := newClient(t, "FetchAccount")
 	defer save()
 
 	f := newFixtures()
-	f.load(t, p.client)
+	f.load(t, cli)
+
+	p := newProvider(cli, nil, 0)
 
 	h := codeHost{CodeHost: p.codeHost}
 
@@ -381,31 +430,29 @@ func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc
 	}
 }
 
-func newProvider(t *testing.T, name string) (*Provider, func()) {
+func newClient(t *testing.T, name string) (*bitbucketserver.Client, func()) {
 	cli, save := bitbucketserver.NewTestClient(t, name, *update)
 
-	key := os.Getenv("BITBUCKET_SERVER_KEY")
-	if key == "" {
+	signingKey := os.Getenv("BITBUCKET_SERVER_SIGNING_KEY")
+	if signingKey == "" {
 		// Bogus key
-		key = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
+		signingKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
 	}
 
-	if err := cli.SetOAuth("sourcegraph", key); err != nil {
+	consumerKey := os.Getenv("BITBUCKET_SERVER_CONSUMER_KEY")
+	if consumerKey == "" {
+		consumerKey = "sourcegraph"
+	}
+
+	if err := cli.SetOAuth(consumerKey, signingKey); err != nil {
 		t.Fatal(err)
 	}
 
-	codeHost := extsvc.CodeHost{
-		ServiceType: bitbucketserver.ServiceType,
-		ServiceID:   os.Getenv("BITBUCKET_SERVER_URL"),
-	}
+	return cli, save
+}
 
-	if codeHost.ServiceID == "" {
-		codeHost.ServiceID = "http://127.0.0.1:7990"
-	}
-
-	return &Provider{
-		client:   cli,
-		codeHost: &codeHost,
-		pageSize: 1, // Exercise pagination
-	}, save
+func newProvider(cli *bitbucketserver.Client, db *sql.DB, ttl time.Duration) *Provider {
+	p := NewProvider(cli, db, ttl)
+	p.pageSize = 1 // Exercise pagination
+	return p
 }

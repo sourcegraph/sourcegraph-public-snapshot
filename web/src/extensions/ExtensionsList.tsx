@@ -181,8 +181,8 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="configured-extensions-list">
-                <Form onSubmit={this.onSubmit} className="form-inline d-flex">
+            <div className="extensions-list">
+                <Form onSubmit={this.onSubmit} className="form-inline">
                     <input
                         className="form-control flex-grow-1 mr-1 mb-2"
                         type="search"
@@ -221,7 +221,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                                 <span className="text-muted">No extensions found</span>
                             )
                         ) : (
-                            <div className="row mt-1">
+                            <div className="extensions-list__cards mt-1">
                                 {this.state.data.resultOrError.extensions.map((e, i) => (
                                     <ExtensionCard
                                         key={i}

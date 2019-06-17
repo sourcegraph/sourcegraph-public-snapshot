@@ -41,9 +41,9 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
         settingsCascade: props.settingsCascade,
     }
     return (
-        <div className="area">
-            <OrgSettingsSidebar {...props} className="area__sidebar" />
-            <div className="area__content">
+        <div className="d-flex">
+            <OrgSettingsSidebar {...props} className="flex-0 mr-3" />
+            <div className="flex-1">
                 <ErrorBoundary location={props.location}>
                     <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                         <Switch>

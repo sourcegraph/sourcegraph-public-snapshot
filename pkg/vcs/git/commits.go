@@ -104,6 +104,21 @@ func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*C
 	return commitLog(ctx, repo, opt)
 }
 
+// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
+// contains a commit past a specified date.
+func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revspec string) (bool, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: HasCommitAfter")
+	span.SetTag("Date", date)
+	span.SetTag("RevSpec", revspec)
+	defer span.Finish()
+
+	n, err := CommitCount(ctx, repo, CommitsOptions{
+		After: date,
+		Range: revspec,
+	})
+	return n > 0, err
+}
+
 func isBadObjectErr(output, obj string) bool {
 	return string(output) == "fatal: bad object "+obj
 }
@@ -203,6 +218,10 @@ func CommitCount(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
+
+	if opt.Range == "" {
+		opt.Range = "HEAD"
+	}
 
 	args, err := commitLogArgs([]string{"rev-list", "--count"}, opt)
 	if err != nil {

@@ -1,26 +1,42 @@
-import { ShortcutProps } from '@slimsag/react-shortcuts'
+import { Shortcut, ShortcutProps } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import H from 'history'
-import { isArray, sortBy, uniq } from 'lodash'
+import { isArray, sortBy, uniq, uniqueId } from 'lodash'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
-import * as React from 'react'
+import MenuUpIcon from 'mdi-react/MenuUpIcon'
+import React, { useCallback, useMemo, useState } from 'react'
+// @ts-ignore
+import TooltipPopoverWrapper from 'reactstrap/lib/TooltipPopoverWrapper'
 import { Subscription } from 'rxjs'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { ContributableMenu, Contributions, Evaluated } from '../api/protocol'
 import { HighlightedMatches } from '../components/HighlightedMatches'
-import { PopoverButton } from '../components/PopoverButton'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
 /**
- * Customizable CSS classes for elements of the the command list
+ * Customizable CSS classes for elements of the the command list button.
+ */
+export interface CommandListPopoverButtonClassProps {
+    /** The class name for the root button element of {@link CommandListPopoverButton}. */
+    buttonClassName?: string
+    buttonElement?: 'span' | 'a'
+    buttonOpenClassName?: string
+
+    showCaret?: boolean
+    popoverClassName?: string
+    popoverInnerClassName?: string
+}
+
+/**
+ * Customizable CSS classes for elements of the the command list.
  */
 export interface CommandListClassProps {
-    popoverClassName?: string
     inputClassName?: string
     formClassName?: string
     listItemClassName?: string
@@ -290,33 +306,56 @@ export function filterAndRankItems(
     return sortBy(scoredItems, 'recentIndex', 'score', ({ item }) => item.action.id).map(({ item }) => item)
 }
 
-export interface CommandListPopoverButtonProps extends CommandListProps {
-    /** The class name for the root button element. */
-    className?: string
-
+export interface CommandListPopoverButtonProps
+    extends CommandListProps,
+        CommandListPopoverButtonClassProps,
+        CommandListClassProps {
     toggleVisibilityKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
 }
 
-export class CommandListPopoverButton extends React.PureComponent<
-    CommandListPopoverButtonProps,
-    { hideOnChange?: any }
-> {
-    public state: { hideOnChange?: any } = {}
+export const CommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = ({
+    buttonClassName = '',
+    buttonElement: ButtonElement = 'span',
+    buttonOpenClassName = '',
+    showCaret = true,
+    popoverClassName = '',
+    popoverInnerClassName = '',
+    toggleVisibilityKeybinding,
+    ...props
+}) => {
+    const [isOpen, setIsOpen] = useState(false)
+    const close = useCallback(() => setIsOpen(false), [])
+    const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
 
-    public render(): JSX.Element | null {
-        return (
-            <PopoverButton
-                className={this.props.className}
-                popoverClassName={this.props.popoverClassName}
+    const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
+
+    return (
+        <ButtonElement
+            role="button"
+            className={`command-list-popover-button ${buttonClassName} ${isOpen ? buttonOpenClassName : ''}`}
+            id={id}
+            onClick={toggleIsOpen}
+        >
+            <MenuIcon className="icon-inline" />
+            {showCaret && (isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />)}
+            {/* Need to use TooltipPopoverWrapper to apply classNames to inner element, see https://github.com/reactstrap/reactstrap/issues/1484 */}
+            <TooltipPopoverWrapper
+                isOpen={isOpen}
+                toggle={toggleIsOpen}
+                popperClassName={`popover show ${popoverClassName}`}
+                innerClassName={`popover-inner ${popoverInnerClassName}`}
                 placement="bottom-end"
-                toggleVisibilityKeybinding={this.props.toggleVisibilityKeybinding}
-                hideOnChange={this.state.hideOnChange}
-                popoverElement={<CommandList {...this.props} onSelect={this.dismissPopover} />}
+                target={id}
+                trigger="legacy"
+                delay={0}
+                hideArrow={true}
             >
-                <MenuIcon className="icon-inline" />
-            </PopoverButton>
-        )
-    }
-
-    private dismissPopover = () => this.setState({ hideOnChange: {} })
+                <CommandList {...props} onSelect={close} />
+            </TooltipPopoverWrapper>
+            {toggleVisibilityKeybinding &&
+                toggleVisibilityKeybinding.map((keybinding, i) => (
+                    <Shortcut key={i} {...keybinding} onMatch={toggleIsOpen} />
+                ))}
+        </ButtonElement>
+    )
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -79,12 +80,12 @@ type TxStore interface {
 // DBStore implements the Store interface for reading and writing repos directly
 // from the Postgres database.
 type DBStore struct {
-	db     DB
+	db     dbutil.DB
 	txOpts sql.TxOptions
 }
 
 // NewDBStore instantiates and returns a new DBStore with prepared statements.
-func NewDBStore(ctx context.Context, db DB, txOpts sql.TxOptions) *DBStore {
+func NewDBStore(ctx context.Context, db dbutil.DB, txOpts sql.TxOptions) *DBStore {
 	return &DBStore{db: db, txOpts: txOpts}
 }
 
@@ -92,11 +93,11 @@ func NewDBStore(ctx context.Context, db DB, txOpts sql.TxOptions) *DBStore {
 // This method will return an error if the underlying DB cannot be interface upgraded
 // to a TxBeginner.
 func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
-	if _, ok := s.db.(Tx); ok { // Already in a Tx.
+	if _, ok := s.db.(dbutil.Tx); ok { // Already in a Tx.
 		return nil, errors.New("dbstore: already in a transaction")
 	}
 
-	tb, ok := s.db.(TxBeginner)
+	tb, ok := s.db.(dbutil.TxBeginner)
 	if !ok { // Not a Tx nor a TxBeginner, error.
 		return nil, errors.New("dbstore: not transactable")
 	}
@@ -120,7 +121,7 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 // When the error value pointed to by the first given `err` is nil, or when no error
 // pointer is given, the transaction is commited. Otherwise, it's rolled-back.
 func (s *DBStore) Done(errs ...*error) {
-	switch tx, ok := s.db.(Tx); {
+	switch tx, ok := s.db.(dbutil.Tx); {
 	case !ok:
 		return
 	case len(errs) == 0:
@@ -747,8 +748,8 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 		&svc.DisplayName,
 		&svc.Config,
 		&svc.CreatedAt,
-		&nullTime{&svc.UpdatedAt},
-		&nullTime{&svc.DeletedAt},
+		&dbutil.NullTime{Time: &svc.UpdatedAt},
+		&dbutil.NullTime{Time: &svc.DeletedAt},
 	)
 }
 
@@ -757,15 +758,15 @@ func scanRepo(r *Repo, s scanner) error {
 	err := s.Scan(
 		&r.ID,
 		&r.Name,
-		&nullString{&r.URI},
+		&dbutil.NullString{S: &r.URI},
 		&r.Description,
 		&r.Language,
 		&r.CreatedAt,
-		&nullTime{&r.UpdatedAt},
-		&nullTime{&r.DeletedAt},
-		&nullString{&r.ExternalRepo.ServiceType},
-		&nullString{&r.ExternalRepo.ServiceID},
-		&nullString{&r.ExternalRepo.ID},
+		&dbutil.NullTime{Time: &r.UpdatedAt},
+		&dbutil.NullTime{Time: &r.DeletedAt},
+		&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
+		&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
+		&dbutil.NullString{S: &r.ExternalRepo.ID},
 		&r.Enabled,
 		&r.Archived,
 		&r.Fork,

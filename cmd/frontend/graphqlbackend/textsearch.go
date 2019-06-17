@@ -140,9 +140,15 @@ func (lm *lineMatch) LimitHit() bool {
 	return lm.JLimitHit
 }
 
+var mockTextSearch func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
+
 // textSearch searches repo@commit with p.
 // Note: the returned matches do not set fileMatch.uri
 func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+	if mockTextSearch != nil {
+		return mockTextSearch(ctx, repo, commit, p, fetchTimeout)
+	}
+
 	tr, ctx := trace.New(ctx, "searcher.client", fmt.Sprintf("%s@%s", repo.Name, commit))
 	defer func() {
 		tr.SetError(err)
@@ -336,6 +342,14 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 		return nil, false, err
 	}
 
+	shouldBeSearched, err := shouldRepoBeSearched(ctx, info, gitserverRepo, commit, fetchTimeout)
+	if err != nil {
+		return nil, false, err
+	}
+	if !shouldBeSearched {
+		return matches, false, err
+	}
+
 	matches, limitHit, err = textSearch(ctx, gitserverRepo, commit, info, fetchTimeout)
 
 	workspace := fileMatchURI(repo.Name, rev, "")
@@ -347,6 +361,44 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	}
 
 	return matches, limitHit, err
+}
+
+// shouldRepoBeSearched determines whether a repository should be searched in, based on whether the repository
+// fits in the subset of repositories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
+func shouldRepoBeSearched(ctx context.Context, info *search.PatternInfo, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
+	shouldBeSearched := true
+	repoHasFileFlagIsInQuery := len(info.FilePatternsReposMustInclude) > 0
+	if repoHasFileFlagIsInQuery {
+		// search for file in repo, if file is in repo, actually search through it.
+		for _, pattern := range info.FilePatternsReposMustInclude {
+			repoHasFileOnlyPattern := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			matches, _, err := textSearch(ctx, gitserverRepo, commit, &repoHasFileOnlyPattern, fetchTimeout)
+			if err != nil {
+				return false, err
+			}
+			if len(matches) <= 0 {
+				// repo shouldn't be searched if it doesn't match the patterns in `repohasfile`.
+				shouldBeSearched = false
+			}
+
+		}
+	}
+	negatedRepoHasFileFlagIsInQuery := len(info.FilePatternsReposMustExclude) > 0
+	if negatedRepoHasFileFlagIsInQuery {
+		for _, pattern := range info.FilePatternsReposMustExclude {
+			repoHasFileOnlyPattern := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			matches, _, err := textSearch(ctx, gitserverRepo, commit, &repoHasFileOnlyPattern, fetchTimeout)
+			if err != nil {
+				return false, err
+			}
+			if len(matches) > 0 {
+				// repo shouldn't be searched if it has file matches for the patterns in `-repohasfile`.
+				shouldBeSearched = false
+			}
+		}
+	}
+
+	return shouldBeSearched, nil
 }
 
 func fileMatchURI(name api.RepoName, ref, path string) string {
@@ -481,10 +533,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 		return nil, false, nil, err
 	}
 	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
-		timeoutToTry := 2 * searchOpts.MaxWallTime
-		if timeoutToTry <= 0 {
-			timeoutToTry = 10 * time.Second
-		}
+		timeoutToTry := longer(2, searchOpts.MaxWallTime)
 		err2 := errors.Errorf("no results found before timeout in index search (try timeout:%v)", timeoutToTry)
 		return nil, false, nil, err2
 	}
@@ -573,10 +622,11 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 // Returns a new repoSet which accounts for the `repohasfile` and `-repohasfile` flags that may have been passed in the query.
 func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.PatternInfo, searcher zoekt.Searcher, repoSet zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
 	newRepoSet := repoSet.Set
-	repoHasFileFlagIsInQuery := len(query.FilePatternsReposMustInclude) > 0
-	negatedRepoHasFileFlagIsInQuery := len(query.FilePatternsReposMustExclude) > 0
+	flagIsInQuery := len(query.FilePatternsReposMustInclude) > 0
+	negatedFlagIsInQuery := len(query.FilePatternsReposMustExclude) > 0
 
-	filesToIncludeQuery, err := queryToZoektFileOnlyQuery(query, query.FilePatternsReposMustInclude)
+	// Construct queries which search for repos containing the files passed into `repohasfile`
+	filesToIncludeQueries, err := queryToZoektFileOnlyQueries(query, query.FilePatternsReposMustInclude)
 	if err != nil {
 		return nil, err
 	}
@@ -588,35 +638,58 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 	}
 	newSearchOpts.SetDefaults()
 
-	if repoHasFileFlagIsInQuery {
-		includeResp, err := searcher.Search(ctx, filesToIncludeQuery, &newSearchOpts)
-		if err != nil {
-			return nil, err
-		}
-		// Set newRepoSet to an empty map if the `repohasflag` exists
-		newRepoSet = make(map[string]bool, len(includeResp.RepoURLs))
-		// For each repo that had a result in the include set, add it to our new repoSet.
-		for repoURL := range includeResp.RepoURLs {
-			newRepoSet[repoURL] = true
-		}
+	if flagIsInQuery {
+		// Set newRepoSet to an empty map if the `repohasflag` exists.
+		newRepoSet = make(map[string]bool)
 
+		for i, q := range filesToIncludeQueries {
+			// Execute a new Zoekt search for each file passed in to a `repohasfile` flag.
+			includeResp, err := searcher.Search(ctx, q, &newSearchOpts)
+			if err != nil {
+				return nil, errors.Wrapf(err, "searching for %v", q.String())
+			}
+
+			for repoURL := range includeResp.RepoURLs {
+				if i == 0 {
+					// For the results from the first file query, add each repo that is in the result set to newRepoSet.
+					//
+					// Only add repoURLs that exist in the original repoSet, since
+					// repoSet is already filtered down to repositories that adhere to
+					// fit the `repo` filters in the query.
+					if repoSet.Set[repoURL] {
+						newRepoSet[repoURL] = true
+					}
+				} else {
+					// Then, for all following file queries, if there are repositories already existing in newRepoSet that do not appear in
+					// the result set for the current file query, remove them so that we only include repos that have at least
+					// one match for each `repohasfile` value in newRepoSet.
+					for existing := range newRepoSet {
+						if _, ok := includeResp.RepoURLs[existing]; !ok {
+							delete(newRepoSet, existing)
+						}
+					}
+				}
+			}
+		}
 	}
 
-	// Construct a query which just searches for repos that contain the file passed into `-repohasfile`
-	filesToExcludeQuery, err := queryToZoektFileOnlyQuery(query, query.FilePatternsReposMustExclude)
+	// Construct queries which search for repos containing the files passed into `-repohasfile`
+	filesToExcludeQueries, err := queryToZoektFileOnlyQueries(query, query.FilePatternsReposMustExclude)
 	if err != nil {
 		return nil, err
 	}
 
-	if negatedRepoHasFileFlagIsInQuery {
-		excludeResp, err := searcher.Search(ctx, filesToExcludeQuery, &newSearchOpts)
-		if err != nil {
-			return nil, err
-		}
-		for repoURL := range excludeResp.RepoURLs {
-			// For each repo that had a result in the exclude set, if it exists in the repoSet, set the value to false so we don't search over it.
-			if newRepoSet[repoURL] {
-				delete(newRepoSet, repoURL)
+	if negatedFlagIsInQuery {
+		for _, q := range filesToExcludeQueries {
+			excludeResp, err := searcher.Search(ctx, q, &newSearchOpts)
+			if err != nil {
+				return nil, err
+			}
+			for repoURL := range excludeResp.RepoURLs {
+				// For each repo that had a result in the exclude set, if it exists in the repoSet, set the value to false so we don't search over it.
+				if newRepoSet[repoURL] {
+					delete(newRepoSet, repoURL)
+				}
 			}
 		}
 	}
@@ -705,11 +778,11 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
 }
 
-// queryToZoekFileOnlyQuery constructs a Zoekt query that searches for a file pattern(s).
+// queryToZoektFileOnlyQueries constructs a list of Zoekt queries that search for a file pattern(s).
 // `listOfFilePaths` specifies which field on `query` should be the list of file patterns to look for.
-func queryToZoektFileOnlyQuery(query *search.PatternInfo, listOfFilePaths []string) (zoektquery.Q, error) {
-	var and []zoektquery.Q
-
+//  A separate zoekt query is created for each file path that should be searched.
+func queryToZoektFileOnlyQueries(query *search.PatternInfo, listOfFilePaths []string) ([]zoektquery.Q, error) {
+	var zoektQueries []zoektquery.Q
 	if !query.PathPatternsAreRegExps {
 		return nil, errors.New("zoekt only supports regex path patterns")
 	}
@@ -718,10 +791,10 @@ func queryToZoektFileOnlyQuery(query *search.PatternInfo, listOfFilePaths []stri
 		if err != nil {
 			return nil, err
 		}
-		and = append(and, q)
+		zoektQueries = append(zoektQueries, zoektquery.Simplify(q))
 	}
 
-	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
+	return zoektQueries, nil
 }
 
 // zoektIndexedRepos splits the input repo list into two parts: (1) the

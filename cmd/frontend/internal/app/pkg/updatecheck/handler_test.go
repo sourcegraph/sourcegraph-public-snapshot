@@ -29,9 +29,14 @@ func TestLatestKubernetesVersionPushed(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping due to network request")
 	}
+
 	url := fmt.Sprintf("https://github.com/sourcegraph/deploy-sourcegraph/releases/tag/v%v", latestReleaseKubernetesBuild.Version)
 	resp, err := http.Head(url)
-	if err != nil || resp.StatusCode != 200 {
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.StatusCode != 200 {
 		t.Errorf("Could not find Kubernetes release %s on GitHub. Response code %s from %s, err: %v", latestReleaseKubernetesBuild.Version, resp.Status, url, err)
 	}
 }

@@ -282,6 +282,7 @@ export const githubCodeHost: CodeHost = {
     check: checkIsGitHub,
     getCommandPaletteMount,
     commandPaletteClassProps: {
+        buttonClassName: 'Header-link',
         popoverClassName: 'Box',
         formClassName: 'p-1',
         inputClassName: 'form-control input-sm header-search-input jump-to-field',

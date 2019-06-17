@@ -160,7 +160,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
         let spec: { base: string | null; head: string | null } | null | undefined
         if (this.props.match.params.spec) {
-            spec = parseComparisonSpec(this.props.match.params.spec)
+            spec = parseComparisonSpec(decodeURIComponent(this.props.match.params.spec))
         }
 
         const commonProps: RepositoryCompareAreaPageProps = {
@@ -172,43 +172,39 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
         }
 
         return (
-            <div className="repository-compare-area area--vertical" ref={this.nextRepositoryCompareAreaElement}>
+            <div className="repository-compare-area container" ref={this.nextRepositoryCompareAreaElement}>
                 <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="compare">Compare</RepoHeaderBreadcrumbNavItem>}
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 <RepositoryCompareHeader
-                    className="area--vertical__header"
+                    className="my-3"
                     {...commonProps}
                     onUpdateComparisonSpec={this.onUpdateComparisonSpec}
                 />
-                <div className="area--vertical__content">
-                    <div className="area--vertical__content-inner">
-                        {spec === null ? (
-                            <div className="alert alert-danger">Invalid comparison specifier</div>
-                        ) : (
-                            <Switch>
-                                <Route
-                                    path={`${this.props.match.url}`}
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    exact={true}
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    render={routeComponentProps => (
-                                        <RepositoryCompareOverviewPage
-                                            {...routeComponentProps}
-                                            {...commonProps}
-                                            hoverifier={this.hoverifier}
-                                            isLightTheme={this.props.isLightTheme}
-                                            extensionsController={this.props.extensionsController}
-                                        />
-                                    )}
+                {spec === null ? (
+                    <div className="alert alert-danger">Invalid comparison specifier</div>
+                ) : (
+                    <Switch>
+                        <Route
+                            path={`${this.props.match.url}`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RepositoryCompareOverviewPage
+                                    {...routeComponentProps}
+                                    {...commonProps}
+                                    hoverifier={this.hoverifier}
+                                    isLightTheme={this.props.isLightTheme}
+                                    extensionsController={this.props.extensionsController}
                                 />
-                                <Route key="hardcoded-key" component={NotFoundPage} />
-                            </Switch>
-                        )}
-                    </div>
-                </div>
+                            )}
+                        />
+                        <Route key="hardcoded-key" component={NotFoundPage} />
+                    </Switch>
+                )}
                 {this.state.hoverOverlayProps && (
                     <WebHoverOverlay
                         {...this.props}

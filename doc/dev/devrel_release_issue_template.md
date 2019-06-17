@@ -38,6 +38,7 @@ Add events to the shared Release Schedule calendar in Google and invite team@sou
 
 ## In the second week
 
+- [ ] Remove `motd` previous release promotion from [Sourcegraph.com global settings](https://sourcegraph.com/site-admin/global-settings)
 - [ ] Post the blog post draft to #dev-announce: `The blog post draft for <VERSION> is ready, please review your parts are accurate and provide feedback by <DATE>: <link>
 - [ ] Tweet written
 - [ ] Email written

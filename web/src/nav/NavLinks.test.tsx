@@ -61,13 +61,15 @@ describe('NavLinks', () => {
         keybindings: KEYBINDINGS,
         settingsCascade: SETTINGS_CASCADE,
         history,
+        isSourcegraphDotCom: false,
+        showStatusIndicator: false,
     }
 
     // The 3 main props that affect the desired contents of NavLinks are whether the user is signed
     // in, whether we're on Sourcegraph.com, and the path. Create snapshots of all permutations.
     for (const authenticatedUser of [null, USER]) {
         for (const showDotComMarketing of [false, true]) {
-            for (const path of ['/foo', '/search', '/welcome']) {
+            for (const path of ['/foo', '/search']) {
                 const name = [
                     authenticatedUser ? 'authed' : 'unauthed',
                     showDotComMarketing ? 'Sourcegraph.com' : 'self-hosted',

@@ -80,9 +80,7 @@ func TestSearch(t *testing.T) {
 			defer conf.Mock(nil)
 			vars := map[string]interface{}{"query": tc.searchQuery}
 			db.Mocks.Repos.List = tc.reposListMock
-			sr := &schemaResolver{
-				recentSearches: &NopRecentSearches{},
-			}
+			sr := &schemaResolver{}
 			schema, err := graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
 			if err != nil {
 				t.Fatal(err)

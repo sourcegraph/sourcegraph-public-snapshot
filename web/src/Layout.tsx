@@ -115,7 +115,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             <ErrorBoundary location={props.location}>
                 <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                     <Switch>
-                        {props.routes.map(route => {
+                        {props.routes.map(({ render, ...route }) => {
                             const isFullWidth = !route.forceNarrowWidth
                             return (
                                 <Route
@@ -132,7 +132,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                                 }`,
                                             ].join(' ')}
                                         >
-                                            {route.render({ ...props, ...routeComponentProps })}
+                                            {render({ ...props, ...routeComponentProps })}
                                         </div>
                                     )}
                                 />

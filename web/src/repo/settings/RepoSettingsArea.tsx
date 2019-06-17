@@ -93,7 +93,7 @@ export class RepoSettingsArea extends React.Component<Props> {
         }
 
         return (
-            <div className="repo-settings-area area">
+            <div className="repo-settings-area container d-flex mt-3">
                 <RepoHeaderContributionPortal
                     position="nav"
                     element={
@@ -103,8 +103,8 @@ export class RepoSettingsArea extends React.Component<Props> {
                     }
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                <RepoSettingsSidebar className="area__sidebar" {...this.props} {...transferProps} />
-                <div className="area__content">
+                <RepoSettingsSidebar className="flex-0 mr-3" {...this.props} {...transferProps} />
+                <div className="flex-1">
                     <Switch>
                         <Route
                             path={`${this.props.match.url}`}
