@@ -212,14 +212,13 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                     <HelpCircleIcon className="icon-inline" />
                                     &nbsp;
                                     <small>{content}</small>
-                                </div>
-                                <div className="hover-overlay__alert-actions">
-                                    <button
-                                        className="hover-overlay__alert-close-button"
+                                    <a
+                                        className="hover-overlay__alert-close"
+                                        href=""
                                         onClick={this.onAlertDismissedCallback(type)}
                                     >
                                         <small>Dismiss</small>
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         ))}
@@ -257,8 +256,9 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
         )
     }
 
-    private onAlertDismissedCallback(alertType: A): () => void {
-        return () => {
+    private onAlertDismissedCallback(alertType: A): (e: React.MouseEvent<HTMLAnchorElement>) => void {
+        return e => {
+            e.preventDefault()
             if (this.props.onAlertDismissed) {
                 this.props.onAlertDismissed(alertType)
             }

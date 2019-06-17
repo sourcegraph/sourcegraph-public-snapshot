@@ -44,21 +44,10 @@
 
     &__alert {
         padding: 0.5rem;
-        display: flex;
-        flex-direction: column;
     }
 
-    &__alert-actions {
-        align-self: flex-end;
-        margin-top: 0.25rem;
-    }
-
-    &__alert-close-button {
-        border: 1px solid #0c5360;
-        border-radius: 3px;
-        background: transparent;
-        color: #0c5360;
-        padding-left: 0.5rem;
+    &__alert-close {
+        float: right;
     }
 
     // __content elements are a subset of the __row elements
