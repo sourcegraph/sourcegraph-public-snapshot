@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
+
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -76,59 +78,30 @@ type didYouMeanQuotedResolver struct {
 }
 
 func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResolver, error) {
-	pqs := []*searchQueryDescription {
-		{
-			description: "query quoted entirely",
-			query:       fmt.Sprintf("%q", r.query),
-		},
-	}
-	q2 := quotedRawQuery(r.query)
-	if q2 != pqs[0].query {
-		pqs = append(pqs, &searchQueryDescription{
-			description: "query quoted by parts",
-			query: q2,
+	q := syntax.ParseAllowingErrors(r.query)
+	// Make a map from various quotings of the query to their descriptions.
+	// This should take care of deduplicating them.
+	qq2d := make(map[string]string)
+	qq2d[q.WithPartsQuoted().String()] = "query with parts quoted"
+	qq2d[q.WithNonFieldPartsQuoted().String()] = "query with parts quoted, except for fields"
+	qq2d[q.WithNonFieldsQuoted().String()] = "query quoted, except for fields"
+	qq2d[fmt.Sprintf("%q", r.query)] = "query quoted entirely"
+	var sqds []*searchQueryDescription
+	for qq, desc := range qq2d {
+		sqds = append(sqds, &searchQueryDescription{
+			description: desc,
+			query:       qq,
 		})
 	}
-	// TODO: Try also quoting the query entirely, other than the fields.
-
+	sort.Slice(sqds, func(i, j int) bool { return sqds[i].description < sqds[j].description })
 	srr := &searchResultsResolver{
 		alert: &searchAlert{
-			title:       "Try quoted",
-			description: r.err.Error(),
-			proposedQueries: pqs,
+			title:           "Try quoted",
+			description:     r.err.Error(),
+			proposedQueries: sqds,
 		},
 	}
 	return srr, nil
-}
-
-func quotedRawQuery(q string) string {
-	rx := regexp.MustCompile(`\s+`)
-	parts := rx.Split(q, -1)
-	for i, p := range parts {
-		p = strings.TrimSpace(p)
-		if partNeedsQuoting(p) {
-			parts[i] = fmt.Sprintf("%q", p)
-		}
-	}
-	return strings.Join(parts, " ")
-}
-
-func partNeedsQuoting(p string) bool {
-	if strings.HasPrefix(p, ":") {
-		// like := for example
-		return true
-	}
-	if strings.Count(p, ":") == 1 {
-		// Looks like a field such as file:foo or repo:bar.
-		return false
-	}
-	if p == "" {
-		return false
-	}
-	if strings.HasPrefix(p, `"`) && strings.HasSuffix(p, `"`) {
-		return false
-	}
-	return true
 }
 
 func (r *didYouMeanQuotedResolver) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {

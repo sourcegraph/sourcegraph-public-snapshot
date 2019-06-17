@@ -16,22 +16,22 @@ func TestExpr_String(t *testing.T) {
 		want   string
 	}{
 		{
-			name: "empty",
-			fields: fields {},
-			want: "",
+			name:   "empty",
+			fields: fields{},
+			want:   "",
 		},
 		{
 			name: "literal",
-			fields: fields {
-				Value: "a",
+			fields: fields{
+				Value:     "a",
 				ValueType: TokenLiteral,
 			},
 			want: "a",
 		},
 		{
 			name: "quoted",
-			fields: fields {
-				Value: `"a"`,
+			fields: fields{
+				Value:     `"a"`,
 				ValueType: TokenQuoted,
 			},
 			want: `"a"`,
@@ -52,4 +52,3 @@ func TestExpr_String(t *testing.T) {
 		})
 	}
 }
-
