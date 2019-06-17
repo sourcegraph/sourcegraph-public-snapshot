@@ -83,6 +83,7 @@ export function registerNativeTooltipContributions(extensionsController: {
                     category: parseTemplate('Code host'),
                     commandArguments: [
                         parseTemplate('codeHost.useNativeTooltips'),
+                        // tslint:disable-next-line no-invalid-template-strings
                         parseTemplate('${!config.codeHost.useNativeTooltips}'),
                         null,
                         parseTemplate('json'),
