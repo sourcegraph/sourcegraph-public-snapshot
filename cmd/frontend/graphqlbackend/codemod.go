@@ -31,9 +31,8 @@ func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolve
 		if v.String != nil && *v.String != "" {
 			matchPatterns = append(matchPatterns, *v.String)
 		}
-		if v.Regexp != nil {
-			// HACK
-			matchPatterns = append(matchPatterns, strings.Replace(v.Regexp.String(), "\\", "", -1))
+		if v.Regexp != nil || v.Bool != nil {
+			return nil, nil, errors.New("This looks like a regex search pattern. Structural search is active because 'replace:' was specified. Please enclose your search string with quotes when using 'replace:'.")
 		}
 	}
 	matchPattern := strings.Join(matchPatterns, " ")
@@ -186,33 +185,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 	}
 
 	computeCodemodResultMatches := func(fileURL string, raw *rawCodemodResult) ([]*searchResultMatchResolver, error) {
-		seenMatches := map[string]struct{}{}
-		matches := func(text string) (hs []*highlightedRange) {
-			if _, seen := seenMatches[text]; seen {
-				return nil
-			}
-			seenMatches[text] = struct{}{}
-			lines := strings.Split(raw.Diff, "\n")
-			for i, line := range lines {
-				if pos := strings.Index(line, text); pos != -1 {
-					hs = append(hs, &highlightedRange{
-						line:      int32(i) - 1,
-						character: int32(pos),
-						length:    int32(len(text)),
-					})
-				}
-			}
-			return hs
-		}
-
 		var highlights []*highlightedRange
-		for _, sub := range raw.InPlaceSubstitutions {
-			highlights = append(highlights, matches(sub.ReplacementContent)...)
-			for _, e := range sub.Environment {
-				highlights = append(highlights, matches(e.Value)...)
-			}
-		}
-
 		matchBody, matchHighlights := cleanDiffPreview(highlights, raw.Diff)
 		_ = matchBody[strings.Index(matchBody, "@@"):]
 
