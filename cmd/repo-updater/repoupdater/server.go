@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
@@ -247,6 +246,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	t := time.Now()
 	args := repos.StoreListReposArgs{Names: []string{string(req.Repo)}}
 	rs, err := s.Store.ListRepos(r.Context(), args)
 	if err != nil {
@@ -269,11 +269,13 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 
 	repos.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
 
-	respond(w, http.StatusOK, &protocol.RepoUpdateResponse{
+	result := &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
 		Name: repo.Name,
 		URL:  req.URL,
-	})
+	}
+	log15.Debug("TRACE enqueueRepoUpdate", "args", &args, "result", result, "duration", time.Since(t))
+	respond(w, http.StatusOK, result)
 }
 
 func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Request) {
