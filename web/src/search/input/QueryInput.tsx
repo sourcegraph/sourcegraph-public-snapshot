@@ -279,9 +279,9 @@ export class QueryInput extends React.Component<Props, State> {
             this.state.suggestions.length !== 0
 
         return (
-            <div className="query-input2">
+            <div className="query-input">
                 <input
-                    className="form-control query-input2__input rounded-left e2e-query-input"
+                    className="form-control query-input__input rounded-left e2e-query-input"
                     value={this.props.value}
                     autoFocus={this.props.autoFocus === true}
                     onChange={this.onInputChange}
@@ -296,7 +296,7 @@ export class QueryInput extends React.Component<Props, State> {
                     autoComplete="off"
                 />
                 {showSuggestions && (
-                    <ul className="query-input2__suggestions" ref={this.setSuggestionListElement}>
+                    <ul className="query-input__suggestions" ref={this.setSuggestionListElement}>
                         {this.state.suggestions.map((suggestion, i) => {
                             const isSelected = this.state.selectedSuggestion === i
                             const onRef = (ref: HTMLLIElement | null) => {

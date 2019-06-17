@@ -1,6 +1,6 @@
 @import './Suggestion';
 
-.query-input2 {
+.query-input {
     flex: 1 1 auto;
     position: relative;
 
@@ -60,7 +60,7 @@
 }
 
 .theme-light {
-    .query-input2 {
+    .query-input {
         &__loading-notifier {
             background-color: $color-light-bg-1;
         }
