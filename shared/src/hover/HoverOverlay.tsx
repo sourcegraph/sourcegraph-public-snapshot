@@ -32,6 +32,8 @@ export interface HoverOverlayClassProps {
 
     actionItemClassName?: string
     actionItemPressedClassName?: string
+
+    alertClassName?: string
 }
 
 /**
@@ -106,7 +108,6 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
             className = '',
             actionItemClassName,
             actionItemPressedClassName,
-            onAlertDismissed,
         } = this.props
 
         if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
@@ -199,7 +200,14 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                 {hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError) && hoverOrError.alerts && (
                     <div className="hover-overlay__alerts">
                         {hoverOrError.alerts.map(({ content, type }) => (
-                            <div className="hover-overlay__row hover-overlay__alert alert-info" key={type}>
+                            <div
+                                className={classNames(
+                                    'hover-overlay__row',
+                                    'hover-overlay__alert',
+                                    this.props.alertClassName
+                                )}
+                                key={type}
+                            >
                                 <div className="hover-overlay__alert-content">
                                     <HelpCircleIcon className="icon-inline" />
                                     &nbsp;

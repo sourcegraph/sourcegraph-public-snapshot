@@ -320,6 +320,7 @@ export const githubCodeHost: CodeHost = {
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn',
+        alertClassName: 'alert-info',
     },
     setElementTooltip,
     linkPreviewContentClass: 'text-small text-gray p-1 mx-1 border rounded-1 bg-gray text-gray-dark',
