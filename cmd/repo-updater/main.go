@@ -14,8 +14,6 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
@@ -27,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 const port = "3182"
@@ -41,10 +40,14 @@ func main() {
 
 	clock := func() time.Time { return time.Now().UTC() }
 
+	log.Printf("# main 0")
+
 	// Syncing relies on access to frontend and git-server, so wait until they started up.
 	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
 		log.Fatalf("sourcegraph-frontend not reachable: %v", err)
 	}
+
+	log.Printf("# main 1")
 
 	gitserver.DefaultClient.WaitForGitServers(ctx)
 
@@ -59,6 +62,9 @@ func main() {
 			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
 		}
 	})
+
+	log.Printf("# main 2")
+
 	db, err := repos.NewDB(dsn)
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
@@ -85,6 +91,8 @@ func main() {
 			trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		)
 	}
+
+	log.Printf("# main 3")
 
 	cf := repos.NewHTTPClientFactory()
 	var src repos.Sourcer
@@ -221,6 +229,8 @@ func main() {
 		Syncer: syncer,
 	}
 
+	log.Printf("# main 4")
+
 	if envvar.SourcegraphDotComMode() {
 		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
 			Kinds: []string{"github"},
@@ -251,6 +261,8 @@ func main() {
 		}
 		server.GithubDotComSource = githubDotComSrc
 	}
+
+	log.Printf("# main 5")
 
 	var handler http.Handler
 	{
