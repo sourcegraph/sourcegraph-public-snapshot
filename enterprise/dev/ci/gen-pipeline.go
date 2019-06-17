@@ -141,37 +141,37 @@ func main() {
 	// 		bk.ArtifactPaths("web/coverage/coverage-final.json"))
 	// }
 
-	// Browser extension tests
-	pipeline.AddStep(":jest::chrome:",
-		bk.Cmd("dev/ci/yarn-test.sh browser"),
-		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
+	// // Browser extension tests
+	// pipeline.AddStep(":jest::chrome:",
+	// 	bk.Cmd("dev/ci/yarn-test.sh browser"),
+	// 	bk.ArtifactPaths("browser/coverage/coverage-final.json"))
 
-	// Shared tests
-	pipeline.AddStep(":jest:",
-		bk.Cmd("dev/ci/yarn-test.sh shared"),
-		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
+	// // Shared tests
+	// pipeline.AddStep(":jest:",
+	// 	bk.Cmd("dev/ci/yarn-test.sh shared"),
+	// 	bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
-	// Storybook
-	pipeline.AddStep(":storybook:", bk.Cmd("dev/ci/yarn-run.sh storybook:smoke-test"))
+	// // Storybook
+	// pipeline.AddStep(":storybook:", bk.Cmd("dev/ci/yarn-run.sh storybook:smoke-test"))
 
-	if !isBextReleaseBranch {
-		pipeline.AddStep(":postgres:",
-			bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
+	// if !isBextReleaseBranch {
+	// 	pipeline.AddStep(":postgres:",
+	// 		bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
 
-		pipeline.AddStep(":go:",
-			bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
-			bk.Cmd("go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -race ./..."),
-			bk.ArtifactPaths("coverage.txt"))
+	// 	pipeline.AddStep(":go:",
+	// 		bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
+	// 		bk.Cmd("go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+	// 		bk.ArtifactPaths("coverage.txt"))
 
-		pipeline.AddStep(":go:",
-			bk.Cmd("go generate ./..."),
-			bk.Cmd("go install -tags dist ./cmd/... ./enterprise/cmd/..."),
-		)
+	// 	pipeline.AddStep(":go:",
+	// 		bk.Cmd("go generate ./..."),
+	// 		bk.Cmd("go install -tags dist ./cmd/... ./enterprise/cmd/..."),
+	// 	)
 
-		pipeline.AddStep(":docker:",
-			bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.15.0/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
-			bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
-	}
+	// 	pipeline.AddStep(":docker:",
+	// 		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.15.0/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
+	// 		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+	// }
 
 	pipeline.AddWait()
 
