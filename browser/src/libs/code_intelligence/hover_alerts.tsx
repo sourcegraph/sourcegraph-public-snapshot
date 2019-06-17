@@ -26,7 +26,7 @@ export function getActiveHoverAlerts(codeHostName?: string): Observable<HoverAle
     )
 }
 /**
- * Marks a hovewr alert as dismissed in sync storage.
+ * Marks a hover alert as dismissed in sync storage.
  */
 export async function onHoverAlertDismissed(alertType: ExtensionHoverAlertType): Promise<void> {
     try {
