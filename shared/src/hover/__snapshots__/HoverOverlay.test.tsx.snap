@@ -389,18 +389,15 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
             </code>
           </React.Fragment>
         </small>
-      </div>
-      <div
-        className="hover-overlay__alert-actions"
-      >
-        <button
-          className="hover-overlay__alert-close-button"
+        <a
+          className="hover-overlay__alert-close"
+          href=""
           onClick={[Function]}
         >
           <small>
             Dismiss
           </small>
-        </button>
+        </a>
       </div>
     </div>
   </div>
