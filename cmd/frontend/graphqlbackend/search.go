@@ -484,7 +484,7 @@ func resolveRepository(ctx context.Context, repo *types.Repo, op resolveRepoOp, 
 		wg.Add(1)
 
 		var x interface{}
-		for x != nil {
+		for x == nil {
 			x = pool.Get()
 		}
 
