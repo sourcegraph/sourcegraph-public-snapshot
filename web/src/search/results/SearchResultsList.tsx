@@ -233,9 +233,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     filter(isDefined),
                     filter((resultsOrError): resultsOrError is GQL.ISearchResults => !isErrorLike(resultsOrError)),
                     map(({ results }) => results),
-                    map(
-                        (results): GQL.IFileMatch[] =>
-                            results.filter((res): res is GQL.IFileMatch => res.__typename === 'FileMatch')
+                    map((results): GQL.IFileMatch[] =>
+                        results.filter((res): res is GQL.IFileMatch => res.__typename === 'FileMatch')
                     )
                 )
                 .subscribe(fileMatches => {
@@ -376,6 +375,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     {results.limitHit && this.state.resultsShown >= results.results.length && (
                                         <button
                                             className="btn btn-secondary btn-block"
+                                            data-testid="search-show-more-button"
                                             onClick={this.props.onShowMoreResultsClick}
                                         >
                                             Show more

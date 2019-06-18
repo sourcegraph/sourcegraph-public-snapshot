@@ -1,14 +1,77 @@
 import { createBrowserHistory } from 'history'
+import { range } from 'lodash'
 import * as React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { cleanup, getAllByTestId, getByTestId, queryByTestId, render } from 'react-testing-library'
+import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
-import { HIGHLIGHTED_FILE_LINES_REQUEST, MULTIPLE_SEARCH_REQUEST, SEARCH_REQUEST } from '../testHelpers'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { HIGHLIGHTED_FILE_LINES_REQUEST, MULTIPLE_SEARCH_REQUEST, RESULT, SEARCH_REQUEST } from '../testHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
+
+let VISIBILITY_CHANGED_CALLBACKS: ((isVisible: boolean) => void)[] = []
+
+class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: boolean) => void }> {
+    constructor(props: { onChange?: (isVisible: boolean) => void }) {
+        super(props)
+        if (props.onChange) {
+            VISIBILITY_CHANGED_CALLBACKS.push(props.onChange)
+        }
+    }
+
+    public render(): JSX.Element {
+        return <>{this.props.children}</>
+    }
+
+    public componentWillUnmount(): void {
+        if (this.props.onChange) {
+            VISIBILITY_CHANGED_CALLBACKS.splice(VISIBILITY_CHANGED_CALLBACKS.indexOf(this.props.onChange), 1)
+        }
+    }
+}
+
+jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
+    <MockVisibilitySensor onChange={onChange} children={children} />
+))
 
 describe('SearchResultsList', () => {
     setLinkComponent((props: any) => <a {...props} />)
+
+    /**
+     * Simulates "scrolling" to the end of the search results,
+     * by triggering all the visibility changed callbacks with
+     * visibility: `true`.
+     */
+    const scrollToBottom = (): void => {
+        for (const onChange of VISIBILITY_CHANGED_CALLBACKS) {
+            onChange(true)
+        }
+    }
+
+    const mockResults = ({
+        resultCount,
+        limitHit,
+    }: {
+        resultCount: number
+        limitHit: boolean
+    }): GQL.ISearchResults => ({
+        ...MULTIPLE_SEARCH_REQUEST(),
+        limitHit,
+        resultCount,
+        approximateResultCount: `${resultCount}`,
+        results: range(resultCount).map(i => ({
+            ...RESULT,
+            file: {
+                ...RESULT.file,
+                url: `${i}`,
+            },
+        })),
+    })
+
+    afterEach(() => {
+        VISIBILITY_CHANGED_CALLBACKS = []
+    })
 
     afterAll(() => {
         setLinkComponent(null as any)
@@ -103,5 +166,90 @@ describe('SearchResultsList', () => {
         )
         expect(getByTestId(container, 'result-container')).toBeTruthy()
         expect(getAllByTestId(container, 'result-container').length).toBe(3)
+    })
+
+    it('displays "Show More" when the limit is hit', () => {
+        const props = {
+            ...defaultProps,
+            resultsOrError: mockResults({ resultCount: 31, limitHit: true }),
+        }
+        const { container, rerender } = render(
+            <BrowserRouter>
+                <SearchResultsList {...props} />
+            </BrowserRouter>
+        )
+        scrollToBottom()
+        rerender(
+            <BrowserRouter>
+                <SearchResultsList {...props} />
+            </BrowserRouter>
+        )
+        expect(getByTestId(container, 'search-show-more-button')).toBeTruthy()
+    })
+
+    it('does not display "Show More" if the limit isn\'t hit', () => {
+        const props = {
+            ...defaultProps,
+            resultsOrError: mockResults({ resultCount: 40, limitHit: false }),
+        }
+        const { container, rerender } = render(
+            <BrowserRouter>
+                <SearchResultsList {...props} />
+            </BrowserRouter>
+        )
+        scrollToBottom()
+        rerender(
+            <BrowserRouter>
+                <SearchResultsList {...props} />
+            </BrowserRouter>
+        )
+        expect(queryByTestId(container, 'search-show-more-button')).toBe(null)
+    })
+
+    it('shows "show more" when new results with limitHit=true are received, even if it previously received results with limitHit=false', () => {
+        // Rel: https://github.com/sourcegraph/sourcegraph/issues/4564
+        // Display search results with the limit hit, simulate scrolling and click 'show more'.
+        const showMore = sinon.spy()
+        const props = {
+            ...defaultProps,
+            resultsOrError: mockResults({ resultCount: 31, limitHit: true }),
+            onShowMoreResultsClick: showMore,
+        }
+        const { container, rerender } = render(
+            <BrowserRouter>
+                <SearchResultsList {...props} />
+            </BrowserRouter>
+        )
+        scrollToBottom()
+        rerender(
+            <BrowserRouter>
+                <SearchResultsList {...props} />
+            </BrowserRouter>
+        )
+        getByTestId(container, 'search-show-more-button').click()
+        sinon.assert.calledOnce(showMore)
+
+        // Render new results without a limit.
+        // Simulate scrolling and verify show more button isn't present.
+        rerender(
+            <BrowserRouter>
+                <SearchResultsList
+                    {...defaultProps}
+                    resultsOrError={mockResults({ resultCount: 1001, limitHit: false })}
+                />
+            </BrowserRouter>
+        )
+        scrollToBottom()
+        expect(queryByTestId(container, 'search-show-more-button')).toBe(null)
+
+        // Re-render with original props and simulate scrolling,
+        // Expect "show more" button to be present.
+        rerender(
+            <BrowserRouter>
+                <SearchResultsList {...props} />
+            </BrowserRouter>
+        )
+        scrollToBottom()
+        expect(getByTestId(container, 'search-show-more-button')).toBeTruthy()
     })
 })
