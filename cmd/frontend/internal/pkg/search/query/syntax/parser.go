@@ -188,9 +188,8 @@ func (p *parser) errorExpr(toks ...Token) *Expr {
 		t := p.next()
 		switch t.Type {
 		case TokenSep, TokenEOF:
-			break
+			return e
 		}
 		e.Value = e.Value + t.Value
 	}
-	return e
 }
