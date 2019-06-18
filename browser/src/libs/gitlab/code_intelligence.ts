@@ -89,7 +89,8 @@ const codeViewResolver: ViewResolver<CodeView> = {
 }
 
 export const gitlabCodeHost: CodeHost = {
-    name: 'gitlab',
+    type: 'gitlab',
+    name: 'GitLab',
     check: checkIsGitlab,
     codeViewResolvers: [codeViewResolver],
     adjustOverlayPosition,

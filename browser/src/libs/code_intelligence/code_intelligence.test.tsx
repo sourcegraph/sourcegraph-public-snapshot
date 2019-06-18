@@ -9,12 +9,17 @@ import { integrationTestContext } from '../../../../shared/src/api/integration-t
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
 import { IMutation, IQuery } from '../../../../shared/src/graphql/schema'
-import { PlatformContext } from '../../../../shared/src/platform/context'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { isDefined } from '../../../../shared/src/util/types'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
-import { createGlobalDebugMount, createOverlayMount, FileInfo, handleCodeHost } from './code_intelligence'
+import {
+    CodeIntelligenceProps,
+    createGlobalDebugMount,
+    createOverlayMount,
+    FileInfo,
+    handleCodeHost,
+} from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
 
 const RENDER = jest.fn()
@@ -36,8 +41,8 @@ const createMockController = (services: Services): Controller => ({
 })
 
 const createMockPlatformContext = (
-    partialMocks?: Partial<Pick<PlatformContext, 'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile'>>
-): Pick<PlatformContext, 'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'urlToFile' | 'requestGraphQL'> => ({
+    partialMocks?: Partial<CodeIntelligenceProps['platformContext']>
+): CodeIntelligenceProps['platformContext'] => ({
     forceUpdateTooltip: jest.fn(),
     urlToFile: jest.fn(),
     // Mock implementation of `requestGraphQL()` that returns successful
@@ -113,6 +118,7 @@ const createMockPlatformContext = (
         return throwError(new Error('GraphQL request failed'))
     },
     sideloadedExtensionURL: new Subject<string | null>(),
+    settings: NEVER,
     ...partialMocks,
 })
 
@@ -160,7 +166,8 @@ describe('code_intelligence', () => {
                 handleCodeHost({
                     mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                     codeHost: {
-                        name: 'test',
+                        type: 'github',
+                        name: 'GitHub',
                         check: () => true,
                         codeViewResolvers: [],
                     },
@@ -174,7 +181,7 @@ describe('code_intelligence', () => {
             )
             const overlayMount = document.body.querySelector('.hover-overlay-mount')
             expect(overlayMount).toBeDefined()
-            expect(overlayMount!.className).toBe('hover-overlay-mount hover-overlay-mount__test')
+            expect(overlayMount!.className).toBe('hover-overlay-mount hover-overlay-mount__github')
             const renderedOverlay = elementRenderedAtMount(overlayMount!)
             expect(renderedOverlay).not.toBeUndefined()
         })
@@ -186,7 +193,8 @@ describe('code_intelligence', () => {
                 handleCodeHost({
                     mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                     codeHost: {
-                        name: 'test',
+                        type: 'github',
+                        name: 'GitHub',
                         check: () => true,
                         getCommandPaletteMount: () => commandPaletteMount,
                         codeViewResolvers: [],
@@ -209,7 +217,8 @@ describe('code_intelligence', () => {
                 handleCodeHost({
                     mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                     codeHost: {
-                        name: 'test',
+                        type: 'github',
+                        name: 'GitHub',
                         check: () => true,
                         codeViewResolvers: [],
                     },
@@ -242,7 +251,8 @@ describe('code_intelligence', () => {
                 handleCodeHost({
                     mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                     codeHost: {
-                        name: 'test',
+                        type: 'github',
+                        name: 'GitHub',
                         check: () => true,
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
@@ -310,7 +320,8 @@ describe('code_intelligence', () => {
                     handleCodeHost({
                         mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                         codeHost: {
-                            name: 'test',
+                            type: 'github',
+                            name: 'GitHub',
                             check: () => true,
                             codeViewResolvers: [
                                 toCodeViewResolver('#code', {
@@ -412,7 +423,8 @@ describe('code_intelligence', () => {
                     handleCodeHost({
                         mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
                         codeHost: {
-                            name: 'test',
+                            type: 'github',
+                            name: 'GitHub',
                             check: () => true,
                             codeViewResolvers: [
                                 toCodeViewResolver('#code', {
@@ -556,7 +568,8 @@ describe('code_intelligence', () => {
                 handleCodeHost({
                     mutations,
                     codeHost: {
-                        name: 'test',
+                        type: 'github',
+                        name: 'GitHub',
                         check: () => true,
                         codeViewResolvers: [
                             toCodeViewResolver('.code', {

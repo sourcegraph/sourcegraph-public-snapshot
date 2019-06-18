@@ -117,6 +117,11 @@ const SettingsSchemaJSON = `{
         "type": "boolean",
         "description": "` + "`" + `true` + "`" + ` to enable the extension, ` + "`" + `false` + "`" + ` to disable the extension (if it was previously enabled)"
       }
+    },
+    "codeHost.useNativeTooltips": {
+      "description": "Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).",
+      "type": "boolean",
+      "default": false
     }
   },
   "definitions": {
