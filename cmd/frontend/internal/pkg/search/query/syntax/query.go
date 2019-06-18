@@ -21,7 +21,13 @@ func (q *Query) WithPartsQuoted() *Query {
 	q2 := &Query{}
 	for _, e := range q.Expr {
 		e2 := *e
-		e2.Value = fmt.Sprintf("%q", e.Value)
+		switch e.Field {
+		case "":
+			e2.Value = fmt.Sprintf("%q", e.Value)
+		default:
+			e2.Value = fmt.Sprintf("%q", fmt.Sprintf("%s:%s", e.Field, e.Value))
+		}
+		e2.Field = ""
 		e2.ValueType = TokenQuoted
 		q2.Expr = append(q2.Expr, &e2)
 	}
