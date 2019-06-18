@@ -500,6 +500,8 @@ type productSubscriptionConnection struct {
 	err     error
 }
 
+// subscriptionWithActiveLicenseExpiration caches subscription expiration dates for sorting
+// subscriptions.
 type subscriptionWithActiveLicenseExpiration struct {
 	subscription           *dbSubscription
 	activeLicenseExpiresAt *time.Time
