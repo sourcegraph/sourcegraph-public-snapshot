@@ -11,8 +11,11 @@ import (
 	"strings"
 	"sync"
 
-	zoektrpc "github.com/google/zoekt/rpc"
+	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
+	"gopkg.in/inconshreveable/log15.v2"
+
+	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -416,19 +419,16 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 	overLimit = len(repos) >= maxRepoListSize
 
-	resolverPool := sync.Pool{}
-	for i := 0; i < 100; i++ {
-		resolverPool.Put(struct{}{})
-	}
+	run := parallel.NewRun(100)
+	resolverPool := parallel.NewRun(100)
 
 	var mut sync.Mutex
-	var wg sync.WaitGroup
 	results := make(chan *repositoryResult)
 
 	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
 	repoResolvers = make([]*searchSuggestionResolver, 0, len(repos))
 	for _, repo := range repos {
-		wg.Add(1)
+		run.Acquire()
 		go resolveRepository(ctx, repo, op, includePatternRevs, resolverPool, results)
 	}
 
@@ -441,10 +441,10 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 				missingRepoRevisions = append(missingRepoRevisions, missing)
 			}
 			mut.Unlock()
-			wg.Done()
+			run.Release()
 		}
 	}()
-	wg.Wait()
+	run.Wait()
 	close(results)
 
 	tr.LazyPrintf("Associate/validate revs - done")
@@ -457,7 +457,7 @@ type repositoryResult struct {
 	missingRepoRevisions []*search.RepositoryRevisions
 }
 
-func resolveRepository(ctx context.Context, repo *types.Repo, op resolveRepoOp, includePatternRevs []patternRevspec, pool sync.Pool, results chan<- *repositoryResult) {
+func resolveRepository(ctx context.Context, repo *types.Repo, op resolveRepoOp, includePatternRevs []patternRevspec, pool *parallel.Run, results chan<- *repositoryResult) {
 	repoRev := &search.RepositoryRevisions{Repo: repo}
 	revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
 	repoResolver := &repositoryResolver{repo: repo}
@@ -481,16 +481,14 @@ func resolveRepository(ctx context.Context, repo *types.Repo, op resolveRepoOp, 
 
 	var wg sync.WaitGroup
 	for _, rev := range revs {
+		pool.Acquire()
 		wg.Add(1)
 
-		var x interface{}
-		for x == nil {
-			x = pool.Get()
-		}
-
 		go func(rev search.RevisionSpecifier) {
-			defer wg.Done()
-			defer pool.Put(x)
+			defer func() {
+				pool.Release()
+				wg.Done()
+			}()
 
 			if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
 				// Do not validate ref patterns. A ref pattern matching 0 refs is not necessarily
