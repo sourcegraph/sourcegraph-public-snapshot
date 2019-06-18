@@ -23,7 +23,6 @@ import (
 	"github.com/stripe/stripe-go/invoice"
 	"github.com/stripe/stripe-go/plan"
 	"github.com/stripe/stripe-go/sub"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func init() {
@@ -497,16 +496,16 @@ type productSubscriptionConnection struct {
 
 	// cache results because they are used by multiple fields
 	once    sync.Once
-	results sortSubscriptions
+	results []*subscriptionWithActiveLicenseExpiration
 	err     error
 }
 
-type subscriptionWithActiveLicense struct {
-	subscription  *dbSubscription
-	activeLicense *dbLicense
+type subscriptionWithActiveLicenseExpiration struct {
+	subscription           *dbSubscription
+	activeLicenseExpiresAt *time.Time
 }
 
-type sortSubscriptions []*subscriptionWithActiveLicense
+type sortSubscriptions []*subscriptionWithActiveLicenseExpiration
 
 func (s sortSubscriptions) Len() int {
 	return len(s)
@@ -514,32 +513,21 @@ func (s sortSubscriptions) Len() int {
 
 func (s sortSubscriptions) Less(i, j int) bool {
 	// Subscriptions with no license should always be last.
-	if s[i].activeLicense == nil {
+	if s[i].activeLicenseExpiresAt == nil {
 		return false
 	}
-	if s[j].activeLicense == nil {
+	if s[j].activeLicenseExpiresAt == nil {
 		return true
 	}
-
-	l1 := &productLicense{v: s[i].activeLicense}
-	l1Info, err := l1.Info()
-	if err != nil {
-		log15.Error("graphqlbackend.productLicense.Info() failed", "error", err)
-		return false
-	}
-	l2 := &productLicense{v: s[j].activeLicense}
-	l2Info, err := l2.Info()
-	if err != nil {
-		log15.Error("graphqlbackend.productLicense.Info() failed", "error", err)
-		return false
-	}
-	return l1Info.ExpiresAtValue.Before(l2Info.ExpiresAtValue)
+	e1 := *s[i].activeLicenseExpiresAt
+	e2 := *s[j].activeLicenseExpiresAt
+	return e1.Before(e2)
 }
 func (s sortSubscriptions) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-func (r *productSubscriptionConnection) compute(ctx context.Context) (sortSubscriptions, error) {
+func (r *productSubscriptionConnection) compute(ctx context.Context) ([]*subscriptionWithActiveLicenseExpiration, error) {
 	r.once.Do(func() {
 		opt2 := r.opt
 		if opt2.LimitOffset != nil {
@@ -553,24 +541,34 @@ func (r *productSubscriptionConnection) compute(ctx context.Context) (sortSubscr
 		if r.err != nil {
 			return
 		}
-
-		r.results = make([]*subscriptionWithActiveLicense, len(dbSubs))
+		res := make(sortSubscriptions, len(dbSubs))
 		for i, s := range dbSubs {
-			r.results[i] = &subscriptionWithActiveLicense{subscription: s}
+			if s.ActiveLicenseKey == nil {
+				res[i] = &subscriptionWithActiveLicenseExpiration{
+					subscription:           s,
+					activeLicenseExpiresAt: nil,
+				}
+				continue
+			}
+			var li *graphqlbackend.ProductLicenseInfo
+			pl := &productLicense{v: &dbLicense{LicenseKey: *s.ActiveLicenseKey}} // Dummy license, only needs to contain the key.
+			li, r.err = pl.Info()
+			if r.err != nil {
+				return
+			}
+			res[i] = &subscriptionWithActiveLicenseExpiration{
+				subscription:           s,
+				activeLicenseExpiresAt: &li.ExpiresAtValue,
+			}
 		}
 
 		if r.orderByExpiresAt {
-			for i, s := range r.results {
-				ps := &productSubscription{v: s.subscription}
-				r.results[i].activeLicense, r.err = ps.activeDBLicense(ctx)
-				if r.err != nil {
-					return
-				}
-			}
-
-			sort.Sort(r.results)
+			sort.Sort(res)
 		}
+
+		r.results = res
 	})
+
 	return r.results, r.err
 }
 

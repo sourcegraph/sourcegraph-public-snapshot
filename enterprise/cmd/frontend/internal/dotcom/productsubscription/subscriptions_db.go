@@ -18,6 +18,7 @@ type dbSubscription struct {
 	ID                    string // UUID
 	UserID                int32
 	BillingSubscriptionID *string // this subscription's ID in the billing system
+	ActiveLicenseKey      *string
 	CreatedAt             time.Time
 	ArchivedAt            *time.Time
 }
@@ -91,7 +92,15 @@ func (s dbSubscriptions) List(ctx context.Context, opt dbSubscriptionsListOption
 
 func (dbSubscriptions) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbSubscription, error) {
 	q := sqlf.Sprintf(`
-SELECT id, user_id, billing_subscription_id, created_at, archived_at FROM product_subscriptions
+WITH active_licenses_ungrouped AS (
+	SELECT product_subscription_id, FIRST_VALUE(license_key) OVER (PARTITION BY product_subscription_id ORDER BY created_at DESC) AS active_key
+	FROM product_licenses
+), active_licenses AS (
+	SELECT product_subscription_id, active_key FROM active_licenses_ungrouped GROUP BY 1, 2
+)
+SELECT s.id, s.user_id, s.billing_subscription_id, s.created_at, s.archived_at, l.active_key
+FROM product_subscriptions s
+LEFT JOIN active_licenses l on l.product_subscription_id = s.id
 WHERE (%s)
 ORDER BY archived_at DESC NULLS FIRST, created_at DESC
 %s`,
@@ -108,7 +117,7 @@ ORDER BY archived_at DESC NULLS FIRST, created_at DESC
 	var results []*dbSubscription
 	for rows.Next() {
 		var v dbSubscription
-		if err := rows.Scan(&v.ID, &v.UserID, &v.BillingSubscriptionID, &v.CreatedAt, &v.ArchivedAt); err != nil {
+		if err := rows.Scan(&v.ID, &v.UserID, &v.BillingSubscriptionID, &v.CreatedAt, &v.ArchivedAt, &v.ActiveLicenseKey); err != nil {
 			return nil, err
 		}
 		results = append(results, &v)
