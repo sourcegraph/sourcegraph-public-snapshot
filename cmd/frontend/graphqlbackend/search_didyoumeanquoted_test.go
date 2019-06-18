@@ -27,7 +27,7 @@ func Test_proposedQuotedQueries(t *testing.T) {
 					query:       `""`,
 				},
 				{
-					description: "query with parts quoted",
+					description: "query with error terms quoted",
 					query:       "",
 				},
 			},

@@ -3,6 +3,7 @@ package syntax
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -14,6 +15,27 @@ type Query struct {
 
 func (q *Query) String() string {
 	return ExprString(q.Expr)
+}
+
+// WithErrorsQuoted converts a query like `f:foo b(ar` to `f:foo "b(ar"`.
+func (q *Query) WithErrorsQuoted() *Query {
+	q2 := &Query{}
+	for _, e := range q.Expr {
+		e2 := *e
+		switch e.ValueType {
+		case TokenError:
+			e2.Value = fmt.Sprintf("%q", e.Value)
+			e2.ValueType = TokenQuoted
+		case TokenPattern, TokenLiteral:
+			_, err := regexp.Compile(e2.Value)
+			if err != nil {
+				e2.Value = fmt.Sprintf("%q", e.Value)
+				e2.ValueType = TokenQuoted
+			}
+		}
+		q2.Expr = append(q2.Expr, &e2)
+	}
+	return q2
 }
 
 // WithPartsQuoted converts a query like `f:foo b(ar) ba+z` to one like `"f:foo" "b(ar)" "ba+z"`.

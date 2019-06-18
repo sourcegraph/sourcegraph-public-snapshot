@@ -44,9 +44,7 @@ func proposedQuotedQueries(rawQuery string) []*searchQueryDescription {
 	// This should take care of deduplicating them.
 	// The descriptions are in a particular order to make the simpler descriptions take precedence.
 	qq2d := make(map[string]string)
-	qq2d[q.WithNonFieldPartsQuoted().String()] = "query with parts quoted, except for fields"
-	qq2d[q.WithNonFieldsQuoted().String()] = "query quoted, except for fields"
-	qq2d[q.WithPartsQuoted().String()] = "query with parts quoted"
+	qq2d[q.WithErrorsQuoted().String()] = "query with error terms quoted"
 	qq2d[fmt.Sprintf("%q", rawQuery)] = "query quoted entirely"
 	var sqds []*searchQueryDescription
 	for qq, desc := range qq2d {
