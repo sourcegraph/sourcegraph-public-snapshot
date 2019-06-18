@@ -425,13 +425,6 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	var mut sync.Mutex
 	results := make(chan *repositoryResult)
 
-	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
-	repoResolvers = make([]*searchSuggestionResolver, 0, len(repos))
-	for _, repo := range repos {
-		run.Acquire()
-		go resolveRepository(ctx, repo, op, includePatternRevs, resolverPool, results)
-	}
-
 	go func() {
 		for res := range results {
 			mut.Lock()
@@ -444,6 +437,13 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			run.Release()
 		}
 	}()
+
+	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
+	repoResolvers = make([]*searchSuggestionResolver, 0, len(repos))
+	for _, repo := range repos {
+		run.Acquire()
+		go resolveRepository(ctx, repo, op, includePatternRevs, resolverPool, results)
+	}
 	run.Wait()
 	close(results)
 
