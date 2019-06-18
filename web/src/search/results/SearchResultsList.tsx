@@ -233,8 +233,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     filter(isDefined),
                     filter((resultsOrError): resultsOrError is GQL.ISearchResults => !isErrorLike(resultsOrError)),
                     map(({ results }) => results),
-                    map((results): GQL.IFileMatch[] =>
-                        results.filter((res): res is GQL.IFileMatch => res.__typename === 'FileMatch')
+                    map(
+                        (results): GQL.IFileMatch[] =>
+                            results.filter((res): res is GQL.IFileMatch => res.__typename === 'FileMatch')
                     )
                 )
                 .subscribe(fileMatches => {
@@ -359,8 +360,20 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         onRef={this.nextVirtualListContainerElement}
                                     />
 
-                                    {/* Show more button */}
-                                    {results.limitHit && results.results.length === this.state.resultsShown && (
+                                    {/*
+                                        Show more button
+
+                                        We only show this button at the bottom of the page when the
+                                        user has scrolled completely to the bottom of the virtual
+                                        list (i.e. when resultsShown is results.length).
+
+                                        Note however that when the bottom is hit, this.onBottomHit
+                                        is called to asynchronously update resultsShown to add 10
+                                        which means there is a race condition in which e.g.
+                                        results.length == 30 && resultsShown == 40 so we use >=
+                                        comparison below.
+                                    */}
+                                    {results.limitHit && this.state.resultsShown >= results.results.length && (
                                         <button
                                             className="btn btn-secondary btn-block"
                                             onClick={this.props.onShowMoreResultsClick}
