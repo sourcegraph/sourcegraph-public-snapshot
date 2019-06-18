@@ -467,6 +467,9 @@ loop:
 
 func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	// Log the query if not too many have piled up to be logged.
 	select {
