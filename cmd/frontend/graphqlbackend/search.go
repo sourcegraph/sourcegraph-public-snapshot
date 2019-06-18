@@ -430,9 +430,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			mut.Lock()
 			repoRevisions = append(repoRevisions, res.revisions)
 			repoResolvers = append(repoResolvers, res.resolver)
-			for _, missing := range res.missingRepoRevisions {
-				missingRepoRevisions = append(missingRepoRevisions, missing)
-			}
+			missingRepoRevisions = append(missingRepoRevisions, res.missingRepoRevisions...)
 			mut.Unlock()
 			run.Release()
 		}
