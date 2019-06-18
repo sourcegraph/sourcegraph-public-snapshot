@@ -70,6 +70,7 @@ $theme-colors-light: (
 @import './libs/phabricator/style.scss';
 @import './libs/code_intelligence/HoverOverlay.scss';
 @import './libs/code_intelligence/external_links';
+@import './libs/code_intelligence/native_tooltips';
 @import './shared';
 
 .sourcegraph-options-menu {

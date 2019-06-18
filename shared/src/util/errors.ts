@@ -3,8 +3,11 @@ export interface ErrorLike {
     code?: string
 }
 
-export const isErrorLike = (val: any): val is ErrorLike =>
-    !!val && typeof val === 'object' && (!!val.stack || ('message' in val || 'code' in val)) && !('__typename' in val)
+export const isErrorLike = (val: unknown): val is ErrorLike =>
+    typeof val === 'object' &&
+    !!val &&
+    ('stack' in val || ('message' in val || 'code' in val)) &&
+    !('__typename' in val)
 
 /**
  * Ensures a value is a proper Error, copying all properties if needed
