@@ -17,7 +17,7 @@ func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResol
 	sqds := proposedQuotedQueries(r.query)
 	srr := &searchResultsResolver{
 		alert: &searchAlert{
-			title:           "Quoting may help.",
+			title:           "Quoting the query may help if you meant a literal search.",
 			proposedQueries: sqds,
 		},
 	}
