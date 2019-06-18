@@ -38,60 +38,6 @@ func (q *Query) WithErrorsQuoted() *Query {
 	return q2
 }
 
-// WithPartsQuoted converts a query like `f:foo b(ar) ba+z` to one like `"f:foo" "b(ar)" "ba+z"`.
-func (q *Query) WithPartsQuoted() *Query {
-	q2 := &Query{}
-	for _, e := range q.Expr {
-		e2 := *e
-		switch e.Field {
-		case "":
-			e2.Value = fmt.Sprintf("%q", e.Value)
-		default:
-			e2.Value = fmt.Sprintf("%q", fmt.Sprintf("%s:%s", e.Field, e.Value))
-		}
-		e2.Field = ""
-		e2.ValueType = TokenQuoted
-		q2.Expr = append(q2.Expr, &e2)
-	}
-	return q2
-}
-
-// WithNonFieldPartsQuoted converts a query like `f:foo b(ar) ba+z` to one like `f:foo "b(ar)" "ba+z"`.
-func (q *Query) WithNonFieldPartsQuoted() *Query {
-	q2 := &Query{}
-	for _, e := range q.Expr {
-		e2 := *e
-		if e2.Field == "" {
-			e2.Value = fmt.Sprintf("%q", e2.Value)
-			e2.ValueType = TokenQuoted
-		}
-		q2.Expr = append(q2.Expr, &e2)
-	}
-	return q2
-}
-
-// WithNonFieldsQuoted converts a query like `f:foo b(ar) ba+z` to one like `f:foo "b(ar) ba+z"`.
-func (q *Query) WithNonFieldsQuoted() *Query {
-	q2 := &Query{}
-	var vals []string
-	for _, e := range q.Expr {
-		e2 := *e
-		if e2.Field == "" {
-			// It's not a field. Add it to the big expression of non-fields.
-			vals = append(vals, e2.Value)
-		} else {
-			// It's a field. Just append it.
-			q2.Expr = append(q2.Expr, &e2)
-		}
-	}
-	// Add the big expression of non-fields to the end, quoted.
-	q2.Expr = append(q2.Expr, &Expr{
-		ValueType: TokenQuoted,
-		Value:     fmt.Sprintf("%q", strings.Join(vals, " ")),
-	})
-	return q2
-}
-
 // An Expr describes an expression in a query.
 type Expr struct {
 	Pos       int       // the starting character position of the query expression

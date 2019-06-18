@@ -48,6 +48,9 @@ func proposedQuotedQueries(rawQuery string) []*searchQueryDescription {
 	qq2d[fmt.Sprintf("%q", rawQuery)] = "quote the whole thing"
 	var sqds []*searchQueryDescription
 	for qq, desc := range qq2d {
+		if qq == rawQuery {
+			continue
+		}
 		sqds = append(sqds, &searchQueryDescription{
 			description: desc,
 			query:       qq,
