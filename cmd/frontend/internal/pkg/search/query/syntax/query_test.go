@@ -92,7 +92,8 @@ func TestQuery_WithPartsQuoted(t *testing.T) {
 				Input: "",
 				Expr: []*Expr{
 					{
-						Value:     `"f:a"`,
+						Field:     "f",
+						Value:     `"a"`,
 						ValueType: TokenQuoted,
 					},
 				},

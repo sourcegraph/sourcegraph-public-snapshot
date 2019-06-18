@@ -1,9 +1,10 @@
 package graphqlbackend
 
 import (
-	"github.com/davecgh/go-spew/spew"
 	"reflect"
 	"testing"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func Test_proposedQuotedQueries(t *testing.T) {
@@ -21,14 +22,14 @@ func Test_proposedQuotedQueries(t *testing.T) {
 				rawQuery: "",
 			},
 			want: []*searchQueryDescription{
-					{
-						description: "query quoted entirely",
-						query:       `""`,
-					},
-					{
-						description: "query with parts quoted",
-						query:       "",
-					},
+				{
+					description: "query quoted entirely",
+					query:       `""`,
+				},
+				{
+					description: "query with parts quoted",
+					query:       "",
+				},
 			},
 		},
 		{
