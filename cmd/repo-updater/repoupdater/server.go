@@ -236,19 +236,35 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		respond(w, http.StatusBadRequest, err)
 		return
 	}
-
 	t := time.Now()
-	args := repos.StoreListReposArgs{Names: []string{string(req.Repo)}}
-	rs, err := s.Store.ListRepos(r.Context(), args)
+	result, status, err := s.enqueueRepoUpdate(r.Context(), &req)
 	if err != nil {
-		respond(w, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos"))
+		log15.Error("enqueueRepoUpdate failed", "req", req, "error", err)
+		respond(w, status, err)
 		return
+	}
+	log15.Debug("TRACE enqueueRepoUpdate", "req", &req, "res", result, "duration", time.Since(t))
+	respond(w, status, result)
+}
+
+func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp *protocol.RepoUpdateResponse, httpStatus int, err error) {
+	tr, ctx := trace.New(ctx, "enqueueRepoUpdate", req.String())
+	defer func() {
+		log15.Debug("enqueueRepoUpdate", "resp", resp, "error", err)
+		if resp != nil {
+			tr.LazyPrintf("response: %s", resp)
+		}
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	rs, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{Names: []string{string(req.Repo)}})
+	if err != nil {
+		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
 	}
 
 	if len(rs) != 1 {
-		err := errors.Errorf("repo %q not found in store", req.Repo)
-		respond(w, http.StatusNotFound, err)
-		return
+		return nil, http.StatusNotFound, errors.Errorf("repo %q not found in store", req.Repo)
 	}
 
 	repo := rs[0]
@@ -257,16 +273,13 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 			req.URL = urls[0]
 		}
 	}
-
 	s.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
 
-	result := &protocol.RepoUpdateResponse{
+	return &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
 		Name: repo.Name,
 		URL:  req.URL,
-	}
-	log15.Debug("TRACE enqueueRepoUpdate", "args", &args, "result", result, "duration", time.Since(t))
-	respond(w, http.StatusOK, result)
+	}, http.StatusOK, nil
 }
 
 func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Request) {
