@@ -393,8 +393,9 @@ func searchRepoForHasFileFlagPatterns(ctx context.Context, include bool, repoHas
 		if err != nil {
 			return false, err
 		}
-		if include && len(matches) > 0 || !include && len(matches) == 0 {
-			// repo shouldn't be searched if it has file matches for the patterns in `-repohasfile`.
+		if include && len(matches) == 0 || !include && len(matches) > 0 {
+			// repo shouldn't be searched if it does not have matches for the patterns in `repohasfile`
+			// or if it has file matches for the patterns in `-repohasfile`.
 			return false, nil
 		}
 	}
