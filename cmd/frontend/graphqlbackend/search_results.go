@@ -521,6 +521,8 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*sea
 	return rr, nil
 }
 
+// queryMightBeBetterQuoted returns true if the given query contains an expression
+// that might be better quoted.
 func queryMightBeBetterQuoted(q *query.Query) bool {
 	ret := false
 	for _, e := range q.Syntax.Expr {
@@ -529,6 +531,8 @@ func queryMightBeBetterQuoted(q *query.Query) bool {
 	return ret
 }
 
+// exprMightBeBetterQuoted returns true if the given expression is a pattern or
+// if is unquoted and contains special regex characters.
 func exprMightBeBetterQuoted(e *syntax.Expr) bool {
 	switch e.ValueType {
 	case syntax.TokenPattern:
@@ -538,23 +542,6 @@ func exprMightBeBetterQuoted(e *syntax.Expr) bool {
 		return strings.ContainsAny(e.Value, rxChars)
 	}
 	return false
-}
-
-// quote quotes any sub-expressions of the given query that look like they
-// would give a different result that way.
-func quote(q *query.Query) string {
-	exs2 := make([]*syntax.Expr, len(q.Syntax.Expr))
-	for i, e := range q.Syntax.Expr {
-		e2 := *e
-		if exprMightBeBetterQuoted(e) {
-			e2.ValueType = syntax.TokenQuoted
-			e2.Value = fmt.Sprintf("%q", e2.Value)
-		}
-		exs2[i] = &e2
-	}
-	q2 := *q
-	q2.Syntax.Expr = exs2
-	return q2.Syntax.String()
 }
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.
