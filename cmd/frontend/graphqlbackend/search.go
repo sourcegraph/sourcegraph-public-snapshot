@@ -442,11 +442,11 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		run.Acquire()
 		go resolveRepository(ctx, repo, op, includePatternRevs, resolverPool, results)
 	}
-	run.Wait()
+	err = run.Wait()
 	close(results)
 
 	tr.LazyPrintf("Associate/validate revs - done")
-	return repoRevisions, missingRepoRevisions, repoResolvers, overLimit, nil
+	return repoRevisions, missingRepoRevisions, repoResolvers, overLimit, err
 }
 
 type repositoryResult struct {
