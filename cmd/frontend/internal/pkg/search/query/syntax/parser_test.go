@@ -123,22 +123,17 @@ func TestParseAllowingErrors(t *testing.T) {
 	}{
 		{
 			name: "empty",
-			args: args { input: "" },
-			want: &Query {
-				Expr: []*Expr{
-					{
-						ValueType: TokenEOF,
-					},
-				},
-			},
+			args: args{input: ""},
+			want: &Query{Expr: nil},
 		},
 		{
 			name: ":=",
-			args: args { input: ":=" },
-			want: &Query {
+			args: args{input: ":="},
+			want: &Query{
+				Input: ":=",
 				Expr: []*Expr{
 					{
-						Value: ":=",
+						Value:     ":=",
 						ValueType: TokenError,
 					},
 				},
@@ -148,7 +143,7 @@ func TestParseAllowingErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := ParseAllowingErrors(tt.args.input); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ParseAllowingErrors() = %v, want %v", got, tt.want)
+				t.Errorf("ParseAllowingErrors() = %+v, want %+v", got, tt.want)
 			}
 		})
 	}

@@ -174,6 +174,9 @@ func (p *parser) parseExpr(ctx context) (*Expr, error) {
 		}
 	}
 
+	if p.allowErrors {
+		return p.errorExpr(tok), nil
+	}
 	return nil, &ParseError{Pos: tok.Pos, Msg: fmt.Sprintf("got %s, want expr", tok.Type)}
 }
 
