@@ -23,12 +23,8 @@ func Test_proposedQuotedQueries(t *testing.T) {
 			},
 			want: []*searchQueryDescription{
 				{
-					description: "query quoted entirely",
+					description: "quote the whole thing",
 					query:       `""`,
-				},
-				{
-					description: "query with error terms quoted",
-					query:       "",
 				},
 			},
 		},
@@ -39,7 +35,7 @@ func Test_proposedQuotedQueries(t *testing.T) {
 			},
 			want: []*searchQueryDescription{
 				{
-					description: "query quoted entirely",
+					description: "quote the whole thing",
 					query:       `"fmt.Sprintf(\""`,
 				},
 			},
