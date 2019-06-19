@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -23,24 +24,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"golang.org/x/net/context/ctxhttp"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-type inPlaceSubstitution struct {
-	Range struct {
-		Start struct{ Offset int64 }
-		End   struct{ Offset int64 }
-	}
-	ReplacementContent string `json:"replacement_content"`
-	Environment        []struct {
-		Value string
-	}
-}
-
 type rawCodemodResult struct {
-	URI                  string                `json:"uri"`
-	RewrittenSource      string                `json:"rewritten_source"`
-	InPlaceSubstitutions []inPlaceSubstitution `json:"in_place_substitutions"`
-	Diff                 string
+	URI  string `json:"uri"`
+	Diff string
 }
 
 // codemodResultResolver is a resolver for the GraphQL type `CodemodResult`
@@ -246,13 +235,26 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 		return nil, errors.WithStack(&searcherError{StatusCode: resp.StatusCode, Message: string(body)})
 	}
 
-	decoder := json.NewDecoder(resp.Body)
-	for decoder.More() {
-		var raw *rawCodemodResult
-		if err := decoder.Decode(&raw); err != nil {
-			return nil, errors.Wrap(err, "Replacer response invalid.")
-		}
+	scanner := bufio.NewScanner(resp.Body)
+	// TODO(RVT): Remove buffer inefficiency introduced here. Results are
+	// line encoded JSON. Malformed JSON can happen, for extremely long
+	// lines. Unless we know where this and subsequent malformed lines end,
+	// we can't continue decoding the next one. As an inefficient but robust
+	// solution, we allow to buffer a very high maximum length line and can
+	// skip over very long malformed lines. It is set to 10 * 64K.
+	scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
 
+	for scanner.Scan() {
+		var raw *rawCodemodResult
+		b := scanner.Bytes()
+		if err := scanner.Err(); err != nil {
+			log15.Info(fmt.Sprintf("Skipping codemod scanner error (line too long?): %s", err.Error()))
+			continue
+		}
+		if err := json.Unmarshal(b, &raw); err != nil {
+			log15.Info("Skipping json lines decode error in codemod.")
+			continue
+		}
 		fileURL := fileMatchURI(repoRevs.Repo.Name, repoRevs.Revs[0].RevSpec, raw.URI)
 		matches, err := toMatchResolver(fileURL, raw)
 		if err != nil {
@@ -270,5 +272,6 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 		}
 		results = append(results, result)
 	}
+
 	return results, nil
 }

@@ -53,9 +53,9 @@ func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath stri
 	switch t.Name {
 	case "comby":
 		if spec.FileExtension == "" {
-			return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, "-zip", zipPath, "-json-lines"), nil
+			return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, "-zip", zipPath, "-json-lines", "-json-only-diff"), nil
 		} else {
-			return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, spec.FileExtension, "-zip", zipPath, "-json-lines"), nil
+			return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, spec.FileExtension, "-zip", zipPath, "-json-lines", "-json-only-diff"), nil
 		}
 	default:
 		return nil, errors.Errorf("Unknown external replace tool %q", t.Name)
