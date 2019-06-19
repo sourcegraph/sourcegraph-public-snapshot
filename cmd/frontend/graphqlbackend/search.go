@@ -489,12 +489,14 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 }
 
 func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) []*search.RepositoryRevisions {
-	var mut sync.Mutex
-	pass := []*search.RepositoryRevisions{}
-	res := make(chan *search.RepositoryRevisions)
+	var (
+		mut  sync.Mutex
+		pass = []*search.RepositoryRevisions{}
+		res  = make(chan *search.RepositoryRevisions)
 
-	repoRun := parallel.NewRun(1000)
-	revRun := parallel.NewRun(1000)
+		repoRun = parallel.NewRun(1000)
+		revRun  = parallel.NewRun(1000)
+	)
 
 	go func() {
 		for rev := range res {
