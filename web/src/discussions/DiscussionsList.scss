@@ -6,7 +6,7 @@
         display: block;
     }
     &__row {
-        border-top: 1px solid $border-color;
+        border-top: 1px solid var(--border-color);
         display: block;
         padding: 0.75rem;
         white-space: nowrap;
@@ -14,32 +14,17 @@
         text-overflow: ellipsis;
 
         &:last-of-type {
-            border-bottom: 1px solid $border-color;
+            border-bottom: 1px solid var(--border-color);
         }
 
         &--active,
         &:hover {
-            background-color: $color-bg-2;
+            background-color: var(--bg-deep);
         }
 
         &-title {
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-    }
-}
-
-.theme-light {
-    .discussions-list {
-        &__row {
-            color: $color-light-text-2;
-            &-title {
-                color: $color-light-text-2;
-            }
-            &--active,
-            &:hover {
-                background-color: $color-light-bg-3;
-            }
         }
     }
 }

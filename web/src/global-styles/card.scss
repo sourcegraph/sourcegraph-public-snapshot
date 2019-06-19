@@ -1,21 +1,32 @@
-$card-spacer-y: 0.5rem;
-$card-spacer-x: 0.5rem;
-$card-bg: var(--body-bg);
-$card-border-color: var(--card-border-color);
-$card-cap-bg: var(--card-cap-bg);
+$card-spacer: $spacer;
 
-@import 'bootstrap/scss/card';
+.card {
+    display: flex;
+    flex-direction: column;
+    word-wrap: break-word;
+    border: 1px solid var(--border-color);
+}
+
+.card-body {
+    padding: $spacer;
+}
+
+.card-title {
+    margin-bottom: $spacer;
+}
+
+.card-header,
+.card-footer {
+    background-color: var(--bg-muted);
+    padding: $card-spacer;
+    margin-top: 0;
+    margin-bottom: 0;
+}
 
 .card-header {
-    font-weight: bold;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.theme-dark {
-    --card-cap-bg: #{$color-bg-3};
-    --card-border-color: #{$color-border};
-}
-
-.theme-light {
-    --card-cap-bg: #{rgba($color-light-bg-2, 0.75)};
-    --card-border-color: #{$color-light-border};
+.card-footer {
+    border-top: 1px solid var(--border-color);
 }

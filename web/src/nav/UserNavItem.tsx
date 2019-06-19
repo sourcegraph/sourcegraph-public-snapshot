@@ -6,10 +6,14 @@ import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reac
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference, ThemePreferenceProps, ThemeProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
+import './UserNavItem.scss'
 
 interface Props extends ThemeProps, ThemePreferenceProps {
     location: H.Location
-    authenticatedUser: GQL.IUser
+    authenticatedUser: Pick<
+        GQL.IUser,
+        'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session'
+    >
     showDotComMarketing: boolean
     showDiscussions: boolean
     switchThemeKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
@@ -69,17 +73,18 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                         Saved searches
                     </Link>
                     <DropdownItem divider={true} />
-                    <div className="px-2 py-1">
+                    <div className="dropdown-item-text">
                         <div className="d-flex align-items-center">
-                            <div className="mr-2">Theme</div>
+                            <div className="mr-3">Theme</div>
                             {/* tslint:disable-next-line: jsx-ban-elements <Select> doesn't support small version */}
                             <select
-                                className="custom-select custom-select-sm e2e-theme-toggle"
+                                className="form-control custom-select custom-select-sm e2e-theme-toggle"
                                 onChange={this.onThemeChange}
                                 value={this.props.themePreference}
                             >
                                 <option value={ThemePreference.Light}>Light</option>
                                 <option value={ThemePreference.Dark}>Dark</option>
+                                <option value={ThemePreference.HighContrast}>High contrast (black)</option>
                                 <option value={ThemePreference.System}>System</option>
                             </select>
                         </div>
@@ -154,7 +159,11 @@ export class UserNavItem extends React.PureComponent<Props, State> {
 
     private onThemeCycle = () => {
         this.props.onThemePreferenceChange(
-            this.props.themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark
+            this.props.themePreference === ThemePreference.Dark
+                ? ThemePreference.Light
+                : this.props.themePreference === ThemePreference.Light
+                ? ThemePreference.HighContrast
+                : ThemePreference.Dark
         )
     }
 }

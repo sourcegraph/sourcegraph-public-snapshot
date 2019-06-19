@@ -1,0 +1,39 @@
+$input-padding: $spacer;
+
+.form-inline {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    .form-control {
+        width: auto;
+    }
+}
+
+.form-control {
+    width: 100%;
+    height: calc(#{$line-height-base * 1rem} + #{$input-padding * 2} + #{$input-border-width * 2});
+    line-height: $line-height-base;
+    font-size: var(--font-size-base);
+    color: var(--body-color);
+    background-color: var(--input-bg);
+    border: $input-border-width solid var(--border-color);
+    padding: $input-padding;
+
+    &::placeholder {
+        color: var(--text-muted);
+        opacity: 1;
+    }
+
+    &:focus {
+        @include focus-ring(-1px);
+    }
+}
+
+.form-group {
+    margin-bottom: $spacer * 1.5;
+}
+
+.form-text {
+    display: block;
+    margin-top: $spacer * 0.25;
+}

@@ -1,0 +1,51 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    line-height: $line-height-base;
+}
+
+ul,
+ol,
+dl {
+    margin-top: 0;
+    margin-bottom: $spacer * 2;
+}
+
+dt {
+    font-weight: bold;
+}
+
+dd {
+    margin-bottom: $spacer;
+    margin-left: 0;
+}
+
+a {
+    text-decoration: var(--link-decoration);
+    &:hover {
+        text-decoration: var(--link-hover-decoration);
+    }
+}
+
+p {
+    margin-top: 0;
+    margin-bottom: $spacer * 2;
+}
+
+.table {
+    border-collapse: collapse;
+}
+
+// Show a focus ring when performing keyboard navigation. Uses the polyfill at
+// https://github.com/WICG/focus-visible because few browsers support :focus-visible.
+.js-focus-visible :focus:not(.focus-visible) {
+    outline: none;
+}
+.js-focus-visible .focus-visible {
+    @include focus-ring;
+}

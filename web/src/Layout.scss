@@ -11,42 +11,5 @@
         display: flex;
         overflow: auto;
         -webkit-overflow-scrolling: touch;
-
-        &--restricted {
-            padding: 0 2.5rem;
-
-            @media (max-width: $media-md) {
-                width: 100%;
-                padding: 0;
-            }
-
-            @media (min-width: $media-md) {
-                // stylelint-disable-next-line declaration-property-unit-whitelist
-                width: 720px;
-            }
-
-            @media (max-width: $media-lg) {
-                width: 100%;
-                padding: 0;
-            }
-
-            @media (min-width: $media-lg) {
-                // stylelint-disable-next-line declaration-property-unit-whitelist
-                width: 960px;
-            }
-
-            @media (min-width: $media-xl) {
-                // stylelint-disable-next-line declaration-property-unit-whitelist
-                width: 1140px;
-            }
-        }
-
-        &--full-width {
-            @media (max-width: $media-md) {
-                padding: 0;
-            }
-
-            width: 100%;
-        }
     }
 }

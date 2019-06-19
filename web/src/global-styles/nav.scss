@@ -1,29 +1,40 @@
-$navbar-padding-y: ($spacer / 4);
-$navbar-padding-x: ($spacer / 2);
-$nav-tabs-border-color: var(--border-color);
-$nav-tabs-link-hover-border-color: var(--border-color) var(--border-color) transparent;
-$nav-tabs-link-active-color: var(--body-color);
-$nav-tabs-link-active-border-color: var(--border-color) var(--border-color) transparent;
+.nav {
+    display: flex;
+    flex-wrap: wrap;
+    padding-left: 0;
+    margin-bottom: 0;
+    list-style: none;
+}
 
-@import 'bootstrap/scss/nav';
-@import 'bootstrap/scss/navbar';
+.nav-link {
+    display: block;
+    padding: $spacer;
+}
 
-// Remove focus ring around nav links during mousedown.
-//
-// The focus ring on nav links is usually undesirable. It shows up when you click on a nav link and remains until
-// you click elsewhere. Because many of our nav links are toolbar buttons, this means that (1) the focus ring
-// remains visible even when it is not useful anymore (after you've clicked the button) and (2) the focus ring is
-// chopped off on the top and bottom by the toolbar boundaries.
-//
-// But the focus ring is important when using the keyboard to focus and for accessibility. In the future, the CSS
-// :focus-visible pseudo-selector will solve our problems (and we could consider using the polyfill
-// https://github.com/wicg/focus-visible).
-//
-// For now, we only remove the focus ring during mousedown. This lets elements that want to eliminate the focus
-// ring for mouse focus (without affecting it for keyboard focus or a11y) do so by calling HTMLElement#blur in an
-// onclick handler.
-.nav-link:active {
-    box-shadow: none !important;
+$nav-tabs-border-width: 1px;
+
+.nav-tabs {
+    // border-bottom: $nav-tabs-border-width solid var(--border-color);
+
+    .nav-item {
+        margin-bottom: -$nav-tabs-border-width;
+    }
+
+    .nav-link {
+        border: $nav-tabs-border-width solid transparent;
+        margin-right: $spacer;
+
+        &.active,
+        &:hover,
+        &:focus {
+            border-color: var(--border-color);
+        }
+
+        &.active {
+            color: var(--body-color);
+            border-bottom-color: var(--body-bg);
+        }
+    }
 }
 
 // Ensure that tabs are all the same height, regardless of whether they have an icon. Without this,

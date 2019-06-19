@@ -1,6 +1,6 @@
 @keyframes highlight {
     0% {
-        background: #2a3a51;
+        background: var(--border-color);
     }
 
     100% {
@@ -22,10 +22,10 @@
     &__top-area {
         display: flex;
         line-height: 1rem;
-        border-bottom: 1px solid #2a3a51;
-        border-top: 1px solid #2a3a51;
+        border-bottom: 1px solid var(--border-color);
+        border-top: 1px solid var(--border-color);
         padding: 0.125rem 0.5rem;
-        background: $color-bg-2;
+        background: var(--bg-deep);
     }
     &__top-right-area {
         display: flex;
@@ -71,39 +71,5 @@
 
     100% {
         background: var(--theme-bg-plain);
-    }
-}
-
-.theme-light {
-    .discussions-comment {
-        &:first-of-type {
-            border: none;
-        }
-
-        &--targeted {
-            .discussions-comment__content {
-                animation: highlight-light 3s;
-            }
-        }
-
-        &__top-area {
-            border-color: $color-light-border;
-            background: $color-light-bg-2;
-        }
-
-        &__content {
-            code,
-            pre {
-                background: $color-light-bg-4;
-            }
-
-            blockquote {
-                color: $color-light-text-2;
-            }
-        }
-
-        &__admin {
-            background: $color-light-bg-3;
-        }
     }
 }

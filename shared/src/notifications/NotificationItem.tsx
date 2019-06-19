@@ -6,6 +6,8 @@ import { NotificationType } from '../api/client/services/notifications'
 import { renderMarkdown } from '../util/markdown'
 import { Notification } from './notification'
 
+import './NotificationItem.scss'
+
 interface Props {
     notification: Notification
     onDismiss: (notification: Notification) => void

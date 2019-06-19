@@ -19,15 +19,10 @@
         overflow-x: hidden;
         overflow-y: auto;
         overflow-y: overlay;
-        background-color: #1c2736;
-        border: solid 1px #1b548a;
+        background-color: var(--bg-muted);
+        border: solid 1px var(--primary);
         border-top: none;
         padding: 0;
-
-        .theme-light & {
-            background-color: $color-light-bg-2;
-            border-top: none;
-        }
 
         // Custom scrollbar
         &::-webkit-scrollbar {
@@ -41,11 +36,7 @@
         }
 
         &::-webkit-scrollbar-thumb {
-            background-color: #2a3a51;
-        }
-
-        .theme-light &::-webkit-scrollbar-thumb {
-            background-color: $color-light-bg-3;
+            background-color: var(--border-color);
         }
     }
 
@@ -56,13 +47,5 @@
         padding-left: 0.25rem;
         bottom: 0.375rem;
         background-color: $color-bg-4;
-    }
-}
-
-.theme-light {
-    .query-input2 {
-        &__loading-notifier {
-            background-color: $color-light-bg-1;
-        }
     }
 }

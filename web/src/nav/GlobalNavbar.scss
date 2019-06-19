@@ -7,13 +7,12 @@
     align-items: flex-start;
     width: 100%;
     &--bg {
-        background-color: $color-bg-2;
+        background-color: var(--navbar-bg);
     }
 
     &__logo-link {
-        outline: 0;
-        margin: 0.25rem 0.5rem 0 0.5rem;
-        display: flex;
+        line-height: 1;
+        padding: $spacer * 0.95;
         width: fit-content;
         text-decoration: none;
     }
@@ -43,17 +42,9 @@
     &__search-box-container {
         min-width: 12rem;
         flex: 1 0 auto;
-        margin-right: 0.25rem;
+        margin-right: $spacer;
         display: flex;
         flex-direction: column;
         justify-content: center;
-    }
-}
-
-.theme-light {
-    .global-navbar {
-        &--bg {
-            background-color: $color-light-bg-2;
-        }
     }
 }

@@ -1,10 +1,17 @@
-@import 'bootstrap/scss/badge';
+.badge {
+    display: inline-block;
+    padding: $spacer * 0.5;
+    line-height: 1;
+    white-space: nowrap;
+    font-size: var(--font-size-sm);
+}
 
-// Light theme badge variants
-.theme-light {
-    @each $color, $value in $theme-colors-light {
-        .badge-#{$color} {
-            @include badge-variant($value);
-        }
+@mixin badge-variant($name) {
+    .badge-#{$name} {
+        background-color: var(--#{$name});
+        color: var(--#{$name}-contrast);
     }
+}
+@each $name, $color in $theme-colors {
+    @include badge-variant($name);
 }

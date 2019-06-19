@@ -1,0 +1,168 @@
+@import 'open-color/open-color.scss';
+
+// General reusable colors from our custom color palette
+
+// Gray (blueish) palette
+$white: #ffffff;
+$gray-01: #f2f4f8;
+$gray-02: #e4e9f1;
+$gray-03: #d7ddea;
+$gray-04: #cad2e2;
+$gray-05: #bdc7db;
+$gray-06: #afbcd4;
+$gray-07: #a2b0cd;
+$gray-08: #95a5c6;
+$gray-09: #889abf;
+$gray-10: #7a8fb8;
+$gray-11: #6d84b0;
+$gray-12: #6078a9;
+$gray-13: #566e9f;
+$gray-14: #4f6592;
+$gray-15: #475c85;
+$gray-16: #405377;
+$gray-17: #39496a;
+$gray-18: #32405d;
+$gray-19: #2b3750;
+$gray-20: #242e42;
+$gray-21: #1d2535;
+$gray-22: #151c28;
+$gray-23: #0e121b;
+$black: #07090d;
+
+// Dark Theme
+
+$color-bg-1: #151c28;
+$color-bg-2: #1d2535;
+$color-bg-3: #2b3750;
+$color-bg-4: #0e121b;
+$color-bg-5: #39496a;
+$color-text: #f2f4f8;
+$color-text-1: #a2b0cd;
+$color-text-2: #f2f4f8;
+$color-text-3: #ffffff;
+$color-border: #2b3750;
+$color-border-hover: #566e9f;
+
+$color-border-active: #329af0;
+
+// TODO add Basics color standards to Dark Theme
+
+// Light Theme
+// Basics
+$color-light-bg-1: #ffffff;
+$color-light-bg-2: #f2f4f8;
+$color-light-bg-3: #cad2e2;
+$color-light-bg-4: #e4e9f1;
+$color-light-bg-5: #566e9f;
+$color-light-bg-6: #070a0d;
+$color-light-text-1: #2b3750;
+$color-light-text-2: #6d727c;
+$color-light-text-3: rgba(57, 73, 106, 0.5);
+$color-light-text-4: #ffffff;
+$color-light-text-5: #07090d;
+$color-light-text-6: #1d2535;
+
+$color-light-border: #cad2e2;
+$color-light-border-2: #e4e9f1;
+
+// Tell Bootstrap to use colors from OpenColor
+$blue: $oc-blue-7;
+$indigo: $oc-indigo-7;
+$purple: $oc-violet-7;
+$pink: $oc-pink-7;
+$red: $oc-red-7;
+$orange: $oc-orange-7;
+$yellow: $oc-yellow-7;
+$green: $oc-green-7;
+$teal: $oc-teal-7;
+$cyan: $oc-cyan-7;
+
+$primary: $blue;
+$secondary: #2b3750;
+$success: $green;
+$info: $cyan;
+$warning: $yellow;
+$danger: $red;
+$secondary-light: #bbbbbb;
+
+$theme-colors: (
+    'primary': $primary,
+    'secondary': $secondary,
+    'success': $success,
+    'info': $info,
+    'warning': $warning,
+    'danger': $danger,
+);
+
+body {
+    color: var(--body-color);
+    background-color: var(--body-bg);
+}
+
+@mixin color-variants($name, $color, $contrast: #ffffff) {
+    --#{$name}: #{$color};
+    --#{$name}-hover: #{darken($color, 10%)};
+    --#{$name}-border: #{darken($color, 10%)};
+    --#{$name}-contrast: #{$contrast};
+}
+
+:root {
+    --sans-serif: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif,
+        Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+    --code-font-family: SFMono-Regular, Consolas, Menlo, DejaVu Sans Mono, Monaco, 'Lucida Console', monospace;
+    --font-size-base: 1rem;
+    --link-decoration: none;
+    --link-hover-decoration: none;
+    --input-bg: var(--bg-deep);
+
+    @each $name, $color in $theme-colors {
+        @include color-variants($name, $color);
+    }
+}
+
+.theme-light {
+    @include color-variants(secondary, $secondary-light, #000000);
+
+    --body-color: #{$gray-19};
+    --body-bg: #fbfdff;
+    --navbar-bg: #{$color-light-bg-2};
+    --bg-deep: #{$color-light-bg-2};
+    --bg-muted: #{$color-light-bg-2};
+    --text-muted: #{$color-light-text-2};
+    --link-color: #566e9f;
+    --link-hover-color: #1d2535;
+    --border-color: #{$color-light-border};
+    --input-bg: #{$color-light-bg-1};
+    --dropdown-header-color: #{$color-light-text-1};
+}
+
+.theme-dark {
+    --body-color: #ffffff;
+    --body-bg: #04070e;
+    --navbar-bg: #{$color-bg-2};
+    --bg-deep: #{$color-bg-2};
+    --bg-muted: #{$color-bg-4};
+    --text-muted: #{$color-text-1};
+    --link-color: #a2b0cd;
+    --link-hover-color: #ffffff;
+    --border-color: #{$color-border};
+    --input-bg: #{$color-bg-1};
+    --dropdown-header-color: #{$color-text-1};
+}
+
+.theme-hc-black {
+    @include color-variants(secondary, #333333, #ffffff);
+
+    --body-color: #ffffff;
+    --body-bg: #000000;
+    --navbar-bg: #000000;
+    --bg-deep: #111111;
+    --bg-muted: #1b1b1b;
+    --text-muted: #cccccc;
+    --link-color: rgb(106, 155, 253);
+    --link-hover-color: rgb(163, 194, 255);
+    --link-hover-decoration: underline;
+    --border-color: #ffffff;
+    --input-bg: #000000;
+    --dropdown-header-color: #{$color-text-1};
+}

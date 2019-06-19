@@ -232,7 +232,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                             <div className="card-header d-flex align-items-center justify-content-between">
                                 Licenses
                                 {this.state.showGenerate ? (
-                                    <button className="btn btn-secondary" onClick={this.toggleShowGenerate}>
+                                    <button className="btn btn-secondary btn-sm" onClick={this.toggleShowGenerate}>
                                         Dismiss new license form
                                     </button>
                                 ) : (

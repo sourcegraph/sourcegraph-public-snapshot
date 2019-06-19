@@ -39,7 +39,7 @@ import { LayoutRouteProps } from './routes'
 import { search } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { ThemePreference } from './theme'
+import { Theme, ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -127,6 +127,7 @@ const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : wit
 class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
     private readonly darkThemeMediaList = window.matchMedia('(prefers-color-scheme: dark)')
+    private readonly highContrastThemeMediaList = window.matchMedia('(-ms-high-contrast: active)') // TODO!(sqs): implement
     private readonly platformContext: PlatformContext = createPlatformContext()
     private readonly extensionsController: ExtensionsController = createExtensionsController(this.platformContext)
 
@@ -142,11 +143,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         }
     }
 
-    /** Returns whether Sourcegraph should be in light theme */
-    private isLightTheme(): boolean {
-        return this.state.themePreference === 'system'
-            ? this.state.systemIsLightTheme
-            : this.state.themePreference === 'light'
+    /** Returns the active theme. */
+    private activeTheme(): Theme {
+        if (this.state.themePreference === ThemePreference.System) {
+            return this.state.systemIsLightTheme ? ThemePreference.Light : ThemePreference.Dark
+        }
+        return this.state.themePreference
     }
 
     public componentDidMount(): void {
@@ -192,17 +194,26 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         )
     }
 
+    private setThemeClass(theme: Theme | null): void {
+        for (const className of document.body.classList) {
+            if (className.startsWith('theme-')) {
+                document.body.classList.remove(className)
+            }
+        }
+        if (theme) {
+            document.body.classList.add(`theme-${theme}`)
+        }
+    }
+
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
         document.body.classList.remove('theme')
-        document.body.classList.remove('theme-light')
-        document.body.classList.remove('theme-dark')
+        this.setThemeClass(null)
     }
 
     public componentDidUpdate(): void {
         localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
-        document.body.classList.toggle('theme-light', this.isLightTheme())
-        document.body.classList.toggle('theme-dark', !this.isLightTheme())
+        this.setThemeClass(this.activeTheme())
     }
 
     public render(): React.ReactFragment | null {
@@ -252,7 +263,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     viewerSubject={this.state.viewerSubject}
                                     settingsCascade={this.state.settingsCascade}
                                     // Theme
-                                    isLightTheme={this.isLightTheme()}
+                                    isLightTheme={this.activeTheme() === ThemePreference.Light}
                                     themePreference={this.state.themePreference}
                                     onThemePreferenceChange={this.onThemePreferenceChange}
                                     // Search query

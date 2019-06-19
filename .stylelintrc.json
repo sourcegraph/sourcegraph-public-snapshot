@@ -1,3 +1,4 @@
 {
-  "extends": ["@sourcegraph/stylelint-config"]
+  "extends": ["@sourcegraph/stylelint-config"],
+  "rules": { "color-no-hex": true }
 }

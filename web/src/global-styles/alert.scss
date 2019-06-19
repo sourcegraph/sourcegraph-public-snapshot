@@ -1,13 +1,16 @@
-@import 'bootstrap/scss/alert';
+.alert {
+    padding: $spacer;
+    border: 1px solid transparent;
+    background: unset !important;
+}
 
-.theme-light {
-    @each $color, $value in map-merge($theme-colors, $theme-colors-light) {
-        .alert-#{$color} {
-            @include alert-variant(
-                theme-color-level($color, $alert-bg-level-light),
-                theme-color-level($color, $alert-border-level-light),
-                theme-color-level($color, $alert-color-level-light)
-            );
-        }
+@mixin alert-variant($name) {
+    .alert-#{$name} {
+        background-color: var(--#{$name}) !important;
+        border-color: var(--#{$name}-border);
+        color: var(--#{$name}-contrast);
     }
+}
+@each $name, $color in $theme-colors {
+    @include alert-variant($name);
 }

@@ -34,7 +34,7 @@
         flex: 0 0;
         padding: $popover-item-padding-v $popover-item-padding-h;
         opacity: 0.7;
-        border-top: solid 1px $color-border;
+        border-top: solid 1px var(--border-color);
     }
 
     &--noncompact {
@@ -56,13 +56,5 @@
 
     &__show-more {
         flex: 0 0 auto;
-    }
-}
-
-.theme-light {
-    .filtered-connection {
-        &--compact .filtered-connection__summary {
-            border-color: $color-light-border;
-        }
     }
 }

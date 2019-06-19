@@ -1,0 +1,22 @@
+$spacer: 0.5rem;
+
+$line-height-base: 1.5;
+
+$btn-border-width: 1px;
+$input-border-width: 1px;
+
+$sm-factor: 0.8;
+$lg-factor: 1.25;
+
+$zindex-dropdown: 1000;
+$zindex-sticky: 1020;
+$zindex-fixed: 1030;
+$zindex-modal-backdrop: 1040;
+$zindex-modal: 1050;
+$zindex-popover: 1060;
+$zindex-tooltip: 1070;
+
+:root {
+    --font-size-sm: calc(var(--font-size-base) * #{$sm-factor});
+    --font-size-lg: calc(var(--font-size-base) * #{$lg-factor});
+}

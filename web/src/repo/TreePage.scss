@@ -41,18 +41,8 @@
         column-gap: 2.25rem;
         column-width: 13rem;
 
-        @media (max-width: $media-sm) {
-            column-count: 1;
-        }
-        @media (max-width: $media-md) {
-            column-count: 3;
-        }
-        @media (max-width: $media-lg) {
-            column-count: 4;
-        }
-        @media (min-width: $media-lg) {
-            column-count: 5;
-        }
+        // TODO!(sqs): make this not depend on width
+        column-count: 3;
     }
 
     .git-commit-node {
@@ -76,14 +66,6 @@
     margin-left: -0.25rem;
     padding: 0.125rem 0.25rem;
     &:hover {
-        background-color: $color-bg-1;
-    }
-}
-
-.theme-light {
-    .tree-entry {
-        &:hover {
-            background-color: $color-light-bg-2;
-        }
+        background-color: var(--bg-muted);
     }
 }
