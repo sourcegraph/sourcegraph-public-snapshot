@@ -568,7 +568,7 @@ func TestServer_StatusMessages(t *testing.T) {
 				Messages: []protocol.StatusMessage{
 					{
 						Type:    protocol.CloningStatusMessage,
-						Message: "Currently cloning 3 repositories...",
+						Message: "3 repositories enqueued for cloning...",
 					},
 				},
 			},

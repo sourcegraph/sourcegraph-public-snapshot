@@ -404,7 +404,7 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 
 	if notCloned != 0 {
 		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Message: fmt.Sprintf("Currently cloning %d repositories...", notCloned),
+			Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
 			Type:    protocol.CloningStatusMessage,
 		})
 	}
