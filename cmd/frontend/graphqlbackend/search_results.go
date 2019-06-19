@@ -1137,6 +1137,7 @@ func validateRepoHasFileUsage(q *query.Query) error {
 		return errors.New("repohasfile does not currently return repository results. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4584 for updates")
 	}
 	syntax := q.Syntax
+
 	// Query only contains "repohasfile:"
 	if len(syntax.Expr) == 1 && syntax.Expr[0].Field == "repohasfile" {
 		return errors.New("repohasfile must be used with at least one other search term in the query. Support for usage on its own is coming soon. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4608 for updates")
