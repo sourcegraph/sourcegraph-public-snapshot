@@ -38,7 +38,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
         Repositories up to date
       </h4>
       <p>
-        All repositories hosted on the configured external services are up to date.
+        All repositories hosted on the configured external services are cloned.
       </p>
     </div>
   </div>
@@ -59,7 +59,7 @@ exports[`StatusMessagesNavItem one CLONING message as non-site admin 1`] = `
   >
     <svg
       className="mdi-icon icon-inline"
-      data-tooltip="Updating repositories..."
+      data-tooltip="Cloning repositories..."
       fill="currentColor"
       height={24}
       viewBox="0 0 24 24"
@@ -80,7 +80,7 @@ exports[`StatusMessagesNavItem one CLONING message as non-site admin 1`] = `
       className="status-messages-nav-item__entry"
     >
       <h4>
-        Repositories updating
+        Repositories cloning
       </h4>
       <p>
         Currently cloning repositories...
@@ -104,7 +104,7 @@ exports[`StatusMessagesNavItem one CLONING message as site admin 1`] = `
   >
     <svg
       className="mdi-icon icon-inline"
-      data-tooltip="Updating repositories..."
+      data-tooltip="Cloning repositories..."
       fill="currentColor"
       height={24}
       viewBox="0 0 24 24"
@@ -125,7 +125,7 @@ exports[`StatusMessagesNavItem one CLONING message as site admin 1`] = `
       className="status-messages-nav-item__entry"
     >
       <h4>
-        Repositories updating
+        Repositories cloning
       </h4>
       <p>
         Currently cloning repositories...
