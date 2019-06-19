@@ -495,7 +495,6 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 		res  = make(chan *search.RepositoryRevisions)
 
 		repoRun = parallel.NewRun(1000)
-		revRun  = parallel.NewRun(1000)
 	)
 
 	go func() {
@@ -513,26 +512,13 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 		repoRun.Acquire()
 
 		go func(revs *search.RepositoryRevisions) {
-			var wg sync.WaitGroup
-			var mut sync.Mutex
 			var specifiers []search.RevisionSpecifier
 			for _, rev := range revs.Revs {
-				wg.Add(1)
-				revRun.Acquire()
-				go func(rev search.RevisionSpecifier) {
-					defer wg.Done()
-					defer revRun.Release()
-
-					ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
-					if err != nil || ok {
-						mut.Lock()
-						specifiers = append(specifiers, rev)
-						mut.Unlock()
-					}
-				}(rev)
+				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
+				if err != nil || ok {
+					specifiers = append(specifiers, rev)
+				}
 			}
-			wg.Wait()
-
 			res <- &search.RepositoryRevisions{Repo: revs.Repo, Revs: specifiers}
 		}(revs)
 	}
