@@ -272,6 +272,10 @@ export interface FileInfo {
     baseRev?: string
 }
 
+export interface FileInfoWithRepoNames extends FileInfo, RepoSpec {
+    baseRepoName?: string
+}
+
 export interface CodeIntelligenceProps
     extends PlatformContextProps<
             'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings'

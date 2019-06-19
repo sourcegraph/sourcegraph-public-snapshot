@@ -4,7 +4,6 @@ import * as React from 'react'
 import { render } from 'react-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
-import { RepoSpec } from '../../../../shared/src/util/url'
 import { SourcegraphIconButton } from '../../shared/components/Button'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { CodeHost, CodeHostContext } from './code_intelligence'
@@ -14,12 +13,10 @@ export interface ViewOnSourcegraphButtonClassProps {
     iconClassName?: string
 }
 
-type RepoExists = { exists: false } | ({ exists: true } & RepoSpec)
-
 interface ViewOnSourcegraphButtonProps extends ViewOnSourcegraphButtonClassProps {
     context: CodeHostContext
     sourcegraphURL: string
-    ensureRepoExists: (context: CodeHostContext, sourcegraphUrl: string) => Observable<RepoExists>
+    ensureRepoExists: (context: CodeHostContext, sourcegraphUrl: string) => Observable<boolean>
     onConfigureSourcegraphClick?: () => void
 }
 
@@ -27,7 +24,7 @@ interface ViewOnSourcegraphButtonState {
     /**
      * Whether or not the repo exists on the configured Sourcegraph instance.
      */
-    repo: 'loading' | RepoExists
+    exists?: boolean
 }
 
 class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonProps, ViewOnSourcegraphButtonState> {
@@ -36,9 +33,7 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
 
     constructor(props: ViewOnSourcegraphButtonProps) {
         super(props)
-        this.state = {
-            repo: 'loading',
-        }
+        this.state = {}
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
@@ -52,8 +47,8 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
                         ensureRepoExists(context, sourcegraphURL)
                     )
                 )
-                .subscribe(repo => {
-                    this.setState({ repo })
+                .subscribe(exists => {
+                    this.setState({ exists })
                 })
         )
     }
@@ -71,14 +66,14 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
     }
 
     public render(): React.ReactNode {
-        if (this.state.repo === 'loading') {
+        if (this.state.exists === undefined) {
             return null
         }
 
         // If repo doesn't exist and the instance is sourcegraph.com, prompt
         // user to configure Sourcegraph.
         if (
-            !this.state.repo.exists &&
+            !this.state.exists &&
             this.props.sourcegraphURL === DEFAULT_SOURCEGRAPH_URL &&
             this.props.onConfigureSourcegraphClick
         ) {
@@ -103,10 +98,9 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
         )
     }
 
-    private getURL(repoName: string): string {
+    private getURL(): string {
         const rev = this.props.context.rev ? `@${this.props.context.rev}` : ''
-
-        return `${this.props.sourcegraphURL}/${this.props.context.repoName}${rev}`
+        return `${this.props.sourcegraphURL}/${this.props.context.rawRepoName}${rev}`
     }
 }
 
