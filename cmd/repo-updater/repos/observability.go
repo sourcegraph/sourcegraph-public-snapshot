@@ -8,6 +8,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
@@ -142,6 +143,7 @@ type StoreMetrics struct {
 	ListRepos              *OperationMetrics
 	UpsertExternalServices *OperationMetrics
 	ListExternalServices   *OperationMetrics
+	ListAllRepoNames       *OperationMetrics
 }
 
 // NewStoreMetrics returns StoreMetrics that need to be registered
@@ -266,6 +268,26 @@ func NewStoreMetrics() StoreMetrics {
 				Subsystem: "repoupdater",
 				Name:      "store_list_external_services_errors_total",
 				Help:      "Total number of errors when listing external_services",
+			}, []string{}),
+		},
+		ListAllRepoNames: &OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Namespace: "src",
+				Subsystem: "repoupdater",
+				Name:      "store_list_all_repo_names_duration_seconds",
+				Help:      "Time spent listing repo names",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: "src",
+				Subsystem: "repoupdater",
+				Name:      "store_list_all_repo_names_total",
+				Help:      "Total number of listed repo names",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: "src",
+				Subsystem: "repoupdater",
+				Name:      "store_list_all_repo_names_errors_total",
+				Help:      "Total number of errors when listing repo names",
 			}, []string{}),
 		},
 	}
@@ -411,6 +433,25 @@ func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) 
 	}(time.Now())
 
 	return o.store.ListRepos(ctx, args)
+}
+
+// ListAllRepoNames calls into the inner Store and registers the observed results.
+func (o *ObservedStore) ListAllRepoNames(ctx context.Context) (names []api.RepoName, err error) {
+	tr, ctx := o.trace(ctx, "Store.ListAllRepoNames")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(names))
+
+		o.metrics.ListAllRepoNames.Observe(secs, count, &err)
+		log(o.log, "store.list-all-repo-names", &err, "count", len(names))
+
+		tr.LogFields(otlog.Int("count", len(names)))
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	return o.store.ListAllRepoNames(ctx)
 }
 
 // UpsertRepos calls into the inner Store and registers the observed results.
