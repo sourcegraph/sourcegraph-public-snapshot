@@ -575,8 +575,6 @@ func (c *Client) AreReposCloned(ctx context.Context, repos ...api.RepoName) (*pr
 			o.res = new(protocol.AreReposClonedResponse)
 			o.err = json.NewDecoder(resp.Body).Decode(o.res)
 			ch <- o
-
-			ch <- o
 		}(op{req: req})
 	}
 
