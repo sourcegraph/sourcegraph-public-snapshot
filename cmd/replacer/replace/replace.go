@@ -53,9 +53,18 @@ func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath stri
 	switch t.Name {
 	case "comby":
 		if spec.FileExtension == "" {
-			return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, "-zip", zipPath, "-json-lines", "-json-only-diff"), nil
+			if spec.DirectoryExclude == "" {
+				return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, "-zip", zipPath, "-json-lines", "-json-only-diff"), nil
+			} else {
+				return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, "-zip", zipPath, "-json-lines", "-json-only-diff", "-exclude-dir", spec.DirectoryExclude), nil
+			}
 		} else {
-			return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, spec.FileExtension, "-zip", zipPath, "-json-lines", "-json-only-diff"), nil
+			if spec.DirectoryExclude == "" {
+				return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, spec.FileExtension, "-zip", zipPath, "-json-lines", "-json-only-diff"), nil
+			} else {
+				log15.Info(fmt.Sprintf("comby '%s' '%s' %s -zip %s -json-lines -json-only-diff -exclude-dir %s", spec.MatchTemplate, spec.RewriteTemplate, spec.FileExtension, zipPath, spec.DirectoryExclude))
+				return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, spec.FileExtension, "-zip", zipPath, "-json-lines", "-json-only-diff", "-exclude-dir", spec.DirectoryExclude), nil
+			}
 		}
 	default:
 		return nil, errors.Errorf("Unknown external replace tool %q", t.Name)
@@ -224,6 +233,7 @@ func (s *Service) replace(ctx context.Context, p *protocol.Request, w http.Respo
 	}
 
 	if err := cmd.Wait(); err != nil {
+		log15.Info("Error after executing command: " + string(err.(*exec.ExitError).Stderr))
 		log15.Info("Error after executing command: " + err.Error())
 	}
 

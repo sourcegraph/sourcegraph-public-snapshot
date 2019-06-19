@@ -32,6 +32,13 @@ type rawCodemodResult struct {
 	Diff string
 }
 
+type args struct {
+	matchTemplate     string
+	rewriteTemplate   string
+	includeFileFilter string
+	excludeFileFilter string
+}
+
 // codemodResultResolver is a resolver for the GraphQL type `CodemodResult`
 type codemodResultResolver struct {
 	commit  *gitCommitResolver
@@ -71,7 +78,7 @@ func (r *codemodResultResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
 }
 
-func validateQuery(q *query.Query) (string, string, string, error) {
+func validateQuery(q *query.Query) (*args, error) {
 	matchValues := q.Values(query.FieldDefault)
 	var matchTemplates []string
 	for _, v := range matchValues {
@@ -79,7 +86,7 @@ func validateQuery(q *query.Query) (string, string, string, error) {
 			matchTemplates = append(matchTemplates, *v.String)
 		}
 		if v.Regexp != nil || v.Bool != nil {
-			return "", "", "", errors.New("This looks like a regex search pattern. Structural search is active because 'replace:' was specified. Please enclose your search string with quotes when using 'replace:'.")
+			return nil, errors.New("This looks like a regex search pattern. Structural search is active because 'replace:' was specified. Please enclose your search string with quotes when using 'replace:'.")
 		}
 	}
 	matchTemplate := strings.Join(matchTemplates, " ")
@@ -90,26 +97,36 @@ func validateQuery(q *query.Query) (string, string, string, error) {
 		rewriteTemplate = replacementValues[0]
 	}
 
-	fileFilter, _ := q.RegexpPatterns(query.FieldFile)
-	var fileFilterText string
-	if len(fileFilter) > 0 {
-		fileFilterText = fileFilter[0]
+	includeFileFilter, excludeFileFilter := q.RegexpPatterns(query.FieldFile)
+	var includeFileFilterText string
+	if len(includeFileFilter) > 0 {
+		includeFileFilterText = includeFileFilter[0]
 		// only file names or files with extensions in the following characterset are allowed
 		var IsAlphanumericWithPeriod = regexp.MustCompile(`^[a-zA-Z_.]+$`).MatchString
-		if !IsAlphanumericWithPeriod(fileFilterText) {
-			return matchTemplate, rewriteTemplate, "", errors.New("Note: the 'file:' filter cannot contain regex when using the 'replace:' filter. Only alphanumeric characters or '.'")
+		if !IsAlphanumericWithPeriod(includeFileFilterText) {
+			return nil, errors.New("The 'file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
 		}
 	}
-	return matchTemplate, rewriteTemplate, fileFilterText, nil
+
+	var excludeFileFilterText string
+	if len(excludeFileFilter) > 0 {
+		excludeFileFilterText = excludeFileFilter[0]
+		var IsAlphanumericWithPeriod = regexp.MustCompile(`^[a-zA-Z_.]+$`).MatchString
+		if !IsAlphanumericWithPeriod(includeFileFilterText) {
+			return nil, errors.New("The '-file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
+		}
+	}
+
+	return &args{matchTemplate, rewriteTemplate, includeFileFilterText, excludeFileFilterText}, nil
 }
 
 func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {
-	matchTemplate, rewriteTemplate, fileFilter, err := validateQuery(args.Query)
+	cmodArgs, err := validateQuery(args.Query)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	tr, ctx := trace.New(ctx, "callCodemod", fmt.Sprintf("pattern: %+v, replace: %+v, fileFilter: %+v, numRepoRevs: %d", matchTemplate, rewriteTemplate, fileFilter, len(args.Repos)))
+	tr, ctx := trace.New(ctx, "callCodemod", fmt.Sprintf("pattern: %+v, replace: %+v, includeFileFilter: %+v, excludeFileFilter: %+v, numRepoRevs: %d", cmodArgs.matchTemplate, cmodArgs.rewriteTemplate, cmodArgs.includeFileFilter, cmodArgs.excludeFileFilter, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -128,7 +145,7 @@ func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolve
 		wg.Add(1)
 		go func(repoRev search.RepositoryRevisions) {
 			defer wg.Done()
-			results, searchErr := callCodemodInRepo(ctx, repoRev, matchTemplate, rewriteTemplate, fileFilter)
+			results, searchErr := callCodemodInRepo(ctx, repoRev, cmodArgs)
 			if ctx.Err() == context.Canceled {
 				// Our request has been canceled (either because another one of args.repos had a
 				// fatal error, or otherwise), so we can just ignore these results.
@@ -181,8 +198,8 @@ func toMatchResolver(fileURL string, raw *rawCodemodResult) ([]*searchResultMatc
 		nil
 }
 
-func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, matchPattern, replacementText string, fileFilter string) (results []*codemodResultResolver, err error) {
-	tr, ctx := trace.New(ctx, "callCodemodInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v, replace: %+v", repoRevs, matchPattern, replacementText))
+func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, args *args) (results []*codemodResultResolver, err error) {
+	tr, ctx := trace.New(ctx, "callCodemodInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v, replace: %+v", repoRevs, args.matchTemplate, args.rewriteTemplate))
 	defer func() {
 		tr.LazyPrintf("%d results", len(results))
 		tr.SetError(err)
@@ -202,9 +219,10 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 	q := u.Query()
 	q.Set("repo", string(repoRevs.Repo.Name))
 	q.Set("commit", string(commit))
-	q.Set("matchtemplate", matchPattern)
-	q.Set("rewritetemplate", replacementText)
-	q.Set("fileextension", fileFilter)
+	q.Set("matchtemplate", args.matchTemplate)
+	q.Set("rewritetemplate", args.rewriteTemplate)
+	q.Set("fileextension", args.includeFileFilter)
+	q.Set("directoryexclude", args.excludeFileFilter)
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequest("GET", u.String(), nil)
