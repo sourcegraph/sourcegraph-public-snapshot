@@ -2,14 +2,14 @@ import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
-import { BehaviorSubject, from, NEVER, Observable, of, Subject, Subscription, throwError } from 'rxjs'
+import { BehaviorSubject, from, NEVER, of, Subject, Subscription } from 'rxjs'
 import { filter, skip, switchMap, take } from 'rxjs/operators'
 import * as sinon from 'sinon'
 import { Services } from '../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
-import { IMutation, IQuery } from '../../../../shared/src/graphql/schema'
+import { IQuery } from '../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { isDefined } from '../../../../shared/src/util/types'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
@@ -22,6 +22,7 @@ import {
     handleCodeHost,
 } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
+import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
 
 const RENDER = jest.fn()
 
@@ -49,88 +50,7 @@ const createMockPlatformContext = (
     // Mock implementation of `requestGraphQL()` that returns successful
     // responses for `ResolveRev` and `BlobContent` queries, so that
     // code views can be resolved
-    requestGraphQL: <R extends IQuery | IMutation>({
-        request,
-        variables,
-    }: {
-        request: string
-        variables: { [k: string]: any }
-    }): Observable<SuccessGraphQLResult<R>> => {
-        if (request.trim().startsWith('query SiteProductVersion')) {
-            // tslint:disable-next-line: no-object-literal-type-assertion
-            return of({
-                data: {
-                    site: {
-                        productVersion: 'dev',
-                        buildVersion: 'dev',
-                        hasCodeIntelligence: true,
-                    },
-                },
-                errors: undefined,
-            } as SuccessGraphQLResult<R>)
-        }
-        if (request.trim().startsWith('query CurrentUser')) {
-            // tslint:disable-next-line: no-object-literal-type-assertion
-            return of({
-                data: {
-                    currentUser: {
-                        id: 'u1',
-                        displayName: 'Alice',
-                        username: 'alice',
-                        avatarURL: null,
-                        url: 'https://example.com/alice',
-                        settingsURL: 'https://example.com/alice/settings',
-                        emails: [{ email: 'alice@example.com' }],
-                        siteAdmin: false,
-                    },
-                },
-                errors: undefined,
-            } as SuccessGraphQLResult<R>)
-        }
-        if (request.trim().startsWith('query ResolveRev')) {
-            // tslint:disable-next-line: no-object-literal-type-assertion
-            return of({
-                data: {
-                    repository: {
-                        mirrorInfo: {
-                            cloned: true,
-                        },
-                        commit: {
-                            oid: 'foo',
-                        },
-                    },
-                },
-                errors: undefined,
-            } as SuccessGraphQLResult<R>)
-        }
-        if (request.trim().startsWith('query BlobContent')) {
-            // tslint:disable-next-line: no-object-literal-type-assertion
-            return of({
-                data: {
-                    repository: {
-                        commit: {
-                            file: {
-                                content: 'Hello World',
-                            },
-                        },
-                    },
-                },
-                errors: undefined,
-            } as SuccessGraphQLResult<R>)
-        }
-        if (request.trim().startsWith('query ResolveRepo')) {
-            // tslint:disable-next-line: no-object-literal-type-assertion
-            return of({
-                data: {
-                    repository: {
-                        name: variables.rawRepoName,
-                    },
-                },
-                errors: undefined,
-            } as SuccessGraphQLResult<R>)
-        }
-        return throwError(new Error('GraphQL request failed'))
-    },
+    requestGraphQL: mockRequestGraphQL(),
     sideloadedExtensionURL: new Subject<string | null>(),
     settings: NEVER,
     ...partialMocks,
@@ -283,7 +203,23 @@ describe('code_intelligence', () => {
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    platformContext: createMockPlatformContext(),
+                    platformContext: {
+                        ...createMockPlatformContext(),
+                        // Simulate an instance with repositoryPathPattern
+                        requestGraphQL: mockRequestGraphQL({
+                            ...DEFAULT_GRAPHQL_RESPONSES,
+                            ResolveRepo: variables =>
+                                // tslint:disable-next-line: no-object-literal-type-assertion
+                                ({
+                                    data: {
+                                        repository: {
+                                            name: `github/${variables.rawRepoName}`,
+                                        },
+                                    },
+                                    errors: undefined,
+                                } as SuccessGraphQLResult<IQuery>),
+                        }),
+                    },
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                     telemetryService: NOOP_TELEMETRY_SERVICE,
                     render: RENDER,
@@ -299,9 +235,10 @@ describe('code_intelligence', () => {
                 {
                     editorId: 'editor#0',
                     isActive: true,
-                    resource: 'git://foo?1#/bar.ts',
+                    // The repo name exposed to extensions is affected by repositoryPathPattern
+                    resource: 'git://github/foo?1#/bar.ts',
                     model: {
-                        uri: 'git://foo?1#/bar.ts',
+                        uri: 'git://github/foo?1#/bar.ts',
                         text: 'Hello World',
                         languageId: 'typescript',
                     },
