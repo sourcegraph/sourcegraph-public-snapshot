@@ -14,7 +14,6 @@ import (
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
