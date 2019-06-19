@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -38,6 +39,10 @@ type Server struct {
 	GitserverClient interface {
 		AreReposCloned(context.Context, ...api.RepoName) (*gitprotocol.AreReposClonedResponse, error)
 	}
+
+	notClonedCount          uint64
+	notClonedCountUpdatedAt time.Time
+	notClonedCountMu        sync.Mutex
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -379,32 +384,24 @@ func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
 }
 
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
-	names, err := s.Store.ListAllRepoNames(r.Context())
-	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	res, err := s.GitserverClient.AreReposCloned(r.Context(), names...)
-	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	notCloned := 0
-	for _, cloned := range res.Results {
-		if !cloned {
-			notCloned += 1
+	if s.notClonedCountUpdatedAt.Before(time.Now().Add(-30 * time.Second)) {
+		fmt.Println("cache expired")
+		err := s.updateNotClonedCount(r.Context())
+		if err != nil {
+			respond(w, http.StatusInternalServerError, err)
+			return
 		}
+	} else {
+		fmt.Println("cache not expired")
 	}
 
 	resp := protocol.StatusMessagesResponse{
 		Messages: []protocol.StatusMessage{},
 	}
 
-	if notCloned != 0 {
+	if s.notClonedCount != 0 {
 		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
+			Message: fmt.Sprintf("%d repositories enqueued for cloning...", s.notClonedCount),
 			Type:    protocol.CloningStatusMessage,
 		})
 	}
@@ -412,6 +409,33 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 	log15.Debug("TRACE handleStatusMessages", "messages", resp.Messages)
 
 	respond(w, http.StatusOK, resp)
+}
+
+func (s *Server) updateNotClonedCount(ctx context.Context) error {
+	s.notClonedCountMu.Lock()
+	defer s.notClonedCountMu.Unlock()
+
+	names, err := s.Store.ListAllRepoNames(ctx)
+	if err != nil {
+		return err
+	}
+
+	res, err := s.GitserverClient.AreReposCloned(ctx, names...)
+	if err != nil {
+		return err
+	}
+
+	var notCloned uint64
+	for _, cloned := range res.Results {
+		if !cloned {
+			notCloned += 1
+		}
+	}
+
+	s.notClonedCount = notCloned
+	s.notClonedCountUpdatedAt = time.Now()
+
+	return nil
 }
 
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
