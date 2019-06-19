@@ -1132,7 +1132,7 @@ func validateRepoHasFileUsage(q *query.Query) error {
 	// Validate usage of `repohasfile` filter
 	rawQuery := q.Syntax.Input
 	if strings.Contains(rawQuery, "type:repo") && strings.Contains(rawQuery, "repohasfile:") {
-		return errors.New("repohasfile does not currently return repository results. Support for repository results is in progress. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4584 for updates")
+		return errors.New("repohasfile does not currently return repository results. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4584 for updates")
 	}
 	syntax := q.Syntax
 	rawQueryContainsOnlyRepoHasFileTerm := len(syntax.Expr) == 1 && syntax.Expr[0].Field == "repohasfile"
