@@ -23,12 +23,12 @@ export class ActivationChecklistItem extends React.PureComponent<ActivationCheck
 
     public render(): JSX.Element {
         const checkboxElem = (
-            <div className="d-flex justify-content-between">
+            <div className="d-flex justify-content-between flex-1">
                 <span className="mr-2">{this.props.title}</span>
                 {this.props.done ? (
-                    <CheckIcon className="icon-inline text-success" />
+                    <CheckIcon className="icon-inline flex-0 text-success" />
                 ) : (
-                    <CheckboxBlankCircleIcon className="icon-inline text-muted" />
+                    <CheckboxBlankCircleIcon className="icon-inline flex-0 text-muted" />
                 )}
             </div>
         )

@@ -1,12 +1,70 @@
-@import 'bootstrap/scss/buttons';
-@import 'bootstrap/scss/button-group';
+$btn-padding: $spacer;
 
-// Light theme button variants
-.theme-light {
-    @each $color, $value in $theme-colors-light {
-        .btn-#{$color} {
-            @include button-variant($value, $value);
+.btn {
+    display: inline-flex;
+    text-align: center;
+    align-items: center;
+    user-select: none;
+    border: $btn-border-width solid transparent;
+    cursor: pointer;
+    font-weight: normal;
+    line-height: $line-height-base;
+    vertical-align: middle;
+
+    // Make buttons equal height as inputs.
+    $input-extra-border-width: $input-border-width - $btn-border-width;
+    padding: calc(#{$btn-padding} + #{$input-extra-border-width});
+    font-size: var(--font-size-base);
+    &.btn-sm {
+        padding: calc(#{$btn-padding * $sm-factor} + #{$input-extra-border-width});
+        font-size: var(--font-size-sm);
+    }
+    &.btn-lg {
+        padding: calc(#{$btn-padding * $lg-factor} + #{$input-extra-border-width});
+        font-size: var(--font-size-lg);
+    }
+
+    &:hover {
+        text-decoration: none;
+    }
+    &:focus {
+        @include focus-ring(-1px, 1px);
+    }
+}
+
+@mixin btn-variant($name) {
+    .btn-#{$name} {
+        background-color: var(--#{$name});
+        border-color: var(--#{$name});
+        &,
+        &:hover {
+            color: var(--#{$name}-contrast);
         }
+        &:hover,
+        &:focus {
+            background-color: var(--#{$name}-hover);
+        }
+    }
+}
+@each $name, $color in $theme-colors {
+    @include btn-variant($name);
+}
+
+.btn-link {
+    color: var(--link-color);
+    text-decoration: var(--link-decoration);
+    background-color: transparent;
+
+    &:hover,
+    &:focus {
+        color: var(--link-hover-color);
+        text-decoration: var(--link-hover-decoration);
+    }
+
+    &:disabled,
+    &.disabled {
+        opacity: 0.75;
+        pointer-events: none;
     }
 }
 
@@ -25,20 +83,4 @@
     .icon {
         @extend .icon-inline;
     }
-
-    &:focus:not(:disabled):not(.disabled) {
-        box-shadow: 0 0 0 2px rgba($primary, 0.5);
-    }
-
-    &:hover:not(:disabled):not(.disabled) {
-        color: #ffffff;
-
-        .theme-light & {
-            color: $color-light-text-2;
-        }
-    }
-}
-
-.btn.btn-sm {
-    @extend small;
 }

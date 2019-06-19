@@ -1,0 +1,9 @@
+.progress {
+    display: flex;
+    height: 0.5rem;
+    overflow: hidden;
+
+    .progress-bar {
+        background-color: var(--primary);
+    }
+}

@@ -118,13 +118,3 @@
         flex: 0 0 auto;
     }
 }
-
-.theme-light {
-    .git-commit-node {
-        &__message {
-            &-subject {
-                color: $color-light-text-1;
-            }
-        }
-    }
-}

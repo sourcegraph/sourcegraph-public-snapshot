@@ -1,0 +1,4 @@
+@mixin focus-ring($offset: 1px, $width: 1px) {
+    outline-offset: $offset;
+    outline: $width solid var(--primary);
+}

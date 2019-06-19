@@ -5,6 +5,8 @@
 
 import '../../shared/src/polyfills'
 
+import 'focus-visible'
+
 import './sentry'
 
 import React from 'react'

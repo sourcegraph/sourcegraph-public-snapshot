@@ -43,6 +43,7 @@ const config: webpack.Configuration = {
                 },
             }),
         ],
+        namedModules: false,
 
         ...(mode === 'development'
             ? {

@@ -12,10 +12,6 @@
     align-content: center;
     justify-content: center;
 
-    &__card-body {
-        padding: 2 * $card-spacer-y 2 * $card-spacer-x;
-    }
-
     &__icon {
         display: flex;
         justify-content: center;

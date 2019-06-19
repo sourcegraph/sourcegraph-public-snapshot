@@ -24,7 +24,7 @@
     .topBar {
         background: var(--body-bg);
         height: 3rem;
-        border-color: $color-border;
+        border-color: var(--border-color);
         .title {
             white-space: nowrap;
         }
@@ -39,7 +39,7 @@
     .history-contents p,
     .doc-explorer-contents,
     .doc-category-title {
-        border-color: $color-border;
+        border-color: var(--border-color);
     }
     .variable-editor-title,
     .result-window .CodeMirror-gutters,
@@ -90,7 +90,7 @@
         .field-short-description {
             font-family: var(--sans-serif);
             color: $color-text-1;
-            border-left: 3px solid $color-border;
+            border-left: 3px solid var(--border-color);
             padding-left: 0.5rem;
             margin-top: 0.5rem;
             > p {
@@ -102,12 +102,12 @@
             font-family: var(--sans-serif);
             background: rgba(42, 58, 81, 0.7);
             box-shadow: none;
-            border: 1px solid $color-border;
+            border: 1px solid var(--border-color);
             color: inherit;
         }
         .doc-category-item {
             color: inherit;
-            border-bottom: 1px solid $color-border;
+            border-bottom: 1px solid var(--border-color);
             padding-bottom: 1rem;
             .field-name:first-of-type {
                 font-weight: bold;
@@ -228,7 +228,7 @@
         .doc-explorer,
         .doc-explorer-contents,
         .execute-options {
-            background: $color-light-bg-2;
+            background: var(--bg-deep);
         }
         .variable-editor-title,
         button,
@@ -266,10 +266,10 @@ body > .CodeMirror-hints {
         color: $color-text;
     }
     .CodeMirror-hint {
-        border-color: $color-border;
+        border-color: var(--border-color);
         color: $color-text;
         &-information {
-            border-color: $color-border;
+            border-color: var(--border-color);
             > .content {
                 color: $color-text;
                 p:nth-child(odd) {
@@ -286,7 +286,7 @@ body > .CodeMirror-hints {
 body.theme-light > .CodeMirror-lint-tooltip,
 body.theme-light > .CodeMirror-info,
 body.theme-light > .CodeMirror-hints {
-    background: $color-light-bg-2;
+    background: var(--bg-deep);
     color: $color-light-text-1;
     .info-description {
         color: $color-light-text-1;

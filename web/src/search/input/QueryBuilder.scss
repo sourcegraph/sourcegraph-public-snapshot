@@ -22,7 +22,7 @@
     }
 
     &__section {
-        border: 1px solid $input-border-color;
+        border: 1px solid var(--border-color);
         border-radius: 0.125rem;
         padding: 0.5rem;
     }
@@ -37,10 +37,6 @@
 
         &-example {
             font-weight: bold;
-
-            @media (max-width: $media-md) {
-                display: none;
-            }
         }
     }
 
@@ -62,10 +58,6 @@
         &-example {
             display: flex;
             align-items: center;
-
-            @media (max-width: $media-md) {
-                width: 100%;
-            }
         }
 
         &-description {

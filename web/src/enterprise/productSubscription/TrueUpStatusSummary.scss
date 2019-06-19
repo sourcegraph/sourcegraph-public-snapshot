@@ -7,9 +7,5 @@
 
     &__item {
         width: 32%;
-        @media (max-width: $media-md) {
-            width: 100%;
-            margin-bottom: 1rem;
-        }
     }
 }

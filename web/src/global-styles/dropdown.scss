@@ -1,41 +1,97 @@
-$dropdown-bg: var(--dropdown-bg);
-$dropdown-border-color: var(--dropdown-border-color);
-$dropdown-divider-bg: var(--border-color);
-$dropdown-link-color: var(--body-color);
-$dropdown-link-hover-color: var(--body-color);
-$dropdown-link-hover-bg: var(--dropdown-link-hover-bg);
-$dropdown-link-active-color: #ffffff;
-$dropdown-link-active-bg: var(--primary);
-$dropdown-link-disabled-color: var(--text-muted);
-$dropdown-header-color: var(--dropdown-header-color);
-$dropdown-item-padding-y: 0.25rem;
-$dropdown-item-padding-x: 0.5rem;
-$dropdown-padding-y: $dropdown-item-padding-y;
+@import './variables';
 
-@import 'bootstrap/scss/dropdown';
+.dropdown {
+    position: relative;
+}
 
+$caret-width: 0.3rem;
+@mixin caret($direction: down) {
+    &::after {
+        display: inline-block;
+        margin-left: $caret-width * 0.85;
+        vertical-align: $caret-width * 0.85;
+        content: '';
+
+        border-top: $caret-width solid;
+        border-right: $caret-width solid transparent;
+        border-bottom: 0;
+        border-left: $caret-width solid transparent;
+    }
+    &:empty::after {
+        margin-left: 0;
+    }
+}
+.dropdown-toggle {
+    white-space: nowrap;
+    @include caret;
+}
+
+$dropdown-padding-y: $spacer/2;
+$dropdown-spacer: $spacer/2;
+$dropdown-item-padding-y: $spacer/2;
+$dropdown-item-padding-x: $spacer * 2;
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: $zindex-dropdown;
+    display: none;
+    min-width: 8rem;
+    padding: $dropdown-padding-y 0;
+    margin: $dropdown-spacer 0 0; // override default ul
+    color: var(--body-color);
+    text-align: left; // Ensures proper alignment if parent has it changed (e.g., modal footer)
+    list-style: none;
+    background-color: var(--body-bg);
+    background-clip: padding-box;
+    border: 1px solid var(--border-color);
+
+    &.show {
+        display: block;
+    }
+}
+
+.dropdown-item,
+.dropdown-item-text {
+    display: block;
+    width: 100%;
+    padding: $dropdown-item-padding-y $dropdown-item-padding-x;
+    font-size: var(--font-size-base);
+    color: var(--text-body);
+}
+.dropdown-item {
+    white-space: nowrap;
+
+    // For <buttons>:
+    text-align: inherit;
+    background-color: transparent;
+    border: 0;
+
+    &:hover,
+    &:focus {
+        text-decoration: none;
+        color: var(--text-body);
+        background-color: var(--bg-muted);
+    }
+}
+
+.dropdown-header {
+    display: block;
+    padding: $dropdown-padding-y $dropdown-item-padding-x;
+    margin-bottom: 0; // for h1..h6
+    font-size: var(--font-size-sm);
+    font-weight: normal;
+    color: var(--dropdown-header-color);
+    white-space: nowrap;
+}
+
+@mixin nav-divider($color: var(--border-color), $margin-y: $dropdown-spacer) {
+    height: 0;
+    margin: $margin-y 0;
+    overflow: hidden;
+    border-top: 1px solid $color;
+}
 .dropdown-divider {
-    margin: 0.25rem 0;
-}
-
-.theme-dark {
-    --dropdown-bg: #0e121b;
-    --dropdown-border-color: #{$color-border};
-    --dropdown-link-hover-bg: #{$color-bg-2};
-    --dropdown-header-color: #{$color-text-1};
-    .dropdown-menu {
-        border-radius: 4px;
-        box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.4);
-    }
-}
-
-.theme-light {
-    --dropdown-bg: #ffffff;
-    --dropdown-border-color: #{$color-light-border};
-    --dropdown-link-hover-bg: #{$color-light-bg-2};
-    --dropdown-header-color: #{$color-light-text-2};
-    .dropdown-menu {
-        border-radius: 4px;
-        box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.085);
-    }
+    @include nav-divider;
 }

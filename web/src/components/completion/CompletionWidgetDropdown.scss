@@ -4,10 +4,10 @@
 
     &__item {
         border-bottom: 1px solid var(--border-color);
-        background-color: $color-bg-2;
+        background-color: var(--bg-deep);
         color: $color-text-2;
         &--selected {
-            color: #ffffff !important;
+            color: var(--white) !important;
         }
     }
 
@@ -15,14 +15,5 @@
         border-bottom: 0;
         border-bottom-right-radius: 3px;
         border-bottom-left-radius: 3px;
-    }
-}
-
-.theme-light {
-    .completion-widget-dropdown {
-        &__item {
-            color: $color-light-text-1;
-            background-color: #ffffff;
-        }
     }
 }

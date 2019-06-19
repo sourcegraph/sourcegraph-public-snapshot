@@ -131,9 +131,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                         <div
                                             className={[
                                                 'layout__app-router-container',
-                                                `layout__app-router-container--${
-                                                    isFullWidth ? 'full-width' : 'restricted'
-                                                }`,
+                                                isFullWidth ? 'w-100' : 'container',
                                             ].join(' ')}
                                         >
                                             {render({ ...props, ...routeComponentProps })}

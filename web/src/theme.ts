@@ -16,8 +16,15 @@ export interface ThemeProps {
 export enum ThemePreference {
     Light = 'light',
     Dark = 'dark',
+    HighContrast = 'hc-black',
     System = 'system',
 }
+
+/**
+ * The actual themes that are available. The "System" theme is not an actual theme itself, so it's
+ * omitted.
+ */
+export type Theme = Exclude<ThemePreference, ThemePreference.System>
 
 /**
  * Props that can be extended by any component's Props which needs to manipulate the theme preferences.

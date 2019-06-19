@@ -108,13 +108,11 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                             ...confettiConfig,
                         }}
                     />
-                    <span className="activation-dropdown-button__progress-bar-container">
-                        <CircularProgressbar
-                            className="activation-dropdown-button__circular-progress-bar"
-                            strokeWidth={12}
-                            percentage={percentageDone(this.props.activation.completed)}
-                        />
-                    </span>
+                    <CircularProgressbar
+                        className="activation-dropdown-button__circular-progress-bar"
+                        strokeWidth={12}
+                        percentage={percentageDone(this.props.activation.completed)}
+                    />
                 </DropdownToggle>
                 <DropdownMenu className="activation-dropdown" right={true}>
                     <div className="dropdown-item-text activation-dropdown-header">
