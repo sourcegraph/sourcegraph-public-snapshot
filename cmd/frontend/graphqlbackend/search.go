@@ -419,75 +419,25 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 	overLimit = len(repos) >= maxRepoListSize
 
-	run := parallel.NewRun(100)
-	resolverPool := parallel.NewRun(100)
-
-	var mut sync.Mutex
-	results := make(chan *repositoryResult)
-
-	go func() {
-		for res := range results {
-			mut.Lock()
-			repoRevisions = append(repoRevisions, res.revisions)
-			repoResolvers = append(repoResolvers, res.resolver)
-			missingRepoRevisions = append(missingRepoRevisions, res.missingRepoRevisions...)
-			mut.Unlock()
-			run.Release()
-		}
-	}()
-
 	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
 	repoResolvers = make([]*searchSuggestionResolver, 0, len(repos))
+	tr.LazyPrintf("Associate/validate revs - start")
 	for _, repo := range repos {
-		run.Acquire()
-		go resolveRepository(ctx, repo, op, includePatternRevs, resolverPool, results)
-	}
-	err = run.Wait()
-	close(results)
+		repoRev := &search.RepositoryRevisions{Repo: repo}
 
-	tr.LazyPrintf("Associate/validate revs - done")
-	return repoRevisions, missingRepoRevisions, repoResolvers, overLimit, err
-}
+		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
 
-type repositoryResult struct {
-	revisions            *search.RepositoryRevisions
-	resolver             *searchSuggestionResolver
-	missingRepoRevisions []*search.RepositoryRevisions
-}
+		repoResolver := &repositoryResolver{repo: repo}
 
-func resolveRepository(ctx context.Context, repo *types.Repo, op resolveRepoOp, includePatternRevs []patternRevspec, pool *parallel.Run, results chan<- *repositoryResult) {
-	repoRev := &search.RepositoryRevisions{Repo: repo}
-	revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
-	repoResolver := &repositoryResolver{repo: repo}
-
-	var mut sync.Mutex
-	res := &repositoryResult{
-		resolver: newSearchResultResolver(
-			repoResolver,
-			math.MaxInt32,
-		),
-		revisions: repoRev,
-	}
-
-	// if multiple specified revisions clash, report this usefully:
-	if len(revs) == 0 && clashingRevs != nil {
-		res.missingRepoRevisions = append(res.missingRepoRevisions, &search.RepositoryRevisions{
-			Repo: repo,
-			Revs: clashingRevs,
-		})
-	}
-
-	var wg sync.WaitGroup
-	for _, rev := range revs {
-		pool.Acquire()
-		wg.Add(1)
-
-		go func(rev search.RevisionSpecifier) {
-			defer func() {
-				pool.Release()
-				wg.Done()
-			}()
-
+		// if multiple specified revisions clash, report this usefully:
+		if len(revs) == 0 && clashingRevs != nil {
+			missingRepoRevisions = append(missingRepoRevisions, &search.RepositoryRevisions{
+				Repo: repo,
+				Revs: clashingRevs,
+			})
+		}
+		// Check if the repository actually has the revisions that the user specified.
+		for _, rev := range revs {
 			if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
 				// Do not validate ref patterns. A ref pattern matching 0 refs is not necessarily
 				// invalid, so it's not clear what validation would even mean.
@@ -506,33 +456,89 @@ func resolveRepository(ctx context.Context, repo *types.Repo, op resolveRepoOp, 
 				if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), nil, rev.RevSpec, &git.ResolveRevisionOptions{NoEnsureRevision: true}); git.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
 					// The revspec does not exist, so don't include it, and report that it's missing.
 					if rev.RevSpec == "" {
+						// Report as HEAD not "" (empty string) to avoid user confusion.
 						rev.RevSpec = "HEAD"
 					}
-					mut.Lock()
-					res.missingRepoRevisions = append(res.missingRepoRevisions, &search.RepositoryRevisions{
+					missingRepoRevisions = append(missingRepoRevisions, &search.RepositoryRevisions{
 						Repo: repo,
 						Revs: []search.RevisionSpecifier{{RevSpec: rev.RevSpec}},
 					})
-					mut.Unlock()
-					return
+					continue
 				}
+				// If err != nil and is not one of the err values checked for above, cloning and other errors will be handled later, so just ignore an error
+				// if there is one.
 			}
 
-			if op.commitAfter != "" {
-				ok, err := git.HasCommitAfter(ctx, repoRev.GitserverRepo(), op.commitAfter, rev.RevSpec)
-				if err == nil && !ok {
-					return
-				}
-			}
-
-			mut.Lock()
 			repoRev.Revs = append(repoRev.Revs, rev)
-			mut.Unlock()
-		}(rev)
-	}
-	wg.Wait()
+		}
 
-	results <- res
+		repoResolvers = append(repoResolvers, newSearchResultResolver(
+			repoResolver,
+			math.MaxInt32,
+		))
+
+		repoRevisions = append(repoRevisions, repoRev)
+	}
+	tr.LazyPrintf("Associate/validate revs - done")
+
+	if op.commitAfter != "" {
+		repoRevisions = filterRepoHasCommitAfter(ctx, repoRevisions, op.commitAfter)
+	}
+
+	return repoRevisions, missingRepoRevisions, repoResolvers, overLimit, nil
+}
+
+func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) []*search.RepositoryRevisions {
+	var mut sync.Mutex
+	pass := []*search.RepositoryRevisions{}
+	res := make(chan *search.RepositoryRevisions)
+
+	repoRun := parallel.NewRun(1000)
+	revRun := parallel.NewRun(1000)
+
+	go func() {
+		for rev := range res {
+			if len(rev.Revs) != 0 {
+				mut.Lock()
+				pass = append(pass, rev)
+				mut.Unlock()
+			}
+			repoRun.Release()
+		}
+	}()
+
+	for _, revs := range revisions {
+		repoRun.Acquire()
+
+		go func(revs *search.RepositoryRevisions) {
+			var wg sync.WaitGroup
+			var mut sync.Mutex
+			var specifiers []search.RevisionSpecifier
+			for _, rev := range revs.Revs {
+				wg.Add(1)
+				revRun.Acquire()
+				go func(rev search.RevisionSpecifier) {
+					defer wg.Done()
+					defer revRun.Release()
+
+					ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
+					if err != nil || ok {
+						mut.Lock()
+						specifiers = append(specifiers, rev)
+						mut.Unlock()
+					}
+				}(rev)
+			}
+			wg.Wait()
+
+			res <- &search.RepositoryRevisions{Repo: revs.Repo, Revs: specifiers}
+		}(revs)
+	}
+
+	repoRun.Wait()
+	close(res)
+
+	return pass
 }
 
 func optimizeRepoPatternWithHeuristics(repoPattern string) string {
