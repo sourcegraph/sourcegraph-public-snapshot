@@ -494,7 +494,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 		mut  sync.Mutex
 		pass = []*search.RepositoryRevisions{}
 		res  = make(chan *search.RepositoryRevisions, 100)
-		run  = parallel.NewRun(1000)
+		run  = parallel.NewRun(128)
 	)
 
 	goroutine.Go(func() {
