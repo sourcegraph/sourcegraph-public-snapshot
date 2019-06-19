@@ -74,6 +74,7 @@ func main() {
 			m.UpsertRepos,
 			m.ListExternalServices,
 			m.UpsertExternalServices,
+			m.ListAllRepoNames,
 		} {
 			om.MustRegister(prometheus.DefaultRegisterer)
 		}
