@@ -121,7 +121,7 @@ interface SourcegraphContext {
         /** Override style for dark themes */
         dark?: BrandAssets
 
-        /** Prevent the icon in the top-left corner of the screen from spinning */
+        /** Prevents the icon in the top-left corner of the screen from spinning. */
         disableSymbolSpin?: boolean
     }
 
