@@ -1137,7 +1137,7 @@ func validateRepoHasFileUsage(q *query.Query) error {
 	syntax := q.Syntax
 	rawQueryContainsOnlyRepoHasFileTerm := len(syntax.Expr) == 1 && syntax.Expr[0].Field == "repohasfile"
 	if rawQueryContainsOnlyRepoHasFileTerm {
-		return errors.New("repohasfile must be used with at least one other search term in the query. Support for usage on its own is in progress. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4608 for updates")
+		return errors.New("repohasfile must be used with at least one other search term in the query. Support for usage on its own is coming soon. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4608 for updates")
 	}
 	return nil
 }
