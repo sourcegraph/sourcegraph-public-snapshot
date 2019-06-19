@@ -385,14 +385,11 @@ func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
 
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 	if s.notClonedCountUpdatedAt.Before(time.Now().Add(-30 * time.Second)) {
-		fmt.Println("cache expired")
 		err := s.updateNotClonedCount(r.Context())
 		if err != nil {
 			respond(w, http.StatusInternalServerError, err)
 			return
 		}
-	} else {
-		fmt.Println("cache not expired")
 	}
 
 	resp := protocol.StatusMessagesResponse{
