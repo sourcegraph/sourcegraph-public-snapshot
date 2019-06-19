@@ -492,7 +492,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 	var (
 		mut  sync.Mutex
 		pass = []*search.RepositoryRevisions{}
-		res  = make(chan *search.RepositoryRevisions)
+		res  = make(chan *search.RepositoryRevisions, 100)
 		run  = parallel.NewRun(1000)
 	)
 
