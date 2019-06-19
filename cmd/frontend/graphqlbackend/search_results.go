@@ -797,17 +797,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, &badRequestError{err}
 	}
 
-	// Validate usage of `repohasfile` filter
-	rawQuery := r.query.Syntax.Input
-	if strings.Contains(rawQuery, "type:repo") && strings.Contains(rawQuery, "repohasfile:") {
-		return nil, errors.New("repohasfile does not currently return repository results. Support for repository results is in progress. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4584 for updates")
-	}
-	rawQueryContainsOnlyRepoHasFileTerm, err := regexp.MatchString(`^[\s]*repohasfile:[\S]*[\s]*$`, rawQuery)
+	err = validateRepoHasFileUsage(r.query)
 	if err != nil {
 		return nil, err
-	}
-	if rawQueryContainsOnlyRepoHasFileTerm {
-		return nil, errors.New("repohasfile must be used with at least one other search term in the query. Support for usage on its own is in progress. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4608 for updates")
 	}
 
 	// Determine which types of results to return.
@@ -1134,4 +1126,18 @@ func regexpPatternMatchingExprsInOrder(patterns []string) string {
 		return patterns[0]
 	}
 	return "(" + strings.Join(patterns, ").*?(") + ")" // "?" makes it prefer shorter matches
+}
+
+func validateRepoHasFileUsage(q *query.Query) error {
+	// Validate usage of `repohasfile` filter
+	rawQuery := q.Syntax.Input
+	if strings.Contains(rawQuery, "type:repo") && strings.Contains(rawQuery, "repohasfile:") {
+		return errors.New("repohasfile does not currently return repository results. Support for repository results is in progress. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4584 for updates")
+	}
+	syntax := q.Syntax
+	rawQueryContainsOnlyRepoHasFileTerm := len(syntax.Expr) == 1 && syntax.Expr[0].Field == "repohasfile"
+	if rawQueryContainsOnlyRepoHasFileTerm {
+		return errors.New("repohasfile must be used with at least one other search term in the query. Support for usage on its own is in progress. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4608 for updates")
+	}
+	return nil
 }
