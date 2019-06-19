@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	gitprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -34,6 +35,9 @@ type Server struct {
 		UpdateQueueLen() int
 		UpdateOnce(id uint32, name api.RepoName, url string)
 		ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult
+	}
+	GitserverClient interface {
+		AreReposCloned(context.Context, ...api.RepoName) (*gitprotocol.AreReposClonedResponse, error)
 	}
 }
 
@@ -382,13 +386,11 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	start := time.Now()
 	res, err := gitserver.DefaultClient.AreReposCloned(r.Context(), names...)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
-	duration := time.Since(start)
 
 	notCloned := 0
 	for _, cloned := range res.Results {
