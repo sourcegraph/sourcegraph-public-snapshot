@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"regexp"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
@@ -21,16 +22,17 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 	}
 
 	fieldWhitelist := map[string]struct{}{
-		query.FieldRepo:      {},
-		query.FieldRepoGroup: {},
-		query.FieldType:      {},
-		query.FieldDefault:   {},
-		query.FieldIndex:     {},
-		query.FieldCount:     {},
-		query.FieldMax:       {},
-		query.FieldTimeout:   {},
-		query.FieldFork:      {},
-		query.FieldArchived:  {},
+		query.FieldRepo:        {},
+		query.FieldRepoGroup:   {},
+		query.FieldType:        {},
+		query.FieldDefault:     {},
+		query.FieldIndex:       {},
+		query.FieldCount:       {},
+		query.FieldMax:         {},
+		query.FieldTimeout:     {},
+		query.FieldFork:        {},
+		query.FieldArchived:    {},
+		query.FieldRepoHasFile: {},
 	}
 	// Don't return repo results if the search contains fields that aren't on the whitelist.
 	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
@@ -52,9 +54,44 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 			common.limitHit = true
 			break
 		}
+
 		if pattern.MatchString(string(repo.Repo.Name)) {
-			results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo, icon: repoIcon}})
+			if len(args.Pattern.FilePatternsReposMustInclude) > 0 {
+				rev := repo.RevSpecs()[0]
+				for _, pattern := range args.Pattern.FilePatternsReposMustInclude {
+					p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+					matches, _, err := searchFilesInRepo(ctx, repo.Repo, repo.GitserverRepo(), rev, &p, time.Minute)
+					if err != nil {
+						return nil, nil, err
+					}
+					if len(matches) > 0 {
+						results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo, icon: repoIcon}})
+						continue
+					} else {
+						continue
+					}
+				}
+			} else if len(args.Pattern.FilePatternsReposMustExclude) > 0 {
+				rev := repo.RevSpecs()[0]
+				for _, pattern := range args.Pattern.FilePatternsReposMustExclude {
+					p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+					matches, _, err := searchFilesInRepo(ctx, repo.Repo, repo.GitserverRepo(), rev, &p, time.Minute)
+					if err != nil {
+						return nil, nil, err
+					}
+					if len(matches) > 0 {
+						continue
+					} else {
+						results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo, icon: repoIcon}})
+						continue
+					}
+				}
+			} else {
+				results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo, icon: repoIcon}})
+			}
+
 		}
 	}
+
 	return results, common, nil
 }
