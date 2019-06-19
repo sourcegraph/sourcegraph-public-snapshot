@@ -156,7 +156,7 @@ require (
 	golang.org/x/sync v0.0.0-20190602191015-112230192c58
 	golang.org/x/sys v0.0.0-20190608051445-5b15430b70e3
 	golang.org/x/time v0.0.0-20190401211219-9d24e82272b4
-	golang.org/x/tools v0.0.0-20190322203728-c1a832b0ad89
+	golang.org/x/tools v0.0.0-20190619221318-4adf7a708c2d
 	google.golang.org/api v0.1.0 // indirect
 	google.golang.org/genproto v0.0.0-20190215211957-bd968387e4aa // indirect
 	google.golang.org/grpc v1.18.0 // indirect
