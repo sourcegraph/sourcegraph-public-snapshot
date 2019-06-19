@@ -1131,6 +1131,7 @@ func regexpPatternMatchingExprsInOrder(patterns []string) string {
 func validateRepoHasFileUsage(q *query.Query) error {
 	// Validate usage of `repohasfile` filter
 	rawQuery := q.Syntax.Input
+
 	// Query contains "type:repo" and "repohasfile:"
 	if strings.Contains(rawQuery, "type:repo") && strings.Contains(rawQuery, "repohasfile:") {
 		return errors.New("repohasfile does not currently return repository results. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4584 for updates")
