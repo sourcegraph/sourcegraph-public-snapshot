@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -71,6 +73,8 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	addTag := func(key, val string) {
 		pkt.Tags = append(pkt.Tags, raven.Tag{Key: key, Value: val})
 	}
+
+	addTag("service", filepath.Base(os.Args[0]))
 
 	// Add appdash span ID.
 	if span := opentracing.SpanFromContext(r.Context()); span != nil {
