@@ -483,13 +483,13 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	tr.LazyPrintf("Associate/validate revs - done")
 
 	if op.commitAfter != "" {
-		repoRevisions = filterRepoHasCommitAfter(ctx, repoRevisions, op.commitAfter)
+		repoRevisions, err = filterRepoHasCommitAfter(ctx, repoRevisions, op.commitAfter)
 	}
 
-	return repoRevisions, missingRepoRevisions, repoResolvers, overLimit, nil
+	return repoRevisions, missingRepoRevisions, repoResolvers, overLimit, err
 }
 
-func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) []*search.RepositoryRevisions {
+func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) ([]*search.RepositoryRevisions, error) {
 	var (
 		mut  sync.Mutex
 		pass = []*search.RepositoryRevisions{}
@@ -524,10 +524,10 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 		})
 	}
 
-	run.Wait()
+	err := run.Wait()
 	close(res)
 
-	return pass
+	return pass, err
 }
 
 func optimizeRepoPatternWithHeuristics(repoPattern string) string {
