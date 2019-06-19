@@ -568,7 +568,7 @@ func TestServer_StatusMessages(t *testing.T) {
 				Messages: []protocol.StatusMessage{
 					{
 						Type:    protocol.CloningStatusMessage,
-						Message: "Currently updating 3 repositories...",
+						Message: "Currently cloning 3 repositories...",
 					},
 				},
 			},
@@ -581,7 +581,8 @@ func TestServer_StatusMessages(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			gitserverClient := &fakeGitserverClient{areReposClonedResponse: tc.gitserverResponse}
-			s := &Server{GitserverClient: gitserverClient}
+			store := new(repos.FakeStore)
+			s := &Server{Store: store, GitserverClient: gitserverClient}
 
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
@@ -938,7 +939,7 @@ type fakeGitserverClient struct {
 	areReposClonedResponse *gitprotocol.AreReposClonedResponse
 }
 
-func (g *fakeGitserverClient) AreReposCloned(ctx context.Context, names ...api.RepoName) (*gitprotocol.AreReposClonedRequest, error) {
+func (g *fakeGitserverClient) AreReposCloned(ctx context.Context, names ...api.RepoName) (*gitprotocol.AreReposClonedResponse, error) {
 	return g.areReposClonedResponse, nil
 }
 

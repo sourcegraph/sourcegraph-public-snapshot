@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	gitprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
@@ -386,7 +385,7 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := gitserver.DefaultClient.AreReposCloned(r.Context(), names...)
+	res, err := s.GitserverClient.AreReposCloned(r.Context(), names...)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
