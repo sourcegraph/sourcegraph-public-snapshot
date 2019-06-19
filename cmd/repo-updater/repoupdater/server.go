@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -375,14 +376,34 @@ func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
 }
 
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
+	names, err := s.Store.ListAllRepoNames(r.Context())
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	start := time.Now()
+	res, err := gitserver.DefaultClient.AreReposCloned(r.Context(), names...)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+	duration := time.Since(start)
+
+	notCloned := 0
+	for _, cloned := range res.Results {
+		if !cloned {
+			notCloned += 1
+		}
+	}
+
 	resp := protocol.StatusMessagesResponse{
 		Messages: []protocol.StatusMessage{},
 	}
 
-	enqueued := s.Scheduler.UpdateQueueLen()
-	if enqueued != 0 {
+	if notCloned != 0 {
 		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Message: fmt.Sprintf("Currently updating %d repositories...", enqueued),
+			Message: fmt.Sprintf("Currently cloning %d repositories...", notCloned),
 			Type:    protocol.CloningStatusMessage,
 		})
 	}
