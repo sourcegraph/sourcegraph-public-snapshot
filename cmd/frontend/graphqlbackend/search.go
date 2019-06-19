@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
@@ -496,7 +497,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 		run  = parallel.NewRun(1000)
 	)
 
-	go func() {
+	goroutine.Go(func() {
 		for rev := range res {
 			if len(rev.Revs) != 0 {
 				mut.Lock()
@@ -505,12 +506,13 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 			}
 			run.Release()
 		}
-	}()
+	})
 
 	for _, revs := range revisions {
 		run.Acquire()
 
-		go func(revs *search.RepositoryRevisions) {
+		revs := revs
+		goroutine.Go(func() {
 			var specifiers []search.RevisionSpecifier
 			for _, rev := range revs.Revs {
 				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
@@ -519,7 +521,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 				}
 			}
 			res <- &search.RepositoryRevisions{Repo: revs.Repo, Revs: specifiers}
-		}(revs)
+		})
 	}
 
 	run.Wait()
