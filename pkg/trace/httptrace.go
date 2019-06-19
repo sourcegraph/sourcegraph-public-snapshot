@@ -48,7 +48,10 @@ var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 }, metricLabels)
 
 func init() {
-	raven.SetDSN(os.Getenv("SENTRY_DSN_BACKEND"))
+	if err := raven.SetDSN(os.Getenv("SENTRY_DSN_BACKEND")); err != nil {
+		log15.Error("sentry.dsn", "error", err)
+	}
+
 	raven.SetRelease(version.Version())
 	raven.SetTagsContext(map[string]string{
 		"service": filepath.Base(os.Args[0]),
@@ -67,8 +70,10 @@ func init() {
 				return
 			}
 
-			// An empty dsn value is ignored.
-			raven.SetDSN(conf.Get().Critical.Log.Sentry.Dsn)
+			// An empty dsn value is ignored: not an error.
+			if err := raven.SetDSN(conf.Get().Critical.Log.Sentry.Dsn); err != nil {
+				log15.Error("sentry.dsn", "error", err)
+			}
 		})
 	}()
 }
