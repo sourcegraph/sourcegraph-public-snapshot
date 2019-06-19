@@ -493,8 +493,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 		mut  sync.Mutex
 		pass = []*search.RepositoryRevisions{}
 		res  = make(chan *search.RepositoryRevisions)
-
-		repoRun = parallel.NewRun(1000)
+		run  = parallel.NewRun(1000)
 	)
 
 	go func() {
@@ -504,12 +503,12 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 				pass = append(pass, rev)
 				mut.Unlock()
 			}
-			repoRun.Release()
+			run.Release()
 		}
 	}()
 
 	for _, revs := range revisions {
-		repoRun.Acquire()
+		run.Acquire()
 
 		go func(revs *search.RepositoryRevisions) {
 			var specifiers []search.RevisionSpecifier
@@ -523,7 +522,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 		}(revs)
 	}
 
-	repoRun.Wait()
+	run.Wait()
 	close(res)
 
 	return pass
