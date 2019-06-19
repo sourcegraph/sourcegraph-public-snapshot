@@ -158,10 +158,11 @@ func preSpansToTable(h string) (string, error) {
 		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
 		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(rows)})
 		tr.AppendChild(tdLineNumber)
-
-		codeCell = &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
-		codeCell.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
-		tr.AppendChild(codeCell)
+		codeTd := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tr.AppendChild(codeTd)
+		codeCell = &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: atom.Div.String()}
+		codeTd.AppendChild(codeCell)
+		codeTd.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
 	}
 	newRow()
 	for next != nil {
