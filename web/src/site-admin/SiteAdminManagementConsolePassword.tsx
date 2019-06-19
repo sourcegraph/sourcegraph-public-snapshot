@@ -77,7 +77,7 @@ export class SiteAdminManagementConsolePassword extends React.Component<Props, S
         return (
             <>
                 <div className="card">
-                    <div className="card-header alert-warning">
+                    <div className="card-header alert alert-warning">
                         <KeyVariantIcon /> Critical configuration is set in the{' '}
                         <a href="/help/admin/management_console ">management console</a>.
                     </div>

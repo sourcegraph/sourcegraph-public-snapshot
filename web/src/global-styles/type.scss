@@ -1,93 +1,36 @@
-@import 'bootstrap/scss/type';
-
-// Defined in https://zpl.io/2jv9lx6
-
-$body-color-light: $gray-19;
-$body-color-dark: $white;
-
-.theme-light {
-    --body-color: #{$body-color-light};
-    --body-bg: #fbfdff;
-    --text-muted: #{$color-light-text-2};
-    --link-color: #566e9f;
-    --link-hover-color: #1d2535;
+body {
+    font-family: var(--sans-serif);
 }
 
-.theme-dark {
-    --body-color: #{$body-color-dark};
-    --body-bg: #04070e;
-    --text-muted: #{$color-text-1};
-    --link-color: #a2b0cd;
-    --link-hover-color: #ffffff;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin-top: 0;
+    margin-bottom: #{$spacer * 2};
 }
 
-h1 {
-    font-size: 32px;
-    line-height: 40px;
-    font-weight: 600;
-    margin: 0 0 1rem;
-}
-
-h2 {
-    font-size: 24px;
-    line-height: 32px;
-    font-weight: 600;
-}
-
-h3 {
-    font-size: 16px;
-    line-height: 24px;
-    font-weight: 600;
-}
-
-h4 {
-    font-size: 14px;
-    line-height: 20px;
-    font-weight: 600;
-}
-
-h5 {
-    font-size: 12px;
-    letter-spacing: 1px;
-    font-weight: 500;
-    text-transform: uppercase;
-    margin: 0;
-}
-
-small {
-    font-size: 12px;
-}
-
-// Apply the same focus outline to links as to buttons
 a {
-    &:focus,
-    &.focus {
-        border-radius: $border-radius;
-        outline: 0;
-        box-shadow: $btn-focus-box-shadow;
+    color: var(--link-color);
+
+    &:hover {
+        color: var(--link-hover-color);
     }
-
-    // Disabled comes first so active can properly restyle
-    &.disabled,
-    &:disabled {
-        opacity: $btn-disabled-opacity;
-
-        @include box-shadow(none);
+    &:not(:hover) {
+        text-decoration: none;
     }
+}
 
-    // Opinionated: add "hand" cursor to non-disabled .btn elements
-    &:not(:disabled):not(.disabled) {
-        cursor: pointer;
-    }
+.small {
+    font-size: var(--font-size-sm);
+}
 
-    &:not(:disabled):not(.disabled):active,
-    &:not(:disabled):not(.disabled).active {
-        background-image: none;
+.text-muted {
+    color: var(--text-muted);
+}
 
-        @include box-shadow($btn-active-box-shadow);
-
-        &:focus {
-            @include box-shadow($btn-focus-box-shadow, $btn-active-box-shadow);
-        }
-    }
+.text-monospace {
+    font-family: var(--code-font-family);
 }

@@ -13,7 +13,7 @@ interface Props {
 export const ModalPage: React.FunctionComponent<Props> = ({ icon, className = '', children }) => (
     <div className={`modal-page ${className}`}>
         <div className="card">
-            <div className="modal-page__card-body card-body">
+            <div className="m-4 p-4">
                 {icon && <div className="modal-page__icon">{icon}</div>}
                 {children}
             </div>

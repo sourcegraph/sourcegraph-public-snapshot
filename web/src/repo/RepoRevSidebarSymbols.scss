@@ -14,7 +14,7 @@
             color: $secondary;
             &--active,
             &:hover {
-                background-color: $color-bg-2;
+                background-color: var(--bg-deep);
             }
         }
 
@@ -29,31 +29,6 @@
         &__path {
             &::before {
                 content: ' – ';
-            }
-        }
-
-        &__container-name,
-        &__path {
-            .theme-dark & {
-                color: #566e9f;
-            }
-        }
-    }
-}
-
-.theme-light {
-    .repo-rev-sidebar-symbols {
-        &-node {
-            &__link {
-                color: $color-light-text-2;
-                &--active,
-                &:hover {
-                    background-color: $color-light-bg-3;
-                }
-            }
-
-            &__name {
-                color: $color-light-text-1;
             }
         }
     }

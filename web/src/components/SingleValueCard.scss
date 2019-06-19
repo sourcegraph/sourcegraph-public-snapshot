@@ -1,13 +1,7 @@
 .single-value-card {
-    background-color: $color-bg-2;
+    background-color: var(--bg-deep);
 
     &__value {
         font-size: 3.5em;
-    }
-}
-
-.theme-light {
-    .single-value-card {
-        background-color: $color-light-bg-2;
     }
 }

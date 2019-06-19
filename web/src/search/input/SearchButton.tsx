@@ -44,70 +44,76 @@ export class SearchButton extends React.Component<Props, State> {
                                 </DropdownItem>
                                 <DropdownItem divider={true} />
                                 <DropdownItem header={true}>Finding matches:</DropdownItem>
-                                <ul className="list-unstyled px-2 mb-2">
-                                    <li>
-                                        <span className="text-muted small">Regexp:</span>{' '}
-                                        <code>
-                                            <strong>(read|write)File</strong>
-                                        </code>
-                                    </li>
-                                    <li>
-                                        <span className="text-muted small">Exact:</span>{' '}
-                                        <code>
-                                            "<strong>fs.open(f)</strong>"
-                                        </code>
-                                    </li>
-                                </ul>
-                                <DropdownItem divider={true} />
-                                <DropdownItem header={true}>Common search keywords:</DropdownItem>
-                                <ul className="list-unstyled px-2 mb-2">
-                                    <li>
-                                        <code>
-                                            repo:<strong>my/repo</strong>
-                                        </code>
-                                    </li>
-                                    {window.context.sourcegraphDotComMode && (
+                                <div className="dropdown-item-text">
+                                    <ul className="list-unstyled">
                                         <li>
+                                            <span className="text-muted small">Regexp:</span>{' '}
                                             <code>
-                                                repo:<strong>github.com/myorg/</strong>
+                                                <strong>(read|write)File</strong>
                                             </code>
                                         </li>
-                                    )}
-                                    <li>
-                                        <code>
-                                            file:<strong>my/file</strong>
-                                        </code>
-                                    </li>
-                                    <li>
-                                        <code>
-                                            lang:<strong>javascript</strong>
-                                        </code>
-                                    </li>
-                                </ul>
+                                        <li>
+                                            <span className="text-muted small">Exact:</span>{' '}
+                                            <code>
+                                                "<strong>fs.open(f)</strong>"
+                                            </code>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <DropdownItem divider={true} />
+                                <DropdownItem header={true}>Common search keywords:</DropdownItem>
+                                <div className="dropdown-item-text">
+                                    <ul className="list-unstyled">
+                                        <li>
+                                            <code>
+                                                repo:<strong>my/repo</strong>
+                                            </code>
+                                        </li>
+                                        {window.context.sourcegraphDotComMode && (
+                                            <li>
+                                                <code>
+                                                    repo:<strong>github.com/myorg/</strong>
+                                                </code>
+                                            </li>
+                                        )}
+                                        <li>
+                                            <code>
+                                                file:<strong>my/file</strong>
+                                            </code>
+                                        </li>
+                                        <li>
+                                            <code>
+                                                lang:<strong>javascript</strong>
+                                            </code>
+                                        </li>
+                                    </ul>
+                                </div>
                                 <DropdownItem divider={true} />
                                 <DropdownItem header={true}>Diff/commit search keywords:</DropdownItem>
-                                <ul className="list-unstyled px-2 mb-2">
-                                    <li>
-                                        <code>type:diff</code> <em className="text-muted small">or</em>{' '}
-                                        <code>type:commit</code>
-                                    </li>
-                                    <li>
-                                        <code>
-                                            after:<strong>"2 weeks ago"</strong>
-                                        </code>
-                                    </li>
-                                    <li>
-                                        <code>
-                                            author:<strong>alice@example.com</strong>
-                                        </code>
-                                    </li>
-                                    <li className="text-nowrap">
-                                        <code>
-                                            repo:<strong>r@*refs/heads/</strong>
-                                        </code>{' '}
-                                        <span className="text-muted small">(all branches)</span>
-                                    </li>
-                                </ul>
+                                <div className="dropdown-item-text">
+                                    <ul className="list-unstyled">
+                                        <li>
+                                            <code>type:diff</code> <em className="text-muted small">or</em>{' '}
+                                            <code>type:commit</code>
+                                        </li>
+                                        <li>
+                                            <code>
+                                                after:<strong>"2 weeks ago"</strong>
+                                            </code>
+                                        </li>
+                                        <li>
+                                            <code>
+                                                author:<strong>alice@example.com</strong>
+                                            </code>
+                                        </li>
+                                        <li className="text-nowrap">
+                                            <code>
+                                                repo:<strong>r@*refs/heads/</strong>
+                                            </code>{' '}
+                                            <span className="text-muted small">(all branches)</span>
+                                        </li>
+                                    </ul>
+                                </div>
                                 <DropdownItem divider={true} />
                                 <a
                                     href={`${docsURLPrefix}/user/search/queries`}

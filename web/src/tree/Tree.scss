@@ -22,7 +22,6 @@
     }
 
     &__row {
-        color: #ffffff;
         width: 100%;
         display: table;
 
@@ -40,10 +39,9 @@
         }
 
         &--active {
-            color: #ffffff;
             width: 100%;
             display: table;
-            background-color: #1c7cd6 !important;
+            background-color: #1c7cd6 !important; // TODO!(sqs)
         }
     }
 
@@ -55,14 +53,12 @@
     }
 
     &__row-icon {
-        color: #ffffff !important; // override link color
         // stylelint-disable-next-line declaration-property-unit-whitelist
         width: 1.1em;
     }
 
     &__row-contents {
         display: flex;
-        color: #ffffff;
         align-items: center;
         padding-top: 0.25rem;
         padding-bottom: 0.25rem;
@@ -80,54 +76,6 @@
 
     &__row-label {
         margin-left: 0.25rem;
-        color: #ffffff !important; // override link color
-    }
-}
-
-.theme-light {
-    .tree {
-        &__row {
-            color: inherit;
-
-            &:hover {
-                background-color: $color-light-bg-4;
-                color: inherit;
-            }
-
-            &--selected {
-                background-color: $color-light-bg-3;
-                color: inherit;
-
-                &:hover {
-                    background-color: $color-light-bg-3;
-                }
-            }
-
-            &--active {
-                background-color: $primary;
-                color: $color-light-text-4 !important;
-            }
-        }
-
-        &__row-icon {
-            color: inherit !important; // override link color
-        }
-
-        &__row-label {
-            color: inherit !important; // override link color
-        }
-
-        &__row-contents {
-            color: inherit; // override link color
-
-            &:hover {
-                color: inherit;
-            }
-        }
-
-        a {
-            color: inherit !important; // override link color
-        }
     }
 }
 

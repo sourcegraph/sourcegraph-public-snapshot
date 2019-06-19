@@ -282,6 +282,7 @@ export class QueryInput extends React.Component<Props, State> {
             <div className="query-input2">
                 <input
                     className="form-control query-input2__input rounded-left e2e-query-input"
+                    type="text"
                     value={this.props.value}
                     autoFocus={this.props.autoFocus === true}
                     onChange={this.onInputChange}

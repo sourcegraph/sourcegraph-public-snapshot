@@ -1,0 +1,22 @@
+.input-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    width: 100%;
+
+    > .form-control {
+        flex: 1 1 0;
+    }
+}
+
+.input-group-prepend,
+.input-group-append {
+    display: flex;
+}
+
+.input-group-prepend {
+    margin-right: -$input-border-width;
+}
+.input-group-append {
+    margin-left: -$input-border-width;
+}

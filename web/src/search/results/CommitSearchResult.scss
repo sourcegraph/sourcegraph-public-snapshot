@@ -71,23 +71,3 @@
         }
     }
 }
-
-.theme-light {
-    .commit-search-result {
-        &__item {
-            .file-header {
-                color: inherit;
-                background-color: rgba(242, 244, 248, 0.75);
-
-                td {
-                    border-top: solid 1px rgba(255, 255, 255, 0.05);
-                }
-            }
-
-            .hunk-header {
-                color: inherit;
-                opacity: 0.5;
-            }
-        }
-    }
-}

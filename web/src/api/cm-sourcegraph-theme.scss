@@ -31,7 +31,7 @@
     --theme-color-builtin: #b58900;
 }
 .theme-dark {
-    --theme-bg-plain: #0e121b;
+    --theme-bg-plain: var(--bg-muted);
     --theme-color-plain: #f2f4f8;
     --theme-color-gutter: #31445e;
     --theme-bg-selection: #232d3b;

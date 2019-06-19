@@ -15,7 +15,7 @@
 
         a.anchor {
             opacity: 0;
-            font-size: $font-size-base;
+            font-size: var(--font-size-base);
             margin-left: -1rem;
             padding: 0.125rem;
             &::before {
@@ -45,7 +45,7 @@
 
     code,
     pre {
-        background: $code-bg;
+        background: var(--bg-muted);
     }
 
     pre {

@@ -1,0 +1,113 @@
+.d-flex {
+    display: flex !important;
+}
+
+.d-block {
+    display: block !important;
+}
+
+.flex-column {
+    flex-direction: column !important;
+}
+
+.flex-wrap {
+    flex-wrap: wrap !important;
+}
+
+.flex-wrap-reverse {
+    flex-wrap: wrap-reverse !important;
+}
+
+.flex-1 {
+    flex: 1 1 auto !important;
+}
+
+.flex-0 {
+    flex: 0 0 auto !important;
+}
+
+.align-items-center {
+    align-items: center !important;
+}
+
+.justify-content-between {
+    justify-content: space-between !important;
+}
+
+.w-100 {
+    width: 100% !important;
+}
+
+.position-relative {
+    position: relative !important;
+}
+
+.text-nowrap {
+    white-space: nowrap !important;
+}
+
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.list-unstyled,
+.list-inline {
+    padding-left: 0;
+    list-style-type: none;
+}
+.list-inline-item {
+    display: inline-block;
+    &:not(:last-child) {
+        margin-right: $spacer;
+    }
+}
+
+$spacers: (
+    0: 0,
+    1: $spacer * 0.25,
+    2: $spacer * 0.5,
+    3: $spacer,
+    4: $spacer * 1.5,
+    5: $spacer * 3,
+);
+
+@mixin generate-spacing-classes($class-name-prefix, $css-properties) {
+    @if type-of($css-properties) == 'string' {
+        $css-properties: append((), $css-properties);
+    }
+
+    @each $key, $value in $spacers {
+        .#{$class-name-prefix + '-' + $key} {
+            @each $css-property in $css-properties {
+                #{$css-property}: $value;
+            }
+        }
+    }
+}
+@include generate-spacing-classes(m, margin);
+@include generate-spacing-classes(my, (margin-top, margin-bottom));
+@include generate-spacing-classes(mx, (margin-left, margin-right));
+@include generate-spacing-classes(mt, margin-top);
+@include generate-spacing-classes(mr, margin-right);
+@include generate-spacing-classes(mb, margin-bottom);
+@include generate-spacing-classes(ml, margin-left);
+@include generate-spacing-classes(p, padding);
+@include generate-spacing-classes(py, (padding-top, padding-bottom));
+@include generate-spacing-classes(px, (padding-left, padding-right));
+@include generate-spacing-classes(pt, padding-top);
+@include generate-spacing-classes(pr, padding-right);
+@include generate-spacing-classes(pb, padding-bottom);
+@include generate-spacing-classes(pl, padding-left);
+
+@mixin generate-border-classes($direction-suffix) {
+    .border#{$direction-suffix} {
+        border#{$direction-suffix}: 1px solid var(--border-color);
+    }
+}
+@include generate-border-classes('');
+@include generate-border-classes(-top);
+@include generate-border-classes(-right);
+@include generate-border-classes(-bottom);
+@include generate-border-classes(-left);
