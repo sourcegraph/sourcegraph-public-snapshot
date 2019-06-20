@@ -127,6 +127,19 @@ func TestParseAllowingErrors(t *testing.T) {
 			want: &Query{Expr: nil},
 		},
 		{
+			name: "a",
+			args: args{input: "a"},
+			want: &Query{
+				Input: "a",
+				Expr: []*Expr{
+					{
+						Value:     "a",
+						ValueType: TokenLiteral,
+					},
+				},
+			},
+		},
+		{
 			name: ":=",
 			args: args{input: ":="},
 			want: &Query{
