@@ -642,15 +642,6 @@ func TestValidateRepoHasFileUsage(t *testing.T) {
 		t.Errorf("Expected error but got nil")
 	}
 
-	q, err = query.ParseAndCheck("repohasfile:test type:repo .")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = validateRepoHasFileUsage(q)
-	if err == nil {
-		t.Errorf("Expected error but got nil")
-	}
-
 	q, err = query.ParseAndCheck("repohasfile:test type:path")
 	if err != nil {
 		t.Fatal(err)
@@ -671,6 +662,7 @@ func TestValidateRepoHasFileUsage(t *testing.T) {
 
 	validQueries := []string{
 		"repohasfile:go error",
+		"repohasfile:test type:repo .",
 		"type:repo",
 		"repohasfile",
 		"foo bar type:repo",
