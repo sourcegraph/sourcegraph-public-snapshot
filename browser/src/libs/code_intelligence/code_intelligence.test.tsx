@@ -11,6 +11,7 @@ import { Controller } from '../../../../shared/src/extensions/controller'
 import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
 import { IQuery } from '../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { resetAllMemoizationCaches } from '../../../../shared/src/util/memoizeObservable'
 import { isDefined } from '../../../../shared/src/util/types'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
@@ -83,6 +84,7 @@ describe('code_intelligence', () => {
 
         afterEach(() => {
             RENDER.mockClear()
+            resetAllMemoizationCaches()
             subscriptions.unsubscribe()
             subscriptions = new Subscription()
         })
@@ -203,23 +205,24 @@ describe('code_intelligence', () => {
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    platformContext: {
-                        ...createMockPlatformContext(),
+                    platformContext: createMockPlatformContext({
                         // Simulate an instance with repositoryPathPattern
                         requestGraphQL: mockRequestGraphQL({
                             ...DEFAULT_GRAPHQL_RESPONSES,
-                            ResolveRepo: variables =>
+                            ResolveRepo: variables => {
+                                console.log(`ResolveRepo ${JSON.stringify(variables)}`)
                                 // tslint:disable-next-line: no-object-literal-type-assertion
-                                ({
+                                return {
                                     data: {
                                         repository: {
                                             name: `github/${variables.rawRepoName}`,
                                         },
                                     },
                                     errors: undefined,
-                                } as SuccessGraphQLResult<IQuery>),
+                                } as SuccessGraphQLResult<IQuery>
+                            },
                         }),
-                    },
+                    }),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                     telemetryService: NOOP_TELEMETRY_SERVICE,
                     render: RENDER,
