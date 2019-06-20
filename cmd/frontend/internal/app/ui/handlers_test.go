@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -20,15 +21,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-func TestServeHome(t *testing.T) {
-	check := func(t *testing.T, wantRedirectLocation string) {
+func TestRedirects(t *testing.T) {
+	check := func(t *testing.T, path string, wantStatusCode int, wantRedirectLocation string) {
 		t.Helper()
 
 		rw := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/", nil)
-		_ = serveHome(rw, req)
-		if want := http.StatusTemporaryRedirect; rw.Code != want {
-			t.Errorf("got HTTP response code %d, want %d", rw.Code, want)
+		req, _ := http.NewRequest("GET", path, nil)
+		uirouter.Router.ServeHTTP(rw, req)
+		if rw.Code != wantStatusCode {
+			t.Errorf("got HTTP response code %d, want %d", rw.Code, wantStatusCode)
 		}
 		if got := rw.Header().Get("Location"); got != wantRedirectLocation {
 			t.Errorf("got redirect location %q, want %q", got, wantRedirectLocation)
@@ -39,13 +40,23 @@ func TestServeHome(t *testing.T) {
 		orig := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
-		check(t, "https://about.sourcegraph.com")
+		t.Run("root", func(t *testing.T) {
+			check(t, "/", http.StatusTemporaryRedirect, "https://about.sourcegraph.com")
+		})
+		t.Run("welcome", func(t *testing.T) {
+			check(t, "/welcome", http.StatusMovedPermanently, "https://about.sourcegraph.com/")
+		})
 	})
 	t.Run("non-Sourcegraph.com", func(t *testing.T) {
 		orig := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(false)
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
-		check(t, "/search")
+		t.Run("root", func(t *testing.T) {
+			check(t, "/", http.StatusTemporaryRedirect, "/search")
+		})
+		t.Run("welcome", func(t *testing.T) {
+			check(t, "/welcome", http.StatusMovedPermanently, "https://about.sourcegraph.com/")
+		})
 	})
 }
 

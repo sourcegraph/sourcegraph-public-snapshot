@@ -132,6 +132,8 @@ $progress-height: auto;
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
+$code-bg: var(--body-bg);
+
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
@@ -221,6 +223,14 @@ body,
     flex: 1;
 }
 
+// Our simple popovers only need these styles. We don't want the caret or special font sizes from
+// Bootstrap's popover CSS.
+.popover-inner {
+    background-color: var(--body-bg);
+    border: solid 1px var(--border-color);
+    border-radius: $border-radius;
+}
+
 // Pages
 @import './Layout';
 @import './api/APIConsole';
@@ -236,7 +246,6 @@ body,
 @import './settings/SettingsFile';
 @import './site-admin/SiteInitPage';
 @import './site-admin/SiteAdmin';
-@import './site-admin/SiteAdminOverviewPage';
 @import './tree/Tree';
 @import './nav/GlobalNavbar';
 @import './nav/NavLinks';
@@ -244,20 +253,15 @@ body,
 @import './auth/SignInPage';
 @import './auth/SignUpPage';
 @import './repo/GitRefTag';
-@import './repo/Repository';
 @import './repo/RepoContainer';
 @import './repo/settings/RepoSettingsArea';
 @import './components/completion/CompletionWidgetDropdown';
 @import './components/CopyableText';
-@import './components/ExternalServiceCard';
 @import './components/FilteredConnection';
 @import './components/SaveToolbar';
 @import './components/DecoratedTextLines';
 @import './components/HeroPage';
 @import './components/ModalPage';
-@import './components/MonacoEditor';
-@import './components/PopoverButton';
-@import './components/Overview';
 @import './components/RadioButtons';
 @import './components/Select';
 @import './components/tooltip/Tooltip';
@@ -276,6 +280,4 @@ body,
 @import './components/SearchResultMatch';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
-@import './extensions/shared';
-@import './integrations/explore/IntegrationsExploreSection';
-@import './repo/explore/RepositoriesExploreSection';
+@import '../../shared/src/index';

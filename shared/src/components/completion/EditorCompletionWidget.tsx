@@ -85,7 +85,7 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
             )
             .subscribe(setCompletionListOrError)
         return () => subscription.unsubscribe()
-    }, [editorId])
+    }, [completionItemsService, editorId, editorService.editors])
 
     const onSelectItem = async (item: CompletionItem) => {
         const editor = findEditor(

@@ -9,7 +9,17 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
-## 3.5.0 (unreleased)
+## 3.6.0 (unreleased)
+
+### Added
+
+### Changed
+
+### Fixed
+
+### Removed
+
+## 3.5.0
 
 ### Added
 
@@ -18,6 +28,8 @@ All notable changes to Sourcegraph are documented in this file.
 - A new experimental search filter `repohascommitafter:"30 days ago"` allows users to exclude stale repositories that don't contain commits (to the branch being searched over) past a specified date from their search query.
 - The `authorization` setting in the [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#permissions) enables Sourcegraph to enforce the repository permissions defined in Bitbucket Server.
 - A new, experimental status indicator in the navigation bar allows admins to quickly see whether the configured repositories are up to date or how many are currently being updated in the background. You can enable the status indicator with the following site configuration: `"experimentalFeatures": { "statusIndicator": "enabled" }`.
+- A new search filter `repohasfile` allows users to filter results to just repositories containing a matching file. For example `ubuntu file:Dockerfile repohasfile:\.py$` would find Dockerfiles mentioning Ubuntu in repositories that contain Python files. [#4501](https://github.com/sourcegraph/sourcegraph/pull/4501)
+- Site admins can prevent the icon in the top-left corner of the screen from spinning on hovers by setting `"branding": { "disableSymbolSpin": true }` in their site configuration.
 
 ### Changed
 

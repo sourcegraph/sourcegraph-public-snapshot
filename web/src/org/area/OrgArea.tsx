@@ -167,84 +167,82 @@ export class OrgArea extends React.Component<Props> {
         }
 
         return (
-            <div className="org-area area--vertical">
-                <OrgHeader className="area--vertical__header" {...this.props} {...transferProps} />
-                <div className="org-area__content area--vertical__content">
-                    <div className="org-area__content-inner area--vertical__content-inner">
-                        <ErrorBoundary location={this.props.location}>
-                            <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
-                                <Switch>
-                                    <Route
-                                        path={this.props.match.url}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        exact={true}
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        render={routeComponentProps => (
-                                            <OrgOverviewPage {...routeComponentProps} {...transferProps} />
-                                        )}
-                                    />
-                                    <Route
-                                        path={`${this.props.match.url}/members`}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        exact={true}
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        render={routeComponentProps => (
-                                            <OrgMembersPage {...routeComponentProps} {...transferProps} />
-                                        )}
-                                    />
-                                    <Route
-                                        path={`${this.props.match.url}/searches`}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        exact={true}
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        render={routeComponentProps => (
-                                            <OrgSavedSearchListPage {...routeComponentProps} {...transferProps} />
-                                        )}
-                                    />
-                                    <Route
-                                        path={`${this.props.match.url}/searches/add`}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        exact={true}
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        render={routeComponentProps => (
-                                            <OrgSavedSearchesCreateForm {...routeComponentProps} {...transferProps} />
-                                        )}
-                                    />
-                                    <Route
-                                        path={`${this.props.match.url}/searches/:id`}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        exact={true}
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        render={routeComponentProps => (
-                                            <OrgSavedSearchesUpdateForm {...routeComponentProps} {...transferProps} />
-                                        )}
-                                    />
-                                    <Route
-                                        path={`${this.props.match.url}/settings`}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        render={routeComponentProps => (
-                                            <OrgSettingsArea
-                                                {...routeComponentProps}
-                                                {...transferProps}
-                                                isLightTheme={this.props.isLightTheme}
-                                            />
-                                        )}
-                                    />
+            <div className="org-area w-100">
+                <OrgHeader {...this.props} {...transferProps} className="border-bottom mt-4" />
+                <div className="container mt-3">
+                    <ErrorBoundary location={this.props.location}>
+                        <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                            <Switch>
+                                <Route
+                                    path={this.props.match.url}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={true}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={routeComponentProps => (
+                                        <OrgOverviewPage {...routeComponentProps} {...transferProps} />
+                                    )}
+                                />
+                                <Route
+                                    path={`${this.props.match.url}/members`}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={true}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={routeComponentProps => (
+                                        <OrgMembersPage {...routeComponentProps} {...transferProps} />
+                                    )}
+                                />
+                                <Route
+                                    path={`${this.props.match.url}/searches`}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={true}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={routeComponentProps => (
+                                        <OrgSavedSearchListPage {...routeComponentProps} {...transferProps} />
+                                    )}
+                                />
+                                <Route
+                                    path={`${this.props.match.url}/searches/add`}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={true}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={routeComponentProps => (
+                                        <OrgSavedSearchesCreateForm {...routeComponentProps} {...transferProps} />
+                                    )}
+                                />
+                                <Route
+                                    path={`${this.props.match.url}/searches/:id`}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={true}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={routeComponentProps => (
+                                        <OrgSavedSearchesUpdateForm {...routeComponentProps} {...transferProps} />
+                                    )}
+                                />
+                                <Route
+                                    path={`${this.props.match.url}/settings`}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={routeComponentProps => (
+                                        <OrgSettingsArea
+                                            {...routeComponentProps}
+                                            {...transferProps}
+                                            isLightTheme={this.props.isLightTheme}
+                                        />
+                                    )}
+                                />
 
-                                    {/* Redirect from previous /users/:username/account -> /users/:username/settings/profile. */}
-                                    <Route
-                                        path={`${this.props.match.url}/account`}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        render={() => <Redirect to={`${this.props.match.url}/settings/profile`} />}
-                                    />
+                                {/* Redirect from previous /users/:username/account -> /users/:username/settings/profile. */}
+                                <Route
+                                    path={`${this.props.match.url}/account`}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={() => <Redirect to={`${this.props.match.url}/settings/profile`} />}
+                                />
 
-                                    <Route key="hardcoded-key" component={NotFoundPage} />
-                                </Switch>
-                            </React.Suspense>
-                        </ErrorBoundary>
-                    </div>
+                                <Route key="hardcoded-key" component={NotFoundPage} />
+                            </Switch>
+                        </React.Suspense>
+                    </ErrorBoundary>
                 </div>
             </div>
         )

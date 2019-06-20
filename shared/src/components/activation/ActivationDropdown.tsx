@@ -3,7 +3,7 @@ import H from 'history'
 import React from 'react'
 import CircularProgressbar from 'react-circular-progressbar'
 import Confetti from 'react-dom-confetti'
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/operators'
 import { Activation, percentageDone } from './Activation'
@@ -116,14 +116,14 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                         />
                     </span>
                 </DropdownToggle>
-                <DropdownMenu className={'activation-dropdown'} right={true}>
-                    <div className="activation-dropdown-background" />
-                    <div className="activation-dropdown-header">
-                        <h3 className="activation-dropdown-header__title">Get started with Sourcegraph</h3>
-                        <p className="activation-dropdown-header__copy">
+                <DropdownMenu className="activation-dropdown" right={true}>
+                    <div className="dropdown-item-text activation-dropdown-header">
+                        <h3 className="mb-1">Get started with Sourcegraph</h3>
+                        <p className="mb-0">
                             Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.
                         </p>
                     </div>
+                    <DropdownItem divider={true} />
                     {this.props.activation && this.props.activation.completed ? (
                         this.props.activation.steps.map(step => (
                             <div

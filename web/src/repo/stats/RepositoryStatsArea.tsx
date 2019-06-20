@@ -50,33 +50,25 @@ export class RepositoryStatsArea extends React.Component<Props> {
         }
 
         return (
-            <div className="repository-stats-area area--vertical">
+            <div className="repository-stats-area container mt-3">
                 <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="stats">Contributors</RepoHeaderBreadcrumbNavItem>}
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                {showNavbar && (
-                    <div className="area--vertical__navbar">
-                        <RepositoryStatsNavbar className="area--vertical__navbar-inner" repo={this.props.repo.name} />
-                    </div>
-                )}
-                <div className="area--vertical__content">
-                    <div className="area--vertical__content-inner">
-                        <Switch>
-                            <Route
-                                path={`${this.props.match.url}/contributors`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={true}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <RepositoryStatsContributorsPage {...routeComponentProps} {...transferProps} />
-                                )}
-                            />
-                            <Route key="hardcoded-key" component={NotFoundPage} />
-                        </Switch>
-                    </div>
-                </div>
+                {showNavbar && <RepositoryStatsNavbar className="mb-3" repo={this.props.repo.name} />}
+                <Switch>
+                    <Route
+                        path={`${this.props.match.url}/contributors`}
+                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                        exact={true}
+                        // tslint:disable-next-line:jsx-no-lambda
+                        render={routeComponentProps => (
+                            <RepositoryStatsContributorsPage {...routeComponentProps} {...transferProps} />
+                        )}
+                    />
+                    <Route key="hardcoded-key" component={NotFoundPage} />
+                </Switch>
             </div>
         )
     }

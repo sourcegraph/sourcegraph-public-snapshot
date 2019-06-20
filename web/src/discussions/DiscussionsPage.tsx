@@ -38,23 +38,21 @@ export class DiscussionsPage extends React.PureComponent<Props, State> {
         }
 
         return (
-            <div className="discussions-page area">
-                <div className="area__content">
-                    <PageTitle title="Discussions" />
-                    <h2>All discussions</h2>
-                    <DiscussionsList
-                        withRepo={true}
-                        repoID={undefined}
-                        rev={undefined}
-                        filePath={'/**'}
-                        history={this.props.history}
-                        location={this.props.location}
-                        noun="discussion"
-                        pluralNoun="discussions"
-                        defaultFirst={6}
-                        compact={false}
-                    />
-                </div>
+            <div className="discussions-page container mt-3">
+                <PageTitle title="Discussions" />
+                <h2>All discussions</h2>
+                <DiscussionsList
+                    withRepo={true}
+                    repoID={undefined}
+                    rev={undefined}
+                    filePath={'/**'}
+                    history={this.props.history}
+                    location={this.props.location}
+                    noun="discussion"
+                    pluralNoun="discussions"
+                    defaultFirst={6}
+                    compact={false}
+                />
             </div>
         )
     }

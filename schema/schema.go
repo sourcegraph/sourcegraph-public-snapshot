@@ -157,9 +157,10 @@ type BrandAssets struct {
 //
 // Only available in Sourcegraph Enterprise.
 type Branding struct {
-	Dark    *BrandAssets `json:"dark,omitempty"`
-	Favicon string       `json:"favicon,omitempty"`
-	Light   *BrandAssets `json:"light,omitempty"`
+	Dark              *BrandAssets `json:"dark,omitempty"`
+	DisableSymbolSpin bool         `json:"disableSymbolSpin,omitempty"`
+	Favicon           string       `json:"favicon,omitempty"`
+	Light             *BrandAssets `json:"light,omitempty"`
 }
 
 // BuiltinAuthProvider description: Configures the builtin username-password authentication provider.
@@ -465,15 +466,16 @@ type Sentry struct {
 
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
-	AlertsShowPatchUpdates bool                      `json:"alerts.showPatchUpdates,omitempty"`
-	Extensions             map[string]bool           `json:"extensions,omitempty"`
-	Motd                   []string                  `json:"motd,omitempty"`
-	Notices                []*Notice                 `json:"notices,omitempty"`
-	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
-	SearchContextLines     int                       `json:"search.contextLines,omitempty"`
-	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`
-	SearchSavedQueries     []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
-	SearchScopes           []*SearchScope            `json:"search.scopes,omitempty"`
+	AlertsShowPatchUpdates    bool                      `json:"alerts.showPatchUpdates,omitempty"`
+	CodeHostUseNativeTooltips bool                      `json:"codeHost.useNativeTooltips,omitempty"`
+	Extensions                map[string]bool           `json:"extensions,omitempty"`
+	Motd                      []string                  `json:"motd,omitempty"`
+	Notices                   []*Notice                 `json:"notices,omitempty"`
+	NotificationsSlack        *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
+	SearchContextLines        int                       `json:"search.contextLines,omitempty"`
+	SearchRepositoryGroups    map[string][]string       `json:"search.repositoryGroups,omitempty"`
+	SearchSavedQueries        []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
+	SearchScopes              []*SearchScope            `json:"search.scopes,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.

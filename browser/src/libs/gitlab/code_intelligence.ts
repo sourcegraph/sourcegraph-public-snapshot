@@ -89,7 +89,8 @@ const codeViewResolver: ViewResolver<CodeView> = {
 }
 
 export const gitlabCodeHost: CodeHost = {
-    name: 'gitlab',
+    type: 'gitlab',
+    name: 'GitLab',
     check: checkIsGitlab,
     codeViewResolvers: [codeViewResolver],
     adjustOverlayPosition,
@@ -104,6 +105,7 @@ export const gitlabCodeHost: CodeHost = {
         inputClassName: 'dropdown-input-field',
         resultsContainerClassName: 'dropdown-content',
         selectedActionItemClassName: 'is-focused',
+        noResultsClassName: 'px-3',
     },
     codeViewToolbarClassProps: {
         className: 'code-view-toolbar--gitlab',

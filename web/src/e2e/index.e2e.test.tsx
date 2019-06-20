@@ -425,12 +425,10 @@ describe('e2e test suite', function(this: any): void {
 
             test('resolves default branch when unspecified', async () => {
                 await driver.page.goto(baseURL + '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go')
-                await driver.page.waitForSelector('.repo-header__rev', { visible: true })
+                await driver.page.waitForSelector('#repo-rev-popover', { visible: true })
                 await retry(async () => {
                     expect(
-                        await driver.page.evaluate(() =>
-                            document.querySelector('.repo-header__rev')!.textContent!.trim()
-                        )
+                        await driver.page.evaluate(() => document.querySelector('.e2e-revision')!.textContent!.trim())
                     ).toEqual('master')
                 })
                 // Verify file contents are loaded.
@@ -440,8 +438,8 @@ describe('e2e test suite', function(this: any): void {
             test('updates rev with switcher', async () => {
                 await driver.page.goto(baseURL + '/github.com/sourcegraph/checkup/-/blob/s3.go')
                 // Open rev switcher
-                await driver.page.waitForSelector('.repo-header__rev', { visible: true })
-                await driver.page.click('.repo-header__rev')
+                await driver.page.waitForSelector('#repo-rev-popover', { visible: true })
+                await driver.page.click('#repo-rev-popover')
                 // Click "Tags" tab
                 await driver.page.click('.revisions-popover .tab-bar__tab:nth-child(2)')
                 await driver.page.waitForSelector('a.git-ref-node[href*="0.1.0"]', { visible: true })

@@ -10,7 +10,17 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import * as React from 'react'
 import { render as reactDOMRender } from 'react-dom'
-import { animationFrameScheduler, EMPTY, from, Observable, of, Subject, Subscription, Unsubscribable } from 'rxjs'
+import {
+    animationFrameScheduler,
+    combineLatest,
+    EMPTY,
+    from,
+    Observable,
+    of,
+    Subject,
+    Subscription,
+    Unsubscribable,
+} from 'rxjs'
 import {
     catchError,
     concatAll,
@@ -28,14 +38,22 @@ import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { PartialCodeEditor } from '../../../../shared/src/api/client/context/context'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
 import { CodeEditorData } from '../../../../shared/src/api/client/services/editorService'
-import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
-import { CommandListClassProps } from '../../../../shared/src/commandPalette/CommandList'
+import {
+    CommandListClassProps,
+    CommandListPopoverButtonClassProps,
+} from '../../../../shared/src/commandPalette/CommandList'
 import { CompletionWidgetClassProps } from '../../../../shared/src/components/completion/CompletionWidget'
 import { ApplyLinkPreviewOptions } from '../../../../shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '../../../../shared/src/hover/actions'
-import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '../../../../shared/src/hover/HoverOverlay'
+import {
+    HoverAlert,
+    HoverContext,
+    HoverData,
+    HoverOverlay,
+    HoverOverlayClassProps,
+} from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
@@ -67,6 +85,13 @@ import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
+import { ExtensionHoverAlertType, getActiveHoverAlerts, onHoverAlertDismissed } from './hover_alerts'
+import {
+    handleNativeTooltips,
+    NativeTooltip,
+    nativeTooltipsEnabledFromSettings,
+    registerNativeTooltipContributions,
+} from './native_tooltips'
 import { handleTextFields, TextField } from './text_fields'
 import { ViewResolver } from './views'
 
@@ -95,10 +120,18 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
  */
 export type CodeHostContext = RepoSpec & Partial<RevSpec> & { privateRepository: boolean }
 
+type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'gitlab'
+
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {
     /**
-     * The name of the code host. This will be added as a className to the overlay mount.
+     * The type of the code host. This will be added as a className to the overlay mount.
+     * Use {@link CodeHost#name} if you need a human-readable name for the code host to display in the UI.
+     */
+    type: CodeHostType
+
+    /**
+     * A human-readable name for the code host, to be displayed in the UI.
      */
     name: string
 
@@ -146,6 +179,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     textFieldResolvers?: ViewResolver<TextField>[]
 
     /**
+     * Resolves {@link NativeTooltip}s from the DOM.
+     */
+    nativeTooltipResolvers?: ViewResolver<NativeTooltip>[]
+
+    /**
      * Adjust the position of the hover overlay. Useful for fixed headers or other
      * elements that throw off the position of the tooltip within the relative
      * element.
@@ -170,7 +208,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     /**
      * CSS classes for the command palette to customize styling
      */
-    commandPaletteClassProps?: CommandListClassProps
+    commandPaletteClassProps?: CommandListPopoverButtonClassProps & CommandListClassProps
 
     /**
      * CSS classes for the code view toolbar to customize styling
@@ -227,8 +265,10 @@ export interface FileInfo {
     baseRev?: string
 }
 
-interface CodeIntelligenceProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL'>,
+export interface CodeIntelligenceProps
+    extends PlatformContextProps<
+            'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings'
+        >,
         TelemetryProps {
     codeHost: CodeHost
     extensionsController: Controller
@@ -261,10 +301,16 @@ export function initCodeIntelligence({
     extensionsController,
     render,
     telemetryService,
+    hoverAlerts,
 }: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
     render: typeof reactDOMRender
+    hoverAlerts: Observable<HoverAlert<ExtensionHoverAlertType>>[]
 }): {
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    hoverifier: Hoverifier<
+        RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
+        HoverData<ExtensionHoverAlertType>,
+        ActionItemAction
+    >
     subscription: Unsubscribable
 } {
     const subscription = new Subscription()
@@ -288,23 +334,36 @@ export function initCodeIntelligence({
     )
 
     // Code views come and go, but there is always a single hoverifier on the page
-    const hoverifier = createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>(
-        {
-            closeButtonClicks,
-            hoverOverlayElements,
-            hoverOverlayRerenders: containerComponentUpdates.pipe(
-                withLatestFrom(hoverOverlayElements),
-                map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
-                filter(propertyIsDefined('hoverOverlayElement'))
+    const hoverifier = createHoverifier<
+        RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
+        HoverData<ExtensionHoverAlertType>,
+        ActionItemAction
+    >({
+        closeButtonClicks,
+        hoverOverlayElements,
+        hoverOverlayRerenders: containerComponentUpdates.pipe(
+            withLatestFrom(hoverOverlayElements),
+            map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
+            filter(propertyIsDefined('hoverOverlayElement'))
+        ),
+        getHover: ({ line, character, part, ...rest }) =>
+            combineLatest([
+                getHover({ ...rest, position: { line, character } }),
+                getActiveHoverAlerts(hoverAlerts),
+            ]).pipe(
+                map(([hoverMerged, alerts]): HoverData<ExtensionHoverAlertType> | null =>
+                    hoverMerged ? { ...hoverMerged, alerts } : null
+                )
             ),
-            getHover: ({ line, character, part, ...rest }) => getHover({ ...rest, position: { line, character } }),
-            getActions: context => getHoverActions({ extensionsController, platformContext }, context),
-            pinningEnabled: true,
-            tokenize: codeHost.codeViewsRequireTokenization,
-        }
-    )
+        getActions: context => getHoverActions({ extensionsController, platformContext }, context),
+        pinningEnabled: true,
+        tokenize: codeHost.codeViewsRequireTokenization,
+    })
 
-    class HoverOverlayContainer extends React.Component<{}, HoverState<HoverContext, HoverMerged, ActionItemAction>> {
+    class HoverOverlayContainer extends React.Component<
+        {},
+        HoverState<HoverContext, HoverData<ExtensionHoverAlertType>, ActionItemAction>
+    > {
         private subscription = new Subscription()
         constructor(props: {}) {
             super(props)
@@ -336,10 +395,15 @@ export function initCodeIntelligence({
                     platformContext={platformContext}
                     location={H.createLocation(window.location)}
                     onCloseButtonClick={nextCloseButtonClick}
+                    onAlertDismissed={onHoverAlertDismissed}
                 />
             ) : null
         }
-        private getHoverOverlayProps(): HoverState<HoverContext, HoverMerged, ActionItemAction>['hoverOverlayProps'] {
+        private getHoverOverlayProps(): HoverState<
+            HoverContext,
+            HoverData<ExtensionHoverAlertType>,
+            ActionItemAction
+        >['hoverOverlayProps'] {
             if (!this.state.hoverOverlayProps) {
                 return undefined
             }
@@ -354,7 +418,7 @@ export function initCodeIntelligence({
 
     // This renders to document.body, which we can assume is never removed,
     // so we don't need to subscribe to mutations.
-    const overlayMount = createOverlayMount(codeHost.name)
+    const overlayMount = createOverlayMount(codeHost.type)
     render(<HoverOverlayContainer />, overlayMount)
 
     return { hoverifier, subscription }
@@ -393,12 +457,26 @@ export function handleCodeHost({
         filter(isInstanceOf(HTMLElement))
     )
 
+    const nativeTooltipsEnabled = codeHost.nativeTooltipResolvers
+        ? nativeTooltipsEnabledFromSettings(platformContext.settings)
+        : of(false)
+
+    const hoverAlerts: Observable<HoverAlert<ExtensionHoverAlertType>>[] = []
+
+    if (codeHost.nativeTooltipResolvers) {
+        const { subscription, nativeTooltipsAlert } = handleNativeTooltips(mutations, nativeTooltipsEnabled, codeHost)
+        subscriptions.add(subscription)
+        hoverAlerts.push(nativeTooltipsAlert)
+        subscriptions.add(registerNativeTooltipContributions(extensionsController))
+    }
+
     const { hoverifier, subscription } = initCodeIntelligence({
         codeHost,
         extensionsController,
         platformContext,
         telemetryService,
         render,
+        hoverAlerts,
     })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
@@ -668,19 +746,26 @@ export function handleCodeHost({
                 rev: part === 'base' ? fileInfo.baseRev || fileInfo.baseCommitID! : fileInfo.rev || fileInfo.commitID,
             })
             const adjustPosition = getPositionAdjuster && getPositionAdjuster(platformContext.requestGraphQL)
+            let hoverSubscription = new Subscription()
             codeViewEvent.subscriptions.add(
-                hoverifier.hoverify({
-                    dom: domFunctions,
-                    positionEvents: of(element).pipe(
-                        findPositionsFromEvents({
-                            domFunctions,
-                            tokenize: codeHost.codeViewsRequireTokenization !== false,
+                nativeTooltipsEnabled.subscribe(useNativeTooltips => {
+                    hoverSubscription.unsubscribe()
+                    if (!useNativeTooltips) {
+                        hoverSubscription = hoverifier.hoverify({
+                            dom: domFunctions,
+                            positionEvents: of(element).pipe(
+                                findPositionsFromEvents({
+                                    domFunctions,
+                                    tokenize: codeHost.codeViewsRequireTokenization !== false,
+                                })
+                            ),
+                            resolveContext,
+                            adjustPosition,
                         })
-                    ),
-                    resolveContext,
-                    adjustPosition,
+                    }
                 })
             )
+            codeViewEvent.subscriptions.add(hoverSubscription)
 
             element.classList.add('sg-mounted')
 

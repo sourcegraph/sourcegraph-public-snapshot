@@ -11,7 +11,7 @@ interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {}
  * The user overview page.
  */
 export const UserOverviewPage: React.FunctionComponent<Props> = props => {
-    useEffect(() => eventLogger.logViewEvent('UserOverview'))
+    useEffect(() => eventLogger.logViewEvent('UserOverview'), [])
 
     return (
         <div className="user-page user-overview-page">

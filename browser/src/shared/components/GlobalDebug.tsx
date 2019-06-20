@@ -26,7 +26,6 @@ export const GlobalDebug: React.FunctionComponent<Props> = props => (
             <div className="nav-item">
                 <ShortcutProvider>
                     <ExtensionStatusPopover
-                        location={props.location}
                         extensionsController={props.extensionsController}
                         link={makeExtensionLink(props.sourcegraphURL)}
                         platformContext={props.platformContext}

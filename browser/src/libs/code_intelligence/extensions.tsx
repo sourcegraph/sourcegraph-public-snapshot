@@ -55,13 +55,17 @@ export const renderCommandPalette = ({
     history,
     render,
     ...props
-}: TelemetryProps & InjectProps & Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName'>) => (
+}: TelemetryProps &
+    InjectProps &
+    Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName' | 'popoverInnerClassName'>) => (
     mount: HTMLElement
 ): void => {
     render(
         <ShortcutProvider>
             <CommandListPopoverButton
                 {...props}
+                popoverClassName={`command-list-popover ${props.popoverClassName}`}
+                popoverInnerClassName={props.popoverInnerClassName}
                 menu={ContributableMenu.CommandPalette}
                 extensionsController={extensionsController}
                 location={history.location}

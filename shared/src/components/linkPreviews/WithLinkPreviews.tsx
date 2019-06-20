@@ -20,22 +20,30 @@ interface Props extends ExtensionsControllerProps, ApplyLinkPreviewOptions {
  * Renders HTML in a component with link previews applied from providers registered with
  * {@link sourcegraph.content.registerLinkPreviewProvider}.
  */
-export const WithLinkPreviews: React.FunctionComponent<Props> = props => {
-    const [html, setHTML] = useState<string>(props.dangerousInnerHTML)
+export const WithLinkPreviews: React.FunctionComponent<Props> = ({
+    dangerousInnerHTML,
+    children,
+    extensionsController,
+    linkPreviewContentClass,
+    setElementTooltip,
+}) => {
+    const [html, setHTML] = useState<string>(dangerousInnerHTML)
     useEffect(() => {
         const container = document.createElement('div')
-        container.innerHTML = props.dangerousInnerHTML
-        setHTML(props.dangerousInnerHTML)
+        container.innerHTML = dangerousInnerHTML
+        setHTML(dangerousInnerHTML)
 
         const subscriptions = new Subscription()
         for (const link of container.querySelectorAll<HTMLAnchorElement>('a[href]')) {
-            props.extensionsController.services.linkPreviews.provideLinkPreview(link.href).subscribe(linkPreview => {
-                applyLinkPreview(props, link, linkPreview)
-                setHTML(container.innerHTML)
-            })
+            subscriptions.add(
+                extensionsController.services.linkPreviews.provideLinkPreview(link.href).subscribe(linkPreview => {
+                    applyLinkPreview({ setElementTooltip, linkPreviewContentClass }, link, linkPreview)
+                    setHTML(container.innerHTML)
+                })
+            )
         }
         return () => subscriptions.unsubscribe()
-    }, [props.dangerousInnerHTML, props.setElementTooltip, props.linkPreviewContentClass])
+    }, [dangerousInnerHTML, setElementTooltip, linkPreviewContentClass, extensionsController.services.linkPreviews])
 
-    return props.children({ dangerousInnerHTML: html })
+    return children({ dangerousInnerHTML: html })
 }

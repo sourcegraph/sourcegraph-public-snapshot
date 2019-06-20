@@ -359,10 +359,23 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         onRef={this.nextVirtualListContainerElement}
                                     />
 
-                                    {/* Show more button */}
-                                    {results.limitHit && results.results.length === this.state.resultsShown && (
+                                    {/*
+                                        Show more button
+
+                                        We only show this button at the bottom of the page when the
+                                        user has scrolled completely to the bottom of the virtual
+                                        list (i.e. when resultsShown is results.length).
+
+                                        Note however that when the bottom is hit, this.onBottomHit
+                                        is called to asynchronously update resultsShown to add 10
+                                        which means there is a race condition in which e.g.
+                                        results.length == 30 && resultsShown == 40 so we use >=
+                                        comparison below.
+                                    */}
+                                    {results.limitHit && this.state.resultsShown >= results.results.length && (
                                         <button
                                             className="btn btn-secondary btn-block"
+                                            data-testid="search-show-more-button"
                                             onClick={this.props.onShowMoreResultsClick}
                                         >
                                             Show more
@@ -422,8 +435,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                   scalable Kubernetes cluster deployment option.
                                                               </>,
                                                               window.context.likelyDockerOnMac
-                                                                  ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS'
-                                                                  : 'Run Sourcegraph on a server with more CPU and memory, or faster disk IO',
+                                                                  ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS.'
+                                                                  : 'Run Sourcegraph on a server with more CPU and memory, or faster disk IO.',
                                                           ]
                                                         : []),
                                                 ])}

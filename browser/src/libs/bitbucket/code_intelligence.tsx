@@ -189,12 +189,22 @@ export const checkIsBitbucket = (): boolean =>
     !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
 
 export const bitbucketServerCodeHost: CodeHost = {
-    name: 'bitbucket-server',
+    type: 'bitbucket-server',
+    name: 'Bitbucket Server',
     check: checkIsBitbucket,
     codeViewResolvers: [codeViewResolver],
     getCommandPaletteMount,
     commandPaletteClassProps: {
-        popoverClassName: 'searchable-selector command-palette-popover--bitbucket-server',
+        buttonClassName:
+            'aui-dropdown2-trigger aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left',
+        buttonElement: 'a',
+        buttonOpenClassName: 'aui-dropdown2-active active aui-alignment-enabled',
+        showCaret: false,
+        popoverClassName:
+            'command-palette-popover--bitbucket-server aui-dropdown2 aui-style-default aui-layer aui-dropdown2-in-header aui-alignment-element aui-alignment-side-bottom aui-alignment-snap-left aui-alignment-enabled aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left',
+        popoverInnerClassName: 'aui-dropdown2-section',
+        formClassName: 'aui',
+        inputClassName: 'text',
         resultsContainerClassName: 'results',
         listClassName: 'results-list',
         listItemClassName: 'result',

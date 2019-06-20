@@ -70,7 +70,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                 style={{ height: `${this.props.height}px`, position: 'relative' }}
                 ref={this.setRef}
                 id={this.props.id}
-                className="monaco-editor-container"
+                className="border"
             />
         )
     }
