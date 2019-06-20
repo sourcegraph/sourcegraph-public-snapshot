@@ -80,6 +80,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        const { branding } = window.context
         let logoSrc: string
         const showFullLogo = this.props.location.pathname === '/welcome'
         if (showFullLogo) {
@@ -88,7 +89,6 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                 : '/.assets/img/sourcegraph-head-logo.svg'
         } else {
             logoSrc = '/.assets/img/sourcegraph-mark.svg'
-            const { branding } = window.context
             if (branding) {
                 if (this.props.isLightTheme) {
                     if (branding.light && branding.light.symbol) {
@@ -100,8 +100,14 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
             }
         }
 
+        const animated = !branding || (branding && !branding.disableSymbolSpin)
         const logo = (
-            <img className={`global-navbar__logo ${showFullLogo ? 'global-navbar__logo--full' : ''}`} src={logoSrc} />
+            <img
+                className={`global-navbar__logo ${showFullLogo ? 'global-navbar__logo--full' : ''} ${
+                    animated ? 'global-navbar__logo--animated' : ''
+                }`}
+                src={logoSrc}
+            />
         )
 
         return (

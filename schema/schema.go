@@ -157,9 +157,10 @@ type BrandAssets struct {
 //
 // Only available in Sourcegraph Enterprise.
 type Branding struct {
-	Dark    *BrandAssets `json:"dark,omitempty"`
-	Favicon string       `json:"favicon,omitempty"`
-	Light   *BrandAssets `json:"light,omitempty"`
+	Dark              *BrandAssets `json:"dark,omitempty"`
+	DisableSymbolSpin bool         `json:"disableSymbolSpin,omitempty"`
+	Favicon           string       `json:"favicon,omitempty"`
+	Light             *BrandAssets `json:"light,omitempty"`
 }
 
 // BuiltinAuthProvider description: Configures the builtin username-password authentication provider.
