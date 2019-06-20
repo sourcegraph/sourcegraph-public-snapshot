@@ -643,6 +643,7 @@ func TestValidateRepoHasFileUsage(t *testing.T) {
 	}
 
 	validQueries := []string{
+		"repohasfile:go",
 		"repohasfile:go error",
 		"repohasfile:test type:repo .",
 		"type:repo",
