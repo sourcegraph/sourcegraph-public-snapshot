@@ -48,7 +48,7 @@ func Test_proposedQuotedQueries(t *testing.T) {
 			want: []*searchQueryDescription{
 				{
 					description: "quote just the errored parts",
-					query:       `r:hammer ""[s]++"`,
+					query:       `r:hammer "[s]++"`,
 				},
 				{
 					description: "quote the whole thing",
