@@ -404,7 +404,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
                             consumerKey: '<consumer key>',
                             signingKey: '<signing key>',
                         },
-                        ttl: '30m',
+                        ttl: '3h',
                     }
                     const comment = `// Follow setup instructions in https://docs.sourcegraph.com/admin/repo/permissions#bitbucket_server`
                     const edit = editWithComment(config, ['authorization'], value, comment)
