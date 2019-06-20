@@ -4,6 +4,7 @@ import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, from, NEVER, Observable, of, Subject, Subscription, throwError } from 'rxjs'
 import { filter, skip, switchMap, take } from 'rxjs/operators'
+import * as sinon from 'sinon'
 import { Services } from '../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../shared/src/extensions/controller'
@@ -659,6 +660,182 @@ describe('code_intelligence', () => {
                 .toPromise()
             expect(editors).toEqual([])
             expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(false)
+        })
+
+        test('Hoverifies a view if the code host has no nativeTooltipResolvers', async () => {
+            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const codeView = createTestElement()
+            codeView.id = 'code'
+            const codeElement = document.createElement('span')
+            codeElement.innerText = 'alert(1)'
+            codeView.appendChild(codeElement)
+            const dom = {
+                getCodeElementFromTarget: sinon.spy(() => codeElement),
+                getCodeElementFromLineNumber: sinon.spy(() => codeElement),
+                getLineElementFromLineNumber: sinon.spy(() => codeElement),
+                getLineNumberFromCodeElement: sinon.spy(() => 1),
+            }
+            subscriptions.add(
+                handleCodeHost({
+                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    codeHost: {
+                        type: 'github',
+                        name: 'GitHub',
+                        check: () => true,
+                        codeViewResolvers: [
+                            toCodeViewResolver('#code', {
+                                dom,
+                                resolveFileInfo: codeView =>
+                                    of({
+                                        repoName: 'foo',
+                                        filePath: '/bar.ts',
+                                        commitID: '1',
+                                    }),
+                            }),
+                        ],
+                    },
+                    extensionsController: createMockController(services),
+                    showGlobalDebug: true,
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
+                })
+            )
+            const editors = await from(services.editor.editors)
+                .pipe(
+                    skip(1),
+                    take(1)
+                )
+                .toPromise()
+            expect(editors.length).toEqual(1)
+            codeView.dispatchEvent(new MouseEvent('mouseover'))
+            sinon.assert.called(dom.getCodeElementFromTarget)
+        })
+
+        test('Does not hoverify a view if the code host has nativeTooltipResolvers and they are enabled from settings', async () => {
+            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const codeView = createTestElement()
+            codeView.id = 'code'
+            const codeElement = document.createElement('span')
+            codeElement.innerText = 'alert(1)'
+            codeView.appendChild(codeElement)
+            const dom = {
+                getCodeElementFromTarget: sinon.spy(() => codeElement),
+                getCodeElementFromLineNumber: sinon.spy(() => codeElement),
+                getLineElementFromLineNumber: sinon.spy(() => codeElement),
+                getLineNumberFromCodeElement: sinon.spy(() => 1),
+            }
+            subscriptions.add(
+                handleCodeHost({
+                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    codeHost: {
+                        type: 'github',
+                        name: 'GitHub',
+                        check: () => true,
+                        nativeTooltipResolvers: [{ selector: '.native', resolveView: element => ({ element }) }],
+                        codeViewResolvers: [
+                            toCodeViewResolver('#code', {
+                                dom,
+                                resolveFileInfo: codeView =>
+                                    of({
+                                        repoName: 'foo',
+                                        filePath: '/bar.ts',
+                                        commitID: '1',
+                                    }),
+                            }),
+                        ],
+                    },
+                    extensionsController: createMockController(services),
+                    showGlobalDebug: true,
+                    platformContext: {
+                        ...createMockPlatformContext(),
+                        settings: of({
+                            subjects: [],
+                            final: {
+                                extensions: {},
+                                'codeHost.useNativeTooltips': true,
+                            },
+                        }),
+                    },
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
+                })
+            )
+            const editors = await from(services.editor.editors)
+                .pipe(
+                    skip(1),
+                    take(1)
+                )
+                .toPromise()
+            expect(editors.length).toEqual(1)
+            codeView.dispatchEvent(new MouseEvent('mouseover'))
+            sinon.assert.notCalled(dom.getCodeElementFromTarget)
+        })
+
+        test('Hides native tooltips if they are disabled from settings', async () => {
+            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const codeView = createTestElement()
+            codeView.id = 'code'
+            const codeElement = document.createElement('span')
+            codeElement.innerText = 'alert(1)'
+            codeView.appendChild(codeElement)
+            const nativeTooltip = createTestElement()
+            nativeTooltip.classList.add('native')
+            const dom = {
+                getCodeElementFromTarget: sinon.spy(() => codeElement),
+                getCodeElementFromLineNumber: sinon.spy(() => codeElement),
+                getLineElementFromLineNumber: sinon.spy(() => codeElement),
+                getLineNumberFromCodeElement: sinon.spy(() => 1),
+            }
+            subscriptions.add(
+                handleCodeHost({
+                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    codeHost: {
+                        type: 'github',
+                        name: 'GitHub',
+                        check: () => true,
+                        nativeTooltipResolvers: [{ selector: '.native', resolveView: element => ({ element }) }],
+                        codeViewResolvers: [
+                            toCodeViewResolver('#code', {
+                                dom,
+                                resolveFileInfo: codeView =>
+                                    of({
+                                        repoName: 'foo',
+                                        filePath: '/bar.ts',
+                                        commitID: '1',
+                                    }),
+                            }),
+                        ],
+                    },
+                    extensionsController: createMockController(services),
+                    showGlobalDebug: true,
+                    platformContext: {
+                        ...createMockPlatformContext(),
+                        settings: of({
+                            subjects: [],
+                            final: {
+                                extensions: {},
+                                'codeHost.useNativeTooltips': false,
+                            },
+                        }),
+                    },
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
+                })
+            )
+            const editors = await from(services.editor.editors)
+                .pipe(
+                    skip(1),
+                    take(1)
+                )
+                .toPromise()
+            expect(editors.length).toEqual(1)
+            codeView.dispatchEvent(new MouseEvent('mouseover'))
+            sinon.assert.called(dom.getCodeElementFromTarget)
+            expect(nativeTooltip.classList.contains('native-tooltip--hidden')).toBe(true)
         })
     })
 })

@@ -12,10 +12,13 @@ import (
 	"sync"
 
 	zoektrpc "github.com/google/zoekt/rpc"
+	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
@@ -466,13 +469,6 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 				// if there is one.
 			}
 
-			if op.commitAfter != "" {
-				ok, err := git.HasCommitAfter(ctx, repoRev.GitserverRepo(), op.commitAfter, rev.RevSpec)
-				if err == nil && !ok {
-					continue
-				}
-			}
-
 			repoRev.Revs = append(repoRev.Revs, rev)
 		}
 
@@ -485,7 +481,60 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 	tr.LazyPrintf("Associate/validate revs - done")
 
-	return repoRevisions, missingRepoRevisions, repoResolvers, overLimit, nil
+	if op.commitAfter != "" {
+		repoRevisions, err = filterRepoHasCommitAfter(ctx, repoRevisions, op.commitAfter)
+	}
+
+	return repoRevisions, missingRepoRevisions, repoResolvers, overLimit, err
+}
+
+func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) ([]*search.RepositoryRevisions, error) {
+	var (
+		mut  sync.Mutex
+		pass = []*search.RepositoryRevisions{}
+		res  = make(chan *search.RepositoryRevisions, 100)
+		run  = parallel.NewRun(128)
+	)
+
+	goroutine.Go(func() {
+		for rev := range res {
+			if len(rev.Revs) != 0 {
+				mut.Lock()
+				pass = append(pass, rev)
+				mut.Unlock()
+			}
+			run.Release()
+		}
+	})
+
+	for _, revs := range revisions {
+		run.Acquire()
+
+		revs := revs
+		goroutine.Go(func() {
+			var specifiers []search.RevisionSpecifier
+			for _, rev := range revs.Revs {
+				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
+				if err != nil {
+					if ctx.Err() != nil {
+						run.Error(errors.New("timeout due to repohascommitafter: filter, please try setting a larger timeout: in your query (we are improving this, see https://github.com/sourcegraph/sourcegraph/issues/4614)"))
+						continue
+					}
+					run.Error(err)
+					continue
+				}
+				if ok {
+					specifiers = append(specifiers, rev)
+				}
+			}
+			res <- &search.RepositoryRevisions{Repo: revs.Repo, Revs: specifiers}
+		})
+	}
+
+	err := run.Wait()
+	close(res)
+
+	return pass, err
 }
 
 func optimizeRepoPatternWithHeuristics(repoPattern string) string {
