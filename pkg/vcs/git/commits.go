@@ -112,9 +112,18 @@ func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revsp
 	span.SetTag("RevSpec", revspec)
 	defer span.Finish()
 
+	if revspec == "" {
+		revspec = "HEAD"
+	}
+
+	commitid, err := ResolveRevision(ctx, repo, nil, revspec, nil)
+	if err != nil {
+		return false, err
+	}
+
 	n, err := CommitCount(ctx, repo, CommitsOptions{
 		After: date,
-		Range: revspec,
+		Range: string(commitid),
 	})
 	return n > 0, err
 }
@@ -196,7 +205,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	}
 
 	if opt.After != "" {
-		args = append(args, "--after="+opt.After)
+		args = append(args, "--after=\""+opt.After+"\"")
 	}
 
 	if opt.MessageQuery != "" {
@@ -218,10 +227,6 @@ func CommitCount(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
-
-	if opt.Range == "" {
-		opt.Range = "HEAD"
-	}
 
 	args, err := commitLogArgs([]string{"rev-list", "--count"}, opt)
 	if err != nil {
