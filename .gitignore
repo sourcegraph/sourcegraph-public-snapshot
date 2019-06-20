@@ -129,3 +129,6 @@ cmd/management-console/assets/assets_vfsdata.go
 # Symbols service: PCRE extension to sqlite3
 libsqlite3-pcre.dylib
 libsqlite3-pcre.so
+
+# Direnv
+.envrc
