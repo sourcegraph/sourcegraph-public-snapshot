@@ -205,7 +205,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	}
 
 	if opt.After != "" {
-		args = append(args, "--after=\""+opt.After+"\"")
+		args = append(args, "--after="+opt.After)
 	}
 
 	if opt.MessageQuery != "" {
