@@ -516,7 +516,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 			for _, rev := range revs.Revs {
 				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
 				if err != nil {
-					if ctx.Error() != nil {
+					if ctx.Err() != nil {
 						run.Error(errors.New("timeout due to repohascommitafter: filter, please try setting a larger timeout: in your query (we are improving this, see https://github.com/sourcegraph/sourcegraph/issues/4614)"))
 						continue
 					}
