@@ -481,8 +481,27 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
 // exceeded returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*searchResultsResolver, error) {
+func (r *searchResolver) resultsOrSuggestions(ctx context.Context) (*searchResultsResolver, error) {
 	start := time.Now()
+
+	qs := r.query.Syntax
+	qs2 := qs.EscapeImpossibleCaretsDollars()
+	if qs2.String() != qs.String() {
+		rr := &searchResultsResolver{
+			alert: &searchAlert{
+				title:       "Impossible regular expression",
+				description: "^ can only be at the beginning and $ can only be at the end.",
+				proposedQueries: []*searchQueryDescription{
+					{
+						description: "query with misplaced metacharacters escaped",
+						query:       qs2.String(),
+					},
+				},
+			},
+		}
+		return rr, nil
+	}
+
 	rr, err := r.doResults(ctx, "")
 	if err != nil {
 		if err == context.DeadlineExceeded {
