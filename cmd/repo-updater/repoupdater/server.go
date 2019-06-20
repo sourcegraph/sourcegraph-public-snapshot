@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -211,7 +210,6 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t := time.Now()
 	result, err := s.repoLookup(r.Context(), args)
 	if err != nil {
 		if err == context.Canceled {
@@ -222,7 +220,6 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log15.Debug("TRACE repoLookup", "args", &args, "result", result, "duration", time.Since(t))
 
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -236,14 +233,12 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		respond(w, http.StatusBadRequest, err)
 		return
 	}
-	t := time.Now()
 	result, status, err := s.enqueueRepoUpdate(r.Context(), &req)
 	if err != nil {
 		log15.Error("enqueueRepoUpdate failed", "req", req, "error", err)
 		respond(w, status, err)
 		return
 	}
-	log15.Debug("TRACE enqueueRepoUpdate", "req", &req, "res", result, "duration", time.Since(t))
 	respond(w, status, result)
 }
 
