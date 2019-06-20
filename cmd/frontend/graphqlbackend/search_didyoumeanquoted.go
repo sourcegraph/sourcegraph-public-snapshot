@@ -3,9 +3,10 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 	"sort"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 )
