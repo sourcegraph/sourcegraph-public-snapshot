@@ -122,7 +122,7 @@ func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revsp
 	// and CommitCount below would fail to take into account the first line that is output:
 	//
 	//  warning: refname 'HEAD' is ambiguous.
-	// 
+	//
 	// While this could theoretically be handled in CommitCount by handling the above output, it is tricky
 	// to do there because the placement of the message can come before or after the normal output and
 	// we are worried it could even be interleaved in some situations.
