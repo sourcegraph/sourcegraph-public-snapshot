@@ -26,7 +26,7 @@ func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResol
 	srr := &searchResultsResolver{
 		alert: &searchAlert{
 			title:           makeTitle(err.Error()),
-			description:     "Quoting the query may help if you want an exact match.",
+			description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
 			proposedQueries: sqds,
 		},
 	}
