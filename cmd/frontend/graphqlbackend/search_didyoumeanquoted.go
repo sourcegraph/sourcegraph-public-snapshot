@@ -17,12 +17,10 @@ func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResol
 	sqds := proposedQuotedQueries(r.query)
 	srr := &searchResultsResolver{
 		alert: &searchAlert{
-			title:           "Quoting the query may help if you meant a literal search.",
+			title:           r.err.Error(),
+			description:     "Quoting the query may help if you want an exact match.",
 			proposedQueries: sqds,
 		},
-	}
-	if r.err != nil {
-		srr.alert.description = r.err.Error()
 	}
 	return srr, nil
 }
