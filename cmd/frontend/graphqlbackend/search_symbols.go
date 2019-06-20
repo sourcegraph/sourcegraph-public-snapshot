@@ -157,9 +157,6 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 			inputRev: &inputRev,
 			// NOTE: Not all fields are set, for performance.
 		}
-		if inputRev != "" {
-			commit.inputRev = &inputRev
-		}
 		symbolRes := &searchSymbolResult{
 			symbol:  symbol,
 			baseURI: baseURI,
