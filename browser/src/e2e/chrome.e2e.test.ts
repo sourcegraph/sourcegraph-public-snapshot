@@ -1,8 +1,13 @@
+import getFreePort from 'get-port'
+import { startCase } from 'lodash'
+import { appendFile, exists, mkdir, readFile } from 'mz/fs'
 import * as path from 'path'
 import puppeteer from 'puppeteer'
+import puppeteerFirefox from 'puppeteer-firefox'
+import webExt from 'web-ext'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 
-const chromeExtensionPath = path.resolve(__dirname, '..', '..', 'build/chrome')
+const BROWSER = process.env.E2E_BROWSER || 'chrome'
 
 async function getTokenWithSelector(
     page: puppeteer.Page,
@@ -33,7 +38,29 @@ async function clickElement(page: puppeteer.Page, element: puppeteer.ElementHand
     await element.click()
 }
 
-describe('Sourcegraph Chrome extension', () => {
+// Copied from node_modules/puppeteer-firefox/misc/install-preferences.js
+async function getFirefoxCfgPath(): Promise<string> {
+    const firefoxFolder = path.dirname(puppeteerFirefox.executablePath())
+    let configPath: string
+    if (process.platform === 'darwin') {
+        configPath = path.join(firefoxFolder, '..', 'Resources')
+    } else if (process.platform === 'linux') {
+        if (!(await exists(path.join(firefoxFolder, 'browser', 'defaults')))) {
+            await mkdir(path.join(firefoxFolder, 'browser', 'defaults'))
+        }
+        if (!(await exists(path.join(firefoxFolder, 'browser', 'defaults', 'preferences')))) {
+            await mkdir(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'))
+        }
+        configPath = firefoxFolder
+    } else if (process.platform === 'win32') {
+        configPath = firefoxFolder
+    } else {
+        throw new Error('Unsupported platform: ' + process.platform)
+    }
+    return path.join(configPath, 'puppeteer.cfg')
+}
+
+describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
     let browser: puppeteer.Browser
     let page: puppeteer.Page
 
@@ -42,21 +69,42 @@ describe('Sourcegraph Chrome extension', () => {
         async (): Promise<void> => {
             jest.setTimeout(90 * 1000)
 
-            let args: string[] = [
-                `--disable-extensions-except=${chromeExtensionPath}`,
-                `--load-extension=${chromeExtensionPath}`,
-            ]
+            if (BROWSER === 'chrome') {
+                const chromeExtensionPath = path.resolve(__dirname, '..', '..', 'build', 'chrome')
+                let args: string[] = [
+                    `--disable-extensions-except=${chromeExtensionPath}`,
+                    `--load-extension=${chromeExtensionPath}`,
+                ]
+                if (process.getuid() === 0) {
+                    // TODO don't run as root in CI
+                    console.warn('Running as root, disabling sandbox')
+                    args = [...args, '--no-sandbox', '--disable-setuid-sandbox']
+                }
+                browser = await puppeteer.launch({ args })
+            } else {
+                // Make sure CSP is disabled in FF preferences,
+                // because Puppeteer uses new Function() to evaluate code
+                // which is not allowed by the github.com CSP.
+                const cfgPath = await getFirefoxCfgPath()
+                const disableCspPreference = '\npref("security.csp.enable", false);\n'
+                if (!(await readFile(cfgPath, 'utf-8')).includes(disableCspPreference)) {
+                    await appendFile(cfgPath, disableCspPreference)
+                }
 
-            if (process.getuid() === 0) {
-                // TODO don't run as root in CI
-                console.warn('Running as root, disabling sandbox')
-                args = [...args, '--no-sandbox', '--disable-setuid-sandbox']
+                const cdpPort = await getFreePort()
+                const firefoxExtensionPath = path.resolve(__dirname, '..', '..', 'build', 'firefox')
+                // webExt.util.logger.consoleStream.makeVerbose()
+                await webExt.cmd.run(
+                    {
+                        sourceDir: firefoxExtensionPath,
+                        firefox: puppeteerFirefox.executablePath(),
+                        args: [`-juggler=${cdpPort}`, '-headless'],
+                    },
+                    { shouldExitProgram: false }
+                )
+                const browserWSEndpoint = `ws://127.0.0.1:${cdpPort}`
+                browser = await puppeteerFirefox.connect({ browserWSEndpoint })
             }
-
-            browser = await puppeteer.launch({
-                headless: false,
-                args,
-            })
         }
     )
 
@@ -67,8 +115,8 @@ describe('Sourcegraph Chrome extension', () => {
 
     // Take a screenshot when a test fails.
     saveScreenshotsUponFailuresAndClosePage(
-        path.resolve(__dirname, '..', '..', '..', '..'),
-        path.resolve(__dirname, '..', '..', '..', '..', 'puppeteer'),
+        path.resolve(__dirname, '..', '..', '..'),
+        path.resolve(__dirname, '..', '..', '..', 'puppeteer'),
         () => page
     )
 
@@ -110,11 +158,11 @@ describe('Sourcegraph Chrome extension', () => {
     }
 
     for (const diffType of ['unified', 'split']) {
-        for (const side of ['base', 'head']) {
+        for (const side of ['base', 'head'] as const) {
             test(`provides tooltips for diff files (${diffType}, ${side})`, async () => {
                 await page.goto(`https://github.com/gorilla/mux/pull/328/files?diff=${diffType}`)
 
-                const token = tokens[side as 'base' | 'head']
+                const token = tokens[side]
                 const element = await getTokenWithSelector(page, token.text, token.selector)
 
                 // Scrolls the element into view so that code view is in view.
