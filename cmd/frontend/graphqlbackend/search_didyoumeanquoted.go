@@ -18,19 +18,35 @@ type didYouMeanQuotedResolver struct {
 
 func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResolver, error) {
 	sqds := proposedQuotedQueries(r.query)
-	err := r.err
-	switch e := err.(type) {
+	switch e := r.err.(type) {
 	case *types.TypeError:
-		err = e.Err
+		srr := &searchResultsResolver{
+			alert: &searchAlert{
+				title:           makeTitle(e.Err.Error()),
+				description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
+				proposedQueries: sqds,
+			},
+		}
+		return srr, nil
+	case *syntax.ParseError:
+		srr := &searchResultsResolver{
+			alert: &searchAlert{
+				title:           makeTitle(e.Msg),
+				description:     "Quoting the query may help if you want a literal match.",
+				proposedQueries: sqds,
+			},
+		}
+		return srr, nil
+	default:
+		srr := &searchResultsResolver{
+			alert: &searchAlert{
+				title:           fmt.Sprintf("Unexpected error of type %T", r.err),
+				description:     "Quoting the query may help if you want a literal match.",
+				proposedQueries: sqds,
+			},
+		}
+		return srr, nil
 	}
-	srr := &searchResultsResolver{
-		alert: &searchAlert{
-			title:           makeTitle(err.Error()),
-			description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
-			proposedQueries: sqds,
-		},
-	}
-	return srr, nil
 }
 
 func (r *didYouMeanQuotedResolver) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
