@@ -1,21 +1,11 @@
 Phabricator/Gitolite documentation
 ==================================
 
-Gitolite
-____________
-
-Most customers who use our Phabricator integration use gitolite as their
-repository hosting service. For ease and reproducibility, we use
-gitolite as well for testing.
-
-If gitolite.sgdev.org is running, give an admin (e.g. Beyang or Isaac)
-your public key and ask them give you permissions.
-
 ### Setup
 
-#### K8s
+#### Kubernetes
 
-1. Spin up gitolite.sgdev.org in the tooling cluster
+1. Spin up gitolite.sgdev.org in the tooling cluster if it does not yet exist.
 
 Create the gitolite pods by navigating to the *infrastructure* repository and applying the Gitolite config.
 
