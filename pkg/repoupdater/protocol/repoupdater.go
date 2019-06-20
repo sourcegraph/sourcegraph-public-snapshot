@@ -145,6 +145,10 @@ type RepoUpdateRequest struct {
 	URL string `json:"url"`
 }
 
+func (a *RepoUpdateRequest) String() string {
+	return fmt.Sprintf("RepoUpdateRequest{%s, %s}", a.Repo, a.URL)
+}
+
 // RepoUpdateResponse is a response type to a RepoUpdateRequest.
 type RepoUpdateResponse struct {
 	// ID of the repo that got an update request.
