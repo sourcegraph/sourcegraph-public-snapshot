@@ -118,7 +118,7 @@ func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revsp
 
 	// We resolve the revision first because some repositories unfortunately have *both* a HEAD branch
 	// and remotes/origin/HEAD -> master reference. We've only encountered this on k8s.sgdev.org (see
-	// https://sourcegraph.slack.com/archives/CHEKCRWKV/p1561004415100200?thread_ts=1560992541.075000&cid=CHEKCRWKV)
+	// https://github.com/sourcegraph/sourcegraph/issues/4619)
 	// and CommitCount below would fail to take into account the first line that is output:
 	//
 	//  warning: refname 'HEAD' is ambiguous.
