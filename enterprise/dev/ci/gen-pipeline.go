@@ -264,20 +264,23 @@ func main() {
 	}
 
 	addBrowserExtensionReleaseSteps := func() {
-		// Run e2e tests
-		pipeline.AddStep(":chromium:",
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("pushd browser"),
-			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s run test-e2e"),
-			bk.Cmd("popd"),
-			bk.ArtifactPaths("./puppeteer/*.png"))
+		for _, browser := range []string{"chrome", "firefox"} {
+			// Run e2e tests
+			pipeline.AddStep(fmt.Sprintf(":%s:", browser),
+				bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+				bk.Env("E2E_BROWSER", browser),
+				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+				bk.Cmd("pushd browser"),
+				bk.Cmd("yarn -s run build"),
+				bk.Cmd("yarn -s run test-e2e"),
+				bk.Cmd("popd"),
+				bk.ArtifactPaths("./puppeteer/*.png"))
+		}
 
 		pipeline.AddWait()
 
 		// Release to the Chrome Webstore
-		pipeline.AddStep(":chrome:",
+		pipeline.AddStep(":rocket::chrome:",
 			bk.Env("FORCE_COLOR", "1"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
@@ -286,7 +289,7 @@ func main() {
 			bk.Cmd("popd"))
 
 		// Build and self sign the FF extension and upload it to ...
-		pipeline.AddStep(":firefox:",
+		pipeline.AddStep(":rocket::firefox:",
 			bk.Env("FORCE_COLOR", "1"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
