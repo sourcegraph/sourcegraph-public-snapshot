@@ -672,7 +672,7 @@ describe('code_intelligence', () => {
             const dom = {
                 getCodeElementFromTarget: sinon.spy(() => codeElement),
                 getCodeElementFromLineNumber: sinon.spy(() => codeElement),
-                getLineElementFromLineNumber: jest.fn(() => codeElement),
+                getLineElementFromLineNumber: sinon.spy(() => codeElement),
                 getLineNumberFromCodeElement: sinon.spy(() => 1),
             }
             subscriptions.add(
@@ -723,7 +723,7 @@ describe('code_intelligence', () => {
             const dom = {
                 getCodeElementFromTarget: sinon.spy(() => codeElement),
                 getCodeElementFromLineNumber: sinon.spy(() => codeElement),
-                getLineElementFromLineNumber: jest.fn(() => codeElement),
+                getLineElementFromLineNumber: sinon.spy(() => codeElement),
                 getLineNumberFromCodeElement: sinon.spy(() => 1),
             }
             subscriptions.add(
@@ -786,7 +786,7 @@ describe('code_intelligence', () => {
             const dom = {
                 getCodeElementFromTarget: sinon.spy(() => codeElement),
                 getCodeElementFromLineNumber: sinon.spy(() => codeElement),
-                getLineElementFromLineNumber: jest.fn(() => codeElement),
+                getLineElementFromLineNumber: sinon.spy(() => codeElement),
                 getLineNumberFromCodeElement: sinon.spy(() => 1),
             }
             subscriptions.add(
@@ -835,7 +835,6 @@ describe('code_intelligence', () => {
             expect(editors.length).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
-            console.log(nativeTooltip.classList)
             expect(nativeTooltip.classList.contains('native-tooltip--hidden')).toBe(true)
         })
     })
