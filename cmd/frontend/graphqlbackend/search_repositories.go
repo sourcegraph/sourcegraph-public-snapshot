@@ -56,42 +56,55 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 		}
 
 		if pattern.MatchString(string(repo.Repo.Name)) {
-			if len(args.Pattern.FilePatternsReposMustInclude) > 0 {
-				rev := repo.RevSpecs()[0]
-				for _, pattern := range args.Pattern.FilePatternsReposMustInclude {
-					p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-					matches, _, err := searchFilesInRepo(ctx, repo.Repo, repo.GitserverRepo(), rev, &p, time.Minute)
-					if err != nil {
-						return nil, nil, err
-					}
-					if len(matches) > 0 {
-						results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo, icon: repoIcon}})
-						continue
-					} else {
-						continue
-					}
+			if len(args.Pattern.FilePatternsReposMustExclude) > 0 || len(args.Pattern.FilePatternsReposMustInclude) > 0 {
+				shouldBeAdded, err := repoShouldBeAdded(ctx, repo, args)
+				if err != nil {
+					return nil, nil, err
 				}
-			} else if len(args.Pattern.FilePatternsReposMustExclude) > 0 {
-				rev := repo.RevSpecs()[0]
-				for _, pattern := range args.Pattern.FilePatternsReposMustExclude {
-					p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-					matches, _, err := searchFilesInRepo(ctx, repo.Repo, repo.GitserverRepo(), rev, &p, time.Minute)
-					if err != nil {
-						return nil, nil, err
-					}
-					if len(matches) > 0 {
-						continue
-					} else {
-						results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo, icon: repoIcon}})
-						continue
-					}
+
+				if shouldBeAdded {
+					results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo, icon: repoIcon}})
 				}
 			} else {
 				results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo, icon: repoIcon}})
 			}
-
 		}
 	}
 
 	return results, common, nil
+}
+
+// repoShouldBeAdded determines whether a repository should be included in the result set based on whether the repository fits in the subset
+// of repostiories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
+func repoShouldBeAdded(ctx context.Context, repo *search.RepositoryRevisions, args *search.Args) (bool, error) {
+	shouldBeAdded := true
+	if len(args.Pattern.FilePatternsReposMustInclude) > 0 {
+		rev := repo.RevSpecs()[0]
+		for _, pattern := range args.Pattern.FilePatternsReposMustInclude {
+			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			matches, _, err := searchFilesInRepo(ctx, repo.Repo, repo.GitserverRepo(), rev, &p, time.Minute)
+			if err != nil {
+				return false, err
+			}
+			if len(matches) == 0 {
+				return false, err
+			}
+		}
+	}
+
+	if len(args.Pattern.FilePatternsReposMustExclude) > 0 {
+		rev := repo.RevSpecs()[0]
+		for _, pattern := range args.Pattern.FilePatternsReposMustExclude {
+			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			matches, _, err := searchFilesInRepo(ctx, repo.Repo, repo.GitserverRepo(), rev, &p, time.Minute)
+			if err != nil {
+				return false, err
+			}
+			if len(matches) > 0 {
+				return false, nil
+			}
+		}
+	}
+
+	return shouldBeAdded, nil
 }
