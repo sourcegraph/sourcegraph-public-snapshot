@@ -624,16 +624,7 @@ func Test_roundStr(t *testing.T) {
 }
 
 func TestValidateRepoHasFileUsage(t *testing.T) {
-	q, err := query.ParseAndCheck("repohasfile:test type:path")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = validateRepoHasFileUsage(q)
-	if err == nil {
-		t.Errorf("Expected error but got nil")
-	}
-
-	q, err = query.ParseAndCheck("repohasfile:test type:symbol")
+	q, err := query.ParseAndCheck("repohasfile:test type:symbol")
 	if err != nil {
 		t.Fatal(err)
 	}
