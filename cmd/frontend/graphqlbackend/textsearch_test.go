@@ -300,7 +300,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 }
 
-func TestShouldRepoBeSearched(t *testing.T) {
+func TestRepoShouldBeSearched(t *testing.T) {
 	mockTextSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
@@ -323,7 +323,7 @@ func TestShouldRepoBeSearched(t *testing.T) {
 		FilePatternsReposMustInclude: []string{"main"},
 	}
 
-	shouldBeSearched, err := shouldRepoBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/one", URL: "http://example.com/foo/one"}, "1a2b3c", time.Minute)
+	shouldBeSearched, err := repoShouldBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/one", URL: "http://example.com/foo/one"}, "1a2b3c", time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -331,7 +331,7 @@ func TestShouldRepoBeSearched(t *testing.T) {
 		t.Errorf("expected repo to be searched, got shouldn't be searched")
 	}
 
-	shouldBeSearched, err = shouldRepoBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/no-filematch", URL: "http://example.com/foo/no-filematch"}, "1a2b3c", time.Minute)
+	shouldBeSearched, err = repoShouldBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/no-filematch", URL: "http://example.com/foo/no-filematch"}, "1a2b3c", time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}
