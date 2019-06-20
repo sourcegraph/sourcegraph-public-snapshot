@@ -3,7 +3,9 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 	"sort"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 )
@@ -15,9 +17,14 @@ type didYouMeanQuotedResolver struct {
 
 func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResolver, error) {
 	sqds := proposedQuotedQueries(r.query)
+	err := r.err
+	switch e := err.(type) {
+	case *types.TypeError:
+		err = e.Err
+	}
 	srr := &searchResultsResolver{
 		alert: &searchAlert{
-			title:           r.err.Error(),
+			title:           makeTitle(err.Error()),
 			description:     "Quoting the query may help if you want an exact match.",
 			proposedQueries: sqds,
 		},
@@ -56,4 +63,11 @@ func proposedQuotedQueries(rawQuery string) []*searchQueryDescription {
 	}
 	sort.Slice(sqds, func(i, j int) bool { return sqds[i].description < sqds[j].description })
 	return sqds
+}
+
+func makeTitle(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }
