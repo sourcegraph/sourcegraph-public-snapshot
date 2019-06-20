@@ -120,6 +120,9 @@ interface SourcegraphContext {
         light?: BrandAssets
         /** Override style for dark themes */
         dark?: BrandAssets
+
+        /** Prevents the icon in the top-left corner of the screen from spinning. */
+        disableSymbolSpin?: boolean
     }
 
     /** Whether new external service status indicator is shown in navbar or not. */

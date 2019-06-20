@@ -177,6 +177,11 @@ const SiteSchemaJSON = `{
           "description": "The URL of the favicon to be used for your instance. We recommend using the following file format: ICO",
           "type": "string",
           "format": "uri"
+        },
+        "disableSymbolSpin": {
+          "description": "Prevents the icon in the top-left corner of the screen from spinning on hover.",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [

@@ -81,6 +81,8 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         let logoSrc = '/.assets/img/sourcegraph-mark.svg'
+        let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'
+
         const { branding } = window.context
         if (branding) {
             if (this.props.isLightTheme) {
@@ -89,6 +91,9 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                 }
             } else if (branding.dark && branding.dark.symbol) {
                 logoSrc = branding.dark.symbol
+            }
+            if (branding.disableSymbolSpin) {
+                logoLinkClassName = 'global-navbar__logo-link'
             }
         }
 
@@ -101,9 +106,9 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                 ) : (
                     <>
                         {this.state.authRequired ? (
-                            <div className="global-navbar__logo-link">{logo}</div>
+                            <div className={logoLinkClassName}>{logo}</div>
                         ) : (
-                            <Link to="/search" className="global-navbar__logo-link">
+                            <Link to="/search" className={logoLinkClassName}>
                                 {logo}
                             </Link>
                         )}
