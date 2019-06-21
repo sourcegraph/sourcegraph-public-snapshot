@@ -26,6 +26,8 @@ type Store interface {
 
 	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
+
+	ListAllRepoNames(context.Context) ([]api.RepoName, error)
 }
 
 // StoreListReposArgs is a query arguments type used by
@@ -365,6 +367,38 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 			limit,
 		)
 	}
+}
+
+// ListAllRepoNames lists the names of all stored repos
+func (s DBStore) ListAllRepoNames(ctx context.Context) (names []api.RepoName, _ error) {
+	return names, s.paginate(ctx, 0, 0, listAllRepoNamesQuery,
+		func(sc scanner) (last, count int64, err error) {
+			var (
+				id   int64
+				name api.RepoName
+			)
+			if err = sc.Scan(&id, &name); err != nil {
+				return 0, 0, err
+			}
+			names = append(names, name)
+			return id, 1, nil
+		},
+	)
+}
+
+const listAllRepoNamesQueryFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.ListAllRepoNames
+SELECT
+  id,
+  name
+FROM repo
+WHERE id > %s
+AND deleted_at IS NULL
+ORDER BY id ASC LIMIT %s
+`
+
+func listAllRepoNamesQuery(cursor, limit int64) *sqlf.Query {
+	return sqlf.Sprintf(listAllRepoNamesQueryFmtstr, cursor, limit)
 }
 
 // a paginatedQuery returns a query with the given pagination

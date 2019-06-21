@@ -94,7 +94,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 return (
                     <StatusMessagesNavItemEntry
                         key={message.message}
-                        title="Repositories updating"
+                        title="Repositories cloning"
                         text={message.message}
                         showLink={this.props.isSiteAdmin}
                         linkTo="/site-admin/external-services"
@@ -117,7 +117,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     ) : this.state.messagesOrError.some(({ type }) => type === GQL.StatusMessageType.CLONING) ? (
                         <CloudSyncIcon
                             className="icon-inline"
-                            data-tooltip={this.state.isOpen ? undefined : 'Updating repositories...'}
+                            data-tooltip={this.state.isOpen ? undefined : 'Cloning repositories...'}
                         />
                     ) : (
                         <CloudCheckIcon
@@ -138,7 +138,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     ) : (
                         <StatusMessagesNavItemEntry
                             title="Repositories up to date"
-                            text="All repositories hosted on the configured external services are up to date."
+                            text="All repositories hosted on the configured external services are cloned."
                             showLink={this.props.isSiteAdmin}
                             linkTo="/site-admin/external-services"
                             linkText="Configure external services"
