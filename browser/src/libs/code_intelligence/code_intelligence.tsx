@@ -459,7 +459,7 @@ export function handleCodeHost({
 
     const nativeTooltipsEnabled = codeHost.nativeTooltipResolvers
         ? nativeTooltipsEnabledFromSettings(platformContext.settings)
-        : of(true)
+        : of(false)
 
     const hoverAlerts: Observable<HoverAlert<ExtensionHoverAlertType>>[] = []
 

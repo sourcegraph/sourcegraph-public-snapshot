@@ -14,8 +14,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
@@ -29,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 const port = "3182"
@@ -45,8 +44,10 @@ func main() {
 	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
 		log.Fatalf("sourcegraph-frontend not reachable: %v", err)
 	}
+	log15.Debug("detected frontend ready")
 
 	gitserver.DefaultClient.WaitForGitServers(ctx)
+	log15.Debug("detected gitservers ready")
 
 	dsn := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
@@ -113,6 +114,7 @@ func main() {
 			log.Fatalf("failed to run migration: %s", err)
 		}
 	}
+	log15.Debug("ran migrations")
 
 	scheduler := repos.NewUpdateScheduler()
 	server := repoupdater.Server{
@@ -180,6 +182,7 @@ func main() {
 			}
 		}
 	}()
+	log15.Debug("started new repo syncer updates scheduler relay thread")
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
@@ -190,6 +193,7 @@ func main() {
 
 	// Git fetches scheduler
 	go repos.RunScheduler(ctx, scheduler)
+	log15.Debug("started scheduler")
 
 	host := ""
 	if env.InsecureDev {

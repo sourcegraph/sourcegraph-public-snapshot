@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
@@ -221,7 +220,6 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t := time.Now()
 	result, err := s.repoLookup(r.Context(), args)
 	if err != nil {
 		if err == context.Canceled {
@@ -232,7 +230,6 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log15.Debug("TRACE repoLookup", "args", &args, "result", result, "duration", time.Since(t))
 
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -246,18 +243,33 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		respond(w, http.StatusBadRequest, err)
 		return
 	}
-
-	args := repos.StoreListReposArgs{Names: []string{string(req.Repo)}}
-	rs, err := s.Store.ListRepos(r.Context(), args)
+	result, status, err := s.enqueueRepoUpdate(r.Context(), &req)
 	if err != nil {
-		respond(w, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos"))
+		log15.Error("enqueueRepoUpdate failed", "req", req, "error", err)
+		respond(w, status, err)
 		return
+	}
+	respond(w, status, result)
+}
+
+func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp *protocol.RepoUpdateResponse, httpStatus int, err error) {
+	tr, ctx := trace.New(ctx, "enqueueRepoUpdate", req.String())
+	defer func() {
+		log15.Debug("enqueueRepoUpdate", "httpStatus", httpStatus, "resp", resp, "error", err)
+		if resp != nil {
+			tr.LazyPrintf("response: %s", resp)
+		}
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	rs, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{Names: []string{string(req.Repo)}})
+	if err != nil {
+		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
 	}
 
 	if len(rs) != 1 {
-		err := errors.Errorf("repo %q not found in store", req.Repo)
-		respond(w, http.StatusNotFound, err)
-		return
+		return nil, http.StatusNotFound, errors.Errorf("repo %q not found in store", req.Repo)
 	}
 
 	repo := rs[0]
@@ -266,14 +278,13 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 			req.URL = urls[0]
 		}
 	}
-
 	s.Scheduler.UpdateOnce(repo.ID, req.Repo, req.URL)
 
-	respond(w, http.StatusOK, &protocol.RepoUpdateResponse{
+	return &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
 		Name: repo.Name,
 		URL:  req.URL,
-	})
+	}, http.StatusOK, nil
 }
 
 func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Request) {

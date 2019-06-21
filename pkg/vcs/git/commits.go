@@ -112,9 +112,36 @@ func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revsp
 	span.SetTag("RevSpec", revspec)
 	defer span.Finish()
 
+	if revspec == "" {
+		revspec = "HEAD"
+	}
+
+	// We resolve the revision first because some repositories unfortunately have *both* a HEAD branch
+	// and remotes/origin/HEAD -> master reference. We've only encountered this on k8s.sgdev.org (see
+	// https://github.com/sourcegraph/sourcegraph/issues/4619)
+	// and CommitCount below would fail to take into account the first line that is output:
+	//
+	//  warning: refname 'HEAD' is ambiguous.
+	//
+	// While this could theoretically be handled in CommitCount by handling the above output, it is tricky
+	// to do there because the placement of the message can come before or after the normal output and
+	// we are worried it could even be interleaved in some situations.
+	//
+	// We can remove this and pass revspec directly into CommitCount in the future if the following hold
+	// true:
+	//
+	//  - k8s.sgdev.org is fixed
+	//  - CommitCount handles the case of opt.Range == "" by treating it as "HEAD"
+	//  - We are OK with not handling these bad repositories that contain HEAD branches.
+	//
+	commitid, err := ResolveRevision(ctx, repo, nil, revspec, nil)
+	if err != nil {
+		return false, err
+	}
+
 	n, err := CommitCount(ctx, repo, CommitsOptions{
 		After: date,
-		Range: revspec,
+		Range: string(commitid),
 	})
 	return n > 0, err
 }
@@ -218,10 +245,6 @@ func CommitCount(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
-
-	if opt.Range == "" {
-		opt.Range = "HEAD"
-	}
 
 	args, err := commitLogArgs([]string{"rev-list", "--count"}, opt)
 	if err != nil {
