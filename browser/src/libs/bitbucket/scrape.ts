@@ -10,7 +10,6 @@ export interface BitbucketRepoInfo {
 
 const LINK_SELECTORS = ['a.raw-view-link', 'a.source-view-link', 'a.mode-source']
 
-// TODO this needs to take repositoryPathPatterns into account!
 const bitbucketToSourcegraphRepoName = ({ repoSlug, project }: BitbucketRepoInfo): string =>
     [window.location.hostname, project, repoSlug].join('/')
 
