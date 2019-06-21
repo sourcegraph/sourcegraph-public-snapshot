@@ -2,11 +2,12 @@ import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
-import { BehaviorSubject, from, NEVER, of, Subject, Subscription } from 'rxjs'
+import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
 import { filter, skip, switchMap, take } from 'rxjs/operators'
 import * as sinon from 'sinon'
 import { Services } from '../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
+import { PrivateRepoPublicSourcegraphComError } from '../../../../shared/src/backend/errors'
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
 import { IQuery } from '../../../../shared/src/graphql/schema'
@@ -209,18 +210,16 @@ describe('code_intelligence', () => {
                         // Simulate an instance with repositoryPathPattern
                         requestGraphQL: mockRequestGraphQL({
                             ...DEFAULT_GRAPHQL_RESPONSES,
-                            ResolveRepo: variables => {
-                                console.log(`ResolveRepo ${JSON.stringify(variables)}`)
+                            ResolveRepo: variables =>
                                 // tslint:disable-next-line: no-object-literal-type-assertion
-                                return {
+                                of({
                                     data: {
                                         repository: {
                                             name: `github/${variables.rawRepoName}`,
                                         },
                                     },
                                     errors: undefined,
-                                } as SuccessGraphQLResult<IQuery>
-                            },
+                                } as SuccessGraphQLResult<IQuery>),
                         }),
                     }),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
@@ -640,7 +639,7 @@ describe('code_intelligence', () => {
                                 dom,
                                 resolveFileInfo: codeView =>
                                     of({
-                                        repoName: 'foo',
+                                        rawRepoName: 'foo',
                                         filePath: '/bar.ts',
                                         commitID: '1',
                                     }),
@@ -692,7 +691,7 @@ describe('code_intelligence', () => {
                                 dom,
                                 resolveFileInfo: codeView =>
                                     of({
-                                        repoName: 'foo',
+                                        rawRepoName: 'foo',
                                         filePath: '/bar.ts',
                                         commitID: '1',
                                     }),
@@ -722,6 +721,7 @@ describe('code_intelligence', () => {
                     take(1)
                 )
                 .toPromise()
+
             expect(editors.length).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.notCalled(dom.getCodeElementFromTarget)
@@ -755,7 +755,7 @@ describe('code_intelligence', () => {
                                 dom,
                                 resolveFileInfo: codeView =>
                                     of({
-                                        repoName: 'foo',
+                                        rawRepoName: 'foo',
                                         filePath: '/bar.ts',
                                         commitID: '1',
                                     }),
@@ -789,6 +789,75 @@ describe('code_intelligence', () => {
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
             expect(nativeTooltip.classList.contains('native-tooltip--hidden')).toBe(true)
+        })
+
+        test('gracefully handles viewing private repos on a public Sourcegraph instance', async () => {
+            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const codeView = createTestElement()
+            codeView.id = 'code'
+            const fileInfo: FileInfo = {
+                rawRepoName: 'github.com/foo',
+                filePath: '/bar.ts',
+                commitID: '1',
+            }
+            subscriptions.add(
+                handleCodeHost({
+                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    codeHost: {
+                        type: 'github',
+                        name: 'GitHub',
+                        check: () => true,
+                        codeViewResolvers: [
+                            toCodeViewResolver('#code', {
+                                dom: {
+                                    getCodeElementFromTarget: jest.fn(),
+                                    getCodeElementFromLineNumber: jest.fn(),
+                                    getLineElementFromLineNumber: jest.fn(),
+                                    getLineNumberFromCodeElement: jest.fn(),
+                                },
+                                resolveFileInfo: () => of(fileInfo),
+                            }),
+                        ],
+                    },
+                    extensionsController: createMockController(services),
+                    showGlobalDebug: true,
+                    platformContext: createMockPlatformContext({
+                        // Simulate an instance where all repo-specific graphQL requests error with
+                        // PrivateRepoPublicSourcegraph
+                        requestGraphQL: mockRequestGraphQL({
+                            ...DEFAULT_GRAPHQL_RESPONSES,
+                            BlobContent: () => throwError(new PrivateRepoPublicSourcegraphComError('BlobContent')),
+                            ResolveRepo: () => throwError(new PrivateRepoPublicSourcegraphComError('ResolveRepo')),
+                            ResolveRev: () => throwError(new PrivateRepoPublicSourcegraphComError('ResolveRev')),
+                        }),
+                    }),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
+                })
+            )
+            const editors = await from(services.editor.editors)
+                .pipe(
+                    skip(1),
+                    take(1)
+                )
+                .toPromise()
+            expect(editors).toEqual([
+                {
+                    editorId: 'editor#0',
+                    isActive: true,
+                    // Repo name exposed in URIs is the raw repo name
+                    resource: 'git://github.com/foo?1#/bar.ts',
+                    model: {
+                        uri: 'git://github.com/foo?1#/bar.ts',
+                        // Text is undefined as BlobContent graphQL requests will error
+                        text: undefined,
+                        languageId: 'typescript',
+                    },
+                    selections: [],
+                    type: 'CodeEditor',
+                },
+            ])
         })
     })
 })

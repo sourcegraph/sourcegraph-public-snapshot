@@ -1,4 +1,4 @@
-import { of, throwError } from 'rxjs'
+import { Observable, of, throwError } from 'rxjs'
 import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
 import { IMutation, IQuery } from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
@@ -7,13 +7,13 @@ interface GraphQLResponseMap {
     [requestName: string]: (
         variables: { [k: string]: any },
         mightContainPrivateInfo?: boolean
-    ) => SuccessGraphQLResult<IQuery | IMutation>
+    ) => Observable<SuccessGraphQLResult<IQuery | IMutation>>
 }
 
 export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
     SiteProductVersion: () =>
         // tslint:disable-next-line: no-object-literal-type-assertion
-        ({
+        of({
             data: {
                 site: {
                     productVersion: 'dev',
@@ -25,7 +25,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
         } as SuccessGraphQLResult<IQuery>),
     CurrentUSer: () =>
         // tslint:disable-next-line: no-object-literal-type-assertion
-        ({
+        of({
             data: {
                 currentUser: {
                     id: 'u1',
@@ -42,7 +42,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
 
     ResolveRev: () =>
         // tslint:disable-next-line: no-object-literal-type-assertion
-        ({
+        of({
             data: {
                 repository: {
                     mirrorInfo: {
@@ -57,7 +57,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
         } as SuccessGraphQLResult<IQuery>),
     BlobContent: () =>
         // tslint:disable-next-line: no-object-literal-type-assertion
-        ({
+        of({
             data: {
                 repository: {
                     commit: {
@@ -71,7 +71,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
         } as SuccessGraphQLResult<IQuery>),
     ResolveRepo: variables =>
         // tslint:disable-next-line: no-object-literal-type-assertion
-        ({
+        of({
             data: {
                 repository: {
                     name: variables.rawRepoName,
@@ -102,5 +102,5 @@ export const mockRequestGraphQL = (
     if (!requestName || !responseMap[requestName]) {
         return throwError(new Error(`GraphQL request ${requestName} failed`))
     }
-    return of(responseMap[requestName](variables, mightContainPrivateInfo) as SuccessGraphQLResult<R>)
+    return responseMap[requestName](variables, mightContainPrivateInfo) as Observable<SuccessGraphQLResult<R>>
 }
