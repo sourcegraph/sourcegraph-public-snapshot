@@ -40,7 +40,7 @@ func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResol
 	default:
 		srr := &searchResultsResolver{
 			alert: &searchAlert{
-				title:           fmt.Sprintf("Unexpected error of type %T", r.err),
+				title:           fmt.Sprintf("Unexpected error %v of type %T", r.err, r.err),
 				description:     "Quoting the query may help if you want a literal match.",
 				proposedQueries: sqds,
 			},
