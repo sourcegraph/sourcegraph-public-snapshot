@@ -44,13 +44,15 @@ func Parse(input string) (*Query, error) {
 	return &Query{Expr: exprs, Input: input}, nil
 }
 
+// ParseAllowingErrors works like Parse except that any errors are
+// returned as TokenError within the Expr slice of the returned Query.
 func ParseAllowingErrors(input string) *Query {
 	tokens := Scan(input)
 	p := parser{tokens: tokens, allowErrors: true}
 	ctx := context{field: ""}
 	exprs, err := p.parseExprList(ctx)
 	if err != nil {
-		panic(fmt.Sprintf("unexpected error while parsing query: %v", err))
+		panic(fmt.Sprintf("(bug) error returned by parseExprList despite allowErrors=true (this should never happen): %v", err))
 	}
 	return &Query{Expr: exprs, Input: input}
 }

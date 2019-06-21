@@ -27,7 +27,7 @@ func Test_proposedQuotedQueries(t *testing.T) {
 			},
 			want: []*searchQueryDescription{
 				{
-					description: "quote the whole thing",
+					description: wholeMsg,
 					query:       `""`,
 				},
 			},
@@ -39,7 +39,7 @@ func Test_proposedQuotedQueries(t *testing.T) {
 			},
 			want: []*searchQueryDescription{
 				{
-					description: "quote the whole thing",
+					description: wholeMsg,
 					query:       `"fmt.Sprintf(\""`,
 				},
 			},
@@ -51,11 +51,11 @@ func Test_proposedQuotedQueries(t *testing.T) {
 			},
 			want: []*searchQueryDescription{
 				{
-					description: "quote just the errored parts",
+					description: partsMsg,
 					query:       `r:hammer "[s]++"`,
 				},
 				{
-					description: "quote the whole thing",
+					description: wholeMsg,
 					query:       `"r:hammer [s]++"`,
 				},
 			},

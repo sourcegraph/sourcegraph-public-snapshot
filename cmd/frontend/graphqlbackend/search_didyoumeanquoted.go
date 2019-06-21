@@ -57,14 +57,17 @@ func (r *didYouMeanQuotedResolver) Stats(context.Context) (*searchResultsStats, 
 
 // proposedQuotedQueries generates various ways of quoting the given query,
 // with descriptions, removing duplicates.
+const partsMsg = "treat the errored parts as literals"
+const wholeMsg = "treat the whole query as a literal"
+
 func proposedQuotedQueries(rawQuery string) []*searchQueryDescription {
 	q := syntax.ParseAllowingErrors(rawQuery)
 	// Make a map from various quotings of the query to their descriptions.
 	// This should take care of deduplicating them.
 	// The descriptions are in a particular order to make the simpler descriptions take precedence.
 	qq2d := make(map[string]string)
-	qq2d[q.WithErrorsQuoted().String()] = "quote just the errored parts"
-	qq2d[fmt.Sprintf("%q", rawQuery)] = "quote the whole thing"
+	qq2d[q.WithErrorsQuoted().String()] = partsMsg
+	qq2d[fmt.Sprintf("%q", rawQuery)] = wholeMsg
 	var sqds []*searchQueryDescription
 	for qq, desc := range qq2d {
 		if qq == rawQuery {
