@@ -287,8 +287,24 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 	errC := make(chan error, 1)
 	go func() {
-		_, err := s.Syncer.Sync(context.Background())
-		errC <- err
+		src, err := repos.NewSource(&repos.ExternalService{
+			ID:          req.ExternalService.ID,
+			Kind:        req.ExternalService.Kind,
+			DisplayName: req.ExternalService.DisplayName,
+			Config:      req.ExternalService.Config,
+		}, nil)
+		if err != nil {
+			errC <- err
+			return
+		}
+
+		_, err = src.ListRepos(r.Context())
+		if err != nil {
+			errC <- err
+			return
+		}
+
+		_, _ = s.Syncer.Sync(context.Background())
 	}()
 
 	select {
