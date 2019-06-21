@@ -26,6 +26,8 @@ type Syncer struct {
 	sourcer Sourcer
 	diffs   chan Diff
 	now     func() time.Time
+
+	syncSignal chan struct{}
 }
 
 // NewSyncer returns a new Syncer that syncs stored repos with
@@ -38,10 +40,11 @@ func NewSyncer(
 	now func() time.Time,
 ) *Syncer {
 	return &Syncer{
-		store:   store,
-		sourcer: sourcer,
-		diffs:   diffs,
-		now:     now,
+		store:      store,
+		sourcer:    sourcer,
+		diffs:      diffs,
+		now:        now,
+		syncSignal: make(chan struct{}, 1),
 	}
 }
 
@@ -51,10 +54,23 @@ func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 		if _, err := s.Sync(ctx); err != nil {
 			log15.Error("Syncer", "error", err)
 		}
-		time.Sleep(interval)
+
+		select {
+		case <-time.After(interval):
+		case <-s.syncSignal:
+		}
 	}
 
 	return ctx.Err()
+}
+
+// TriggerSync will run Sync as soon as the current Sync has finished running
+// or if no Sync is running.
+func (s *Syncer) TriggerSync() {
+	select {
+	case s.syncSignal <- struct{}{}:
+	default:
+	}
 }
 
 // Sync synchronizes the repositories.

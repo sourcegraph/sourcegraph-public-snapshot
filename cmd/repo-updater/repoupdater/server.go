@@ -304,7 +304,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		_, _ = s.Syncer.Sync(context.Background())
+		s.Syncer.TriggerSync()
 	}()
 
 	select {
