@@ -344,7 +344,7 @@ export const githubCodeHost: CodeHost = {
         }
 
         // Make sure the location is also on this github instance, return an absolute URL otherwise.
-        const sameCodeHost = location.rawRepoName.includes(window.location.origin)
+        const sameCodeHost = location.rawRepoName.startsWith(window.location.hostname)
         if (!sameCodeHost) {
             return toAbsoluteBlobURL(sourcegraphURL, {
                 ...location,

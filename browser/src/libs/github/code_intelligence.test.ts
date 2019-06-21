@@ -63,4 +63,71 @@ describe('github/code_intelligence', () => {
             }
         })
     }
+
+    describe('githubCodeHost.urlToFile()', () => {
+        const urlToFile = githubCodeHost.urlToFile!
+        const sourcegraphURL = 'https://sourcegraph.my.org'
+        it('returns an URL to the Sourcegraph instance if the location has a viewState', () => {
+            jsdom.reconfigure({
+                url:
+                    'https://github.com/sourcegraph/sourcegraph/blob/master/browser/src/libs/code_intelligence/code_intelligence.tsx',
+            })
+            expect(
+                urlToFile(sourcegraphURL, {
+                    repoName: 'sourcegraph/sourcegraph',
+                    rawRepoName: 'github.com/sourcegraph/sourcegraph',
+                    rev: 'master',
+                    filePath: 'browser/src/libs/code_intelligence/code_intelligence.tsx',
+                    position: {
+                        line: 5,
+                        character: 12,
+                    },
+                    viewState: 'references',
+                })
+            ).toBe(
+                'https://sourcegraph.my.org/sourcegraph/sourcegraph@master/-/blob/browser/src/libs/code_intelligence/code_intelligence.tsx#L5:12&tab=references'
+            )
+        })
+
+        it('returns an absolute URL if the location is not on the same code host', () => {
+            jsdom.reconfigure({
+                url:
+                    'https://github.com/sourcegraph/sourcegraph/blob/master/browser/src/libs/code_intelligence/code_intelligence.tsx',
+            })
+            expect(
+                urlToFile(sourcegraphURL, {
+                    repoName: 'sourcegraph/sourcegraph',
+                    rawRepoName: 'ghe.sgdev.org/sourcegraph/sourcegraph',
+                    rev: 'master',
+                    filePath: 'browser/src/libs/code_intelligence/code_intelligence.tsx',
+                    position: {
+                        line: 5,
+                        character: 12,
+                    },
+                })
+            ).toBe(
+                'https://sourcegraph.my.org/sourcegraph/sourcegraph@master/-/blob/browser/src/libs/code_intelligence/code_intelligence.tsx#L5:12'
+            )
+        })
+        it('returns an URL to a blob on the same code host if possible', () => {
+            jsdom.reconfigure({
+                url:
+                    'https://github.com/sourcegraph/sourcegraph/blob/master/browser/src/libs/code_intelligence/code_intelligence.tsx',
+            })
+            expect(
+                urlToFile(sourcegraphURL, {
+                    repoName: 'sourcegraph/sourcegraph',
+                    rawRepoName: 'github.com/sourcegraph/sourcegraph',
+                    rev: 'master',
+                    filePath: 'browser/src/libs/code_intelligence/code_intelligence.tsx',
+                    position: {
+                        line: 5,
+                        character: 12,
+                    },
+                })
+            ).toBe(
+                'https://github.com/sourcegraph/sourcegraph/blob/master/browser/src/libs/code_intelligence/code_intelligence.tsx#L5:12'
+            )
+        })
+    })
 })
