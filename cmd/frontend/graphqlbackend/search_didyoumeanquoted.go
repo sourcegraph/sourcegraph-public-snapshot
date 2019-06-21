@@ -3,12 +3,12 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	rxsyntax "regexp/syntax"
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 )
 
 type didYouMeanQuotedResolver struct {
@@ -20,14 +20,19 @@ func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResol
 	sqds := proposedQuotedQueries(r.query)
 	switch e := r.err.(type) {
 	case *types.TypeError:
-		srr := &searchResultsResolver{
-			alert: &searchAlert{
-				title:           makeTitle(e.Err.Error()),
-				description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
-				proposedQueries: sqds,
-			},
+		switch e := e.Err.(type) {
+		case *rxsyntax.Error:
+			srr := &searchResultsResolver{
+				alert: &searchAlert{
+					title:           makeTitle(e.Error()),
+					description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
+					proposedQueries: sqds,
+				},
+			}
+			return srr, nil
+		default:
+			return nil, r.err
 		}
-		return srr, nil
 	case *syntax.ParseError:
 		srr := &searchResultsResolver{
 			alert: &searchAlert{
@@ -38,24 +43,16 @@ func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResol
 		}
 		return srr, nil
 	default:
-		srr := &searchResultsResolver{
-			alert: &searchAlert{
-				title:           fmt.Sprintf("Unexpected error %v of type %T", r.err, r.err),
-				description:     "Quoting the query may help if you want a literal match.",
-				proposedQueries: sqds,
-			},
-		}
-		return srr, nil
+		return nil, r.err
 	}
 }
 
 func (r *didYouMeanQuotedResolver) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
-	return nil, nil
+	return nil, r.err
 }
 
 func (r *didYouMeanQuotedResolver) Stats(context.Context) (*searchResultsStats, error) {
-	srs := &searchResultsStats{}
-	return srs, nil
+	return nil, r.err
 }
 
 // proposedQuotedQueries generates various ways of quoting the given query,

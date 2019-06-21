@@ -91,6 +91,19 @@ func Test_didYouMeanQuotedResolver_Results(t *testing.T) {
 		}
 	})
 
+	t.Run("type error that is not a regex error", func(t *testing.T) {
+		raw := "-foobar"
+		_, err := query.ParseAndCheck(raw)
+		if err == nil {
+			t.Fatalf(`error returned from syntax.Parse("%s") is nil`, raw)
+		}
+		dymqr := didYouMeanQuotedResolver{query: raw, err: err}
+		_, err = dymqr.Results(context.Background())
+		if err == nil {
+			t.Errorf("got nil error")
+		}
+	})
+
 	t.Run("query parse error", func(t *testing.T) {
 		raw := ":"
 		_, err := query.ParseAndCheck(raw)
