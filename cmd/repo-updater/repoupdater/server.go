@@ -310,7 +310,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		_, err = src.ListRepos(r.Context())
 		if err != nil {
 			errch <- err
-			return
+			// intentionally not return, we want to always triggersync
 		}
 
 		s.Syncer.TriggerSync()
