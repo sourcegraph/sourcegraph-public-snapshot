@@ -27,6 +27,7 @@ import { PlatformContext, PlatformContextProps } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision } from '../util/url'
 import { HoverContext } from './HoverOverlay'
+import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../backend/errors'
 
 const LOADING: 'loading' = 'loading'
 
@@ -226,6 +227,15 @@ export function getDefinitionURL(
             // When returning a single definition, include the repo's
             // `rawRepoName`, to allow building URLs on the code host.
             return resolveRawRepoName({ ...uri, requestGraphQL }).pipe(
+                // When encountering an ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, we can assume that
+                // we're executing in a browser extension pointed to the public sourcegraph.com,
+                // in which case repoName === rawRepoName.
+                catchError(err => {
+                    if (isErrorLike(err) && err.code === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                        return [uri.repoName]
+                    }
+                    throw err
+                }),
                 map(rawRepoName => ({
                     url: urlToFile({
                         ...uri,
