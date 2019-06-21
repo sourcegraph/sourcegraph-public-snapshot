@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -284,23 +285,41 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	_, err := s.Syncer.Sync(r.Context())
-	switch {
-	case err == nil:
-		log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
+	errC := make(chan error, 1)
+	go func() {
+		_, err := s.Syncer.Sync(context.Background())
+		errC <- err
+	}()
+
+	select {
+	case err := <-errC:
+		switch {
+		case err == nil:
+			log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
+			respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
+				ExternalService: req.ExternalService,
+			})
+		case err == github.ErrIncompleteResults:
+			log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+			syncResult := &protocol.ExternalServiceSyncResult{
+				ExternalService: req.ExternalService,
+				Error:           err.Error(),
+			}
+			respond(w, http.StatusOK, syncResult)
+		default:
+			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+	case <-time.After(10 * time.Second):
 		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
 			ExternalService: req.ExternalService,
+			Error:           "warning: took longer than 10s to verify config against code host. Please monitor repo-updater logs.",
 		})
-	case err == github.ErrIncompleteResults:
-		log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
-		syncResult := &protocol.ExternalServiceSyncResult{
-			ExternalService: req.ExternalService,
-			Error:           err.Error(),
-		}
-		respond(w, http.StatusOK, syncResult)
-	default:
-		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+	case <-r.Context().Done():
+		// client is gone
+		return
 	}
 }
 
