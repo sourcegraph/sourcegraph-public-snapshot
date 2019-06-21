@@ -9,7 +9,7 @@ This roadmap is a curated list of what we are working on now and the direction t
 
 We ship a release on the [20th day of each month](../releases.md#releases-are-monthly). See [previous Sourcegraph releases](previous_releases.md).
 
-**Next release:** [Sourcegraph 3.6](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+milestone%3A3.6+label%3Aroadmap) (ships on June 20, 2019).
+**Next release:** [Sourcegraph 3.6](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+milestone%3A3.6+label%3Aroadmap) (ships on July 20, 2019).
 
 ## Overview
 
