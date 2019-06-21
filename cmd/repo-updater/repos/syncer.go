@@ -57,9 +57,9 @@ func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 	return ctx.Err()
 }
 
-// Sync synchronizes the repositories of the given external service kinds.
-func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err error) {
-	ctx, save := s.observe(ctx, "Syncer.Sync", strings.Join(kinds, " "))
+// Sync synchronizes the repositories.
+func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
+	ctx, save := s.observe(ctx, "Syncer.Sync", "")
 	defer save(&diff, &err)
 
 	if s.FailFullSync {
@@ -67,7 +67,7 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err erro
 	}
 
 	var sourced Repos
-	if sourced, err = s.sourced(ctx, kinds...); err != nil {
+	if sourced, err = s.sourced(ctx); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.sourced")
 	}
 
@@ -82,8 +82,7 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err erro
 	}
 
 	var stored Repos
-	args := StoreListReposArgs{Kinds: kinds}
-	if stored, err = store.ListRepos(ctx, args); err != nil {
+	if stored, err = store.ListRepos(ctx, StoreListReposArgs{}); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 

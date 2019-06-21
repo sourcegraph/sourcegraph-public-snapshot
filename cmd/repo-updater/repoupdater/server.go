@@ -284,7 +284,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	_, err := s.Syncer.Sync(r.Context(), req.ExternalService.Kind)
+	_, err := s.Syncer.Sync(r.Context())
 	switch {
 	case err == nil:
 		log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
