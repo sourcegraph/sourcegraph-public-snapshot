@@ -75,6 +75,7 @@ func main() {
 			m.UpsertRepos,
 			m.ListExternalServices,
 			m.UpsertExternalServices,
+			m.ListAllRepoNames,
 		} {
 			om.MustRegister(prometheus.DefaultRegisterer)
 		}
@@ -116,7 +117,11 @@ func main() {
 	log15.Debug("ran migrations")
 
 	scheduler := repos.NewUpdateScheduler()
-	server := repoupdater.Server{Store: store, Scheduler: scheduler}
+	server := repoupdater.Server{
+		Store:           store,
+		Scheduler:       scheduler,
+		GitserverClient: gitserver.DefaultClient,
+	}
 
 	var handler http.Handler
 	{
