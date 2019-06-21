@@ -49,9 +49,6 @@ const createMockPlatformContext = (
 ): CodeIntelligenceProps['platformContext'] => ({
     forceUpdateTooltip: jest.fn(),
     urlToFile: jest.fn(),
-    // Mock implementation of `requestGraphQL()` that returns successful
-    // responses for `ResolveRev` and `BlobContent` queries, so that
-    // code views can be resolved
     requestGraphQL: mockRequestGraphQL(),
     sideloadedExtensionURL: new Subject<string | null>(),
     settings: NEVER,
