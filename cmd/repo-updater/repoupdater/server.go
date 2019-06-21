@@ -324,7 +324,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			respond(w, http.StatusOK, syncResult)
 		default:
 			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			respond(w, http.StatusInternalServerError, err)
 		}
 
 	case <-time.After(10 * time.Second):
