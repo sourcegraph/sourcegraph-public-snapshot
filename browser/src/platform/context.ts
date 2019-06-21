@@ -78,8 +78,8 @@ export function createPlatformContext(
                 isInPage
                     ? fetchViewerSettings(requestGraphQL)
                     : observeStorageKey('sync', 'sourcegraphURL').pipe(
-                        switchMap(() => fetchViewerSettings(requestGraphQL))
-                    ),
+                          switchMap(() => fetchViewerSettings(requestGraphQL))
+                      ),
                 updatedViewerSettings
             ).pipe(
                 publishReplay(1),

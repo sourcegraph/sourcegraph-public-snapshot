@@ -1,6 +1,12 @@
 import { from, Observable } from 'rxjs'
 import { catchError, delay, filter, map, retryWhen } from 'rxjs/operators'
-import { AggregateError, CloneInProgressError, ECLONEINPROGESS, RepoNotFoundError, RevNotFoundError, } from '../../../../shared/src/backend/errors'
+import {
+    AggregateError,
+    CloneInProgressError,
+    ECLONEINPROGESS,
+    RepoNotFoundError,
+    RevNotFoundError,
+} from '../../../../shared/src/backend/errors'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
