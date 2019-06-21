@@ -180,7 +180,7 @@ describe('e2e test suite', function(this: any): void {
          * @param spanOffset 1-indexed index of the span that's to be clicked
          */
         const clickToken = async (line: number, spanOffset: number): Promise<void> => {
-            const selector = `${blobTableSelector} tr:nth-child(${line}) > td.code > span:nth-child(${spanOffset})`
+            const selector = `${blobTableSelector} tr:nth-child(${line}) > td.code > div:nth-child(1) > span:nth-child(${spanOffset})`
             await driver.page.waitForSelector(selector, { visible: true })
             await driver.page.click(selector)
         }
