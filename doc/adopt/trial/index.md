@@ -44,13 +44,13 @@ Site admins can get direct support from Sourcegraph Engineers in our open source
 
 ## 3. Share with the trial team
 
-**The bare minimum for a successful trial is 25 users.**
+**The bare minimum for a successful trial is 10 users.**
 
-As mentioned above, Sourcegraph trials are most successful when they start with a full team or organization (typically 25 to 500 users). If the cohort with access is smaller than that, we find users feel uncomfortable:
-  (1) investing in the product and exploring features, as they don't expect it to stick around, and;
-  (2) sharing links, telling others about it, posting search results, and other socializing.
+As mentioned above, Sourcegraph trials are most successful when they start with a full team or organization (typically 10 to 500 users). If the cohort with access is smaller than that, we find users feel uncomfortable:
+  - investing in the product and exploring features, as they don't expect it to stick around, and;
+  - sharing links, telling others about it, posting search results, and other socializing.
 
-If you want to run a trial with more than 30 users on your instance, just [reach out](https://about.sourcegraph.com/contact) and we'll provide an unlimited license key for up to a month, no questions asked.
+If you want to run a trial with more than 20 users on your instance, just [reach out](https://about.sourcegraph.com/contact) and we'll provide an unlimited license key for up to a month, no questions asked.
 
 A typical message to the team looks like:
 
