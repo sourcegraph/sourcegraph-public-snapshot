@@ -39,9 +39,9 @@ type Server struct {
 		AreReposCloned(context.Context, ...api.RepoName) (*gitprotocol.AreReposClonedResponse, error)
 	}
 
+	notClonedCountMu        sync.Mutex
 	notClonedCount          uint64
 	notClonedCountUpdatedAt time.Time
-	notClonedCountMu        sync.Mutex
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -395,21 +395,19 @@ func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
 }
 
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
-	if s.notClonedCountUpdatedAt.Before(time.Now().Add(-30 * time.Second)) {
-		err := s.updateNotClonedCount(r.Context())
-		if err != nil {
-			respond(w, http.StatusInternalServerError, err)
-			return
-		}
+	notCloned, err := s.computeNotClonedCount(r.Context())
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
 	}
 
 	resp := protocol.StatusMessagesResponse{
 		Messages: []protocol.StatusMessage{},
 	}
 
-	if s.notClonedCount != 0 {
+	if notCloned != 0 {
 		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Message: fmt.Sprintf("%d repositories enqueued for cloning...", s.notClonedCount),
+			Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
 			Type:    protocol.CloningStatusMessage,
 		})
 	}
@@ -419,31 +417,35 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 	respond(w, http.StatusOK, resp)
 }
 
-func (s *Server) updateNotClonedCount(ctx context.Context) error {
+func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 	s.notClonedCountMu.Lock()
 	defer s.notClonedCountMu.Unlock()
 
+	if expiresAt := s.notClonedCountUpdatedAt.Add(30 * time.Second); expiresAt.After(time.Now()) {
+		return s.notClonedCount, nil
+	}
+
 	names, err := s.Store.ListAllRepoNames(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	res, err := s.GitserverClient.AreReposCloned(ctx, names...)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	var notCloned uint64
 	for _, cloned := range res.Results {
 		if !cloned {
-			notCloned += 1
+			notCloned++
 		}
 	}
 
 	s.notClonedCount = notCloned
 	s.notClonedCountUpdatedAt = time.Now()
 
-	return nil
+	return notCloned, nil
 }
 
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
