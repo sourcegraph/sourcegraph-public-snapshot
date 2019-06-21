@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"regexp"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
@@ -57,7 +56,7 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 
 		if pattern.MatchString(string(repo.Repo.Name)) {
 			if len(args.Pattern.FilePatternsReposMustExclude) > 0 || len(args.Pattern.FilePatternsReposMustInclude) > 0 {
-				shouldBeAdded, err := repoShouldBeAdded(ctx, repo, args)
+				shouldBeAdded, err := repoShouldBeAdded(ctx, repo, args.Pattern)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -76,13 +75,17 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 
 // repoShouldBeAdded determines whether a repository should be included in the result set based on whether the repository fits in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
-func repoShouldBeAdded(ctx context.Context, repo *search.RepositoryRevisions, args *search.Args) (bool, error) {
+func repoShouldBeAdded(ctx context.Context, repo *search.RepositoryRevisions, pattern *search.PatternInfo) (bool, error) {
 	shouldBeAdded := true
-	if len(args.Pattern.FilePatternsReposMustInclude) > 0 {
-		rev := repo.RevSpecs()[0]
-		for _, pattern := range args.Pattern.FilePatternsReposMustInclude {
+	if len(pattern.FilePatternsReposMustInclude) > 0 {
+		for _, pattern := range pattern.FilePatternsReposMustInclude {
 			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-			matches, _, err := searchFilesInRepo(ctx, repo.Repo, repo.GitserverRepo(), rev, &p, time.Minute)
+			q, err := query.ParseAndCheck("file:" + pattern)
+			if err != nil {
+				return false, err
+			}
+			newArgs := search.Args{Pattern: &p, Repos: []*search.RepositoryRevisions{repo}, Query: q, UseFullDeadline: true}
+			matches, _, err := searchFilesInRepos(ctx, &newArgs)
 			if err != nil {
 				return false, err
 			}
@@ -92,11 +95,15 @@ func repoShouldBeAdded(ctx context.Context, repo *search.RepositoryRevisions, ar
 		}
 	}
 
-	if len(args.Pattern.FilePatternsReposMustExclude) > 0 {
-		rev := repo.RevSpecs()[0]
-		for _, pattern := range args.Pattern.FilePatternsReposMustExclude {
+	if len(pattern.FilePatternsReposMustExclude) > 0 {
+		for _, pattern := range pattern.FilePatternsReposMustExclude {
 			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-			matches, _, err := searchFilesInRepo(ctx, repo.Repo, repo.GitserverRepo(), rev, &p, time.Minute)
+			q, err := query.ParseAndCheck("file:" + pattern)
+			if err != nil {
+				return false, err
+			}
+			newArgs := search.Args{Pattern: &p, Repos: []*search.RepositoryRevisions{repo}, Query: q, UseFullDeadline: true}
+			matches, _, err := searchFilesInRepos(ctx, &newArgs)
 			if err != nil {
 				return false, err
 			}
