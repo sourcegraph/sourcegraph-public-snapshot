@@ -346,7 +346,7 @@ describe('registerHoverContributions()', () => {
             altAction: undefined,
         }
 
-        it.only('shows goToDefinition (non-preloaded) when the definition is loading', async () =>
+        it('shows goToDefinition (non-preloaded) when the definition is loading', async () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': true,
