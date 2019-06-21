@@ -1,5 +1,11 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import {
+    CloneInProgressError,
+    RepoNotFoundError,
+    RepoSeeOtherError,
+    RevNotFoundError,
+} from '../../../shared/src/backend/errors'
 import { FetchFileCtx } from '../../../shared/src/components/CodeExcerpt'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -7,39 +13,6 @@ import { createAggregateError } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { AbsoluteRepoFile, makeRepoURI, RepoRev } from '../../../shared/src/util/url'
 import { queryGraphQL } from '../backend/graphql'
-
-// We don't subclass Error because Error is not subclassable in ES5.
-// Use the internal factory functions and check for the error code on callsites.
-
-export const ECLONEINPROGESS = 'ECLONEINPROGESS'
-export interface CloneInProgressError extends Error {
-    code: typeof ECLONEINPROGESS
-    progress?: string
-}
-const createCloneInProgressError = (repoName: string, progress: string | undefined): CloneInProgressError =>
-    Object.assign(new Error(`Repository ${repoName} is clone in progress`), {
-        code: ECLONEINPROGESS as typeof ECLONEINPROGESS,
-        progress,
-    })
-
-export const EREPONOTFOUND = 'EREPONOTFOUND'
-const createRepoNotFoundError = (repoName: string): Error =>
-    Object.assign(new Error(`Repository ${repoName} not found`), { code: EREPONOTFOUND })
-
-export const EREVNOTFOUND = 'EREVNOTFOUND'
-const createRevNotFoundError = (rev?: string): Error =>
-    Object.assign(new Error(`Revision ${rev} not found`), { code: EREVNOTFOUND })
-
-export const EREPOSEEOTHER = 'ERREPOSEEOTHER'
-export interface RepoSeeOtherError extends Error {
-    code: typeof EREPOSEEOTHER
-    redirectURL: string
-}
-const createRepoSeeOtherError = (redirectURL: string): RepoSeeOtherError =>
-    Object.assign(new Error(`Repository not found at this location, but might exist at ${redirectURL}`), {
-        code: EREPOSEEOTHER as typeof EREPOSEEOTHER,
-        redirectURL,
-    })
 
 /**
  * Fetch the repository.
@@ -73,10 +46,10 @@ export const fetchRepository = memoizeObservable(
                     throw createAggregateError(errors)
                 }
                 if (data.repository && data.repository.redirectURL) {
-                    throw createRepoSeeOtherError(data.repository.redirectURL)
+                    throw new RepoSeeOtherError(data.repository.redirectURL)
                 }
                 if (!data.repository) {
-                    throw createRepoNotFoundError(args.repoName)
+                    throw new RepoNotFoundError(args.repoName)
                 }
                 return data.repository
             })
@@ -128,25 +101,22 @@ export const resolveRev = memoizeObservable(
                     throw createAggregateError(errors)
                 }
                 if (data.repository && data.repository.redirectURL) {
-                    throw createRepoSeeOtherError(data.repository.redirectURL)
+                    throw new RepoSeeOtherError(data.repository.redirectURL)
                 }
                 if (!data.repository) {
-                    throw createRepoNotFoundError(ctx.repoName)
+                    throw new RepoNotFoundError(ctx.repoName)
                 }
                 if (data.repository.mirrorInfo.cloneInProgress) {
-                    throw createCloneInProgressError(
-                        ctx.repoName,
-                        data.repository.mirrorInfo.cloneProgress || undefined
-                    )
+                    throw new CloneInProgressError(ctx.repoName, data.repository.mirrorInfo.cloneProgress || undefined)
                 }
                 if (!data.repository.mirrorInfo.cloned) {
-                    throw createCloneInProgressError(ctx.repoName, 'queued for cloning')
+                    throw new CloneInProgressError(ctx.repoName, 'queued for cloning')
                 }
                 if (!data.repository.commit) {
-                    throw createRevNotFoundError(ctx.rev)
+                    throw new RevNotFoundError(ctx.rev)
                 }
                 if (!data.repository.defaultBranch || !data.repository.commit.tree) {
-                    throw createRevNotFoundError('HEAD')
+                    throw new RevNotFoundError('HEAD')
                 }
                 return {
                     commitID: data.repository.commit.oid,

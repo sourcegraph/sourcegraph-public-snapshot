@@ -1,5 +1,6 @@
 import { combineLatest, merge, Observable, ReplaySubject } from 'rxjs'
 import { map, publishReplay, refCount, switchMap, take } from 'rxjs/operators'
+import { PrivateRepoPublicSourcegraphComError } from '../../../shared/src/backend/errors'
 import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../shared/src/platform/context'
@@ -12,7 +13,6 @@ import { background } from '../browser/runtime'
 import { observeStorageKey } from '../browser/storage'
 import { isInPage } from '../context'
 import { CodeHost } from '../libs/code_intelligence'
-import { PrivateRepoPublicSourcegraphComError } from '../shared/backend/errors'
 import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../shared/util/context'
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
@@ -78,8 +78,8 @@ export function createPlatformContext(
                 isInPage
                     ? fetchViewerSettings(requestGraphQL)
                     : observeStorageKey('sync', 'sourcegraphURL').pipe(
-                          switchMap(() => fetchViewerSettings(requestGraphQL))
-                      ),
+                        switchMap(() => fetchViewerSettings(requestGraphQL))
+                    ),
                 updatedViewerSettings
             ).pipe(
                 publishReplay(1),

@@ -1,17 +1,12 @@
 import { from, Observable } from 'rxjs'
 import { catchError, delay, filter, map, retryWhen } from 'rxjs/operators'
+import { AggregateError, CloneInProgressError, ECLONEINPROGESS, RepoNotFoundError, RevNotFoundError, } from '../../../../shared/src/backend/errors'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
+import { isErrorLike } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { FileSpec, makeRepoURI, RawRepoSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
-import {
-    CloneInProgressError,
-    createAggregateError,
-    ECLONEINPROGESS,
-    RepoNotFoundError,
-    RevNotFoundError,
-} from '../backend/errors'
 
 /**
  * @return Observable that emits if the repo exists on the instance.
@@ -93,7 +88,7 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
             retryWhen(errors =>
                 errors.pipe(
                     filter(err => {
-                        if (err.code === ECLONEINPROGESS) {
+                        if (isErrorLike(err) && err.code === ECLONEINPROGESS) {
                             return true
                         }
 
@@ -150,7 +145,7 @@ export const fetchBlobContentLines = memoizeObservable(
                             return []
                         }
                     }
-                    throw createAggregateError(errors)
+                    throw new AggregateError(errors)
                 }
                 const { repository } = data
                 if (!repository || !repository.commit || !repository.commit.file || !repository.commit.file.content) {

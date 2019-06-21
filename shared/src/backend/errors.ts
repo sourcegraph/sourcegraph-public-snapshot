@@ -1,58 +1,51 @@
-export interface ErrorLike {
-    message?: string
-    code?: string
-}
+import { asError, ErrorLike } from '../util/errors'
 
-export const isErrorLike = (val: any): val is ErrorLike =>
-    !!val && typeof val === 'object' && (!!val.stack || ('message' in val || 'code' in val))
-
-/**
- * Converts an ErrorLike to a proper Error if needed, copying all properties
- * @param errorLike An Error or object with ErrorLike properties
- */
-export const asError = (errorLike: ErrorLike): Error =>
-    errorLike instanceof Error ? errorLike : Object.assign(new Error(errorLike.message), errorLike)
-
+export const EAGGREGATE = 'AggregateError'
 /**
  * An Error that aggregates multiple errors
  */
-export interface AggregateError extends Error {
-    name: 'AggregateError'
-    errors: Error[]
+export class AggregateError extends Error {
+    public readonly name = EAGGREGATE
+    public readonly code = EAGGREGATE
+    constructor(public readonly errors: ErrorLike[] = []) {
+        super(errors.map(({ message }) => message).join('\n'))
+        this.errors = errors.map(asError)
+    }
 }
 
-/**
- * Creates an aggregate error out of multiple provided error likes
- *
- * @param errors The errors or ErrorLikes to aggregate
- */
-export const createAggregateError = (errors: ErrorLike[] = []): AggregateError =>
-    Object.assign(new Error(errors.map(e => e.message).join('\n')), {
-        name: 'AggregateError' as const,
-        errors: errors.map(asError),
-    })
-
-export const ECLONEINPROGESS = 'ECLONEINPROGESS'
+export const ECLONEINPROGESS = 'CloneInProgressError'
 export class CloneInProgressError extends Error {
+    public readonly name = ECLONEINPROGESS
     public readonly code = ECLONEINPROGESS
-    constructor(repoName: string) {
+    constructor(repoName: string, public readonly progress?: string) {
         super(`${repoName} is clone in progress`)
     }
 }
 
-export const EREPONOTFOUND = 'EREPONOTFOUND'
+export const EREPONOTFOUND = 'RepoNotFoundError'
 export class RepoNotFoundError extends Error {
+    public readonly name = EREPONOTFOUND
     public readonly code = EREPONOTFOUND
     constructor(repoName: string) {
         super(`repo ${repoName} not found`)
     }
 }
 
-export const EREVNOTFOUND = 'EREVNOTFOUND'
+export const EREVNOTFOUND = 'RevNotFoundError'
 export class RevNotFoundError extends Error {
+    public readonly name = EREVNOTFOUND
     public readonly code = EREVNOTFOUND
     constructor(rev?: string) {
         super(`rev ${rev} not found`)
+    }
+}
+
+export const EREPOSEEOTHER = 'ERREPOSEEOTHER'
+export class RepoSeeOtherError extends Error {
+    public readonly name = EREPOSEEOTHER
+    public readonly code = EREPOSEEOTHER
+    constructor(public readonly redirectURL: string) {
+        super(`Repository not found at this location, but might exist at ${redirectURL}`)
     }
 }
 
@@ -63,10 +56,10 @@ export class RevNotFoundError extends Error {
  * `requestMightContainPrivateInfo` argument to `requestGraphQL` is explicitly
  * set to false (defaults to true to be conservative).
  */
-export const ERPRIVATEREPOPUBLICSOURCEGRAPHCOM = 'ERPRIVATEREPOPUBLICSOURCEGRAPHCOM'
+export const ERPRIVATEREPOPUBLICSOURCEGRAPHCOM = 'PrivateRepoPublicSourcegraph'
 export class PrivateRepoPublicSourcegraphComError extends Error {
-    public readonly code = ERPRIVATEREPOPUBLICSOURCEGRAPHCOM
     public readonly name = ERPRIVATEREPOPUBLICSOURCEGRAPHCOM
+    public readonly code = ERPRIVATEREPOPUBLICSOURCEGRAPHCOM
     constructor(graphQLName: string) {
         super(
             `A ${graphQLName} GraphQL request to the public Sourcegraph.com was blocked because the current repository is private.`
@@ -74,14 +67,11 @@ export class PrivateRepoPublicSourcegraphComError extends Error {
     }
 }
 
-export const ERAUTHREQUIRED = 'ERAUTHREQUIRED'
-export interface AuthRequiredError extends Error {
-    code: typeof ERAUTHREQUIRED
-    url: string
+export const ERAUTHREQUIRED = 'AuthRequiredError'
+export class AuthRequiredError extends Error {
+    public readonly name = ERAUTHREQUIRED
+    public readonly code = ERAUTHREQUIRED
+    constructor(url: string) {
+        super(`private mode requires authentication: ${url}`)
+    }
 }
-
-export const createAuthRequiredError = (url: string): AuthRequiredError =>
-    Object.assign(new Error(`private mode requires authentication: ${url}`), {
-        code: ERAUTHREQUIRED as typeof ERAUTHREQUIRED,
-        url,
-    })

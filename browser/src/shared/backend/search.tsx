@@ -1,7 +1,6 @@
 import { flatten } from 'lodash'
 import { Observable, Subject } from 'rxjs'
 import {
-    catchError,
     debounceTime,
     distinctUntilChanged,
     filter,
@@ -17,7 +16,6 @@ import {
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
-import { createAggregateError } from './errors'
 
 interface BaseSuggestion {
     title: string
@@ -261,20 +259,5 @@ export const fetchSymbols = (
             const symbolsResults = flatten((search.results.results as GQL.IFileMatch[]).map(match => match.symbols))
 
             return symbolsResults
-        }),
-        catchError(err => {
-            // TODO@ggilmore: This is a kludge that should be removed once the
-            // code smells with requestGraphQL are addressed.
-            // At this time of writing, requestGraphQL throws the entire response
-            // instead of a well-formed error created from response.errors. This kludge
-            // manually creates this well-formed error before re-throwing it.
-            //
-            // See https://github.com/sourcegraph/browser-extension/pull/235 for more context.
-
-            if (err.errors) {
-                throw createAggregateError(err.errors)
-            }
-
-            throw err
         })
     )

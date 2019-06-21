@@ -1,8 +1,8 @@
 import { Observable, of, zip } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
+import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../../../shared/src/backend/errors'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
-import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../shared/backend/errors'
 import { resolveRepo, resolveRev, retryWhenCloneInProgressError } from '../../../shared/repo/backend'
 import { FileInfo, FileInfoWithRepoNames } from '../code_intelligence'
 
