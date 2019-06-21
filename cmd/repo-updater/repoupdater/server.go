@@ -418,6 +418,7 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
+	// Coarse lock so we single flight the expensive computation.
 	s.notClonedCountMu.Lock()
 	defer s.notClonedCountMu.Unlock()
 
