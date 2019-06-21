@@ -49,6 +49,16 @@ Or manually:
 - Place the file under e.g. `C:\Program Files\Sourcegraph\src.exe`
 - Add that directory to your system path to access it from any command prompt
 
+### Renaming
+
+Since `src` is a single static binary, you can simply rename it should you have any existing conflicts such as Bash aliases. For example, on Linux / Mac OS:
+
+```sh
+mv /usr/local/bin/src /usr/local/bin/sourcegraph-cli
+```
+
+You can then invoke it via `sourcegraph-cli`.
+
 ## Usage
 
 Consult `src -h` and `src api -h` for usage information.
