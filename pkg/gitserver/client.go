@@ -531,7 +531,7 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, err
 
 func (c *Client) AreReposCloned(ctx context.Context, repos ...api.RepoName) (*protocol.AreReposClonedResponse, error) {
 	numPossibleShards := len(c.Addrs(ctx))
-	shards := make(map[string]*protocol.AreReposClonedRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
+	shards := make(map[string]*protocol.AreReposClonedRequest, numPossibleShards)
 
 	for _, r := range repos {
 		addr := c.addrForRepo(ctx, r)
