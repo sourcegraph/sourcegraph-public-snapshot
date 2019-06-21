@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"reflect"
-	"strings"
 	"sync"
 	"testing"
 
@@ -105,11 +104,16 @@ func TestSearchSuggestions(t *testing.T) {
 	})
 
 	t.Run("single term invalid regex", func(t *testing.T) {
-		_, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: "[foo"})
-		if err == nil {
-			t.Fatal("err == nil")
-		} else if want := "error parsing regexp"; !strings.Contains(err.Error(), want) {
-			t.Fatalf("got error %q, want it to contain %q", err, want)
+		sr, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: "[foo"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		srr, err := sr.Results(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(srr.alert.proposedQueries) == 0 {
+			t.Errorf("want an alert with some query suggestions")
 		}
 	})
 

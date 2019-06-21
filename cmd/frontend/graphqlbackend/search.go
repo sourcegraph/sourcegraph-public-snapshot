@@ -66,7 +66,7 @@ func (r *schemaResolver) Search(args *struct {
 	defer tr.Finish()
 	q, err := query.ParseAndCheck(args.Query)
 	if err != nil {
-		return nil, err
+		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
 	}
 	return &searchResolver{
 		query: q,

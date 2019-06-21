@@ -13,8 +13,9 @@ func (e *ParseError) Error() string {
 }
 
 type parser struct {
-	tokens []Token
-	pos    int
+	tokens      []Token
+	pos         int
+	allowErrors bool
 }
 
 // context holds settings active within a given scope during parsing.
@@ -41,6 +42,19 @@ func Parse(input string) (*Query, error) {
 		return nil, err
 	}
 	return &Query{Expr: exprs, Input: input}, nil
+}
+
+// ParseAllowingErrors works like Parse except that any errors are
+// returned as TokenError within the Expr slice of the returned Query.
+func ParseAllowingErrors(input string) *Query {
+	tokens := Scan(input)
+	p := parser{tokens: tokens, allowErrors: true}
+	ctx := context{field: ""}
+	exprs, err := p.parseExprList(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("(bug) error returned by parseExprList despite allowErrors=true (this should never happen): %v", err))
+	}
+	return &Query{Expr: exprs, Input: input}
 }
 
 // peek returns the next token without consuming it. Peeking beyond the end of
@@ -130,12 +144,18 @@ func (p *parser) parseExpr(ctx context) (*Expr, error) {
 			switch valueTok.Type {
 			case TokenLiteral, TokenQuoted:
 				if tok3 := p.next(); tok3.Type != TokenSep && tok3.Type != TokenEOF {
+					if p.allowErrors {
+						return p.errorExpr(tok, tok2, tok3), nil
+					}
 					return nil, &ParseError{Pos: tok3.Pos, Msg: fmt.Sprintf("got %s, want separator or EOF", tok3.Type)}
 				}
 				return &Expr{Pos: tok.Pos, Field: tok.Value, Value: valueTok.Value, ValueType: valueTok.Type}, nil
 			case TokenSep, TokenEOF:
 				return &Expr{Pos: tok.Pos, Field: tok.Value, Value: "", ValueType: TokenLiteral}, nil
 			default:
+				if p.allowErrors {
+					return p.errorExpr(tok, tok2), nil
+				}
 				return nil, &ParseError{Pos: valueTok.Pos, Msg: fmt.Sprintf("got %s, want value", valueTok.Type)}
 			}
 		case TokenSep, TokenEOF:
@@ -149,9 +169,32 @@ func (p *parser) parseExpr(ctx context) (*Expr, error) {
 		case TokenSep, TokenEOF:
 			return &Expr{Pos: tok.Pos, Value: tok.Value, ValueType: tok.Type}, nil
 		default:
+			if p.allowErrors {
+				return p.errorExpr(tok, tok2), nil
+			}
 			return nil, &ParseError{Pos: tok2.Pos, Msg: fmt.Sprintf("got %s, want separator or EOF", tok2.Type)}
 		}
 	}
 
+	if p.allowErrors {
+		return p.errorExpr(tok), nil
+	}
 	return nil, &ParseError{Pos: tok.Pos, Msg: fmt.Sprintf("got %s, want expr", tok.Type)}
+}
+
+// errorExpr makes an Expr with type TokenError, whose value is built from the
+// given tokens plus any others up to the next separator (space) or EOF.
+func (p *parser) errorExpr(toks ...Token) *Expr {
+	e := &Expr{Pos: toks[0].Pos, Value: toks[0].Value, ValueType: TokenError}
+	for _, t := range toks[1:] {
+		e.Value = e.Value + t.Value
+	}
+	for {
+		t := p.next()
+		switch t.Type {
+		case TokenSep, TokenEOF:
+			return e
+		}
+		e.Value = e.Value + t.Value
+	}
 }
