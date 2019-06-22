@@ -6,6 +6,7 @@ import (
 	rxsyntax "regexp/syntax"
 	"sort"
 	"strings"
+	"unicode"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
@@ -83,8 +84,12 @@ func proposedQuotedQueries(rawQuery string) []*searchQueryDescription {
 }
 
 func makeTitle(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-	return strings.ToUpper(s[:1]) + s[1:]
+	i := 0
+	return strings.Map(func(r rune) rune {
+		i++
+		if i == 1 {
+			return unicode.ToTitle(r)
+		}
+		return r
+	}, s)
 }
