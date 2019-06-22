@@ -10,16 +10,19 @@ export const CopyThreadLinkButton: React.FunctionComponent<{
     className?: string
 }> = ({ link, className = '', children }) => {
     const [justCopied, setJustCopied] = useState(false)
-    const onCopyClick = useCallback<React.MouseEventHandler>(e => {
-        e.preventDefault()
-        copy(link)
-        setJustCopied(true)
-        setTimeout(() => setJustCopied(false), 1000)
-    }, [link])
+    const onCopyClick = useCallback<React.MouseEventHandler>(
+        e => {
+            e.preventDefault()
+            copy(link)
+            setJustCopied(true)
+            setTimeout(() => setJustCopied(false), 1000)
+        },
+        [link]
+    )
 
     return (
         <a className={className} data-tooltip={justCopied ? 'Copied!' : 'Copy link'} onClick={onCopyClick} href={link}>
-            {children} <ContentCopyIcon className="icon-inline" />
+            {children} <ContentCopyIcon className="icon-inline ml-1" />
         </a>
     )
 }

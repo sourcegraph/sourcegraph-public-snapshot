@@ -68,16 +68,16 @@ export class NavLinks extends React.PureComponent<Props> {
                     // TODO!(sqs): only show these on enterprise
                     <>
                         <li className="nav-item">
-                            <ChecksNavItem className="px-2" />
+                            <ChecksNavItem className="px-3" />
                         </li>
                         <li className="nav-item mr-1">
-                            <ThreadsNavItem className="px-2" />
+                            <ThreadsNavItem className="px-3" />
                         </li>
                         <li className="nav-item">
                             <Link
                                 to="/notifications"
                                 data-tooltip="Notifications"
-                                className="nav-link btn btn-link px-2 text-decoration-none"
+                                className="nav-link btn btn-link px-3 text-decoration-none"
                             >
                                 <BellIcon className="icon-inline" />
                             </Link>
@@ -87,7 +87,7 @@ export class NavLinks extends React.PureComponent<Props> {
                                 to="/changes"
                                 text="Changes"
                                 icon={ChangesIcon}
-                                className="nav-link btn btn-link px-2 text-decoration-none"
+                                className="nav-link btn btn-link px-3 text-decoration-none"
                             />
                         </li>
                     </>

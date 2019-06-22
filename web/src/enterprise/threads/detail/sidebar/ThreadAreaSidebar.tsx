@@ -35,10 +35,10 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
         {expanded => (
             <div className={`thread-area-sidebar d-flex flex-column ${className}`}>
                 <ul className="list-group list-group-flush px-2">
-                    <li className="list-group-item py-3">
+                    <li className="list-group-item thread-area-sidebar__item">
                         {expanded ? (
                             <>
-                                <h6>Assignee</h6>
+                                <h6 className="font-weight-normal mb-0">Assignee</h6>
                                 <div>
                                     <strong>@sqs</strong>
                                 </div>
@@ -47,10 +47,10 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
                             <UserIcon className="icon-inline" data-tooltip={`Assignee: @sqs`} />
                         )}
                     </li>
-                    <li className="list-group-item py-3">
+                    <li className="list-group-item thread-area-sidebar__item">
                         {expanded ? (
                             <>
-                                <h6>Labels</h6>
+                                <h6 className="font-weight-normal mb-0">Labels</h6>
                                 <div>
                                     {thread.title
                                         .toLowerCase()
@@ -67,28 +67,28 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
                             <LabelIcon className="icon-inline" data-tooltip="Labels TODO!(sqs)" />
                         )}
                     </li>
-                    <li className="list-group-item py-3">
+                    <li className="list-group-item thread-area-sidebar__item">
                         {expanded ? (
                             <>
-                                <h6>3 participants</h6>
+                                <h6 className="font-weight-normal mb-0">3 participants</h6>
                                 <div className="text-muted">@sqs @jtal3sf @rrono3 @jstykes</div>
                             </>
                         ) : (
                             <UserGroupIcon className="icon-inline" data-tooltip="TODO" />
                         )}
                     </li>
-                    <li className="list-group-item py-3">
+                    <li className="list-group-item thread-area-sidebar__item">
                         {expanded ? (
-                            <h6 className="mb-0 d-flex align-items-center justify-content-between">
+                            <h6 className="font-weight-normal mb-0 d-flex align-items-center justify-content-between">
                                 Notifications <Toggle value={true} />
                             </h6>
                         ) : (
                             <BellIcon className="icon-inline" />
                         )}
                     </li>
-                    <li className="list-group-item py-3">
+                    <li className="list-group-item thread-area-sidebar__item">
                         {expanded ? (
-                            <h6 className="mb-0 d-flex align-items-center justify-content-between">
+                            <h6 className="font-weight-normal mb-0 d-flex align-items-center justify-content-between">
                                 Link
                                 <CopyThreadLinkButton
                                     link={thread.url}
@@ -105,7 +105,7 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
                         )}
                     </li>
                     {expanded && (
-                        <li className="list-group-item py-3">
+                        <li className="list-group-item thread-area-sidebar__item">
                             <ThreadDeleteButton
                                 {...props}
                                 thread={thread}

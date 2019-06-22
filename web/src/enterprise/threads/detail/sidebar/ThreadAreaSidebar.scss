@@ -1,8 +1,24 @@
 .thread-area-sidebar {
+    --nav-link-icon-size: 1.25rem;
+    --sidebar-collapsed-width: calc(var(--project-avatar-size) + #{2 * map-get($spacers, 3)});
+
     &--collapsed {
-        width: 3.5rem;
+        width: var(--sidebar-collapsed-width);
     }
     &--expanded {
         width: 10rem;
+    }
+
+    &__item {
+        padding: map-get($spacers, 3) map-get($spacers, 1);
+        &:first-child {
+            border-top: 0;
+        }
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+    &--collapsed &__item {
+        text-align: center;
     }
 }

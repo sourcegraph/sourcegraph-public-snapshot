@@ -1,12 +1,22 @@
 .project-area-sidebar {
+    --project-avatar-size: 1.5rem;
+    --nav-link-icon-size: 1.25rem;
+    --sidebar-collapsed-width: calc(var(--project-avatar-size) + #{2 * map-get($spacers, 3)});
+
     &--collapsed {
-        width: 3.5rem;
+        width: var(--sidebar-collapsed-width);
     }
     &--expanded {
-        width: 12rem;
+        width: 10rem;
+    }
+
+    &__avatar {
+        width: var(--project-avatar-size);
+        height: var(--project-avatar-size);
     }
 
     &__nav-link {
+        line-height: 1; // make same height in collapsed and expanded states
         &:hover {
             background-color: var(--navbar-link-hover-bg);
         }
@@ -15,5 +25,10 @@
             background-color: var(--navbar-link-active-bg);
             color: var(--body-color);
         }
+    }
+    &__icon {
+        width: var(--nav-link-icon-size);
+        height: var(--nav-link-icon-size);
+        margin-left: calc((var(--project-avatar-size) - var(--nav-link-icon-size)) / 2);
     }
 }
