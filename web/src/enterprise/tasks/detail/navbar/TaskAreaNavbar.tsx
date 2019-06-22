@@ -1,11 +1,11 @@
-import FileDocumentBoxMultipleIcon from 'mdi-react/FileDocumentBoxMultipleIcon'
 import FileMultipleIcon from 'mdi-react/FileMultipleIcon'
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import * as sourcegraph from 'sourcegraph'
+import { ChatIcon } from '../../../../../../shared/src/components/icons'
+import { Task } from '../../task'
 
 interface Props {
-    task: sourcegraph.Diagnostic
+    task: Task
     areaURL: string
     className?: string
 }
@@ -26,17 +26,17 @@ export const TaskAreaNavbar: React.FunctionComponent<Props> = ({ task, areaURL, 
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="task-area-navbar__nav-link--active"
                     >
-                        <FileMultipleIcon className="icon-inline" /> Files changed
-                        <span className="badge badge-secondary">9</span>
+                        <ChatIcon className="icon-inline mr-1" /> Overview
                     </NavLink>
                 </div>
                 <div className="nav-item">
                     <NavLink
-                        to={`${areaURL}/changes`}
+                        to={`${areaURL}/files`}
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="task-area-navbar__nav-link--active"
                     >
-                        <FileDocumentBoxMultipleIcon className="icon-inline" /> Changes
+                        <FileMultipleIcon className="icon-inline mr-1" /> Files changed{' '}
+                        <span className="badge badge-secondary ml-1">9</span>
                     </NavLink>
                 </div>
             </div>

@@ -1,11 +1,11 @@
 import H from 'history'
 import React from 'react'
-import * as sourcegraph from 'sourcegraph'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { Task } from '../../task'
 import { TaskDescription } from './TaskDescription'
 
 interface Props extends ExtensionsControllerProps {
-    task: sourcegraph.Diagnostic
+    task: Task
 
     areaURL: string
 

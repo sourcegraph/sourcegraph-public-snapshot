@@ -95,22 +95,24 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
             decorations: { head: new Map(), base: new Map() },
         }
 
-        this.subscriptions.add(
-            this.props.hoverifier.hoverify({
-                dom: diffDomFunctions,
-                positionEvents: this.codeElements.pipe(
-                    filter(isDefined),
-                    findPositionsFromEvents({ domFunctions: diffDomFunctions })
-                ),
-                positionJumps: NEVER, // TODO support diff URLs
-                resolveContext: hoveredToken => {
-                    // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
-                    const { repoName, rev, filePath, commitID } = this.props[hoveredToken.part || 'head']
-                    // If a hover or go-to-definition was invoked on this part, we know the file path must exist
-                    return { repoName, filePath: filePath!, rev, commitID }
-                },
-            })
-        )
+        if (this.props.hoverifier) {
+            this.subscriptions.add(
+                this.props.hoverifier.hoverify({
+                    dom: diffDomFunctions,
+                    positionEvents: this.codeElements.pipe(
+                        filter(isDefined),
+                        findPositionsFromEvents({ domFunctions: diffDomFunctions })
+                    ),
+                    positionJumps: NEVER, // TODO support diff URLs
+                    resolveContext: hoveredToken => {
+                        // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
+                        const { repoName, rev, filePath, commitID } = this.props[hoveredToken.part || 'head']
+                        // If a hover or go-to-definition was invoked on this part, we know the file path must exist
+                        return { repoName, filePath: filePath!, rev, commitID }
+                    },
+                })
+            )
+        }
 
         // Listen to decorations from extensions and group them by line
         this.subscriptions.add(
