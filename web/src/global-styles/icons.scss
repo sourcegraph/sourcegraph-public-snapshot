@@ -18,13 +18,12 @@
 svg.icon-inline,
 img.icon-inline,
 .icon-inline svg {
-    // TODO find a better way to scale icons that is not proportional to the font size
-    // 14px font size -> 20px icon size
     // stylelint-disable-next-line declaration-property-unit-whitelist
-    width: (20em / 14);
+    width: $line-height-base * 1em;
     // stylelint-disable-next-line declaration-property-unit-whitelist
-    height: (20em / 14);
-    // Match color of the text
+    height: $line-height-base * 1em;
+
+    // Match color of the text.
     fill: currentColor;
 }
 

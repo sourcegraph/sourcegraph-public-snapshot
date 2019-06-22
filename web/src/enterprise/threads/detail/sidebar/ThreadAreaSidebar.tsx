@@ -28,12 +28,12 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
     <CollapsibleSidebar
         localStorageKey="thread-area__sidebar"
         side="right"
-        className={`project-area-sidebar d-flex flex-column border-left ${className}`}
-        collapsedClassName="project-area-sidebar--collapsed"
-        expandedClassName="project-area-sidebar--expanded"
+        className={`thread-area-sidebar d-flex flex-column border-left ${className}`}
+        collapsedClassName="thread-area-sidebar--collapsed"
+        expandedClassName="thread-area-sidebar--expanded"
     >
         {expanded => (
-            <div className={`thread-area-sidebar d-flex flex-column ${className}`}>
+            <>
                 <ul className="list-group list-group-flush px-2">
                     <li className="list-group-item thread-area-sidebar__item">
                         {expanded ? (
@@ -74,7 +74,7 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
                                 <div className="text-muted">@sqs @jtal3sf @rrono3 @jstykes</div>
                             </>
                         ) : (
-                            <UserGroupIcon className="icon-inline" data-tooltip="TODO" />
+                            <UserGroupIcon className="icon-inline" data-tooltip="TODO!(sqs)" />
                         )}
                     </li>
                     <li className="list-group-item thread-area-sidebar__item">
@@ -83,7 +83,7 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
                                 Notifications <Toggle value={true} />
                             </h6>
                         ) : (
-                            <BellIcon className="icon-inline" />
+                            <BellIcon className="icon-inline" data-tooltip="TODO!(sqs)" />
                         )}
                     </li>
                     <li className="list-group-item thread-area-sidebar__item">
@@ -116,7 +116,7 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
                         </li>
                     )}
                 </ul>
-            </div>
+            </>
         )}
     </CollapsibleSidebar>
 )

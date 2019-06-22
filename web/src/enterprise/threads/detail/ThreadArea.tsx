@@ -47,7 +47,7 @@ const LOADING: 'loading' = 'loading'
 export const ThreadArea: React.FunctionComponent<Props> = props => {
     const [threadOrError, setThreadOrError] = useState<typeof LOADING | GQL.IDiscussionThread | ErrorLike>(LOADING)
 
-    // tslint:disable-next-line: no-floating-promises beacuse fetchDiscussionThreadAndComments never throws
+    // tslint:disable-next-line: no-floating-promises because fetchDiscussionThreadAndComments never throws
     useMemo(async () => {
         try {
             setThreadOrError(await fetchDiscussionThreadAndComments(props.match.params.threadID).toPromise())

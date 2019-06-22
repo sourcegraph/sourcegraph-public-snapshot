@@ -20,7 +20,7 @@ export const ChangesListPage: React.FunctionComponent<Props> = props => {
     }
 
     return (
-        <div className="changes-overview-page mt-3 container">
+        <div className="mt-3 container">
             <h1 className="h4">
                 Changes <span className="text-muted">to...</span>
             </h1>
