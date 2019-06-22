@@ -22,6 +22,7 @@ import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
+import { ChangesetIcon } from '../enterprise/changesets/icons'
 
 interface Props
     extends SettingsCascadeProps,
@@ -68,6 +69,15 @@ export class NavLinks extends React.PureComponent<Props> {
                 {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
                     // TODO!(sqs): only show these on enterprise
                     <>
+                        <li className="nav-item">
+                            <LinkWithIconOnlyTooltip
+                                to="/changesets"
+                                text="Changesets"
+                                icon={ChangesetIcon}
+                                className="nav-link btn btn-link px-3 text-decoration-none"
+                            />
+                        </li>
+
                         <li className="nav-item">
                             <LinkWithIconOnlyTooltip
                                 to="/tasks"
