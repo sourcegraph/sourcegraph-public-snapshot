@@ -2,12 +2,17 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { from } from 'rxjs'
+import { filter, first, map, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
 import { useEffectAsync } from '../../../util/useEffectAsync'
+import { getCodeActions, getDiagnosticInfos } from '../../threads/detail/backend'
 import { TasksAreaContext } from '../global/TasksArea'
+import { Task } from '../task'
+import { TaskFilesPage } from './files/TaskFilesPage'
 import { TaskAreaNavbar } from './navbar/TaskAreaNavbar'
 import { TaskOverview } from './overview/TaskOverview'
 
@@ -19,7 +24,7 @@ interface Props extends TasksAreaContext, RouteComponentProps<{ taskID: string }
 
 export interface TaskAreaContext {
     /** The task. */
-    task: sourcegraph.Diagnostic
+    task: Task
 }
 
 const LOADING: 'loading' = 'loading'
@@ -28,17 +33,31 @@ const LOADING: 'loading' = 'loading'
  * The area for a single task.
  */
 export const TaskArea: React.FunctionComponent<Props> = props => {
-    const [taskOrError, setTaskOrError] = useState<typeof LOADING | sourcegraph.Diagnostic | ErrorLike>(LOADING)
+    const [taskOrError, setTaskOrError] = useState<typeof LOADING | Task | ErrorLike>(LOADING)
 
     useEffectAsync(async () => {
         try {
             // TODO!(sqs)
-            setTaskOrError(Array.from(props.extensionsController.services.diagnostics.collection.entries())[0][1][0])
+            setTaskOrError(
+                await getDiagnosticInfos(props.extensionsController)
+                    .pipe(
+                        filter(diagnostics => diagnostics.length > 0),
+                        first(),
+                        map(diagnostics => diagnostics[0]),
+                        switchMap(diagnostic =>
+                            getCodeActions({ diagnostic, extensionsController: props.extensionsController }).pipe(
+                                filter(codeActions => codeActions.length > 0),
+                                first(),
+                                map(codeActions => ({ diagnostic, codeActions }))
+                            )
+                        )
+                    )
+                    .toPromise()
+            )
         } catch (err) {
             setTaskOrError(asError(err))
         }
     }, [props.extensionsController])
-
     if (taskOrError === LOADING) {
         return null // loading
     }
