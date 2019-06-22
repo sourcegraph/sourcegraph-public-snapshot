@@ -40,13 +40,16 @@ export const ProjectAreaSidebar: React.FunctionComponent<Props> = ({ project, ar
     >
         {expanded => (
             <>
-                <h3>
+                <h3 className="mb-0">
                     <Link
                         to={areaURL}
-                        className="project-area-sidebar__nav-link pt-3 pb-2 d-block text-decoration-none shadow-none text-body px-3 text-truncate h5 mb-0"
+                        className="project-area-sidebar__nav-link d-block text-decoration-none shadow-none text-body p-3 text-truncate h5 mb-2"
                         data-tooltip={expanded ? '' : project.name}
                     >
-                        <ProjectAvatar project={project} className={expanded ? 'mr-3' : ''} />
+                        <ProjectAvatar
+                            project={project}
+                            className={`project-area-sidebar__avatar ${expanded ? 'mr-3' : ''}`}
+                        />
                         {expanded && project.name}
                     </Link>
                 </h3>
@@ -60,7 +63,8 @@ export const ProjectAreaSidebar: React.FunctionComponent<Props> = ({ project, ar
                                 activeClassName="project-area-sidebar__nav-link--active"
                                 data-tooltip={expanded ? '' : label}
                             >
-                                {Icon && <Icon className="icon-inline mr-3" />} {expanded && label}
+                                {Icon && <Icon className="project-area-sidebar__icon" />}{' '}
+                                {expanded && <span className="ml-3">{label}</span>}
                             </NavLink>
                         </li>
                     ))}

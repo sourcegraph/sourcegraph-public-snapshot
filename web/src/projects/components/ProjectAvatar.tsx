@@ -13,13 +13,11 @@ export const ProjectAvatar: React.FunctionComponent<{
     const backgroundColor = randomColor({ seed: project.name }) as string
     return (
         <div
-            className={`d-inline-flex align-items-center justify-content-center font-weight-bold rounded ${className}`}
+            className={`project-avatar d-inline-flex align-items-center justify-content-center font-weight-bold rounded ${className}`}
             // tslint:disable-next-line: jsx-ban-props
             style={{
                 backgroundColor,
                 color: contrastingForegroundColor(backgroundColor),
-                width: '39px',
-                height: '39px',
             }}
         >
             {project.name[0].toUpperCase()}
