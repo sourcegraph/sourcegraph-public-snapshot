@@ -6,6 +6,7 @@ import (
 	rxsyntax "regexp/syntax"
 	"sort"
 	"strings"
+	"unicode"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
@@ -24,7 +25,7 @@ func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResol
 		case *rxsyntax.Error:
 			srr := &searchResultsResolver{
 				alert: &searchAlert{
-					title:           makeTitle(e.Error()),
+					title:           capFirst(e.Error()),
 					description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
 					proposedQueries: sqds,
 				},
@@ -36,7 +37,7 @@ func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResol
 	case *syntax.ParseError:
 		srr := &searchResultsResolver{
 			alert: &searchAlert{
-				title:           makeTitle(e.Msg),
+				title:           capFirst(e.Msg),
 				description:     "Quoting the query may help if you want a literal match.",
 				proposedQueries: sqds,
 			},
@@ -82,9 +83,15 @@ func proposedQuotedQueries(rawQuery string) []*searchQueryDescription {
 	return sqds
 }
 
-func makeTitle(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-	return strings.ToUpper(s[:1]) + s[1:]
+// capFirst capitalizes the first rune in the given string. It can be safely
+// used with UTF-8 strings.
+func capFirst(s string) string {
+	i := 0
+	return strings.Map(func(r rune) rune {
+		i++
+		if i == 1 {
+			return unicode.ToTitle(r)
+		}
+		return r
+	}, s)
 }

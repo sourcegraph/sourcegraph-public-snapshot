@@ -122,7 +122,7 @@ func Test_didYouMeanQuotedResolver_Results(t *testing.T) {
 	})
 }
 
-func Test_makeTitle(t *testing.T) {
+func Test_capFirst(t *testing.T) {
 	tests := []struct {
 		name string
 		in   string
@@ -131,10 +131,11 @@ func Test_makeTitle(t *testing.T) {
 		{name: "empty", in: "", want: ""},
 		{name: "a", in: "a", want: "A"},
 		{name: "ab", in: "ab", want: "Ab"},
+		{name: "хлеб", in: "хлеб", want: "Хлеб"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := makeTitle(tt.in); got != tt.want {
+			if got := capFirst(tt.in); got != tt.want {
 				t.Errorf("makeTitle() = %v, want %v", got, tt.want)
 			}
 		})
