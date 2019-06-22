@@ -7,6 +7,7 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { HeroPage } from '../../../../components/HeroPage'
 import { FileDiffHunks } from '../../../../repo/compare/FileDiffHunks'
+import { FileDiffNode } from '../../../../repo/compare/FileDiffNode'
 import { useEffectAsync } from '../../../../util/useEffectAsync'
 import { QueryParameterProps } from '../../../threads/components/withQueryParameter/WithQueryParameter'
 import { computeDiff, FileDiff } from '../../../threads/detail/changes/computeDiff'
@@ -45,26 +46,29 @@ export const TaskFilesList: React.FunctionComponent<Props> = ({ task, ...props }
 
     return (
         <div className="task-files-list">
-            {fileDiffsOrError.map((fileDiff, i) => (
-                <FileDiffHunks
+            {fileDiffsOrError.map((fileDiff: GQL.IFileDiff, key: string) => (
+                <FileDiffNode
                     {...props}
+                    lineNumbers={false}
                     base={{
                         repoName: 'github.com/sourcegraph/about',
                         repoID: '123' as any /* TODO!(sqs) */,
                         rev: 'master', // TODO!(sqs): un-hardcode master
                         commitID: 'master' /* TODO!(sqs) un-hardcode master */,
-                        filePath: fileDiff.oldPath,
                     }}
                     head={{
                         repoName: 'github.com/sourcegraph/about',
                         repoID: '123' as any /* TODO!(sqs) */,
                         rev: 'master', // TODO!(sqs): un-hardcode master
                         commitID: 'master' /* TODO!(sqs) un-hardcode master */,
-                        filePath: fileDiff.newPath,
                     }}
-                    hunks={fileDiff.hunks}
-                    lineNumbers={false}
-                    className="overflow-auto"
+                    node={{
+                        ...fileDiff,
+                        stat: { added: 1, changed: 2, deleted: 3 },
+                        mostRelevantFile: {},
+                        newFile: {},
+                        oldFile: {},
+                    }}
                 />
             ))}
         </div>
