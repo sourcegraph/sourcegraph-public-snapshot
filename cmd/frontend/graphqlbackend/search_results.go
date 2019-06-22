@@ -464,7 +464,7 @@ loop:
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
-	rr, err := r.resultsWithTimeoutSuggestion(ctx)
+	rr, err := r.resultsOrSuggestions(ctx)
 	if err != nil {
 		return nil, err
 	}
