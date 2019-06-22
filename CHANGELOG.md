@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Suggestions are now displayed to fix some queries with impossible or invalid regular expressions, or queries that are invalid for other reasons. [#4625](https://github.com/sourcegraph/sourcegraph/issues/4625), [#4523](https://github.com/sourcegraph/sourcegraph/issues/4523)
+
 ### Changed
 
 ### Fixed
