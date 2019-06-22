@@ -94,3 +94,30 @@ func TestQuery_EscapeImpossibleCaretsDollars(t *testing.T) {
 		})
 	}
 }
+
+func TestQuery_WithErrorsQuoted(t *testing.T) {
+	cases := []struct {
+		in   string
+		want string
+	}{
+		{in: "", want: ""},
+		{in: "a", want: "a"},
+		{in: "f:foo bar", want: `f:foo bar`},
+		{in: "f:foo b(ar", want: `f:foo "b(ar"`},
+		{in: "f:foo b(ar b[az", want: `f:foo "b(ar" "b[az"`},
+	}
+	for _, c := range cases {
+		name := c.in
+		if c.in == "" {
+			name = "empty"
+		}
+		t.Run(name, func(t *testing.T) {
+			q := ParseAllowingErrors(c.in)
+			q2 := q.WithErrorsQuoted()
+			q2s := q2.String()
+			if q2s != c.want {
+				t.Errorf(`output is '%s', want '%s'`, q2s, c.want)
+			}
+		})
+	}
+}

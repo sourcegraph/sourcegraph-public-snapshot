@@ -124,7 +124,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     title={`${setupPercentage < 100 ? 'Set up Sourcegraph' : 'Status'}`}
                                     defaultExpanded={setupPercentage < 100}
                                     className="list-group-item"
-                                    titleClassName="h5 mb-0 font-weight-normal"
+                                    titleClassName="h5 mb-0 font-weight-normal p-2"
                                 >
                                     {this.props.activation.completed && (
                                         <ActivationChecklist
@@ -139,7 +139,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             {this.state.info.repositories !== null && (
                                 <Link
                                     to="/site-admin/repositories"
-                                    className="list-group-item list-group-item-action h5 font-weight-normal"
+                                    className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
                                 >
                                     {numberWithCommas(this.state.info.repositories)}{' '}
                                     {pluralize('repository', this.state.info.repositories, 'repositories')}
@@ -148,7 +148,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             {this.state.info.users > 1 && (
                                 <Link
                                     to="/site-admin/users"
-                                    className="list-group-item list-group-item-action h5 font-weight-normal"
+                                    className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
                                 >
                                     {numberWithCommas(this.state.info.users)} {pluralize('user', this.state.info.users)}
                                 </Link>
@@ -156,7 +156,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             {this.state.info.orgs > 1 && (
                                 <Link
                                     to="/site-admin/organizations"
-                                    className="list-group-item list-group-item-action h5 font-weight-normal"
+                                    className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
                                 >
                                     {numberWithCommas(this.state.info.orgs)}{' '}
                                     {pluralize('organization', this.state.info.orgs)}
@@ -165,7 +165,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             {this.state.info.users > 1 && (
                                 <Link
                                     to="/site-admin/surveys"
-                                    className="list-group-item list-group-item-action h5 font-weight-normal"
+                                    className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
                                 >
                                     {numberWithCommas(this.state.info.surveyResponses.totalCount)}{' '}
                                     {pluralize('user survey response', this.state.info.surveyResponses.totalCount)}
@@ -179,7 +179,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     )} last week`}
                                     defaultExpanded={true}
                                     className="list-group-item"
-                                    titleClassName="h5 mb-0 font-weight-normal"
+                                    titleClassName="h5 mb-0 font-weight-normal p-2"
                                 >
                                     {this.state.error && (
                                         <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>

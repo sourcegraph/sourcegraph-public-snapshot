@@ -2,6 +2,7 @@ package syntax
 
 import (
 	"bytes"
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -90,6 +91,24 @@ func (e Expr) String() string {
 		buf.WriteByte('/')
 	}
 	return buf.String()
+}
+
+// WithErrorsQuoted returns a new version of the expression,
+// quoting in case of TokenError or an invalid regular expression.
+func (e Expr) WithErrorsQuoted() Expr {
+	e2 := e
+	switch e.ValueType {
+	case TokenError:
+		e2.Value = fmt.Sprintf("%q", e.Value)
+		e2.ValueType = TokenQuoted
+	case TokenPattern, TokenLiteral:
+		_, err := regexp.Compile(e2.Value)
+		if err != nil {
+			e2.Value = fmt.Sprintf("%q", e.Value)
+			e2.ValueType = TokenQuoted
+		}
+	}
+	return e2
 }
 
 // ExprString returns the query string that parses to expr.

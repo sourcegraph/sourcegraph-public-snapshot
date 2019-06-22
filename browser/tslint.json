@@ -1,5 +1,5 @@
 {
-  "extends": ["../tslint.json"],
+  "extends": ["../tslint.config.js"],
   "linterOptions": { "exclude": ["node_modules/**", "**/*.json", "coverage/**"] },
   "rules": {
     "deprecation": {

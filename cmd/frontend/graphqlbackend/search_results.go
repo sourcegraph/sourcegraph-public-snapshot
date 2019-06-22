@@ -816,6 +816,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, &badRequestError{err}
 	}
 
+	err = validateRepoHasFileUsage(r.query)
+	if err != nil {
+		return nil, err
+	}
+
 	// Determine which types of results to return.
 	var resultTypes []string
 	if forceOnlyResultType != "" {
@@ -1140,4 +1145,33 @@ func regexpPatternMatchingExprsInOrder(patterns []string) string {
 		return patterns[0]
 	}
 	return "(" + strings.Join(patterns, ").*?(") + ")" // "?" makes it prefer shorter matches
+}
+
+// Validates usage of the `repohasfile` filter
+func validateRepoHasFileUsage(q *query.Query) error {
+	syntax := q.Syntax
+
+	// Query only contains "repohasfile:"
+	if len(syntax.Expr) == 1 && syntax.Expr[0].Field == "repohasfile" {
+		return errors.New("repohasfile must be used with at least one other search term in the query. Support for usage on its own is coming soon. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4608 for updates")
+	}
+
+	rawQuery := q.Syntax.Input
+
+	// Query contains "type:repo" and "repohasfile:"
+	// TODO: check q.Fields["type"] here instead of using string containment (requires checking list of type values in query).
+	if strings.Contains(rawQuery, "type:repo") && q.Fields["type"] != nil && q.Fields["repohasfile"] != nil {
+		return errors.New("repohasfile does not currently return repository results. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4584 for updates")
+	}
+
+	// Query only contains "repohasfile:" and "type:path"
+	if len(q.Fields) == 2 && q.Fields["repohasfile"] != nil && q.Fields["type"] != nil && len(q.Fields["type"]) == 1 && q.Fields["type"][0].Value() == "path" {
+		return errors.New("repohasfile must be used with at least one other search term in the query. Support for usage on its own is coming soon. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4608 for updates")
+	}
+
+	// Query only contains "repohasfile:" and "type:symbol"
+	if len(q.Fields) == 2 && q.Fields["repohasfile"] != nil && q.Fields["type"] != nil && len(q.Fields["type"]) == 1 && q.Fields["type"][0].Value() == "symbol" {
+		return errors.New("repohasfile does not currently return symbol results. Support for symbol results is coming soon. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates")
+	}
+	return nil
 }
