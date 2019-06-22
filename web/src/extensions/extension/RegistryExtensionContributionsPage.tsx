@@ -33,7 +33,7 @@ const ContributionsTable: React.FunctionComponent<{ contributionGroups: Contribu
                             {group.title} ({group.rows.length})
                         </h3>
                         {group.error && <div className="alert alert-danger mt-1">Error: {group.error.message}</div>}
-                        <table className="table">
+                        <table className="table mb-5">
                             <thead>
                                 <tr>
                                     {group.columnHeaders.map((label, i) => (
@@ -110,7 +110,7 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
                     // tslint:disable-next-line:no-invalid-template-strings
                     description.includes('${') ? (
                         <>
-                            Evaluated at runtime: <span className="text-monospace">{description}</span>
+                            Evaluated at runtime: <small className="text-monospace">{description}</small>
                         </>
                     ) : (
                         description
@@ -133,7 +133,7 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
     return groups
 }
 
-/** A page that displays an extension's manifest. */
+/** A page that displays an extension's contributions. */
 export class RegistryExtensionContributionsPage extends React.PureComponent<Props> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('RegistryExtensionContributions')
@@ -141,9 +141,9 @@ export class RegistryExtensionContributionsPage extends React.PureComponent<Prop
 
     public render(): JSX.Element | null {
         return (
-            <div className="registry-extension-manifest-page">
+            <div className="registry-extension-contributions-page">
                 <PageTitle title={`Contributions of ${this.props.extension.id}`} />
-                <div className="mt-2">
+                <div className="mt-3">
                     {this.props.extension.manifest === null ? (
                         <ExtensionNoManifestAlert extension={this.props.extension} />
                     ) : isErrorLike(this.props.extension.manifest) ? (
