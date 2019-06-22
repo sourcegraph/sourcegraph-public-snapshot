@@ -29,6 +29,8 @@ interface Props extends ExtensionsControllerProps {
 
 /**
  * The actions that can be performed on an item in a thread inbox.
+ *
+ * TODO!(sqs): dedupe with TasksListItemActions?
  */
 // tslint:disable: jsx-no-lambda
 export const ThreadInboxItemActions: React.FunctionComponent<Props> = ({
@@ -55,8 +57,6 @@ export const ThreadInboxItemActions: React.FunctionComponent<Props> = ({
                 codeActionsWithCommand.length > 0 ||
                 codeActionsWithCommandSecondary.length > 0) && (
                 <div className={`d-flex align-items-center`}>
-                    {/* <label className="mr-2 mb-2 text-muted">Fix:</label> */}
-                    {/* <PlayCircleOutlineIcon className="icon-inline text-muted mr-2 mb-2" aria-label="Fixes" /> */}
                     {codeActionsWithEdit.length > 0 && (
                         <div className="btn-group btn-group-toggle" data-toggle="buttons">
                             {codeActionsWithEdit.map((codeAction, i) => (
@@ -72,17 +72,18 @@ export const ThreadInboxItemActions: React.FunctionComponent<Props> = ({
                                 >
                                     <input
                                         type="radio"
+                                        className="mr-2"
                                         autoComplete="off"
                                         checked={codeAction === activeCodeAction}
                                         onChange={e =>
                                             onCodeActionClick(e.currentTarget.checked ? codeAction : undefined)
                                         }
                                     />{' '}
-                                    {codeAction === activeCodeAction ? (
+                                    {/* TODO!(sqs) {codeAction === activeCodeAction ? (
                                         <CheckboxMarkedCircleOutlineIcon className="icon-inline small mr-1" />
                                     ) : (
                                         <CheckboxBlankCirckeOutlineIcon className="icon-inline small mr-1" />
-                                    )}{' '}
+                                    )} */}{' '}
                                     {codeAction.title}
                                 </label>
                             ))}

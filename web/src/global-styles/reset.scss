@@ -23,6 +23,14 @@ body {
     font-size: var(--font-size-base);
 }
 
+input,
+button,
+select,
+optgroup,
+textarea {
+    margin: 0;
+}
+
 ul,
 ol,
 dl {

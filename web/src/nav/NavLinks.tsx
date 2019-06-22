@@ -15,6 +15,7 @@ import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/s
 import { isDiscussionsEnabled } from '../discussions'
 import { ChangesIcon } from '../enterprise/changes/icons'
 import { ChecksNavItem } from '../enterprise/checks/global/nav/ChecksNavItem'
+import { TasksIcon } from '../enterprise/tasks/icons'
 import { ThreadsNavItem } from '../enterprise/threads/global/nav/ThreadsNavItem'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
@@ -67,6 +68,14 @@ export class NavLinks extends React.PureComponent<Props> {
                 {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
                     // TODO!(sqs): only show these on enterprise
                     <>
+                        <li className="nav-item">
+                            <LinkWithIconOnlyTooltip
+                                to="/tasks"
+                                text="Tasks"
+                                icon={TasksIcon}
+                                className="nav-link btn btn-link px-3 text-decoration-none"
+                            />
+                        </li>
                         <li className="nav-item">
                             <ChecksNavItem className="px-3" />
                         </li>

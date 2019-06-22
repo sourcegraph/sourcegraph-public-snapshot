@@ -85,43 +85,25 @@ function startDiagnostics(): Unsubscribable {
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {
         provideCodeActions: async (doc, _rangeOrSelection, context): Promise<sourcegraph.CodeAction[]> => {
-            const diag = context.diagnostics.find(
-                d => typeof d.code === 'string' && d.code.startsWith(CODE_IMPORT_STAR + ':')
-            )
+            const diag = context.diagnostics.find(isImportStarDiagnostic)
             if (!diag) {
                 return []
-            }
-            const { binding, module } = JSON.parse((diag.code as string).slice((CODE_IMPORT_STAR + ':').length))
-
-            const fixEdits = new sourcegraph.WorkspaceEdit()
-            for (const range of findMatchRanges(doc.text, binding, module)) {
-                fixEdits.replace(new URL(doc.uri), range, `import ${binding} from '${module}'`)
-            }
-
-            const disableRuleEdits = new sourcegraph.WorkspaceEdit()
-
-            for (const range of findMatchRanges(doc.text, binding, module)) {
-                disableRuleEdits.insert(
-                    new URL(doc.uri),
-                    range.end,
-                    ' // sourcegraph:ignore-line React lint Hi Aneesh and Charlie https://sourcegraph.example.com/ofYRz6NFzj'
-                )
             }
 
             return [
                 {
                     title: 'Convert to named import',
-                    edit: fixEdits,
-                    diagnostics: flatten(
-                        sourcegraph.languages.getDiagnostics().map(([uri, diagnostics]) => diagnostics)
-                    ),
+                    edit: computeFixEdit(diag, doc),
+                    diagnostics: [diag],
+                },
+                {
+                    title: 'Fix all unnecessary import-stars',
+                    ...(await computeFixAllAction()),
                 },
                 {
                     title: 'Ignore',
-                    edit: disableRuleEdits,
-                    diagnostics: flatten(
-                        sourcegraph.languages.getDiagnostics().map(([uri, diagnostics]) => diagnostics)
-                    ),
+                    edit: computeIgnoreEdit(diag, doc),
+                    diagnostics: [diag],
                 },
                 {
                     title: `View npm package: ${module}`,
@@ -131,6 +113,66 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
             ]
         },
     }
+}
+
+function isImportStarDiagnostic(diag: sourcegraph.Diagnostic): boolean {
+    return typeof diag.code === 'string' && diag.code.startsWith(CODE_IMPORT_STAR + ':')
+}
+
+function getDiagnosticData(diag: sourcegraph.Diagnostic): { binding: string; module: string } {
+    const { binding, module } = JSON.parse((diag.code as string).slice((CODE_IMPORT_STAR + ':').length))
+    return { binding, module }
+}
+
+function computeFixEdit(
+    diag: sourcegraph.Diagnostic,
+    doc: sourcegraph.TextDocument,
+    edit = new sourcegraph.WorkspaceEdit()
+): sourcegraph.WorkspaceEdit {
+    const { binding, module } = getDiagnosticData(diag)
+    for (const range of findMatchRanges(doc.text, binding, module)) {
+        edit.replace(new URL(doc.uri), range, `import ${binding} from '${module}'`)
+    }
+    return edit
+}
+
+async function computeFixAllAction(): Promise<Pick<sourcegraph.CodeAction, 'edit' | 'diagnostics'>> {
+    // TODO!(sqs): Make this listen for new diagnostics and include those too, but that might be
+    // super inefficient because it's n^2, so maybe an altogether better/different solution is
+    // needed.
+    const allImportStarDiags = sourcegraph.languages
+        .getDiagnostics()
+        .map(([uri, diagnostics]) => {
+            const matchingDiags = diagnostics.filter(isImportStarDiagnostic)
+            return matchingDiags.length > 0
+                ? ([uri, matchingDiags] as ReturnType<typeof sourcegraph.languages.getDiagnostics>[0])
+                : null
+        })
+        .filter(isDefined)
+    const edit = new sourcegraph.WorkspaceEdit()
+    for (const [uri, diags] of allImportStarDiags) {
+        const doc = await sourcegraph.workspace.openTextDocument(uri)
+        for (const diag of diags) {
+            computeFixEdit(diag, doc, edit)
+        }
+    }
+    return { edit, diagnostics: flatten(allImportStarDiags.map(([uri, diagnostics]) => diagnostics)) }
+}
+
+function computeIgnoreEdit(
+    diag: sourcegraph.Diagnostic,
+    doc: sourcegraph.TextDocument,
+    edit = new sourcegraph.WorkspaceEdit()
+): sourcegraph.WorkspaceEdit {
+    const { binding, module } = getDiagnosticData(diag)
+    for (const range of findMatchRanges(doc.text, binding, module)) {
+        edit.insert(
+            new URL(doc.uri),
+            range.end,
+            ' // sourcegraph:ignore-line React lint https://sourcegraph.example.com/ofYRz6NFzj'
+        )
+    }
+    return edit
 }
 
 function findMatchRanges(text: string, binding: string, module: string): sourcegraph.Range[] {

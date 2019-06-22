@@ -1,4 +1,3 @@
-import H from 'history'
 import React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { PageTitle } from '../../../components/PageTitle'
@@ -8,10 +7,7 @@ import { ChecksAreaTitle } from '../components/ChecksAreaTitle'
 import { ChecksAreaContext } from '../global/ChecksArea'
 import { CheckThreadsList } from '../threads/list/CheckThreadsList'
 
-interface Props extends ChecksAreaContext, RouteComponentProps<{}> {
-    history: H.History
-    location: H.Location
-}
+interface Props extends ChecksAreaContext, RouteComponentProps<{}> {}
 
 /**
  * The checks overview page.
