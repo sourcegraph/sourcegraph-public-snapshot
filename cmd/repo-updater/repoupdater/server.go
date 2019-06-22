@@ -307,8 +307,14 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		_, err = src.ListRepos(r.Context())
+		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+		defer cancel()
+		_, err = src.ListRepos(ctx)
 		if err != nil {
+			// ignore if we took too long
+			if ctx.Err() != nil {
+				err = nil
+			}
 			errch <- err
 			// intentionally not return, we want to always triggersync
 		}
@@ -335,12 +341,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 			respond(w, http.StatusInternalServerError, err)
 		}
-
-	case <-time.After(10 * time.Second):
-		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
-			ExternalService: req.ExternalService,
-			Error:           "warning: took longer than 10s to verify config against code host. Please monitor repo-updater logs.",
-		})
 
 	case <-r.Context().Done():
 		// client is gone
