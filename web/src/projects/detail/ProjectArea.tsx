@@ -3,14 +3,15 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { map } from 'rxjs/operators'
-import { Resizable } from '../../../../shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
+import { ChangesetsArea } from '../../enterprise/changesets/global/ChangesetsArea'
 import { ChecksArea } from '../../enterprise/checks/global/ChecksArea'
 import { ThreadsArea } from '../../enterprise/threads/global/ThreadsArea'
 import { ProjectLabelsPage } from './labels/ProjectLabelsPage'
@@ -48,12 +49,15 @@ const NotFoundPage = () => (
 
 interface Props extends RouteComponentProps<{ idWithoutKind: string }>, ExtensionsControllerProps {}
 
-export interface ProjectAreaContext extends ExtensionsControllerProps {
+export interface ProjectAreaContext extends ExtensionsControllerProps, PlatformContextProps {
     /** The project. */
     project: GQL.IProject
 
     /** Called to update the project. */
     onProjectUpdate: (project: GQL.IProject) => void
+
+    authenticatedUser: GQL.IUser | null
+    isLightTheme: boolean
 }
 
 /**
@@ -99,6 +103,12 @@ export const ProjectArea: React.FunctionComponent<Props> = props => {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={() => <p>Overview!</p>}
+                        />
+                        <Route
+                            path={`${props.match.url}/changesets`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => <ChangesetsArea {...context} {...routeComponentProps} />}
                         />
                         <Route
                             path={`${props.match.url}/checks`}

@@ -1,3 +1,3 @@
-import FileDocumentBoxIcon from 'mdi-react/FileDocumentBoxIcon'
+import { ChecklistIcon } from '../changesets/icons'
 
-export const TasksIcon = FileDocumentBoxIcon
+export const TasksIcon = ChecklistIcon

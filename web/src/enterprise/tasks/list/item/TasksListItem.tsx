@@ -11,6 +11,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/DiagnosticSeverityIcon'
+import { createPreviewChangeset } from '../../../changesets/preview/backend'
 import { DiagnosticInfo, getCodeActions } from '../../../threads/detail/backend'
 import { WorkspaceEditPreview } from '../../../threads/detail/inbox/item/WorkspaceEditPreview'
 import { TasksListItemActions } from './TasksListItemActions'
@@ -60,10 +61,11 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
         return () => subscriptions.unsubscribe()
     }, [diagnostic, extensionsController])
 
-    const onCodeActionClick = useCallback((codeAction: sourcegraph.CodeAction) => {
-        // TODO!(sqs)
-        alert('not implemented')
-    }, [])
+    const onCodeActionClick = useCallback(async (codeAction: sourcegraph.CodeAction) => {
+        // TODO!(sqs): show loading
+        const changeset = await createPreviewChangeset({ extensionsController }, codeAction)
+        props.history.push(changeset.url)
+    }, [extensionsController, props.history])
 
     return (
         <div className={className}>

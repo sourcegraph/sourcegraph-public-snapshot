@@ -1,0 +1,9 @@
+.changeset-area-navbar {
+    &__nav-link {
+        border-bottom: solid 3px transparent;
+        &--active {
+            border-color: $primary;
+            color: var(--body-color);
+        }
+    }
+}

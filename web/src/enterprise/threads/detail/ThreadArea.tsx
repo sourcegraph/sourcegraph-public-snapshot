@@ -25,7 +25,7 @@ const NotFoundPage = () => (
 
 interface Props extends ThreadsAreaContext, RouteComponentProps<{ threadID: string }> {}
 
-export interface ThreadAreaContext {
+export interface ThreadAreaContext extends ThreadsAreaContext {
     /** The thread. */
     thread: GQL.IDiscussionThread
 
@@ -37,6 +37,20 @@ export interface ThreadAreaContext {
 
     /** The project containing the thread. */
     project: Pick<GQL.IProject, 'id' | 'name' | 'url'> | null
+
+    areaURL: string
+}
+
+export function createThreadAreaContext(
+    props: ThreadsAreaContext & RouteComponentProps<{ threadID: string }>,
+    context: Pick<ThreadAreaContext, 'thread' | 'onThreadUpdate'>
+): ThreadAreaContext {
+    return {
+        ...props,
+        ...context,
+        threadSettings: parseJSON(context.thread.settings),
+        areaURL: props.match.url,
+    }
 }
 
 const LOADING: 'loading' = 'loading'
@@ -63,18 +77,6 @@ export const ThreadArea: React.FunctionComponent<Props> = props => {
         return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={threadOrError.message} />
     }
 
-    const context: ThreadsAreaContext &
-        ThreadAreaContext & {
-            threadSettings: ThreadSettings
-            areaURL: string
-        } = {
-        ...props,
-        thread: threadOrError,
-        onThreadUpdate: setThreadOrError,
-        threadSettings: parseJSON(threadOrError.settings),
-        areaURL: props.match.url,
-    }
-
     const isCheck = threadOrError && !isErrorLike(threadOrError) && threadOrError.type === GQL.ThreadType.CHECK
     const sections = {
         review: true,
@@ -83,6 +85,7 @@ export const ThreadArea: React.FunctionComponent<Props> = props => {
         settings: isCheck,
     }
 
+    const context = createThreadAreaContext(props, { thread: threadOrError, onThreadUpdate: setThreadOrError })
     return (
         <div className="thread-area flex-1 d-flex overflow-hidden">
             <div className="d-flex flex-column flex-1 overflow-auto">

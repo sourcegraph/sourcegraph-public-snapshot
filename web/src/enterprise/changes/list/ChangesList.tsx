@@ -5,10 +5,10 @@ import { first, take } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
 import { fetchSearchResultStats, search } from '../../../search/backend'
 import { ChangesListHeader } from './ChangesListHeader'
 import { ChangesListItem } from './ChangesListItem'
-import { QueryParameterProps } from '../../threads/components/withQueryParameter/WithQueryParameter'
 
 const queryChanges = async ({
     query,

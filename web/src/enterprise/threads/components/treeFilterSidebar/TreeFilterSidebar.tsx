@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 import { Form } from '../../../../components/Form'
-import { QueryParameterProps } from '../withQueryParameter/WithQueryParameter'
+import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
 
 interface RenderChildrenProps extends Pick<QueryParameterProps, 'query'> {
     className?: string

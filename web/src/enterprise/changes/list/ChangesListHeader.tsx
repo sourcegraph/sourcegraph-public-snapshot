@@ -4,7 +4,7 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import TagOutlineIcon from 'mdi-react/TagOutlineIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { QueryParameterProps } from '../../threads/components/withQueryParameter/WithQueryParameter'
+import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
 
 interface Props extends QueryParameterProps {
     location: H.Location

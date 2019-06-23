@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { Diagnostic } from 'sourcegraph'
+import { QueryParameterProps } from '../../../../../components/withQueryParameter/WithQueryParameter'
 import { DiagnosticSeverityIcon } from '../../../../../diagnostics/components/DiagnosticSeverityIcon'
-import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
 import { ThreadInboxSidebarFilterListItem } from './ThreadInboxSidebarFilterListItem'
 
 interface Props extends QueryParameterProps {

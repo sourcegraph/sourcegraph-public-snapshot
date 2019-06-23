@@ -6,6 +6,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CollapsibleSidebar } from '../../../components/collapsibleSidebar/CollapsibleSidebar'
+import { ChangesetIcon } from '../../../enterprise/changesets/icons'
 import { ChecksIcon } from '../../../enterprise/checks/icons'
 import { ThreadsIcon } from '../../../enterprise/threads/icons'
 import { NavItemWithIconDescriptor } from '../../../util/contributions'
@@ -21,6 +22,7 @@ interface Props extends ExtensionsControllerProps {
 const LINKS: NavItemWithIconDescriptor[] = [
     { to: '', label: 'Project', icon: HomeVariantIcon, exact: true },
     { to: '/tree', label: 'Repository', icon: FolderTextIcon },
+    { to: '/changesets', label: 'Changesets', icon: ChangesetIcon },
     { to: '/checks', label: 'Checks', icon: ChecksIcon },
     { to: '/threads', label: 'Threads', icon: ThreadsIcon },
     { to: '/labels', label: 'Labels', icon: LabelIcon },

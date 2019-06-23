@@ -1,8 +1,8 @@
 import H from 'history'
 import React from 'react'
 import { Link } from '../../../../../shared/src/components/Link'
+import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
 import { threadsQueryMatches, threadsQueryWithValues } from '../url'
-import { QueryParameterProps } from './withQueryParameter/WithQueryParameter'
 
 /** A link in {@link ListHeaderQueryLinks}. */
 export interface QueryLink {

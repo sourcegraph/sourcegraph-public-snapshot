@@ -8,7 +8,7 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
-import { QueryParameterProps } from '../../components/withQueryParameter/WithQueryParameter'
+import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { ThreadSettings } from '../../settings'
 import { DiagnosticInfo, getDiagnosticInfos } from '../backend'
 import { ThreadInboxFileItem } from './item/ThreadInboxFileItem'

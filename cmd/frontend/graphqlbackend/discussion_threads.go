@@ -196,8 +196,8 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		Contents string
 		Target   *discussionThreadTargetInput
 		Settings *string
-		Type     threadType
-		Status   *threadStatus
+		Type     types.ThreadType
+		Status   *types.ThreadStatus
 	}
 }) (*discussionThreadResolver, error) {
 	if args.Input.Title == nil {
@@ -233,14 +233,14 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 	}
 
 	// Apply default status.
-	var status threadStatus
+	var status types.ThreadStatus
 	switch {
 	case args.Input.Status != nil:
 		status = *args.Input.Status
-	case args.Input.Type == threadTypeThread:
-		status = threadStatusOpenActive
-	case args.Input.Type == threadTypeCheck:
-		status = threadStatusInactive
+	case args.Input.Type == types.ThreadTypeThread || args.Input.Type == types.ThreadTypeChangeset:
+		status = types.ThreadStatusOpenActive
+	case args.Input.Type == types.ThreadTypeCheck:
+		status = types.ThreadStatusInactive
 	default:
 		return nil, fmt.Errorf("unexpected thread type %q", args.Input.Type)
 	}
@@ -258,8 +258,8 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		ProjectID:    project.DBID(),
 		Title:        *args.Input.Title,
 		Settings:     args.Input.Settings,
-		IsCheck:      args.Input.Type == threadTypeCheck,
-		IsActive:     status == threadStatusOpenActive,
+		Type:         args.Input.Type,
+		Status:       status,
 	}
 	thread, err := db.DiscussionThreads.Create(ctx, newThread)
 	if err != nil {
@@ -759,26 +759,17 @@ func (d *discussionThreadResolver) Settings(ctx context.Context) string {
 	return "{}"
 }
 
-func (d *discussionThreadResolver) Status() threadStatus {
-	if d.t.ArchivedAt != nil {
-		return threadStatusClosed
-	}
-	if d.t.IsCheck && !d.t.IsActive {
-		return threadStatusInactive
-	}
-	return threadStatusOpenActive
+func (d *discussionThreadResolver) Status() types.ThreadStatus {
+	return d.t.Status
 }
 
-func (d *discussionThreadResolver) Type() threadType {
-	if d.t.IsCheck {
-		return threadTypeCheck
-	}
-	return threadTypeThread
+func (d *discussionThreadResolver) Type() types.ThreadType {
+	return types.ThreadType(d.t.Type)
 }
 
 func (d *discussionThreadResolver) URL(ctx context.Context) string {
 	// TODO!(sqs): hardcoded /p/
-	return fmt.Sprintf("/p/%d/threads/%s", d.t.ProjectID, d.IDWithoutKind())
+	return fmt.Sprintf("/p/%d/%s/%s", d.t.ProjectID, strings.ToLower(string(d.t.Type))+"s", d.IDWithoutKind())
 }
 
 func (d *discussionThreadResolver) InlineURL(ctx context.Context) (*string, error) {

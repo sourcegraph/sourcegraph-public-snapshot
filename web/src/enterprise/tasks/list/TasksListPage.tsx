@@ -3,9 +3,9 @@ import UnfoldMoreVerticalIcon from 'mdi-react/UnfoldMoreVerticalIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../../components/PageTitle'
-import { WithQueryParameter } from '../../threads/components/withQueryParameter/WithQueryParameter'
+import { WithQueryParameter } from '../../../components/withQueryParameter/WithQueryParameter'
 import { TasksAreaContext } from '../global/TasksArea'
-import { TasksAreaTitle } from '../global/TasksAreaTitle'
+import { TasksAreaTitle } from '../components/TasksAreaTitle'
 import { TasksList } from './TasksList'
 
 interface Props extends TasksAreaContext, RouteComponentProps<{}> {}

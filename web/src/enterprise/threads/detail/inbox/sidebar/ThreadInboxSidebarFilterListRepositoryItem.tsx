@@ -3,7 +3,7 @@ import React from 'react'
 import { RepositoryIcon } from '../../../../../../../shared/src/components/icons'
 import { displayRepoName } from '../../../../../../../shared/src/components/RepoFileLink'
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
-import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
+import { QueryParameterProps } from '../../../../../components/withQueryParameter/WithQueryParameter'
 import { ThreadInboxSidebarFilterListItem } from './ThreadInboxSidebarFilterListItem'
 
 interface Props extends QueryParameterProps {

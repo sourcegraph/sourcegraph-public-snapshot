@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { HighlightedMatches } from '../../../../../../../shared/src/components/HighlightedMatches'
-import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
+import { QueryParameterProps } from '../../../../../components/withQueryParameter/WithQueryParameter'
 
 interface Props extends QueryParameterProps {
     icon: React.ComponentType<{ className?: string }>

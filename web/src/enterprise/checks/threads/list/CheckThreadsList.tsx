@@ -1,6 +1,6 @@
 import H from 'history'
 import React from 'react'
-import { QueryParameterProps } from '../../../threads/components/withQueryParameter/WithQueryParameter'
+import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { ThreadsAreaContext } from '../../../threads/global/ThreadsArea'
 import { ThreadsList } from '../../../threads/list/ThreadsList'
 import { CheckThreadsListHeader } from './CheckThreadsListHeader'

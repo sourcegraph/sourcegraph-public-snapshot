@@ -10,7 +10,7 @@
 .icon-inline {
     // SVGs already include padding to account for text baseline,
     // so align with the bottom of the text
-    vertical-align: bottom;
+    vertical-align: bottom !important;
     display: inline-flex;
     align-items: center;
 }
