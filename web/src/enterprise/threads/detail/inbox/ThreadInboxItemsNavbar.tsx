@@ -8,7 +8,7 @@ import { MultilineTextField } from '../../../../../../shared/src/components/mult
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ListHeaderQueryLinksNav } from '../../components/ListHeaderQueryLinks'
-import { QueryParameterProps } from '../../components/withQueryParameter/WithQueryParameter'
+import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { ThreadSettings } from '../../settings'
 import { ThreadInboxItemsListFilter } from './ThreadInboxItemsListFilter'
 import { ThreadInboxItemsListHeaderFilterButtonDropdown } from './ThreadInboxItemsListHeaderFilterButtonDropdown'

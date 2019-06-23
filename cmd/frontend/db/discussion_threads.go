@@ -83,8 +83,8 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 		author_user_id,
 		title,
 		settings,
-		is_check,
-		is_active,
+		type,
+		status,
 		created_at,
 		updated_at
 	) VALUES ($1, $2, $3, $4, $5, $6, $7,   $8) RETURNING id`,
@@ -92,8 +92,8 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 		newThread.AuthorUserID,
 		newThread.Title,
 		newThread.Settings,
-		newThread.IsCheck,
-		newThread.IsActive,
+		newThread.Type,
+		newThread.Status,
 		newThread.CreatedAt,
 		newThread.UpdatedAt,
 	).Scan(&newThread.ID)
@@ -164,7 +164,7 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 	}
 	if opts.Active != nil {
 		anyUpdate = true
-		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET is_active=$1 WHERE id=$2 AND deleted_at IS NULL", *opts.Active, threadID); err != nil {
+		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET status=$1 WHERE id=$2 AND deleted_at IS NULL", *opts.Active, threadID); err != nil {
 			return nil, err
 		}
 	}
@@ -217,13 +217,11 @@ type DiscussionThreadsListOptions struct {
 	// should be returned.
 	IsOpen *bool
 
-	// IsActive, when non-nil, specifies that only threads that are active (true) or inactive
-	// (false) should be returned.
-	IsActive *bool
+	// Type, when non-zero, specifies that only threads of the given type should be returned.
+	Type types.ThreadType
 
-	// IsCheck, when non-nil, specifies that only threads that are or aren't a check should be
-	// returned.
-	IsCheck *bool
+	// Status, when non-zero, specifies that only threads with the given status should be returned.
+	Status types.ThreadStatus
 
 	// TitleQuery, when non-nil, specifies that only threads whose title
 	// matches this string should be returned.
@@ -321,30 +319,16 @@ func (opts *DiscussionThreadsListOptions) SetFromQuery(ctx context.Context, quer
 
 	var reported bool
 	operators := map[string]func(value string){
-		// syntax: "is:open"/"is:closed"
+		// syntax: "is:open"/"is:closed"/"is:thread"
 		"is": func(value string) {
-			switch value {
-			case "open":
-				v := true
-				opts.IsOpen = &v
-			case "active":
-				v := true
-				opts.IsOpen = &v
-				opts.IsActive = &v
-			case "inactive":
-				t := true
-				f := false
-				opts.IsOpen = &t
-				opts.IsActive = &f
-			case "closed":
-				v := false
-				opts.IsOpen = &v
-			case "check":
-				v := true
-				opts.IsCheck = &v
-			case "thread":
-				v := false
-				opts.IsCheck = &v
+			if t := strings.ToUpper(value); types.IsValidThreadType(t) {
+				opts.Type = types.ThreadType(t)
+			}
+			if s := strings.ToUpper(value); types.IsValidThreadStatus(s) {
+				opts.Status = types.ThreadStatus(s)
+			}
+			if s := strings.ToLower(value); s == "open" || s == "active" {
+				opts.Status = types.ThreadStatusOpenActive
 			}
 		},
 
@@ -557,15 +541,11 @@ func (t *discussionThreads) fuzzyFilterThreads(opts *DiscussionThreadsListOption
 func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds []*sqlf.Query) {
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
-	if opts.IsOpen != nil {
-		// TODO!(sqs): rename archived_at to closed_at?
-		conds = append(conds, sqlf.Sprintf("(archived_at IS NULL) = %v", *opts.IsOpen))
+	if opts.Status != "" {
+		conds = append(conds, sqlf.Sprintf("status = %s", opts.Status))
 	}
-	if opts.IsActive != nil {
-		conds = append(conds, sqlf.Sprintf("is_active = %v", *opts.IsActive))
-	}
-	if opts.IsCheck != nil {
-		conds = append(conds, sqlf.Sprintf("is_check = %v", *opts.IsCheck))
+	if opts.Type != "" {
+		conds = append(conds, sqlf.Sprintf("type = %s", opts.Type))
 	}
 	if opts.TitleQuery != nil && strings.TrimSpace(*opts.TitleQuery) != "" {
 		conds = append(conds, sqlf.Sprintf("title ILIKE %v", extraFuzzy(*opts.TitleQuery)))
@@ -642,8 +622,8 @@ func (t *discussionThreads) getBySQL(ctx context.Context, query string, args ...
 			t.author_user_id,
 			t.title,
 			t.settings,
-			t.is_check,
-			t.is_active,
+			t.type,
+			t.status,
 			t.created_at,
 			t.archived_at,
 			t.updated_at
@@ -662,8 +642,8 @@ func (t *discussionThreads) getBySQL(ctx context.Context, query string, args ...
 			&thread.AuthorUserID,
 			&thread.Title,
 			&thread.Settings,
-			&thread.IsCheck,
-			&thread.IsActive,
+			&thread.Type,
+			&thread.Status,
 			&thread.CreatedAt,
 			&thread.ArchivedAt,
 			&thread.UpdatedAt,

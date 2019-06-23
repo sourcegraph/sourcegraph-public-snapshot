@@ -25,6 +25,10 @@ export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
         render: lazyComponent(() => import('./tasks/global/TasksArea'), 'TasksArea'),
     },
     {
+        path: '/changesets',
+        render: lazyComponent(() => import('./changesets/global/ChangesetsArea'), 'ChangesetsArea'),
+    },
+    {
         path: '/threads',
         render: lazyComponent(() => import('./threads/global/ThreadsArea'), 'ThreadsArea'),
     },

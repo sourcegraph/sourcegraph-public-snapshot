@@ -483,15 +483,19 @@ enum ThreadType {
     THREAD
     # A check.
     CHECK
+    # A changeset.
+    CHANGESET
 }
 
 # The statuses of discussion threads.
 enum ThreadStatus {
-    # Open (for threads) or active (for checks).
+    # Preview (for changesets).
+    PREVIEW
+    # Open (for threads and changesets) or active (for checks).
     OPEN_ACTIVE
     # Inactive (for checks only). In this state, checks do not perform any "write" operations.
     INACTIVE
-    # Closed (for threads and checks).
+    # Closed.
     CLOSED
 }
 

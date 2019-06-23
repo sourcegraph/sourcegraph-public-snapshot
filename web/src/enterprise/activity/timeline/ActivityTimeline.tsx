@@ -5,7 +5,7 @@ import { first, take } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { QueryParameterProps } from '../../threads/components/withQueryParameter/WithQueryParameter'
+import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
 
 interface GQLIEvent {}
 

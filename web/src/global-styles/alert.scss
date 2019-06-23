@@ -2,11 +2,16 @@
     padding: $spacer;
     border: 1px solid transparent;
     background: unset !important;
+
+    .text-muted {
+        color: var(--#{name}-contrast);
+        opacity: 0.8;
+    }
 }
 
 @mixin alert-variant($name) {
     .alert-#{$name} {
-        background-color: var(--#{$name}) !important;
+        background-color: var(--#{$name}-transparent) !important;
         border-color: var(--#{$name}-border);
         color: var(--#{$name}-contrast);
     }

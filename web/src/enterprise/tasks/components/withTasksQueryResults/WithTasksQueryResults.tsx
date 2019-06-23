@@ -3,7 +3,7 @@ import { Subscription } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
-import { QueryParameterProps } from '../../../threads/components/withQueryParameter/WithQueryParameter'
+import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { DiagnosticInfo, getDiagnosticInfos } from '../../../threads/detail/backend'
 const LOADING: 'loading' = 'loading'
 

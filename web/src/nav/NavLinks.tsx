@@ -14,6 +14,7 @@ import { LinkWithIconOnlyTooltip } from '../components/LinkWithIconOnlyTooltip'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { isDiscussionsEnabled } from '../discussions'
 import { ChangesIcon } from '../enterprise/changes/icons'
+import { ChangesetIcon } from '../enterprise/changesets/icons'
 import { ChecksNavItem } from '../enterprise/checks/global/nav/ChecksNavItem'
 import { TasksIcon } from '../enterprise/tasks/icons'
 import { ThreadsNavItem } from '../enterprise/threads/global/nav/ThreadsNavItem'
@@ -22,7 +23,6 @@ import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
-import { ChangesetIcon } from '../enterprise/changesets/icons'
 
 interface Props
     extends SettingsCascadeProps,

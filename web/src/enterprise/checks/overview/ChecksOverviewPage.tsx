@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { PageTitle } from '../../../components/PageTitle'
-import { WithQueryParameter } from '../../threads/components/withQueryParameter/WithQueryParameter'
+import { WithQueryParameter } from '../../../components/withQueryParameter/WithQueryParameter'
 import { threadsQueryWithValues } from '../../threads/url'
 import { ChecksAreaTitle } from '../components/ChecksAreaTitle'
 import { ChecksAreaContext } from '../global/ChecksArea'

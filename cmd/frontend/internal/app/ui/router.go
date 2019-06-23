@@ -46,6 +46,7 @@ const (
 	routeCodemods       = "codemods"
 	routeChanges        = "changes"
 	routeThreads        = "threads"
+	routeChangesets     = "changesets"
 	routeProject        = "project"
 	routeTree           = "tree"
 	routeBlob           = "blob"
@@ -144,6 +145,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/snippets").Methods("GET").Name(routeSnippets)
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
+	r.PathPrefix("/changesets").Methods("GET").Name(routeChangesets)
 	r.PathPrefix("/checks").Methods("GET").Name(routeChecks)
 	r.PathPrefix("/codemods").Methods("GET").Name(routeCodemods)
 	r.PathPrefix("/change").Methods("GET").Name(routeChanges)
@@ -200,6 +202,7 @@ func initRouter() {
 	router.Get(routeStart).Handler(staticRedirectHandler("https://about.sourcegraph.com/", http.StatusMovedPermanently))
 	router.Get(routeWelcome).Handler(staticRedirectHandler("https://about.sourcegraph.com/", http.StatusMovedPermanently))
 	router.Get(routeThreads).Handler(handler(serveBasicPageString("Threads - Sourcegraph")))
+	router.Get(routeChangesets).Handler(handler(serveBasicPageString("Changesets - Sourcegraph")))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
 	router.Get(uirouter.RouteSignUp).Handler(handler(serveBasicPageString("Sign up - Sourcegraph")))
 	router.Get(routeOrganizations).Handler(handler(serveBasicPageString("Organization - Sourcegraph")))

@@ -1,8 +1,16 @@
 BEGIN;
 
 ALTER TABLE discussion_threads ADD COLUMN settings text;
-ALTER TABLE discussion_threads ADD COLUMN is_check boolean NOT NULL DEFAULT false;
-ALTER TABLE discussion_threads ADD COLUMN is_active boolean NOT NULL DEFAULT false;
+
+ALTER TABLE discussion_threads ADD COLUMN type text;
+UPDATE discussion_threads SET type='THREAD';
+ALTER TABLE discussion_threads ALTER COLUMN type SET NOT NULL;
+
+ALTER TABLE discussion_threads ADD COLUMN status text;
+UPDATE discussion_threads SET status=(CASE WHEN archived_at IS NULL THEN 'OPEN_ACTIVE' ELSE 'CLOSED' END);
+ALTER TABLE discussion_threads ALTER COLUMN status SET NOT NULL;
+
+ALTER TABLE discussion_threads ADD COLUMN status text NOT NULL DEFAULT false;
 
 ALTER TABLE discussion_threads_target_repo ADD COLUMN is_ignored boolean NOT NULL DEFAULT false;
 

@@ -17,7 +17,7 @@ interface Props {
  */
 export const TasksListItemActions: React.FunctionComponent<Props> = ({
     codeActions,
-    onCodeActionClick: onCodeActionClick,
+    onCodeActionClick,
     className,
     buttonClassName = 'btn btn-link text-decoration-none',
 }) => {

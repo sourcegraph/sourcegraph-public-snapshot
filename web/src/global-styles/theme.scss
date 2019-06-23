@@ -73,7 +73,7 @@ $pink: $oc-pink-7;
 $red: $oc-red-7;
 $orange: $oc-orange-7;
 $yellow: $oc-yellow-7;
-$green: $oc-green-7;
+$green: $oc-green-8;
 $teal: $oc-teal-7;
 $cyan: $oc-cyan-7;
 
@@ -102,6 +102,7 @@ body {
 @mixin color-variants($name, $color, $contrast: #ffffff) {
     --#{$name}: #{$color};
     --#{$name}-hover: #{darken($color, 10%)};
+    --#{$name}-transparent: #{rgba($color, 0.25)};
     --#{$name}-border: #{darken($color, 10%)};
     --#{$name}-contrast: #{$contrast};
 }
@@ -147,8 +148,8 @@ body {
     --navbar-link-active-bg: rgba(0, 0, 0, 0.25);
     --bg-deep: #{$color-bg-2};
     --bg-muted: #{$color-bg-4};
-    --text-muted: #{$color-text-1};
-    --link-color: #a2b0cd;
+    --text-muted: #{darken($color-text-1, 15%)};
+    --link-color: #{$color-text-1};
     --link-hover-color: #ffffff;
     --border-color: #{$color-border};
     --input-bg: #{$color-bg-1};

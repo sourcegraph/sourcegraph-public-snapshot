@@ -1,4 +1,5 @@
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { FileDiff } from './detail/changes/computeDiff'
 
 export type PullRequest = {
     repo: string
@@ -58,4 +59,6 @@ export interface ThreadSettings {
     emailNotificationRules?: [EmailNotificationRule]
     webhooks?: [WebhookRule]
     actions?: { [id: string]: string | undefined }
+
+    previewChangesetDiff?: FileDiff[]
 }

@@ -2,7 +2,7 @@ import H from 'history'
 import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
-import { WithQueryParameter } from '../../../threads/components/withQueryParameter/WithQueryParameter'
+import { WithQueryParameter } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { Task } from '../../task'
 import { TaskFilesList } from './TaskFilesList'
 

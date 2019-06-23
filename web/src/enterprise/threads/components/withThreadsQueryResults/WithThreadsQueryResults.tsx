@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
+import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { fetchDiscussionThreads } from '../../../../discussions/backend'
-import { QueryParameterProps } from '../withQueryParameter/WithQueryParameter'
 
 const LOADING: 'loading' = 'loading'
 

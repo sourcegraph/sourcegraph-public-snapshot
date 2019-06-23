@@ -14,12 +14,41 @@ type DiscussionThread struct {
 	AuthorUserID int32
 	Title        string
 	Settings     *string
-	IsCheck      bool
-	IsActive     bool
+	Type         ThreadType
+	Status       ThreadStatus
 	CreatedAt    time.Time
 	ArchivedAt   *time.Time
 	UpdatedAt    time.Time
 	DeletedAt    *time.Time
+}
+
+// ThreadType enumerates the possible thread types.
+type ThreadType string
+
+const (
+	ThreadTypeThread    ThreadType = "THREAD"
+	ThreadTypeCheck                = "CHECK"
+	ThreadTypeChangeset            = "CHANGESET"
+)
+
+// IsValidThreadType reports whether t is a valid thread type.
+func IsValidThreadType(t string) bool {
+	return ThreadType(t) == ThreadTypeThread || ThreadType(t) == ThreadTypeCheck || ThreadType(t) == ThreadTypeChangeset
+}
+
+// ThreadStatus enumerates the possible thread statuses.
+type ThreadStatus string
+
+const (
+	ThreadStatusPreview    ThreadStatus = "PREVIEW"
+	ThreadStatusOpenActive              = "OPEN_ACTIVE"
+	ThreadStatusInactive                = "INACTIVE"
+	ThreadStatusClosed                  = "CLOSED"
+)
+
+// IsValidThreadStatus reports whether t is a valid thread status.
+func IsValidThreadStatus(t string) bool {
+	return ThreadStatus(t) == ThreadStatusPreview || ThreadStatus(t) == ThreadStatusOpenActive || ThreadStatus(t) == ThreadStatusInactive || ThreadStatus(t) == ThreadStatusClosed
 }
 
 // DiscussionThreadTargetRepo mirrors the underlying discussion_threads_target_repo field types exactly.

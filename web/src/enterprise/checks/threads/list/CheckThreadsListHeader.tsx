@@ -1,7 +1,7 @@
 import H from 'history'
 import React from 'react'
+import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { ListHeaderQueryLinksButtonGroup } from '../../../threads/components/ListHeaderQueryLinks'
-import { QueryParameterProps } from '../../../threads/components/withQueryParameter/WithQueryParameter'
 import { ThreadsAreaContext } from '../../../threads/global/ThreadsArea'
 import { ThreadsListFilter } from '../../../threads/list/ThreadsListFilter'
 
