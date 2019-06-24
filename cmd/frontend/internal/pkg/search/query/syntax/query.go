@@ -59,16 +59,21 @@ func (e Expr) String() string {
 // quoting in case of TokenError or an invalid regular expression.
 func (e Expr) WithErrorsQuoted() Expr {
 	e2 := e
+	needsQuoting := false
 	switch e.ValueType {
 	case TokenError:
-		e2.Value = fmt.Sprintf("%q", e.Value)
-		e2.ValueType = TokenQuoted
+		needsQuoting = true
 	case TokenPattern, TokenLiteral:
 		_, err := regexp.Compile(e2.Value)
 		if err != nil {
-			e2.Value = fmt.Sprintf("%q", e.Value)
-			e2.ValueType = TokenQuoted
+			needsQuoting = true
 		}
+	}
+	if needsQuoting {
+		e2.Not = false
+		e2.Field = ""
+		e2.Value = fmt.Sprintf("%q", e.String())
+		e2.ValueType = TokenQuoted
 	}
 	return e2
 }
