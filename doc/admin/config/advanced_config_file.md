@@ -18,13 +18,15 @@ Loading configuration in this manner has two important drawbacks:
 
 ## Getting started
 
-Simply add the relevant environment variable below to all `frontend` containers (cluster deployment) or to the `server` container (single-container Docker deployment):
+#### Critical configuration
+
+Set the environment variable below on all `frontend` containers (cluster deployment) or on the `server` container (single-container Docker deployment):
 
 ```sh
 CRITICAL_CONFIG_FILE=critical.json
-SITE_CONFIG_FILE=site.json
-EXTSVC_CONFIG_FILE=extsvc.json
 ```
+
+Where `critical.json` is literally the [management console](../management_console.md) configuration.
 
 You should also add to the `management-console` container (cluster deployment) or to the `server` container (single-container Docker deployment) the following:
 
@@ -32,32 +34,46 @@ You should also add to the `management-console` container (cluster deployment) o
 DISABLE_CONFIG_UPDATES=true
 ```
 
-- `critical.json` is literally the [management console](../management_console.md) configuration.
-- `site.json` is literally the [site configuration](site_config.md)
-- `extsvc.json` is _all_ of your external services in a single JSONC file like so:
+#### Site configuration
+
+Set the environment variable below on all `frontend` containers (cluster deployment) or on the `server` container (single-container Docker deployment):
+
+```sh
+SITE_CONFIG_FILE=site.json
+```
+
+Where `site.json` is literally the [site configuration](site_config.md) from the in-app editor.
+
+#### External service configuration
+
+Set the environment variable below on all `frontend` containers (cluster deployment) or on the `server` container (single-container Docker deployment):
+
+```sh
+EXTSVC_CONFIG_FILE=extsvc.json
+```
+
+Where `extsvc.json` is _all_ of your external services in a single JSONC file like so:
 
 ```jsonc
 
 {
   "GITHUB": [
     {
-      // First GitHub external service configuration
+      // First GitHub external service configuration: literally the JSON object from the external service config editor.
       "authorization": {},
       "url": "https://github.com",
       "token": "...",
       "repositoryQuery": ["affiliated"]
     },
     {
-      // Second GitHub external service configuration
-      "authorization": {},
-      "url": "https://github.com",
-      "token": "...",
-      "repositoryQuery": ["affiliated"]
+      // Second GitHub external service configuration: literally the JSON object from the external service config editor.
+      ...
     },
   ],
   "PHABRICATOR": [
     {
-      // First Phabricator external service configuration
+      // First Phabricator external service configuration: literally the JSON object from the external service config editor.
+      ...
     },
   ]
 }
