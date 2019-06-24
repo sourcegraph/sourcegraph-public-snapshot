@@ -97,6 +97,6 @@ We're planning to improve this by having Sourcegraph notify you as a site admin 
 
 ## Kubernetes ConfigMap
 
-Currently, site admins are responsible for creating the ConfigMap resource that maps the above environment variables to refer to the ConfigMap'd files on disk.
+Currently, site admins are responsible for creating the ConfigMap resource that maps the above environment variables to files on the container disk.
 
 (If you need assistance with this, please contact us.)
