@@ -91,7 +91,7 @@ func Test_didYouMeanQuotedResolver_Results(t *testing.T) {
 		}
 	})
 
-	t.Run("type error that is not a regex error", func(t *testing.T) {
+	t.Run("type error that is not a regex error should show a suggestion", func(t *testing.T) {
 		raw := "-foobar"
 		_, err := query.ParseAndCheck(raw)
 		if err == nil {
@@ -118,6 +118,23 @@ func Test_didYouMeanQuotedResolver_Results(t *testing.T) {
 		}
 		if strings.Contains(alert.description, "regular expression") {
 			t.Errorf("description is '%s', want it not to contain 'regular expression'", alert.description)
+		}
+	})
+
+	t.Run("negated file field with an invalid regex", func(t *testing.T) {
+		raw := "-f:(a"
+		_, err := query.ParseAndCheck(raw)
+		if err == nil {
+			t.Fatal("ParseAndCheck failed to detect the invalid regex in the f: field")
+		}
+		dymqr := didYouMeanQuotedResolver{query: raw, err: err}
+		srr, err := dymqr.Results(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		alert := srr.alert
+		if len(alert.proposedQueries) != 1 {
+			t.Fatalf("got %d proposed queries (%v), want exactly 1", len(alert.proposedQueries), alert.proposedQueries)
 		}
 	})
 }
