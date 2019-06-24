@@ -19,7 +19,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
         filePath: headFilePath,
         commitID: headCommitID,
         rev: headCommitID,
-        baseRepoName: rawRepoName, // TODO this is not necessarily true!
+        baseRawRepoName: rawRepoName,
         baseFilePath,
         baseCommitID,
         baseRev: baseCommitID,
