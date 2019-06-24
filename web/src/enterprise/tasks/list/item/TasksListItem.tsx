@@ -1,9 +1,12 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { isEqual } from 'date-fns'
 import H from 'history'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Subscription } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
+import { fromDiagnostic, toDiagnostic } from '../../../../../../shared/src/api/extension/api/types'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
 import { displayRepoName } from '../../../../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
@@ -12,6 +15,7 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/DiagnosticSeverityIcon'
 import { updateThreadSettings } from '../../../../discussions/backend'
+import { ChangesetIcon } from '../../../changesets/icons'
 import { createPreviewChangeset } from '../../../changesets/preview/backend'
 import {
     codeActionID,
@@ -52,11 +56,14 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
     const [codeActionsOrError, setCodeActionsOrError] = useState<typeof LOADING | sourcegraph.CodeAction[] | ErrorLike>(
         LOADING
     )
-    // tslint:disable-next-line: no-floating-promises
+    // Reduce recomputation of code actions when the diagnostic object reference changes but it
+    // contains the same data.
+    const diagnosticData = JSON.stringify(fromDiagnostic(diagnostic))
     useEffect(() => {
+        const diagnostic2: DiagnosticInfo = { ...toDiagnostic(JSON.parse(diagnosticData)), entry: diagnostic.entry }
         const subscriptions = new Subscription()
         subscriptions.add(
-            getCodeActions({ diagnostic, extensionsController })
+            getCodeActions({ diagnostic: diagnostic2, extensionsController })
                 .pipe(
                     catchError(err => [asError(err)]),
                     startWith(LOADING)
@@ -64,12 +71,23 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                 .subscribe(setCodeActionsOrError)
         )
         return () => subscriptions.unsubscribe()
-    }, [diagnostic, extensionsController])
+    }, [diagnosticData, diagnostic.entry, extensionsController])
 
     const onCodeActionClick = useCallback(
         async (codeAction: sourcegraph.CodeAction) => {
             if (codeAction.command) {
                 await extensionsController.executeCommand(codeAction.command)
+                if (codeAction.diagnostics) {
+                    // const fixedThisDiagnostic = codeAction.diagnostics.some(
+                    //     d =>
+                    //         d.code === diagnostic.code &&
+                    //         d.message === diagnostic.message &&
+                    //         d.source === diagnostic.source &&
+                    //         d.severity === diagnostic.severity &&
+                    //         d.range.isEqual(diagnostic.range)
+                    // )
+                    // TODO!(sqs)
+                }
             }
             if (codeAction.edit) {
                 // TODO!(sqs): show loading
@@ -83,8 +101,8 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
     const [activeCodeAction, setActiveCodeAction] = useState<sourcegraph.CodeAction | undefined>()
 
     return (
-        <div className={`d-flex flex-wrap ${className}`}>
-            <div style={{ flex: '1 1 33%' }} className="pr-5">
+        <div className={`d-flex flex-wrap align-items-stretch ${className}`}>
+            <div style={{ flex: '1 1 40%', minWidth: '400px', maxWidth: '600px' }} className="pr-5">
                 <header className={`d-flex align-items-start ${headerClassName}`} style={headerStyle}>
                     <div className={`flex-1 d-flex align-items-center`}>
                         <h3 className="mb-0 small">
@@ -119,23 +137,31 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                         onCodeActionClick={onCodeActionClick}
                         onCodeActionSetActive={setActiveCodeAction}
                         className="pt-2 pb-0"
-                        buttonClassName="btn py-0 px-2 text-decoration-none"
+                        buttonClassName="btn py-0 px-2 text-decoration-none text-left"
                         inactiveButtonClassName="btn-link"
                         activeButtonClassName="border"
                     />
                 )}
             </div>
-            <aside style={{ flex: '2 0 66%', minWidth: '800px' }}>
-                {activeCodeAction && activeCodeAction.edit && (
+            {activeCodeAction && activeCodeAction.edit && (
+                <aside
+                    className="d-flex flex-column justify-content-between"
+                    style={{ flex: '2 0 60%', minWidth: '600px' }}
+                >
                     <WorkspaceEditPreview
                         key={JSON.stringify(activeCodeAction.edit)}
                         {...props}
                         workspaceEdit={activeCodeAction.edit}
                         extensionsController={extensionsController}
-                        className="overflow-auto"
+                        className="overflow-auto pb-3 mb-3"
                     />
-                )}
-            </aside>
+                    <div>
+                        <button className="btn btn-success" onClick={() => onCodeActionClick(activeCodeAction)}>
+                            <ChangesetIcon className="icon-inline mr-1" /> Preview changeset
+                        </button>
+                    </div>
+                </aside>
+            )}
         </div>
     )
 }

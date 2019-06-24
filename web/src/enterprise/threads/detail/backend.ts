@@ -1,7 +1,7 @@
 import { Range } from '@sourcegraph/extension-api-classes'
 import { sortBy } from 'lodash'
 import { combineLatest, from, Observable, of } from 'rxjs'
-import { map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { map, mapTo, publishReplay, refCount, startWith, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { gql } from '../../../../../shared/src/graphql/graphql'

@@ -49,7 +49,12 @@ export const TasksList: React.FunctionComponent<Props> = ({ containerClassName, 
                     <ul className="list-group list-group-flush mb-0">
                         {tasksOrError.map((task, i) => (
                             <li key={i} className="list-group-item px-0">
-                                <TasksListItem {...props} key={i} diagnostic={task} className={containerClassName} />
+                                <TasksListItem
+                                    {...props}
+                                    key={JSON.stringify(task)}
+                                    diagnostic={task}
+                                    className={containerClassName}
+                                />
                             </li>
                         ))}
                     </ul>

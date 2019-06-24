@@ -50,7 +50,7 @@ function startDiagnostics(): Unsubscribable {
                         )
                             .pipe(toArray())
                             .toPromise()
-                    )
+                    ).slice(0, 1) // TODO!(sqs)
                     return combineLatestOrDefault(
                         results.map(async ({ uri }) => {
                             const { text } = await sourcegraph.workspace.openTextDocument(new URL(uri))
@@ -110,7 +110,7 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                     diagnostics: [diag],
                 },
                 {
-                    title: `View npm package: ${module}`,
+                    title: `View npm package: ${getDiagnosticData(diag).module}`,
                     command: { title: '', command: 'TODO!(sqs)' },
                 },
                 ...OTHER_CODE_ACTIONS,
