@@ -18,13 +18,14 @@ export type ChangesetCreationStatus = GQL.ThreadStatus.OPEN_ACTIVE | GQL.ThreadS
  */
 export async function createChangeset(
     { extensionsController }: ExtensionsControllerProps,
+    diagnostic: sourcegraph.Diagnostic,
     codeAction: sourcegraph.CodeAction,
     creationStatus: ChangesetCreationStatus
 ): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
     const settings: ThreadSettings = { previewChangesetDiff: await computeDiff(extensionsController, [codeAction]) }
     return createThread({
         type: GQL.ThreadType.CHANGESET,
-        title: codeAction.title,
+        title: `${diagnostic.message}: ${codeAction.title}`,
         contents: '',
         project: FAKE_PROJECT_ID,
         settings: JSON.stringify(settings, null, 2),

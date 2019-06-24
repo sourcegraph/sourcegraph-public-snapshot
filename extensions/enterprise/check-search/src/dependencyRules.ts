@@ -4,7 +4,7 @@ import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combine
 import { flatten, sortedUniq } from 'lodash'
 import { Subscription, Observable, of, Unsubscribable, from } from 'rxjs'
 import { map, switchMap, startWith, first, toArray } from 'rxjs/operators'
-import { queryGraphQL, settingsObservable } from './util'
+import { queryGraphQL, settingsObservable, memoizedFindTextInFiles } from './util'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { OTHER_CODE_ACTIONS, MAX_RESULTS, REPO_INCLUDE } from './misc'
 
@@ -42,7 +42,7 @@ function startDiagnostics(): Unsubscribable {
                 switchMap(async () => {
                     const results = flatten(
                         await from(
-                            sourcegraph.search.findTextInFiles(
+                            memoizedFindTextInFiles(
                                 { pattern: '[Dd]ependencies"', type: 'regexp' },
                                 {
                                     repositories: {

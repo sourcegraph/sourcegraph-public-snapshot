@@ -7,10 +7,17 @@
     flex: none;
     padding-top: 0;
     padding-bottom: 0;
+    border-bottom: var(--border-color);
     border-style: solid;
     border-width: 0 0 1px;
 
     .navbar-nav {
+        &__action-items {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
         white-space: nowrap;
 
         // Less padding above, below, and between actions.
