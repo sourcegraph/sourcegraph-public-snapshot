@@ -34,16 +34,13 @@ var unescapedDollarRx = regexp.MustCompile(`(^|[^\\])\$(.)`)
 var initialCaretRx = regexp.MustCompile(`^\^`)
 var finalUnescapedDollarRx = regexp.MustCompile(`(^|[^\\])\$$`)
 
-func (q *Query) EscapeImpossibleCaretsDollars() *Query {
-	q2 := &Query{}
-	// nf is the number of non-fields seen so far.
-	nf := 0
-	for i, e := range q.Expr {
+func (q *Query) EscapeImpossibleCaretsDollars() {
+	for i, e := range q.NonFieldExprs() {
 		e2 := *e
 		escape := func(s string) string {
 			s = unescapedCaretRx.ReplaceAllString(s, `$1\^`)
 			s = unescapedDollarRx.ReplaceAllString(s, `$1\$$$2`)
-			if nf > 0 {
+			if i > 0 {
 				s = initialCaretRx.ReplaceAllString(s, `\^`)
 			}
 			if i+1 < len(q.Expr) {
@@ -55,14 +52,29 @@ func (q *Query) EscapeImpossibleCaretsDollars() *Query {
 		// otherwise end up as `^\^^` whereas we want it to be escaped as
 		// `^\^\^`.
 		e2.Value = escape(escape(e2.Value))
-		if e2.Field == "" {
-			nf++
-		}
-		q2.Expr = append(q2.Expr, &e2)
+		*e = e2
 	}
+	q.Input = q.String()
+}
 
-	q2.Input = q2.String()
-	return q2
+func (q *Query) FieldExprs() []*Expr {
+	var es []*Expr
+	for _, e := range q.Expr {
+		if e.Field != "" {
+			es = append(es, e)
+		}
+	}
+	return es
+}
+
+func (q *Query) NonFieldExprs() []*Expr {
+	var es []*Expr
+	for _, e := range q.Expr {
+		if e.Field == "" {
+			es = append(es, e)
+		}
+	}
+	return es
 }
 
 // An Expr describes an expression in a query.

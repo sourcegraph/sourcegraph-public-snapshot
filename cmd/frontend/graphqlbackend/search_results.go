@@ -485,8 +485,10 @@ func (r *searchResolver) resultsOrSuggestions(ctx context.Context) (*searchResul
 	start := time.Now()
 
 	qs := r.query.Syntax
-	qs2 := qs.EscapeImpossibleCaretsDollars()
-	if qs2.String() != qs.String() {
+	qStr := qs.String()
+	qs.EscapeImpossibleCaretsDollars()
+	qStr2 := qs.String()
+	if qStr2 != qStr {
 		rr := &searchResultsResolver{
 			alert: &searchAlert{
 				title:       "Impossible regular expression",
@@ -494,7 +496,7 @@ func (r *searchResolver) resultsOrSuggestions(ctx context.Context) (*searchResul
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "query with misplaced metacharacters escaped",
-						query:       qs2.String(),
+						query:       qStr2,
 					},
 				},
 			},

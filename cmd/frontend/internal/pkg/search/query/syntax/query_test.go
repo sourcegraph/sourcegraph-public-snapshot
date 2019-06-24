@@ -79,6 +79,14 @@ func TestQuery_EscapeImpossibleCaretsDollars(t *testing.T) {
 		{in: "a^b", want: `a\^b`},
 		{in: "a^$b a^$b", want: `a\^\$b a\^\$b`},
 		{
+			in:   `file:mux.go repo:^github.com/gorilla/mux$`,
+			want: `file:mux.go repo:^github.com/gorilla/mux$`,
+		},
+		{
+			in:   `file:mux.go repo:^github.com/gorilla/mux$ a`,
+			want: `file:mux.go repo:^github.com/gorilla/mux$ a`,
+		},
+		{
 			in:   `repo:^github.com/gorilla/mux$ file:mux.go`,
 			want: `repo:^github.com/gorilla/mux$ file:mux.go`,
 		},
@@ -90,10 +98,10 @@ func TestQuery_EscapeImpossibleCaretsDollars(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			q2 := q.EscapeImpossibleCaretsDollars()
-			q2s := q2.String()
-			if q2s != c.want {
-				t.Errorf(`new query is "%s", want "%s"`, q2s, c.want)
+			q.EscapeImpossibleCaretsDollars()
+			qs := q.String()
+			if qs != c.want {
+				t.Errorf(`new query is "%s", want "%s"`, qs, c.want)
 			}
 		})
 	}
