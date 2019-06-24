@@ -52,7 +52,7 @@ Set the environment variable below on all `frontend` containers (cluster deploym
 EXTSVC_CONFIG_FILE=extsvc.json
 ```
 
-Where `extsvc.json` is _all_ of your external services in a single JSONC file like so:
+`extsvc.json` contains a JSON object that specifies _all_ of your external services in a single JSONC file:
 
 ```jsonc
 
