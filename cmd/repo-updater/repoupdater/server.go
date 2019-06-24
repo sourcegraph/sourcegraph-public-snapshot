@@ -297,6 +297,8 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	s.Syncer.TriggerSync()
+
 	errch := make(chan error, 1)
 	go func() {
 		src, err := repos.NewSource(&repos.ExternalService{
@@ -316,8 +318,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			err = nil
 		}
 		errch <- err
-
-		s.Syncer.TriggerSync()
 	}()
 
 	select {
