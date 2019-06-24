@@ -87,7 +87,7 @@ As mentioned earlier, when configuration is loaded via this manner Sourcegraph c
 
 It will still perform such migrations on the configuration loaded from file, it just cannot persist such migrations _back to file_.
 
-When you upgrade Sourcegraph versions, to ensure your configurations do not become invalid, you should:
+When you upgrade Sourcegraph versions, you should do the following to ensure your configurations do not become invalid:
 
 1. Upgrade Sourcegraph to the new version
 2. Visit each configuration page in the web UI (management console, site configuration, each external service)
