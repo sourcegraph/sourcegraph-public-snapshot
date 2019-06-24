@@ -1,4 +1,4 @@
-import { AbsoluteRepoFile } from '../../../../shared/src/util/url'
+import { FileSpec, RawRepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 
 export enum PhabricatorMode {
     Diffusion = 1,
@@ -7,7 +7,7 @@ export enum PhabricatorMode {
     Change,
 }
 
-export interface DiffusionState extends AbsoluteRepoFile {
+export interface DiffusionState extends RawRepoSpec, RevSpec, ResolvedRevSpec, FileSpec {
     mode: PhabricatorMode
 }
 
@@ -17,14 +17,13 @@ export interface DifferentialState {
     leftDiffID?: number
     diffID?: number
     baseRev: string
-    baseRepoName: string
+    baseRawRepoName: string
     headRev: string
-    headRepoName: string
+    headRawRepoName: string
 }
 
-export interface RevisionState {
+export interface RevisionState extends RawRepoSpec {
     mode: PhabricatorMode
-    repoName: string
     baseCommitID: string
     headCommitID: string
 }
@@ -33,11 +32,8 @@ export interface RevisionState {
  * Refers to a URL like http://phabricator.aws.sgdev.org/source/nzap/change/master/checked_message_bench_test.go,
  * which a user gets to by clicking "Show Last Change" on a differential page.
  */
-export interface ChangeState {
+export interface ChangeState extends RawRepoSpec, FileSpec, ResolvedRevSpec {
     mode: PhabricatorMode
-    repoName: string
-    filePath: string
-    commitID: string
 }
 
 export function convertSpacesToTabs(realLineContent: string, domContent: string): boolean {

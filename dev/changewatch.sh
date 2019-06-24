@@ -4,18 +4,18 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 GO_DIRS="$(./dev/watchdirs.sh) ${ADDITIONAL_GO_DIRS}"
 
 dirs_starstar() {
-	for i; do echo "'$i/**/*.go'"; done
+    for i; do echo "'$i/**/*.go'"; done
 }
 
 dirs_path() {
-	for i; do echo "-path $i"; done
+    for i; do echo "-path $i"; done
 }
 
 useChokidar() {
-	echo >&2 "Using chokidar."
-	# eval so the expansion can produce quoted things, and eval can eat the
-	# quotes, so it doesn't try to expand wildcards.
-	eval exec chokidar --silent \
+    echo >&2 "Using chokidar."
+    # eval so the expansion can produce quoted things, and eval can eat the
+    # quotes, so it doesn't try to expand wildcards.
+    eval exec chokidar --silent \
         $(dirs_starstar $GO_DIRS) \
         cmd/frontend/graphqlbackend/schema.graphql \
         "'schema/*.json'" \
@@ -24,23 +24,38 @@ useChokidar() {
         -c "'./dev/handle-change.sh {path}'"
 }
 
-useInotifywrapper() {
-	echo >&2 "Using inotifywrapper."
-	exec dev/inotifywrapper/inotifywrapper $(dirs_path $GO_DIRS) \
-		-match '\.go$' \
-		-match 'cmd/frontend/graphqlbackend/schema\.graphql' \
-		-match 'schema/.*.json' \
-		-cmd './dev/handle-change.sh'
+execInotifywrapper() {
+    echo >&2 "Using inotifywrapper."
+    set -e
+    pushd dev/inotifywrapper
+    go build
+    popd
+    exec dev/inotifywrapper/inotifywrapper $(dirs_path $GO_DIRS) \
+        -match '\.go$' \
+        -match 'cmd/frontend/graphqlbackend/schema\.graphql' \
+        -match 'schema/.*.json' \
+        -cmd './dev/handle-change.sh'
 }
 
-case $(which inotifywait 2>/dev/null) in
-"")	useChokidar
-	;;
-*)	if ( cd dev/inotifywrapper; go build ); then
-		useInotifywrapper
-	else
-		echo >&2 "Can't build inotifywrapper: Falling back on chokidar."
-		useChokidar
-	fi
-	;;
-esac
+execWatchman() {
+    echo >&2 "Using watchman."
+    set -e
+    pushd dev/watchmanwrapper
+    go build
+    popd
+    exec dev/watchmanwrapper/watchmanwrapper dev/handle-change.sh <<-EOT
+["subscribe", ".", "gochangewatch", {
+  "expression": ["anyof",
+    ["suffix", "go"],
+    ["dirname", "cmd/symbols"],
+    ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"]
+  ],
+  "fields": ["name"]
+}]
+EOT
+}
+
+[ -x "$(command -v watchman)" ] && execWatchman
+[ -x "$(command -v inotifywait)" ] && execInotifywrapper
+
+useChokidar

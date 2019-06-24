@@ -11,7 +11,7 @@ func TestPreSpansToTable_Simple(t *testing.T) {
 </pre>
 
 `
-	want := `<table><tr><td class="line" data-line="1"></td><td class="code"><span>package</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"></td></tr></table>`
+	want := `<table><tr><td class="line" data-line="1"></td><td class="code"><div><span>package</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div></div></td></tr></table>`
 	got, err := preSpansToTable(input)
 	if err != nil {
 		t.Fatal(err)
@@ -34,15 +34,15 @@ func TestPreSpansToTable_Complex(t *testing.T) {
 </span></pre>
 `
 
-	want := `<table><tr><td class="line" data-line="1"></td><td class="code"><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> errcode
-</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span style="color:#323232;">
-</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span style="font-weight:bold;color:#a71d5d;">import </span><span style="color:#323232;">(
-</span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;
-</span></td></tr><tr><td class="line" data-line="5"></td><td class="code"><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/pkg/api/legacyerr&#34;
-</span></td></tr><tr><td class="line" data-line="6"></td><td class="code"><span style="color:#323232;">)
-</span></td></tr><tr><td class="line" data-line="7"></td><td class="code"><span style="color:#323232;">
-</span></td></tr><tr><td class="line" data-line="8"></td><td class="code"><span style="color:#323232;">
-</span></td></tr><tr><td class="line" data-line="9"></td><td class="code"></td></tr></table>`
+	want := `<table><tr><td class="line" data-line="1"></td><td class="code"><div><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> errcode
+</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="font-weight:bold;color:#a71d5d;">import </span><span style="color:#323232;">(
+</span></div></td></tr><tr><td class="line" data-line="4"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;
+</span></div></td></tr><tr><td class="line" data-line="5"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/pkg/api/legacyerr&#34;
+</span></div></td></tr><tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#323232;">)
+</span></div></td></tr><tr><td class="line" data-line="7"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="8"></td><td class="code"><div><span style="color:#323232;">
+</span></div></td></tr><tr><td class="line" data-line="9"></td><td class="code"><div></div></td></tr></table>`
 	got, err := preSpansToTable(input)
 	if err != nil {
 		t.Fatal(err)
@@ -91,8 +91,8 @@ func TestIssue6892(t *testing.T) {
 
 <span style="color:#9b9b9b;">import</span>
 </pre>`
-	want := `<table><tr><td class="line" data-line="1"></td><td class="code"><span>
-</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span style="color:#9b9b9b;">import</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"></td></tr></table>`
+	want := `<table><tr><td class="line" data-line="1"></td><td class="code"><div><span>
+</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#9b9b9b;">import</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div></div></td></tr></table>`
 	got, err := preSpansToTable(input)
 	if err != nil {
 		t.Fatal(err)

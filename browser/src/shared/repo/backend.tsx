@@ -1,44 +1,47 @@
 import { from, Observable } from 'rxjs'
 import { catchError, delay, filter, map, retryWhen } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { PlatformContext } from '../../../../shared/src/platform/context'
-import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
-import { FileSpec, makeRepoURI, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import {
+    AggregateError,
     CloneInProgressError,
-    createAggregateError,
     ECLONEINPROGESS,
     RepoNotFoundError,
     RevNotFoundError,
-} from '../backend/errors'
+} from '../../../../shared/src/backend/errors'
+import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../../shared/src/platform/context'
+import { isErrorLike } from '../../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
+import { FileSpec, makeRepoURI, RawRepoSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 
 /**
  * @return Observable that emits if the repo exists on the instance.
+ *         Emits the repo name on the Sourcegraph instance as affected by `repositoryPathPattern`.
  *         Errors with a `RepoNotFoundError` if the repo is not found
  */
 export const resolveRepo = memoizeObservable(
-    ({ repoName, requestGraphQL }: RepoSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<void> =>
+    ({ rawRepoName, requestGraphQL }: RawRepoSpec & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
         requestGraphQL<GQL.IQuery>({
             request: gql`
-                query ResolveRepo($repoName: String!) {
-                    repository(name: $repoName) {
+                query ResolveRepo($rawRepoName: String!) {
+                    repository(name: $rawRepoName) {
                         name
                     }
                 }
             `,
-            variables: { repoName },
+            variables: { rawRepoName },
             // This request may leak private repository names
             mightContainPrivateInfo: true,
         }).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => {
                 if (!repository) {
-                    throw new RepoNotFoundError(repoName)
+                    throw new RepoNotFoundError(rawRepoName)
                 }
+                return repository.name
             }, catchError((err, caught) => caught))
         ),
-    makeRepoURI
+    ({ rawRepoName }) => rawRepoName
 )
 
 /**
@@ -91,7 +94,7 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
             retryWhen(errors =>
                 errors.pipe(
                     filter(err => {
-                        if (err.code === ECLONEINPROGESS) {
+                        if (isErrorLike(err) && err.code === ECLONEINPROGESS) {
                             return true
                         }
 
@@ -148,7 +151,7 @@ export const fetchBlobContentLines = memoizeObservable(
                             return []
                         }
                     }
-                    throw createAggregateError(errors)
+                    throw new AggregateError(errors)
                 }
                 const { repository } = data
                 if (!repository || !repository.commit || !repository.commit.file || !repository.commit.file.content) {
