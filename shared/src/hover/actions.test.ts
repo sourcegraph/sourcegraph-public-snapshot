@@ -267,7 +267,7 @@ describe('getDefinitionURL', () => {
                 .pipe(first())
                 .toPromise()
             sinon.assert.calledOnce(urlToFile)
-            sinon.assert.calledWith(urlToFile, {
+            expect(urlToFile.getCalls()[0].args[0]).toMatchObject({
                 filePath: 'f',
                 position: undefined,
                 rawRepoName: 'github.com/r3',
