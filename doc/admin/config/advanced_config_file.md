@@ -85,7 +85,7 @@ You can find a full list of [valid top-level keys here](https://sourcegraph.com/
 
 As mentioned earlier, when configuration is loaded via this manner Sourcegraph can no longer persist the automatic migrations to configuration it sometimes performs on upgrades.
 
-It will still perform such migrations on the configuration loaded from file, it just cannot persist such migrations _back to file_ and we only guarantee such migrations stick around for two minor versions.
+It will still perform such migrations on the configuration loaded from file, it just cannot persist such migrations _back to file_.
 
 When you upgrade Sourcegraph versions, to ensure your configurations do not become invalid, you should:
 
