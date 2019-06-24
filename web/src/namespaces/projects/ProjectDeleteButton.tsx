@@ -3,7 +3,7 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { useCallback, useState } from 'react'
 import { map } from 'rxjs/operators'
 import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
+import { ExtensionsControllerNotificationProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
@@ -31,23 +31,11 @@ const deleteProject = (args: GQL.IDeleteProjectOnProjectsMutationArguments): Pro
         )
         .toPromise()
 
-interface Props {
+interface Props extends ExtensionsControllerNotificationProps {
     project: Pick<GQL.IProject, 'id'>
     onDelete: () => void
     className?: string
     buttonClassName?: string
-    extensionsController: {
-        services: {
-            notifications: {
-                showMessages: Pick<
-                    ExtensionsControllerProps<
-                        'services'
-                    >['extensionsController']['services']['notifications']['showMessages'],
-                    'next'
-                >
-            }
-        }
-    }
 }
 
 /**

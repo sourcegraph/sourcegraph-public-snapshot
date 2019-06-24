@@ -11,7 +11,9 @@
 
 .form-control {
     width: 100%;
-    height: calc(#{$line-height-base * 1rem} + #{$input-padding * 2} + #{$input-border-width * 2});
+    :not(textarea) {
+        height: calc(#{$line-height-base * 1rem} + #{$input-padding * 2} + #{$input-border-width * 2});
+    }
     line-height: $line-height-base;
     font-size: var(--font-size-base);
     color: var(--body-color);
@@ -30,12 +32,12 @@
 }
 
 .form-group {
-    margin-bottom: $spacer * 1.5;
+    margin-bottom: map-get($spacers, 3);
 }
 
 .form-text {
     display: block;
-    margin-top: $spacer * 0.25;
+    margin-top: map-get($spacers, 1);
 }
 
 // TODO!(sqs): fix these after rebasing onto web-ui

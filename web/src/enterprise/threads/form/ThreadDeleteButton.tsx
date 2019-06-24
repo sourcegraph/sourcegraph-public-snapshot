@@ -3,30 +3,18 @@ import H from 'history'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { useCallback, useState } from 'react'
 import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { ExtensionsControllerNotificationProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { updateThread } from '../../../discussions/backend'
 import { threadNoun } from '../util'
 
-interface Props {
+interface Props extends ExtensionsControllerNotificationProps {
     textLabel?: boolean
     includeNounInLabel?: boolean
     thread: Pick<GQL.IDiscussionThread, 'id' | 'type'>
     history: H.History
     className?: string
     buttonClassName?: string
-    extensionsController: {
-        services: {
-            notifications: {
-                showMessages: Pick<
-                    ExtensionsControllerProps<
-                        'services'
-                    >['extensionsController']['services']['notifications']['showMessages'],
-                    'next'
-                >
-            }
-        }
-    }
 }
 
 /**

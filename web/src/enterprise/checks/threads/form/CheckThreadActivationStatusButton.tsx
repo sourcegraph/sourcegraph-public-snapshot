@@ -3,29 +3,20 @@ import FlashIcon from 'mdi-react/FlashIcon'
 import PauseCircleIcon from 'mdi-react/PauseCircleIcon'
 import React, { useCallback, useState } from 'react'
 import { NotificationType } from '../../../../../../shared/src/api/client/services/notifications'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import {
+    ExtensionsControllerNotificationProps,
+    ExtensionsControllerProps,
+} from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { updateThread } from '../../../../discussions/backend'
 import { threadNoun } from '../../../threads/util'
 
-interface Props {
+interface Props extends ExtensionsControllerNotificationProps {
     includeNounInLabel?: boolean
     thread: Pick<GQL.IDiscussionThread, 'id' | 'status' | 'type'>
     onThreadUpdate: (thread: GQL.IDiscussionThread) => void
     className?: string
     buttonClassName?: string
-    extensionsController: {
-        services: {
-            notifications: {
-                showMessages: Pick<
-                    ExtensionsControllerProps<
-                        'services'
-                    >['extensionsController']['services']['notifications']['showMessages'],
-                    'next'
-                >
-            }
-        }
-    }
 }
 
 /**
@@ -49,7 +40,13 @@ export const CheckThreadActivationStatusButton: React.FunctionComponent<Props> =
             e.preventDefault()
             setIsLoading(true)
             try {
-                const updatedThread = await updateThread({ threadID: thread.id, active: !isActive })
+                const updatedThread = await updateThread({
+                    threadID: thread.id,
+                    status:
+                        thread.status === GQL.ThreadStatus.OPEN_ACTIVE
+                            ? GQL.ThreadStatus.INACTIVE
+                            : GQL.ThreadStatus.OPEN_ACTIVE,
+                })
                 onThreadUpdate(updatedThread)
             } catch (err) {
                 extensionsController.services.notifications.showMessages.next({
@@ -62,7 +59,7 @@ export const CheckThreadActivationStatusButton: React.FunctionComponent<Props> =
                 setIsLoading(false)
             }
         },
-        [extensionsController.services.notifications.showMessages, isActive, onThreadUpdate, thread.id, thread.status]
+        [extensionsController.services.notifications.showMessages, onThreadUpdate, thread.id, thread.status]
     )
     const Icon = isActive ? PauseCircleIcon : FlashIcon
     return thread.status === GQL.ThreadStatus.CLOSED ? null : (

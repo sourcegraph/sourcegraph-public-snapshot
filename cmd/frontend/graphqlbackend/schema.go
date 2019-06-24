@@ -568,9 +568,10 @@ input DiscussionThreadCreateInput {
 
     # The initial status of the thread upon creation.
     #
-    # For threads (DiscussionThreadCreateInput#type == ThreadType.CHECK), the default status is
-    # ThreadStatus.OPEN_ACTIVE. For checks (DiscussionThreadCreateInput#type == ThreadType.CHECK),
-    # the default status is ThreadStatus.INACTIVE.
+    # For threads and changesets (DiscussionThreadCreateInput#type == ThreadType.THREAD or
+    # ThreadType.CHANGESET), the default status is ThreadStatus.OPEN_ACTIVE. For checks
+    # (DiscussionThreadCreateInput#type == ThreadType.CHECK), the default status is
+    # ThreadStatus.INACTIVE.
     status: ThreadStatus
 }
 
@@ -588,8 +589,8 @@ input DiscussionThreadUpdateInput {
     # When non-null, indicates that the thread should be archived.
     archive: Boolean
 
-    # When non-null, indicates that the check should be activated (true) or deactivated (false).
-    active: Boolean
+    # When non-null, updates the thread's status.
+    status: ThreadStatus
 
     # When non-null, indicates that the thread should be deleted. Only admins
     # can perform this action.

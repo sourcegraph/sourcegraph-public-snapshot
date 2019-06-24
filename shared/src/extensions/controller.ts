@@ -57,6 +57,25 @@ export interface ExtensionsControllerProps<K extends keyof Controller = keyof Co
 }
 
 /**
+ * A sparse subset of {@link ExtensionsControllerProps} that includes only what's necessary for
+ * showing a notification.
+ */
+export interface ExtensionsControllerNotificationProps {
+    extensionsController: {
+        services: {
+            notifications: {
+                showMessages: Pick<
+                    ExtensionsControllerProps<
+                        'services'
+                    >['extensionsController']['services']['notifications']['showMessages'],
+                    'next'
+                >
+            }
+        }
+    }
+}
+
+/**
  * Creates the controller, which handles all communication between the client application and extensions.
  *
  * There should only be a single controller for the entire client application. The controller's model represents

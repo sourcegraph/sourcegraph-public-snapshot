@@ -2,7 +2,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import CheckIcon from 'mdi-react/CheckIcon'
 import React, { useCallback, useState } from 'react'
 import { NotificationType } from '../../../../../../../shared/src/api/client/services/notifications'
-import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
+import {
+    ExtensionsControllerNotificationProps,
+    ExtensionsControllerProps,
+} from '../../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
 import { updateThreadSettings } from '../../../../../discussions/backend'
 import { PullRequest, ThreadSettings } from '../../../settings'
@@ -17,7 +20,7 @@ export const toCreatedPR = (pull: PullRequest): PullRequest => ({
     updatedBy: 'sqs',
 })
 
-interface Props {
+interface Props extends ExtensionsControllerNotificationProps {
     pull: PullRequest
     thread: Pick<GQL.IDiscussionThread, 'id'>
     onThreadUpdate: (thread: GQL.IDiscussionThread) => void
@@ -25,18 +28,6 @@ interface Props {
 
     className?: string
     buttonClassName?: string
-    extensionsController: {
-        services: {
-            notifications: {
-                showMessages: Pick<
-                    ExtensionsControllerProps<
-                        'services'
-                    >['extensionsController']['services']['notifications']['showMessages'],
-                    'next'
-                >
-            }
-        }
-    }
 }
 
 /**

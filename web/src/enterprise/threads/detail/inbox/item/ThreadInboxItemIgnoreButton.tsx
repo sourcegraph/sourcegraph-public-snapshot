@@ -3,29 +3,17 @@ import BackupRestoreIcon from 'mdi-react/BackupRestoreIcon'
 import WindowCloseIcon from 'mdi-react/WindowCloseIcon'
 import React, { useCallback, useState } from 'react'
 import { NotificationType } from '../../../../../../../shared/src/api/client/services/notifications'
-import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
+import { ExtensionsControllerNotificationProps } from '../../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
 import { fetchDiscussionThreadAndComments, updateTargetInThread } from '../../../../../discussions/backend'
 
-interface Props {
+interface Props extends ExtensionsControllerNotificationProps {
     inboxItem: Pick<GQL.IDiscussionThreadTargetRepo, 'id' | 'isIgnored'>
     onInboxItemUpdate: (item: GQL.DiscussionThreadTarget) => void
     thread: Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind'>
     onThreadUpdate: (thread: GQL.IDiscussionThread) => void
     className?: string
     buttonClassName?: string
-    extensionsController: {
-        services: {
-            notifications: {
-                showMessages: Pick<
-                    ExtensionsControllerProps<
-                        'services'
-                    >['extensionsController']['services']['notifications']['showMessages'],
-                    'next'
-                >
-            }
-        }
-    }
 }
 
 /**
@@ -61,7 +49,14 @@ export const ThreadInboxItemIgnoreButton: React.FunctionComponent<Props> = ({
                 setIsLoading(false)
             }
         },
-        [extensionsController.services.notifications.showMessages, inboxItem.id, inboxItem.isIgnored, onInboxItemUpdate, onThreadUpdate, thread.idWithoutKind]
+        [
+            extensionsController.services.notifications.showMessages,
+            inboxItem.id,
+            inboxItem.isIgnored,
+            onInboxItemUpdate,
+            onThreadUpdate,
+            thread.idWithoutKind,
+        ]
     )
     const Icon = inboxItem.isIgnored ? BackupRestoreIcon : WindowCloseIcon
     return (
