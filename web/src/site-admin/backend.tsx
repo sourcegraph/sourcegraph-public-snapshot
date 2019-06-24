@@ -148,8 +148,10 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
     )
 }
 
-export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
-    // Poll if there are repositories that are being cloned.
+export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
+    args: RepositoryArgs
+): Observable<GQL.IRepositoryConnection> {
+    // Poll if there are repositories that are being cloned or the list is empty.
     //
     // TODO(sqs): This is hacky, but I couldn't figure out a better way.
     const subject = new Subject<null>()
@@ -157,7 +159,7 @@ export function fetchAllRepositoriesAndPollIfAnyCloning(args: RepositoryArgs): O
         startWith(null),
         mergeMap(() => fetchAllRepositories(args)),
         tap(result => {
-            if (result.nodes && result.nodes.some(n => !n.mirrorInfo.cloned)) {
+            if (!result.nodes || result.nodes.some(n => !n.mirrorInfo.cloned)) {
                 setTimeout(() => subject.next(), 5000)
             }
         })
