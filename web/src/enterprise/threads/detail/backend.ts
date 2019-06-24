@@ -39,6 +39,7 @@ const queryCandidateFile = memoizeObservable(
                                 commit {
                                     oid
                                 }
+                                url
                             }
                         }
                     }

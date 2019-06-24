@@ -39,7 +39,7 @@ export async function computeDiff(
             })
         )
         const { hunks } = structuredPatch(uri.toString(), uri.toString(), oldText, newText, undefined, undefined, {
-            context: 1,
+            context: 4,
         })
         fileDiffs.push({
             oldPath: uri.toString(),

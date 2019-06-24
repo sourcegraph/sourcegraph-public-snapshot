@@ -14,6 +14,12 @@ export function highlightNode(node: HTMLElement, start: number, length: number):
     if (length > node.textContent!.length - start) {
         return
     }
+
+    // TODO!(sqs): prevent double-highlighting
+    if (node.querySelector('.selection-highlight')) {
+        return
+    }
+
     // We want to treat text nodes as walkable so they can be highlighted. Wrap these in a span and
     // replace them in the DOM.
     if (node.nodeType === Node.TEXT_NODE && node.textContent !== null) {
