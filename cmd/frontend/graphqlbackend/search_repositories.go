@@ -74,7 +74,7 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 }
 
 // repoShouldBeAdded determines whether a repository should be included in the result set based on whether the repository fits in the subset
-// of repostiories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
+// of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
 func repoShouldBeAdded(ctx context.Context, repo *search.RepositoryRevisions, pattern *search.PatternInfo) (bool, error) {
 	shouldBeAdded := true
 	if len(pattern.FilePatternsReposMustInclude) > 0 {
