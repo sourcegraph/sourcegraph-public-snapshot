@@ -2,30 +2,18 @@ import SourcePullIcon from 'mdi-react/SourcePullIcon'
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownToggle } from 'reactstrap'
 import { NotificationType } from '../../../../../../../../../shared/src/api/client/services/notifications'
-import { ExtensionsControllerProps } from '../../../../../../../../../shared/src/extensions/controller'
+import { ExtensionsControllerNotificationProps } from '../../../../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../../../../shared/src/graphql/schema'
 import { updateThreadSettings } from '../../../../../../../discussions/backend'
 import { PullRequest, ThreadSettings } from '../../../../../settings'
 import { PullRequestDropdownMenu } from './PullRequestDropdownMenu'
 
-interface Props {
+interface Props extends ExtensionsControllerNotificationProps {
     thread: Pick<GQL.IDiscussionThread, 'id' | 'settings'>
     onThreadUpdate: (thread: GQL.IDiscussionThread) => void
     threadSettings: ThreadSettings
     inboxItem: GQL.IDiscussionThreadTargetRepo
     buttonClassName?: string
-    extensionsController: {
-        services: {
-            notifications: {
-                showMessages: Pick<
-                    ExtensionsControllerProps<
-                        'services'
-                    >['extensionsController']['services']['notifications']['showMessages'],
-                    'next'
-                >
-            }
-        }
-    }
 }
 
 /**
@@ -64,7 +52,14 @@ export const ThreadInboxItemAddToPullRequest: React.FunctionComponent<Props> = (
                 type: NotificationType.Error,
             })
         }
-    }, [onThreadUpdate, thread, threadSettings, inboxItem.repository.name, inboxItem.id, extensionsController.services.notifications.showMessages])
+    }, [
+        onThreadUpdate,
+        thread,
+        threadSettings,
+        inboxItem.repository.name,
+        inboxItem.id,
+        extensionsController.services.notifications.showMessages,
+    ])
 
     const onAddToExistingClick = useCallback(
         async (_pull: PullRequest) => {
@@ -87,7 +82,14 @@ export const ThreadInboxItemAddToPullRequest: React.FunctionComponent<Props> = (
                 })
             }
         },
-        [onThreadUpdate, thread, threadSettings, inboxItem.repository.name, inboxItem.id, extensionsController.services.notifications.showMessages]
+        [
+            onThreadUpdate,
+            thread,
+            threadSettings,
+            inboxItem.repository.name,
+            inboxItem.id,
+            extensionsController.services.notifications.showMessages,
+        ]
     )
 
     return (

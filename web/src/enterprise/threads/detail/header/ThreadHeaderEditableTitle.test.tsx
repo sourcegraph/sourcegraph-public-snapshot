@@ -16,7 +16,7 @@ describe('ThreadHeaderEditableTitle', () => {
     } = {}) =>
         renderer.create(
             <ThreadHeaderEditableTitle
-                thread={{ id: 'a', title: 't', status: GQL.ThreadStatus.OPEN_ACTIVE, targets: { totalCount: 1 } }}
+                thread={{ id: 'a1', idWithoutKind: '1', title: 't' }}
                 onThreadUpdate={sinon.spy()}
                 className="c"
                 extensionsController={{

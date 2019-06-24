@@ -15,58 +15,58 @@ interface Props {
     className?: string
 }
 
-const NAV_LINK_CLASS_NAME = 'changeset-area-navbar__nav-link nav-link rounded-0 px-5'
+const NAV_LINK_CLASS_NAME = 'changeset-area-navbar__nav-link nav-link rounded-0 px-3'
 
 /**
  * The navbar for a single changeset.
  */
 export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({ thread, areaURL, className = '' }) => (
-    <div className={`changeset-area-navbar border-bottom ${className}`}>
-        <div className="container px-0">
-            <div className="nav nav-pills flex-nowrap">
-                <div className="nav-item">
+    <nav className={`changeset-area-navbar border-bottom ${className}`}>
+        <div className="container">
+            <ul className="nav flex-nowrap">
+                <li className="changeset-area-navbar__nav-item nav-item">
                     <NavLink
                         to={areaURL}
                         exact={true}
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="changeset-area-navbar__nav-link--active"
                     >
-                        <ChatIcon className="icon-inline d-none" /> Discussion{' '}
+                        <ChatIcon className="icon-inline" /> Discussion{' '}
                         <span className="badge badge-secondary ml-1">7</span>
                     </NavLink>
-                </div>
-                <div className="nav-item">
+                </li>
+                <li className="changeset-area-navbar__nav-item nav-item">
                     <NavLink
                         to={`${areaURL}/tasks`}
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="changeset-area-navbar__nav-link--active"
                     >
-                        <TasksIcon className="icon-inline d-none" /> Tasks{' '}
+                        <TasksIcon className="icon-inline" /> Tasks{' '}
                         <span className="badge badge-secondary ml-1">5</span>
                     </NavLink>
-                </div>
-                <div className="nav-item">
+                </li>
+                <li className="changeset-area-navbar__nav-item nav-item">
                     <NavLink
                         to={`${areaURL}/commits`}
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="changeset-area-navbar__nav-link--active"
                     >
-                        <GitCommitIcon className="icon-inline d-none" /> Commits{' '}
+                        <GitCommitIcon className="icon-inline" /> Commits{' '}
                         <span className="badge badge-secondary ml-1">5</span>
                     </NavLink>
-                </div>
-                <div className="nav-item">
+                </li>
+                <li className="changeset-area-navbar__nav-item nav-item">
                     <NavLink
                         to={`${areaURL}/changes`}
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="changeset-area-navbar__nav-link--active"
                     >
-                        <DiffIcon className="icon-inline d-none" /> Changes{' '}
+                        <DiffIcon className="icon-inline" /> Changes{' '}
                         <span className="badge badge-secondary ml-1">9</span>
                     </NavLink>
-                </div>
-                <div className="flex-1" />
-                <div className="nav-item">
+                </li>
+                <li className="flex-1" />
+                <li className="changeset-area-navbar__nav-item nav-item">
                     <NavLink
                         to={`${areaURL}/settings`}
                         className={NAV_LINK_CLASS_NAME}
@@ -75,8 +75,8 @@ export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({ thread, ar
                     >
                         <SettingsIcon className="icon-inline" />
                     </NavLink>
-                </div>
-            </div>
+                </li>
+            </ul>
         </div>
-    </div>
+    </nav>
 )

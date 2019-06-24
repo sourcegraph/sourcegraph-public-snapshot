@@ -1,4 +1,16 @@
 .changeset-area-navbar {
+    &__nav-item {
+        $margin: map-get($spacers, 2);
+        margin-left: $margin;
+        margin-right: $margin;
+        &:first-child {
+            margin-left: 0;
+        }
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+
     &__nav-link {
         border-bottom: solid 3px transparent;
         &--active {

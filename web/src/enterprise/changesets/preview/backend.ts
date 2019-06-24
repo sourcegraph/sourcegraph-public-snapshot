@@ -17,9 +17,10 @@ export async function createPreviewChangeset(
     const settings: ThreadSettings = { previewChangesetDiff: await computeDiff(extensionsController, [codeAction]) }
     return createThread({
         type: GQL.ThreadType.CHANGESET,
-        title: `PREVIEW: ${codeAction.title}`,
+        title: codeAction.title,
         contents: '',
         project: FAKE_PROJECT_ID,
         settings: JSON.stringify(settings, null, 2),
+        status: GQL.ThreadStatus.PREVIEW,
     }).toPromise()
 }

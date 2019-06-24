@@ -127,8 +127,8 @@ type DiscussionThreadsUpdateOptions struct {
 	// Settings, when non-nil, updates the thread's settings.
 	Settings *string
 
-	// Active, when non-nil, specifies whether the check is active or not.
-	Active *bool
+	// Status, when non-nil, updates the thread's status.
+	Status types.ThreadStatus
 
 	// Archive, when non-nil, specifies whether the thread is archived or not.
 	Archive *bool
@@ -162,9 +162,9 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 			return nil, err
 		}
 	}
-	if opts.Active != nil {
+	if opts.Status != "" {
 		anyUpdate = true
-		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET status=$1 WHERE id=$2 AND deleted_at IS NULL", *opts.Active, threadID); err != nil {
+		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET status=$1 WHERE id=$2 AND deleted_at IS NULL", opts.Status, threadID); err != nil {
 			return nil, err
 		}
 	}
@@ -174,7 +174,8 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 		if *opts.Archive {
 			archivedAt = &now
 		}
-		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET archived_at=$1 WHERE id=$2 AND deleted_at IS NULL", archivedAt, threadID); err != nil {
+		// TODO!(sqs): this is kind of duplicative with setting status to CLOSED above
+		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET archived_at=$1, status=$2 WHERE id=$3 AND deleted_at IS NULL", archivedAt, types.ThreadStatusClosed, threadID); err != nil {
 			return nil, err
 		}
 	}

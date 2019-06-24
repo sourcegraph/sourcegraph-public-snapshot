@@ -1,3 +1,5 @@
+@import './variables';
+
 .d-none {
     display: none !important;
 }
@@ -67,12 +69,20 @@
     justify-content: space-between !important;
 }
 
+.justify-content-end {
+    justify-content: flex-end !important;
+}
+
 .w-100 {
     width: 100% !important;
 }
 
 .overflow-hidden {
     overflow: hidden !important;
+}
+
+.overflow-auto {
+    overflow: auto !important;
 }
 
 .position-relative {
@@ -100,16 +110,6 @@
         margin-right: $spacer;
     }
 }
-
-$spacers: (
-    0: 0,
-    1: $spacer * 0.25,
-    2: $spacer * 0.5,
-    3: $spacer,
-    4: $spacer * 1.5,
-    5: $spacer * 2,
-    6: $spacer * 3,
-);
 
 @mixin generate-spacing-classes($class-name-prefix, $css-properties) {
     @if type-of($css-properties) == 'string' {

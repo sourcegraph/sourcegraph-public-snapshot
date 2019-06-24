@@ -39,11 +39,14 @@ export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
     const isCreateFormExpanded = new URLSearchParams(props.location.search).get(CREATE_FORM_EXPANDED_PARAM) !== null
 
     return (
-        <div className="changeset-preview-page mt-3">
+        <div className="changeset-preview-page mt-3 overflow-auto">
             <div className="container">
                 <h1 className="mb-3">Preview changeset</h1>
                 {isCreateFormExpanded ? (
-                    <CreateChangesetFromPreviewForm {...context} />
+                    <>
+                        <CreateChangesetFromPreviewForm {...context} className="border p-3 mb-6" />
+                        <div className="my-6" />
+                    </>
                 ) : (
                     <div className="alert alert-warning d-flex align-items-center mb-3">
                         <Link to={CREATE_FORM_EXPANDED_URL} className="btn btn-lg btn-success mr-3">
@@ -54,15 +57,16 @@ export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
                         </span>
                     </div>
                 )}
-                <ChangesetSummaryBar {...context} className="mb-3" />
+                <ChangesetSummaryBar {...context} />
             </div>
-            <hr />
-            <div className="container">asdf</div>
-            <WithQueryParameter defaultQuery="" history={props.history} location={props.location}>
-                {({ query, onQueryChange }) => (
-                    <ChangesetFilesList {...props} {...context} query={query} onQueryChange={onQueryChange} />
-                )}
-            </WithQueryParameter>
+            <hr className="my-4" />
+            <div className="container">
+                <WithQueryParameter defaultQuery="" history={props.history} location={props.location}>
+                    {({ query, onQueryChange }) => (
+                        <ChangesetFilesList {...props} {...context} query={query} onQueryChange={onQueryChange} />
+                    )}
+                </WithQueryParameter>
+            </div>
         </div>
     )
 }

@@ -23,3 +23,13 @@ $code-font-size: 12px;
     --font-size-sm: calc(var(--font-size-base) * #{$sm-factor});
     --font-size-lg: calc(var(--font-size-base) * #{$lg-factor});
 }
+
+$spacers: (
+    0: 0,
+    1: $spacer * 0.25,
+    2: $spacer * 0.5,
+    3: $spacer,
+    4: $spacer * 1.5,
+    5: $spacer * 2,
+    6: $spacer * 3,
+);

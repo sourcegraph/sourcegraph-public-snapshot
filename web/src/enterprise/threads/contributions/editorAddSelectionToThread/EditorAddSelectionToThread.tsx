@@ -3,13 +3,13 @@ import PlusBoxIcon from 'mdi-react/PlusBoxIcon'
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownToggle } from 'reactstrap'
 import { NotificationType } from '../../../../../../shared/src/api/client/services/notifications'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { LineOrPositionOrRange, RepoFile } from '../../../../../../shared/src/util/url'
 import { addTargetToThread } from '../../../../discussions/backend'
 import { ThreadDropdownMenu } from './ThreadDropdownMenu'
 
-interface Props extends RepoFile {
+interface Props extends RepoFile, ExtensionsControllerNotificationProps {
     /** The currently selected position. */
     selectedPosition: LineOrPositionOrRange
 
@@ -17,19 +17,6 @@ interface Props extends RepoFile {
     overlayPosition?: { left: number; top: number }
 
     location: H.Location
-
-    extensionsController: {
-        services: {
-            notifications: {
-                showMessages: Pick<
-                    ExtensionsControllerProps<
-                        'services'
-                    >['extensionsController']['services']['notifications']['showMessages'],
-                    'next'
-                >
-            }
-        }
-    }
 }
 
 /**
@@ -100,7 +87,17 @@ export const EditorAddSelectionToThread: React.FunctionComponent<Props> = ({
                 })
             }
         },
-        [commitID, extensionsController.services.notifications.showMessages, filePath, repoName, rev, selectedPosition.character, selectedPosition.endCharacter, selectedPosition.endLine, selectedPosition.line]
+        [
+            commitID,
+            extensionsController.services.notifications.showMessages,
+            filePath,
+            repoName,
+            rev,
+            selectedPosition.character,
+            selectedPosition.endCharacter,
+            selectedPosition.endLine,
+            selectedPosition.line,
+        ]
     )
 
     return (

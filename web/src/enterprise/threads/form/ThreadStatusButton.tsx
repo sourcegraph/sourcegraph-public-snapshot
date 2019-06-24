@@ -3,29 +3,17 @@ import BackupRestoreIcon from 'mdi-react/BackupRestoreIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import React, { useCallback, useState } from 'react'
 import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { ExtensionsControllerNotificationProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { updateThread } from '../../../discussions/backend'
 import { threadNoun } from '../util'
 
-interface Props {
+interface Props extends ExtensionsControllerNotificationProps {
     includeNounInLabel?: boolean
     thread: Pick<GQL.IDiscussionThread, 'id' | 'status' | 'type'>
     onThreadUpdate: (thread: GQL.IDiscussionThread) => void
     className?: string
     buttonClassName?: string
-    extensionsController: {
-        services: {
-            notifications: {
-                showMessages: Pick<
-                    ExtensionsControllerProps<
-                        'services'
-                    >['extensionsController']['services']['notifications']['showMessages'],
-                    'next'
-                >
-            }
-        }
-    }
 }
 
 /**
@@ -51,7 +39,13 @@ export const ThreadStatusButton: React.FunctionComponent<Props> = ({
             try {
                 // Include `active: false` so that reopening a check doesn't immediately restart all
                 // of its actions (which is probably undesirable).
-                const updatedThread = await updateThread({ threadID: thread.id, archive: isOpen, active: false })
+                const updatedThread = await updateThread({
+                    threadID: thread.id,
+                    status:
+                        thread.status === GQL.ThreadStatus.OPEN_ACTIVE
+                            ? GQL.ThreadStatus.CLOSED
+                            : GQL.ThreadStatus.OPEN_ACTIVE,
+                })
                 onThreadUpdate(updatedThread)
             } catch (err) {
                 extensionsController.services.notifications.showMessages.next({
@@ -62,7 +56,7 @@ export const ThreadStatusButton: React.FunctionComponent<Props> = ({
                 setIsLoading(false)
             }
         },
-        [thread.id, isOpen, onThreadUpdate, extensionsController.services.notifications.showMessages]
+        [thread.id, thread.status, onThreadUpdate, extensionsController.services.notifications.showMessages]
     )
     const Icon = isOpen ? CheckIcon : BackupRestoreIcon
     return (

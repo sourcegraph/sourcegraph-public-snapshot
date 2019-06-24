@@ -298,7 +298,7 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 		Title    *string
 		Settings *string
 		Archive  *bool
-		Active   *bool
+		Status   *types.ThreadStatus
 		Delete   *bool
 	}
 }) (*discussionThreadResolver, error) {
@@ -320,12 +320,20 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 		delete = *args.Input.Delete
 	}
 
+	var status types.ThreadStatus
+	if args.Input.Status != nil {
+		if !types.IsValidThreadStatus(string(*args.Input.Status)) {
+			return nil, errors.New("unknown thread status")
+		}
+		status = *args.Input.Status
+	}
+
 	threadID, err := unmarshalDiscussionThreadID(args.Input.ThreadID)
 	if err != nil {
 		return nil, err
 	}
 	thread, err := db.DiscussionThreads.Update(ctx, threadID, &db.DiscussionThreadsUpdateOptions{
-		Active:   args.Input.Active,
+		Status:   status,
 		Archive:  args.Input.Archive,
 		Delete:   delete,
 		Settings: args.Input.Settings,
@@ -769,7 +777,11 @@ func (d *discussionThreadResolver) Type() types.ThreadType {
 
 func (d *discussionThreadResolver) URL(ctx context.Context) string {
 	// TODO!(sqs): hardcoded /p/
-	return fmt.Sprintf("/p/%d/%s/%s", d.t.ProjectID, strings.ToLower(string(d.t.Type))+"s", d.IDWithoutKind())
+	var preview string
+	if d.t.Status == types.ThreadStatusPreview {
+		preview = "preview/"
+	}
+	return fmt.Sprintf("/p/%d/%s/%s%s", d.t.ProjectID, strings.ToLower(string(d.t.Type))+"s", preview, d.IDWithoutKind())
 }
 
 func (d *discussionThreadResolver) InlineURL(ctx context.Context) (*string, error) {

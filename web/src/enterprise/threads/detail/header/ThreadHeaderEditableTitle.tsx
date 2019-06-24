@@ -1,26 +1,14 @@
 import React, { useCallback, useState } from 'react'
 import { NotificationType } from '../../../../../../shared/src/api/client/services/notifications'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { Form } from '../../../../components/Form'
 import { updateThread } from '../../../../discussions/backend'
 
-interface Props {
+interface Props extends ExtensionsControllerNotificationProps {
     thread: Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'title'>
     onThreadUpdate: (thread: GQL.IDiscussionThread) => void
     className?: string
-    extensionsController: {
-        services: {
-            notifications: {
-                showMessages: Pick<
-                    ExtensionsControllerProps<
-                        'services'
-                    >['extensionsController']['services']['notifications']['showMessages'],
-                    'next'
-                >
-            }
-        }
-    }
 
     /** Provided by tests only. */
     _updateThread?: typeof updateThread
