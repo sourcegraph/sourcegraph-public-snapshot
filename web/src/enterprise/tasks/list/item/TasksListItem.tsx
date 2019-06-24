@@ -1,11 +1,11 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isEqual } from 'date-fns'
 import H from 'history'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useCallback, useEffect, useState } from 'react'
+import { Link, Redirect } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
+import { NotificationType } from '../../../../../../shared/src/api/client/services/notifications'
 import { fromDiagnostic, toDiagnostic } from '../../../../../../shared/src/api/extension/api/types'
 import { CodeExcerpt } from '../../../../../../shared/src/components/CodeExcerpt'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
@@ -14,21 +14,12 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
-import { parseRepoURI } from '../../../../../../shared/src/util/url'
 import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/DiagnosticSeverityIcon'
-import { updateThreadSettings } from '../../../../discussions/backend'
 import { fetchHighlightedFileLines } from '../../../../repo/backend'
-import { ChangesetIcon } from '../../../changesets/icons'
-import { createPreviewChangeset } from '../../../changesets/preview/backend'
-import {
-    codeActionID,
-    diagnosticID,
-    DiagnosticInfo,
-    getActiveCodeAction0,
-    getCodeActions,
-} from '../../../threads/detail/backend'
+import { ChangesetCreationStatus, createChangeset } from '../../../changesets/preview/backend'
+import { DiagnosticInfo, getCodeActions } from '../../../threads/detail/backend'
 import { WorkspaceEditPreview } from '../../../threads/detail/inbox/item/WorkspaceEditPreview'
-import { ThreadSettings } from '../../../threads/settings'
+import { CreateChangesetFromCodeActionButton } from './CreateChangesetFromCodeActionButton'
 import { TasksListItemActions } from './TasksListItemActions'
 const LOADING: 'loading' = 'loading'
 
@@ -77,30 +68,55 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
 
     const onCodeActionClick = useCallback(
         async (codeAction: sourcegraph.CodeAction) => {
-            if (codeAction.command) {
-                await extensionsController.executeCommand(codeAction.command)
-                if (codeAction.diagnostics) {
-                    // const fixedThisDiagnostic = codeAction.diagnostics.some(
-                    //     d =>
-                    //         d.code === diagnostic.code &&
-                    //         d.message === diagnostic.message &&
-                    //         d.source === diagnostic.source &&
-                    //         d.severity === diagnostic.severity &&
-                    //         d.range.isEqual(diagnostic.range)
-                    // )
-                    // TODO!(sqs)
+            try {
+                if (codeAction.command) {
+                    await extensionsController.executeCommand(codeAction.command)
+                    if (codeAction.diagnostics) {
+                        // const fixedThisDiagnostic = codeAction.diagnostics.some(
+                        //     d =>
+                        //         d.code === diagnostic.code &&
+                        //         d.message === diagnostic.message &&
+                        //         d.source === diagnostic.source &&
+                        //         d.severity === diagnostic.severity &&
+                        //         d.range.isEqual(diagnostic.range)
+                        // )
+                        // TODO!(sqs)
+                    }
                 }
-            }
-            if (codeAction.edit) {
-                // TODO!(sqs): show loading
-                const changeset = await createPreviewChangeset({ extensionsController }, codeAction)
-                props.history.push(changeset.url)
+            } catch (err) {
+                extensionsController.services.notifications.showMessages.next({
+                    message: `Error running action: ${err.message}`,
+                    type: NotificationType.Error,
+                })
             }
         },
-        [extensionsController, props.history]
+        [extensionsController]
     )
 
     const [activeCodeAction, setActiveCodeAction] = useState<sourcegraph.CodeAction | undefined>()
+
+    const [createdThreadOrLoading, setCreatedThreadOrLoading] = useState<
+        typeof LOADING | Pick<GQL.IDiscussionThread, 'idWithoutKind' | 'url' | 'status'>
+    >()
+    const onCreateThreadClick = useCallback(
+        async (creationStatus: ChangesetCreationStatus) => {
+            setCreatedThreadOrLoading(LOADING)
+            try {
+                const codeAction = activeCodeAction
+                if (!codeAction) {
+                    throw new Error('no active code action')
+                }
+                setCreatedThreadOrLoading(await createChangeset({ extensionsController }, codeAction, creationStatus))
+            } catch (err) {
+                setCreatedThreadOrLoading(undefined)
+                extensionsController.services.notifications.showMessages.next({
+                    message: `Error creating changeset: ${err.message}`,
+                    type: NotificationType.Error,
+                })
+            }
+        },
+        [activeCodeAction, extensionsController]
+    )
 
     return (
         <div className={`d-flex flex-wrap align-items-stretch ${className}`}>
@@ -163,9 +179,18 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                             className="tasks-list-item__workspace-edit-preview overflow-auto p-2 pl-5 ml-5 mb-3"
                         />
                         <div className="m-3">
-                            <button className="btn btn-success" onClick={() => onCodeActionClick(activeCodeAction)}>
-                                <ChangesetIcon className="icon-inline mr-1" /> Preview changeset
-                            </button>
+                            {createdThreadOrLoading === undefined || createdThreadOrLoading === LOADING ? (
+                                <CreateChangesetFromCodeActionButton
+                                    onClick={onCreateThreadClick}
+                                    isLoading={createdThreadOrLoading === LOADING}
+                                />
+                            ) : createdThreadOrLoading.status === GQL.ThreadStatus.PREVIEW ? (
+                                <Redirect to={createdThreadOrLoading.url} push={true} />
+                            ) : (
+                                <Link className="btn btn-secondary" to={createdThreadOrLoading.url}>
+                                    Changeset #{createdThreadOrLoading.idWithoutKind}
+                                </Link>
+                            )}
                         </div>
                     </>
                 ) : (
