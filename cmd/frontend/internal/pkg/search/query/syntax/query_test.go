@@ -78,6 +78,10 @@ func TestQuery_EscapeImpossibleCaretsDollars(t *testing.T) {
 		{in: "^a$", want: "^a$"},
 		{in: "a^b", want: `a\^b`},
 		{in: "a^$b a^$b", want: `a\^\$b a\^\$b`},
+		{
+			in:   `repo:^github.com/gorilla/mux$ file:mux.go`,
+			want: `repo:^github.com/gorilla/mux$ file:mux.go`,
+		},
 	}
 
 	for _, c := range cases {
