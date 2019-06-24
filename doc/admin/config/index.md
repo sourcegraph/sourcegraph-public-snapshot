@@ -17,3 +17,7 @@ There are 2 types of site configuration for a Sourcegraph instance:
 - [Set up HTTPS](../nginx.md)
 - [Use a custom domain](../url.md)
 - [Update Sourcegraph](../updates.md)
+
+## Advanced tasks
+
+- [Loading configuration via the file system](advanced_config_file.md)
