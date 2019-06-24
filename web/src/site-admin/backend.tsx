@@ -159,7 +159,7 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
         startWith(null),
         mergeMap(() => fetchAllRepositories(args)),
         tap(result => {
-            if (!result.nodes || result.nodes.some(n => !n.mirrorInfo.cloned)) {
+            if (result.nodes && (result.nodes.length === 0 || result.nodes.some(n => !n.mirrorInfo.cloned))) {
                 setTimeout(() => subject.next(), 5000)
             }
         })
