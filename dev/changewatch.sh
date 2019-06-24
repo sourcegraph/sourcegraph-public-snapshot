@@ -24,8 +24,12 @@ useChokidar() {
         -c "'./dev/handle-change.sh {path}'"
 }
 
-useInotifywrapper() {
+execInotifywrapper() {
     echo >&2 "Using inotifywrapper."
+    set -e
+    pushd dev/inotifywrapper
+    go build
+    popd
     exec dev/inotifywrapper/inotifywrapper $(dirs_path $GO_DIRS) \
         -match '\.go$' \
         -match 'cmd/frontend/graphqlbackend/schema\.graphql' \
@@ -33,19 +37,25 @@ useInotifywrapper() {
         -cmd './dev/handle-change.sh'
 }
 
-case $(which inotifywait 2>/dev/null) in
-"")
-    useChokidar
-    ;;
-*)
-    if (
-        cd dev/inotifywrapper
-        go build
-    ); then
-        useInotifywrapper
-    else
-        echo >&2 "Can't build inotifywrapper: Falling back on chokidar."
-        useChokidar
-    fi
-    ;;
-esac
+execWatchman() {
+    echo >&2 "Using watchman."
+    set -e
+    pushd dev/watchmanwrapper
+    go build
+    popd
+    exec dev/watchmanwrapper/watchmanwrapper dev/handle-change.sh <<-EOT
+["subscribe", ".", "gochangewatch", {
+  "expression": ["anyof",
+    ["suffix", "go"],
+    ["dirname", "cmd/symbols"],
+    ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"]
+  ],
+  "fields": ["name"]
+}]
+EOT
+}
+
+[ -x "$(command -v watchman)" ] && execWatchman
+[ -x "$(command -v inotifywait)" ] && execInotifywrapper
+
+useChokidar
