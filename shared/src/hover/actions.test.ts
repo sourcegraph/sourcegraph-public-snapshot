@@ -21,7 +21,7 @@ import { IMutation, IQuery } from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
 import { EMPTY_SETTINGS_CASCADE } from '../settings/settings'
 import { resetAllMemoizationCaches } from '../util/memoizeObservable'
-import { toPrettyBlobURL } from '../util/url'
+import { FileSpec, PositionSpec, RawRepoSpec, RepoSpec, RevSpec, toPrettyBlobURL, ViewStateSpec } from '../util/url'
 import { getDefinitionURL, getHoverActionsContext, HoverActionsContext, registerHoverContributions } from './actions'
 import { HoverContext } from './HoverOverlay'
 
@@ -244,7 +244,16 @@ describe('getDefinitionURL', () => {
                         },
                     },
                 } as SuccessGraphQLResult<R>)
-            const urlToFile = sinon.spy()
+            const urlToFile = sinon.spy(
+                (
+                    location: RepoSpec &
+                        Partial<RawRepoSpec> &
+                        RevSpec &
+                        FileSpec &
+                        Partial<PositionSpec> &
+                        Partial<ViewStateSpec>
+                ) => ''
+            )
             await getDefinitionURL(
                 { urlToFile, requestGraphQL },
                 {
@@ -259,10 +268,8 @@ describe('getDefinitionURL', () => {
                 .toPromise()
             sinon.assert.calledOnce(urlToFile)
             sinon.assert.calledWith(urlToFile, {
-                commitID: undefined,
                 filePath: 'f',
                 position: undefined,
-                range: undefined,
                 rawRepoName: 'github.com/r3',
                 repoName: 'r3',
                 rev: 'v3',
