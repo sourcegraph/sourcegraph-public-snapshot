@@ -1,5 +1,4 @@
-import { flatten } from 'lodash'
-import { Observable, Subject } from 'rxjs'
+import { Subject } from 'rxjs'
 import {
     debounceTime,
     distinctUntilChanged,
