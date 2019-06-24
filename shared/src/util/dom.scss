@@ -31,7 +31,7 @@
 // TODO!(sqs) hack for demo
 .tasks-list {
     td.line {
-        // display: none;
+        display: none;
     }
     .selection-highlight,
     .selection-highlight-sticky {
@@ -50,7 +50,7 @@
         border-collapse: collapse;
     }
     .tasks-list-item__workspace-edit-preview {
-        margin-left: 21px !important;
+        margin-left: 8.75px !important;
         * {
             line-height: 18px !important;
             vertical-align: middle;

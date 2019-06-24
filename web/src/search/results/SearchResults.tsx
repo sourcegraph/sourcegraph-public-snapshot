@@ -210,6 +210,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     )}
                     <SearchResultsList
                         {...this.props}
+                        className="search-results__list"
                         resultsOrError={this.state.resultsOrError}
                         onShowMoreResultsClick={this.showMoreResults}
                         onExpandAllResultsToggle={this.onExpandAllResultsToggle}

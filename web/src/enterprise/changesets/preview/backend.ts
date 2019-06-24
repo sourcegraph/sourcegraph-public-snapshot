@@ -5,7 +5,7 @@ import { createThread } from '../../../discussions/backend'
 import { computeDiff } from '../../threads/detail/changes/computeDiff'
 import { ThreadSettings } from '../../threads/settings'
 
-const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
+export const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
 
 /**
  * The initial status for a changeset thread when creating it. {@link GQL.ThreadStatus.OPEN_ACTIVE}

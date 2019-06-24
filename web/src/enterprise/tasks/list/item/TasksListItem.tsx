@@ -181,7 +181,7 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                             {...props}
                             workspaceEdit={activeCodeAction.edit}
                             extensionsController={extensionsController}
-                            className="tasks-list-item__workspace-edit-preview overflow-auto p-2 pl-5 ml-5 mb-3"
+                            className="tasks-list-item__workspace-edit-preview overflow-auto p-2 mb-3"
                         />
                         <div className="m-3">
                             {createdThreadOrLoading === undefined || createdThreadOrLoading === LOADING ? (

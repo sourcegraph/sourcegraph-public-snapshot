@@ -8,4 +8,9 @@
         min-width: 10rem;
         max-width: 80%;
     }
+    &__list {
+        // TODO!(sqs) doesnt work on narrow screens, the SearchContextBar needs to become
+        // non-100%-height.
+        flex: 1 0 0 /*24rem*/;
+    }
 }

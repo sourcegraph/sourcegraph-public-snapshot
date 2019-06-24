@@ -1,14 +1,24 @@
 import { applyEdits } from '@sqs/jsonc-parser'
-import { structuredPatch } from 'diff'
+import { Hunk, structuredPatch } from 'diff'
 import { CodeAction, TextEdit } from 'sourcegraph'
 import { positionToOffset } from '../../../../../../shared/src/api/client/types/textDocument'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { propertyIsDefined } from '../../../../../../shared/src/util/types'
+import { parseRepoURI } from '../../../../../../shared/src/util/url'
 
 export interface FileDiff extends Pick<GQL.IFileDiff, 'oldPath' | 'newPath'> {
     hunks: GQL.IFileDiffHunk[]
 }
+
+export const npmDiffToFileDiffHunk = (hunk: Hunk): GQL.IFileDiffHunk => ({
+    __typename: 'FileDiffHunk',
+    body: hunk.lines.join('\n'),
+    oldRange: { __typename: 'FileDiffHunkRange', startLine: hunk.oldStart, lines: hunk.oldLines },
+    newRange: { __typename: 'FileDiffHunkRange', startLine: hunk.newStart, lines: hunk.newLines },
+    oldNoNewlineAt: false,
+    section: null,
+})
 
 /**
  * Computes the combined diff from applying all active code actions' workspace edits.
@@ -41,17 +51,11 @@ export async function computeDiff(
         const { hunks } = structuredPatch(uri.toString(), uri.toString(), oldText, newText, undefined, undefined, {
             context: 4,
         })
+        const p = parseRepoURI(uri)
         fileDiffs.push({
-            oldPath: uri.toString(),
-            newPath: uri.toString(),
-            hunks: hunks.map(hunk => ({
-                __typename: 'FileDiffHunk',
-                body: hunk.lines.join('\n'),
-                oldRange: { __typename: 'FileDiffHunkRange', startLine: hunk.oldStart, lines: hunk.oldLines },
-                newRange: { __typename: 'FileDiffHunkRange', startLine: hunk.newStart, lines: hunk.newLines },
-                oldNoNewlineAt: false,
-                section: null,
-            })),
+            oldPath: p.filePath!,
+            newPath: p.filePath!,
+            hunks: hunks.map(npmDiffToFileDiffHunk),
         })
     }
     return fileDiffs
