@@ -61,17 +61,20 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
         return () => subscriptions.unsubscribe()
     }, [diagnostic, extensionsController])
 
-    const onCodeActionClick = useCallback(async (codeAction: sourcegraph.CodeAction) => {
-        // TODO!(sqs): show loading
-        const changeset = await createPreviewChangeset({ extensionsController }, codeAction)
-        props.history.push(changeset.url)
-    }, [extensionsController, props.history])
+    const onCodeActionClick = useCallback(
+        async (codeAction: sourcegraph.CodeAction) => {
+            // TODO!(sqs): show loading
+            const changeset = await createPreviewChangeset({ extensionsController }, codeAction)
+            props.history.push(changeset.url)
+        },
+        [extensionsController, props.history]
+    )
 
     return (
         <div className={className}>
             <header className={`d-flex align-items-start ${headerClassName}`} style={headerStyle}>
                 <div className={`flex-1 d-flex align-items-center`}>
-                    <h3 className="mb-0 h6">
+                    <h3 className="mb-0 small">
                         <LinkOrSpan to={diagnostic.entry.url || 'TODO!(sqs)'} className="d-block">
                             {diagnostic.entry.path ? (
                                 <>
@@ -88,7 +91,7 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                 </div>
             </header>
             <div className={`d-flex align-items-center mt-2 mb-1`}>
-                <DiagnosticSeverityIcon severity={diagnostic.severity} className="icon-inline mr-1" />
+                <DiagnosticSeverityIcon severity={diagnostic.severity} className="icon-inline mr-2" />
                 <span>{diagnostic.message}</span>
             </div>
             {codeActionsOrError === LOADING ? (
@@ -100,8 +103,8 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                     {...props}
                     codeActions={codeActionsOrError}
                     onCodeActionClick={onCodeActionClick}
-                    className="pt-2 pb-0"
-                    buttonClassName="btn btn-link px-2 py-0 text-decoration-none"
+                    className="pt-2 pb-0 ml-6"
+                    buttonClassName="btn btn-link pl-0 pr-2 py-0 text-decoration-none"
                 />
             )}
         </div>

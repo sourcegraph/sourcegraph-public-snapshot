@@ -42,7 +42,6 @@ export const ThreadInboxItemActions: React.FunctionComponent<Props> = ({
     inactiveButtonClassName,
     activeButtonClassName,
 }) => {
-    const a = 123
     const codeActionsWithEdit = codeActions.filter(({ edit }) => !!edit)
     const codeActionsWithCommand = codeActions.filter(
         ({ diagnostics, command }) => !!command && diagnostics && diagnostics.length > 0
