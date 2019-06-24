@@ -92,7 +92,7 @@ When you upgrade Sourcegraph versions, you should do the following to ensure you
 1. Upgrade Sourcegraph to the new version
 2. Visit each configuration page in the web UI (management console, site configuration, each external service)
 3. Copy the (now migrated) configuration from those pages into your JSON files.
-
+It is important to follow the above steps after *every* Sourcegraph version update, because we only guarantee migrations remain valid across two minor versions. If you fail to apply a migration and later upgrade Sourcegraph twice more, you may effectively "skip" an important migration.
 We're planning to improve this by having Sourcegraph notify you as a site admin when you should do the above, since today it is not actually required in most upgrades. See https://github.com/sourcegraph/sourcegraph/issues/4650 for details.
 
 ## Kubernetes ConfigMap
