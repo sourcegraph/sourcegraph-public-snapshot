@@ -288,6 +288,9 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 }
 
 func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
 	var req protocol.ExternalServiceSyncRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -307,17 +310,12 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-		defer cancel()
 		_, err = src.ListRepos(ctx)
-		if err != nil {
+		if err != nil && ctx.Err() != nil {
 			// ignore if we took too long
-			if ctx.Err() != nil {
-				err = nil
-			}
+			err = nil
 		}
 		errch <- err
-		// intentionally not return, we want to always triggersync
 
 		s.Syncer.TriggerSync()
 	}()
@@ -342,7 +340,13 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			respond(w, http.StatusInternalServerError, err)
 		}
 
-	case <-r.Context().Done():
+	case <-time.After(10 * time.Second):
+		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
+			ExternalService: req.ExternalService,
+			Error:           "warning: took longer than 10s to verify config against code host. Please monitor repo-updater logs.",
+		})
+
+	case <-ctx.Done():
 		// client is gone
 		return
 	}
