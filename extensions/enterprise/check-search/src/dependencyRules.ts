@@ -17,7 +17,7 @@ export function registerDependencyRules(): Unsubscribable {
 
 interface Settings {
     ['dependency.rules']?: {
-        npm: { [name: string]: DependencyStatus }
+        npm?: { [name: string]: DependencyStatus }
     }
 }
 
@@ -60,11 +60,13 @@ function startDiagnostics(): Unsubscribable {
                             .pipe(toArray())
                             .toPromise()
                     )
+                    const docs = await Promise.all(
+                        results.map(async ({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
+                    )
                     return from(settingsObservable<Settings>()).pipe(
-                        switchMap(settings =>
-                            combineLatestOrDefault(
-                                results.map(async ({ uri }) => {
-                                    const { text } = await sourcegraph.workspace.openTextDocument(new URL(uri))
+                        map(settings =>
+                            docs
+                                .map(({ uri, text }) => {
                                     const diagnostics: sourcegraph.Diagnostic[] = parseDependencies(text)
                                         .map(({ range, ...dep }) => {
                                             const status = getDependencyStatusFromSettings(settings, dep)
@@ -88,7 +90,7 @@ function startDiagnostics(): Unsubscribable {
                                         ? ([new URL(uri), diagnostics] as [URL, sourcegraph.Diagnostic[]])
                                         : null
                                 })
-                            ).pipe(map(items => items.filter(isDefined)))
+                                .filter(isDefined)
                         )
                     )
                 }),
@@ -153,7 +155,7 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                               ]
                             : []),
                         {
-                            title: `View npm package: ${module}`,
+                            title: `View npm package: ${dep.name}`,
                             command: { title: '', command: 'TODO!(sqs)' },
                         },
                         ...OTHER_CODE_ACTIONS,
@@ -176,8 +178,8 @@ function parseDependencies(text: string): (Dependency & { range: sourcegraph.Ran
         const data = JSON.parse(text)
         const depNames = sortedUniq([
             ...Object.keys(data.dependencies || {}),
-            ...Object.keys(data.devDependencies),
-            ...Object.keys(data.peerDependencies),
+            ...Object.keys(data.devDependencies || {}),
+            ...Object.keys(data.peerDependencies || {}),
         ])
         return depNames.map(name => ({ name, range: findDependencyMatchRange(text, name) }))
     } catch (err) {
@@ -199,7 +201,12 @@ function findDependencyMatchRange(text: string, depName: string): sourcegraph.Ra
 }
 
 function getDependencyStatusFromSettings(settings: Settings, dep: Dependency): DependencyStatus {
-    return (settings['dependency.rules'] && settings['dependency.rules'][dep.name]) || DependencyStatus.Unreviewed
+    return (
+        (settings['dependency.rules'] &&
+            settings['dependency.rules'].npm &&
+            settings['dependency.rules'].npm[dep.name]) ||
+        DependencyStatus.Unreviewed
+    )
 }
 
 function isDependencyRulesDiagnostic(diag: sourcegraph.Diagnostic): boolean {

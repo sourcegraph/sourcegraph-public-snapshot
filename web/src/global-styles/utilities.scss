@@ -61,6 +61,10 @@
     align-items: flex-start !important;
 }
 
+.align-items-stretch {
+    align-items: stretch !important;
+}
+
 .justify-content-center {
     justify-content: center !important;
 }
@@ -75,6 +79,10 @@
 
 .w-100 {
     width: 100% !important;
+}
+
+.h-100 {
+    height: 100% !important;
 }
 
 .overflow-hidden {

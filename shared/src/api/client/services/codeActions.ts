@@ -46,8 +46,8 @@ export function getCodeActions(
     return providers.pipe(
         switchMap(providers =>
             combineLatestOrDefault(
-                providers.map(provider =>
-                    from(
+                providers.map(provider => {
+                    return from(
                         provider(params).pipe(
                             catchError(err => {
                                 if (logErrors) {
@@ -57,7 +57,7 @@ export function getCodeActions(
                             })
                         )
                     )
-                )
+                })
             ).pipe(
                 map(flattenAndCompact),
                 defaultIfEmpty<CodeAction[] | null>(null),
