@@ -66,8 +66,8 @@ func TestQuery_WithErrorsQuoted(t *testing.T) {
 		{in: "f:foo bar", want: `f:foo bar`},
 		{in: "f:foo b(ar", want: `f:foo "b(ar"`},
 		{in: "f:foo b(ar b[az", want: `f:foo "b(ar" "b[az"`},
-		{name: "invalid regex in field", in: `f:(`, want: `"f:("`},
-		{name: "invalid regex in negated field", in: `-f:(`, want: `"-f:("`},
+		{name: "invalid regex in field", in: `f:(a`, want: `"f:(a"`},
+		{name: "invalid regex in negated field", in: `-f:(a`, want: `"-f:(a"`},
 	}
 	for _, c := range cases {
 		name := c.name
