@@ -119,6 +119,10 @@
     }
 }
 
+.hidden {
+    visibility: hidden;
+}
+
 @mixin generate-spacing-classes($class-name-prefix, $css-properties) {
     @if type-of($css-properties) == 'string' {
         $css-properties: append((), $css-properties);

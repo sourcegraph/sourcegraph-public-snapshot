@@ -8,12 +8,19 @@ import { ThreadSettings } from '../../threads/settings'
 const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
 
 /**
+ * The initial status for a changeset thread when creating it. {@link GQL.ThreadStatus.OPEN_ACTIVE}
+ * is for "Create changeset" and {@link GQL.ThreadStatus.PREVIEW} is for "Preview changeset".
+ */
+export type ChangesetCreationStatus = GQL.ThreadStatus.OPEN_ACTIVE | GQL.ThreadStatus.PREVIEW
+
+/**
  * Create a preview changeset by applying the {@link codeAction}.
  */
-export async function createPreviewChangeset(
+export async function createChangeset(
     { extensionsController }: ExtensionsControllerProps,
-    codeAction: sourcegraph.CodeAction
-): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url'>> {
+    codeAction: sourcegraph.CodeAction,
+    creationStatus: ChangesetCreationStatus
+): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
     const settings: ThreadSettings = { previewChangesetDiff: await computeDiff(extensionsController, [codeAction]) }
     return createThread({
         type: GQL.ThreadType.CHANGESET,
@@ -21,6 +28,6 @@ export async function createPreviewChangeset(
         contents: '',
         project: FAKE_PROJECT_ID,
         settings: JSON.stringify(settings, null, 2),
-        status: GQL.ThreadStatus.PREVIEW,
+        status: creationStatus,
     }).toPromise()
 }
