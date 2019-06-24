@@ -26,7 +26,7 @@ Set the environment variable below on all `frontend` containers (cluster deploym
 CRITICAL_CONFIG_FILE=critical.json
 ```
 
-Where `critical.json` is literally the [management console](../management_console.md) configuration.
+`critical.json` should contain the [management console](../management_console.md) configuration that you would otherwise enter through the management console UI.
 
 You should also add to the `management-console` container (cluster deployment) or to the `server` container (single-container Docker deployment) the following:
 
