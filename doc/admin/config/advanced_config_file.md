@@ -1,8 +1,8 @@
-# (advanced) Loading configuration via the file system or Kubernetes ConfigMap
+# (advanced) Loading configuration via the file system
 
 In teams where Sourcegraph is a critical piece of infrastructure, it can often be desirable to check the Sourcegraph configuration into version control.
 
-As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md), [critical configuration](critical_config.md), and [external services configuration]()
+As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md), [critical configuration](critical_config.md), and [external services configuration](../external_service/index.md)
 
 ## Benefits
 
