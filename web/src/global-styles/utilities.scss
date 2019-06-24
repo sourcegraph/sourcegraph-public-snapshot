@@ -146,6 +146,11 @@
     .border#{$direction-suffix}-0 {
         border#{$direction-suffix}: none;
     }
+    @each $name, $color in $theme-colors {
+        .border#{$direction-suffix}-#{$name} {
+            border#{$direction-suffix}-color: $color;
+        }
+    }
 }
 @include generate-border-classes('');
 @include generate-border-classes(-top);

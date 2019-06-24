@@ -90,16 +90,20 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                 return []
             }
 
+            const fixAllAction = await computeFixAllAction()
+
             return [
                 {
                     title: 'Convert to named import',
                     edit: computeFixEdit(diag, doc),
                     diagnostics: [diag],
                 },
-                {
-                    title: 'Fix all unnecessary import-stars',
-                    ...(await computeFixAllAction()),
-                },
+                fixAllAction.edit && Array.from(fixAllAction.edit.textEdits()).length > 1
+                    ? {
+                          title: 'Fix all unnecessary import-stars',
+                          ...fixAllAction,
+                      }
+                    : null,
                 {
                     title: 'Ignore',
                     edit: computeIgnoreEdit(diag, doc),
@@ -110,7 +114,7 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                     command: { title: '', command: 'TODO!(sqs)' },
                 },
                 ...OTHER_CODE_ACTIONS,
-            ]
+            ].filter(isDefined)
         },
     }
 }

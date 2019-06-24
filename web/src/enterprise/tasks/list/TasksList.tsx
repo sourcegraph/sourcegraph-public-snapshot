@@ -2,6 +2,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
@@ -33,23 +34,22 @@ export const TasksList: React.FunctionComponent<Props> = ({ containerClassName, 
         {({ tasksOrError }) => (
             <div className="tasks-list">
                 {isErrorLike(tasksOrError) ? (
-                    <div className="alert alert-danger mt-2">{tasksOrError.message}</div>
+                    <div className={containerClassName}>
+                        <div className="alert alert-danger mt-2">{tasksOrError.message}</div>
+                    </div>
                 ) : tasksOrError === LOADING ? (
-                    <LoadingSpinner className="mt-3" />
+                    <div className={containerClassName}>
+                        <LoadingSpinner className="mt-3" />
+                    </div>
                 ) : tasksOrError.length === 0 ? (
-                    <p className="p-2 mb-0 text-muted">No tasks found.</p>
+                    <div className={containerClassName}>
+                        <p className="p-2 mb-0 text-muted">No tasks found.</p>
+                    </div>
                 ) : (
                     <ul className="list-group list-group-flush mb-0">
                         {tasksOrError.map((task, i) => (
                             <li key={i} className="list-group-item px-0">
-                                <TasksListItem
-                                    {...props}
-                                    key={i}
-                                    thread={null as any /* TODO!(sqs) */}
-                                    diagnostic={task}
-                                    onThreadUpdate={() => void 0 /* TODO!(sqs) */}
-                                    className={containerClassName}
-                                />
+                                <TasksListItem {...props} key={i} diagnostic={task} className={containerClassName} />
                             </li>
                         ))}
                     </ul>
