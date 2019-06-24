@@ -9,3 +9,63 @@
 .selection-highlight-sticky {
     background-color: rgba(255, 192, 120, 0.5);
 }
+
+// TODO!(sqs): hack, use css custom props
+.theme-dark,
+.theme-hc-black {
+    .selection-highlight {
+        background-color: rgba(255, 83, 30, 0.3);
+    }
+    // Same as above, but indicates highlighting for a fixed hover (vs. e.g.
+    // an ephemeral mouseover on some token).
+    .selection-highlight-sticky {
+        background-color: rgba(255, 83, 30, 0.3);
+    }
+}
+.theme-hc-black {
+    .selection-highlight,
+    .selection-highlight-sticky {
+        text-decoration: underline yellow;
+    }
+}
+// TODO!(sqs) hack for demo
+.tasks-list {
+    td.line {
+        // display: none;
+    }
+    .selection-highlight,
+    .selection-highlight-sticky {
+        background-color: transparent !important;
+        text-decoration-skip-ink: none;
+        .theme-light & {
+            text-decoration: underline rgba(255, 94, 0, 0.7) wavy;
+        }
+        .theme-dark &,
+        .theme-hc-black & {
+            text-decoration: underline rgba(255, 255, 0, 0.7) wavy;
+        }
+    }
+
+    table {
+        border-collapse: collapse;
+    }
+    .tasks-list-item__workspace-edit-preview {
+        margin-left: 21px !important;
+        * {
+            line-height: 18px !important;
+            vertical-align: middle;
+        }
+    }
+
+    .theme-light & {
+        aside {
+            background-color: #f5f5f5;
+        }
+    }
+    .theme-dark &,
+    .theme-hc-black & {
+        aside {
+            background-color: black;
+        }
+    }
+}
