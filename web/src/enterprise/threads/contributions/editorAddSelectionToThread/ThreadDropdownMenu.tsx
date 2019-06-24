@@ -6,6 +6,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { fetchDiscussionThreads } from '../../../../discussions/backend'
 import { urlForNewThreadAtSelection } from '../../../../repo/blob/discussions/DiscussionsGutterOverlay'
+import { useEffectAsync } from '../../../../util/useEffectAsync'
 
 interface Props extends Pick<DropdownMenuProps, 'right'> {
     /** Called when the user clicks on an existing thread to add to. */
@@ -27,9 +28,7 @@ export const ThreadDropdownMenu: React.FunctionComponent<Props> = ({
     const [threadsOrError, setThreadsOrError] = useState<typeof LOADING | GQL.IDiscussionThreadConnection | ErrorLike>(
         LOADING
     )
-
-    // tslint:disable-next-line: no-floating-promises
-    useMemo(async () => {
+    useEffectAsync(async () => {
         try {
             setThreadsOrError(await fetchDiscussionThreads({}).toPromise())
         } catch (err) {

@@ -98,6 +98,7 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
     const [createdThreadOrLoading, setCreatedThreadOrLoading] = useState<
         typeof LOADING | Pick<GQL.IDiscussionThread, 'idWithoutKind' | 'url' | 'status'>
     >()
+    const [justCreated, setJustCreated] = useState(false)
     const onCreateThreadClick = useCallback(
         async (creationStatus: ChangesetCreationStatus) => {
             setCreatedThreadOrLoading(LOADING)
@@ -106,7 +107,11 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                 if (!codeAction) {
                     throw new Error('no active code action')
                 }
-                setCreatedThreadOrLoading(await createChangeset({ extensionsController }, codeAction, creationStatus))
+                setCreatedThreadOrLoading(
+                    await createChangeset({ extensionsController }, diagnostic, codeAction, creationStatus)
+                )
+                setJustCreated(true)
+                setTimeout(() => setJustCreated(false), 2500)
             } catch (err) {
                 setCreatedThreadOrLoading(undefined)
                 extensionsController.services.notifications.showMessages.next({
@@ -115,7 +120,7 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                 })
             }
         },
-        [activeCodeAction, extensionsController]
+        [activeCodeAction, diagnostic, extensionsController]
     )
 
     return (
@@ -187,9 +192,12 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                             ) : createdThreadOrLoading.status === GQL.ThreadStatus.PREVIEW ? (
                                 <Redirect to={createdThreadOrLoading.url} push={true} />
                             ) : (
-                                <Link className="btn btn-secondary" to={createdThreadOrLoading.url}>
-                                    Changeset #{createdThreadOrLoading.idWithoutKind}
-                                </Link>
+                                <>
+                                    <Link className="btn btn-secondary" to={createdThreadOrLoading.url}>
+                                        Changeset #{createdThreadOrLoading.idWithoutKind}
+                                    </Link>
+                                    {justCreated && <strong className="text-success ml-3">Created!</strong>}
+                                </>
                             )}
                         </div>
                     </>

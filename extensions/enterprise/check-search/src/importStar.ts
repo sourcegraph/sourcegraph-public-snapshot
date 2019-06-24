@@ -2,11 +2,10 @@ import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../shared/src/util/types'
 import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { flatten } from 'lodash'
-import { Subscription, Observable, of, Unsubscribable, from } from 'rxjs'
-import { map, switchMap, startWith, first, toArray } from 'rxjs/operators'
-import { queryGraphQL } from './util'
-import * as GQL from '../../../../shared/src/graphql/schema'
+import { Subscription, Unsubscribable, from } from 'rxjs'
+import { map, switchMap, startWith, toArray } from 'rxjs/operators'
 import { OTHER_CODE_ACTIONS, MAX_RESULTS, REPO_INCLUDE } from './misc'
+import { memoizedFindTextInFiles } from './util'
 
 export function registerImportStar(): Unsubscribable {
     const subscriptions = new Subscription()
@@ -32,7 +31,7 @@ function startDiagnostics(): Unsubscribable {
                 switchMap(async () => {
                     const results = flatten(
                         await from(
-                            sourcegraph.search.findTextInFiles(
+                            memoizedFindTextInFiles(
                                 { pattern: 'import \\* as (React|H)', type: 'regexp' },
                                 {
                                     repositories: {
@@ -160,7 +159,7 @@ async function computeFixAllAction(): Promise<Pick<sourcegraph.CodeAction, 'edit
             computeFixEdit(diag, doc, edit)
         }
     }
-    return { edit, diagnostics: flatten(allImportStarDiags.map(([uri, diagnostics]) => diagnostics)) }
+    return { edit, diagnostics: flatten(allImportStarDiags.map(([, diagnostics]) => diagnostics)) }
 }
 
 function computeIgnoreEdit(

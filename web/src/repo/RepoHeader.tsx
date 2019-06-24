@@ -188,7 +188,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
             encodedRev: this.props.rev,
         }
         return (
-            <nav className="repo-header d-flex align-items-center">
+            <nav className="repo-header pl-3 d-flex align-items-center">
                 <div className="d-flex align-items-center">
                     <Link
                         to={
