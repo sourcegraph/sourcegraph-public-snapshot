@@ -21,16 +21,17 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 	}
 
 	fieldWhitelist := map[string]struct{}{
-		query.FieldRepo:      {},
-		query.FieldRepoGroup: {},
-		query.FieldType:      {},
-		query.FieldDefault:   {},
-		query.FieldIndex:     {},
-		query.FieldCount:     {},
-		query.FieldMax:       {},
-		query.FieldTimeout:   {},
-		query.FieldFork:      {},
-		query.FieldArchived:  {},
+		query.FieldRepo:        {},
+		query.FieldRepoGroup:   {},
+		query.FieldType:        {},
+		query.FieldDefault:     {},
+		query.FieldIndex:       {},
+		query.FieldCount:       {},
+		query.FieldMax:         {},
+		query.FieldTimeout:     {},
+		query.FieldFork:        {},
+		query.FieldArchived:    {},
+		query.FieldRepoHasFile: {},
 	}
 	// Don't return repo results if the search contains fields that aren't on the whitelist.
 	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
@@ -52,9 +53,65 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 			common.limitHit = true
 			break
 		}
+
 		if pattern.MatchString(string(repo.Repo.Name)) {
-			results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo, icon: repoIcon}})
+			if len(args.Pattern.FilePatternsReposMustExclude) > 0 || len(args.Pattern.FilePatternsReposMustInclude) > 0 {
+				shouldBeAdded, err := repoShouldBeAdded(ctx, repo, args.Pattern)
+				if err != nil {
+					return nil, nil, err
+				}
+
+				if shouldBeAdded {
+					results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo, icon: repoIcon}})
+				}
+			} else {
+				results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo, icon: repoIcon}})
+			}
 		}
 	}
+
 	return results, common, nil
+}
+
+// repoShouldBeAdded determines whether a repository should be included in the result set based on whether the repository fits in the subset
+// of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
+func repoShouldBeAdded(ctx context.Context, repo *search.RepositoryRevisions, pattern *search.PatternInfo) (bool, error) {
+	shouldBeAdded := true
+	if len(pattern.FilePatternsReposMustInclude) > 0 {
+		for _, pattern := range pattern.FilePatternsReposMustInclude {
+			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			q, err := query.ParseAndCheck("file:" + pattern)
+			if err != nil {
+				return false, err
+			}
+			newArgs := search.Args{Pattern: &p, Repos: []*search.RepositoryRevisions{repo}, Query: q, UseFullDeadline: true}
+			matches, _, err := searchFilesInRepos(ctx, &newArgs)
+			if err != nil {
+				return false, err
+			}
+			if len(matches) == 0 {
+				return false, err
+			}
+		}
+	}
+
+	if len(pattern.FilePatternsReposMustExclude) > 0 {
+		for _, pattern := range pattern.FilePatternsReposMustExclude {
+			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			q, err := query.ParseAndCheck("file:" + pattern)
+			if err != nil {
+				return false, err
+			}
+			newArgs := search.Args{Pattern: &p, Repos: []*search.RepositoryRevisions{repo}, Query: q, UseFullDeadline: true}
+			matches, _, err := searchFilesInRepos(ctx, &newArgs)
+			if err != nil {
+				return false, err
+			}
+			if len(matches) > 0 {
+				return false, nil
+			}
+		}
+	}
+
+	return shouldBeAdded, nil
 }
