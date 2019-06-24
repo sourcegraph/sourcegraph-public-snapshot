@@ -1,4 +1,5 @@
 import * as sourcegraph from 'sourcegraph'
+import { Observable } from 'rxjs'
 
 /**
  * Creates a function that memoizes the async result of func.
@@ -33,3 +34,10 @@ export const queryGraphQL = memoizeAsync(
     },
     arg => JSON.stringify({ query: arg.query, vars: arg.vars })
 )
+
+export const settingsObservable = <T extends object>() =>
+    new Observable<T>(subscriber =>
+        sourcegraph.configuration.subscribe(() => {
+            subscriber.next(sourcegraph.configuration.get<T>().value)
+        })
+    )
