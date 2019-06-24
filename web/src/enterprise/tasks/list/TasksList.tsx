@@ -35,13 +35,13 @@ export const TasksList: React.FunctionComponent<Props> = ({ containerClassName, 
                 {isErrorLike(tasksOrError) ? (
                     <div className="alert alert-danger mt-2">{tasksOrError.message}</div>
                 ) : tasksOrError === LOADING ? (
-                    <LoadingSpinner className="m-3" />
+                    <LoadingSpinner className="mt-3" />
                 ) : tasksOrError.length === 0 ? (
                     <p className="p-2 mb-0 text-muted">No tasks found.</p>
                 ) : (
                     <ul className="list-group list-group-flush mb-0">
                         {tasksOrError.map((task, i) => (
-                            <li key={i} className="list-group-item">
+                            <li key={i} className="list-group-item px-0">
                                 <TasksListItem
                                     {...props}
                                     key={i}
