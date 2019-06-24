@@ -42,7 +42,7 @@ Set the environment variable below on all `frontend` containers (cluster deploym
 SITE_CONFIG_FILE=site.json
 ```
 
-Where `site.json` is literally the [site configuration](site_config.md) from the in-app editor.
+`site.json` contains the [site configuration](site_config.md), which you would otherwise edit through the in-app site configuration editor.
 
 #### External service configuration
 
