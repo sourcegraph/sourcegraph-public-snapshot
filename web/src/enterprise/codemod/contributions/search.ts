@@ -1,11 +1,19 @@
+import { parsePatch } from 'diff'
 import H from 'history'
-import { Subscription, Unsubscribable } from 'rxjs'
+import { of, Subscription, throwError, Unsubscribable } from 'rxjs'
+import { first, switchMap } from 'rxjs/operators'
 import { parseContributionExpressions } from '../../../../../shared/src/api/client/services/contribution'
 import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { isErrorLike } from '../../../../../shared/src/util/errors'
+import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { createThread } from '../../../discussions/backend'
 import { parseSearchURLQuery } from '../../../search'
+import { search } from '../../../search/backend'
+import { FAKE_PROJECT_ID } from '../../changesets/preview/backend'
+import { FileDiff, npmDiffToFileDiffHunk } from '../../threads/detail/changes/computeDiff'
+import { ThreadSettings } from '../../threads/settings'
 import { queryWithReplacementText } from '../query'
 
 export const CODEMOD_PANEL_VIEW_ID = 'codemod'
@@ -66,17 +74,58 @@ export function registerCodemodSearchContributions({
         extensionsController.services.commands.registerCommand({
             command: SAVE_ID,
             run: async () => {
-                const title = prompt('Enter title to create codemod:')
-                if (title !== null) {
-                    const query = parseSearchURLQuery(history.location.search)
-                    const thread = await createThread({
-                        title,
-                        settings: JSON.stringify({ query }),
-                        contents: 'Created codemod',
-                        type: GQL.ThreadType.CHECK,
-                    }).toPromise()
-                    setTimeout(() => history.push(`${thread.url}/activity`), 500)
+                // const title = prompt('Enter title to create changeset:')
+                // if (title !== null) {
+                const query = parseSearchURLQuery(history.location.search) || ''
+
+                // TODO!(sqs) hack get diffs from search
+                const results = await search(query, { extensionsController })
+                    .pipe(
+                        first(),
+                        switchMap(r => {
+                            if (isErrorLike(r)) {
+                                // tslint:disable-next-line: rxjs-throw-error
+                                return throwError(r)
+                            }
+                            return of(r)
+                        })
+                    )
+                    .toPromise()
+                const diffs: FileDiff[] = results.results
+                    .filter((r): r is GQL.ICodemodResult => r.__typename === 'CodemodResult')
+                    .flatMap(r =>
+                        r.matches.flatMap(m =>
+                            parsePatch(
+                                `--- ${m.url}\n+++ ${m.url}\n${m.body.text
+                                    .replace(/^```diff\n/, '')
+                                    .replace(/\n```$/, '')
+                                    .replace(/\n /g, '\n')}`
+                            )
+                        )
+                    )
+                    .map(
+                        diff =>
+                            ({
+                                oldPath: diff.oldFileName,
+                                newPath: diff.newFileName,
+                                hunks: diff.hunks.map(npmDiffToFileDiffHunk),
+                            } as FileDiff)
+                    )
+
+                const settings: ThreadSettings = {
+                    queries: [query],
+                    previewChangesetDiff: diffs,
                 }
+                const thread = await createThread({
+                    title: query,
+                    settings: JSON.stringify(settings),
+                    contents: `Created from search:\n\n${'```'}\n${query}\n${'```'}`,
+                    project: FAKE_PROJECT_ID,
+                    status: GQL.ThreadStatus.PREVIEW,
+                    type: GQL.ThreadType.CHANGESET,
+                }).toPromise()
+                history.push(thread.url)
+                // }
             },
         })
     )
@@ -90,7 +139,7 @@ export function registerCodemodSearchContributions({
                         category: 'Codemod',
                         command: SAVE_ID,
                         actionItem: {
-                            label: 'Create codemod',
+                            label: 'Preview changeset',
                             // TODO!(sqs): icon theme color doesn't update
                             iconURL:
                                 "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' style='width:24px;height:24px' viewBox='0 0 24 24' fill='transparent'%3E%3Cpath d='M20,16V10H22V16C22,17.1 21.1,18 20,18H8C6.89,18 6,17.1 6,16V4C6,2.89 6.89,2 8,2H16V4H8V16H20M10.91,7.08L14,10.17L20.59,3.58L22,5L14,13L9.5,8.5L10.91,7.08M16,20V22H4C2.9,22 2,21.1 2,20V7H4V20H16Z'%3E%3C/path%3E%3C/svg%3E",
