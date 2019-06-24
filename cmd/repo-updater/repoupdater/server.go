@@ -288,29 +288,67 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 }
 
 func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
 	var req protocol.ExternalServiceSyncRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	_, err := s.Syncer.Sync(r.Context(), req.ExternalService.Kind)
-	switch {
-	case err == nil:
-		log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
+	s.Syncer.TriggerSync()
+
+	errch := make(chan error, 1)
+	go func() {
+		src, err := repos.NewSource(&repos.ExternalService{
+			ID:          req.ExternalService.ID,
+			Kind:        req.ExternalService.Kind,
+			DisplayName: req.ExternalService.DisplayName,
+			Config:      req.ExternalService.Config,
+		}, nil)
+		if err != nil {
+			errch <- err
+			return
+		}
+
+		_, err = src.ListRepos(ctx)
+		if err != nil && ctx.Err() != nil {
+			// ignore if we took too long
+			err = nil
+		}
+		errch <- err
+	}()
+
+	select {
+	case err := <-errch:
+		switch {
+		case err == nil:
+			log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
+			respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
+				ExternalService: req.ExternalService,
+			})
+		case err == github.ErrIncompleteResults:
+			log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+			syncResult := &protocol.ExternalServiceSyncResult{
+				ExternalService: req.ExternalService,
+				Error:           err.Error(),
+			}
+			respond(w, http.StatusOK, syncResult)
+		default:
+			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+			respond(w, http.StatusInternalServerError, err)
+		}
+
+	case <-time.After(10 * time.Second):
 		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
 			ExternalService: req.ExternalService,
+			Error:           "warning: took longer than 10s to verify config against code host. Please monitor repo-updater logs.",
 		})
-	case err == github.ErrIncompleteResults:
-		log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
-		syncResult := &protocol.ExternalServiceSyncResult{
-			ExternalService: req.ExternalService,
-			Error:           err.Error(),
-		}
-		respond(w, http.StatusOK, syncResult)
-	default:
-		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+	case <-ctx.Done():
+		// client is gone
+		return
 	}
 }
 

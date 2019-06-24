@@ -10,7 +10,8 @@ export const isErrorLike = (val: unknown): val is ErrorLike =>
     !('__typename' in val)
 
 /**
- * Ensures a value is a proper Error, copying all properties if needed
+ * Converts an ErrorLike to a proper Error if needed, copying all properties
+ * @param errorLike An Error or object with ErrorLike properties
  */
 export const asError = (err: any): Error => {
     if (err instanceof Error) {

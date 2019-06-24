@@ -14,11 +14,11 @@ describe('Bitbucket scrape.ts', () => {
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
                 baseFilePath: undefined,
-                baseRepoName: undefined,
+                baseRawRepoName: undefined,
                 filePath: 'dir/new_file.go',
                 project: 'SOURCEGRAPH',
                 repoSlug: 'mux',
-                repoName: 'bitbucket.test/SOURCEGRAPH/mux',
+                rawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
             })
         })
         it('should get the FileInfo for a modified file', async () => {
@@ -32,11 +32,11 @@ describe('Bitbucket scrape.ts', () => {
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
                 baseFilePath: 'dir/mux.go',
-                baseRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
+                baseRawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
                 filePath: 'dir/mux.go',
                 project: 'SOURCEGRAPH',
                 repoSlug: 'mux',
-                repoName: 'bitbucket.test/SOURCEGRAPH/mux',
+                rawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
             })
         })
         it('should get the FileInfo for a deleted file', async () => {
@@ -50,11 +50,11 @@ describe('Bitbucket scrape.ts', () => {
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
                 baseFilePath: 'dir/old_test.go',
-                baseRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
+                baseRawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
                 filePath: 'dir/old_test.go', // TODO should really be undefined?
                 project: 'SOURCEGRAPH',
                 repoSlug: 'mux',
-                repoName: 'bitbucket.test/SOURCEGRAPH/mux',
+                rawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
             })
         })
         it('should get the FileInfo for a copied file', async () => {
@@ -68,11 +68,11 @@ describe('Bitbucket scrape.ts', () => {
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
                 baseFilePath: 'dir/mux.go',
-                baseRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
+                baseRawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
                 filePath: 'dir/mux.1.go',
                 project: 'SOURCEGRAPH',
                 repoSlug: 'mux',
-                repoName: 'bitbucket.test/SOURCEGRAPH/mux',
+                rawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
             })
         })
         it('should get the FileInfo for a renamed file', async () => {
@@ -86,11 +86,11 @@ describe('Bitbucket scrape.ts', () => {
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
                 baseFilePath: 'dir/mux_test.go',
-                baseRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
+                baseRawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
                 filePath: 'dir/mux_test_moved.go',
                 project: 'SOURCEGRAPH',
                 repoSlug: 'mux',
-                repoName: 'bitbucket.test/SOURCEGRAPH/mux',
+                rawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
             })
         })
         it('should get the FileInfo for a moved file', async () => {
@@ -104,11 +104,11 @@ describe('Bitbucket scrape.ts', () => {
             const fileInfo = getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView(codeView)
             expect(fileInfo).toStrictEqual({
                 baseFilePath: 'dir/route.go',
-                baseRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
+                baseRawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
                 filePath: 'dir/test-dir/route.go',
                 project: 'SOURCEGRAPH',
                 repoSlug: 'mux',
-                repoName: 'bitbucket.test/SOURCEGRAPH/mux',
+                rawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
             })
         })
     })

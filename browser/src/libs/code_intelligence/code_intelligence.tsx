@@ -38,6 +38,7 @@ import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { PartialCodeEditor } from '../../../../shared/src/api/client/context/context'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
 import { CodeEditorData } from '../../../../shared/src/api/client/services/editorService'
+import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../../shared/src/backend/errors'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
@@ -61,6 +62,7 @@ import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../shared/s
 import {
     FileSpec,
     PositionSpec,
+    RawRepoSpec,
     RepoSpec,
     ResolvedRevSpec,
     RevSpec,
@@ -69,7 +71,6 @@ import {
     ViewStateSpec,
 } from '../../../../shared/src/util/url'
 import { isInPage } from '../../context'
-import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../shared/backend/errors'
 import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
@@ -93,6 +94,7 @@ import {
     registerNativeTooltipContributions,
 } from './native_tooltips'
 import { handleTextFields, TextField } from './text_fields'
+import { resolveRepoNames } from './util/file_info'
 import { ViewResolver } from './views'
 
 registerHighlightContributions()
@@ -118,7 +120,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
 /**
  * The context the code host is in on the current page.
  */
-export type CodeHostContext = RepoSpec & Partial<RevSpec> & { privateRepository: boolean }
+export type CodeHostContext = RawRepoSpec & Partial<RevSpec> & { privateRepository: boolean }
 
 type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'gitlab'
 
@@ -202,7 +204,12 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     /** Construct the URL to the specified file. */
     urlToFile?: (
         sourcegraphURL: string,
-        location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
+        location: RepoSpec &
+            RawRepoSpec &
+            RevSpec &
+            FileSpec &
+            Partial<PositionSpec> &
+            Partial<ViewStateSpec> & { part?: DiffPart }
     ) => string
 
     /**
@@ -231,7 +238,7 @@ export interface FileInfo {
      * The path for the repo the file belongs to. If a `baseRepoName` is provided, this value
      * is treated as the head repo name.
      */
-    repoName: string
+    rawRepoName: string
     /**
      * The path for the file path for a given `codeView`. If a `baseFilePath` is provided, this value
      * is treated as the head file path.
@@ -250,7 +257,7 @@ export interface FileInfo {
      * The repo name for the BASE side of a diff. This is useful for Phabricator
      * staging areas since they are separate repos.
      */
-    baseRepoName?: string
+    baseRawRepoName?: string
     /**
      * The base file path.
      */
@@ -263,6 +270,10 @@ export interface FileInfo {
      * Revision for the BASE side of the diff.
      */
     baseRev?: string
+}
+
+export interface FileInfoWithRepoNames extends FileInfo, RepoSpec {
+    baseRepoName?: string
 }
 
 export interface CodeIntelligenceProps
@@ -442,8 +453,8 @@ export function handleCodeHost({
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
 
-    const ensureRepoExists = (context: CodeHostContext) =>
-        resolveRev({ ...context, requestGraphQL }).pipe(
+    const ensureRepoExists = ({ rawRepoName, rev }: CodeHostContext) =>
+        resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
             retryWhenCloneInProgressError(),
             map(rev => !!rev),
             catchError(() => [false])
@@ -537,6 +548,7 @@ export function handleCodeHost({
         trackCodeViews(codeHost),
         mergeMap(codeViewEvent =>
             codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
+                mergeMap(fileInfo => resolveRepoNames(fileInfo, platformContext.requestGraphQL)),
                 mergeMap(fileInfo =>
                     fetchFileContents(fileInfo, platformContext.requestGraphQL).pipe(
                         map(fileInfoWithContents => ({

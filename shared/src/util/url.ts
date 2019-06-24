@@ -3,9 +3,21 @@ import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceServi
 
 export interface RepoSpec {
     /**
-     * Example: github.com/gorilla/mux
+     * The name of this repository on a Sourcegraph instance,
+     * as affected by `repositoryPathPattern`.
+     *
+     * Example: `sourcegraph/sourcegraph`
      */
     repoName: string
+}
+
+export interface RawRepoSpec {
+    /**
+     * The name of this repository, unaffected by `repositoryPathPattern`.
+     *
+     * Example: `github.com/sourcegraph/sourcegraph`
+     */
+    rawRepoName: string
 }
 
 export interface RevSpec {
