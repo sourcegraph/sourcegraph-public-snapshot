@@ -11,7 +11,7 @@ describe('code_views', () => {
     })
     describe('trackCodeViews()', () => {
         const fileInfo: FileInfo = {
-            repoName: 'foo',
+            rawRepoName: 'foo',
             filePath: '/bar.ts',
             commitID: '1',
         }

@@ -17,7 +17,7 @@ import {
  * Resolves file information for a page with a single file, not including diffs with only one file.
  */
 export const resolveFileInfo = (): Observable<FileInfo> => {
-    const { repoName, filePath, rev } = getFilePageInfo()
+    const { rawRepoName, filePath, rev } = getFilePageInfo()
     if (!filePath) {
         return throwError(
             new Error(
@@ -30,7 +30,7 @@ export const resolveFileInfo = (): Observable<FileInfo> => {
         const commitID = getCommitIDFromPermalink()
 
         return of({
-            repoName,
+            rawRepoName,
             filePath,
             commitID,
             rev,

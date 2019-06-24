@@ -100,8 +100,7 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
 
     private getURL(): string {
         const rev = this.props.context.rev ? `@${this.props.context.rev}` : ''
-
-        return `${this.props.sourcegraphURL}/${this.props.context.repoName}${rev}`
+        return `${this.props.sourcegraphURL}/${this.props.context.rawRepoName}${rev}`
     }
 }
 
