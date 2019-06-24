@@ -24,7 +24,7 @@ interface ViewOnSourcegraphButtonState {
     /**
      * Whether or not the repo exists on the configured Sourcegraph instance.
      */
-    exists?: boolean
+    repoExists?: boolean
 }
 
 class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonProps, ViewOnSourcegraphButtonState> {
@@ -47,8 +47,8 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
                         ensureRepoExists(context, sourcegraphURL)
                     )
                 )
-                .subscribe(exists => {
-                    this.setState({ exists })
+                .subscribe(repoExists => {
+                    this.setState({ repoExists })
                 })
         )
     }
@@ -66,14 +66,14 @@ class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonPro
     }
 
     public render(): React.ReactNode {
-        if (this.state.exists === undefined) {
+        if (this.state.repoExists === undefined) {
             return null
         }
 
         // If repo doesn't exist and the instance is sourcegraph.com, prompt
         // user to configure Sourcegraph.
         if (
-            !this.state.exists &&
+            !this.state.repoExists &&
             this.props.sourcegraphURL === DEFAULT_SOURCEGRAPH_URL &&
             this.props.onConfigureSourcegraphClick
         ) {
