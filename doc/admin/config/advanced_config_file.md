@@ -7,7 +7,7 @@ As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.m
 ## Benefits
 
 1. Configuration can be checked into version control (e.g. Git).
-2. Edits through the web UI cannot be saved (good for enforcing configuration organization-wide).
+2. Configuration is enforced across the entire instance and edits cannot be made from the web UI.
 
 ## Drawbacks
 
