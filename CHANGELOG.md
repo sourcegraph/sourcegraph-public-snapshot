@@ -17,6 +17,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Updating or creating an external service will no longer block until the service is synced.
+
 ### Fixed
 
 ### Removed
