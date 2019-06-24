@@ -315,9 +315,9 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			if ctx.Err() != nil {
 				err = nil
 			}
-			errch <- err
-			// intentionally not return, we want to always triggersync
 		}
+		errch <- err
+		// intentionally not return, we want to always triggersync
 
 		s.Syncer.TriggerSync()
 	}()
