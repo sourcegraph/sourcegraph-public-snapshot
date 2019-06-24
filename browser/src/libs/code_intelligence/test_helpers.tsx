@@ -100,7 +100,7 @@ export const mockRequestGraphQL = (
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const requestName = nameMatch && nameMatch[1]
     if (!requestName || !responseMap[requestName]) {
-        return throwError(new Error(`GraphQL request ${requestName} failed`))
+        return throwError(new Error(`No mock for GraphQL request ${requestName}`))
     }
     return responseMap[requestName](variables, mightContainPrivateInfo) as Observable<SuccessGraphQLResult<R>>
 }
