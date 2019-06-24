@@ -1,3 +1,6 @@
+// Command watchmanwrapper runs watchman subscribe and parses its output to
+// trigger another command with the files that have changed. See
+// dev/changewatch for how it is invocated.
 package main
 
 import (
@@ -41,14 +44,14 @@ func main() {
 			cmd := exec.Command(os.Args[1], r.Files...)
 			cmd.Stderr = os.Stderr
 			cmd.Stdout = os.Stdout
-			err := cmd.Run()
+			err = cmd.Run()
 			if err != nil {
-				log.Println("%s failed to run: %v", os.Args[1], err)
+				log.Printf("%s failed to run: %v", os.Args[1], err)
 			}
 		}
 	}()
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
