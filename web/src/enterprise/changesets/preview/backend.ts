@@ -20,16 +20,35 @@ export const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
  */
 export type ChangesetCreationStatus = GQL.ThreadStatus.OPEN_ACTIVE | GQL.ThreadStatus.PREVIEW
 
+interface ChangesetCreationInfo
+    extends Pick<GQL.ICreateThreadOnDiscussionsMutationArguments['input'], 'title' | 'contents'> {
+    status: ChangesetCreationStatus
+}
+
 /**
- * Create a preview changeset by applying the {@link codeAction}.
+ * Create a changeset by applying the {@link codeAction}.
  */
-export async function createChangeset(
+export async function createChangesetFromCodeAction(
     { extensionsController }: ExtensionsControllerProps,
     diagnostic: sourcegraph.Diagnostic,
     codeAction: sourcegraph.CodeAction,
-    creationStatus: ChangesetCreationStatus
+    info: Pick<ChangesetCreationInfo, 'status'>
 ): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
-    const fileDiffs = await computeDiff(extensionsController, [codeAction])
+    return createChangesetFromDiffs({ extensionsController }, await computeDiff(extensionsController, [codeAction]), {
+        ...info,
+        title: `${diagnostic.message}: ${codeAction.title}`,
+        contents: '',
+    })
+}
+
+/**
+ * Create a changeset by applying the diffs.
+ */
+export async function createChangesetFromDiffs(
+    { extensionsController }: ExtensionsControllerProps,
+    fileDiffs: FileDiff[],
+    info: ChangesetCreationInfo
+): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
     const fileDiffsByRepo = new Map<string, FileDiff[]>()
     for (const fileDiff of fileDiffs) {
         const repo = parseRepoURI(fileDiff.newPath!).repoName
@@ -61,12 +80,10 @@ export async function createChangeset(
 
     const settings: ThreadSettings = { deltas }
     return createThread({
+        ...info,
         type: GQL.ThreadType.CHANGESET,
-        title: `${diagnostic.message}: ${codeAction.title}`,
-        contents: '',
         project: FAKE_PROJECT_ID,
         settings: JSON.stringify(settings, null, 2),
-        status: creationStatus,
     }).toPromise()
 }
 

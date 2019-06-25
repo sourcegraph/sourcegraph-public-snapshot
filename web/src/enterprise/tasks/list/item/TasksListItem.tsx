@@ -16,7 +16,7 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/DiagnosticSeverityIcon'
 import { fetchHighlightedFileLines } from '../../../../repo/backend'
-import { ChangesetCreationStatus, createChangeset } from '../../../changesets/preview/backend'
+import { ChangesetCreationStatus, createChangesetFromCodeAction } from '../../../changesets/preview/backend'
 import { DiagnosticInfo, getCodeActions } from '../../../threads/detail/backend'
 import { WorkspaceEditPreview } from '../../../threads/detail/inbox/item/WorkspaceEditPreview'
 import { CreateChangesetFromCodeActionButton } from './CreateChangesetFromCodeActionButton'
@@ -108,7 +108,12 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                     throw new Error('no active code action')
                 }
                 setCreatedThreadOrLoading(
-                    await createChangeset({ extensionsController }, diagnostic, codeAction, creationStatus)
+                    await createChangesetFromCodeAction(
+                        { extensionsController },
+                        diagnostic,
+                        codeAction,
+                        creationStatus
+                    )
                 )
                 setJustCreated(true)
                 setTimeout(() => setJustCreated(false), 2500)
