@@ -1,5 +1,9 @@
 package graphqlbackend
 
+// This change is only to find out if the breakage in
+// https://buildkite.com/sourcegraph/sourcegraph/builds/38552#301d308f-31bf-44b9-9144-d8c6b08e716f
+// is caused by the suggestion changes or if the build was already broken.
+
 import (
 	"context"
 	"encoding/json"
