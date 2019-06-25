@@ -835,9 +835,9 @@ func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions)
 
 	// Everything currently in indexed is at HEAD. Filter out repos which
 	// zoekt hasn't indexed yet.
-	zoektIndexed := map[string]zoekt.Repository{}
+	zoektIndexed := make(map[string]*zoekt.Repository, len(resp.Repos))
 	for _, repo := range resp.Repos {
-		zoektIndexed[repo.Repository.Name] = repo.Repository
+		zoektIndexed[repo.Repository.Name] = &repo.Repository
 	}
 	head := indexed
 	indexed = indexed[:0]
