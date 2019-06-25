@@ -33,6 +33,8 @@ type repositoryResolver struct {
 	matches     []*searchResultMatchResolver
 }
 
+var RepositoryByID = repositoryByID
+
 func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, error) {
 	var repoID api.RepoID
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
