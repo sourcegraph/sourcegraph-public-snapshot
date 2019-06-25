@@ -799,14 +799,18 @@ func queryToZoektFileOnlyQueries(query *search.PatternInfo, listOfFilePaths []st
 	return zoektQueries, nil
 }
 
+type zoektBackend interface {
+	ListAll(context.Context) (*zoekt.RepoList, error)
+}
+
 // zoektIndexedRepos splits the input repo list into two parts: (1) the
 // repositories `indexed` by Zoekt and (2) the repositories that are
 // `unindexed`.
 //
 // Additionally, it returns a mapping of `indexed` repositories to the exact
 // Git commit of HEAD that is indexed.
-func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, err error) {
-	if !IndexedSearch().Enabled() {
+func zoektIndexedRepos(ctx context.Context, z zoektBackend, repos []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, err error) {
+	if z == nil {
 		return nil, repos, nil, nil
 	}
 	for _, repoRev := range repos {
@@ -828,7 +832,7 @@ func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	resp, err := IndexedSearch().ListAll(ctx)
+	resp, err := z.ListAll(ctx)
 	if err != nil {
 		return nil, repos, nil, err
 	}
@@ -839,6 +843,7 @@ func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions)
 	for _, repo := range resp.Repos {
 		zoektIndexed[repo.Repository.Name] = &repo.Repository
 	}
+
 	head := indexed
 	indexed = indexed[:0]
 	for _, repoRev := range head {
@@ -859,6 +864,7 @@ func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions)
 			}
 		}
 	}
+
 	return indexed, unindexed, indexedRevisions, nil
 }
 
@@ -881,7 +887,11 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 
 	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
 
-	zoektRepos, searcherRepos, indexedRevisions, err := zoektIndexedRepos(ctx, args.Repos)
+	zoektBackend := IndexedSearch()
+	if !zoektBackend.Enabled() {
+		zoektBackend = nil
+	}
+	zoektRepos, searcherRepos, indexedRevisions, err := zoektIndexedRepos(ctx, zoektBackend, args.Repos)
 	if err != nil {
 		// Don't hard fail if index is not available yet.
 		tr.LogFields(otlog.String("indexErr", err.Error()))
