@@ -640,19 +640,19 @@ func Test_zoektIndexedRepos(t *testing.T) {
 			{
 				Repository: zoekt.Repository{
 					Name:     "foo/indexed-one",
-					Branches: []zoekt.RepositoryBranch{{"HEAD", "deadbeef"}},
+					Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
 				},
 			},
 			{
 				Repository: zoekt.Repository{
 					Name:     "foo/indexed-two",
-					Branches: []zoekt.RepositoryBranch{{"HEAD", "deadbeef"}},
+					Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
 				},
 			},
 			{
 				Repository: zoekt.Repository{
 					Name:     "foo/indexed-three-no-HEAD",
-					Branches: []zoekt.RepositoryBranch{{"foobar", "deadbeef"}},
+					Branches: []zoekt.RepositoryBranch{{Name: "foobar", Version: "deadbeef"}},
 				},
 			},
 		},
@@ -710,7 +710,7 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
 				Name:     indexedName,
-				Branches: []zoekt.RepositoryBranch{{"HEAD", "deadbeef"}},
+				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
 			},
 		})
 	}
@@ -723,7 +723,7 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		zoektIndexedRepos(ctx, zoekt, repos)
+		_, _, _, _ = zoektIndexedRepos(ctx, zoekt, repos)
 	}
 }
 
