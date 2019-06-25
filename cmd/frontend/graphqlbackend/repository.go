@@ -152,14 +152,10 @@ func (r *repositoryResolver) Language() string {
 func (r *repositoryResolver) Enabled() bool { return true }
 
 func (r *repositoryResolver) CreatedAt() string {
-	return r.repo.CreatedAt.Format(time.RFC3339)
+	return time.Now().Format(time.RFC3339)
 }
 
 func (r *repositoryResolver) UpdatedAt() *string {
-	if r.repo.UpdatedAt != nil {
-		t := r.repo.UpdatedAt.Format(time.RFC3339)
-		return &t
-	}
 	return nil
 }
 
