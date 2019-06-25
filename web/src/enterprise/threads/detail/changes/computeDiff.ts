@@ -1,5 +1,5 @@
 import { applyEdits } from '@sqs/jsonc-parser'
-import { Hunk, structuredPatch } from 'diff'
+import { createTwoFilesPatch, Hunk, structuredPatch } from 'diff'
 import { CodeAction, TextEdit } from 'sourcegraph'
 import { positionToOffset } from '../../../../../../shared/src/api/client/types/textDocument'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
@@ -9,6 +9,7 @@ import { parseRepoURI } from '../../../../../../shared/src/util/url'
 
 export interface FileDiff extends Pick<GQL.IFileDiff, 'oldPath' | 'newPath'> {
     hunks: GQL.IFileDiffHunk[]
+    patch: string
 }
 
 export const npmDiffToFileDiffHunk = (hunk: Hunk): GQL.IFileDiffHunk => ({
@@ -53,9 +54,10 @@ export async function computeDiff(
         })
         const p = parseRepoURI(uri)
         fileDiffs.push({
-            oldPath: p.filePath!,
-            newPath: p.filePath!,
+            oldPath: uri.toString(),
+            newPath: uri.toString(),
             hunks: hunks.map(npmDiffToFileDiffHunk),
+            patch: createTwoFilesPatch('a/' + p.filePath!, 'b/' + p.filePath!, oldText, newText, undefined, undefined),
         })
     }
     return fileDiffs

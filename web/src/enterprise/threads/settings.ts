@@ -49,6 +49,12 @@ export interface WebhookRule {
     url?: string
 }
 
+export interface ChangesetDelta {
+    repository: GQL.ID
+    base: string
+    head: string
+}
+
 export interface ThreadSettings {
     providers?: string[]
     queries?: string[]
@@ -61,4 +67,5 @@ export interface ThreadSettings {
     actions?: { [id: string]: string | undefined }
 
     previewChangesetDiff?: FileDiff[]
+    deltas?: ChangesetDelta[]
 }

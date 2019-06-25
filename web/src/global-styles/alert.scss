@@ -11,7 +11,7 @@
 
 @mixin alert-variant($name) {
     .alert-#{$name} {
-        background-color: var(--#{$name}-transparent) !important;
+        background-color: var(--#{$name}-contrast-bg) !important;
         border-color: var(--#{$name}-border);
         color: var(--#{$name}-contrast);
     }
