@@ -86,10 +86,10 @@ export class NavLinks extends React.PureComponent<Props> {
                                 className="nav-link btn btn-link px-3 text-decoration-none"
                             />
                         </li>
-                        <li className="nav-item">
+                        <li className="nav-item d-none">
                             <ChecksNavItem className="px-3" />
                         </li>
-                        <li className="nav-item mr-1">
+                        <li className="nav-item mr-1 d-none">
                             <ThreadsNavItem className="px-3" />
                         </li>
                         <li className="nav-item">
