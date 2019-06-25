@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sort"
 	"testing"
@@ -693,6 +694,36 @@ func Test_zoektIndexedRepos(t *testing.T) {
 	if !reflect.DeepEqual(indexedRevisions, wantIndexedRevisions) {
 		diff := cmp.Diff(indexedRevisions, wantIndexedRevisions)
 		t.Fatalf("indexedRevisions has wrong revisions. diff=%s", diff)
+	}
+}
+
+func Benchmark_zoektIndexedRepos(b *testing.B) {
+	repoNames := []string{}
+	zoektRepos := []*zoekt.RepoListEntry{}
+
+	for i := 0; i < 10000; i++ {
+		indexedName := fmt.Sprintf("foo/indexed-%d@", i)
+		unindexedName := fmt.Sprintf("foo/unindexed-%d@", i)
+
+		repoNames = append(repoNames, indexedName, unindexedName)
+
+		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
+			Repository: zoekt.Repository{
+				Name:     indexedName,
+				Branches: []zoekt.RepositoryBranch{{"HEAD", "deadbeef"}},
+			},
+		})
+	}
+
+	repos := makeRepositoryRevisions(repoNames...)
+	zoekt := &fakeZoektBackend{repos: &zoekt.RepoList{Repos: zoektRepos}}
+	ctx := context.Background()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for n := 0; n < b.N; n++ {
+		zoektIndexedRepos(ctx, zoekt, repos)
 	}
 }
 
