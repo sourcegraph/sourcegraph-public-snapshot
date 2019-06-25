@@ -2,18 +2,18 @@
     &__header {
         display: flex;
 
-        &--title {
-            flex: 1;
+        &__title {
+            flex: auto;
         }
-        &--input {
-            flex: 0;
+        &__input {
+            flex: 0 0 55px;
         }
     }
 
     &__top-queries {
         width: 100%;
 
-        &--entry {
+        &__entry {
             border-bottom: 1px solid $table-border-color;
 
             .theme-light & {
@@ -24,7 +24,7 @@
                 border-bottom: none;
             }
 
-            &-cell {
+            &__cell {
                 padding: 0.625rem;
             }
         }

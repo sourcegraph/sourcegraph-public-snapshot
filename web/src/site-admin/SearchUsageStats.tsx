@@ -50,18 +50,18 @@ export class SearchUsageStats extends React.Component<SearchUsageStatsProps, Sea
 
     public render(): React.ReactNode {
         return (
-            <div className="search-usage-stats">
-                <h3 className="search-usage-stats__header">
-                    <span className="search-usage-stats__header--title">Top search queries</span>
+            <div className="search-usage-stats mt-4">
+                <span className="search-usage-stats__header">
+                    <h3 className="search-usage-stats__header__title mt4">Top search queries</h3>
                     <input
-                        className="form-control search-usage-stats__header--input"
+                        className="form-control search-usage-stats__header__input"
                         type="number"
                         name="count"
                         value={this.state.count}
                         min={0}
                         onChange={this.onCountChange}
                     />
-                </h3>
+                </span>
                 <table className="search-usage-stats__top-queries">
                     <thead>
                         <tr>
@@ -71,11 +71,11 @@ export class SearchUsageStats extends React.Component<SearchUsageStatsProps, Sea
                     </thead>
                     <tbody>
                         {this.state.queries.map(({ query, count }) => (
-                            <tr className="search-usage-stats__top-queries--entry">
-                                <td className="search-usage-stats__top-queries--entry-cell">
+                            <tr className="search-usage-stats__top-queries__entry">
+                                <td className="search-usage-stats__top-queries__entry__cell">
                                     <Link to={`/search?${buildSearchURLQuery(query)}`}>{query}</Link>
                                 </td>
-                                <td className="search-usage-stats__top-queries--entry-cell">{count}</td>
+                                <td className="search-usage-stats__top-queries__entry__cell">{count}</td>
                             </tr>
                         ))}
                     </tbody>
