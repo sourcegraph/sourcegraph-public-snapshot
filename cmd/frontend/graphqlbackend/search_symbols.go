@@ -153,7 +153,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	for _, symbol := range symbols {
 		commit := &gitCommitResolver{
 			repo:     &repositoryResolver{repo: repoRevs.Repo},
-			oid:      gitObjectID(commitID),
+			oid:      GitObjectID(commitID),
 			inputRev: &inputRev,
 			// NOTE: Not all fields are set, for performance.
 		}
