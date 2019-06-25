@@ -2,11 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sort"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/pkg/errors"
@@ -616,6 +618,117 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 			}
 		})
 	}
+}
+
+type fakeZoektBackend struct{ repos *zoekt.RepoList }
+
+func (z *fakeZoektBackend) ListAll(ctx context.Context) (*zoekt.RepoList, error) {
+	return z.repos, nil
+}
+
+func Test_zoektIndexedRepos(t *testing.T) {
+	repos := makeRepositoryRevisions(
+		"foo/indexed-one@",
+		"foo/indexed-two@",
+		"foo/indexed-three-no-HEAD@",
+		"foo/unindexed-one",
+		"foo/unindexed-two",
+	)
+
+	zoektRepoList := &zoekt.RepoList{
+		Repos: []*zoekt.RepoListEntry{
+			{
+				Repository: zoekt.Repository{
+					Name:     "foo/indexed-one",
+					Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+				},
+			},
+			{
+				Repository: zoekt.Repository{
+					Name:     "foo/indexed-two",
+					Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+				},
+			},
+			{
+				Repository: zoekt.Repository{
+					Name:     "foo/indexed-three-no-HEAD",
+					Branches: []zoekt.RepositoryBranch{{Name: "foobar", Version: "deadbeef"}},
+				},
+			},
+		},
+	}
+
+	zoekt := &fakeZoektBackend{repos: zoektRepoList}
+	ctx := context.Background()
+
+	indexed, unindexed, indexedRevisions, err := zoektIndexedRepos(ctx, zoekt, repos)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, assertion := range []struct {
+		name       string
+		have, want []*search.RepositoryRevisions
+	}{
+		{"indexed", indexed, makeRepositoryRevisions("foo/indexed-one@", "foo/indexed-two@", "foo/indexed-three-no-HEAD@")},
+		{"unindexed", unindexed, makeRepositoryRevisions("foo/unindexed-one", "foo/unindexed-two")},
+	} {
+		if len(assertion.have) != len(assertion.want) {
+			t.Fatalf("%s has wrong length: %d", assertion.name, len(assertion.have))
+		}
+
+		sort.Slice(assertion.have, sortRepoRevsByName(assertion.have))
+		sort.Slice(assertion.want, sortRepoRevsByName(assertion.want))
+
+		if !reflect.DeepEqual(assertion.have, assertion.want) {
+			diff := cmp.Diff(assertion.have, assertion.want)
+			t.Fatalf("%s has wrong repo revs. diff=%s", assertion.name, diff)
+		}
+	}
+
+	wantIndexedRevisions := map[*search.RepositoryRevisions]string{
+		repos[0]: "deadbeef",
+		repos[1]: "deadbeef",
+	}
+
+	if !reflect.DeepEqual(indexedRevisions, wantIndexedRevisions) {
+		diff := cmp.Diff(indexedRevisions, wantIndexedRevisions)
+		t.Fatalf("indexedRevisions has wrong revisions. diff=%s", diff)
+	}
+}
+
+func Benchmark_zoektIndexedRepos(b *testing.B) {
+	repoNames := []string{}
+	zoektRepos := []*zoekt.RepoListEntry{}
+
+	for i := 0; i < 10000; i++ {
+		indexedName := fmt.Sprintf("foo/indexed-%d@", i)
+		unindexedName := fmt.Sprintf("foo/unindexed-%d@", i)
+
+		repoNames = append(repoNames, indexedName, unindexedName)
+
+		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
+			Repository: zoekt.Repository{
+				Name:     indexedName,
+				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+			},
+		})
+	}
+
+	repos := makeRepositoryRevisions(repoNames...)
+	zoekt := &fakeZoektBackend{repos: &zoekt.RepoList{Repos: zoektRepos}}
+	ctx := context.Background()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for n := 0; n < b.N; n++ {
+		_, _, _, _ = zoektIndexedRepos(ctx, zoekt, repos)
+	}
+}
+
+func sortRepoRevsByName(repoRevs []*search.RepositoryRevisions) func(int, int) bool {
+	return func(i, j int) bool { return repoRevs[i].Repo.Name < repoRevs[j].Repo.Name }
 }
 
 func init() {
