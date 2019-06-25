@@ -74,6 +74,10 @@ func gitRefByID(ctx context.Context, id graphql.ID) (*GitRefResolver, error) {
 	}, nil
 }
 
+func NewGitRefResolver(repo *repositoryResolver, name string, target gitObjectID) *GitRefResolver {
+	return &GitRefResolver{repo: repo, name: name, target: target}
+}
+
 type GitRefResolver struct {
 	repo *repositoryResolver
 	name string
