@@ -26,7 +26,7 @@ type GitResolver interface {
 type GitCreateRefFromPatchInput struct {
 	Repository graphql.ID
 	Name       string
-	BaseCommit gitObjectID
+	BaseCommit GitObjectID
 	Patch      string
 }
 

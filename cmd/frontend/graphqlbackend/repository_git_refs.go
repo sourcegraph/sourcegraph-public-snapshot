@@ -109,10 +109,10 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 	// Combine branches and tags.
 	refs := make([]*GitRefResolver, len(branches)+len(tags))
 	for i, b := range branches {
-		refs[i] = &GitRefResolver{name: "refs/heads/" + b.Name, repo: r, target: gitObjectID(b.Head)}
+		refs[i] = &GitRefResolver{name: "refs/heads/" + b.Name, repo: r, target: GitObjectID(b.Head)}
 	}
 	for i, t := range tags {
-		refs[i+len(branches)] = &GitRefResolver{name: "refs/tags/" + t.Name, repo: r, target: gitObjectID(t.CommitID)}
+		refs[i+len(branches)] = &GitRefResolver{name: "refs/tags/" + t.Name, repo: r, target: GitObjectID(t.CommitID)}
 	}
 
 	if args.Query != nil {
