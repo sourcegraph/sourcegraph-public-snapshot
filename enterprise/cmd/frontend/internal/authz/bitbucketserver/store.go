@@ -8,12 +8,10 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // A store of Permissions with in-memory caching, safe for concurrent use.
@@ -69,9 +67,6 @@ func (s *store) LoadPermissions(
 	p **Permissions,
 	update func() (objectIDs []uint32, _ error),
 ) (err error) {
-	ctx, save := s.observe(ctx, "LoadPermissions", "")
-	defer func() { save(*p, &err) }()
-
 	if s == nil {
 		return nil
 	}
@@ -93,7 +88,7 @@ func (s *store) LoadPermissions(
 	}
 
 	// Load the permissions with a read lock.
-	if err = s.load(ctx, stored, "SHARE"); err != nil {
+	if err = s.load(ctx, stored, false); err != nil {
 		return err
 	}
 
@@ -115,14 +110,10 @@ func (s *store) LoadPermissions(
 	return nil
 }
 
-func (s *store) load(ctx context.Context, p *Permissions, lock string) (err error) {
-	ctx, save := s.observe(ctx, "load", lock)
-	defer save(p, &err)
+func (s *store) load(ctx context.Context, p *Permissions, update bool) error {
+	q := s.loadQuery(p, update)
 
-	q := s.loadQuery(p, lock)
-
-	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}
@@ -149,7 +140,14 @@ func (s *store) load(ctx context.Context, p *Permissions, lock string) (err erro
 	return p.IDs.UnmarshalBinary(ids)
 }
 
-func (s *store) loadQuery(p *Permissions, lock string) *sqlf.Query {
+func (s *store) loadQuery(p *Permissions, update bool) *sqlf.Query {
+	var lock string
+	if update {
+		lock = "FOR UPDATE" // Exclusive write lock (one writer)
+	} else {
+		lock = "FOR SHARE" // Shared read lock (many readers)
+	}
+
 	return sqlf.Sprintf(
 		loadQueryFmtStr+lock,
 		p.UserID,
@@ -163,15 +161,12 @@ const loadQueryFmtStr = `
 SELECT object_ids, updated_at
 FROM user_permissions
 WHERE user_id = %s AND permission = %s AND object_type = %s
-FOR `
+`
 
 func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uint32, error)) (err error) {
-	ctx, save := s.observe(ctx, "update", "")
-	defer save(p, &err)
-
 	// Open a transaction for concurrency control.
-	var tx *sql.Tx
-	if tx, err = s.tx(ctx); err != nil {
+	tx, err := s.tx(ctx)
+	if err != nil {
 		return err
 	}
 
@@ -194,7 +189,7 @@ func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uin
 	//
 	// This means other processes will block until the cache fill succeeds,
 	// which is the desired behaviour.
-	if err = txs.load(ctx, p, "UPDATE"); err != nil {
+	if err = txs.load(ctx, p, true); err != nil {
 		return err
 	}
 
@@ -231,17 +226,13 @@ func (s *store) tx(ctx context.Context) (*sql.Tx, error) {
 	}
 }
 
-func (s *store) upsert(ctx context.Context, p *Permissions) (err error) {
-	ctx, save := s.observe(ctx, "upsert", "")
-	defer save(p, &err)
-
-	var q *sqlf.Query
-	if q, err = s.upsertQuery(p); err != nil {
+func (s *store) upsert(ctx context.Context, p *Permissions) error {
+	q, err := s.upsertQuery(p)
+	if err != nil {
 		return err
 	}
 
-	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}
@@ -281,39 +272,6 @@ DO UPDATE SET
   object_ids = excluded.object_ids,
   updated_at = excluded.updated_at
 `
-
-func (s *store) observe(ctx context.Context, family, title string) (context.Context, func(*Permissions, *error)) {
-	began := s.clock()
-	tr, ctx := trace.New(ctx, "bitbucket.authz.store."+family, title)
-
-	return ctx, func(ps *Permissions, err *error) {
-		now := s.clock()
-		took := now.Sub(began)
-
-		fields := []otlog.Field{
-			otlog.String("Duration", took.String()),
-			otlog.Int32("Permissions.UserID", ps.UserID),
-			otlog.String("Permissions.Perm", string(ps.Perm)),
-			otlog.String("Permissions.Type", ps.Type),
-		}
-
-		if ps.IDs != nil {
-			fields = append(fields,
-				otlog.Uint64("Permissions.IDs.Count", ps.IDs.GetCardinality()),
-				otlog.String("Permissions.UpdatedAt", ps.UpdatedAt.String()),
-			)
-		}
-
-		tr.LogFields(fields...)
-
-		success := err == nil || *err == nil
-		if !success {
-			tr.SetError(*err)
-		}
-
-		tr.Finish()
-	}
-}
 
 // A store's in-memory read-through cache used in LoadPermissions.
 type cache struct {
