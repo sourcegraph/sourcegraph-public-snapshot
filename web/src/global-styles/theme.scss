@@ -102,8 +102,8 @@ body {
 @mixin color-variants($name, $color, $contrast: #ffffff) {
     --#{$name}: #{$color};
     --#{$name}-hover: #{darken($color, 10%)};
-    --#{$name}-transparent: #{rgba($color, 0.25)};
     --#{$name}-border: #{darken($color, 10%)};
+    --#{$name}-contrast-bg: #{darken($color, 40%)};
     --#{$name}-contrast: #{$contrast};
 }
 
