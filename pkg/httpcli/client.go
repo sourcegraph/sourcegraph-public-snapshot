@@ -3,13 +3,13 @@ package httpcli
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gregjones/httpcache"
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
+	"github.com/pkg/errors"
 )
 
 // A Doer captures the Do method of an http.Client. It faciliates decorating
@@ -145,13 +145,9 @@ func ContextErrorMiddleware(cli Doer) Doer {
 // transport.
 func NewCertPoolOpt(pool *x509.CertPool) Opt {
 	return func(cli *http.Client) error {
-		if cli.Transport == nil {
-			cli.Transport = http.DefaultTransport
-		}
-
-		tr, ok := cli.Transport.(*http.Transport)
-		if !ok {
-			return errors.New("httpcli.NewCertPoolOpt: http.Client.Transport is not an *http.Transport")
+		tr, err := getTransportForMutation(cli)
+		if err != nil {
+			return errors.Wrap(err, "httpcli.NewCertPoolOpt")
 		}
 
 		if tr.TLSClientConfig == nil {
@@ -197,17 +193,52 @@ func TracedTransportOpt(cli *http.Client) error {
 // http.Client's transport.
 func NewIdleConnTimeoutOpt(timeout time.Duration) Opt {
 	return func(cli *http.Client) error {
-		if cli.Transport == nil {
-			cli.Transport = http.DefaultTransport
-		}
-
-		tr, ok := cli.Transport.(*http.Transport)
-		if !ok {
-			return errors.New("httpcli.NewIdleConnTimeoutOpt: http.Client.Transport is not an *http.Transport")
+		tr, err := getTransportForMutation(cli)
+		if err != nil {
+			return errors.Wrap(err, "httpcli.NewIdleConnTimeoutOpt")
 		}
 
 		tr.IdleConnTimeout = timeout
 
 		return nil
+	}
+}
+
+// getTransport returns the http.Transport for cli. If Transport is nil, it is
+// set to a copy of the DefaultTransport. If it is the DefaultTransport, it is
+// updated to a copy of the DefaultTransport.
+//
+// Use this function when you intend on mutating the transport.
+func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
+	if cli.Transport == nil {
+		cli.Transport = defaultTransportClone()
+	}
+
+	tr, ok := cli.Transport.(*http.Transport)
+	if !ok {
+		return nil, errors.New("http.Client.Transport is not an *http.Transport")
+	}
+
+	if tr == http.DefaultTransport {
+		tr = defaultTransportClone()
+		cli.Transport = tr
+	}
+
+	return tr, nil
+}
+
+func defaultTransportClone() *http.Transport {
+	// TODO(keegancsmith) Once go1.13 is out we can use
+	// http.DefaultTransport.Clone
+	// https://github.com/sourcegraph/sourcegraph/issues/4664 For now
+	// we set the same fields DefaultClient is initialized with.
+	t := http.DefaultTransport.(*http.Transport)
+	return &http.Transport{
+		Proxy:                 t.Proxy,
+		DialContext:           t.DialContext,
+		MaxIdleConns:          t.MaxIdleConns,
+		IdleConnTimeout:       t.IdleConnTimeout,
+		TLSHandshakeTimeout:   t.TLSHandshakeTimeout,
+		ExpectContinueTimeout: t.ExpectContinueTimeout,
 	}
 }
