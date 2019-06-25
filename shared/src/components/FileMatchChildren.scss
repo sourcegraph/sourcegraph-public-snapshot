@@ -42,3 +42,19 @@
         }
     }
 }
+
+.theme-dark {
+    .file-match-children {
+        &__item {
+            background-color: $color-bg-4;
+        }
+    }
+}
+
+.theme-light {
+    .file-match-children {
+        &__item {
+            background-color: $color-light-bg-1;
+        }
+    }
+}
