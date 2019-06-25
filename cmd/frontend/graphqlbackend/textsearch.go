@@ -810,9 +810,6 @@ type zoektBackend interface {
 // Additionally, it returns a mapping of `indexed` repositories to the exact
 // Git commit of HEAD that is indexed.
 func zoektIndexedRepos(ctx context.Context, z zoektBackend, repos []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, err error) {
-	if z == nil {
-		return nil, repos, nil, nil
-	}
 	for _, repoRev := range repos {
 		// We search HEAD using zoekt
 		if revspecs := repoRev.RevSpecs(); len(revspecs) > 0 {
@@ -887,17 +884,21 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 
 	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
 
-	zoektBackend := IndexedSearch()
-	if !zoektBackend.Enabled() {
-		zoektBackend = nil
-	}
-	zoektRepos, searcherRepos, indexedRevisions, err := zoektIndexedRepos(ctx, zoektBackend, args.Repos)
-	if err != nil {
-		// Don't hard fail if index is not available yet.
-		tr.LogFields(otlog.String("indexErr", err.Error()))
-		log15.Warn("zoektIndexedRepos failed", "error", err)
-		common.indexUnavailable = true
-		err = nil
+	var (
+		zoektRepos       []*search.RepositoryRevisions
+		searcherRepos    []*search.RepositoryRevisions = args.Repos
+		indexedRevisions map[*search.RepositoryRevisions]string
+	)
+	if IndexedSearch().Enabled() {
+		var err error
+		zoektRepos, searcherRepos, indexedRevisions, err = zoektIndexedRepos(ctx, IndexedSearch(), args.Repos)
+		if err != nil {
+			// Don't hard fail if index is not available yet.
+			tr.LogFields(otlog.String("indexErr", err.Error()))
+			log15.Warn("zoektIndexedRepos failed", "error", err)
+			common.indexUnavailable = true
+			err = nil
+		}
 	}
 
 	common.repos = make([]*types.Repo, len(args.Repos))
