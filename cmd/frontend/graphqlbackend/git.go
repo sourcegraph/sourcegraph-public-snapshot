@@ -31,5 +31,5 @@ type GitCreateRefFromPatchInput struct {
 }
 
 type GitCreateRefFromPatchPayload interface {
-	Ref() *gitRefResolver
+	Ref(ctx context.Context) (*gitRefResolver, error)
 }
