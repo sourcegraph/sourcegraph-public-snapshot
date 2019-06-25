@@ -23,15 +23,19 @@ func TestDiscussionsMutations_AddTargetToThread(t *testing.T) {
 	mockViewerCanUseDiscussions = func() error { return nil }
 	defer func() { mockViewerCanUseDiscussions = nil }()
 	const (
-		wantRepoID   = api.RepoID(1)
-		wantThreadID = 123
-		wantPath     = "foo/bar"
+		wantRepoID          = api.RepoID(1)
+		wantThreadID        = 123
+		wantThreadGraphQLID = "RGlzY3Vzc2lvblRocmVhZDoiM2Yi"
+		wantPath            = "foo/bar"
 	)
 	db.Mocks.Repos.Get = func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		if id != wantRepoID {
 			t.Errorf("got repo ID %v, want %v", id, wantRepoID)
 		}
 		return &types.Repo{ID: wantRepoID}, nil
+	}
+	db.Mocks.DiscussionThreads.ListTargets = func(db.DiscussionThreadsListTargetsOptions) ([]*types.DiscussionThreadTargetRepo, error) {
+		return nil, nil
 	}
 	db.Mocks.DiscussionThreads.AddTarget = func(tr *types.DiscussionThreadTargetRepo) (*types.DiscussionThreadTargetRepo, error) {
 		if tr.RepoID != wantRepoID {
@@ -54,9 +58,9 @@ func TestDiscussionsMutations_AddTargetToThread(t *testing.T) {
 		{
 			Schema: GraphQLSchema,
 			Query: `
-				mutation($target: DiscussionThreadTargetInput!) {
+				mutation($threadID: ID!, $target: DiscussionThreadTargetInput!) {
 					discussions {
-						addTargetToThread(threadID: "123", target: $target) {
+						addTargetToThread(threadID: $threadID, target: $target) {
 							__typename
 							... on DiscussionThreadTargetRepo {
 								path
@@ -66,6 +70,7 @@ func TestDiscussionsMutations_AddTargetToThread(t *testing.T) {
 				}
 			`,
 			Variables: map[string]interface{}{
+				"threadID": wantThreadGraphQLID,
 				"target": map[string]interface{}{
 					"repo": map[string]interface{}{
 						"repositoryID": string(marshalRepositoryID(wantRepoID)),
@@ -108,7 +113,7 @@ func TestDiscussionsMutations_UpdateTargetInThread(t *testing.T) {
 				Query: `
 					mutation($targetID: ID!) {
 						discussions {
-							updateTargetInThread(targetID: $targetID, remove: true) {
+							updateTargetInThread(input: {targetID: $targetID, remove: true}) {
 								__typename
 							}
 						}

@@ -22,7 +22,8 @@ export async function createChangeset(
     codeAction: sourcegraph.CodeAction,
     creationStatus: ChangesetCreationStatus
 ): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
-    const settings: ThreadSettings = { previewChangesetDiff: await computeDiff(extensionsController, [codeAction]) }
+    const diff = await computeDiff(extensionsController, [codeAction])
+    const settings: ThreadSettings = { previewChangesetDiff: diff }
     return createThread({
         type: GQL.ThreadType.CHANGESET,
         title: `${diagnostic.message}: ${codeAction.title}`,
