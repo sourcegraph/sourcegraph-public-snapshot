@@ -33,6 +33,9 @@ func TestDiscussionsMutations_AddTargetToThread(t *testing.T) {
 		}
 		return &types.Repo{ID: wantRepoID}, nil
 	}
+	db.Mocks.DiscussionThreads.ListTargets = func(db.DiscussionThreadsListTargetsOptions) ([]*types.DiscussionThreadTargetRepo, error) {
+		return nil, nil
+	}
 	db.Mocks.DiscussionThreads.AddTarget = func(tr *types.DiscussionThreadTargetRepo) (*types.DiscussionThreadTargetRepo, error) {
 		if tr.RepoID != wantRepoID {
 			t.Errorf("got repo ID %v, want %v", tr.RepoID, wantRepoID)
@@ -109,7 +112,7 @@ func TestDiscussionsMutations_UpdateTargetInThread(t *testing.T) {
 				Query: `
 					mutation($targetID: ID!) {
 						discussions {
-							updateTargetInThread(targetID: $targetID, remove: true) {
+							updateTargetInThread(input: {targetID: $targetID, remove: true}) {
 								__typename
 							}
 						}

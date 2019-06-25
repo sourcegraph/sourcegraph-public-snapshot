@@ -352,6 +352,56 @@ type Mutation {
     projects: ProjectsMutation!
     # Mutations related to labels.
     labels: LabelsMutation!
+    # Mutations related to repositories' Git data.
+    git: GitMutation!
+    # Mutations related to changesets.
+    changesets: ChangesetsMutation!
+}
+
+# Mutations related to repositories' Git data.
+type GitMutation {
+    # Create a new Git ref in a repository by applying a patch to an existing commit.
+    createRefFromPatch(input: GitCreateRefFromPatchInput!): GitCreateRefFromPatchPayload
+}
+
+# Input arguments for GitMutation.createRefFromPatch.
+input GitCreateRefFromPatchInput {
+    # The repository in which to create the ref.
+    repository: ID!
+
+    # The full name of the ref (e.g., "refs/heads/mybranch" not just "mybranch").
+    name: String!
+
+    # The Git commit on top of which to apply the patch.
+    baseCommit: GitObjectID!
+
+    # The patch to apply, in unified diff format.
+    patch: String!
+}
+
+# The payload for GitMutation.createRefFromPatch.
+type GitCreateRefFromPatchPayload {
+    # The newly created ref.
+    ref: GitRef!
+}
+
+# Mutations related to changesets.
+type ChangesetsMutation {
+    # Create a changeset.
+    createChangeset(input: ChangesetsCreateChangesetInput!): ChangesetsCreateChangesetPayload
+}
+
+# Input arguments for ChangesetsMutation.createChangeset.
+input ChangesetsCreateChangesetInput {
+    title: String!
+    body: String!
+    project: ID!
+}
+
+# The payload for ChangesetsMutation.createChangeset.
+type ChangesetsCreateChangesetPayload {
+    # The newly created changeset thread.
+    thread: DiscussionThread!
 }
 
 # Mutations related to projects.

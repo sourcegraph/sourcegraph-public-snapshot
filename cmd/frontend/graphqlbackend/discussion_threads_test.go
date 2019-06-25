@@ -49,7 +49,7 @@ func TestDiscussionThread_Target(t *testing.T) {
 					"discussionThreads": {
 						"nodes": [
 							{
-								"target": null
+								"target": {"__typename": "EmptyResponse"}
 							}
 						]
 					}
