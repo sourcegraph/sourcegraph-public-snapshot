@@ -32,12 +32,12 @@ func (r *gitRevSpecExpr) Object(ctx context.Context) (*gitObject, error) {
 }
 
 type gitRevSpec struct {
-	ref    *gitRefResolver
+	ref    *GitRefResolver
 	expr   *gitRevSpecExpr
 	object *gitObject
 }
 
-func (r *gitRevSpec) ToGitRef() (*gitRefResolver, bool)         { return r.ref, r.ref != nil }
+func (r *gitRevSpec) ToGitRef() (*GitRefResolver, bool)         { return r.ref, r.ref != nil }
 func (r *gitRevSpec) ToGitRevSpecExpr() (*gitRevSpecExpr, bool) { return r.expr, r.expr != nil }
 func (r *gitRevSpec) ToGitObject() (*gitObject, bool)           { return r.object, r.object != nil }
 

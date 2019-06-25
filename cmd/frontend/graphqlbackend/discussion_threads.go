@@ -456,15 +456,15 @@ func (r *discussionThreadTargetRepoResolver) Repository(ctx context.Context) (*r
 
 func (r *discussionThreadTargetRepoResolver) Path() *string { return r.t.Path }
 
-func (r *discussionThreadTargetRepoResolver) Branch(ctx context.Context) (*gitRefResolver, error) {
+func (r *discussionThreadTargetRepoResolver) Branch(ctx context.Context) (*GitRefResolver, error) {
 	return r.branchOrRevision(ctx, r.t.Branch)
 }
 
-func (r *discussionThreadTargetRepoResolver) Revision(ctx context.Context) (*gitRefResolver, error) {
+func (r *discussionThreadTargetRepoResolver) Revision(ctx context.Context) (*GitRefResolver, error) {
 	return r.branchOrRevision(ctx, r.t.Revision)
 }
 
-func (r *discussionThreadTargetRepoResolver) branchOrRevision(ctx context.Context, rev *string) (*gitRefResolver, error) {
+func (r *discussionThreadTargetRepoResolver) branchOrRevision(ctx context.Context, rev *string) (*GitRefResolver, error) {
 	if rev == nil {
 		return nil, nil
 	}
@@ -472,7 +472,7 @@ func (r *discussionThreadTargetRepoResolver) branchOrRevision(ctx context.Contex
 	if err != nil {
 		return nil, err
 	}
-	return &gitRefResolver{repo: repo, name: *rev}, nil
+	return &GitRefResolver{repo: repo, name: *rev}, nil
 }
 
 func (r *discussionThreadTargetRepoResolver) Selection() *discussionThreadTargetRepoSelectionResolver {
