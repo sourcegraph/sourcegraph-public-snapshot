@@ -30,11 +30,17 @@ func (GraphQLResolver) CreateRefFromPatch(ctx context.Context, arg *struct {
 			Date:        time.Now(),
 		},
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &gitCreateRefFromPatchPayload{ref: graphqlbackend.NewGitRefResolver(repo, arg.Input.Name, commitID)}, nil
 }
 
 type gitCreateRefFromPatchPayload struct {
-	refName  string
-	commitID api.CommitID
+	ref *graphqlbackend.GitRefResolver
 }
 
-func (p gitCreateRefFromPatchPayload) Ref(ctx context.Context)
+func (p gitCreateRefFromPatchPayload) Ref(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
+
+}
