@@ -1,5 +1,5 @@
+import H from 'history'
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
@@ -52,7 +52,10 @@ function queryRepositoryComparisonCommits(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends Pick<RepositoryCompareAreaPageProps, 'repo' | 'base' | 'head'> {
+    location: H.Location
+    history: H.History
+}
 
 /** A page with a list of commits in the comparison. */
 export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {

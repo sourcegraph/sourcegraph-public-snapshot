@@ -27,7 +27,7 @@ export interface FileDiffNodeProps extends PlatformContextProps, ExtensionsContr
     className?: string
     location: H.Location
     history: H.History
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    hoverifier?: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
 }
 
 interface State {

@@ -89,6 +89,10 @@ type RepositoryComparisonResolver struct {
 	repo                     *repositoryResolver
 }
 
+func (r *RepositoryComparisonResolver) BaseRepository() *repositoryResolver { return r.repo }
+
+func (r *RepositoryComparisonResolver) HeadRepository() *repositoryResolver { return r.repo }
+
 func (r *RepositoryComparisonResolver) Range() *gitRevisionRange {
 	return &gitRevisionRange{
 		expr:      r.baseRevspec + "..." + r.headRevspec,

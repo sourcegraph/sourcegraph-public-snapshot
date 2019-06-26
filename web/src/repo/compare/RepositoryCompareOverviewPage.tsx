@@ -21,6 +21,22 @@ import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
 import { RepositoryCompareDiffPage } from './RepositoryCompareDiffPage'
 
+export const gitRevisionRangeFieldsFragment = gql`
+    fragment GitRevisionRangeFields on GitRevisionRange {
+        expr
+        baseRevSpec {
+            object {
+                oid
+            }
+        }
+        headRevSpec {
+            object {
+                oid
+            }
+        }
+    }
+`
+
 function queryRepositoryComparison(args: {
     repo: GQL.ID
     base: string | null
@@ -33,22 +49,13 @@ function queryRepositoryComparison(args: {
                     ... on Repository {
                         comparison(base: $base, head: $head) {
                             range {
-                                expr
-                                baseRevSpec {
-                                    object {
-                                        oid
-                                    }
-                                }
-                                headRevSpec {
-                                    object {
-                                        oid
-                                    }
-                                }
+                                ...GitRevisionRangeFields
                             }
                         }
                     }
                 }
             }
+            ${gitRevisionRangeFieldsFragment}
         `,
         args
     ).pipe(

@@ -14,8 +14,8 @@ export const DiffStat: React.FunctionComponent<{
     /** Number of deletions (deleted lines). */
     deleted: number
 
-    className: string
-}> = ({ added, changed, deleted, className }) => {
+    className?: string
+}> = ({ added, changed, deleted, className = '' }) => {
     const total = added + changed + deleted
     const numSquares = Math.min(NUM_SQUARES, total)
     let addedSquares = allocateSquares(added, total)

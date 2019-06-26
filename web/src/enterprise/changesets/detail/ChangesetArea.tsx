@@ -9,7 +9,7 @@ import { ThreadDiscussionPage } from '../../threads/detail/discussion/ThreadDisc
 import { ThreadSettingsPage } from '../../threads/detail/settings/ThreadSettingsPage'
 import { ThreadAreaSidebar } from '../../threads/detail/sidebar/ThreadAreaSidebar'
 import { createThreadAreaContext, ThreadAreaContext } from '../../threads/detail/ThreadArea'
-import { useChangesetByID } from '../components/useChangesetByID'
+import { useChangesetByID } from '../util/useChangesetByID'
 import { ChangesetsAreaContext } from '../global/ChangesetsArea'
 import { ChangesetChangesPage } from './changes/ChangesetChangesPage'
 import { ChangesetAreaNavbar } from './navbar/ChangesetAreaNavbar'

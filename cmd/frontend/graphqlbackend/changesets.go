@@ -39,7 +39,8 @@ type ChangesetsResolver interface {
 
 // Changeset is the interface for the GraphQL type Changeset.
 type Changeset interface {
-	RepositoryComparisons() []*RepositoryComparisonResolver
+	Repositories(context.Context) ([]*RepositoryResolver, error)
+	RepositoryComparisons(context.Context) ([]*RepositoryComparisonResolver, error)
 }
 
 type ChangesetsCreateChangesetInput struct {
