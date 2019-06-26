@@ -63,10 +63,10 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 				}
 
 				if shouldBeAdded {
-					results = append(results, &repositoryResolver{repo: repo.Repo, icon: repoIcon})
+					results = append(results, &RepositoryResolver{repo: repo.Repo, icon: repoIcon})
 				}
 			} else {
-				results = append(results, &repositoryResolver{repo: repo.Repo, icon: repoIcon})
+				results = append(results, &RepositoryResolver{repo: repo.Repo, icon: repoIcon})
 			}
 		}
 	}
