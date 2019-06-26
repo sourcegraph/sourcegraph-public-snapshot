@@ -902,6 +902,13 @@ declare module 'sourcegraph' {
          * @example git://github.com/sourcegraph/sourcegraph?sha#mydir1/mydir2
          */
         readonly uri: URL
+
+        /**
+         * The base URI, used when the workspace is opened for comparison.
+         *
+         * TODO!(sqs)
+         */
+        readonly baseUri?: URL
     }
 
     /**

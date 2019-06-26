@@ -2,7 +2,7 @@ import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../shared/src/util/types'
 import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { flatten } from 'lodash'
-import { Subscription, Unsubscribable, from } from 'rxjs'
+import { Subscription, Unsubscribable, from, of } from 'rxjs'
 import { map, switchMap, startWith, toArray } from 'rxjs/operators'
 import { OTHER_CODE_ACTIONS, MAX_RESULTS, REPO_INCLUDE } from './misc'
 import { memoizedFindTextInFiles } from './util'
@@ -28,7 +28,11 @@ function startDiagnostics(): Unsubscribable {
             .pipe(
                 startWith(void 0),
                 map(() => sourcegraph.workspace.roots),
-                switchMap(async () => {
+                switchMap(async roots => {
+                    if (roots.length > 0) {
+                        return of([]) // TODO!(sqs): dont run in comparison mode
+                    }
+
                     const results = flatten(
                         await from(
                             memoizedFindTextInFiles(

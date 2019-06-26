@@ -11,6 +11,7 @@ import { ChangesetActionsList } from '../detail/changes/ChangesetActionsList'
 import { ChangesetCommitsList } from '../detail/changes/ChangesetCommitsList'
 import { ChangesetFilesList } from '../detail/changes/ChangesetFilesList'
 import { ChangesetRepositoriesList } from '../detail/changes/ChangesetRepositoriesList'
+import { ChangesetTasksList } from '../detail/changes/ChangesetTasksList'
 import { ChangesetsAreaContext } from '../global/ChangesetsArea'
 import { ChangesetIcon } from '../icons'
 import { useChangesetByID } from '../util/useChangesetByID'
@@ -51,16 +52,9 @@ export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
             <div className="container">
                 <h1 className="mb-3">Preview changeset</h1>
                 {isCreateFormExpanded ? (
-                    <>
-                        <CreateChangesetFromPreviewForm
-                            {...context}
-                            className="border p-3 mb-6"
-                            history={props.history}
-                        />
-                        <div className="my-6" />
-                    </>
+                    <CreateChangesetFromPreviewForm {...context} className="border p-3 mb-4" history={props.history} />
                 ) : (
-                    <div className="alert alert-warning d-flex align-items-center mb-3">
+                    <div className="alert alert-warning d-flex align-items-center mb-4">
                         <Link to={CREATE_FORM_EXPANDED_URL} className="btn btn-lg btn-success mr-3">
                             <ChangesetIcon className="icon-inline mr-1" /> Create changeset
                         </Link>
@@ -76,6 +70,7 @@ export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
                 <ChangesetActionsList {...props} {...context} xchangeset={xchangeset} />
                 <ChangesetRepositoriesList {...props} {...context} xchangeset={xchangeset} showCommits={true} />
                 <ChangesetCommitsList {...props} {...context} xchangeset={xchangeset} className="d-none" />
+                <ChangesetTasksList {...props} {...context} xchangeset={xchangeset} />
                 <WithQueryParameter defaultQuery="" history={props.history} location={props.location}>
                     {({ query, onQueryChange }) => (
                         <ChangesetFilesList

@@ -15,7 +15,7 @@ export interface TasksListContext {
 }
 
 interface Props
-    extends QueryParameterProps,
+    extends Partial<QueryParameterProps>,
         TasksListContext,
         TasksAreaContext,
         ExtensionsControllerProps,
