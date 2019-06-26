@@ -68,7 +68,7 @@ export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
                         </span>
                     </div>
                 )}
-                <ChangesetSummaryBar {...context} />
+                <ChangesetSummaryBar {...context} xchangeset={xchangeset} />
             </div>
             <hr className="my-4" />
             <div className="container">

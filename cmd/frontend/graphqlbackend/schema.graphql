@@ -4058,6 +4058,9 @@ type Changeset {
     # The list of repositories affected by this changeset.
     repositories: [Repository!]!
 
+    # The list of commits (from one or more repositories) in this changeset.
+    commits: [GitCommit!]!
+
     # The comparisons of before and after this changeset is applied for all affected repositories.
     repositoryComparisons: [RepositoryComparison!]!
 }

@@ -38,7 +38,7 @@ export function useExtraChangesetInfo(
 function queryChangeset(threadID: string): Observable<GQL.IChangeset> {
     return queryGraphQL(
         gql`
-            query Changeset($threadID: ID!, $first: Int!) {
+            query Changeset($threadID: ID!) {
                 node(id: $threadID) {
                     __typename
                     ... on DiscussionThread {
@@ -47,6 +47,12 @@ function queryChangeset(threadID: string): Observable<GQL.IChangeset> {
                                 id
                                 name
                                 url
+                            }
+                            commits {
+                                ...GitCommitFields
+                                repository {
+                                    name
+                                }
                             }
                             repositoryComparisons {
                                 baseRepository {
@@ -62,7 +68,7 @@ function queryChangeset(threadID: string): Observable<GQL.IChangeset> {
                                 range {
                                     ...GitRevisionRangeFields
                                 }
-                                commits(first: $first) {
+                                commits {
                                     nodes {
                                         ...GitCommitFields
                                     }
@@ -70,7 +76,7 @@ function queryChangeset(threadID: string): Observable<GQL.IChangeset> {
                                         hasNextPage
                                     }
                                 }
-                                fileDiffs(first: $first) {
+                                fileDiffs {
                                     nodes {
                                         ...FileDiffFields
                                     }
@@ -93,7 +99,7 @@ function queryChangeset(threadID: string): Observable<GQL.IChangeset> {
             ${fileDiffHunkRangeFieldsFragment}
             ${diffStatFieldsFragment}
         `,
-        { threadID, first: 999999 /* TODO!(sqs) */ }
+        { threadID }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.node || data.node.__typename !== 'DiscussionThread' || (errors && errors.length > 0)) {

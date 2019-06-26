@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
@@ -44,13 +45,31 @@ func (v *gqlChangeset) Repositories(ctx context.Context) ([]*graphqlbackend.Repo
 
 	rs := make([]*graphqlbackend.RepositoryResolver, len(settings.Deltas))
 	for i, delta := range settings.Deltas {
-		repo, err := graphqlbackend.RepositoryByID(ctx, delta.Repository)
+		var err error
+		rs[i], err = graphqlbackend.RepositoryByID(ctx, delta.Repository)
 		if err != nil {
 			return nil, err
 		}
-		rs[i] = repo
 	}
 	return rs, nil
+}
+
+func (v *gqlChangeset) Commits(ctx context.Context) ([]*graphqlbackend.GitCommitResolver, error) {
+	rcs, err := v.RepositoryComparisons(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var allCommits []*graphqlbackend.GitCommitResolver
+	for _, rc := range rcs {
+		cc := rc.Commits(&graphqlutil.ConnectionArgs{})
+		commits, err := cc.Nodes(ctx)
+		if err != nil {
+			return nil, err
+		}
+		allCommits = append(allCommits, commits...)
+	}
+	return allCommits, nil
 }
 
 func (v *gqlChangeset) RepositoryComparisons(ctx context.Context) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
