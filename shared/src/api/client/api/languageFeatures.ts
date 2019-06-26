@@ -154,7 +154,9 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
     ): Unsubscribable & ProxyValue {
         return proxyValue(
             this.codeActionsRegistry.registerProvider({ documentSelector }, params =>
-                wrapRemoteObservable(providerFunction({ ...params, range: (params.range as any).toJSON() })).pipe(
+                wrapRemoteObservable(
+                    providerFunction({ ...params, range: params.range ? (params.range as any).toJSON() : undefined })
+                ).pipe(
                     map(codeActions =>
                         codeActions ? codeActions.map(codeAction => toCodeAction(codeAction)) : codeActions
                     )
