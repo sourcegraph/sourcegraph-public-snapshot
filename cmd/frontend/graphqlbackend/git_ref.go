@@ -74,12 +74,12 @@ func gitRefByID(ctx context.Context, id graphql.ID) (*GitRefResolver, error) {
 	}, nil
 }
 
-func NewGitRefResolver(repo *repositoryResolver, name string, target GitObjectID) *GitRefResolver {
+func NewGitRefResolver(repo *RepositoryResolver, name string, target GitObjectID) *GitRefResolver {
 	return &GitRefResolver{repo: repo, name: name, target: target}
 }
 
 type GitRefResolver struct {
-	repo *repositoryResolver
+	repo *RepositoryResolver
 	name string
 
 	target GitObjectID // the target's OID, if known (otherwise computed on demand)
@@ -122,6 +122,6 @@ func (r *GitRefResolver) Target() interface {
 	}
 	return &gitObjectResolver{repo: r.repo, revspec: r.name}
 }
-func (r *GitRefResolver) Repository() *repositoryResolver { return r.repo }
+func (r *GitRefResolver) Repository() *RepositoryResolver { return r.repo }
 
 func (r *GitRefResolver) URL() string { return r.repo.URL() + "@" + escapeRevspecForURL(r.AbbrevName()) }

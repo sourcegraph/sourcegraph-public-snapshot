@@ -114,8 +114,18 @@ func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToRepository() (*repositoryResolver, bool) {
-	n, ok := r.Node.(*repositoryResolver)
+func (r *NodeResolver) ToLabel() (Label, bool) {
+	n, ok := r.Node.(Label)
+	return n, ok
+}
+
+func (r *NodeResolver) ToProject() (Project, bool) {
+	n, ok := r.Node.(Project)
+	return n, ok
+}
+
+func (r *NodeResolver) ToRepository() (*RepositoryResolver, bool) {
+	n, ok := r.Node.(*RepositoryResolver)
 	return n, ok
 }
 
@@ -195,7 +205,7 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":
-		return discussionThreadByID(ctx, id)
+		return DiscussionThreadByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)
@@ -212,12 +222,16 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 		return externalServiceByID(ctx, id)
 	case "GitRef":
 		return gitRefByID(ctx, id)
+	case "Label":
+		return LabelByID(ctx, id)
+	case "Project":
+		return ProjectByID(ctx, id)
 	case "Repository":
 		return repositoryByID(ctx, id)
 	case "User":
 		return UserByID(ctx, id)
 	case "Org":
-		return orgByID(ctx, id)
+		return OrgByID(ctx, id)
 	case "OrganizationInvitation":
 		return orgInvitationByID(ctx, id)
 	case "GitCommit":
@@ -238,7 +252,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	CloneURL *string
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
-}) (*repositoryResolver, error) {
+}) (*RepositoryResolver, error) {
 	var name api.RepoName
 	if args.URI != nil {
 		// Deprecated query by "URI"
@@ -264,14 +278,14 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	repo, err := backend.Repos.GetByName(ctx, name)
 	if err != nil {
 		if err, ok := err.(backend.ErrRepoSeeOther); ok {
-			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
+			return &RepositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
 		}
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &repositoryResolver{repo: repo}, nil
+	return &RepositoryResolver{repo: repo}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

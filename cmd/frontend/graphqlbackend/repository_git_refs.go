@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-func (r *repositoryResolver) Branches(ctx context.Context, args *struct {
+func (r *RepositoryResolver) Branches(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 	Query   *string
 	OrderBy *string
@@ -25,7 +25,7 @@ func (r *repositoryResolver) Branches(ctx context.Context, args *struct {
 	}{ConnectionArgs: args.ConnectionArgs, Query: args.Query, Type: &gitRefTypeBranch, OrderBy: args.OrderBy})
 }
 
-func (r *repositoryResolver) Tags(ctx context.Context, args *struct {
+func (r *RepositoryResolver) Tags(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 	Query *string
 }) (*gitRefConnectionResolver, error) {
@@ -38,7 +38,7 @@ func (r *repositoryResolver) Tags(ctx context.Context, args *struct {
 	}{ConnectionArgs: args.ConnectionArgs, Query: args.Query, Type: &gitRefTypeTag})
 }
 
-func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
+func (r *RepositoryResolver) GitRefs(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 	Query   *string
 	Type    *string
@@ -139,7 +139,7 @@ type gitRefConnectionResolver struct {
 	first *int32
 	refs  []*GitRefResolver
 
-	repo *repositoryResolver
+	repo *RepositoryResolver
 }
 
 func (r *gitRefConnectionResolver) Nodes() []*GitRefResolver {
