@@ -401,6 +401,7 @@ func displayRepoName(repoPath string) string {
 func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
 	const maxMatchesPerLine = 25 // arbitrary
 
+	// Make map from byte positions to character positions.
 	byteToChar := make(map[int]int)
 	var b, c int
 	bytes.Map(func(r rune) rune {
@@ -409,6 +410,7 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
 		c++
 		return r
 	}, data)
+	byteToChar[b] = c
 
 	var highlights []*highlightedRange
 	for i, line := range bytes.Split(data, []byte("\n")) {
