@@ -8,6 +8,7 @@ import { setLinkComponent } from '../../../../shared/src/components/Link'
 import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { determineCodeHost, injectCodeIntelligenceToCodeHost } from '../code_intelligence'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
+import { metaClickOverride } from './util'
 
 // Just for informational purposes (see getPlatformContext())
 window.SOURCEGRAPH_PHABRICATOR_EXTENSION = true
@@ -52,7 +53,7 @@ function init(): void {
         // so we do not need to do this here.
         if (!window.SOURCEGRAPH_BUNDLE_URL && !window.localStorage.getItem('SOURCEGRAPH_BUNDLE_URL')) {
             injectModules().catch(err => console.error('Unable to inject modules', err))
-            // metaClickOverride()
+            metaClickOverride()
             return
         }
 
@@ -66,7 +67,7 @@ function init(): void {
                     document.getElementsByTagName('head')[0].appendChild(style)
                     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
                     window.SOURCEGRAPH_URL = sourcegraphURL
-                    // metaClickOverride()
+                    metaClickOverride()
                     injectModules().catch(err => console.error('Unable to inject modules', err))
                 })
             )
