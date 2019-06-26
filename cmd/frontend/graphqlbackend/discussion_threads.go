@@ -514,7 +514,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 	} else if r.t.Branch != nil {
 		rev = *r.t.Branch
 	}
-	comparison, err := repo.Comparison(ctx, &repositoryComparisonInput{
+	comparison, err := repo.Comparison(ctx, &RepositoryComparisonInput{
 		Base: &rev,
 		Head: &args.Rev,
 	})
