@@ -50,7 +50,7 @@ func (id *GitObjectID) UnmarshalGraphQL(input interface{}) error {
 }
 
 type gitObject struct {
-	repo *repositoryResolver
+	repo *RepositoryResolver
 	oid  GitObjectID
 	typ  gitObjectType
 }
@@ -66,7 +66,7 @@ func (o *gitObject) Commit(ctx context.Context) (*GitCommitResolver, error) {
 func (o *gitObject) Type(context.Context) (gitObjectType, error) { return o.typ, nil }
 
 type gitObjectResolver struct {
-	repo    *repositoryResolver
+	repo    *RepositoryResolver
 	revspec string
 
 	once sync.Once

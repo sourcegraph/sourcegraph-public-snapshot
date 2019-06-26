@@ -11,7 +11,7 @@ import (
 
 type gitRevSpecExpr struct {
 	expr string
-	repo *repositoryResolver
+	repo *RepositoryResolver
 }
 
 func (r *gitRevSpecExpr) Expr() string { return r.expr }

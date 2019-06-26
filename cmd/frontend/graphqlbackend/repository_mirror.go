@@ -18,12 +18,12 @@ import (
 	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
-func (r *repositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
+func (r *RepositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
 	return &repositoryMirrorInfoResolver{repository: r}
 }
 
 type repositoryMirrorInfoResolver struct {
-	repository *repositoryResolver
+	repository *RepositoryResolver
 
 	// memoize the repo-updater RepoUpdateSchedulerInfo call
 	repoUpdateSchedulerInfoOnce   sync.Once
