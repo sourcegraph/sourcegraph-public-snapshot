@@ -11,7 +11,7 @@
     &__main {
         display: flex;
         flex-wrap: wrap-reverse;
-        align-items: flex-start;
+        align-items: flex-end;
         justify-content: space-between;
     }
 
@@ -99,6 +99,7 @@
         justify-content: flex-start;
     }
     &--compact &__byline {
+        margin-top: map-get($spacers, 1);
         width: 25%;
         flex: none;
         padding-right: 1.5rem;

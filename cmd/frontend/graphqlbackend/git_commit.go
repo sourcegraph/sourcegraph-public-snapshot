@@ -24,6 +24,10 @@ func gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, erro
 	if err != nil {
 		return nil, err
 	}
+	return GetGitCommit(ctx, repo, commitID)
+}
+
+func GetGitCommit(ctx context.Context, repo *RepositoryResolver, commitID GitObjectID) (*GitCommitResolver, error) {
 	return repo.Commit(ctx, &repositoryCommitArgs{Rev: string(commitID)})
 }
 

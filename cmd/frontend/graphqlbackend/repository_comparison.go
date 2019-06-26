@@ -102,9 +102,7 @@ func (r *RepositoryComparisonResolver) Range() *gitRevisionRange {
 	}
 }
 
-func (r *RepositoryComparisonResolver) Commits(args *struct {
-	First *int32
-}) *gitCommitConnectionResolver {
+func (r *RepositoryComparisonResolver) Commits(args *graphqlutil.ConnectionArgs) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
 		revisionRange: string(r.baseRevspec) + ".." + string(r.headRevspec),
 		first:         args.First,

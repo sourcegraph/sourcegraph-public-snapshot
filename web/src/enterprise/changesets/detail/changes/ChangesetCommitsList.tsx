@@ -27,14 +27,17 @@ export const ChangesetCommitsList: React.FunctionComponent<Props> = ({
     ...props
 }) => (
     <div className="changeset-commits-list">
-        {xchangeset.repositoryComparisons.map((c, i) => (
-            <ol key={i} className="list-group mb-4">
-                {c.commits.nodes.map((commit, i) => (
-                    <li key={i} className="list-group-item p-0">
-                        <GitCommitNode repoName={c.baseRepository.name} node={commit} />
-                    </li>
-                ))}
-            </ol>
-        ))}
+        <ul className="list-group mb-4">
+            {xchangeset.commits.map((commit, i) => (
+                <li key={i} className="list-group-item p-0">
+                    <GitCommitNode
+                        repoName={commit.repository.name}
+                        node={commit}
+                        compact={true}
+                        showRepository={true}
+                    />
+                </li>
+            ))}
+        </ul>
     </div>
 )

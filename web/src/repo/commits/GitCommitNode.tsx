@@ -4,6 +4,8 @@ import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { RepositoryIcon } from '../../../../shared/src/components/icons'
+import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -31,6 +33,9 @@ export interface GitCommitNodeProps {
 
     /** Show the full 40-character SHA and parents on their own row. */
     showSHAAndParentsRow?: boolean
+
+    /** Show the repository that this commit is from. */
+    showRepository?: boolean
 
     /** Fragment to show at the end to the right of the SHA. */
     afterElement?: React.ReactFragment
@@ -97,6 +102,14 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                     .className || ''}`}
             >
                 <div className="git-commit-node__row git-commit-node__main">
+                    {this.props.showRepository && (
+                        <RepoLink
+                            to={this.props.node.repository.url}
+                            repoName={this.props.node.repository.name}
+                            icon={RepositoryIcon}
+                            className="mr-6"
+                        />
+                    )}
                     {!this.props.compact ? (
                         <>
                             <div className="git-commit-node__signature">
