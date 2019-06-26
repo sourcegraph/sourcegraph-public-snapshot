@@ -9,9 +9,13 @@ import { ThreadDiscussionPage } from '../../threads/detail/discussion/ThreadDisc
 import { ThreadSettingsPage } from '../../threads/detail/settings/ThreadSettingsPage'
 import { ThreadAreaSidebar } from '../../threads/detail/sidebar/ThreadAreaSidebar'
 import { createThreadAreaContext, ThreadAreaContext } from '../../threads/detail/ThreadArea'
-import { useChangesetByID } from '../util/useChangesetByID'
 import { ChangesetsAreaContext } from '../global/ChangesetsArea'
+import { useChangesetByID } from '../util/useChangesetByID'
+import { useExtraChangesetInfo } from '../util/useExtraChangesetInfo'
+import { ChangesetActionsList } from './changes/ChangesetActionsList'
 import { ChangesetChangesPage } from './changes/ChangesetChangesPage'
+import { ChangesetCommitsList } from './changes/ChangesetCommitsList'
+import { ChangesetTasksList } from './changes/ChangesetTasksList'
 import { ChangesetAreaNavbar } from './navbar/ChangesetAreaNavbar'
 import { ChangesetOverview } from './overview/ChangesetOverview'
 
@@ -30,11 +34,15 @@ const LOADING: 'loading' = 'loading'
  */
 export const ChangesetArea: React.FunctionComponent<Props> = props => {
     const [threadOrError, setThreadOrError] = useChangesetByID(props.match.params.threadID)
-    if (threadOrError === LOADING) {
+    const xchangeset = useExtraChangesetInfo(threadOrError)
+    if (threadOrError === LOADING || xchangeset === LOADING) {
         return null // loading
     }
     if (isErrorLike(threadOrError)) {
         return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={threadOrError.message} />
+    }
+    if (isErrorLike(xchangeset)) {
+        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={xchangeset.message} />
     }
     const context = createThreadAreaContext(props, { thread: threadOrError, onThreadUpdate: setThreadOrError })
     return (
@@ -48,7 +56,7 @@ export const ChangesetArea: React.FunctionComponent<Props> = props => {
                         className="container flex-0 pb-3"
                     />
                     <div className="w-100 border-bottom" />
-                    <ChangesetAreaNavbar {...context} className="flex-0 sticky-top bg-body" />
+                    <ChangesetAreaNavbar {...context} xchangeset={xchangeset} className="flex-0 sticky-top bg-body" />
                 </ErrorBoundary>
                 <ErrorBoundary location={props.location}>
                     <Switch>
@@ -66,11 +74,50 @@ export const ChangesetArea: React.FunctionComponent<Props> = props => {
                             )}
                         />
                         <Route
+                            path={`${props.match.url}/tasks`}
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <ChangesetTasksList
+                                    {...context}
+                                    {...routeComponentProps}
+                                    xchangeset={xchangeset}
+                                    itemClassName="pl-4"
+                                />
+                            )}
+                        />
+                        <Route
+                            path={`${props.match.url}/actions`}
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <ChangesetActionsList
+                                    {...context}
+                                    {...routeComponentProps}
+                                    xchangeset={xchangeset}
+                                    className="container mt-3"
+                                />
+                            )}
+                        />
+                        <Route
+                            path={`${props.match.url}/commits`}
+                            exact={true}
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <ChangesetCommitsList
+                                    {...context}
+                                    {...routeComponentProps}
+                                    xchangeset={xchangeset}
+                                    className="container mt-3"
+                                />
+                            )}
+                        />
+                        <Route
                             path={`${props.match.url}/changes`}
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <ChangesetChangesPage {...context} {...routeComponentProps} />
+                                <ChangesetChangesPage {...context} {...routeComponentProps} xchangeset={xchangeset} />
                             )}
                         />
                         <Route

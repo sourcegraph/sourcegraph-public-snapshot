@@ -19,28 +19,36 @@ interface SummaryItem {
     noun: string
     pluralNoun?: string
     icon: React.ComponentType<{ className?: string }>
-    count: number | ((changeset: GQL.IChangeset, threadSettings: ThreadSettings) => number)
+    count: number | ((changeset: GQL.IChangeset, threadSettings: ThreadSettings) => number) | null
 }
+
+export const countChangesetActions = (c: GQL.IChangeset, s: ThreadSettings) =>
+    s.changesetActionDescriptions ? s.changesetActionDescriptions.length : 0
+
+export const countChangesetFilesChanged = (c: GQL.IChangeset) =>
+    c.repositoryComparisons.reduce((n, c) => n + (c.fileDiffs.totalCount || 0), 0)
+
+export const countChangesetCommits = (c: GQL.IChangeset) => c.commits.length
 
 const ITEMS: SummaryItem[] = [
     {
         noun: 'action',
         icon: ActionsIcon,
-        count: (_c, s) => (s.changesetActionDescriptions ? s.changesetActionDescriptions.length : 0),
+        count: countChangesetActions,
     },
-    { noun: 'review task', icon: TasksIcon, count: 7 },
+    { noun: 'review task', icon: TasksIcon, count: null },
     {
         noun: 'repository affected',
         pluralNoun: 'repositories affected',
         icon: RepositoryIcon,
         count: c => c.repositories.length,
     },
-    { noun: 'commit', icon: GitCommitIcon, count: c => c.commits.length },
+    { noun: 'commit', icon: GitCommitIcon, count: countChangesetCommits },
     {
         noun: 'file changed',
         pluralNoun: 'files changed',
         icon: DiffIcon,
-        count: c => c.repositoryComparisons.reduce((n, c) => n + (c.fileDiffs.totalCount || 0), 0),
+        count: countChangesetFilesChanged,
     },
 ]
 
@@ -56,12 +64,17 @@ export const ChangesetSummaryBar: React.FunctionComponent<Props> = ({
     <nav className={`changeset-summary-bar border ${className}`}>
         <ul className="nav w-100">
             {ITEMS.map(({ icon: Icon, ...item }, i) => {
-                const count = typeof item.count === 'number' ? item.count : item.count(xchangeset, threadSettings)
+                const count =
+                    typeof item.count === 'number'
+                        ? item.count
+                        : typeof item.count === 'function'
+                        ? item.count(xchangeset, threadSettings)
+                        : null
                 return (
                     <li key={i} className="nav-item flex-1 text-center">
                         <Link to="TODO!(sqs)" className="nav-link">
                             <Icon className="icon-inline text-muted" /> <strong>{count}</strong>{' '}
-                            <span className="text-muted">{pluralize(item.noun, count, item.pluralNoun)}</span>
+                            <span className="text-muted">{pluralize(item.noun, count || 0, item.pluralNoun)}</span>
                         </Link>
                     </li>
                 )

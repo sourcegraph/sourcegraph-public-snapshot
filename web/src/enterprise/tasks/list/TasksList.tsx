@@ -11,7 +11,7 @@ import { TasksAreaContext } from '../global/TasksArea'
 import { TasksListItem } from './item/TasksListItem'
 
 export interface TasksListContext {
-    containerClassName?: string
+    itemClassName?: string
 }
 
 interface Props
@@ -29,20 +29,20 @@ const LOADING: 'loading' = 'loading'
 /**
  * The list of tasks with a header.
  */
-export const TasksList: React.FunctionComponent<Props> = ({ containerClassName, query, ...props }) => (
+export const TasksList: React.FunctionComponent<Props> = ({ itemClassName, query, ...props }) => (
     <WithTasksQueryResults {...props} query={query}>
         {({ tasksOrError }) => (
             <div className="tasks-list">
                 {isErrorLike(tasksOrError) ? (
-                    <div className={containerClassName}>
+                    <div className={itemClassName}>
                         <div className="alert alert-danger mt-2">{tasksOrError.message}</div>
                     </div>
                 ) : tasksOrError === LOADING ? (
-                    <div className={containerClassName}>
+                    <div className={itemClassName}>
                         <LoadingSpinner className="mt-3" />
                     </div>
                 ) : tasksOrError.length === 0 ? (
-                    <div className={containerClassName}>
+                    <div className={itemClassName}>
                         <p className="p-2 mb-0 text-muted">No tasks found.</p>
                     </div>
                 ) : (
@@ -53,7 +53,7 @@ export const TasksList: React.FunctionComponent<Props> = ({ containerClassName, 
                                     {...props}
                                     key={JSON.stringify(task)}
                                     diagnostic={task}
-                                    className={containerClassName}
+                                    className={itemClassName}
                                 />
                             </li>
                         ))}
