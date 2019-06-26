@@ -142,23 +142,23 @@ class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNod
                     {this.props.node.usageStatistics && this.props.node.usageStatistics.lastActiveTime ? (
                         <Timestamp date={this.props.node.usageStatistics.lastActiveTime} />
                     ) : (
-                            'n/a'
-                        )}
+                        'n/a'
+                    )}
                 </td>
                 <td className="site-admin-usage-statistics-page__date-column">
                     {this.props.node.usageStatistics &&
-                        this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime ? (
-                            <Timestamp date={this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime} />
-                        ) : (
-                            'n/a'
-                        )}
+                    this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime ? (
+                        <Timestamp date={this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime} />
+                    ) : (
+                        'n/a'
+                    )}
                 </td>
             </tr>
         )
     }
 }
 
-class FilteredUserConnection extends FilteredConnection<GQL.IUser, {}> { }
+class FilteredUserConnection extends FilteredConnection<GQL.IUser, {}> {}
 export const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
     {
         label: 'All users',
@@ -203,7 +203,7 @@ interface SiteAdminUsageStatisticsPageState {
 export class SiteAdminUsageStatisticsPage extends React.Component<
     SiteAdminUsageStatisticsPageProps,
     SiteAdminUsageStatisticsPageState
-    > {
+> {
     public state: SiteAdminUsageStatisticsPageState = {
         chartID: this.loadLatestChartFromStorage(),
     }
