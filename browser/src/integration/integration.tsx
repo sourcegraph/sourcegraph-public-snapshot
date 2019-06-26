@@ -20,14 +20,13 @@ async function injectModules(): Promise<void> {
     extensionMarker.style.display = 'none'
     document.body.appendChild(extensionMarker)
 
-    const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
-        childList: true,
-        subtree: true,
-    }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
-
     // TODO handle subscription
     const codeHost = await determineCodeHost()
     if (codeHost) {
+        const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
+            childList: true,
+            subtree: true,
+        }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
         await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION)
     }
 }
