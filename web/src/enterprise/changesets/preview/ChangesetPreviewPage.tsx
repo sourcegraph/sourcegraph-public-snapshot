@@ -67,7 +67,7 @@ export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
             </div>
             <hr className="my-4" />
             <div className="container">
-                <ChangesetActionsList {...props} {...context} xchangeset={xchangeset} />
+                <ChangesetActionsList {...props} {...context} xchangeset={xchangeset} className="mb-4" />
                 <ChangesetRepositoriesList {...props} {...context} xchangeset={xchangeset} showCommits={true} />
                 <ChangesetCommitsList {...props} {...context} xchangeset={xchangeset} className="d-none" />
                 <ChangesetTasksList {...props} {...context} xchangeset={xchangeset} className="mb-4" />

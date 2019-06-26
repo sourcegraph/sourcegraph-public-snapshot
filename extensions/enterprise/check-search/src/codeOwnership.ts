@@ -73,6 +73,7 @@ function startDiagnostics(): Unsubscribable {
                                             ...markEnsureAuthz(doc),
                                             ...markSecurityReviewRequired(doc, fileDiff),
                                             ...(rootI === 0 && fileDiffI === 0 ? [suggestChangelogEntry()] : []),
+                                            ...(rootI === 0 && fileDiffI === 0 ? updateDependents() : []),
                                             ...markTODO(doc, fileDiff),
                                         ].filter(isDefined)
                                         return [uri, diagnostics] as [URL, sourcegraph.Diagnostic[]]
@@ -111,9 +112,7 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                         ...(data.securityReviewRequired
                             ? [
                                   {
-                                      title: `Ask @${data.codeOwner || 'evan'} for review on ${
-                                          parseRepoURI(doc.uri).filePath
-                                      }`,
+                                      title: `Waiting on review from @${data.codeOwner || 'evan'} (notified 2h ago)`,
                                       command: { title: '', command: 'TODO!(sqs)' },
                                       diagnostics: [diag],
                                   },
@@ -126,7 +125,8 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                                       diagnostics: [diag],
                                   },
                                   {
-                                      title: `Ask @${data.codeOwner || 'ziyang71'} (code owner) to review authz checks`,
+                                      title: `Request review of authz checks from @${data.codeOwner ||
+                                          'ziyang71'} (code owner)`,
                                       command: { title: '', command: 'TODO!(sqs)' },
                                       diagnostics: [diag],
                                   },
@@ -174,6 +174,29 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                                       diagnostics: [diag],
                                   },
                               ]
+                            : data.updateDependents
+                            ? [
+                                  {
+                                      title: `Include in this changeset (default)`,
+                                      command: { title: '', command: 'TODO!(sqs)' },
+                                      diagnostics: [diag],
+                                  },
+                                  {
+                                      title: `Create changesets after merging`,
+                                      command: { title: '', command: 'TODO!(sqs)' },
+                                      diagnostics: [diag],
+                                  },
+                                  {
+                                      title: `Don't update users`,
+                                      command: { title: '', command: 'TODO!(sqs)' },
+                                      diagnostics: [diag],
+                                  },
+                                  {
+                                      title: `View 17 users`,
+                                      command: { title: '', command: 'TODO!(sqs)' },
+                                      diagnostics: [diag],
+                                  },
+                              ]
                             : [
                                   {
                                       title: `File as issue and add issue URL`,
@@ -181,7 +204,6 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                                       diagnostics: [diag],
                                   },
                               ]),
-                        ...OTHER_CODE_ACTIONS,
                     ].filter(isDefined)
                 })
             )
@@ -194,6 +216,7 @@ interface DiagnosticData {
     securityReviewRequired?: boolean
     authzChecks?: boolean
     suggestChangelogEntry?: boolean
+    updateDependents?: boolean
 }
 
 function isCodeOwnershipDiagnostic(diag: sourcegraph.Diagnostic): boolean {
@@ -223,7 +246,7 @@ function markSecurityReviewRequired(doc: sourcegraph.TextDocument, fileDiff: Par
 }
 
 function markEnsureAuthz(doc: sourcegraph.TextDocument): sourcegraph.Diagnostic[] {
-    if (doc.text.includes('SECURITY') || doc.text.includes('ListByRepo')) {
+    if (doc.text.includes('SECURITY') || doc.text.includes('security') || doc.text.includes('ListByRepo')) {
         return [
             {
                 message: `Ensure changes preserve/add appropriate GraphQL API authorization and security checks`,
@@ -251,8 +274,18 @@ function suggestChangelogEntry(): sourcegraph.Diagnostic {
     return {
         message: `Add changelog entry? (Looks like you changed something user-facing.)`,
         severity: sourcegraph.DiagnosticSeverity.Hint,
-        code: CODE_CODE_OWNERSHIP_RULES + ':' + JSON.stringify({ suggestChangelog: true } as DiagnosticData),
+        code: CODE_CODE_OWNERSHIP_RULES + ':' + JSON.stringify({ suggestChangelogEntry: true } as DiagnosticData),
     }
+}
+
+function updateDependents(): sourcegraph.Diagnostic[] {
+    return [
+        {
+            message: `Update users of the changed code?`,
+            severity: sourcegraph.DiagnosticSeverity.Information,
+            code: CODE_CODE_OWNERSHIP_RULES + ':' + JSON.stringify({ updateDependents: true } as DiagnosticData),
+        },
+    ]
 }
 
 function findHunkMatchRanges(hunk: Hunk, pattern: RegExp): sourcegraph.Range[] {

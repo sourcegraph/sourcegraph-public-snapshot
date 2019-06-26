@@ -46,7 +46,7 @@ export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({
                         activeClassName="changeset-area-navbar__nav-link--active"
                     >
                         <ChatIcon className="icon-inline" /> Discussion{' '}
-                        <span className="badge badge-secondary ml-1">{thread.comments.totalCount}</span>
+                        <span className="badge badge-secondary ml-1">{thread.comments.totalCount - 1}</span>
                     </NavLink>
                 </li>
                 <li className="changeset-area-navbar__nav-item nav-item">
@@ -58,7 +58,7 @@ export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({
                         <TasksIcon className="icon-inline" /> Tasks
                     </NavLink>
                 </li>
-                <li className="changeset-area-navbar__nav-item nav-item">
+                <li className="changeset-area-navbar__nav-item nav-item d-none">
                     <NavLink
                         to={`${areaURL}/actions`}
                         className={NAV_LINK_CLASS_NAME}
