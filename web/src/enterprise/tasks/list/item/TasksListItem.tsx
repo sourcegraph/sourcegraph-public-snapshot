@@ -127,7 +127,7 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
 
     return (
         <div className={`d-flex flex-wrap align-items-stretch ${className}`}>
-            <div style={{ flex: '1 1 40%', minWidth: '400px', maxWidth: '600px' }} className="pr-5">
+            <div style={{ flex: '1 1 40%', minWidth: '400px' }} className="pr-5">
                 <header className={`d-flex align-items-start ${headerClassName}`} style={headerStyle}>
                     <div className={`flex-1 d-flex align-items-center`}>
                         <h3 className="mb-0 small">

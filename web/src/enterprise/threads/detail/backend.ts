@@ -93,7 +93,9 @@ export const getDiagnosticInfos = (
     )
 
 export const diagnosticID = (diagnostic: DiagnosticInfo): string =>
-    `${diagnostic.entry.path}:${diagnostic.range.start.line}:${diagnostic.range.start.character}:${diagnostic.message}`
+    `${diagnostic.entry.path}:${diagnostic.range ? diagnostic.range.start.line : '-'}:${
+        diagnostic.range ? diagnostic.range.start.character : '-'
+    }:${diagnostic.message}`
 
 export const getCodeActions = memoizeObservable(
     ({
@@ -110,7 +112,7 @@ export const getCodeActions = memoizeObservable(
                         filePath: diagnostic.entry.path,
                     }),
                 },
-                range: Range.fromPlain(diagnostic.range),
+                range: diagnostic.range ? Range.fromPlain(diagnostic.range) : undefined,
                 context: { diagnostics: [diagnostic] },
             })
         ).pipe(map(codeActions => codeActions || [])),

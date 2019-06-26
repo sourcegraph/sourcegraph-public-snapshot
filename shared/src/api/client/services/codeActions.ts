@@ -10,7 +10,7 @@ import { flattenAndCompact } from './util'
 
 export interface CodeActionsParams {
     textDocument: TextDocumentIdentifier
-    range: Range | Selection
+    range: Range | Selection | undefined
     context: CodeActionContext
 }
 

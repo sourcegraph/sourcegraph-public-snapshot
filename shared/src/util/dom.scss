@@ -57,6 +57,9 @@
         }
     }
 
+    aside:empty:not(.foo) {
+        display: none !important;
+    }
     .theme-light & {
         aside {
             background-color: #f5f5f5;

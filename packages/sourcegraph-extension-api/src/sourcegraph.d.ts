@@ -1487,7 +1487,7 @@ declare module 'sourcegraph' {
          */
         provideCodeActions(
             document: TextDocument,
-            range: Range | Selection,
+            range: Range | Selection | undefined,
             context: CodeActionContext
         ): ProviderResult<CodeAction[]>
     }
