@@ -31,7 +31,7 @@ type searchSymbolResult struct {
 	symbol  protocol.Symbol
 	baseURI *gituri.URI
 	lang    string
-	commit  *gitCommitResolver // TODO: change to utility type we create to remove git resolvers from search.
+	commit  *GitCommitResolver // TODO: change to utility type we create to remove git resolvers from search.
 }
 
 func (s *searchSymbolResult) uri() *gituri.URI {
@@ -151,7 +151,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	fileMatchesByURI := make(map[string]*fileMatchResolver)
 	fileMatches := make([]*fileMatchResolver, 0)
 	for _, symbol := range symbols {
-		commit := &gitCommitResolver{
+		commit := &GitCommitResolver{
 			repo:     &repositoryResolver{repo: repoRevs.Repo},
 			oid:      GitObjectID(commitID),
 			inputRev: &inputRev,
@@ -175,7 +175,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 				symbols: []*searchSymbolResult{symbolRes},
 				uri:     uri,
 				repo:    symbolRes.commit.repo.repo,
-				// Don't get commit from gitCommitResolver.OID() because we don't want to
+				// Don't get commit from GitCommitResolver.OID() because we don't want to
 				// slow search results down when they are coming from zoekt.
 				commitID: api.CommitID(symbolRes.commit.oid),
 			}

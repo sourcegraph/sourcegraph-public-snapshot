@@ -25,7 +25,7 @@ import (
 
 // commitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
 type commitSearchResultResolver struct {
-	commit         *gitCommitResolver
+	commit         *GitCommitResolver
 	refs           []*GitRefResolver
 	sourceRefs     []*GitRefResolver
 	messagePreview *highlightedString
@@ -37,7 +37,7 @@ type commitSearchResultResolver struct {
 	matches        []*searchResultMatchResolver
 }
 
-func (r *commitSearchResultResolver) Commit() *gitCommitResolver         { return r.commit }
+func (r *commitSearchResultResolver) Commit() *GitCommitResolver         { return r.commit }
 func (r *commitSearchResultResolver) Refs() []*GitRefResolver            { return r.refs }
 func (r *commitSearchResultResolver) SourceRefs() []*GitRefResolver      { return r.sourceRefs }
 func (r *commitSearchResultResolver) MessagePreview() *highlightedString { return r.messagePreview }
@@ -388,7 +388,7 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (str
 	return body, highlights
 }
 
-func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *gitCommitResolver) (string, error) {
+func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *GitCommitResolver) (string, error) {
 	message := commitSubject(rawResult.Commit.Message)
 	author := rawResult.Commit.Author.Name
 	repoName := displayRepoName(commitResolver.Repository().Name())

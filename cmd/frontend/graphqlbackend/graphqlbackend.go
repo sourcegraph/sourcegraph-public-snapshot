@@ -144,8 +144,8 @@ func (r *NodeResolver) ToOrganizationInvitation() (*organizationInvitationResolv
 	return n, ok
 }
 
-func (r *NodeResolver) ToGitCommit() (*gitCommitResolver, bool) {
-	n, ok := r.Node.(*gitCommitResolver)
+func (r *NodeResolver) ToGitCommit() (*GitCommitResolver, bool) {
+	n, ok := r.Node.(*GitCommitResolver)
 	return n, ok
 }
 

@@ -117,7 +117,7 @@ type repositoryCommitArgs struct {
 	InputRevspec *string
 }
 
-func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitArgs) (*gitCommitResolver, error) {
+func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitArgs) (*GitCommitResolver, error) {
 	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
 	if err != nil {
 		if git.IsRevisionNotFound(err) {
@@ -279,13 +279,13 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	AuthorEmail *string
 	Description *string
 	Date        *string
-}) (*gitCommitResolver, error) {
+}) (*GitCommitResolver, error) {
 	repo, err := db.Repos.GetByName(ctx, api.RepoName(args.RepoName))
 	if err != nil {
 		return nil, err
 	}
 	targetRef := fmt.Sprintf("phabricator/diff/%d", args.DiffID)
-	getCommit := func() (*gitCommitResolver, error) {
+	getCommit := func() (*GitCommitResolver, error) {
 		// We first check via the vcsrepo api so that we can toggle
 		// NoEnsureRevision. We do this, otherwise repositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
