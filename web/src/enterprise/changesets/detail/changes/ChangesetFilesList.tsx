@@ -1,19 +1,15 @@
 import H from 'history'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState } from 'react'
+import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
-import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
-import { HeroPage } from '../../../../components/HeroPage'
 import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
-import { FileDiffNode } from '../../../../repo/compare/FileDiffNode'
-import { useEffectAsync } from '../../../../util/useEffectAsync'
-import { computeDiff, FileDiff } from '../../../threads/detail/changes/computeDiff'
+import { RepositoryCompareDiffPage } from '../../../../repo/compare/RepositoryCompareDiffPage'
 import { ThreadSettings } from '../../../threads/settings'
 
 interface Props extends QueryParameterProps, ExtensionsControllerProps, PlatformContextProps {
     thread: GQL.IDiscussionThread
+    xchangeset: GQL.IChangeset
     threadSettings: ThreadSettings
 
     location: H.Location
@@ -24,41 +20,31 @@ interface Props extends QueryParameterProps, ExtensionsControllerProps, Platform
 /**
  * A list of changed files in a changeset.
  */
-export const ChangesetFilesList: React.FunctionComponent<Props> = ({ thread, threadSettings, ...props }) => {
-    const fileDiffsOrError = threadSettings.previewChangesetDiff
-
-    if (!fileDiffsOrError) {
-        return <p>TODO!(sqs): no changes precomputed</p>
-    }
-
-    return (
-        <div className="changeset-files-list">
-            {fileDiffsOrError.map((fileDiff, i) => (
-                <FileDiffNode
-                    key={i}
-                    {...props}
-                    lineNumbers={false}
-                    base={{
-                        repoName: 'github.com/sourcegraph/about',
-                        repoID: '123' as any /* TODO!(sqs) */,
-                        rev: 'master', // TODO!(sqs): un-hardcode master
-                        commitID: 'master' /* TODO!(sqs) un-hardcode master */,
-                    }}
-                    head={{
-                        repoName: 'github.com/sourcegraph/about',
-                        repoID: '123' as any /* TODO!(sqs) */,
-                        rev: 'master', // TODO!(sqs): un-hardcode master
-                        commitID: 'master' /* TODO!(sqs) un-hardcode master */,
-                    }}
-                    node={{
-                        ...fileDiff,
-                        stat: { __typename: 'DiffStat', added: 1, changed: 2, deleted: 3 },
-                        mostRelevantFile: {} as any,
-                        newFile: {} as any,
-                        oldFile: {} as any,
-                    }}
-                />
-            ))}
-        </div>
-    )
-}
+export const ChangesetFilesList: React.FunctionComponent<Props> = ({
+    thread,
+    xchangeset,
+    threadSettings,
+    ...props
+}) => (
+    <div className="changeset-files-list">
+        {xchangeset.repositoryComparisons.map((c, i) => (
+            <RepositoryCompareDiffPage
+                key={i}
+                {...props}
+                repo={c.baseRepository}
+                base={{
+                    repoName: c.baseRepository.name,
+                    repoID: c.baseRepository.id,
+                    rev: c.range.baseRevSpec.expr,
+                    commitID: c.range.baseRevSpec.object!.oid,
+                }}
+                head={{
+                    repoName: c.headRepository.name,
+                    repoID: c.headRepository.id,
+                    rev: c.range.headRevSpec.expr,
+                    commitID: c.range.headRevSpec.object!.oid,
+                }}
+            />
+        ))}
+    </div>
+)

@@ -121,7 +121,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                                 this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
                                             }
                                         >
-                                            <ContentCopyIcon className="icon-inline" />
+                                            <ContentCopyIcon className="icon-inline small" />
                                         </button>
                                     </div>
                                 )}
@@ -131,7 +131,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                         to={this.props.node.tree.canonicalURL}
                                         data-tooltip="View files at this commit"
                                     >
-                                        <FileDocumentIcon className="icon-inline" />
+                                        <FileDocumentIcon className="icon-inline small" />
                                     </Link>
                                 )}
                             </div>

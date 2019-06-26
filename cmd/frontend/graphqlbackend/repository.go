@@ -33,6 +33,12 @@ type repositoryResolver struct {
 	matches     []*searchResultMatchResolver
 }
 
+func NewRepositoryResolver(repo *repositoryResolver) *RepositoryResolver {
+	return &RepositoryResolver{repo}
+}
+
+type RepositoryResolver struct{ *repositoryResolver }
+
 var RepositoryByID = repositoryByID
 
 func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, error) {

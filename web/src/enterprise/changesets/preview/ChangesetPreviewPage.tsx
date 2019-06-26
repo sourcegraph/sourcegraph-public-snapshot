@@ -7,12 +7,15 @@ import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { HeroPage } from '../../../components/HeroPage'
 import { WithQueryParameter } from '../../../components/withQueryParameter/WithQueryParameter'
 import { createThreadAreaContext } from '../../threads/detail/ThreadArea'
-import { useChangesetByID } from '../components/useChangesetByID'
+import { ChangesetCommitsList } from '../detail/changes/ChangesetCommitsList'
 import { ChangesetFilesList } from '../detail/changes/ChangesetFilesList'
 import { ChangesetsAreaContext } from '../global/ChangesetsArea'
 import { ChangesetIcon } from '../icons'
+import { useChangesetByID } from '../util/useChangesetByID'
+import { useExtraChangesetInfo } from '../util/useExtraChangesetInfo'
 import { ChangesetSummaryBar } from './ChangesetSummaryBar'
 import { CreateChangesetFromPreviewForm } from './CreateChangesetFromPreviewForm'
+import { ChangesetRepositoriesList } from '../detail/changes/ChangesetRepositoriesList'
 
 interface Props extends ChangesetsAreaContext, RouteComponentProps<{ threadID: string }> {}
 
@@ -28,11 +31,15 @@ const CREATE_FORM_EXPANDED_URL: H.LocationDescriptor = {
  */
 export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
     const [threadOrError, setThreadOrError] = useChangesetByID(props.match.params.threadID)
-    if (threadOrError === LOADING) {
+    const xchangeset = useExtraChangesetInfo(threadOrError)
+    if (threadOrError === LOADING || xchangeset === LOADING) {
         return null // loading
     }
     if (isErrorLike(threadOrError)) {
         return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={threadOrError.message} />
+    }
+    if (isErrorLike(xchangeset)) {
+        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={xchangeset.message} />
     }
     const context = createThreadAreaContext(props, { thread: threadOrError, onThreadUpdate: setThreadOrError })
 
@@ -44,7 +51,11 @@ export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
                 <h1 className="mb-3">Preview changeset</h1>
                 {isCreateFormExpanded ? (
                     <>
-                        <CreateChangesetFromPreviewForm {...context} className="border p-3 mb-6" />
+                        <CreateChangesetFromPreviewForm
+                            {...context}
+                            className="border p-3 mb-6"
+                            history={props.history}
+                        />
                         <div className="my-6" />
                     </>
                 ) : (
@@ -61,9 +72,17 @@ export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
             </div>
             <hr className="my-4" />
             <div className="container">
+                <ChangesetRepositoriesList {...props} {...context} xchangeset={xchangeset} />
+                <ChangesetCommitsList {...props} {...context} xchangeset={xchangeset} />
                 <WithQueryParameter defaultQuery="" history={props.history} location={props.location}>
                     {({ query, onQueryChange }) => (
-                        <ChangesetFilesList {...props} {...context} query={query} onQueryChange={onQueryChange} />
+                        <ChangesetFilesList
+                            {...props}
+                            {...context}
+                            xchangeset={xchangeset}
+                            query={query}
+                            onQueryChange={onQueryChange}
+                        />
                     )}
                 </WithQueryParameter>
             </div>

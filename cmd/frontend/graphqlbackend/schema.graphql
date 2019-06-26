@@ -1582,6 +1582,14 @@ type GitRefConnection {
 
 # The differences between two Git commits in a repository.
 type RepositoryComparison {
+    # The repository that is the base (left-hand side) of this comparison.
+    baseRepository: Repository!
+
+    # The repository that is the head (right-hand side) of this comparison. Cross-repository
+    # comparisons are not yet supported, so this is always equal to
+    # RepositoryComparison.baseRepository.
+    headRepository: Repository!
+
     # The range that this comparison represents.
     range: GitRevisionRange!
     # The commits in the comparison range, excluding the base and including the head.
@@ -4047,6 +4055,9 @@ type GitCreateRefFromPatchPayload {
 #
 # TODO!(sqs): make this a top-level type, not just a sub-type of DiscussionThread
 type Changeset {
+    # The list of repositories affected by this changeset.
+    repositories: [Repository!]!
+
     # The comparisons of before and after this changeset is applied for all affected repositories.
     repositoryComparisons: [RepositoryComparison!]!
 }
