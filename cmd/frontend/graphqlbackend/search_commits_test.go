@@ -138,7 +138,7 @@ func Test_highlightMatches(t *testing.T) {
 		want *highlightedString
 	}{
 		{
-			name: "https://github.com/sourcegraph/sourcegraph/issues/4512 1",
+			name: "https://github.com/sourcegraph/sourcegraph/issues/4512 case 1",
 			args: args {
 				pattern: regexp.MustCompile(`白`),
 				data: []byte(`加一行空白`),
@@ -154,9 +154,8 @@ func Test_highlightMatches(t *testing.T) {
 				},
 			},
 		},
-		/*
 		{
-			name: "https://github.com/sourcegraph/sourcegraph/issues/4512",
+			name: "https://github.com/sourcegraph/sourcegraph/issues/4512 case 2",
 			args: args {
 				pattern: regexp.MustCompile(`行空`),
 				data: []byte(`加一行空白`),
@@ -172,7 +171,23 @@ func Test_highlightMatches(t *testing.T) {
 				},
 			},
 		},
-		 */
+		{
+			name: "https://github.com/sourcegraph/sourcegraph/issues/4512 case 3",
+			args: args {
+				pattern: regexp.MustCompile(`加`),
+				data: []byte(`加一行空白`),
+			},
+			want: &highlightedString{
+				value: "加一行空白",
+				highlights: []*highlightedRange {
+					{
+						line: 1,
+						character: 0,
+						length: 1,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
