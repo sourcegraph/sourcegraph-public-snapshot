@@ -20,12 +20,12 @@ import (
 // when computing the `git diff` of the root commit.
 const devNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
-type repositoryComparisonInput struct {
+type RepositoryComparisonInput struct {
 	Base *string
 	Head *string
 }
 
-func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryComparisonInput) (*repositoryComparisonResolver, error) {
+func (r *repositoryResolver) Comparison(ctx context.Context, args *RepositoryComparisonInput) (*repositoryComparisonResolver, error) {
 	var baseRevspec, headRevspec string
 	if args.Base == nil {
 		baseRevspec = "HEAD"
