@@ -19,6 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Updating or creating an external service will no longer block until the service is synced.
 - The GraphQL fields `Repository.createdAt` and `Repository.updatedAt` are deprecated and will be removed in 3.8. Now `createdAt` is always the current time and updatedAt is always null.
+- In the [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) and [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#permissions) `repositoryQuery` is now only required if `repos` is not set.
 
 ### Fixed
 

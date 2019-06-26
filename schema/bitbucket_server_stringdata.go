@@ -11,7 +11,7 @@ const BitbucketServerSchemaJSON = `{
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
-  "required": ["username", "url", "repositoryQuery"],
+  "required": ["username", "url"],
   "oneOf": [
     {
       "required": ["token"],

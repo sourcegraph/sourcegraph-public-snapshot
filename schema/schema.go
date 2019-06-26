@@ -109,7 +109,7 @@ type BitbucketServerConnection struct {
 	Password                    string                         `json:"password,omitempty"`
 	Repos                       []string                       `json:"repos,omitempty"`
 	RepositoryPathPattern       string                         `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string                       `json:"repositoryQuery"`
+	RepositoryQuery             []string                       `json:"repositoryQuery,omitempty"`
 	Token                       string                         `json:"token,omitempty"`
 	Url                         string                         `json:"url"`
 	Username                    string                         `json:"username"`
@@ -267,7 +267,7 @@ type GitHubConnection struct {
 	Orgs                        []string              `json:"orgs,omitempty"`
 	Repos                       []string              `json:"repos,omitempty"`
 	RepositoryPathPattern       string                `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string              `json:"repositoryQuery"`
+	RepositoryQuery             []string              `json:"repositoryQuery,omitempty"`
 	Token                       string                `json:"token"`
 	Url                         string                `json:"url"`
 }

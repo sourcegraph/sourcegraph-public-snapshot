@@ -11,7 +11,7 @@ const GitHubSchemaJSON = `{
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
-  "required": ["url", "token", "repositoryQuery"],
+  "required": ["url", "token"],
   "properties": {
     "url": {
       "description": "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
