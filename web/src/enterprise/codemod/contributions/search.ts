@@ -11,7 +11,7 @@ import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { createThread } from '../../../discussions/backend'
 import { parseSearchURLQuery } from '../../../search'
 import { search } from '../../../search/backend'
-import { FAKE_PROJECT_ID } from '../../changesets/preview/backend'
+import { createChangesetFromDiffs, FAKE_PROJECT_ID } from '../../changesets/preview/backend'
 import { FileDiff, npmDiffToFileDiffHunk } from '../../threads/detail/changes/computeDiff'
 import { ThreadSettings } from '../../threads/settings'
 import { queryWithReplacementText } from '../query'
@@ -74,8 +74,6 @@ export function registerCodemodSearchContributions({
         extensionsController.services.commands.registerCommand({
             command: SAVE_ID,
             run: async () => {
-                // const title = prompt('Enter title to create changeset:')
-                // if (title !== null) {
                 const query = parseSearchURLQuery(history.location.search) || ''
 
                 // TODO!(sqs) hack get diffs from search
@@ -112,20 +110,12 @@ export function registerCodemodSearchContributions({
                             } as FileDiff)
                     )
 
-                const settings: ThreadSettings = {
-                    queries: [query],
-                    previewChangesetDiff: diffs,
-                }
-                const thread = await createThread({
+                const thread = await createChangesetFromDiffs(diffs, {
                     title: query,
-                    settings: JSON.stringify(settings),
                     contents: `Created from search:\n\n${'```'}\n${query}\n${'```'}`,
-                    project: FAKE_PROJECT_ID,
                     status: GQL.ThreadStatus.PREVIEW,
-                    type: GQL.ThreadType.CHANGESET,
-                }).toPromise()
+                })
                 history.push(thread.url)
-                // }
             },
         })
     )

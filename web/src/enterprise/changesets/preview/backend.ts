@@ -34,7 +34,7 @@ export async function createChangesetFromCodeAction(
     codeAction: sourcegraph.CodeAction,
     info: Pick<ChangesetCreationInfo, 'status'>
 ): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
-    return createChangesetFromDiffs({ extensionsController }, await computeDiff(extensionsController, [codeAction]), {
+    return createChangesetFromDiffs(await computeDiff(extensionsController, [codeAction]), {
         ...info,
         title: `${diagnostic.message}: ${codeAction.title}`,
         contents: '',
@@ -45,7 +45,6 @@ export async function createChangesetFromCodeAction(
  * Create a changeset by applying the diffs.
  */
 export async function createChangesetFromDiffs(
-    { extensionsController }: ExtensionsControllerProps,
     fileDiffs: FileDiff[],
     info: ChangesetCreationInfo
 ): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {

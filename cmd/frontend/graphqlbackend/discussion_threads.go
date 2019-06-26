@@ -828,6 +828,13 @@ func (d *discussionThreadResolver) Labels(ctx context.Context, arg *graphqlutil.
 	return LabelsFor(ctx, d.ID(), arg)
 }
 
+func (d *discussionThreadResolver) Changeset(ctx context.Context) (Changeset, error) {
+	if d.t.Type == types.ThreadTypeChangeset {
+		return ChangesetFor(d.t)
+	}
+	return nil, nil
+}
+
 // discussionThreadsConnectionResolver resolves a list of discussion comments.
 //
 // 🚨 SECURITY: When instantiating an discussionThreadsConnectionResolver
