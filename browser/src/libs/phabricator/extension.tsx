@@ -8,7 +8,6 @@ import { setLinkComponent } from '../../../../shared/src/components/Link'
 import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { determineCodeHost, injectCodeIntelligenceToCodeHost } from '../code_intelligence'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
-import { metaClickOverride } from './util'
 
 // Just for informational purposes (see getPlatformContext())
 window.SOURCEGRAPH_PHABRICATOR_EXTENSION = true
@@ -51,26 +50,29 @@ function init(): void {
         // Backwards compat: Support Legacy Phabricator extension. Check that the Phabricator integration
         // passed the bundle url. Legacy Phabricator extensions inject CSS via the loader.js script
         // so we do not need to do this here.
-        if (!window.SOURCEGRAPH_BUNDLE_URL && !window.localStorage.getItem('SOURCEGRAPH_BUNDLE_URL')) {
-            injectModules().catch(err => console.error('Unable to inject modules', err))
-            metaClickOverride()
-            return
-        }
+        // if (!window.SOURCEGRAPH_BUNDLE_URL && !window.localStorage.getItem('SOURCEGRAPH_BUNDLE_URL')) {
+        //     injectModules().catch(err => console.error('Unable to inject modules', err))
+        //     // metaClickOverride()
+        //     return
+        // }
 
-        getSourcegraphURLFromConduit()
-            .then(sourcegraphURL =>
-                getPhabricatorCSS(sourcegraphURL).then(css => {
-                    const style = document.createElement('style')
-                    style.setAttribute('type', 'text/css')
-                    style.id = 'sourcegraph-styles'
-                    style.textContent = css
-                    document.getElementsByTagName('head')[0].appendChild(style)
-                    window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
-                    window.SOURCEGRAPH_URL = sourcegraphURL
-                    metaClickOverride()
-                    injectModules().catch(err => console.error('Unable to inject modules', err))
-                })
-            )
+        const sourcegraphURL = window.SOURCEGRAPH_URL!
+
+        // getSourcegraphURLFromConduit()
+        //     .then(sourcegraphURL =>
+        getPhabricatorCSS(sourcegraphURL)
+            .then(css => {
+                const style = document.createElement('style')
+                style.setAttribute('type', 'text/css')
+                style.id = 'sourcegraph-styles'
+                style.textContent = css
+                document.getElementsByTagName('head')[0].appendChild(style)
+                window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
+                window.SOURCEGRAPH_URL = sourcegraphURL
+                // metaClickOverride()
+                injectModules().catch(err => console.error('Unable to inject modules', err))
+            })
+            // )
             .catch(e => console.error(e))
     } else {
         console.log(
