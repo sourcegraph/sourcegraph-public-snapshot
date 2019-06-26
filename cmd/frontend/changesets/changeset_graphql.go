@@ -1,6 +1,8 @@
 package changesets
 
 import (
+	"context"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
@@ -14,4 +16,6 @@ func (GraphQLResolver) ChangesetFor(t *types.DiscussionThread) (graphqlbackend.C
 	return &gqlChangeset{t}, nil
 }
 
-func (v *gqlChangeset) Deltas() string { return "ASDF" }
+func (v *gqlChangeset) RepositoryComparisons(ctx context.Context) ([]*graphqlbackend.RepositoryComparison, error) {
+	return nil, nil
+}
