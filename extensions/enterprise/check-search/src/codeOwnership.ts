@@ -35,67 +35,73 @@ function startDiagnostics(): Unsubscribable {
                 map(() => sourcegraph.workspace.roots.filter(propertyIsDefined('baseUri'))),
                 switchMap(async roots => {
                     return combineLatestOrDefault(
-                        roots.map(async root => {
-                            console.log({ root })
-                            const base = parseRepoURI(root.baseUri.toString())
-                            const head = parseRepoURI(root.uri.toString())
-                            const data = dataOrThrowErrors<GQL.IQuery>(
-                                await queryGraphQL({
-                                    query: gql`
-                                        query ComparisonRawDiff(
-                                            $repositoryName: String!
-                                            $baseRevSpec: String!
-                                            $headRevSpec: String!
-                                        ) {
-                                            repository(name: $repositoryName) {
-                                                comparison(base: $baseRevSpec, head: $headRevSpec) {
-                                                    fileDiffs {
-                                                        rawDiff
+                        roots
+                            .map(async root => {
+                                const base = parseRepoURI(root.baseUri.toString())
+                                const head = parseRepoURI(root.uri.toString())
+                                const data = dataOrThrowErrors<GQL.IQuery>(
+                                    await queryGraphQL({
+                                        query: gql`
+                                            query ComparisonRawDiff(
+                                                $repositoryName: String!
+                                                $baseRevSpec: String!
+                                                $headRevSpec: String!
+                                            ) {
+                                                repository(name: $repositoryName) {
+                                                    comparison(base: $baseRevSpec, head: $headRevSpec) {
+                                                        fileDiffs {
+                                                            rawDiff
+                                                        }
                                                     }
                                                 }
                                             }
-                                        }
-                                    `,
-                                    vars: {
-                                        repositoryName: base.repoName,
-                                        baseRevSpec: base.rev || base.commitID,
-                                        headRevSpec: head.rev || head.commitID,
-                                    },
-                                })
-                            )
-                            const { rawDiff } = data.repository.comparison.fileDiffs
-                            const fileDiffs = parsePatch(rawDiff)
-                            return Promise.all(
-                                fileDiffs.map(async fileDiff => {
-                                    const uri = new URL(makeRepoURI({ ...head, filePath: fileDiff.newFileName }))
-                                    const doc = await sourcegraph.workspace.openTextDocument(uri)
-                                    const diagnostics = fileDiff.hunks
-                                        .map<sourcegraph.Diagnostic | undefined>(hunk => {
-                                            return {
-                                                message: `MY DIAGNOSTIC IN CHANGESET`,
-                                                range: new sourcegraph.Range(
-                                                    new sourcegraph.Position(hunk.newStart, 0),
-                                                    new sourcegraph.Position(hunk.newStart + hunk.newLines, 0)
-                                                ),
-                                                severity: sourcegraph.DiagnosticSeverity.Hint,
-                                                code:
-                                                    CODE_CODE_OWNERSHIP_RULES +
-                                                    ':' +
-                                                    JSON.stringify({ codeOwner: 'alice' } as DiagnosticData),
-                                            }
-                                        })
-                                        .filter(isDefined)
-                                    return [uri, diagnostics] as [URL, sourcegraph.Diagnostic[]]
-                                })
-                            )
-                        })
+                                        `,
+                                        vars: {
+                                            repositoryName: base.repoName,
+                                            baseRevSpec: base.rev || base.commitID,
+                                            headRevSpec: head.rev || head.commitID,
+                                        },
+                                    })
+                                )
+                                const { rawDiff } = data.repository.comparison.fileDiffs
+                                const fileDiffs = parsePatch(rawDiff)
+                                return Promise.all(
+                                    fileDiffs.map(async fileDiff => {
+                                        const uri = new URL(makeRepoURI({ ...head, filePath: fileDiff.newFileName }))
+                                        const doc = await sourcegraph.workspace.openTextDocument(uri)
+                                        const lines = doc.text.split('\n')
+                                        const diagnostics = fileDiff.hunks
+                                            .map<sourcegraph.Diagnostic | undefined>(hunk => {
+                                                const CONTEXT_LINES = 2
+                                                const line = hunk.newStart + CONTEXT_LINES
+                                                const m = lines[line].match(/\S/)
+                                                return {
+                                                    message: `MY DIAGNOSTIC IN CHANGESET`,
+                                                    range:
+                                                        m &&
+                                                        doc.getWordRangeAtPosition(
+                                                            new sourcegraph.Position(line, m.index)
+                                                        ),
+                                                    severity: sourcegraph.DiagnosticSeverity.Hint,
+                                                    code:
+                                                        CODE_CODE_OWNERSHIP_RULES +
+                                                        ':' +
+                                                        JSON.stringify({ codeOwner: 'alice' } as DiagnosticData),
+                                                }
+                                            })
+                                            .filter(isDefined)
+                                        return [uri, diagnostics] as [URL, sourcegraph.Diagnostic[]]
+                                    })
+                                ).catch(() => [])
+                            })
+                            .filter(isDefined)
                     )
                 }),
                 switchMap(results => results),
                 map(results => flatten(results))
             )
             .subscribe(entries => {
-                diagnosticsCollection.set(entries)
+                diagnosticsCollection.set(entries || [])
             })
     )
 

@@ -1302,9 +1302,10 @@ declare module 'sourcegraph' {
      */
     export interface Diagnostic {
         /**
-         * The range to which this diagnostic applies.
+         * The range to which this diagnostic applies. If no range is given, it applies to the
+         * entire file.
          */
-        readonly range: Range
+        readonly range?: Range
 
         /**
          * The human-readable message.

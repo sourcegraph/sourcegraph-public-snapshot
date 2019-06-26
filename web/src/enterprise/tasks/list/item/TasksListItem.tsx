@@ -203,7 +203,7 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                             )}
                         </div>
                     </>
-                ) : (
+                ) : diagnostic.range ? (
                     <CodeExcerpt
                         repoName={diagnostic.entry.repository.name}
                         commitID={diagnostic.entry.commit.oid}
@@ -218,7 +218,7 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                         isLightTheme={isLightTheme}
                         fetchHighlightedFileLines={fetchHighlightedFileLines}
                     />
-                )}
+                ) : null}
             </aside>
         </div>
     )
