@@ -48,7 +48,7 @@ func (v *gqlChangeset) Repositories(ctx context.Context) ([]*graphqlbackend.Repo
 		if err != nil {
 			return nil, err
 		}
-		rs[i] = graphqlbackend.NewRepositoryResolver(repo)
+		rs[i] = repo
 	}
 	return rs, nil
 }

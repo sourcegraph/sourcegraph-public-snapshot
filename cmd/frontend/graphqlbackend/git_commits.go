@@ -18,7 +18,7 @@ type gitCommitConnectionResolver struct {
 	author *string
 	after  *string
 
-	repo *repositoryResolver
+	repo *RepositoryResolver
 
 	// cache results because it is used by multiple fields
 	once    sync.Once

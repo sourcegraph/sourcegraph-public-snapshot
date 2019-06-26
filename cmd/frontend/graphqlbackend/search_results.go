@@ -62,42 +62,42 @@ func (c *searchResultsCommon) LimitHit() bool {
 	return c.limitHit || c.resultCount > c.maxResultsCount
 }
 
-func (c *searchResultsCommon) Repositories() []*repositoryResolver {
+func (c *searchResultsCommon) Repositories() []*RepositoryResolver {
 	if c.repos == nil {
-		return []*repositoryResolver{}
+		return []*RepositoryResolver{}
 	}
 	return toRepositoryResolvers(c.repos)
 }
 
-func (c *searchResultsCommon) RepositoriesSearched() []*repositoryResolver {
+func (c *searchResultsCommon) RepositoriesSearched() []*RepositoryResolver {
 	if c.searched == nil {
 		return nil
 	}
 	return toRepositoryResolvers(c.searched)
 }
 
-func (c *searchResultsCommon) IndexedRepositoriesSearched() []*repositoryResolver {
+func (c *searchResultsCommon) IndexedRepositoriesSearched() []*RepositoryResolver {
 	if c.indexed == nil {
 		return nil
 	}
 	return toRepositoryResolvers(c.indexed)
 }
 
-func (c *searchResultsCommon) Cloning() []*repositoryResolver {
+func (c *searchResultsCommon) Cloning() []*RepositoryResolver {
 	if c.cloning == nil {
 		return nil
 	}
 	return toRepositoryResolvers(c.cloning)
 }
 
-func (c *searchResultsCommon) Missing() []*repositoryResolver {
+func (c *searchResultsCommon) Missing() []*RepositoryResolver {
 	if c.missing == nil {
 		return nil
 	}
 	return toRepositoryResolvers(c.missing)
 }
 
-func (c *searchResultsCommon) Timedout() []*repositoryResolver {
+func (c *searchResultsCommon) Timedout() []*RepositoryResolver {
 	if c.timedout == nil {
 		return nil
 	}
@@ -423,7 +423,7 @@ loop:
 	for _, r := range sr.results {
 		r := r // shadow so it doesn't change in the goroutine
 		switch m := r.(type) {
-		case *repositoryResolver:
+		case *RepositoryResolver:
 			// We don't care about repo results here.
 			continue
 		case *commitSearchResultResolver:
@@ -1081,13 +1081,13 @@ func isContextError(ctx context.Context, err error) bool {
 //
 // Supported types:
 //
-//   - *repositoryResolver         // repo name match
+//   - *RepositoryResolver         // repo name match
 //   - *fileMatchResolver          // text match
 //   - *commitSearchResultResolver // diff or commit match
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type searchResultResolver interface {
-	ToRepository() (*repositoryResolver, bool)
+	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*fileMatchResolver, bool)
 	ToCommitSearchResult() (*commitSearchResultResolver, bool)
 	ToCodemodResult() (*codemodResultResolver, bool)

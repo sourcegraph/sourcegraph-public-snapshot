@@ -61,7 +61,7 @@ func (r *codemodResultResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
 }
 
-func (r *codemodResultResolver) ToRepository() (*repositoryResolver, bool) { return nil, false }
+func (r *codemodResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
 func (r *codemodResultResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
 func (r *codemodResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
@@ -294,7 +294,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 		}
 		results[i] = &codemodResultResolver{
 			commit: &GitCommitResolver{
-				repo:     &repositoryResolver{repo: repoRevs.Repo},
+				repo:     &RepositoryResolver{repo: repoRevs.Repo},
 				inputRev: &repoRevs.Revs[0].RevSpec,
 			},
 			path:    raw.URI,

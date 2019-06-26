@@ -8,7 +8,7 @@ import (
 )
 
 type hunkResolver struct {
-	repo *repositoryResolver
+	repo *RepositoryResolver
 	hunk *git.Hunk
 }
 

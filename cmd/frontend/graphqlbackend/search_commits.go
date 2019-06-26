@@ -62,7 +62,7 @@ func (r *commitSearchResultResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
 }
 
-func (r *commitSearchResultResolver) ToRepository() (*repositoryResolver, bool) { return nil, false }
+func (r *commitSearchResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
 func (r *commitSearchResultResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
 func (r *commitSearchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return r, true
@@ -267,7 +267,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		rawResults = rawResults[:maxResults]
 	}
 
-	repoResolver := &repositoryResolver{repo: repo}
+	repoResolver := &RepositoryResolver{repo: repo}
 	results = make([]*commitSearchResultResolver, len(rawResults))
 	for i, rawResult := range rawResults {
 		commit := rawResult.Commit

@@ -38,7 +38,7 @@ type discussionThreadTargetRepoSelectionInput struct {
 
 // discussionsResolveRepository resolves the repository given an ID, name, or
 // git clone URL. Only one must be specified, or else this function will panic.
-func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, gitCloneURL *string) (*repositoryResolver, error) {
+func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, gitCloneURL *string) (*RepositoryResolver, error) {
 	switch {
 	case id != nil:
 		return repositoryByID(ctx, *id)
@@ -145,7 +145,7 @@ func (d *discussionThreadTargetRepoInput) validate() error {
 // d.LinesAfter fields by pulling the information directly from the repository.
 //
 // Precondition: d.Selection != nil && d.validate() == nil
-func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx context.Context, repo *repositoryResolver) error {
+func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx context.Context, repo *RepositoryResolver) error {
 	if d.Selection == nil {
 		panic("precondition failed")
 	}
@@ -450,7 +450,7 @@ type discussionThreadTargetRepoResolver struct {
 	t *types.DiscussionThreadTargetRepo
 }
 
-func (r *discussionThreadTargetRepoResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
+func (r *discussionThreadTargetRepoResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
 	return repositoryByIDInt32(ctx, r.t.RepoID)
 }
 

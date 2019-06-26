@@ -80,7 +80,7 @@ func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
 	// values for all other fields.
 	return &gitTreeEntryResolver{
 		commit: &GitCommitResolver{
-			repo:     &repositoryResolver{repo: fm.repo},
+			repo:     &RepositoryResolver{repo: fm.repo},
 			oid:      GitObjectID(fm.commitID),
 			inputRev: fm.inputRev,
 		},
@@ -89,8 +89,8 @@ func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
 	}
 }
 
-func (fm *fileMatchResolver) Repository() *repositoryResolver {
-	return &repositoryResolver{repo: fm.repo}
+func (fm *fileMatchResolver) Repository() *RepositoryResolver {
+	return &RepositoryResolver{repo: fm.repo}
 }
 
 func (fm *fileMatchResolver) Resource() string {
@@ -113,7 +113,7 @@ func (fm *fileMatchResolver) LimitHit() bool {
 	return fm.JLimitHit
 }
 
-func (fm *fileMatchResolver) ToRepository() (*repositoryResolver, bool) { return nil, false }
+func (fm *fileMatchResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
 func (fm *fileMatchResolver) ToFileMatch() (*fileMatchResolver, bool)   { return fm, true }
 func (fm *fileMatchResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
