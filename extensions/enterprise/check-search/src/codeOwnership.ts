@@ -72,7 +72,7 @@ function startDiagnostics(): Unsubscribable {
                                         const diagnostics = [
                                             ...markEnsureAuthz(doc),
                                             ...markSecurityReviewRequired(doc, fileDiff),
-                                            ...(rootI === 0 && fileDiffI === 0 ? suggestChangelogEntry() : []),
+                                            ...(rootI === 0 && fileDiffI === 0 ? [suggestChangelogEntry()] : []),
                                             ...markTODO(doc, fileDiff),
                                         ].filter(isDefined)
                                         return [uri, diagnostics] as [URL, sourcegraph.Diagnostic[]]

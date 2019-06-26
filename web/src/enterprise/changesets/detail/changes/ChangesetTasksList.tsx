@@ -16,6 +16,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
     threadSettings: ThreadSettings
 
     className?: string
+    itemClassName?: string
     location: H.Location
     history: H.History
     isLightTheme: boolean
@@ -28,6 +29,7 @@ export const ChangesetTasksList: React.FunctionComponent<Props> = ({
     xchangeset,
     extensionsController,
     className = '',
+    itemClassName = '',
     ...props
 }) => {
     const makeURI = (repo: GQL.IRepository, revspec: GQL.IGitRevSpecExpr, filePath?: string) =>
@@ -74,7 +76,7 @@ export const ChangesetTasksList: React.FunctionComponent<Props> = ({
 
     return (
         <div className={`changeset-tasks-list ${className}`}>
-            <TasksList {...props} extensionsController={extensionsController} />
+            <TasksList {...props} extensionsController={extensionsController} itemClassName={itemClassName} />
         </div>
     )
 }

@@ -9,6 +9,7 @@ import { ChangesetFilesList } from './ChangesetFilesList'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     thread: GQL.IDiscussionThread
+    xchangeset: GQL.IChangeset
     threadSettings: ThreadSettings
 
     history: H.History
@@ -19,11 +20,17 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 /**
  * The changes (file diffs) page for a changeset.
  */
-export const ChangesetChangesPage: React.FunctionComponent<Props> = ({ thread, ...props }) => (
+export const ChangesetChangesPage: React.FunctionComponent<Props> = ({ thread, xchangeset, ...props }) => (
     <div className="changeset-changes-page">
         <WithQueryParameter defaultQuery={/* TODO!(sqs) */ ''} history={props.history} location={props.location}>
             {({ query, onQueryChange }) => (
-                <ChangesetFilesList {...props} thread={thread} query={query} onQueryChange={onQueryChange} />
+                <ChangesetFilesList
+                    {...props}
+                    thread={thread}
+                    xchangeset={xchangeset}
+                    query={query}
+                    onQueryChange={onQueryChange}
+                />
             )}
         </WithQueryParameter>
     </div>

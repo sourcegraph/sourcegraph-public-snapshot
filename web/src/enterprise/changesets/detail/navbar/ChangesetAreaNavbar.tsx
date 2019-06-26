@@ -7,10 +7,18 @@ import { NavLink } from 'react-router-dom'
 import { ChatIcon } from '../../../../../../shared/src/components/icons'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { TasksIcon } from '../../../tasks/icons'
-import { ChecklistIcon, DiffIcon, GitCommitIcon } from '../../icons'
+import { ThreadSettings } from '../../../threads/settings'
+import { ActionsIcon, ChecklistIcon, DiffIcon, GitCommitIcon } from '../../icons'
+import {
+    countChangesetActions,
+    countChangesetCommits,
+    countChangesetFilesChanged,
+} from '../../preview/ChangesetSummaryBar'
 
 interface Props {
     thread: GQL.IDiscussionThread
+    xchangeset: GQL.IChangeset
+    threadSettings: ThreadSettings
     areaURL: string
     className?: string
 }
@@ -20,7 +28,13 @@ const NAV_LINK_CLASS_NAME = 'changeset-area-navbar__nav-link nav-link rounded-0 
 /**
  * The navbar for a single changeset.
  */
-export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({ thread, areaURL, className = '' }) => (
+export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({
+    thread,
+    xchangeset,
+    threadSettings,
+    areaURL,
+    className = '',
+}) => (
     <nav className={`changeset-area-navbar border-bottom ${className}`}>
         <div className="container">
             <ul className="nav flex-nowrap">
@@ -32,7 +46,7 @@ export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({ thread, ar
                         activeClassName="changeset-area-navbar__nav-link--active"
                     >
                         <ChatIcon className="icon-inline" /> Discussion{' '}
-                        <span className="badge badge-secondary ml-1">7</span>
+                        <span className="badge badge-secondary ml-1">{thread.comments.totalCount}</span>
                     </NavLink>
                 </li>
                 <li className="changeset-area-navbar__nav-item nav-item">
@@ -41,8 +55,19 @@ export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({ thread, ar
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="changeset-area-navbar__nav-link--active"
                     >
-                        <TasksIcon className="icon-inline" /> Tasks{' '}
-                        <span className="badge badge-secondary ml-1">5</span>
+                        <TasksIcon className="icon-inline" /> Tasks
+                    </NavLink>
+                </li>
+                <li className="changeset-area-navbar__nav-item nav-item">
+                    <NavLink
+                        to={`${areaURL}/actions`}
+                        className={NAV_LINK_CLASS_NAME}
+                        activeClassName="changeset-area-navbar__nav-link--active"
+                    >
+                        <ActionsIcon className="icon-inline" /> Actions{' '}
+                        <span className="badge badge-secondary ml-1">
+                            {countChangesetActions(xchangeset, threadSettings)}
+                        </span>
                     </NavLink>
                 </li>
                 <li className="changeset-area-navbar__nav-item nav-item">
@@ -52,7 +77,7 @@ export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({ thread, ar
                         activeClassName="changeset-area-navbar__nav-link--active"
                     >
                         <GitCommitIcon className="icon-inline" /> Commits{' '}
-                        <span className="badge badge-secondary ml-1">5</span>
+                        <span className="badge badge-secondary ml-1">{countChangesetCommits(xchangeset)}</span>
                     </NavLink>
                 </li>
                 <li className="changeset-area-navbar__nav-item nav-item">
@@ -62,7 +87,7 @@ export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({ thread, ar
                         activeClassName="changeset-area-navbar__nav-link--active"
                     >
                         <DiffIcon className="icon-inline" /> Changes{' '}
-                        <span className="badge badge-secondary ml-1">9</span>
+                        <span className="badge badge-secondary ml-1">{countChangesetFilesChanged(xchangeset)}</span>
                     </NavLink>
                 </li>
                 <li className="flex-1" />

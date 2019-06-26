@@ -19,12 +19,7 @@ export const TasksListPage: React.FunctionComponent<Props> = ({ match, ...props 
         </div>
         <WithQueryParameter {...props}>
             {({ query, onQueryChange }) => (
-                <TasksList
-                    {...props}
-                    query={query}
-                    onQueryChange={onQueryChange}
-                    containerClassName="container-fluid"
-                />
+                <TasksList {...props} query={query} onQueryChange={onQueryChange} itemClassName="container-fluid" />
             )}
         </WithQueryParameter>
     </div>
