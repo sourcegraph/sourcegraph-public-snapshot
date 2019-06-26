@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -91,6 +92,9 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(cmd.Env, tmpGitPathEnv, altObjectsEnv)
 	cmd.Stdin = strings.NewReader(req.Patch)
+
+	// TODO!(sqs): debugging
+	_ = ioutil.WriteFile("/tmp/patch.diff", []byte(req.Patch), 0600)
 
 	if out, err := run(cmd); err != nil {
 		log15.Error("Failed to apply patch.", "ref", req.TargetRef, "output", string(out))

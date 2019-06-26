@@ -91,30 +91,20 @@ export function registerCodemodSearchContributions({
                     .toPromise()
                 const diffs: FileDiff[] = results.results
                     .filter((r): r is GQL.ICodemodResult => r.__typename === 'CodemodResult')
-                    .flatMap(r =>
-                        r.matches
-                            .flatMap(m => {
-                                const patch = `--- ${m.url}\n+++ ${m.url}\n${m.body.text
-                                    .replace(/^```diff\n/, '')
-                                    .replace(/\n```$/, '')
-                                    .replace(/\n /g, '\n')}`
-                                return { ...parsePatch(patch)[0], patch }
-                            })
-                            .map(
-                                diff =>
-                                    ({
-                                        oldPath: diff.oldFileName!,
-                                        newPath: diff.newFileName!,
-                                        hunks: diff.hunks.map(npmDiffToFileDiffHunk),
-                                        patch: diff.patch,
-                                    } as FileDiff)
-                            )
-                    )
+                    .map<FileDiff>(r => ({
+                        oldPath: r.url,
+                        newPath: r.url,
+                        hunks: parsePatch(r.rawDiff)[0].hunks.map(npmDiffToFileDiffHunk),
+                        patch: r.rawDiff,
+                    }))
 
                 const thread = await createChangesetFromDiffs(diffs, {
                     title: query,
                     contents: `Created from search:\n\n${'```'}\n${query}\n${'```'}`,
                     status: GQL.ThreadStatus.PREVIEW,
+                    changesetActionDescriptions: [
+                        { user: 'sqs', timestamp: Date.now(), title: 'Codemod', detail: query },
+                    ],
                 })
                 history.push(thread.url)
             },

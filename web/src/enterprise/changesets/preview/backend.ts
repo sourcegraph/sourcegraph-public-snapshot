@@ -21,7 +21,8 @@ export const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
 export type ChangesetCreationStatus = GQL.ThreadStatus.OPEN_ACTIVE | GQL.ThreadStatus.PREVIEW
 
 interface ChangesetCreationInfo
-    extends Pick<GQL.ICreateThreadOnDiscussionsMutationArguments['input'], 'title' | 'contents'> {
+    extends Pick<GQL.ICreateThreadOnDiscussionsMutationArguments['input'], 'title' | 'contents'>,
+        Pick<ThreadSettings, 'changesetActionDescriptions'> {
     status: ChangesetCreationStatus
 }
 
@@ -38,6 +39,9 @@ export async function createChangesetFromCodeAction(
         ...info,
         title: `${diagnostic.message}: ${codeAction.title}`,
         contents: '',
+        changesetActionDescriptions: [
+            { user: 'sqs', timestamp: Date.now(), title: codeAction.title, detail: diagnostic.message },
+        ],
     })
 }
 
@@ -72,12 +76,26 @@ export async function createChangesetFromDiffs(
                 name: delta.head,
                 baseCommit,
                 patch: fileDiffs.map(({ patch }) => patch).join('\n'),
+                commitMessage:
+                    info.changesetActionDescriptions && info.changesetActionDescriptions.length > 0
+                        ? `${info.changesetActionDescriptions
+                              .map(c => c.title)
+                              .join(', ')}\n\n${info.changesetActionDescriptions
+                              .filter(c => c.detail)
+                              .map(
+                                  c =>
+                                      `- ${info.changesetActionDescriptions!.length > 1 ? `${c.title}: ` : ''}${
+                                          c.detail
+                                      }`
+                              )
+                              .join('\n')}`
+                        : 'Changeset commit',
             },
         }).toPromise()
         deltas.push(delta)
     }
 
-    const settings: ThreadSettings = { deltas }
+    const settings: ThreadSettings = { deltas, changesetActionDescriptions: info.changesetActionDescriptions }
     return createThread({
         ...info,
         type: GQL.ThreadType.CHANGESET,

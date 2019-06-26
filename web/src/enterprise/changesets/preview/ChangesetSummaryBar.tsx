@@ -19,11 +19,15 @@ interface SummaryItem {
     noun: string
     pluralNoun?: string
     icon: React.ComponentType<{ className?: string }>
-    count: number | ((changeset: GQL.IChangeset) => number)
+    count: number | ((changeset: GQL.IChangeset, threadSettings: ThreadSettings) => number)
 }
 
 const ITEMS: SummaryItem[] = [
-    { noun: 'action', icon: ActionsIcon, count: 3 },
+    {
+        noun: 'action',
+        icon: ActionsIcon,
+        count: (_c, s) => (s.changesetActionDescriptions ? s.changesetActionDescriptions.length : 0),
+    },
     { noun: 'review task', icon: TasksIcon, count: 7 },
     {
         noun: 'repository affected',
@@ -43,11 +47,16 @@ const ITEMS: SummaryItem[] = [
 /**
  * A bar that summarizes the contents and impact of a changeset.
  */
-export const ChangesetSummaryBar: React.FunctionComponent<Props> = ({ xchangeset, className = '', ...props }) => (
+export const ChangesetSummaryBar: React.FunctionComponent<Props> = ({
+    xchangeset,
+    threadSettings,
+    className = '',
+    ...props
+}) => (
     <nav className={`changeset-summary-bar border ${className}`}>
         <ul className="nav w-100">
             {ITEMS.map(({ icon: Icon, ...item }, i) => {
-                const count = typeof item.count === 'number' ? item.count : item.count(xchangeset)
+                const count = typeof item.count === 'number' ? item.count : item.count(xchangeset, threadSettings)
                 return (
                     <li key={i} className="nav-item flex-1 text-center">
                         <Link to="TODO!(sqs)" className="nav-link">

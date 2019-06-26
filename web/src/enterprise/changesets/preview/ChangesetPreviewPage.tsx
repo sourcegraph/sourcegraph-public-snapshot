@@ -7,15 +7,16 @@ import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { HeroPage } from '../../../components/HeroPage'
 import { WithQueryParameter } from '../../../components/withQueryParameter/WithQueryParameter'
 import { createThreadAreaContext } from '../../threads/detail/ThreadArea'
+import { ChangesetActionsList } from '../detail/changes/ChangesetActionsList'
 import { ChangesetCommitsList } from '../detail/changes/ChangesetCommitsList'
 import { ChangesetFilesList } from '../detail/changes/ChangesetFilesList'
+import { ChangesetRepositoriesList } from '../detail/changes/ChangesetRepositoriesList'
 import { ChangesetsAreaContext } from '../global/ChangesetsArea'
 import { ChangesetIcon } from '../icons'
 import { useChangesetByID } from '../util/useChangesetByID'
 import { useExtraChangesetInfo } from '../util/useExtraChangesetInfo'
 import { ChangesetSummaryBar } from './ChangesetSummaryBar'
 import { CreateChangesetFromPreviewForm } from './CreateChangesetFromPreviewForm'
-import { ChangesetRepositoriesList } from '../detail/changes/ChangesetRepositoriesList'
 
 interface Props extends ChangesetsAreaContext, RouteComponentProps<{ threadID: string }> {}
 
@@ -72,8 +73,9 @@ export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
             </div>
             <hr className="my-4" />
             <div className="container">
-                <ChangesetRepositoriesList {...props} {...context} xchangeset={xchangeset} />
-                <ChangesetCommitsList {...props} {...context} xchangeset={xchangeset} />
+                <ChangesetActionsList {...props} {...context} xchangeset={xchangeset} />
+                <ChangesetRepositoriesList {...props} {...context} xchangeset={xchangeset} showCommits={true} />
+                <ChangesetCommitsList {...props} {...context} xchangeset={xchangeset} className="d-none" />
                 <WithQueryParameter defaultQuery="" history={props.history} location={props.location}>
                     {({ query, onQueryChange }) => (
                         <ChangesetFilesList

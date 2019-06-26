@@ -189,7 +189,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     calculateShowMoreResultsCount={this.calculateCount}
                     />
                 )}
-                <div className="d-flex flex-wrap flex-1 overflow-hidden">
+                <div className="d-flex flex-1 overflow-hidden">
                     {USE_SEARCH_EXP && (
                         <Resizable
                             className="h-100 search-results__resizable"
