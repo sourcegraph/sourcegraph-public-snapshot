@@ -38,7 +38,7 @@ func NewRepositoryComparison(ctx context.Context, r *repositoryResolver, args *R
 		headRevspec = *args.Head
 	}
 
-	getCommit := func(ctx context.Context, repo gitserver.Repo, revspec string) (*gitCommitResolver, error) {
+	getCommit := func(ctx context.Context, repo gitserver.Repo, revspec string) (*GitCommitResolver, error) {
 		if revspec == devNullSHA {
 			return nil, nil
 		}
@@ -85,7 +85,7 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *RepositoryCom
 
 type RepositoryComparisonResolver struct {
 	baseRevspec, headRevspec string
-	base, head               *gitCommitResolver
+	base, head               *GitCommitResolver
 	repo                     *repositoryResolver
 }
 

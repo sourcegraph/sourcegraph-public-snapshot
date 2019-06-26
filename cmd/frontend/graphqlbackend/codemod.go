@@ -42,7 +42,7 @@ type args struct {
 
 // codemodResultResolver is a resolver for the GraphQL type `CodemodResult`
 type codemodResultResolver struct {
-	commit  *gitCommitResolver
+	commit  *GitCommitResolver
 	path    string
 	fileURL string
 	diff    string
@@ -306,7 +306,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions
 			return nil, err
 		}
 		result := codemodResultResolver{
-			commit: &gitCommitResolver{
+			commit: &GitCommitResolver{
 				repo:     &repositoryResolver{repo: repoRevs.Repo},
 				inputRev: &repoRevs.Revs[0].RevSpec,
 			},

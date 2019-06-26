@@ -78,10 +78,10 @@ func (fm *fileMatchResolver) Key() string {
 
 func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
 	// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
-	// (which would make it slow). This gitCommitResolver will return empty
+	// (which would make it slow). This GitCommitResolver will return empty
 	// values for all other fields.
 	return &gitTreeEntryResolver{
-		commit: &gitCommitResolver{
+		commit: &GitCommitResolver{
 			repo:     &repositoryResolver{repo: fm.repo},
 			oid:      GitObjectID(fm.commitID),
 			inputRev: fm.inputRev,
@@ -630,7 +630,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 					offsets[k] = [2]int32{int32(offset), int32(length)}
 					if isSymbol && m.SymbolInfo != nil {
-						commit := &gitCommitResolver{
+						commit := &GitCommitResolver{
 							repo:     &repositoryResolver{repo: repoRev.Repo},
 							oid:      GitObjectID(repoRev.IndexedHEADCommit()),
 							inputRev: &inputRev,

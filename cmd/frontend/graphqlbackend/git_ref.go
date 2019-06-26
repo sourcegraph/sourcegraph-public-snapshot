@@ -113,7 +113,7 @@ func (r *GitRefResolver) Target() interface {
 	//lint:ignore U1000 is used by graphql via reflection
 	AbbreviatedOID(context.Context) (string, error)
 	//lint:ignore U1000 is used by graphql via reflection
-	Commit(context.Context) (*gitCommitResolver, error)
+	Commit(context.Context) (*GitCommitResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Type(context.Context) (gitObjectType, error)
 } {
