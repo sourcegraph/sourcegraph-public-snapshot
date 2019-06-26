@@ -104,6 +104,10 @@ export function search(
                                     }
                                     ... on CodemodResult {
                                         ${genericSearchResultInterfaceFields}
+                                        commit {
+                                            oid
+                                        }
+                                        diff
                                     }
                                 }
                                 alert {

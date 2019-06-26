@@ -4,7 +4,6 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { GitCommitNode } from '../../../../repo/commits/GitCommitNode'
-import { RepositoryCompareCommitsPage } from '../../../../repo/compare/RepositoryCompareCommitsPage'
 import { ThreadSettings } from '../../../threads/settings'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {

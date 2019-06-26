@@ -47,7 +47,7 @@ func (r *codemodResultResolver) Label() (*markdownResolver, error) {
 }
 
 func (r *codemodResultResolver) URL() string {
-	return ""
+	return r.fileURL
 }
 
 func (r *codemodResultResolver) Detail() (*markdownResolver, error) {
@@ -59,6 +59,10 @@ func (r *codemodResultResolver) Detail() (*markdownResolver, error) {
 
 func (r *codemodResultResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
+}
+
+func (r *codemodResultResolver) RawDiff() string {
+	return r.diff
 }
 
 func (r *codemodResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
@@ -287,7 +291,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 	}
 	results = make([]*codemodResultResolver, len(rawResults))
 	for i, raw := range rawResults {
-		fileURL := fileMatchURI(repoRevs.Repo.Name, repoRevs.Revs[0].RevSpec, raw.URI)
+		fileURL := fileMatchURI(repoRevs.Repo.Name, string(commit), raw.URI)
 		matches, err := computeCodemodResultMatches(fileURL, raw)
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("invalid result (%d)", i))
@@ -296,6 +300,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 			commit: &GitCommitResolver{
 				repo:     &RepositoryResolver{repo: repoRevs.Repo},
 				inputRev: &repoRevs.Revs[0].RevSpec,
+				oid:      GitObjectID(commit),
 			},
 			path:    raw.URI,
 			fileURL: fileURL,

@@ -44,6 +44,7 @@ export const ChangesetFilesList: React.FunctionComponent<Props> = ({
                     rev: c.range.headRevSpec.expr,
                     commitID: c.range.headRevSpec.object!.oid,
                 }}
+                showRepository={true}
             />
         ))}
     </div>
