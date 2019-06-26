@@ -358,52 +358,6 @@ type Mutation {
     changesets: ChangesetsMutation!
 }
 
-# Mutations related to repositories' Git data.
-type GitMutation {
-    # Create a new Git ref in a repository by applying a patch to an existing commit.
-    createRefFromPatch(input: GitCreateRefFromPatchInput!): GitCreateRefFromPatchPayload
-}
-
-# Input arguments for GitMutation.createRefFromPatch.
-input GitCreateRefFromPatchInput {
-    # The repository in which to create the ref.
-    repository: ID!
-
-    # The full name of the ref (e.g., "refs/heads/mybranch" not just "mybranch").
-    name: String!
-
-    # The Git commit on top of which to apply the patch.
-    baseCommit: GitObjectID!
-
-    # The patch to apply, in unified diff format.
-    patch: String!
-}
-
-# The payload for GitMutation.createRefFromPatch.
-type GitCreateRefFromPatchPayload {
-    # The newly created ref.
-    ref: GitRef!
-}
-
-# Mutations related to changesets.
-type ChangesetsMutation {
-    # Create a changeset.
-    createChangeset(input: ChangesetsCreateChangesetInput!): ChangesetsCreateChangesetPayload
-}
-
-# Input arguments for ChangesetsMutation.createChangeset.
-input ChangesetsCreateChangesetInput {
-    title: String!
-    body: String!
-    project: ID!
-}
-
-# The payload for ChangesetsMutation.createChangeset.
-type ChangesetsCreateChangesetPayload {
-    # The newly created changeset thread.
-    thread: DiscussionThread!
-}
-
 # Mutations related to projects.
 type ProjectsMutation {
     # Create a project associated with a project. Returns the newly created project.
@@ -2880,6 +2834,9 @@ type DiscussionThread implements Node & Labelable {
         # Returns the first n labels from the list.
         first: Int
     ): LabelConnection!
+
+    # TODO!(sqs): make Changeset a top-level type
+    changeset: Changeset
 }
 
 # A comment made within a discussion thread.
@@ -4057,4 +4014,58 @@ type LabelConnection {
     totalCount: Int!
     # Pagination information.
     pageInfo: PageInfo!
+}
+
+# Mutations related to repositories' Git data.
+type GitMutation {
+    # Create a new Git ref in a repository by applying a patch to an existing commit.
+    createRefFromPatch(input: GitCreateRefFromPatchInput!): GitCreateRefFromPatchPayload
+}
+
+# Input arguments for GitMutation.createRefFromPatch.
+input GitCreateRefFromPatchInput {
+    # The repository in which to create the ref.
+    repository: ID!
+
+    # The full name of the ref (e.g., "refs/heads/mybranch" not just "mybranch").
+    name: String!
+
+    # The Git commit on top of which to apply the patch.
+    baseCommit: GitObjectID!
+
+    # The patch to apply, in unified diff format.
+    patch: String!
+}
+
+# The payload for GitMutation.createRefFromPatch.
+type GitCreateRefFromPatchPayload {
+    # The newly created ref.
+    ref: GitRef!
+}
+
+# A changeset is a set of changes to code, along with related discussion and automation.
+#
+# TODO!(sqs): make this a top-level type, not just a sub-type of DiscussionThread
+type Changeset {
+    # The comparisons of before and after this changeset is applied for all affected repositories.
+    repositoryComparisons: [RepositoryComparison!]!
+}
+
+# Mutations related to changesets.
+type ChangesetsMutation {
+    # Create a changeset.
+    createChangeset(input: ChangesetsCreateChangesetInput!): ChangesetsCreateChangesetPayload
+}
+
+# Input arguments for ChangesetsMutation.createChangeset.
+input ChangesetsCreateChangesetInput {
+    title: String!
+    body: String!
+    project: ID!
+}
+
+# The payload for ChangesetsMutation.createChangeset.
+type ChangesetsCreateChangesetPayload {
+    # The newly created changeset thread.
+    thread: DiscussionThread!
 }
