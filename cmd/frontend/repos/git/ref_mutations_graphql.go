@@ -18,6 +18,15 @@ func (GraphQLResolver) CreateRefFromPatch(ctx context.Context, arg *struct {
 		return nil, err
 	}
 
+	targetRef := arg.Input.Name
+	if targetRef == "" {
+		defaultBranch, err := repo.DefaultBranch(ctx)
+		if err != nil {
+			return nil, err
+		}
+		targetRef = defaultBranch.Name()
+	}
+
 	commitID, err := gitserver.DefaultClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name()),
 		BaseCommit: api.CommitID(arg.Input.BaseCommit),

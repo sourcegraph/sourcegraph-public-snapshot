@@ -96,6 +96,7 @@ export const SearchContextBar: React.FunctionComponent<Props> = ({
                         listClass="flex-column"
                         wrapInList={true}
                         actionItemClass="nav-link px-2"
+                        showLoadingSpinnerDuringExecution={true}
                     />
                 </section>
             </>

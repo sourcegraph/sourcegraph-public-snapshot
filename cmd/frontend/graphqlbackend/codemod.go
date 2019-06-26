@@ -79,7 +79,7 @@ func (r *codemodResultResolver) Label() (*markdownResolver, error) {
 }
 
 func (r *codemodResultResolver) URL() string {
-	return ""
+	return r.fileURL
 }
 
 func (r *codemodResultResolver) Detail() (*markdownResolver, error) {
@@ -307,6 +307,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 			commit: &GitCommitResolver{
 				repo:     &RepositoryResolver{repo: repoRevs.Repo},
 				inputRev: &repoRevs.Revs[0].RevSpec,
+				oid:      GitObjectID(commit),
 			},
 			path:    raw.URI,
 			fileURL: fileURL,

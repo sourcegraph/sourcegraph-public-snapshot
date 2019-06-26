@@ -107,7 +107,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                             to={this.props.node.repository.url}
                             repoName={this.props.node.repository.name}
                             icon={RepositoryIcon}
-                            className="mr-6"
+                            className="mr-3"
                         />
                     )}
                     {!this.props.compact ? (

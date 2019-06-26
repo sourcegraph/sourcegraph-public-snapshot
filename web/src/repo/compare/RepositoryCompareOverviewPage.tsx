@@ -21,20 +21,42 @@ import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
 import { RepositoryCompareDiffPage } from './RepositoryCompareDiffPage'
 
+export const gitRevSpecFieldsFragment = gql`
+    fragment GitRevSpecFields on GitRevSpec {
+        __typename
+        ... on GitRef {
+            repository {
+                name
+            }
+            prefix
+            displayName
+        }
+    }
+`
+
 export const gitRevisionRangeFieldsFragment = gql`
     fragment GitRevisionRangeFields on GitRevisionRange {
         expr
+        base {
+            ...GitRevSpecFields
+        }
+        head {
+            ...GitRevSpecFields
+        }
         baseRevSpec {
             object {
                 oid
             }
+            expr
         }
         headRevSpec {
             object {
                 oid
             }
+            expr
         }
     }
+    ${gitRevSpecFieldsFragment}
 `
 
 function queryRepositoryComparison(args: {

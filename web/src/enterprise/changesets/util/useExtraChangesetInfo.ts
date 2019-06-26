@@ -52,6 +52,7 @@ function queryChangeset(threadID: string): Observable<GQL.IChangeset> {
                                 ...GitCommitFields
                                 repository {
                                     name
+                                    url
                                 }
                             }
                             repositoryComparisons {

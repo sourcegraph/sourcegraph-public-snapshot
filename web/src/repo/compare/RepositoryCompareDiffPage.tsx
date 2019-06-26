@@ -116,6 +116,8 @@ interface RepositoryCompareDiffPageProps
     head: { repoName: string; repoID: GQL.ID; rev: string | null; commitID: string }
     hoverifier?: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
 
+    showRepository?: boolean
+
     location: H.Location
     history: H.History
 }

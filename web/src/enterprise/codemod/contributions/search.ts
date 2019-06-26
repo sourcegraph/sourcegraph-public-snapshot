@@ -92,22 +92,23 @@ export function registerCodemodSearchContributions({
                 const diffs: FileDiff[] = results.results
                     .filter((r): r is GQL.ICodemodResult => r.__typename === 'CodemodResult')
                     .flatMap(r =>
-                        r.matches.flatMap(m =>
-                            parsePatch(
-                                `--- ${m.url}\n+++ ${m.url}\n${m.body.text
+                        r.matches
+                            .flatMap(m => {
+                                const patch = `--- ${m.url}\n+++ ${m.url}\n${m.body.text
                                     .replace(/^```diff\n/, '')
                                     .replace(/\n```$/, '')
                                     .replace(/\n /g, '\n')}`
+                                return { ...parsePatch(patch)[0], patch }
+                            })
+                            .map(
+                                diff =>
+                                    ({
+                                        oldPath: diff.oldFileName!,
+                                        newPath: diff.newFileName!,
+                                        hunks: diff.hunks.map(npmDiffToFileDiffHunk),
+                                        patch: diff.patch,
+                                    } as FileDiff)
                             )
-                        )
-                    )
-                    .map(
-                        diff =>
-                            ({
-                                oldPath: diff.oldFileName,
-                                newPath: diff.newFileName,
-                                hunks: diff.hunks.map(npmDiffToFileDiffHunk),
-                            } as FileDiff)
                     )
 
                 const thread = await createChangesetFromDiffs(diffs, {
