@@ -62,7 +62,8 @@ func (r *codemodResultResolver) Matches() []*searchResultMatchResolver {
 }
 
 func (r *codemodResultResolver) RawDiff() string {
-	return r.diff
+	// TODO!(sqs) HACK gitserver's CreateCommitFromPatch assumes `patch -p1` so we need to add `a/` and `b/` path prefixes
+	return "diff git\nindex\n" + strings.Replace(strings.Replace(r.diff, "+++ ", "+++ b/", 1), "--- ", "--- a/", 1) + "\n"
 }
 
 func (r *codemodResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
@@ -243,7 +244,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 			seenMatches[text] = struct{}{}
 			lines := strings.Split(raw.Diff, "\n")
 			for i, line := range lines {
-				if line[1] == ' ' {
+				if len(line) == 1 || line[1] == ' ' {
 					continue
 				}
 				if pos := strings.Index(line, text); pos != -1 {

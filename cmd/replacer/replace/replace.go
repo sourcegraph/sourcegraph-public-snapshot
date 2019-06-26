@@ -52,7 +52,11 @@ type ExternalTool struct {
 func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath string) (cmd *exec.Cmd, err error) {
 	switch t.Name {
 	case "comby":
-		return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, spec.FileExtension, "-zip", zipPath, "-json-lines"), nil
+		if spec.FileExtension == "" {
+			return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, "-zip", zipPath, "-json-lines"), nil
+		} else {
+			return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, spec.FileExtension, "-zip", zipPath, "-json-lines"), nil
+		}
 	default:
 		return nil, errors.Errorf("Unknown external replace tool %q", t.Name)
 	}

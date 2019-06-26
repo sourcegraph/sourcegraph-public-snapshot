@@ -33,9 +33,9 @@ func (GraphQLResolver) CreateRefFromPatch(ctx context.Context, arg *struct {
 		TargetRef:  arg.Input.Name,
 		Patch:      arg.Input.Patch,
 		CommitInfo: protocol.PatchCommitInfo{
-			AuthorName:  "Sourcegraph",
-			AuthorEmail: "bot@sourcegraph.com",
-			Message:     "bot commit",
+			AuthorName:  "Quinn Slack",         // TODO!(sqs): un-hardcode
+			AuthorEmail: "sqs@sourcegraph.com", // TODO!(sqs): un-hardcode
+			Message:     arg.Input.CommitMessage,
 			Date:        time.Now(),
 		},
 	})

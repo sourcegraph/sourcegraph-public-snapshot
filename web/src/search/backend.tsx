@@ -107,7 +107,7 @@ export function search(
                                         commit {
                                             oid
                                         }
-                                        diff
+                                        rawDiff
                                     }
                                 }
                                 alert {

@@ -55,6 +55,13 @@ export interface ChangesetDelta {
     head: string
 }
 
+export interface ChangesetAction {
+    user: string
+    timestamp: number
+    title: string
+    detail?: string
+}
+
 export interface ThreadSettings {
     providers?: string[]
     queries?: string[]
@@ -66,6 +73,6 @@ export interface ThreadSettings {
     webhooks?: [WebhookRule]
     actions?: { [id: string]: string | undefined }
 
-    previewChangesetDiff?: FileDiff[]
+    changesetActionDescriptions?: ChangesetAction[]
     deltas?: ChangesetDelta[]
 }

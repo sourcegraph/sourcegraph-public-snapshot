@@ -108,12 +108,9 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                     throw new Error('no active code action')
                 }
                 setCreatedThreadOrLoading(
-                    await createChangesetFromCodeAction(
-                        { extensionsController },
-                        diagnostic,
-                        codeAction,
-                        creationStatus
-                    )
+                    await createChangesetFromCodeAction({ extensionsController }, diagnostic, codeAction, {
+                        status: creationStatus,
+                    })
                 )
                 setJustCreated(true)
                 setTimeout(() => setJustCreated(false), 2500)
