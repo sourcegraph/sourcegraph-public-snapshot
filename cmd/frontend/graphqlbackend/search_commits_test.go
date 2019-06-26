@@ -3,7 +3,9 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"reflect"
+	"regexp"
 	"strconv"
 	"testing"
 	"time"
@@ -122,5 +124,42 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 	}
 	if want := []string{"foo", `alice@example\.com`, `alice@example\.org`}; !reflect.DeepEqual(x, want) {
 		t.Errorf("got %q, want %q", x, want)
+	}
+}
+
+func Test_highlightMatches(t *testing.T) {
+	type args struct {
+		pattern *regexp.Regexp
+		data    []byte
+	}
+	tests := []struct {
+		name string
+		args args
+		want *highlightedString
+	}{
+		{
+			name: "",
+			args: args {
+				pattern: regexp.MustCompile(`行空`),
+				data: []byte(`加一行空白`),
+			},
+			want: &highlightedString{
+				value: "加一行空白",
+				highlights: []*highlightedRange {
+					{
+						line: 1,
+						character: 2,
+						length: 2,
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := highlightMatches(tt.args.pattern, tt.args.data); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("highlightMatches() = %v, want %v", spew.Sdump(got), spew.Sdump(tt.want))
+			}
+		})
 	}
 }
