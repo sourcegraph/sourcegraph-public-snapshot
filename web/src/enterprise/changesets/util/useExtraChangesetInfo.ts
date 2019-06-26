@@ -80,6 +80,10 @@ function queryChangeset(threadID: string): Observable<GQL.IChangeset> {
                                 fileDiffs {
                                     nodes {
                                         ...FileDiffFields
+                                        newFile {
+                                            path
+                                            content
+                                        }
                                     }
                                     totalCount
                                     pageInfo {

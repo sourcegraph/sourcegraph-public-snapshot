@@ -30,7 +30,7 @@ export class ExtRoots implements ExtRootsAPI, ProxyValue {
             roots.map(plain => ({
                 ...plain,
                 uri: new URL(plain.uri),
-                baseUri: plain.uri ? new URL(plain.uri) : undefined,
+                baseUri: plain.baseUri ? new URL(plain.baseUri) : undefined,
             }))
         )
         this.changes.next()

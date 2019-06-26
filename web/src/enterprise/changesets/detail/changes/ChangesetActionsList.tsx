@@ -12,6 +12,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
     xchangeset: GQL.IChangeset
     threadSettings: ThreadSettings
 
+    className?: string
     location: H.Location
     history: H.History
     isLightTheme: boolean
@@ -20,9 +21,9 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 /**
  * A list of actions run in a changeset.
  */
-export const ChangesetActionsList: React.FunctionComponent<Props> = ({ threadSettings }) =>
+export const ChangesetActionsList: React.FunctionComponent<Props> = ({ threadSettings, className = '' }) =>
     threadSettings.changesetActionDescriptions && threadSettings.changesetActionDescriptions.length > 0 ? (
-        <div className="changeset-actions-list">
+        <div className={`changeset-actions-list ${className}`}>
             <ul className="list-group mb-4">
                 {threadSettings.changesetActionDescriptions.map((a, i) => (
                     <li key={i} className="list-group-item d-flex align-items-start">
