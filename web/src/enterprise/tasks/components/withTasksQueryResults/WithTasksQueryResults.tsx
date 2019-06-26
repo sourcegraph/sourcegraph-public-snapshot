@@ -15,7 +15,7 @@ export interface TasksQueryResultProps {
     tasksOrError: typeof LOADING | DiagnosticInfo[] | ErrorLike
 }
 
-interface Props extends Pick<QueryParameterProps, 'query'>, ExtensionsControllerProps {
+interface Props extends Partial<Pick<QueryParameterProps, 'query'>>, ExtensionsControllerProps {
     children: (props: TasksQueryResultProps) => JSX.Element | null
 }
 

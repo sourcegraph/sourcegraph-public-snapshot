@@ -39,7 +39,11 @@ function startDiagnostics(): Unsubscribable {
             .pipe(
                 startWith(void 0),
                 map(() => sourcegraph.workspace.roots),
-                switchMap(async () => {
+                switchMap(async roots => {
+                    if (roots.length > 0) {
+                        return of([]) // TODO!(sqs): dont run in comparison mode
+                    }
+
                     const results = flatten(
                         await from(
                             memoizedFindTextInFiles(
