@@ -25,7 +25,7 @@ type RepositoryComparisonInput struct {
 	Head *string
 }
 
-func NewRepositoryComparison(ctx context.Context, r *repositoryResolver, args *RepositoryComparisonInput) (*repositoryComparisonResolver, error) {
+func NewRepositoryComparison(ctx context.Context, r *repositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
 	var baseRevspec, headRevspec string
 	if args.Base == nil {
 		baseRevspec = "HEAD"
@@ -70,7 +70,7 @@ func NewRepositoryComparison(ctx context.Context, r *repositoryResolver, args *R
 		return nil, err
 	}
 
-	return &repositoryComparisonResolver{
+	return &RepositoryComparisonResolver{
 		baseRevspec: baseRevspec,
 		headRevspec: headRevspec,
 		base:        base,
@@ -79,17 +79,17 @@ func NewRepositoryComparison(ctx context.Context, r *repositoryResolver, args *R
 	}, nil
 }
 
-func (r *repositoryResolver) Comparison(ctx context.Context, args *RepositoryComparisonInput) (*repositoryComparisonResolver, error) {
+func (r *repositoryResolver) Comparison(ctx context.Context, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
 	return NewRepositoryComparison(ctx, r, args)
 }
 
-type repositoryComparisonResolver struct {
+type RepositoryComparisonResolver struct {
 	baseRevspec, headRevspec string
 	base, head               *gitCommitResolver
 	repo                     *repositoryResolver
 }
 
-func (r *repositoryComparisonResolver) Range() *gitRevisionRange {
+func (r *RepositoryComparisonResolver) Range() *gitRevisionRange {
 	return &gitRevisionRange{
 		expr:      r.baseRevspec + "..." + r.headRevspec,
 		base:      &gitRevSpec{expr: &gitRevSpecExpr{expr: r.baseRevspec, repo: r.repo}},
@@ -98,7 +98,7 @@ func (r *repositoryComparisonResolver) Range() *gitRevisionRange {
 	}
 }
 
-func (r *repositoryComparisonResolver) Commits(args *struct {
+func (r *RepositoryComparisonResolver) Commits(args *struct {
 	First *int32
 }) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
@@ -108,7 +108,7 @@ func (r *repositoryComparisonResolver) Commits(args *struct {
 	}
 }
 
-func (r *repositoryComparisonResolver) FileDiffs(args *struct {
+func (r *RepositoryComparisonResolver) FileDiffs(args *struct {
 	First *int32
 }) *fileDiffConnectionResolver {
 	return &fileDiffConnectionResolver{
@@ -118,7 +118,7 @@ func (r *repositoryComparisonResolver) FileDiffs(args *struct {
 }
 
 type fileDiffConnectionResolver struct {
-	cmp   *repositoryComparisonResolver // {base,head}{,RevSpec} and repo
+	cmp   *RepositoryComparisonResolver // {base,head}{,RevSpec} and repo
 	first *int32
 
 	// cache result because it is used by multiple fields
@@ -261,7 +261,7 @@ func (r *fileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error
 
 type fileDiffResolver struct {
 	fileDiff *diff.FileDiff
-	cmp      *repositoryComparisonResolver // {base,head}{,RevSpec} and repo
+	cmp      *RepositoryComparisonResolver // {base,head}{,RevSpec} and repo
 }
 
 func (r *fileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
