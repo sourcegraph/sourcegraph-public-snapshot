@@ -49,7 +49,7 @@ func TestNodeResolverTo(t *testing.T) {
 		&UserResolver{},
 		&OrgResolver{},
 		&organizationInvitationResolver{},
-		&gitCommitResolver{},
+		&GitCommitResolver{},
 		&savedSearchResolver{},
 		&siteResolver{},
 	}

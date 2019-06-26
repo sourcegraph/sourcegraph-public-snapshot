@@ -67,7 +67,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*git.Commi
 	return r.commits, r.err
 }
 
-func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*gitCommitResolver, error) {
+func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitResolver, error) {
 	commits, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*gitCommitRe
 		commits = commits[:*r.first]
 	}
 
-	resolvers := make([]*gitCommitResolver, len(commits))
+	resolvers := make([]*GitCommitResolver, len(commits))
 	for i, commit := range commits {
 		resolvers[i] = toGitCommitResolver(r.repo, commit)
 	}
