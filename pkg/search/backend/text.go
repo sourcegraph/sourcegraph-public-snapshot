@@ -107,7 +107,7 @@ func (c *Zoekt) start() {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		listResp, listErr := c.Client.List(ctx, &zoektquery.Const{Value: true})
 		cancel()
 

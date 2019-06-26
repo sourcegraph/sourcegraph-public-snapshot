@@ -895,7 +895,9 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		if err != nil {
 			// Don't hard fail if index is not available yet.
 			tr.LogFields(otlog.String("indexErr", err.Error()))
-			log15.Warn("zoektIndexedRepos failed", "error", err)
+			if ctx.Err() == nil {
+				log15.Warn("zoektIndexedRepos failed", "error", err)
+			}
 			common.indexUnavailable = true
 			err = nil
 		}
