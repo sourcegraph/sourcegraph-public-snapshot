@@ -21,6 +21,7 @@ describe('StatusMessagesNavItem', () => {
             __typename: 'StatusMessage',
             type: GQL.StatusMessageType.CLONING,
             message: 'Currently cloning repositories...',
+            metadata: [],
         }
 
         const fetchMessages = () => of([message])

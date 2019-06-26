@@ -12,7 +12,8 @@
     }
     &__entry {
         padding: 0.5rem 1rem;
-        white-space: normal;
+        word-wrap: break-word;
+        white-space: pre-line;
         &-link {
             margin-bottom: 0;
         }

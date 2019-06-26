@@ -145,7 +145,13 @@ type SurveyResponse struct {
 	CreatedAt time.Time
 }
 
+type StatusMessageMetadata struct {
+	Name  string
+	Value string
+}
+
 type StatusMessage struct {
-	Message string
-	Type    string
+	Message  string
+	Type     string
+	Metadata []StatusMessageMetadata
 }

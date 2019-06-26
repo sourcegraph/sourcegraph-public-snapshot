@@ -178,11 +178,18 @@ type StatusMessageType string
 
 const (
 	CloningStatusMessage StatusMessageType = "CLONING"
+	SyncingErrorMessage  StatusMessageType = "SYNCERROR"
 )
 
+type StatusMessageMetadata struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
 type StatusMessage struct {
-	Message string            `json:"message"`
-	Type    StatusMessageType `json:"type"`
+	Message  string                  `json:"message"`
+	Type     StatusMessageType       `json:"type"`
+	Metadata []StatusMessageMetadata `json":metadata"`
 }
 
 type StatusMessagesResponse struct {

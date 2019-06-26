@@ -3688,6 +3688,13 @@ type ProductSubscriptionEvent {
 # The type of a StatusMessage
 enum StatusMessageType {
     CLONING
+    SYNCERROR
+}
+
+# A single metadata element attached to a statusmessage
+type StatusMessageMetadata {
+    name: String!
+    value: String!
 }
 
 # A status message
@@ -3696,5 +3703,7 @@ type StatusMessage {
     message: String!
     # The type.
     type: StatusMessageType!
+    # List of metadata
+    metadata: [StatusMessageMetadata!]!
 }
 `

@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -21,6 +22,12 @@ type Syncer struct {
 	// FailFullSync prevents Sync from running. This should only be true for
 	// Sourcegraph.com
 	FailFullSync bool
+
+	// LastSourcerError contains the last error returned by the Sourcer in each
+	// Sync. It's reset with each Sync and if the Sourcer produced no error,
+	// it's set to nil.
+	multiSourceErr   *MultiSourceError
+	multiSourceErrMu sync.Mutex
 
 	store   Store
 	sourcer Sourcer
@@ -310,6 +317,9 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 	}
 
 	srcs, err := s.sourcer(svcs...)
+	if multiSourceErr, ok := err.(*MultiSourceError); ok {
+		s.setMultiSourceErr(multiSourceErr)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -317,7 +327,24 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 	ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
 	defer cancel()
 
-	return srcs.ListRepos(ctx)
+	repos, err := srcs.ListRepos(ctx)
+	if multiSourceErr, ok := err.(*MultiSourceError); ok {
+		s.setMultiSourceErr(multiSourceErr)
+	}
+
+	return repos, err
+}
+
+func (s *Syncer) setMultiSourceErr(err *MultiSourceError) {
+	s.multiSourceErrMu.Lock()
+	s.multiSourceErr = err
+	s.multiSourceErrMu.Unlock()
+}
+
+func (s *Syncer) MultiSourceError() *MultiSourceError {
+	s.multiSourceErrMu.Lock()
+	defer s.multiSourceErrMu.Unlock()
+	return s.multiSourceErr
 }
 
 func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *error)) {
