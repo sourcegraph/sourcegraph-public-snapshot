@@ -74,6 +74,67 @@ func main() {
 		}
 	}
 
+	// addDockerImageStep adds a build step for a given app.
+	// If the app is not in the cmd directory, it is assumed to be from the open source repo.
+	addDockerImageStep := func(app string, insiders bool) {
+		cmds := []bk.StepOpt{
+			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
+		}
+
+		cmdDir := "cmd/" + app
+		if _, err := os.Stat(filepath.Join("enterprise", cmdDir)); err != nil {
+			fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
+		} else {
+			cmds = append(cmds, bk.Cmd("pushd enterprise"))
+		}
+
+		preBuildScript := cmdDir + "/pre-build.sh"
+		if _, err := os.Stat(preBuildScript); err == nil {
+			cmds = append(cmds, bk.Cmd(preBuildScript))
+		}
+
+		image := "sourcegraph/" + app
+
+		getBuildScript := func() string {
+			buildScriptByApp := map[string]string{
+				"symbols": "env BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImage",
+				// The server image was built prior to e2e tests in a previous step.
+				"server": fmt.Sprintf("docker tag %s:%s_candidate %s:%s", image, version, image, version),
+			}
+			if buildScript, ok := buildScriptByApp[app]; ok {
+				return buildScript
+			}
+			return cmdDir + "/build.sh"
+		}
+
+		cmds = append(cmds,
+			bk.Env("IMAGE", image+":"+version),
+			bk.Env("VERSION", version),
+			bk.Cmd(getBuildScript()),
+		)
+
+		if app != "server" || taggedRelease {
+			cmds = append(cmds,
+				bk.Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
+			)
+		}
+
+		if app == "server" && releaseBranch {
+			cmds = append(cmds,
+				bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s-insiders", image, version, image, branch)),
+				bk.Cmd(fmt.Sprintf("docker push %s:%s-insiders", image, branch)),
+			)
+		}
+
+		if insiders {
+			cmds = append(cmds,
+				bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", image, version, image)),
+				bk.Cmd(fmt.Sprintf("docker push %s:insiders", image)),
+			)
+		}
+		pipeline.AddStep(":docker:", cmds...)
+	}
+
 	isPR := !isBextReleaseBranch &&
 		!releaseBranch &&
 		!taggedRelease &&
@@ -100,6 +161,12 @@ func main() {
 				bk.Cmd("./dev/check/docsite.sh"))
 			return
 		}
+	}
+
+	if strings.HasPrefix(branch, "docker-images-patch-notest/") {
+		version = version + "_patch"
+		addDockerImageStep(branch[27:], false)
+		return
 	}
 
 	if !isBextReleaseBranch {
@@ -195,73 +262,6 @@ func main() {
 		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
 		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
-
-	// addDockerImageStep adds a build step for a given app.
-	// If the app is not in the cmd directory, it is assumed to be from the open source repo.
-	addDockerImageStep := func(app string, insiders bool) {
-		cmds := []bk.StepOpt{
-			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
-		}
-
-		cmdDir := "cmd/" + app
-		if _, err := os.Stat(filepath.Join("enterprise", cmdDir)); err != nil {
-			fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
-		} else {
-			cmds = append(cmds, bk.Cmd("pushd enterprise"))
-		}
-
-		preBuildScript := cmdDir + "/pre-build.sh"
-		if _, err := os.Stat(preBuildScript); err == nil {
-			cmds = append(cmds, bk.Cmd(preBuildScript))
-		}
-
-		image := "sourcegraph/" + app
-
-		getBuildScript := func() string {
-			buildScriptByApp := map[string]string{
-				"symbols": "env BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImage",
-				// The server image was built prior to e2e tests in a previous step.
-				"server": fmt.Sprintf("docker tag %s:%s_candidate %s:%s", image, version, image, version),
-			}
-			if buildScript, ok := buildScriptByApp[app]; ok {
-				return buildScript
-			}
-			return cmdDir + "/build.sh"
-		}
-
-		cmds = append(cmds,
-			bk.Env("IMAGE", image+":"+version),
-			bk.Env("VERSION", version),
-			bk.Cmd(getBuildScript()),
-		)
-
-		if app != "server" || taggedRelease {
-			cmds = append(cmds,
-				bk.Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
-			)
-		}
-
-		if app == "server" && releaseBranch {
-			cmds = append(cmds,
-				bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s-insiders", image, version, image, branch)),
-				bk.Cmd(fmt.Sprintf("docker push %s:%s-insiders", image, branch)),
-			)
-		}
-
-		if insiders {
-			cmds = append(cmds,
-				bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", image, version, image)),
-				bk.Cmd(fmt.Sprintf("docker push %s:insiders", image)),
-			)
-		}
-		pipeline.AddStep(":docker:", cmds...)
-	}
-
-	if strings.HasPrefix(branch, "docker-images-patch-notest/") {
-		version = version + "_patch"
-		addDockerImageStep(branch[27:], false)
-		return
-	}
 
 	addBrowserExtensionReleaseSteps := func() {
 		// Run e2e tests
