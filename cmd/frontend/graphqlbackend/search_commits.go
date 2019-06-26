@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/xeonx/timeago"
@@ -400,13 +401,22 @@ func displayRepoName(repoPath string) string {
 func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
 	const maxMatchesPerLine = 25 // arbitrary
 
+	byteToChar := make(map[int]int)
+	var b, c int
+	bytes.Map(func(r rune) rune {
+		byteToChar[b] = c
+		b += utf8.RuneLen(r)
+		c++
+		return r
+	}, data)
+
 	var highlights []*highlightedRange
 	for i, line := range bytes.Split(data, []byte("\n")) {
 		for _, match := range pattern.FindAllIndex(bytes.ToLower(line), maxMatchesPerLine) {
 			highlights = append(highlights, &highlightedRange{
 				line:      int32(i + 1),
-				character: int32(match[0]),
-				length:    int32(match[1] - match[0]),
+				character: int32(byteToChar[match[0]]),
+				length:    int32(byteToChar[match[1]] - byteToChar[match[0]]),
 			})
 		}
 	}
