@@ -1,4 +1,5 @@
 import H from 'history'
+import PencilIcon from 'mdi-react/PencilIcon'
 import React, { useCallback, useState } from 'react'
 import { WithLinkPreviews } from '../../../../../../shared/src/components/linkPreviews/WithLinkPreviews'
 import { Markdown } from '../../../../../../shared/src/components/Markdown'
@@ -56,8 +57,13 @@ export const ThreadDescription: React.FunctionComponent<Props> = ({ thread, onTh
                             </strong>{' '}
                             <Timestamp date={comment.updatedAt} />
                         </small>
-                        <button type="button" className="btn btn-link btn-sm ml-2 py-0 px-1" onClick={onEditClick}>
-                            Edit
+                        <button
+                            type="button"
+                            className="btn btn-link btn-sm text-muted ml-2 py-0 px-1"
+                            onClick={onEditClick}
+                            aria-label="Edit"
+                        >
+                            <PencilIcon className="icon-inline small" />
                         </button>
                     </div>
                 </>

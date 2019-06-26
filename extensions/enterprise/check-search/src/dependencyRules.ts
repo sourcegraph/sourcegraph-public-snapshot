@@ -51,6 +51,7 @@ function startDiagnostics(): Unsubscribable {
                                 {
                                     repositories: {
                                         includes: [REPO_INCLUDE],
+                                        excludes: ['hackathon'],
                                         type: 'regexp',
                                     },
                                     files: {

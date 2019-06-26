@@ -1,4 +1,5 @@
 import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { ChangesetIcon } from '../../../changesets/icons'
 import { ChecksIcon } from '../../../checks/icons'
 import { ThreadsIcon } from '../../icons'
 
@@ -7,16 +8,21 @@ import { ThreadsIcon } from '../../icons'
  */
 export interface ThreadStatusFields extends Pick<GQL.IDiscussionThread, 'status' | 'type'> {}
 
-type ThreadStatusColor = 'success' | 'danger' | 'info'
+type ThreadStatusColor = 'success' | 'danger' | 'info' | 'secondary'
 
 const STATUS_COLOR: Record<GQL.ThreadStatus, ThreadStatusColor> = {
     OPEN_ACTIVE: 'success',
     INACTIVE: 'info',
     CLOSED: 'danger',
+    PREVIEW: 'secondary',
 }
 
 const threadIcon = (thread: ThreadStatusFields): React.ComponentType<{ className?: string }> =>
-    thread.type === GQL.ThreadType.CHECK ? ChecksIcon : ThreadsIcon
+    thread.type === GQL.ThreadType.CHECK
+        ? ChecksIcon
+        : thread.type === GQL.ThreadType.CHANGESET
+        ? ChangesetIcon
+        : ThreadsIcon
 
 const statusText = (thread: ThreadStatusFields) => {
     switch (thread.status) {
@@ -26,6 +32,8 @@ const statusText = (thread: ThreadStatusFields) => {
             return 'Inactive'
         case GQL.ThreadStatus.CLOSED:
             return 'Closed'
+        case GQL.ThreadStatus.PREVIEW:
+            return 'Preview'
     }
 }
 

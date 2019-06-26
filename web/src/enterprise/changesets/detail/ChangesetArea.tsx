@@ -51,6 +51,7 @@ export const ChangesetArea: React.FunctionComponent<Props> = props => {
                 <ErrorBoundary location={props.location}>
                     <ChangesetOverview
                         {...context}
+                        xchangeset={xchangeset}
                         location={props.location}
                         history={props.history}
                         className="container flex-0 pb-3"
@@ -117,7 +118,12 @@ export const ChangesetArea: React.FunctionComponent<Props> = props => {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <ChangesetChangesPage {...context} {...routeComponentProps} xchangeset={xchangeset} />
+                                <ChangesetChangesPage
+                                    {...context}
+                                    {...routeComponentProps}
+                                    xchangeset={xchangeset}
+                                    className="container mt-3"
+                                />
                             )}
                         />
                         <Route

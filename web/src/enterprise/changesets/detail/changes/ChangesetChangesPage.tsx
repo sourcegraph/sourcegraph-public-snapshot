@@ -12,6 +12,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
     xchangeset: GQL.IChangeset
     threadSettings: ThreadSettings
 
+    className?: string
     history: H.History
     location: H.Location
     isLightTheme: boolean
@@ -20,8 +21,13 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 /**
  * The changes (file diffs) page for a changeset.
  */
-export const ChangesetChangesPage: React.FunctionComponent<Props> = ({ thread, xchangeset, ...props }) => (
-    <div className="changeset-changes-page">
+export const ChangesetChangesPage: React.FunctionComponent<Props> = ({
+    thread,
+    xchangeset,
+    className = '',
+    ...props
+}) => (
+    <div className={`changeset-changes-page ${className}`}>
         <WithQueryParameter defaultQuery={/* TODO!(sqs) */ ''} history={props.history} location={props.location}>
             {({ query, onQueryChange }) => (
                 <ChangesetFilesList

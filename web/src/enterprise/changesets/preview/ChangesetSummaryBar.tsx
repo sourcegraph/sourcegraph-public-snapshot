@@ -36,7 +36,7 @@ const ITEMS: SummaryItem[] = [
         icon: ActionsIcon,
         count: countChangesetActions,
     },
-    { noun: 'review task', icon: TasksIcon, count: null },
+    { noun: 'Review task', icon: TasksIcon, count: null },
     {
         noun: 'repository affected',
         pluralNoun: 'repositories affected',
