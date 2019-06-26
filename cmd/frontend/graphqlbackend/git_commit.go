@@ -28,7 +28,7 @@ func gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, erro
 }
 
 type GitCommitResolver struct {
-	repo *repositoryResolver
+	repo *RepositoryResolver
 
 	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
@@ -43,7 +43,7 @@ type GitCommitResolver struct {
 	parents   []api.CommitID
 }
 
-func toGitCommitResolver(repo *repositoryResolver, commit *git.Commit) *GitCommitResolver {
+func toGitCommitResolver(repo *RepositoryResolver, commit *git.Commit) *GitCommitResolver {
 	authorResolver := toSignatureResolver(&commit.Author)
 	return &GitCommitResolver{
 		repo: repo,
@@ -78,7 +78,7 @@ func (r *GitCommitResolver) ID() graphql.ID {
 	return marshalGitCommitID(r.repo.ID(), r.oid)
 }
 
-func (r *GitCommitResolver) Repository() *repositoryResolver { return r.repo }
+func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repo }
 
 func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
 
