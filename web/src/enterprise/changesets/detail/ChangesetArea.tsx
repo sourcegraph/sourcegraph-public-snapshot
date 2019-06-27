@@ -15,6 +15,7 @@ import { useExtraChangesetInfo } from '../util/useExtraChangesetInfo'
 import { ChangesetActionsList } from './changes/ChangesetActionsList'
 import { ChangesetChangesPage } from './changes/ChangesetChangesPage'
 import { ChangesetCommitsList } from './changes/ChangesetCommitsList'
+import { ChangesetRepositoriesList } from './changes/ChangesetRepositoriesList'
 import { ChangesetTasksList } from './changes/ChangesetTasksList'
 import { ChangesetAreaNavbar } from './navbar/ChangesetAreaNavbar'
 import { ChangesetOverview } from './overview/ChangesetOverview'
@@ -96,7 +97,7 @@ export const ChangesetArea: React.FunctionComponent<Props> = props => {
                                     {...context}
                                     {...routeComponentProps}
                                     xchangeset={xchangeset}
-                                    className="container mt-3"
+                                    className="container mt-5"
                                 />
                             )}
                         />
@@ -105,11 +106,12 @@ export const ChangesetArea: React.FunctionComponent<Props> = props => {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <ChangesetCommitsList
+                                <ChangesetRepositoriesList
                                     {...context}
                                     {...routeComponentProps}
                                     xchangeset={xchangeset}
-                                    className="container mt-3"
+                                    showCommits={true}
+                                    className="container mt-5"
                                 />
                             )}
                         />
@@ -122,7 +124,7 @@ export const ChangesetArea: React.FunctionComponent<Props> = props => {
                                     {...context}
                                     {...routeComponentProps}
                                     xchangeset={xchangeset}
-                                    className="container mt-3"
+                                    className="container mt-5"
                                 />
                             )}
                         />
@@ -132,7 +134,7 @@ export const ChangesetArea: React.FunctionComponent<Props> = props => {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <ThreadSettingsPage {...context} {...routeComponentProps} className="container mt-3" />
+                                <ThreadSettingsPage {...context} {...routeComponentProps} className="container mt-5" />
                             )}
                         />
                         <Route key="hardcoded-key" component={NotFoundPage} />

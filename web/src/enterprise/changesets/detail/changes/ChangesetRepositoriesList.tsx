@@ -21,6 +21,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 
     showCommits?: boolean
 
+    className?: string
     location: H.Location
     history: H.History
     isLightTheme: boolean
@@ -29,8 +30,12 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 /**
  * A list of affected repositories in a changeset.
  */
-export const ChangesetRepositoriesList: React.FunctionComponent<Props> = ({ xchangeset, showCommits }) => (
-    <div className="changeset-repositories-list">
+export const ChangesetRepositoriesList: React.FunctionComponent<Props> = ({
+    xchangeset,
+    showCommits,
+    className = '',
+}) => (
+    <div className={`changeset-repositories-list ${className}`}>
         <ul className="list-group mb-4">
             {xchangeset.repositoryComparisons.map((c, i) => (
                 <li key={i} className="list-group-item">
