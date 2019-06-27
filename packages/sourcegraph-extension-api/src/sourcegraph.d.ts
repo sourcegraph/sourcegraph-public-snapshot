@@ -990,6 +990,64 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * The scopes for a checklist.
+     */
+    export enum ChecklistScope {
+        /**
+         * A global checklist applies to all repositories on Sourcegraph that are accessible to the
+         * user.
+         */
+        Global = 'global',
+    }
+
+    /**
+     * A checklist item is an item in a checklist for a particular scope. It describes an action
+     * that should be taken.
+     */
+    export interface ChecklistItem {
+        /**
+         * The title of the checklist item.
+         */
+        title: string
+    }
+
+    /**
+     * A checklist provider provides a checklist for a particular scope.
+     *
+     * Its results are intentionally not persisted because they can include information derived from
+     * multiple repositories (which are the unit of permissioning).
+     */
+    export interface ChecklistProvider {
+        /**
+         * Provide a checklist for the given scope.
+         *
+         * @param scope The scope to provide a checklist for.
+         * @param context Context carrying additional information.
+         * @return An array of commands, quick fixes, or refactorings or a thenable of such. The
+         * lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideChecklistItems(scope: ChecklistScope.Global | WorkspaceRoot): ProviderResult<ChecklistItem[]>
+    }
+
+    /**
+     * A checklist is a list of actions that should be taken at a particular scope.
+     */
+    export namespace checklist {
+        /**
+         * Register a checklist provider.
+         *
+         * Multiple providers can be registered. In that case, providers are queried in parallel and
+         * the results are merged. A failing provider (rejected promise or exception) will not cause
+         * a failure of the whole operation.
+         *
+         * @param type The checklist type that this provider is registered for.
+         * @param provider A checklist provider.
+         * @return An unsubscribable to unregister this provider.
+         */
+        export function registerChecklistProvider(type: string, provider: ChecklistProvider): Unsubscribable
+    }
+
+    /**
      * The full configuration value, containing all settings for the current subject.
      *
      * @template C The configuration schema.
