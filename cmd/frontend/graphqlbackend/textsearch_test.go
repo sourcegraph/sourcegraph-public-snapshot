@@ -631,12 +631,6 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 	}
 }
 
-type fakeZoektClient struct{ repos *zoekt.RepoList }
-
-func (z *fakeZoektClient) List(ctx context.Context) (*zoekt.RepoList, error) {
-	return z.repos, nil
-}
-
 func Test_zoektIndexedRepos(t *testing.T) {
 	repos := makeRepositoryRevisions(
 		"foo/indexed-one@",
