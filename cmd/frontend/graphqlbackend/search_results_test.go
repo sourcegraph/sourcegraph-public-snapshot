@@ -130,7 +130,9 @@ func TestSearchResults(t *testing.T) {
 }
 
 func BenchmarkSearchResults(b *testing.B) {
+	// Repositories in the database
 	var repos []*types.Repo
+	// Repositories indexed by Zoekt
 	var zoektRepos []*zoekt.RepoListEntry
 
 	for i := 1; i <= 5000; i++ {
@@ -157,25 +159,30 @@ func BenchmarkSearchResults(b *testing.B) {
 		})
 	}
 
-	z := &searchbackend.Zoekt{
-		Client: &fakeSearcher{
-			repos: &zoekt.RepoList{Repos: zoektRepos},
-			result: &zoekt.SearchResult{
-				Files: []zoekt.FileMatch{
-					{
-						Score:      0.0,
-						FileName:   "foobar.go",
-						Repository: "repo-1", // Important: this needs to match one name in `repos`
-						Branches:   []string{"master"},
-						LineMatches: []zoekt.LineMatch{
-							{
-								Line: nil,
-							},
-						},
-						Checksum: []byte{0, 1, 2},
-					},
+	// File matches in search result by Zoekt
+	var zoektFileMatches []zoekt.FileMatch
+	for i := 1; i <= 300; i++ {
+		repoName := fmt.Sprintf("repo-%d", i)
+		fileName := fmt.Sprintf("foobar-%d.go", i)
+
+		zoektFileMatches = append(zoektFileMatches, zoekt.FileMatch{
+			Score:      5.0,
+			FileName:   fileName,
+			Repository: repoName, // Important: this needs to match a name in `repos`
+			Branches:   []string{"master"},
+			LineMatches: []zoekt.LineMatch{
+				{
+					Line: nil,
 				},
 			},
+			Checksum: []byte{0, 1, 2},
+		})
+	}
+
+	z := &searchbackend.Zoekt{
+		Client: &fakeSearcher{
+			repos:  &zoekt.RepoList{Repos: zoektRepos},
+			result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
 	}
 
