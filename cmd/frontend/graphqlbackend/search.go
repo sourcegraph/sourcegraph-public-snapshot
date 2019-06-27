@@ -70,6 +70,7 @@ func (r *schemaResolver) Search(args *struct {
 	}
 	return &searchResolver{
 		query: q,
+		zoekt: IndexedSearch(),
 	}, nil
 }
 
@@ -94,6 +95,8 @@ type searchResolver struct {
 	repoResults               []*searchSuggestionResolver
 	repoOverLimit             bool
 	repoErr                   error
+
+	zoekt *searchbackend.Zoekt
 }
 
 // rawQuery returns the original query string input.
@@ -568,6 +571,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		Repos:           repos,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
+		Zoekt:           r.zoekt,
 	}
 	if err := args.Pattern.Validate(); err != nil {
 		return nil, err

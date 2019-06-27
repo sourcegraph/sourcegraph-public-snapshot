@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -256,6 +257,8 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 	defer func() { mockSearchFilesInRepo = nil }()
 
+	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{}}}
+
 	q, err := query.ParseAndCheck("foo")
 	if err != nil {
 		t.Fatal(err)
@@ -267,6 +270,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		},
 		Repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
 		Query: q,
+		Zoekt: zoekt,
 	}
 	results, common, err := searchFilesInRepos(context.Background(), args)
 	if err != nil {
@@ -295,6 +299,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		},
 		Repos: makeRepositoryRevisions("foo/no-rev@dev"),
 		Query: q,
+		Zoekt: zoekt,
 	}
 	_, _, err = searchFilesInRepos(context.Background(), args)
 	if !git.IsRevisionNotFound(errors.Cause(err)) {
@@ -359,12 +364,18 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 type fakeSearcher struct {
 	result *zoekt.SearchResult
 
+	repos *zoekt.RepoList
+
 	// Default all unimplemented zoekt.Searcher methods to panic.
 	zoekt.Searcher
 }
 
 func (ss *fakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	return ss.result, nil
+}
+
+func (ss *fakeSearcher) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error) {
+	return ss.repos, nil
 }
 
 type errorSearcher struct {
@@ -620,9 +631,9 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 	}
 }
 
-type fakeZoektBackend struct{ repos *zoekt.RepoList }
+type fakeZoektClient struct{ repos *zoekt.RepoList }
 
-func (z *fakeZoektBackend) ListAll(ctx context.Context) (*zoekt.RepoList, error) {
+func (z *fakeZoektClient) List(ctx context.Context) (*zoekt.RepoList, error) {
 	return z.repos, nil
 }
 
@@ -658,7 +669,7 @@ func Test_zoektIndexedRepos(t *testing.T) {
 		},
 	}
 
-	zoekt := &fakeZoektBackend{repos: zoektRepoList}
+	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: zoektRepoList}}
 	ctx := context.Background()
 
 	indexed, unindexed, indexedRevisions, err := zoektIndexedRepos(ctx, zoekt, repos)
@@ -716,14 +727,14 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 	}
 
 	repos := makeRepositoryRevisions(repoNames...)
-	zoekt := &fakeZoektBackend{repos: &zoekt.RepoList{Repos: zoektRepos}}
+	z := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{Repos: zoektRepos}}}
 	ctx := context.Background()
 
 	b.ResetTimer()
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		_, _, _, _ = zoektIndexedRepos(ctx, zoekt, repos)
+		_, _, _, _ = zoektIndexedRepos(ctx, z, repos)
 	}
 }
 

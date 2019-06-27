@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
+	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -809,7 +810,7 @@ type zoektBackend interface {
 //
 // Additionally, it returns a mapping of `indexed` repositories to the exact
 // Git commit of HEAD that is indexed.
-func zoektIndexedRepos(ctx context.Context, z zoektBackend, repos []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, err error) {
+func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, repos []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, err error) {
 	for _, repoRev := range repos {
 		// We search HEAD using zoekt
 		if revspecs := repoRev.RevSpecs(); len(revspecs) > 0 {
@@ -889,9 +890,9 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		searcherRepos    []*search.RepositoryRevisions = args.Repos
 		indexedRevisions map[*search.RepositoryRevisions]string
 	)
-	if IndexedSearch().Enabled() {
+	if args.Zoekt.Enabled() {
 		var err error
-		zoektRepos, searcherRepos, indexedRevisions, err = zoektIndexedRepos(ctx, IndexedSearch(), args.Repos)
+		zoektRepos, searcherRepos, indexedRevisions, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos)
 		if err != nil {
 			// Don't hard fail if index is not available yet.
 			tr.LogFields(otlog.String("indexErr", err.Error()))
@@ -920,11 +921,11 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		switch parseYesNoOnly(index) {
 		case Yes, True:
 			// default
-			if IndexedSearch().Enabled() {
+			if args.Zoekt.Enabled() {
 				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
 			}
 		case Only:
-			if !IndexedSearch().Enabled() {
+			if !args.Zoekt.Enabled() {
 				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
 			}
 			common.missing = make([]*types.Repo, len(searcherRepos))
@@ -981,7 +982,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		query := args.Pattern
 		k := zoektResultCountFactor(len(zoektRepos), query)
 		opts := zoektSearchOpts(k, query)
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, indexedRevisions, args.UseFullDeadline, IndexedSearch().Client, opts, time.Since)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, indexedRevisions, args.UseFullDeadline, args.Zoekt.Client, opts, time.Since)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {

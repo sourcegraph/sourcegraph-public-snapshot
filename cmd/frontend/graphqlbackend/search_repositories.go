@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 )
 
 var mockSearchRepositories func(args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error)
@@ -56,7 +57,7 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 
 		if pattern.MatchString(string(repo.Repo.Name)) {
 			if len(args.Pattern.FilePatternsReposMustExclude) > 0 || len(args.Pattern.FilePatternsReposMustInclude) > 0 {
-				shouldBeAdded, err := repoShouldBeAdded(ctx, repo, args.Pattern)
+				shouldBeAdded, err := repoShouldBeAdded(ctx, args.Zoekt, repo, args.Pattern)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -75,7 +76,7 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 
 // repoShouldBeAdded determines whether a repository should be included in the result set based on whether the repository fits in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func repoShouldBeAdded(ctx context.Context, repo *search.RepositoryRevisions, pattern *search.PatternInfo) (bool, error) {
+func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *search.RepositoryRevisions, pattern *search.PatternInfo) (bool, error) {
 	shouldBeAdded := true
 	if len(pattern.FilePatternsReposMustInclude) > 0 {
 		for _, pattern := range pattern.FilePatternsReposMustInclude {
@@ -84,7 +85,7 @@ func repoShouldBeAdded(ctx context.Context, repo *search.RepositoryRevisions, pa
 			if err != nil {
 				return false, err
 			}
-			newArgs := search.Args{Pattern: &p, Repos: []*search.RepositoryRevisions{repo}, Query: q, UseFullDeadline: true}
+			newArgs := search.Args{Pattern: &p, Repos: []*search.RepositoryRevisions{repo}, Query: q, UseFullDeadline: true, Zoekt: zoekt}
 			matches, _, err := searchFilesInRepos(ctx, &newArgs)
 			if err != nil {
 				return false, err
@@ -102,7 +103,7 @@ func repoShouldBeAdded(ctx context.Context, repo *search.RepositoryRevisions, pa
 			if err != nil {
 				return false, err
 			}
-			newArgs := search.Args{Pattern: &p, Repos: []*search.RepositoryRevisions{repo}, Query: q, UseFullDeadline: true}
+			newArgs := search.Args{Pattern: &p, Repos: []*search.RepositoryRevisions{repo}, Query: q, UseFullDeadline: true, Zoekt: zoekt}
 			matches, _, err := searchFilesInRepos(ctx, &newArgs)
 			if err != nil {
 				return false, err

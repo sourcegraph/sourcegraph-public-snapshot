@@ -792,6 +792,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		Repos:           repos,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
+		Zoekt:           r.zoekt,
 	}
 	if err := args.Pattern.Validate(); err != nil {
 		return nil, &badRequestError{err}
