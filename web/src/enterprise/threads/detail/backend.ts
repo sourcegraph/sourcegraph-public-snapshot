@@ -112,7 +112,7 @@ export const getCodeActions = memoizeObservable(
                         filePath: diagnostic.entry.path,
                     }),
                 },
-                range: diagnostic.range ? Range.fromPlain(diagnostic.range) : undefined,
+                range:  Range.fromPlain(diagnostic.range) ,
                 context: { diagnostics: [diagnostic] },
             })
         ).pipe(map(codeActions => codeActions || [])),

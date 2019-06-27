@@ -11,10 +11,10 @@ import { FileDiffHunks } from '../../../../repo/compare/FileDiffHunks'
 import { FileDiffNode } from '../../../../repo/compare/FileDiffNode'
 import { useEffectAsync } from '../../../../util/useEffectAsync'
 import { computeDiff, FileDiff } from '../../../threads/detail/changes/computeDiff'
-import { Task } from '../../task'
+import { Checklist } from '../../checklist'
 
 interface Props extends QueryParameterProps, ExtensionsControllerProps, PlatformContextProps {
-    task: Task
+    checklist: Checklist
 
     location: H.Location
     history: H.History
@@ -24,19 +24,19 @@ interface Props extends QueryParameterProps, ExtensionsControllerProps, Platform
 const LOADING: 'loading' = 'loading'
 
 /**
- * A list of changed files in a task.
+ * A list of changed files in a checklist.
  */
-export const TaskFilesList: React.FunctionComponent<Props> = ({ task, ...props }) => {
+export const ChecklistFilesList: React.FunctionComponent<Props> = ({ checklist, ...props }) => {
     const [fileDiffsOrError, setFileDiffsOrError] = useState<typeof LOADING | FileDiff[] | ErrorLike>(LOADING)
 
     useEffectAsync(async () => {
         try {
             // TODO!(sqs)
-            setFileDiffsOrError(await computeDiff(props.extensionsController, task.codeActions || []))
+            setFileDiffsOrError(await computeDiff(props.extensionsController, checklist.codeActions || []))
         } catch (err) {
             setFileDiffsOrError(asError(err))
         }
-    }, [props.extensionsController, task.codeActions])
+    }, [props.extensionsController, checklist.codeActions])
     if (fileDiffsOrError === LOADING) {
         return null // loading
     }
@@ -45,7 +45,7 @@ export const TaskFilesList: React.FunctionComponent<Props> = ({ task, ...props }
     }
 
     return (
-        <div className="task-files-list">
+        <div className="checklist-files-list">
             {fileDiffsOrError.map((fileDiff: GQL.IFileDiff, key: string) => (
                 <FileDiffNode
                     {...props}

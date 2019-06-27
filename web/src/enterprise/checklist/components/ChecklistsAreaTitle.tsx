@@ -1,5 +1,5 @@
 import React from 'react'
-import { TasksIcon } from '../icons'
+import { ChecklistsIcon } from '../icons'
 
 interface Props {
     className?: string
@@ -7,14 +7,14 @@ interface Props {
 }
 
 /**
- * The tasks area title.
+ * The checklist area title.
  *
  * // TODO!(sqs): dedupe with ChecksAreaTitle?
  */
-export const TasksAreaTitle: React.FunctionComponent<Props> = ({ className = '', primaryActions, children }) => (
+export const ChecklistsAreaTitle: React.FunctionComponent<Props> = ({ className = '', primaryActions, children }) => (
     <div className="d-flex align-items-center mb-3">
         <h1 className={`h3 mb-0 d-flex align-items-center ${className}`}>
-            <TasksIcon className="icon-inline mr-1" /> Tasks
+            <ChecklistsIcon className="icon-inline mr-1" /> Checklists
         </h1>
         {children}
         {primaryActions && (

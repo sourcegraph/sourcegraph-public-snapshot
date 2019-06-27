@@ -4,27 +4,27 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { HeroPage } from '../../../components/HeroPage'
-import { TaskArea } from '../detail/TaskArea'
-import { TasksListPage } from '../list/TasksListPage'
+import { ChecklistArea } from '../detail/ChecklistArea'
+import { ChecklistsListPage } from '../list/ChecklistsListPage'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle={`Sorry, the requested page was not found.`} />
 )
 
 /**
- * Properties passed to all page components in the tasks area.
+ * Properties passed to all page components in the checklist area.
  */
-export interface TasksAreaContext extends ExtensionsControllerProps, PlatformContextProps {
+export interface ChecklistsAreaContext extends ExtensionsControllerProps, PlatformContextProps {
     isLightTheme: boolean
 }
 
-export interface TasksAreaProps extends TasksAreaContext, RouteComponentProps<{}> {}
+export interface ChecklistsAreaProps extends ChecklistsAreaContext, RouteComponentProps<{}> {}
 
 /**
- * The global tasks area.
+ * The global checklist area.
  */
-export const TasksArea: React.FunctionComponent<TasksAreaProps> = ({ match, ...props }) => {
-    const context: TasksAreaContext = {
+export const ChecklistsArea: React.FunctionComponent<ChecklistsAreaProps> = ({ match, ...props }) => {
+    const context: ChecklistsAreaContext = {
         ...props,
     }
 
@@ -34,12 +34,12 @@ export const TasksArea: React.FunctionComponent<TasksAreaProps> = ({ match, ...p
                 path={match.url}
                 exact={true}
                 // tslint:disable-next-line:jsx-no-lambda
-                render={routeComponentProps => <TasksListPage {...routeComponentProps} {...context} />}
+                render={routeComponentProps => <ChecklistsListPage {...routeComponentProps} {...context} />}
             />
             <Route
-                path={`${match.url}/:taskID`}
+                path={`${match.url}/:checklistID`}
                 // tslint:disable-next-line:jsx-no-lambda
-                render={routeComponentProps => <TaskArea {...routeComponentProps} {...context} />}
+                render={routeComponentProps => <ChecklistArea {...routeComponentProps} {...context} />}
             />
             <Route key="hardcoded-key" component={NotFoundPage} />
         </Switch>

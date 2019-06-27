@@ -20,7 +20,7 @@ import { ChangesetCreationStatus, createChangesetFromCodeAction } from '../../..
 import { DiagnosticInfo, getCodeActions } from '../../../threads/detail/backend'
 import { WorkspaceEditPreview } from '../../../threads/detail/inbox/item/WorkspaceEditPreview'
 import { CreateChangesetFromCodeActionButton } from './CreateChangesetFromCodeActionButton'
-import { TasksListItemActions } from './TasksListItemActions'
+import { ChecklistsListItemActions } from './ChecklistsListItemActions'
 const LOADING: 'loading' = 'loading'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
@@ -35,9 +35,9 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 }
 
 /**
- * An item in a task list.
+ * An item in a checklist list.
  */
-export const TasksListItem: React.FunctionComponent<Props> = ({
+export const ChecklistsListItem: React.FunctionComponent<Props> = ({
     diagnostic,
     className = '',
     headerClassName = '',
@@ -155,7 +155,7 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                 ) : isErrorLike(codeActionsOrError) ? (
                     <span className="text-danger">{codeActionsOrError.message}</span>
                 ) : (
-                    <TasksListItemActions
+                    <ChecklistsListItemActions
                         {...props}
                         codeActions={codeActionsOrError}
                         activeCodeAction={activeCodeAction}
@@ -183,7 +183,7 @@ export const TasksListItem: React.FunctionComponent<Props> = ({
                             {...props}
                             workspaceEdit={activeCodeAction.edit}
                             extensionsController={extensionsController}
-                            className="tasks-list-item__workspace-edit-preview overflow-auto p-2 mb-3"
+                            className="checklists-list-item__workspace-edit-preview overflow-auto p-2 mb-3"
                         />
                         <div className="m-3">
                             {createdThreadOrLoading === undefined || createdThreadOrLoading === LOADING ? (

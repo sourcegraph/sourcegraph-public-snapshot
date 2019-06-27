@@ -74,7 +74,7 @@ export function fromDiagnostic(diag: sourcegraph.Diagnostic): clientType.Diagnos
 export function toDiagnostic(diag: clientType.Diagnostic): sourcegraph.Diagnostic {
     return {
         ...diag,
-        range: diag.range ? Range.fromPlain(diag.range) : undefined,
+        range: Range.fromPlain(diag.range),
     }
 }
 

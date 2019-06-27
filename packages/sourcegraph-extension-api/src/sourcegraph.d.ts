@@ -1360,10 +1360,9 @@ declare module 'sourcegraph' {
      */
     export interface Diagnostic {
         /**
-         * The range to which this diagnostic applies. If no range is given, it applies to the
-         * entire file.
+         * The range to which this diagnostic applies.
          */
-        readonly range?: Range
+        readonly range: Range
 
         /**
          * The human-readable message.
@@ -1545,7 +1544,7 @@ declare module 'sourcegraph' {
          */
         provideCodeActions(
             document: TextDocument,
-            range: Range | Selection | undefined,
+            range: Range | Selection,
             context: CodeActionContext
         ): ProviderResult<CodeAction[]>
     }

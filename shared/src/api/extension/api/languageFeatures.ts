@@ -104,16 +104,14 @@ export class ExtLanguageFeatures {
             toProxyableSubscribable(
                 provider.provideCodeActions(
                     await this.documents.getSync(textDocument.uri),
-                    rangeOrSelection
-                        ? Selection.isSelection(rangeOrSelection)
-                            ? Selection.fromPlain(rangeOrSelection)
-                            : Range.fromPlain(rangeOrSelection)
-                        : undefined,
+                    Selection.isSelection(rangeOrSelection)
+                        ? Selection.fromPlain(rangeOrSelection)
+                        : Range.fromPlain(rangeOrSelection),
                     {
                         ...context,
                         diagnostics: context.diagnostics.map(d => ({
                             ...d,
-                            range: d.range ? Range.fromPlain(d.range) : undefined,
+                            range: Range.fromPlain(d.range),
                         })),
                     }
                 ),

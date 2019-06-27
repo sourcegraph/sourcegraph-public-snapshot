@@ -15,10 +15,10 @@ interface Props {
 }
 
 /**
- * The filter control (dropdown and input field) for a list of tasks.
+ * The filter control (dropdown and input field) for a list of checklists.
  */
 // tslint:disable: jsx-no-lambda
-export const TasksListFilter: React.FunctionComponent<Props> = ({
+export const ChecklistsListFilter: React.FunctionComponent<Props> = ({
     value,
     onChange,
     beforeInputFragment,
@@ -56,7 +56,7 @@ export const TasksListFilter: React.FunctionComponent<Props> = ({
                 <input
                     type="text"
                     className={`form-control ${prependSearchIcon ? 'shadow-none border-0 rounded-0 pl-1' : ''}`}
-                    aria-label="Filter tasks"
+                    aria-label="Filter checklists"
                     autoCapitalize="off"
                     value={uncommittedValue}
                     onChange={e => setUncommittedValue(e.currentTarget.value)}
