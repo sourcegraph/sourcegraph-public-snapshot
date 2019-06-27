@@ -159,10 +159,17 @@ Scroll to the bottom and check the *Allow 2-Legged OAuth* checkbox, then write y
 
 ---
 
-Go to your Sourcegraph's external services page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server* external service. Click on the *Enforce permissions* quick action on top of the configuration editor. Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 sourcegraph.pem | tr -d '\n'` to the `oauth.signingKey` field. Finally, **save the configuration**.
+Go to your Sourcegraph's external services page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server* external service. Click on the *Enforce permissions* quick action on top of the configuration editor. Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 sourcegraph.pem | tr -d '\n'` to the `oauth.signingKey` field.
 
 <img src="https://imgur.com/ucetesA.png" width="800">
 
 ---
 
-You're done! :tada:
+Permissions for each user are cached for the configured `ttl` duration. When the `ttl` elapses, permissions will refetched from Bitbucket Server again. A lower `ttl` makes Sourcegraph refresh permissions for each user more often. A higher `ttl` reduces the load on Bitbucket Server and improves user experience by using cached permissions on most requests (i.e. those that are issued within the `ttl` window). The more repos you have, the slower it is to fetch permissions.
+
+Taking all of this into account, you may want to configure the `ttl` to something else than its default value of `3h`, depending on your requirements.
+
+---
+
+Finally, **save the configuration**. You're done!
+
