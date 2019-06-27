@@ -161,7 +161,7 @@ func BenchmarkSearchResults(b *testing.B) {
 
 	// File matches in search result by Zoekt
 	var zoektFileMatches []zoekt.FileMatch
-	for i := 1; i <= 300; i++ {
+	for i := 1; i <= 50; i++ {
 		repoName := fmt.Sprintf("repo-%d", i)
 		fileName := fmt.Sprintf("foobar-%d.go", i)
 
@@ -200,14 +200,17 @@ func BenchmarkSearchResults(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		q, err := query.ParseAndCheck(`print index:only`)
+		q, err := query.ParseAndCheck(`print index:only count:350`)
 		if err != nil {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{query: q, zoekt: z}
-		_, err = resolver.Results(context.Background())
+		results, err := resolver.Results(context.Background())
 		if err != nil {
 			b.Fatal("Results:", err)
+		}
+		if int(results.MatchCount()) != len(zoektFileMatches) {
+			b.Fatalf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
 		}
 	}
 }
