@@ -19,6 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Updating or creating an external service will no longer block until the service is synced.
 - The GraphQL fields `Repository.createdAt` and `Repository.updatedAt` are deprecated and will be removed in 3.8. Now `createdAt` is always the current time and updatedAt is always null.
+- Usernames can now contain the `.` character in them (#4690).
 
 ### Fixed
 
