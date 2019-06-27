@@ -8,5 +8,5 @@ import { Range } from './location'
  */
 export interface Diagnostic extends Pick<sourcegraph.Diagnostic, Exclude<keyof sourcegraph.Diagnostic, 'range'>> {
     /** The range that the diagnostic applies to. */
-    range?: Range
+    range: Range
 }

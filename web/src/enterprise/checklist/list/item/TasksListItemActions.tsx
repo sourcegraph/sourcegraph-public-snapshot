@@ -17,11 +17,11 @@ interface Props {
 }
 
 /**
- * The actions that can be performed on a task.
+ * The actions that can be performed on a checklist.
  *
  * TODO!(sqs): dedupe with ThreadInboxItemActions?
  */
-export const TasksListItemActions: React.FunctionComponent<Props> = ({
+export const ChecklistsListItemActions: React.FunctionComponent<Props> = ({
     codeActions,
     activeCodeAction,
     onCodeActionClick,
@@ -46,7 +46,7 @@ export const TasksListItemActions: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className={`task-list-item-actions d-flex flex-column ${className}`}>
+        <div className={`checklist-list-item-actions d-flex flex-column ${className}`}>
             {codeActionsWithEdit.length > 0 && (
                 <div className="d-flex flex-column align-items-start" data-toggle="buttons">
                     {codeActionsWithEdit.map((codeAction, i) => (

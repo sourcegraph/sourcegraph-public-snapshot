@@ -6,10 +6,10 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 import { LINK_PREVIEW_CLASS } from '../../../../components/linkPreviews/styles'
 import { setElementTooltip } from '../../../../components/tooltip/Tooltip'
-import { Task } from '../../task'
+import { Checklist } from '../../checklist'
 
 interface Props extends ExtensionsControllerProps {
-    task: Task
+    checklist: Checklist
 
     className?: string
     location: H.Location
@@ -17,11 +17,11 @@ interface Props extends ExtensionsControllerProps {
 }
 
 /**
- * The description for a single task.
+ * The description for a single checklist.
  */
-export const TaskDescription: React.FunctionComponent<Props> = ({ task, className, ...props }) => (
+export const ChecklistDescription: React.FunctionComponent<Props> = ({ checklist, className, ...props }) => (
     <WithLinkPreviews
-        dangerousInnerHTML={renderMarkdown(task.diagnostic.message)}
+        dangerousInnerHTML={renderMarkdown(checklist.diagnostic.message)}
         extensionsController={props.extensionsController}
         setElementTooltip={setElementTooltip}
         linkPreviewContentClass={LINK_PREVIEW_CLASS}

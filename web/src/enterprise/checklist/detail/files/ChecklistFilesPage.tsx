@@ -3,11 +3,11 @@ import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { WithQueryParameter } from '../../../../components/withQueryParameter/WithQueryParameter'
-import { Task } from '../../task'
-import { TaskFilesList } from './TaskFilesList'
+import { Checklist } from '../../checklist'
+import { ChecklistFilesList } from './ChecklistFilesList'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
-    task: Task
+    checklist: Checklist
 
     history: H.History
     location: H.Location
@@ -15,13 +15,13 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 }
 
 /**
- * The "Files changed" page for a task.
+ * The "Files changed" page for a checklist.
  */
-export const TaskFilesPage: React.FunctionComponent<Props> = ({ task, ...props }) => (
-    <div className="task-files-page">
+export const ChecklistFilesPage: React.FunctionComponent<Props> = ({ checklist, ...props }) => (
+    <div className="checklist-files-page">
         <WithQueryParameter defaultQuery={/* TODO!(sqs) */ ''} history={props.history} location={props.location}>
             {({ query, onQueryChange }) => (
-                <TaskFilesList {...props} task={task} query={query} onQueryChange={onQueryChange} />
+                <ChecklistFilesList {...props} checklist={checklist} query={query} onQueryChange={onQueryChange} />
             )}
         </WithQueryParameter>
     </div>

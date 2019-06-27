@@ -43,7 +43,7 @@ export class Services {
     public readonly commands = new CommandRegistry()
     public readonly context = createContextService(this.platformContext)
     public readonly diagnostics = createDiagnosticsService()
-    public readonly fileSystem = createFileSystemService(this.platformContext)
+    public readonly fileSystem = createFileSystemService()
     public readonly workspace = createWorkspaceService()
     public readonly model = createModelService()
     public readonly editor = createEditorService(this.model)
