@@ -191,11 +191,6 @@ func BenchmarkSearchResults(b *testing.B) {
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
 
-	mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
-		return nil, nil, nil
-	}
-	defer func() { mockSearchSymbols = nil }()
-
 	b.ResetTimer()
 	b.ReportAllocs()
 
