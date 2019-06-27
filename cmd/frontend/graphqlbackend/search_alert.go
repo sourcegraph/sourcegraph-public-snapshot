@@ -232,7 +232,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 	//
 	// TODO(sqs): this logic can be significantly improved, but it's better than
 	// nothing for now.
-	repos, _, _, _, err := r.resolveRepositories(ctx, nil, false)
+	repos, _, _, _, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +265,7 @@ outer:
 		repoFieldValues = append(repoFieldValues, repoParentPattern)
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 		defer cancel()
-		_, _, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues, false)
+		_, _, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
 		if ctx.Err() != nil {
 			continue
 		} else if err != nil {
