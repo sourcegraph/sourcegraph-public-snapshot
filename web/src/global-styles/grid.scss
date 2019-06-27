@@ -1,4 +1,4 @@
-$container-padding-x: 1rem;
+$container-padding-x: map-get($spacers, 5);
 @mixin make-container($padding-x: $container-padding-x) {
     width: 100%;
     padding-right: $padding-x;
