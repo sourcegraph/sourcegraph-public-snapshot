@@ -61,7 +61,7 @@ export function fromRange(range: Range | sourcegraph.Range | undefined): clientT
 export function fromDiagnostic(diag: sourcegraph.Diagnostic): clientType.Diagnostic {
     return {
         ...diag,
-        range: diag.range ? fromRange(diag.range) : undefined,
+        range: fromRange(diag.range),
     }
 }
 
@@ -83,11 +83,11 @@ export function toDiagnostic(diag: clientType.Diagnostic): sourcegraph.Diagnosti
  *
  * @internal
  */
-export function fromCodeAction(codeAction: sourcegraph.CodeAction & { edit?: WorkspaceEdit }): clientType.CodeAction {
+export function fromCodeAction(codeAction: sourcegraph.CodeAction): clientType.CodeAction {
     return {
         ...codeAction,
         diagnostics: codeAction.diagnostics && codeAction.diagnostics.map(fromDiagnostic),
-        edit: codeAction.edit && codeAction.edit.toJSON(),
+        edit: codeAction.edit && (codeAction.edit as WorkspaceEdit).toJSON(),
     }
 }
 
