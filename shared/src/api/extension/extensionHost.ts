@@ -1,5 +1,5 @@
 import * as comlink from '@sourcegraph/comlink'
-import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
+import { Location, MarkupKind, Position, Range, Selection, ChecklistScope } from '@sourcegraph/extension-api-classes'
 import { WorkspaceEdit } from '../types/workspaceEdit'
 import { TextEdit } from '../types/textEdit'
 import { Subscription, Unsubscribable } from 'rxjs'
@@ -13,6 +13,7 @@ import { ExtConfiguration } from './api/configuration'
 import { ExtContent } from './api/content'
 import { ExtContext } from './api/context'
 import { createDecorationType } from './api/decorations'
+import { createExtChecklist } from './api/checklist'
 import { ExtDiagnostics } from './api/diagnostics'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
@@ -142,7 +143,7 @@ function createExtensionAPI(
     const search = new ExtSearch(proxy.search)
     const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
-    const checklist = new ExtChecklist(proxy.checklist)
+    const checklist = createExtChecklist(proxy.checklist)
 
     const diagnostics = new ExtDiagnostics(proxy.diagnostics)
     subscription.add(diagnostics)
