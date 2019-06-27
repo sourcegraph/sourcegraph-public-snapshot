@@ -130,8 +130,6 @@ func TestSearchResults(t *testing.T) {
 }
 
 func BenchmarkSearchResults(b *testing.B) {
-	t := b
-
 	var repos []*types.Repo
 	var zoektRepos []*zoekt.RepoListEntry
 
@@ -162,6 +160,22 @@ func BenchmarkSearchResults(b *testing.B) {
 	z := &searchbackend.Zoekt{
 		Client: &fakeSearcher{
 			repos: &zoekt.RepoList{Repos: zoektRepos},
+			result: &zoekt.SearchResult{
+				Files: []zoekt.FileMatch{
+					{
+						Score:      0.0,
+						FileName:   "foobar.go",
+						Repository: "repo-1", // Important: this needs to match one name in `repos`
+						Branches:   []string{"master"},
+						LineMatches: []zoekt.LineMatch{
+							{
+								Line: nil,
+							},
+						},
+						Checksum: []byte{0, 1, 2},
+					},
+				},
+			},
 		},
 	}
 
@@ -175,29 +189,18 @@ func BenchmarkSearchResults(b *testing.B) {
 	}
 	defer func() { mockSearchSymbols = nil }()
 
-	mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
-		return []*fileMatchResolver{
-			{
-				uri:          "git://repo?rev#dir/file",
-				JPath:        "dir/file",
-				JLineMatches: []*lineMatch{{JLineNumber: 123}},
-			},
-		}, &searchResultsCommon{}, nil
-	}
-	defer func() { mockSearchFilesInRepos = nil }()
-
 	b.ResetTimer()
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		q, err := query.ParseAndCheck(`foo\d "bar*"`)
+		q, err := query.ParseAndCheck(`print index:only`)
 		if err != nil {
-			t.Fatal(err)
+			b.Fatal(err)
 		}
 		resolver := &searchResolver{query: q, zoekt: z}
 		_, err = resolver.Results(context.Background())
 		if err != nil {
-			t.Fatal("Results:", err)
+			b.Fatal("Results:", err)
 		}
 	}
 }
