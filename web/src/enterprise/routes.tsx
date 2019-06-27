@@ -22,7 +22,7 @@ export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/tasks',
-        render: lazyComponent(() => import('./tasks/global/TasksArea'), 'TasksArea'),
+        render: lazyComponent(() => import('./checklist/global/TasksArea'), 'TasksArea'),
     },
     {
         path: '/changesets',
