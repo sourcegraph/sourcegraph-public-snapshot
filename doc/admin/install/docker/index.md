@@ -45,6 +45,16 @@ To achieve better performance, you can do any of the following:
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph:delegated
   ```
 
+## Insiders build
+
+To access to the experimental, unreleased (untested), and possibly unstable version of Sourcegraph, you can use our `insiders` build. Simply run the docker command above specifying the `insiders` tag:
+
+```
+docker run --publish 7080:7080 --publish 2633:2633 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:insiders
+```
+
+To keep this up to date, run `docker pull sourcegraph/server:insiders` to pull in the latest image, and restart the container to access new changes.
+
 ## Next steps
 
 - [Configuring Sourcegraph](../../config/index.md)
