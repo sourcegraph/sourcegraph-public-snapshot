@@ -49,7 +49,7 @@ async function fetchCSS(sourcegraphURL: string): Promise<string> {
 async function init(): Promise<void> {
     const sourcegraphURL = window.SOURCEGRAPH_URL
     if (!sourcegraphURL) {
-        throw new Error('windo.SOURCEGRAPH_URL is undefined')
+        throw new Error('window.SOURCEGRAPH_URL is undefined')
     }
     const css = await fetchCSS(sourcegraphURL)
     const style = document.createElement('style')
