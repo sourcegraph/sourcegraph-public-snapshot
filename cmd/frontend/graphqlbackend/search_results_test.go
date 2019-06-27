@@ -127,6 +127,73 @@ func TestSearchResults(t *testing.T) {
 	})
 }
 
+func BenchmarkSearchResults(b *testing.B) {
+	t := b
+	resolvers := &schemaResolver{}
+
+	getResults := func(t testing.TB, query string) {
+		r, err := resolvers.Search(&struct{ Query string }{Query: query})
+		if err != nil {
+			t.Fatal("Search:", err)
+		}
+		_, err = r.Results(context.Background())
+		if err != nil {
+			t.Fatal("Results:", err)
+		}
+	}
+
+	var repos []*types.Repo
+	for i := 1; i <= 5000; i++ {
+		name := fmt.Sprintf("repo-%d", i)
+
+		repos = append(repos, &types.Repo{
+			ID: api.RepoID(i),
+			ExternalRepo: &api.ExternalRepoSpec{
+				ID:          name,
+				ServiceType: "github",
+				ServiceID:   "https://github.com",
+			},
+			Name:        api.RepoName(name),
+			URI:         fmt.Sprintf("https://github.com/foobar/%s", name),
+			Description: "this repositoriy contains a side project that I haven't maintained in 2 years",
+			Language:    "v-language",
+		})
+	}
+
+	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { db.Mocks = db.MockStores{} }()
+
+	mockSearchRepositories = func(args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {
+		return nil, &searchResultsCommon{}, nil
+	}
+	defer func() { mockSearchRepositories = nil }()
+
+	mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+		return nil, nil, nil
+	}
+	defer func() { mockSearchSymbols = nil }()
+
+	mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
+		return []*fileMatchResolver{
+			{
+				uri:          "git://repo?rev#dir/file",
+				JPath:        "dir/file",
+				JLineMatches: []*lineMatch{{JLineNumber: 123}},
+			},
+		}, &searchResultsCommon{}, nil
+	}
+	defer func() { mockSearchFilesInRepos = nil }()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for n := 0; n < b.N; n++ {
+		getResults(t, `foo\d "bar*"`)
+	}
+}
+
 func TestRegexpPatternMatchingExprsInOrder(t *testing.T) {
 	got := regexpPatternMatchingExprsInOrder([]string{})
 	if want := ""; got != want {
