@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { RepositoryIcon } from '../../../../../shared/src/components/icons'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../../shared/src/util/strings'
-import { TasksIcon } from '../../tasks/icons'
+import { TasksIcon } from '../../checklist/icons'
 import { ThreadSettings } from '../../threads/settings'
 import { ActionsIcon, DiffIcon, GitCommitIcon } from '../icons'
 

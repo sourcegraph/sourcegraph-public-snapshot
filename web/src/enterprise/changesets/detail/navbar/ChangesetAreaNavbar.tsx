@@ -6,7 +6,7 @@ import React from 'react'
 import { NavLink } from 'react-router-dom'
 import { ChatIcon } from '../../../../../../shared/src/components/icons'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { TasksIcon } from '../../../tasks/icons'
+import { TasksIcon } from '../../../checklist/icons'
 import { ThreadSettings } from '../../../threads/settings'
 import { ActionsIcon, ChecklistIcon, DiffIcon, GitCommitIcon } from '../../icons'
 import {
