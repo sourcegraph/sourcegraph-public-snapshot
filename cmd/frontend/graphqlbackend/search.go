@@ -200,7 +200,7 @@ func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, repoResults []*searchSuggestionResolver, overLimit bool, err error) {
+func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string, includeResolvers bool) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, repoResults []*searchSuggestionResolver, overLimit bool, err error) {
 	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("effectiveRepoFieldValues: %v", effectiveRepoFieldValues))
 	defer func() {
 		if err != nil {
@@ -243,6 +243,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		onlyArchived:     archived == Only || archived == True,
 		noArchived:       archived == No || archived == False,
 		commitAfter:      commitAfter,
+		includeResolvers: includeResolvers,
 	})
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
@@ -357,6 +358,7 @@ type resolveRepoOp struct {
 	noArchived       bool
 	onlyArchived     bool
 	commitAfter      string
+	includeResolvers bool
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, repoResolvers []*searchSuggestionResolver, overLimit bool, err error) {
@@ -423,14 +425,14 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	overLimit = len(repos) >= maxRepoListSize
 
 	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
-	repoResolvers = make([]*searchSuggestionResolver, 0, len(repos))
+	if op.includeResolvers {
+		repoResolvers = make([]*searchSuggestionResolver, 0, len(repos))
+	}
 	tr.LazyPrintf("Associate/validate revs - start")
 	for _, repo := range repos {
 		repoRev := &search.RepositoryRevisions{Repo: repo}
 
 		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
-
-		repoResolver := &repositoryResolver{repo: repo}
 
 		// if multiple specified revisions clash, report this usefully:
 		if len(revs) == 0 && clashingRevs != nil {
@@ -475,12 +477,15 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			repoRev.Revs = append(repoRev.Revs, rev)
 		}
 
-		repoResolvers = append(repoResolvers, newSearchResultResolver(
-			repoResolver,
-			math.MaxInt32,
-		))
-
 		repoRevisions = append(repoRevisions, repoRev)
+
+		if op.includeResolvers {
+			repoResolver := &repositoryResolver{repo: repo}
+			repoResolvers = append(repoResolvers, newSearchResultResolver(
+				repoResolver,
+				math.MaxInt32,
+			))
+		}
 	}
 	tr.LazyPrintf("Associate/validate revs - done")
 
@@ -551,7 +556,7 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 }
 
 func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*searchSuggestionResolver, error) {
-	repos, _, _, overLimit, err := r.resolveRepositories(ctx, nil)
+	repos, _, _, overLimit, err := r.resolveRepositories(ctx, nil, false)
 	if err != nil {
 		return nil, err
 	}

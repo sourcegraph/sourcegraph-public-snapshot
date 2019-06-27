@@ -763,7 +763,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	defer cancel()
 
-	repos, missingRepoRevs, _, overLimit, err := r.resolveRepositories(ctx, nil)
+	repos, missingRepoRevs, _, overLimit, err := r.resolveRepositories(ctx, nil, false)
 	if err != nil {
 		return nil, err
 	}

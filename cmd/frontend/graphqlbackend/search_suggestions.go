@@ -70,7 +70,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
 
 		if len(effectiveRepoFieldValues) > 0 {
-			_, _, repos, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
+			_, _, repos, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues, true)
 			return repos, err
 		}
 		return nil, nil
@@ -93,7 +93,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	suggesters = append(suggesters, showFileSuggestions)
 
 	showSymbolMatches := func(ctx context.Context) (results []*searchSuggestionResolver, err error) {
-		repoRevs, _, _, _, err := r.resolveRepositories(ctx, nil)
+		repoRevs, _, _, _, err := r.resolveRepositories(ctx, nil, false)
 		if err != nil {
 			return nil, err
 		}
