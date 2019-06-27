@@ -142,6 +142,7 @@ function createExtensionAPI(
     const search = new ExtSearch(proxy.search)
     const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
+    const checklist = new ExtChecklist(proxy.checklist)
 
     const diagnostics = new ExtDiagnostics(proxy.diagnostics)
     subscription.add(diagnostics)
@@ -177,6 +178,7 @@ function createExtensionAPI(
         TextEdit,
         DiagnosticSeverity,
         WorkspaceEdit,
+        ChecklistScope,
         app: {
             activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {
@@ -201,6 +203,10 @@ function createExtensionAPI(
             onDidChangeRoots: roots.changes,
             rootChanges: roots.changes,
             openTextDocument: uri => documents.openTextDocument(uri),
+        },
+
+        checklist: {
+            registerChecklistProvider: (type, provider) => checklist.registerChecklistProvider(type, provider),
         },
 
         configuration: {

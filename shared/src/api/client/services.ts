@@ -61,4 +61,5 @@ export class Services {
     public readonly views = new ViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
     public readonly checkTemplates = new CheckTemplateRegistry()
+    public readonly checklist = new ChecklistProviderRegistry()
 }
