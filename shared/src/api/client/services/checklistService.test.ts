@@ -1,136 +1,93 @@
-import { Range } from '@sourcegraph/extension-api-classes'
-import { of, throwError } from 'rxjs'
+import { throwError, Unsubscribable, of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import * as sourcegraph from 'sourcegraph'
-import { CodeActionsParams, getCodeActions, ProvideCodeActionsSignature } from './codeActions'
-import { FIXTURE } from './registry.test'
+import { createChecklistService } from './checklistService'
 
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
-const FIXTURE_PARAMS: CodeActionsParams = {
-    textDocument: FIXTURE.TextDocumentPositionParams.textDocument,
-    range: new Range(1, 2, 3, 4),
-    context: { diagnostics: [] },
-}
+const CHECKLIST_ITEM_1: sourcegraph.ChecklistItem = { title: 't1' }
 
-const FIXTURE_CODE_ACTION: sourcegraph.CodeAction = {
-    title: 'a',
-    command: { title: 'c', command: 'c' },
-}
+const CHECKLIST_ITEM_2: sourcegraph.ChecklistItem = { title: 't2' }
 
-const FIXTURE_CODE_ACTIONS: sourcegraph.CodeAction[] = [FIXTURE_CODE_ACTION]
+const SCOPE: sourcegraph.ChecklistScope = 'global' as sourcegraph.ChecklistScope.Global
 
-describe('getCodeActions', () => {
-    describe('0 providers', () => {
-        test('returns null', () =>
-            scheduler().run(({ cold, expectObservable }) =>
-                expectObservable(
-                    getCodeActions(cold<ProvideCodeActionsSignature[]>('-a-|', { a: [] }), FIXTURE_PARAMS)
-                ).toBe('-a-|', {
-                    a: null,
-                })
-            ))
-    })
-
-    describe('1 provider', () => {
-        test('returns null result from provider', () =>
-            scheduler().run(({ cold, expectObservable }) =>
-                expectObservable(
-                    getCodeActions(cold<ProvideCodeActionsSignature[]>('-a-|', { a: [() => of(null)] }), FIXTURE_PARAMS)
-                ).toBe('-a-|', {
-                    a: null,
-                })
-            ))
-
-        test('returns result from provider', () =>
-            scheduler().run(({ cold, expectObservable }) =>
-                expectObservable(
-                    getCodeActions(
-                        cold<ProvideCodeActionsSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_CODE_ACTIONS)],
-                        }),
-                        FIXTURE_PARAMS
-                    )
-                ).toBe('-a-|', {
-                    a: FIXTURE_CODE_ACTIONS,
-                })
-            ))
-    })
-
-    test('errors do not propagate', () =>
-        scheduler().run(({ cold, expectObservable }) =>
-            expectObservable(
-                getCodeActions(
-                    cold<ProvideCodeActionsSignature[]>('-a-|', {
-                        a: [() => of(FIXTURE_CODE_ACTIONS), () => throwError(new Error('x'))],
-                    }),
-                    FIXTURE_PARAMS,
-                    false
-                )
-            ).toBe('-a-|', {
-                a: FIXTURE_CODE_ACTIONS,
+describe('ChecklistService', () => {
+    test('no providers yields empty array', () =>
+        scheduler().run(({ expectObservable }) =>
+            expectObservable(createChecklistService(false).observeChecklistItems(SCOPE)).toBe('a', {
+                a: [],
             })
         ))
 
-    describe('2 providers', () => {
-        test('returns null result if both providers return null', () =>
-            scheduler().run(({ cold, expectObservable }) =>
-                expectObservable(
-                    getCodeActions(
-                        cold<ProvideCodeActionsSignature[]>('-a-|', {
-                            a: [() => of(null), () => of(null)],
-                        }),
-                        FIXTURE_PARAMS
-                    )
-                ).toBe('-a-|', {
-                    a: null,
-                })
-            ))
-
-        test('omits null result from 1 provider', () =>
-            scheduler().run(({ cold, expectObservable }) =>
-                expectObservable(
-                    getCodeActions(
-                        cold<ProvideCodeActionsSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_CODE_ACTIONS), () => of(null)],
-                        }),
-                        FIXTURE_PARAMS
-                    )
-                ).toBe('-a-|', {
-                    a: FIXTURE_CODE_ACTIONS,
-                })
-            ))
-
-        test('merges results from providers', () =>
-            scheduler().run(({ cold, expectObservable }) =>
-                expectObservable(
-                    getCodeActions(
-                        cold<ProvideCodeActionsSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_CODE_ACTIONS), () => of(FIXTURE_CODE_ACTIONS)],
-                        }),
-                        FIXTURE_PARAMS
-                    )
-                ).toBe('-a-|', {
-                    a: [...FIXTURE_CODE_ACTIONS, ...FIXTURE_CODE_ACTIONS],
-                })
-            ))
+    test('single provider', () => {
+        scheduler().run(({ cold, expectObservable }) => {
+            const service = createChecklistService(false)
+            service.registerChecklistProvider('', {
+                provideChecklistItems: () =>
+                    cold<sourcegraph.ChecklistItem[] | null>('abcd', {
+                        a: null,
+                        b: [CHECKLIST_ITEM_1],
+                        c: [CHECKLIST_ITEM_1, CHECKLIST_ITEM_2],
+                        d: null,
+                    }),
+            })
+            expectObservable(service.observeChecklistItems(SCOPE)).toBe('abcd', {
+                a: [],
+                b: [CHECKLIST_ITEM_1],
+                c: [CHECKLIST_ITEM_1, CHECKLIST_ITEM_2],
+                d: [],
+            })
+        })
     })
 
-    describe('multiple emissions', () => {
-        test('returns stream of results', () =>
-            scheduler().run(({ cold, expectObservable }) =>
-                expectObservable(
-                    getCodeActions(
-                        cold<ProvideCodeActionsSignature[]>('-a-b-|', {
-                            a: [() => of(FIXTURE_CODE_ACTIONS)],
-                            b: [() => of(null)],
-                        }),
-                        FIXTURE_PARAMS
-                    )
-                ).toBe('-a-b-|', {
-                    a: FIXTURE_CODE_ACTIONS,
-                    b: null,
-                })
-            ))
+    test('merges results from multiple providers', () => {
+        scheduler().run(({ cold, expectObservable }) => {
+            const service = createChecklistService(false)
+            const unsub1 = service.registerChecklistProvider('1', {
+                provideChecklistItems: () => of([CHECKLIST_ITEM_1]),
+            })
+            let unsub2: Unsubscribable
+            cold('-bc', {
+                b: () => {
+                    unsub2 = service.registerChecklistProvider('2', {
+                        provideChecklistItems: () => of([CHECKLIST_ITEM_2]),
+                    })
+                },
+                c: () => {
+                    unsub1.unsubscribe()
+                    unsub2.unsubscribe()
+                },
+            }).subscribe(f => f())
+            expectObservable(service.observeChecklistItems(SCOPE)).toBe('ab(cd)', {
+                a: [CHECKLIST_ITEM_1],
+                b: [CHECKLIST_ITEM_1, CHECKLIST_ITEM_2],
+                c: [CHECKLIST_ITEM_2],
+                d: [],
+            })
+        })
+    })
+
+    test('suppresses errors', () => {
+        scheduler().run(({ expectObservable }) => {
+            const service = createChecklistService(false)
+            service.registerChecklistProvider('a', {
+                provideChecklistItems: () => throwError(new Error('x')),
+            })
+            expectObservable(service.observeChecklistItems(SCOPE)).toBe('a', {
+                a: [],
+            })
+        })
+    })
+
+    test('enforces unique registration types', () => {
+        const service = createChecklistService(false)
+        service.registerChecklistProvider('a', {
+            provideChecklistItems: () => [],
+        })
+        expect(() =>
+            service.registerChecklistProvider('a', {
+                provideChecklistItems: () => [],
+            })
+        ).toThrowError(/already registered/)
     })
 })

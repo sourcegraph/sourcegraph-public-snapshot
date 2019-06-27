@@ -28,7 +28,7 @@ export interface ChecklistService {
 /**
  * Creates a new {@link ChecklistService}.
  */
-export function createChecklistProviderRegistry(logErrors = false): ChecklistService {
+export function createChecklistService(logErrors = true): ChecklistService {
     interface Registration {
         type: Parameters<typeof sourcegraph.checklist.registerChecklistProvider>[0]
         provider: sourcegraph.ChecklistProvider
