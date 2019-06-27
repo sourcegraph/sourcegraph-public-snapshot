@@ -115,8 +115,7 @@ export class ExtLanguageFeatures {
                         })),
                     }
                 ),
-                (items: null | undefined | (CodeAction & { edit?: WorkspaceEdit })[]) =>
-                    items ? items.map(fromCodeAction) : items
+                (items: null | undefined | CodeAction[]) => (items ? items.map(fromCodeAction) : items)
             )
         )
         return syncSubscription(this.proxy.$registerCodeActionProvider(selector, providerFunction))
