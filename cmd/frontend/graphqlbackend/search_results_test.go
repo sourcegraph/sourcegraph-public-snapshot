@@ -8,11 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/zoekt"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 )
 
 func TestSearchResults(t *testing.T) {
@@ -129,20 +131,10 @@ func TestSearchResults(t *testing.T) {
 
 func BenchmarkSearchResults(b *testing.B) {
 	t := b
-	resolvers := &schemaResolver{}
-
-	getResults := func(t testing.TB, query string) {
-		r, err := resolvers.Search(&struct{ Query string }{Query: query})
-		if err != nil {
-			t.Fatal("Search:", err)
-		}
-		_, err = r.Results(context.Background())
-		if err != nil {
-			t.Fatal("Results:", err)
-		}
-	}
 
 	var repos []*types.Repo
+	var zoektRepos []*zoekt.RepoListEntry
+
 	for i := 1; i <= 5000; i++ {
 		name := fmt.Sprintf("repo-%d", i)
 
@@ -158,17 +150,25 @@ func BenchmarkSearchResults(b *testing.B) {
 			Description: "this repositoriy contains a side project that I haven't maintained in 2 years",
 			Language:    "v-language",
 		})
+
+		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
+			Repository: zoekt.Repository{
+				Name:     name,
+				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+			},
+		})
+	}
+
+	z := &searchbackend.Zoekt{
+		Client: &fakeSearcher{
+			repos: &zoekt.RepoList{Repos: zoektRepos},
+		},
 	}
 
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return repos, nil
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
-
-	mockSearchRepositories = func(args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {
-		return nil, &searchResultsCommon{}, nil
-	}
-	defer func() { mockSearchRepositories = nil }()
 
 	mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 		return nil, nil, nil
@@ -190,7 +190,15 @@ func BenchmarkSearchResults(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		getResults(t, `foo\d "bar*"`)
+		q, err := query.ParseAndCheck(`foo\d "bar*"`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resolver := &searchResolver{query: q, zoekt: z}
+		_, err = resolver.Results(context.Background())
+		if err != nil {
+			t.Fatal("Results:", err)
+		}
 	}
 }
 

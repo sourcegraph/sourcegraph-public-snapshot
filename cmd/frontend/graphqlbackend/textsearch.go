@@ -890,6 +890,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		searcherRepos    []*search.RepositoryRevisions = args.Repos
 		indexedRevisions map[*search.RepositoryRevisions]string
 	)
+
 	if args.Zoekt.Enabled() {
 		var err error
 		zoektRepos, searcherRepos, indexedRevisions, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos)
