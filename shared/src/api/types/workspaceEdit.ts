@@ -137,7 +137,7 @@ export class WorkspaceEdit implements sourcegraph.WorkspaceEdit {
                 return {
                     ...op,
                     uri: op.uri.toJSON(),
-                    edit: op.edit.toJSON(),
+                    edit: (op.edit as TextEdit).toJSON(),
                 }
             }),
         }

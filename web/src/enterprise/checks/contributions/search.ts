@@ -6,6 +6,7 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { createThread } from '../../../discussions/backend'
 import { parseSearchURLQuery } from '../../../search'
+import { FAKE_PROJECT_ID } from '../../changesets/preview/backend'
 
 /**
  * Registers contributions for checks functionality related to search.
@@ -41,6 +42,7 @@ function registerSearchContextBarActions({
                         settings: JSON.stringify({ queries: [query] }),
                         contents: '',
                         type: GQL.ThreadType.CHECK,
+                        project: FAKE_PROJECT_ID,
                     }).toPromise()
                     history.push(thread.url)
                 }

@@ -5,7 +5,7 @@ import { gql } from '../graphql/graphql'
 import { PlatformContext } from '../platform/context'
 import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoizeObservable'
-import { ParsedRepoURI, parseRepoURI } from '../util/url'
+import { parseRepoURI } from '../util/url'
 
 export function registerFileSystemContributions(
     { fileSystem }: Pick<Services, 'fileSystem'>,

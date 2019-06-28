@@ -1,17 +1,17 @@
 import React, { useCallback, useState } from 'react'
-import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { Dropdown, DropdownToggle } from 'reactstrap'
 import { LinkWithIconOnlyTooltip } from '../../../../components/LinkWithIconOnlyTooltip'
-import { ChecksIcon } from '../../icons'
-import { ChecksNavItemDropdownMenu } from './ChecksNavItemDropdownMenu'
+import { GitPullRequestIcon } from '../../../../util/octicons'
+import { ChecksNavItemDropdownMenu } from './ChangesetsNavItemDropdownMenu'
 
 interface Props {
     className?: string
 }
 
 /**
- * An item in {@link GlobalNavbar} that links to the checks area.
+ * An item in {@link GlobalNavbar} that links to the changesets area.
  */
-export const ChecksNavItem: React.FunctionComponent<Props> = ({ className = '' }) => {
+export const ChangesetsNavItem: React.FunctionComponent<Props> = ({ className = '' }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
     const setIsOpenTrue = useCallback(() => setIsOpen(true), [])
@@ -27,9 +27,9 @@ export const ChecksNavItem: React.FunctionComponent<Props> = ({ className = '' }
         >
             <DropdownToggle tag="span" data-toggle="dropdown" aria-expanded={isOpen} onMouseEnter={setIsOpenTrue}>
                 <LinkWithIconOnlyTooltip
-                    to="/checks"
-                    text="Checks"
-                    icon={ChecksIcon}
+                    to="/changesets"
+                    text="Changesets"
+                    icon={GitPullRequestIcon}
                     className={`nav-link btn btn-link text-decoration-none ${className}`}
                 />
             </DropdownToggle>

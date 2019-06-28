@@ -7,7 +7,6 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { makeRepoURI } from '../../../../../../shared/src/util/url'
-import { TasksList } from '../../../checklist/list/TasksList'
 import { ThreadSettings } from '../../../threads/settings'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {

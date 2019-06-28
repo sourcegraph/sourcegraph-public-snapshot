@@ -1,9 +1,9 @@
 import H from 'history'
 import React from 'react'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
-import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
-import { WithQueryParameter } from '../../../../components/withQueryParameter/WithQueryParameter'
-import { Checklist } from '../../checklist'
+import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../../../../shared/src/platform/context'
+import { WithQueryParameter } from '../../../../../components/withQueryParameter/WithQueryParameter'
+import { Checklist } from '../../../checklist'
 import { ChecklistFilesList } from './ChecklistFilesList'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {

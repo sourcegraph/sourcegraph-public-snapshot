@@ -2,8 +2,8 @@ import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { Timestamp } from '../../../../components/time/Timestamp'
+import { ActionsIcon } from '../../../../util/octicons'
 import { ThreadSettings } from '../../../threads/settings'
-import { ActionsIcon } from '../../icons'
 
 interface Props extends ExtensionsControllerProps {
     thread: GQL.IDiscussionThread

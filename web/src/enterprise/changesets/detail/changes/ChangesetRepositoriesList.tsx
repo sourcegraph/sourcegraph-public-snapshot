@@ -11,8 +11,8 @@ import { pluralize } from '../../../../../../shared/src/util/strings'
 import { GitCommitNode } from '../../../../repo/commits/GitCommitNode'
 import { DiffStat } from '../../../../repo/compare/DiffStat'
 import { GitRefTag } from '../../../../repo/GitRefTag'
+import { GitCommitIcon } from '../../../../util/octicons'
 import { ThreadSettings } from '../../../threads/settings'
-import { GitCommitIcon } from '../../icons'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     thread: GQL.IDiscussionThread

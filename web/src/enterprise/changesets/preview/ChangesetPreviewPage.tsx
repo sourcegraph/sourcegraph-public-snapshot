@@ -1,11 +1,12 @@
 import H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState } from 'react'
+import React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { HeroPage } from '../../../components/HeroPage'
 import { WithQueryParameter } from '../../../components/withQueryParameter/WithQueryParameter'
+import { GitPullRequestIcon } from '../../../util/octicons'
 import { createThreadAreaContext } from '../../threads/detail/ThreadArea'
 import { ChangesetActionsList } from '../detail/changes/ChangesetActionsList'
 import { ChangesetCommitsList } from '../detail/changes/ChangesetCommitsList'
@@ -13,7 +14,6 @@ import { ChangesetFilesList } from '../detail/changes/ChangesetFilesList'
 import { ChangesetRepositoriesList } from '../detail/changes/ChangesetRepositoriesList'
 import { ChangesetTasksList } from '../detail/changes/ChangesetTasksList'
 import { ChangesetsAreaContext } from '../global/ChangesetsArea'
-import { ChangesetIcon } from '../icons'
 import { useChangesetByID } from '../util/useChangesetByID'
 import { useExtraChangesetInfo } from '../util/useExtraChangesetInfo'
 import { ChangesetSummaryBar } from './ChangesetSummaryBar'
@@ -56,7 +56,7 @@ export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
                 ) : (
                     <div className="alert alert-warning d-flex align-items-center mb-4">
                         <Link to={CREATE_FORM_EXPANDED_URL} className="btn btn-lg btn-success mr-3">
-                            <ChangesetIcon className="icon-inline mr-1" /> Create changeset
+                            <GitPullRequestIcon className="icon-inline mr-1" /> Create changeset
                         </Link>
                         <span className="text-muted">
                             Create branches for this change in all affected repositories and request code reviews.

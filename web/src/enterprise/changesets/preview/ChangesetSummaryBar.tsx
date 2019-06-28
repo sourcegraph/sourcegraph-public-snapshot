@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom'
 import { RepositoryIcon } from '../../../../../shared/src/components/icons'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../../shared/src/util/strings'
-import { TasksIcon } from '../../checklist/icons'
+import { ActionsIcon, DiffIcon, GitCommitIcon } from '../../../util/octicons'
+import { ChecklistIcon } from '../../checklists/icons'
 import { ThreadSettings } from '../../threads/settings'
-import { ActionsIcon, DiffIcon, GitCommitIcon } from '../icons'
 
 interface Props {
     thread: GQL.IDiscussionThread
@@ -36,7 +36,7 @@ const ITEMS: SummaryItem[] = [
         icon: ActionsIcon,
         count: countChangesetActions,
     },
-    { noun: 'Review task', icon: TasksIcon, count: null },
+    { noun: 'Review task', icon: ChecklistIcon, count: null },
     {
         noun: 'repository affected',
         pluralNoun: 'repositories affected',

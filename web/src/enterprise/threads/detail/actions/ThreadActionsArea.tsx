@@ -9,13 +9,13 @@ import { HeroPage } from '../../../../components/HeroPage'
 import { ThreadSettings } from '../../settings'
 import { ThreadAreaContext } from '../ThreadArea'
 import { ThreadActionsCommitStatusesPage } from './commitStatuses/ThreadActionsCommitStatusesPage'
+import { ThreadActionsEditorPage } from './editor/ThreadActionsEditorPage'
 import { ThreadActionsEmailNotificationsPage } from './email/ThreadActionsEmailNotificationsPage'
 import { ThreadActionsPullRequestsPage } from './pullRequests/ThreadActionsPullRequestsPage'
 import { ThreadActionsSlackNotificationsPage } from './slackNotifications/ThreadActionsSlackNotificationsPage'
 import { ThreadActionsAreaSidebar } from './ThreadActionsAreaSidebar'
 import { ThreadActionsOverview } from './ThreadActionsOverview'
 import { ThreadActionsWebhooksPage } from './webhooks/ThreadActionsWebhooksPage'
-import { ThreadActionsEditorPage } from './editor/ThreadActionsEditorPage'
 
 const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
@@ -41,7 +41,9 @@ export const ThreadActionsArea: React.FunctionComponent<Props> = ({
     className = '',
     ...props
 }) => {
-    const context: ThreadAreaContext & { areaURL: string } & ExtensionsControllerProps = {
+    const context: Pick<ThreadAreaContext, Exclude<keyof ThreadAreaContext, 'project'>> & {
+        areaURL: string
+    } & ExtensionsControllerProps = {
         thread,
         onThreadUpdate,
         threadSettings,

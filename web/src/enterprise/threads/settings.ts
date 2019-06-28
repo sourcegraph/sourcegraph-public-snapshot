@@ -63,7 +63,6 @@ export interface ChangesetAction {
 }
 
 export interface ThreadSettings {
-    providers?: string[]
     queries?: string[]
     pullRequests?: PullRequest[]
     pullRequestTemplate?: Partial<PullRequestFields>

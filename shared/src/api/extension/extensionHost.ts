@@ -269,6 +269,9 @@ function createExtensionAPI(
             findTextInFiles: (query, options) => search.findTextInFiles(query, options),
             registerQueryTransformer: (provider: sourcegraph.QueryTransformer) =>
                 search.registerQueryTransformer(provider),
+            registerTextSearchProvider: () => {
+                throw new Error('TODO!(sqs): not implemented')
+            },
         },
 
         commands: {

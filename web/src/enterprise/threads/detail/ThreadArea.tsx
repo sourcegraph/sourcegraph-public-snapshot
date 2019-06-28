@@ -25,7 +25,7 @@ const NotFoundPage = () => (
 
 interface Props extends ThreadsAreaContext, RouteComponentProps<{ threadID: string }> {}
 
-export interface ThreadAreaContext extends ThreadsAreaContext {
+export interface ThreadAreaContext extends Pick<ThreadsAreaContext, Exclude<keyof ThreadsAreaContext, 'project'>> {
     /** The thread. */
     thread: GQL.IDiscussionThread
 
@@ -35,7 +35,7 @@ export interface ThreadAreaContext extends ThreadsAreaContext {
     /** The thread's parsed JSON settings. */
     threadSettings: ThreadSettings
 
-    /** The project containing the thread. */
+    /** The project containing the thread. TODO! */
     project: Pick<GQL.IProject, 'id' | 'name' | 'url'> | null
 
     areaURL: string
@@ -50,6 +50,7 @@ export function createThreadAreaContext(
         ...context,
         threadSettings: parseJSON(context.thread.settings),
         areaURL: props.match.url,
+        project: props.project || null, // TODO!(sqs)
     }
 }
 

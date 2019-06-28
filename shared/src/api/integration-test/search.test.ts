@@ -1,6 +1,5 @@
 import { from } from 'rxjs'
 import { first, take } from 'rxjs/operators'
-import { TextSearchResult } from 'sourcegraph'
 import { integrationTestContext } from './testHelpers'
 
 describe('search (integration)', () => {

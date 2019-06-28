@@ -13,7 +13,7 @@ declare module '@primer/octicons-react' {
 
 const defaultProps: Partial<OcticonProps> = { size: 24 }
 
-export const ChangesetIcon: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
+export const GitPullRequestIcon: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
     <Octicon {...defaultProps} icon={GitPullRequest} className={className} />
 )
 
