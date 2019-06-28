@@ -47,7 +47,9 @@ To achieve better performance, you can do any of the following:
 
 ## Insiders build
 
-To access to the experimental, unreleased (untested), and possibly unstable version of Sourcegraph, you can use our `insiders` build. Simply run the docker command above specifying the `insiders` tag:
+To test new development builds of Sourcegraph (triggered by commits to master), change the tag to `insiders` in the `docker run` command.
+
+> WARNING: `insiders` builds may be unstable, so back up Sourcegraph's data and config (usually `~/.sourcegraph`) beforehand.
 
 ```
 docker run --publish 7080:7080 --publish 2633:2633 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:insiders
