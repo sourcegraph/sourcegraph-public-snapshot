@@ -136,7 +136,7 @@ func TestSearchResults(t *testing.T) {
 }
 
 func BenchmarkSearchResults(b *testing.B) {
-	repos, zoektRepos := generateRepos(5000)
+	minimalRepos, _, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
 
 	z := &searchbackend.Zoekt{
@@ -148,8 +148,8 @@ func BenchmarkSearchResults(b *testing.B) {
 	}
 
 	ctx := context.Background()
-	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-		return repos, nil
+	db.Mocks.Repos.MinimalList = func(_ context.Context, op db.ReposListOptions) ([]*db.MinimalRepo, error) {
+		return minimalRepos, nil
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
 
@@ -175,7 +175,7 @@ func BenchmarkSearchResults(b *testing.B) {
 func BenchmarkIntegrationSearchResults(b *testing.B) {
 	ctx := dbtesting.TestContext(b)
 
-	repos, zoektRepos := generateRepos(5000)
+	_, repos, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
 
 	zoektClient, cleanup := zoektRPC(&fakeSearcher{
@@ -221,23 +221,33 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 	}
 }
 
-func generateRepos(count int) ([]*types.Repo, []*zoekt.RepoListEntry) {
+func generateRepos(count int) ([]*db.MinimalRepo, []*types.Repo, []*zoekt.RepoListEntry) {
+	var minimalRepos []*db.MinimalRepo
 	var repos []*types.Repo
 	var zoektRepos []*zoekt.RepoListEntry
+
 	for i := 1; i <= count; i++ {
 		name := fmt.Sprintf("repo-%d", i)
 
-		repos = append(repos, &types.Repo{
-			ID: api.RepoID(i),
-			ExternalRepo: &api.ExternalRepoSpec{
+		minimalRepo := &db.MinimalRepo{
+			ID:   api.RepoID(i),
+			Name: api.RepoName(name),
+			ExternalRepo: api.ExternalRepoSpec{
 				ID:          name,
 				ServiceType: "github",
 				ServiceID:   "https://github.com",
 			},
-			Name:        api.RepoName(name),
-			URI:         fmt.Sprintf("https://github.com/foobar/%s", name),
-			Description: "this repositoriy contains a side project that I haven't maintained in 2 years",
-			Language:    "v-language",
+		}
+
+		minimalRepos = append(minimalRepos, minimalRepo)
+
+		repos = append(repos, &types.Repo{
+			ID:           minimalRepo.ID,
+			Name:         minimalRepo.Name,
+			ExternalRepo: &minimalRepo.ExternalRepo,
+			URI:          fmt.Sprintf("https://github.com/foobar/%s", minimalRepo.Name),
+			Description:  "this repositoriy contains a side project that I haven't maintained in 2 years",
+			Language:     "v-language",
 		})
 
 		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
@@ -247,7 +257,7 @@ func generateRepos(count int) ([]*types.Repo, []*zoekt.RepoListEntry) {
 			},
 		})
 	}
-	return repos, zoektRepos
+	return minimalRepos, repos, zoektRepos
 }
 
 func generateZoektMatches(count int) []zoekt.FileMatch {
