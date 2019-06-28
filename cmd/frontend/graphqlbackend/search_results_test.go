@@ -186,6 +186,7 @@ func BenchmarkSearchResults(b *testing.B) {
 			repos:  &zoekt.RepoList{Repos: zoektRepos},
 			result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
+		DisableCache: true,
 	}
 
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
