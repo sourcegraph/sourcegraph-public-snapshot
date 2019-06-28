@@ -58,13 +58,13 @@ func composeMiddleware(middlewares ...*Middleware) *Middleware {
 }
 
 // NormalizeUsername normalizes a proposed username into a format that meets Sourcegraph's
-// username formatting rules (consistent with
+// username formatting rules (based on, but not identical to
 // https://help.github.com/enterprise/2.11/admin/guides/user-management/using-ldap/#username-considerations-with-ldap):
 //
 // - Any portion of the username after a '@' character is removed
-// - Any characters not in `[a-zA-Z0-9-]` are replaced with `-`
-// - Usernames with consecutive '-' characters are not allowed
-// - Usernames that start or end with '-' are not allowed
+// - Any characters not in `[a-zA-Z0-9-.]` are replaced with `-`
+// - Usernames with consecutive '-' or '.' characters are not allowed
+// - Usernames that start or end with '-' or '.' are not allowed
 //
 // Usernames that could not be converted return an error.
 func NormalizeUsername(name string) (string, error) {
@@ -72,14 +72,20 @@ func NormalizeUsername(name string) (string, error) {
 	if i := strings.Index(name, "@"); i != -1 && i == strings.LastIndex(name, "@") {
 		name = name[:i]
 	}
+
 	name = disallowedCharacter.ReplaceAllString(name, "-")
-	if strings.HasPrefix(name, "-") || strings.HasSuffix(name, "-") || strings.Contains(name, "--") {
+	if disallowedSymbols.MatchString(name) {
 		return "", fmt.Errorf("username %q could not be normalized to acceptable format", origName)
 	}
+
 	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(name); err != nil {
 		return "", err
 	}
+
 	return name, nil
 }
 
-var disallowedCharacter = regexp.MustCompile(`[^a-zA-Z0-9\-]`)
+var (
+	disallowedSymbols   = regexp.MustCompile(`(^[\-\.])|([\-\.]$)|([\-\.]{2,})`)
+	disallowedCharacter = regexp.MustCompile(`[^a-zA-Z0-9\-\.]`)
+)
