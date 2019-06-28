@@ -905,9 +905,9 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 	}
 
-	common.repos = make([]*types.Repo, len(args.Repos))
+	common.repos = make([]*db.MinimalRepo, len(args.Repos))
 	for i, repo := range args.Repos {
-		common.repos[i] = repo.Repo.TODO()
+		common.repos[i] = repo.Repo
 	}
 
 	if args.Pattern.IsEmpty() {
@@ -929,9 +929,9 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			if !args.Zoekt.Enabled() {
 				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
 			}
-			common.missing = make([]*types.Repo, len(searcherRepos))
+			common.missing = make([]*db.MinimalRepo, len(searcherRepos))
 			for i, r := range searcherRepos {
-				common.missing[i] = r.Repo.TODO()
+				common.missing[i] = r.Repo
 			}
 			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
 			searcherRepos = nil
@@ -988,8 +988,8 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		defer mu.Unlock()
 		if ctx.Err() == nil {
 			for _, repo := range zoektRepos {
-				common.searched = append(common.searched, repo.Repo.TODO())
-				common.indexed = append(common.indexed, repo.Repo.TODO())
+				common.searched = append(common.searched, repo.Repo)
+				common.indexed = append(common.indexed, repo.Repo)
 			}
 			for repo := range reposLimitHit {
 				// Repos that aren't included in the result set due to exceeded limits are partially searched
@@ -1067,7 +1067,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			mu.Lock()
 			defer mu.Unlock()
 			if ctx.Err() == nil {
-				common.searched = append(common.searched, repoRev.Repo.TODO())
+				common.searched = append(common.searched, repoRev.Repo)
 			}
 			if repoLimitHit {
 				// We did not return all results in this repository.

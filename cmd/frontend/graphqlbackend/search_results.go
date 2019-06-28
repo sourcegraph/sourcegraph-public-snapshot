@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 
 	"github.com/hashicorp/go-multierror"
@@ -28,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -41,12 +41,11 @@ import (
 type searchResultsCommon struct {
 	limitHit bool // whether the limit on results was hit
 
-	// TODO: should these be *db.MinimalRepo?
-	repos    []*types.Repo             // repos that were matched by the repo-related filters
-	searched []*types.Repo             // repos that were searched
-	indexed  []*types.Repo             // repos that were searched using an index
-	cloning  []*types.Repo             // repos that could not be searched because they were still being cloned
-	missing  []*types.Repo             // repos that could not be searched because they do not exist
+	repos    []*db.MinimalRepo         // repos that were matched by the repo-related filters
+	searched []*db.MinimalRepo         // repos that were searched
+	indexed  []*db.MinimalRepo         // repos that were searched using an index
+	cloning  []*db.MinimalRepo         // repos that could not be searched because they were still being cloned
+	missing  []*db.MinimalRepo         // repos that could not be searched because they do not exist
 	partial  map[api.RepoName]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
 	maxResultsCount, resultCount int32
@@ -54,7 +53,7 @@ type searchResultsCommon struct {
 	// timedout usually contains repos that haven't finished being fetched yet.
 	// This should only happen for large repos and the searcher caches are
 	// purged.
-	timedout []*types.Repo
+	timedout []*db.MinimalRepo
 
 	indexUnavailable bool // True if indexed search is enabled but was not available during this search.
 }
@@ -115,7 +114,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.limitHit = c.limitHit || other.limitHit
 	c.indexUnavailable = c.indexUnavailable || other.indexUnavailable
 
-	appendUnique := func(dstp *[]*types.Repo, src []*types.Repo) {
+	appendUnique := func(dstp *[]*db.MinimalRepo, src []*db.MinimalRepo) {
 		dst := *dstp
 		sort.Slice(dst, func(i, j int) bool { return dst[i].ID < dst[j].ID })
 		sort.Slice(src, func(i, j int) bool { return src[i].ID < src[j].ID })

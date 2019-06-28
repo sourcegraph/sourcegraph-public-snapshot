@@ -384,18 +384,18 @@ func repoNamesToStrings(repoNames []api.RepoName) []string {
 	return strings
 }
 
-func toRepositoryResolvers(repos []*types.Repo) []*repositoryResolver {
+func toRepositoryResolvers(repos []*db.MinimalRepo) []*repositoryResolver {
 	resolvers := make([]*repositoryResolver, len(repos))
 	for i, repo := range repos {
 		resolvers[i] = &repositoryResolver{
-			repo:         &db.MinimalRepo{Name: repo.Name, ID: repo.ID, ExternalRepo: *repo.ExternalRepo},
-			hydratedRepo: repo,
+			repo:         repo,
+			hydratedRepo: repo.TODO(),
 		}
 	}
 	return resolvers
 }
 
-func toRepoNames(repos []*types.Repo) []api.RepoName {
+func toRepoNames(repos []*db.MinimalRepo) []api.RepoName {
 	names := make([]api.RepoName, len(repos))
 	for i, repo := range repos {
 		names[i] = repo.Name
