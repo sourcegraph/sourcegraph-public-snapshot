@@ -8,11 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/zoekt"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 )
 
 func TestSearchResults(t *testing.T) {
@@ -125,6 +127,87 @@ func TestSearchResults(t *testing.T) {
 			t.Error("calledSearchSymbols")
 		}
 	})
+}
+
+func BenchmarkSearchResults(b *testing.B) {
+	// Repositories in the database
+	var repos []*types.Repo
+	// Repositories indexed by Zoekt
+	var zoektRepos []*zoekt.RepoListEntry
+
+	for i := 1; i <= 5000; i++ {
+		name := fmt.Sprintf("repo-%d", i)
+
+		repos = append(repos, &types.Repo{
+			ID: api.RepoID(i),
+			ExternalRepo: &api.ExternalRepoSpec{
+				ID:          name,
+				ServiceType: "github",
+				ServiceID:   "https://github.com",
+			},
+			Name:        api.RepoName(name),
+			URI:         fmt.Sprintf("https://github.com/foobar/%s", name),
+			Description: "this repositoriy contains a side project that I haven't maintained in 2 years",
+			Language:    "v-language",
+		})
+
+		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
+			Repository: zoekt.Repository{
+				Name:     name,
+				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+			},
+		})
+	}
+
+	// File matches in search result by Zoekt
+	var zoektFileMatches []zoekt.FileMatch
+	for i := 1; i <= 50; i++ {
+		repoName := fmt.Sprintf("repo-%d", i)
+		fileName := fmt.Sprintf("foobar-%d.go", i)
+
+		zoektFileMatches = append(zoektFileMatches, zoekt.FileMatch{
+			Score:      5.0,
+			FileName:   fileName,
+			Repository: repoName, // Important: this needs to match a name in `repos`
+			Branches:   []string{"master"},
+			LineMatches: []zoekt.LineMatch{
+				{
+					Line: nil,
+				},
+			},
+			Checksum: []byte{0, 1, 2},
+		})
+	}
+
+	z := &searchbackend.Zoekt{
+		Client: &fakeSearcher{
+			repos:  &zoekt.RepoList{Repos: zoektRepos},
+			result: &zoekt.SearchResult{Files: zoektFileMatches},
+		},
+	}
+
+	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
+		return repos, nil
+	}
+	defer func() { db.Mocks = db.MockStores{} }()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for n := 0; n < b.N; n++ {
+		q, err := query.ParseAndCheck(`print index:only count:350`)
+		if err != nil {
+			b.Fatal(err)
+		}
+		resolver := &searchResolver{query: q, zoekt: z}
+		results, err := resolver.Results(context.Background())
+		if err != nil {
+			b.Fatal("Results:", err)
+		}
+		if int(results.MatchCount()) != len(zoektFileMatches) {
+			b.Fatalf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
+		}
+	}
 }
 
 func TestRegexpPatternMatchingExprsInOrder(t *testing.T) {

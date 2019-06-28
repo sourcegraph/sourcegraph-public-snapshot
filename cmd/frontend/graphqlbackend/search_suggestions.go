@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 	"sync"
@@ -70,8 +71,17 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
 
 		if len(effectiveRepoFieldValues) > 0 {
-			_, _, repos, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
-			return repos, err
+			repoRevs, _, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
+
+			resolvers := make([]*searchSuggestionResolver, 0, len(repoRevs))
+			for _, rev := range repoRevs {
+				resolvers = append(resolvers, newSearchResultResolver(
+					&repositoryResolver{repo: rev.Repo},
+					math.MaxInt32,
+				))
+			}
+
+			return resolvers, err
 		}
 		return nil, nil
 	}
@@ -93,7 +103,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	suggesters = append(suggesters, showFileSuggestions)
 
 	showSymbolMatches := func(ctx context.Context) (results []*searchSuggestionResolver, err error) {
-		repoRevs, _, _, _, err := r.resolveRepositories(ctx, nil)
+		repoRevs, _, _, err := r.resolveRepositories(ctx, nil)
 		if err != nil {
 			return nil, err
 		}
