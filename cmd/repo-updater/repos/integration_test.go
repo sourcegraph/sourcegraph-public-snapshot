@@ -59,16 +59,8 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/Syncer/Sync", testSyncerSync(store)},
 		{"DBStore/Syncer/SyncSubset", testSyncSubset(store)},
 		{
-			"Migrations/GithubSetDefaultRepositoryQuery",
-			testGithubSetDefaultRepositoryQueryMigration(store),
-		},
-		{
 			"Migrations/GitLabSetDefaultProjectQuery",
 			testGitLabSetDefaultProjectQueryMigration(store),
-		},
-		{
-			"Migrations/BitbucketServerSetDefaultRepositoryQuery",
-			testBitbucketServerSetDefaultRepositoryQueryMigration(store),
 		},
 		{
 			"Migrations/BitbucketServerUsername",
