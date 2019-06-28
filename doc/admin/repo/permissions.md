@@ -165,7 +165,7 @@ Go to your Sourcegraph's external services page (i.e. `https://sourcegraph.examp
 
 ---
 
-Permissions for each user are cached for the configured `ttl` duration. When the `ttl` elapses, permissions will refetched from Bitbucket Server again. A lower `ttl` makes Sourcegraph refresh permissions for each user more often. A higher `ttl` reduces the load on Bitbucket Server and improves user experience by using cached permissions on most requests (i.e. those that are issued within the `ttl` window). The more repos you have, the slower it is to fetch permissions.
+Permissions for each user are cached for the configured `ttl` duration. When the `ttl` elapses, permissions will be refetched from Bitbucket Server again. A lower `ttl` makes Sourcegraph refresh permissions for each user more often. A higher `ttl` reduces the load on Bitbucket Server and improves user experience by using cached permissions on most requests (i.e. those that are issued within the `ttl` window). The more repos you have, the slower it is to fetch permissions.
 
 Taking all of this into account, you may want to configure the `ttl` to something else than its default value of `3h`, depending on your requirements.
 
