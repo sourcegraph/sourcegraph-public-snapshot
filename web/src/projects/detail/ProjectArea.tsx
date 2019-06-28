@@ -47,8 +47,6 @@ const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
 )
 
-interface Props extends RouteComponentProps<{ idWithoutKind: string }>, ExtensionsControllerProps {}
-
 export interface ProjectAreaContext extends ExtensionsControllerProps, PlatformContextProps {
     /** The project. */
     project: GQL.IProject
@@ -59,6 +57,10 @@ export interface ProjectAreaContext extends ExtensionsControllerProps, PlatformC
     authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
 }
+
+interface Props
+    extends Pick<ProjectAreaContext, Exclude<keyof ProjectAreaContext, 'project' | 'onProjectUpdate'>>,
+        RouteComponentProps<{ idWithoutKind: string }> {}
 
 /**
  * The area for a single project.

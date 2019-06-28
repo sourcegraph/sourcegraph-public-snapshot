@@ -2,6 +2,7 @@ import * as sourcegraph from 'sourcegraph'
 import { DiagnosticInfo } from '../threads/detail/backend'
 
 export interface Checklist {
-    diagnostic: DiagnosticInfo
-    codeActions?: sourcegraph.CodeAction[]
+    items: sourcegraph.ChecklistItem[]
+    // diagnostic: DiagnosticInfo
+    // codeActions?: sourcegraph.CodeAction[]
 }

@@ -8,6 +8,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError } from '../../../../../shared/src/util/errors'
 import { parseHash } from '../../../../../shared/src/util/url'
 import { createThread } from '../../../discussions/backend'
+import { FAKE_PROJECT_ID } from '../../../enterprise/changesets/preview/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
@@ -81,6 +82,8 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
         return createThread({
             title,
             contents,
+            project: FAKE_PROJECT_ID,
+            type: GQL.ThreadType.THREAD,
             target: {
                 repo: {
                     repositoryID: this.props.repoID,

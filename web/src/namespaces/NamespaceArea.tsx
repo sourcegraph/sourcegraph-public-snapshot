@@ -1,7 +1,7 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { ExtensionsControllerNotificationProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { HeroPage } from '../components/HeroPage'
 import { NamespaceProjectsPage } from './projects/NamespaceProjectsPage'
@@ -13,7 +13,7 @@ const NotFoundPage: React.FunctionComponent = () => (
 /**
  * Properties passed to all page components in the namespace area.
  */
-export interface NamespaceAreaContext extends ExtensionsControllerProps {
+export interface NamespaceAreaContext extends ExtensionsControllerNotificationProps {
     namespace: Pick<GQL.Namespace, '__typename' | 'id'>
     authenticatedUser: GQL.IUser | null
     isLightTheme: boolean

@@ -15,7 +15,6 @@ import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import { NamespaceProps } from '../../namespaces'
 import { NamespaceArea } from '../../namespaces/NamespaceArea'
 import { ThemeProps } from '../../theme'
 import { OrgSavedSearchesCreateForm } from '../saved-searches/OrgSavedSearchesCreateForm'
@@ -91,11 +90,7 @@ interface State {
 /**
  * Properties passed to all page components in the org area.
  */
-export interface OrgAreaPageProps
-    extends PlatformContextProps,
-        SettingsCascadeProps,
-        ExtensionsControllerProps,
-        NamespaceProps {
+export interface OrgAreaPageProps extends PlatformContextProps, SettingsCascadeProps {
     /** The org that is the subject of the page. */
     org: GQL.IOrg
 
@@ -171,9 +166,8 @@ export class OrgArea extends React.Component<Props> {
             onOrganizationUpdate: this.onDidUpdateOrganization,
             platformContext: this.props.platformContext,
             settingsCascade: this.props.settingsCascade,
-            extensionsController: this.props.extensionsController,
-            namespace: this.state.orgOrError,
         }
+        const namespace = this.state.orgOrError
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
             // The OrgInvitationPage is displayed without the OrgHeader because it is modal-like.
@@ -252,6 +246,8 @@ export class OrgArea extends React.Component<Props> {
                                         <NamespaceArea
                                             {...routeComponentProps}
                                             {...transferProps}
+                                            namespace={namespace}
+                                            extensionsController={this.props.extensionsController}
                                             isLightTheme={this.props.isLightTheme}
                                         />
                                     )}

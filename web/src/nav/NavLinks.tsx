@@ -14,13 +14,13 @@ import { LinkWithIconOnlyTooltip } from '../components/LinkWithIconOnlyTooltip'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { isDiscussionsEnabled } from '../discussions'
 import { ChangesIcon } from '../enterprise/changes/icons'
-import { ChangesetsNavItem, ChecksNavItem } from '../enterprise/changesets/global/nav/ChangesetsNavItem'
+import { ChangesetsNavItem } from '../enterprise/changesets/global/nav/ChangesetsNavItem'
 import { ChecklistIcon } from '../enterprise/checklists/icons'
+import { TasksIcon } from '../enterprise/tasks/icons'
 import { ThreadsNavItem } from '../enterprise/threads/global/nav/ThreadsNavItem'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
-import { GitPullRequestIcon } from '../util/octicons'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
 
@@ -78,6 +78,14 @@ export class NavLinks extends React.PureComponent<Props> {
                                 to="/checklist"
                                 text="Checklist"
                                 icon={ChecklistIcon}
+                                className="nav-link btn btn-link px-3 text-decoration-none"
+                            />
+                        </li>
+                        <li className="nav-item">
+                            <LinkWithIconOnlyTooltip
+                                to="/tasks"
+                                text="Tasks"
+                                icon={TasksIcon}
                                 className="nav-link btn btn-link px-3 text-decoration-none"
                             />
                         </li>
