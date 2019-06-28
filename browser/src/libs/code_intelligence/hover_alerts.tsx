@@ -1,9 +1,10 @@
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { catchError, map, startWith, switchMap } from 'rxjs/operators'
 import { HoverAlert } from '../../../../shared/src/hover/HoverOverlay'
 import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { observeStorageKey, storage } from '../../browser/storage'
 import { StorageItems } from '../../browser/types'
+import { isInPage } from '../../context'
 
 export type ExtensionHoverAlertType = 'nativeTooltips'
 
@@ -14,6 +15,9 @@ export type ExtensionHoverAlertType = 'nativeTooltips'
 export function getActiveHoverAlerts(
     allAlerts: Observable<HoverAlert<ExtensionHoverAlertType>>[]
 ): Observable<HoverAlert<ExtensionHoverAlertType>[] | undefined> {
+    if (isInPage) {
+        return of(undefined)
+    }
     return observeStorageKey('sync', 'dismissedHoverAlerts').pipe(
         switchMap(dismissedAlerts =>
             combineLatestOrDefault(allAlerts).pipe(
