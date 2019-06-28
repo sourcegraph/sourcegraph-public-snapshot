@@ -91,7 +91,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("sent, with un-normalized username", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(headerName, "alice.zhao")
+		req.Header.Set(headerName, "alice_zhao")
 		const wantNormalizedUsername = "alice-zhao"
 		var calledMock bool
 		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
@@ -99,7 +99,7 @@ func TestMiddleware(t *testing.T) {
 			if op.UserProps.Username != wantNormalizedUsername {
 				t.Errorf("got %q, want %q", op.UserProps.Username, wantNormalizedUsername)
 			}
-			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice.zhao" {
+			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice_zhao" {
 				return 1, "", nil
 			}
 			return 0, "safeErr", fmt.Errorf("account %v not found in mock", op.ExternalAccount)
