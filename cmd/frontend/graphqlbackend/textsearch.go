@@ -487,7 +487,7 @@ func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 	return searchOpts
 }
 
-func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, indexedCommits map[*search.RepositoryRevisions]string, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -632,7 +632,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 			JLimitHit:    fileLimitHit,
 			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
 			repo:         repoRev.Repo,
-			commitID:     api.CommitID(indexedRevisions[repoRev]),
+			commitID:     api.CommitID(indexedCommits[repoRev]),
 		}
 	}
 
@@ -827,60 +827,61 @@ type zoektBackend interface {
 //
 // Additionally, it returns a mapping of `indexed` repositories to the exact
 // Git commit of HEAD that is indexed.
-func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, repos []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, indexedRevisions map[*search.RepositoryRevisions]string, err error) {
-	for _, repoRev := range repos {
+func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, indexedCommits map[*search.RepositoryRevisions]string, err error) {
+	revset := make(map[string]*search.RepositoryRevisions, len(revs))
+	indexedCount := 0
+
+	for _, r := range revs {
+		revset[string(r.Repo.Name)] = r
 		// We search HEAD using zoekt
-		if revspecs := repoRev.RevSpecs(); len(revspecs) > 0 {
+		if len(r.Revs) > 0 {
 			// TODO(sqs): search all revspecs
-			if revspecs[0] == "" {
-				indexed = append(indexed, repoRev)
+			if r.Revs[0].RevSpec == "" {
+				indexedCount++
 			} else {
-				unindexed = append(unindexed, repoRev)
+				unindexed = append(unindexed, r)
 			}
 		}
 	}
 
 	// Return early if we don't need to querying zoekt
-	if len(indexed) == 0 {
-		return indexed, unindexed, nil, nil
+	if indexedCount == 0 {
+		return nil, unindexed, nil, nil
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	resp, err := z.ListAll(ctx)
 	if err != nil {
-		return nil, repos, nil, err
+		return nil, revs, nil, err
 	}
 
-	// Everything currently in indexed is at HEAD. Filter out repos which
-	// zoekt hasn't indexed yet.
-	zoektIndexed := make(map[string]*zoekt.Repository, len(resp.Repos))
-	for _, repo := range resp.Repos {
-		zoektIndexed[repo.Repository.Name] = &repo.Repository
-	}
+	indexed = make([]*search.RepositoryRevisions, 0, len(resp.Repos))
+	indexedCommits = make(map[*search.RepositoryRevisions]string)
 
-	head := indexed
-	indexed = indexed[:0]
-	for _, repoRev := range head {
-		if _, ok := zoektIndexed[string(repoRev.Repo.Name)]; ok {
-			indexed = append(indexed, repoRev)
-		} else {
-			unindexed = append(unindexed, repoRev)
+	for _, r := range resp.Repos {
+		rev, ok := revset[r.Repository.Name]
+		if !ok {
+			continue
 		}
-	}
 
-	// Populate the indexedRevisions map.
-	indexedRevisions = make(map[*search.RepositoryRevisions]string, len(indexed))
-	for _, repoRev := range indexed {
-		for _, branch := range zoektIndexed[string(repoRev.Repo.Name)].Branches {
+		indexed = append(indexed, rev)
+		for _, branch := range r.Repository.Branches {
 			if branch.Name == "HEAD" {
-				indexedRevisions[repoRev] = branch.Version
+				indexedCommits[rev] = branch.Version
 				break
 			}
 		}
+
+		delete(revset, r.Repository.Name)
 	}
 
-	return indexed, unindexed, indexedRevisions, nil
+	unindexed = make([]*search.RepositoryRevisions, 0, len(revset))
+	for _, r := range revset {
+		unindexed = append(unindexed, r)
+	}
+
+	return indexed, unindexed, indexedCommits, nil
 }
 
 var mockSearchFilesInRepos func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error)
@@ -903,14 +904,14 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
 
 	var (
-		zoektRepos       []*search.RepositoryRevisions
-		searcherRepos    []*search.RepositoryRevisions = args.Repos
-		indexedRevisions map[*search.RepositoryRevisions]string
+		zoektRepos     []*search.RepositoryRevisions
+		searcherRepos  []*search.RepositoryRevisions = args.Repos
+		indexedCommits map[*search.RepositoryRevisions]string
 	)
 
 	if args.Zoekt.Enabled() {
 		var err error
-		zoektRepos, searcherRepos, indexedRevisions, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos)
+		zoektRepos, searcherRepos, indexedCommits, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos)
 		if err != nil {
 			// Don't hard fail if index is not available yet.
 			tr.LogFields(otlog.String("indexErr", err.Error()))
@@ -1000,7 +1001,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		query := args.Pattern
 		k := zoektResultCountFactor(len(zoektRepos), query)
 		opts := zoektSearchOpts(k, query)
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, indexedRevisions, args.UseFullDeadline, args.Zoekt.Client, opts, time.Since)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, indexedCommits, args.UseFullDeadline, args.Zoekt.Client, opts, time.Since)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
