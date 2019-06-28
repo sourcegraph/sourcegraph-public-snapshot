@@ -162,10 +162,16 @@ type MinimalRepo struct {
 	ID           api.RepoID
 	ExternalRepo api.ExternalRepoSpec
 	Name         api.RepoName
+
+	// Remove this as soon as hydration is in place
+	cachedHydratedRepo *types.Repo
 }
 
 func (m *MinimalRepo) TODO() *types.Repo {
-	return &types.Repo{ID: m.ID, Name: m.Name, ExternalRepo: &m.ExternalRepo}
+	if m.cachedHydratedRepo == nil {
+		m.cachedHydratedRepo = &types.Repo{ID: m.ID, Name: m.Name, ExternalRepo: &m.ExternalRepo}
+	}
+	return m.cachedHydratedRepo
 }
 
 const getMinimalRepoByQueryFmtstr = `
