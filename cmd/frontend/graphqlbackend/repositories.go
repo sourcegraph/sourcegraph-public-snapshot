@@ -208,7 +208,15 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 		if r.opt.LimitOffset != nil && i == r.opt.Limit {
 			break
 		}
-		resolvers = append(resolvers, &repositoryResolver{repo: repo})
+
+		minimalRepo := &db.MinimalRepo{ID: repo.ID, Name: repo.Name}
+		if repo.ExternalRepo != nil {
+			minimalRepo.ExternalRepo = *repo.ExternalRepo
+		}
+		resolvers = append(resolvers, &repositoryResolver{
+			repo:         minimalRepo,
+			hydratedRepo: repo,
+		})
 	}
 	return resolvers, nil
 }
@@ -305,7 +313,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 
 	// Trigger update when enabling.
 	if args.Enabled {
-		gitserverRepo, err := backend.GitRepo(ctx, repo.repo)
+		gitserverRepo, err := backend.GitRepo(ctx, repo.repo.TODO())
 		if err != nil {
 			return nil, err
 		}
@@ -379,7 +387,10 @@ func repoNamesToStrings(repoNames []api.RepoName) []string {
 func toRepositoryResolvers(repos []*types.Repo) []*repositoryResolver {
 	resolvers := make([]*repositoryResolver, len(repos))
 	for i, repo := range repos {
-		resolvers[i] = &repositoryResolver{repo: repo}
+		resolvers[i] = &repositoryResolver{
+			repo:         &db.MinimalRepo{Name: repo.Name, ID: repo.ID, ExternalRepo: *repo.ExternalRepo},
+			hydratedRepo: repo,
+		}
 	}
 	return resolvers
 }

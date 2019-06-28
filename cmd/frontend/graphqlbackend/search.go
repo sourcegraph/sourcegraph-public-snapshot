@@ -403,7 +403,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 
 	tr.LazyPrintf("Repos.List - start")
-	repos, err := backend.Repos.List(ctx, db.ReposListOptions{
+	repos, err := db.Repos.MinimalList(ctx, db.ReposListOptions{
 		IncludePatterns: includePatterns,
 		ExcludePattern:  unionRegExps(excludePatterns),
 		Enabled:         true,
@@ -748,9 +748,9 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev search.Reposito
 	common.limitHit = common.limitHit || limitHit
 	if vcs.IsRepoNotExist(searchErr) {
 		if vcs.IsCloneInProgress(searchErr) {
-			common.cloning = append(common.cloning, repoRev.Repo)
+			common.cloning = append(common.cloning, repoRev.Repo.TODO())
 		} else {
-			common.missing = append(common.missing, repoRev.Repo)
+			common.missing = append(common.missing, repoRev.Repo.TODO())
 		}
 	} else if git.IsRevisionNotFound(searchErr) {
 		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
@@ -759,9 +759,9 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev search.Reposito
 			return searchErr
 		}
 	} else if errcode.IsNotFound(searchErr) {
-		common.missing = append(common.missing, repoRev.Repo)
+		common.missing = append(common.missing, repoRev.Repo.TODO())
 	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		common.timedout = append(common.timedout, repoRev.Repo)
+		common.timedout = append(common.timedout, repoRev.Repo.TODO())
 	} else if searchErr != nil {
 		return searchErr
 	}

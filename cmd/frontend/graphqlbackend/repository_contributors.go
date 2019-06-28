@@ -51,7 +51,7 @@ func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) (
 			opt.After = *r.args.After
 		}
 
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
+		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo.TODO())
 		if err != nil {
 			r.err = err
 			return

@@ -49,7 +49,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 	repoRevs := search.RepositoryRevisions{
-		Repo: &types.Repo{ID: 1, Name: "repo"},
+		Repo: &db.MinimalRepo{ID: 1, Name: "repo"},
 		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, commitSearchOp{
@@ -64,7 +64,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 
 	wantCommit := gitCommitResolver{
-		repo:   &repositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
+		repo:   &repositoryResolver{repo: &db.MinimalRepo{ID: 1, Name: "repo"}},
 		oid:    "c1",
 		author: *toSignatureResolver(&gitSignatureWithDate),
 	}

@@ -39,7 +39,9 @@ import (
 // searchResultsCommon contains fields that should be returned by all funcs
 // that contribute to the overall search result set.
 type searchResultsCommon struct {
-	limitHit bool                      // whether the limit on results was hit
+	limitHit bool // whether the limit on results was hit
+
+	// TODO: should these be *db.MinimalRepo?
 	repos    []*types.Repo             // repos that were matched by the repo-related filters
 	searched []*types.Repo             // repos that were searched
 	indexed  []*types.Repo             // repos that were searched using an index

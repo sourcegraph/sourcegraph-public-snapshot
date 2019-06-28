@@ -46,7 +46,7 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 }) (*gitRefConnectionResolver, error) {
 	var branches []*git.Branch
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
+		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.TODO())
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +88,7 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 
 	var tags []*git.Tag
 	if args.Type == nil || *args.Type == gitRefTypeTag {
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
+		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.TODO())
 		if err != nil {
 			return nil, err
 		}

@@ -118,14 +118,14 @@ func (r *gitCommitResolver) CanonicalURL() (string, error) {
 }
 
 func (r *gitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.Commit(ctx, r.repo.repo, api.CommitID(r.oid))
+	return externallink.Commit(ctx, r.repo.repo.TODO(), api.CommitID(r.oid))
 }
 
 func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*gitTreeEntryResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo.TODO())
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *gitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*gitTreeEntryResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo.TODO())
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func (r *gitCommitResolver) File(ctx context.Context, args *struct {
 }
 
 func (r *gitCommitResolver) Languages(ctx context.Context) ([]string, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid))
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo.TODO(), api.CommitID(r.oid))
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func (r *gitCommitResolver) Ancestors(ctx context.Context, args *struct {
 func (r *gitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo.TODO())
 	if err != nil {
 		return nil, err
 	}

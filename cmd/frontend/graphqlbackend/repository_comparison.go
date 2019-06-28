@@ -57,7 +57,7 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 		return toGitCommitResolver(r, commit), nil
 	}
 
-	grepo, err := backend.CachedGitRepo(ctx, r.repo)
+	grepo, err := backend.CachedGitRepo(ctx, r.repo.TODO())
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 			// flags or refer to a file.
 			return nil, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
 		}
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.cmp.repo.repo)
+		cachedRepo, err := backend.CachedGitRepo(ctx, r.cmp.repo.repo.TODO())
 		if err != nil {
 			return nil, err
 		}

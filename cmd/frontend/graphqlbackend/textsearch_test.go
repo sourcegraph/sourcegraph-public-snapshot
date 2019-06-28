@@ -13,6 +13,7 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -355,7 +356,7 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 			// treat empty list as preferring master
 			revs = []search.RevisionSpecifier{{RevSpec: ""}}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: repoName}, Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: &db.MinimalRepo{Name: repoName}, Revs: revs}
 	}
 	return r
 }
@@ -404,7 +405,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 
 	singleRepositoryRevisions := []*search.RepositoryRevisions{
 		{
-			Repo:              &types.Repo{},
+			Repo:              &db.MinimalRepo{},
 			IndexedHEADCommit: "abc",
 		},
 	}

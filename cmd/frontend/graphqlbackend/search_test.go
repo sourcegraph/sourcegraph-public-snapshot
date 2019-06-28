@@ -23,7 +23,7 @@ func TestSearch(t *testing.T) {
 	tcs := []struct {
 		name                         string
 		searchQuery                  string
-		reposListMock                func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
+		reposMinimalListMock         func(v0 context.Context, v1 db.ReposListOptions) ([]*db.MinimalRepo, error)
 		repoRevsMock                 func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error)
 		externalServicesListMock     func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error)
 		phabricatorGetRepoByNameMock func(repo api.RepoName) (*types.PhabricatorRepo, error)
@@ -32,7 +32,7 @@ func TestSearch(t *testing.T) {
 		{
 			name:        "empty query against no repos gets no results",
 			searchQuery: "",
-			reposListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
+			reposMinimalListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*db.MinimalRepo, error) {
 				return nil, nil
 			},
 			repoRevsMock: func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
@@ -52,8 +52,8 @@ func TestSearch(t *testing.T) {
 		{
 			name:        "empty query against empty repo gets no results",
 			searchQuery: "",
-			reposListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
-				return []*types.Repo{
+			reposMinimalListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*db.MinimalRepo, error) {
+				return []*db.MinimalRepo{
 					{
 						Name: "test",
 					},
@@ -79,7 +79,7 @@ func TestSearch(t *testing.T) {
 			conf.Mock(&conf.Unified{})
 			defer conf.Mock(nil)
 			vars := map[string]interface{}{"query": tc.searchQuery}
-			db.Mocks.Repos.List = tc.reposListMock
+			db.Mocks.Repos.MinimalList = tc.reposMinimalListMock
 			sr := &schemaResolver{}
 			schema, err := graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
 			if err != nil {

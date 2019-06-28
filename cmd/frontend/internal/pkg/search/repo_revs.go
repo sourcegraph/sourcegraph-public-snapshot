@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	dbquery "github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
@@ -57,7 +57,7 @@ func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
 // globs.  If no revspecs and no ref globs are specified, then the
 // repository's default branch is used.
 type RepositoryRevisions struct {
-	Repo *types.Repo
+	Repo *db.MinimalRepo
 	Revs []RevisionSpecifier
 	// IndexedHEADCommit contains the HEAD Git commit indexed by Zoekt.
 	// It is written to by zoektIndexedRepos and read later by zoektSearchHEAD.
@@ -147,7 +147,7 @@ func (r *RepositoryRevisions) RevSpecs() []string {
 
 // RepoRevisionsQuery evaulates ref specifiers in q to find out which
 // revisions need to be searched for each repository.
-func RepoRevisionsQuery(q query.Q, repos []*types.Repo) ([]RepositoryRevisions, error) {
+func RepoRevisionsQuery(q query.Q, repos []*db.MinimalRepo) ([]RepositoryRevisions, error) {
 	// If we have no ref specifiers, then we can shortcut this evaluation and
 	// just search default branch.
 	hasRef := false

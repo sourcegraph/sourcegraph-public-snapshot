@@ -88,7 +88,7 @@ func (r *gitTreeEntryResolver) urlPath(prefix string) (string, error) {
 func (r *gitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *gitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.inputRevOrImmutableRev(), r.path, r.stat.Mode().IsDir())
+	return externallink.FileOrDir(ctx, r.commit.repo.repo.TODO(), r.commit.inputRevOrImmutableRev(), r.path, r.stat.Mode().IsDir())
 }
 
 func (r *gitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
@@ -193,7 +193,7 @@ func (r *gitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if !r.IsDirectory() {
 		return false, nil
 	}
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo.TODO())
 	if err != nil {
 		return false, err
 	}

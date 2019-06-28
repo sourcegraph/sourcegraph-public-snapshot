@@ -10,12 +10,13 @@ import (
 )
 
 type MockRepos struct {
-	Get       func(ctx context.Context, repo api.RepoID) (*types.Repo, error)
-	GetByName func(ctx context.Context, repo api.RepoName) (*types.Repo, error)
-	List      func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)
-	Delete    func(ctx context.Context, repo api.RepoID) error
-	Count     func(ctx context.Context, opt ReposListOptions) (int, error)
-	Upsert    func(api.InsertRepoOp) error
+	Get         func(ctx context.Context, repo api.RepoID) (*types.Repo, error)
+	GetByName   func(ctx context.Context, repo api.RepoName) (*types.Repo, error)
+	List        func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)
+	MinimalList func(v0 context.Context, v1 ReposListOptions) ([]*MinimalRepo, error)
+	Delete      func(ctx context.Context, repo api.RepoID) error
+	Count       func(ctx context.Context, opt ReposListOptions) (int, error)
+	Upsert      func(api.InsertRepoOp) error
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
@@ -64,6 +65,19 @@ func (s *MockRepos) MockList(t testing.TB, wantRepos ...api.RepoName) (called *b
 		repos := make([]*types.Repo, len(wantRepos))
 		for i, repo := range wantRepos {
 			repos[i] = &types.Repo{Name: repo}
+		}
+		return repos, nil
+	}
+	return
+}
+
+func (s *MockRepos) MockMinimalList(t testing.TB, wantRepos ...api.RepoName) (called *bool) {
+	called = new(bool)
+	s.MinimalList = func(ctx context.Context, opt ReposListOptions) ([]*MinimalRepo, error) {
+		*called = true
+		repos := make([]*MinimalRepo, len(wantRepos))
+		for i, repo := range wantRepos {
+			repos[i] = &MinimalRepo{Name: repo}
 		}
 		return repos, nil
 	}

@@ -49,7 +49,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*git.Commi
 		if r.after != nil {
 			after = *r.after
 		}
-		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
+		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo.TODO())
 		if err != nil {
 			return nil, err
 		}

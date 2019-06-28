@@ -92,7 +92,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 					run.Error(repoErr)
 				}
 			} else {
-				common.searched = append(common.searched, repoRevs.Repo)
+				common.searched = append(common.searched, repoRevs.Repo.TODO())
 			}
 			if repoSymbols != nil {
 				res = append(res, repoSymbols...)

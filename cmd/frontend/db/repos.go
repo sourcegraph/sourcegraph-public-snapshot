@@ -164,6 +164,10 @@ type MinimalRepo struct {
 	Name         api.RepoName
 }
 
+func (m *MinimalRepo) TODO() *types.Repo {
+	return &types.Repo{ID: m.ID, Name: m.Name, ExternalRepo: &m.ExternalRepo}
+}
+
 const getMinimalRepoByQueryFmtstr = `
 SELECT id, name, external_id, external_service_type, external_service_id
 FROM repo
@@ -382,9 +386,9 @@ func (s *repos) MinimalList(ctx context.Context, opt ReposListOptions) (results 
 		tr.Finish()
 	}()
 
-	// if Mocks.Repos.List != nil {
-	// 	return Mocks.Repos.List(ctx, opt)
-	// }
+	if Mocks.Repos.MinimalList != nil {
+		return Mocks.Repos.MinimalList(ctx, opt)
+	}
 
 	conds, err := s.listSQL(opt)
 	if err != nil {

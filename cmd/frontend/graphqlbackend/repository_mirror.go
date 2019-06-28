@@ -243,7 +243,7 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	gitserverRepo, err := backend.GitRepo(ctx, repo.repo)
+	gitserverRepo, err := backend.GitRepo(ctx, repo.repo.TODO())
 	if err != nil {
 		return nil, err
 	}

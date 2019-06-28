@@ -25,10 +25,11 @@ import (
 )
 
 type repositoryResolver struct {
-	repo        *types.Repo
-	redirectURL *string
-	icon        string
-	matches     []*searchResultMatchResolver
+	hydratedRepo *types.Repo
+	repo         *db.MinimalRepo
+	redirectURL  *string
+	icon         string
+	matches      []*searchResultMatchResolver
 }
 
 func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, error) {
@@ -40,7 +41,10 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, er
 	if err != nil {
 		return nil, err
 	}
-	return &repositoryResolver{repo: repo}, nil
+	return &repositoryResolver{
+		repo:         &db.MinimalRepo{Name: repo.Name, ID: repo.ID, ExternalRepo: *repo.ExternalRepo},
+		hydratedRepo: repo,
+	}, nil
 }
 
 func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*repositoryResolver, error) {
@@ -48,7 +52,10 @@ func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*repositoryRes
 	if err != nil {
 		return nil, err
 	}
-	return &repositoryResolver{repo: repo}, nil
+	return &repositoryResolver{
+		repo:         &db.MinimalRepo{Name: repo.Name, ID: repo.ID, ExternalRepo: *repo.ExternalRepo},
+		hydratedRepo: repo,
+	}, nil
 }
 
 func (r *repositoryResolver) ID() graphql.ID {
@@ -67,11 +74,11 @@ func (r *repositoryResolver) Name() string {
 }
 
 func (r *repositoryResolver) URI() string {
-	return r.repo.URI
+	return r.hydratedRepo.URI
 }
 
 func (r *repositoryResolver) Description() string {
-	return r.repo.Description
+	return r.hydratedRepo.Description
 }
 
 func (r *repositoryResolver) RedirectURL() *string {
@@ -98,7 +105,7 @@ type repositoryCommitArgs struct {
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitArgs) (*gitCommitResolver, error) {
-	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
+	commitID, err := backend.Repos.ResolveRev(ctx, r.repo.TODO(), args.Rev)
 	if err != nil {
 		if git.IsRevisionNotFound(err) {
 			return nil, nil
@@ -106,7 +113,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitA
 		return nil, err
 	}
 
-	commit, err := backend.Repos.GetCommit(ctx, r.repo, commitID)
+	commit, err := backend.Repos.GetCommit(ctx, r.repo.TODO(), commitID)
 	if commit == nil || err != nil {
 		return nil, err
 	}
@@ -121,7 +128,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitA
 }
 
 func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.TODO())
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +153,7 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver
 }
 
 func (r *repositoryResolver) Language() string {
-	return r.repo.Language
+	return r.hydratedRepo.Language
 }
 
 func (r *repositoryResolver) Enabled() bool { return true }
@@ -162,7 +169,7 @@ func (r *repositoryResolver) UpdatedAt() *string {
 func (r *repositoryResolver) URL() string { return "/" + string(r.repo.Name) }
 
 func (r *repositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.Repository(ctx, r.repo)
+	return externallink.Repository(ctx, r.repo.TODO())
 }
 
 func (r *repositoryResolver) Icon() string {
@@ -244,7 +251,10 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		if err != nil {
 			return nil, err
 		}
-		r := &repositoryResolver{repo: repo}
+		r := &repositoryResolver{
+			repo:         &db.MinimalRepo{Name: repo.Name, ID: repo.ID, ExternalRepo: *repo.ExternalRepo},
+			hydratedRepo: repo,
+		}
 		return r.Commit(ctx, &repositoryCommitArgs{Rev: targetRef})
 	}
 

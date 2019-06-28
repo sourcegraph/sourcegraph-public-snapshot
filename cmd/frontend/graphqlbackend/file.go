@@ -18,7 +18,7 @@ func (r *gitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo.TODO())
 	if err != nil {
 		return "", err
 	}
@@ -95,7 +95,7 @@ func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo)
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo.TODO())
 	if err != nil {
 		return nil, err
 	}

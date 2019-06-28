@@ -24,6 +24,7 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -62,7 +63,7 @@ type fileMatchResolver struct {
 	JLimitHit    bool         `json:"LimitHit"`
 	symbols      []*searchSymbolResult
 	uri          string
-	repo         *types.Repo
+	repo         *db.MinimalRepo
 	commitID     api.CommitID
 	// inputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the
@@ -373,7 +374,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	workspace := fileMatchURI(repo.Name, rev, "")
 	for _, fm := range matches {
 		fm.uri = workspace + fm.JPath
-		fm.repo = repo
+		fm.repo = &db.MinimalRepo{ID: repo.ID, Name: repo.Name, ExternalRepo: *repo.ExternalRepo}
 		fm.commitID = commit
 		fm.inputRev = &rev
 	}
@@ -906,7 +907,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 
 	common.repos = make([]*types.Repo, len(args.Repos))
 	for i, repo := range args.Repos {
-		common.repos[i] = repo.Repo
+		common.repos[i] = repo.Repo.TODO()
 	}
 
 	if args.Pattern.IsEmpty() {
@@ -930,7 +931,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			}
 			common.missing = make([]*types.Repo, len(searcherRepos))
 			for i, r := range searcherRepos {
-				common.missing[i] = r.Repo
+				common.missing[i] = r.Repo.TODO()
 			}
 			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
 			searcherRepos = nil
@@ -987,8 +988,8 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		defer mu.Unlock()
 		if ctx.Err() == nil {
 			for _, repo := range zoektRepos {
-				common.searched = append(common.searched, repo.Repo)
-				common.indexed = append(common.indexed, repo.Repo)
+				common.searched = append(common.searched, repo.Repo.TODO())
+				common.indexed = append(common.indexed, repo.Repo.TODO())
 			}
 			for repo := range reposLimitHit {
 				// Repos that aren't included in the result set due to exceeded limits are partially searched
@@ -1058,7 +1059,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			defer done()
 
 			rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
-			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
+			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo.TODO(), repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
 			if searchErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 				log15.Warn("searchFilesInRepo failed", "error", searchErr, "repo", repoRev.Repo.Name)
@@ -1066,7 +1067,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			mu.Lock()
 			defer mu.Unlock()
 			if ctx.Err() == nil {
-				common.searched = append(common.searched, repoRev.Repo)
+				common.searched = append(common.searched, repoRev.Repo.TODO())
 			}
 			if repoLimitHit {
 				// We did not return all results in this repository.
