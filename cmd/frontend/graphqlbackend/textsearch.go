@@ -113,6 +113,23 @@ func (fm *fileMatchResolver) LimitHit() bool {
 	return fm.JLimitHit
 }
 
+func (fm *fileMatchResolver) ToRepository() (*repositoryResolver, bool) { return nil, false }
+func (fm *fileMatchResolver) ToFileMatch() (*fileMatchResolver, bool)   { return fm, true }
+func (fm *fileMatchResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
+	return nil, false
+}
+
+func (fm *fileMatchResolver) searchResultURIs() (string, string) {
+	return string(fm.repo.Name), fm.JPath
+}
+
+func (fm *fileMatchResolver) resultCount() int32 {
+	if l := len(fm.LineMatches()); l > 0 {
+		return int32(l)
+	}
+	return 1 // 1 to count "empty" results like type:path results
+}
+
 // LineMatch is the struct used by vscode to receive search results for a line
 type lineMatch struct {
 	JPreview          string     `json:"Preview"`

@@ -33,11 +33,13 @@ func TestSearchResults(t *testing.T) {
 		for i, result := range results.results {
 			// NOTE: Only supports one match per line. If we need to test other cases,
 			// just remove that assumption in the following line of code.
-			switch {
-			case result.repo != nil:
-				resultDescriptions[i] = fmt.Sprintf("repo:%s", result.repo.repo.Name)
-			case result.fileMatch != nil:
-				resultDescriptions[i] = fmt.Sprintf("%s:%d", result.fileMatch.JPath, result.fileMatch.JLineMatches[0].JLineNumber)
+			switch m := result.(type) {
+			case *repositoryResolver:
+				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.repo.Name)
+			case *fileMatchResolver:
+				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].JLineNumber)
+			default:
+				t.Fatal("unexpected result type", result)
 			}
 		}
 		return resultDescriptions
@@ -84,7 +86,7 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {
+		mockSearchRepositories = func(args *search.Args) ([]searchResultResolver, *searchResultsCommon, error) {
 			calledSearchRepositories = true
 			return nil, &searchResultsCommon{}, nil
 		}
@@ -358,19 +360,15 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 
 	type testCase struct {
 		descr                     string
-		searchResults             []*searchResultResolver
+		searchResults             []searchResultResolver
 		expectedDynamicFilterStrs map[string]struct{}
 	}
 
 	tests := []testCase{
 
 		{
-			descr: "single repo match",
-			searchResults: []*searchResultResolver{
-				{
-					repo: repoMatch,
-				},
-			},
+			descr:         "single repo match",
+			searchResults: []searchResultResolver{repoMatch},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`case:yes`:        {},
@@ -378,12 +376,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 
 		{
-			descr: "single file match without revision in query",
-			searchResults: []*searchResultResolver{
-				{
-					fileMatch: fileMatch,
-				},
-			},
+			descr:         "single file match without revision in query",
+			searchResults: []searchResultResolver{fileMatch},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:markdown`:   {},
@@ -392,12 +386,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 
 		{
-			descr: "single file match with specified revision",
-			searchResults: []*searchResultResolver{
-				{
-					fileMatch: fileMatchRev,
-				},
-			},
+			descr:         "single file match with specified revision",
+			searchResults: []searchResultResolver{fileMatchRev},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$@develop`: {},
 				`lang:markdown`:           {},
@@ -405,12 +395,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			},
 		},
 		{
-			descr: "file match from a language with two file extensions, using first extension",
-			searchResults: []*searchResultResolver{
-				{
-					fileMatch: tsFileMatch,
-				},
-			},
+			descr:         "file match from a language with two file extensions, using first extension",
+			searchResults: []searchResultResolver{tsFileMatch},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:typescript`: {},
@@ -418,12 +404,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			},
 		},
 		{
-			descr: "file match from a language with two file extensions, using second extension",
-			searchResults: []*searchResultResolver{
-				{
-					fileMatch: tsxFileMatch,
-				},
-			},
+			descr:         "file match from a language with two file extensions, using second extension",
+			searchResults: []searchResultResolver{tsxFileMatch},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:typescript`: {},
@@ -434,7 +416,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		// If there are no search results, no filters should be displayed.
 		{
 			descr:                     "no results",
-			searchResults:             []*searchResultResolver{},
+			searchResults:             []searchResultResolver{},
 			expectedDynamicFilterStrs: map[string]struct{}{},
 		},
 	}
@@ -564,90 +546,69 @@ func TestSearchRevspecs(t *testing.T) {
 
 func TestCompareSearchResults(t *testing.T) {
 	type testCase struct {
-		a       *searchResultResolver
-		b       *searchResultResolver
+		a       searchResultResolver
+		b       searchResultResolver
 		aIsLess bool
 	}
 
-	tests := []testCase{
+	tests := []testCase{{
 		// Different repo matches
-		{
-			a: &searchResultResolver{
-				repo: &repositoryResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("a"),
-					},
-				},
+		a: &repositoryResolver{
+			repo: &types.Repo{
+				Name: api.RepoName("a"),
 			},
-			b: &searchResultResolver{
-				repo: &repositoryResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("b"),
-					},
-				},
-			},
-			aIsLess: true,
 		},
+		b: &repositoryResolver{
+			repo: &types.Repo{
+				Name: api.RepoName("b"),
+			},
+		},
+		aIsLess: true,
+	}, {
 		// Repo match vs file match in same repo
-		{
-			a: &searchResultResolver{
-				fileMatch: &fileMatchResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("a"),
-					},
-					JPath: "a",
-				},
+		a: &fileMatchResolver{
+			repo: &types.Repo{
+				Name: api.RepoName("a"),
 			},
-			b: &searchResultResolver{
-				repo: &repositoryResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("a"),
-					},
-				},
-			},
-			aIsLess: false,
+			JPath: "a",
 		},
+		b: &repositoryResolver{
+			repo: &types.Repo{
+				Name: api.RepoName("a"),
+			},
+		},
+		aIsLess: false,
+	}, {
 		// Same repo, different files
-		{
-			a: &searchResultResolver{
-				fileMatch: &fileMatchResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("a"),
-					},
-					JPath: "a",
-				},
+		a: &fileMatchResolver{
+			repo: &types.Repo{
+				Name: api.RepoName("a"),
 			},
-			b: &searchResultResolver{
-				fileMatch: &fileMatchResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("a"),
-					},
-					JPath: "b",
-				},
-			},
-			aIsLess: true,
+			JPath: "a",
 		},
+		b: &fileMatchResolver{
+			repo: &types.Repo{
+				Name: api.RepoName("a"),
+			},
+			JPath: "b",
+		},
+		aIsLess: true,
+	}, {
 		// different repo, same file name
-		{
-			a: &searchResultResolver{
-				fileMatch: &fileMatchResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("a"),
-					},
-					JPath: "a",
-				},
+		a: &fileMatchResolver{
+			repo: &types.Repo{
+				Name: api.RepoName("a"),
 			},
-			b: &searchResultResolver{
-				fileMatch: &fileMatchResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("b"),
-					},
-					JPath: "a",
-				},
-			},
-			aIsLess: true,
+			JPath: "a",
 		},
-	}
+		b: &fileMatchResolver{
+			repo: &types.Repo{
+				Name: api.RepoName("b"),
+			},
+			JPath: "a",
+		},
+		aIsLess: true,
+	}}
 
 	for i, test := range tests {
 		got := compareSearchResults(test.a, test.b)
