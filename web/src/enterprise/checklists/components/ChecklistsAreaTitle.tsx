@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChecklistsIcon } from '../icons'
+import { ChecklistIcon } from '../icons'
 
 interface Props {
     className?: string
@@ -11,10 +11,10 @@ interface Props {
  *
  * // TODO!(sqs): dedupe with ChecksAreaTitle?
  */
-export const ChecklistsAreaTitle: React.FunctionComponent<Props> = ({ className = '', primaryActions, children }) => (
+export const ChecklistAreaTitle: React.FunctionComponent<Props> = ({ className = '', primaryActions, children }) => (
     <div className="d-flex align-items-center mb-3">
         <h1 className={`h3 mb-0 d-flex align-items-center ${className}`}>
-            <ChecklistsIcon className="icon-inline mr-1" /> Checklists
+            <ChecklistIcon className="icon-inline mr-1" /> Checklist
         </h1>
         {children}
         {primaryActions && (

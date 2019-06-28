@@ -21,8 +21,8 @@ export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
         render: () => <Redirect to="/subscriptions/new" />,
     },
     {
-        path: '/tasks',
-        render: lazyComponent(() => import('./checklist/global/TasksArea'), 'TasksArea'),
+        path: '/checklist',
+        render: lazyComponent(() => import('./checklists/detail/ChecklistArea'), 'ChecklistArea'),
     },
     {
         path: '/changesets',

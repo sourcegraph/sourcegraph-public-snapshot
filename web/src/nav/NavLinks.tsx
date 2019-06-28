@@ -14,13 +14,13 @@ import { LinkWithIconOnlyTooltip } from '../components/LinkWithIconOnlyTooltip'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { isDiscussionsEnabled } from '../discussions'
 import { ChangesIcon } from '../enterprise/changes/icons'
-import { ChangesetIcon } from '../enterprise/changesets/icons'
-import { TasksIcon } from '../enterprise/checklist/icons'
-import { ChecksNavItem } from '../enterprise/checks/global/nav/ChecksNavItem'
+import { ChangesetsNavItem, ChecksNavItem } from '../enterprise/changesets/global/nav/ChangesetsNavItem'
+import { ChecklistIcon } from '../enterprise/checklists/icons'
 import { ThreadsNavItem } from '../enterprise/threads/global/nav/ThreadsNavItem'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
+import { GitPullRequestIcon } from '../util/octicons'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
 
@@ -70,24 +70,16 @@ export class NavLinks extends React.PureComponent<Props> {
                     // TODO!(sqs): only show these on enterprise
                     <>
                         <li className="nav-item">
-                            <LinkWithIconOnlyTooltip
-                                to="/changesets"
-                                text="Changesets"
-                                icon={ChangesetIcon}
-                                className="nav-link btn btn-link px-3 text-decoration-none"
-                            />
+                            <ChangesetsNavItem className="px-3" />
                         </li>
 
                         <li className="nav-item">
                             <LinkWithIconOnlyTooltip
                                 to="/checklist"
                                 text="Checklist"
-                                icon={TasksIcon}
+                                icon={ChecklistIcon}
                                 className="nav-link btn btn-link px-3 text-decoration-none"
                             />
-                        </li>
-                        <li className="nav-item d-none">
-                            <ChecksNavItem className="px-3" />
                         </li>
                         <li className="nav-item mr-1 d-none">
                             <ThreadsNavItem className="px-3" />

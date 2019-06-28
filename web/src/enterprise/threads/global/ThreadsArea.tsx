@@ -20,7 +20,11 @@ const NotFoundPage: React.FunctionComponent = () => (
  * and codemods).
  */
 export interface ThreadsAreaContext extends ExtensionsControllerProps, PlatformContextProps {
-    project: Pick<GQL.IProject, 'id' | 'name' | 'url'>
+    /**
+     * The project in which to show threads, or undefined to show all of the viewer's threads.
+     */
+    project?: Pick<GQL.IProject, 'id' | 'name' | 'url'>
+
     type: GQL.ThreadType
     authenticatedUser: GQL.IUser | null
     isLightTheme: boolean

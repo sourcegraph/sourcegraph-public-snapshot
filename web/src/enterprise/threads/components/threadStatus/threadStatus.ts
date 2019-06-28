@@ -1,5 +1,5 @@
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { ChangesetIcon } from '../../../changesets/icons'
+import { GitPullRequestIcon } from '../../../../util/octicons'
 import { ChecksIcon } from '../../../checks/icons'
 import { ThreadsIcon } from '../../icons'
 
@@ -21,7 +21,7 @@ const threadIcon = (thread: ThreadStatusFields): React.ComponentType<{ className
     thread.type === GQL.ThreadType.CHECK
         ? ChecksIcon
         : thread.type === GQL.ThreadType.CHANGESET
-        ? ChangesetIcon
+        ? GitPullRequestIcon
         : ThreadsIcon
 
 const statusText = (thread: ThreadStatusFields) => {

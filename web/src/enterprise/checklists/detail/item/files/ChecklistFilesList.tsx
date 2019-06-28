@@ -1,17 +1,15 @@
 import H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useState } from 'react'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
-import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
-import { HeroPage } from '../../../../components/HeroPage'
-import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
-import { FileDiffHunks } from '../../../../repo/compare/FileDiffHunks'
-import { FileDiffNode } from '../../../../repo/compare/FileDiffNode'
-import { useEffectAsync } from '../../../../util/useEffectAsync'
-import { computeDiff, FileDiff } from '../../../threads/detail/changes/computeDiff'
-import { Checklist } from '../../checklist'
+import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../../../../shared/src/platform/context'
+import { asError, ErrorLike, isErrorLike } from '../../../../../../../shared/src/util/errors'
+import { HeroPage } from '../../../../../components/HeroPage'
+import { QueryParameterProps } from '../../../../../components/withQueryParameter/WithQueryParameter'
+import { FileDiffNode } from '../../../../../repo/compare/FileDiffNode'
+import { useEffectAsync } from '../../../../../util/useEffectAsync'
+import { computeDiff, FileDiff } from '../../../../threads/detail/changes/computeDiff'
+import { Checklist } from '../../../checklist'
 
 interface Props extends QueryParameterProps, ExtensionsControllerProps, PlatformContextProps {
     checklist: Checklist
@@ -46,7 +44,7 @@ export const ChecklistFilesList: React.FunctionComponent<Props> = ({ checklist, 
 
     return (
         <div className="checklist-files-list">
-            {fileDiffsOrError.map((fileDiff: GQL.IFileDiff, key: string) => (
+            {fileDiffsOrError.map((fileDiff: FileDiff) => (
                 <FileDiffNode
                     {...props}
                     lineNumbers={false}
@@ -62,13 +60,15 @@ export const ChecklistFilesList: React.FunctionComponent<Props> = ({ checklist, 
                         rev: 'master', // TODO!(sqs): un-hardcode master
                         commitID: 'master' /* TODO!(sqs) un-hardcode master */,
                     }}
-                    node={{
-                        ...fileDiff,
-                        stat: { added: 1, changed: 2, deleted: 3 },
-                        mostRelevantFile: {},
-                        newFile: {},
-                        oldFile: {},
-                    }}
+                    node={
+                        {
+                            ...fileDiff,
+                            stat: { added: 1, changed: 2, deleted: 3 } as any /* TODO!(sqs) */,
+                            mostRelevantFile: {} as any /* TODO!(sqs) */,
+                            newFile: {} as any /* TODO!(sqs) */,
+                            oldFile: {} as any /* TODO!(sqs) */,
+                        } as any /* TODO!(sqs) */
+                    }
                 />
             ))}
         </div>

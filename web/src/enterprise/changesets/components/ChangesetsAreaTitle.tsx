@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChangesetIcon } from '../icons'
+import { GitPullRequestIcon } from '../../../util/octicons'
 
 interface Props {
     className?: string
@@ -14,7 +14,7 @@ interface Props {
 export const ChangesetsAreaTitle: React.FunctionComponent<Props> = ({ className = '', primaryActions, children }) => (
     <div className="d-flex align-items-center mb-3">
         <h1 className={`h3 mb-0 d-flex align-items-center ${className}`}>
-            <ChangesetIcon className="icon-inline mr-1" /> Changesets
+            <GitPullRequestIcon className="icon-inline mr-1" /> Changesets
         </h1>
         {children}
         {primaryActions && (

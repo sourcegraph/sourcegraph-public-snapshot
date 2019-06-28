@@ -7,7 +7,8 @@ import { pluralize } from '../../../../../../shared/src/util/strings'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { Timeline } from '../../../../components/timeline/Timeline'
 import { PersonLink } from '../../../../user/PersonLink'
-import { TasksIcon } from '../../../checklist/icons'
+import { ChangesetIcon } from '../../../../util/octicons'
+import { ChecklistIcon } from '../../../checklists/icons'
 import { CheckThreadActivationStatusButton } from '../../../checks/threads/form/CheckThreadActivationStatusButton'
 import { ThreadStatusBadge } from '../../../threads/components/threadStatus/ThreadStatusBadge'
 import { ThreadHeaderEditableTitle } from '../../../threads/detail/header/ThreadHeaderEditableTitle'
@@ -15,7 +16,6 @@ import { ThreadBreadcrumbs } from '../../../threads/detail/overview/ThreadBreadc
 import { ThreadDescription } from '../../../threads/detail/overview/ThreadDescription'
 import { ThreadStatusButton } from '../../../threads/form/ThreadStatusButton'
 import { ThreadSettings } from '../../../threads/settings'
-import { ChangesetIcon } from '../../icons'
 import { countChangesetFilesChanged } from '../../preview/ChangesetSummaryBar'
 import { ChangesetActionsList } from '../changes/ChangesetActionsList'
 
@@ -77,7 +77,7 @@ export const ChangesetOverview: React.FunctionComponent<Props> = ({
         <ThreadDescription {...props} thread={thread} onThreadUpdate={onThreadUpdate} className="mb-4" />
         <Timeline className="align-items-stretch mb-4">
             <div className="d-flex align-items-start bg-body border p-4 mb-5">
-                <ChangesetIcon className="icon-inline mb-0 mr-3" />
+                <GitPullRequest className="icon-inline mb-0 mr-3" />
                 Changes requested to {countChangesetFilesChanged(xchangeset)}{' '}
                 {pluralize('file', countChangesetFilesChanged(xchangeset))} in {xchangeset.repositories.length}{' '}
                 {pluralize('repository', xchangeset.repositories.length, 'repositories')}
@@ -90,14 +90,14 @@ export const ChangesetOverview: React.FunctionComponent<Props> = ({
                 className="bg-body mb-5"
             />
             <div className="d-flex align-items-start bg-body border p-4 mb-5 position-relative">
-                <TasksIcon className="mb-0 mr-3" />
+                <ChecklistIcon className="mb-0 mr-3" />
                 <Link to={`${areaURL}/tasks`} className="stretched-link text-body">
                     Review is not complete
                 </Link>
             </div>
             <div className="d-flex align-items-center bg-body border p-4">
                 <button type="button" className="btn btn-secondary text-muted mr-4" disabled={true}>
-                    <ChangesetIcon className="mb-0 mr-3" />
+                    <GitPullRequest className="mb-0 mr-3" />
                     Merge all
                 </button>
                 <span className="text-muted">Required review tasks are not yet complete</span>

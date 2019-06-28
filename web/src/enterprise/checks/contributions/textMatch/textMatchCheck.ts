@@ -3,8 +3,6 @@ import { Subscription, Unsubscribable } from 'rxjs'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { CHECK_TYPES } from '../sampleCheckTypes'
 
-const PROVIDER_ID = 'check.textMatch'
-
 /**
  * Registers the text match check provider.
  *
@@ -22,9 +20,6 @@ export function registerTextMatchCheckProviderContributions({
                 title: 'Text find/replace',
                 description: 'Find a string (and optionally replace it with another string)',
                 icon: AlphabeticalIcon,
-                settings: {
-                    providers: PROVIDER_ID,
-                },
             }
         )
     )

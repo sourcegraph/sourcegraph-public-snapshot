@@ -1,5 +1,5 @@
 import H from 'history'
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { DropdownItem, DropdownMenu, DropdownMenuProps } from 'reactstrap'
 import * as GQL from '../../../../../../shared/src/graphql/schema'

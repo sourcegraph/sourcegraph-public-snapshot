@@ -1,7 +1,5 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import TextareaAutosize from 'react-textarea-autosize'
+import React, { useCallback } from 'react'
 import { MultilineTextField } from '../multilineTextField/MultilineTextField'
-// import { DisplayToken, Tokenizer } from 'tokenizer.js'
 
 interface Props extends Pick<React.HTMLProps<HTMLTextAreaElement>, 'className' | 'onFocus' | 'onBlur'> {
     className?: string
@@ -13,39 +11,17 @@ interface Props extends Pick<React.HTMLProps<HTMLTextAreaElement>, 'className' |
 /**
  * A text input field that may contain a mixture of tokens and non-tokenized text.
  */
-// tslint:disable: jsx-no-lambda
 export const TokenTextInput: React.FunctionComponent<Props> = ({
     className = '',
     value,
     placeholder,
-    onChange,
+    onChange: onChangeValue,
     ...props
 }) => {
-    const [element, setElement] = useState<HTMLDivElement | null>(null)
-
-    // const tokenizer = useMemo(() => {
-    //     if (!element) {
-    //         return undefined
-    //     }
-    //     return new Tokenizer(element, {
-    //         initialInput: tokenizeFood('banana tomato mango onio'),
-    //
-    //         isFocused: true,
-    //         onCaretPositionChanged: () => void 0,
-    //         onChange: async (inputText, caretPosition, isCaretOnSeparator) => {
-    //             onChange(inputText)
-    //             return asyncTokenizeFood(inputText, caretPosition)
-    //         },
-    //     })
-    // }, [element])
-    // useEffect(() => () => tokenizer && tokenizer.destroy(), [tokenizer])
-    //
-    // useEffect(() => {
-    //     if (tokenizer && tokenizer.getInnerText() !== value) {
-    //         tokenizer.updateText(value)
-    //     }
-    // }, [value, tokenizer])
-
+    const onChange = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(
+        e => onChangeValue(e.currentTarget.value),
+        [onChangeValue]
+    )
     return (
         <MultilineTextField
             {...props}
@@ -53,7 +29,7 @@ export const TokenTextInput: React.FunctionComponent<Props> = ({
             style={{ resize: 'none' }}
             value={value}
             placeholder={placeholder}
-            onChange={e => onChange(e.currentTarget.value)}
+            onChange={onChange}
         />
     )
 }

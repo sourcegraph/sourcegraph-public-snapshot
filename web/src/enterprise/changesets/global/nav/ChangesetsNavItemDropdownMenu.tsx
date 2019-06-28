@@ -1,4 +1,3 @@
-import AddIcon from 'mdi-react/AddIcon'
 import TableIcon from 'mdi-react/TableIcon'
 import React, { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'

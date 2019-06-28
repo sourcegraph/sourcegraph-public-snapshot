@@ -1,14 +1,11 @@
-import FileMultipleIcon from 'mdi-react/FileMultipleIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import { ChatIcon } from '../../../../../../shared/src/components/icons'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { TasksIcon } from '../../../checklist/icons'
+import { ActionsIcon, DiffIcon, GitCommitIcon } from '../../../../util/octicons'
+import { ChecklistIcon } from '../../../checklists/icons'
 import { ThreadSettings } from '../../../threads/settings'
-import { ActionsIcon, ChecklistIcon, DiffIcon, GitCommitIcon } from '../../icons'
 import {
     countChangesetActions,
     countChangesetCommits,
@@ -55,7 +52,7 @@ export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="changeset-area-navbar__nav-link--active"
                     >
-                        <TasksIcon className="icon-inline" /> Tasks
+                        <ChecklistIcon className="icon-inline" /> Tasks
                     </NavLink>
                 </li>
                 <li className="changeset-area-navbar__nav-item nav-item d-none">
