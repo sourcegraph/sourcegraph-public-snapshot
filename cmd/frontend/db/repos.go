@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
@@ -157,6 +158,107 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 	return authzFilter(ctx, repos, authz.Read)
 }
 
+type MinimalRepo struct {
+	ID           api.RepoID
+	ExternalRepo api.ExternalRepoSpec
+	Name         api.RepoName
+}
+
+const getMinimalRepoByQueryFmtstr = `
+SELECT id, name, external_id, external_service_type, external_service_id
+FROM repo
+WHERE deleted_at IS NULL AND enabled = true AND %s`
+
+func (s *repos) getMinimalBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*MinimalRepo, error) {
+	q := sqlf.Sprintf(getMinimalRepoByQueryFmtstr, querySuffix)
+	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var repos []*MinimalRepo
+	for rows.Next() {
+		var repo MinimalRepo
+
+		if err := rows.Scan(
+			&repo.ID,
+			&repo.Name,
+			&repo.ExternalRepo.ID,
+			&repo.ExternalRepo.ServiceType,
+			&repo.ExternalRepo.ServiceID,
+		); err != nil {
+			return nil, err
+		}
+
+		repos = append(repos, &repo)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: This enforces repository permissions
+	return minimalAuthzFilter(ctx, repos, authz.Read)
+}
+
+// TODO: we should merge this with authzFilter by using an interface for repos instead of types
+func minimalAuthzFilter(ctx context.Context, repos []*MinimalRepo, p authz.Perm) (rs []*MinimalRepo, err error) {
+	tr, ctx := trace.New(ctx, "minimalAuthzFilter", "")
+	defer func() {
+		if err != nil {
+			tr.SetError(err)
+		}
+		tr.Finish()
+	}()
+
+	// if mockAuthzFilter != nil {
+	// 	return mockAuthzFilter(ctx, repos, p)
+	// }
+
+	if len(repos) == 0 {
+		return repos, nil
+	}
+	if isInternalActor(ctx) {
+		return repos, nil
+	}
+
+	var currentUser *types.User
+	if actor.FromContext(ctx).IsAuthenticated() {
+		var err error
+		currentUser, err = Users.GetByCurrentAuthUser(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if currentUser.SiteAdmin {
+			return repos, nil
+		}
+	}
+
+	authzRepos := make(map[authz.Repo]struct{})
+	for _, r := range repos {
+		rp := authz.Repo{
+			ID:               r.ID,
+			RepoName:         r.Name,
+			ExternalRepoSpec: r.ExternalRepo,
+		}
+		authzRepos[rp] = struct{}{}
+	}
+
+	filteredRepoNames, err := getFilteredRepoNames(ctx, currentUser, authzRepos, p)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredRepos := repos[:0]
+	for _, repo := range repos {
+		if _, ok := filteredRepoNames[repo.Name]; ok {
+			filteredRepos = append(filteredRepos, repo)
+		}
+	}
+
+	return filteredRepos, nil
+}
+
 // ReposListOptions specifies the options for listing repositories.
 //
 // Query and IncludePatterns/ExcludePatterns may not be used together.
@@ -271,6 +373,29 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 		return nil, err
 	}
 	return rawRepos, nil
+}
+
+func (s *repos) MinimalList(ctx context.Context, opt ReposListOptions) (results []*MinimalRepo, err error) {
+	tr, ctx := trace.New(ctx, "repos.MinimalList", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// if Mocks.Repos.List != nil {
+	// 	return Mocks.Repos.List(ctx, opt)
+	// }
+
+	conds, err := s.listSQL(opt)
+	if err != nil {
+		return nil, err
+	}
+
+	// fetch matching repos
+	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
+	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
+
+	return s.getMinimalBySQL(ctx, fetchSQL)
 }
 
 // ListEnabledNames returns a list of all enabled repo names. This is commonly
