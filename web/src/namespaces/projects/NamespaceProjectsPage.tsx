@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useMemo, useState } from 'react'
 import { map } from 'rxjs/operators'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
+import { ExtensionsControllerNotificationProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
@@ -41,7 +41,7 @@ const queryNamespaceProjects = (namespace: GQL.ID): Promise<GQL.IProjectConnecti
 
 const LOADING: 'loading' = 'loading'
 
-interface Props extends Pick<NamespaceAreaContext, 'namespace'>, ExtensionsControllerProps {}
+interface Props extends Pick<NamespaceAreaContext, 'namespace'>, ExtensionsControllerNotificationProps {}
 
 /**
  * Lists a namespace's projects.

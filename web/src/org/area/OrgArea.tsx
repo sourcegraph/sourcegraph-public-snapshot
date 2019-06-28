@@ -175,6 +175,7 @@ export class OrgArea extends React.Component<Props> {
             isLightTheme: this.props.isLightTheme,
             namespace: this.state.orgOrError,
         }
+        const namespace = this.state.orgOrError
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
             // The OrgInvitationPage is displayed without the OrgHeader because it is modal-like.

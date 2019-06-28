@@ -1,13 +1,13 @@
 import PencilIcon from 'mdi-react/PencilIcon'
 import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
+import { ExtensionsControllerNotificationProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { ProjectIcon } from '../../projects/icons'
 import { UpdateProjectForm } from './EditProjectForm'
 import { ProjectDeleteButton } from './ProjectDeleteButton'
 
-interface Props extends ExtensionsControllerProps {
+interface Props extends ExtensionsControllerNotificationProps {
     project: GQL.IProject
 
     /** Called when the project is updated. */

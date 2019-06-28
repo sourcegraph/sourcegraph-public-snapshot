@@ -1,17 +1,16 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useState } from 'react'
+import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { filter, first, map, switchMap } from 'rxjs/operators'
+import * as sourcegraph from 'sourcegraph'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
-import { useEffectAsync } from '../../../util/useEffectAsync'
-import { getCodeActions, getDiagnosticInfos } from '../../threads/detail/backend'
 import { Checklist } from '../checklist'
+import { useChecklist } from '../util/WithChecklistQueryResults'
 import { ChecklistItemsList } from './itemsList/ChecklistItemsList'
 
 const NotFoundPage = () => (
@@ -20,7 +19,9 @@ const NotFoundPage = () => (
 
 interface Props
     extends Pick<ChecklistAreaContext, Exclude<keyof ChecklistAreaContext, 'checklist'>>,
-        RouteComponentProps<{}> {}
+        RouteComponentProps<{}> {
+    scope: sourcegraph.ChecklistScope | sourcegraph.WorkspaceRoot
+}
 
 export interface ChecklistAreaContext extends ExtensionsControllerProps, PlatformContextProps {
     /** The checklist. */
@@ -35,32 +36,8 @@ const LOADING: 'loading' = 'loading'
 /**
  * The area for a single checklist.
  */
-export const ChecklistArea: React.FunctionComponent<Props> = props => {
-    const [checklistOrError, setChecklistOrError] = useState<typeof LOADING | Checklist | ErrorLike>(LOADING)
-
-    useEffectAsync(async () => {
-        try {
-            // TODO!(sqs)
-            setChecklistOrError(
-                await getDiagnosticInfos(props.extensionsController)
-                    .pipe(
-                        filter(diagnostics => diagnostics.length > 0),
-                        first(),
-                        map(diagnostics => diagnostics[0]),
-                        switchMap(diagnostic =>
-                            getCodeActions({ diagnostic, extensionsController: props.extensionsController }).pipe(
-                                filter(codeActions => codeActions.length > 0),
-                                first(),
-                                map(codeActions => ({ diagnostic, codeActions }))
-                            )
-                        )
-                    )
-                    .toPromise()
-            )
-        } catch (err) {
-            setChecklistOrError(asError(err))
-        }
-    }, [props.extensionsController])
+export const ChecklistArea: React.FunctionComponent<Props> = ({ scope, ...props }) => {
+    const checklistOrError = useChecklist(props.extensionsController, scope)
     if (checklistOrError === LOADING) {
         return null // loading
     }

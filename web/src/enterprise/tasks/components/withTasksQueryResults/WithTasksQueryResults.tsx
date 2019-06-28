@@ -8,26 +8,22 @@ import { DiagnosticInfo, getDiagnosticInfos } from '../../../threads/detail/back
 const LOADING: 'loading' = 'loading'
 
 /**
- * React component props for children of {@link WithChecklistQueryResults}.
+ * React component props for children of {@link WithTasksQueryResults}.
  */
-export interface ChecklistQueryResultProps {
-    /** The list of checklist items, loading, or an error. */
-    checklistOrError: typeof LOADING | DiagnosticInfo[] | ErrorLike
+export interface TasksQueryResultProps {
+    /** The list of tasks, loading, or an error. */
+    tasksOrError: typeof LOADING | DiagnosticInfo[] | ErrorLike
 }
 
 interface Props extends Partial<Pick<QueryParameterProps, 'query'>>, ExtensionsControllerProps {
-    children: (props: ChecklistQueryResultProps) => JSX.Element | null
+    children: (props: TasksQueryResultProps) => JSX.Element | null
 }
 
 /**
- * Wraps a component and provides a list of checklist items resulting from querying using the
- * provided `query` prop.
+ * Wraps a component and provides a list of tasks resulting from querying using the provided
+ * `query` prop.
  */
-export const WithChecklistQueryResults: React.FunctionComponent<Props> = ({
-    query,
-    children,
-    extensionsController,
-}) => {
+export const WithTasksQueryResults: React.FunctionComponent<Props> = ({ query, children, extensionsController }) => {
     const [diagnosticsOrError, setDiagnosticsOrError] = useState<typeof LOADING | DiagnosticInfo[] | ErrorLike>(LOADING)
     // tslint:disable-next-line: no-floating-promises
     useEffect(() => {
@@ -43,5 +39,5 @@ export const WithChecklistQueryResults: React.FunctionComponent<Props> = ({
         return () => subscriptions.unsubscribe()
     }, [query, extensionsController])
 
-    return children({ checklistOrError: diagnosticsOrError })
+    return children({ tasksOrError: diagnosticsOrError })
 }
