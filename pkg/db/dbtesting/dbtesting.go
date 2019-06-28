@@ -4,7 +4,6 @@ package dbtesting
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"hash/fnv"
 	"io"
 	"log"
@@ -83,25 +82,20 @@ func TestContext(t testing.TB) context.Context {
 		f()
 	}
 
-	if err := emptyDBPreserveSchema(dbconn.Global); err != nil {
-		log.Fatal(err)
-	}
+	emptyDBPreserveSchema(t, dbconn.Global)
 
 	return ctx
 }
 
-func emptyDBPreserveSchema(d *sql.DB) error {
+func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {
 	_, err := d.Exec(`SELECT * FROM schema_migrations`)
 	if err != nil {
-		return fmt.Errorf("Table schema_migrations not found: %v", err)
+		t.Fatalf("Table schema_migrations not found: %v", err)
 	}
-	return truncateDB(d)
-}
 
-func truncateDB(d *sql.DB) error {
 	rows, err := d.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name != 'schema_migrations'")
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 	var tables []string
 	for rows.Next() {
@@ -110,14 +104,18 @@ func truncateDB(d *sql.DB) error {
 		tables = append(tables, table)
 	}
 	if err := rows.Close(); err != nil {
-		return err
+		t.Fatal(err)
 	}
 	if err := rows.Err(); err != nil {
-		return err
+		t.Fatal(err)
 	}
-	log.Printf("Truncating all %d tables", len(tables))
+	if testing.Verbose() {
+		t.Logf("Truncating all %d tables", len(tables))
+	}
 	_, err = d.Exec("TRUNCATE " + strings.Join(tables, ", ") + " RESTART IDENTITY")
-	return err
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 // initTest creates a test database, named with the given suffix
