@@ -182,6 +182,20 @@ func (r *repositoryResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
 }
 
+func (r *repositoryResolver) ToRepository() (*repositoryResolver, bool) { return r, true }
+func (r *repositoryResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
+func (r *repositoryResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
+	return nil, false
+}
+
+func (r *repositoryResolver) searchResultURIs() (string, string) {
+	return string(r.repo.Name), ""
+}
+
+func (r *repositoryResolver) resultCount() int32 {
+	return 1
+}
+
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	Callsign string
 	Name     *string

@@ -73,7 +73,11 @@ func TestSearchRepositories(t *testing.T) {
 		if len(res) != 1 {
 			t.Errorf("expected only one repository result `foo/one`, but got %v", len(res))
 		}
-		if res[0].repo.repo.Name != "foo/one" {
+		r, ok := res[0].ToRepository()
+		if !ok {
+			t.Fatalf("expected repo result")
+		}
+		if r.repo.Name != "foo/one" {
 			t.Errorf("expected the repository result to be `foo/one`, but got another repo")
 		}
 	})
@@ -96,7 +100,11 @@ func TestSearchRepositories(t *testing.T) {
 		if len(res) != 1 {
 			t.Errorf("expected only one repository result `foo/one`, but got %v", len(res))
 		}
-		if res[0].repo.repo.Name != "foo/one" {
+		r, ok := res[0].ToRepository()
+		if !ok {
+			t.Fatalf("expected repo result")
+		}
+		if r.repo.Name != "foo/one" {
 			t.Errorf("expected the repository result to be `foo/one`, but got another repo")
 		}
 	})
