@@ -65,6 +65,13 @@
     "notifications.slack": {
       "$ref": "#/definitions/SlackNotificationsConfig"
     },
+    "quicklinks": {
+      "description": "Links that should be accessible quickly from the home and search pages.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/QuickLink"
+      }
+    },
     "motd": {
       "description": "DEPRECATED: Use `notices` instead.\n\nAn array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).\n\nMarkdown formatting is supported.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that user. (This is useful for testing the correctness of the message's Markdown formatting.)\n\nMOTD stands for \"message of the day\" (which is the conventional Unix name for this type of message).",
       "type": "array",
@@ -140,6 +147,25 @@
         "description": {
           "type": "string",
           "description": "A description for this search scope"
+        }
+      }
+    },
+    "QuickLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The human-readable name for this quick link"
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL of this quick link (absolute or relative)"
+        },
+        "description": {
+          "type": "string",
+          "description": "A description for this quick link"
         }
       }
     },
