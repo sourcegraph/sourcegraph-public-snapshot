@@ -18,8 +18,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/docker/docker v0.7.3-0.20190108045446-77df18c24acf
-	github.com/emersion/go-imap v1.0.0-beta.1
-	github.com/emersion/go-sasl v0.0.0-20161116183048-7e096a0a6197 // indirect
+	github.com/emersion/go-imap v1.0.0
 	github.com/ericchiang/k8s v1.2.0
 	github.com/etdub/goparsetime v0.0.0-20160315173935-ea17b0ac3318 // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
