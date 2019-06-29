@@ -992,66 +992,60 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * The scopes for a checklist.
+     * The scopes for a status.
      */
-    export enum ChecklistScope {
+    export enum StatusScope {
         /**
-         * A global checklist applies to all repositories on Sourcegraph that are accessible to the
-         * user.
+         * A global status.
          */
         Global = 'global',
     }
 
     /**
-     * A checklist item is an item in a checklist for a particular scope. It describes an action
-     * that should be taken.
+     * A status describes a situation and related actions that can be taken in a particular scope.
      */
-    export interface ChecklistItem {
+    export interface Status {
         /**
-         * The title of the checklist item.
+         * The title of the status.
          */
         title: string
 
         /**
-         * Notifications related to the checklist item.
+         * Notifications related to the status.
          */
-        notifications: Notification[]
+        notifications?: Notification[]
     }
 
     /**
-     * A checklist provider provides a checklist for a particular scope.
-     *
-     * Its results are intentionally not persisted because they can include information derived from
-     * multiple repositories (which are the unit of permissioning).
+     * A status provider provides a status for a particular scope.
      */
-    export interface ChecklistProvider {
+    export interface StatusProvider {
         /**
-         * Provide a checklist for the given scope.
+         * Provide a status for the given scope.
          *
-         * @param scope The scope to provide a checklist for.
-         * @param context Context carrying additional information.
-         * @return An array of commands, quick fixes, or refactorings or a thenable of such. The
-         * lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
+         * @param scope The scope to provide a status for.
+         * @return A status or an observable of such. The lack of a result can be signaled by
+         * returning `undefined` or `null`.
          */
-        provideChecklistItems(scope: ChecklistScope.Global | WorkspaceRoot): ProviderResult<ChecklistItem[]>
+        provideStatus(scope: StatusScope.Global | WorkspaceRoot): ProviderResult<Status>
     }
 
     /**
-     * A checklist is a list of actions that should be taken at a particular scope.
+     * A status is a description of a situation and related actions that can be taken.
      */
-    export namespace checklist {
+    export namespace status {
         /**
-         * Register a checklist provider.
+         * Register a status provider.
          *
          * Multiple providers can be registered. In that case, providers are queried in parallel and
          * the results are merged. A failing provider (rejected promise or exception) will not cause
          * a failure of the whole operation.
          *
-         * @param type The checklist type that this provider is registered for.
-         * @param provider A checklist provider.
+         * @param type The type of status that this provider provides.
+         * @param provider A status provider.
          * @return An unsubscribable to unregister this provider.
          */
-        export function registerChecklistProvider(type: string, provider: ChecklistProvider): Unsubscribable
+        export function registerStatusProvider(type: string, provider: StatusProvider): Unsubscribable
     }
 
     /**
@@ -1087,8 +1081,7 @@ declare module 'sourcegraph' {
          * Provide a notification for the given scope.
          *
          * @param scope The scope to provide a notification for.
-         * @param context Context carrying additional information.
-         * @return An array of commands, quick fixes, or refactorings or a thenable of such. The
+         * @return An array of commands, quick fixes, or refactorings or an observable of such. The
          * lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
          */
         provideNotifications(scope: NotificationScope.Global | WorkspaceRoot): ProviderResult<Notification[]>
@@ -1379,7 +1372,7 @@ declare module 'sourcegraph' {
          * @param document The document in which the command was invoked.
          * @param position The position at which the command was invoked.
          *
-         * @return An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
+         * @return An array of completions, a [completion list](#CompletionList), or an observable that resolves to either.
          * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
          */
         provideCompletionItems(document: TextDocument, position: Position): ProviderResult<CompletionList>
@@ -1606,7 +1599,7 @@ declare module 'sourcegraph' {
          * @param range The selector or range to provide code actions for. This will always be a
          * selection if there is a currently active editor.
          * @param context Context carrying additional information.
-         * @return An array of commands, quick fixes, or refactorings or a thenable of such. The
+         * @return An array of commands, quick fixes, or refactorings or an observable of such. The
          * lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
          */
         provideCodeActions(

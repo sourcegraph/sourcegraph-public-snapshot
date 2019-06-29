@@ -13,7 +13,7 @@ import { ExtConfiguration } from './api/configuration'
 import { ExtContent } from './api/content'
 import { ExtContext } from './api/context'
 import { createDecorationType } from './api/decorations'
-import { createExtChecklist } from './api/checklist'
+import { createExtStatus } from './api/status'
 import { ExtDiagnostics } from './api/diagnostics'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
@@ -143,7 +143,7 @@ function createExtensionAPI(
     const search = new ExtSearch(proxy.search)
     const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
-    const checklist = createExtChecklist(proxy.checklist)
+    const checklist = createExtStatus(proxy.status)
 
     const diagnostics = new ExtDiagnostics(proxy.diagnostics)
     subscription.add(diagnostics)
@@ -179,7 +179,7 @@ function createExtensionAPI(
         TextEdit,
         DiagnosticSeverity,
         WorkspaceEdit,
-        ChecklistScope,
+        StatusScope: ChecklistScope,
         app: {
             activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {
@@ -207,7 +207,7 @@ function createExtensionAPI(
         },
 
         checklist: {
-            registerChecklistProvider: (type, provider) => checklist.registerChecklistProvider(type, provider),
+            registerStatusProvider: (type, provider) => checklist.registerStatusProvider(type, provider),
         },
 
         configuration: {

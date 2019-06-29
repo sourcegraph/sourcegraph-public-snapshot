@@ -15,7 +15,7 @@ import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/s
 import { isDiscussionsEnabled } from '../discussions'
 import { ChangesIcon } from '../enterprise/changes/icons'
 import { ChangesetsNavItem } from '../enterprise/changesets/global/nav/ChangesetsNavItem'
-import { ChecklistIcon } from '../enterprise/checklists/icons'
+import { ChecklistIcon, StatusIcon } from '../enterprise/status/icons'
 import { TasksIcon } from '../enterprise/tasks/icons'
 import { ThreadsNavItem } from '../enterprise/threads/global/nav/ThreadsNavItem'
 import { KeybindingsProps } from '../keybindings'
@@ -75,9 +75,9 @@ export class NavLinks extends React.PureComponent<Props> {
 
                         <li className="nav-item">
                             <LinkWithIconOnlyTooltip
-                                to="/checklist"
-                                text="Checklist"
-                                icon={ChecklistIcon}
+                                to="/status"
+                                text="Status"
+                                icon={StatusIcon}
                                 className="nav-link btn btn-link px-3 text-decoration-none"
                             />
                         </li>

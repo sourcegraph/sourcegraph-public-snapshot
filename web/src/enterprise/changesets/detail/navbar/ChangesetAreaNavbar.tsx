@@ -4,7 +4,7 @@ import { NavLink } from 'react-router-dom'
 import { ChatIcon } from '../../../../../../shared/src/components/icons'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ActionsIcon, DiffIcon, GitCommitIcon } from '../../../../util/octicons'
-import { ChecklistIcon } from '../../../checklists/icons'
+import { StatusIcon } from '../../../status/icons'
 import { ThreadSettings } from '../../../threads/settings'
 import {
     countChangesetActions,
@@ -52,7 +52,7 @@ export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="changeset-area-navbar__nav-link--active"
                     >
-                        <ChecklistIcon className="icon-inline" /> Tasks
+                        <StatusIcon className="icon-inline" /> Tasks
                     </NavLink>
                 </li>
                 <li className="changeset-area-navbar__nav-item nav-item d-none">

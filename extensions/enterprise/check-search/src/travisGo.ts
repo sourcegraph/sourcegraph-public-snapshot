@@ -14,7 +14,7 @@ export function registerTravisGo(): Unsubscribable {
     subscriptions.add(startDiagnostics())
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
     subscriptions.add(
-        sourcegraph.checklist.registerChecklistProvider(CODE_TRAVIS_GO, createChecklistProvider(diagnostics))
+        sourcegraph.status.registerStatusProvider(CODE_TRAVIS_GO, createStatusProvider(diagnostics))
     )
     return subscriptions
 }
@@ -31,14 +31,14 @@ function startDiagnostics(): Unsubscribable {
     return subscriptions
 }
 
-function createChecklistProvider(
+function createStatusProvider(
     diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]>
-): sourcegraph.ChecklistProvider {
+): sourcegraph.StatusProvider {
     return {
-        provideChecklistItems: (scope): sourcegraph.Subscribable<sourcegraph.ChecklistItem[]> => {
+        provideStatus: (scope): sourcegraph.Subscribable<sourcegraph.Status[]> => {
             // TODO!(sqs): dont ignore scope
             return diagnostics.pipe(
-                map<[URL, sourcegraph.Diagnostic[]][], sourcegraph.ChecklistItem[]>(diagnostics => [
+                map<[URL, sourcegraph.Diagnostic[]][], sourcegraph.Status[]>(diagnostics => [
                     {
                         title: `Standardize Travis CI configuration`,
                         notifications: [

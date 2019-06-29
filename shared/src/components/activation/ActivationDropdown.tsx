@@ -7,7 +7,7 @@ import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reac
 import { concat, of, Subject, Subscription } from 'rxjs'
 import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/operators'
 import { Activation, percentageDone } from './Activation'
-import { ActivationChecklistItem } from './ActivationChecklist'
+import { ActivationStatus } from './ActivationChecklist'
 
 interface Props {
     history: H.History
@@ -129,7 +129,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                                 className="activation-dropdown-item dropdown-item"
                                 onClick={this.toggleIsOpen}
                             >
-                                <ActivationChecklistItem
+                                <ActivationStatus
                                     {...step}
                                     history={this.props.history}
                                     done={

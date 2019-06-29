@@ -8,7 +8,7 @@ import { Timestamp } from '../../../../components/time/Timestamp'
 import { Timeline } from '../../../../components/timeline/Timeline'
 import { PersonLink } from '../../../../user/PersonLink'
 import { ChangesetIcon } from '../../../../util/octicons'
-import { ChecklistIcon } from '../../../checklists/icons'
+import { StatusIcon } from '../../../status/icons'
 import { CheckThreadActivationStatusButton } from '../../../checks/threads/form/CheckThreadActivationStatusButton'
 import { ThreadStatusBadge } from '../../../threads/components/threadStatus/ThreadStatusBadge'
 import { ThreadHeaderEditableTitle } from '../../../threads/detail/header/ThreadHeaderEditableTitle'
@@ -90,7 +90,7 @@ export const ChangesetOverview: React.FunctionComponent<Props> = ({
                 className="bg-body mb-5"
             />
             <div className="d-flex align-items-start bg-body border p-4 mb-5 position-relative">
-                <ChecklistIcon className="mb-0 mr-3" />
+                <StatusIcon className="mb-0 mr-3" />
                 <Link to={`${areaURL}/tasks`} className="stretched-link text-body">
                     Review is not complete
                 </Link>

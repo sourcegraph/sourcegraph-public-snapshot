@@ -4,7 +4,7 @@ import { RepositoryIcon } from '../../../../../shared/src/components/icons'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../../shared/src/util/strings'
 import { ActionsIcon, DiffIcon, GitCommitIcon } from '../../../util/octicons'
-import { ChecklistIcon } from '../../checklists/icons'
+import { StatusIcon } from '../../status/icons'
 import { ThreadSettings } from '../../threads/settings'
 
 interface Props {
