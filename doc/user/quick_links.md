@@ -12,7 +12,7 @@ Sourcegraph supports setting these `quicklinks` at 3 different levels:
 - By org admins for all org members: in the org profile **Configuration** section
 - By users for themselves only: in the user profile **Configuration** section
 
-You can configure search scopes by setting the `quicklinks` property to a JSON array of `{name, url}` objects. The `url` may be any valid URL or URL path.
+You can display these links by setting the `quicklinks` property to a JSON array of `{name, url}` objects. The `url` may be any valid URL or URL path.
 
 For example, this JSON will create two quick links:
 
