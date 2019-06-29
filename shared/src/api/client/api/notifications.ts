@@ -17,11 +17,11 @@ export interface ClientNotificationsAPI extends ProxyValue {
     ): Unsubscribable & ProxyValue
 }
 
-export function createClientNotifications(checklistService: NotificationService): ClientNotificationsAPI {
+export function createClientNotifications(statusService: NotificationService): ClientNotificationsAPI {
     return {
         $registerNotificationProvider: (type, providerFunction) => {
             return proxyValue(
-                checklistService.registerNotificationProvider(type, {
+                statusService.registerNotificationProvider(type, {
                     provideNotifications: (...args) => wrapRemoteObservable(providerFunction(...args)),
                 })
             )

@@ -1,5 +1,5 @@
 import { PlatformContext } from '../../platform/context'
-import { createChecklistService } from './services/checklistService'
+import { createStatusService } from './services/statusService'
 import { ReferenceParams } from '../protocol'
 import { createContextService } from './context/contextService'
 import { CheckTemplateRegistry } from './services/checkTemplates'
@@ -62,5 +62,5 @@ export class Services {
     public readonly views = new ViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
     public readonly checkTemplates = new CheckTemplateRegistry()
-    public readonly checklist = createChecklistService()
+    public readonly status = createStatusService()
 }

@@ -6,7 +6,6 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../../components/HeroPage'
 import { ThreadsAreaContext } from '../../threads/global/ThreadsArea'
 import { ChangesetArea } from '../detail/ChangesetArea'
-import { NewChangesetPage } from '../new/NewChangesetPage'
 import { ChangesetsOverviewPage } from '../overview/ChangesetsOverviewPage'
 import { ChangesetPreviewPage } from '../preview/ChangesetPreviewPage'
 
@@ -44,12 +43,6 @@ export const ChangesetsArea: React.FunctionComponent<ChangesetsAreaProps> = ({ m
                 exact={true}
                 // tslint:disable-next-line:jsx-no-lambda
                 render={routeComponentProps => <ChangesetsOverviewPage {...routeComponentProps} {...context} />}
-            />
-            <Route
-                path={`${match.url}/new`}
-                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                // tslint:disable-next-line:jsx-no-lambda
-                render={routeComponentProps => <NewChangesetPage {...routeComponentProps} {...context} />}
             />
             <Route
                 path={`${match.url}/preview/:threadID`}

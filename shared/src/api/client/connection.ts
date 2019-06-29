@@ -26,7 +26,7 @@ import {
     ShowMessageRequestParams,
     ShowNotificationParams,
 } from './services/notifications'
-import { createClientChecklist } from './api/checklist'
+import { createClientStatus } from './api/status'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -122,7 +122,7 @@ export async function createExtensionHostClientConnection(
 
     const clientContent = createClientContent(services.linkPreviews)
 
-    const clientChecklist = createClientChecklist(services.checklist)
+    const clientStatus = createClientStatus(services.status)
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
@@ -137,7 +137,7 @@ export async function createExtensionHostClientConnection(
         content: clientContent,
         diagnostics: clientDiagnostics,
         documents: clientDocuments,
-        checklist: clientChecklist,
+        status: clientStatus,
     }
     comlink.expose(clientAPI, endpoints.expose)
 

@@ -9,7 +9,7 @@ import { ClientLanguageFeaturesAPI } from './languageFeatures'
 import { ClientSearchAPI } from './search'
 import { ClientViewsAPI } from './views'
 import { ClientWindowsAPI } from './windows'
-import { ClientChecklistAPI } from './checklist'
+import { ClientStatusAPI } from './status'
 
 /**
  * The API that is exposed from the client (main thread) to the extension host (worker)
@@ -28,5 +28,5 @@ export interface ClientAPI {
     content: ClientContentAPI
     diagnostics: ClientDiagnosticsAPI
     documents: ClientDocumentsAPI
-    checklist: ClientChecklistAPI
+    status: ClientStatusAPI
 }

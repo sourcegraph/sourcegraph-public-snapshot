@@ -6,7 +6,7 @@ import * as React from 'react'
 import { Link } from '../Link'
 import { ActivationCompletionStatus, ActivationStep } from './Activation'
 
-interface ActivationChecklistItemProps extends ActivationStep {
+interface ActivationStatusProps extends ActivationStep {
     done: boolean
     history: H.History
 }
@@ -14,7 +14,7 @@ interface ActivationChecklistItemProps extends ActivationStep {
 /**
  * A single item in the activation checklist.
  */
-export class ActivationChecklistItem extends React.PureComponent<ActivationChecklistItemProps, {}> {
+export class ActivationStatus extends React.PureComponent<ActivationStatusProps, {}> {
     private onClick = (e: React.MouseEvent<HTMLElement>) => {
         if (this.props.onClick) {
             this.props.onClick(e, this.props.history)
@@ -61,7 +61,7 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
             <div className={`list-group list-group-flush ${this.props.className || ''}`}>
                 {this.props.steps.map(step => (
                     <div key={step.id} className="list-group-item list-group-item-action">
-                        <ActivationChecklistItem
+                        <ActivationStatus
                             {...step}
                             history={this.props.history}
                             done={(this.props.completed && this.props.completed[step.id]) || false}
