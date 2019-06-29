@@ -1,13 +1,13 @@
 import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
-import { wrapRemoteObservable } from './common'
-import { Unsubscribable } from 'rxjs'
 import { StatusService } from '../services/statusService'
+import { wrapRemoteObservable } from './common'
 
 export interface ClientStatusAPI extends ProxyValue {
     $registerStatusProvider(
-        type: Parameters<typeof sourcegraph.status.registerStatusProvider>[0],
+        name: Parameters<typeof sourcegraph.status.registerStatusProvider>[0],
         providerFunction: ProxyResult<
             ((
                 ...args: Parameters<sourcegraph.StatusProvider['provideStatus']>
@@ -19,9 +19,9 @@ export interface ClientStatusAPI extends ProxyValue {
 
 export function createClientStatus(statusService: StatusService): ClientStatusAPI {
     return {
-        $registerStatusProvider: (type, providerFunction) => {
+        $registerStatusProvider: (name, providerFunction) => {
             return proxyValue(
-                statusService.registerStatusProvider(type, {
+                statusService.registerStatusProvider(name, {
                     provideStatus: (...args) => wrapRemoteObservable(providerFunction(...args)),
                 })
             )

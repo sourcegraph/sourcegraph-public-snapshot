@@ -9,14 +9,14 @@ import { Status } from '../status'
 const LOADING: 'loading' = 'loading'
 
 /**
- * A React hook that observes a single status (looked up by type) for a particular scope.
+ * A React hook that observes a single status (looked up by name) for a particular scope.
  *
- * @param type The status type.
+ * @param name The status name.
  * @param scope The scope in which to compute the status.
  */
 export const useStatusByTypeForScope = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
-    type: string,
+    name: string,
     scope: sourcegraph.StatusScope | sourcegraph.WorkspaceRoot
 ): typeof LOADING | Status | null | ErrorLike => {
     const [statusOrError, setStatusOrError] = useState<typeof LOADING | Status | null | ErrorLike>(LOADING)
@@ -24,7 +24,7 @@ export const useStatusByTypeForScope = (
         const subscriptions = new Subscription()
         subscriptions.add(
             extensionsController.services.status
-                .observeStatus(type, scope)
+                .observeStatus(name, scope)
                 .pipe(
                     catchError(err => [asError(err)]),
                     startWith(LOADING)
@@ -32,6 +32,6 @@ export const useStatusByTypeForScope = (
                 .subscribe(setStatusOrError)
         )
         return () => subscriptions.unsubscribe()
-    }, [extensionsController.services.status, scope, type])
+    }, [extensionsController.services.status, scope, name])
     return statusOrError
 }

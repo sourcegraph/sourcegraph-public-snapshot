@@ -20,8 +20,8 @@ const NotFoundPage = () => (
 interface Props extends Pick<StatusAreaContext, Exclude<keyof StatusAreaContext, 'status'>> {}
 
 export interface StatusAreaContext extends ExtensionsControllerProps, PlatformContextProps {
-    /** The status type. */
-    type: string
+    /** The status name. */
+    name: string
 
     /** The status scope. */
     scope: sourcegraph.StatusScope | sourcegraph.WorkspaceRoot
@@ -41,8 +41,8 @@ const LOADING: 'loading' = 'loading'
 /**
  * The area for a single status.
  */
-export const StatusArea: React.FunctionComponent<Props> = ({ type, scope, areaURL, ...props }) => {
-    const statusOrError = useStatusByTypeForScope(props.extensionsController, type, scope)
+export const StatusArea: React.FunctionComponent<Props> = ({ name, scope, areaURL, ...props }) => {
+    const statusOrError = useStatusByTypeForScope(props.extensionsController, name, scope)
     if (statusOrError === LOADING) {
         return null // loading
     }
@@ -57,7 +57,7 @@ export const StatusArea: React.FunctionComponent<Props> = ({ type, scope, areaUR
         areaURL: string
     } = {
         ...props,
-        type,
+        name,
         scope,
         areaURL,
         status: statusOrError,

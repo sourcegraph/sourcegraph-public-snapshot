@@ -1,10 +1,10 @@
-import * as sourcegraph from 'sourcegraph'
-import { isDefined } from '../../../../shared/src/util/types'
-import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { flatten } from 'lodash'
-import { Subscription, Unsubscribable, from, of, Observable } from 'rxjs'
-import { map, switchMap, startWith, toArray, publishReplay, refCount } from 'rxjs/operators'
-import { OTHER_CODE_ACTIONS, MAX_RESULTS, REPO_INCLUDE } from './misc'
+import { from, Observable, of, Subscription, Unsubscribable } from 'rxjs'
+import { map, publishReplay, refCount, startWith, switchMap, toArray } from 'rxjs/operators'
+import * as sourcegraph from 'sourcegraph'
+import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
+import { isDefined } from '../../../../shared/src/util/types'
+import { MAX_RESULTS, OTHER_CODE_ACTIONS, REPO_INCLUDE } from './misc'
 import { memoizedFindTextInFiles } from './util'
 
 const CODE_TRAVIS_GO = 'check-search.travis-go'
@@ -13,9 +13,7 @@ export function registerTravisGo(): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(startDiagnostics())
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
-    subscriptions.add(
-        sourcegraph.status.registerStatusProvider(CODE_TRAVIS_GO, createStatusProvider(diagnostics))
-    )
+    subscriptions.add(sourcegraph.status.registerStatusProvider('travis-ci', createStatusProvider(diagnostics)))
     return subscriptions
 }
 
@@ -31,22 +29,18 @@ function startDiagnostics(): Unsubscribable {
     return subscriptions
 }
 
-function createStatusProvider(
-    diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]>
-): sourcegraph.StatusProvider {
+function createStatusProvider(diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]>): sourcegraph.StatusProvider {
     return {
-        provideStatus: (scope): sourcegraph.Subscribable<sourcegraph.Status[]> => {
+        provideStatus: (scope): sourcegraph.Subscribable<sourcegraph.Status | null> => {
             // TODO!(sqs): dont ignore scope
             return diagnostics.pipe(
-                map<[URL, sourcegraph.Diagnostic[]][], sourcegraph.Status[]>(diagnostics => [
-                    {
-                        title: `Standardize Travis CI configuration`,
-                        notifications: [
-                            { title: 'my notif1', type: sourcegraph.NotificationType.Info },
-                            { title: 'my notif2', type: sourcegraph.NotificationType.Error },
-                        ],
-                    },
-                ])
+                map<[URL, sourcegraph.Diagnostic[]][], sourcegraph.Status>(diagnostics => ({
+                    title: `Standardize Travis CI configuration`,
+                    notifications: [
+                        { title: 'my notif1', type: sourcegraph.NotificationType.Info },
+                        { title: 'my notif2', type: sourcegraph.NotificationType.Error },
+                    ],
+                }))
             )
         },
     }

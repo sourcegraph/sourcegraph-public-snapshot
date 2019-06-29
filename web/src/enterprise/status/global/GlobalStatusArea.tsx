@@ -1,4 +1,4 @@
-import { ChecklistScope } from '@sourcegraph/extension-api-classes'
+import { StatusScope } from '@sourcegraph/extension-api-classes'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -7,7 +7,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { HeroPage } from '../../../components/HeroPage'
 import { ChecklistIcon } from '../../../util/octicons'
-import { CombinedStatus } from '../combined/CombinedStatus'
+import { CombinedStatusPage } from '../combined/CombinedStatusPage'
 import { StatusArea } from '../detail/StatusArea'
 
 const NotFoundPage: React.FunctionComponent = () => (
@@ -35,18 +35,18 @@ export const GlobalStatusArea: React.FunctionComponent<Props> = ({ match, ...pro
                 exact={true}
                 // tslint:disable-next-line:jsx-no-lambda
                 render={routeComponentProps => (
-                    <CombinedStatus {...props} scope={ChecklistScope.Global} areaURL={routeComponentProps.match.url} />
+                    <CombinedStatusPage {...props} scope={StatusScope.Global} areaURL={routeComponentProps.match.url} />
                 )}
             />
             <Route
-                path={`${match.url}/:type`}
+                path={`${match.url}/:name`}
                 exact={true}
                 // tslint:disable-next-line:jsx-no-lambda
-                render={(routeComponentProps: RouteComponentProps<{ type: string }>) => (
+                render={(routeComponentProps: RouteComponentProps<{ name: string }>) => (
                     <StatusArea
                         {...props}
-                        type={routeComponentProps.match.params.type}
-                        scope={ChecklistScope.Global}
+                        name={routeComponentProps.match.params.name}
+                        scope={StatusScope.Global}
                         areaURL={routeComponentProps.match.url}
                     />
                 )}
