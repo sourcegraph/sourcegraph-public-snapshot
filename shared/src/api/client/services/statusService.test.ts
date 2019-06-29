@@ -1,15 +1,16 @@
-import { throwError, Unsubscribable, of } from 'rxjs'
+import { ProcessStatus, StatusScope } from '@sourcegraph/extension-api-classes'
+import { of, throwError, Unsubscribable } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import * as sourcegraph from 'sourcegraph'
-import { createStatusService } from './statusService'
+import { createStatusService, WrappedStatus } from './statusService'
 
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
-const STATUS_1: sourcegraph.Status = { title: '1' }
+const STATUS_1: WrappedStatus = { name: '', status: { title: '1', status: ProcessStatus.Completed } }
 
-const STATUS_2: sourcegraph.Status = { title: '2' }
+const STATUS_2: WrappedStatus = { name: '', status: { title: '2', status: ProcessStatus.Completed } }
 
-const SCOPE: sourcegraph.StatusScope = 'global' as sourcegraph.StatusScope.Global
+const SCOPE = StatusScope.Global
 
 describe('StatusService', () => {
     describe('observeStatuses', () => {
@@ -27,8 +28,8 @@ describe('StatusService', () => {
                     provideStatus: () =>
                         cold<sourcegraph.Status | null>('abcd', {
                             a: null,
-                            b: STATUS_1,
-                            c: STATUS_2,
+                            b: STATUS_1.status,
+                            c: STATUS_2.status,
                             d: null,
                         }),
                 })
@@ -45,13 +46,13 @@ describe('StatusService', () => {
             scheduler().run(({ cold, expectObservable }) => {
                 const service = createStatusService(false)
                 const unsub1 = service.registerStatusProvider('1', {
-                    provideStatus: () => of(STATUS_1),
+                    provideStatus: () => of(STATUS_1.status),
                 })
                 let unsub2: Unsubscribable
                 cold('-bc', {
                     b: () => {
                         unsub2 = service.registerStatusProvider('2', {
-                            provideStatus: () => of(STATUS_2),
+                            provideStatus: () => of(STATUS_2.status),
                         })
                     },
                     c: () => {
@@ -96,8 +97,8 @@ describe('StatusService', () => {
                     provideStatus: () =>
                         cold<sourcegraph.Status | null>('abcd', {
                             a: null,
-                            b: STATUS_1,
-                            c: STATUS_2,
+                            b: STATUS_1.status,
+                            c: STATUS_2.status,
                             d: null,
                         }),
                 })
@@ -125,7 +126,7 @@ describe('StatusService', () => {
     })
 
     describe('registerStatusProvider', () => {
-        test('enforces unique registration types', () => {
+        test('enforces unique registration names', () => {
             const service = createStatusService(false)
             service.registerStatusProvider('a', {
                 provideStatus: () => null,

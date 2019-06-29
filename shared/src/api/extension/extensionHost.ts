@@ -1,28 +1,28 @@
 import * as comlink from '@sourcegraph/comlink'
-import { Location, MarkupKind, Position, Range, Selection, ChecklistScope } from '@sourcegraph/extension-api-classes'
-import { WorkspaceEdit } from '../types/workspaceEdit'
-import { TextEdit } from '../types/textEdit'
+import { Location, MarkupKind, Position, Range, Selection, StatusScope } from '@sourcegraph/extension-api-classes'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
 import { NotificationType } from '../client/services/notifications'
+import { DiagnosticSeverity } from '../types/diagnosticCollection'
+import { TextEdit } from '../types/textEdit'
+import { WorkspaceEdit } from '../types/workspaceEdit'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { ExtCommands } from './api/commands'
 import { ExtConfiguration } from './api/configuration'
 import { ExtContent } from './api/content'
 import { ExtContext } from './api/context'
 import { createDecorationType } from './api/decorations'
-import { createExtStatus } from './api/status'
 import { ExtDiagnostics } from './api/diagnostics'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
 import { ExtLanguageFeatures } from './api/languageFeatures'
 import { ExtRoots } from './api/roots'
 import { ExtSearch } from './api/search'
+import { createExtStatus } from './api/status'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
-import { DiagnosticSeverity } from '../types/diagnosticCollection'
 
 /**
  * Required information when initializing an extension host.
@@ -143,7 +143,7 @@ function createExtensionAPI(
     const search = new ExtSearch(proxy.search)
     const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
-    const checklist = createExtStatus(proxy.status)
+    const status = createExtStatus(proxy.status)
 
     const diagnostics = new ExtDiagnostics(proxy.diagnostics)
     subscription.add(diagnostics)
@@ -179,7 +179,7 @@ function createExtensionAPI(
         TextEdit,
         DiagnosticSeverity,
         WorkspaceEdit,
-        StatusScope: ChecklistScope,
+        StatusScope,
         app: {
             activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {
@@ -206,8 +206,8 @@ function createExtensionAPI(
             openTextDocument: uri => documents.openTextDocument(uri),
         },
 
-        checklist: {
-            registerStatusProvider: (type, provider) => checklist.registerStatusProvider(type, provider),
+        status: {
+            registerStatusProvider: (name, provider) => status.registerStatusProvider(name, provider),
         },
 
         configuration: {

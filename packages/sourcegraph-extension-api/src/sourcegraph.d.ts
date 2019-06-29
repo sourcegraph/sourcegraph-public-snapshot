@@ -1002,13 +1002,41 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * The status of a long-running background process.
+     */
+    export enum ProcessStatus {
+        Queued = 'queued',
+        InProgress = 'in-progress',
+        Completed = 'completed',
+    }
+
+    /**
+     * The summarized result of a status.
+     */
+    export enum StatusResult {
+        Success = 'success',
+        Failure = 'failure',
+        ActionRequired = 'action-required',
+    }
+
+    /**
      * A status describes a situation and related actions that can be taken in a particular scope.
      */
     export interface Status {
         /**
-         * The title of the status.
+         * The human-readable title of the status.
          */
         title: string
+
+        /**
+         * The current status of the status (i.e., whether it is completed).
+         */
+        status: ProcessStatus
+
+        /**
+         * The summarized result of the status.
+         */
+        result?: StatusResult
 
         /**
          * Notifications related to the status.
@@ -1041,11 +1069,12 @@ declare module 'sourcegraph' {
          * the results are merged. A failing provider (rejected promise or exception) will not cause
          * a failure of the whole operation.
          *
-         * @param type The type of status that this provider provides.
+         * @param name The name of the status that this provider provides, such as
+         * "code-ownership-validity".
          * @param provider A status provider.
          * @return An unsubscribable to unregister this provider.
          */
-        export function registerStatusProvider(type: string, provider: StatusProvider): Unsubscribable
+        export function registerStatusProvider(name: string, provider: StatusProvider): Unsubscribable
     }
 
     /**

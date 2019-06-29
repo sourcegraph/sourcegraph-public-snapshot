@@ -1,9 +1,20 @@
-import { Observable, BehaviorSubject, from, isObservable, of } from 'rxjs'
+import { compact, isEqual } from 'lodash'
+import { BehaviorSubject, from, isObservable, Observable, of } from 'rxjs'
+import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { switchMap, catchError, map, distinctUntilChanged } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
-import { isEqual, compact } from 'lodash'
 import { isPromise, isSubscribable } from '../../util'
+
+/**
+ * A status from a status provider with additional information.
+ */
+export interface WrappedStatus {
+    /** The name of the status. */
+    name: string
+
+    /** The status. */
+    status: sourcegraph.Status
+}
 
 /**
  * A service that manages and queries registered status providers
@@ -15,17 +26,17 @@ export interface StatusService {
      *
      * The returned observable emits upon subscription and whenever any status changes.
      */
-    observeStatuses(scope: Parameters<sourcegraph.StatusProvider['provideStatus']>[0]): Observable<sourcegraph.Status[]>
+    observeStatuses(scope: Parameters<sourcegraph.StatusProvider['provideStatus']>[0]): Observable<WrappedStatus[]>
 
     /**
-     * Observe the status for a particular provider (by type) and scope.
+     * Observe the status for a particular provider (by name) and scope.
      *
      * The returned observable emits upon subscription and whenever the status changes.
      */
     observeStatus(
-        type: Parameters<typeof sourcegraph.status.registerStatusProvider>[0],
+        name: Parameters<typeof sourcegraph.status.registerStatusProvider>[0],
         scope: Parameters<sourcegraph.StatusProvider['provideStatus']>[0]
-    ): Observable<sourcegraph.Status | null>
+    ): Observable<WrappedStatus | null>
 
     /**
      * Register a status provider.
@@ -39,11 +50,18 @@ export interface StatusService {
  * Creates a new {@link StatusService}.
  */
 export function createStatusService(logErrors = true): StatusService {
+    interface Registration {
+        name: Parameters<typeof sourcegraph.status.registerStatusProvider>[0]
+        provider: sourcegraph.StatusProvider
+    }
+    const registrations = new BehaviorSubject<Registration[]>([])
+
     const provideStatus = (
-        provider: sourcegraph.StatusProvider,
+        registration: Registration,
         args: Parameters<sourcegraph.StatusProvider['provideStatus']>
-    ): Observable<sourcegraph.Status | null> =>
-        fromProviderResult(provider.provideStatus(...args), item => item || null).pipe(
+    ): Observable<WrappedStatus | null> =>
+        fromProviderResult(registration.provider.provideStatus(...args), item => item || null).pipe(
+            map(status => (status ? { name: registration.name, status } : null)),
             catchError(err => {
                 if (logErrors) {
                     console.error(err)
@@ -52,35 +70,30 @@ export function createStatusService(logErrors = true): StatusService {
             })
         )
 
-    interface Registration {
-        type: Parameters<typeof sourcegraph.status.registerStatusProvider>[0]
-        provider: sourcegraph.StatusProvider
-    }
-    const registrations = new BehaviorSubject<Registration[]>([])
     return {
         observeStatuses: (...args) => {
             return registrations.pipe(
                 switchMap(registrations =>
-                    combineLatestOrDefault(registrations.map(({ provider }) => provideStatus(provider, args))).pipe(
+                    combineLatestOrDefault(registrations.map(reg => provideStatus(reg, args))).pipe(
                         map(itemsArrays => compact(itemsArrays)),
                         distinctUntilChanged((a, b) => isEqual(a, b))
                     )
                 )
             )
         },
-        observeStatus: (type, ...args) => {
+        observeStatus: (name, ...args) => {
             return registrations.pipe(
                 switchMap(registrations => {
-                    const reg = registrations.find(r => r.type === type)
-                    return reg ? provideStatus(reg.provider, args) : of(null)
+                    const registration = registrations.find(r => r.name === name)
+                    return registration ? provideStatus(registration, args) : of(null)
                 })
             )
         },
-        registerStatusProvider: (type, provider) => {
-            if (registrations.value.some(r => r.type === type)) {
-                throw new Error(`a StatusProvider of type ${JSON.stringify(type)} is already registered`)
+        registerStatusProvider: (name, provider) => {
+            if (registrations.value.some(r => r.name === name)) {
+                throw new Error(`a StatusProvider with name ${JSON.stringify(name)} is already registered`)
             }
-            const reg: Registration = { type, provider }
+            const reg: Registration = { name, provider }
             registrations.next([...registrations.value, reg])
             const unregister = () => registrations.next(registrations.value.filter(r => r !== reg))
             return { unsubscribe: unregister }
