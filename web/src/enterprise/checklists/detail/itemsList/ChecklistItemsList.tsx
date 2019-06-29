@@ -20,7 +20,13 @@ export const ChecklistItemsList: React.FunctionComponent<Props> = ({ itemClassNa
         <ul className="list-group list-group-flush mb-0">
             {checklist.items.map((item, i) => (
                 <li key={i} className="list-group-item px-0">
-                    <ChecklistListItem {...props} key={JSON.stringify(item)} item={item} className={itemClassName} />
+                    <ChecklistListItem
+                        {...props}
+                        key={JSON.stringify(item)}
+                        item={item}
+                        className={itemClassName}
+                        headerClassName="pl-5"
+                    />
                 </li>
             ))}
         </ul>
