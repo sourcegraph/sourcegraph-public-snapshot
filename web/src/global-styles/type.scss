@@ -58,6 +58,10 @@ a {
     }
 }
 
+.font-size-base {
+    font-size: var(--font-size-base);
+}
+
 .small {
     font-size: var(--font-size-sm);
 }

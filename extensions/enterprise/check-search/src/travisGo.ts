@@ -2,84 +2,108 @@ import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../shared/src/util/types'
 import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { flatten } from 'lodash'
-import { Subscription, Unsubscribable, from, of } from 'rxjs'
-import { map, switchMap, startWith, toArray } from 'rxjs/operators'
+import { Subscription, Unsubscribable, from, of, Observable } from 'rxjs'
+import { map, switchMap, startWith, toArray, publishReplay, refCount } from 'rxjs/operators'
 import { OTHER_CODE_ACTIONS, MAX_RESULTS, REPO_INCLUDE } from './misc'
 import { memoizedFindTextInFiles } from './util'
+
+const CODE_TRAVIS_GO = 'check-search.travis-go'
 
 export function registerTravisGo(): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(startDiagnostics())
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
+    subscriptions.add(
+        sourcegraph.checklist.registerChecklistProvider(CODE_TRAVIS_GO, createChecklistProvider(diagnostics))
+    )
     return subscriptions
 }
 
-const CODE_TRAVIS_GO = 'TRAVIS_GO'
-
 function startDiagnostics(): Unsubscribable {
     const subscriptions = new Subscription()
-
     const diagnosticsCollection = sourcegraph.languages.createDiagnosticCollection('demo0')
     subscriptions.add(diagnosticsCollection)
     subscriptions.add(
-        from(sourcegraph.workspace.rootChanges)
-            .pipe(
-                startWith(void 0),
-                map(() => sourcegraph.workspace.roots),
-                switchMap(async roots => {
-                    if (roots.length > 0) {
-                        return of([]) // TODO!(sqs): dont run in comparison mode
-                    }
-
-                    const results = flatten(
-                        await from(
-                            memoizedFindTextInFiles(
-                                { pattern: '', type: 'regexp' },
-                                {
-                                    repositories: {
-                                        includes: [REPO_INCLUDE],
-                                        type: 'regexp',
-                                    },
-                                    files: {
-                                        includes: ['\\.travis\\.yml$'],
-                                        type: 'regexp',
-                                    },
-                                    maxResults: MAX_RESULTS,
-                                }
-                            )
-                        )
-                            .pipe(toArray())
-                            .toPromise()
-                    )
-                    return combineLatestOrDefault(
-                        results.map(async ({ uri }) => {
-                            const { text } = await sourcegraph.workspace.openTextDocument(new URL(uri))
-                            const diagnostics: sourcegraph.Diagnostic[] = flatten(
-                                findMatchRanges(text, /(^go:)|(^language: go)/g)
-                                    .slice(0, 1)
-                                    .map(
-                                        range =>
-                                            ({
-                                                message: 'Outdated Go version used in Travis CI',
-                                                range,
-                                                severity: sourcegraph.DiagnosticSeverity.Warning,
-                                                code: CODE_TRAVIS_GO,
-                                            } as sourcegraph.Diagnostic)
-                                    )
-                            )
-                            return [new URL(uri), diagnostics] as [URL, sourcegraph.Diagnostic[]]
-                        })
-                    ).pipe(map(items => items.filter(isDefined)))
-                }),
-                switchMap(results => results)
-            )
-            .subscribe(entries => {
-                diagnosticsCollection.set(entries)
-            })
+        diagnostics.subscribe(entries => {
+            diagnosticsCollection.set(entries)
+        })
     )
-
-    return diagnosticsCollection
+    return subscriptions
 }
+
+function createChecklistProvider(
+    diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]>
+): sourcegraph.ChecklistProvider {
+    return {
+        provideChecklistItems: (scope): sourcegraph.Subscribable<sourcegraph.ChecklistItem[]> => {
+            // TODO!(sqs): dont ignore scope
+            return diagnostics.pipe(
+                map<[URL, sourcegraph.Diagnostic[]][], sourcegraph.ChecklistItem[]>(diagnostics => [
+                    {
+                        title: `Standardize Travis CI configuration`,
+                        notifications: [
+                            { title: 'my notif1', type: sourcegraph.NotificationType.Info },
+                            { title: 'my notif2', type: sourcegraph.NotificationType.Error },
+                        ],
+                    },
+                ])
+            )
+        },
+    }
+}
+
+const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]> = from(sourcegraph.workspace.rootChanges).pipe(
+    startWith(void 0),
+    map(() => sourcegraph.workspace.roots),
+    switchMap(async roots => {
+        if (roots.length > 0) {
+            return of<[URL, sourcegraph.Diagnostic[]][]>([]) // TODO!(sqs): dont run in comparison mode
+        }
+
+        const results = flatten(
+            await from(
+                memoizedFindTextInFiles(
+                    { pattern: '', type: 'regexp' },
+                    {
+                        repositories: {
+                            includes: [REPO_INCLUDE],
+                            type: 'regexp',
+                        },
+                        files: {
+                            includes: ['\\.travis\\.yml$'],
+                            type: 'regexp',
+                        },
+                        maxResults: MAX_RESULTS,
+                    }
+                )
+            )
+                .pipe(toArray())
+                .toPromise()
+        )
+        return combineLatestOrDefault(
+            results.map(async ({ uri }) => {
+                const { text } = await sourcegraph.workspace.openTextDocument(new URL(uri))
+                const diagnostics: sourcegraph.Diagnostic[] = flatten(
+                    findMatchRanges(text, /(^go:)|(^language: go)/g)
+                        .slice(0, 1)
+                        .map(
+                            range =>
+                                ({
+                                    message: 'Outdated Go version used in Travis CI',
+                                    range,
+                                    severity: sourcegraph.DiagnosticSeverity.Warning,
+                                    code: CODE_TRAVIS_GO,
+                                } as sourcegraph.Diagnostic)
+                        )
+                )
+                return [new URL(uri), diagnostics] as [URL, sourcegraph.Diagnostic[]]
+            })
+        ).pipe(map(items => items.filter(isDefined)))
+    }),
+    switchMap(results => results),
+    publishReplay(),
+    refCount() //TODO!(sqs): or just share()?
+)
 
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {

@@ -632,6 +632,8 @@ declare module 'sourcegraph' {
 
         /**
          * Show a notification message to the user that does not require interaction or steal focus.
+         * *
+         * TODO!(sqs): avoid name conflict with the other Notification)
          *
          * @param message The message to show. Markdown is supported.
          * @param type a {@link NotificationType} affecting the display of the notification.
@@ -1009,6 +1011,11 @@ declare module 'sourcegraph' {
          * The title of the checklist item.
          */
         title: string
+
+        /**
+         * Notifications related to the checklist item.
+         */
+        notifications: Notification[]
     }
 
     /**
@@ -1045,6 +1052,64 @@ declare module 'sourcegraph' {
          * @return An unsubscribable to unregister this provider.
          */
         export function registerChecklistProvider(type: string, provider: ChecklistProvider): Unsubscribable
+    }
+
+    /**
+     * The scopes for a notification.
+     */
+    export enum NotificationScope {
+        /**
+         * A global notification.
+         */
+        Global = 'global',
+    }
+
+    /**
+     * A notification.
+     */
+    export interface Notification {
+        /**
+         * The title of the notification.
+         */
+        title: string
+
+        /**
+         * The type of the notification.
+         */
+        type: NotificationType
+    }
+
+    /**
+     * A notification provider provides notifications for a particular scope.
+     */
+    export interface NotificationProvider {
+        /**
+         * Provide a notification for the given scope.
+         *
+         * @param scope The scope to provide a notification for.
+         * @param context Context carrying additional information.
+         * @return An array of commands, quick fixes, or refactorings or a thenable of such. The
+         * lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideNotifications(scope: NotificationScope.Global | WorkspaceRoot): ProviderResult<Notification[]>
+    }
+
+    /**
+     * TODO!(sqs)
+     */
+    export namespace notifications {
+        /**
+         * Register a notification provider.
+         *
+         * Multiple providers can be registered. In that case, providers are queried in parallel and
+         * the results are merged. A failing provider (rejected promise or exception) will not cause
+         * a failure of the whole operation.
+         *
+         * @param type The notification type that this provider is registered for.
+         * @param provider A notification provider.
+         * @return An unsubscribable to unregister this provider.
+         */
+        export function registerNotificationProvider(type: string, provider: NotificationProvider): Unsubscribable
     }
 
     /**
@@ -1151,6 +1216,8 @@ declare module 'sourcegraph' {
 
     /**
      * The type of a notification shown through {@link Window.showNotification}.
+     *
+     * TODO!(sqs): avoid name conflict with the other Notification)
      */
     export enum NotificationType {
         /**

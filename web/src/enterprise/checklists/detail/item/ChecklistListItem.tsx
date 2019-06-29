@@ -12,8 +12,6 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 
     className?: string
     headerClassName?: string
-    headerStyle?: React.CSSProperties
-    isLightTheme: boolean
     history: H.History
     location: H.Location
 }
@@ -21,13 +19,10 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 /**
  * An item in a checklist.
  */
-export const ChecklistListItem: React.FunctionComponent<Props> = ({
-    item,
-    className = '',
-    headerClassName = '',
-    headerStyle,
-}) => (
+export const ChecklistListItem: React.FunctionComponent<Props> = ({ item, className = '', headerClassName = '' }) => (
     <div className={`d-flex flex-wrap align-items-stretch ${className}`}>
-        <h3 className="mb-0">{item.title}</h3>
+        <header className={headerClassName}>
+            <h3 className="mb-0 font-weight-normal font-size-base">{item.title}</h3>
+        </header>
     </div>
 )
