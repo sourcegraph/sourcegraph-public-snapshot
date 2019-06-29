@@ -33,4 +33,4 @@ For example, this JSON will create two quick links:
 }
 ```
 
-After editing and saving the configuration settings JSON you can view the new links on the homepage or search results page.
+After editing and saving the settings JSON, you can view the new links on the homepage or search results page.
