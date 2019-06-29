@@ -1,8 +1,8 @@
 import H from 'history'
 import React from 'react'
+import { WrappedStatus } from '../../../../../shared/src/api/client/services/statusService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { Status } from '../status'
 import { CombinedStatusItem } from './CombinedStatusItem'
 
 export interface CombinedStatusContext {
@@ -10,8 +10,9 @@ export interface CombinedStatusContext {
 }
 
 interface Props extends CombinedStatusContext, ExtensionsControllerProps, PlatformContextProps {
-    statuses: Status[]
+    statuses: WrappedStatus[]
 
+    areaURL: string
     history: H.History
     location: H.Location
 }
@@ -23,15 +24,13 @@ export const CombinedStatus: React.FunctionComponent<Props> = ({ itemClassName, 
     <div className="combined-status">
         <ul className="list-group list-group-flush mb-0">
             {statuses.map((status, i) => (
-                <li key={i} className="list-group-item px-0">
-                    <CombinedStatusItem
-                        {...props}
-                        key={JSON.stringify(status)}
-                        status={status}
-                        className={itemClassName}
-                        headerClassName="pl-5"
-                    />
-                </li>
+                <CombinedStatusItem
+                    {...props}
+                    key={status.name}
+                    tag="li"
+                    status={status}
+                    className={`list-group-item ${itemClassName}`}
+                />
             ))}
         </ul>
     </div>

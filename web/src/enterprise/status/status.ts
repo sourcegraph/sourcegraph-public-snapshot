@@ -1,3 +1,3 @@
-import * as sourcegraph from 'sourcegraph'
+import { WrappedStatus } from '../../../../shared/src/api/client/services/statusService'
 
-export interface Status extends sourcegraph.Status {}
+export interface Status extends WrappedStatus {}

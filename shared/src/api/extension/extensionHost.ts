@@ -1,5 +1,14 @@
 import * as comlink from '@sourcegraph/comlink'
-import { Location, MarkupKind, Position, Range, Selection, StatusScope } from '@sourcegraph/extension-api-classes'
+import {
+    Location,
+    MarkupKind,
+    Position,
+    Range,
+    Selection,
+    StatusScope,
+    StatusCompletion,
+    StatusResult,
+} from '@sourcegraph/extension-api-classes'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
@@ -180,6 +189,8 @@ function createExtensionAPI(
         DiagnosticSeverity,
         WorkspaceEdit,
         StatusScope,
+        StatusCompletion,
+        StatusResult,
         app: {
             activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {
