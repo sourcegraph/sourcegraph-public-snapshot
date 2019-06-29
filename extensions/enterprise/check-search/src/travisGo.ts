@@ -35,12 +35,20 @@ function createStatusProvider(diagnostics: Observable<[URL, sourcegraph.Diagnost
             // TODO!(sqs): dont ignore scope
             return diagnostics.pipe(
                 map<[URL, sourcegraph.Diagnostic[]][], sourcegraph.Status>(diagnostics => ({
-                    title: `Standardize Travis CI configuration`,
+                    title: 'Travis CI',
+                    state: {
+                        completion: sourcegraph.StatusCompletion.Completed,
+                        result: sourcegraph.StatusResult.Success,
+                    },
                     notifications: [
                         { title: 'my notif1', type: sourcegraph.NotificationType.Info },
                         { title: 'my notif2', type: sourcegraph.NotificationType.Error },
                     ],
-                }))
+                })),
+                startWith<sourcegraph.Status>({
+                    title: 'Travis CI',
+                    state: { completion: sourcegraph.StatusCompletion.InProgress },
+                })
             )
         },
     }

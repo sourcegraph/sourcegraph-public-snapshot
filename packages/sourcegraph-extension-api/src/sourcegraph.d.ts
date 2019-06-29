@@ -1002,20 +1002,21 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * The status of a long-running background process.
+     * The completion state of a status.
      */
-    export enum ProcessStatus {
+    export enum StatusCompletion {
         Queued = 'queued',
         InProgress = 'in-progress',
         Completed = 'completed',
     }
 
     /**
-     * The summarized result of a status.
+     * The overall result of a status.
      */
     export enum StatusResult {
         Success = 'success',
         Failure = 'failure',
+        Neutral = 'neutral',
         ActionRequired = 'action-required',
     }
 
@@ -1029,14 +1030,11 @@ declare module 'sourcegraph' {
         title: string
 
         /**
-         * The current status of the status (i.e., whether it is completed).
+         * The current state of the status.
          */
-        status: ProcessStatus
-
-        /**
-         * The summarized result of the status.
-         */
-        result?: StatusResult
+        state:
+            | { completion: StatusCompletion.Queued | StatusCompletion.InProgress }
+            | { completion: StatusCompletion; result: StatusResult }
 
         /**
          * Notifications related to the status.

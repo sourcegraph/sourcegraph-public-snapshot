@@ -10,9 +10,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import { useCombinedStatusForScope } from '../util/useCombinedStatusForScope'
 import { CombinedStatus } from './CombinedStatus'
 
-interface Props extends Pick<StatusAreaContext, Exclude<keyof StatusAreaContext, 'status'>> {}
-
-export interface StatusAreaContext extends ExtensionsControllerProps, PlatformContextProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps {
     /** The status scope. */
     scope: sourcegraph.StatusScope | sourcegraph.WorkspaceRoot
 
@@ -28,13 +26,13 @@ const LOADING: 'loading' = 'loading'
 /**
  * A page showing a combined status for a particular scope.
  */
-export const CombinedStatusPage: React.FunctionComponent<Props> = ({ scope, areaURL, ...props }) => {
-    const statusOrError = useCombinedStatusForScope(props.extensionsController, scope)
-    if (statusOrError === LOADING) {
+export const CombinedStatusPage: React.FunctionComponent<Props> = ({ scope, ...props }) => {
+    const statusesOrError = useCombinedStatusForScope(props.extensionsController, scope)
+    if (statusesOrError === LOADING) {
         return null // loading
     }
-    if (isErrorLike(statusOrError)) {
-        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={statusOrError.message} />
+    if (isErrorLike(statusesOrError)) {
+        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={statusesOrError.message} />
     }
-    return <CombinedStatus {...props} statuses={statusOrError} />
+    return <CombinedStatus {...props} statuses={statusesOrError} itemClassName="container-fluid px-5" />
 }
