@@ -23,5 +23,13 @@
         &::-webkit-scrollbar {
             display: none;
         }
+
+        &--no-label {
+            margin-left: 0;
+        }
+
+        &-quicklink {
+            margin: 0.25rem 0.5rem 0.25rem 0;
+        }
     }
 }

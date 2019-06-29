@@ -1,6 +1,8 @@
+import LinkIcon from 'mdi-react/LinkIcon'
 import React from 'react'
 import { SearchFilters } from '../../../../shared/src/api/protocol'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { QuickLink } from '../../schema/settings.schema'
 import { FilterChip } from '../FilterChip'
 import { isSearchResults } from '../helpers'
 
@@ -14,6 +16,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
     results?: GQL.ISearchResults
     filters: SearchScopeWithOptionalName[]
     extensionFilters: SearchFilters[] | undefined
+    quickLinks?: QuickLink[] | undefined
     onFilterClick: (value: string) => void
     onShowMoreResultsClick: (value: string) => void
     calculateShowMoreResultsCount: () => number
@@ -22,6 +25,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
     results,
     filters,
     extensionFilters,
+    quickLinks,
     onFilterClick,
     onShowMoreResultsClick,
     calculateShowMoreResultsCount,
@@ -84,6 +88,20 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                             showMore={true}
                         />
                     )}
+                </div>
+            </div>
+        )}
+        {quickLinks && (
+            <div className="search-results-filter-bars__row" data-testid="quicklinks-bar">
+                <div className="search-results-filter-bars__filters search-results-filter-bars__filters--no-label">
+                    {quickLinks.map((quickLink, i) => (
+                        <small className="search-results-filter-bars__filters-quicklink text-nowrap">
+                            <a href={quickLink.url} data-tooltip={quickLink.description} key={i}>
+                                <LinkIcon className="icon-inline pr-1" />
+                                {quickLink.name}
+                            </a>
+                        </small>
+                    ))}
                 </div>
             </div>
         )}

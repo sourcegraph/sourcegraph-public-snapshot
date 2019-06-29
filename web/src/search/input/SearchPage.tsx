@@ -1,4 +1,5 @@
 import * as H from 'history'
+import LinkIcon from 'mdi-react/LinkIcon'
 import * as React from 'react'
 import { parseSearchURLQuery } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
@@ -7,7 +8,7 @@ import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/se
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { Notices } from '../../global/Notices'
-import { Settings } from '../../schema/settings.schema'
+import { QuickLink, Settings } from '../../schema/settings.schema'
 import { ThemePreferenceProps, ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
@@ -101,6 +102,7 @@ export class SearchPage extends React.Component<Props, State> {
                                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 />
                             </div>
+                            {this.renderQuickLinks()}
                             <QueryBuilder
                                 onFieldsQueryChange={this.onBuilderQueryChange}
                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
@@ -112,6 +114,7 @@ export class SearchPage extends React.Component<Props, State> {
                                 onFieldsQueryChange={this.onBuilderQueryChange}
                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             />
+                            {this.renderQuickLinks()}
                             <div className="search-page__input-sub-container">
                                 <SearchFilterChips
                                     location={this.props.location}
@@ -128,6 +131,22 @@ export class SearchPage extends React.Component<Props, State> {
                 </Form>
             </div>
         )
+    }
+
+    private renderQuickLinks(): JSX.Element | null {
+        const quickLinks = this.getQuickLinks()
+        return quickLinks.length > 0 ? (
+            <div className="search-page__input-sub-container">
+                {quickLinks.map((quickLink, i) => (
+                    <small className="text-nowrap mr-2 search-page__quicklink">
+                        <a href={quickLink.url} data-tooltip={quickLink.description} key={i}>
+                            <LinkIcon className="icon-inline pr-1" />
+                            {quickLink.name}
+                        </a>
+                    </small>
+                ))}
+            </div>
+        ) : null
     }
 
     private onUserQueryChange = (userQuery: string) => {
@@ -161,10 +180,16 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     private getScopes(): ISearchScope[] {
-        const allScopes: ISearchScope[] =
+        return (
             (isSettingsValid<Settings>(this.props.settingsCascade) &&
                 this.props.settingsCascade.final['search.scopes']) ||
             []
-        return allScopes
+        )
+    }
+
+    private getQuickLinks(): QuickLink[] {
+        return (
+            (isSettingsValid<Settings>(this.props.settingsCascade) && this.props.settingsCascade.final.quicklinks) || []
+        )
     }
 }

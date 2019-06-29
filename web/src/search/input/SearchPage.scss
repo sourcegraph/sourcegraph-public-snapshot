@@ -41,6 +41,10 @@
         display: block;
         margin: 0.5rem 0;
     }
+
+    &__quicklink {
+        display: inline-block;
+    }
 }
 
 .theme-light {
