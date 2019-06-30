@@ -151,6 +151,11 @@
 @include generate-spacing-classes(pb, padding-bottom);
 @include generate-spacing-classes(pl, padding-left);
 
+.mx-auto {
+    margin-right: auto !important;
+    margin-left: auto !important;
+}
+
 @mixin generate-border-classes($direction-suffix) {
     .border#{$direction-suffix} {
         border#{$direction-suffix}: 1px solid var(--border-color);

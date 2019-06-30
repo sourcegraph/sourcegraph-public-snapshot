@@ -31,11 +31,11 @@ export const StatusAreaNavbar: React.FunctionComponent<Props> = ({ statusURL, cl
                 </li>
                 <li className="status-area-navbar__nav-item nav-item">
                     <NavLink
-                        to={`${statusURL}/problems`}
+                        to={`${statusURL}/issues`}
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="status-area-navbar__nav-link--active"
                     >
-                        <AlertCircleOutlineIcon className="icon-inline" /> Problems
+                        <AlertCircleOutlineIcon className="icon-inline" /> Issues
                     </NavLink>
                 </li>
                 <li className="flex-1" />

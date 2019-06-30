@@ -122,7 +122,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
-                <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                <Suspense fallback={<LoadingSpinner className="icon-inline m-4" />}>
                     <Switch>
                         {props.routes.map(({ render, ...route }) => {
                             const isFullWidth = !route.forceNarrowWidth
