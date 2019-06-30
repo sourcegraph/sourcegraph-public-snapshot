@@ -1,9 +1,10 @@
 import H from 'history'
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { WrappedStatus } from '../../../../../shared/src/api/client/services/statusService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { StatusHeader } from '../components/StatusHeader'
+import { StatusStateIcon } from '../components/StatusStateIcon'
 import { StatusesAreaContext } from '../statusesArea/StatusesArea'
 import { urlToStatus } from '../url'
 
@@ -12,7 +13,6 @@ interface Props extends Pick<StatusesAreaContext, 'statusesURL'>, ExtensionsCont
 
     tag: 'li'
     className?: string
-    headerClassName?: string
     history: H.History
     location: H.Location
 }
@@ -21,18 +21,17 @@ interface Props extends Pick<StatusesAreaContext, 'statusesURL'>, ExtensionsCont
  * A single status in a combined status ({@link CombinedStatus}).
  */
 export const CombinedStatusItem: React.FunctionComponent<Props> = ({
-    status,
+    status: { name, status },
     tag: Tag,
     statusesURL,
     className = '',
-    headerClassName = '',
 }) => (
     <Tag className={`d-flex flex-wrap align-items-stretch position-relative ${className}`}>
-        <StatusHeader
-            status={status}
-            to={urlToStatus(statusesURL, status.name)}
-            tag="header"
-            className={headerClassName}
-        />
+        <StatusStateIcon status={status} className="mr-3" />
+        <h3 className="mb-0 font-weight-normal font-size-base">
+            <Link to={urlToStatus(statusesURL, name)} className="stretched-link">
+                {status.title}
+            </Link>
+        </h3>
     </Tag>
 )

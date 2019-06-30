@@ -1033,8 +1033,8 @@ declare module 'sourcegraph' {
          * The current state of the status.
          */
         state:
-            | { completion: StatusCompletion.Queued | StatusCompletion.InProgress }
-            | { completion: StatusCompletion; result: StatusResult }
+            | { message?: string; completion: StatusCompletion.Queued | StatusCompletion.InProgress }
+            | { message?: string; completion: StatusCompletion; result: StatusResult }
 
         /**
          * Notifications related to the status.

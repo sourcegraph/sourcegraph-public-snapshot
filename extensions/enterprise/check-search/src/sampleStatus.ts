@@ -8,6 +8,20 @@ const STATUSES: (sourcegraph.Status & { name: string })[] = [
         state: {
             completion: sourcegraph.StatusCompletion.Completed,
             result: sourcegraph.StatusResult.ActionRequired,
+            message: 'High code churn detected',
+        },
+        notifications: [
+            { title: 'my notif1', type: sourcegraph.NotificationType.Info },
+            { title: 'my notif2', type: sourcegraph.NotificationType.Error },
+        ],
+    },
+    {
+        name: 'eslint',
+        title: 'ESLint',
+        state: {
+            completion: sourcegraph.StatusCompletion.Completed,
+            result: sourcegraph.StatusResult.Success,
+            message: 'Compliant with up-to-date ESLint rules',
         },
         notifications: [
             { title: 'my notif1', type: sourcegraph.NotificationType.Info },
@@ -19,6 +33,7 @@ const STATUSES: (sourcegraph.Status & { name: string })[] = [
         title: 'npm dependency security',
         state: {
             completion: sourcegraph.StatusCompletion.InProgress,
+            message: 'Scanning npm dependencies...',
         },
         notifications: [
             { title: 'my notif1', type: sourcegraph.NotificationType.Info },
