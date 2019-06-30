@@ -1,8 +1,9 @@
 import { StatusCompletion, StatusResult } from '@sourcegraph/extension-api-classes'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
+import CircleIcon from 'mdi-react/CircleIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
+import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import React from 'react'
 import * as sourcegraph from 'sourcegraph'
 
@@ -19,6 +20,8 @@ const iconForStatusResult = (
             return { icon: CheckIcon, className: 'text-success' }
         case StatusResult.Failure:
             return { icon: CloseIcon, className: 'text-failure' }
+        case StatusResult.Neutral:
+            return { icon: CircleIcon, className: 'text-muted' }
         case StatusResult.ActionRequired:
             return { icon: AlertCircleOutlineIcon, className: 'text-info' }
     }
@@ -37,5 +40,5 @@ export const StatusStateIcon: React.FunctionComponent<Props> = ({ state, classNa
         const { icon: Icon, className: resultClassName } = iconForStatusResult(state.result)
         return <Icon className={`${className} ${resultClassName}`} />
     }
-    return <LoadingSpinner className={className} />
+    return <ProgressClockIcon className={`${className} text-muted`} />
 }

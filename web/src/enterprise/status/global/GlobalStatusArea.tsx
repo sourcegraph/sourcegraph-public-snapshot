@@ -20,13 +20,13 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps, RouteCo
 }
 
 /**
- * The global checkliststatus area.
+ * The global status area.
  */
 export const GlobalStatusArea: React.FunctionComponent<Props> = ({ match, ...props }) => (
     <div className="w-100">
         <div className="container-fluid my-3">
-            <h1 className="h3 mb-0 d-flex align-items-center">
-                <ChecklistIcon className="icon-inline mr-1" /> Status
+            <h1 className="h3 mb-0 d-flex align-items-center font-weight-normal">
+                <ChecklistIcon className="icon-inline mr-2" /> Status
             </h1>
         </div>
         <Switch>

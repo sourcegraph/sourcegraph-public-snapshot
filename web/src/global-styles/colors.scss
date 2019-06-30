@@ -10,6 +10,10 @@
     @include color-variant($name);
 }
 
+.text-body {
+    color: var(--body-color) !important;
+}
+
 .bg-body {
     background-color: var(--body-bg) !important;
 }

@@ -10,6 +10,8 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
+import { CombinedStatusItem } from '../combined/CombinedStatusItem'
+import { StatusHeader } from '../components/StatusHeader'
 import { Status } from '../status'
 import { useStatusByTypeForScope } from '../util/useStatusByTypeForScope'
 
@@ -65,6 +67,11 @@ export const StatusArea: React.FunctionComponent<Props> = ({ name, scope, areaUR
 
     return (
         <div className="status-area">
+            <hr className="mt-3" />
+            <div className="container">
+                <StatusHeader status={statusOrError} />
+            </div>
+            <hr className="my-3" />
             <ErrorBoundary location={props.location}>
                 <Switch>
                     <Route

@@ -4,6 +4,7 @@ import { registerNoInlineProps } from './noInlineProps'
 import { registerDependencyRules } from './dependencyRules'
 import { registerCodeOwnership } from './codeOwnership'
 import { registerTravisGo } from './travisGo'
+import { registerSampleStatusProviders } from './sampleStatus'
 
 export function activate(ctx: sourcegraph.ExtensionContext): void {
     ctx.subscriptions.add(registerTravisGo())
@@ -11,4 +12,5 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
     ctx.subscriptions.add(registerNoInlineProps())
     ctx.subscriptions.add(registerDependencyRules())
     ctx.subscriptions.add(registerCodeOwnership())
+    ctx.subscriptions.add(registerSampleStatusProviders())
 }
