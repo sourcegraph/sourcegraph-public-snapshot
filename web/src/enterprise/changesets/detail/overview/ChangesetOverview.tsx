@@ -7,9 +7,9 @@ import { pluralize } from '../../../../../../shared/src/util/strings'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { Timeline } from '../../../../components/timeline/Timeline'
 import { PersonLink } from '../../../../user/PersonLink'
-import { ChangesetIcon } from '../../../../util/octicons'
-import { StatusIcon } from '../../../status/icons'
+import { ChangesetIcon, GitPullRequestIcon } from '../../../../util/octicons'
 import { CheckThreadActivationStatusButton } from '../../../checks/threads/form/CheckThreadActivationStatusButton'
+import { StatusIcon } from '../../../status/icons'
 import { ThreadStatusBadge } from '../../../threads/components/threadStatus/ThreadStatusBadge'
 import { ThreadHeaderEditableTitle } from '../../../threads/detail/header/ThreadHeaderEditableTitle'
 import { ThreadBreadcrumbs } from '../../../threads/detail/overview/ThreadBreadcrumbs'
@@ -77,7 +77,7 @@ export const ChangesetOverview: React.FunctionComponent<Props> = ({
         <ThreadDescription {...props} thread={thread} onThreadUpdate={onThreadUpdate} className="mb-4" />
         <Timeline className="align-items-stretch mb-4">
             <div className="d-flex align-items-start bg-body border p-4 mb-5">
-                <GitPullRequest className="icon-inline mb-0 mr-3" />
+                <GitPullRequestIcon className="icon-inline mb-0 mr-3" />
                 Changes requested to {countChangesetFilesChanged(xchangeset)}{' '}
                 {pluralize('file', countChangesetFilesChanged(xchangeset))} in {xchangeset.repositories.length}{' '}
                 {pluralize('repository', xchangeset.repositories.length, 'repositories')}

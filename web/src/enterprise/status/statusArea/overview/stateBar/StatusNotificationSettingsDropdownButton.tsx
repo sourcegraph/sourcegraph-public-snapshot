@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { MuteIcon } from '../../../../../util/octicons'
+import { UnmuteIcon } from '../../../../../util/octicons'
 
 interface Props {
     className?: string
@@ -17,7 +17,7 @@ export const StatusNotificationSettingsDropdownButton: React.FunctionComponent<P
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className={className}>
             <DropdownToggle className={`btn ${buttonClassName}`} color="none">
-                <MuteIcon className="icon-inline mr-2" /> Unsubscribe
+                <UnmuteIcon className="icon-inline mr-2" /> Subscribe
             </DropdownToggle>
             <DropdownMenu>
                 <DropdownItem>All changes</DropdownItem>

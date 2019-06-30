@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { StatusStateIcon } from '../../components/StatusStateIcon'
 import { StatusAreaContext } from '../StatusArea'
 
 interface Props extends Pick<StatusAreaContext, 'status' | 'statusURL' | 'statusesURL'> {
@@ -21,7 +22,9 @@ export const StatusBreadcrumbs: React.FunctionComponent<Props> = ({
                 <Link to={statusesURL}>Status</Link>
             </li>
             <li className="breadcrumb-item active font-weight-bold">
-                <Link to={statusURL}>{status.name}</Link>
+                <Link to={statusURL} className="d-inline-flex align-items-center">
+                    {status.name} <StatusStateIcon status={status.status} className="icon-inline ml-2" />
+                </Link>
             </li>
         </ol>
     </nav>
