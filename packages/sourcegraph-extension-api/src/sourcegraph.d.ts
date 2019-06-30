@@ -1038,10 +1038,13 @@ declare module 'sourcegraph' {
 
         /**
          * Sections that describe the pipeline and parameters used to compute the status.
+         *
+         * TODO!(sqs): for simplicity, we require these be markdown, but this is kind of a hacky way
+         * to do it.
          */
-        sections: {
-            settings?: MarkupContent
-            notifications?: MarkupContent
+        sections?: {
+            settings?: MarkupContent & { kind: MarkupKind.Markdown }
+            notifications?: MarkupContent & { kind: MarkupKind.Markdown }
         }
 
         /**

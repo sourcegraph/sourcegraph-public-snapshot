@@ -41,6 +41,16 @@ function createStatusProvider(diagnostics: Observable<[URL, sourcegraph.Diagnost
                         result: sourcegraph.StatusResult.Success,
                         message: 'All builds passing, all repository configuration valid and up-to-date',
                     },
+                    sections: {
+                        settings: {
+                            kind: sourcegraph.MarkupKind.Markdown,
+                            value: `Require all projects to configure Travis CI`,
+                        },
+                        notifications: {
+                            kind: sourcegraph.MarkupKind.Markdown,
+                            value: `Notify @sourcegraph/devops of changes to Travis CI configuration`,
+                        },
+                    },
                     notifications: [
                         { title: 'my notif1', type: sourcegraph.NotificationType.Info },
                         { title: 'my notif2', type: sourcegraph.NotificationType.Error },
