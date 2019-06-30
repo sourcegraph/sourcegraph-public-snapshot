@@ -48,7 +48,7 @@ function createStatusProvider(diagnostics: Observable<[URL, sourcegraph.Diagnost
                         },
                         notifications: {
                             kind: sourcegraph.MarkupKind.Markdown,
-                            value: `Notify @sourcegraph/devops of changes to Travis CI configuration`,
+                            value: `Notify **@sourcegraph/devops** of changes to Travis CI configuration`,
                         },
                     },
                     notifications: [

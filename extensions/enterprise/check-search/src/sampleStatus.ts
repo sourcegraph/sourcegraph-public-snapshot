@@ -35,7 +35,7 @@ const STATUSES: (sourcegraph.Status & { name: string })[] = [
                 kind: sourcegraph.MarkupKind.Markdown,
                 value: `
 - Fail changesets that add code not checked by ESLint
-- Notify <strong>@felixfbecker</strong> of new ESLint rules`,
+- Notify **@felixfbecker** of new ESLint rules`,
             },
         },
         notifications: [

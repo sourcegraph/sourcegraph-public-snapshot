@@ -1,5 +1,6 @@
 import EyeIcon from 'mdi-react/EyeIcon'
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { Timeline } from '../../../../components/timeline/Timeline'
 import { StatusAreaContext } from '../StatusArea'
 import { StatusPipelineSection } from './pipeline/StatusPipelineSection'
@@ -31,13 +32,19 @@ export const StatusOverview: React.FunctionComponent<Props> = ({ status, statusU
                         <StatusPipelineSection
                             section="settings"
                             content={status.status.sections.settings}
-                            action={className => <button className={`btn ${className}`}>Configure</button>}
+                            // tslint:disable-next-line: jsx-no-lambda
+                            action={className => (
+                                <Link to={`${statusURL}/settings`} className={`btn ${className}`}>
+                                    Configure
+                                </Link>
+                            )}
                         />
                     )}
                     {status.status.sections.notifications && (
                         <StatusPipelineSection
                             section="notifications"
                             content={status.status.sections.notifications}
+                            // tslint:disable-next-line: jsx-no-lambda
                             action={className => (
                                 <StatusNotificationSettingsDropdownButton buttonClassName={className} />
                             )}
