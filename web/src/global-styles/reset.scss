@@ -57,7 +57,9 @@ textarea {
 }
 
 hr {
-    border-color: var(--border-color);
+    background-color: var(--border-color);
+    border: 0;
+    height: 1px;
 }
 
 .table {

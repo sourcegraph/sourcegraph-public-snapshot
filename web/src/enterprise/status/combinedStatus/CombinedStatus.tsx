@@ -26,7 +26,7 @@ interface Props
  */
 export const CombinedStatus: React.FunctionComponent<Props> = ({ itemClassName, statuses, ...props }) => (
     <div className="combined-status">
-        <ul className="list-group list-group-flush mb-0">
+        <ul className="list-group mb-0">
             {statuses.map((status, i) => (
                 <CombinedStatusItem
                     {...props}

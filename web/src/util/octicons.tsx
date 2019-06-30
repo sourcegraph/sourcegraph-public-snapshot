@@ -3,8 +3,10 @@ import Octicon, {
     Diff,
     GitCommit,
     GitPullRequest,
+    Mute,
     OcticonProps,
     Tasklist,
+    Unmute,
     Zap,
 } from '@primer/octicons-react'
 import React from 'react'
@@ -43,4 +45,12 @@ export const ActionsIcon: React.FunctionComponent<{ className?: string }> = ({ c
 
 export const TasklistIcon: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
     <Octicon {...defaultProps} icon={Tasklist} className={className} />
+)
+
+export const UnmuteIcon: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
+    <Octicon {...defaultProps} icon={Unmute} className={className} />
+)
+
+export const MuteIcon: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
+    <Octicon {...defaultProps} icon={Mute} className={className} />
 )

@@ -34,5 +34,5 @@ export const CombinedStatusPage: React.FunctionComponent<Props> = ({ scope, ...p
     if (isErrorLike(statusesOrError)) {
         return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={statusesOrError.message} />
     }
-    return <CombinedStatus {...props} statuses={statusesOrError} itemClassName="container-fluid px-5" />
+    return <CombinedStatus {...props} statuses={statusesOrError} itemClassName="text-truncate" />
 }
