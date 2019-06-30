@@ -22,7 +22,7 @@ export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/status',
-        render: lazyComponent(() => import('./status/global/GlobalStatusArea'), 'GlobalStatusArea'),
+        render: lazyComponent(() => import('./status/global/GlobalStatusesArea'), 'GlobalStatusesArea'),
     },
     {
         path: '/changesets',

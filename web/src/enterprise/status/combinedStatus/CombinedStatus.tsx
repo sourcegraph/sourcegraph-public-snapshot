@@ -3,16 +3,20 @@ import React from 'react'
 import { WrappedStatus } from '../../../../../shared/src/api/client/services/statusService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { StatusesAreaContext } from '../statusesArea/StatusesArea'
 import { CombinedStatusItem } from './CombinedStatusItem'
 
 export interface CombinedStatusContext {
     itemClassName?: string
 }
 
-interface Props extends CombinedStatusContext, ExtensionsControllerProps, PlatformContextProps {
+interface Props
+    extends Pick<StatusesAreaContext, 'statusesURL'>,
+        CombinedStatusContext,
+        ExtensionsControllerProps,
+        PlatformContextProps {
     statuses: WrappedStatus[]
 
-    areaURL: string
     history: H.History
     location: H.Location
 }
