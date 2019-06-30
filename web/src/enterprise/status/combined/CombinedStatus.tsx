@@ -29,7 +29,7 @@ export const CombinedStatus: React.FunctionComponent<Props> = ({ itemClassName, 
                     key={status.name}
                     tag="li"
                     status={status}
-                    className={`list-group-item ${itemClassName}`}
+                    className={`list-group-item list-group-item-action ${itemClassName}`}
                 />
             ))}
         </ul>
