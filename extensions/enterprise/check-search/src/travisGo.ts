@@ -39,6 +39,7 @@ function createStatusProvider(diagnostics: Observable<[URL, sourcegraph.Diagnost
                     state: {
                         completion: sourcegraph.StatusCompletion.Completed,
                         result: sourcegraph.StatusResult.Success,
+                        message: 'All builds passing, all repository configuration valid and up-to-date',
                     },
                     notifications: [
                         { title: 'my notif1', type: sourcegraph.NotificationType.Info },

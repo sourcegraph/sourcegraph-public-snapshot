@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react'
-import { Subscription } from 'rxjs'
-import { catchError, startWith } from 'rxjs/operators'
+import { combineLatest, NEVER, of, Subscription } from 'rxjs'
+import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { WrappedStatus } from '../../../../../shared/src/api/client/services/statusService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 
 const LOADING: 'loading' = 'loading'
+
+/**
+ * Wait this long for the status provider to be registered (to allow time for the extension to
+ * activate) before showing "not found".
+ */
+const STATUS_PROVIDER_REGISTRATION_DELAY = 5000 // ms
 
 /**
  * A React hook that observes a single status (looked up by name) for a particular scope.
@@ -23,11 +29,16 @@ export const useStatusByTypeForScope = (
     useEffect(() => {
         const subscriptions = new Subscription()
         subscriptions.add(
-            extensionsController.services.status
-                .observeStatus(name, scope)
+            combineLatest([
+                extensionsController.services.status.observeStatus(name, scope).pipe(startWith(LOADING)),
+                of(true).pipe(
+                    delay(STATUS_PROVIDER_REGISTRATION_DELAY),
+                    startWith(false)
+                ),
+            ])
                 .pipe(
-                    catchError(err => [asError(err)]),
-                    startWith(LOADING)
+                    switchMap(([status, isDelayElapsed]) => (status || isDelayElapsed ? of(status) : NEVER)),
+                    catchError(err => [asError(err)])
                 )
                 .subscribe(setStatusOrError)
         )

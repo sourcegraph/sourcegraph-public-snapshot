@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -45,7 +46,7 @@ const LOADING: 'loading' = 'loading'
 export const StatusArea: React.FunctionComponent<Props> = ({ name, scope, statusURL, ...props }) => {
     const statusOrError = useStatusByTypeForScope(props.extensionsController, name, scope)
     if (statusOrError === LOADING) {
-        return null // loading
+        return <LoadingSpinner className="icon-inline mx-auto my-4" />
     }
     if (statusOrError === null) {
         return <HeroPage icon={AlertCircleIcon} title="Status not found" />
@@ -66,12 +67,7 @@ export const StatusArea: React.FunctionComponent<Props> = ({ name, scope, status
         <div className="status-area flex-1 d-flex overflow-hidden">
             <div className="d-flex flex-column flex-1 overflow-auto">
                 <ErrorBoundary location={props.location}>
-                    <StatusOverview
-                        {...context}
-                        location={props.location}
-                        history={props.history}
-                        className="container flex-0 pb-3"
-                    />
+                    <StatusOverview {...context} className="container flex-0 pb-3" />
                     <div className="w-100 border-bottom" />
                     <StatusAreaNavbar {...context} className="flex-0 sticky-top bg-body" />
                 </ErrorBoundary>

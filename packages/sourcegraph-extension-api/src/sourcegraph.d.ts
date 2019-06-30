@@ -1037,6 +1037,14 @@ declare module 'sourcegraph' {
             | { message?: string; completion: StatusCompletion; result: StatusResult }
 
         /**
+         * Sections that describe the pipeline and parameters used to compute the status.
+         */
+        sections: {
+            settings?: MarkupContent
+            notifications?: MarkupContent
+        }
+
+        /**
          * Notifications related to the status.
          */
         notifications?: Notification[]
