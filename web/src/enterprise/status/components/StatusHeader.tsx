@@ -22,7 +22,7 @@ export const StatusHeader: React.FunctionComponent<Props> = ({
     <Tag className={`d-flex align-items-center ${className}`}>
         <StatusStateIcon state={status.state} className="mr-3" />
         <h3 className="mb-0 font-weight-normal font-size-base">
-            <LinkOrSpan to={to} className="text-body stretched-link">
+            <LinkOrSpan to={to} className="stretched-link">
                 {status.title}
             </LinkOrSpan>
         </h3>

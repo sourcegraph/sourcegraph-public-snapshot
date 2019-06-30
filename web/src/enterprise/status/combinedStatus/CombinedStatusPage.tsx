@@ -14,7 +14,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
     /** The status scope. */
     scope: sourcegraph.StatusScope | sourcegraph.WorkspaceRoot
 
-    areaURL: string
+    statusesURL: string
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
