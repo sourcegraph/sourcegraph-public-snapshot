@@ -1,8 +1,8 @@
+import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
+import BellIcon from 'mdi-react/BellIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { ChatIcon } from '../../../../../../shared/src/components/icons'
-import { StatusIcon } from '../../icons'
 import { StatusAreaContext } from '../StatusArea'
 
 interface Props extends Pick<StatusAreaContext, 'statusURL'> {
@@ -25,17 +25,17 @@ export const StatusAreaNavbar: React.FunctionComponent<Props> = ({ statusURL, cl
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="status-area-navbar__nav-link--active"
                     >
-                        <ChatIcon className="icon-inline" /> Notifications{' '}
+                        <BellIcon className="icon-inline" /> Notifications{' '}
                         <span className="badge badge-secondary ml-1">7</span>
                     </NavLink>
                 </li>
                 <li className="status-area-navbar__nav-item nav-item">
                     <NavLink
-                        to={`${statusURL}/tasks`}
+                        to={`${statusURL}/problems`}
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="status-area-navbar__nav-link--active"
                     >
-                        <StatusIcon className="icon-inline" /> Tasks
+                        <AlertCircleOutlineIcon className="icon-inline" /> Problems
                     </NavLink>
                 </li>
                 <li className="flex-1" />

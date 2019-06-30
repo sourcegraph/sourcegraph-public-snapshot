@@ -1,5 +1,6 @@
 $btn-padding: $spacer;
-$btn-sm-factor: $sm-factor * 0.8;
+$btn-sm-factor-x: $sm-factor * 0.8;
+$btn-sm-factor-y: $sm-factor * 0.5;
 $btn-lg-factor: $lg-factor;
 
 .btn {
@@ -18,8 +19,9 @@ $btn-lg-factor: $lg-factor;
     padding: calc(#{$btn-padding} + #{$input-extra-border-width});
     font-size: var(--font-size-base);
     &.btn-sm {
-        padding: calc(#{$btn-padding * $btn-sm-factor} + #{$input-extra-border-width});
-        font-size: var(--font-size-sm * #{$btn-sm-factor}) !important;
+        padding: calc(#{$btn-padding * $btn-sm-factor-y} + #{$input-extra-border-width})
+            calc(#{$btn-padding * $btn-sm-factor-x} + #{$input-extra-border-width});
+        font-size: var(--font-size-sm) !important;
     }
     &.btn-lg {
         padding: calc(#{$btn-padding * $btn-lg-factor} + #{$input-extra-border-width});
