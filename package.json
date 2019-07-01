@@ -105,7 +105,7 @@
     "@types/react-router": "5.0.2",
     "@types/react-router-dom": "4.3.3",
     "@types/react-stripe-elements": "1.1.10",
-    "@types/react-test-renderer": "16.8.1",
+    "@types/react-test-renderer": "16.8.2",
     "@types/react-visibility-sensor": "5.0.1",
     "@types/reactstrap": "8.0.1",
     "@types/sanitize-html": "1.18.3",
