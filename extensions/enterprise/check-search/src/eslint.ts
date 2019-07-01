@@ -1,8 +1,8 @@
 import * as sourcegraph from 'sourcegraph'
-import eslintConfigStandard from 'eslint-config-standard'
+import _eslintConfigStandard from 'eslint-config-standard'
 import { TSESLint } from '@typescript-eslint/experimental-utils'
 import * as tseslintParser from '@typescript-eslint/parser'
-import { Linter, Rule } from 'eslint'
+import { Linter, Rule, CLIEngine } from 'eslint'
 import { isDefined } from '../../../../shared/src/util/types'
 import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { flatten, sortedUniq, sortBy } from 'lodash'
@@ -11,6 +11,38 @@ import { map, switchMap, startWith, first, toArray } from 'rxjs/operators'
 import { queryGraphQL, settingsObservable, memoizedFindTextInFiles } from './util'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { OTHER_CODE_ACTIONS, MAX_RESULTS, REPO_INCLUDE } from './misc'
+
+/**
+ * From https://sourcegraph.com/github.com/eslint/eslint@d8f26886f19a17f2e1cdcb91e2db84fc7ba3fdfb/-/blob/lib/shared/types.js#L125-129.
+ */
+type GlobalConf = boolean | 'off' | 'readable' | 'readonly' | 'writable' | 'writeable'
+interface ConfigData {
+    env: Record<string, boolean>
+    extends: string | string[]
+    globals: Record<string, GlobalConf>
+    parser: string
+    parserOptions: Linter.ParserOptions
+    plugins: string[]
+    processor: string
+    root: boolean
+    rules: Record<string, Linter.RuleLevel | Linter.RuleLevelAndOptions>
+    settings: Object
+}
+interface Environment {
+    globals: Record<string, GlobalConf>
+    parserOptions: Linter.ParserOptions
+}
+interface Processor {
+    preprocess?: (text: string, filename: string) => Array<string | { text: string; filename: string }>
+    postprocess?: (messagesList: Linter.LintMessage[][], filename: string) => Linter.LintMessage[]
+    supportsAutofix?: boolean
+}
+interface Plugin {
+    configs: Record<string, ConfigData>
+    environments: Record<string, Environment>
+    processors: Record<string, Processor>
+    rules: Record<string, Rule.RuleModule>
+}
 
 export function registerESLintRules(): Unsubscribable {
     const subscriptions = new Subscription()
@@ -205,30 +237,56 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]> = from(sourcegr
         const linter = new Linter()
         linter.defineParser('@typescript-eslint/parser', tseslintParser)
 
-        const rules = { ...eslintConfigStandard.rules }
-        for (const ruleId of Object.keys(rules)) {
-            if (!linter.getRules().has(ruleId)) {
-                delete rules[ruleId]
-            }
-        }
-        delete rules.indent
-        delete rules['space-before-function-paren']
-        delete rules['no-undef']
-        delete rules['comma-dangle']
-        delete rules['no-unused-vars']
+        // const rules = eslintConfigStandard
+        // for (const ruleId of Object.keys(rules)) {
+        //     if (!linter.getRules().has(ruleId)) {
+        //         delete rules[ruleId]
+        //     }
+        // }
+        // delete rules.indent
+        // delete rules['space-before-function-paren']
+        // delete rules['no-undef']
+        // delete rules['comma-dangle']
+        // delete rules['no-unused-vars']
         const config: Linter.Config = {
             parser: '@typescript-eslint/parser',
             parserOptions: tseslintConfig,
-            rules,
+            rules: {
+                'no-useless-constructor': 0,
+                'spaced-comment': 0,
+            },
+        }
+        const plugins: Record<string, Plugin> = {
+            react: require('eslint-plugin-react'),
+            'react-hooks': require('eslint-plugin-react-hooks'),
+        }
+        for (const pluginName of Object.keys(plugins)) {
+            const plugin = plugins[pluginName]
+            for (const ruleName of Object.keys(plugin.rules)) {
+                const rule = plugin.rules[ruleName]
+                linter.defineRule(`${pluginName}/${ruleName}`, rule)
+            }
+            config.rules = {
+                ...config.rules,
+                ...(plugin.configs && plugin.configs.recommended ? plugin.configs.recommended.rules : {}),
+            }
+        }
+        delete config.rules['react/prop-types']
+        config.rules = {
+            ...config.rules,
+            'react-hooks/rules-of-hooks': 'error',
+            'react-hooks/exhaustive-deps': 'error',
         }
 
         return from(settingsObservable<Settings>()).pipe(
             map(settings =>
                 docs
                     .map(doc => {
-                        const lintMessages = linter.verify(doc.text, config, {
-                            filename: new URL(doc.uri).pathname.slice(1),
-                        })
+                        const lintMessages = linter
+                            .verify(doc.text, config, {
+                                filename: new URL(doc.uri).pathname.slice(1),
+                            })
+                            .slice(0, 2)
                         const diagnostics: sourcegraph.Diagnostic[] = lintMessages
                             .map(r => {
                                 if (r.fatal) {

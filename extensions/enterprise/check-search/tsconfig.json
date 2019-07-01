@@ -3,7 +3,7 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "lib": ["esnext", "esnext.array"],
+    "lib": ["esnext"],
     "sourceRoot": "src",
   },
 }
