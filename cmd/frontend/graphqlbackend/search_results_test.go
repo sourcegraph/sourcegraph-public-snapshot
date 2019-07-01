@@ -62,9 +62,10 @@ func TestSearchResults(t *testing.T) {
 			if want := (db.ReposListOptions{Enabled: true, IncludePatterns: []string{"r", "p"}, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
-			return []*db.MinimalRepo{{Name: "repo"}}, nil
+			return []*db.MinimalRepo{{ID: 1, Name: "repo"}}, nil
 		}
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
+		db.Mocks.Repos.MockGet(t, 1)
 
 		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			return nil, &searchResultsCommon{}, nil
@@ -84,10 +85,11 @@ func TestSearchResults(t *testing.T) {
 			if want := (db.ReposListOptions{Enabled: true, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
-			return []*db.MinimalRepo{{Name: "repo"}}, nil
+			return []*db.MinimalRepo{{ID: 1, Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
+		db.Mocks.Repos.MockGet(t, 1)
 
 		calledSearchRepositories := false
 		mockSearchRepositories = func(args *search.Args) ([]searchResultResolver, *searchResultsCommon, error) {
@@ -114,7 +116,12 @@ func TestSearchResults(t *testing.T) {
 				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
 			}
 			return []*fileMatchResolver{
-				{uri: "git://repo?rev#dir/file", JPath: "dir/file", JLineMatches: []*lineMatch{{JLineNumber: 123}}},
+				{
+					uri:          "git://repo?rev#dir/file",
+					JPath:        "dir/file",
+					JLineMatches: []*lineMatch{{JLineNumber: 123}},
+					repo:         &db.MinimalRepo{ID: 1},
+				},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -782,6 +789,111 @@ func TestValidateRepoHasFileUsage(t *testing.T) {
 		err = validateRepoHasFileUsage(q)
 		if err != nil {
 			t.Errorf("Expected no error, but got %v", err)
+		}
+	}
+}
+
+func TestSearchResultsHydration(t *testing.T) {
+	id := 42
+	repoName := "reponame-foobar"
+	fileName := "foobar.go"
+
+	minimalRepo := &db.MinimalRepo{
+		ID:   api.RepoID(id),
+		Name: api.RepoName(repoName),
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          repoName,
+			ServiceType: "github",
+			ServiceID:   "https://github.com",
+		},
+	}
+
+	hydratedRepo := &types.Repo{
+		ID:           minimalRepo.ID,
+		ExternalRepo: &(minimalRepo.ExternalRepo),
+		Name:         minimalRepo.Name,
+		URI:          fmt.Sprintf("github.com/my-org/%s", minimalRepo.Name),
+		Description:  "This is a description of a repository",
+		Language:     "monkey",
+		Fork:         false,
+	}
+
+	db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
+		return hydratedRepo, nil
+	}
+
+	db.Mocks.Repos.MinimalList = func(_ context.Context, op db.ReposListOptions) ([]*db.MinimalRepo, error) {
+		return []*db.MinimalRepo{minimalRepo}, nil
+	}
+
+	defer func() { db.Mocks = db.MockStores{} }()
+
+	zoektRepo := &zoekt.RepoListEntry{
+		Repository: zoekt.Repository{
+			Name:     string(minimalRepo.Name),
+			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+		},
+	}
+
+	zoektFileMatches := []zoekt.FileMatch{zoekt.FileMatch{
+		Score:      5.0,
+		FileName:   fileName,
+		Repository: string(minimalRepo.Name), // Important: this needs to match a name in `repos`
+		Branches:   []string{"master"},
+		LineMatches: []zoekt.LineMatch{
+			{
+				Line: nil,
+			},
+		},
+		Checksum: []byte{0, 1, 2},
+	}}
+
+	z := &searchbackend.Zoekt{
+		Client: &fakeSearcher{
+			repos:  &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{zoektRepo}},
+			result: &zoekt.SearchResult{Files: zoektFileMatches},
+		},
+		DisableCache: true,
+	}
+
+	ctx := context.Background()
+
+	q, err := query.ParseAndCheck(`foobar index:only count:350`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolver := &searchResolver{query: q, zoekt: z}
+	results, err := resolver.Results(ctx)
+	if err != nil {
+		t.Fatal("Results:", err)
+	}
+	// We want one file match and one repository match
+	wantMatchCount := 2
+	if int(results.MatchCount()) != wantMatchCount {
+		t.Fatalf("wrong results length. want=%d, have=%d\n", wantMatchCount, results.MatchCount())
+	}
+
+	assert := func(t *testing.T, r *repositoryResolver) {
+		t.Helper()
+
+		if have, want := r.Description(ctx), hydratedRepo.Description; have != want {
+			t.Fatalf("wrong Description. want=%q, have=%q", want, have)
+		}
+		if have, want := r.URI(ctx), hydratedRepo.URI; have != want {
+			t.Fatalf("wrong URI. want=%q, have=%q", want, have)
+		}
+		if have, want := r.Language(ctx), hydratedRepo.Language; have != want {
+			t.Fatalf("wrong Language. want=%q, have=%q", want, have)
+		}
+	}
+
+	for _, r := range results.Results() {
+		switch r := r.(type) {
+		case *fileMatchResolver:
+			assert(t, r.Repository())
+
+		case *repositoryResolver:
+			assert(t, r)
 		}
 	}
 }

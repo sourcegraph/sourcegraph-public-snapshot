@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -25,11 +26,13 @@ import (
 )
 
 type repositoryResolver struct {
-	hydratedRepo *types.Repo
-	repo         *db.MinimalRepo
-	redirectURL  *string
-	icon         string
-	matches      []*searchResultMatchResolver
+	hydratedRepo     *types.Repo
+	hydratedRepoOnce sync.Once
+
+	repo        *db.MinimalRepo
+	redirectURL *string
+	icon        string
+	matches     []*searchResultMatchResolver
 }
 
 func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, error) {
@@ -73,12 +76,21 @@ func (r *repositoryResolver) Name() string {
 	return string(r.repo.Name)
 }
 
-func (r *repositoryResolver) URI() string {
+func (r *repositoryResolver) URI(ctx context.Context) string {
+	r.hydrate(ctx)
+
 	return r.hydratedRepo.URI
 }
 
-func (r *repositoryResolver) Description() string {
+func (r *repositoryResolver) Description(ctx context.Context) string {
+	r.hydrate(ctx)
+
 	return r.hydratedRepo.Description
+}
+
+func (r *repositoryResolver) Language(ctx context.Context) string {
+	r.hydrate(ctx)
+	return r.hydratedRepo.Language
 }
 
 func (r *repositoryResolver) RedirectURL() *string {
@@ -152,10 +164,6 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver
 	return &gitRefResolver{repo: r, name: refName}, nil
 }
 
-func (r *repositoryResolver) Language() string {
-	return r.hydratedRepo.Language
-}
-
 func (r *repositoryResolver) Enabled() bool { return true }
 
 func (r *repositoryResolver) CreatedAt() string {
@@ -201,6 +209,21 @@ func (r *repositoryResolver) searchResultURIs() (string, string) {
 
 func (r *repositoryResolver) resultCount() int32 {
 	return 1
+}
+
+func (r *repositoryResolver) hydrate(ctx context.Context) {
+	r.hydratedRepoOnce.Do(func() {
+		log15.Info("hydrating repository", "id", r.repo.ID)
+		hydratedRepo, err := db.Repos.Get(ctx, r.repo.ID)
+		if err != nil {
+			r.hydratedRepo = &types.Repo{
+				ID:           r.repo.ID,
+				Name:         r.repo.Name,
+				ExternalRepo: &r.repo.ExternalRepo,
+			}
+		}
+		r.hydratedRepo = hydratedRepo
+	})
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {

@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
@@ -49,4 +50,47 @@ func TestRepository_Commit(t *testing.T) {
 			`,
 		},
 	})
+}
+
+func TestRepositoryHydration(t *testing.T) {
+	id := 42
+	name := fmt.Sprintf("repo-%d", id)
+
+	minimalRepo := &db.MinimalRepo{
+		ID:   api.RepoID(id),
+		Name: api.RepoName(name),
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          name,
+			ServiceType: "github",
+			ServiceID:   "https://github.com",
+		},
+	}
+	hydratedRepo := &types.Repo{
+		ID:           minimalRepo.ID,
+		ExternalRepo: &(minimalRepo.ExternalRepo),
+		Name:         minimalRepo.Name,
+		URI:          fmt.Sprintf("github.com/foobar/%s", name),
+		Description:  "This is a description of a repository",
+		Language:     "monkey",
+		Fork:         false,
+	}
+
+	db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
+		return hydratedRepo, nil
+	}
+
+	defer func() { db.Mocks = db.MockStores{} }()
+
+	ctx := context.Background()
+
+	repoResolver := &repositoryResolver{repo: minimalRepo}
+	if have, want := repoResolver.Description(ctx), hydratedRepo.Description; have != want {
+		t.Fatalf("wrong Description. want=%q, have=%q", want, have)
+	}
+	if have, want := repoResolver.URI(ctx), hydratedRepo.URI; have != want {
+		t.Fatalf("wrong URI. want=%q, have=%q", want, have)
+	}
+	if have, want := repoResolver.Language(ctx), hydratedRepo.Language; have != want {
+		t.Fatalf("wrong Language. want=%q, have=%q", want, have)
+	}
 }
