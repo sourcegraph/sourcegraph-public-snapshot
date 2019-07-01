@@ -313,7 +313,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 
 	// Trigger update when enabling.
 	if args.Enabled {
-		gitserverRepo, err := backend.GitRepo(ctx, repo.repo.TODO())
+		gitserverRepo, err := backend.GitRepo(ctx, repo.repo)
 		if err != nil {
 			return nil, err
 		}
@@ -387,10 +387,7 @@ func repoNamesToStrings(repoNames []api.RepoName) []string {
 func toRepositoryResolvers(repos []*db.MinimalRepo) []*repositoryResolver {
 	resolvers := make([]*repositoryResolver, len(repos))
 	for i, repo := range repos {
-		resolvers[i] = &repositoryResolver{
-			repo:         repo,
-			hydratedRepo: repo.TODO(),
-		}
+		resolvers[i] = &repositoryResolver{repo: repo}
 	}
 	return resolvers
 }

@@ -347,7 +347,7 @@ func (e *searcherError) Error() string {
 
 var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoIdentifier, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+func searchFilesInRepo(ctx context.Context, repo *db.MinimalRepo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -371,10 +371,10 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 
 	matches, limitHit, err = textSearch(ctx, gitserverRepo, commit, info, fetchTimeout)
 
-	workspace := fileMatchURI(repo.Name, rev, "")
+	workspace := fileMatchURI(repo.GetName(), rev, "")
 	for _, fm := range matches {
 		fm.uri = workspace + fm.JPath
-		fm.repo = &db.MinimalRepo{ID: repo.ID, Name: repo.Name, ExternalRepo: *repo.ExternalRepo}
+		fm.repo = repo
 		fm.commitID = commit
 		fm.inputRev = &rev
 	}
@@ -1059,7 +1059,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			defer done()
 
 			rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
-			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo.TODO(), repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
+			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
 			if searchErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 				log15.Warn("searchFilesInRepo failed", "error", searchErr, "repo", repoRev.Repo.Name)

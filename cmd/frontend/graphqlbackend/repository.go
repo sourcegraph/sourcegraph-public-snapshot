@@ -105,7 +105,7 @@ type repositoryCommitArgs struct {
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitArgs) (*gitCommitResolver, error) {
-	commitID, err := backend.Repos.ResolveRev(ctx, r.repo.TODO(), args.Rev)
+	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
 	if err != nil {
 		if git.IsRevisionNotFound(err) {
 			return nil, nil
@@ -113,7 +113,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitA
 		return nil, err
 	}
 
-	commit, err := backend.Repos.GetCommit(ctx, r.repo.TODO(), commitID)
+	commit, err := backend.Repos.GetCommit(ctx, r.repo, commitID)
 	if commit == nil || err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitA
 }
 
 func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver, error) {
-	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.TODO())
+	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (r *repositoryResolver) UpdatedAt() *string {
 func (r *repositoryResolver) URL() string { return "/" + string(r.repo.Name) }
 
 func (r *repositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.Repository(ctx, r.repo.TODO())
+	return externallink.Repository(ctx, r.repo)
 }
 
 func (r *repositoryResolver) Icon() string {
