@@ -1,0 +1,290 @@
+import * as sourcegraph from 'sourcegraph'
+import { TSESLint } from '@typescript-eslint/experimental-utils'
+import * as tseslintParser from '@typescript-eslint/parser'
+import { Linter, Rule } from 'eslint'
+import { isDefined } from '../../../../shared/src/util/types'
+import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
+import { flatten, sortedUniq, sortBy } from 'lodash'
+import { Subscription, Observable, of, Unsubscribable, from, combineLatest } from 'rxjs'
+import { map, switchMap, startWith, first, toArray } from 'rxjs/operators'
+import { queryGraphQL, settingsObservable, memoizedFindTextInFiles } from './util'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { OTHER_CODE_ACTIONS, MAX_RESULTS, REPO_INCLUDE } from './misc'
+
+export function registerESLintRules(): Unsubscribable {
+    const subscriptions = new Subscription()
+    subscriptions.add(startDiagnostics())
+    subscriptions.add(sourcegraph.status.registerStatusProvider('eslint', createStatusProvider(diagnostics)))
+    subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
+    return subscriptions
+}
+
+interface Settings {
+    ['eslint.rules']?: { [ruleId: string]: RulePolicy }
+}
+
+enum RulePolicy {
+    Ignore = 'ignore',
+    Default = 'default',
+}
+
+const CODE_ESLINT = 'eslint'
+
+function startDiagnostics(): Unsubscribable {
+    const subscriptions = new Subscription()
+
+    const diagnosticsCollection = sourcegraph.languages.createDiagnosticCollection('eslint')
+    subscriptions.add(diagnosticsCollection)
+    subscriptions.add(
+        diagnostics.subscribe(entries => {
+            diagnosticsCollection.set(entries)
+        })
+    )
+
+    return diagnosticsCollection
+}
+
+function createStatusProvider(diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]>): sourcegraph.StatusProvider {
+    const LOADING: 'loading' = 'loading'
+    return {
+        provideStatus: (scope): sourcegraph.Subscribable<sourcegraph.Status | null> => {
+            // TODO!(sqs): dont ignore scope
+            return combineLatest([diagnostics.pipe(startWith(LOADING)), settingsObservable<Settings>()]).pipe(
+                map(([diagnostics, settings]) => {
+                    const deps = new Map<string, RulePolicy>()
+                    if (diagnostics !== LOADING) {
+                        for (const [, diags] of diagnostics) {
+                            for (const diag of diags) {
+                                const rule = getLintMessageFromDiagnosticData(diag)
+                                const rulePolicy = getRulePolicyFromSettings(settings, rule.ruleId)
+                                deps.set(rule.ruleId, rulePolicy)
+                            }
+                        }
+                    }
+
+                    const rulePolicy: sourcegraph.Status = {
+                        title: 'ESLint',
+                        description: {
+                            kind: sourcegraph.MarkupKind.Markdown,
+                            value: 'Checks code using ESLint, an open-source JavaScript linting utility.',
+                        },
+                        state:
+                            diagnostics === LOADING
+                                ? {
+                                      completion: sourcegraph.StatusCompletion.InProgress,
+                                      message: 'Running ESLint...',
+                                  }
+                                : {
+                                      completion: sourcegraph.StatusCompletion.Completed,
+                                      result:
+                                          diagnostics.length > 0
+                                              ? sourcegraph.StatusResult.Failure
+                                              : sourcegraph.StatusResult.Success,
+                                      message:
+                                          diagnostics.length > 0
+                                              ? 'ESLint problems found'
+                                              : 'Code is compliant with ESLint',
+                                  },
+                        sections: {
+                            settings: {
+                                kind: sourcegraph.MarkupKind.Markdown,
+                                value: `
+- Use \`eslint@6.0.1\`
+- Check for new, recommended ESLint rules
+- Ignore projects with only JavaScript files`,
+                            },
+                            notifications: {
+                                kind: sourcegraph.MarkupKind.Markdown,
+                                value: `
+- Fail changesets that add code not checked by ESLint
+- Notify **@felixfbecker** of new ESLint rules`,
+                            },
+                        },
+                        notifications: sortBy(Array.from(deps.entries()), 0)
+                            .filter(([, rulePolicy]) => rulePolicy !== RulePolicy.Ignore)
+                            .map<sourcegraph.Notification>(([ruleId, rulePolicy]) => ({
+                                title: ruleId,
+                                type:
+                                    rulePolicy === RulePolicy.Default
+                                        ? sourcegraph.NotificationType.Warning
+                                        : sourcegraph.NotificationType.Error,
+                            })),
+                    }
+                    return rulePolicy
+                })
+            )
+        },
+    }
+}
+
+function createCodeActionProvider(): sourcegraph.CodeActionProvider {
+    return {
+        provideCodeActions: (doc, _rangeOrSelection, context): Observable<sourcegraph.CodeAction[]> => {
+            const diag = context.diagnostics.find(isESLintDiagnostic)
+            if (!diag) {
+                return of([])
+            }
+            const lintMessage = getLintMessageFromDiagnosticData(diag)
+            return from(settingsObservable<Settings>()).pipe(
+                map(settings => {
+                    const rulePolicy = getRulePolicyFromSettings(settings, lintMessage.ruleId)
+                    if (rulePolicy === RulePolicy.Ignore) {
+                        return []
+                    }
+                    return [
+                        ...(lintMessage.fix
+                            ? [
+                                  {
+                                      title: `Fix`,
+                                      edit: createWorkspaceEditFromESLintFix(doc, lintMessage.fix),
+                                      diagnostics: [diag],
+                                  },
+                              ]
+                            : []),
+                        {
+                            title: `Ignore all`,
+                            command: updateRulePoliciesCommand(RulePolicy.Ignore, lintMessage.ruleId),
+                            diagnostics: [diag],
+                        },
+                        {
+                            title: `Documentation`,
+                            command: {
+                                title: '',
+                                command: 'open',
+                                arguments: [`https://eslint.org/docs/rules/${lintMessage.ruleId}`],
+                            },
+                        },
+                        ...OTHER_CODE_ACTIONS,
+                    ].filter(isDefined)
+                })
+            )
+        },
+    }
+}
+
+const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]> = from(sourcegraph.workspace.rootChanges).pipe(
+    startWith(void 0),
+    map(() => sourcegraph.workspace.roots),
+    switchMap(async roots => {
+        if (roots.length > 0) {
+            return of([]) // TODO!(sqs): dont run in comparison mode
+        }
+
+        const results = flatten(
+            await from(
+                memoizedFindTextInFiles(
+                    { pattern: '', type: 'regexp' },
+                    {
+                        repositories: {
+                            includes: [REPO_INCLUDE],
+                            type: 'regexp',
+                        },
+                        files: {
+                            includes: ['\\.tsx?$'], // TODO!(sqs): typescript only
+                            type: 'regexp',
+                        },
+                        maxResults: MAX_RESULTS * 5,
+                    }
+                )
+            )
+                .pipe(toArray())
+                .toPromise()
+        )
+        const docs = await Promise.all(
+            results.map(async ({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
+        )
+
+        const tseslintConfig: TSESLint.ParserOptions = { ecmaVersion: 2018, range: true, sourceType: 'module' }
+        const config: Linter.Config = { parser: '@typescript-eslint/parser', parserOptions: tseslintConfig }
+        const linter = new Linter()
+        linter.defineParser('@typescript-eslint/parser', tseslintParser)
+
+        return from(settingsObservable<Settings>()).pipe(
+            map(settings =>
+                docs
+                    .map(({ uri, text }) => {
+                        text = `console.log(a)\n\nvar a=3`
+                        const lintMessages = linter.verify(text, config, { allowInlineConfig: true, filename: uri })
+                        console.log(lintMessages)
+                        const diagnostics: sourcegraph.Diagnostic[] = lintMessages
+                            .map(r => {
+                                const rulePolicy = getRulePolicyFromSettings(settings, r.ruleId)
+                                if (rulePolicy === RulePolicy.Ignore) {
+                                    return null
+                                }
+                                console.log(r)
+                                return {
+                                    message: r.message,
+                                    source: r.source,
+                                    range:
+                                        r.line !== undefined && r.column !== undefined
+                                            ? new sourcegraph.Range(
+                                                  new sourcegraph.Position(r.line, r.column),
+                                                  r.endLine !== undefined && r.endColumn !== undefined
+                                                      ? new sourcegraph.Position(r.endLine, r.endColumn)
+                                                      : new sourcegraph.Position(r.line + 1, 0)
+                                              )
+                                            : new sourcegraph.Range(0, 0, 1, 0),
+                                    severity: linterSeverityToDiagnosticSeverity(r.severity),
+                                    code: CODE_ESLINT + ':' + JSON.stringify(r),
+                                } as sourcegraph.Diagnostic
+                            })
+                            .filter(isDefined)
+                        return diagnostics.length > 0
+                            ? ([new URL(uri), diagnostics] as [URL, sourcegraph.Diagnostic[]])
+                            : null
+                    })
+                    .filter(isDefined)
+            )
+        )
+    }),
+    switchMap(results => results)
+)
+
+function linterSeverityToDiagnosticSeverity(ruleSeverity: Linter.Severity): sourcegraph.DiagnosticSeverity {
+    switch (ruleSeverity) {
+        case 0:
+            return sourcegraph.DiagnosticSeverity.Information
+        case 1:
+            return sourcegraph.DiagnosticSeverity.Warning
+        case 2:
+            return sourcegraph.DiagnosticSeverity.Error
+        default:
+            return sourcegraph.DiagnosticSeverity.Error
+    }
+}
+
+function getRulePolicyFromSettings(settings: Settings, ruleId: string): RulePolicy {
+    return (settings['eslint.rules'] && settings['eslint.rules'][ruleId]) || RulePolicy.Default
+}
+
+function isESLintDiagnostic(diag: sourcegraph.Diagnostic): boolean {
+    return typeof diag.code === 'string' && diag.code.startsWith(CODE_ESLINT + ':')
+}
+
+function getLintMessageFromDiagnosticData(diag: sourcegraph.Diagnostic): Linter.LintMessage {
+    return JSON.parse((diag.code as string).slice((CODE_ESLINT + ':').length))
+}
+
+function createWorkspaceEditFromESLintFix(
+    doc: sourcegraph.TextDocument,
+    fix: Rule.Fix,
+    edit = new sourcegraph.WorkspaceEdit()
+): sourcegraph.WorkspaceEdit {
+    edit.replace(
+        new URL(doc.uri),
+        new sourcegraph.Range(doc.positionAt(fix.range[0]), doc.positionAt(fix.range[1])),
+        fix.text
+    )
+    return edit
+}
+
+/**
+ * Returns the object describing how to invoke the command to update the rule policy.
+ */
+function updateRulePoliciesCommand(
+    rulePolicy: RulePolicy.Ignore | RulePolicy.Default,
+    ruleId: string
+): sourcegraph.Command {
+    return { title: '', command: 'updateConfiguration', arguments: [['eslint.rules', ruleId], rulePolicy] }
+}

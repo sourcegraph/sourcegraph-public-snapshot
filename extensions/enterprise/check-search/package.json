@@ -45,9 +45,12 @@
     "last 1 Safari versions"
   ],
   "devDependencies": {
+    "@types/eslint": "^4.16.6",
     "sourcegraph": "link:../../../packages/sourcegraph-extension-api"
   },
   "dependencies": {
+    "@typescript-eslint/parser": "^1.11.0",
+    "eslint": "^6.0.1",
     "localforage": "^1.7.3"
   }
 }
