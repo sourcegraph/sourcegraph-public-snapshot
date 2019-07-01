@@ -50,7 +50,6 @@ export const StatusesArea: React.FunctionComponent<Props> = ({ match, ...props }
             </Route>
             <Route
                 path={`${match.url}/:name`}
-                exact={true}
                 // tslint:disable-next-line:jsx-no-lambda
                 render={(routeComponentProps: RouteComponentProps<{ name: string }>) => (
                     <StatusArea

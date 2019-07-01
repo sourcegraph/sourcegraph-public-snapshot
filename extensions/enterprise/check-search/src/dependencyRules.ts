@@ -1,8 +1,8 @@
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../shared/src/util/types'
 import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
-import { flatten, sortedUniq } from 'lodash'
-import { Subscription, Observable, of, Unsubscribable, from } from 'rxjs'
+import { flatten, sortedUniq, sortBy } from 'lodash'
+import { Subscription, Observable, of, Unsubscribable, from, combineLatest } from 'rxjs'
 import { map, switchMap, startWith, first, toArray } from 'rxjs/operators'
 import { queryGraphQL, settingsObservable, memoizedFindTextInFiles } from './util'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -11,6 +11,9 @@ import { OTHER_CODE_ACTIONS, MAX_RESULTS, REPO_INCLUDE } from './misc'
 export function registerDependencyRules(): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(startDiagnostics())
+    subscriptions.add(
+        sourcegraph.status.registerStatusProvider('npm-dependency-security', createStatusProvider(diagnostics))
+    )
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
     return subscriptions
 }
@@ -35,78 +38,83 @@ function startDiagnostics(): Unsubscribable {
     const diagnosticsCollection = sourcegraph.languages.createDiagnosticCollection('dependencyRules')
     subscriptions.add(diagnosticsCollection)
     subscriptions.add(
-        from(sourcegraph.workspace.rootChanges)
-            .pipe(
-                startWith(void 0),
-                map(() => sourcegraph.workspace.roots),
-                switchMap(async roots => {
-                    if (roots.length > 0) {
-                        return of([]) // TODO!(sqs): dont run in comparison mode
-                    }
-
-                    const results = flatten(
-                        await from(
-                            memoizedFindTextInFiles(
-                                { pattern: '[Dd]ependencies"', type: 'regexp' },
-                                {
-                                    repositories: {
-                                        includes: [REPO_INCLUDE],
-                                        excludes: ['hackathon'],
-                                        type: 'regexp',
-                                    },
-                                    files: {
-                                        includes: ['(^|/)package.json$'],
-                                        type: 'regexp',
-                                    },
-                                    maxResults: MAX_RESULTS,
-                                }
-                            )
-                        )
-                            .pipe(toArray())
-                            .toPromise()
-                    )
-                    const docs = await Promise.all(
-                        results.map(async ({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
-                    )
-                    return from(settingsObservable<Settings>()).pipe(
-                        map(settings =>
-                            docs
-                                .map(({ uri, text }) => {
-                                    const diagnostics: sourcegraph.Diagnostic[] = parseDependencies(text)
-                                        .map(({ range, ...dep }) => {
-                                            const status = getDependencyStatusFromSettings(settings, dep)
-                                            if (status === DependencyStatus.Allowed) {
-                                                return null
-                                            }
-                                            return {
-                                                message: `${
-                                                    status === DependencyStatus.Forbidden ? 'Forbidden' : 'Unreviewed'
-                                                } npm dependency '${dep.name}'`,
-                                                range: range,
-                                                severity:
-                                                    status === DependencyStatus.Forbidden
-                                                        ? sourcegraph.DiagnosticSeverity.Error
-                                                        : sourcegraph.DiagnosticSeverity.Warning,
-                                                code: CODE_DEPENDENCY_RULES + ':' + JSON.stringify(dep),
-                                            } as sourcegraph.Diagnostic
-                                        })
-                                        .filter(isDefined)
-                                    return diagnostics.length > 0
-                                        ? ([new URL(uri), diagnostics] as [URL, sourcegraph.Diagnostic[]])
-                                        : null
-                                })
-                                .filter(isDefined)
-                        )
-                    )
-                }),
-                switchMap(results => results)
-            )
-            .subscribe(entries => {
-                diagnosticsCollection.set(entries)
-            })
+        diagnostics.subscribe(entries => {
+            diagnosticsCollection.set(entries)
+        })
     )
 
     return diagnosticsCollection
+}
+
+function createStatusProvider(diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]>): sourcegraph.StatusProvider {
+    const LOADING: 'loading' = 'loading'
+    return {
+        provideStatus: (scope): sourcegraph.Subscribable<sourcegraph.Status | null> => {
+            // TODO!(sqs): dont ignore scope
+            return combineLatest([diagnostics.pipe(startWith(LOADING)), settingsObservable<Settings>()]).pipe(
+                map(([diagnostics, settings]) => {
+                    const deps = new Map<string, DependencyStatus>()
+                    if (diagnostics !== LOADING) {
+                        for (const [, diags] of diagnostics) {
+                            for (const diag of diags) {
+                                const dep = getDiagnosticData(diag)
+                                const depStatus = getDependencyStatusFromSettings(settings, dep)
+                                deps.set(dep.name, depStatus)
+                            }
+                        }
+                    }
+
+                    const status: sourcegraph.Status = {
+                        title: 'npm dependency security',
+                        description: {
+                            kind: sourcegraph.MarkupKind.Markdown,
+                            value: 'Monitors and enforces rules about the use of npm dependencies.',
+                        },
+                        state:
+                            diagnostics === LOADING
+                                ? {
+                                      completion: sourcegraph.StatusCompletion.InProgress,
+                                      message: 'Scanning npm dependencies...',
+                                  }
+                                : {
+                                      completion: sourcegraph.StatusCompletion.Completed,
+                                      result:
+                                          diagnostics.length > 0
+                                              ? sourcegraph.StatusResult.Failure
+                                              : sourcegraph.StatusResult.Success,
+                                      message:
+                                          diagnostics.length > 0
+                                              ? 'Unapproved npm dependencies found'
+                                              : 'All in-use npm dependencies are approved',
+                                  },
+                        sections: {
+                            settings: {
+                                kind: sourcegraph.MarkupKind.Markdown,
+                                value: `Require explicit approval for all npm dependencies`,
+                            },
+                            notifications: {
+                                kind: sourcegraph.MarkupKind.Markdown,
+                                value: `Fail changesets that add unapproved npm dependencies`,
+                            },
+                        },
+                        notifications: sortBy(Array.from(deps.entries()), 0)
+                            .filter(([, depStatus]) => depStatus !== DependencyStatus.Allowed)
+                            .map<sourcegraph.Notification>(([depName, depStatus]) => ({
+                                title:
+                                    depStatus === DependencyStatus.Unreviewed
+                                        ? `Unreviewed npm dependency in use: ${depName}`
+                                        : `Forbidden npm dependency in use: ${depName}`,
+                                type:
+                                    depStatus === DependencyStatus.Unreviewed
+                                        ? sourcegraph.NotificationType.Warning
+                                        : sourcegraph.NotificationType.Error,
+                            })),
+                    }
+                    return status
+                })
+            )
+        },
+    }
 }
 
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
@@ -170,6 +178,72 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
         },
     }
 }
+
+const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]> = from(sourcegraph.workspace.rootChanges).pipe(
+    startWith(void 0),
+    map(() => sourcegraph.workspace.roots),
+    switchMap(async roots => {
+        if (roots.length > 0) {
+            return of([]) // TODO!(sqs): dont run in comparison mode
+        }
+
+        const results = flatten(
+            await from(
+                memoizedFindTextInFiles(
+                    { pattern: '[Dd]ependencies"', type: 'regexp' },
+                    {
+                        repositories: {
+                            includes: [REPO_INCLUDE],
+                            excludes: ['hackathon'],
+                            type: 'regexp',
+                        },
+                        files: {
+                            includes: ['(^|/)package.json$'],
+                            type: 'regexp',
+                        },
+                        maxResults: MAX_RESULTS,
+                    }
+                )
+            )
+                .pipe(toArray())
+                .toPromise()
+        )
+        const docs = await Promise.all(
+            results.map(async ({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
+        )
+        return from(settingsObservable<Settings>()).pipe(
+            map(settings =>
+                docs
+                    .map(({ uri, text }) => {
+                        const diagnostics: sourcegraph.Diagnostic[] = parseDependencies(text)
+                            .map(({ range, ...dep }) => {
+                                const status = getDependencyStatusFromSettings(settings, dep)
+                                if (status === DependencyStatus.Allowed) {
+                                    return null
+                                }
+                                return {
+                                    message: `${
+                                        status === DependencyStatus.Forbidden ? 'Forbidden' : 'Unreviewed'
+                                    } npm dependency '${dep.name}'`,
+                                    range: range,
+                                    severity:
+                                        status === DependencyStatus.Forbidden
+                                            ? sourcegraph.DiagnosticSeverity.Error
+                                            : sourcegraph.DiagnosticSeverity.Warning,
+                                    code: CODE_DEPENDENCY_RULES + ':' + JSON.stringify(dep),
+                                } as sourcegraph.Diagnostic
+                            })
+                            .filter(isDefined)
+                        return diagnostics.length > 0
+                            ? ([new URL(uri), diagnostics] as [URL, sourcegraph.Diagnostic[]])
+                            : null
+                    })
+                    .filter(isDefined)
+            )
+        )
+    }),
+    switchMap(results => results)
+)
 
 interface Dependency {
     name: string

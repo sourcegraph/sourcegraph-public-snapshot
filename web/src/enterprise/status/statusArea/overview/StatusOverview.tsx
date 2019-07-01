@@ -1,6 +1,8 @@
 import EyeIcon from 'mdi-react/EyeIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { Markdown } from '../../../../../../shared/src/components/Markdown'
+import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 import { Timeline } from '../../../../components/timeline/Timeline'
 import { StatusAreaContext } from '../StatusArea'
 import { StatusPipelineSection } from './pipeline/StatusPipelineSection'
@@ -20,7 +22,7 @@ export const StatusOverview: React.FunctionComponent<Props> = ({ status, statusU
         <StatusBreadcrumbs status={status} statusURL={statusURL} statusesURL={statusesURL} className="py-3" />
         <hr className="my-0" />
         <h2 className="my-3 font-weight-normal">{status.status.title}</h2>
-        <p>Checks code using ESLint, an open-source JavaScript linting utility.</p>
+        {status.status.description && <Markdown dangerousInnerHTML={renderMarkdown(status.status.description.value)} />}
         <Timeline tag="div" className="align-items-stretch mb-3">
             <div className="d-flex align-items-start bg-body border p-3 mb-5">
                 <EyeIcon className="icon-inline mb-0 mr-3" />

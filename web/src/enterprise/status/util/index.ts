@@ -15,7 +15,7 @@ export const statusStateIsCompleted = (
 ): state is { completion: sourcegraph.StatusCompletion; result: sourcegraph.StatusResult } =>
     state.completion === StatusCompletion.Completed
 
-type ThemeColor = 'success' | 'failure' | 'muted' | 'info'
+type ThemeColor = 'success' | 'danger' | 'muted' | 'info'
 
 export const themeColorForStatus = (status: Pick<sourcegraph.Status, 'state'>): ThemeColor => {
     if (statusStateIsCompleted(status.state)) {
@@ -23,7 +23,7 @@ export const themeColorForStatus = (status: Pick<sourcegraph.Status, 'state'>): 
             case StatusResult.Success:
                 return 'success'
             case StatusResult.Failure:
-                return 'failure'
+                return 'danger'
             case StatusResult.Neutral:
                 return 'muted'
             case StatusResult.ActionRequired:

@@ -13,7 +13,9 @@ import { HeroPage } from '../../../components/HeroPage'
 import { Status } from '../status'
 import { StatusesAreaContext } from '../statusesArea/StatusesArea'
 import { useStatusByTypeForScope } from '../util/useStatusByTypeForScope'
+import { StatusIssuesPage } from './issues/StatusIssuesPage'
 import { StatusAreaNavbar } from './navbar/StatusAreaNavbar'
+import { StatusNotificationsPage } from './notifications/StatusNotificationsPage'
 import { StatusOverview } from './overview/StatusOverview'
 
 const NotFoundPage = () => (
@@ -74,9 +76,12 @@ export const StatusArea: React.FunctionComponent<Props> = ({ name, scope, status
                 <ErrorBoundary location={props.location}>
                     <Switch>
                         <Route path={statusURL} exact={true}>
-                            <p>hello, world!</p>
+                            <StatusNotificationsPage {...context} className="container mt-5" />
                         </Route>
-                        <Route key="hardcoded-key" component={NotFoundPage} />
+                        <Route path={`${statusURL}/issues`} exact={true}>
+                            <StatusIssuesPage {...context} />
+                        </Route>
+                        <Route component={NotFoundPage} />
                     </Switch>
                 </ErrorBoundary>
             </div>

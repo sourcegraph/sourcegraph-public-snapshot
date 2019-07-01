@@ -18,6 +18,10 @@ const STATUSES: (sourcegraph.Status & { name: string })[] = [
     {
         name: 'eslint',
         title: 'ESLint',
+        description: {
+            kind: sourcegraph.MarkupKind.Markdown,
+            value: 'Checks code using ESLint, an open-source JavaScript linting utility.',
+        },
         state: {
             completion: sourcegraph.StatusCompletion.Completed,
             result: sourcegraph.StatusResult.Success,
@@ -37,18 +41,6 @@ const STATUSES: (sourcegraph.Status & { name: string })[] = [
 - Fail changesets that add code not checked by ESLint
 - Notify **@felixfbecker** of new ESLint rules`,
             },
-        },
-        notifications: [
-            { title: 'my notif1', type: sourcegraph.NotificationType.Info },
-            { title: 'my notif2', type: sourcegraph.NotificationType.Error },
-        ],
-    },
-    {
-        name: 'npm-dependency-security',
-        title: 'npm dependency security',
-        state: {
-            completion: sourcegraph.StatusCompletion.InProgress,
-            message: 'Scanning npm dependencies...',
         },
         notifications: [
             { title: 'my notif1', type: sourcegraph.NotificationType.Info },
