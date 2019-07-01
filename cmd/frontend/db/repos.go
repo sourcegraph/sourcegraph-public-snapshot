@@ -164,9 +164,9 @@ type MinimalRepo struct {
 	Name         api.RepoName
 }
 
-func (m *MinimalRepo) GetID() api.RepoID                      { return m.ID }
-func (m *MinimalRepo) GetName() api.RepoName                  { return m.Name }
-func (m *MinimalRepo) GetExternalRepo() *api.ExternalRepoSpec { return &m.ExternalRepo }
+func (m *MinimalRepo) RepoID() api.RepoID                      { return m.ID }
+func (m *MinimalRepo) RepoName() api.RepoName                  { return m.Name }
+func (m *MinimalRepo) ExternalRepoSpec() *api.ExternalRepoSpec { return &m.ExternalRepo }
 
 const getMinimalRepoByQueryFmtstr = `
 SELECT id, name, external_id, external_service_type, external_service_id
