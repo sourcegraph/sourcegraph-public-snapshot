@@ -1,4 +1,5 @@
 import * as sourcegraph from 'sourcegraph'
+import eslintConfigStandard from 'eslint-config-standard'
 import { TSESLint } from '@typescript-eslint/experimental-utils'
 import * as tseslintParser from '@typescript-eslint/parser'
 import { Linter, Rule } from 'eslint'
@@ -142,7 +143,7 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                               ]
                             : []),
                         {
-                            title: `Ignore all`,
+                            title: `Ignore all (${lintMessage.ruleId})`,
                             command: updateRulePoliciesCommand(RulePolicy.Ignore, lintMessage.ruleId),
                             diagnostics: [diag],
                         },
@@ -154,7 +155,6 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                                 arguments: [`https://eslint.org/docs/rules/${lintMessage.ruleId}`],
                             },
                         },
-                        ...OTHER_CODE_ACTIONS,
                     ].filter(isDefined)
                 })
             )
@@ -194,44 +194,61 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]> = from(sourcegr
             results.map(async ({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
         )
 
-        const tseslintConfig: TSESLint.ParserOptions = { ecmaVersion: 2018, range: true, sourceType: 'module' }
-        const config: Linter.Config = { parser: '@typescript-eslint/parser', parserOptions: tseslintConfig }
+        const tseslintConfig: TSESLint.ParserOptions = {
+            ecmaVersion: 2018,
+            range: true,
+            sourceType: 'module',
+            filePath: 'foo.tsx',
+            useJSXTextNode: true,
+            ecmaFeatures: { jsx: true },
+        }
         const linter = new Linter()
         linter.defineParser('@typescript-eslint/parser', tseslintParser)
+
+        const rules = { ...eslintConfigStandard.rules }
+        for (const ruleId of Object.keys(rules)) {
+            if (!linter.getRules().has(ruleId)) {
+                delete rules[ruleId]
+            }
+        }
+        delete rules.indent
+        delete rules['space-before-function-paren']
+        delete rules['no-undef']
+        delete rules['comma-dangle']
+        delete rules['no-unused-vars']
+        const config: Linter.Config = {
+            parser: '@typescript-eslint/parser',
+            parserOptions: tseslintConfig,
+            rules,
+        }
 
         return from(settingsObservable<Settings>()).pipe(
             map(settings =>
                 docs
-                    .map(({ uri, text }) => {
-                        text = `console.log(a)\n\nvar a=3`
-                        const lintMessages = linter.verify(text, config, { allowInlineConfig: true, filename: uri })
-                        console.log(lintMessages)
+                    .map(doc => {
+                        const lintMessages = linter.verify(doc.text, config, {
+                            filename: new URL(doc.uri).pathname.slice(1),
+                        })
                         const diagnostics: sourcegraph.Diagnostic[] = lintMessages
                             .map(r => {
+                                if (r.fatal) {
+                                    return null // TODO!(sqs): dont suppress
+                                }
                                 const rulePolicy = getRulePolicyFromSettings(settings, r.ruleId)
                                 if (rulePolicy === RulePolicy.Ignore) {
                                     return null
                                 }
-                                console.log(r)
                                 return {
                                     message: r.message,
                                     source: r.source,
-                                    range:
-                                        r.line !== undefined && r.column !== undefined
-                                            ? new sourcegraph.Range(
-                                                  new sourcegraph.Position(r.line, r.column),
-                                                  r.endLine !== undefined && r.endColumn !== undefined
-                                                      ? new sourcegraph.Position(r.endLine, r.endColumn)
-                                                      : new sourcegraph.Position(r.line + 1, 0)
-                                              )
-                                            : new sourcegraph.Range(0, 0, 1, 0),
+                                    range: rangeForLintMessage(doc, r),
                                     severity: linterSeverityToDiagnosticSeverity(r.severity),
                                     code: CODE_ESLINT + ':' + JSON.stringify(r),
                                 } as sourcegraph.Diagnostic
                             })
                             .filter(isDefined)
                         return diagnostics.length > 0
-                            ? ([new URL(uri), diagnostics] as [URL, sourcegraph.Diagnostic[]])
+                            ? ([new URL(doc.uri), diagnostics] as [URL, sourcegraph.Diagnostic[]])
                             : null
                     })
                     .filter(isDefined)
@@ -240,6 +257,21 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]> = from(sourcegr
     }),
     switchMap(results => results)
 )
+
+function rangeForLintMessage(doc: sourcegraph.TextDocument, m: Linter.LintMessage): sourcegraph.Range {
+    if (m.line === undefined && m.column === undefined) {
+        return new sourcegraph.Range(0, 0, 1, 0)
+    }
+    const start = new sourcegraph.Position(m.line - 1, m.column - 1)
+    let end: sourcegraph.Position
+    if (m.endLine === undefined && m.endColumn === undefined) {
+        const wordRange = doc.getWordRangeAtPosition(start)
+        end = wordRange ? wordRange.end : start
+    } else {
+        end = new sourcegraph.Position(m.endLine - 1, m.endColumn - 1)
+    }
+    return new sourcegraph.Range(start, end)
+}
 
 function linterSeverityToDiagnosticSeverity(ruleSeverity: Linter.Severity): sourcegraph.DiagnosticSeverity {
     switch (ruleSeverity) {
