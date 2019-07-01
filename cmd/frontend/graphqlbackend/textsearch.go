@@ -848,7 +848,7 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 	unindexed = make([]*search.RepositoryRevisions, 0, len(revs)-len(set))
 
 	for _, rev := range revs {
-		repo, ok := set[string(rev.Repo.Name)]
+		repo, ok := set[strings.ToLower(string(rev.Repo.Name))]
 		if !ok {
 			unindexed = append(unindexed, rev)
 			continue

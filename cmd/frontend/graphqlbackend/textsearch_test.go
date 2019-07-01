@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -723,7 +724,7 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 
 		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
-				Name:     indexedName,
+				Name:     strings.TrimSuffix(indexedName, "@"),
 				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
 			},
 		})

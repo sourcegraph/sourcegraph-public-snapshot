@@ -57,8 +57,12 @@ func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
 // globs.  If no revspecs and no ref globs are specified, then the
 // repository's default branch is used.
 type RepositoryRevisions struct {
-	Repo              *types.Repo
-	Revs              []RevisionSpecifier
+	Repo *types.Repo
+	Revs []RevisionSpecifier
+	// IndexedHEADCommit contains the HEAD Git commit indexed by Zoekt.
+	// It is written to by zoektIndexedRepos and read later by zoektSearchHEAD.
+	// See https://github.com/sourcegraph/sourcegraph/pull/4702 for the performance
+	// rationale.
 	IndexedHEADCommit api.CommitID
 }
 
