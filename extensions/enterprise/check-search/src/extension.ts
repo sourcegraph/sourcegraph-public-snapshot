@@ -9,10 +9,10 @@ import { registerESLintRules } from './eslint'
 
 export function activate(ctx: sourcegraph.ExtensionContext): void {
     ctx.subscriptions.add(registerESLintRules())
-    // ctx.subscriptions.add(registerTravisGo())
-    // ctx.subscriptions.add(registerImportStar())
-    // ctx.subscriptions.add(registerNoInlineProps())
-    // ctx.subscriptions.add(registerDependencyRules())
-    // ctx.subscriptions.add(registerCodeOwnership())
-    // ctx.subscriptions.add(registerSampleStatusProviders())
+    ctx.subscriptions.add(registerTravisGo())
+    ctx.subscriptions.add(registerImportStar())
+    ctx.subscriptions.add(registerNoInlineProps())
+    ctx.subscriptions.add(registerDependencyRules())
+    ctx.subscriptions.add(registerCodeOwnership())
+    ctx.subscriptions.add(registerSampleStatusProviders())
 }
