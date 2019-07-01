@@ -57,8 +57,9 @@ func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
 // globs.  If no revspecs and no ref globs are specified, then the
 // repository's default branch is used.
 type RepositoryRevisions struct {
-	Repo *types.Repo
-	Revs []RevisionSpecifier
+	Repo              *types.Repo
+	Revs              []RevisionSpecifier
+	IndexedHEADCommit api.CommitID
 }
 
 // ParseRepositoryRevisions parses strings that refer to a repository and 0
