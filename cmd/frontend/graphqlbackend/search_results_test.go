@@ -144,6 +144,7 @@ func BenchmarkSearchResults(b *testing.B) {
 			repos:  &zoekt.RepoList{Repos: zoektRepos},
 			result: &zoekt.SearchResult{Files: zoektFileMatches},
 		},
+		DisableCache: true,
 	}
 
 	ctx := context.Background()
@@ -183,7 +184,8 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 	})
 	defer cleanup()
 	z := &searchbackend.Zoekt{
-		Client: zoektClient,
+		Client:       zoektClient,
+		DisableCache: true,
 	}
 
 	for _, r := range repos {
