@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/zoekt"
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -112,25 +113,23 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			opt2.Limit += 1250
 		}
 
-		var indexed map[api.RepoName]bool
+		var indexed map[string]*zoekt.Repository
 		searchIndexEnabled := IndexedSearch().Enabled()
 		isIndexed := func(repo api.RepoName) bool {
 			if !searchIndexEnabled {
 				return true // do not need index
 			}
-			return indexed[api.RepoName(strings.ToLower(string(repo)))]
+			_, ok := indexed[strings.ToLower(string(repo))]
+			return ok
 		}
 		if searchIndexEnabled && (!r.indexed || !r.notIndexed) {
 			listCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 			defer cancel()
-			indexedRepos, err := IndexedSearch().ListAll(listCtx)
+			var err error
+			indexed, err = IndexedSearch().ListAll(listCtx)
 			if err != nil {
 				r.err = err
 				return
-			}
-			indexed = make(map[api.RepoName]bool, len(indexedRepos.Repos))
-			for _, repo := range indexedRepos.Repos {
-				indexed[api.RepoName(strings.ToLower(string(repo.Repository.Name)))] = true
 			}
 		}
 
