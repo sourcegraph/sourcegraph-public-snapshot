@@ -1030,6 +1030,11 @@ declare module 'sourcegraph' {
         title: string
 
         /**
+         * The human-readable description of the status.
+         */
+        description?: MarkupContent & { kind: MarkupKind.Markdown }
+
+        /**
          * The current state of the status.
          */
         state:

@@ -12,8 +12,8 @@ const CODE_TRAVIS_GO = 'check-search.travis-go'
 export function registerTravisGo(): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(startDiagnostics())
-    subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
     subscriptions.add(sourcegraph.status.registerStatusProvider('travis-ci', createStatusProvider(diagnostics)))
+    subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
     return subscriptions
 }
 
@@ -52,8 +52,14 @@ function createStatusProvider(diagnostics: Observable<[URL, sourcegraph.Diagnost
                         },
                     },
                     notifications: [
-                        { title: 'my notif1', type: sourcegraph.NotificationType.Info },
-                        { title: 'my notif2', type: sourcegraph.NotificationType.Error },
+                        ...(diagnostics.length > 0
+                            ? [
+                                  {
+                                      title: `Outdated Go version specified in Travis CI configuration (${diagnostics.length} repositories affected)`,
+                                      type: sourcegraph.NotificationType.Info,
+                                  },
+                              ]
+                            : []),
                     ],
                 })),
                 startWith<sourcegraph.Status>({
