@@ -43,7 +43,7 @@ func TestRepoRefresh(t *testing.T) {
 		}
 	}
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo types.RepoIdentifier, rev string) (api.CommitID, error) {
-		if repo.GetID() != 2 || rev != "master" {
+		if repo.RepoID() != 2 || rev != "master" {
 			t.Error("wrong arguments to ResolveRev")
 		}
 		return "aed", nil

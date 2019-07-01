@@ -26,42 +26,42 @@ import (
 // when an update is needed (eg in ResolveRevision).
 func CachedGitRepo(ctx context.Context, repo types.RepoIdentifier) (*gitserver.Repo, error) {
 	var serviceType string
-	if extRepo := repo.GetExternalRepo(); extRepo != nil {
+	if extRepo := repo.ExternalRepoSpec(); extRepo != nil {
 		serviceType = extRepo.ServiceType
 	}
-	r, err := quickGitserverRepo(ctx, repo.GetName(), serviceType)
+	r, err := quickGitserverRepo(ctx, repo.RepoName(), serviceType)
 	if err != nil {
 		return nil, err
 	}
 	if r != nil {
 		return r, nil
 	}
-	return &gitserver.Repo{Name: repo.GetName()}, nil
+	return &gitserver.Repo{Name: repo.RepoName()}, nil
 }
 
 // GitRepo returns a handle to the Git repository with the up-to-date (as of the time of this call)
 // remote URL. See CachedGitRepo for when this is necessary vs. unnecessary.
 func GitRepo(ctx context.Context, repo types.RepoIdentifier) (gitserver.Repo, error) {
 	var serviceType string
-	if extRepo := repo.GetExternalRepo(); extRepo != nil {
+	if extRepo := repo.ExternalRepoSpec(); extRepo != nil {
 		serviceType = extRepo.ServiceType
 	}
-	gitserverRepo, err := quickGitserverRepo(ctx, repo.GetName(), serviceType)
+	gitserverRepo, err := quickGitserverRepo(ctx, repo.RepoName(), serviceType)
 	if err != nil {
-		return gitserver.Repo{Name: repo.GetName()}, err
+		return gitserver.Repo{Name: repo.RepoName()}, err
 	}
 	if gitserverRepo != nil {
 		return *gitserverRepo, nil
 	}
 
 	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
-		Repo: repo.GetName(),
+		Repo: repo.RepoName(),
 	})
 	if err != nil {
-		return gitserver.Repo{Name: repo.GetName()}, err
+		return gitserver.Repo{Name: repo.RepoName()}, err
 	}
 	if result.Repo == nil {
-		return gitserver.Repo{Name: repo.GetName()}, repoupdater.ErrNotFound
+		return gitserver.Repo{Name: repo.RepoName()}, repoupdater.ErrNotFound
 	}
 	return gitserver.Repo{Name: result.Repo.Name, URL: result.Repo.VCS.URL}, nil
 }
@@ -154,7 +154,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo types.RepoIdentifier, rev s
 		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}
 
-	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.GetName(), "rev": rev}, &err)
+	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.RepoName(), "rev": rev}, &err)
 	defer done()
 
 	// We start out by using a CachedGitRepo which doesn't have a remote URL.
@@ -181,10 +181,10 @@ func (s *repos) GetCommit(ctx context.Context, repo types.RepoIdentifier, commit
 		return Mocks.Repos.GetCommit(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetCommit", map[string]interface{}{"repo": repo.GetName(), "commitID": commitID}, &err)
+	ctx, done := trace(ctx, "Repos", "GetCommit", map[string]interface{}{"repo": repo.RepoName(), "commitID": commitID}, &err)
 	defer done()
 
-	log15.Debug("svc.local.repos.GetCommit", "repo", repo.GetName(), "commitID", commitID)
+	log15.Debug("svc.local.repos.GetCommit", "repo", repo.RepoName(), "commitID", commitID)
 
 	if !git.IsAbsoluteRevision(string(commitID)) {
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
@@ -225,6 +225,6 @@ func maybeLogRepoUpdaterError(repo types.RepoIdentifier, err error) {
 		msg = "Repository host was temporarily unavailable while retrieving repository information."
 	}
 	if msg != "" {
-		log15.Warn(msg+" Consult repo-updater logs for more information.", "repo", repo.GetName())
+		log15.Warn(msg+" Consult repo-updater logs for more information.", "repo", repo.RepoName())
 	}
 }
