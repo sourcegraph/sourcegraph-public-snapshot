@@ -249,12 +249,16 @@ func generateRepos(count int) ([]*db.MinimalRepo, []*types.Repo, []*zoekt.RepoLi
 		minimalRepos = append(minimalRepos, minimalRepo)
 
 		repos = append(repos, &types.Repo{
-			ID:           minimalRepo.ID,
-			Name:         minimalRepo.Name,
-			ExternalRepo: &minimalRepo.ExternalRepo,
-			URI:          fmt.Sprintf("https://github.com/foobar/%s", minimalRepo.Name),
-			Description:  "this repositoriy contains a side project that I haven't maintained in 2 years",
-			Language:     "v-language",
+			RepoIDs: types.RepoIDs{
+				ID:           minimalRepo.ID,
+				Name:         minimalRepo.Name,
+				ExternalRepo: &minimalRepo.ExternalRepo,
+			},
+			RepoFields: &types.RepoFields{
+				URI:         fmt.Sprintf("https://github.com/foobar/%s", minimalRepo.Name),
+				Description: "this repositoriy contains a side project that I haven't maintained in 2 years",
+				Language:    "v-language",
+			},
 		})
 
 		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
@@ -809,13 +813,17 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 
 	hydratedRepo := &types.Repo{
-		ID:           minimalRepo.ID,
-		ExternalRepo: &(minimalRepo.ExternalRepo),
-		Name:         minimalRepo.Name,
-		URI:          fmt.Sprintf("github.com/my-org/%s", minimalRepo.Name),
-		Description:  "This is a description of a repository",
-		Language:     "monkey",
-		Fork:         false,
+		RepoIDs: types.RepoIDs{
+			ID:           minimalRepo.ID,
+			ExternalRepo: &(minimalRepo.ExternalRepo),
+			Name:         minimalRepo.Name,
+		},
+		RepoFields: &types.RepoFields{
+			URI:         fmt.Sprintf("github.com/my-org/%s", minimalRepo.Name),
+			Description: "This is a description of a repository",
+			Language:    "monkey",
+			Fork:        false,
+		},
 	}
 
 	db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {

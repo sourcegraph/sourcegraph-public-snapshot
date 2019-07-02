@@ -67,13 +67,17 @@ func TestRepositoryHydration(t *testing.T) {
 		},
 	}
 	hydratedRepo := &types.Repo{
-		ID:           minimalRepo.ID,
-		ExternalRepo: &(minimalRepo.ExternalRepo),
-		Name:         minimalRepo.Name,
-		URI:          fmt.Sprintf("github.com/foobar/%s", name),
-		Description:  "This is a description of a repository",
-		Language:     "monkey",
-		Fork:         false,
+		RepoIDs: types.RepoIDs{
+			ID:           minimalRepo.ID,
+			ExternalRepo: &(minimalRepo.ExternalRepo),
+			Name:         minimalRepo.Name,
+		},
+		RepoFields: &types.RepoFields{
+			URI:         fmt.Sprintf("github.com/foobar/%s", name),
+			Description: "This is a description of a repository",
+			Language:    "monkey",
+			Fork:        false,
+		},
 	}
 
 	ctx := context.Background()
