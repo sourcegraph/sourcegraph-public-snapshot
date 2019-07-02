@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -75,22 +76,75 @@ func TestRepositoryHydration(t *testing.T) {
 		Fork:         false,
 	}
 
-	db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
-		return hydratedRepo, nil
-	}
-
-	defer func() { db.Mocks = db.MockStores{} }()
-
 	ctx := context.Background()
 
-	repoResolver := &repositoryResolver{repo: minimalRepo}
-	if have, want := repoResolver.Description(ctx), hydratedRepo.Description; have != want {
-		t.Fatalf("wrong Description. want=%q, have=%q", want, have)
+	t.Run("hydrated without errors", func(t *testing.T) {
+		db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
+			return hydratedRepo, nil
+		}
+		defer func() { db.Mocks = db.MockStores{} }()
+
+		repoResolver := &repositoryResolver{repo: minimalRepo}
+		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
+	})
+
+	t.Run("hydration results in errors", func(t *testing.T) {
+		dbErr := errors.New("cannot load repo")
+
+		db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
+			return nil, dbErr
+		}
+		defer func() { db.Mocks = db.MockStores{} }()
+
+		repoResolver := &repositoryResolver{repo: minimalRepo}
+		_, err := repoResolver.Description(ctx)
+		if err == nil {
+			t.Fatal("err is unexpected nil")
+		}
+
+		if err != dbErr {
+			t.Fatalf("wrong err. want=%q, have=%q", dbErr, err)
+		}
+
+		// Another call to make sure err does not disappear
+		_, err = repoResolver.Language(ctx)
+		if err == nil {
+			t.Fatal("err is unexpected nil")
+		}
+
+		if err != dbErr {
+			t.Fatalf("wrong err. want=%q, have=%q", dbErr, err)
+		}
+	})
+}
+
+func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *repositoryResolver, hydrated *types.Repo) {
+	t.Helper()
+
+	description, err := r.Description(ctx)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if have, want := repoResolver.URI(ctx), hydratedRepo.URI; have != want {
-		t.Fatalf("wrong URI. want=%q, have=%q", want, have)
+
+	if description != hydrated.Description {
+		t.Fatalf("wrong Description. want=%q, have=%q", hydrated.Description, description)
 	}
-	if have, want := repoResolver.Language(ctx), hydratedRepo.Language; have != want {
-		t.Fatalf("wrong Language. want=%q, have=%q", want, have)
+
+	uri, err := r.URI(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if uri != hydrated.URI {
+		t.Fatalf("wrong URI. want=%q, have=%q", hydrated.URI, uri)
+	}
+
+	language, err := r.Language(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if language != hydrated.Language {
+		t.Fatalf("wrong Language. want=%q, have=%q", hydrated.Language, language)
 	}
 }

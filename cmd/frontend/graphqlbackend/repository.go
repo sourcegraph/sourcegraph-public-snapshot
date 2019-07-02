@@ -28,6 +28,7 @@ import (
 type repositoryResolver struct {
 	hydratedRepo     *types.Repo
 	hydratedRepoOnce sync.Once
+	hydratedRepoErr  error
 
 	repo        *db.MinimalRepo
 	redirectURL *string
@@ -76,21 +77,31 @@ func (r *repositoryResolver) Name() string {
 	return string(r.repo.Name)
 }
 
-func (r *repositoryResolver) URI(ctx context.Context) string {
-	r.hydrate(ctx)
+func (r *repositoryResolver) URI(ctx context.Context) (string, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return "", err
+	}
 
-	return r.hydratedRepo.URI
+	return r.hydratedRepo.URI, nil
 }
 
-func (r *repositoryResolver) Description(ctx context.Context) string {
-	r.hydrate(ctx)
+func (r *repositoryResolver) Description(ctx context.Context) (string, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return "", err
+	}
 
-	return r.hydratedRepo.Description
+	return r.hydratedRepo.Description, nil
 }
 
-func (r *repositoryResolver) Language(ctx context.Context) string {
-	r.hydrate(ctx)
-	return r.hydratedRepo.Language
+func (r *repositoryResolver) Language(ctx context.Context) (string, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return r.hydratedRepo.Language, nil
 }
 
 func (r *repositoryResolver) RedirectURL() *string {
@@ -211,22 +222,16 @@ func (r *repositoryResolver) resultCount() int32 {
 	return 1
 }
 
-func (r *repositoryResolver) hydrate(ctx context.Context) {
+func (r *repositoryResolver) hydrate(ctx context.Context) error {
 	r.hydratedRepoOnce.Do(func() {
 		if r.hydratedRepo != nil {
 			return
 		}
 
-		hydratedRepo, err := db.Repos.Get(ctx, r.repo.ID)
-		if err != nil {
-			r.hydratedRepo = &types.Repo{
-				ID:           r.repo.ID,
-				Name:         r.repo.Name,
-				ExternalRepo: &r.repo.ExternalRepo,
-			}
-		}
-		r.hydratedRepo = hydratedRepo
+		r.hydratedRepo, r.hydratedRepoErr = db.Repos.Get(ctx, r.repo.ID)
 	})
+
+	return r.hydratedRepoErr
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {

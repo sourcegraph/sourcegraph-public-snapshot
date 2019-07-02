@@ -873,27 +873,13 @@ func TestSearchResultsHydration(t *testing.T) {
 		t.Fatalf("wrong results length. want=%d, have=%d\n", wantMatchCount, results.MatchCount())
 	}
 
-	assert := func(t *testing.T, r *repositoryResolver) {
-		t.Helper()
-
-		if have, want := r.Description(ctx), hydratedRepo.Description; have != want {
-			t.Fatalf("wrong Description. want=%q, have=%q", want, have)
-		}
-		if have, want := r.URI(ctx), hydratedRepo.URI; have != want {
-			t.Fatalf("wrong URI. want=%q, have=%q", want, have)
-		}
-		if have, want := r.Language(ctx), hydratedRepo.Language; have != want {
-			t.Fatalf("wrong Language. want=%q, have=%q", want, have)
-		}
-	}
-
 	for _, r := range results.Results() {
 		switch r := r.(type) {
 		case *fileMatchResolver:
-			assert(t, r.Repository())
+			assertRepoResolverHydrated(ctx, t, r.Repository(), hydratedRepo)
 
 		case *repositoryResolver:
-			assert(t, r)
+			assertRepoResolverHydrated(ctx, t, r, hydratedRepo)
 		}
 	}
 }
