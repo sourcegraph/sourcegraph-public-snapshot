@@ -146,7 +146,7 @@ func (s *repos) getRepoIDsBySQL(ctx context.Context, querySuffix *sqlf.Query) ([
 func (s *repos) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	columns := getBySQLColumns
 	if minimal {
-		columns = columns[:4]
+		columns = columns[:5]
 	}
 
 	q := sqlf.Sprintf(
