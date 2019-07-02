@@ -22,6 +22,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"strings"
 	"time"
 
 	"golang.org/x/net/trace"
@@ -52,20 +53,22 @@ type ExternalTool struct {
 func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath string) (cmd *exec.Cmd, err error) {
 	switch t.Name {
 	case "comby":
-		if spec.FileExtension == "" {
-			if spec.DirectoryExclude == "" {
-				return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, "-zip", zipPath, "-json-lines", "-json-only-diff"), nil
-			} else {
-				return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, "-zip", zipPath, "-json-lines", "-json-only-diff", "-exclude-dir", spec.DirectoryExclude), nil
-			}
-		} else {
-			if spec.DirectoryExclude == "" {
-				return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, spec.FileExtension, "-zip", zipPath, "-json-lines", "-json-only-diff"), nil
-			} else {
-				log15.Info(fmt.Sprintf("comby '%s' '%s' %s -zip %s -json-lines -json-only-diff -exclude-dir %s", spec.MatchTemplate, spec.RewriteTemplate, spec.FileExtension, zipPath, spec.DirectoryExclude))
-				return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, spec.FileExtension, "-zip", zipPath, "-json-lines", "-json-only-diff", "-exclude-dir", spec.DirectoryExclude), nil
-			}
+		var args []string
+		args = append(args, spec.MatchTemplate, spec.RewriteTemplate)
+
+		if spec.FileExtension != "" {
+			args = append(args, spec.FileExtension)
 		}
+
+		args = append(args, "-zip", zipPath, "-json-lines", "-json-only-diff")
+
+		if spec.DirectoryExclude != "" {
+			args = append(args, "-exclude-dir", spec.DirectoryExclude)
+		}
+
+		log15.Info(fmt.Sprintf("running command: %q", strings.Join(args[:], " ")))
+		return exec.Command(t.BinaryPath, args...), nil
+
 	default:
 		return nil, errors.Errorf("Unknown external replace tool %q", t.Name)
 	}
