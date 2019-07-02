@@ -13,6 +13,7 @@ import { ThemePreferenceProps, ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { queryIndexOfScope, submitSearch } from '../helpers'
+import { QuickLinks } from '../QuickLinks'
 import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
@@ -75,6 +76,7 @@ export class SearchPage extends React.Component<Props, State> {
             }
         }
         const hasScopes = this.getScopes().length > 0
+        const quickLinks = this.getQuickLinks()
         return (
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
@@ -102,7 +104,11 @@ export class SearchPage extends React.Component<Props, State> {
                                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 />
                             </div>
-                            {this.renderQuickLinks()}
+                            {quickLinks.length > 0 && (
+                                <div className="search-page__input-sub-container">
+                                    <QuickLinks quickLinks={quickLinks} />
+                                </div>
+                            )}
                             <QueryBuilder
                                 onFieldsQueryChange={this.onBuilderQueryChange}
                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
@@ -114,7 +120,11 @@ export class SearchPage extends React.Component<Props, State> {
                                 onFieldsQueryChange={this.onBuilderQueryChange}
                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             />
-                            {this.renderQuickLinks()}
+                            {quickLinks.length > 0 && (
+                                <div className="search-page__input-sub-container">
+                                    <QuickLinks quickLinks={quickLinks} />
+                                </div>
+                            )}
                             <div className="search-page__input-sub-container">
                                 <SearchFilterChips
                                     location={this.props.location}
@@ -131,22 +141,6 @@ export class SearchPage extends React.Component<Props, State> {
                 </Form>
             </div>
         )
-    }
-
-    private renderQuickLinks(): JSX.Element | null {
-        const quickLinks = this.getQuickLinks()
-        return quickLinks.length > 0 ? (
-            <div className="search-page__input-sub-container">
-                {quickLinks.map((quickLink, i) => (
-                    <small className="text-nowrap mr-2 search-page__quicklink">
-                        <a href={quickLink.url} data-tooltip={quickLink.description} key={i}>
-                            <LinkIcon className="icon-inline pr-1" />
-                            {quickLink.name}
-                        </a>
-                    </small>
-                ))}
-            </div>
-        ) : null
     }
 
     private onUserQueryChange = (userQuery: string) => {
