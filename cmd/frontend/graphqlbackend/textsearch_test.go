@@ -686,30 +686,41 @@ func Test_zoektIndexedRepos(t *testing.T) {
 	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: zoektRepoList}}
 	ctx := context.Background()
 
-	indexed, unindexed, err := zoektIndexedRepos(ctx, zoekt, repos)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for _, tc := range []struct {
-		name       string
-		have, want []*search.RepositoryRevisions
-	}{
-		{"indexed", indexed, func() (want []*search.RepositoryRevisions) {
-			for i := 0; i < 3; i++ {
-				rev := *repos[i]
-				rev.IndexedHEADCommit = "deadbeef"
-				want = append(want, &rev)
-			}
-			return
-		}()},
-		{"unindexed", unindexed, repos[3:]},
-	} {
-		if !reflect.DeepEqual(tc.have, tc.want) {
-			diff := cmp.Diff(tc.have, tc.want)
-			t.Fatalf("%s has wrong repo revs. diff=%s", tc.name, diff)
+	t.Run("issue 4759", func(t *testing.T) {
+		// Run it with revs having fewer items than the slice returned from zoekt.ListAll().
+		// In issue 4759, this panics.
+		_, _, err := zoektIndexedRepos(ctx, zoekt, repos[:1])
+		if err != nil {
+			t.Fatal(err)
 		}
-	}
+	})
+	t.Run("etc", func(t *testing.T) {
+
+		indexed, unindexed, err := zoektIndexedRepos(ctx, zoekt, repos)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, tc := range []struct {
+			name       string
+			have, want []*search.RepositoryRevisions
+		}{
+			{"indexed", indexed, func() (want []*search.RepositoryRevisions) {
+				for i := 0; i < 3; i++ {
+					rev := *repos[i]
+					rev.IndexedHEADCommit = "deadbeef"
+					want = append(want, &rev)
+				}
+				return
+			}()},
+			{"unindexed", unindexed, repos[3:]},
+		} {
+			if !reflect.DeepEqual(tc.have, tc.want) {
+				diff := cmp.Diff(tc.have, tc.want)
+				t.Fatalf("%s has wrong repo revs. diff=%s", tc.name, diff)
+			}
+		}
+	})
 }
 
 func Benchmark_zoektIndexedRepos(b *testing.B) {
