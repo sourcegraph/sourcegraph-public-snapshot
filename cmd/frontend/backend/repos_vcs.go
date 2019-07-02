@@ -24,44 +24,44 @@ import (
 // knowing the remote URL is necessary to perform any operations (from method calls on the return
 // value), those operations will fail. This occurs when the repository isn't cloned on gitserver or
 // when an update is needed (eg in ResolveRevision).
-func CachedGitRepo(ctx context.Context, repo *types.Repo) (*gitserver.Repo, error) {
+func CachedGitRepo(ctx context.Context, repo types.RepoIdentifier) (*gitserver.Repo, error) {
 	var serviceType string
-	if repo.ExternalRepo != nil {
-		serviceType = repo.ExternalRepo.ServiceType
+	if extRepo := repo.GetExternalRepo(); extRepo != nil {
+		serviceType = extRepo.ServiceType
 	}
-	r, err := quickGitserverRepo(ctx, repo.Name, serviceType)
+	r, err := quickGitserverRepo(ctx, repo.GetName(), serviceType)
 	if err != nil {
 		return nil, err
 	}
 	if r != nil {
 		return r, nil
 	}
-	return &gitserver.Repo{Name: repo.Name}, nil
+	return &gitserver.Repo{Name: repo.GetName()}, nil
 }
 
 // GitRepo returns a handle to the Git repository with the up-to-date (as of the time of this call)
 // remote URL. See CachedGitRepo for when this is necessary vs. unnecessary.
-func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
+func GitRepo(ctx context.Context, repo types.RepoIdentifier) (gitserver.Repo, error) {
 	var serviceType string
-	if repo.ExternalRepo != nil {
-		serviceType = repo.ExternalRepo.ServiceType
+	if extRepo := repo.GetExternalRepo(); extRepo != nil {
+		serviceType = extRepo.ServiceType
 	}
-	gitserverRepo, err := quickGitserverRepo(ctx, repo.Name, serviceType)
+	gitserverRepo, err := quickGitserverRepo(ctx, repo.GetName(), serviceType)
 	if err != nil {
-		return gitserver.Repo{Name: repo.Name}, err
+		return gitserver.Repo{Name: repo.GetName()}, err
 	}
 	if gitserverRepo != nil {
 		return *gitserverRepo, nil
 	}
 
 	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
-		Repo: repo.Name,
+		Repo: repo.GetName(),
 	})
 	if err != nil {
-		return gitserver.Repo{Name: repo.Name}, err
+		return gitserver.Repo{Name: repo.GetName()}, err
 	}
 	if result.Repo == nil {
-		return gitserver.Repo{Name: repo.Name}, repoupdater.ErrNotFound
+		return gitserver.Repo{Name: repo.GetName()}, repoupdater.ErrNotFound
 	}
 	return gitserver.Repo{Name: result.Repo.Name, URL: result.Repo.VCS.URL}, nil
 }
@@ -149,12 +149,12 @@ func hasGitLabDotComToken(ctx context.Context) (bool, error) {
 // * Empty repository: git.RevisionNotFoundError
 // * The user does not have permission: errcode.IsNotFound
 // * Other unexpected errors.
-func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (commitID api.CommitID, err error) {
+func (s *repos) ResolveRev(ctx context.Context, repo types.RepoIdentifier, rev string) (commitID api.CommitID, err error) {
 	if Mocks.Repos.ResolveRev != nil {
 		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}
 
-	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.Name, "rev": rev}, &err)
+	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.GetName(), "rev": rev}, &err)
 	defer done()
 
 	// We start out by using a CachedGitRepo which doesn't have a remote URL.
@@ -176,15 +176,15 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	return git.ResolveRevision(ctx, *gitserverRepo, remoteURLFunc, rev, nil)
 }
 
-func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *git.Commit, err error) {
+func (s *repos) GetCommit(ctx context.Context, repo types.RepoIdentifier, commitID api.CommitID) (res *git.Commit, err error) {
 	if Mocks.Repos.GetCommit != nil {
 		return Mocks.Repos.GetCommit(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetCommit", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
+	ctx, done := trace(ctx, "Repos", "GetCommit", map[string]interface{}{"repo": repo.GetName(), "commitID": commitID}, &err)
 	defer done()
 
-	log15.Debug("svc.local.repos.GetCommit", "repo", repo.Name, "commitID", commitID)
+	log15.Debug("svc.local.repos.GetCommit", "repo", repo.GetName(), "commitID", commitID)
 
 	if !git.IsAbsoluteRevision(string(commitID)) {
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
@@ -214,7 +214,7 @@ func isIgnorableRepoUpdaterError(err error) bool {
 	return err == repoupdater.ErrNotFound || err == repoupdater.ErrUnauthorized || err == repoupdater.ErrTemporarilyUnavailable
 }
 
-func maybeLogRepoUpdaterError(repo *types.Repo, err error) {
+func maybeLogRepoUpdaterError(repo types.RepoIdentifier, err error) {
 	var msg string
 	switch c := errors.Cause(err); c {
 	case repoupdater.ErrNotFound:
@@ -225,6 +225,6 @@ func maybeLogRepoUpdaterError(repo *types.Repo, err error) {
 		msg = "Repository host was temporarily unavailable while retrieving repository information."
 	}
 	if msg != "" {
-		log15.Warn(msg+" Consult repo-updater logs for more information.", "repo", repo.Name)
+		log15.Warn(msg+" Consult repo-updater logs for more information.", "repo", repo.GetName())
 	}
 }
