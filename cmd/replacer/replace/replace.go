@@ -66,7 +66,7 @@ func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath stri
 			args = append(args, "-exclude-dir", spec.DirectoryExclude)
 		}
 
-		log15.Info(fmt.Sprintf("running command: %q", strings.Join(args[:], " ")))
+		log15.Info(fmt.Sprintf("running command: comby %q", strings.Join(args[:], " ")))
 		return exec.Command(t.BinaryPath, args...), nil
 
 	default:
@@ -228,16 +228,17 @@ func (s *Service) replace(ctx context.Context, p *protocol.Request, w http.Respo
 
 	if err := cmd.Start(); err != nil {
 		log15.Info("Error starting command: " + err.Error())
+		return false, errors.New(err.Error())
 	}
 
 	_, err = io.Copy(w, stdout)
 	if err != nil {
 		log15.Info("Error copying external command output to HTTP writer: " + err.Error())
+		return
 	}
 
 	if err := cmd.Wait(); err != nil {
 		log15.Info("Error after executing command: " + string(err.(*exec.ExitError).Stderr))
-		log15.Info("Error after executing command: " + err.Error())
 	}
 
 	return false, nil
