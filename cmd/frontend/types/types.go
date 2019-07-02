@@ -29,8 +29,13 @@ type Repo struct {
 
 	// Description is a brief description of the repository.
 	Description string
+
+	// DEPRECATED: this field is always empty for new repositories as of
+	// https://github.com/sourcegraph/sourcegraph/issues/2586. Do not use it.
+	//
 	// Language is the primary programming language used in this repository.
 	Language string
+
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
 	// CreatedAt is when this repository was created on Sourcegraph.
