@@ -22,7 +22,7 @@ func TestGitTree(t *testing.T) {
 	}
 	db.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo types.RepoIdentifier, rev string) (api.CommitID, error) {
-		if repo.GetID() != 2 || rev != exampleCommitSHA1 {
+		if repo.RepoID() != 2 || rev != exampleCommitSHA1 {
 			t.Error("wrong arguments to Repos.ResolveRev")
 		}
 		return exampleCommitSHA1, nil

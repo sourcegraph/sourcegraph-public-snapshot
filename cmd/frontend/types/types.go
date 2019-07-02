@@ -10,9 +10,9 @@ import (
 // RepoIdentifier identifies a single repository by providing ID, Name and the
 // ExternalRepo
 type RepoIdentifier interface {
-	GetID() api.RepoID
-	GetExternalRepo() *api.ExternalRepoSpec
-	GetName() api.RepoName
+	RepoID() api.RepoID
+	RepoName() api.RepoName
+	ExternalRepoSpec() *api.ExternalRepoSpec
 }
 
 // Repo represents a source code repository.
@@ -43,9 +43,9 @@ type Repo struct {
 	Fork bool
 }
 
-func (r *Repo) GetID() api.RepoID                      { return r.ID }
-func (r *Repo) GetName() api.RepoName                  { return r.Name }
-func (r *Repo) GetExternalRepo() *api.ExternalRepoSpec { return r.ExternalRepo }
+func (r *Repo) RepoID() api.RepoID                      { return r.ID }
+func (r *Repo) RepoName() api.RepoName                  { return r.Name }
+func (r *Repo) ExternalRepoSpec() *api.ExternalRepoSpec { return r.ExternalRepo }
 
 // ExternalService is a connection to an external service.
 type ExternalService struct {

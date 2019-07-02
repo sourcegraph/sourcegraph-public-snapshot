@@ -98,13 +98,13 @@ func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, w
 	called = new(bool)
 	s.ResolveRev = func(ctx context.Context, repo types.RepoIdentifier, rev string) (api.CommitID, error) {
 		*called = true
-		if repo.GetID() != wantRepo {
-			t.Errorf("got repo %v, want %v", repo.GetID(), wantRepo)
+		if repo.RepoID() != wantRepo {
+			t.Errorf("got repo %v, want %v", repo.RepoID(), wantRepo)
 		}
 		if rev != wantRev {
 			t.Errorf("got rev %v, want %v", rev, wantRev)
 		}
-		return "", &git.RevisionNotFoundError{Repo: repo.GetName(), Spec: rev}
+		return "", &git.RevisionNotFoundError{Repo: repo.RepoName(), Spec: rev}
 	}
 	return
 }

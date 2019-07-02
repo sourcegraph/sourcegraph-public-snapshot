@@ -106,13 +106,13 @@ func Commit(ctx context.Context, repo types.RepoIdentifier, commitID api.CommitI
 func linksForRepository(ctx context.Context, repo types.RepoIdentifier) (phabRepo *types.PhabricatorRepo, link *protocol.RepoLinks, serviceType string) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "externallink.linksForRepository")
 	defer span.Finish()
-	span.SetTag("Repo", repo.GetName())
-	if repo.GetExternalRepo() != nil {
-		span.SetTag("ExternalRepo", repo.GetExternalRepo())
+	span.SetTag("Repo", repo.RepoName())
+	if repo.ExternalRepoSpec() != nil {
+		span.SetTag("ExternalRepo", repo.ExternalRepoSpec())
 	}
 
 	var err error
-	phabRepo, err = db.Phabricator.GetByName(ctx, repo.GetName())
+	phabRepo, err = db.Phabricator.GetByName(ctx, repo.RepoName())
 	if err != nil && !errcode.IsNotFound(err) {
 		ext.Error.Set(span, true)
 		span.SetTag("phabErr", err.Error())
@@ -120,12 +120,12 @@ func linksForRepository(ctx context.Context, repo types.RepoIdentifier) (phabRep
 
 	// Look up repo links in the repo-updater. This supplies links from code host APIs.
 	info, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
-		Repo: repo.GetName(),
+		Repo: repo.RepoName(),
 	})
 	if err != nil {
 		ext.Error.Set(span, true)
 		span.SetTag("repoUpdaterErr", err.Error())
-		log15.Warn("linksForRepository failed to RepoLookup", "repo", repo.GetName(), "error", err)
+		log15.Warn("linksForRepository failed to RepoLookup", "repo", repo.RepoName(), "error", err)
 		linksForRepositoryFailed.Inc()
 	}
 	if info != nil && info.Repo != nil {

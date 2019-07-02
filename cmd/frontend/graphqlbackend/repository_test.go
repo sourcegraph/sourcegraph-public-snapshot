@@ -19,7 +19,7 @@ func TestRepository_Commit(t *testing.T) {
 	resetMocks()
 	db.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo types.RepoIdentifier, rev string) (api.CommitID, error) {
-		if repo.GetID() != 2 || rev != "abc" {
+		if repo.RepoID() != 2 || rev != "abc" {
 			t.Error("wrong arguments to ResolveRev")
 		}
 		return exampleCommitSHA1, nil
