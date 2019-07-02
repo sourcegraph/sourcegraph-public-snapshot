@@ -844,11 +844,6 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 		return nil, nil, err
 	}
 
-	unindexedCap := len(revs) - len(set)
-	if unindexedCap < 0 {
-		unindexedCap = 0
-	}
-
 	indexed = make([]*search.RepositoryRevisions, 0, count)
 	unindexed = make([]*search.RepositoryRevisions, 0, len(revs)-count)
 
