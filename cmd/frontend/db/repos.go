@@ -132,7 +132,7 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 
 	var repos []*types.Repo
 	for rows.Next() {
-		var repo types.Repo
+		repo := types.Repo{RepoFields: &types.RepoFields{}}
 		var spec dbExternalRepoSpec
 
 		if err := rows.Scan(
