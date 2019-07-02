@@ -648,7 +648,6 @@ func Test_zoektIndexedRepos(t *testing.T) {
 		"foo/indexed-three@",
 		"foo/unindexed-one",
 		"foo/unindexed-two",
-		"foo/unindexed-three@",
 	)
 
 	zoektRepoList := &zoekt.RepoList{
@@ -672,12 +671,6 @@ func Test_zoektIndexedRepos(t *testing.T) {
 						{Name: "HEAD", Version: "deadbeef"},
 						{Name: "foobar", Version: "deadcow"},
 					},
-				},
-			},
-			{
-				Repository: zoekt.Repository{
-					Name:     "foo/unindexed-three",
-					Branches: []zoekt.RepositoryBranch{},
 				},
 			},
 		},
