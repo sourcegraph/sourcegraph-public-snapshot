@@ -1056,6 +1056,11 @@ declare module 'sourcegraph' {
          * Notifications related to the status.
          */
         notifications?: Notification[]
+
+        /**
+         * Diagnostics related to the status.
+         */
+        diagnostics?: DiagnosticCollection
     }
 
     /**

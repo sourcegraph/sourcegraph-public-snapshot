@@ -1,7 +1,7 @@
 import { Range } from '@sourcegraph/extension-api-classes'
 import { sortBy } from 'lodash'
 import { combineLatest, from, Observable, of } from 'rxjs'
-import { map, mapTo, publishReplay, refCount, startWith, switchMap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { gql } from '../../../../../shared/src/graphql/graphql'
@@ -71,10 +71,7 @@ export const queryCandidateFiles = async (uris: URL[]): Promise<[URL, Diagnostic
 export const getDiagnosticInfos = (
     extensionsController: ExtensionsControllerProps['extensionsController']
 ): Observable<DiagnosticInfo[]> =>
-    from(extensionsController.services.diagnostics.collection.changes).pipe(
-        mapTo(() => void 0),
-        startWith(() => void 0),
-        map(() => Array.from(extensionsController.services.diagnostics.collection.entries())),
+    from(extensionsController.services.diagnostics.all).pipe(
         switchMap(async diagEntries => {
             const entries = await queryCandidateFiles(diagEntries.map(([url]) => url))
             const m = new Map<string, DiagnosticInfo['entry']>()
@@ -112,7 +109,7 @@ export const getCodeActions = memoizeObservable(
                         filePath: diagnostic.entry.path,
                     }),
                 },
-                range:  Range.fromPlain(diagnostic.range) ,
+                range: Range.fromPlain(diagnostic.range),
                 context: { diagnostics: [diagnostic] },
             })
         ).pipe(map(codeActions => codeActions || [])),

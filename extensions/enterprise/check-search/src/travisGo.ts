@@ -9,27 +9,33 @@ import { memoizedFindTextInFiles } from './util'
 
 const CODE_TRAVIS_GO = 'check-search.travis-go'
 
+const diagnosticCollection = sourcegraph.languages.createDiagnosticCollection('demo0')
+
 export function registerTravisGo(): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(startDiagnostics())
-    subscriptions.add(sourcegraph.status.registerStatusProvider('travis-ci', createStatusProvider(diagnostics)))
+    subscriptions.add(
+        sourcegraph.status.registerStatusProvider('travis-ci', createStatusProvider(diagnostics, diagnosticCollection))
+    )
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
     return subscriptions
 }
 
 function startDiagnostics(): Unsubscribable {
     const subscriptions = new Subscription()
-    const diagnosticsCollection = sourcegraph.languages.createDiagnosticCollection('demo0')
-    subscriptions.add(diagnosticsCollection)
+    subscriptions.add(diagnosticCollection)
     subscriptions.add(
         diagnostics.subscribe(entries => {
-            diagnosticsCollection.set(entries)
+            diagnosticCollection.set(entries)
         })
     )
     return subscriptions
 }
 
-function createStatusProvider(diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]>): sourcegraph.StatusProvider {
+function createStatusProvider(
+    diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]>,
+    diagnosticCollection: sourcegraph.DiagnosticCollection
+): sourcegraph.StatusProvider {
     return {
         provideStatus: (scope): sourcegraph.Subscribable<sourcegraph.Status | null> => {
             // TODO!(sqs): dont ignore scope
@@ -61,6 +67,7 @@ function createStatusProvider(diagnostics: Observable<[URL, sourcegraph.Diagnost
                               ]
                             : []),
                     ],
+                    // diagnostics: diagnosticCollection,
                 })),
                 startWith<sourcegraph.Status>({
                     title: 'Travis CI',
