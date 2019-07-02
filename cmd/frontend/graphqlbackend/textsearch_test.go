@@ -706,6 +706,16 @@ func Test_zoektIndexedRepos(t *testing.T) {
 		repos:     repos,
 		indexed:   makeIndexed(repos[:3]),
 		unindexed: repos[3:],
+	}, {
+		name:      "one unindexed",
+		repos:     repos[3:4],
+		indexed:   repos[:0],
+		unindexed: repos[3:4],
+	}, {
+		name:      "one indexed",
+		repos:     repos[:1],
+		indexed:   makeIndexed(repos[:1]),
+		unindexed: repos[:0],
 	}}
 
 	for _, tc := range cases {
