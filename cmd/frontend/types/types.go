@@ -7,6 +7,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
+// RepoIdentifier identifies a single repository by providing ID, Name and the
+// ExternalRepo
+type RepoIdentifier interface {
+	GetID() api.RepoID
+	GetExternalRepo() *api.ExternalRepoSpec
+	GetName() api.RepoName
+}
+
 // Repo represents a source code repository.
 type Repo struct {
 	// ID is the unique numeric ID for this repository.
@@ -34,6 +42,10 @@ type Repo struct {
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
 }
+
+func (r *Repo) GetID() api.RepoID                      { return r.ID }
+func (r *Repo) GetName() api.RepoName                  { return r.Name }
+func (r *Repo) GetExternalRepo() *api.ExternalRepoSpec { return r.ExternalRepo }
 
 // ExternalService is a connection to an external service.
 type ExternalService struct {
