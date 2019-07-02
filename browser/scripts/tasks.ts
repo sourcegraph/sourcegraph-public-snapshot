@@ -81,11 +81,6 @@ function writeManifest(env: BuildEnv, browser: Browser, writeDir: string): void 
         ...omit(extensionInfo[env], BROWSER_BLACKLIST[browser]),
     }
 
-    if (browser === 'firefox') {
-        manifest.permissions.push('<all_urls>')
-        delete manifest.storage
-    }
-
     delete manifest.$schema
 
     if (env === 'prod') {
