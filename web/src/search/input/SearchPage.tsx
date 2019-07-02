@@ -1,5 +1,4 @@
 import * as H from 'history'
-import LinkIcon from 'mdi-react/LinkIcon'
 import * as React from 'react'
 import { parseSearchURLQuery } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
