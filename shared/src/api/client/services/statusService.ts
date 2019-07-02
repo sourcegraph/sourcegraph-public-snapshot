@@ -4,6 +4,8 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 import * as sourcegraph from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { isPromise, isSubscribable } from '../../util'
+import { ClientStatus } from '../../types/status'
+import { DiagnosticsService } from './diagnosticsService'
 
 /**
  * A status from a status provider with additional information.
@@ -13,7 +15,7 @@ export interface WrappedStatus {
     name: string
 
     /** The status. */
-    status: sourcegraph.Status
+    status: ClientStatus
 }
 
 /**
@@ -49,7 +51,10 @@ export interface StatusService {
 /**
  * Creates a new {@link StatusService}.
  */
-export function createStatusService(logErrors = true): StatusService {
+export function createStatusService(
+    diagnosticsService: Pick<DiagnosticsService, 'observe'>,
+    logErrors = true
+): StatusService {
     interface Registration {
         name: Parameters<typeof sourcegraph.status.registerStatusProvider>[0]
         provider: sourcegraph.StatusProvider

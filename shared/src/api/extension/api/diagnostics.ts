@@ -78,8 +78,9 @@ export class ExtDiagnostics
         // Send the new data (from all collections) to the client when there is a change to any
         // collection.
         const subscription = c.changes.subscribe(() =>
-            this.proxy.$acceptDiagnosticData(
-                this.getDiagnostics().map(([uri, diagnostics]) => [uri.toString(), diagnostics.map(fromDiagnostic)])
+            this.proxy.$acceptDiagnosticCollection(
+                name,
+                Array.from(c.entries()).map(([uri, diagnostics]) => [uri.toString(), diagnostics.map(fromDiagnostic)])
             )
         )
 

@@ -10,17 +10,20 @@ export type DiagnosticData = [string, Diagnostic[]][]
 /** @internal */
 export interface ClientDiagnosticsAPI extends ProxyValue {
     // TODO!(sqs): inefficient
-    $acceptDiagnosticData(updates: DiagnosticData): void
+    $acceptDiagnosticCollection(name: string, data: DiagnosticData | null): void
 }
 
 /** @internal */
 export class ClientDiagnostics implements ClientDiagnosticsAPI, Unsubscribable {
     public readonly [proxyValueSymbol] = true
 
-    constructor(private diagnosticsService: Pick<DiagnosticsService, 'collection'>) {}
+    constructor(private diagnosticsService: Pick<DiagnosticsService, 'set'>) {}
 
-    public $acceptDiagnosticData(data: DiagnosticData): void {
-        this.diagnosticsService.collection.set(data.map(([uri, diagnostics]) => [uri, diagnostics.map(toDiagnostic)]))
+    public $acceptDiagnosticCollection(name: string, data: DiagnosticData | null): void {
+        this.diagnosticsService.set(
+            name,
+            data ? data.map(([uri, diagnostics]) => [new URL(uri), diagnostics.map(toDiagnostic)]) : null
+        )
     }
 
     public unsubscribe(): void {
