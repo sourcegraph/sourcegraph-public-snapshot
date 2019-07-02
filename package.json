@@ -124,7 +124,7 @@
     "@types/storybook__react": "4.0.2",
     "@types/textarea-caret": "3.0.0",
     "@types/uuid": "3.4.5",
-    "@types/webpack": "4.4.32",
+    "@types/webpack": "4.4.34",
     "@types/webpack-dev-server": "3.1.6",
     "@types/whatwg-url": "6.4.0",
     "@typescript-eslint/eslint-plugin": "^1.11.0",
@@ -190,7 +190,7 @@
     "typescript": "^3.5.1",
     "utc-version": "^2.0.0",
     "web-ext": "npm:@sourcegraph/web-ext@^3.0.0-fork.1",
-    "webpack": "^4.33.0",
+    "webpack": "^4.35.2",
     "webpack-dev-server": "^3.7.1",
     "worker-loader": "^2.0.0",
     "yarn-deduplicate": "^1.1.1"
