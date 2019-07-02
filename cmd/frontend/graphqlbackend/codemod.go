@@ -86,7 +86,7 @@ func validateQuery(q *query.Query) (*args, error) {
 			matchTemplates = append(matchTemplates, *v.String)
 		}
 		if v.Regexp != nil || v.Bool != nil {
-			return nil, errors.New("This looks like a regex search pattern. Structural search is active because 'replace:' was specified. Please enclose your search string with quotes when using 'replace:'.")
+			return nil, errors.New("this looks like a regex search pattern. Structural search is active because 'replace:' was specified. Please enclose your search string with quotes when using 'replace:'.")
 		}
 	}
 	matchTemplate := strings.Join(matchTemplates, " ")
@@ -102,9 +102,9 @@ func validateQuery(q *query.Query) (*args, error) {
 	if len(includeFileFilter) > 0 {
 		includeFileFilterText = includeFileFilter[0]
 		// only file names or files with extensions in the following characterset are allowed
-		var IsAlphanumericWithPeriod = regexp.MustCompile(`^[a-zA-Z_.]+$`).MatchString
+		var IsAlphanumericWithPeriod = regexp.MustCompile(`^[a-zA-Z0-9_.]+$`).MatchString
 		if !IsAlphanumericWithPeriod(includeFileFilterText) {
-			return nil, errors.New("The 'file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
+			return nil, errors.New("the 'file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
 		}
 	}
 
@@ -113,20 +113,22 @@ func validateQuery(q *query.Query) (*args, error) {
 		excludeFileFilterText = excludeFileFilter[0]
 		var IsAlphanumericWithPeriod = regexp.MustCompile(`^[a-zA-Z_.]+$`).MatchString
 		if !IsAlphanumericWithPeriod(includeFileFilterText) {
-			return nil, errors.New("The '-file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
+			return nil, errors.New("the '-file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
 		}
 	}
 
 	return &args{matchTemplate, rewriteTemplate, includeFileFilterText, excludeFileFilterText}, nil
 }
 
+// Calls the codemod backend replacer service for a set of repository revisions.
 func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {
 	cmodArgs, err := validateQuery(args.Query)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	tr, ctx := trace.New(ctx, "callCodemod", fmt.Sprintf("pattern: %+v, replace: %+v, includeFileFilter: %+v, excludeFileFilter: %+v, numRepoRevs: %d", cmodArgs.matchTemplate, cmodArgs.rewriteTemplate, cmodArgs.includeFileFilter, cmodArgs.excludeFileFilter, len(args.Repos)))
+	title := fmt.Sprintf("pattern: %+v, replace: %+v, includeFileFilter: %+v, excludeFileFilter: %+v, numRepoRevs: %d", cmodArgs.matchTemplate, cmodArgs.rewriteTemplate, cmodArgs.includeFileFilter, cmodArgs.excludeFileFilter, len(args.Repos))
+	tr, ctx := trace.New(ctx, "callCodemod", title)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -158,7 +160,7 @@ func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolve
 			mu.Lock()
 			defer mu.Unlock()
 			if fatalErr := handleRepoSearchResult(common, repoRev, false, repoTimedOut, searchErr); fatalErr != nil {
-				err = errors.Wrapf(searchErr, "failed to call codemod %s", repoRev.String())
+				err = errors.Wrapf(searchErr, "failed to call codemod %s", repoRev)
 				cancel()
 			}
 			if len(results) > 0 {
@@ -209,7 +211,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 	// For performance, assume repo is cloned in gitserver and do not trigger a repo-updater lookup (this call fails if repo is not on gitserver).
 	commit, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo(), nil, repoRevs.Revs[0].RevSpec, &git.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
-		return nil, errors.Wrap(err, "Codemod repo lookup failed: it's possible that the repo is not cloned in gitserver. Try force a repo update another way.")
+		return nil, errors.Wrap(err, "codemod repo lookup failed: it's possible that the repo is not cloned in gitserver. Try force a repo update another way.")
 	}
 
 	u, err := url.Parse(replacerURL)

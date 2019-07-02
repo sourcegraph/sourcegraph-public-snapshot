@@ -891,7 +891,7 @@ func testDBStoreTransact(store *repos.DBStore) func(*testing.T) {
 		defer txstore.Done()
 
 		_, err = txstore.(repos.Transactor).Transact(ctx)
-		have := fmt.Sprintf("%s", err)
+		have := err.Error()
 		want := "dbstore: already in a transaction"
 		if have != want {
 			t.Errorf("error:\nhave: %v\nwant: %v", have, want)
