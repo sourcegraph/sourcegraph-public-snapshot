@@ -26,9 +26,8 @@ import (
 )
 
 type repositoryResolver struct {
-	hydratedRepo     *types.Repo
-	hydratedRepoOnce sync.Once
-	hydratedRepoErr  error
+	hydration sync.Once
+	err       error
 
 	repo        *types.Repo
 	redirectURL *string
@@ -45,10 +44,7 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, er
 	if err != nil {
 		return nil, err
 	}
-	return &repositoryResolver{
-		repo:         types.NewRepoWithIDs(repo.ID, repo.Name, repo.ExternalRepo),
-		hydratedRepo: repo,
-	}, nil
+	return &repositoryResolver{repo: repo}, nil
 }
 
 func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*repositoryResolver, error) {
@@ -56,10 +52,7 @@ func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*repositoryRes
 	if err != nil {
 		return nil, err
 	}
-	return &repositoryResolver{
-		repo:         types.NewRepoWithIDs(repo.ID, repo.Name, repo.ExternalRepo),
-		hydratedRepo: repo,
-	}, nil
+	return &repositoryResolver{repo: repo}, nil
 }
 
 func (r *repositoryResolver) ID() graphql.ID {
@@ -83,7 +76,7 @@ func (r *repositoryResolver) URI(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return r.hydratedRepo.URI, nil
+	return r.repo.URI, nil
 }
 
 func (r *repositoryResolver) Description(ctx context.Context) (string, error) {
@@ -92,7 +85,7 @@ func (r *repositoryResolver) Description(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return r.hydratedRepo.Description, nil
+	return r.repo.Description, nil
 }
 
 func (r *repositoryResolver) Language(ctx context.Context) (string, error) {
@@ -101,7 +94,7 @@ func (r *repositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return r.hydratedRepo.Language, nil
+	return r.repo.Language, nil
 }
 
 func (r *repositoryResolver) RedirectURL() *string {
@@ -223,15 +216,19 @@ func (r *repositoryResolver) resultCount() int32 {
 }
 
 func (r *repositoryResolver) hydrate(ctx context.Context) error {
-	r.hydratedRepoOnce.Do(func() {
-		if r.hydratedRepo != nil {
+	r.hydration.Do(func() {
+		if r.repo.RepoFields != nil {
 			return
 		}
 
-		r.hydratedRepo, r.hydratedRepoErr = db.Repos.Get(ctx, r.repo.ID)
+		var repo *types.Repo
+		repo, r.err = db.Repos.Get(ctx, r.repo.ID)
+		if r.err == nil {
+			r.repo = repo
+		}
 	})
 
-	return r.hydratedRepoErr
+	return r.err
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
@@ -282,10 +279,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		if err != nil {
 			return nil, err
 		}
-		r := &repositoryResolver{
-			repo:         types.NewRepoWithIDs(repo.ID, repo.Name, repo.ExternalRepo),
-			hydratedRepo: repo,
-		}
+		r := &repositoryResolver{repo: repo}
 		return r.Commit(ctx, &repositoryCommitArgs{Rev: targetRef})
 	}
 

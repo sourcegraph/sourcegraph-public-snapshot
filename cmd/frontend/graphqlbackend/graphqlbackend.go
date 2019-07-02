@@ -254,8 +254,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 		}
 		return nil, err
 	}
-	minimalRepo := types.NewRepoWithIDs(repo.ID, repo.Name, repo.ExternalRepo)
-	return &repositoryResolver{repo: minimalRepo, hydratedRepo: repo}, nil
+	return &repositoryResolver{repo: repo}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

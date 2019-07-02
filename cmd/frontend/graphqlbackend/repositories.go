@@ -209,11 +209,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 			break
 		}
 
-		minimalRepo := types.NewRepoWithIDs(repo.ID, repo.Name, repo.ExternalRepo)
-		resolvers = append(resolvers, &repositoryResolver{
-			repo:         minimalRepo,
-			hydratedRepo: repo,
-		})
+		resolvers = append(resolvers, &repositoryResolver{repo: repo})
 	}
 	return resolvers, nil
 }
