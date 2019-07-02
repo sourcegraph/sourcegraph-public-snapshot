@@ -23,6 +23,15 @@ const addSearchScopeToSettings: ConfigInsertionFunction = config => {
     return { edits, selectText: '<name>' }
 }
 
+const addQuickLinkToSettings: ConfigInsertionFunction = config => {
+    const value: { name: string; url: string } = {
+        name: '<human-readable name>',
+        url: '<URL>',
+    }
+    const edits = setProperty(config, ['quicklinks', -1], value, defaultFormattingOptions)
+    return { edits, selectText: '<name>' }
+}
+
 const addSlackWebhook: ConfigInsertionFunction = config => {
     const value: SlackNotificationsConfig = {
         webhookURL: 'get webhook URL at https://YOUR-WORKSPACE-NAME.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks',
@@ -44,6 +53,7 @@ export const settingsActions: EditorAction[] = [
         run: setSearchContextLines,
     },
     { id: 'sourcegraph.settings.searchScopes', label: 'Add search scope', run: addSearchScopeToSettings },
+    { id: 'sourcegraph.settings.quickLinks', label: 'Add quick link', run: addQuickLinkToSettings },
     { id: 'sourcegraph.settings.addSlackWebhook', label: 'Add Slack webhook', run: addSlackWebhook },
 ]
 
