@@ -213,7 +213,10 @@ func (r *repositoryResolver) resultCount() int32 {
 
 func (r *repositoryResolver) hydrate(ctx context.Context) {
 	r.hydratedRepoOnce.Do(func() {
-		log15.Info("hydrating repository", "id", r.repo.ID)
+		if r.hydratedRepo != nil {
+			return
+		}
+
 		hydratedRepo, err := db.Repos.Get(ctx, r.repo.ID)
 		if err != nil {
 			r.hydratedRepo = &types.Repo{
