@@ -64,13 +64,15 @@ func TestRepos_Get(t *testing.T) {
 	ctx := dbtesting.TestContext(t)
 
 	want := mustCreate(ctx, t, &types.Repo{
-		Name: "r",
-		URI:  "u",
-		ExternalRepo: &api.ExternalRepoSpec{
-			ID:          "a",
-			ServiceType: "b",
-			ServiceID:   "c",
+		RepoIDs: types.RepoIDs{
+			Name: "r",
+			ExternalRepo: &api.ExternalRepoSpec{
+				ID:          "a",
+				ServiceType: "b",
+				ServiceID:   "c",
+			},
 		},
+		RepoFields: &types.RepoFields{URI: "u"},
 	})
 
 	repo, err := Repos.Get(ctx, want[0].ID)
@@ -95,7 +97,7 @@ func TestRepos_List(t *testing.T) {
 	ctx := dbtesting.TestContext(t)
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	want := mustCreate(ctx, t, &types.Repo{Name: "r"})
+	want := mustCreate(ctx, t, &types.Repo{RepoIDs: types.RepoIDs{Name: "r"}})
 
 	repos, err := Repos.List(ctx, ReposListOptions{Enabled: true})
 	if err != nil {
@@ -118,8 +120,8 @@ func TestRepos_List_fork(t *testing.T) {
 	ctx := dbtesting.TestContext(t)
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", Fork: false})
-	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", Fork: true})
+	mine := mustCreate(ctx, t, &types.Repo{RepoIDs: types.RepoIDs{Name: "a/r"}, Fork: false})
+	yours := mustCreate(ctx, t, &types.Repo{RepoIDs: types.RepoIDs{Name: "b/r"}, Fork: true})
 
 	{
 		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true, OnlyForks: true})
@@ -164,9 +166,9 @@ func TestRepos_List_pagination(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
-		{Name: "r1"},
-		{Name: "r2"},
-		{Name: "r3"},
+		{RepoIDs: types.RepoIDs{Name: "r1"}},
+		{RepoIDs: types.RepoIDs{Name: "r2"}},
+		{RepoIDs: types.RepoIDs{Name: "r3"}},
 	}
 	for _, repo := range createdRepos {
 		mustCreate(ctx, t, repo)
