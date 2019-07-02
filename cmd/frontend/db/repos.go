@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
@@ -11,10 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
@@ -117,13 +118,42 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 }
 
 const getRepoByQueryFmtstr = `
-SELECT id, name, COALESCE(uri, ''), description, language,
-  external_id, external_service_type, external_service_id
+SELECT %s
 FROM repo
-WHERE deleted_at IS NULL AND enabled = true AND %s`
+WHERE deleted_at IS NULL
+AND enabled = true
+AND %%s`
+
+var getBySQLColumns = []string{
+	"id",
+	"name",
+	"external_id",
+	"external_service_type",
+	"external_service_id",
+	"uri",
+	"description",
+	"language",
+}
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	q := sqlf.Sprintf(getRepoByQueryFmtstr, querySuffix)
+	return s.getReposBySQL(ctx, false, querySuffix)
+}
+
+func (s *repos) getRepoIDsBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+	return s.getReposBySQL(ctx, true, querySuffix)
+}
+
+func (s *repos) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+	columns := getBySQLColumns
+	if minimal {
+		columns = columns[:4]
+	}
+
+	q := sqlf.Sprintf(
+		fmt.Sprintf(getRepoByQueryFmtstr, strings.Join(columns, ",")),
+		querySuffix,
+	)
+
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -132,21 +162,14 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 
 	var repos []*types.Repo
 	for rows.Next() {
-		repo := types.Repo{RepoFields: &types.RepoFields{}}
-		var spec dbExternalRepoSpec
-
-		if err := rows.Scan(
-			&repo.ID,
-			&repo.Name,
-			&repo.URI,
-			&repo.Description,
-			&repo.Language,
-			&spec.id, &spec.serviceType, &spec.serviceID,
-		); err != nil {
-			return nil, err
+		var repo types.Repo
+		if !minimal {
+			repo.RepoFields = &types.RepoFields{}
 		}
 
-		repo.ExternalRepo = spec.toAPISpec()
+		if err := scanRepo(rows, &repo); err != nil {
+			return nil, err
+		}
 
 		repos = append(repos, &repo)
 	}
@@ -158,109 +181,33 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 	return authzFilter(ctx, repos, authz.Read)
 }
 
-type MinimalRepo struct {
-	ID           api.RepoID
-	ExternalRepo api.ExternalRepoSpec
-	Name         api.RepoName
-}
+func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
+	var spec dbExternalRepoSpec
 
-func (m *MinimalRepo) RepoID() api.RepoID                      { return m.ID }
-func (m *MinimalRepo) RepoName() api.RepoName                  { return m.Name }
-func (m *MinimalRepo) ExternalRepoSpec() *api.ExternalRepoSpec { return &m.ExternalRepo }
+	if r.RepoFields == nil {
+		err = rows.Scan(
+			&r.ID,
+			&r.Name,
+			&spec.id, &spec.serviceType, &spec.serviceID,
+		)
+	} else {
+		err = rows.Scan(
+			&r.ID,
+			&r.Name,
+			&spec.id, &spec.serviceType, &spec.serviceID,
+			&dbutil.NullString{S: &r.URI},
+			&r.Description,
+			&r.Language,
+		)
+	}
 
-const getMinimalRepoByQueryFmtstr = `
-SELECT id, name, external_id, external_service_type, external_service_id
-FROM repo
-WHERE deleted_at IS NULL AND enabled = true AND %s`
-
-func (s *repos) getMinimalBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*MinimalRepo, error) {
-	q := sqlf.Sprintf(getMinimalRepoByQueryFmtstr, querySuffix)
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var repos []*MinimalRepo
-	for rows.Next() {
-		var repo MinimalRepo
-
-		if err := rows.Scan(
-			&repo.ID,
-			&repo.Name,
-			&repo.ExternalRepo.ID,
-			&repo.ExternalRepo.ServiceType,
-			&repo.ExternalRepo.ServiceID,
-		); err != nil {
-			return nil, err
-		}
-
-		repos = append(repos, &repo)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
+		return err
 	}
 
-	// 🚨 SECURITY: This enforces repository permissions
-	return minimalAuthzFilter(ctx, repos, authz.Read)
-}
+	r.ExternalRepo = spec.toAPISpec()
 
-// TODO: we should merge this with authzFilter by using an interface for repos instead of types
-func minimalAuthzFilter(ctx context.Context, repos []*MinimalRepo, p authz.Perm) (rs []*MinimalRepo, err error) {
-	tr, ctx := trace.New(ctx, "minimalAuthzFilter", "")
-	defer func() {
-		if err != nil {
-			tr.SetError(err)
-		}
-		tr.Finish()
-	}()
-
-	// if mockAuthzFilter != nil {
-	// 	return mockAuthzFilter(ctx, repos, p)
-	// }
-
-	if len(repos) == 0 {
-		return repos, nil
-	}
-	if isInternalActor(ctx) {
-		return repos, nil
-	}
-
-	var currentUser *types.User
-	if actor.FromContext(ctx).IsAuthenticated() {
-		var err error
-		currentUser, err = Users.GetByCurrentAuthUser(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if currentUser.SiteAdmin {
-			return repos, nil
-		}
-	}
-
-	authzRepos := make(map[authz.Repo]struct{})
-	for _, r := range repos {
-		rp := authz.Repo{
-			ID:               r.ID,
-			RepoName:         r.Name,
-			ExternalRepoSpec: r.ExternalRepo,
-		}
-		authzRepos[rp] = struct{}{}
-	}
-
-	filteredRepoNames, err := getFilteredRepoNames(ctx, currentUser, authzRepos, p)
-	if err != nil {
-		return nil, err
-	}
-
-	filteredRepos := repos[:0]
-	for _, repo := range repos {
-		if _, ok := filteredRepoNames[repo.Name]; ok {
-			filteredRepos = append(filteredRepos, repo)
-		}
-	}
-
-	return filteredRepos, nil
+	return nil
 }
 
 // ReposListOptions specifies the options for listing repositories.
@@ -300,6 +247,9 @@ type ReposListOptions struct {
 
 	// OnlyArchived excludes non-archived repositories from the list.
 	OnlyArchived bool
+
+	// OnlyRepoIDs fetches only the RepoIDs fields in each Repo.
+	OnlyRepoIDs bool
 
 	// Index when set will only include repositories which should be indexed
 	// if true. If false it will exclude repositories which should be
@@ -372,34 +322,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 	// fetch matching repos
 	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
-	rawRepos, err := s.getBySQL(ctx, fetchSQL)
-	if err != nil {
-		return nil, err
-	}
-	return rawRepos, nil
-}
-
-func (s *repos) MinimalList(ctx context.Context, opt ReposListOptions) (results []*MinimalRepo, err error) {
-	tr, ctx := trace.New(ctx, "repos.MinimalList", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	if Mocks.Repos.MinimalList != nil {
-		return Mocks.Repos.MinimalList(ctx, opt)
-	}
-
-	conds, err := s.listSQL(opt)
-	if err != nil {
-		return nil, err
-	}
-
-	// fetch matching repos
-	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
-	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
-
-	return s.getMinimalBySQL(ctx, fetchSQL)
+	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fetchSQL)
 }
 
 // ListEnabledNames returns a list of all enabled repo names. This is commonly
