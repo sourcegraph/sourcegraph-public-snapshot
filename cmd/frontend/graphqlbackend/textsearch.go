@@ -861,11 +861,7 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 			}
 		}
 
-		if rev.IndexedHEADCommit == "" {
-			unindexed = append(unindexed, rev)
-		} else {
-			indexed = append(indexed, rev)
-		}
+		indexed = append(indexed, rev)
 	}
 
 	return indexed, unindexed, nil
