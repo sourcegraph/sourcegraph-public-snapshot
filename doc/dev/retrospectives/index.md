@@ -92,3 +92,18 @@ At the end of your retrospective, it’s important to take five minutes to discu
 Remove any sensitive information from the retrospective document and commit it to this directory.
 
 To maintain list formatting, download the Google Doc as plaintext instead of attempting to copy/paste: File > Download As > Plain Text (.txt).
+
+## Completed retrospectives	
+
+<!--	
+Add links to completed retrospective docs here. These are publicly visible, so make sure they don't include anything sensitive.	
+-->	
+
+- [3.0 beta](3_0_beta.md)	
+- [3.0](3_0.md)	
+- [Tomás’ notes on the PostgreSQL upgrade](postgresql_upgrade.md)	
+- [3.2](3_2.md)	
+- [Customer license expiration](customer_license_expiration.md)	
+- [3.3](3_3.md)
+- [3.4](3_4.md)
+- [3.5](3_5.md)
