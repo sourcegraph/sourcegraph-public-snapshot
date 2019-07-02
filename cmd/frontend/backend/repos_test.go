@@ -16,10 +16,7 @@ func TestReposService_Get(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
-	wantRepo := &types.Repo{
-		ID:   1,
-		Name: "github.com/u/r",
-	}
+	wantRepo := &types.Repo{RepoIDs: types.RepoIDs{ID: 1, Name: "github.com/u/r"}}
 
 	calledGet := db.Mocks.Repos.MockGet_Return(t, wantRepo)
 
@@ -41,8 +38,8 @@ func TestReposService_List(t *testing.T) {
 	ctx := testContext()
 
 	wantRepos := []*types.Repo{
-		{Name: "r1"},
-		{Name: "r2"},
+		{RepoIDs: types.RepoIDs{Name: "r1"}},
+		{RepoIDs: types.RepoIDs{Name: "r2"}},
 	}
 
 	calledList := db.Mocks.Repos.MockList(t, "r1", "r2")

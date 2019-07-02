@@ -57,6 +57,17 @@ type Repo struct {
 	*RepoFields
 }
 
+// NewRepoWithIDs returns a Repo with its RepoIDs set.
+func NewRepoWithIDs(id api.RepoID, name api.RepoName, ext *api.ExternalRepoSpec) *Repo {
+	return &Repo{
+		RepoIDs: RepoIDs{
+			ID:           id,
+			Name:         name,
+			ExternalRepo: ext,
+		},
+	}
+}
+
 // ExternalService is a connection to an external service.
 type ExternalService struct {
 	ID          int64
