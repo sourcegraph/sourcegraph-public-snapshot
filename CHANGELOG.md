@@ -34,6 +34,10 @@ All notable changes to Sourcegraph are documented in this file.
 - A new [`quicklinks` setting](https://docs.sourcegraph.com/user/quick_links) allows adding links to be displayed on the homepage and search page for all users (or users in an organization).
 - Site admins can prevent the icon in the top-left corner of the screen from spinning on hovers by setting `"branding": { "disableSymbolSpin": true }` in their site configuration.
 
+### Fixed
+
+- Fix `repository.language` GraphQL field (previously returned empty for most repositories).
+
 ## 3.5.0
 
 ### Added
@@ -65,6 +69,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed an issue where syntax highlighting taking too long would result in errors or wait long amounts of time without properly falling back to plaintext rendering after a few seconds. [#4267](https://github.com/sourcegraph/sourcegraph/issues/4267) [#4268](https://github.com/sourcegraph/sourcegraph/issues/4268) (this fix was intended to be in 3.4.3, but was in fact left out by accident)
 - Fixed an issue with `sourcegraph/server` Docker deployments where syntax highlighting could produce `server closed idle connection` errors. [#4269](https://github.com/sourcegraph/sourcegraph/issues/4269) (this fix was intended to be in 3.4.3, but was in fact left out by accident)
+- Fix `repository.language` GraphQL field (previously returned empty for most repositories).
 
 ## 3.4.4
 
