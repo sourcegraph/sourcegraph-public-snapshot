@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
+
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 	lsp "github.com/sourcegraph/go-lsp"
@@ -197,7 +199,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	)
 	for _, suggester := range suggesters {
 		par.Acquire()
-		go func(suggester func(ctx context.Context) ([]*searchSuggestionResolver, error)) {
+		suggester := suggester
+		goroutine.Go(func() {
 			defer par.Release()
 			ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 			defer cancel()
@@ -218,7 +221,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 					par.Error(err)
 				}
 			}
-		}(suggester)
+		})
 	}
 	if err := par.Wait(); err != nil {
 		if len(allSuggestions) == 0 {
