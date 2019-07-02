@@ -417,7 +417,7 @@ type PhabricatorConnection struct {
 type QuickLink struct {
 	Description string `json:"description,omitempty"`
 	Name        string `json:"name"`
-	Url         string `json:"url,omitempty"`
+	Url         string `json:"url"`
 }
 type Repos struct {
 	Callsign string `json:"callsign"`

@@ -158,7 +158,7 @@ const SettingsSchemaJSON = `{
     "QuickLink": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "value"],
+      "required": ["name", "url"],
       "properties": {
         "name": {
           "type": "string",
