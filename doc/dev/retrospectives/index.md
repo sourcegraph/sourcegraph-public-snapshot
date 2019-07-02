@@ -6,19 +6,6 @@ Retrospectives are a chance for teams to reflect on past experiences, celebrate 
 
 The [release captain](../releases.md#release-captain) is responsible for facilitating a retrospective for each monthly release, but additional retrospectives may be organized by anyone on the team for any reason (e.g. project retrospective, ops incident, customer incident).
 
-## Completed retrospectives
-
-<!--
-Add links to completed retrospective docs here. These are publicly visible, so make sure they don't include anything sensitive.
--->
-
-- [Sourcegraph 3.0 beta retrospective](3_0_beta.md)
-- [Sourcegraph 3.0 retrospective](3_0.md)
-- [Tomás’ notes on the PostgreSQL upgrade](postgresql_upgrade.md)
-- [Sourcegraph 3.2 retrospective](3_2.md)
-- [Sourcegraph customer license expiration retrospective](customer_license_expiration.md)
-- [Sourcegraph 3.3 retrospective](3_3.md)
-
 ## How to facilitate a retrospective
 
 If you are facilitating a retrospective for a project or release, follow these steps.
