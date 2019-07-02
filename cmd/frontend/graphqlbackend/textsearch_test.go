@@ -686,29 +686,54 @@ func Test_zoektIndexedRepos(t *testing.T) {
 	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: zoektRepoList}}
 	ctx := context.Background()
 
-	indexed, unindexed, err := zoektIndexedRepos(ctx, zoekt, repos)
-	if err != nil {
-		t.Fatal(err)
+	makeIndexed := func(repos []*search.RepositoryRevisions) []*search.RepositoryRevisions {
+		var indexed []*search.RepositoryRevisions
+		for _, r := range repos {
+			rev := *r
+			rev.IndexedHEADCommit = "deadbeef"
+			indexed = append(indexed, &rev)
+		}
+		return indexed
 	}
 
-	for _, tc := range []struct {
-		name       string
-		have, want []*search.RepositoryRevisions
-	}{
-		{"indexed", indexed, func() (want []*search.RepositoryRevisions) {
-			for i := 0; i < 3; i++ {
-				rev := *repos[i]
-				rev.IndexedHEADCommit = "deadbeef"
-				want = append(want, &rev)
+	cases := []struct {
+		name      string
+		repos     []*search.RepositoryRevisions
+		indexed   []*search.RepositoryRevisions
+		unindexed []*search.RepositoryRevisions
+	}{{
+		name:      "all",
+		repos:     repos,
+		indexed:   makeIndexed(repos[:3]),
+		unindexed: repos[3:],
+	}, {
+		name:      "one unindexed",
+		repos:     repos[3:4],
+		indexed:   repos[:0],
+		unindexed: repos[3:4],
+	}, {
+		name:      "one indexed",
+		repos:     repos[:1],
+		indexed:   makeIndexed(repos[:1]),
+		unindexed: repos[:0],
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			indexed, unindexed, err := zoektIndexedRepos(ctx, zoekt, tc.repos)
+			if err != nil {
+				t.Fatal(err)
 			}
-			return
-		}()},
-		{"unindexed", unindexed, repos[3:]},
-	} {
-		if !reflect.DeepEqual(tc.have, tc.want) {
-			diff := cmp.Diff(tc.have, tc.want)
-			t.Fatalf("%s has wrong repo revs. diff=%s", tc.name, diff)
-		}
+
+			if !reflect.DeepEqual(tc.indexed, indexed) {
+				diff := cmp.Diff(tc.indexed, indexed)
+				t.Error("unexpected indexed:", diff)
+			}
+			if !reflect.DeepEqual(tc.unindexed, unindexed) {
+				diff := cmp.Diff(tc.unindexed, unindexed)
+				t.Error("unexpected unindexed:", diff)
+			}
+		})
 	}
 }
 
