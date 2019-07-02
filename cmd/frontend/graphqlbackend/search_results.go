@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
@@ -41,11 +41,11 @@ import (
 type searchResultsCommon struct {
 	limitHit bool // whether the limit on results was hit
 
-	repos    []*db.MinimalRepo         // repos that were matched by the repo-related filters
-	searched []*db.MinimalRepo         // repos that were searched
-	indexed  []*db.MinimalRepo         // repos that were searched using an index
-	cloning  []*db.MinimalRepo         // repos that could not be searched because they were still being cloned
-	missing  []*db.MinimalRepo         // repos that could not be searched because they do not exist
+	repos    []*types.Repo             // repos that were matched by the repo-related filters
+	searched []*types.Repo             // repos that were searched
+	indexed  []*types.Repo             // repos that were searched using an index
+	cloning  []*types.Repo             // repos that could not be searched because they were still being cloned
+	missing  []*types.Repo             // repos that could not be searched because they do not exist
 	partial  map[api.RepoName]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
 	maxResultsCount, resultCount int32
@@ -53,7 +53,7 @@ type searchResultsCommon struct {
 	// timedout usually contains repos that haven't finished being fetched yet.
 	// This should only happen for large repos and the searcher caches are
 	// purged.
-	timedout []*db.MinimalRepo
+	timedout []*types.Repo
 
 	indexUnavailable bool // True if indexed search is enabled but was not available during this search.
 }
@@ -114,7 +114,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.limitHit = c.limitHit || other.limitHit
 	c.indexUnavailable = c.indexUnavailable || other.indexUnavailable
 
-	appendUnique := func(dstp *[]*db.MinimalRepo, src []*db.MinimalRepo) {
+	appendUnique := func(dstp *[]*types.Repo, src []*types.Repo) {
 		dst := *dstp
 		sort.Slice(dst, func(i, j int) bool { return dst[i].ID < dst[j].ID })
 		sort.Slice(src, func(i, j int) bool { return src[i].ID < src[j].ID })

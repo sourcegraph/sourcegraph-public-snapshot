@@ -30,7 +30,7 @@ type repositoryResolver struct {
 	hydratedRepoOnce sync.Once
 	hydratedRepoErr  error
 
-	repo        *db.MinimalRepo
+	repo        *types.Repo
 	redirectURL *string
 	icon        string
 	matches     []*searchResultMatchResolver
@@ -46,7 +46,7 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, er
 		return nil, err
 	}
 	return &repositoryResolver{
-		repo:         &db.MinimalRepo{Name: repo.Name, ID: repo.ID, ExternalRepo: *repo.ExternalRepo},
+		repo:         types.NewRepoWithIDs(repo.ID, repo.Name, repo.ExternalRepo),
 		hydratedRepo: repo,
 	}, nil
 }
@@ -57,7 +57,7 @@ func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*repositoryRes
 		return nil, err
 	}
 	return &repositoryResolver{
-		repo:         &db.MinimalRepo{Name: repo.Name, ID: repo.ID, ExternalRepo: *repo.ExternalRepo},
+		repo:         types.NewRepoWithIDs(repo.ID, repo.Name, repo.ExternalRepo),
 		hydratedRepo: repo,
 	}, nil
 }
@@ -283,7 +283,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 			return nil, err
 		}
 		r := &repositoryResolver{
-			repo:         &db.MinimalRepo{Name: repo.Name, ID: repo.ID, ExternalRepo: *repo.ExternalRepo},
+			repo:         types.NewRepoWithIDs(repo.ID, repo.Name, repo.ExternalRepo),
 			hydratedRepo: repo,
 		}
 		return r.Commit(ctx, &repositoryCommitArgs{Rev: targetRef})

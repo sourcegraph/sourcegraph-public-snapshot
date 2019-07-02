@@ -23,7 +23,7 @@ func TestSearch(t *testing.T) {
 	tcs := []struct {
 		name                         string
 		searchQuery                  string
-		reposMinimalListMock         func(v0 context.Context, v1 db.ReposListOptions) ([]*db.MinimalRepo, error)
+		reposListMock                func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
 		repoRevsMock                 func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error)
 		externalServicesListMock     func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error)
 		phabricatorGetRepoByNameMock func(repo api.RepoName) (*types.PhabricatorRepo, error)
@@ -32,7 +32,7 @@ func TestSearch(t *testing.T) {
 		{
 			name:        "empty query against no repos gets no results",
 			searchQuery: "",
-			reposMinimalListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*db.MinimalRepo, error) {
+			reposListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
 				return nil, nil
 			},
 			repoRevsMock: func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
@@ -52,12 +52,10 @@ func TestSearch(t *testing.T) {
 		{
 			name:        "empty query against empty repo gets no results",
 			searchQuery: "",
-			reposMinimalListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*db.MinimalRepo, error) {
-				return []*db.MinimalRepo{
-					{
-						Name: "test",
-					},
-				}, nil
+			reposListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
+				return []*types.Repo{types.NewRepoWithIDs(0, "test", nil)},
+
+					nil
 			},
 			repoRevsMock: func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
 				return api.CommitID(""), nil
@@ -79,7 +77,7 @@ func TestSearch(t *testing.T) {
 			conf.Mock(&conf.Unified{})
 			defer conf.Mock(nil)
 			vars := map[string]interface{}{"query": tc.searchQuery}
-			db.Mocks.Repos.MinimalList = tc.reposMinimalListMock
+			db.Mocks.Repos.List = tc.reposListMock
 			sr := &schemaResolver{}
 			schema, err := graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
 			if err != nil {

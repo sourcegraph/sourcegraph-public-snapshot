@@ -57,15 +57,15 @@ func TestSearchSuggestions(t *testing.T) {
 
 	t.Run("single term", func(t *testing.T) {
 		var calledReposListAll, calledReposListFoo bool
-		db.Mocks.Repos.MinimalList = func(_ context.Context, op db.ReposListOptions) ([]*db.MinimalRepo, error) {
-			wantFoo := db.ReposListOptions{IncludePatterns: []string{"foo"}, Enabled: true, LimitOffset: limitOffset} // when treating term as repo: field
-			wantAll := db.ReposListOptions{Enabled: true, LimitOffset: limitOffset}                                   // when treating term as text query
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
+			wantFoo := db.ReposListOptions{IncludePatterns: []string{"foo"}, OnlyRepoIDs: true, Enabled: true, LimitOffset: limitOffset} // when treating term as repo: field
+			wantAll := db.ReposListOptions{OnlyRepoIDs: true, Enabled: true, LimitOffset: limitOffset}                                   // when treating term as text query
 			if reflect.DeepEqual(op, wantAll) {
 				calledReposListAll = true
-				return []*db.MinimalRepo{{Name: "bar-repo"}}, nil
+				return []*types.Repo{types.NewRepoWithIDs(0, "bar-repo", nil)}, nil
 			} else if reflect.DeepEqual(op, wantFoo) {
 				calledReposListFoo = true
-				return []*db.MinimalRepo{{Name: "foo-repo"}}, nil
+				return []*types.Repo{types.NewRepoWithIDs(0, "foo-repo", nil)}, nil
 			} else {
 				t.Errorf("got %+v, want %+v or %+v", op, wantFoo, wantAll)
 			}
@@ -86,7 +86,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
 			}
 			return []*fileMatchResolver{
-				{uri: "git://repo?rev#dir/file", JPath: "dir/file", repo: &db.MinimalRepo{Name: "repo"}, commitID: "rev"},
+				{uri: "git://repo?rev#dir/file", JPath: "dir/file", repo: types.NewRepoWithIDs(0, "repo", nil), commitID: "rev"},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -121,17 +121,17 @@ func TestSearchSuggestions(t *testing.T) {
 		t.Skip("TODO(slimsag): this test is not reliable")
 		var mu sync.Mutex
 		var calledReposListReposInGroup, calledReposListFooRepo3 bool
-		db.Mocks.Repos.MinimalList = func(_ context.Context, op db.ReposListOptions) ([]*db.MinimalRepo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			wantReposInGroup := db.ReposListOptions{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, Enabled: true, LimitOffset: limitOffset}    // when treating term as repo: field
 			wantFooRepo3 := db.ReposListOptions{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, Enabled: true, LimitOffset: limitOffset} // when treating term as repo: field
 			if reflect.DeepEqual(op, wantReposInGroup) {
 				calledReposListReposInGroup = true
-				return []*db.MinimalRepo{{Name: "foo-repo1"}, {Name: "repo3"}}, nil
+				return []*types.Repo{types.NewRepoWithIDs(0, "foo-repo1", nil), types.NewRepoWithIDs(0, "repo3", nil)}, nil
 			} else if reflect.DeepEqual(op, wantFooRepo3) {
 				calledReposListFooRepo3 = true
-				return []*db.MinimalRepo{{Name: "foo-repo1"}}, nil
+				return []*types.Repo{types.NewRepoWithIDs(0, "foo-repo1", nil)}, nil
 			}
 			t.Errorf("got %+v, want %+v or %+v", op, wantReposInGroup, wantFooRepo3)
 			return nil, nil
@@ -149,9 +149,9 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.Pattern.Pattern, `"foo" or "."`)
 			}
 			return []*fileMatchResolver{
-				{uri: "git://repo?rev#dir/foo-repo3-file-name-match", JPath: "dir/foo-repo3-file-name-match", repo: &db.MinimalRepo{Name: "repo3"}, commitID: "rev"},
-				{uri: "git://repo?rev#dir/foo-repo1-file-name-match", JPath: "dir/foo-repo1-file-name-match", repo: &db.MinimalRepo{Name: "repo1"}, commitID: "rev"},
-				{uri: "git://repo?rev#dir/file-content-match", JPath: "dir/file-content-match", repo: &db.MinimalRepo{Name: "repo"}, commitID: "rev"},
+				{uri: "git://repo?rev#dir/foo-repo3-file-name-match", JPath: "dir/foo-repo3-file-name-match", repo: types.NewRepoWithIDs(0, "repo3", nil), commitID: "rev"},
+				{uri: "git://repo?rev#dir/foo-repo1-file-name-match", JPath: "dir/foo-repo1-file-name-match", repo: types.NewRepoWithIDs(0, "repo1", nil), commitID: "rev"},
+				{uri: "git://repo?rev#dir/file-content-match", JPath: "dir/file-content-match", repo: types.NewRepoWithIDs(0, "repo", nil), commitID: "rev"},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -188,14 +188,21 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("repo: field", func(t *testing.T) {
 		var mu sync.Mutex
 		calledReposList := false
-		db.Mocks.Repos.MinimalList = func(_ context.Context, op db.ReposListOptions) ([]*db.MinimalRepo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			if want := (db.ReposListOptions{IncludePatterns: []string{"foo"}, Enabled: true, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
+
+			want := db.ReposListOptions{
+				IncludePatterns: []string{"foo"},
+				OnlyRepoIDs:     true,
+				Enabled:         true,
+				LimitOffset:     limitOffset,
+			}
+			if !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
-			return []*db.MinimalRepo{{Name: "foo-repo"}}, nil
+			return []*types.Repo{types.NewRepoWithIDs(0, "foo-repo", nil)}, nil
 		}
 
 		calledSearchFilesInRepos := false
@@ -207,7 +214,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.Repos, want)
 			}
 			return []*fileMatchResolver{
-				{uri: "git://foo-repo?rev#dir/file", JPath: "dir/file", repo: &db.MinimalRepo{Name: "foo-repo"}, commitID: ""},
+				{uri: "git://foo-repo?rev#dir/file", JPath: "dir/file", repo: types.NewRepoWithIDs(0, "foo-repo", nil), commitID: ""},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -225,14 +232,21 @@ func TestSearchSuggestions(t *testing.T) {
 		var mu sync.Mutex
 
 		calledReposList := false
-		db.Mocks.Repos.MinimalList = func(_ context.Context, op db.ReposListOptions) ([]*db.MinimalRepo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			if want := (db.ReposListOptions{IncludePatterns: []string{"foo"}, Enabled: true, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
+			want := db.ReposListOptions{
+				IncludePatterns: []string{"foo"},
+				OnlyRepoIDs:     true,
+				Enabled:         true,
+				LimitOffset:     limitOffset,
+			}
+
+			if !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
-			return []*db.MinimalRepo{{Name: "foo-repo"}}, nil
+			return []*types.Repo{types.NewRepoWithIDs(0, "foo-repo", nil)}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 
@@ -245,7 +259,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.Repos, want)
 			}
 			return []*fileMatchResolver{
-				{uri: "git://foo-repo?rev#dir/bar-file", JPath: "dir/bar-file", repo: &db.MinimalRepo{Name: "foo-repo"}, commitID: ""},
+				{uri: "git://foo-repo?rev#dir/bar-file", JPath: "dir/bar-file", repo: types.NewRepoWithIDs(0, "foo-repo", nil), commitID: ""},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()

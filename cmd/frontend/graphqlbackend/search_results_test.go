@@ -57,12 +57,20 @@ func TestSearchResults(t *testing.T) {
 
 	t.Run("repo: only", func(t *testing.T) {
 		var calledReposList bool
-		db.Mocks.Repos.MinimalList = func(_ context.Context, op db.ReposListOptions) ([]*db.MinimalRepo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
-			if want := (db.ReposListOptions{Enabled: true, IncludePatterns: []string{"r", "p"}, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
+
+			want := db.ReposListOptions{
+				OnlyRepoIDs:     true,
+				Enabled:         true,
+				IncludePatterns: []string{"r", "p"},
+				LimitOffset:     limitOffset,
+			}
+			if !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
-			return []*db.MinimalRepo{{ID: 1, Name: "repo"}}, nil
+
+			return []*types.Repo{types.NewRepoWithIDs(1, "repo", nil)}, nil
 		}
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
@@ -80,12 +88,20 @@ func TestSearchResults(t *testing.T) {
 
 	t.Run("multiple terms", func(t *testing.T) {
 		var calledReposList bool
-		db.Mocks.Repos.MinimalList = func(_ context.Context, op db.ReposListOptions) ([]*db.MinimalRepo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
-			if want := (db.ReposListOptions{Enabled: true, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
+
+			want := db.ReposListOptions{
+				OnlyRepoIDs: true,
+				Enabled:     true,
+				LimitOffset: limitOffset,
+			}
+
+			if !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
-			return []*db.MinimalRepo{{ID: 1, Name: "repo"}}, nil
+
+			return []*types.Repo{types.NewRepoWithIDs(1, "repo", nil)}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
@@ -120,7 +136,7 @@ func TestSearchResults(t *testing.T) {
 					uri:          "git://repo?rev#dir/file",
 					JPath:        "dir/file",
 					JLineMatches: []*lineMatch{{JLineNumber: 123}},
-					repo:         &db.MinimalRepo{ID: 1},
+					repo:         types.NewRepoWithIDs(1, "", nil),
 				},
 			}, &searchResultsCommon{}, nil
 		}
@@ -155,7 +171,7 @@ func BenchmarkSearchResults(b *testing.B) {
 	}
 
 	ctx := context.Background()
-	db.Mocks.Repos.MinimalList = func(_ context.Context, op db.ReposListOptions) ([]*db.MinimalRepo, error) {
+	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return minimalRepos, nil
 	}
 	defer func() { db.Mocks = db.MockStores{} }()
@@ -228,34 +244,33 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 	}
 }
 
-func generateRepos(count int) ([]*db.MinimalRepo, []*types.Repo, []*zoekt.RepoListEntry) {
-	var minimalRepos []*db.MinimalRepo
+func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEntry) {
+	var reposWithIDs []*types.Repo
 	var repos []*types.Repo
 	var zoektRepos []*zoekt.RepoListEntry
 
 	for i := 1; i <= count; i++ {
 		name := fmt.Sprintf("repo-%d", i)
 
-		minimalRepo := &db.MinimalRepo{
-			ID:   api.RepoID(i),
-			Name: api.RepoName(name),
-			ExternalRepo: api.ExternalRepoSpec{
+		repoWithIDs := types.NewRepoWithIDs(
+			api.RepoID(i),
+			api.RepoName(name),
+			&api.ExternalRepoSpec{
 				ID:          name,
 				ServiceType: "github",
 				ServiceID:   "https://github.com",
-			},
-		}
+			})
 
-		minimalRepos = append(minimalRepos, minimalRepo)
+		reposWithIDs = append(reposWithIDs, repoWithIDs)
 
 		repos = append(repos, &types.Repo{
 			RepoIDs: types.RepoIDs{
-				ID:           minimalRepo.ID,
-				Name:         minimalRepo.Name,
-				ExternalRepo: &minimalRepo.ExternalRepo,
+				ID:           repoWithIDs.ID,
+				Name:         repoWithIDs.Name,
+				ExternalRepo: repoWithIDs.ExternalRepo,
 			},
 			RepoFields: &types.RepoFields{
-				URI:         fmt.Sprintf("https://github.com/foobar/%s", minimalRepo.Name),
+				URI:         fmt.Sprintf("https://github.com/foobar/%s", repoWithIDs.Name),
 				Description: "this repositoriy contains a side project that I haven't maintained in 2 years",
 				Language:    "v-language",
 			},
@@ -268,7 +283,7 @@ func generateRepos(count int) ([]*db.MinimalRepo, []*types.Repo, []*zoekt.RepoLi
 			},
 		})
 	}
-	return minimalRepos, repos, zoektRepos
+	return reposWithIDs, repos, zoektRepos
 }
 
 func generateZoektMatches(count int) []zoekt.FileMatch {
@@ -423,9 +438,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 }
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
-	repo := &db.MinimalRepo{
-		Name: "testRepo",
-	}
+	repo := types.NewRepoWithIDs(0, "testRepo", nil)
 
 	repoMatch := &repositoryResolver{
 		repo: repo,
@@ -649,57 +662,46 @@ func TestCompareSearchResults(t *testing.T) {
 	tests := []testCase{{
 		// Different repo matches
 		a: &repositoryResolver{
-			repo: &db.MinimalRepo{
-				Name: api.RepoName("a"),
-			},
+			repo: types.NewRepoWithIDs(0, api.RepoName("a"), nil),
 		},
 		b: &repositoryResolver{
-			repo: &db.MinimalRepo{
-				Name: api.RepoName("b"),
-			},
+			repo: types.NewRepoWithIDs(0, api.RepoName("b"), nil),
 		},
 		aIsLess: true,
 	}, {
 		// Repo match vs file match in same repo
 		a: &fileMatchResolver{
-			repo: &db.MinimalRepo{
-				Name: api.RepoName("a"),
-			},
+			repo: types.NewRepoWithIDs(0, api.RepoName("a"), nil),
+
 			JPath: "a",
 		},
 		b: &repositoryResolver{
-			repo: &db.MinimalRepo{
-				Name: api.RepoName("a"),
-			},
+			repo: types.NewRepoWithIDs(0, api.RepoName("a"), nil),
 		},
 		aIsLess: false,
 	}, {
 		// Same repo, different files
 		a: &fileMatchResolver{
-			repo: &db.MinimalRepo{
-				Name: api.RepoName("a"),
-			},
+			repo: types.NewRepoWithIDs(0, api.RepoName("a"), nil),
+
 			JPath: "a",
 		},
 		b: &fileMatchResolver{
-			repo: &db.MinimalRepo{
-				Name: api.RepoName("a"),
-			},
+			repo: types.NewRepoWithIDs(0, api.RepoName("a"), nil),
+
 			JPath: "b",
 		},
 		aIsLess: true,
 	}, {
 		// different repo, same file name
 		a: &fileMatchResolver{
-			repo: &db.MinimalRepo{
-				Name: api.RepoName("a"),
-			},
+			repo: types.NewRepoWithIDs(0, api.RepoName("a"), nil),
+
 			JPath: "a",
 		},
 		b: &fileMatchResolver{
-			repo: &db.MinimalRepo{
-				Name: api.RepoName("b"),
-			},
+			repo: types.NewRepoWithIDs(0, api.RepoName("b"), nil),
+
 			JPath: "a",
 		},
 		aIsLess: true,
@@ -802,24 +804,23 @@ func TestSearchResultsHydration(t *testing.T) {
 	repoName := "reponame-foobar"
 	fileName := "foobar.go"
 
-	minimalRepo := &db.MinimalRepo{
-		ID:   api.RepoID(id),
-		Name: api.RepoName(repoName),
-		ExternalRepo: api.ExternalRepoSpec{
+	repoWithIDs := types.NewRepoWithIDs(
+		api.RepoID(id),
+		api.RepoName(repoName),
+		&api.ExternalRepoSpec{
 			ID:          repoName,
 			ServiceType: "github",
 			ServiceID:   "https://github.com",
-		},
-	}
+		})
 
 	hydratedRepo := &types.Repo{
 		RepoIDs: types.RepoIDs{
-			ID:           minimalRepo.ID,
-			ExternalRepo: &(minimalRepo.ExternalRepo),
-			Name:         minimalRepo.Name,
+			ID:           repoWithIDs.ID,
+			ExternalRepo: repoWithIDs.ExternalRepo,
+			Name:         repoWithIDs.Name,
 		},
 		RepoFields: &types.RepoFields{
-			URI:         fmt.Sprintf("github.com/my-org/%s", minimalRepo.Name),
+			URI:         fmt.Sprintf("github.com/my-org/%s", repoWithIDs.Name),
 			Description: "This is a description of a repository",
 			Language:    "monkey",
 			Fork:        false,
@@ -830,15 +831,15 @@ func TestSearchResultsHydration(t *testing.T) {
 		return hydratedRepo, nil
 	}
 
-	db.Mocks.Repos.MinimalList = func(_ context.Context, op db.ReposListOptions) ([]*db.MinimalRepo, error) {
-		return []*db.MinimalRepo{minimalRepo}, nil
+	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
+		return []*types.Repo{repoWithIDs}, nil
 	}
 
 	defer func() { db.Mocks = db.MockStores{} }()
 
 	zoektRepo := &zoekt.RepoListEntry{
 		Repository: zoekt.Repository{
-			Name:     string(minimalRepo.Name),
+			Name:     string(repoWithIDs.Name),
 			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
 		},
 	}
@@ -846,7 +847,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	zoektFileMatches := []zoekt.FileMatch{{
 		Score:      5.0,
 		FileName:   fileName,
-		Repository: string(minimalRepo.Name), // Important: this needs to match a name in `repos`
+		Repository: string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
 		Branches:   []string{"master"},
 		LineMatches: []zoekt.LineMatch{
 			{

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	dbquery "github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
@@ -51,7 +51,11 @@ func TestParseRepositoryRevisions(t *testing.T) {
 }
 
 func TestRepoRevisionsQuery(t *testing.T) {
-	repos := []*db.MinimalRepo{{Name: "foo"}, {Name: "bar"}, {Name: "baz"}}
+	repos := []*types.Repo{
+		types.NewRepoWithIDs(0, "foo", nil),
+		types.NewRepoWithIDs(0, "bar", nil),
+		types.NewRepoWithIDs(0, "baz", nil),
+	}
 	cases := map[string]string{
 		// Short circuit (no ref specifier) which doesn't filter input
 		"r:":         "foo@ bar@ baz@",

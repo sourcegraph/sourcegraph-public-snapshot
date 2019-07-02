@@ -5,16 +5,16 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 )
 
 func TestSearchRepositories(t *testing.T) {
 	repositories := []*search.RepositoryRevisions{
-		{Repo: &db.MinimalRepo{Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
-		{Repo: &db.MinimalRepo{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
+		{Repo: types.NewRepoWithIDs(0, "foo/one", nil), Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
+		{Repo: types.NewRepoWithIDs(0, "foo/no-match", nil), Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
 	}
 
 	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{}}
@@ -130,7 +130,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{}}
 
 	t.Run("repo should be included in results, query has repoHasFile filter", func(t *testing.T) {
-		repo := &search.RepositoryRevisions{Repo: &db.MinimalRepo{Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
+		repo := &search.RepositoryRevisions{Repo: types.NewRepoWithIDs(0, "foo/one", nil), Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
 		mockSearchFilesInRepos = func(args *search.Args) (matches []*fileMatchResolver, common *searchResultsCommon, err error) {
 			return []*fileMatchResolver{
 				{
@@ -149,7 +149,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	})
 
 	t.Run("repo shouldn't be included in results, query has repoHasFile filter ", func(t *testing.T) {
-		repo := &search.RepositoryRevisions{Repo: &db.MinimalRepo{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
+		repo := &search.RepositoryRevisions{Repo: types.NewRepoWithIDs(0, "foo/no-match", nil), Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
 		mockSearchFilesInRepos = func(args *search.Args) (matches []*fileMatchResolver, common *searchResultsCommon, err error) {
 			return []*fileMatchResolver{}, &searchResultsCommon{}, nil
 		}
@@ -164,7 +164,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	})
 
 	t.Run("repo shouldn't be included in results, query has -repoHasFile filter", func(t *testing.T) {
-		repo := &search.RepositoryRevisions{Repo: &db.MinimalRepo{Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
+		repo := &search.RepositoryRevisions{Repo: types.NewRepoWithIDs(0, "foo/one", nil), Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
 		mockSearchFilesInRepos = func(args *search.Args) (matches []*fileMatchResolver, common *searchResultsCommon, err error) {
 			return []*fileMatchResolver{
 				{
@@ -183,7 +183,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	})
 
 	t.Run("repo should be included in results, query has -repoHasFile filter", func(t *testing.T) {
-		repo := &search.RepositoryRevisions{Repo: &db.MinimalRepo{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
+		repo := &search.RepositoryRevisions{Repo: types.NewRepoWithIDs(0, "foo/no-match", nil), Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
 		mockSearchFilesInRepos = func(args *search.Args) (matches []*fileMatchResolver, common *searchResultsCommon, err error) {
 			return []*fileMatchResolver{}, &searchResultsCommon{}, nil
 		}

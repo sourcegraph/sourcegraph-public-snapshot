@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
@@ -246,17 +247,14 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	repo, err := backend.Repos.GetByName(ctx, name)
 	if err != nil {
 		if err, ok := err.(backend.ErrRepoSeeOther); ok {
-			return &repositoryResolver{repo: &db.MinimalRepo{}, redirectURL: &err.RedirectURL}, nil
+			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
 		}
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	minimalRepo := &db.MinimalRepo{Name: repo.Name, ID: repo.ID}
-	if repo.ExternalRepo != nil {
-		minimalRepo.ExternalRepo = *repo.ExternalRepo
-	}
+	minimalRepo := types.NewRepoWithIDs(repo.ID, repo.Name, repo.ExternalRepo)
 	return &repositoryResolver{repo: minimalRepo, hydratedRepo: repo}, nil
 }
 

@@ -57,19 +57,19 @@ func TestRepositoryHydration(t *testing.T) {
 	id := 42
 	name := fmt.Sprintf("repo-%d", id)
 
-	minimalRepo := &db.MinimalRepo{
-		ID:   api.RepoID(id),
-		Name: api.RepoName(name),
-		ExternalRepo: api.ExternalRepoSpec{
+	minimalRepo := types.NewRepoWithIDs(
+		api.RepoID(id),
+		api.RepoName(name),
+		&api.ExternalRepoSpec{
 			ID:          name,
 			ServiceType: "github",
 			ServiceID:   "https://github.com",
-		},
-	}
+		})
+
 	hydratedRepo := &types.Repo{
 		RepoIDs: types.RepoIDs{
 			ID:           minimalRepo.ID,
-			ExternalRepo: &(minimalRepo.ExternalRepo),
+			ExternalRepo: minimalRepo.ExternalRepo,
 			Name:         minimalRepo.Name,
 		},
 		RepoFields: &types.RepoFields{

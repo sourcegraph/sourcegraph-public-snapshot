@@ -209,10 +209,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 			break
 		}
 
-		minimalRepo := &db.MinimalRepo{ID: repo.ID, Name: repo.Name}
-		if repo.ExternalRepo != nil {
-			minimalRepo.ExternalRepo = *repo.ExternalRepo
-		}
+		minimalRepo := types.NewRepoWithIDs(repo.ID, repo.Name, repo.ExternalRepo)
 		resolvers = append(resolvers, &repositoryResolver{
 			repo:         minimalRepo,
 			hydratedRepo: repo,
@@ -384,7 +381,7 @@ func repoNamesToStrings(repoNames []api.RepoName) []string {
 	return strings
 }
 
-func toRepositoryResolvers(repos []*db.MinimalRepo) []*repositoryResolver {
+func toRepositoryResolvers(repos []*types.Repo) []*repositoryResolver {
 	resolvers := make([]*repositoryResolver, len(repos))
 	for i, repo := range repos {
 		resolvers[i] = &repositoryResolver{repo: repo}
@@ -392,7 +389,7 @@ func toRepositoryResolvers(repos []*db.MinimalRepo) []*repositoryResolver {
 	return resolvers
 }
 
-func toRepoNames(repos []*db.MinimalRepo) []api.RepoName {
+func toRepoNames(repos []*types.Repo) []api.RepoName {
 	names := make([]api.RepoName, len(repos))
 	for i, repo := range repos {
 		names[i] = repo.Name

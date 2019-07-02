@@ -24,7 +24,6 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -63,7 +62,7 @@ type fileMatchResolver struct {
 	JLimitHit    bool         `json:"LimitHit"`
 	symbols      []*searchSymbolResult
 	uri          string
-	repo         *db.MinimalRepo
+	repo         *types.Repo
 	commitID     api.CommitID
 	// inputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the
@@ -347,7 +346,7 @@ func (e *searcherError) Error() string {
 
 var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoIdentifier, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, repo *db.MinimalRepo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -905,7 +904,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 	}
 
-	common.repos = make([]*db.MinimalRepo, len(args.Repos))
+	common.repos = make([]*types.Repo, len(args.Repos))
 	for i, repo := range args.Repos {
 		common.repos[i] = repo.Repo
 	}
@@ -929,7 +928,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			if !args.Zoekt.Enabled() {
 				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
 			}
-			common.missing = make([]*db.MinimalRepo, len(searcherRepos))
+			common.missing = make([]*types.Repo, len(searcherRepos))
 			for i, r := range searcherRepos {
 				common.missing[i] = r.Repo
 			}

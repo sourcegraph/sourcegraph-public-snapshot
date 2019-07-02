@@ -403,7 +403,8 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 
 	tr.LazyPrintf("Repos.List - start")
-	repos, err := db.Repos.MinimalList(ctx, db.ReposListOptions{
+	repos, err := db.Repos.List(ctx, db.ReposListOptions{
+		OnlyRepoIDs:     true,
 		IncludePatterns: includePatterns,
 		ExcludePattern:  unionRegExps(excludePatterns),
 		Enabled:         true,
