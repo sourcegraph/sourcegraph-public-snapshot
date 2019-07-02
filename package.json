@@ -123,7 +123,7 @@
     "@types/storybook__addon-storyshots": "4.0.1",
     "@types/storybook__react": "4.0.2",
     "@types/textarea-caret": "3.0.0",
-    "@types/uuid": "3.4.4",
+    "@types/uuid": "3.4.5",
     "@types/webpack": "4.4.32",
     "@types/webpack-dev-server": "3.1.6",
     "@types/whatwg-url": "6.4.0",
