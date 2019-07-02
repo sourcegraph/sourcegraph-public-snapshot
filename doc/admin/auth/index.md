@@ -301,7 +301,7 @@ Some proxies add a prefix to the username header value. For example, Google IAP 
   "auth.providers": [
     {
       "type": "http-header",
-      "usernameHeader": "x-goog-authenticated-user-id",
+      "usernameHeader": "x-goog-authenticated-user-email",
       "stripUsernameHeaderPrefix": "accounts.google.com:"
     }
   ]
