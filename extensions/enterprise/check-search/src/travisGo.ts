@@ -76,7 +76,7 @@ function registerStatusProvider(
                         diagnostics.length > 0
                             ? [
                                   {
-                                      title: `Outdated Go version specified in Travis CI configuration (${
+                                      message: `Outdated Go version specified in Travis CI configuration (${
                                           diagnostics.length /* TODO!(sqs) this doesnt count repos, it counts files */
                                       } repositories affected)`,
                                       type: sourcegraph.NotificationType.Info,

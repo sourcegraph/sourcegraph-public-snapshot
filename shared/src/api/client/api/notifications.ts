@@ -4,6 +4,9 @@ import { ProxySubscribable } from '../../extension/api/common'
 import { wrapRemoteObservable } from './common'
 import { Unsubscribable } from 'rxjs'
 import { NotificationService } from '../services/notificationService'
+import { Notification } from '../../../notifications/notification'
+import { map } from 'rxjs/operators'
+import { toNotification } from '../../types/notifications'
 
 export interface ClientNotificationsAPI extends ProxyValue {
     $registerNotificationProvider(
@@ -11,7 +14,7 @@ export interface ClientNotificationsAPI extends ProxyValue {
         providerFunction: ProxyResult<
             ((
                 ...args: Parameters<sourcegraph.NotificationProvider['provideNotifications']>
-            ) => ProxySubscribable<sourcegraph.Notification[] | null | undefined>) &
+            ) => ProxySubscribable<Notification[] | null | undefined>) &
                 ProxyValue
         >
     ): Unsubscribable & ProxyValue
@@ -22,7 +25,10 @@ export function createClientNotifications(statusService: NotificationService): C
         $registerNotificationProvider: (type, providerFunction) => {
             return proxyValue(
                 statusService.registerNotificationProvider(type, {
-                    provideNotifications: (...args) => wrapRemoteObservable(providerFunction(...args)),
+                    provideNotifications: (...args) =>
+                        wrapRemoteObservable(providerFunction(...args)).pipe(
+                            map(notifications => (notifications ? notifications.map(toNotification) : notifications))
+                        ),
                 })
             )
         },

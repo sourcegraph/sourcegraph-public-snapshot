@@ -5,7 +5,7 @@ import { CodeAction } from 'sourcegraph'
 import { ThreadInboxItemActionsDropdownButton } from '../../../threads/detail/inbox/item/actions/ThreadInboxItemActionsDropdownButton'
 
 interface Props {
-    codeActions: CodeAction[]
+    codeActions: readonly CodeAction[]
     activeCodeAction: CodeAction | undefined
     onCodeActionSetActive: (activeCodeAction: CodeAction | undefined) => void
     onCodeActionClick: (codeAction: CodeAction) => void

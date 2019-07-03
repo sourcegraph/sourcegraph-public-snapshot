@@ -6,9 +6,9 @@ import { NotificationType } from '@sourcegraph/extension-api-classes'
 
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
-const NOTIFICATION_1: sourcegraph.Notification = { title: 't1', type: NotificationType.Info }
+const NOTIFICATION_1: sourcegraph.Notification = { message: 't1', type: NotificationType.Info }
 
-const NOTIFICATION_2: sourcegraph.Notification = { title: 't2', type: NotificationType.Error }
+const NOTIFICATION_2: sourcegraph.Notification = { message: 't2', type: NotificationType.Error }
 
 const SCOPE: sourcegraph.NotificationScope = 'global' as sourcegraph.NotificationScope.Global
 

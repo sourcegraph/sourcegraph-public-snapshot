@@ -8,11 +8,12 @@ import { QueryParameterProps } from '../../../components/withQueryParameter/With
 import { DiagnosticInfo } from '../../threads/detail/backend'
 import { TasksAreaContext } from '../global/TasksArea'
 import { TasksListItem } from './item/TasksListItem'
-import { useDiagnostics } from './useDiagnostics'
 
 export interface TasksListContext {
     itemClassName?: string
 }
+
+const LOADING: 'loading' = 'loading'
 
 interface Props
     extends Partial<QueryParameterProps>,
@@ -25,8 +26,6 @@ interface Props
     history: H.History
     location: H.Location
 }
-
-const LOADING: 'loading' = 'loading'
 
 /**
  * The list of tasks with a header.
