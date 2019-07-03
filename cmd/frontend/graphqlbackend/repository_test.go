@@ -54,35 +54,33 @@ func TestRepository_Commit(t *testing.T) {
 }
 
 func TestRepositoryHydration(t *testing.T) {
-	id := 42
-	name := fmt.Sprintf("repo-%d", id)
-
-	minimalRepo := types.NewRepoWithIDs(
-		api.RepoID(id),
-		api.RepoName(name),
-		&api.ExternalRepoSpec{
-			ID:          name,
-			ServiceType: "github",
-			ServiceID:   "https://github.com",
-		})
-
-	hydratedRepo := &types.Repo{
-		RepoIDs: types.RepoIDs{
-			ID:           minimalRepo.ID,
-			ExternalRepo: minimalRepo.ExternalRepo,
-			Name:         minimalRepo.Name,
-		},
-		RepoFields: &types.RepoFields{
-			URI:         fmt.Sprintf("github.com/foobar/%s", name),
-			Description: "This is a description of a repository",
-			Language:    "monkey",
-			Fork:        false,
-		},
+	makeRepos := func() (minimal, hydrated *types.Repo) {
+		const id = 42
+		name := fmt.Sprintf("repo-%d", id)
+		minimal = types.NewRepoWithIDs(
+			api.RepoID(id),
+			api.RepoName(name),
+			&api.ExternalRepoSpec{
+				ID:          name,
+				ServiceType: "github",
+				ServiceID:   "https://github.com",
+			},
+		)
+		return minimal, &types.Repo{
+			RepoIDs: minimal.RepoIDs,
+			RepoFields: &types.RepoFields{
+				URI:         fmt.Sprintf("github.com/foobar/%s", name),
+				Description: "This is a description of a repository",
+				Language:    "monkey",
+				Fork:        false,
+			},
+		}
 	}
 
 	ctx := context.Background()
 
 	t.Run("hydrated without errors", func(t *testing.T) {
+		minimalRepo, hydratedRepo := makeRepos()
 		db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 			return hydratedRepo, nil
 		}
@@ -93,6 +91,8 @@ func TestRepositoryHydration(t *testing.T) {
 	})
 
 	t.Run("hydration results in errors", func(t *testing.T) {
+		minimalRepo, _ := makeRepos()
+
 		dbErr := errors.New("cannot load repo")
 
 		db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
