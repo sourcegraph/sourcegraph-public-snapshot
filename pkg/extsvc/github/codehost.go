@@ -16,6 +16,6 @@ func ExternalRepoSpec(repo *Repository, baseURL url.URL) api.ExternalRepoSpec {
 	return api.ExternalRepoSpec{
 		ID:          repo.ID,
 		ServiceType: ServiceType,
-		ServiceID:   extsvc.NormalizeBaseURL(&baseURL).String()}
-
+		ServiceID:   extsvc.NormalizeBaseURL(&baseURL).String(),
+	}
 }

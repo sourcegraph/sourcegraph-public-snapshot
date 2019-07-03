@@ -5,19 +5,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-// AWSCodeCommitServiceType is the (api.ExternalRepoSpec).ServiceType value for AWS CodeCommit
+// ServiceType is the (api.ExternalRepoSpec).ServiceType value for AWS CodeCommit
 // repositories. The ServiceID value is the ARN (Amazon Resource Name) omitting the repository name
 // suffix (e.g., "arn:aws:codecommit:us-west-1:123456789:").
 const ServiceType = "awscodecommit"
 
-// AWSCodeCommitExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified AWS
+// ExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified AWS
 // CodeCommit repository.
 func ExternalRepoSpec(repo *Repository, serviceID string) api.ExternalRepoSpec {
 	return api.ExternalRepoSpec{
 		ID:          repo.ID,
 		ServiceType: ServiceType,
-		ServiceID:   serviceID}
-
+		ServiceID:   serviceID,
+	}
 }
 
 // ServiceID creates the repository external service ID. See AWSCodeCommitServiceType for

@@ -12,11 +12,11 @@ import (
 // value is the base URL to the GitLab instance (https://gitlab.com or self-hosted GitLab URL).
 const ServiceType = "gitlab"
 
-// GitLabExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified GitLab project.
+// ExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified GitLab project.
 func ExternalRepoSpec(proj *Project, baseURL url.URL) api.ExternalRepoSpec {
 	return api.ExternalRepoSpec{
 		ID:          strconv.Itoa(proj.ID),
 		ServiceType: ServiceType,
-		ServiceID:   extsvc.NormalizeBaseURL(&baseURL).String()}
-
+		ServiceID:   extsvc.NormalizeBaseURL(&baseURL).String(),
+	}
 }
