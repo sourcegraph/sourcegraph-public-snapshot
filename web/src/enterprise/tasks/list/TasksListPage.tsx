@@ -3,7 +3,7 @@ import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../../components/PageTitle'
 import { TasksAreaTitle } from '../components/TasksAreaTitle'
 import { TasksAreaContext } from '../global/TasksArea'
-import { DiagnosticsList } from './TasksList'
+import { DiagnosticsList } from './DiagnosticsList'
 import { useDiagnostics } from './useDiagnostics'
 
 interface Props extends TasksAreaContext, RouteComponentProps<{}> {}

@@ -1,11 +1,10 @@
 import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
-import { Range } from '@sourcegraph/extension-api-classes'
 import { from, Unsubscribable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { ClientDiagnosticsAPI, DiagnosticData } from '../../client/api/diagnostics'
+import { ClientDiagnosticsAPI } from '../../client/api/diagnostics'
 import { DiagnosticCollection } from '../../types/diagnosticCollection'
-import { fromDiagnostic } from './types'
+import { toDiagnosticData, fromDiagnosticData, DiagnosticData } from '../../types/diagnostic'
 
 /** @internal */
 export interface ExtDiagnosticsAPI extends ProxyValue {
@@ -46,9 +45,7 @@ export class ExtDiagnostics
     public readonly diagnosticsChanges = from(this.data.changes).pipe(map(uris => ({ uris })))
 
     public $acceptDiagnosticData(data: DiagnosticData): void {
-        this.data.set(
-            data.map(([uri, diagnostics]) => [uri, diagnostics.map(d => ({ ...d, range: Range.fromPlain(d.range) }))])
-        )
+        this.data.set(fromDiagnosticData(data))
     }
 
     public getDiagnostics(resource: URL): sourcegraph.Diagnostic[]
@@ -78,10 +75,7 @@ export class ExtDiagnostics
         // Send the new data (from all collections) to the client when there is a change to any
         // collection.
         const subscription = c.changes.subscribe(() =>
-            this.proxy.$acceptDiagnosticCollection(
-                name,
-                Array.from(c.entries()).map(([uri, diagnostics]) => [uri.toString(), diagnostics.map(fromDiagnostic)])
-            )
+            this.proxy.$acceptDiagnosticCollection(name, toDiagnosticData(Array.from(c.entries())))
         )
 
         // Remove from ExtDiagnostics#collections array when the DiagnosticCollection is

@@ -80,6 +80,7 @@ function registerStatusProvider(
                                           diagnostics.length /* TODO!(sqs) this doesnt count repos, it counts files */
                                       } repositories affected)`,
                                       type: sourcegraph.NotificationType.Info,
+                                      diagnostics: diagnostics,
                                       actions: [
                                           {
                                               ...(await computeFixAllActionsFromDiagnostics(diagnostics)),

@@ -7,8 +7,8 @@ import React, { useCallback, useState } from 'react'
 import { CodeAction } from 'sourcegraph'
 import { ExtensionsControllerProps } from '../../../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../../../shared/src/graphql/schema'
+import { ActionsDropdownButton } from '../../../../../actions/internal/ActionsDropdownButton'
 import { ThreadSettings } from '../../../../settings'
-import { ThreadInboxItemActionsDropdownButton } from './ThreadInboxItemActionsDropdownButton'
 
 interface Props extends ExtensionsControllerProps {
     thread: Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'settings'>
@@ -77,12 +77,7 @@ export const ThreadInboxItemActions: React.FunctionComponent<Props> = ({
                                         onChange={e =>
                                             onCodeActionClick(e.currentTarget.checked ? codeAction : undefined)
                                         }
-                                    />{' '}
-                                    {/* TODO!(sqs) {codeAction === activeCodeAction ? (
-                                        <CheckboxMarkedCircleOutlineIcon className="icon-inline small mr-1" />
-                                    ) : (
-                                        <CheckboxBlankCirckeOutlineIcon className="icon-inline small mr-1" />
-                                    )} */}{' '}
+                                    />
                                     {codeAction.title}
                                 </label>
                             ))}
@@ -103,8 +98,8 @@ export const ThreadInboxItemActions: React.FunctionComponent<Props> = ({
                         </ul>
                     )}
                     {codeActionsWithCommandSecondary.length > 0 && (
-                        <ThreadInboxItemActionsDropdownButton
-                            codeActions={codeActionsWithCommandSecondary}
+                        <ActionsDropdownButton
+                            actions={codeActionsWithCommandSecondary}
                             buttonClassName={`${buttonClassName} ${inactiveButtonClassName} mr-2 mb-2`}
                         />
                     )}

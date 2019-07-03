@@ -3,7 +3,6 @@ import { Hover, Location } from '@sourcegraph/extension-api-types'
 import { map } from 'rxjs/operators'
 import { CodeAction, CompletionList, DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
-import { toCodeAction } from '../../extension/api/types'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { CodeActionsParams, ProvideCodeActionsSignature } from '../services/codeActions'
 import { ProvideCompletionItemSignature } from '../services/completion'
@@ -11,6 +10,7 @@ import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
 import { wrapRemoteObservable } from './common'
+import { toCodeAction } from '../../types/action'
 
 /** @internal */
 export interface ClientLanguageFeaturesAPI extends ProxyValue {

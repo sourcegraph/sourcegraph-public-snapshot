@@ -3,7 +3,7 @@ import * as sourcegraph from 'sourcegraph'
 import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 import { ClientNotificationsAPI } from '../../client/api/notifications'
-import { fromNotification } from '../../types/notifications'
+import { fromNotification } from '../../types/notification'
 
 export function createExtNotifications(
     proxy: ProxyResult<ClientNotificationsAPI>

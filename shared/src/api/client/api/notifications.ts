@@ -6,7 +6,7 @@ import { Unsubscribable } from 'rxjs'
 import { NotificationService } from '../services/notificationService'
 import { Notification } from '../../../notifications/notification'
 import { map } from 'rxjs/operators'
-import { toNotification } from '../../types/notifications'
+import { toNotification } from '../../types/notification'
 
 export interface ClientNotificationsAPI extends ProxyValue {
     $registerNotificationProvider(
