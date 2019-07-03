@@ -8,7 +8,7 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ChangesetCreationStatus, createChangesetFromCodeAction } from '../changesets/preview/backend'
-import { CreateChangesetFromCodeActionButton } from '../tasks/list/item/CreateChangesetFromCodeActionButton'
+import { CreateOrPreviewChangesetButton } from '../tasks/list/item/CreateOrPreviewChangesetButton'
 import { WorkspaceEditPreview } from '../threads/detail/inbox/item/WorkspaceEditPreview'
 import { ActionsFormControl } from './internal/ActionsFormControl'
 
@@ -126,9 +126,9 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
                     />
                     <div className="m-3">
                         {createdThreadOrLoading === undefined || createdThreadOrLoading === LOADING ? (
-                            <CreateChangesetFromCodeActionButton
+                            <CreateOrPreviewChangesetButton
                                 onClick={onCreateThreadClick}
-                                isLoading={createdThreadOrLoading === LOADING}
+                                disabled={createdThreadOrLoading === LOADING}
                             />
                         ) : createdThreadOrLoading.status === GQL.ThreadStatus.PREVIEW ? (
                             <Redirect to={createdThreadOrLoading.url} push={true} />

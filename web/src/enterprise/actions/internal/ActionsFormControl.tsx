@@ -1,84 +1,52 @@
-import CloseIcon from 'mdi-react/CloseIcon'
-import React, { useCallback } from 'react'
-import { CodeAction } from 'sourcegraph'
-import { ActionButton } from './ActionButton'
-import { ActionRadioButton } from './ActionRadioButton'
-import { ActionsDropdownButton } from './ActionsDropdownButton'
+import React from 'react'
+import { Action, isActionType } from '../../../../../shared/src/api/types/action'
+import { ChangesetCreationStatus } from '../../changesets/preview/backend'
+import { CommandActionButton } from './CommandActionButton'
+import { PlanActionButton } from './PlanActionButton'
 
 interface Props {
-    actions: readonly CodeAction[]
-    activeAction: CodeAction | undefined
-    onActionSetActive: (activeAction: CodeAction | undefined) => void
-    onActionClick: (action: CodeAction) => void
+    actions: readonly Action[]
+    onActionClick: (action: Action, creationStatus?: ChangesetCreationStatus) => void
 
     className?: string
     buttonClassName?: string
-    inactiveButtonClassName?: string
-    activeButtonClassName?: string
 }
 
 /**
- * A form control that displays {@link sourcegraph.CodeAction}s.
+ * A form control that displays {@link sourcegraph.Action}s.
  *
  * TODO!(sqs): dedupe with ThreadInboxItemActions?
  */
 export const ActionsFormControl: React.FunctionComponent<Props> = ({
     actions,
-    activeAction,
     onActionClick,
-    onActionSetActive,
     className,
     buttonClassName = 'btn btn-link text-decoration-none',
-    inactiveButtonClassName,
-    activeButtonClassName,
 }) => {
-    const actionsWithEdit = actions.filter(({ edit }) => !!edit)
-    const actionsWithCommand = actions.filter(
-        ({ diagnostics, command }) => !!command && diagnostics && diagnostics.length > 0
-    )
-    const secondaryCodeActions = actions.filter(
-        ({ diagnostics, command }) => !!command && (!diagnostics || diagnostics.length === 0)
-    )
-
-    const onActionValueChange = useCallback(
-        (value: boolean, action: CodeAction) => {
-            onActionSetActive(value ? action : undefined)
-        },
-        [onActionSetActive]
-    )
-
+    const planActions = actions.filter(isActionType('plan'))
+    const commandActions = actions.filter(isActionType('command'))
     return (
-        <div className={`task-list-item-actions d-flex ${className}`}>
-            {actionsWithEdit.map((action, i) => (
-                <ActionRadioButton
-                    key={i}
-                    action={action}
-                    value={action === activeAction}
-                    onChange={onActionValueChange}
-                    className="mb-2"
-                    buttonClassName={buttonClassName}
-                    activeButtonClassName={activeButtonClassName}
-                    inactiveButtonClassName={inactiveButtonClassName}
-                />
-            ))}
-            {actionsWithCommand.map((action, i) => (
-                <ActionButton
+        <div className={`task-list-item-actions d-flex flex-column ${className}`}>
+            {planActions.map((action, i) => (
+                <PlanActionButton
                     key={i}
                     action={action}
                     onClick={onActionClick}
-                    className={`${buttonClassName} ${inactiveButtonClassName} mr-2 mb-2`}
+                    className="mb-2"
+                    buttonClassName={buttonClassName}
                 />
             ))}
-            <ActionButton
-                action={{ title: 'Preview and edit changeset...' }}
-                onClick={onActionClick}
-                className={`${buttonClassName} ${inactiveButtonClassName} mr-2 mb-2`}
-            />
-            {secondaryCodeActions.length > 0 && (
-                <ActionsDropdownButton
-                    actions={secondaryCodeActions}
-                    buttonClassName={`${buttonClassName} ${inactiveButtonClassName} mr-2 mb-2`}
-                />
+            {commandActions.length > 0 && (
+                <div className="d-flex flex-wrap">
+                    {commandActions.map((action, i) => (
+                        <CommandActionButton
+                            key={i}
+                            action={action}
+                            onClick={onActionClick}
+                            className={`${buttonClassName} mr-2 mb-2`}
+                        />
+                    ))}
+                </div>
             )}
         </div>
     )
