@@ -137,7 +137,6 @@ func Test_highlightMatches(t *testing.T) {
 		name    string
 		args    args
 		want    *highlightedString
-		wantErr bool
 	}{
 		{
 			// https://github.com/sourcegraph/sourcegraph/issues/4512
