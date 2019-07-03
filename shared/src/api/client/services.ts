@@ -22,6 +22,7 @@ import { SearchProviderRegistry } from './services/searchProviders'
 import { createSettingsService } from './services/settings'
 import { ViewProviderRegistry } from './services/view'
 import { createWorkspaceService } from './services/workspaceService'
+import { createNotificationService } from './services/notificationService'
 
 /**
  * Services is a container for all services used by the client application.
@@ -48,6 +49,7 @@ export class Services {
     public readonly model = createModelService()
     public readonly editor = createEditorService(this.model)
     public readonly notifications = new NotificationsService()
+    public readonly notifications2 = createNotificationService()
     public readonly settings = createSettingsService(this.platformContext)
     public readonly contribution = new ContributionRegistry(this.editor, this.settings, this.context.data)
     public readonly extensions = new ExtensionsService(this.platformContext, this.editor, this.settings)

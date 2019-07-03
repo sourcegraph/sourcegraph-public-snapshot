@@ -1,6 +1,6 @@
 import { Observable, BehaviorSubject, from, isObservable, of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import { switchMap, catchError, map, distinctUntilChanged } from 'rxjs/operators'
+import { switchMap, catchError, map, distinctUntilChanged, tap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { isEqual, flatten, compact } from 'lodash'
 import { isPromise, isSubscribable } from '../../util'
@@ -11,10 +11,14 @@ import { isPromise, isSubscribable } from '../../util'
  */
 export interface NotificationService {
     /**
-     * Observe the notification items provided by all registered providers.
+     * Observe the notifications provided by registered providers or by a specific provider.
+     *
+     * @param type Only observe notifications from the provider registered with this type. If
+     * undefined, notifications from all providers are observed.
      */
     observeNotifications(
-        scope: Parameters<sourcegraph.NotificationProvider['provideNotifications']>[0]
+        scope: Parameters<sourcegraph.NotificationProvider['provideNotifications']>[0],
+        type?: Parameters<typeof sourcegraph.notifications.registerNotificationProvider>[0]
     ): Observable<sourcegraph.Notification[]>
 
     /**
@@ -35,19 +39,20 @@ export function createNotificationService(logErrors = true): NotificationService
     }
     const registrations = new BehaviorSubject<Registration[]>([])
     return {
-        observeNotifications: (...args) => {
+        observeNotifications: (scope, type) => {
             return registrations.pipe(
                 switchMap(registrations =>
                     combineLatestOrDefault(
-                        registrations.map(({ provider }) =>
-                            fromProviderResult(provider.provideNotifications(...args), items => items || []).pipe(
-                                catchError(err => {
-                                    if (logErrors) {
-                                        console.error(err)
-                                    }
-                                    return [null]
-                                })
-                            )
+                        (type === undefined ? registrations : registrations.filter(r => r.type === type)).map(
+                            ({ provider }) =>
+                                fromProviderResult(provider.provideNotifications(scope), items => items || []).pipe(
+                                    catchError(err => {
+                                        if (logErrors) {
+                                            console.error(err)
+                                        }
+                                        return [null]
+                                    })
+                                )
                         )
                     ).pipe(
                         map(itemsArrays => flatten(compact(itemsArrays))),
