@@ -234,7 +234,7 @@ func (r *repositoryResolver) hydrate(ctx context.Context) error {
 		var repo *types.Repo
 		repo, r.err = db.Repos.Get(ctx, r.repo.ID)
 		if r.err == nil {
-			r.repo = repo
+			r.repo.RepoFields = repo.RepoFields
 		}
 	})
 
