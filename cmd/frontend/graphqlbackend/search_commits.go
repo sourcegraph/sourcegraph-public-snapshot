@@ -277,7 +277,10 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 				}
 				pat, err := regexp.Compile(patString)
 				if err == nil {
-					results[i].messagePreview = highlightMatches(pat, []byte(commit.Message))
+					results[i].messagePreview, err = highlightMatches(pat, []byte(commit.Message))
+					if err != nil {
+						return nil, false, false, errors.Wrapf(err, "highlighting matches")
+					}
 					matchHighlights = results[i].messagePreview.highlights
 				}
 			} else {
@@ -398,7 +401,7 @@ func displayRepoName(repoPath string) string {
 	return strings.Join(parts, "/")
 }
 
-func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
+func highlightMatches(pattern *regexp.Regexp, data []byte) (*highlightedString, error) {
 	const maxMatchesPerLine = 25 // arbitrary
 
 	// Make map from byte positions to character positions.
@@ -422,10 +425,11 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
 			})
 		}
 	}
-	return &highlightedString{
+	hls := &highlightedString{
 		value:      string(data),
 		highlights: highlights,
 	}
+	return hls, nil
 }
 
 var mockSearchCommitDiffsInRepos func(args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error)

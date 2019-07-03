@@ -3,12 +3,13 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"reflect"
 	"regexp"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
 
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -133,65 +134,82 @@ func Test_highlightMatches(t *testing.T) {
 		data    []byte
 	}
 	tests := []struct {
-		name string
-		args args
-		want *highlightedString
+		name    string
+		args    args
+		want    *highlightedString
+		wantErr bool
 	}{
 		{
 			name: "https://github.com/sourcegraph/sourcegraph/issues/4512 case 1",
-			args: args {
+			args: args{
 				pattern: regexp.MustCompile(`白`),
-				data: []byte(`加一行空白`),
+				data:    []byte(`加一行空白`),
 			},
 			want: &highlightedString{
 				value: "加一行空白",
-				highlights: []*highlightedRange {
+				highlights: []*highlightedRange{
 					{
-						line: 1,
+						line:      1,
 						character: 4,
-						length: 1,
+						length:    1,
 					},
 				},
 			},
 		},
 		{
 			name: "https://github.com/sourcegraph/sourcegraph/issues/4512 case 2",
-			args: args {
+			args: args{
 				pattern: regexp.MustCompile(`行空`),
-				data: []byte(`加一行空白`),
+				data:    []byte(`加一行空白`),
 			},
 			want: &highlightedString{
 				value: "加一行空白",
-				highlights: []*highlightedRange {
+				highlights: []*highlightedRange{
 					{
-						line: 1,
+						line:      1,
 						character: 2,
-						length: 2,
+						length:    2,
 					},
 				},
 			},
 		},
 		{
 			name: "https://github.com/sourcegraph/sourcegraph/issues/4512 case 3",
-			args: args {
+			args: args{
 				pattern: regexp.MustCompile(`加`),
-				data: []byte(`加一行空白`),
+				data:    []byte(`加一行空白`),
 			},
 			want: &highlightedString{
 				value: "加一行空白",
-				highlights: []*highlightedRange {
+				highlights: []*highlightedRange{
 					{
-						line: 1,
+						line:      1,
 						character: 0,
-						length: 1,
+						length:    1,
 					},
 				},
 			},
 		},
+
+		{
+			name: "invalid utf-8 ",
+			args: args{
+				pattern: regexp.MustCompile(`.+`),
+				data:    []byte(`"a\xc5z"`),
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := highlightMatches(tt.args.pattern, tt.args.data); !reflect.DeepEqual(got, tt.want) {
+			got, err := highlightMatches(tt.args.pattern, tt.args.data)
+			if tt.wantErr && err == nil {
+				t.Fatalf("got no error")
+			} else if err != nil {
+				t.Fatal("got an error")
+			}
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("highlightMatches() = %v, want %v", spew.Sdump(got), spew.Sdump(tt.want))
 			}
 		})
