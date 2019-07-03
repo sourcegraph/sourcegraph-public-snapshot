@@ -40,7 +40,7 @@ function createStatusProvider(
         provideStatus: (scope): sourcegraph.Subscribable<sourcegraph.Status | null> => {
             // TODO!(sqs): dont ignore scope
             return diagnostics.pipe(
-                map<[URL, sourcegraph.Diagnostic[]][], sourcegraph.Status>(diagnostics => ({
+                switchMap<[URL, sourcegraph.Diagnostic[]][], Promise<sourcegraph.Status>>(async diagnostics => ({
                     title: 'Travis CI',
                     state: {
                         completion: sourcegraph.StatusCompletion.Completed,
@@ -59,15 +59,16 @@ function createStatusProvider(
                     },
                     notifications: [
                         ...(diagnostics.length > 0
-                            ? [
+                            ? ([
                                   {
                                       title: `Outdated Go version specified in Travis CI configuration (${diagnostics.length} repositories affected)`,
                                       type: sourcegraph.NotificationType.Info,
+                                      actions: [await computeFixAllActionsFromDiagnostics(diagnostics)],
                                   },
-                              ]
+                              ] as sourcegraph.Notification[])
                             : []),
                     ],
-                    // diagnostics: diagnosticCollection,
+                    diagnostics: diagnosticCollection,
                 })),
                 startWith<sourcegraph.Status>({
                     title: 'Travis CI',
@@ -203,14 +204,20 @@ async function computeFixAllAction(): Promise<Pick<sourcegraph.CodeAction, 'edit
                 : null
         })
         .filter(isDefined)
+    return computeFixAllActionsFromDiagnostics(allTravisGoDiags)
+}
+
+async function computeFixAllActionsFromDiagnostics(
+    allDiags: [URL, sourcegraph.Diagnostic[]][]
+): Promise<Pick<sourcegraph.CodeAction, 'edit' | 'diagnostics'>> {
     const edit = new sourcegraph.WorkspaceEdit()
-    for (const [uri, diags] of allTravisGoDiags) {
+    for (const [uri, diags] of allDiags) {
         const doc = await sourcegraph.workspace.openTextDocument(uri)
         for (const diag of diags) {
             computeFixEdit(diag, doc, edit)
         }
     }
-    return { edit, diagnostics: flatten(allTravisGoDiags.map(([, diagnostics]) => diagnostics)) }
+    return { edit, diagnostics: flatten(allDiags.map(([, diagnostics]) => diagnostics)) }
 }
 
 function findMatchRanges(text: string, pattern: RegExp): sourcegraph.Range[] {

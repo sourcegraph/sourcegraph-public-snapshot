@@ -68,26 +68,34 @@ const queryCandidateFile = memoizeObservable(
 export const queryCandidateFiles = async (uris: URL[]): Promise<[URL, DiagnosticInfo['entry']][]> =>
     Promise.all(uris.map(uri => queryCandidateFile(uri).toPromise()))
 
+export const toDiagnosticInfos = async (diagEntries: [URL, sourcegraph.Diagnostic[]][]) => {
+    const entries = await queryCandidateFiles(diagEntries.map(([url]) => url))
+    const m = new Map<string, DiagnosticInfo['entry']>()
+    for (const [url, entry] of entries) {
+        m.set(url.toString(), entry)
+    }
+    return diagEntries.flatMap(([url, diag]) => {
+        const entry = m.get(url.toString())
+        if (!entry) {
+            throw new Error(`no entry for url ${url}`)
+        }
+        // tslint:disable-next-line: no-object-literal-type-assertion
+        return diag.map(d => ({ ...d, entry } as DiagnosticInfo))
+    })
+}
+
+/**
+ * @param diagnosticCollectionName Only observe diagnostics from the named {@link sourcegraph.DiagnosticCollection}.
+ */
 export const getDiagnosticInfos = (
-    extensionsController: ExtensionsControllerProps['extensionsController']
+    extensionsController: ExtensionsControllerProps['extensionsController'],
+    diagnosticCollectionName?: string
 ): Observable<DiagnosticInfo[]> =>
-    from(extensionsController.services.diagnostics.all).pipe(
-        switchMap(async diagEntries => {
-            const entries = await queryCandidateFiles(diagEntries.map(([url]) => url))
-            const m = new Map<string, DiagnosticInfo['entry']>()
-            for (const [url, entry] of entries) {
-                m.set(url.toString(), entry)
-            }
-            return diagEntries.flatMap(([url, diag]) => {
-                const entry = m.get(url.toString())
-                if (!entry) {
-                    throw new Error(`no entry for url ${url}`)
-                }
-                // tslint:disable-next-line: no-object-literal-type-assertion
-                return diag.map(d => ({ ...d, entry } as DiagnosticInfo))
-            })
-        })
-    )
+    from(
+        diagnosticCollectionName === undefined
+            ? extensionsController.services.diagnostics.all
+            : extensionsController.services.diagnostics.observe(diagnosticCollectionName)
+    ).pipe(switchMap(diagEntries => toDiagnosticInfos(diagEntries)))
 
 export const diagnosticID = (diagnostic: DiagnosticInfo): string =>
     `${diagnostic.entry.path}:${diagnostic.range ? diagnostic.range.start.line : '-'}:${

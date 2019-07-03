@@ -1113,12 +1113,17 @@ declare module 'sourcegraph' {
         /**
          * The title of the notification.
          */
-        title: string
+        readonly title: string
 
         /**
          * The type of the notification.
          */
-        type: NotificationType
+        readonly type: NotificationType
+
+        /**
+         * The [code actions](#CodeAction) that this notification presents.
+         */
+        readonly actions?: readonly CodeAction[]
     }
 
     /**

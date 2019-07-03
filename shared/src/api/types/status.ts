@@ -1,5 +1,5 @@
 import * as sourcegraph from 'sourcegraph'
-import { Subscribable } from 'rxjs'
+import { Subscribable, Observable } from 'rxjs'
 import { DiagnosticsService } from '../client/services/diagnosticsService'
 
 export interface TransferableStatus extends Pick<sourcegraph.Status, Exclude<keyof sourcegraph.Status, 'diagnostics'>> {
@@ -23,4 +23,10 @@ export const fromTransferableStatus = (
         ...status,
         diagnostics: status._diagnosticCollectionName ? observe(status._diagnosticCollectionName) : undefined,
     }
+}
+
+export interface TransferableStatusProvider {
+    provideStatus: (
+        ...args: Parameters<sourcegraph.StatusProvider['provideStatus']>
+    ) => Observable<TransferableStatus | null>
 }
