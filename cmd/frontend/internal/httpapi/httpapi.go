@@ -3,6 +3,8 @@ package httpapi
 import (
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"reflect"
 	"strconv"
 	"time"
@@ -45,6 +47,17 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
 
+	// BEFORE MERGING get this from config
+	target := "http://localhost:5000"
+	remote, err := url.Parse(target)
+	if err != nil {
+		panic(err)
+	}
+	proxy := httputil.NewSingleHostReverseProxy(remote)
+	// BEFORE MERGING consider moving this in the GraphQL API instead of at `.api/lsif`
+	// that might make auth easier, especially since /upload will have different permissions from /request
+	m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(proxyHandler(proxy))))
+
 	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(registry.HandleRegistry)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -53,6 +66,13 @@ func NewHandler(m *mux.Router) http.Handler {
 	})
 
 	return m
+}
+
+func proxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = mux.Vars(r)["rest"]
+		p.ServeHTTP(w, r)
+	}
 }
 
 // NewInternalHandler returns a new API handler for internal endpoints that uses
