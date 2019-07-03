@@ -13,6 +13,7 @@ const config: webpack.Configuration = {
         minimize: true,
         minimizer: [
             new TerserPlugin({
+                sourceMap: true,
                 terserOptions: {
                     output: {
                         // Without this, Uglify will change \u0000 to \0 (NULL byte),
