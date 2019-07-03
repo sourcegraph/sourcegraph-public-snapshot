@@ -402,7 +402,7 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
 	const maxMatchesPerLine = 25 // arbitrary
 
 	// Make map from byte positions to character positions.
-	byteToChar := make(map[int]int)
+	byteToChar := make(map[int]int, len(data))
 	var b, c int
 	bytes.Map(func(r rune) rune {
 		byteToChar[b] = c
