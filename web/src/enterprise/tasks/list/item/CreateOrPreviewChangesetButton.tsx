@@ -9,13 +9,18 @@ import { ChangesetIcon } from '../../../changesets/icons'
 import { ChangesetCreationStatus } from '../../../changesets/preview/backend'
 
 interface Props {
-    isLoading: boolean
     onClick: (creationStatus: ChangesetCreationStatus) => void
+
+    disabled?: boolean
+    className?: string
 }
 
 const LOADING: 'loading' = 'loading'
 
-export const CreateChangesetFromCodeActionButton: React.FunctionComponent<Props> = ({ isLoading, onClick }) => {
+/**
+ * A button to create or preview a changeset.
+ */
+export const CreateOrPreviewChangesetButton: React.FunctionComponent<Props> = ({ disabled, onClick }) => {
     const [creationStatus, setCreationStatus] = useState<ChangesetCreationStatus>(GQL.ThreadStatus.PREVIEW)
     const setCreationStatusCreate = useCallback(() => setCreationStatus(GQL.ThreadStatus.OPEN_ACTIVE), [])
     const setCreationStatusPreview = useCallback(() => setCreationStatus(GQL.ThreadStatus.PREVIEW), [])
@@ -40,7 +45,7 @@ export const CreateChangesetFromCodeActionButton: React.FunctionComponent<Props>
             <button
                 className="btn btn-success"
                 onClick={onClickWithStatus}
-                disabled={isLoading}
+                disabled={disabled}
                 style={{ minWidth: '160px' }}
             >
                 <ChangesetIcon className="icon-inline mr-1" />{' '}
@@ -51,7 +56,7 @@ export const CreateChangesetFromCodeActionButton: React.FunctionComponent<Props>
                     color="success"
                     className="border-left pl-1 pr-2"
                     caret={true}
-                    disabled={isLoading}
+                    disabled={disabled}
                 ></DropdownToggle>
                 <DropdownMenu>
                     <DropdownItem onClick={setCreationStatusCreate}>
