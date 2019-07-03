@@ -1111,9 +1111,9 @@ declare module 'sourcegraph' {
      */
     export interface Notification {
         /**
-         * The title of the notification.
+         * The message of the notification.
          */
-        readonly title: string
+        readonly message: string
 
         /**
          * The type of the notification.

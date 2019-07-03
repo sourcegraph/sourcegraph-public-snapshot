@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs'
 import { NotificationType, Progress } from 'sourcegraph'
+import { CodeAction } from '@sourcegraph/extension-api-types'
 
 /**
  * A notification message to display to the user.
@@ -21,4 +22,9 @@ export interface Notification {
      * If this Observable errors, the notification will be changed to an error type.
      */
     progress?: Observable<Progress>
+
+    /**
+     * Actions associated with this notification.
+     */
+    actions?: CodeAction[]
 }
