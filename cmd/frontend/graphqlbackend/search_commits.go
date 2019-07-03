@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"regexp"
 	"sort"
 	"strconv"
@@ -425,8 +424,6 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) (*highlightedString, 
 		if err != nil {
 			return nil, err
 		}
-
-		log.Printf("line is %q, byteToChar: %+v", line, byteToChar)
 
 		for _, match := range pattern.FindAllIndex(line, maxMatchesPerLine) {
 			highlights = append(highlights, &highlightedRange{
