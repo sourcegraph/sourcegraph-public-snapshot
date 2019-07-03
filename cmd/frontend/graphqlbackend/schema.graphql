@@ -806,14 +806,14 @@ type Query {
         query: String = ""
 
         # (experimental) When specified, indicates that this request should be
-        # paginated and results should be fetched starting at this offset.
-        #
-        # You can easily resume fetching where you left off by passing in the
-        # offset that was previously given to you as 'Search.offset'.
-        offset: SearchOffset
+        # paginated and fetch results starting at this cursor.
+        cursor: ID
 
         # (experimental) When specified, indicates that this request should be
         # paginated and results should be limited to this amount.
+        #
+        # A future request can be made for more results by passing in the
+        # `Search.cursor` that is returned.
         limit: Int
     ): Search
     # All saved searches configured for the current user, merged from all configurations.
@@ -875,12 +875,12 @@ type Search {
     # cached and thus quicker to query. Useful for e.g. querying sparkline
     # data.
     stats: SearchResultsStats!
-    # (experimental) For paginated search requests, this field may be passed in
-    # to a subsequent search request to resume consuming search results where
-    # this request left off.
+    # The cursor that can be passed into a future search request in order to
+    # fetch more results starting where this search left off. See the `search`
+    # resolver for more details.
     #
-    # This field is only present if the original request was a paginated one.
-    offset: SearchOffset
+    # Only present when the original request was a paginated one.
+    cursor: ID
 }
 
 # A search result.
