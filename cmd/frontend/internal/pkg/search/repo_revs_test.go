@@ -52,9 +52,9 @@ func TestParseRepositoryRevisions(t *testing.T) {
 
 func TestRepoRevisionsQuery(t *testing.T) {
 	repos := []*types.Repo{
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "foo"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "bar"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "baz"}},
+		{RepoIDs: types.RepoIDs{Name: "foo"}},
+		{RepoIDs: types.RepoIDs{Name: "bar"}},
+		{RepoIDs: types.RepoIDs{Name: "baz"}},
 	}
 	cases := map[string]string{
 		// Short circuit (no ref specifier) which doesn't filter input

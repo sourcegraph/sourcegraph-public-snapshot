@@ -76,7 +76,8 @@ func TestRepos_Get(t *testing.T) {
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "a",
 				ServiceType: "b",
-				ServiceID:   "c"},
+				ServiceID:   "c",
+			},
 		},
 		RepoFields: &types.RepoFields{URI: "u"},
 	})
@@ -223,10 +224,10 @@ func TestRepos_List_query1(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "abc/def"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "def/ghi"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "jkl/mno/pqr"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "github.com/abc/xyz"}},
+		{RepoIDs: types.RepoIDs{Name: "abc/def"}},
+		{RepoIDs: types.RepoIDs{Name: "def/ghi"}},
+		{RepoIDs: types.RepoIDs{Name: "jkl/mno/pqr"}},
+		{RepoIDs: types.RepoIDs{Name: "github.com/abc/xyz"}},
 	}
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, repo)
@@ -265,13 +266,13 @@ func TestRepos_List_query2(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "a/def"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "b/def"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "c/def"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "def/ghi"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "def/jkl"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "def/mno"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "abc/m"}},
+		{RepoIDs: types.RepoIDs{Name: "a/def"}},
+		{RepoIDs: types.RepoIDs{Name: "b/def"}},
+		{RepoIDs: types.RepoIDs{Name: "c/def"}},
+		{RepoIDs: types.RepoIDs{Name: "def/ghi"}},
+		{RepoIDs: types.RepoIDs{Name: "def/jkl"}},
+		{RepoIDs: types.RepoIDs{Name: "def/mno"}},
+		{RepoIDs: types.RepoIDs{Name: "abc/m"}},
 	}
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, repo)
@@ -310,13 +311,13 @@ func TestRepos_List_sort(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "c/def"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "def/mno"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "b/def"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "abc/m"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "abc/def"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "def/jkl"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "def/ghi"}},
+		{RepoIDs: types.RepoIDs{Name: "c/def"}},
+		{RepoIDs: types.RepoIDs{Name: "def/mno"}},
+		{RepoIDs: types.RepoIDs{Name: "b/def"}},
+		{RepoIDs: types.RepoIDs{Name: "abc/m"}},
+		{RepoIDs: types.RepoIDs{Name: "abc/def"}},
+		{RepoIDs: types.RepoIDs{Name: "def/jkl"}},
+		{RepoIDs: types.RepoIDs{Name: "def/ghi"}},
 	}
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, repo)
@@ -383,10 +384,10 @@ func TestRepos_List_patterns(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "a/b"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "c/d"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "e/f"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "g/h"}},
+		{RepoIDs: types.RepoIDs{Name: "a/b"}},
+		{RepoIDs: types.RepoIDs{Name: "c/d"}},
+		{RepoIDs: types.RepoIDs{Name: "e/f"}},
+		{RepoIDs: types.RepoIDs{Name: "g/h"}},
 	}
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, repo)
@@ -440,10 +441,10 @@ func TestRepos_List_queryPattern(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "a/b"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "c/d"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "e/f"}},
-		{RepoIDs: types.RepoIDs{ID: 0, Name: "g/h"}},
+		{RepoIDs: types.RepoIDs{Name: "a/b"}},
+		{RepoIDs: types.RepoIDs{Name: "c/d"}},
+		{RepoIDs: types.RepoIDs{Name: "e/f"}},
+		{RepoIDs: types.RepoIDs{Name: "g/h"}},
 	}
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, repo)

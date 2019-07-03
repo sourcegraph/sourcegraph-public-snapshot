@@ -62,10 +62,10 @@ func TestSearchSuggestions(t *testing.T) {
 			wantAll := db.ReposListOptions{OnlyRepoIDs: true, Enabled: true, LimitOffset: limitOffset}                                   // when treating term as text query
 			if reflect.DeepEqual(op, wantAll) {
 				calledReposListAll = true
-				return []*types.Repo{{RepoIDs: types.RepoIDs{ID: 0, Name: "bar-repo"}}}, nil
+				return []*types.Repo{{RepoIDs: types.RepoIDs{Name: "bar-repo"}}}, nil
 			} else if reflect.DeepEqual(op, wantFoo) {
 				calledReposListFoo = true
-				return []*types.Repo{{RepoIDs: types.RepoIDs{ID: 0, Name: "foo-repo"}}}, nil
+				return []*types.Repo{{RepoIDs: types.RepoIDs{Name: "foo-repo"}}}, nil
 			} else {
 				t.Errorf("got %+v, want %+v or %+v", op, wantFoo, wantAll)
 			}
@@ -128,10 +128,10 @@ func TestSearchSuggestions(t *testing.T) {
 			wantFooRepo3 := db.ReposListOptions{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, Enabled: true, LimitOffset: limitOffset} // when treating term as repo: field
 			if reflect.DeepEqual(op, wantReposInGroup) {
 				calledReposListReposInGroup = true
-				return []*types.Repo{{RepoIDs: types.RepoIDs{ID: 0, Name: "foo-repo1"}}, {RepoIDs: types.RepoIDs{ID: 0, Name: "repo3"}}}, nil
+				return []*types.Repo{{RepoIDs: types.RepoIDs{Name: "foo-repo1"}}, {RepoIDs: types.RepoIDs{Name: "repo3"}}}, nil
 			} else if reflect.DeepEqual(op, wantFooRepo3) {
 				calledReposListFooRepo3 = true
-				return []*types.Repo{{RepoIDs: types.RepoIDs{ID: 0, Name: "foo-repo1"}}}, nil
+				return []*types.Repo{{RepoIDs: types.RepoIDs{Name: "foo-repo1"}}}, nil
 			}
 			t.Errorf("got %+v, want %+v or %+v", op, wantReposInGroup, wantFooRepo3)
 			return nil, nil
@@ -202,7 +202,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
-			return []*types.Repo{{RepoIDs: types.RepoIDs{ID: 0, Name: "foo-repo"}}}, nil
+			return []*types.Repo{{RepoIDs: types.RepoIDs{Name: "foo-repo"}}}, nil
 		}
 
 		calledSearchFilesInRepos := false
@@ -246,7 +246,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
-			return []*types.Repo{{RepoIDs: types.RepoIDs{ID: 0, Name: "foo-repo"}}}, nil
+			return []*types.Repo{{RepoIDs: types.RepoIDs{Name: "foo-repo"}}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 
