@@ -194,11 +194,29 @@ func Test_highlightMatches(t *testing.T) {
 		{
 			name: "invalid utf-8 ",
 			args: args{
-				pattern: regexp.MustCompile(`.+`),
+				pattern: regexp.MustCompile(`.`),
 				data:    []byte("a\xc5z"),
 			},
-			want:    nil,
-			wantErr: true,
+			want: &highlightedString{
+				value: "a\xc5z",
+				highlights: []*highlightedRange{
+					{
+						line:      1,
+						character: 0,
+						length:    1,
+					},
+					{
+						line:      1,
+						character: 1,
+						length:    1,
+					},
+					{
+						line:      1,
+						character: 2,
+						length:    1,
+					},
+				},
+			},
 		},
 
 		{
@@ -226,14 +244,7 @@ func Test_highlightMatches(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := highlightMatches(tt.args.pattern, tt.args.data)
-			switch {
-			case tt.wantErr && err == nil:
-				t.Fatalf("got no error")
-			case !tt.wantErr && err != nil:
-				t.Fatal("got an error")
-			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if got := highlightMatches(tt.args.pattern, tt.args.data); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("highlightMatches() = %v, want %v", spew.Sdump(got), spew.Sdump(tt.want))
 			}
 		})
@@ -242,9 +253,6 @@ func Test_highlightMatches(t *testing.T) {
 
 func Benchmark_highlightMatches(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, err := highlightMatches(regexp.MustCompile(`a`), []byte("aaaaa\naaaaaa"))
-		if err != nil {
-			b.Fatal(err)
-		}
+		_ = highlightMatches(regexp.MustCompile(`a`), []byte("aaaaa\naaaaaa"))
 	}
 }
