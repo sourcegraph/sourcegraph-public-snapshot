@@ -38,7 +38,7 @@ func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {
 			t.Errorf("got repo %d, want %d", repo, wantRepo)
 			return nil, errRepoNotFound
 		}
-		return &types.Repo{ID: repo}, nil
+		return types.NewRepoWithIDs(repo, "", nil), nil
 	}
 	return
 }
@@ -51,7 +51,7 @@ func (s *MockRepos) MockGetByName(t *testing.T, wantName api.RepoName, repo api.
 			t.Errorf("got repo name %q, want %q", name, wantName)
 			return nil, errRepoNotFound
 		}
-		return &types.Repo{ID: repo, Name: name}, nil
+		return types.NewRepoWithIDs(repo, name, nil), nil
 	}
 	return
 }
@@ -75,7 +75,7 @@ func (s *MockRepos) MockList(t *testing.T, wantRepos ...api.RepoName) (called *b
 		*called = true
 		repos := make([]*types.Repo, len(wantRepos))
 		for i, repo := range wantRepos {
-			repos[i] = &types.Repo{Name: repo}
+			repos[i] = types.NewRepoWithIDs(0, repo, nil)
 		}
 		return repos, nil
 	}

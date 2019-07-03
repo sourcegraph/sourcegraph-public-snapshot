@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
@@ -28,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -39,7 +39,8 @@ import (
 // searchResultsCommon contains fields that should be returned by all funcs
 // that contribute to the overall search result set.
 type searchResultsCommon struct {
-	limitHit bool                      // whether the limit on results was hit
+	limitHit bool // whether the limit on results was hit
+
 	repos    []*types.Repo             // repos that were matched by the repo-related filters
 	searched []*types.Repo             // repos that were searched
 	indexed  []*types.Repo             // repos that were searched using an index

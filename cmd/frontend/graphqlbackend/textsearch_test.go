@@ -355,7 +355,7 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 			// treat empty list as preferring master
 			revs = []search.RevisionSpecifier{{RevSpec: ""}}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: repoName}, Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: types.NewRepoWithIDs(0, repoName, nil), Revs: revs}
 	}
 	return r
 }

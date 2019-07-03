@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -23,6 +24,9 @@ import (
 )
 
 type repositoryResolver struct {
+	hydration sync.Once
+	err       error
+
 	repo        *types.Repo
 	redirectURL *string
 	icon        string
@@ -64,12 +68,22 @@ func (r *repositoryResolver) Name() string {
 	return string(r.repo.Name)
 }
 
-func (r *repositoryResolver) URI() string {
-	return r.repo.URI
+func (r *repositoryResolver) URI(ctx context.Context) (string, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return r.repo.URI, nil
 }
 
-func (r *repositoryResolver) Description() string {
-	return r.repo.Description
+func (r *repositoryResolver) Description(ctx context.Context) (string, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return r.repo.Description, nil
 }
 
 func (r *repositoryResolver) RedirectURL() *string {
@@ -209,6 +223,22 @@ func (r *repositoryResolver) searchResultURIs() (string, string) {
 
 func (r *repositoryResolver) resultCount() int32 {
 	return 1
+}
+
+func (r *repositoryResolver) hydrate(ctx context.Context) error {
+	r.hydration.Do(func() {
+		if r.repo.RepoFields != nil {
+			return
+		}
+
+		var repo *types.Repo
+		repo, r.err = db.Repos.Get(ctx, r.repo.ID)
+		if r.err == nil {
+			r.repo.RepoFields = repo.RepoFields
+		}
+	})
+
+	return r.err
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {

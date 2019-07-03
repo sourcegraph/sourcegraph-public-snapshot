@@ -370,7 +370,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 
 	matches, limitHit, err = textSearch(ctx, gitserverRepo, commit, info, fetchTimeout)
 
-	workspace := fileMatchURI(repo.Name, rev, "")
+	workspace := fileMatchURI(repo.RepoName(), rev, "")
 	for _, fm := range matches {
 		fm.uri = workspace + fm.JPath
 		fm.repo = repo

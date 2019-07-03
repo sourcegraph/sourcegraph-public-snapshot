@@ -150,7 +150,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	for name, repoPaths := range settings.SearchRepositoryGroups {
 		repos := make([]*types.Repo, len(repoPaths))
 		for i, repoPath := range repoPaths {
-			repos[i] = &types.Repo{Name: api.RepoName(repoPath)}
+			repos[i] = types.NewRepoWithIDs(0, api.RepoName(repoPath), nil)
 		}
 		groups[name] = repos
 	}
@@ -403,7 +403,8 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 
 	tr.LazyPrintf("Repos.List - start")
-	repos, err := backend.Repos.List(ctx, db.ReposListOptions{
+	repos, err := db.Repos.List(ctx, db.ReposListOptions{
+		OnlyRepoIDs:     true,
 		IncludePatterns: includePatterns,
 		ExcludePattern:  unionRegExps(excludePatterns),
 		Enabled:         true,
