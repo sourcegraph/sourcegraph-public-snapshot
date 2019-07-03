@@ -1,32 +1,43 @@
-import { StatusCompletion, StatusScope } from '@sourcegraph/extension-api-classes'
-import { of, throwError, Unsubscribable } from 'rxjs'
-import { TestScheduler } from 'rxjs/testing'
+import { StatusCompletion, StatusScope, StatusResult, Range } from '@sourcegraph/extension-api-classes'
 import * as sourcegraph from 'sourcegraph'
+import { of, throwError, Unsubscribable, combineLatest, from } from 'rxjs'
+import { TestScheduler } from 'rxjs/testing'
 import { createStatusService, WrappedStatus } from './statusService'
+import { DiagnosticsService } from './diagnosticsService'
+import { DiagnosticSeverity } from '../../types/diagnosticCollection'
+import { TransferableStatus } from '../../types/status'
+import { map, switchMap } from 'rxjs/operators'
 
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
-const STATUS_1: WrappedStatus = { name: '', status: { title: '1', state: StatusCompletion.Completed } }
+const STATUS_1: WrappedStatus = {
+    name: '',
+    status: { title: '1', state: { result: StatusResult.Success, completion: StatusCompletion.Completed } },
+}
 
-const STATUS_2: WrappedStatus = { name: '', status: { title: '2', state: StatusCompletion.Completed } }
+const STATUS_2: WrappedStatus = { name: '', status: { title: '2', state: { completion: StatusCompletion.InProgress } } }
 
 const SCOPE = StatusScope.Global
+
+const EMPTY_DIAGNOSTICS: Pick<DiagnosticsService, 'observe'> = {
+    observe: () => of([]),
+}
 
 describe('StatusService', () => {
     describe('observeStatuses', () => {
         test('no providers yields empty array', () =>
             scheduler().run(({ expectObservable }) =>
-                expectObservable(createStatusService(false).observeStatuses(SCOPE)).toBe('a', {
+                expectObservable(createStatusService(EMPTY_DIAGNOSTICS, false).observeStatuses(SCOPE)).toBe('a', {
                     a: [],
                 })
             ))
 
         test('single provider', () => {
             scheduler().run(({ cold, expectObservable }) => {
-                const service = createStatusService(false)
+                const service = createStatusService(EMPTY_DIAGNOSTICS, false)
                 service.registerStatusProvider('', {
                     provideStatus: () =>
-                        cold<sourcegraph.Status | null>('abcd', {
+                        cold<TransferableStatus | null>('abcd', {
                             a: null,
                             b: STATUS_1.status,
                             c: STATUS_2.status,
@@ -42,9 +53,57 @@ describe('StatusService', () => {
             })
         })
 
+        test('includes diagnostics', () => {
+            const DIAGNOSTICS: [URL, sourcegraph.Diagnostic[]][] = [
+                [
+                    new URL('https://example.com'),
+                    [{ message: 'm', range: new Range(1, 2, 3, 4), severity: DiagnosticSeverity.Error }],
+                ],
+            ]
+            scheduler().run(({ cold, expectObservable }) => {
+                const service = createStatusService(
+                    {
+                        observe: name => {
+                            expect(name).toBe('d')
+                            return of(DIAGNOSTICS)
+                        },
+                    },
+                    false
+                )
+                service.registerStatusProvider('', {
+                    provideStatus: () =>
+                        cold<TransferableStatus>('a', {
+                            a: { ...STATUS_1.status, _diagnosticCollectionName: 'd' },
+                        }),
+                })
+                expectObservable(
+                    service.observeStatuses(SCOPE).pipe(
+                        switchMap(statuses =>
+                            combineLatest(
+                                statuses.map(status =>
+                                    from(status.status.diagnostics || of([])).pipe(
+                                        map(diagnostics => ({
+                                            ...status,
+                                            status: {
+                                                ...status.status,
+                                                _diagnosticCollectionName: undefined,
+                                                diagnostics,
+                                            },
+                                        }))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ).toBe('a', {
+                    a: [{ ...STATUS_1, status: { ...STATUS_1.status, diagnostics: DIAGNOSTICS } }],
+                })
+            })
+        })
+
         test('merges results from multiple providers', () => {
             scheduler().run(({ cold, expectObservable }) => {
-                const service = createStatusService(false)
+                const service = createStatusService(EMPTY_DIAGNOSTICS, false)
                 const unsub1 = service.registerStatusProvider('1', {
                     provideStatus: () => of(STATUS_1.status),
                 })
@@ -61,9 +120,9 @@ describe('StatusService', () => {
                     },
                 }).subscribe(f => f())
                 expectObservable(service.observeStatuses(SCOPE)).toBe('ab(cd)', {
-                    a: [STATUS_1],
-                    b: [STATUS_1, STATUS_2],
-                    c: [STATUS_2],
+                    a: [{ ...STATUS_1, name: '1' }],
+                    b: [{ ...STATUS_1, name: '1' }, { ...STATUS_2, name: '2' }],
+                    c: [{ ...STATUS_2, name: '2' }],
                     d: [],
                 })
             })
@@ -71,7 +130,7 @@ describe('StatusService', () => {
 
         test('suppresses errors', () => {
             scheduler().run(({ expectObservable }) => {
-                const service = createStatusService(false)
+                const service = createStatusService(EMPTY_DIAGNOSTICS, false)
                 service.registerStatusProvider('a', {
                     provideStatus: () => throwError(new Error('x')),
                 })
@@ -82,20 +141,20 @@ describe('StatusService', () => {
         })
     })
 
-    describe('observeStatuse', () => {
+    describe('observeStatus', () => {
         test('no providers yields null', () =>
             scheduler().run(({ expectObservable }) =>
-                expectObservable(createStatusService(false).observeStatus('', SCOPE)).toBe('a', {
+                expectObservable(createStatusService(EMPTY_DIAGNOSTICS, false).observeStatus('', SCOPE)).toBe('a', {
                     a: null,
                 })
             ))
 
         test('single provider', () => {
             scheduler().run(({ cold, expectObservable }) => {
-                const service = createStatusService(false)
+                const service = createStatusService(EMPTY_DIAGNOSTICS, false)
                 service.registerStatusProvider('', {
                     provideStatus: () =>
-                        cold<sourcegraph.Status | null>('abcd', {
+                        cold<TransferableStatus | null>('abcd', {
                             a: null,
                             b: STATUS_1.status,
                             c: STATUS_2.status,
@@ -114,7 +173,7 @@ describe('StatusService', () => {
         test('suppresses errors', () => {
             // TODO!(sqs): probably should NOT suppress errors, especially when observing a single status
             scheduler().run(({ expectObservable }) => {
-                const service = createStatusService(false)
+                const service = createStatusService(EMPTY_DIAGNOSTICS, false)
                 service.registerStatusProvider('a', {
                     provideStatus: () => throwError(new Error('x')),
                 })
@@ -127,13 +186,13 @@ describe('StatusService', () => {
 
     describe('registerStatusProvider', () => {
         test('enforces unique registration names', () => {
-            const service = createStatusService(false)
+            const service = createStatusService(EMPTY_DIAGNOSTICS, false)
             service.registerStatusProvider('a', {
-                provideStatus: () => null,
+                provideStatus: () => of(null),
             })
             expect(() =>
                 service.registerStatusProvider('a', {
-                    provideStatus: () => null,
+                    provideStatus: () => of(null),
                 })
             ).toThrowError(/already registered/)
         })

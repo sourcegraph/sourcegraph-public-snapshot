@@ -4,6 +4,7 @@ import * as sourcegraph from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { StatusService } from '../services/statusService'
 import { wrapRemoteObservable } from './common'
+import { TransferableStatus } from '../../types/status'
 
 export interface ClientStatusAPI extends ProxyValue {
     $registerStatusProvider(
@@ -11,7 +12,7 @@ export interface ClientStatusAPI extends ProxyValue {
         providerFunction: ProxyResult<
             ((
                 ...args: Parameters<sourcegraph.StatusProvider['provideStatus']>
-            ) => ProxySubscribable<sourcegraph.Status | null | undefined>) &
+            ) => ProxySubscribable<TransferableStatus | null>) &
                 ProxyValue
         >
     ): Unsubscribable & ProxyValue

@@ -1,10 +1,10 @@
 import { compact, isEqual } from 'lodash'
-import { BehaviorSubject, from, isObservable, Observable, of } from 'rxjs'
+import { BehaviorSubject, from, isObservable, Observable, of, Unsubscribable } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { isPromise, isSubscribable } from '../../util'
-import { ClientStatus } from '../../types/status'
+import { ClientStatus, fromTransferableStatus, TransferableStatusProvider } from '../../types/status'
 import { DiagnosticsService } from './diagnosticsService'
 
 /**
@@ -45,7 +45,10 @@ export interface StatusService {
      *
      * @returns An unsubscribable to unregister the provider.
      */
-    registerStatusProvider: typeof sourcegraph.status.registerStatusProvider
+    registerStatusProvider(
+        name: Parameters<typeof sourcegraph.status.registerStatusProvider>[0],
+        provider: TransferableStatusProvider
+    ): Unsubscribable
 }
 
 /**
@@ -57,7 +60,7 @@ export function createStatusService(
 ): StatusService {
     interface Registration {
         name: Parameters<typeof sourcegraph.status.registerStatusProvider>[0]
-        provider: sourcegraph.StatusProvider
+        provider: TransferableStatusProvider
     }
     const registrations = new BehaviorSubject<Registration[]>([])
 
@@ -65,7 +68,9 @@ export function createStatusService(
         registration: Registration,
         args: Parameters<sourcegraph.StatusProvider['provideStatus']>
     ): Observable<WrappedStatus | null> =>
-        fromProviderResult(registration.provider.provideStatus(...args), item => item || null).pipe(
+        fromProviderResult(registration.provider.provideStatus(...args), item =>
+            item ? fromTransferableStatus(item, diagnosticsService) : null
+        ).pipe(
             map(status => (status ? { name: registration.name, status } : null)),
             catchError(err => {
                 if (logErrors) {

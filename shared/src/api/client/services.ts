@@ -62,5 +62,5 @@ export class Services {
     public readonly views = new ViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
     public readonly checkTemplates = new CheckTemplateRegistry()
-    public readonly status = createStatusService()
+    public readonly status = createStatusService(this.diagnostics)
 }
