@@ -6,6 +6,7 @@ import {
     Range,
     Selection,
     StatusScope,
+    NotificationScope,
     StatusCompletion,
     StatusResult,
 } from '@sourcegraph/extension-api-classes'
@@ -32,6 +33,7 @@ import { ExtSearch } from './api/search'
 import { createExtStatus } from './api/status'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
+import { createExtNotifications } from './api/notifications'
 
 /**
  * Required information when initializing an extension host.
@@ -153,6 +155,7 @@ function createExtensionAPI(
     const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
     const status = createExtStatus(proxy.status)
+    const notifications = createExtNotifications(proxy.notifications)
 
     const diagnostics = new ExtDiagnostics(proxy.diagnostics)
     subscription.add(diagnostics)
@@ -188,6 +191,7 @@ function createExtensionAPI(
         TextEdit,
         DiagnosticSeverity,
         WorkspaceEdit,
+        NotificationScope,
         StatusScope,
         StatusCompletion,
         StatusResult,
@@ -215,6 +219,11 @@ function createExtensionAPI(
             onDidChangeRoots: roots.changes,
             rootChanges: roots.changes,
             openTextDocument: uri => documents.openTextDocument(uri),
+        },
+
+        notifications: {
+            registerNotificationProvider: (type, provider) =>
+                notifications.registerNotificationProvider(type, provider),
         },
 
         status: {

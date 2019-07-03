@@ -27,6 +27,7 @@ import {
     ShowNotificationParams,
 } from './services/notifications'
 import { createClientStatus } from './api/status'
+import { createClientNotifications } from './api/notifications'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -123,6 +124,7 @@ export async function createExtensionHostClientConnection(
     const clientContent = createClientContent(services.linkPreviews)
 
     const clientStatus = createClientStatus(services.status)
+    const clientNotifications = createClientNotifications(services.notifications2)
 
     const clientAPI: ClientAPI = {
         ping: () => 'pong',
@@ -138,6 +140,7 @@ export async function createExtensionHostClientConnection(
         diagnostics: clientDiagnostics,
         documents: clientDocuments,
         status: clientStatus,
+        notifications: clientNotifications,
     }
     comlink.expose(clientAPI, endpoints.expose)
 

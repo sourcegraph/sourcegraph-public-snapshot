@@ -1,6 +1,6 @@
 import { flatten } from 'lodash'
 import { from, Observable, of, Subscription, Unsubscribable } from 'rxjs'
-import { map, publishReplay, refCount, startWith, switchMap, toArray } from 'rxjs/operators'
+import { map, publishReplay, refCount, startWith, switchMap, toArray, tap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { isDefined } from '../../../../shared/src/util/types'
@@ -14,9 +14,7 @@ const diagnosticCollection = sourcegraph.languages.createDiagnosticCollection('d
 export function registerTravisGo(): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(startDiagnostics())
-    subscriptions.add(
-        sourcegraph.status.registerStatusProvider('travis-ci', createStatusProvider(diagnostics, diagnosticCollection))
-    )
+    subscriptions.add(registerStatusProvider(diagnostics, diagnosticCollection))
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
     return subscriptions
 }
@@ -32,51 +30,70 @@ function startDiagnostics(): Unsubscribable {
     return subscriptions
 }
 
-function createStatusProvider(
+function registerStatusProvider(
     diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]>,
     diagnosticCollection: sourcegraph.DiagnosticCollection
-): sourcegraph.StatusProvider {
-    return {
-        provideStatus: (scope): sourcegraph.Subscribable<sourcegraph.Status | null> => {
-            // TODO!(sqs): dont ignore scope
-            return diagnostics.pipe(
-                switchMap<[URL, sourcegraph.Diagnostic[]][], Promise<sourcegraph.Status>>(async diagnostics => ({
-                    title: 'Travis CI',
-                    state: {
-                        completion: sourcegraph.StatusCompletion.Completed,
-                        result: sourcegraph.StatusResult.Success,
-                        message: 'All builds passing, all repository configuration valid and up-to-date',
-                    },
-                    sections: {
-                        settings: {
-                            kind: sourcegraph.MarkupKind.Markdown,
-                            value: `Require all projects to configure Travis CI`,
+): Unsubscribable {
+    const subscriptions = new Subscription()
+    subscriptions.add(
+        sourcegraph.status.registerStatusProvider('travis-ci', {
+            provideStatus: (scope): sourcegraph.Subscribable<sourcegraph.Status | null> => {
+                // TODO!(sqs): dont ignore scope
+                return diagnostics.pipe(
+                    switchMap<[URL, sourcegraph.Diagnostic[]][], Promise<sourcegraph.Status>>(async diagnostics => ({
+                        title: 'Travis CI',
+                        state: {
+                            completion: sourcegraph.StatusCompletion.Completed,
+                            result: sourcegraph.StatusResult.Success,
+                            message: 'All builds passing, all repository configuration valid and up-to-date',
                         },
-                        notifications: {
-                            kind: sourcegraph.MarkupKind.Markdown,
-                            value: `Notify **@sourcegraph/devops** of changes to Travis CI configuration`,
+                        sections: {
+                            settings: {
+                                kind: sourcegraph.MarkupKind.Markdown,
+                                value: `Require all projects to configure Travis CI`,
+                            },
+                            notifications: {
+                                kind: sourcegraph.MarkupKind.Markdown,
+                                value: `Notify **@sourcegraph/devops** of changes to Travis CI configuration`,
+                            },
                         },
-                    },
-                    notifications: [
-                        ...(diagnostics.length > 0
-                            ? ([
+                        diagnostics: diagnosticCollection,
+                    })),
+                    startWith<sourcegraph.Status>({
+                        title: 'Travis CI',
+                        state: { completion: sourcegraph.StatusCompletion.InProgress },
+                    })
+                )
+            },
+        })
+    )
+    subscriptions.add(
+        sourcegraph.notifications.registerNotificationProvider('travis-ci', {
+            provideNotifications: scope =>
+                // TODO!(sqs): dont ignore scope
+                diagnostics.pipe(
+                    switchMap(async diagnostics =>
+                        diagnostics.length > 0
+                            ? [
                                   {
-                                      title: `Outdated Go version specified in Travis CI configuration (${diagnostics.length} repositories affected)`,
+                                      title: `Outdated Go version specified in Travis CI configuration (${
+                                          diagnostics.length /* TODO!(sqs) this doesnt count repos, it counts files */
+                                      } repositories affected)`,
                                       type: sourcegraph.NotificationType.Info,
-                                      actions: [await computeFixAllActionsFromDiagnostics(diagnostics)],
+                                      actions: [
+                                          {
+                                              ...(await computeFixAllActionsFromDiagnostics(diagnostics)),
+                                              title: 'Fix all',
+                                          },
+                                      ],
                                   },
-                              ] as sourcegraph.Notification[])
-                            : []),
-                    ],
-                    diagnostics: diagnosticCollection,
-                })),
-                startWith<sourcegraph.Status>({
-                    title: 'Travis CI',
-                    state: { completion: sourcegraph.StatusCompletion.InProgress },
-                })
-            )
-        },
-    }
+                              ]
+                            : []
+                    )
+                ),
+        })
+    )
+    return subscriptions
 }
 
 const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]> = from(sourcegraph.workspace.rootChanges).pipe(

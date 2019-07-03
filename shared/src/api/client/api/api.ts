@@ -10,6 +10,7 @@ import { ClientSearchAPI } from './search'
 import { ClientViewsAPI } from './views'
 import { ClientWindowsAPI } from './windows'
 import { ClientStatusAPI } from './status'
+import { ClientNotificationsAPI } from './notifications'
 
 /**
  * The API that is exposed from the client (main thread) to the extension host (worker)
@@ -29,4 +30,5 @@ export interface ClientAPI {
     diagnostics: ClientDiagnosticsAPI
     documents: ClientDocumentsAPI
     status: ClientStatusAPI
+    notifications: ClientNotificationsAPI
 }
