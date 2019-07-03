@@ -11,6 +11,10 @@ import (
 )
 
 func (r *repositoryResolver) ExternalRepository() *externalRepositoryResolver {
+	if r.repo.ExternalRepo == nil {
+		return nil
+	}
+
 	return &externalRepositoryResolver{repository: r}
 }
 
