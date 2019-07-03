@@ -804,6 +804,14 @@ type Query {
     search(
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
+
+        # (experimental) When specified, indicates that this request should be
+        # paginated and results should be returned starting at this offset.
+        offset: Int
+
+        # (experimental) When specified, indicates that this request should be
+        # paginated and results should be limited to this amount.
+        limit: Int
     ): Search
     # All saved searches configured for the current user, merged from all configurations.
     savedSearches: [SavedSearch!]!
