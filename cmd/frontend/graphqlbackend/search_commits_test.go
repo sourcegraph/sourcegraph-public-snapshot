@@ -140,7 +140,8 @@ func Test_highlightMatches(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "https://github.com/sourcegraph/sourcegraph/issues/4512 case 1",
+			// https://github.com/sourcegraph/sourcegraph/issues/4512
+			name: "match at end",
 			args: args{
 				pattern: regexp.MustCompile(`白`),
 				data:    []byte(`加一行空白`),
@@ -157,7 +158,8 @@ func Test_highlightMatches(t *testing.T) {
 			},
 		},
 		{
-			name: "https://github.com/sourcegraph/sourcegraph/issues/4512 case 2",
+			// https://github.com/sourcegraph/sourcegraph/issues/4512
+			name: "two character match in middle",
 			args: args{
 				pattern: regexp.MustCompile(`行空`),
 				data:    []byte(`加一行空白`),
@@ -174,7 +176,8 @@ func Test_highlightMatches(t *testing.T) {
 			},
 		},
 		{
-			name: "https://github.com/sourcegraph/sourcegraph/issues/4512 case 3",
+			// https://github.com/sourcegraph/sourcegraph/issues/4512
+			name: "match at beginning",
 			args: args{
 				pattern: regexp.MustCompile(`加`),
 				data:    []byte(`加一行空白`),
