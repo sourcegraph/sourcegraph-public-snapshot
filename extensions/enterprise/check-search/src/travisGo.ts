@@ -30,6 +30,10 @@ function startDiagnostics(): Unsubscribable {
     return subscriptions
 }
 
+const FIX_GO_VERSION_COMMAND_ID = 'travis-ci.fixGoVersion'
+
+interface FixGoVersionParams {}
+
 function registerStatusProvider(
     diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]>,
     diagnosticCollection: sourcegraph.DiagnosticCollection
@@ -72,27 +76,47 @@ function registerStatusProvider(
             provideNotifications: scope =>
                 // TODO!(sqs): dont ignore scope
                 diagnostics.pipe(
-                    switchMap(async diagnostics =>
-                        diagnostics.length > 0
-                            ? [
-                                  {
-                                      message: `Outdated Go version specified in Travis CI configuration (${
-                                          diagnostics.length /* TODO!(sqs) this doesnt count repos, it counts files */
-                                      } repositories affected)`,
-                                      type: sourcegraph.NotificationType.Info,
-                                      diagnostics: diagnostics,
-                                      actions: [
-                                          {
-                                              ...(await computeFixAllActionsFromDiagnostics(diagnostics)),
-                                              title: 'Fix all',
-                                          },
-                                      ],
-                                  },
-                              ]
-                            : []
+                    switchMap(
+                        async diagnostics =>
+                            (diagnostics.length > 0
+                                ? [
+                                      {
+                                          message: 'Outdated Go version specified in Travis CI configuration',
+                                          type: sourcegraph.NotificationType.Info,
+                                          actions: [
+                                              {
+                                                  plan: {
+                                                      operations: [
+                                                          {
+                                                              command: {
+                                                                  command: FIX_GO_VERSION_COMMAND_ID,
+                                                                  title: 'Use Go 1.13 for all Travis CI builds',
+                                                              },
+                                                          },
+                                                      ],
+                                                  },
+                                              },
+                                          ],
+                                      },
+                                  ]
+                                : []) as sourcegraph.Notification[]
                     )
                 ),
         })
+    )
+    subscriptions.add(
+        sourcegraph.commands.registerPlanCommand<FixGoVersionParams>(
+            FIX_GO_VERSION_COMMAND_ID,
+            async (_params, diagnostics) => {
+                sourcegraph.app.activeWindow!.showNotification(
+                    'Hello from plan command',
+                    sourcegraph.NotificationType.Info
+                )
+
+                const { edit } = await computeFixAllActionsFromDiagnostics(diagnostics)
+                return edit
+            }
+        )
     )
     return subscriptions
 }

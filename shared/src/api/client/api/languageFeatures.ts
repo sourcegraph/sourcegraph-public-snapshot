@@ -10,7 +10,7 @@ import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
 import { wrapRemoteObservable } from './common'
-import { toCodeAction } from '../../types/action'
+import { toCodeAction } from '../../types/codeAction'
 
 /** @internal */
 export interface ClientLanguageFeaturesAPI extends ProxyValue {

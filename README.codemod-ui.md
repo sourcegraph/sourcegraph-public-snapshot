@@ -35,7 +35,9 @@ You *might* see some weirdness because Redis isn't similarly isolated. I don't k
 A **changeset** consists of:
 
 - a set of changes to code across one or more repositories
-- the "blueprints" for how those changes were made, so the changes can be recomputed against an updated base branch
+- optionally, the "blueprints" for how those changes were made, so the changes can be recomputed against an updated base branch
+
+An **auto changeset** is a changeset that has these "blueprints".
 
 You can create a changeset in 3 ways:
 

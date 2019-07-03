@@ -70,7 +70,7 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
                 />
             ))}
             <ActionButton
-                action={{ title: '' }}
+                action={{ title: 'Preview and edit changeset...' }}
                 onClick={onActionClick}
                 className={`${buttonClassName} ${inactiveButtonClassName} mr-2 mb-2`}
             />
