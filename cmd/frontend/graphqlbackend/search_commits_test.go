@@ -195,7 +195,7 @@ func Test_highlightMatches(t *testing.T) {
 			name: "invalid utf-8 ",
 			args: args{
 				pattern: regexp.MustCompile(`.+`),
-				data:    []byte(`"a\xc5z"`),
+				data:    []byte("a\xc5z"),
 			},
 			want:    nil,
 			wantErr: true,
@@ -204,9 +204,11 @@ func Test_highlightMatches(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := highlightMatches(tt.args.pattern, tt.args.data)
-			if tt.wantErr && err == nil {
+			switch {
+			case tt.wantErr && err == nil:
 				t.Fatalf("got no error")
-			} else if err != nil {
+
+			case !tt.wantErr && err != nil:
 				t.Fatal("got an error")
 			}
 			if !reflect.DeepEqual(got, tt.want) {

@@ -407,13 +407,21 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) (*highlightedString, 
 	// Make map from byte positions to character positions.
 	byteToChar := make(map[int]int, len(data))
 	var b, c int
-	bytes.Map(func(r rune) rune {
+	var err error
+	_ = bytes.Map(func(r rune) rune {
 		byteToChar[b] = c
-		b += utf8.RuneLen(r)
+		rl :=utf8.RuneLen(r)
+		if (rl < 0 || r == utf8.RuneError) && err == nil {
+			err = fmt.Errorf("invalid utf-8 code at character %d of %q", b, data)
+		}
+		b += rl
 		c++
 		return r
 	}, data)
 	byteToChar[b] = c
+	if err != nil {
+		return nil, err
+	}
 
 	var highlights []*highlightedRange
 	for i, line := range bytes.Split(data, []byte("\n")) {
