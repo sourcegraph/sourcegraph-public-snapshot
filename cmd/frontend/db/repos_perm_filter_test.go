@@ -526,22 +526,22 @@ func Test_authzFilter(t *testing.T) {
 					description:      "admin can read",
 					user:             &types.User{ID: 1, SiteAdmin: true},
 					perm:             authz.Read,
-					repos:            []*types.Repo{{RepoIDs: types.RepoIDs{Name: "gitolite.mycorp.co/foo"}}},
-					expFilteredRepos: []*types.Repo{{RepoIDs: types.RepoIDs{Name: "gitolite.mycorp.co/foo"}}},
+					repos:            []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+					expFilteredRepos: []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
 				},
 				{
 					description:      "non-admin can read",
 					user:             &types.User{ID: 2},
 					perm:             authz.Read,
-					repos:            []*types.Repo{{RepoIDs: types.RepoIDs{Name: "gitolite.mycorp.co/foo"}}},
-					expFilteredRepos: []*types.Repo{{RepoIDs: types.RepoIDs{Name: "gitolite.mycorp.co/foo"}}},
+					repos:            []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+					expFilteredRepos: []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
 				},
 				{
 					description:      "unauthenticated user can read",
 					user:             nil,
 					perm:             authz.Read,
-					repos:            []*types.Repo{{RepoIDs: types.RepoIDs{Name: "gitolite.mycorp.co/foo"}}},
-					expFilteredRepos: []*types.Repo{{RepoIDs: types.RepoIDs{Name: "gitolite.mycorp.co/foo"}}},
+					repos:            []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+					expFilteredRepos: []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
 				},
 			},
 		},
@@ -561,21 +561,21 @@ func Test_authzFilter(t *testing.T) {
 					description:      "admin can read",
 					user:             &types.User{ID: 1, SiteAdmin: true},
 					perm:             authz.Read,
-					repos:            []*types.Repo{{RepoIDs: types.RepoIDs{Name: "gitolite.mycorp.co/foo"}}},
-					expFilteredRepos: []*types.Repo{{RepoIDs: types.RepoIDs{Name: "gitolite.mycorp.co/foo"}}},
+					repos:            []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
+					expFilteredRepos: []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
 				},
 				{
 					description:      "non-admin can't read",
 					user:             &types.User{ID: 2},
 					perm:             authz.Read,
-					repos:            []*types.Repo{{RepoIDs: types.RepoIDs{Name: "gitolite.mycorp.co/foo"}}},
+					repos:            []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
 					expFilteredRepos: []*types.Repo{},
 				},
 				{
 					description:      "unauthenticated user can't read",
 					user:             nil,
 					perm:             authz.Read,
-					repos:            []*types.Repo{{RepoIDs: types.RepoIDs{Name: "gitolite.mycorp.co/foo"}}},
+					repos:            []*types.Repo{{Name: "gitolite.mycorp.co/foo"}},
 					expFilteredRepos: []*types.Repo{},
 				},
 			},
@@ -802,16 +802,15 @@ func makeRepo(name api.RepoName, id api.RepoID) *types.Repo {
 		extName = strconv.Itoa(int(id))
 	}
 	return &types.Repo{
-		RepoIDs: types.RepoIDs{
-			ID:   id,
-			Name: name,
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          extName,
-				ServiceType: "mock",
-				ServiceID:   "mock",
-			},
-		},
-	}
+
+		ID:   id,
+		Name: name,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          extName,
+			ServiceType: "mock",
+			ServiceID:   "mock",
+		}}
+
 }
 
 func makeRepos(names ...api.RepoName) []*types.Repo {

@@ -150,7 +150,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	for name, repoPaths := range settings.SearchRepositoryGroups {
 		repos := make([]*types.Repo, len(repoPaths))
 		for i, repoPath := range repoPaths {
-			repos[i] = &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName(repoPath)}}
+			repos[i] = &types.Repo{Name: api.RepoName(repoPath)}
 		}
 		groups[name] = repos
 	}

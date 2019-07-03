@@ -15,27 +15,6 @@ type RepoIdentifier interface {
 	ExternalRepoSpec() api.ExternalRepoSpec
 }
 
-// RepoIDs contains different identifiers for a single repository
-type RepoIDs struct {
-	// ID is the unique numeric ID for this repository.
-	ID api.RepoID
-
-	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
-	// service itself).
-	ExternalRepo api.ExternalRepoSpec
-
-	// Name is the name for this repository (e.g., "github.com/user/repo"). It
-	// is the same as URI, unless the user configures a non-default
-	// repositoryPathPattern.
-	//
-	// Previously, this was called RepoURI.
-	Name api.RepoName
-}
-
-func (r RepoIDs) RepoID() api.RepoID                     { return r.ID }
-func (r RepoIDs) RepoName() api.RepoName                 { return r.Name }
-func (r RepoIDs) ExternalRepoSpec() api.ExternalRepoSpec { return r.ExternalRepo }
-
 // RepoFields are optional data fields on a Repo
 type RepoFields struct {
 	// URI is the full name for this repository (e.g.,
@@ -57,20 +36,26 @@ type RepoFields struct {
 
 // Repo represents a source code repository.
 type Repo struct {
-	RepoIDs
+	// ID is the unique numeric ID for this repository.
+	ID api.RepoID
+	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// service itself).
+	ExternalRepo api.ExternalRepoSpec
+	// Name is the name for this repository (e.g., "github.com/user/repo"). It
+	// is the same as URI, unless the user configures a non-default
+	// repositoryPathPattern.
+	//
+	// Previously, this was called RepoURI.
+	Name api.RepoName
+
+	// RepoFields contains fields that are loaded from the DB only when necessary.
+	// This is to reduce memory usage when loading thousands of repos.
 	*RepoFields
 }
 
-// NewRepoWithIDs returns a Repo with its RepoIDs set.
-func NewRepoWithIDs(id api.RepoID, name api.RepoName, ext api.ExternalRepoSpec) *Repo {
-	return &Repo{
-		RepoIDs: RepoIDs{
-			ID:           id,
-			Name:         name,
-			ExternalRepo: ext,
-		},
-	}
-}
+func (r Repo) RepoID() api.RepoID                     { return r.ID }
+func (r Repo) RepoName() api.RepoName                 { return r.Name }
+func (r Repo) ExternalRepoSpec() api.ExternalRepoSpec { return r.ExternalRepo }
 
 // ExternalService is a connection to an external service.
 type ExternalService struct {

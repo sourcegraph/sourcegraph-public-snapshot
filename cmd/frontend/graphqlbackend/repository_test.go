@@ -54,30 +54,29 @@ func TestRepository_Commit(t *testing.T) {
 }
 
 func TestRepositoryHydration(t *testing.T) {
-	makeRepos := func() (minimal, hydrated *types.Repo) {
+	makeRepos := func() (*types.Repo, *types.Repo) {
 		const id = 42
 		name := fmt.Sprintf("repo-%d", id)
-		minimal = &types.Repo{
-			RepoIDs: types.RepoIDs{
-				ID:   api.RepoID(id),
-				Name: api.RepoName(name),
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          name,
-					ServiceType: "github",
-					ServiceID:   "https://github.com",
-				},
+
+		minimal := types.Repo{
+			ID:   api.RepoID(id),
+			Name: api.RepoName(name),
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          name,
+				ServiceType: "github",
+				ServiceID:   "https://github.com",
 			},
 		}
 
-		return minimal, &types.Repo{
-			RepoIDs: minimal.RepoIDs,
-			RepoFields: &types.RepoFields{
-				URI:         fmt.Sprintf("github.com/foobar/%s", name),
-				Description: "This is a description of a repository",
-				Language:    "monkey",
-				Fork:        false,
-			},
+		hydrated := minimal
+		hydrated.RepoFields = &types.RepoFields{
+			URI:         fmt.Sprintf("github.com/foobar/%s", name),
+			Description: "This is a description of a repository",
+			Language:    "monkey",
+			Fork:        false,
 		}
+
+		return &minimal, &hydrated
 	}
 
 	ctx := context.Background()

@@ -56,7 +56,7 @@ func TestEditorRev(t *testing.T) {
 		return "", nil
 	}
 	backend.Mocks.Repos.GetByName = func(v0 context.Context, name api.RepoName) (*types.Repo, error) {
-		return &types.Repo{RepoIDs: types.RepoIDs{ID: api.RepoID(1), Name: name}},
+		return &types.Repo{ID: api.RepoID(1), Name: name},
 
 			nil
 	}

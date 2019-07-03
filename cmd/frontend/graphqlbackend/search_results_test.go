@@ -70,7 +70,7 @@ func TestSearchResults(t *testing.T) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
 
-			return []*types.Repo{{RepoIDs: types.RepoIDs{ID: 1, Name: "repo"}}}, nil
+			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
 		}
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
@@ -101,7 +101,7 @@ func TestSearchResults(t *testing.T) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
 
-			return []*types.Repo{{RepoIDs: types.RepoIDs{ID: 1, Name: "repo"}}}, nil
+			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
@@ -136,7 +136,7 @@ func TestSearchResults(t *testing.T) {
 					uri:          "git://repo?rev#dir/file",
 					JPath:        "dir/file",
 					JLineMatches: []*lineMatch{{JLineNumber: 123}},
-					repo:         &types.Repo{RepoIDs: types.RepoIDs{ID: 1}},
+					repo:         &types.Repo{ID: 1},
 				},
 			}, &searchResultsCommon{}, nil
 		}
@@ -253,30 +253,27 @@ func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEn
 		name := fmt.Sprintf("repo-%d", i)
 
 		repoWithIDs := &types.Repo{
-			RepoIDs: types.RepoIDs{ID: api.RepoID(i),
-				Name: api.RepoName(name),
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          name,
-					ServiceType: "github",
-					ServiceID:   "https://github.com",
-				},
-			},
-		}
+			ID:   api.RepoID(i),
+			Name: api.RepoName(name),
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          name,
+				ServiceType: "github",
+				ServiceID:   "https://github.com",
+			}}
 
 		reposWithIDs = append(reposWithIDs, repoWithIDs)
 
 		repos = append(repos, &types.Repo{
-			RepoIDs: types.RepoIDs{
-				ID:           repoWithIDs.ID,
-				Name:         repoWithIDs.Name,
-				ExternalRepo: repoWithIDs.ExternalRepo,
-			},
+
+			ID:           repoWithIDs.ID,
+			Name:         repoWithIDs.Name,
+			ExternalRepo: repoWithIDs.ExternalRepo,
+
 			RepoFields: &types.RepoFields{
 				URI:         fmt.Sprintf("https://github.com/foobar/%s", repoWithIDs.Name),
 				Description: "this repositoriy contains a side project that I haven't maintained in 2 years",
 				Language:    "v-language",
-			},
-		})
+			}})
 
 		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
@@ -440,7 +437,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 }
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
-	repo := &types.Repo{RepoIDs: types.RepoIDs{Name: "testRepo"}}
+	repo := &types.Repo{Name: "testRepo"}
 
 	repoMatch := &repositoryResolver{
 		repo: repo,
@@ -664,32 +661,32 @@ func TestCompareSearchResults(t *testing.T) {
 	tests := []testCase{{
 		// Different repo matches
 		a: &repositoryResolver{
-			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("a")}},
+			repo: &types.Repo{Name: api.RepoName("a")},
 		},
 		b: &repositoryResolver{
-			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("b")}},
+			repo: &types.Repo{Name: api.RepoName("b")},
 		},
 		aIsLess: true,
 	}, {
 		// Repo match vs file match in same repo
 		a: &fileMatchResolver{
-			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("a")}},
+			repo: &types.Repo{Name: api.RepoName("a")},
 
 			JPath: "a",
 		},
 		b: &repositoryResolver{
-			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("a")}},
+			repo: &types.Repo{Name: api.RepoName("a")},
 		},
 		aIsLess: false,
 	}, {
 		// Same repo, different files
 		a: &fileMatchResolver{
-			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("a")}},
+			repo: &types.Repo{Name: api.RepoName("a")},
 
 			JPath: "a",
 		},
 		b: &fileMatchResolver{
-			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("a")}},
+			repo: &types.Repo{Name: api.RepoName("a")},
 
 			JPath: "b",
 		},
@@ -697,12 +694,12 @@ func TestCompareSearchResults(t *testing.T) {
 	}, {
 		// different repo, same file name
 		a: &fileMatchResolver{
-			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("a")}},
+			repo: &types.Repo{Name: api.RepoName("a")},
 
 			JPath: "a",
 		},
 		b: &fileMatchResolver{
-			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("b")}},
+			repo: &types.Repo{Name: api.RepoName("b")},
 
 			JPath: "a",
 		},
@@ -807,30 +804,27 @@ func TestSearchResultsHydration(t *testing.T) {
 	fileName := "foobar.go"
 
 	repoWithIDs := &types.Repo{
-		RepoIDs: types.RepoIDs{
-			ID:   api.RepoID(id),
-			Name: api.RepoName(repoName),
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          repoName,
-				ServiceType: "github",
-				ServiceID:   "https://github.com",
-			},
-		},
-	}
+
+		ID:   api.RepoID(id),
+		Name: api.RepoName(repoName),
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          repoName,
+			ServiceType: "github",
+			ServiceID:   "https://github.com",
+		}}
 
 	hydratedRepo := &types.Repo{
-		RepoIDs: types.RepoIDs{
-			ID:           repoWithIDs.ID,
-			ExternalRepo: repoWithIDs.ExternalRepo,
-			Name:         repoWithIDs.Name,
-		},
+
+		ID:           repoWithIDs.ID,
+		ExternalRepo: repoWithIDs.ExternalRepo,
+		Name:         repoWithIDs.Name,
+
 		RepoFields: &types.RepoFields{
 			URI:         fmt.Sprintf("github.com/my-org/%s", repoWithIDs.Name),
 			Description: "This is a description of a repository",
 			Language:    "monkey",
 			Fork:        false,
-		},
-	}
+		}}
 
 	db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return hydratedRepo, nil
