@@ -12,8 +12,8 @@ import (
 const ServiceType = "github"
 
 // ExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified GitHub repository.
-func ExternalRepoSpec(repo *Repository, baseURL url.URL) *api.ExternalRepoSpec {
-	return &api.ExternalRepoSpec{
+func ExternalRepoSpec(repo *Repository, baseURL url.URL) api.ExternalRepoSpec {
+	return api.ExternalRepoSpec{
 		ID:          repo.ID,
 		ServiceType: ServiceType,
 		ServiceID:   extsvc.NormalizeBaseURL(&baseURL).String(),

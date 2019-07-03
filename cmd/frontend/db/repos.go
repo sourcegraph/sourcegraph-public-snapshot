@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
@@ -116,13 +118,38 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 }
 
 const getRepoByQueryFmtstr = `
-SELECT id, name, COALESCE(uri, ''), description, language, created_at,
-  updated_at, external_id, external_service_type, external_service_id
+SELECT %s
 FROM repo
-WHERE deleted_at IS NULL AND enabled = true AND %s`
+WHERE deleted_at IS NULL
+AND enabled = true
+AND %%s`
+
+var getBySQLColumns = []string{
+	"id",
+	"name",
+	"external_id",
+	"external_service_type",
+	"external_service_id",
+	"uri",
+	"description",
+	"language",
+}
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
-	q := sqlf.Sprintf(getRepoByQueryFmtstr, querySuffix)
+	return s.getReposBySQL(ctx, false, querySuffix)
+}
+
+func (s *repos) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
+	columns := getBySQLColumns
+	if minimal {
+		columns = columns[:5]
+	}
+
+	q := sqlf.Sprintf(
+		fmt.Sprintf(getRepoByQueryFmtstr, strings.Join(columns, ",")),
+		querySuffix,
+	)
+
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -132,22 +159,13 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 	var repos []*types.Repo
 	for rows.Next() {
 		var repo types.Repo
-		var spec dbExternalRepoSpec
-
-		if err := rows.Scan(
-			&repo.ID,
-			&repo.Name,
-			&repo.URI,
-			&repo.Description,
-			&repo.Language,
-			&repo.CreatedAt,
-			&repo.UpdatedAt,
-			&spec.id, &spec.serviceType, &spec.serviceID,
-		); err != nil {
-			return nil, err
+		if !minimal {
+			repo.RepoFields = &types.RepoFields{}
 		}
 
-		repo.ExternalRepo = spec.toAPISpec()
+		if err := scanRepo(rows, &repo); err != nil {
+			return nil, err
+		}
 
 		repos = append(repos, &repo)
 	}
@@ -157,6 +175,29 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 
 	// 🚨 SECURITY: This enforces repository permissions
 	return authzFilter(ctx, repos, authz.Read)
+}
+
+func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
+	if r.RepoFields == nil {
+		return rows.Scan(
+			&r.ID,
+			&r.Name,
+			&dbutil.NullString{S: &r.ExternalRepo.ID},
+			&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
+			&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
+		)
+	}
+
+	return rows.Scan(
+		&r.ID,
+		&r.Name,
+		&dbutil.NullString{S: &r.ExternalRepo.ID},
+		&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
+		&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
+		&dbutil.NullString{S: &r.URI},
+		&r.Description,
+		&r.Language,
+	)
 }
 
 // ReposListOptions specifies the options for listing repositories.
@@ -196,6 +237,9 @@ type ReposListOptions struct {
 
 	// OnlyArchived excludes non-archived repositories from the list.
 	OnlyArchived bool
+
+	// OnlyRepoIDs fetches only the RepoIDs fields in each Repo.
+	OnlyRepoIDs bool
 
 	// Index when set will only include repositories which should be indexed
 	// if true. If false it will exclude repositories which should be
@@ -268,11 +312,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 	// fetch matching repos
 	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
-	rawRepos, err := s.getBySQL(ctx, fetchSQL)
-	if err != nil {
-		return nil, err
-	}
-	return rawRepos, nil
+	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fetchSQL)
 }
 
 // ListEnabledNames returns a list of all enabled repo names. This is commonly
@@ -681,14 +721,13 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 		// Ignore Enabled for deciding to update
 		insert = ((op.Description != r.Description) ||
 			(op.Fork != r.Fork) ||
-			(!op.ExternalRepo.Equal(r.ExternalRepo)))
+			(!op.ExternalRepo.Equal(&r.ExternalRepo)))
 	}
 
 	if !insert {
 		return nil
 	}
 
-	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
 	_, err = dbconn.Global.ExecContext(
 		ctx,
 		upsertSQL,
@@ -696,37 +735,12 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 		op.Description,
 		op.Fork,
 		enabled,
-		spec.id,
-		spec.serviceType,
-		spec.serviceID,
+		op.ExternalRepo.ID,
+		op.ExternalRepo.ServiceType,
+		op.ExternalRepo.ServiceID,
 		language,
 		op.Archived,
 	)
 
 	return err
-}
-
-// dbExternalRepoSpec is convenience type for inserting or selecting *api.ExternalRepoSpec database data.
-type dbExternalRepoSpec struct{ id, serviceType, serviceID *string }
-
-func (s *dbExternalRepoSpec) fromAPISpec(spec *api.ExternalRepoSpec) *dbExternalRepoSpec {
-	if spec != nil {
-		*s = dbExternalRepoSpec{
-			id:          &spec.ID,
-			serviceType: &spec.ServiceType,
-			serviceID:   &spec.ServiceID,
-		}
-	}
-	return s
-}
-
-func (s dbExternalRepoSpec) toAPISpec() *api.ExternalRepoSpec {
-	if s.id != nil && s.serviceType != nil && s.serviceID != nil {
-		return &api.ExternalRepoSpec{
-			ID:          *s.id,
-			ServiceType: *s.serviceType,
-			ServiceID:   *s.serviceID,
-		}
-	}
-	return nil
 }

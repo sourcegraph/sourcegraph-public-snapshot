@@ -109,7 +109,7 @@ type BitbucketServerConnection struct {
 	Password                    string                         `json:"password,omitempty"`
 	Repos                       []string                       `json:"repos,omitempty"`
 	RepositoryPathPattern       string                         `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string                       `json:"repositoryQuery"`
+	RepositoryQuery             []string                       `json:"repositoryQuery,omitempty"`
 	Token                       string                         `json:"token,omitempty"`
 	Url                         string                         `json:"url"`
 	Username                    string                         `json:"username"`
@@ -267,7 +267,7 @@ type GitHubConnection struct {
 	Orgs                        []string              `json:"orgs,omitempty"`
 	Repos                       []string              `json:"repos,omitempty"`
 	RepositoryPathPattern       string                `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string              `json:"repositoryQuery"`
+	RepositoryQuery             []string              `json:"repositoryQuery,omitempty"`
 	Token                       string                `json:"token"`
 	Url                         string                `json:"url"`
 }
@@ -414,6 +414,11 @@ type PhabricatorConnection struct {
 	Token string   `json:"token,omitempty"`
 	Url   string   `json:"url,omitempty"`
 }
+type QuickLink struct {
+	Description string `json:"description,omitempty"`
+	Name        string `json:"name"`
+	Url         string `json:"url"`
+}
 type Repos struct {
 	Callsign string `json:"callsign"`
 	Path     string `json:"path"`
@@ -473,6 +478,7 @@ type Settings struct {
 	Motd                      []string                  `json:"motd,omitempty"`
 	Notices                   []*Notice                 `json:"notices,omitempty"`
 	NotificationsSlack        *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
+	Quicklinks                []*QuickLink              `json:"quicklinks,omitempty"`
 	SearchContextLines        int                       `json:"search.contextLines,omitempty"`
 	SearchRepositoryGroups    map[string][]string       `json:"search.repositoryGroups,omitempty"`
 	SearchSavedQueries        []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`

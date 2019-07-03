@@ -101,6 +101,29 @@ describe('mergeSettings', () => {
                 { name: 'sourcegraph repos', value: 'repogroup:sourcegraph' },
             ],
         }))
+    test('merges quicklinks property', () =>
+        expect(
+            mergeSettings<
+                {
+                    a?: { [key: string]: { [key: string]: string }[] }
+                    b?: { [key: string]: { [key: string]: string }[] }
+                } & Settings
+            >([
+                { quicklinks: [{ name: 'main repo', value: '/github.com/org/main-repo' }] },
+                { quicklinks: [{ name: 'About Sourcegraph', value: 'https://docs.internal/about-sourcegraph' }] },
+                {
+                    quicklinks: [
+                        { name: 'mycorp extensions', value: 'https://sourcegraph.com/extensions?query=mycorp%2F' },
+                    ],
+                },
+            ])
+        ).toEqual({
+            quicklinks: [
+                { name: 'main repo', value: '/github.com/org/main-repo' },
+                { name: 'About Sourcegraph', value: 'https://docs.internal/about-sourcegraph' },
+                { name: 'mycorp extensions', value: 'https://sourcegraph.com/extensions?query=mycorp%2F' },
+            ],
+        }))
     test('merges search.repositoryGroups property', () =>
         expect(
             mergeSettings<{ a?: { [key: string]: string }; b?: { [key: string]: string } } & Settings>([

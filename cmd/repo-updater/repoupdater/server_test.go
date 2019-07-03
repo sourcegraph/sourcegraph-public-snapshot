@@ -110,7 +110,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	t.Run("found", func(t *testing.T) {
 		want := protocol.RepoLookupResult{
 			Repo: &protocol.RepoInfo{
-				ExternalRepo: &api.ExternalRepoSpec{
+				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "a",
 					ServiceType: github.ServiceType,
 					ServiceID:   "https://github.com/",
@@ -717,7 +717,7 @@ func TestRepoLookup(t *testing.T) {
 			},
 			stored: []*repos.Repo{githubRepository},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: &api.ExternalRepoSpec{
+				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
 					ServiceID:   "https://github.com/",
@@ -740,7 +740,7 @@ func TestRepoLookup(t *testing.T) {
 			},
 			stored: []*repos.Repo{awsCodeCommitRepository},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: &api.ExternalRepoSpec{
+				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 					ServiceType: awscodecommit.ServiceType,
 					ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
@@ -766,7 +766,7 @@ func TestRepoLookup(t *testing.T) {
 				repo: githubRepository,
 			},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: &api.ExternalRepoSpec{
+				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
 					ServiceID:   "https://github.com/",
@@ -793,7 +793,7 @@ func TestRepoLookup(t *testing.T) {
 				repo: githubRepository,
 			},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: &api.ExternalRepoSpec{
+				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
 					ServiceID:   "https://github.com/",

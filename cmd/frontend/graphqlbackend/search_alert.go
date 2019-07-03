@@ -80,7 +80,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		a.title = "Expand your repository filters to see results"
 		a.description = fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0])
 
-		repos1, _, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: repoFilters, minusRepoFilters: minusRepoFilters, onlyForks: onlyForks, noForks: noForks})
+		repos1, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: repoFilters, minusRepoFilters: minusRepoFilters, onlyForks: onlyForks, noForks: noForks})
 		if err != nil {
 			return nil, err
 		}
@@ -92,7 +92,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		}
 
 		unionRepoFilter := unionRegExps(repoFilters)
-		repos2, _, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: []string{unionRepoFilter}, minusRepoFilters: minusRepoFilters, repoGroupFilters: repoGroupFilters, onlyForks: onlyForks, noForks: noForks})
+		repos2, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: []string{unionRepoFilter}, minusRepoFilters: minusRepoFilters, repoGroupFilters: repoGroupFilters, onlyForks: onlyForks, noForks: noForks})
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +115,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		a.title = "Expand your repository filters to see results"
 		a.description = fmt.Sprintf("No repositories in repogroup:%s satisfied your repo: filter.", repoGroupFilters[0])
 
-		repos1, _, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: repoFilters, minusRepoFilters: minusRepoFilters, noForks: noForks, onlyForks: onlyForks})
+		repos1, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: repoFilters, minusRepoFilters: minusRepoFilters, noForks: noForks, onlyForks: onlyForks})
 		if err != nil {
 			return nil, err
 		}
@@ -136,7 +136,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		a.description = fmt.Sprintf("No repositories satisfied all of your repo: filters.")
 
 		unionRepoFilter := unionRegExps(repoFilters)
-		repos2, _, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: []string{unionRepoFilter}, minusRepoFilters: minusRepoFilters, repoGroupFilters: repoGroupFilters, noForks: noForks, onlyForks: onlyForks})
+		repos2, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: []string{unionRepoFilter}, minusRepoFilters: minusRepoFilters, repoGroupFilters: repoGroupFilters, noForks: noForks, onlyForks: onlyForks})
 		if err != nil {
 			return nil, err
 		}
@@ -232,7 +232,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 	//
 	// TODO(sqs): this logic can be significantly improved, but it's better than
 	// nothing for now.
-	repos, _, _, _, err := r.resolveRepositories(ctx, nil)
+	repos, _, _, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +265,7 @@ outer:
 		repoFieldValues = append(repoFieldValues, repoParentPattern)
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 		defer cancel()
-		_, _, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
+		_, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
 		if ctx.Err() != nil {
 			continue
 		} else if err != nil {

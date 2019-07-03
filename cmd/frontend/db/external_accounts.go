@@ -7,8 +7,10 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -199,7 +201,21 @@ type ExternalAccountsListOptions struct {
 	*LimitOffset
 }
 
-func (s *userExternalAccounts) List(ctx context.Context, opt ExternalAccountsListOptions) ([]*extsvc.ExternalAccount, error) {
+func (s *userExternalAccounts) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.ExternalAccount, err error) {
+	tr, ctx := trace.New(ctx, "userExternalAccounts.List", "")
+	defer func() {
+		if err != nil {
+			tr.SetError(err)
+		}
+
+		tr.LogFields(
+			otlog.Object("opt", opt),
+			otlog.Int("accounts.count", len(acct)),
+		)
+
+		tr.Finish()
+	}()
+
 	if Mocks.ExternalAccounts.List != nil {
 		return Mocks.ExternalAccounts.List(opt)
 	}

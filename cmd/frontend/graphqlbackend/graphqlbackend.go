@@ -254,7 +254,6 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 		}
 		return nil, err
 	}
-
 	return &repositoryResolver{repo: repo}, nil
 }
 

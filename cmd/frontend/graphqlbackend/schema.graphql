@@ -1173,8 +1173,12 @@ type Repository implements Node & GenericSearchResultInterface {
     # NOTE: Disabling a repository does not provide any additional security. This field is merely a
     # guideline to UI implementations.
     enabled: Boolean! @deprecated(reason: "Always true. All repositories are enabled.")
+    # DEPRECATED: This field is unused in known clients.
+    #
     # The date when this repository was created on Sourcegraph.
     createdAt: String!
+    # DEPRECATED: This field is unused in known clients.
+    #
     # The date when this repository's metadata was last updated on Sourcegraph.
     updatedAt: String
     # Returns information about the given commit in the repository, or null if no commit exists with the given rev.

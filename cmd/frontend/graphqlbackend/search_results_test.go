@@ -3,16 +3,22 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/zoekt"
+	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 )
 
 func TestSearchResults(t *testing.T) {
@@ -31,11 +37,13 @@ func TestSearchResults(t *testing.T) {
 		for i, result := range results.results {
 			// NOTE: Only supports one match per line. If we need to test other cases,
 			// just remove that assumption in the following line of code.
-			switch {
-			case result.repo != nil:
-				resultDescriptions[i] = fmt.Sprintf("repo:%s", result.repo.repo.Name)
-			case result.fileMatch != nil:
-				resultDescriptions[i] = fmt.Sprintf("%s:%d", result.fileMatch.JPath, result.fileMatch.JLineMatches[0].JLineNumber)
+			switch m := result.(type) {
+			case *repositoryResolver:
+				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.repo.Name)
+			case *fileMatchResolver:
+				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].JLineNumber)
+			default:
+				t.Fatal("unexpected result type", result)
 			}
 		}
 		return resultDescriptions
@@ -51,12 +59,21 @@ func TestSearchResults(t *testing.T) {
 		var calledReposList bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
-			if want := (db.ReposListOptions{Enabled: true, IncludePatterns: []string{"r", "p"}, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
+
+			want := db.ReposListOptions{
+				OnlyRepoIDs:     true,
+				Enabled:         true,
+				IncludePatterns: []string{"r", "p"},
+				LimitOffset:     limitOffset,
+			}
+			if !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
-			return []*types.Repo{{Name: "repo"}}, nil
+
+			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
 		}
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
+		db.Mocks.Repos.MockGet(t, 1)
 
 		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			return nil, &searchResultsCommon{}, nil
@@ -73,16 +90,25 @@ func TestSearchResults(t *testing.T) {
 		var calledReposList bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
-			if want := (db.ReposListOptions{Enabled: true, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
+
+			want := db.ReposListOptions{
+				OnlyRepoIDs: true,
+				Enabled:     true,
+				LimitOffset: limitOffset,
+			}
+
+			if !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
-			return []*types.Repo{{Name: "repo"}}, nil
+
+			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
+		db.Mocks.Repos.MockGet(t, 1)
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {
+		mockSearchRepositories = func(args *search.Args) ([]searchResultResolver, *searchResultsCommon, error) {
 			calledSearchRepositories = true
 			return nil, &searchResultsCommon{}, nil
 		}
@@ -106,7 +132,12 @@ func TestSearchResults(t *testing.T) {
 				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
 			}
 			return []*fileMatchResolver{
-				{uri: "git://repo?rev#dir/file", JPath: "dir/file", JLineMatches: []*lineMatch{{JLineNumber: 123}}},
+				{
+					uri:          "git://repo?rev#dir/file",
+					JPath:        "dir/file",
+					JLineMatches: []*lineMatch{{JLineNumber: 123}},
+					repo:         &types.Repo{ID: 1},
+				},
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -125,6 +156,169 @@ func TestSearchResults(t *testing.T) {
 			t.Error("calledSearchSymbols")
 		}
 	})
+}
+
+func BenchmarkSearchResults(b *testing.B) {
+	minimalRepos, _, zoektRepos := generateRepos(5000)
+	zoektFileMatches := generateZoektMatches(50)
+
+	z := &searchbackend.Zoekt{
+		Client: &fakeSearcher{
+			repos:  &zoekt.RepoList{Repos: zoektRepos},
+			result: &zoekt.SearchResult{Files: zoektFileMatches},
+		},
+		DisableCache: true,
+	}
+
+	ctx := context.Background()
+	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
+		return minimalRepos, nil
+	}
+	defer func() { db.Mocks = db.MockStores{} }()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for n := 0; n < b.N; n++ {
+		q, err := query.ParseAndCheck(`print index:only count:350`)
+		if err != nil {
+			b.Fatal(err)
+		}
+		resolver := &searchResolver{query: q, zoekt: z}
+		results, err := resolver.Results(ctx)
+		if err != nil {
+			b.Fatal("Results:", err)
+		}
+		if int(results.MatchCount()) != len(zoektFileMatches) {
+			b.Fatalf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
+		}
+	}
+}
+
+func BenchmarkIntegrationSearchResults(b *testing.B) {
+	ctx := dbtesting.TestContext(b)
+
+	_, repos, zoektRepos := generateRepos(5000)
+	zoektFileMatches := generateZoektMatches(50)
+
+	zoektClient, cleanup := zoektRPC(&fakeSearcher{
+		repos:  &zoekt.RepoList{Repos: zoektRepos},
+		result: &zoekt.SearchResult{Files: zoektFileMatches},
+	})
+	defer cleanup()
+	z := &searchbackend.Zoekt{
+		Client:       zoektClient,
+		DisableCache: true,
+	}
+
+	for _, r := range repos {
+		err := db.Repos.Upsert(ctx, api.InsertRepoOp{
+			Name:         r.Name,
+			Description:  r.Description,
+			Fork:         r.Fork,
+			Archived:     false,
+			Enabled:      true,
+			ExternalRepo: r.ExternalRepo,
+		})
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for n := 0; n < b.N; n++ {
+		q, err := query.ParseAndCheck(`print index:only count:350`)
+		if err != nil {
+			b.Fatal(err)
+		}
+		resolver := &searchResolver{query: q, zoekt: z}
+		results, err := resolver.Results(ctx)
+		if err != nil {
+			b.Fatal("Results:", err)
+		}
+		if int(results.MatchCount()) != len(zoektFileMatches) {
+			b.Fatalf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
+		}
+	}
+}
+
+func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEntry) {
+	var reposWithIDs []*types.Repo
+	var repos []*types.Repo
+	var zoektRepos []*zoekt.RepoListEntry
+
+	for i := 1; i <= count; i++ {
+		name := fmt.Sprintf("repo-%d", i)
+
+		repoWithIDs := &types.Repo{
+			ID:   api.RepoID(i),
+			Name: api.RepoName(name),
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          name,
+				ServiceType: "github",
+				ServiceID:   "https://github.com",
+			}}
+
+		reposWithIDs = append(reposWithIDs, repoWithIDs)
+
+		repos = append(repos, &types.Repo{
+
+			ID:           repoWithIDs.ID,
+			Name:         repoWithIDs.Name,
+			ExternalRepo: repoWithIDs.ExternalRepo,
+
+			RepoFields: &types.RepoFields{
+				URI:         fmt.Sprintf("https://github.com/foobar/%s", repoWithIDs.Name),
+				Description: "this repositoriy contains a side project that I haven't maintained in 2 years",
+				Language:    "v-language",
+			}})
+
+		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
+			Repository: zoekt.Repository{
+				Name:     name,
+				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+			},
+		})
+	}
+	return reposWithIDs, repos, zoektRepos
+}
+
+func generateZoektMatches(count int) []zoekt.FileMatch {
+	var zoektFileMatches []zoekt.FileMatch
+	for i := 1; i <= count; i++ {
+		repoName := fmt.Sprintf("repo-%d", i)
+		fileName := fmt.Sprintf("foobar-%d.go", i)
+
+		zoektFileMatches = append(zoektFileMatches, zoekt.FileMatch{
+			Score:      5.0,
+			FileName:   fileName,
+			Repository: repoName, // Important: this needs to match a name in `repos`
+			Branches:   []string{"master"},
+			LineMatches: []zoekt.LineMatch{
+				{
+					Line: nil,
+				},
+			},
+			Checksum: []byte{0, 1, 2},
+		})
+	}
+	return zoektFileMatches
+}
+
+// zoektRPC starts zoekts rpc interface and returns a client to
+// searcher. Useful for capturing CPU/memory usage when benchmarking the zoekt
+// client.
+func zoektRPC(s zoekt.Searcher) (zoekt.Searcher, func()) {
+	mux := http.NewServeMux()
+	mux.Handle(zoektrpc.DefaultRPCPath, zoektrpc.Server(s))
+	ts := httptest.NewServer(mux)
+	cl := zoektrpc.Client(strings.TrimPrefix(ts.URL, "http://"))
+	return cl, func() {
+		cl.Close()
+		ts.Close()
+	}
 }
 
 func TestRegexpPatternMatchingExprsInOrder(t *testing.T) {
@@ -243,9 +437,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 }
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
-	repo := &types.Repo{
-		Name: "testRepo",
-	}
+	repo := &types.Repo{Name: "testRepo"}
 
 	repoMatch := &repositoryResolver{
 		repo: repo,
@@ -275,19 +467,15 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 
 	type testCase struct {
 		descr                     string
-		searchResults             []*searchResultResolver
+		searchResults             []searchResultResolver
 		expectedDynamicFilterStrs map[string]struct{}
 	}
 
 	tests := []testCase{
 
 		{
-			descr: "single repo match",
-			searchResults: []*searchResultResolver{
-				{
-					repo: repoMatch,
-				},
-			},
+			descr:         "single repo match",
+			searchResults: []searchResultResolver{repoMatch},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`case:yes`:        {},
@@ -295,12 +483,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 
 		{
-			descr: "single file match without revision in query",
-			searchResults: []*searchResultResolver{
-				{
-					fileMatch: fileMatch,
-				},
-			},
+			descr:         "single file match without revision in query",
+			searchResults: []searchResultResolver{fileMatch},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:markdown`:   {},
@@ -309,12 +493,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 
 		{
-			descr: "single file match with specified revision",
-			searchResults: []*searchResultResolver{
-				{
-					fileMatch: fileMatchRev,
-				},
-			},
+			descr:         "single file match with specified revision",
+			searchResults: []searchResultResolver{fileMatchRev},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$@develop`: {},
 				`lang:markdown`:           {},
@@ -322,12 +502,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			},
 		},
 		{
-			descr: "file match from a language with two file extensions, using first extension",
-			searchResults: []*searchResultResolver{
-				{
-					fileMatch: tsFileMatch,
-				},
-			},
+			descr:         "file match from a language with two file extensions, using first extension",
+			searchResults: []searchResultResolver{tsFileMatch},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:typescript`: {},
@@ -335,12 +511,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			},
 		},
 		{
-			descr: "file match from a language with two file extensions, using second extension",
-			searchResults: []*searchResultResolver{
-				{
-					fileMatch: tsxFileMatch,
-				},
-			},
+			descr:         "file match from a language with two file extensions, using second extension",
+			searchResults: []searchResultResolver{tsxFileMatch},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
 				`lang:typescript`: {},
@@ -351,7 +523,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		// If there are no search results, no filters should be displayed.
 		{
 			descr:                     "no results",
-			searchResults:             []*searchResultResolver{},
+			searchResults:             []searchResultResolver{},
 			expectedDynamicFilterStrs: map[string]struct{}{},
 		},
 	}
@@ -481,90 +653,58 @@ func TestSearchRevspecs(t *testing.T) {
 
 func TestCompareSearchResults(t *testing.T) {
 	type testCase struct {
-		a       *searchResultResolver
-		b       *searchResultResolver
+		a       searchResultResolver
+		b       searchResultResolver
 		aIsLess bool
 	}
 
-	tests := []testCase{
+	tests := []testCase{{
 		// Different repo matches
-		{
-			a: &searchResultResolver{
-				repo: &repositoryResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("a"),
-					},
-				},
-			},
-			b: &searchResultResolver{
-				repo: &repositoryResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("b"),
-					},
-				},
-			},
-			aIsLess: true,
+		a: &repositoryResolver{
+			repo: &types.Repo{Name: api.RepoName("a")},
 		},
+		b: &repositoryResolver{
+			repo: &types.Repo{Name: api.RepoName("b")},
+		},
+		aIsLess: true,
+	}, {
 		// Repo match vs file match in same repo
-		{
-			a: &searchResultResolver{
-				fileMatch: &fileMatchResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("a"),
-					},
-					JPath: "a",
-				},
-			},
-			b: &searchResultResolver{
-				repo: &repositoryResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("a"),
-					},
-				},
-			},
-			aIsLess: false,
+		a: &fileMatchResolver{
+			repo: &types.Repo{Name: api.RepoName("a")},
+
+			JPath: "a",
 		},
+		b: &repositoryResolver{
+			repo: &types.Repo{Name: api.RepoName("a")},
+		},
+		aIsLess: false,
+	}, {
 		// Same repo, different files
-		{
-			a: &searchResultResolver{
-				fileMatch: &fileMatchResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("a"),
-					},
-					JPath: "a",
-				},
-			},
-			b: &searchResultResolver{
-				fileMatch: &fileMatchResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("a"),
-					},
-					JPath: "b",
-				},
-			},
-			aIsLess: true,
+		a: &fileMatchResolver{
+			repo: &types.Repo{Name: api.RepoName("a")},
+
+			JPath: "a",
 		},
+		b: &fileMatchResolver{
+			repo: &types.Repo{Name: api.RepoName("a")},
+
+			JPath: "b",
+		},
+		aIsLess: true,
+	}, {
 		// different repo, same file name
-		{
-			a: &searchResultResolver{
-				fileMatch: &fileMatchResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("a"),
-					},
-					JPath: "a",
-				},
-			},
-			b: &searchResultResolver{
-				fileMatch: &fileMatchResolver{
-					repo: &types.Repo{
-						Name: api.RepoName("b"),
-					},
-					JPath: "a",
-				},
-			},
-			aIsLess: true,
+		a: &fileMatchResolver{
+			repo: &types.Repo{Name: api.RepoName("a")},
+
+			JPath: "a",
 		},
-	}
+		b: &fileMatchResolver{
+			repo: &types.Repo{Name: api.RepoName("b")},
+
+			JPath: "a",
+		},
+		aIsLess: true,
+	}}
 
 	for i, test := range tests {
 		got := compareSearchResults(test.a, test.b)
@@ -654,6 +794,100 @@ func TestValidateRepoHasFileUsage(t *testing.T) {
 		err = validateRepoHasFileUsage(q)
 		if err != nil {
 			t.Errorf("Expected no error, but got %v", err)
+		}
+	}
+}
+
+func TestSearchResultsHydration(t *testing.T) {
+	id := 42
+	repoName := "reponame-foobar"
+	fileName := "foobar.go"
+
+	repoWithIDs := &types.Repo{
+
+		ID:   api.RepoID(id),
+		Name: api.RepoName(repoName),
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          repoName,
+			ServiceType: "github",
+			ServiceID:   "https://github.com",
+		}}
+
+	hydratedRepo := &types.Repo{
+
+		ID:           repoWithIDs.ID,
+		ExternalRepo: repoWithIDs.ExternalRepo,
+		Name:         repoWithIDs.Name,
+
+		RepoFields: &types.RepoFields{
+			URI:         fmt.Sprintf("github.com/my-org/%s", repoWithIDs.Name),
+			Description: "This is a description of a repository",
+			Language:    "monkey",
+			Fork:        false,
+		}}
+
+	db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
+		return hydratedRepo, nil
+	}
+
+	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
+		return []*types.Repo{repoWithIDs}, nil
+	}
+
+	defer func() { db.Mocks = db.MockStores{} }()
+
+	zoektRepo := &zoekt.RepoListEntry{
+		Repository: zoekt.Repository{
+			Name:     string(repoWithIDs.Name),
+			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+		},
+	}
+
+	zoektFileMatches := []zoekt.FileMatch{{
+		Score:      5.0,
+		FileName:   fileName,
+		Repository: string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
+		Branches:   []string{"master"},
+		LineMatches: []zoekt.LineMatch{
+			{
+				Line: nil,
+			},
+		},
+		Checksum: []byte{0, 1, 2},
+	}}
+
+	z := &searchbackend.Zoekt{
+		Client: &fakeSearcher{
+			repos:  &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{zoektRepo}},
+			result: &zoekt.SearchResult{Files: zoektFileMatches},
+		},
+		DisableCache: true,
+	}
+
+	ctx := context.Background()
+
+	q, err := query.ParseAndCheck(`foobar index:only count:350`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolver := &searchResolver{query: q, zoekt: z}
+	results, err := resolver.Results(ctx)
+	if err != nil {
+		t.Fatal("Results:", err)
+	}
+	// We want one file match and one repository match
+	wantMatchCount := 2
+	if int(results.MatchCount()) != wantMatchCount {
+		t.Fatalf("wrong results length. want=%d, have=%d\n", wantMatchCount, results.MatchCount())
+	}
+
+	for _, r := range results.Results() {
+		switch r := r.(type) {
+		case *fileMatchResolver:
+			assertRepoResolverHydrated(ctx, t, r.Repository(), hydratedRepo)
+
+		case *repositoryResolver:
+			assertRepoResolverHydrated(ctx, t, r, hydratedRepo)
 		}
 	}
 }

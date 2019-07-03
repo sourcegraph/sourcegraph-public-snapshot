@@ -24,6 +24,6 @@ compiler.run((err, stats) => {
 
     buildChrome()
     buildFirefox()
-    tasks.copyPhabricator()
+    tasks.copyIntegrationAssets()
     signale.success('Build done')
 })

@@ -13,7 +13,7 @@ import { isErrorLike } from '../../../util/errors'
 import { memoizeObservable } from '../../../util/memoizeObservable'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { isDefined } from '../../../util/types'
-import { CodeEditor, EditorService } from './editorService'
+import { CodeEditorWithPartialModel, EditorService } from './editorService'
 import { SettingsService } from './settings'
 
 /**
@@ -56,7 +56,7 @@ interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getSc
 export class ExtensionsService {
     public constructor(
         private platformContext: PartialContext,
-        private editorService: Pick<EditorService, 'editors'>,
+        private editorService: Pick<EditorService, 'editorsAndModels'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private extensionActivationFilter = extensionsWithMatchedActivationEvent,
         private fetchSideloadedExtension: (
@@ -120,7 +120,7 @@ export class ExtensionsService {
         // Extensions that have been activated (including extensions with zero "activationEvents" that evaluate to
         // true currently).
         const activatedExtensionIDs = new Set<string>()
-        return combineLatest(from(this.editorService.editors), this.enabledExtensions).pipe(
+        return combineLatest(from(this.editorService.editorsAndModels), this.enabledExtensions).pipe(
             tap(([editors, enabledExtensions]) => {
                 const activeExtensions = this.extensionActivationFilter(enabledExtensions, editors)
                 for (const x of activeExtensions) {
@@ -171,7 +171,7 @@ function asObservable(input: string | ObservableInput<string>): Observable<strin
 
 function extensionsWithMatchedActivationEvent(
     enabledExtensions: ConfiguredExtension[],
-    editors: readonly CodeEditor[]
+    editors: readonly CodeEditorWithPartialModel[]
 ): ConfiguredExtension[] {
     return enabledExtensions.filter(x => {
         try {

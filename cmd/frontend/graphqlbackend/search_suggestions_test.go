@@ -58,8 +58,8 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("single term", func(t *testing.T) {
 		var calledReposListAll, calledReposListFoo bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-			wantFoo := db.ReposListOptions{IncludePatterns: []string{"foo"}, Enabled: true, LimitOffset: limitOffset} // when treating term as repo: field
-			wantAll := db.ReposListOptions{Enabled: true, LimitOffset: limitOffset}                                   // when treating term as text query
+			wantFoo := db.ReposListOptions{IncludePatterns: []string{"foo"}, OnlyRepoIDs: true, Enabled: true, LimitOffset: limitOffset} // when treating term as repo: field
+			wantAll := db.ReposListOptions{OnlyRepoIDs: true, Enabled: true, LimitOffset: limitOffset}                                   // when treating term as text query
 			if reflect.DeepEqual(op, wantAll) {
 				calledReposListAll = true
 				return []*types.Repo{{Name: "bar-repo"}}, nil
@@ -128,7 +128,10 @@ func TestSearchSuggestions(t *testing.T) {
 			wantFooRepo3 := db.ReposListOptions{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, Enabled: true, LimitOffset: limitOffset} // when treating term as repo: field
 			if reflect.DeepEqual(op, wantReposInGroup) {
 				calledReposListReposInGroup = true
-				return []*types.Repo{{Name: "foo-repo1"}, {Name: "repo3"}}, nil
+				return []*types.Repo{
+					{Name: "foo-repo1"},
+					{Name: "repo3"},
+				}, nil
 			} else if reflect.DeepEqual(op, wantFooRepo3) {
 				calledReposListFooRepo3 = true
 				return []*types.Repo{{Name: "foo-repo1"}}, nil
@@ -162,7 +165,10 @@ func TestSearchSuggestions(t *testing.T) {
 			defer mu.Unlock()
 			calledResolveRepoGroups = true
 			return map[string][]*types.Repo{
-				"sample": {{Name: "foo-repo1"}, {Name: "repo3"}},
+				"sample": {
+					&types.Repo{Name: "foo-repo1"},
+					&types.Repo{Name: "repo3"},
+				},
 			}, nil
 		}
 		defer func() { mockResolveRepoGroups = nil }()
@@ -189,7 +195,14 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			if want := (db.ReposListOptions{IncludePatterns: []string{"foo"}, Enabled: true, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
+
+			want := db.ReposListOptions{
+				IncludePatterns: []string{"foo"},
+				OnlyRepoIDs:     true,
+				Enabled:         true,
+				LimitOffset:     limitOffset,
+			}
+			if !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
@@ -226,7 +239,14 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposList = true
-			if want := (db.ReposListOptions{IncludePatterns: []string{"foo"}, Enabled: true, LimitOffset: limitOffset}); !reflect.DeepEqual(op, want) {
+			want := db.ReposListOptions{
+				IncludePatterns: []string{"foo"},
+				OnlyRepoIDs:     true,
+				Enabled:         true,
+				LimitOffset:     limitOffset,
+			}
+
+			if !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil

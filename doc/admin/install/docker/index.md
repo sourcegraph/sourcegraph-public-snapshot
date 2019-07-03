@@ -8,7 +8,7 @@ It takes less than 5 minutes to run and install Sourcegraph using Docker:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.5.0</code></pre>
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.5.1</code></pre>
 
 Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
@@ -44,6 +44,18 @@ To achieve better performance, you can do any of the following:
   ```
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph:delegated
   ```
+
+## Insiders build
+
+To test new development builds of Sourcegraph (triggered by commits to master), change the tag to `insiders` in the `docker run` command.
+
+> WARNING: `insiders` builds may be unstable, so back up Sourcegraph's data and config (usually `~/.sourcegraph`) beforehand.
+
+```
+docker run --publish 7080:7080 --publish 2633:2633 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:insiders
+```
+
+To keep this up to date, run `docker pull sourcegraph/server:insiders` to pull in the latest image, and restart the container to access new changes.
 
 ## Next steps
 

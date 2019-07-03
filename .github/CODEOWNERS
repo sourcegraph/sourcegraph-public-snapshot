@@ -59,7 +59,6 @@
 /.gitattributes @beyang
 /.yarnrc @felixfbecker
 .eslintrc.js @felixfbecker
-/CHANGELOG.md @beyang
 /pkg/httputil @beyang
 /pkg/diskcache @beyang
 /pkg/sysreq @beyang
@@ -92,7 +91,6 @@ tslint.config.js @felixfbecker
 /prettier.config.js @felixfbecker
 /.editorconfig @felixfbecker
 /jest.config.js @felixfbecker
-/go.mod @beyang
 /cmd @beyang @slimsag
 /pkg @beyang @slimsag
 /enterprise/cmd/frontend/internal/registry @sqs @beyang
@@ -248,3 +246,5 @@ README.md @sqs
 **/package.json
 **/yarn.lock
 /go.sum
+/go.mod
+/CHANGELOG.md
