@@ -200,6 +200,29 @@ func Test_highlightMatches(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
+
+		{
+			name: "multiline",
+			args: args {
+				pattern: regexp.MustCompile(`行`),
+				data: []byte("加一行空白\n加一行空白"),
+			},
+			want: &highlightedString{
+				value: "加一行空白\n加一空行白",
+				highlights: []*highlightedRange{
+					{
+						line:      1,
+						character: 2,
+						length:    1,
+					},
+					{
+						line:      2,
+						character: 3,
+						length:    1,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
