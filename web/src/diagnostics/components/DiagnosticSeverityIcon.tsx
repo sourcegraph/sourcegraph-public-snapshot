@@ -1,10 +1,10 @@
+import { DiagnosticSeverity } from '@sourcegraph/extension-api-classes'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import AlertIcon from 'mdi-react/AlertIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React from 'react'
 import { DiagnosticSeverity as DiagnosticSeverityType } from 'sourcegraph'
-import { DiagnosticSeverity } from '../../../../shared/src/api/types/diagnosticCollection'
 
 const DEFAULT_SEVERITY: DiagnosticSeverityType = DiagnosticSeverity.Error
 

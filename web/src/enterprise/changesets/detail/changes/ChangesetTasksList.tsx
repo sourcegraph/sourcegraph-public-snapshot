@@ -7,6 +7,8 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { makeRepoURI } from '../../../../../../shared/src/util/url'
+import { DiagnosticsList } from '../../../tasks/list/DiagnosticsList'
+import { useDiagnostics } from '../../../tasks/list/useDiagnostics'
 import { ThreadSettings } from '../../../threads/settings'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
@@ -73,9 +75,16 @@ export const ChangesetTasksList: React.FunctionComponent<Props> = ({
         xchangeset.repositoryComparisons,
     ])
 
+    const diagnosticsOrError = useDiagnostics(extensionsController)
+
     return (
         <div className={`changeset-tasks-list ${className}`}>
-            <TasksList {...props} extensionsController={extensionsController} itemClassName={itemClassName} />
+            <DiagnosticsList
+                {...props}
+                extensionsController={extensionsController}
+                diagnosticsOrError={diagnosticsOrError}
+                itemClassName={itemClassName}
+            />
         </div>
     )
 }

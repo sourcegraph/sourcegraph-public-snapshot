@@ -1,19 +1,5 @@
 import { Diagnostic } from '@sourcegraph/extension-api-types'
 import { Subject, Subscribable } from 'rxjs'
-import * as sourcegraph from 'sourcegraph'
-
-/**
- * The severity of a diagnostic.
- *
- * This is needed because if sourcegraph.DiagnosticSeverity enum values are referenced, the
- * `sourcegraph` module import at the top of the file is emitted in the generated code.
- */
-export const DiagnosticSeverity: typeof sourcegraph.DiagnosticSeverity = {
-    Error: 0,
-    Warning: 1,
-    Information: 2,
-    Hint: 3,
-}
 
 /**
  * A collection of diagnostics.

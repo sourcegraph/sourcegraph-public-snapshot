@@ -31,16 +31,21 @@ interface ChangesetCreationInfo
  */
 export async function createChangesetFromCodeAction(
     { extensionsController }: ExtensionsControllerProps,
-    diagnostic: sourcegraph.Diagnostic,
+    diagnostic: sourcegraph.Diagnostic | null, // TODO!(sqs)
     codeAction: sourcegraph.CodeAction,
     info: Pick<ChangesetCreationInfo, 'status'>
 ): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
     return createChangesetFromDiffs(await computeDiff(extensionsController, [codeAction]), {
         ...info,
-        title: `${diagnostic.message}: ${codeAction.title}`,
+        title: diagnostic ? `${diagnostic.message}: ${codeAction.title}` : codeAction.title,
         contents: '',
         changesetActionDescriptions: [
-            { user: 'sqs', timestamp: Date.now(), title: codeAction.title, detail: diagnostic.message },
+            {
+                user: 'sqs',
+                timestamp: Date.now(),
+                title: codeAction.title,
+                detail: diagnostic ? diagnostic.message : 'TODO!(sqs)',
+            },
         ],
     })
 }

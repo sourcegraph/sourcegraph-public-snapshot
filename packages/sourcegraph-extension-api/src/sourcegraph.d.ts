@@ -1121,6 +1121,11 @@ declare module 'sourcegraph' {
         readonly type: NotificationType
 
         /**
+         * The [diagnostics](#Diagnostic) that are related to this notification.
+         */
+        readonly diagnostics?: readonly [URL, readonly Diagnostic[]][]
+
+        /**
          * The [code actions](#CodeAction) that this notification presents.
          */
         readonly actions?: readonly CodeAction[]

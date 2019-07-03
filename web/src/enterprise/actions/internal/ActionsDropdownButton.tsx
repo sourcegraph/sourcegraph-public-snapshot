@@ -1,16 +1,19 @@
-import React, { useState, useCallback } from 'react'
-import { CodeAction } from 'sourcegraph'
-import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
+import React, { useCallback, useState } from 'react'
+import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { CodeAction } from 'sourcegraph'
 
 interface Props {
-    codeActions: CodeAction[]
+    actions: CodeAction[]
     className?: string
     buttonClassName?: string
 }
 
-export const ThreadInboxItemActionsDropdownButton: React.FunctionComponent<Props> = ({
-    codeActions,
+/**
+ * A button that toggles a dropdown with actions.
+ */
+export const ActionsDropdownButton: React.FunctionComponent<Props> = ({
+    actions,
     className = '',
     buttonClassName = '',
 }) => {
@@ -23,9 +26,10 @@ export const ThreadInboxItemActionsDropdownButton: React.FunctionComponent<Props
                 <DotsHorizontalIcon className="icon-inline" />
             </DropdownToggle>
             <DropdownMenu>
-                {codeActions.map((codeAction, i) => (
+                {actions.map((action, i) => (
+                    // TODO!(sqs): add onClick
                     <DropdownItem key={i} className="d-flex">
-                        {codeAction.title}
+                        {action.title}
                     </DropdownItem>
                 ))}
             </DropdownMenu>

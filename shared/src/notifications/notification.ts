@@ -1,13 +1,14 @@
 import { Observable } from 'rxjs'
 import { NotificationType, Progress } from 'sourcegraph'
-import { CodeAction } from '@sourcegraph/extension-api-types'
+import { CodeAction, Diagnostic } from '@sourcegraph/extension-api-types'
+import { DiagnosticData } from '../api/types/diagnostic'
 
 /**
  * A notification message to display to the user.
  */
 export interface Notification {
     /** The message of the notification. */
-    message?: string
+    message: string
 
     /**
      * The type of the message.
@@ -24,7 +25,12 @@ export interface Notification {
     progress?: Observable<Progress>
 
     /**
+     * Diagnostics associated with this notification.
+     */
+    diagnostics?: DiagnosticData
+
+    /**
      * Actions associated with this notification.
      */
-    actions?: CodeAction[]
+    actions?: readonly CodeAction[]
 }

@@ -5,7 +5,7 @@ import { catchError, startWith, switchMap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
-import { DiagnosticsList } from '../../../tasks/list/TasksList'
+import { DiagnosticsList } from '../../../tasks/list/DiagnosticsList'
 import { DiagnosticInfo, toDiagnosticInfos } from '../../../threads/detail/backend'
 import { StatusAreaContext } from '../StatusArea'
 
