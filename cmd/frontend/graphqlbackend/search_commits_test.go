@@ -205,7 +205,7 @@ func Test_highlightMatches(t *testing.T) {
 			name: "multiline",
 			args: args {
 				pattern: regexp.MustCompile(`行`),
-				data: []byte("加一行空白\n加一行空白"),
+				data: []byte("加一行空白\n加一空行白"),
 			},
 			want: &highlightedString{
 				value: "加一行空白\n加一空行白",
