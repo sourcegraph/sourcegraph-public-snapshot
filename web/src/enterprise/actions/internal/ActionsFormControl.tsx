@@ -69,6 +69,11 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
                     className={`${buttonClassName} ${inactiveButtonClassName} mr-2 mb-2`}
                 />
             ))}
+            <ActionButton
+                action={{ title: '' }}
+                onClick={onActionClick}
+                className={`${buttonClassName} ${inactiveButtonClassName} mr-2 mb-2`}
+            />
             {secondaryCodeActions.length > 0 && (
                 <ActionsDropdownButton
                     actions={secondaryCodeActions}

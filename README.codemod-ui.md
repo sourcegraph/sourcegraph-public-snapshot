@@ -26,3 +26,20 @@ There are DB migrations, so if you downgrade to `master`, it may complain. You c
 1. When using `codemod-ui`, use `PGDATABASE=sg-codemod-ui enterprise/dev/start.sh` to start the server in the separate DB.
 
 You *might* see some weirdness because Redis isn't similarly isolated. I don't know the solution because I haven't encountered any problems, but there's probably an easy way to use a separate Redis namespace, too.
+
+
+---
+
+## Concepts
+
+A **changeset** consists of:
+
+- a set of changes to code across one or more repositories
+- the "blueprints" for how those changes were made, so the changes can be recomputed against an updated base branch
+
+You can create a changeset in 3 ways:
+
+- clicking "Create changeset" on a notification about a suggested change
+- performing a search-and-replace
+- clicking a code action in a code file (e.g., "Rename identifier")
+
