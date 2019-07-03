@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"reflect"
@@ -254,7 +255,12 @@ func Test_highlightMatches(t *testing.T) {
 }
 
 func Benchmark_highlightMatches(b *testing.B) {
+	as := bytes.Repeat([]byte{'a'}, 5000)
+	lines := append(as, byte('\n'))
+	lines = append(lines, as...)
+	rx := regexp.MustCompile(`a`)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = highlightMatches(regexp.MustCompile(`a`), []byte("aaaaa\naaaaaa"))
+		_ = highlightMatches(rx, lines)
 	}
 }
