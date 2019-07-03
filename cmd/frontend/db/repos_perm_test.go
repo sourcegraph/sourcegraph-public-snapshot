@@ -20,15 +20,27 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 
 	ctx := dbtesting.TestContext(t)
 
-	allRepos := mustCreate(ctx, t, &types.Repo{RepoIDs: types.RepoIDs{Name: "r0", ExternalRepo: api.ExternalRepoSpec{
-		ID:          "a0",
-		ServiceType: "b0",
-		ServiceID:   "c0"}}},
-
-		&types.Repo{RepoIDs: types.RepoIDs{Name: "r1", ExternalRepo: api.ExternalRepoSpec{
-			ID:          "a1",
-			ServiceType: "b1",
-			ServiceID:   "c1"}}},
+	allRepos := mustCreate(ctx, t,
+		&types.Repo{
+			RepoIDs: types.RepoIDs{
+				Name: "r0",
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "a0",
+					ServiceType: "b0",
+					ServiceID:   "c0",
+				},
+			},
+		},
+		&types.Repo{
+			RepoIDs: types.RepoIDs{
+				Name: "r1",
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "a1",
+					ServiceType: "b1",
+					ServiceID:   "c1",
+				},
+			},
+		},
 	)
 	{
 		calledFilter := false
