@@ -154,12 +154,12 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*typ
 
 var inventoryCache = rcache.New("inv")
 
-func (s *repos) GetInventory(ctx context.Context, repo types.RepoIdentifier, commitID api.CommitID) (res *inventory.Inventory, err error) {
+func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetInventory", map[string]interface{}{"repo": repo.RepoName(), "commitID": commitID}, &err)
+	ctx, done := trace(ctx, "Repos", "GetInventory", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
 	// Cap GetInventory operation to some reasonable time.
@@ -171,13 +171,13 @@ func (s *repos) GetInventory(ctx context.Context, repo types.RepoIdentifier, com
 	}
 
 	// Try cache first
-	cacheKey := fmt.Sprintf("%s:%s", repo.RepoName(), commitID)
+	cacheKey := fmt.Sprintf("%s:%s", repo.Name, commitID)
 	if b, ok := inventoryCache.Get(cacheKey); ok {
 		var inv inventory.Inventory
 		if err := json.Unmarshal(b, &inv); err == nil {
 			return &inv, nil
 		}
-		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repo", repo.RepoName(), "commitID", commitID, "err", err)
+		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repo", repo.Name, "commitID", commitID, "err", err)
 	}
 
 	// Not found in the cache, so compute it.
@@ -196,12 +196,12 @@ func (s *repos) GetInventory(ctx context.Context, repo types.RepoIdentifier, com
 	return inv, nil
 }
 
-func (s *repos) GetInventoryUncached(ctx context.Context, repo types.RepoIdentifier, commitID api.CommitID) (res *inventory.Inventory, err error) {
+func (s *repos) GetInventoryUncached(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventoryUncached != nil {
 		return Mocks.Repos.GetInventoryUncached(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetInventoryUncached", map[string]interface{}{"repo": repo.RepoName(), "commitID": commitID}, &err)
+	ctx, done := trace(ctx, "Repos", "GetInventoryUncached", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
 	cachedRepo, err := CachedGitRepo(ctx, repo)

@@ -71,13 +71,11 @@ func TestRepos_Get(t *testing.T) {
 	ctx := dbtesting.TestContext(t)
 
 	want := mustCreate(ctx, t, &types.Repo{
-		RepoIDs: types.RepoIDs{
-			Name: "r",
-			ExternalRepo: &api.ExternalRepoSpec{
-				ID:          "a",
-				ServiceType: "b",
-				ServiceID:   "c",
-			},
+		Name: "r",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "a",
+			ServiceType: "b",
+			ServiceID:   "c",
 		},
 		RepoFields: &types.RepoFields{URI: "u"},
 	})
@@ -104,7 +102,7 @@ func TestRepos_List(t *testing.T) {
 	ctx := dbtesting.TestContext(t)
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	want := mustCreate(ctx, t, types.NewRepoWithIDs(0, "r", nil))
+	want := mustCreate(ctx, t, &types.Repo{Name: "r"})
 
 	repos, err := Repos.List(ctx, ReposListOptions{Enabled: true})
 	if err != nil {
@@ -127,8 +125,8 @@ func TestRepos_List_fork(t *testing.T) {
 	ctx := dbtesting.TestContext(t)
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	mine := mustCreate(ctx, t, &types.Repo{RepoIDs: types.RepoIDs{Name: "a/r"}, RepoFields: &types.RepoFields{Fork: false}})
-	yours := mustCreate(ctx, t, &types.Repo{RepoIDs: types.RepoIDs{Name: "b/r"}, RepoFields: &types.RepoFields{Fork: true}})
+	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", RepoFields: &types.RepoFields{Fork: false}})
+	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", RepoFields: &types.RepoFields{Fork: true}})
 
 	{
 		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true, OnlyForks: true})
@@ -173,9 +171,9 @@ func TestRepos_List_pagination(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
-		{RepoIDs: types.RepoIDs{Name: "r1"}},
-		{RepoIDs: types.RepoIDs{Name: "r2"}},
-		{RepoIDs: types.RepoIDs{Name: "r3"}},
+		{Name: "r1"},
+		{Name: "r2"},
+		{Name: "r3"},
 	}
 	for _, repo := range createdRepos {
 		mustCreate(ctx, t, repo)
@@ -224,10 +222,10 @@ func TestRepos_List_query1(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
-		types.NewRepoWithIDs(0, "abc/def", nil),
-		types.NewRepoWithIDs(0, "def/ghi", nil),
-		types.NewRepoWithIDs(0, "jkl/mno/pqr", nil),
-		types.NewRepoWithIDs(0, "github.com/abc/xyz", nil),
+		{Name: "abc/def"},
+		{Name: "def/ghi"},
+		{Name: "jkl/mno/pqr"},
+		{Name: "github.com/abc/xyz"},
 	}
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, repo)
@@ -266,13 +264,13 @@ func TestRepos_List_query2(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
-		types.NewRepoWithIDs(0, "a/def", nil),
-		types.NewRepoWithIDs(0, "b/def", nil),
-		types.NewRepoWithIDs(0, "c/def", nil),
-		types.NewRepoWithIDs(0, "def/ghi", nil),
-		types.NewRepoWithIDs(0, "def/jkl", nil),
-		types.NewRepoWithIDs(0, "def/mno", nil),
-		types.NewRepoWithIDs(0, "abc/m", nil),
+		{Name: "a/def"},
+		{Name: "b/def"},
+		{Name: "c/def"},
+		{Name: "def/ghi"},
+		{Name: "def/jkl"},
+		{Name: "def/mno"},
+		{Name: "abc/m"},
 	}
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, repo)
@@ -311,13 +309,13 @@ func TestRepos_List_sort(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
-		types.NewRepoWithIDs(0, "c/def", nil),
-		types.NewRepoWithIDs(0, "def/mno", nil),
-		types.NewRepoWithIDs(0, "b/def", nil),
-		types.NewRepoWithIDs(0, "abc/m", nil),
-		types.NewRepoWithIDs(0, "abc/def", nil),
-		types.NewRepoWithIDs(0, "def/jkl", nil),
-		types.NewRepoWithIDs(0, "def/ghi", nil),
+		{Name: "c/def"},
+		{Name: "def/mno"},
+		{Name: "b/def"},
+		{Name: "abc/m"},
+		{Name: "abc/def"},
+		{Name: "def/jkl"},
+		{Name: "def/ghi"},
 	}
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, repo)
@@ -384,10 +382,10 @@ func TestRepos_List_patterns(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
-		types.NewRepoWithIDs(0, "a/b", nil),
-		types.NewRepoWithIDs(0, "c/d", nil),
-		types.NewRepoWithIDs(0, "e/f", nil),
-		types.NewRepoWithIDs(0, "g/h", nil),
+		{Name: "a/b"},
+		{Name: "c/d"},
+		{Name: "e/f"},
+		{Name: "g/h"},
 	}
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, repo)
@@ -441,10 +439,10 @@ func TestRepos_List_queryPattern(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	createdRepos := []*types.Repo{
-		types.NewRepoWithIDs(0, "a/b", nil),
-		types.NewRepoWithIDs(0, "c/d", nil),
-		types.NewRepoWithIDs(0, "e/f", nil),
-		types.NewRepoWithIDs(0, "g/h", nil),
+		{Name: "a/b"},
+		{Name: "c/d"},
+		{Name: "e/f"},
+		{Name: "g/h"},
 	}
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, repo)
@@ -592,9 +590,8 @@ func TestRepos_Create(t *testing.T) {
 
 	// Add a repo.
 	createRepo(ctx, t, &types.Repo{
-		RepoIDs:    types.RepoIDs{Name: "a/b"},
-		RepoFields: &types.RepoFields{Description: "test"},
-	})
+		Name:       "a/b",
+		RepoFields: &types.RepoFields{Description: "test"}})
 
 	repo, err := Repos.GetByName(ctx, "a/b")
 	if err != nil {
@@ -617,8 +614,8 @@ func TestRepos_Create_dupe(t *testing.T) {
 	ctx := dbtesting.TestContext(t)
 
 	// Add a repo.
-	createRepo(ctx, t, types.NewRepoWithIDs(0, "a/b", nil))
+	createRepo(ctx, t, &types.Repo{Name: "a/b"})
 
 	// Add another repo with the same name.
-	createRepo(ctx, t, types.NewRepoWithIDs(0, "a/b", nil))
+	createRepo(ctx, t, &types.Repo{Name: "a/b"})
 }

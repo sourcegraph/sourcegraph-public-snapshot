@@ -37,13 +37,13 @@ func TestRepoRefresh(t *testing.T) {
 	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 		switch name {
 		case "github.com/gorilla/mux":
-			return types.NewRepoWithIDs(2, name, nil), nil
+			return &types.Repo{ID: 2, Name: name}, nil
 		default:
 			panic("wrong path")
 		}
 	}
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo types.RepoIdentifier, rev string) (api.CommitID, error) {
-		if repo.RepoID() != 2 || rev != "master" {
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		if repo.ID != 2 || rev != "master" {
 			t.Error("wrong arguments to ResolveRev")
 		}
 		return "aed", nil

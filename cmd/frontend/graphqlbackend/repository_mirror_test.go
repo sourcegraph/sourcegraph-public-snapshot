@@ -26,7 +26,7 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 
 	t.Run("repository arg", func(t *testing.T) {
 		backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
-			return types.NewRepoWithIDs(0, repoName, nil), nil
+			return &types.Repo{Name: repoName}, nil
 		}
 
 		calledRepoLookup := false

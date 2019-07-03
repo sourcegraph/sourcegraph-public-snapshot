@@ -38,11 +38,12 @@ func TestCountGoImporters(t *testing.T) {
 		if repoName != wantRepoName {
 			t.Errorf("got repo name %q, want %q", repoName, wantRepoName)
 		}
-		return types.NewRepoWithIDs(
-			0,
-			repoName,
-			&api.ExternalRepoSpec{ServiceType: github.ServiceType},
-		), nil
+		return &types.Repo{
+			Name: repoName,
+			ExternalRepo: api.ExternalRepoSpec{
+				ServiceType: github.ServiceType,
+			},
+		}, nil
 	}
 	git.Mocks.ResolveRevision = func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
 		return "c", nil

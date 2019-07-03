@@ -53,7 +53,7 @@ func TestSearch(t *testing.T) {
 			name:        "empty query against empty repo gets no results",
 			searchQuery: "",
 			reposListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
-				return []*types.Repo{types.NewRepoWithIDs(0, "test", nil)},
+				return []*types.Repo{{Name: "test"}},
 
 					nil
 			},

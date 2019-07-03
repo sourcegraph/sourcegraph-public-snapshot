@@ -224,8 +224,8 @@ func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 }
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoIdentifier, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
-		repoName := repo.RepoName()
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
 			return []*fileMatchResolver{
@@ -355,7 +355,7 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 			// treat empty list as preferring master
 			revs = []search.RevisionSpecifier{{RevSpec: ""}}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: types.NewRepoWithIDs(0, repoName, nil), Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: &types.Repo{Name: repoName}, Revs: revs}
 	}
 	return r
 }

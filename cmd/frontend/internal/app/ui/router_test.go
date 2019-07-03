@@ -241,7 +241,7 @@ func TestRouter_RootPath(t *testing.T) {
 					panic("unexpected")
 				}
 				if tst.exists {
-					return types.NewRepoWithIDs(0, name, nil), nil
+					return &types.Repo{Name: name}, nil
 				}
 				return nil, &errcode.Mock{Message: "repo not found", IsNotFound: true}
 			}

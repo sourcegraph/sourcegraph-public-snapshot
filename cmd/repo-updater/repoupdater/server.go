@@ -499,7 +499,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 		Fork:         r.Fork,
 		Archived:     r.Archived,
 		VCS:          protocol.VCSInfo{URL: urls[0]},
-		ExternalRepo: &r.ExternalRepo,
+		ExternalRepo: r.ExternalRepo,
 	}
 
 	switch strings.ToLower(r.ExternalRepo.ServiceType) {

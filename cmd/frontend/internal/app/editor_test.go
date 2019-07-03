@@ -42,7 +42,7 @@ func TestGuessRepoNameFromRemoteURL(t *testing.T) {
 
 func TestEditorRev(t *testing.T) {
 	repoName := api.RepoName("myRepo")
-	backend.Mocks.Repos.ResolveRev = func(v0 context.Context, repo types.RepoIdentifier, rev string) (api.CommitID, error) {
+	backend.Mocks.Repos.ResolveRev = func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		if rev == "branch" {
 			return api.CommitID(strings.Repeat("b", 40)), nil
 		}
@@ -56,9 +56,7 @@ func TestEditorRev(t *testing.T) {
 		return "", nil
 	}
 	backend.Mocks.Repos.GetByName = func(v0 context.Context, name api.RepoName) (*types.Repo, error) {
-		return types.NewRepoWithIDs(
-				api.RepoID(1),
-				name, nil),
+		return &types.Repo{ID: api.RepoID(1), Name: name},
 
 			nil
 	}
