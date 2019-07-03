@@ -73,13 +73,13 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 			name  string
 			ctx   context.Context
 			user  *bitbucketserver.User
-			perms map[api.RepoName]map[authz.Perm]bool
+			perms []*types.Repo
 			err   string
 		}{
 			{
 				name: "anonymous user",
 				user: nil,
-				perms: map[api.RepoName]map[authz.Perm]bool{
+				perms: []*types.Repo{
 					// Because repo is public
 					"public-repo": {authz.Read: true},
 				},
@@ -87,7 +87,7 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 			{
 				name: "authenticated user: engineer1",
 				user: f.users["engineer1"],
-				perms: map[api.RepoName]map[authz.Perm]bool{
+				perms: []*types.Repo{
 					// Because repo is public
 					"public-repo": {authz.Read: true},
 					// Because of engineer1 has a secret-project group membership
@@ -102,7 +102,7 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 			{
 				name: "authenticated user: engineer2",
 				user: f.users["engineer2"],
-				perms: map[api.RepoName]map[authz.Perm]bool{
+				perms: []*types.Repo{
 					// Because repo is public
 					"public-repo": {authz.Read: true},
 					// Because engineers group has PROJECT_WRITE perm on PRIVATE project
@@ -113,7 +113,7 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 			{
 				name: "authenticated user: scientist",
 				user: f.users["scientist"],
-				perms: map[api.RepoName]map[authz.Perm]bool{
+				perms: []*types.Repo{
 					// Because repo is public
 					"public-repo": {authz.Read: true},
 					// Because of scientist1 has a secret-project group membership
@@ -128,7 +128,7 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 			{
 				name: "authenticated user: ceo",
 				user: f.users["ceo"],
-				perms: map[api.RepoName]map[authz.Perm]bool{
+				perms: []*types.Repo{
 					// Because repo is public
 					"public-repo": {authz.Read: true},
 					// Because management group has PROJECT_READ perm on PRIVATE project
@@ -151,7 +151,7 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 					tc.err = "<nil>"
 				}
 
-				repos := make(map[authz.Repo]struct{}, len(f.repos))
+				repos := make([]*types.Repo, len(f.repos))
 				for _, r := range f.repos {
 					repos[authz.Repo{
 						ID:               api.RepoID(r.ID + 42), // Make them different

@@ -46,7 +46,7 @@ func NewProvider(githubURL *url.URL, baseToken string, cacheTTL time.Duration, m
 var _ authz.Provider = ((*Provider)(nil))
 
 // Repos implements the authz.Provider interface.
-func (p *Provider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
+func (p *Provider) Repos(ctx context.Context, repos []*types.Repo) (mine []*types.Repo, others []*types.Repo) {
 	return authz.GetCodeHostRepos(p.codeHost, repos)
 }
 
@@ -59,17 +59,17 @@ func (p *Provider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mi
 // For each repo in the input set, we look first to see if the above information is cached in Redis.
 // If not, then the info is computed by querying the GitHub API. A separate query is issued for each
 // repository (and for each user for the explicit case).
-func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
+func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) ([]*types.Repo, error) {
 	remaining, _ := p.Repos(ctx, repos)
 	remainingPublic := remaining
 	if len(remaining) == 0 {
 		return nil, nil
 	}
 
-	perms := map[api.RepoName]map[authz.Perm]bool{}
-	populatePermsPublic := func(checkAccess func(ctx context.Context, repos map[authz.Repo]struct{}) (map[string]bool, error)) error {
-		nextRemaining := map[authz.Repo]struct{}{}
-		nextRemainingPublic := map[authz.Repo]struct{}{}
+	perms := []*types.Repo{}
+	populatePermsPublic := func(checkAccess func(ctx context.Context, repos []*types.Repo) (map[string]bool, error)) error {
+		nextRemaining := []*types.Repo{}
+		nextRemainingPublic := []*types.Repo{}
 		canAccess, err := checkAccess(ctx, remainingPublic)
 		if err != nil {
 			return err
@@ -89,8 +89,8 @@ func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAc
 		remainingPublic = nextRemainingPublic
 		return nil
 	}
-	populatePerms := func(checkAccess func(ctx context.Context, userAccount *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[string]bool, error)) error {
-		nextRemaining := map[authz.Repo]struct{}{}
+	populatePerms := func(checkAccess func(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) (map[string]bool, error)) error {
+		nextRemaining := []*types.Repo{}
 		canAccess, err := checkAccess(ctx, userAccount, remaining)
 		if err != nil {
 			return err
@@ -134,7 +134,7 @@ func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAc
 // ID (the GitHub repository GraphQL ID) to true/false indicating whether the repository is public
 // or private. It consults and updates the cache. As a side effect, it caches the publicness of the
 // repos.
-func (p *Provider) fetchAndSetPublicRepos(ctx context.Context, repos map[authz.Repo]struct{}) (map[string]bool, error) {
+func (p *Provider) fetchAndSetPublicRepos(ctx context.Context, repos []*types.Repo) (map[string]bool, error) {
 	isPublic, err := p.fetchPublicRepos(ctx, repos)
 	if err != nil {
 		return nil, err
@@ -170,7 +170,7 @@ func (p *Provider) setCachedPublicRepos(ctx context.Context, isPublic map[string
 // getCachedPublicRepos accepts a set of repos and returns a map from repo ID to true/false
 // indicating whether the repo is public or private. The returned map may be incomplete (i.e., not
 // every input repo may be represented in the key set) due to cache incompleteness.
-func (p *Provider) getCachedPublicRepos(ctx context.Context, repos map[authz.Repo]struct{}) (isPublic map[string]bool, err error) {
+func (p *Provider) getCachedPublicRepos(ctx context.Context, repos []*types.Repo) (isPublic map[string]bool, err error) {
 	if len(repos) == 0 {
 		return nil, nil
 	}
@@ -201,7 +201,7 @@ func (p *Provider) getCachedPublicRepos(ctx context.Context, repos map[authz.Rep
 
 // fetchPublicRepos returns a map from GitHub repository ID (the GraphQL repo node ID) to true/false
 // indicating whether a repository is public (true) or private (false).
-func (p *Provider) fetchPublicRepos(ctx context.Context, repos map[authz.Repo]struct{}) (map[string]bool, error) {
+func (p *Provider) fetchPublicRepos(ctx context.Context, repos []*types.Repo) (map[string]bool, error) {
 	isPublic := make(map[string]bool)
 	for repo := range repos {
 		ghRepo, err := p.client.GetRepositoryByNodeID(ctx, "", repo.ExternalRepoSpec.ID)
@@ -223,7 +223,7 @@ func (p *Provider) fetchPublicRepos(ctx context.Context, repos map[authz.Repo]st
 // repo ID is missing from the return map, the user does not have read access to that repo. As a
 // side effect, it caches the fetched repos (whether the given user has access to each and whether
 // each is public).
-func (p *Provider) fetchAndSetUserRepos(ctx context.Context, userAccount *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (isAllowed map[string]bool, err error) {
+func (p *Provider) fetchAndSetUserRepos(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) (isAllowed map[string]bool, err error) {
 	if userAccount == nil {
 		return nil, nil
 	}
@@ -280,7 +280,7 @@ func (p *Provider) setCachedUserRepos(ctx context.Context, userAccount *extsvc.E
 // getCachedUserRepos accepts a user account and set of repos and returns a map from repo ID to
 // true/false indicating whether the user can access the repo. The returned map may be incomplete
 // (i.e., not every input repo may be represented in the key set) due to cache incompleteness.
-func (p *Provider) getCachedUserRepos(ctx context.Context, userAccount *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (cachedUserRepos map[string]bool, err error) {
+func (p *Provider) getCachedUserRepos(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) (cachedUserRepos map[string]bool, err error) {
 	if userAccount == nil {
 		return nil, nil
 	}

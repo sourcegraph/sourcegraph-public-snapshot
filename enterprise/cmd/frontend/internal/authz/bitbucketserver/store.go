@@ -52,8 +52,8 @@ type Permissions struct {
 
 // Authorized returns the intersection of the given ids with
 // the authorized ids.
-func (p *Permissions) Authorized(repos map[authz.Repo]struct{}) map[api.RepoName]map[authz.Perm]bool {
-	perms := make(map[api.RepoName]map[authz.Perm]bool, len(repos))
+func (p *Permissions) Authorized(repos []*types.Repo) []*types.Repo {
+	perms := make([]*types.Repo, len(repos))
 	for r := range repos {
 		if r.ID != 0 && p.IDs.Contains(uint32(r.ID)) {
 			perms[r.RepoName] = map[authz.Perm]bool{p.Perm: true}

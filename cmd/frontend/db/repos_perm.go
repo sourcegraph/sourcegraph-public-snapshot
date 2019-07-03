@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -69,18 +68,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perm) (rs []*
 		}
 	}
 
-	filteredRepoNames, err := getFilteredRepoNames(ctx, currentUser, authz.ToRepos(repos), p)
-	if err != nil {
-		return nil, err
-	}
-
-	filteredRepos := make([]*types.Repo, 0, len(filteredRepoNames))
-	for _, repo := range repos {
-		if _, ok := filteredRepoNames[repo.Name]; ok {
-			filteredRepos = append(filteredRepos, repo)
-		}
-	}
-	return filteredRepos, nil
+	return getFilteredRepos(ctx, currentUser, repos, p)
 }
 
 // isInternalActor returns true if the actor represents an internal agent (i.e., non-user-bound
@@ -92,8 +80,8 @@ func isInternalActor(ctx context.Context) bool {
 	return actor.FromContext(ctx).Internal
 }
 
-func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos map[authz.Repo]struct{}, p authz.Perm) (accepted map[api.RepoName]struct{}, err error) {
-	tr, ctx := trace.New(ctx, "getFilteredRepoNames", "")
+func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*types.Repo, p authz.Perm) (accepted []*types.Repo, err error) {
+	tr, ctx := trace.New(ctx, "getFilteredRepos", "")
 	defer func() {
 		if err != nil {
 			tr.SetError(err)
@@ -123,17 +111,17 @@ func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos ma
 		}
 	}
 
-	accepted = make(map[api.RepoName]struct{}) // repositories that have been claimed and have read permissions
-	toverify := make(map[authz.Repo]struct{})  // repositories that have not been claimed by any authz provider
-	for repo := range repos {
+	accepted = make([]*types.Repo, 0, len(repos))  // repositories that have been claimed and have read permissions
+	toverify := make([]*types.Repo, 0, len(repos)) // repositories that have not been claimed by any authz provider
+	for _, repo := range repos {
 		// 🚨 SECURITY: Defensively bar access to repos with no external repo spec (we don't know
 		// where they came from, so can't reliably enforce permissions). If external repo spec is
 		// NOT set, then we exclude the repo (unless there are no authz providers and
 		// `authzAllowByDefault` is true).
-		if repo.ExternalRepoSpec.IsSet() {
-			toverify[repo] = struct{}{}
+		if repo.ExternalRepo.IsSet() {
+			toverify = append(toverify, repo)
 		} else if authzAllowByDefault && len(authzProviders) == 0 {
-			accepted[repo.RepoName] = struct{}{}
+			accepted = append(accepted, repo)
 		}
 	}
 
@@ -174,18 +162,16 @@ func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos ma
 		if err != nil {
 			return nil, err
 		}
-		for repoToVerify := range myToVerify {
-			if repoPerms, ok := perms[repoToVerify.RepoName]; ok && repoPerms[p] {
-				accepted[repoToVerify.RepoName] = struct{}{}
-			}
-		}
+
+		accepted = append(accepted, perms[p]...)
+
 		// continue checking repos that didn't belong to this authz provider
 		toverify = nextToVerify
 	}
 
 	if authzAllowByDefault {
-		for r := range toverify {
-			accepted[r.RepoName] = struct{}{}
+		for _, r := range toverify {
+			accepted = append(accepted, r)
 		}
 	}
 

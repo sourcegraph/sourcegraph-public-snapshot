@@ -107,9 +107,8 @@ type fakeProvider struct {
 	extAcct  *extsvc.ExternalAccount
 }
 
-func (f fakeProvider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (
-	mine map[authz.Repo]struct{},
-	others map[authz.Repo]struct{},
+func (f fakeProvider) Repos(ctx context.Context, repos []*types.Repo) (
+	mine, others []*types.Repo,
 ) {
 	return authz.GetCodeHostRepos(f.codeHost, repos)
 }
@@ -117,11 +116,13 @@ func (f fakeProvider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) 
 func (f fakeProvider) RepoPerms(
 	ctx context.Context,
 	userAccount *extsvc.ExternalAccount,
-	repos map[authz.Repo]struct{},
-) (map[api.RepoName]map[authz.Perm]bool, error) {
-	authorized := make(map[api.RepoName]map[authz.Perm]bool, len(repos))
-	for repo := range repos {
-		authorized[repo.RepoName] = map[authz.Perm]bool{authz.Read: true}
+	repos []*types.Repo,
+) (map[authz.Perm][]*types.Repo, error) {
+	authorized := map[authz.Perm][]*types.Repo{
+		authz.Read: make([]*types.Repo, 0, len(repos)),
+	}
+	for _, repo := range repos {
+		authorized[authz.Read] = append(authorized[authz.Read], repo)
 	}
 	return authorized, nil
 }

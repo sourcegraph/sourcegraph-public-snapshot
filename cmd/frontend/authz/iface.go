@@ -6,7 +6,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
 
@@ -32,7 +31,7 @@ type Provider interface {
 	//
 	// This should not depend on the current user. Implementations should not use the context to
 	// determine anything about the current user.
-	Repos(ctx context.Context, repos map[Repo]struct{}) (mine map[Repo]struct{}, others map[Repo]struct{})
+	Repos(ctx context.Context, repos []*types.Repo) (mine, others []*types.Repo)
 
 	// RepoPerms accepts an external user account and a set of repos. The external user account
 	// identifies the user to the authz source (e.g., the code host). The return value is a map of
@@ -53,7 +52,7 @@ type Provider interface {
 	// permissions it needs to compute.  In practice, most will probably use a combination of (1)
 	// "list all private repos the user has access to", (2) a mechanism to determine which repos are
 	// public/private, and (3) a cache of some sort.
-	RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos map[Repo]struct{}) (map[api.RepoName]map[Perm]bool, error)
+	RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) (map[Perm][]*types.Repo, error)
 
 	// FetchAccount returns the external account that identifies the user to this authz provider,
 	// taking as input the current list of external accounts associated with the
@@ -78,15 +77,4 @@ type Provider interface {
 	// Validate checks the configuration and credentials of the authz provider and returns any
 	// problems.
 	Validate() (problems []string)
-}
-
-type Repo struct {
-	// ID of the repo on Sourcegraph
-	ID api.RepoID
-
-	// RepoName is the unique name of the repo on Sourcegraph.
-	RepoName api.RepoName
-
-	// ExternalRepoSpec uniquely identifies the external repo that is the source of the repo.
-	api.ExternalRepoSpec
 }

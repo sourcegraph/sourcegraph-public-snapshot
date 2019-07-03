@@ -117,22 +117,22 @@ func (p *SudoProvider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *SudoProvider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
+func (p *SudoProvider) Repos(ctx context.Context, repos []*types.Repo) (mine []*types.Repo, others []*types.Repo) {
 	// Note(beyang): this is identical to GitLabOAuthAuthzProvider.Repos, so is not explicitly
 	// unit-tested. If this impl ever changes, unit tests should be added.
 	return authz.GetCodeHostRepos(p.codeHost, repos)
 }
 
-func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
+func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos []*types.Repo) ([]*types.Repo, error) {
 	accountID := "" // empty means public / unauthenticated to the code host
 	if account != nil && account.ServiceID == p.codeHost.ServiceID && account.ServiceType == p.codeHost.ServiceType {
 		accountID = account.AccountID
 	}
 
-	perms := map[api.RepoName]map[authz.Perm]bool{}
+	perms := []*types.Repo{}
 
 	remaining, _ := p.Repos(ctx, repos)
-	nextRemaining := map[authz.Repo]struct{}{}
+	nextRemaining := []*types.Repo{}
 
 	// Populate perms using cached repository visibility information. After this block,
 	// nextRemaining records the repositories that we still have to check.
@@ -160,7 +160,7 @@ func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAc
 	// Populate perms using cached user-can-access-repository information. After this block,
 	// nextRemaining records the repositories that we still have to check.
 	if accountID != "" {
-		remaining, nextRemaining = nextRemaining, map[authz.Repo]struct{}{}
+		remaining, nextRemaining = nextRemaining, []*types.Repo{}
 		for repo := range remaining {
 			projID, err := strconv.Atoi(repo.ExternalRepoSpec.ID)
 			if err != nil {

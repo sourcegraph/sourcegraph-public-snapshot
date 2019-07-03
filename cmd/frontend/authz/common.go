@@ -5,25 +5,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
 
-func ToRepos(src []*types.Repo) (dst map[Repo]struct{}) {
-	dst = make(map[Repo]struct{})
-	for _, r := range src {
-		dst[Repo{
-			ID:               r.ID,
-			RepoName:         r.Name,
-			ExternalRepoSpec: r.ExternalRepo,
-		}] = struct{}{}
-	}
-	return dst
-}
-
-func GetCodeHostRepos(c *extsvc.CodeHost, repos map[Repo]struct{}) (mine map[Repo]struct{}, others map[Repo]struct{}) {
-	mine, others = make(map[Repo]struct{}), make(map[Repo]struct{})
-	for repo := range repos {
-		if extsvc.IsHostOf(c, repo.ExternalRepoSpec) {
-			mine[repo] = struct{}{}
+func GetCodeHostRepos(c *extsvc.CodeHost, repos []*types.Repo) (mine, others []*types.Repo) {
+	for _, repo := range repos {
+		if extsvc.IsHostOf(c, repo.ExternalRepo) {
+			mine = append(mine, repo)
 		} else {
-			others[repo] = struct{}{}
+			others = append(others, repo)
 		}
 	}
 	return mine, others

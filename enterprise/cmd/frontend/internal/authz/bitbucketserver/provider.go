@@ -66,14 +66,14 @@ func (p *Provider) ServiceID() string { return p.codeHost.ServiceID }
 func (p *Provider) ServiceType() string { return p.codeHost.ServiceType }
 
 // Repos returns all Bitbucket Server repos as mine, and all others as others.
-func (p *Provider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
+func (p *Provider) Repos(ctx context.Context, repos []*types.Repo) (mine []*types.Repo, others []*types.Repo) {
 	return authz.GetCodeHostRepos(p.codeHost, repos)
 }
 
 // RepoPerms returns the permissions the given external account has in relation to the given set of repos.
 // It performs a single HTTP request against the Bitbucket Server API which returns all repositories
 // the authenticated user has permissions to read.
-func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (authorized map[api.RepoName]map[authz.Perm]bool, err error) {
+func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos []*types.Repo) (authorized []*types.Repo, err error) {
 	var (
 		userName string
 		userID   int32

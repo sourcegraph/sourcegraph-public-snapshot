@@ -16,8 +16,8 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 	type call struct {
 		description string
 		account     *extsvc.ExternalAccount
-		repos       map[authz.Repo]struct{}
-		expPerms    map[api.RepoName]map[authz.Perm]bool
+		repos       []*types.Repo
+		expPerms    []*types.Repo
 	}
 	type test struct {
 		description string
@@ -82,14 +82,14 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 				{
 					description: "u1 user has expected perms",
 					account:     acct(t, 1, "gitlab", "https://gitlab.mine/", "1", "oauth-u1"),
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
 						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
 						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
 						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
 						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
+					expPerms: []*types.Repo{
 						"u1/repo1":       {authz.Read: true},
 						"internal/repo1": {authz.Read: true},
 						"public/repo1":   {authz.Read: true},
@@ -98,14 +98,14 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 				{
 					description: "u2 user has expected perms",
 					account:     acct(t, 2, "gitlab", "https://gitlab.mine/", "2", "oauth-u2"),
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
 						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
 						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
 						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
 						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
+					expPerms: []*types.Repo{
 						"u2/repo1":       {authz.Read: true},
 						"internal/repo1": {authz.Read: true},
 						"public/repo1":   {authz.Read: true},
@@ -114,14 +114,14 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 				{
 					description: "other user has expected perms (internal and public)",
 					account:     acct(t, 4, "gitlab", "https://gitlab.mine/", "555", "oauth-other"),
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
 						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
 						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
 						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
 						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
+					expPerms: []*types.Repo{
 						"internal/repo1": {authz.Read: true},
 						"public/repo1":   {authz.Read: true},
 					},
@@ -129,28 +129,28 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 				{
 					description: "no token means only public repos",
 					account:     acct(t, 4, "gitlab", "https://gitlab.mine/", "555", ""),
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
 						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
 						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
 						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
 						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
+					expPerms: []*types.Repo{
 						"public/repo1": {authz.Read: true},
 					},
 				},
 				{
 					description: "unauthenticated means only public repos",
 					account:     nil,
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
 						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
 						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
 						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
 						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
+					expPerms: []*types.Repo{
 						"public/repo1": {authz.Read: true},
 					},
 				},
@@ -222,7 +222,7 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 	// Initial request for private repo
 	if _, err := authzProvider.RepoPerms(ctx,
 		acct(t, 1, gitlab.ServiceType, "https://gitlab.mine/", "1", "oauth-u1"),
-		map[authz.Repo]struct{}{
+		[]*types.Repo{
 			repo("10", "gitlab", "https://gitlab.mine/", "10"): {},
 		},
 	); err != nil {
@@ -242,7 +242,7 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 	// Exact same request
 	if _, err := authzProvider.RepoPerms(ctx,
 		acct(t, 1, gitlab.ServiceType, "https://gitlab.mine/", "1", "oauth-u1"),
-		map[authz.Repo]struct{}{
+		[]*types.Repo{
 			repo("10", "gitlab", "https://gitlab.mine/", "10"): {},
 		},
 	); err != nil {
@@ -262,7 +262,7 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 	// Different request, on internal repo
 	if _, err := authzProvider.RepoPerms(ctx,
 		acct(t, 2, gitlab.ServiceType, "https://gitlab.mine/", "2", "oauth-u2"),
-		map[authz.Repo]struct{}{
+		[]*types.Repo{
 			repo("981", "gitlab", "https://gitlab.mine/", "981"): {},
 		},
 	); err != nil {
@@ -281,7 +281,7 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 	// Make initial request twice again, expect cache miss the first time around
 	if _, err := authzProvider.RepoPerms(ctx,
 		acct(t, 1, gitlab.ServiceType, "https://gitlab.mine/", "1", "oauth-u1"),
-		map[authz.Repo]struct{}{
+		[]*types.Repo{
 			repo("10", "gitlab", "https://gitlab.mine/", "10"): {},
 		},
 	); err != nil {
@@ -304,9 +304,9 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 
 func Test_GitLab_Repos(t *testing.T) {
 	type call struct {
-		repos     map[authz.Repo]struct{}
-		expMine   map[authz.Repo]struct{}
-		expOthers map[authz.Repo]struct{}
+		repos     []*types.Repo
+		expMine   []*types.Repo
+		expOthers []*types.Repo
 	}
 	type test struct {
 		description string
@@ -322,7 +322,7 @@ func Test_GitLab_Repos(t *testing.T) {
 			},
 			calls: []call{
 				{
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						repo("gitlab.mine/bl/repo-1", "", "", ""):                   {},
 						repo("gitlab.mine/kl/repo-1", "", "", ""):                   {},
 						repo("another.host/bl/repo-1", "", "", ""):                  {},
@@ -330,10 +330,10 @@ func Test_GitLab_Repos(t *testing.T) {
 						repo("b", gitlab.ServiceType, "https://not-mine/", "34"):    {},
 						repo("c", "not-gitlab", "https://gitlab.mine/", "45"):       {},
 					},
-					expMine: map[authz.Repo]struct{}{
+					expMine: []*types.Repo{
 						repo("a", gitlab.ServiceType, "https://gitlab.mine/", "23"): {},
 					},
-					expOthers: map[authz.Repo]struct{}{
+					expOthers: []*types.Repo{
 						repo("gitlab.mine/bl/repo-1", "", "", ""):                {},
 						repo("gitlab.mine/kl/repo-1", "", "", ""):                {},
 						repo("another.host/bl/repo-1", "", "", ""):               {},

@@ -220,8 +220,8 @@ func Test_SudoProvider_RepoPerms(t *testing.T) {
 	type call struct {
 		description string
 		account     *extsvc.ExternalAccount
-		repos       map[authz.Repo]struct{}
-		expPerms    map[api.RepoName]map[authz.Perm]bool
+		repos       []*types.Repo
+		expPerms    []*types.Repo
 	}
 	type test struct {
 		description string
@@ -283,14 +283,14 @@ func Test_SudoProvider_RepoPerms(t *testing.T) {
 				{
 					description: "u1 user has expected perms",
 					account:     acct(t, 1, "gitlab", "https://gitlab.mine/", "1", "oauth-u1"),
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
 						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
 						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
 						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
 						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
+					expPerms: []*types.Repo{
 						"u1/repo1":       {authz.Read: true},
 						"internal/repo1": {authz.Read: true},
 						"public/repo1":   {authz.Read: true},
@@ -299,14 +299,14 @@ func Test_SudoProvider_RepoPerms(t *testing.T) {
 				{
 					description: "u2 user has expected perms",
 					account:     acct(t, 2, "gitlab", "https://gitlab.mine/", "2", "oauth-u2"),
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
 						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
 						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
 						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
 						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
+					expPerms: []*types.Repo{
 						"u2/repo1":       {authz.Read: true},
 						"internal/repo1": {authz.Read: true},
 						"public/repo1":   {authz.Read: true},
@@ -315,14 +315,14 @@ func Test_SudoProvider_RepoPerms(t *testing.T) {
 				{
 					description: "other user has expected perms (internal and public)",
 					account:     acct(t, 4, "gitlab", "https://gitlab.mine/", "555", "oauth-other"),
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
 						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
 						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
 						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
 						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
+					expPerms: []*types.Repo{
 						"internal/repo1": {authz.Read: true},
 						"public/repo1":   {authz.Read: true},
 					},
@@ -330,14 +330,14 @@ func Test_SudoProvider_RepoPerms(t *testing.T) {
 				{
 					description: "no token means only public and internal repos",
 					account:     acct(t, 4, "gitlab", "https://gitlab.mine/", "555", ""),
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
 						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
 						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
 						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
 						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
+					expPerms: []*types.Repo{
 						"internal/repo1": {authz.Read: true},
 						"public/repo1":   {authz.Read: true},
 					},
@@ -345,14 +345,14 @@ func Test_SudoProvider_RepoPerms(t *testing.T) {
 				{
 					description: "unauthenticated means only public repos",
 					account:     nil,
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
 						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
 						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
 						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
 						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
+					expPerms: []*types.Repo{
 						"public/repo1": {authz.Read: true},
 					},
 				},

@@ -27,8 +27,8 @@ type Provider_RepoPerms_Test struct {
 type Provider_RepoPerms_call struct {
 	description string
 	userAccount *extsvc.ExternalAccount
-	repos       map[authz.Repo]struct{}
-	wantPerms   map[api.RepoName]map[authz.Perm]bool
+	repos       []*types.Repo
+	wantPerms   []*types.Repo
 	wantErr     error
 }
 
@@ -84,7 +84,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 				{
 					description: "t0_repos",
 					userAccount: ua("u0", "t0"),
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						rp("r0", "u0/private", "https://github.com/"):  {},
 						rp("r1", "u0/public", "https://github.com/"):   {},
 						rp("r2", "u1/private", "https://github.com/"):  {},
@@ -92,7 +92,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 						rp("r4", "u99/private", "https://github.com/"): {},
 						rp("r5", "u99/public", "https://github.com/"):  {},
 					},
-					wantPerms: map[api.RepoName]map[authz.Perm]bool{
+					wantPerms: []*types.Repo{
 						"r0": readPerms,
 						"r1": readPerms,
 						"r2": noPerms,
@@ -104,7 +104,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 				{
 					description: "t1_repos",
 					userAccount: ua("u1", "t1"),
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						rp("r0", "u0/private", "https://github.com/"):  {},
 						rp("r1", "u0/public", "https://github.com/"):   {},
 						rp("r2", "u1/private", "https://github.com/"):  {},
@@ -112,7 +112,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 						rp("r4", "u99/private", "https://github.com/"): {},
 						rp("r5", "u99/public", "https://github.com/"):  {},
 					},
-					wantPerms: map[api.RepoName]map[authz.Perm]bool{
+					wantPerms: []*types.Repo{
 						"r0": noPerms,
 						"r1": readPerms,
 						"r2": readPerms,
@@ -124,7 +124,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 				{
 					description: "repos_with_unknown_token_(only_public_repos)",
 					userAccount: ua("unknown-user", "unknown-token"),
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						rp("r0", "u0/private", "https://github.com/"):  {},
 						rp("r1", "u0/public", "https://github.com/"):   {},
 						rp("r2", "u1/private", "https://github.com/"):  {},
@@ -132,7 +132,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 						rp("r4", "u99/private", "https://github.com/"): {},
 						rp("r5", "u99/public", "https://github.com/"):  {},
 					},
-					wantPerms: map[api.RepoName]map[authz.Perm]bool{
+					wantPerms: []*types.Repo{
 						"r0": noPerms,
 						"r1": readPerms,
 						"r2": noPerms,
@@ -144,7 +144,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 				{
 					description: "public repos",
 					userAccount: nil,
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						rp("r0", "u0/private", "https://github.com/"):  {},
 						rp("r1", "u0/public", "https://github.com/"):   {},
 						rp("r2", "u1/private", "https://github.com/"):  {},
@@ -152,7 +152,7 @@ func TestProvider_RepoPerms(t *testing.T) {
 						rp("r4", "u99/private", "https://github.com/"): {},
 						rp("r5", "u99/public", "https://github.com/"):  {},
 					},
-					wantPerms: map[api.RepoName]map[authz.Perm]bool{
+					wantPerms: []*types.Repo{
 						"r1": readPerms,
 						"r3": readPerms,
 						"r5": readPerms,
@@ -161,21 +161,21 @@ func TestProvider_RepoPerms(t *testing.T) {
 				{
 					description: "t0 select",
 					userAccount: ua("u0", "t0"),
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						rp("r2", "u1/private", "https://github.com/"): {},
 					},
-					wantPerms: map[api.RepoName]map[authz.Perm]bool{
+					wantPerms: []*types.Repo{
 						"r2": noPerms,
 					},
 				},
 				{
 					description: "t0 missing",
 					userAccount: ua("u0", "t0"),
-					repos: map[authz.Repo]struct{}{
+					repos: []*types.Repo{
 						rp("r00", "404", "https://github.com/"):             {},
 						rp("r11", "u0/public", "https://other.github.com/"): {},
 					},
-					wantPerms: map[api.RepoName]map[authz.Perm]bool{
+					wantPerms: []*types.Repo{
 						"r00": noPerms,
 					},
 				},
