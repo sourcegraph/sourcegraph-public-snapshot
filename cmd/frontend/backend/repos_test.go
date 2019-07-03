@@ -16,7 +16,7 @@ func TestReposService_Get(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
-	wantRepo := types.NewRepoWithIDs(1, "github.com/u/r", nil)
+	wantRepo := &types.Repo{RepoIDs: types.RepoIDs{ID: 1, Name: "github.com/u/r"}}
 
 	calledGet := db.Mocks.Repos.MockGet_Return(t, wantRepo)
 

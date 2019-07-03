@@ -12,12 +12,12 @@ const ServiceType = "awscodecommit"
 
 // AWSCodeCommitExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified AWS
 // CodeCommit repository.
-func ExternalRepoSpec(repo *Repository, serviceID string) *api.ExternalRepoSpec {
-	return &api.ExternalRepoSpec{
+func ExternalRepoSpec(repo *Repository, serviceID string) api.ExternalRepoSpec {
+	return api.ExternalRepoSpec{
 		ID:          repo.ID,
 		ServiceType: ServiceType,
-		ServiceID:   serviceID,
-	}
+		ServiceID:   serviceID}
+
 }
 
 // ServiceID creates the repository external service ID. See AWSCodeCommitServiceType for

@@ -70,7 +70,7 @@ func TestSearchResults(t *testing.T) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
 
-			return []*types.Repo{types.NewRepoWithIDs(1, "repo", nil)}, nil
+			return []*types.Repo{{RepoIDs: types.RepoIDs{ID: 1, Name: "repo"}}}, nil
 		}
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
@@ -101,7 +101,7 @@ func TestSearchResults(t *testing.T) {
 				t.Fatalf("got %+v, want %+v", op, want)
 			}
 
-			return []*types.Repo{types.NewRepoWithIDs(1, "repo", nil)}, nil
+			return []*types.Repo{{RepoIDs: types.RepoIDs{ID: 1, Name: "repo"}}}, nil
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
@@ -136,7 +136,7 @@ func TestSearchResults(t *testing.T) {
 					uri:          "git://repo?rev#dir/file",
 					JPath:        "dir/file",
 					JLineMatches: []*lineMatch{{JLineNumber: 123}},
-					repo:         types.NewRepoWithIDs(1, "", nil),
+					repo:         &types.Repo{RepoIDs: types.RepoIDs{ID: 1}},
 				},
 			}, &searchResultsCommon{}, nil
 		}
@@ -252,14 +252,10 @@ func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEn
 	for i := 1; i <= count; i++ {
 		name := fmt.Sprintf("repo-%d", i)
 
-		repoWithIDs := types.NewRepoWithIDs(
-			api.RepoID(i),
-			api.RepoName(name),
-			&api.ExternalRepoSpec{
-				ID:          name,
-				ServiceType: "github",
-				ServiceID:   "https://github.com",
-			})
+		repoWithIDs := &types.Repo{RepoIDs: types.RepoIDs{ID: api.RepoID(i), Name: api.RepoName(name), ExternalRepo: api.ExternalRepoSpec{
+			ID:          name,
+			ServiceType: "github",
+			ServiceID:   "https://github.com"}}}
 
 		reposWithIDs = append(reposWithIDs, repoWithIDs)
 
@@ -438,7 +434,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 }
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
-	repo := types.NewRepoWithIDs(0, "testRepo", nil)
+	repo := &types.Repo{RepoIDs: types.RepoIDs{Name: "testRepo"}}
 
 	repoMatch := &repositoryResolver{
 		repo: repo,
@@ -662,32 +658,32 @@ func TestCompareSearchResults(t *testing.T) {
 	tests := []testCase{{
 		// Different repo matches
 		a: &repositoryResolver{
-			repo: types.NewRepoWithIDs(0, api.RepoName("a"), nil),
+			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("a")}},
 		},
 		b: &repositoryResolver{
-			repo: types.NewRepoWithIDs(0, api.RepoName("b"), nil),
+			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("b")}},
 		},
 		aIsLess: true,
 	}, {
 		// Repo match vs file match in same repo
 		a: &fileMatchResolver{
-			repo: types.NewRepoWithIDs(0, api.RepoName("a"), nil),
+			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("a")}},
 
 			JPath: "a",
 		},
 		b: &repositoryResolver{
-			repo: types.NewRepoWithIDs(0, api.RepoName("a"), nil),
+			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("a")}},
 		},
 		aIsLess: false,
 	}, {
 		// Same repo, different files
 		a: &fileMatchResolver{
-			repo: types.NewRepoWithIDs(0, api.RepoName("a"), nil),
+			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("a")}},
 
 			JPath: "a",
 		},
 		b: &fileMatchResolver{
-			repo: types.NewRepoWithIDs(0, api.RepoName("a"), nil),
+			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("a")}},
 
 			JPath: "b",
 		},
@@ -695,12 +691,12 @@ func TestCompareSearchResults(t *testing.T) {
 	}, {
 		// different repo, same file name
 		a: &fileMatchResolver{
-			repo: types.NewRepoWithIDs(0, api.RepoName("a"), nil),
+			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("a")}},
 
 			JPath: "a",
 		},
 		b: &fileMatchResolver{
-			repo: types.NewRepoWithIDs(0, api.RepoName("b"), nil),
+			repo: &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName("b")}},
 
 			JPath: "a",
 		},
@@ -804,14 +800,10 @@ func TestSearchResultsHydration(t *testing.T) {
 	repoName := "reponame-foobar"
 	fileName := "foobar.go"
 
-	repoWithIDs := types.NewRepoWithIDs(
-		api.RepoID(id),
-		api.RepoName(repoName),
-		&api.ExternalRepoSpec{
-			ID:          repoName,
-			ServiceType: "github",
-			ServiceID:   "https://github.com",
-		})
+	repoWithIDs := &types.Repo{RepoIDs: types.RepoIDs{ID: api.RepoID(id), Name: api.RepoName(repoName), ExternalRepo: api.ExternalRepoSpec{
+		ID:          repoName,
+		ServiceType: "github",
+		ServiceID:   "https://github.com"}}}
 
 	hydratedRepo := &types.Repo{
 		RepoIDs: types.RepoIDs{

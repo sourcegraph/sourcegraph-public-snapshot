@@ -178,32 +178,26 @@ func (s *repos) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sq
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
-	var spec dbExternalRepoSpec
-
 	if r.RepoFields == nil {
-		err = rows.Scan(
+		return rows.Scan(
 			&r.ID,
 			&r.Name,
-			&spec.id, &spec.serviceType, &spec.serviceID,
-		)
-	} else {
-		err = rows.Scan(
-			&r.ID,
-			&r.Name,
-			&spec.id, &spec.serviceType, &spec.serviceID,
-			&dbutil.NullString{S: &r.URI},
-			&r.Description,
-			&r.Language,
+			&dbutil.NullString{S: &r.ExternalRepo.ID},
+			&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
+			&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
 		)
 	}
 
-	if err != nil {
-		return err
-	}
-
-	r.ExternalRepo = spec.toAPISpec()
-
-	return nil
+	return rows.Scan(
+		&r.ID,
+		&r.Name,
+		&dbutil.NullString{S: &r.ExternalRepo.ID},
+		&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
+		&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
+		&dbutil.NullString{S: &r.URI},
+		&r.Description,
+		&r.Language,
+	)
 }
 
 // ReposListOptions specifies the options for listing repositories.
@@ -727,14 +721,13 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 		// Ignore Enabled for deciding to update
 		insert = ((op.Description != r.Description) ||
 			(op.Fork != r.Fork) ||
-			(!op.ExternalRepo.Equal(r.ExternalRepo)))
+			(!op.ExternalRepo.Equal(&r.ExternalRepo)))
 	}
 
 	if !insert {
 		return nil
 	}
 
-	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
 	_, err = dbconn.Global.ExecContext(
 		ctx,
 		upsertSQL,
@@ -742,37 +735,12 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 		op.Description,
 		op.Fork,
 		enabled,
-		spec.id,
-		spec.serviceType,
-		spec.serviceID,
+		op.ExternalRepo.ID,
+		op.ExternalRepo.ServiceType,
+		op.ExternalRepo.ServiceID,
 		language,
 		op.Archived,
 	)
 
 	return err
-}
-
-// dbExternalRepoSpec is convenience type for inserting or selecting *api.ExternalRepoSpec database data.
-type dbExternalRepoSpec struct{ id, serviceType, serviceID *string }
-
-func (s *dbExternalRepoSpec) fromAPISpec(spec *api.ExternalRepoSpec) *dbExternalRepoSpec {
-	if spec != nil {
-		*s = dbExternalRepoSpec{
-			id:          &spec.ID,
-			serviceType: &spec.ServiceType,
-			serviceID:   &spec.ServiceID,
-		}
-	}
-	return s
-}
-
-func (s dbExternalRepoSpec) toAPISpec() *api.ExternalRepoSpec {
-	if s.id != nil && s.serviceType != nil && s.serviceID != nil {
-		return &api.ExternalRepoSpec{
-			ID:          *s.id,
-			ServiceType: *s.serviceType,
-			ServiceID:   *s.serviceID,
-		}
-	}
-	return nil
 }

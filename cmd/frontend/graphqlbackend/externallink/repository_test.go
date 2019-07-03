@@ -33,7 +33,7 @@ func TestRepository(t *testing.T) {
 		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
-		links, err := Repository(context.Background(), types.NewRepoWithIDs(0, api.RepoName(repoName), nil))
+		links, err := Repository(context.Background(), &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName(repoName)}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -58,7 +58,7 @@ func TestRepository(t *testing.T) {
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
 		}
-		links, err := Repository(context.Background(), types.NewRepoWithIDs(0, "myrepo", nil))
+		links, err := Repository(context.Background(), &types.Repo{RepoIDs: types.RepoIDs{Name: "myrepo"}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -80,7 +80,7 @@ func TestRepository(t *testing.T) {
 		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
-		links, err := Repository(context.Background(), types.NewRepoWithIDs(0, "myrepo", nil))
+		links, err := Repository(context.Background(), &types.Repo{RepoIDs: types.RepoIDs{Name: "myrepo"}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -130,7 +130,7 @@ func TestFileOrDir(t *testing.T) {
 				db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 					return nil, errors.New("x")
 				}
-				links, err := FileOrDir(context.Background(), types.NewRepoWithIDs(0, api.RepoName(repoName), nil), rev, path, isDir)
+				links, err := FileOrDir(context.Background(), &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName(repoName)}}, rev, path, isDir)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -161,7 +161,7 @@ func TestFileOrDir(t *testing.T) {
 			return []byte("mybranch"), nil, 0, nil
 		}
 		defer git.ResetMocks()
-		links, err := FileOrDir(context.Background(), types.NewRepoWithIDs(0, "myrepo", nil), rev, path, true)
+		links, err := FileOrDir(context.Background(), &types.Repo{RepoIDs: types.RepoIDs{Name: "myrepo"}}, rev, path, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -183,7 +183,7 @@ func TestFileOrDir(t *testing.T) {
 		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
-		links, err := FileOrDir(context.Background(), types.NewRepoWithIDs(0, "myrepo", nil), rev, path, true)
+		links, err := FileOrDir(context.Background(), &types.Repo{RepoIDs: types.RepoIDs{Name: "myrepo"}}, rev, path, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -214,7 +214,7 @@ func TestCommit(t *testing.T) {
 		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
-		links, err := Commit(context.Background(), types.NewRepoWithIDs(0, api.RepoName(repoName), nil), commit)
+		links, err := Commit(context.Background(), &types.Repo{RepoIDs: types.RepoIDs{Name: api.RepoName(repoName)}}, commit)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -239,7 +239,7 @@ func TestCommit(t *testing.T) {
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
 		}
-		links, err := Commit(context.Background(), types.NewRepoWithIDs(0, "myrepo", nil), commit)
+		links, err := Commit(context.Background(), &types.Repo{RepoIDs: types.RepoIDs{Name: "myrepo"}}, commit)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -261,7 +261,7 @@ func TestCommit(t *testing.T) {
 		db.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
-		links, err := Commit(context.Background(), types.NewRepoWithIDs(0, "myrepo", nil), commit)
+		links, err := Commit(context.Background(), &types.Repo{RepoIDs: types.RepoIDs{Name: "myrepo"}}, commit)
 		if err != nil {
 			t.Fatal(err)
 		}

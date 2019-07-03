@@ -107,9 +107,7 @@ func linksForRepository(ctx context.Context, repo types.RepoIdentifier) (phabRep
 	span, ctx := opentracing.StartSpanFromContext(ctx, "externallink.linksForRepository")
 	defer span.Finish()
 	span.SetTag("Repo", repo.RepoName())
-	if repo.ExternalRepoSpec() != nil {
-		span.SetTag("ExternalRepo", repo.ExternalRepoSpec())
-	}
+	span.SetTag("ExternalRepo", repo.ExternalRepoSpec())
 
 	var err error
 	phabRepo, err = db.Phabricator.GetByName(ctx, repo.RepoName())
@@ -130,9 +128,7 @@ func linksForRepository(ctx context.Context, repo types.RepoIdentifier) (phabRep
 	}
 	if info != nil && info.Repo != nil {
 		link = info.Repo.Links
-		if info.Repo.ExternalRepo != nil {
-			serviceType = info.Repo.ExternalRepo.ServiceType
-		}
+		serviceType = info.Repo.ExternalRepo.ServiceType
 	}
 
 	return phabRepo, link, serviceType

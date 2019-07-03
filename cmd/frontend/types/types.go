@@ -12,7 +12,7 @@ import (
 type RepoIdentifier interface {
 	RepoID() api.RepoID
 	RepoName() api.RepoName
-	ExternalRepoSpec() *api.ExternalRepoSpec
+	ExternalRepoSpec() api.ExternalRepoSpec
 }
 
 // RepoIDs contains different identifiers for a single repository
@@ -22,8 +22,7 @@ type RepoIDs struct {
 
 	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
 	// service itself).
-	// TODO: Get rid of the pointer after introduction of RepoIDs
-	ExternalRepo *api.ExternalRepoSpec
+	ExternalRepo api.ExternalRepoSpec
 
 	// Name is the name for this repository (e.g., "github.com/user/repo"). It
 	// is the same as URI, unless the user configures a non-default
@@ -33,9 +32,9 @@ type RepoIDs struct {
 	Name api.RepoName
 }
 
-func (r RepoIDs) RepoID() api.RepoID                      { return r.ID }
-func (r RepoIDs) RepoName() api.RepoName                  { return r.Name }
-func (r RepoIDs) ExternalRepoSpec() *api.ExternalRepoSpec { return r.ExternalRepo }
+func (r RepoIDs) RepoID() api.RepoID                     { return r.ID }
+func (r RepoIDs) RepoName() api.RepoName                 { return r.Name }
+func (r RepoIDs) ExternalRepoSpec() api.ExternalRepoSpec { return r.ExternalRepo }
 
 // RepoFields are optional data fields on a Repo
 type RepoFields struct {
@@ -63,7 +62,7 @@ type Repo struct {
 }
 
 // NewRepoWithIDs returns a Repo with its RepoIDs set.
-func NewRepoWithIDs(id api.RepoID, name api.RepoName, ext *api.ExternalRepoSpec) *Repo {
+func NewRepoWithIDs(id api.RepoID, name api.RepoName, ext api.ExternalRepoSpec) *Repo {
 	return &Repo{
 		RepoIDs: RepoIDs{
 			ID:           id,
