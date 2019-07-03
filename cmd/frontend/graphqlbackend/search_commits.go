@@ -406,30 +406,11 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) (*highlightedString, 
 
 	var highlights []*highlightedRange
 	for i, line := range bytes.Split(bytes.ToLower(data), []byte("\n")) {
-		// Make map from byte positions to character positions.
-		byteToChar := make(map[int]int, len(line))
-		var b, c int
-		var err error
-		_ = bytes.Map(func(r rune) rune {
-			byteToChar[b] = c
-			rl := utf8.RuneLen(r)
-			if (rl < 0 || r == utf8.RuneError) && err == nil {
-				err = fmt.Errorf("invalid utf-8 code at character %d of %q", b, data)
-			}
-			b += rl
-			c++
-			return r
-		}, line)
-		byteToChar[b] = c
-		if err != nil {
-			return nil, err
-		}
-
 		for _, match := range pattern.FindAllIndex(line, maxMatchesPerLine) {
 			highlights = append(highlights, &highlightedRange{
 				line:      int32(i + 1),
-				character: int32(byteToChar[match[0]]),
-				length:    int32(byteToChar[match[1]] - byteToChar[match[0]]),
+				character: int32(utf8.RuneCount(line[:match[0]])),
+				length:    int32(utf8.RuneCount(line[:match[1]]) - utf8.RuneCount(line[:match[0]])),
 			})
 		}
 	}
