@@ -188,7 +188,7 @@
     "tslint": "^5.17.0",
     "typedoc": "^0.14.2",
     "typescript": "^3.5.2",
-    "utc-version": "^2.0.0",
+    "utc-version": "^2.0.1",
     "web-ext": "npm:@sourcegraph/web-ext@^3.0.0-fork.1",
     "webpack": "^4.35.2",
     "webpack-dev-server": "^3.7.1",
