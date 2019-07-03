@@ -35,9 +35,8 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
-import { PartialCodeEditor } from '../../../../shared/src/api/client/context/context'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
-import { CodeEditorData } from '../../../../shared/src/api/client/services/editorService'
+import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/editorService'
 import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../../shared/src/backend/errors'
 import {
     CommandListClassProps,
@@ -629,7 +628,7 @@ export function handleCodeHost({
                 isActive: true,
             }
             const editorId = extensionsController.services.editor.addEditor(editorData)
-            const scope: PartialCodeEditor = {
+            const scope: CodeEditorWithPartialModel = {
                 ...editorData,
                 ...editorId,
                 model,

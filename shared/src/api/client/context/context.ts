@@ -1,6 +1,6 @@
 import { basename, dirname, extname } from 'path'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditor } from '../services/editorService'
+import { CodeEditorWithPartialModel } from '../services/editorService'
 
 /**
  * Context is an arbitrary, immutable set of key-value pairs. Its value can be any JSON object.
@@ -15,12 +15,8 @@ export interface Context<T = never>
         string | number | boolean | null | Context | T | (string | number | boolean | null | Context | T)[]
     > {}
 
-export type PartialCodeEditor = Pick<CodeEditor, 'editorId' | 'type' | 'resource' | 'selections' | 'isActive'> & {
-    model: Pick<CodeEditor['model'], 'uri' | 'languageId'>
-}
-
 export type ContributionScope =
-    | PartialCodeEditor
+    | CodeEditorWithPartialModel
     | {
           type: 'panelView'
           id: string
@@ -35,7 +31,7 @@ export type ContributionScope =
  * @param scope the user interface component in whose scope this computation should occur
  */
 export function getComputedContextProperty(
-    editors: readonly PartialCodeEditor[],
+    editors: readonly CodeEditorWithPartialModel[],
     settings: SettingsCascadeOrError,
     context: Context<any>,
     key: string,

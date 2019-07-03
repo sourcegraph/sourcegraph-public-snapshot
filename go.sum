@@ -712,6 +712,7 @@ golang.org/x/sys v0.0.0-20190606212808-7fc4e5ec1444 h1:gmKy/SaqFWnWO0RM/E9ox+LZ3
 golang.org/x/sys v0.0.0-20190606212808-7fc4e5ec1444/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20190608051445-5b15430b70e3 h1:OX5dSAHHPYz8i/jcJD/k6HqRZZHhFzGrIAxdOC5or44=
 golang.org/x/sys v0.0.0-20190608051445-5b15430b70e3/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20190701071227-04f50cda93cb h1:Lg1hzdbqYD5SXgexpVrmRiyybANxq2at3ALUbcfxsfM=
 golang.org/x/sys v0.0.0-20190701071227-04f50cda93cb/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.0.0-20170915090833-1cbadb444a80/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.0 h1:g61tztE5qeGQ89tm6NTjjM9VPIm088od1l6aSorWRWg=
