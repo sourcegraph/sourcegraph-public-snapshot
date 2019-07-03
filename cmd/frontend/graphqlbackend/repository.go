@@ -231,6 +231,8 @@ func (r *repositoryResolver) hydrate(ctx context.Context) error {
 			return
 		}
 
+		log15.Debug("repositoryResolver.hydrate", "repo.ID", r.repo.ID)
+
 		var repo *types.Repo
 		repo, r.err = db.Repos.Get(ctx, r.repo.ID)
 		if r.err == nil {
