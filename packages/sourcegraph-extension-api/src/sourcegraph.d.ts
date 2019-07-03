@@ -1097,6 +1097,15 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * An action that can be presented to the user as a button.
+     */
+    export type Action =
+        | {
+              plan: Plan
+          }
+        | { command: Command }
+
+    /**
      * The scopes for a notification.
      */
     export enum NotificationScope {
@@ -1121,14 +1130,9 @@ declare module 'sourcegraph' {
         readonly type: NotificationType
 
         /**
-         * The [diagnostics](#Diagnostic) that are related to this notification.
+         * The [actions](#Action) that this notification presents.
          */
-        readonly diagnostics?: readonly [URL, readonly Diagnostic[]][]
-
-        /**
-         * The [code actions](#CodeAction) that this notification presents.
-         */
-        readonly actions?: readonly CodeAction[]
+        readonly actions?: readonly Action[]
     }
 
     /**
@@ -1616,6 +1620,19 @@ declare module 'sourcegraph' {
         arguments?: any[]
     }
 
+    export interface Plan {
+        operations: PlanOperation[] & { length: 1 /* TODO!(sqs): for now, enforce only 1 op */ }
+    }
+
+    export interface PlanOperation<P extends object = {}> {
+        // TODO!(sqs): refer to a diagnostic provider (which doesnt yet exist) and then let it filter based on that
+        diagnostics?: { codePrefix: string }
+
+        parameters?: P
+
+        command: Command
+    }
+
     /**
      * A code action represents a change that can be performed in code, e.g. to fix a problem or to
      * refactor code.
@@ -2024,6 +2041,24 @@ declare module 'sourcegraph' {
          * @throws Registering a command with an existing command identifier throws an error.
          */
         export function registerCommand(command: string, callback: (...args: any[]) => any): Unsubscribable
+
+        /**
+         * Registers a command that is invoked to compute a [plan](#Plan).
+         *
+         * @template P The plan parameters type.
+         * @param command A unique identifier for the command.
+         * @param callback A command function.
+         * @return Unsubscribable to unregister this command.
+         * @throws Registering a command with an existing command identifier throws an error.
+         */
+        export function registerPlanCommand<P extends object = {}>(
+            command: string,
+            callback: (
+                params: P,
+                diagnostics: [URL, Diagnostic[]][],
+                ...args: any[]
+            ) => WorkspaceEdit | Promise<WorkspaceEdit>
+        ): Unsubscribable
 
         /**
          * Executes the command with the given command identifier.

@@ -9,13 +9,13 @@ import {
     NotificationScope,
     StatusCompletion,
     StatusResult,
+    DiagnosticSeverity,
 } from '@sourcegraph/extension-api-classes'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
 import { NotificationType } from '../client/services/notifications'
-import { DiagnosticSeverity } from '../types/diagnosticCollection'
 import { TextEdit } from '../types/textEdit'
 import { WorkspaceEdit } from '../types/workspaceEdit'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
@@ -295,9 +295,8 @@ function createExtensionAPI(
         },
 
         commands: {
-            registerCommand: (command: string, callback: (...args: any[]) => any) =>
-                commands.registerCommand({ command, callback }),
-
+            registerCommand: (command, callback) => commands.registerCommand({ command, callback }),
+            registerPlanCommand: (command, callback) => commands.registerCommand({ command, callback }),
             executeCommand: (command: string, ...args: any[]) => commands.executeCommand(command, args),
         },
 
