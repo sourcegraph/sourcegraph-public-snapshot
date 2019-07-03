@@ -166,7 +166,8 @@ func TestRepos_Upsert(t *testing.T) {
 	ext := api.ExternalRepoSpec{
 		ID:          "ext:id",
 		ServiceType: "test",
-		ServiceID:   "ext:test"}
+		ServiceID:   "ext:test",
+	}
 
 	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, Enabled: true, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)

@@ -252,10 +252,16 @@ func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEn
 	for i := 1; i <= count; i++ {
 		name := fmt.Sprintf("repo-%d", i)
 
-		repoWithIDs := &types.Repo{RepoIDs: types.RepoIDs{ID: api.RepoID(i), Name: api.RepoName(name), ExternalRepo: api.ExternalRepoSpec{
-			ID:          name,
-			ServiceType: "github",
-			ServiceID:   "https://github.com"}}}
+		repoWithIDs := &types.Repo{
+			RepoIDs: types.RepoIDs{ID: api.RepoID(i),
+				Name: api.RepoName(name),
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          name,
+					ServiceType: "github",
+					ServiceID:   "https://github.com",
+				},
+			},
+		}
 
 		reposWithIDs = append(reposWithIDs, repoWithIDs)
 
@@ -800,10 +806,17 @@ func TestSearchResultsHydration(t *testing.T) {
 	repoName := "reponame-foobar"
 	fileName := "foobar.go"
 
-	repoWithIDs := &types.Repo{RepoIDs: types.RepoIDs{ID: api.RepoID(id), Name: api.RepoName(repoName), ExternalRepo: api.ExternalRepoSpec{
-		ID:          repoName,
-		ServiceType: "github",
-		ServiceID:   "https://github.com"}}}
+	repoWithIDs := &types.Repo{
+		RepoIDs: types.RepoIDs{
+			ID:   api.RepoID(id),
+			Name: api.RepoName(repoName),
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          repoName,
+				ServiceType: "github",
+				ServiceID:   "https://github.com",
+			},
+		},
+	}
 
 	hydratedRepo := &types.Repo{
 		RepoIDs: types.RepoIDs{

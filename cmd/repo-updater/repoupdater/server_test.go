@@ -113,8 +113,8 @@ func TestServer_handleRepoLookup(t *testing.T) {
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "a",
 					ServiceType: github.ServiceType,
-					ServiceID:   "https://github.com/"},
-
+					ServiceID:   "https://github.com/",
+				},
 				Name:        "github.com/c/d",
 				Description: "b",
 				Fork:        true,
@@ -720,8 +720,8 @@ func TestRepoLookup(t *testing.T) {
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
-					ServiceID:   "https://github.com/"},
-
+					ServiceID:   "https://github.com/",
+				},
 				Name:        "github.com/foo/bar",
 				Description: "The description",
 				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
@@ -743,8 +743,8 @@ func TestRepoLookup(t *testing.T) {
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 					ServiceType: awscodecommit.ServiceType,
-					ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:"},
-
+					ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
+				},
 				Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 				Description: "The stripe-go lib",
 				VCS:         protocol.VCSInfo{URL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go"},
@@ -769,8 +769,8 @@ func TestRepoLookup(t *testing.T) {
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
-					ServiceID:   "https://github.com/"},
-
+					ServiceID:   "https://github.com/",
+				},
 				Name:        "github.com/foo/bar",
 				Description: "The description",
 				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
@@ -796,8 +796,8 @@ func TestRepoLookup(t *testing.T) {
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
-					ServiceID:   "https://github.com/"},
-
+					ServiceID:   "https://github.com/",
+				},
 				Name:        "github.com/foo/bar",
 				Description: "The description",
 				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
