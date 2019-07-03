@@ -413,7 +413,7 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) (*highlightedString, 
 		var err error
 		_ = bytes.Map(func(r rune) rune {
 			byteToChar[b] = c
-			rl :=utf8.RuneLen(r)
+			rl := utf8.RuneLen(r)
 			if (rl < 0 || r == utf8.RuneError) && err == nil {
 				err = fmt.Errorf("invalid utf-8 code at character %d of %q", b, data)
 			}
