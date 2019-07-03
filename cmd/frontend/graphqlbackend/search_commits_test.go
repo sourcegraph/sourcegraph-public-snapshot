@@ -134,9 +134,9 @@ func Test_highlightMatches(t *testing.T) {
 		data    []byte
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    *highlightedString
+		name string
+		args args
+		want *highlightedString
 	}{
 		{
 			// https://github.com/sourcegraph/sourcegraph/issues/4512
