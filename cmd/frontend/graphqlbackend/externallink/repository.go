@@ -25,7 +25,7 @@ import (
 //
 // For example, a repository might have 2 external links, one to its origin repository on GitHub.com
 // and one to the repository on Phabricator.
-func Repository(ctx context.Context, repo types.RepoIdentifier) (links []*Resolver, err error) {
+func Repository(ctx context.Context, repo *types.Repo) (links []*Resolver, err error) {
 	phabRepo, link, serviceType := linksForRepository(ctx, repo)
 	if phabRepo != nil {
 		links = append(links, &Resolver{
@@ -40,7 +40,7 @@ func Repository(ctx context.Context, repo types.RepoIdentifier) (links []*Resolv
 }
 
 // FileOrDir returns the external links for a file or directory in a repository.
-func FileOrDir(ctx context.Context, repo types.RepoIdentifier, rev, path string, isDir bool) (links []*Resolver, err error) {
+func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bool) (links []*Resolver, err error) {
 	rev = url.PathEscape(rev)
 
 	phabRepo, link, serviceType := linksForRepository(ctx, repo)
@@ -77,7 +77,7 @@ func FileOrDir(ctx context.Context, repo types.RepoIdentifier, rev, path string,
 }
 
 // Commit returns the external links for a commit in a repository.
-func Commit(ctx context.Context, repo types.RepoIdentifier, commitID api.CommitID) (links []*Resolver, err error) {
+func Commit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (links []*Resolver, err error) {
 	commitStr := url.PathEscape(string(commitID))
 
 	phabRepo, link, serviceType := linksForRepository(ctx, repo)
@@ -103,14 +103,14 @@ func Commit(ctx context.Context, repo types.RepoIdentifier, commitID api.CommitI
 //
 // It logs errors to the trace but does not return errors, because external links are not worth
 // failing any request for.
-func linksForRepository(ctx context.Context, repo types.RepoIdentifier) (phabRepo *types.PhabricatorRepo, link *protocol.RepoLinks, serviceType string) {
+func linksForRepository(ctx context.Context, repo *types.Repo) (phabRepo *types.PhabricatorRepo, link *protocol.RepoLinks, serviceType string) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "externallink.linksForRepository")
 	defer span.Finish()
-	span.SetTag("Repo", repo.RepoName())
-	span.SetTag("ExternalRepo", repo.ExternalRepoSpec())
+	span.SetTag("Repo", repo.Name)
+	span.SetTag("ExternalRepo", repo.ExternalRepo)
 
 	var err error
-	phabRepo, err = db.Phabricator.GetByName(ctx, repo.RepoName())
+	phabRepo, err = db.Phabricator.GetByName(ctx, repo.Name)
 	if err != nil && !errcode.IsNotFound(err) {
 		ext.Error.Set(span, true)
 		span.SetTag("phabErr", err.Error())
@@ -118,12 +118,12 @@ func linksForRepository(ctx context.Context, repo types.RepoIdentifier) (phabRep
 
 	// Look up repo links in the repo-updater. This supplies links from code host APIs.
 	info, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
-		Repo: repo.RepoName(),
+		Repo: repo.Name,
 	})
 	if err != nil {
 		ext.Error.Set(span, true)
 		span.SetTag("repoUpdaterErr", err.Error())
-		log15.Warn("linksForRepository failed to RepoLookup", "repo", repo.RepoName(), "error", err)
+		log15.Warn("linksForRepository failed to RepoLookup", "repo", repo.Name, "error", err)
 		linksForRepositoryFailed.Inc()
 	}
 	if info != nil && info.Repo != nil {

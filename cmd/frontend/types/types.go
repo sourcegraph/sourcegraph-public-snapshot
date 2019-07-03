@@ -7,15 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-// RepoIdentifier identifies a single repository by providing ID, Name and the
-// ExternalRepo
-type RepoIdentifier interface {
-	RepoID() api.RepoID
-	RepoName() api.RepoName
-	ExternalRepoSpec() api.ExternalRepoSpec
-}
-
-// RepoFields are optional data fields on a Repo
+// RepoFields are lazy loaded data fields on a Repo (from the DB).
 type RepoFields struct {
 	// URI is the full name for this repository (e.g.,
 	// "github.com/user/repo"). See the documentation for the Name field.
@@ -52,10 +44,6 @@ type Repo struct {
 	// This is to reduce memory usage when loading thousands of repos.
 	*RepoFields
 }
-
-func (r Repo) RepoID() api.RepoID                     { return r.ID }
-func (r Repo) RepoName() api.RepoName                 { return r.Name }
-func (r Repo) ExternalRepoSpec() api.ExternalRepoSpec { return r.ExternalRepo }
 
 // ExternalService is a connection to an external service.
 type ExternalService struct {
