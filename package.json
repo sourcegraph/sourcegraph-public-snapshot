@@ -132,7 +132,7 @@
     "autoprefixer": "^9.6.0",
     "babel-loader": "^8.0.6",
     "babel-plugin-lodash": "^3.3.4",
-    "browserslist": "^4.6.1",
+    "browserslist": "^4.6.3",
     "bundlesize": "^0.17.2",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
