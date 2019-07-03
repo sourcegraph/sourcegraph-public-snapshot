@@ -230,7 +230,6 @@ func Test_highlightMatches(t *testing.T) {
 			switch {
 			case tt.wantErr && err == nil:
 				t.Fatalf("got no error")
-
 			case !tt.wantErr && err != nil:
 				t.Fatal("got an error")
 			}
@@ -238,5 +237,14 @@ func Test_highlightMatches(t *testing.T) {
 				t.Errorf("highlightMatches() = %v, want %v", spew.Sdump(got), spew.Sdump(tt.want))
 			}
 		})
+	}
+}
+
+func Benchmark_highlightMatches(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, err := highlightMatches(regexp.MustCompile(`a`), []byte("aaaaa\naaaaaa"))
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }
