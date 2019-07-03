@@ -1,5 +1,5 @@
 import { of } from 'rxjs'
-import { CodeEditor } from '../../api/client/services/editorService'
+import { CodeEditorWithModel } from '../../api/client/services/editorService'
 import { EditorTextFieldUtils } from './EditorTextField'
 
 describe('EditorTextFieldUtils', () => {
@@ -94,8 +94,8 @@ describe('EditorTextFieldUtils', () => {
             const setValue = jest.fn()
             const subscription = EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
                 {
-                    editors: of<readonly CodeEditor[]>([
-                        {
+                    observeEditorAndModel: () =>
+                        of<CodeEditorWithModel>({
                             editorId: 'e',
                             type: 'CodeEditor',
                             resource: 'u',
@@ -110,8 +110,7 @@ describe('EditorTextFieldUtils', () => {
                                 },
                             ],
                             isActive: true,
-                        },
-                    ]),
+                        }),
                 },
                 { editorId: 'e' },
                 setValue,
@@ -130,8 +129,8 @@ describe('EditorTextFieldUtils', () => {
             const setValue = jest.fn()
             const subscription = EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
                 {
-                    editors: of<readonly CodeEditor[]>([
-                        {
+                    observeEditorAndModel: () =>
+                        of<CodeEditorWithModel>({
                             editorId: 'e',
                             type: 'CodeEditor',
                             resource: 'u',
@@ -146,8 +145,7 @@ describe('EditorTextFieldUtils', () => {
                                 },
                             ],
                             isActive: true,
-                        },
-                    ]),
+                        }),
                 },
                 { editorId: 'e' },
                 setValue,

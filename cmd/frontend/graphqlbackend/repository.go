@@ -7,12 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
-
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -23,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type repositoryResolver struct {
@@ -86,15 +84,6 @@ func (r *repositoryResolver) Description(ctx context.Context) (string, error) {
 	}
 
 	return r.repo.Description, nil
-}
-
-func (r *repositoryResolver) Language(ctx context.Context) (string, error) {
-	err := r.hydrate(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	return r.repo.Language, nil
 }
 
 func (r *repositoryResolver) RedirectURL() *string {
@@ -166,6 +155,27 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver
 	}
 
 	return &gitRefResolver{repo: r, name: refName}, nil
+}
+
+func (r *repositoryResolver) Language(ctx context.Context) string {
+	// The repository language is the most common language at the HEAD commit of the repository.
+	// Note: the repository database field is no longer updated as of
+	// https://github.com/sourcegraph/sourcegraph/issues/2586, so we do not use it anymore and
+	// instead compute the language on the fly.
+
+	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, "")
+	if err != nil {
+		return ""
+	}
+
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo, commitID)
+	if err != nil {
+		return ""
+	}
+	if len(inventory.Languages) == 0 {
+		return ""
+	}
+	return inventory.Languages[0].Name
 }
 
 func (r *repositoryResolver) Enabled() bool { return true }

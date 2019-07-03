@@ -111,7 +111,7 @@ func TestRepositoryHydration(t *testing.T) {
 		}
 
 		// Another call to make sure err does not disappear
-		_, err = repoResolver.Language(ctx)
+		_, err = repoResolver.URI(ctx)
 		if err == nil {
 			t.Fatal("err is unexpected nil")
 		}
@@ -141,14 +141,5 @@ func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *repository
 
 	if uri != hydrated.URI {
 		t.Fatalf("wrong URI. want=%q, have=%q", hydrated.URI, uri)
-	}
-
-	language, err := r.Language(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if language != hydrated.Language {
-		t.Fatalf("wrong Language. want=%q, have=%q", hydrated.Language, language)
 	}
 }
