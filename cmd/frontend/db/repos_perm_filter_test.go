@@ -801,11 +801,17 @@ func makeRepo(name api.RepoName, id api.RepoID) *types.Repo {
 	if extName == "" {
 		extName = strconv.Itoa(int(id))
 	}
-	return &types.Repo{RepoIDs: types.RepoIDs{ID: id, Name: name, ExternalRepo: api.ExternalRepoSpec{
-		ID:          extName,
-		ServiceType: "mock",
-		ServiceID:   "mock"}}}
-
+	return &types.Repo{
+		RepoIDs: types.RepoIDs{
+			ID:   id,
+			Name: name,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          extName,
+				ServiceType: "mock",
+				ServiceID:   "mock",
+			},
+		},
+	}
 }
 
 func makeRepos(names ...api.RepoName) []*types.Repo {
