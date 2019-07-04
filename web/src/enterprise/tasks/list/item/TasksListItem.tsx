@@ -10,9 +10,9 @@ import { displayRepoName } from '../../../../../../shared/src/components/RepoFil
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
+import { ActionsWithPreview } from '../../../actions/ActionsWithPreview'
 import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/DiagnosticSeverityIcon'
 import { fetchHighlightedFileLines } from '../../../../repo/backend'
-import { ActionsWithPreview } from '../../../actions/ActionsWithPreview'
 import { DiagnosticInfo, getCodeActions } from '../../../threads/detail/backend'
 
 const LOADING: 'loading' = 'loading'

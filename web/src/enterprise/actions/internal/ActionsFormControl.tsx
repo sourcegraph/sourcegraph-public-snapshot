@@ -26,7 +26,7 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
     const planActions = actions.filter(isActionType('plan'))
     const commandActions = actions.filter(isActionType('command'))
     return (
-        <div className={`task-list-item-actions d-flex flex-column ${className}`}>
+        <div className={`d-flex flex-column align-items-start ${className}`}>
             {planActions.map((action, i) => (
                 <PlanActionButton key={i} action={action} onClick={onActionClick} className="mb-2" />
             ))}
@@ -37,7 +37,7 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
                             key={i}
                             action={action}
                             onClick={onActionClick}
-                            className={`${buttonClassName} mr-2 mb-2`}
+                            className={`${buttonClassName} ${inactiveButtonClassName} mr-2 mb-2`}
                         />
                     ))}
                 </div>

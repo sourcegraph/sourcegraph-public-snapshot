@@ -9,7 +9,7 @@ import { useEffectAsync } from '../../../../util/useEffectAsync'
 import { ChangesetIcon } from '../../../changesets/icons'
 import { ChangesetCreationStatus } from '../../../changesets/preview/backend'
 
-interface Props {
+export interface CreateOrPreviewChangesetButtonProps {
     onClick: (creationStatus: ChangesetCreationStatus) => void
     showAddToExistingChangeset?: boolean
 
@@ -23,7 +23,7 @@ const LOADING: 'loading' = 'loading'
 /**
  * A button to create or preview a changeset.
  */
-export const CreateOrPreviewChangesetButton: React.FunctionComponent<Props> = ({
+export const CreateOrPreviewChangesetButton: React.FunctionComponent<CreateOrPreviewChangesetButtonProps> = ({
     onClick,
     showAddToExistingChangeset,
     disabled,

@@ -1,12 +1,12 @@
 import React, { useCallback } from 'react'
-import { Action, ActionType } from '../../../../../shared/src/api/types/action'
+import { ActionType } from '../../../../../shared/src/api/types/action'
 
 interface Props {
     /** The action. */
     action: ActionType['command']
 
     /** Called when the button is clicked. */
-    onClick: (action: Action) => void
+    onClick: (action: ActionType['command']) => void
 
     disabled?: boolean
     className?: string
