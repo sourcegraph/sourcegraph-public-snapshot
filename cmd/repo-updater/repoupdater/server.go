@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	gitprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -36,7 +35,7 @@ type Server struct {
 		ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult
 	}
 	GitserverClient interface {
-		AreReposCloned(context.Context, ...api.RepoName) (*gitprotocol.AreReposClonedResponse, error)
+		ListCloned(context.Context) ([]string, error)
 	}
 
 	notClonedCountMu        sync.Mutex
@@ -464,27 +463,25 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 		return s.notClonedCount, nil
 	}
 
-	names, err := s.Store.ListAllRepoNames(ctx)
+	reposCount, err := s.Store.CountRepos(ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	res, err := s.GitserverClient.AreReposCloned(ctx, names...)
+	cloned, err := s.GitserverClient.ListCloned(ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	var notCloned uint64
-	for _, cloned := range res.Results {
-		if !cloned {
-			notCloned++
-		}
+	notCloned := reposCount - len(cloned)
+	if notCloned < 0 {
+		notCloned = 0
 	}
 
-	s.notClonedCount = notCloned
+	s.notClonedCount = uint64(notCloned)
 	s.notClonedCountUpdatedAt = time.Now()
 
-	return notCloned, nil
+	return s.notClonedCount, nil
 }
 
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
