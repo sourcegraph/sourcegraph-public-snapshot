@@ -96,6 +96,12 @@ function registerStatusProvider(
                                                       ],
                                                   },
                                               },
+                                              {
+                                                  command: {
+                                                      command: 'TODO!(sqs)',
+                                                      title: 'Change preferred Go version (1.13)',
+                                                  },
+                                              },
                                           ],
                                       },
                                   ]

@@ -46,7 +46,12 @@ export const StatusNotificationsPage: React.FunctionComponent<Props> = ({
                 <ul className="list-unstyled mb-0">
                     {notificationsOrError.map((notification, i) => (
                         <li key={i}>
-                            <StatusNotification {...props} notification={notification} className="mb-5" />
+                            <StatusNotification
+                                {...props}
+                                notification={notification}
+                                className="py-4 border-bottom"
+                                contentClassName="container"
+                            />
                         </li>
                     ))}
                 </ul>

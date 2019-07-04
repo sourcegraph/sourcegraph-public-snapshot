@@ -8,9 +8,15 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ChangesetCreationStatus, createChangesetFromCodeAction } from '../changesets/preview/backend'
+import {
+    ChangesetButtonOrLink,
+    ChangesetButtonOrLinkExistingChangeset,
+    PENDING_CREATION,
+} from '../tasks/list/item/ChangesetButtonOrLink'
 import { CreateOrPreviewChangesetButton } from '../tasks/list/item/CreateOrPreviewChangesetButton'
 import { WorkspaceEditPreview } from '../threads/detail/inbox/item/WorkspaceEditPreview'
 import { ActionsFormControl } from './internal/ActionsFormControl'
+import { useOnActionClickCallback } from './useOnActionClickCallback'
 
 interface RenderChildrenProps {
     actions: React.ReactFragment
@@ -37,42 +43,17 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
     children,
     ...props
 }) => {
-    const onActionClick = useCallback(
-        async (action: sourcegraph.CodeAction) => {
-            try {
-                if (action.command) {
-                    await extensionsController.executeCommand(action.command)
-                    if (action.diagnostics) {
-                        // const fixedThisDiagnostic = action.diagnostics.some(
-                        //     d =>
-                        //         d.code === diagnostic.code &&
-                        //         d.message === diagnostic.message &&
-                        //         d.source === diagnostic.source &&
-                        //         d.severity === diagnostic.severity &&
-                        //         d.range.isEqual(diagnostic.range)
-                        // )
-                        // TODO!(sqs)
-                    }
-                }
-            } catch (err) {
-                extensionsController.services.notifications.showMessages.next({
-                    message: `Error running action: ${err.message}`,
-                    type: NotificationType.Error,
-                })
-            }
-        },
-        [extensionsController]
-    )
+    const onActionClick = useOnActionClickCallback(extensionsController)
 
     const [activeAction, setActiveAction] = useState<sourcegraph.CodeAction | undefined>()
 
-    const [createdThreadOrLoading, setCreatedThreadOrLoading] = useState<
-        typeof LOADING | Pick<GQL.IDiscussionThread, 'idWithoutKind' | 'url' | 'status'>
-    >()
+    const [createdThreadOrLoading, setCreatedThreadOrLoading] = useState<ChangesetButtonOrLinkExistingChangeset>(
+        LOADING
+    )
     const [justCreated, setJustCreated] = useState(false)
     const onCreateThreadClick = useCallback(
         async (creationStatus: ChangesetCreationStatus) => {
-            setCreatedThreadOrLoading(LOADING)
+            setCreatedThreadOrLoading(PENDING_CREATION)
             try {
                 const action = activeAction
                 if (!action) {
@@ -86,7 +67,7 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
                 setJustCreated(true)
                 setTimeout(() => setJustCreated(false), 2500)
             } catch (err) {
-                setCreatedThreadOrLoading(undefined)
+                setCreatedThreadOrLoading(null)
                 extensionsController.services.notifications.showMessages.next({
                     message: `Error creating changeset: ${err.message}`,
                     type: NotificationType.Error,
@@ -108,7 +89,7 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
                     activeAction={activeAction}
                     onActionClick={onActionClick}
                     onActionSetActive={setActiveAction}
-                    className="py-2 px-3"
+                    className="mt-4"
                     buttonClassName="btn py-0 px-2 text-decoration-none text-left"
                     inactiveButtonClassName="btn-link"
                     activeButtonClassName="border"
@@ -125,11 +106,12 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
                         className="overflow-auto p-2 mb-3"
                     />
                     <div className="m-3">
+                        <ChangesetButtonOrLink
+                            onClick={onCreateThreadClick}
+                            existingChangeset={createdThreadOrLoading}
+                        />
                         {createdThreadOrLoading === undefined || createdThreadOrLoading === LOADING ? (
-                            <CreateOrPreviewChangesetButton
-                                onClick={onCreateThreadClick}
-                                disabled={createdThreadOrLoading === LOADING}
-                            />
+                            <CreateOrPreviewChangesetButton disabled={createdThreadOrLoading === LOADING} />
                         ) : createdThreadOrLoading.status === GQL.ThreadStatus.PREVIEW ? (
                             <Redirect to={createdThreadOrLoading.url} push={true} />
                         ) : (

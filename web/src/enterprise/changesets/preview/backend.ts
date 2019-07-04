@@ -7,7 +7,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { mutateGraphQL } from '../../../backend/graphql'
-import { createThread, discussionThreadTargetFieldsFragment } from '../../../discussions/backend'
+import { createThread } from '../../../discussions/backend'
 import { fetchRepository } from '../../../repo/settings/backend'
 import { computeDiff, FileDiff } from '../../threads/detail/changes/computeDiff'
 import { ChangesetDelta, ThreadSettings } from '../../threads/settings'
@@ -24,6 +24,18 @@ interface ChangesetCreationInfo
     extends Pick<GQL.ICreateThreadOnDiscussionsMutationArguments['input'], 'title' | 'contents'>,
         Pick<ThreadSettings, 'changesetActionDescriptions'> {
     status: ChangesetCreationStatus
+}
+
+export async function createChangeset(
+    info: ChangesetCreationInfo
+): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
+    const settings: ThreadSettings = { changesetActionDescriptions: info.changesetActionDescriptions }
+    return createThread({
+        ...info,
+        type: GQL.ThreadType.CHANGESET,
+        project: FAKE_PROJECT_ID,
+        settings: JSON.stringify(settings, null, 2),
+    }).toPromise()
 }
 
 /**
