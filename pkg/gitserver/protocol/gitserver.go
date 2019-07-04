@@ -92,19 +92,6 @@ type IsRepoClonedRequest struct {
 	Repo api.RepoName
 }
 
-// AreReposClonedRequest is a request to determine if multiple repos currently exist on gitserver.
-type AreReposClonedRequest struct {
-	// Repos are the names of the the repositories to check.
-	Repos []api.RepoName
-}
-
-// AreReposClonedResponse is the response when requesting the clone status for
-// multiple repositories at the same time.
-type AreReposClonedResponse struct {
-	// Results mapping from the repository name to the cloned status
-	Results map[api.RepoName]bool
-}
-
 // DeprecatedRepoInfoRequest is a request for information about a repository on gitserver.
 //
 // TODO(slimsag): Remove this after 3.3 is released.
@@ -193,4 +180,10 @@ type PatchCommitInfo struct {
 type CreatePatchFromPatchResponse struct {
 	// Rev is the tag that the staging object can be found at
 	Rev string
+}
+
+// ClonedCountResponse is the response type returned after asking for the
+// number of cloned repositories
+type ClonedCountResponse struct {
+	Count int `json:"count"`
 }

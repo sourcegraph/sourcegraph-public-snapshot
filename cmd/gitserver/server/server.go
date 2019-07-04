@@ -226,13 +226,13 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
 	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
 	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
-	mux.HandleFunc("/are-repos-cloned", s.handleAreReposCloned)
 	mux.HandleFunc("/repo", s.handleDeprecatedRepoInfo) // TODO(slimsag): Remove this after 3.3 is released.
 	mux.HandleFunc("/repos", s.handleRepoInfo)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
 	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
 	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
 	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
+	mux.HandleFunc("/cloned-count", s.handleClonedCount)
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -372,30 +372,6 @@ func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
-	}
-}
-
-func (s *Server) handleAreReposCloned(w http.ResponseWriter, r *http.Request) {
-	var req protocol.AreReposClonedRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	resp := protocol.AreReposClonedResponse{
-		Results: make(map[api.RepoName]bool, len(req.Repos)),
-	}
-
-	for _, repoName := range req.Repos {
-		normalized := protocol.NormalizeRepo(repoName)
-		dir := path.Join(s.ReposDir, string(normalized))
-
-		resp.Results[repoName] = repoCloned(dir)
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 }
 
@@ -1297,6 +1273,25 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 	// Revision not found, update before returning.
 	s.doRepoUpdate(ctx, repo, url)
 	return true
+}
+
+func (s *Server) handleClonedCount(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var resp protocol.ClonedCountResponse
+
+	err := s.walkCloned(ctx, func(path string) error {
+		resp.Count++
+		return nil
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // quickRevParseHead best-effort mimics the execution of `git rev-parse HEAD`, but doesn't exec a child process.
