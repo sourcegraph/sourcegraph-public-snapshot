@@ -28,7 +28,7 @@ func TestPermsInclude(t *testing.T) {
 		if have, want := tc.Include(tc.other), tc.want; have != want {
 			t.Logf("%032b", tc.Perms&tc.other)
 			t.Errorf(
-				"\nPerms{%032b} XOR\nPerms{%032b} == 0\nhave: %t\nwant: %t",
+				"\nPerms{%032b} Include\nPerms{%032b} == 0\nhave: %t\nwant: %t",
 				tc.Perms,
 				tc.other,
 				have, want,
