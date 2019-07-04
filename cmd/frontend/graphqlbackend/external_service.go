@@ -28,7 +28,6 @@ func externalServiceByID(ctx context.Context, id graphql.ID) (*externalServiceRe
 
 	externalServiceID, err := unmarshalExternalServiceID(id)
 	if err != nil {
-		fmt.Printf("here we are. err=%s\n", err)
 		return nil, err
 	}
 
