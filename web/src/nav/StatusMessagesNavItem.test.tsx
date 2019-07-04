@@ -47,4 +47,40 @@ describe('StatusMessagesNavItem', () => {
             ).toMatchSnapshot()
         })
     })
+
+    describe('one SYNCERROR message', () => {
+        const message: GQL.IStatusMessage = {
+            __typename: 'StatusMessage',
+            type: GQL.StatusMessageType.SYNCERROR,
+            message: 'failed to list organization kubernetes repos: request returned status 404: Not Found',
+            metadata: [
+                { __typename: 'StatusMessageMetadata', name: 'ext_svc_id', value: '4' },
+                { __typename: 'StatusMessageMetadata', name: 'ext_svc_name', value: 'Github Enterprise' },
+                { __typename: 'StatusMessageMetadata', name: 'ext_svc_kind', value: 'GITHUB' },
+            ],
+        }
+
+        const fetchMessages = () => of([message])
+        test('as non-site admin', () => {
+            expect(
+                renderer
+                    .create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />)
+                    .toJSON()
+            ).toMatchSnapshot()
+        })
+
+        test('as site admin', () => {
+            expect(
+                renderer
+                    .create(
+                        <StatusMessagesNavItem
+                            scheduler={queueScheduler}
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={true}
+                        />
+                    )
+                    .toJSON()
+            ).toMatchSnapshot()
+        })
+    })
 })
