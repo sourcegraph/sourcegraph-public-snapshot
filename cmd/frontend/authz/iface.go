@@ -30,8 +30,8 @@ type Provider interface {
 
 	// RepoPerms accepts an external user account and a set of repos. The external user account
 	// identifies the user to the authz source (e.g., the code host). The return value is a slice of
-	// repository permissions *in the same order* as the given repos. If a repo in the input slice is
-	// missing from the returned permissions slice, that means "no permissions" on that repo.
+	// repository permissions. If a repo in the input slice is missing from the returned permissions
+	// slice, that means "no permissions" on that repo.
 	//
 	// Implementations should handle any external account whose ServiceID and ServiceType values
 	// match the `ServiceID()` and `ServiceType()` return values of this authz provider. The caller
