@@ -11,7 +11,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
@@ -52,11 +52,11 @@ type Permissions struct {
 
 // Authorized returns the intersection of the given ids with
 // the authorized ids.
-func (p *Permissions) Authorized(repos []*types.Repo) []*types.Repo {
-	perms := make([]*types.Repo, len(repos))
-	for r := range repos {
+func (p *Permissions) Authorized(repos []*types.Repo) []authz.RepoPerms {
+	perms := make([]authz.RepoPerms, 0, len(repos))
+	for _, r := range repos {
 		if r.ID != 0 && p.IDs.Contains(uint32(r.ID)) {
-			perms[r.RepoName] = map[authz.Perms]bool{p.Perm: true}
+			perms = append(perms, authz.RepoPerms{Repo: r, Perms: p.Perm})
 		}
 	}
 	return perms
@@ -371,10 +371,6 @@ func (c *cache) update(p *Permissions) {
 }
 
 func newCacheKey(p *Permissions) cacheKey {
-	if p.Perm == "" {
-		panic("empty Perm")
-	}
-
 	if p.Type == "" {
 		panic("empty Type")
 	}

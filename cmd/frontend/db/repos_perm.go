@@ -164,7 +164,7 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		}
 
 		for _, r := range perms {
-			if r.Has(p) {
+			if r.Perms.Include(p) {
 				accepted = append(accepted, r.Repo)
 			}
 		}

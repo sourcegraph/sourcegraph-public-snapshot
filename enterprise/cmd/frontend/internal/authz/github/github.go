@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -59,14 +58,14 @@ func (p *Provider) Repos(ctx context.Context, repos []*types.Repo) (mine []*type
 // For each repo in the input set, we look first to see if the above information is cached in Redis.
 // If not, then the info is computed by querying the GitHub API. A separate query is issued for each
 // repository (and for each user for the explicit case).
-func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) ([]*types.Repo, error) {
+func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) ([]authz.RepoPerms, error) {
 	remaining, _ := p.Repos(ctx, repos)
 	remainingPublic := remaining
 	if len(remaining) == 0 {
 		return nil, nil
 	}
 
-	perms := []*types.Repo{}
+	perms := make(map[*types.Repo]authz.Perms, len(remaining))
 	populatePermsPublic := func(checkAccess func(ctx context.Context, repos []*types.Repo) (map[string]bool, error)) error {
 		nextRemaining := []*types.Repo{}
 		nextRemainingPublic := []*types.Repo{}
@@ -74,15 +73,15 @@ func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAc
 		if err != nil {
 			return err
 		}
-		for repo := range remaining {
-			canAcc, isExplicit := canAccess[repo.ExternalRepoSpec.ID]
+		for _, repo := range remaining {
+			canAcc, isExplicit := canAccess[repo.ExternalRepo.ID]
 			if canAcc {
-				perms[repo.RepoName] = map[authz.Perms]bool{authz.Read: true}
+				perms[repo] = authz.Read
 				continue
 			}
-			nextRemaining[repo] = struct{}{}
+			nextRemaining = append(nextRemaining, repo)
 			if !isExplicit {
-				nextRemainingPublic[repo] = struct{}{}
+				nextRemainingPublic = append(nextRemainingPublic, repo)
 			}
 		}
 		remaining = nextRemaining
@@ -95,12 +94,16 @@ func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAc
 		if err != nil {
 			return err
 		}
-		for repo := range remaining {
-			if canAcc, isExplicit := canAccess[repo.ExternalRepoSpec.ID]; isExplicit {
-				perms[repo.RepoName] = map[authz.Perms]bool{authz.Read: canAcc}
+		for _, repo := range remaining {
+			if canAcc, isExplicit := canAccess[repo.ExternalRepo.ID]; isExplicit {
+				if canAcc {
+					perms[repo] = authz.Read
+				} else {
+					perms[repo] = authz.None
+				}
 				continue
 			}
-			nextRemaining[repo] = struct{}{}
+			nextRemaining = append(nextRemaining, repo)
 		}
 		remaining = nextRemaining
 		return nil
@@ -110,24 +113,35 @@ func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAc
 		return nil, err
 	}
 	if len(remaining) == 0 {
-		return perms, nil
+		return orderedBy(repos, perms), nil
 	}
 	if err := populatePermsPublic(p.getCachedPublicRepos); err != nil {
 		return nil, err
 	}
 	if len(remaining) == 0 {
-		return perms, nil
+		return orderedBy(repos, perms), nil
 	}
 	if err := populatePerms(p.fetchAndSetUserRepos); err != nil {
 		return nil, err
 	}
 	if len(remaining) == 0 {
-		return perms, nil
+		return orderedBy(repos, perms), nil
 	}
 	if err := populatePermsPublic(p.fetchAndSetPublicRepos); err != nil {
 		return nil, err
 	}
-	return perms, nil
+
+	return orderedBy(repos, perms), nil
+}
+
+func orderedBy(repos []*types.Repo, perms map[*types.Repo]authz.Perms) []authz.RepoPerms {
+	ps := make([]authz.RepoPerms, 0, len(perms))
+	for _, repo := range repos {
+		if p, ok := perms[repo]; ok {
+			ps = append(ps, authz.RepoPerms{Repo: repo, Perms: p})
+		}
+	}
+	return ps
 }
 
 // fetchAndSetPublicRepos accepts a set of repositories and returns a map from repository external
@@ -177,9 +191,9 @@ func (p *Provider) getCachedPublicRepos(ctx context.Context, repos []*types.Repo
 	isPublic = make(map[string]bool)
 	repoList := make([]string, 0, len(repos))
 	getArgs := make([]string, 0, len(repos))
-	for r := range repos {
-		getArgs = append(getArgs, publicRepoCacheKey(r.ExternalRepoSpec.ID))
-		repoList = append(repoList, r.ExternalRepoSpec.ID)
+	for _, r := range repos {
+		getArgs = append(getArgs, publicRepoCacheKey(r.ExternalRepo.ID))
+		repoList = append(repoList, r.ExternalRepo.ID)
 	}
 	vals := p.cache.GetMulti(getArgs...)
 	for i, v := range vals {
@@ -203,8 +217,8 @@ func (p *Provider) getCachedPublicRepos(ctx context.Context, repos []*types.Repo
 // indicating whether a repository is public (true) or private (false).
 func (p *Provider) fetchPublicRepos(ctx context.Context, repos []*types.Repo) (map[string]bool, error) {
 	isPublic := make(map[string]bool)
-	for repo := range repos {
-		ghRepo, err := p.client.GetRepositoryByNodeID(ctx, "", repo.ExternalRepoSpec.ID)
+	for _, repo := range repos {
+		ghRepo, err := p.client.GetRepositoryByNodeID(ctx, "", repo.ExternalRepo.ID)
 		if err == github.ErrNotFound {
 			// Note: we could set `isPublic[repo.ExternalRepoSpec.ID] = false` here, but
 			// purposefully don't cache if a repo is private in case it later becomes public.
@@ -213,7 +227,7 @@ func (p *Provider) fetchPublicRepos(ctx context.Context, repos []*types.Repo) (m
 		if err != nil {
 			return nil, err
 		}
-		isPublic[repo.ExternalRepoSpec.ID] = !ghRepo.IsPrivate
+		isPublic[repo.ExternalRepo.ID] = !ghRepo.IsPrivate
 	}
 	return isPublic, nil
 }
@@ -230,8 +244,8 @@ func (p *Provider) fetchAndSetUserRepos(ctx context.Context, userAccount *extsvc
 
 	repoIDs := make([]string, len(repos))
 	i := 0
-	for repo := range repos {
-		repoIDs[i] = repo.ExternalRepoSpec.ID
+	for _, repo := range repos {
+		repoIDs[i] = repo.ExternalRepo.ID
 		i++
 	}
 
@@ -241,9 +255,9 @@ func (p *Provider) fetchAndSetUserRepos(ctx context.Context, userAccount *extsvc
 	}
 	userRepos := make(map[string]bool)
 	publicRepos := make(map[string]bool)
-	for r := range repos {
-		userRepos[r.ExternalRepoSpec.ID] = canAccess[r.ExternalRepoSpec.ID]
-		publicRepos[r.ExternalRepoSpec.ID] = isPublic[r.ExternalRepoSpec.ID]
+	for _, r := range repos {
+		userRepos[r.ExternalRepo.ID] = canAccess[r.ExternalRepo.ID]
+		publicRepos[r.ExternalRepo.ID] = isPublic[r.ExternalRepo.ID]
 	}
 
 	if err := p.setCachedUserRepos(ctx, userAccount, userRepos); err != nil {
@@ -287,16 +301,16 @@ func (p *Provider) getCachedUserRepos(ctx context.Context, userAccount *extsvc.E
 
 	getArgs := make([]string, 0, len(repos))
 	repoList := make([]string, 0, len(repos))
-	for repo := range repos {
+	for _, repo := range repos {
 		rkey, err := json.Marshal(userRepoCacheKey{
 			User: userAccount.AccountID,
-			Repo: repo.ExternalRepoSpec.ID,
+			Repo: repo.ExternalRepo.ID,
 		})
 		if err != nil {
 			return nil, err
 		}
 		getArgs = append(getArgs, string(rkey))
-		repoList = append(repoList, repo.ExternalRepoSpec.ID)
+		repoList = append(repoList, repo.ExternalRepo.ID)
 	}
 
 	cacheVals := p.cache.GetMulti(getArgs...)

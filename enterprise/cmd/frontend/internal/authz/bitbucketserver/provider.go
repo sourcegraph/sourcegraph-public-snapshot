@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
@@ -73,7 +72,10 @@ func (p *Provider) Repos(ctx context.Context, repos []*types.Repo) (mine []*type
 // RepoPerms returns the permissions the given external account has in relation to the given set of repos.
 // It performs a single HTTP request against the Bitbucket Server API which returns all repositories
 // the authenticated user has permissions to read.
-func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos []*types.Repo) (authorized []*types.Repo, err error) {
+func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos []*types.Repo) (
+	perms []authz.RepoPerms,
+	err error,
+) {
 	var (
 		userName string
 		userID   int32
@@ -85,7 +87,7 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 			otlog.String("user.name", userName),
 			otlog.Int32("user.id", userID),
 			otlog.Int("repos.count", len(repos)),
-			otlog.Int("authorized.count", len(authorized)),
+			otlog.Int("perms.count", len(perms)),
 		)
 
 		if err != nil {
@@ -105,9 +107,9 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		userName = user.Name
 	}
 
-	ids := make(map[int]authz.Repo, len(repos))
-	for r := range repos {
-		if id, _ := strconv.Atoi(r.ExternalRepoSpec.ID); id != 0 {
+	ids := make(map[int]*types.Repo, len(repos))
+	for _, r := range repos {
+		if id, _ := strconv.Atoi(r.ExternalRepo.ID); id != 0 {
 			ids[id] = r
 		}
 	}

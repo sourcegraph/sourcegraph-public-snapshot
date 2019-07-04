@@ -8,9 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
-	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -28,7 +27,7 @@ type Provider_RepoPerms_call struct {
 	description string
 	userAccount *extsvc.ExternalAccount
 	repos       []*types.Repo
-	wantPerms   []*types.Repo
+	wantPerms   []authz.RepoPerms
 	wantErr     error
 }
 
@@ -61,9 +60,10 @@ func (p *Provider_RepoPerms_Test) run(t *testing.T) {
 				if gotErr != c.wantErr {
 					t.Errorf("expected err %v, got err %v", c.wantErr, gotErr)
 				} else if !reflect.DeepEqual(gotPerms, c.wantPerms) {
-					dmp := diffmatchpatch.New()
-					t.Errorf("expected perms did not equal actual, diff:\n%s",
-						dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(c.wantPerms), spew.Sdump(gotPerms), false)))
+					t.Errorf("\nhave: %v\nwant: %v", gotPerms, c.wantPerms)
+					//	dmp := diffmatchpatch.New()
+					//	t.Errorf("expected perms did not equal actual, diff:\n%s",
+					//		dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(c.wantPerms), spew.Sdump(gotPerms), false)))
 				}
 
 				if j == 1 && githubMock.getRepositoryByNodeIDCount > 0 {
@@ -75,6 +75,17 @@ func (p *Provider_RepoPerms_Test) run(t *testing.T) {
 }
 
 func TestProvider_RepoPerms(t *testing.T) {
+	repos := map[string]*types.Repo{
+		"r0":  rp("r0", "u0/private", "https://github.com/"),
+		"r1":  rp("r1", "u0/public", "https://github.com/"),
+		"r2":  rp("r2", "u1/private", "https://github.com/"),
+		"r3":  rp("r3", "u1/public", "https://github.com/"),
+		"r4":  rp("r4", "u99/private", "https://github.com/"),
+		"r5":  rp("r5", "u99/public", "https://github.com/"),
+		"r00": rp("r00", "404", "https://github.com/"),
+		"r11": rp("r11", "u0/public", "https://other.github.com/"),
+	}
+
 	tests := []Provider_RepoPerms_Test{
 		{
 			description: "common_case",
@@ -85,98 +96,98 @@ func TestProvider_RepoPerms(t *testing.T) {
 					description: "t0_repos",
 					userAccount: ua("u0", "t0"),
 					repos: []*types.Repo{
-						rp("r0", "u0/private", "https://github.com/"):  {},
-						rp("r1", "u0/public", "https://github.com/"):   {},
-						rp("r2", "u1/private", "https://github.com/"):  {},
-						rp("r3", "u1/public", "https://github.com/"):   {},
-						rp("r4", "u99/private", "https://github.com/"): {},
-						rp("r5", "u99/public", "https://github.com/"):  {},
+						repos["r0"],
+						repos["r1"],
+						repos["r2"],
+						repos["r3"],
+						repos["r4"],
+						repos["r5"],
 					},
-					wantPerms: []*types.Repo{
-						"r0": readPerms,
-						"r1": readPerms,
-						"r2": noPerms,
-						"r3": readPerms,
-						"r4": noPerms,
-						"r5": readPerms,
+					wantPerms: []authz.RepoPerms{
+						{Repo: repos["r0"], Perms: authz.Read},
+						{Repo: repos["r1"], Perms: authz.Read},
+						{Repo: repos["r2"], Perms: authz.None},
+						{Repo: repos["r3"], Perms: authz.Read},
+						{Repo: repos["r4"], Perms: authz.None},
+						{Repo: repos["r5"], Perms: authz.Read},
 					},
 				},
 				{
 					description: "t1_repos",
 					userAccount: ua("u1", "t1"),
 					repos: []*types.Repo{
-						rp("r0", "u0/private", "https://github.com/"):  {},
-						rp("r1", "u0/public", "https://github.com/"):   {},
-						rp("r2", "u1/private", "https://github.com/"):  {},
-						rp("r3", "u1/public", "https://github.com/"):   {},
-						rp("r4", "u99/private", "https://github.com/"): {},
-						rp("r5", "u99/public", "https://github.com/"):  {},
+						repos["r0"],
+						repos["r1"],
+						repos["r2"],
+						repos["r3"],
+						repos["r4"],
+						repos["r5"],
 					},
-					wantPerms: []*types.Repo{
-						"r0": noPerms,
-						"r1": readPerms,
-						"r2": readPerms,
-						"r3": readPerms,
-						"r4": noPerms,
-						"r5": readPerms,
+					wantPerms: []authz.RepoPerms{
+						{Repo: repos["r0"], Perms: authz.None},
+						{Repo: repos["r1"], Perms: authz.Read},
+						{Repo: repos["r2"], Perms: authz.Read},
+						{Repo: repos["r3"], Perms: authz.Read},
+						{Repo: repos["r4"], Perms: authz.None},
+						{Repo: repos["r5"], Perms: authz.Read},
 					},
 				},
 				{
 					description: "repos_with_unknown_token_(only_public_repos)",
 					userAccount: ua("unknown-user", "unknown-token"),
 					repos: []*types.Repo{
-						rp("r0", "u0/private", "https://github.com/"):  {},
-						rp("r1", "u0/public", "https://github.com/"):   {},
-						rp("r2", "u1/private", "https://github.com/"):  {},
-						rp("r3", "u1/public", "https://github.com/"):   {},
-						rp("r4", "u99/private", "https://github.com/"): {},
-						rp("r5", "u99/public", "https://github.com/"):  {},
+						repos["r0"],
+						repos["r1"],
+						repos["r2"],
+						repos["r3"],
+						repos["r4"],
+						repos["r5"],
 					},
-					wantPerms: []*types.Repo{
-						"r0": noPerms,
-						"r1": readPerms,
-						"r2": noPerms,
-						"r3": readPerms,
-						"r4": noPerms,
-						"r5": readPerms,
+					wantPerms: []authz.RepoPerms{
+						{Repo: repos["r0"], Perms: authz.None},
+						{Repo: repos["r1"], Perms: authz.Read},
+						{Repo: repos["r2"], Perms: authz.None},
+						{Repo: repos["r3"], Perms: authz.Read},
+						{Repo: repos["r4"], Perms: authz.None},
+						{Repo: repos["r5"], Perms: authz.Read},
 					},
 				},
 				{
 					description: "public repos",
 					userAccount: nil,
 					repos: []*types.Repo{
-						rp("r0", "u0/private", "https://github.com/"):  {},
-						rp("r1", "u0/public", "https://github.com/"):   {},
-						rp("r2", "u1/private", "https://github.com/"):  {},
-						rp("r3", "u1/public", "https://github.com/"):   {},
-						rp("r4", "u99/private", "https://github.com/"): {},
-						rp("r5", "u99/public", "https://github.com/"):  {},
+						repos["r0"],
+						repos["r1"],
+						repos["r2"],
+						repos["r3"],
+						repos["r4"],
+						repos["r5"],
 					},
-					wantPerms: []*types.Repo{
-						"r1": readPerms,
-						"r3": readPerms,
-						"r5": readPerms,
+					wantPerms: []authz.RepoPerms{
+						{Repo: repos["r1"], Perms: authz.Read},
+						{Repo: repos["r3"], Perms: authz.Read},
+						{Repo: repos["r5"], Perms: authz.Read},
 					},
 				},
 				{
 					description: "t0 select",
 					userAccount: ua("u0", "t0"),
 					repos: []*types.Repo{
-						rp("r2", "u1/private", "https://github.com/"): {},
+						repos["r2"],
 					},
-					wantPerms: []*types.Repo{
-						"r2": noPerms,
+					wantPerms: []authz.RepoPerms{
+						{Repo: repos["r2"], Perms: authz.None},
 					},
 				},
 				{
 					description: "t0 missing",
 					userAccount: ua("u0", "t0"),
 					repos: []*types.Repo{
-						rp("r00", "404", "https://github.com/"):             {},
-						rp("r11", "u0/public", "https://other.github.com/"): {},
+						repos["r00"],
+						repos["r11"],
 					},
-					wantPerms: []*types.Repo{
-						"r00": noPerms,
+					wantPerms: []authz.RepoPerms{
+						{Repo: repos["r00"], Perms: authz.None},
 					},
 				},
 			},
@@ -263,10 +274,10 @@ func ua(accountID, token string) *extsvc.ExternalAccount {
 	return &a
 }
 
-func rp(name, ghid, serviceID string) authz.Repo {
-	return authz.Repo{
-		RepoName: api.RepoName(name),
-		ExternalRepoSpec: api.ExternalRepoSpec{
+func rp(name, ghid, serviceID string) *types.Repo {
+	return &types.Repo{
+		Name: api.RepoName(name),
+		ExternalRepo: api.ExternalRepoSpec{
 			ID:          ghid,
 			ServiceType: github.ServiceType,
 			ServiceID:   serviceID,
