@@ -1,0 +1,74 @@
+package authz
+
+import (
+	"testing"
+)
+
+func TestPermsInclude(t *testing.T) {
+	for _, tc := range []struct {
+		Perms
+		other Perms
+		want  bool
+	}{
+		{None, Read, false},
+		{None, Write, false},
+		{Read, Read, true},
+		{Read, None, false},
+		{Read, Write, false},
+		{Read, Read | Write, false},
+		{Write, Write, true},
+		{Write, Read, false},
+		{Write, None, false},
+		{Write, Read | Write, false},
+		{Read | Write, Read, true},
+		{Read | Write, Write, true},
+		{Read | Write, None, false},
+		{Read | Write, Write | Read, true},
+	} {
+		if have, want := tc.Include(tc.other), tc.want; have != want {
+			t.Logf("%032b", tc.Perms&tc.other)
+			t.Errorf(
+				"\nPerms{%032b} XOR\nPerms{%032b} == 0\nhave: %t\nwant: %t",
+				tc.Perms,
+				tc.other,
+				have, want,
+			)
+		}
+	}
+}
+
+func BenchmarkPermsInclude(b *testing.B) {
+	p := Read | Write
+	for i := 0; i < b.N; i++ {
+		_ = p.Include(Write)
+	}
+}
+
+func TestPermsString(t *testing.T) {
+	for _, tc := range []struct {
+		Perms
+		want string
+	}{
+		{0, "none"},
+		{None, "none"},
+		{Read, "read"},
+		{Write, "write"},
+		{Read | Write, "read,write"},
+		{Write | Read, "read,write"},
+		{Write | Read, "read,write"},
+	} {
+		if have, want := tc.String(), tc.want; have != want {
+			t.Errorf(
+				"Perms{%032b}:\nhave: %q\nwant: %q",
+				tc.Perms,
+				have, want,
+			)
+		}
+	}
+}
+
+func BenchmarkPermsString(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = Read.String()
+	}
+}
