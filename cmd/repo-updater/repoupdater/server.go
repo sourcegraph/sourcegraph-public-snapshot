@@ -481,8 +481,6 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 	s.notClonedCount = uint64(notCloned)
 	s.notClonedCountUpdatedAt = time.Now()
 
-	log15.Info("computeNotClonedCount", "repos", repos, "cloned", cloned, "notCloned", notCloned)
-
 	return s.notClonedCount, nil
 }
 
