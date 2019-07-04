@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
+	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -59,11 +62,18 @@ func (p *Provider_RepoPerms_Test) run(t *testing.T) {
 				gotPerms, gotErr := provider.RepoPerms(ctx, c.userAccount, c.repos)
 				if gotErr != c.wantErr {
 					t.Errorf("expected err %v, got err %v", c.wantErr, gotErr)
-				} else if !reflect.DeepEqual(gotPerms, c.wantPerms) {
-					t.Errorf("\nhave: %v\nwant: %v", gotPerms, c.wantPerms)
-					//	dmp := diffmatchpatch.New()
-					//	t.Errorf("expected perms did not equal actual, diff:\n%s",
-					//		dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(c.wantPerms), spew.Sdump(gotPerms), false)))
+				}
+
+				for _, perms := range [][]authz.RepoPerms{gotPerms, c.wantPerms} {
+					sort.Slice(perms, func(i, j int) bool {
+						return perms[i].Repo.Name <= perms[j].Repo.Name
+					})
+				}
+
+				if !reflect.DeepEqual(gotPerms, c.wantPerms) {
+					dmp := diffmatchpatch.New()
+					t.Errorf("expected perms did not equal actual, diff:\n%s",
+						dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(c.wantPerms), spew.Sdump(gotPerms), false)))
 				}
 
 				if j == 1 && githubMock.getRepositoryByNodeIDCount > 0 {

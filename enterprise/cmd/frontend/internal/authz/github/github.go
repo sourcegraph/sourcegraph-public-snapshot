@@ -65,7 +65,7 @@ func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAc
 		return nil, nil
 	}
 
-	perms := make(map[*types.Repo]authz.Perms, len(remaining))
+	perms := make([]authz.RepoPerms, 0, len(remaining))
 	populatePermsPublic := func(checkAccess func(ctx context.Context, repos []*types.Repo) (map[string]bool, error)) error {
 		nextRemaining := []*types.Repo{}
 		nextRemainingPublic := []*types.Repo{}
@@ -76,7 +76,7 @@ func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAc
 		for _, repo := range remaining {
 			canAcc, isExplicit := canAccess[repo.ExternalRepo.ID]
 			if canAcc {
-				perms[repo] = authz.Read
+				perms = append(perms, authz.RepoPerms{Repo: repo, Perms: authz.Read})
 				continue
 			}
 			nextRemaining = append(nextRemaining, repo)
@@ -96,11 +96,11 @@ func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAc
 		}
 		for _, repo := range remaining {
 			if canAcc, isExplicit := canAccess[repo.ExternalRepo.ID]; isExplicit {
+				p := authz.None
 				if canAcc {
-					perms[repo] = authz.Read
-				} else {
-					perms[repo] = authz.None
+					p = authz.Read
 				}
+				perms = append(perms, authz.RepoPerms{Repo: repo, Perms: p})
 				continue
 			}
 			nextRemaining = append(nextRemaining, repo)
@@ -113,35 +113,25 @@ func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAc
 		return nil, err
 	}
 	if len(remaining) == 0 {
-		return orderedBy(repos, perms), nil
+		return perms, nil
 	}
 	if err := populatePermsPublic(p.getCachedPublicRepos); err != nil {
 		return nil, err
 	}
 	if len(remaining) == 0 {
-		return orderedBy(repos, perms), nil
+		return perms, nil
 	}
 	if err := populatePerms(p.fetchAndSetUserRepos); err != nil {
 		return nil, err
 	}
 	if len(remaining) == 0 {
-		return orderedBy(repos, perms), nil
+		return perms, nil
 	}
 	if err := populatePermsPublic(p.fetchAndSetPublicRepos); err != nil {
 		return nil, err
 	}
 
-	return orderedBy(repos, perms), nil
-}
-
-func orderedBy(repos []*types.Repo, perms map[*types.Repo]authz.Perms) []authz.RepoPerms {
-	ps := make([]authz.RepoPerms, 0, len(perms))
-	for _, repo := range repos {
-		if p, ok := perms[repo]; ok {
-			ps = append(ps, authz.RepoPerms{Repo: repo, Perms: p})
-		}
-	}
-	return ps
+	return perms, nil
 }
 
 // fetchAndSetPublicRepos accepts a set of repositories and returns a map from repository external
