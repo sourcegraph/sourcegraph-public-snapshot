@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -121,14 +120,6 @@ func (p *SudoProvider) Repos(ctx context.Context, repos []*types.Repo) (mine []*
 	// Note(beyang): this is identical to GitLabOAuthAuthzProvider.Repos, so is not explicitly
 	// unit-tested. If this impl ever changes, unit tests should be added.
 	return authz.GetCodeHostRepos(p.codeHost, repos)
-}
-
-func debug(rs []*types.Repo) string {
-	var sb strings.Builder
-	for _, r := range rs {
-		sb.WriteString(string(r.Name) + ",")
-	}
-	return sb.String()
 }
 
 func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos []*types.Repo) ([]authz.RepoPerms, error) {
