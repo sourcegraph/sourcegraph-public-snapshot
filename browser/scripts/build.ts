@@ -6,7 +6,7 @@ import * as tasks from './tasks'
 const buildChrome = tasks.buildChrome('prod')
 const buildFirefox = tasks.buildFirefox('prod')
 
-tasks.copyAssets('prod')
+tasks.copyAssets()
 
 const compiler = webpack(config)
 
