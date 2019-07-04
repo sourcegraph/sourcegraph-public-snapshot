@@ -20,7 +20,7 @@ type Perms uint32
 const (
 	Read Perms = 1 << (32 - 1 - iota)
 	Write
-	None = 0
+	None Perms = 0
 )
 
 // Include is a convenience method to test if Perms
