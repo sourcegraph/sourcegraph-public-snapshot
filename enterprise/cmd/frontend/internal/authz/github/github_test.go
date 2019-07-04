@@ -262,11 +262,6 @@ func Test_fetchUserRepos(t *testing.T) {
 	}
 }
 
-var (
-	readPerms = map[authz.Perms]bool{authz.Read: true}
-	noPerms   = map[authz.Perms]bool{authz.Read: false}
-)
-
 func mustURL(t *testing.T, u string) *url.URL {
 	parsed, err := url.Parse(u)
 	if err != nil {
