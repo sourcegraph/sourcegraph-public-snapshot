@@ -12,7 +12,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var mockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error)
+var mockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error)
 
 // authzFilter is the enforcement mechanism for repository permissions. It is the root
 // repository-permission-enforcing function (i.e., all other code that wants to check/enforce
@@ -36,7 +36,7 @@ var mockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perm)
 //
 // - If no authz providers match the repository, consult `authzAllowByDefault`. If true, then return
 //   the repository; otherwise, do not.
-func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perm) (rs []*types.Repo, err error) {
+func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (rs []*types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "authzFilter", "")
 	defer func() {
 		if err != nil {
@@ -80,7 +80,7 @@ func isInternalActor(ctx context.Context) bool {
 	return actor.FromContext(ctx).Internal
 }
 
-func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*types.Repo, p authz.Perm) (accepted []*types.Repo, err error) {
+func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*types.Repo, p authz.Perms) (accepted []*types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "getFilteredRepos", "")
 	defer func() {
 		if err != nil {
@@ -163,7 +163,11 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 			return nil, err
 		}
 
-		accepted = append(accepted, perms[p]...)
+		for _, r := range perms {
+			if r.Has(p) {
+				accepted = append(accepted, r.Repo)
+			}
+		}
 
 		// continue checking repos that didn't belong to this authz provider
 		toverify = nextToVerify

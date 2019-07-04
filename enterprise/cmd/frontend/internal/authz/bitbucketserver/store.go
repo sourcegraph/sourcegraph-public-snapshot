@@ -44,7 +44,7 @@ func newStore(db dbutil.DB, ttl time.Duration, clock func() time.Time, cache *ca
 // given set of object IDs of the defined type.
 type Permissions struct {
 	UserID    int32
-	Perm      authz.Perm
+	Perm      authz.Perms
 	Type      string
 	IDs       *roaring.Bitmap
 	UpdatedAt time.Time
@@ -56,7 +56,7 @@ func (p *Permissions) Authorized(repos []*types.Repo) []*types.Repo {
 	perms := make([]*types.Repo, len(repos))
 	for r := range repos {
 		if r.ID != 0 && p.IDs.Contains(uint32(r.ID)) {
-			perms[r.RepoName] = map[authz.Perm]bool{p.Perm: true}
+			perms[r.RepoName] = map[authz.Perms]bool{p.Perm: true}
 		}
 	}
 	return perms
@@ -333,7 +333,7 @@ func newCache(ttl time.Duration, clock func() time.Time) *cache {
 
 type cacheKey struct {
 	UserID int32
-	Perm   authz.Perm
+	Perm   authz.Perms
 	Type   string
 }
 

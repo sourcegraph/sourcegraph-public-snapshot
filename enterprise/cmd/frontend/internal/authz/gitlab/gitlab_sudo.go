@@ -147,7 +147,7 @@ func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAc
 			continue
 		}
 		if v := vis.Visibility; v == gitlab.Public || (v == gitlab.Internal && accountID != "") {
-			perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: true}
+			perms[repo.RepoName] = map[authz.Perms]bool{authz.Read: true}
 			continue
 		}
 		nextRemaining[repo] = struct{}{}
@@ -171,7 +171,7 @@ func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAc
 				nextRemaining[repo] = struct{}{}
 				continue
 			}
-			perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: userRepo.Read}
+			perms[repo.RepoName] = map[authz.Perms]bool{authz.Read: userRepo.Read}
 		}
 
 		if len(nextRemaining) == 0 { // shortcut
@@ -201,7 +201,7 @@ func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAc
 		}
 		if isAccessible {
 			// Set perms
-			perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: true}
+			perms[repo.RepoName] = map[authz.Perms]bool{authz.Read: true}
 
 			// Update visibility cache
 			err := cacheSetRepoVisibility(p.cache, projID, repoVisibilityCacheVal{Visibility: vis, TTL: p.cacheTTL})

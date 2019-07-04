@@ -9,12 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
 
-// Perm is a type of permission (e.g., "read").
-type Perm string
-
-const Read Perm = "read"
-
-// AuthzProvider defines a source of truth of which repositories a user is authorized to view. The
+// Provider defines a source of truth of which repositories a user is authorized to view. The
 // user is identified by an ExternalAccount instance. Examples of authz providers include the
 // following:
 //
@@ -52,7 +47,7 @@ type Provider interface {
 	// permissions it needs to compute.  In practice, most will probably use a combination of (1)
 	// "list all private repos the user has access to", (2) a mechanism to determine which repos are
 	// public/private, and (3) a cache of some sort.
-	RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) (map[Perm][]*types.Repo, error)
+	RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) ([]RepoPerms, error)
 
 	// FetchAccount returns the external account that identifies the user to this authz provider,
 	// taking as input the current list of external accounts associated with the

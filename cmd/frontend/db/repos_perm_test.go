@@ -117,12 +117,13 @@ func (f fakeProvider) RepoPerms(
 	ctx context.Context,
 	userAccount *extsvc.ExternalAccount,
 	repos []*types.Repo,
-) (map[authz.Perm][]*types.Repo, error) {
-	authorized := map[authz.Perm][]*types.Repo{
-		authz.Read: make([]*types.Repo, 0, len(repos)),
-	}
+) ([]authz.RepoPerms, error) {
+	authorized := make([]authz.RepoPerms, 0, len(repos))
 	for _, repo := range repos {
-		authorized[authz.Read] = append(authorized[authz.Read], repo)
+		authorized = append(authorized, authz.RepoPerms{
+			Repo:  repo,
+			Perms: authz.Read,
+		})
 	}
 	return authorized, nil
 }
@@ -169,7 +170,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 	)
 	{
 		calledFilter := false
-		mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+		mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 			calledFilter = true
 			return repos, nil
 		}
@@ -187,7 +188,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 	}
 	{
 		calledFilter := false
-		mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+		mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 			calledFilter = true
 			return nil, nil
 		}
@@ -206,7 +207,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 	{
 		calledFilter := false
 		filteredRepos := allRepos[0:1]
-		mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+		mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 			calledFilter = true
 			return filteredRepos, nil
 		}

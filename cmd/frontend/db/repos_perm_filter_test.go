@@ -29,7 +29,7 @@ type authzFilter_call struct {
 	userAccounts []*extsvc.ExternalAccount
 
 	repos []*types.Repo
-	perm  authz.Perm
+	perm  authz.Perms
 
 	expFilteredRepos []*types.Repo
 }
@@ -95,19 +95,19 @@ func Test_authzFilter(t *testing.T) {
 						"gitlab.mine/sharedPrivate/r0": {},
 						"gitlab.mine/org/r0":           {},
 					},
-					perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
+					perms: map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{
 						*acct(1, "gitlab", "https://gitlab.mine/", "u1"): {
-							"gitlab.mine/u1/r0":            {authz.Read: true},
-							"gitlab.mine/sharedPrivate/r0": {authz.Read: true},
-							"gitlab.mine/org/r0":           {authz.Read: true},
+							"gitlab.mine/u1/r0":            authz.Read,
+							"gitlab.mine/sharedPrivate/r0": authz.Read,
+							"gitlab.mine/org/r0":           authz.Read,
 						},
 						*acct(2, "gitlab", "https://gitlab.mine/", "u2"): {
-							"gitlab.mine/u2/r0":            {authz.Read: true},
-							"gitlab.mine/sharedPrivate/r0": {authz.Read: true},
-							"gitlab.mine/org/r0":           {authz.Read: true},
+							"gitlab.mine/u2/r0":            authz.Read,
+							"gitlab.mine/sharedPrivate/r0": authz.Read,
+							"gitlab.mine/org/r0":           authz.Read,
 						},
 						{}: {
-							"gitlab.mine/org/r0": {authz.Read: true},
+							"gitlab.mine/org/r0": authz.Read,
 						},
 					},
 				},
@@ -262,15 +262,15 @@ func Test_authzFilter(t *testing.T) {
 						"gitlab0.mine/u2/r0":  {},
 						"gitlab0.mine/org/r0": {},
 					},
-					perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
+					perms: map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{
 						*acct(1, "gitlab", "https://gitlab0.mine/", "u1"): {
-							"gitlab0.mine/u1/r0":  {authz.Read: true},
-							"gitlab0.mine/org/r0": {authz.Read: true},
+							"gitlab0.mine/u1/r0":  authz.Read,
+							"gitlab0.mine/org/r0": authz.Read,
 						},
 						*acct(2, "gitlab", "https://gitlab0.mine/", "u2"): {
-							"gitlab0.mine/u1/r0":  {},
-							"gitlab0.mine/u2/r0":  {authz.Read: true},
-							"gitlab0.mine/org/r0": {authz.Read: true},
+							"gitlab0.mine/u1/r0":  authz.None,
+							"gitlab0.mine/u2/r0":  authz.Read,
+							"gitlab0.mine/org/r0": authz.Read,
 						},
 					},
 				},
@@ -282,14 +282,14 @@ func Test_authzFilter(t *testing.T) {
 						"gitlab1.mine/u2/r0":  {},
 						"gitlab1.mine/org/r0": {},
 					},
-					perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
+					perms: map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{
 						*acct(1, "gitlab", "https://gitlab1.mine/", "u1"): {
-							"gitlab1.mine/u1/r0":  {authz.Read: true},
-							"gitlab1.mine/org/r0": {authz.Read: true},
+							"gitlab1.mine/u1/r0":  authz.Read,
+							"gitlab1.mine/org/r0": authz.Read,
 						},
 						*acct(2, "gitlab", "https://gitlab1.mine/", "u2"): {
-							"gitlab1.mine/u2/r0":  {authz.Read: true},
-							"gitlab1.mine/org/r0": {authz.Read: true},
+							"gitlab1.mine/u2/r0":  authz.Read,
+							"gitlab1.mine/org/r0": authz.Read,
 						},
 					},
 				},
@@ -360,15 +360,15 @@ func Test_authzFilter(t *testing.T) {
 						"gitlab0.mine/u2/r0":  {},
 						"gitlab0.mine/org/r0": {},
 					},
-					perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
+					perms: map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{
 						*acct(1, "gitlab", "https://gitlab0.mine/", "u1"): {
-							"gitlab0.mine/u1/r0":  {authz.Read: true},
-							"gitlab0.mine/org/r0": {authz.Read: true},
+							"gitlab0.mine/u1/r0":  authz.Read,
+							"gitlab0.mine/org/r0": authz.Read,
 						},
 						*acct(2, "gitlab", "https://gitlab0.mine/", "u2"): {
-							"gitlab0.mine/u1/r0":  {},
-							"gitlab0.mine/u2/r0":  {authz.Read: true},
-							"gitlab0.mine/org/r0": {authz.Read: true},
+							"gitlab0.mine/u1/r0":  authz.None,
+							"gitlab0.mine/u2/r0":  authz.Read,
+							"gitlab0.mine/org/r0": authz.Read,
 						},
 					},
 				},
@@ -380,14 +380,14 @@ func Test_authzFilter(t *testing.T) {
 						"gitlab1.mine/u2/r0":  {},
 						"gitlab1.mine/org/r0": {},
 					},
-					perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
+					perms: map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{
 						*acct(1, "gitlab", "https://gitlab1.mine/", "u1"): {
-							"gitlab1.mine/u1/r0":  {authz.Read: true},
-							"gitlab1.mine/org/r0": {authz.Read: true},
+							"gitlab1.mine/u1/r0":  authz.Read,
+							"gitlab1.mine/org/r0": authz.Read,
 						},
 						*acct(2, "gitlab", "https://gitlab1.mine/", "u2"): {
-							"gitlab1.mine/u2/r0":  {authz.Read: true},
-							"gitlab1.mine/org/r0": {authz.Read: true},
+							"gitlab1.mine/u2/r0":  authz.Read,
+							"gitlab1.mine/org/r0": authz.Read,
 						},
 					},
 				},
@@ -434,20 +434,20 @@ func Test_authzFilter(t *testing.T) {
 						"gitlab.mine/org/r0":    {},
 						"gitlab.mine/public/r0": {},
 					},
-					perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
+					perms: map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{
 						*acct(1, "gitlab", "https://gitlab.mine/", "u1"): {
-							"gitlab.mine/u1/r0":     {authz.Read: true},
-							"gitlab.mine/org/r0":    {authz.Read: true},
-							"gitlab.mine/public/r0": {authz.Read: true},
+							"gitlab.mine/u1/r0":     authz.Read,
+							"gitlab.mine/org/r0":    authz.Read,
+							"gitlab.mine/public/r0": authz.Read,
 						},
 						*acct(2, "gitlab", "https://gitlab.mine/", "u2"): {
-							"gitlab.mine/u2/r0":     {authz.Read: true},
-							"gitlab.mine/org/r0":    {authz.Read: true},
-							"gitlab.mine/public/r0": {authz.Read: true},
+							"gitlab.mine/u2/r0":     authz.Read,
+							"gitlab.mine/org/r0":    authz.Read,
+							"gitlab.mine/public/r0": authz.Read,
 						},
 						// entry for nil account / anonymous users
 						{}: {
-							"gitlab.mine/public/r0": {authz.Read: true},
+							"gitlab.mine/public/r0": authz.Read,
 						},
 					},
 				},
@@ -553,7 +553,7 @@ func Test_authzFilter(t *testing.T) {
 					serviceID:   "https://gitlab.mine/",
 					serviceType: "gitlab",
 					repos:       map[api.RepoName]struct{}{},
-					perms:       map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{},
+					perms:       map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{},
 				},
 			},
 			calls: []authzFilter_call{
@@ -628,7 +628,7 @@ func Test_authzFilter_createsNewUsers(t *testing.T) {
 			serviceType:  "gitlab",
 			okServiceIDs: map[string]struct{}{"https://okta.mine/": {}},
 			repos:        map[api.RepoName]struct{}{},
-			perms: map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool{
+			perms: map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{
 				*acct(23, "gitlab", "https://gitlab.mine/", "101"): {},
 			},
 		},
@@ -733,7 +733,7 @@ type MockAuthzProvider struct {
 
 	// perms is the map from external user account to repository permissions. The key set must
 	// include all user external accounts that are available in this mock instance.
-	perms map[extsvc.ExternalAccount]map[api.RepoName]map[authz.Perm]bool
+	perms map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms
 	repos map[api.RepoName]struct{}
 }
 
@@ -757,8 +757,7 @@ func (m *MockAuthzProvider) FetchAccount(ctx context.Context, user *types.User, 
 	return nil, nil
 }
 
-func (m *MockAuthzProvider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos []*types.Repo) (map[authz.Perm][]*types.Repo, error) {
-	retPerms := make(map[authz.Perm][]*types.Repo)
+func (m *MockAuthzProvider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos []*types.Repo) (retPerms []authz.RepoPerms, _ error) {
 	repos, _ = m.Repos(ctx, repos)
 
 	if acct == nil {
@@ -771,7 +770,10 @@ func (m *MockAuthzProvider) RepoPerms(ctx context.Context, acct *extsvc.External
 	userPerms := m.perms[*acct]
 	for _, repo := range repos {
 		if _, ok := userPerms[repo.Name]; ok {
-			retPerms[authz.Read] = append(retPerms[authz.Read], repo)
+			retPerms = append(retPerms, authz.RepoPerms{
+				Repo:  repo,
+				Perms: authz.Read,
+			})
 		}
 	}
 	return retPerms, nil

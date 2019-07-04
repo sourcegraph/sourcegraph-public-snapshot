@@ -77,7 +77,7 @@ func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAc
 		for repo := range remaining {
 			canAcc, isExplicit := canAccess[repo.ExternalRepoSpec.ID]
 			if canAcc {
-				perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: true}
+				perms[repo.RepoName] = map[authz.Perms]bool{authz.Read: true}
 				continue
 			}
 			nextRemaining[repo] = struct{}{}
@@ -97,7 +97,7 @@ func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAc
 		}
 		for repo := range remaining {
 			if canAcc, isExplicit := canAccess[repo.ExternalRepoSpec.ID]; isExplicit {
-				perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: canAcc}
+				perms[repo.RepoName] = map[authz.Perms]bool{authz.Read: canAcc}
 				continue
 			}
 			nextRemaining[repo] = struct{}{}
