@@ -28,13 +28,7 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
     return (
         <div className={`task-list-item-actions d-flex flex-column ${className}`}>
             {planActions.map((action, i) => (
-                <PlanActionButton
-                    key={i}
-                    action={action}
-                    onClick={onActionClick}
-                    className="mb-2"
-                    buttonClassName={buttonClassName}
-                />
+                <PlanActionButton key={i} action={action} onClick={onActionClick} className="mb-2" />
             ))}
             {commandActions.length > 0 && (
                 <div className="d-flex flex-wrap">

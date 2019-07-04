@@ -12,27 +12,25 @@ interface Props {
 
     disabled?: boolean
     className?: string
-    buttonClassName?: string
 }
 
 /**
  * A button for a plan action that can be previewed and made into a changeset.
  */
-export const PlanActionButton: React.FunctionComponent<Props> = ({
-    action,
-    onClick,
-    disabled,
-    className = '',
-    buttonClassName = '',
-}) => {
+export const PlanActionButton: React.FunctionComponent<Props> = ({ action, onClick, disabled, className = '' }) => {
     const onButtonClick = useCallback((creationStatus: ChangesetCreationStatus) => onClick(action, creationStatus), [
         action,
         onClick,
     ])
     return (
-        <label className={className}>
-            <span className="text-muted">{action.plan.operations[0].command.title}:</span>
-            <CreateOrPreviewChangesetButton onClick={onButtonClick} disabled={disabled} className={buttonClassName} />
-        </label>
+        <div className={`d-flex align-items-center ${className}`}>
+            <CreateOrPreviewChangesetButton
+                onClick={onButtonClick}
+                disabled={disabled}
+                className="mr-3"
+                buttonClassName="btn-success"
+            />
+            <span className="text-muted">{action.plan.operations[0].command.title}</span>
+        </div>
     )
 }
