@@ -38,6 +38,7 @@ interface StatusMessageEntryProps {
     showLink?: boolean
     linkTo: string
     linkText: string
+    linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
 }
 
 const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => (
@@ -46,7 +47,9 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
         <p>{props.text}</p>
         {props.showLink && (
             <p className="status-messages-nav-item__entry-link">
-                <Link to={props.linkTo}>{props.linkText}</Link>
+                <Link to={props.linkTo} onClick={props.linkOnClick}>
+                    {props.linkText}
+                </Link>
             </p>
         )}
     </div>
@@ -103,6 +106,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         showLink={this.props.isSiteAdmin}
                         linkTo="/site-admin/external-services"
                         linkText="Configure external services"
+                        linkOnClick={this.toggleIsOpen}
                     />
                 )
             case GQL.StatusMessageType.SYNCERROR:
@@ -117,6 +121,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             showLink={this.props.isSiteAdmin}
                             linkTo={`/site-admin/external-services/${extSvcID.value}`}
                             linkText={`Edit "${displayName.value}"...`}
+                            linkOnClick={this.toggleIsOpen}
                         />
                     )
                 }
@@ -128,6 +133,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         showLink={this.props.isSiteAdmin}
                         linkTo="/site-admin/external-services"
                         linkText="Configure external services"
+                        linkOnClick={this.toggleIsOpen}
                     />
                 )
         }
@@ -187,6 +193,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             showLink={this.props.isSiteAdmin}
                             linkTo="/site-admin/external-services"
                             linkText="Configure external services"
+                            linkOnClick={this.toggleIsOpen}
                         />
                     )}
                 </DropdownMenu>
