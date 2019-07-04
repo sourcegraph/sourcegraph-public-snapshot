@@ -9,6 +9,7 @@ import (
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -21,19 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-// marshalDiscussionID marshals a discussion thread or comment ID into a
-// graphql.ID. These IDs are a lot like GitHub issue IDs: we want them to be
-// pretty integer values (not base64 encoded values), so we just turn the ID
-// integer into a string. Note we cannot use a GraphQL Int type, as it is not
-// 64 bits.
-func marshalDiscussionID(discussionID int64) graphql.ID {
-	return graphql.ID(strconv.FormatInt(discussionID, 10))
-}
-
-func unmarshalDiscussionID(id graphql.ID) (discussionID int64, err error) {
-	return strconv.ParseInt(string(id), 10, 64)
-}
 
 type discussionsMutationResolver struct {
 }
@@ -293,7 +281,7 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 		delete = *args.Input.Delete
 	}
 
-	threadID, err := unmarshalDiscussionID(args.Input.ThreadID)
+	threadID, err := unmarshalDiscussionThreadID(args.Input.ThreadID)
 	if err != nil {
 		return nil, err
 	}
@@ -346,11 +334,14 @@ func (*schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 
 	if args.ThreadID != nil {
-		threadID, err := unmarshalDiscussionID(*args.ThreadID)
+		// BACKCOMPAT DEPRECATED: For backcompat, this value is treated as
+		// DiscussionThread#idWithoutKind and is a strictly numeric string like "1234", not a
+		// conventional graphql.ID value (i.e., base64("DiscussionThread:1234")).
+		dbID, err := strconv.ParseInt(string(*args.ThreadID), 10, 64)
 		if err != nil {
 			return nil, err
 		}
-		opt.ThreadIDs = []int64{threadID}
+		opt.ThreadIDs = []int64{dbID}
 	}
 	if args.AuthorUserID != nil {
 		authorUserID, err := UnmarshalUserID(*args.AuthorUserID)
@@ -380,6 +371,16 @@ func (*schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 		return nil, errors.New("only one of targetRepositoryID, targetRepositoryName, or targetRepositoryGitCloneURL can be specified")
 	}
 	return &discussionThreadsConnectionResolver{opt: opt}, nil
+}
+
+func (schemaResolver) DiscussionThread(ctx context.Context, args *struct {
+	IDWithoutKind string
+}) (*discussionThreadResolver, error) {
+	dbID, err := strconv.ParseInt(args.IDWithoutKind, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return discussionThreadByID(ctx, marshalDiscussionThreadID(dbID))
 }
 
 type discussionThreadTargetRepoSelectionResolver struct {
@@ -626,6 +627,34 @@ func (r *discussionThreadTargetResolver) ToDiscussionThreadTargetRepo() (*discus
 	return &discussionThreadTargetRepoResolver{t: r.t.TargetRepo}, true
 }
 
+func marshalDiscussionThreadID(dbID int64) graphql.ID {
+	return relay.MarshalID("DiscussionThread", strconv.FormatInt(dbID, 36))
+}
+
+func unmarshalDiscussionThreadID(id graphql.ID) (dbID int64, err error) {
+	var dbIDStr string
+	err = relay.UnmarshalSpec(id, &dbIDStr)
+	if err == nil {
+		dbID, err = strconv.ParseInt(dbIDStr, 36, 64)
+	}
+	return
+}
+
+// discussionThreadByID looks up a DiscussionThread by its GraphQL ID.
+func discussionThreadByID(ctx context.Context, id graphql.ID) (*discussionThreadResolver, error) {
+	dbID, err := unmarshalDiscussionThreadID(id)
+	if err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: No authentication is required to get a discussion. Discussions are public unless
+	// the Sourcegraph instance itself (and inherently, the GraphQL API) is private.
+	thread, err := db.DiscussionThreads.Get(ctx, dbID)
+	if err != nil {
+		return nil, err
+	}
+	return &discussionThreadResolver{t: thread}, nil
+}
+
 // 🚨 SECURITY: When instantiating an discussionThreadResolver value, the
 // caller MUST check permissions.
 type discussionThreadResolver struct {
@@ -633,7 +662,11 @@ type discussionThreadResolver struct {
 }
 
 func (d *discussionThreadResolver) ID() graphql.ID {
-	return marshalDiscussionID(d.t.ID)
+	return marshalDiscussionThreadID(d.t.ID)
+}
+
+func (d *discussionThreadResolver) IDWithoutKind() string {
+	return strconv.FormatInt(d.t.ID, 10)
 }
 
 func (d *discussionThreadResolver) Author(ctx context.Context) (*UserResolver, error) {
