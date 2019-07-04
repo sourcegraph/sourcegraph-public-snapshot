@@ -375,6 +375,48 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 	return repos, err
 }
 
+// ClonedCount returns a count of all cloned repositories
+func (c *Client) ClonedCount(ctx context.Context) (int, error) {
+	var (
+		wg    sync.WaitGroup
+		mu    sync.Mutex
+		err   error
+		total int
+	)
+	for _, addr := range c.Addrs(ctx) {
+		wg.Add(1)
+		go func(addr string) {
+			defer wg.Done()
+			count, e := c.doClonedCountOne(ctx, addr)
+			mu.Lock()
+			if e != nil {
+				err = e
+			}
+			total += count
+			mu.Unlock()
+		}(addr)
+	}
+	wg.Wait()
+	return total, err
+}
+
+func (c *Client) doClonedCountOne(ctx context.Context, addr string) (int, error) {
+	req, err := http.NewRequest("GET", "http://"+addr+"/cloned-count", nil)
+	if err != nil {
+		return 0, err
+	}
+
+	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	var count protocol.ClonedCountResponse
+	err = json.NewDecoder(resp.Body).Decode(&count)
+	return count.Count, err
+}
+
 // GetGitolitePhabricatorMetadata returns Phabricator metadata for a Gitolite repository fetched via
 // a user-provided command.
 func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repoName api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {

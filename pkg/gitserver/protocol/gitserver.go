@@ -181,3 +181,9 @@ type CreatePatchFromPatchResponse struct {
 	// Rev is the tag that the staging object can be found at
 	Rev string
 }
+
+// ClonedCountResponse is the response type returned after asking for the
+// number of cloned repositories
+type ClonedCountResponse struct {
+	Count int `json:"count"`
+}

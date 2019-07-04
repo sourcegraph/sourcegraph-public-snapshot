@@ -546,14 +546,14 @@ func TestServer_StatusMessages(t *testing.T) {
 	testCases := []struct {
 		name              string
 		stored            repos.Repos
-		gitserverResponse []string
+		gitserverResponse int
 		res               *protocol.StatusMessagesResponse
 		err               string
 	}{
 		{
 			name:              "all cloned",
 			stored:            []*repos.Repo{{Name: "foobar"}},
-			gitserverResponse: []string{"foobar"},
+			gitserverResponse: 1,
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
@@ -561,7 +561,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		{
 			name:              "more cloned than in DB",
 			stored:            []*repos.Repo{{Name: "foobar"}},
-			gitserverResponse: []string{"foobar", "barfoo"},
+			gitserverResponse: 2,
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
@@ -569,7 +569,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		{
 			name:              "few not cloned",
 			stored:            []*repos.Repo{{Name: "foobar"}, {Name: "barfoo"}, {Name: "barbaz"}},
-			gitserverResponse: []string{"foobar"},
+			gitserverResponse: 1,
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
@@ -582,7 +582,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		{
 			name:              "nothing cloned",
 			stored:            []*repos.Repo{{Name: "foobar"}, {Name: "barfoo"}, {Name: "barbaz"}},
-			gitserverResponse: []string{},
+			gitserverResponse: 0,
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
@@ -599,7 +599,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			gitserverClient := &fakeGitserverClient{listClonedResponse: tc.gitserverResponse}
+			gitserverClient := &fakeGitserverClient{clonedCountResponse: tc.gitserverResponse}
 
 			store := new(repos.FakeStore)
 			err := store.UpsertRepos(ctx, tc.stored.Clone()...)
@@ -961,11 +961,11 @@ func (s *fakeScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInf
 }
 
 type fakeGitserverClient struct {
-	listClonedResponse []string
+	clonedCountResponse int
 }
 
-func (g *fakeGitserverClient) ListCloned(ctx context.Context) ([]string, error) {
-	return g.listClonedResponse, nil
+func (g *fakeGitserverClient) ClonedCount(ctx context.Context) (int, error) {
+	return g.clonedCountResponse, nil
 }
 
 func formatJSON(s string) string {

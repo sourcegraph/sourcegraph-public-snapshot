@@ -35,7 +35,7 @@ type Server struct {
 		ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult
 	}
 	GitserverClient interface {
-		ListCloned(context.Context) ([]string, error)
+		ClonedCount(context.Context) (int, error)
 	}
 
 	notClonedCountMu        sync.Mutex
@@ -463,23 +463,25 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 		return s.notClonedCount, nil
 	}
 
-	reposCount, err := s.Store.CountRepos(ctx)
+	repos, err := s.Store.CountRepos(ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	cloned, err := s.GitserverClient.ListCloned(ctx)
+	cloned, err := s.GitserverClient.ClonedCount(ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	notCloned := reposCount - len(cloned)
+	notCloned := repos - cloned
 	if notCloned < 0 {
 		notCloned = 0
 	}
 
 	s.notClonedCount = uint64(notCloned)
 	s.notClonedCountUpdatedAt = time.Now()
+
+	log15.Info("computeNotClonedCount", "repos", repos, "cloned", cloned, "notCloned", notCloned)
 
 	return s.notClonedCount, nil
 }
