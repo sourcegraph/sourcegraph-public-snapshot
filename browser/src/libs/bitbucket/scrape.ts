@@ -87,6 +87,19 @@ export const getCommitIDFromLink = (selector = 'a.commitid'): string => {
     return commitID
 }
 
+const getCommitIDFromRevisionSelector = (): string => {
+    const revisionSelectorSpan = document.querySelector<HTMLElement>('span[data-revision-ref]')
+    if (!revisionSelectorSpan) {
+        throw new Error('Could not find span[data-revision-ref] element')
+    }
+    try {
+        const { latestCommit }: { latestCommit: string } = JSON.parse(revisionSelectorSpan.dataset.revisionRef!)
+        return latestCommit
+    } catch (err) {
+        throw new Error(`Could not determine commitID from revision selector: ${err}`)
+    }
+}
+
 /**
  * Gets the file info on a single-file source code view
  */
@@ -94,7 +107,7 @@ export const getFileInfoFromSingleFileSourceCodeView = (
     codeViewElement: HTMLElement
 ): BitbucketRepoInfo & Pick<FileInfo, 'rawRepoName' | 'filePath' | 'rev' | 'commitID'> => {
     const { rawRepoName, filePath, rev, project, repoSlug } = getFileInfoFromLinkInSingleFileView(codeViewElement)
-    const commitID = getCommitIDFromLink()
+    const commitID = getCommitIDFromRevisionSelector()
     return {
         rawRepoName,
         filePath,
