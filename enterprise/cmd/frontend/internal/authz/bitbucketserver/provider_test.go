@@ -104,47 +104,50 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 				name: "authenticated user: engineer1",
 				user: f.users["engineer1"],
 				perms: []authz.RepoPerms{
+					// Because engineers group has PROJECT_WRITE perm on PRIVATE project
+					// which private-repo belongs to.
+					{Repo: repo["private-repo"], Perms: authz.Read},
 					// Because repo is public
 					{Repo: repo["public-repo"], Perms: authz.Read},
 					// Because of engineer1 has a secret-project group membership
 					// and secret-project group has PROJECT_READ perm on SECRET project
 					// which secret-repo belongs to.
 					{Repo: repo["secret-repo"], Perms: authz.Read},
-					// Because engineers group has PROJECT_WRITE perm on PRIVATE project
-					// which private-repo belongs to.
-					{Repo: repo["private-repo"], Perms: authz.Read},
 				},
 			},
 			{
 				name: "authenticated user: engineer2",
 				user: f.users["engineer2"],
 				perms: []authz.RepoPerms{
-					// Because repo is public
-					{Repo: repo["public-repo"], Perms: authz.Read},
 					// Because engineers group has PROJECT_WRITE perm on PRIVATE project
 					// which private-repo belongs to.
 					{Repo: repo["private-repo"], Perms: authz.Read}, // Because of engineers group membership
+					// Because repo is public
+					{Repo: repo["public-repo"], Perms: authz.Read},
 				},
 			},
 			{
 				name: "authenticated user: scientist",
 				user: f.users["scientist"],
 				perms: []authz.RepoPerms{
+					// Because scientists group has PROJECT_READ perm on PRIVATE project
+					// which private-repo belongs to.
+					{Repo: repo["private-repo"], Perms: authz.Read},
 					// Because repo is public
 					{Repo: repo["public-repo"], Perms: authz.Read},
 					// Because of scientist1 has a secret-project group membership
 					// and secret-project group has PROJECT_READ perm on SECRET project
 					// which secret-repo belongs to.
 					{Repo: repo["secret-repo"], Perms: authz.Read},
-					// Because scientists group has PROJECT_READ perm on PRIVATE project
-					// which private-repo belongs to.
-					{Repo: repo["private-repo"], Perms: authz.Read},
 				},
 			},
 			{
 				name: "authenticated user: ceo",
 				user: f.users["ceo"],
 				perms: []authz.RepoPerms{
+					// Because management group has PROJECT_READ perm on PRIVATE project
+					// which private-repo belongs to.
+					{Repo: repo["private-repo"], Perms: authz.Read},
 					// Because repo is public
 					{Repo: repo["public-repo"], Perms: authz.Read},
 					// Because management group has PROJECT_READ perm on PRIVATE project
@@ -152,9 +155,6 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 					{Repo: repo["secret-repo"], Perms: authz.Read},
 					// Because ceo has REPO_WRITE perm on super-secret-repo.
 					{Repo: repo["super-secret-repo"], Perms: authz.Read},
-					// Because management group has PROJECT_READ perm on PRIVATE project
-					// which private-repo belongs to.
-					{Repo: repo["private-repo"], Perms: authz.Read},
 				},
 			},
 		} {

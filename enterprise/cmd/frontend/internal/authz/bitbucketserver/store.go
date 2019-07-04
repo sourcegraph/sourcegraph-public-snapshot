@@ -153,7 +153,7 @@ func (s *store) loadQuery(p *Permissions, lock string) *sqlf.Query {
 	return sqlf.Sprintf(
 		loadQueryFmtStr+lock,
 		p.UserID,
-		p.Perm,
+		p.Perm.String(),
 		p.Type,
 	)
 }
@@ -262,7 +262,7 @@ func (s *store) upsertQuery(p *Permissions) (*sqlf.Query, error) {
 	return sqlf.Sprintf(
 		upsertQueryFmtStr,
 		p.UserID,
-		p.Perm,
+		p.Perm.String(),
 		p.Type,
 		ids,
 		p.UpdatedAt.UTC(),
