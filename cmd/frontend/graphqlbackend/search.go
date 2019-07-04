@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	zoektrpc "github.com/google/zoekt/rpc"
+	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 
@@ -55,12 +56,18 @@ func maxReposToSearch() int {
 
 // Search provides search results and suggestions.
 func (r *schemaResolver) Search(args *struct {
-	Query string
+	Query  string
+	Cursor *graphql.ID
+	Limit  *int32
 }) (interface {
 	Results(context.Context) (*searchResultsResolver, error)
 	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
+	//lint:ignore U1000 is used by graphql via reflection
+	Finished(context.Context) bool
+	//lint:ignore U1000 is used by graphql via reflection
+	Cursor(ctx context.Context) graphql.ID
 }, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
@@ -68,9 +75,26 @@ func (r *schemaResolver) Search(args *struct {
 	if err != nil {
 		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
 	}
+
+	// If the request is a paginated one, decode those arguments now.
+	var pagination *searchPaginationInfo
+	if args.Limit != nil {
+		cursor, err := unmarshalSearchCursor(args.Cursor)
+		if err != nil {
+			return nil, err
+		}
+		pagination = &searchPaginationInfo{
+			cursor: cursor,
+			limit:  *args.Limit,
+		}
+	} else if args.Cursor != nil {
+		return nil, errors.New("Search: paginated requests providing a 'cursor' but no 'limit' is forbidden")
+	}
+
 	return &searchResolver{
-		query: q,
-		zoekt: IndexedSearch(),
+		query:      q,
+		pagination: pagination,
+		zoekt:      IndexedSearch(),
 	}, nil
 }
 
@@ -87,7 +111,8 @@ func asString(v *searchquerytypes.Value) string {
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query *query.Query // the parsed search query
+	query      *query.Query          // the parsed search query
+	pagination *searchPaginationInfo // pagination information, or nil if the request is not paginated.
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex

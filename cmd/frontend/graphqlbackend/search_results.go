@@ -462,6 +462,12 @@ loop:
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
+	// If the request is a paginated one, we handle it separately. See
+	// paginatedResults for more details.
+	if r.pagination != nil {
+		return r.paginatedResults(ctx)
+	}
+
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
 	if err != nil {
 		return nil, err
