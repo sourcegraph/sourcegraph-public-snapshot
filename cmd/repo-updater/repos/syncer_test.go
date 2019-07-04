@@ -81,9 +81,7 @@ func TestSyncer_Sync(t *testing.T) {
 			if tc.lastSourcerErr == "" {
 				tc.lastSourcerErr = "<nil>"
 			}
-			multiSource := syncer.MultiSourceError()
-			fmt.Printf("multiSource=%+v\n", multiSource)
-			if have, want := fmt.Sprint(multiSource), tc.lastSourcerErr; have != want {
+			if have, want := fmt.Sprint(syncer.MultiSourceError()), tc.lastSourcerErr; have != want {
 				t.Errorf("have error %q, want %q", have, want)
 			}
 		})
