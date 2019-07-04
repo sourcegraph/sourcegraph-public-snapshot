@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 
+	"github.com/RoaringBitmap/roaring"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -111,8 +112,8 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		}
 	}
 
-	accepted := make(map[*types.Repo]struct{}, len(repos)) // repositories that have been claimed and have read permissions
-	toverify := make([]*types.Repo, 0, len(repos))         // repositories that have not been claimed by any authz provider
+	accepted := roaring.NewBitmap()                // repositories that have been claimed and have read permissions
+	toverify := make([]*types.Repo, 0, len(repos)) // repositories that have not been claimed by any authz provider
 	for _, repo := range repos {
 		// 🚨 SECURITY: Defensively bar access to repos with no external repo spec (we don't know
 		// where they came from, so can't reliably enforce permissions). If external repo spec is
@@ -121,7 +122,7 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		if repo.ExternalRepo.IsSet() {
 			toverify = append(toverify, repo)
 		} else if authzAllowByDefault && len(authzProviders) == 0 {
-			accepted[repo] = struct{}{}
+			accepted.Add(uint32(repo.ID))
 		}
 	}
 
@@ -165,7 +166,7 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 
 		for _, r := range perms {
 			if r.Perms.Include(p) {
-				accepted[r.Repo] = struct{}{}
+				accepted.Add(uint32(r.Repo.ID))
 			}
 		}
 
@@ -175,13 +176,13 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 
 	if authzAllowByDefault {
 		for _, r := range toverify {
-			accepted[r] = struct{}{}
+			accepted.Add(uint32(r.ID))
 		}
 	}
 
-	filtered = make([]*types.Repo, 0, len(accepted))
+	filtered = make([]*types.Repo, 0, accepted.GetCardinality())
 	for _, r := range repos {
-		if _, ok := accepted[r]; ok {
+		if accepted.Contains(uint32(r.ID)) {
 			filtered = append(filtered, r)
 		}
 	}

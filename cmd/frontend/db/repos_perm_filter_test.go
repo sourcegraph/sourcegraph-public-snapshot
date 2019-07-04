@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strconv"
 	"testing"
@@ -81,6 +82,37 @@ func (r authzFilter_Test) run(t *testing.T) {
 }
 
 func Test_authzFilter(t *testing.T) {
+	repos := map[api.RepoName]*types.Repo{}
+	for _, r := range makeRepos(
+		"gitlab.mine/org/r0",
+		"gitlab.mine/public/r0",
+		"gitlab.mine/sharedPrivate/r0",
+		"gitlab.mine/u1/r0",
+		"gitlab.mine/u2/r0",
+		"gitlab0.mine/org/r0",
+		"gitlab0.mine/u1/r0",
+		"gitlab0.mine/u2/r0",
+		"gitlab1.mine/org/r0",
+		"gitlab1.mine/u1/r0",
+		"gitlab1.mine/u2/r0",
+		"gitlab2.mine/u2/r0",
+		"other.mine/r",
+		"otherHost/r0",
+	) {
+		repos[r.Name] = r
+	}
+
+	getRepos := func(names ...api.RepoName) (rs []*types.Repo) {
+		for _, name := range names {
+			if r, ok := repos[name]; ok {
+				rs = append(rs, r)
+			} else {
+				panic(fmt.Sprintf("repo %q doesn't exist", name))
+			}
+		}
+		return rs
+	}
+
 	tests := []authzFilter_Test{
 		{
 			description:         "1 authz provider, ext account exists",
@@ -117,21 +149,21 @@ func Test_authzFilter(t *testing.T) {
 					description:      "u1 can read its own repo",
 					user:             &types.User{ID: 1},
 					userAccounts:     []*extsvc.ExternalAccount{acct(1, "gitlab", "https://gitlab.mine/", "u1")},
-					repos:            makeRepos("gitlab.mine/u1/r0"),
+					repos:            getRepos("gitlab.mine/u1/r0"),
 					perm:             authz.Read,
-					expFilteredRepos: makeRepos("gitlab.mine/u1/r0"),
+					expFilteredRepos: getRepos("gitlab.mine/u1/r0"),
 				},
 				{
 					description:  "u1 not allowed to read u2's repo",
 					user:         &types.User{ID: 1},
 					userAccounts: []*extsvc.ExternalAccount{acct(1, "gitlab", "https://gitlab.mine/", "u1")},
-					repos: makeRepos("gitlab.mine/u1/r0",
+					repos: getRepos("gitlab.mine/u1/r0",
 						"gitlab.mine/u2/r0",
 						"gitlab.mine/sharedPrivate/r0",
 						"gitlab.mine/org/r0",
 					),
 					perm: authz.Read,
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/sharedPrivate/r0",
 						"gitlab.mine/org/r0",
@@ -141,14 +173,14 @@ func Test_authzFilter(t *testing.T) {
 					description:  "u2 not allowed to read u0's repo",
 					user:         &types.User{ID: 1},
 					userAccounts: []*extsvc.ExternalAccount{acct(2, "gitlab", "https://gitlab.mine/", "u2")},
-					repos: makeRepos(
+					repos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/u2/r0",
 						"gitlab.mine/sharedPrivate/r0",
 						"gitlab.mine/org/r0",
 					),
 					perm: authz.Read,
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab.mine/u2/r0",
 						"gitlab.mine/sharedPrivate/r0",
 						"gitlab.mine/org/r0",
@@ -157,13 +189,13 @@ func Test_authzFilter(t *testing.T) {
 					description:  "u99 not allowed to read anyone's repo",
 					user:         &types.User{ID: 1},
 					userAccounts: []*extsvc.ExternalAccount{acct(99, "gitlab", "https://gitlab.mine/", "u99")},
-					repos: makeRepos(
+					repos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/u2/r0",
 						"gitlab.mine/sharedPrivate/r0",
 						"gitlab.mine/org/r0",
 					),
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab.mine/org/r0",
 					),
 					perm: authz.Read,
@@ -171,10 +203,10 @@ func Test_authzFilter(t *testing.T) {
 					description:  "u99 can read unmanaged repo",
 					user:         &types.User{ID: 1},
 					userAccounts: []*extsvc.ExternalAccount{acct(99, "gitlab", "https://gitlab.mine/", "u99")},
-					repos: makeRepos(
+					repos: getRepos(
 						"other.mine/r",
 					),
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"other.mine/r",
 					),
 					perm: authz.Read,
@@ -182,14 +214,14 @@ func Test_authzFilter(t *testing.T) {
 					description:  "u1 can read its own, public, and unmanaged repos",
 					user:         &types.User{ID: 1},
 					userAccounts: []*extsvc.ExternalAccount{acct(1, "gitlab", "https://gitlab.mine/", "u1")},
-					repos: makeRepos(
+					repos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/u2/r0",
 						"gitlab.mine/sharedPrivate/r0",
 						"gitlab.mine/org/r0",
 						"otherHost/r0",
 					),
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/sharedPrivate/r0",
 						"gitlab.mine/org/r0",
@@ -200,14 +232,14 @@ func Test_authzFilter(t *testing.T) {
 					description:  "authenticated but 0 accounts can read public anad unmanaged repos",
 					user:         &types.User{ID: 1},
 					userAccounts: nil,
-					repos: makeRepos(
+					repos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/u2/r0",
 						"gitlab.mine/sharedPrivate/r0",
 						"gitlab.mine/org/r0",
 						"otherHost/r0",
 					),
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab.mine/org/r0",
 						"otherHost/r0",
 					),
@@ -216,14 +248,14 @@ func Test_authzFilter(t *testing.T) {
 					description:  "unauthenticated can read public and unmanaged repos",
 					user:         nil,
 					userAccounts: nil,
-					repos: makeRepos(
+					repos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/u2/r0",
 						"gitlab.mine/sharedPrivate/r0",
 						"gitlab.mine/org/r0",
 						"otherHost/r0",
 					),
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab.mine/org/r0",
 						"otherHost/r0",
 					),
@@ -232,14 +264,14 @@ func Test_authzFilter(t *testing.T) {
 					description:  "admin user can read all repos",
 					user:         &types.User{ID: 777, SiteAdmin: true},
 					userAccounts: nil,
-					repos: makeRepos(
+					repos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/u2/r0",
 						"gitlab.mine/sharedPrivate/r0",
 						"gitlab.mine/org/r0",
 						"otherHost/r0",
 					),
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/u2/r0",
 						"gitlab.mine/sharedPrivate/r0",
@@ -304,7 +336,7 @@ func Test_authzFilter(t *testing.T) {
 						acct(1, "gitlab", "https://gitlab0.mine/", "u1"),
 						acct(1, "gitlab", "https://gitlab1.mine/", "u1"),
 					},
-					repos: makeRepos(
+					repos: getRepos(
 						"gitlab0.mine/u1/r0",
 						"gitlab0.mine/u2/r0",
 						"gitlab0.mine/org/r0",
@@ -314,7 +346,7 @@ func Test_authzFilter(t *testing.T) {
 						"gitlab2.mine/u2/r0",
 						"otherHost/r0",
 					),
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab0.mine/u1/r0",
 						"gitlab0.mine/org/r0",
 						"gitlab1.mine/u1/r0",
@@ -330,7 +362,7 @@ func Test_authzFilter(t *testing.T) {
 					userAccounts: []*extsvc.ExternalAccount{
 						acct(1, "gitlab", "https://gitlab1.mine/", "u1"),
 					},
-					repos: makeRepos(
+					repos: getRepos(
 						"gitlab0.mine/u1/r0",
 						"gitlab0.mine/u2/r0",
 						"gitlab0.mine/org/r0",
@@ -340,7 +372,7 @@ func Test_authzFilter(t *testing.T) {
 						"gitlab2.mine/u2/r0",
 						"otherHost/r0",
 					),
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab1.mine/u1/r0",
 						"gitlab1.mine/org/r0",
 						"gitlab2.mine/u2/r0",
@@ -402,7 +434,7 @@ func Test_authzFilter(t *testing.T) {
 						acct(1, "gitlab", "https://gitlab0.mine/", "u1"),
 						acct(1, "gitlab", "https://gitlab1.mine/", "u1"),
 					},
-					repos: makeRepos(
+					repos: getRepos(
 						"gitlab0.mine/u1/r0",
 						"gitlab0.mine/u2/r0",
 						"gitlab0.mine/org/r0",
@@ -412,7 +444,7 @@ func Test_authzFilter(t *testing.T) {
 						"gitlab2.mine/u2/r0",
 						"otherHost/r0",
 					),
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab0.mine/u1/r0",
 						"gitlab0.mine/org/r0",
 						"gitlab1.mine/u1/r0",
@@ -459,14 +491,14 @@ func Test_authzFilter(t *testing.T) {
 					description:  "u1 has access to the right repos",
 					user:         &types.User{ID: 1},
 					userAccounts: []*extsvc.ExternalAccount{acct(1, "saml", "https://okta.mine/", "u1")},
-					repos: makeRepos(
+					repos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/u2/r0",
 						"gitlab.mine/org/r0",
 						"gitlab.mine/public/r0",
 					),
 					perm: authz.Read,
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/org/r0",
 						"gitlab.mine/public/r0",
@@ -476,13 +508,13 @@ func Test_authzFilter(t *testing.T) {
 					description:  "u99 has access to public repos only",
 					user:         &types.User{ID: 1},
 					userAccounts: []*extsvc.ExternalAccount{acct(1, "saml", "https://okta.mine/", "u99")},
-					repos: makeRepos(
+					repos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/u2/r0",
 						"gitlab.mine/org/r0",
 						"gitlab.mine/public/r0",
 					),
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab.mine/public/r0",
 					),
 					perm: authz.Read,
@@ -491,13 +523,13 @@ func Test_authzFilter(t *testing.T) {
 					description:  "service ID does not match",
 					user:         &types.User{ID: 1},
 					userAccounts: []*extsvc.ExternalAccount{acct(1, "saml", "https://rando.mine/", "u1")},
-					repos: makeRepos(
+					repos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/u2/r0",
 						"gitlab.mine/org/r0",
 						"gitlab.mine/public/r0",
 					),
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab.mine/public/r0",
 					),
 					perm: authz.Read,
@@ -506,13 +538,13 @@ func Test_authzFilter(t *testing.T) {
 					description:  "unauthenticated user",
 					user:         nil,
 					userAccounts: nil,
-					repos: makeRepos(
+					repos: getRepos(
 						"gitlab.mine/u1/r0",
 						"gitlab.mine/u2/r0",
 						"gitlab.mine/org/r0",
 						"gitlab.mine/public/r0",
 					),
-					expFilteredRepos: makeRepos(
+					expFilteredRepos: getRepos(
 						"gitlab.mine/public/r0",
 					),
 					perm: authz.Read,
@@ -802,21 +834,21 @@ func makeRepo(name api.RepoName, id api.RepoID) *types.Repo {
 		extName = strconv.Itoa(int(id))
 	}
 	return &types.Repo{
-
 		ID:   id,
 		Name: name,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          extName,
 			ServiceType: "mock",
 			ServiceID:   "mock",
-		}}
+		},
+	}
 
 }
 
 func makeRepos(names ...api.RepoName) []*types.Repo {
 	repos := make([]*types.Repo, len(names))
 	for i, name := range names {
-		repos[i] = makeRepo(name, 0)
+		repos[i] = makeRepo(name, api.RepoID(i+1))
 	}
 	return repos
 }
