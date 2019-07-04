@@ -80,7 +80,7 @@ func isInternalActor(ctx context.Context) bool {
 	return actor.FromContext(ctx).Internal
 }
 
-func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*types.Repo, p authz.Perms) (accepted []*types.Repo, err error) {
+func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*types.Repo, p authz.Perms) (filtered []*types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "getFilteredRepos", "")
 	defer func() {
 		if err != nil {
@@ -90,7 +90,7 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		fields := []otlog.Field{
 			otlog.String("permission", string(p)),
 			otlog.Int("repos.count", len(repos)),
-			otlog.Int("authorized.count", len(accepted)),
+			otlog.Int("filtered.count", len(filtered)),
 		}
 
 		if currentUser != nil {
@@ -111,8 +111,8 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		}
 	}
 
-	accepted = make([]*types.Repo, 0, len(repos))  // repositories that have been claimed and have read permissions
-	toverify := make([]*types.Repo, 0, len(repos)) // repositories that have not been claimed by any authz provider
+	accepted := make(map[*types.Repo]struct{}, len(repos)) // repositories that have been claimed and have read permissions
+	toverify := make([]*types.Repo, 0, len(repos))         // repositories that have not been claimed by any authz provider
 	for _, repo := range repos {
 		// 🚨 SECURITY: Defensively bar access to repos with no external repo spec (we don't know
 		// where they came from, so can't reliably enforce permissions). If external repo spec is
@@ -121,7 +121,7 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		if repo.ExternalRepo.IsSet() {
 			toverify = append(toverify, repo)
 		} else if authzAllowByDefault && len(authzProviders) == 0 {
-			accepted = append(accepted, repo)
+			accepted[repo] = struct{}{}
 		}
 	}
 
@@ -165,7 +165,7 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 
 		for _, r := range perms {
 			if r.Perms.Include(p) {
-				accepted = append(accepted, r.Repo)
+				accepted[r.Repo] = struct{}{}
 			}
 		}
 
@@ -175,9 +175,16 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 
 	if authzAllowByDefault {
 		for _, r := range toverify {
-			accepted = append(accepted, r)
+			accepted[r] = struct{}{}
 		}
 	}
 
-	return accepted, nil
+	filtered = make([]*types.Repo, 0, len(accepted))
+	for _, r := range repos {
+		if _, ok := accepted[r]; ok {
+			filtered = append(filtered, r)
+		}
+	}
+
+	return filtered, nil
 }

@@ -254,6 +254,27 @@ func Test_authzFilter(t *testing.T) {
 			description:         "2 authz providers, ext accounts exist",
 			authzAllowByDefault: true,
 			authzProviders: []authz.Provider{
+				// Order of Providers matters, so we test that the returned
+				// filtered repos are in the same order as the input repos.
+				&MockAuthzProvider{
+					serviceID:   "https://gitlab1.mine/",
+					serviceType: "gitlab",
+					repos: map[api.RepoName]struct{}{
+						"gitlab1.mine/u1/r0":  {},
+						"gitlab1.mine/u2/r0":  {},
+						"gitlab1.mine/org/r0": {},
+					},
+					perms: map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{
+						*acct(1, "gitlab", "https://gitlab1.mine/", "u1"): {
+							"gitlab1.mine/u1/r0":  authz.Read,
+							"gitlab1.mine/org/r0": authz.Read,
+						},
+						*acct(2, "gitlab", "https://gitlab1.mine/", "u2"): {
+							"gitlab1.mine/u2/r0":  authz.Read,
+							"gitlab1.mine/org/r0": authz.Read,
+						},
+					},
+				},
 				&MockAuthzProvider{
 					serviceID:   "https://gitlab0.mine/",
 					serviceType: "gitlab",
@@ -271,25 +292,6 @@ func Test_authzFilter(t *testing.T) {
 							"gitlab0.mine/u1/r0":  authz.None,
 							"gitlab0.mine/u2/r0":  authz.Read,
 							"gitlab0.mine/org/r0": authz.Read,
-						},
-					},
-				},
-				&MockAuthzProvider{
-					serviceID:   "https://gitlab1.mine/",
-					serviceType: "gitlab",
-					repos: map[api.RepoName]struct{}{
-						"gitlab1.mine/u1/r0":  {},
-						"gitlab1.mine/u2/r0":  {},
-						"gitlab1.mine/org/r0": {},
-					},
-					perms: map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{
-						*acct(1, "gitlab", "https://gitlab1.mine/", "u1"): {
-							"gitlab1.mine/u1/r0":  authz.Read,
-							"gitlab1.mine/org/r0": authz.Read,
-						},
-						*acct(2, "gitlab", "https://gitlab1.mine/", "u2"): {
-							"gitlab1.mine/u2/r0":  authz.Read,
-							"gitlab1.mine/org/r0": authz.Read,
 						},
 					},
 				},
