@@ -3692,15 +3692,17 @@ type ProductSubscriptionEvent {
     url: String
 }
 
-# The type of a StatusMessage
+# The type of a StatusMessage.
 enum StatusMessageType {
     CLONING
     SYNCERROR
 }
 
-# A single metadata element attached to a statusmessage
+# A single metadata element attached to a statusmessage.
 type StatusMessageMetadata {
+    # The name of this metadata pair.
     name: String!
+    # The data of this metadata pair.
     value: String!
 }
 
