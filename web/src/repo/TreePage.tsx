@@ -3,6 +3,7 @@ import * as H from 'history'
 import { escapeRegExp, upperFirst } from 'lodash'
 import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
+import SearchIcon from 'mdi-react/SearchIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import TagIcon from 'mdi-react/TagIcon'
@@ -24,16 +25,13 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
-import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
 import { searchQueryForRepoRev } from '../search'
-import { submitSearch } from '../search/helpers'
-import { QueryInput } from '../search/input/QueryInput'
-import { SearchButton } from '../search/input/SearchButton'
 import { ThemeProps } from '../theme'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
 import { basename } from '../util/path'
@@ -275,20 +273,13 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 </header>
                             )}
                             <section className="tree-page__section">
-                                <h3 className="tree-page__section-header">
+                                <Link
+                                    className="btn btn-primary d-inline-flex align-items-center"
+                                    to={`/search?${buildSearchURLQuery(this.getQueryPrefix())}`}
+                                >
+                                    <SearchIcon className="icon-inline"></SearchIcon>
                                     Search in this {this.props.filePath ? 'tree' : 'repository'}
-                                </h3>
-                                <Form className="tree-page__section-search" onSubmit={this.onSubmit}>
-                                    <QueryInput
-                                        {...this.props}
-                                        value={this.state.query}
-                                        onChange={this.onQueryChange}
-                                        prependQueryForSuggestions={this.getQueryPrefix()}
-                                        autoFocus={true}
-                                        placeholder=""
-                                    />
-                                    <SearchButton />
-                                </Form>
+                                </Link>
                             </section>
                             <TreeEntriesSection
                                 title="Files and directories"
@@ -364,18 +355,6 @@ export class TreePage extends React.PureComponent<Props, State> {
                         </>
                     ))}
             </div>
-        )
-    }
-
-    private onQueryChange = (query: string) => this.setState({ query })
-
-    private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
-        event.preventDefault()
-        submitSearch(
-            this.props.history,
-            this.getQueryPrefix() + this.state.query,
-            this.props.filePath ? 'tree' : 'repo',
-            this.props.activation
         )
     }
 
