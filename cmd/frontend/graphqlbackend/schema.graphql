@@ -805,15 +805,15 @@ type Query {
     # (experimental) Sourcegraph 3.6 added support for cursor-based paginated
     # search requests. The typical request flow looks like:
     #
-    # - Fetch results 0-100: `search(query:"some query", cursor:null, limit:100)`
-    # - Fetch results 100-200: `search(query:"some query", cursor:Search.cursor, limit:100)`
+    # - Fetch results 0-100: 'search(query:"some query", cursor:null, limit:100)'
+    # - Fetch results 100-200: 'search(query:"some query", cursor:Search.cursor, limit:100)'
     #
     # And so on, until Search.finished is true.
     #
     # It is important to take note that Sourcegraph performs (nearly) live
     # searches and as such when intending to display results to a user it is
-    # very important to choose a small `limit` in order to get a response
-    # quickly in all cases. For example, a request for `limit:10000` may
+    # very important to choose a small 'limit' in order to get a response
+    # quickly in all cases. For example, a request for 'limit:10000' may
     # complete very quickly if the search term is a common one found in most
     # repositories whereas it may take much longer if the result exists in only
     # one repository and Sourcegraph has to search all other repositories first.
@@ -839,7 +839,7 @@ type Query {
     # be returning to you a subset of the overall result set. An easy way to
     # visualize the behavior is as follows:
     #
-    # 1. Sourcegraph has a complete ordered result set `[a, b, c, ..., z]`
+    # 1. Sourcegraph has a complete ordered result set '[a, b, c, ..., z]'
     # 2. At any point you may request a subset of that complete result set via
     #    a paginated request acting like array indexing / slicing.
     # 3. At any point in time the addition/removal of results, or upgrade of
@@ -863,7 +863,7 @@ type Query {
         # paginated and results should be limited to this amount.
         #
         # A future request can be made for more results by passing in the
-        # `Search.cursor` that is returned.
+        # 'Search.cursor' that is returned.
         limit: Int
     ): Search
     # All saved searches configured for the current user, merged from all configurations.
@@ -926,7 +926,7 @@ type Search {
     # data.
     stats: SearchResultsStats!
     # The cursor that can be passed into a future search request in order to
-    # fetch more results starting where this search left off. See the `search`
+    # fetch more results starting where this search left off. See the 'search'
     # resolver for more details.
     #
     # Only valid when the original request was a paginated one.
