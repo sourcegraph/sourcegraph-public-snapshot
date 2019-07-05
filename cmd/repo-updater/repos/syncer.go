@@ -317,9 +317,7 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 	}
 
 	srcs, err := s.sourcer(svcs...)
-	if multiSourceErr, ok := err.(*MultiSourceError); ok {
-		s.setMultiSourceErr(multiSourceErr)
-	}
+	s.setOrResetMultiSourceErr(err)
 	if err != nil {
 		return nil, err
 	}
@@ -328,16 +326,20 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 	defer cancel()
 
 	repos, err := srcs.ListRepos(ctx)
-	if multiSourceErr, ok := err.(*MultiSourceError); ok {
-		s.setMultiSourceErr(multiSourceErr)
-	}
+	s.setOrResetMultiSourceErr(err)
 
 	return repos, err
 }
 
-func (s *Syncer) setMultiSourceErr(err *MultiSourceError) {
+func (s *Syncer) setOrResetMultiSourceErr(err error) {
 	s.multiSourceErrMu.Lock()
-	s.multiSourceErr = err
+
+	if multiSourceErr, ok := err.(*MultiSourceError); ok {
+		s.multiSourceErr = multiSourceErr
+	} else {
+		s.multiSourceErr = nil
+	}
+
 	s.multiSourceErrMu.Unlock()
 }
 
