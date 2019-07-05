@@ -179,12 +179,16 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 
 		// check the perms on our repos
 		perms, err := authzProvider.RepoPerms(ctx, providerAcct, ours)
-		if err != nil {
-			pool.Put(&ours)
-			return nil, err
+
+		for i := range ours {
+			ours[i] = nil // Let the GC take these back
 		}
 
 		pool.Put(&ours)
+
+		if err != nil {
+			return nil, err
+		}
 
 		for _, r := range perms {
 			if r.Perms.Include(p) {
