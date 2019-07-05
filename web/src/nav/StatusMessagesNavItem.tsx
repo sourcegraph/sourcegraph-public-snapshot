@@ -3,7 +3,7 @@ import CloudAlertIcon from 'mdi-react/CloudAlertIcon'
 import CloudCheckIcon from 'mdi-react/CloudCheckIcon'
 import CloudSyncIcon from 'mdi-react/CloudSyncIcon'
 import React from 'react'
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { ButtonDropdown, DropdownMenu, DropdownToggle, DropdownItem } from 'reactstrap'
 import { Observable, SchedulerLike, Subscription, timer } from 'rxjs'
 import { catchError, concatMap, map } from 'rxjs/operators'
 import { Link } from '../../../shared/src/components/Link'
@@ -185,7 +185,17 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             <p className="alert alert-danger">{startCase(this.state.messagesOrError.message)}</p>
                         </div>
                     ) : this.state.messagesOrError.length > 0 ? (
-                        this.state.messagesOrError.map(m => this.renderMessage(m))
+                        this.state.messagesOrError.map((m, i) => {
+                            if (!isErrorLike(this.state.messagesOrError) && i < this.state.messagesOrError.length - 1) {
+                                return (
+                                    <div>
+                                        {this.renderMessage(m)}
+                                        <DropdownItem divider={true}></DropdownItem>
+                                    </div>
+                                )
+                            }
+                            return this.renderMessage(m)
+                        })
                     ) : (
                         <StatusMessagesNavItemEntry
                             title="Repositories up to date"
