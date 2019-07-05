@@ -61,8 +61,15 @@ The plan is stored in the changeset. Each operation in the sequence consists of:
 A status consists of:
 
 - a group of related diagnostics
-- aggregateduser-facing container for related diagnostics and actions, plus the configuration used to generate and compute these diagnostics and actions.
+- aggregated user-facing container for related diagnostics and actions, plus the configuration used to generate and compute these diagnostics and actions.
 
+goal is to allow changesets to granularly select high-level actions using diagnostics+codeactions, and also to not require status providers to reimplement a lot of custom stuff for notifications.
+
+- idea: make notificationprovider be a function of the diagnostics that exist? assumption is that the diagnostics are the slow part to compute and can be precomputed on the backend, and the notificationprovider/status can then be frontend-only.
+
+TODO: how to cover new usages of your code, active people on this repo, diagnostics, etc.? rename diagnostics to annotations/notes?
+
+- other idea: statuses are just diagnostics (multiple categories thereof, like "wrong go version in CI" and "missing .travis.yml") and actions. there can be "fix all" actions for an entire category of diagnostic that creates a changeset using the default code action for all instances of that diagnostic category. the user can then go diagnostic-by-diagnostic and customize the code action if desired (including ignoring a diagnostic, ie the null code action). any new instances of that diagnostic found are added to the changeset (if it's an auto-changeset) with the default code action. **TODO!(sqs): this seems the most promising and simple**
 
 
 ## Notification
