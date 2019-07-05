@@ -3,7 +3,7 @@ import { SearchFilters } from '../../../../shared/src/api/protocol'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { QuickLink } from '../../schema/settings.schema'
 import { FilterChip } from '../FilterChip'
-import { isSearchResults } from '../helpers'
+import { isSearchResults, queryIndexOfScope } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 
 export interface SearchScopeWithOptionalName {
@@ -40,7 +40,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                             .filter(filter => filter.value !== '')
                             .map((filter, i) => (
                                 <FilterChip
-                                    query={navbarSearchQuery}
+                                    isSelected={isScopeSelected(navbarSearchQuery, filter.value)}
                                     onFilterChosen={onFilterClick}
                                     key={filter.name + filter.value}
                                     value={filter.value}
@@ -51,7 +51,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                         .filter(filter => filter.value !== '')
                         .map((filter, i) => (
                             <FilterChip
-                                query={navbarSearchQuery}
+                                isSelected={isScopeSelected(navbarSearchQuery, filter.value)}
                                 onFilterChosen={onFilterClick}
                                 key={filter.name + filter.value}
                                 value={filter.value}
@@ -70,7 +70,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                         .map((filter, i) => (
                             <FilterChip
                                 name={filter.label}
-                                query={navbarSearchQuery}
+                                isSelected={isScopeSelected(navbarSearchQuery, filter.value)}
                                 onFilterChosen={onFilterClick}
                                 key={filter.value}
                                 value={filter.value}
@@ -81,7 +81,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                     {results.limitHit && !/\brepo:/.test(navbarSearchQuery) && (
                         <FilterChip
                             name="Show more"
-                            query={navbarSearchQuery}
+                            isSelected={false}
                             onFilterChosen={onShowMoreResultsClick}
                             key={`count:${calculateShowMoreResultsCount()}`}
                             value={`count:${calculateShowMoreResultsCount()}`}
@@ -100,3 +100,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
         )}
     </div>
 )
+
+function isScopeSelected(query: string, scope: string): boolean {
+    return queryIndexOfScope(query, scope) !== -1
+}

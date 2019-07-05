@@ -13,7 +13,12 @@ import { routes } from '../../routes'
 import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { FilterChip } from '../FilterChip'
-import { submitSearch, toggleSearchFilter, toggleSearchFilterAndReplaceSampleRepogroup } from '../helpers'
+import {
+    queryIndexOfScope,
+    submitSearch,
+    toggleSearchFilter,
+    toggleSearchFilterAndReplaceSampleRepogroup,
+} from '../helpers'
 
 interface Props extends SettingsCascadeProps {
     location: H.Location
@@ -63,7 +68,7 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                     .filter(scope => scope.value !== '')
                     .map((scope, i) => (
                         <FilterChip
-                            query={this.props.query}
+                            isSelected={isScopeSelected(this.props.query, scope.value)}
                             onFilterChosen={this.onSearchScopeClicked}
                             key={i}
                             value={scope.value}
@@ -173,4 +178,8 @@ function scopeForRepo(repoName: string): ISearchScope {
     return {
         value: `repo:^${escapeRegExp(repoName)}$`,
     }
+}
+
+function isScopeSelected(query: string, scope: string): boolean {
+    return queryIndexOfScope(query, scope) !== -1
 }
