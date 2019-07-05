@@ -163,9 +163,7 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 			theirs      = toverify[:0]
 		)
 
-		// 🚨 SECURITY: Repositories that have their ExternalRepo fields unset won't be selected
-		// to the `mine` set by the authz.GetCodeHostRepos function which is used to implement Repos
-		// in each Provider we have, so they will remain in toverify after we looped through all providers.
+		// 🚨 SECURITY: Repositories that have their ExternalRepo fields unset will remain in unverified.
 		for _, r := range toverify {
 			if r.ExternalRepo.ServiceType == serviceType && r.ExternalRepo.ServiceID == serviceID {
 				ours = append(ours, r)
