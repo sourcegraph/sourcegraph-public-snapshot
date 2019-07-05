@@ -89,6 +89,30 @@ function registerStatusProvider(
                 // TODO!(sqs): dont ignore scope
                 diagnostics.pipe(
                     switchMap(async diagnostics => [
+                        {
+                            message: 'Build failures on default branch',
+                            type: sourcegraph.NotificationType.Error,
+                            actions: [
+                                {
+                                    command: {
+                                        command: 'TODO!(sqs)',
+                                        title: 'sourcegraph/codeintellify (31 minutes ago)',
+                                    },
+                                },
+                                {
+                                    command: {
+                                        command: 'TODO!(sqs)',
+                                        title: 'sourcegraph/go-diff (7 hours ago)',
+                                    },
+                                },
+                                {
+                                    command: {
+                                        command: 'TODO!(sqs)',
+                                        title: 'sourcegraph/syntect_server (1 day ago)',
+                                    },
+                                },
+                            ],
+                        },
                         ...((diagnostics.length > 0
                             ? [
                                   {
@@ -117,30 +141,6 @@ function registerStatusProvider(
                                   },
                               ]
                             : []) as sourcegraph.Notification[]),
-                        {
-                            message: 'Build failures on default branch',
-                            type: sourcegraph.NotificationType.Error,
-                            actions: [
-                                {
-                                    command: {
-                                        command: 'TODO!(sqs)',
-                                        title: 'sourcegraph/codeintellify (31 minutes ago)',
-                                    },
-                                },
-                                {
-                                    command: {
-                                        command: 'TODO!(sqs)',
-                                        title: 'sourcegraph/go-diff (7 hours ago)',
-                                    },
-                                },
-                                {
-                                    command: {
-                                        command: 'TODO!(sqs)',
-                                        title: 'sourcegraph/syntect_server (1 day ago)',
-                                    },
-                                },
-                            ],
-                        },
                         {
                             message: 'Missing Travis CI configuration',
                             type: sourcegraph.NotificationType.Warning,

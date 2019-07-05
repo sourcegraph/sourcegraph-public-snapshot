@@ -58,8 +58,13 @@ The plan is stored in the changeset. Each operation in the sequence consists of:
 
 ## Status
 
+A status consists of:
+
+- a group of related diagnostics
+- aggregateduser-facing container for related diagnostics and actions, plus the configuration used to generate and compute these diagnostics and actions.
+
 
 
 ## Notification
 
-A notification consists of a message, actions, and contextual information about the current state. 
+A notification consists of a message, actions, and contextual information about the current state.

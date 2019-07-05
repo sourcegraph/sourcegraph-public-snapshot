@@ -76,7 +76,7 @@ export const StatusArea: React.FunctionComponent<Props> = ({ name, scope, status
                 <ErrorBoundary location={props.location}>
                     <Switch>
                         <Route path={statusURL} exact={true}>
-                            <StatusNotificationsPage {...context} className="mt-3" />
+                            <StatusNotificationsPage {...context} className="mt-3 container" />
                         </Route>
                         <Route path={`${statusURL}/issues`} exact={true}>
                             <StatusIssuesPage {...context} />
