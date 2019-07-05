@@ -82,7 +82,12 @@ func isInternalActor(ctx context.Context) bool {
 	return actor.FromContext(ctx).Internal
 }
 
-var pool = sync.Pool{New: func() interface{} { return make([]*types.Repo, 0, 2048) }}
+var pool = sync.Pool{
+	New: func() interface{} {
+		repos := make([]*types.Repo, 0, 2048)
+		return &repos
+	},
+}
 
 func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*types.Repo, p authz.Perms) (filtered []*types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "getFilteredRepos", "")
@@ -159,7 +164,7 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		var (
 			serviceType = authzProvider.ServiceType()
 			serviceID   = authzProvider.ServiceID()
-			ours        = pool.Get().([]*types.Repo)[:0]
+			ours        = (*(pool.Get().(*[]*types.Repo)))[:0]
 			theirs      = toverify[:0]
 		)
 
@@ -175,11 +180,11 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		// check the perms on our repos
 		perms, err := authzProvider.RepoPerms(ctx, providerAcct, ours)
 		if err != nil {
-			pool.Put(ours)
+			pool.Put(&ours)
 			return nil, err
 		}
 
-		pool.Put(ours)
+		pool.Put(&ours)
 
 		for _, r := range perms {
 			if r.Perms.Include(p) {
