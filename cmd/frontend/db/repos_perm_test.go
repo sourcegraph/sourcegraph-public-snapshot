@@ -112,12 +112,6 @@ type fakeProvider struct {
 	extAcct  *extsvc.ExternalAccount
 }
 
-func (f fakeProvider) Repos(ctx context.Context, repos []*types.Repo) (
-	mine, others []*types.Repo,
-) {
-	return authz.GetCodeHostRepos(f.codeHost, repos)
-}
-
 func (f fakeProvider) RepoPerms(
 	ctx context.Context,
 	userAccount *extsvc.ExternalAccount,

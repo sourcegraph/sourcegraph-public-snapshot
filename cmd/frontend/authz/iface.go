@@ -20,18 +20,11 @@ import (
 // In most cases, an authz provider represents a code host, because it is the source of truth for
 // repository permissions.
 type Provider interface {
-	// Repos partitions the set of repositories into two sets: the set of repositories for which
-	// this AuthzProvider is the source of permissions and the set of repositories for which it is
-	// not. Each repository in the input set must be represented in exactly one of the output sets.
-	//
-	// This should not depend on the current user. Implementations should not use the context to
-	// determine anything about the current user.
-	Repos(ctx context.Context, repos []*types.Repo) (mine, others []*types.Repo)
-
-	// RepoPerms accepts an external user account and a set of repos. The external user account
-	// identifies the user to the authz source (e.g., the code host). The return value is a slice of
-	// repository permissions. If a repo in the input slice is missing from the returned permissions
-	// slice, that means "no permissions" on that repo.
+	// RepoPerms accepts an external user account and a set of repos whose external service id and type
+	// matches the Provider's `ServiceID()` and `ServiceType()`. The external user account identifies the
+	// user to the authz source (e.g., the code host). The return value is a slice of repository permissions.
+	// If a repo in the input slice is missing from the returned permissions slice, that means "no permissions"
+	// on that repo.
 	//
 	// Implementations should handle any external account whose ServiceID and ServiceType values
 	// match the `ServiceID()` and `ServiceType()` return values of this authz provider. The caller

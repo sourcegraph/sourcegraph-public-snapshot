@@ -68,12 +68,6 @@ func (p *GitLabOAuthAuthzProvider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *GitLabOAuthAuthzProvider) Repos(ctx context.Context, repos []*types.Repo) (mine, others []*types.Repo) {
-	// Note(beyang): this is identical to SudoProvider.Repos, which is not explicitly
-	// unit-tested. If this impl ever changes, unit tests should be added for SudoProvider.Repos.
-	return authz.GetCodeHostRepos(p.codeHost, repos)
-}
-
 func (p *GitLabOAuthAuthzProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
 	return nil, nil
 }
@@ -86,7 +80,7 @@ func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsv
 		accountID = account.AccountID
 	}
 
-	remaining, _ := p.Repos(ctx, repos)
+	remaining := repos
 	perms := make([]authz.RepoPerms, 0, len(remaining))
 
 	// Populate perms using cached repository visibility information.

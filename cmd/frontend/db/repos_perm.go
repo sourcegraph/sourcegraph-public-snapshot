@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"sync"
 
 	"github.com/RoaringBitmap/roaring"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -81,6 +82,8 @@ func isInternalActor(ctx context.Context) bool {
 	return actor.FromContext(ctx).Internal
 }
 
+var pool = sync.Pool{New: func() interface{} { return make([]*types.Repo, 0, 2048) }}
+
 func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*types.Repo, p authz.Perms) (filtered []*types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "getFilteredRepos", "")
 	defer func() {
@@ -116,8 +119,12 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		}
 	}
 
-	toverify := repos[:]
 	verified := roaring.NewBitmap()
+	toverify := make([]*types.Repo, len(repos))
+
+	// We need to preserve the order of repos and we do in-place mutation
+	// in toverify, so we must copy.
+	copy(toverify, repos)
 
 	// Walk through all authz providers, checking repo permissions against each. If any own a given
 	// repo, we use its permissions for that repo.
@@ -134,6 +141,7 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 				break
 			}
 		}
+
 		if providerAcct == nil && currentUser != nil { // no existing external account for authz provider
 			if pr, err := authzProvider.FetchAccount(ctx, currentUser, accts); err == nil {
 				providerAcct = pr
@@ -148,16 +156,32 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 			}
 		}
 
+		var (
+			serviceType = authzProvider.ServiceType()
+			serviceID   = authzProvider.ServiceID()
+			ours        = pool.Get().([]*types.Repo)[:0]
+			theirs      = toverify[:0]
+		)
+
 		// 🚨 SECURITY: Repositories that have their ExternalRepo fields unset won't be selected
 		// to the `mine` set by the authz.GetCodeHostRepos function which is used to implement Repos
 		// in each Provider we have, so they will remain in toverify after we looped through all providers.
-		mine, others := authzProvider.Repos(ctx, toverify)
+		for _, r := range toverify {
+			if r.ExternalRepo.ServiceType == serviceType && r.ExternalRepo.ServiceID == serviceID {
+				ours = append(ours, r)
+			} else {
+				theirs = append(theirs, r) // In-place filtering of toverify
+			}
+		}
 
-		// check the perms on those repos
-		perms, err := authzProvider.RepoPerms(ctx, providerAcct, mine)
+		// check the perms on our repos
+		perms, err := authzProvider.RepoPerms(ctx, providerAcct, ours)
 		if err != nil {
+			pool.Put(ours)
 			return nil, err
 		}
+
+		pool.Put(ours)
 
 		for _, r := range perms {
 			if r.Perms.Include(p) {
@@ -166,7 +190,7 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		}
 
 		// continue checking repos that didn't belong to this authz provider
-		toverify = others
+		toverify = theirs
 	}
 
 	if authzAllowByDefault {
@@ -179,11 +203,15 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		}
 	}
 
-	filtered = make([]*types.Repo, 0, verified.GetCardinality())
+	filtered = repos[:0]
 	for _, r := range repos {
 		if verified.Contains(uint32(r.ID)) {
-			filtered = append(filtered, r)
+			filtered = append(filtered, r) // In-place filtering
 		}
+	}
+
+	for i := len(filtered); i < len(repos); i++ {
+		repos[i] = nil // Let GC take these back
 	}
 
 	return filtered, nil

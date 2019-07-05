@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"reflect"
 	"strconv"
 	"testing"
@@ -63,19 +64,22 @@ func (r authzFilter_Test) run(t *testing.T) {
 		Mocks.ExternalAccounts.AssociateUserAndSave = func(userID int32, spec extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) error { return nil }
 		Mocks.ExternalAccounts.List = func(ExternalAccountsListOptions) ([]*extsvc.ExternalAccount, error) { return c.userAccounts, nil }
 
+		getNames := func(rs []*types.Repo) []string {
+			a := make([]string, len(rs))
+			for i, v := range rs {
+				a[i] = string(v.Name)
+			}
+			return a
+		}
+
 		filteredRepos, err := authzFilter(ctx, c.repos, c.perm)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		if !reflect.DeepEqual(filteredRepos, c.expFilteredRepos) {
-			a := make([]api.RepoName, len(filteredRepos))
-			for i, v := range filteredRepos {
-				a[i] = v.Name
-			}
-			e := make([]api.RepoName, len(c.expFilteredRepos))
-			for i, v := range c.expFilteredRepos {
-				e[i] = v.Name
-			}
+			a := getNames(filteredRepos)
+			e := getNames(c.expFilteredRepos)
 			t.Errorf("Expected filtered repos\n\t%v\n, but got\n\t%v", e, a)
 		}
 	}
@@ -792,8 +796,6 @@ func (m *MockAuthzProvider) FetchAccount(ctx context.Context, user *types.User, 
 }
 
 func (m *MockAuthzProvider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos []*types.Repo) (retPerms []authz.RepoPerms, _ error) {
-	repos, _ = m.Repos(ctx, repos)
-
 	if acct == nil {
 		acct = &extsvc.ExternalAccount{}
 	}
@@ -813,17 +815,6 @@ func (m *MockAuthzProvider) RepoPerms(ctx context.Context, acct *extsvc.External
 	return retPerms, nil
 }
 
-func (m *MockAuthzProvider) Repos(ctx context.Context, repos []*types.Repo) (mine, others []*types.Repo) {
-	for _, repo := range repos {
-		if _, ok := m.repos[repo.Name]; ok {
-			mine = append(mine, repo)
-		} else {
-			others = append(others, repo)
-		}
-	}
-	return mine, others
-}
-
 func (m *MockAuthzProvider) ServiceID() string   { return m.serviceID }
 func (m *MockAuthzProvider) ServiceType() string { return m.serviceType }
 func (m *MockAuthzProvider) Validate() []string  { return nil }
@@ -833,13 +824,20 @@ func makeRepo(name api.RepoName, id api.RepoID) *types.Repo {
 	if extName == "" {
 		extName = strconv.Itoa(int(id))
 	}
+
+	serviceID, err := url.Parse("https://" + string(name))
+	if err != nil {
+		panic(err)
+	}
+
+	serviceID.Path = "/"
 	return &types.Repo{
 		ID:   id,
 		Name: name,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          extName,
-			ServiceType: "mock",
-			ServiceID:   "mock",
+			ServiceType: "gitlab",
+			ServiceID:   serviceID.String(),
 		},
 	}
 

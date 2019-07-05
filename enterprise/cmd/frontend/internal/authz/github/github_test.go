@@ -93,7 +93,6 @@ func TestProvider_RepoPerms(t *testing.T) {
 		"r4":  rp("r4", "u99/private", "https://github.com/"),
 		"r5":  rp("r5", "u99/public", "https://github.com/"),
 		"r00": rp("r00", "404", "https://github.com/"),
-		"r11": rp("r11", "u0/public", "https://other.github.com/"),
 	}
 
 	tests := []Provider_RepoPerms_Test{
@@ -194,7 +193,6 @@ func TestProvider_RepoPerms(t *testing.T) {
 					userAccount: ua("u0", "t0"),
 					repos: []*types.Repo{
 						repos["r00"],
-						repos["r11"],
 					},
 					wantPerms: []authz.RepoPerms{
 						{Repo: repos["r00"], Perms: authz.None},

@@ -116,19 +116,13 @@ func (p *SudoProvider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *SudoProvider) Repos(ctx context.Context, repos []*types.Repo) (mine []*types.Repo, others []*types.Repo) {
-	// Note(beyang): this is identical to GitLabOAuthAuthzProvider.Repos, so is not explicitly
-	// unit-tested. If this impl ever changes, unit tests should be added.
-	return authz.GetCodeHostRepos(p.codeHost, repos)
-}
-
 func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos []*types.Repo) ([]authz.RepoPerms, error) {
 	accountID := "" // empty means public / unauthenticated to the code host
 	if account != nil && account.ServiceID == p.codeHost.ServiceID && account.ServiceType == p.codeHost.ServiceType {
 		accountID = account.AccountID
 	}
 
-	remaining, _ := p.Repos(ctx, repos)
+	remaining := repos
 	perms := make([]authz.RepoPerms, 0, len(remaining))
 
 	for _, repo := range remaining {

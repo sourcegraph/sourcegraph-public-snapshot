@@ -44,11 +44,6 @@ func NewProvider(githubURL *url.URL, baseToken string, cacheTTL time.Duration, m
 
 var _ authz.Provider = ((*Provider)(nil))
 
-// Repos implements the authz.Provider interface.
-func (p *Provider) Repos(ctx context.Context, repos []*types.Repo) (mine []*types.Repo, others []*types.Repo) {
-	return authz.GetCodeHostRepos(p.codeHost, repos)
-}
-
 // RepoPerms implements the authz.Provider interface.
 //
 // It computes permissions by keeping track of two classes of info:
@@ -59,7 +54,7 @@ func (p *Provider) Repos(ctx context.Context, repos []*types.Repo) (mine []*type
 // If not, then the info is computed by querying the GitHub API. A separate query is issued for each
 // repository (and for each user for the explicit case).
 func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) ([]authz.RepoPerms, error) {
-	remaining, _ := p.Repos(ctx, repos)
+	remaining := repos
 	remainingPublic := remaining
 	if len(remaining) == 0 {
 		return nil, nil
