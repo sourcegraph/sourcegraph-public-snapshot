@@ -1009,7 +1009,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				codemodResults, codemodCommon, err := callCodemod(ctx, &args)
+				codemodResults, codemodCommon, err := performCodemod(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
@@ -1068,6 +1068,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		results:             results,
 		alert:               alert,
 	}
+
 	return &resultsResolver, multiErr.ErrorOrNil()
 }
 
@@ -1084,7 +1085,7 @@ func isContextError(ctx context.Context, err error) bool {
 //   - *repositoryResolver         // repo name match
 //   - *fileMatchResolver          // text match
 //   - *commitSearchResultResolver // diff or commit match
-//   - *codemodResultResolver      // codemod
+//   - *codemodResultResolver      // code modification
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type searchResultResolver interface {
