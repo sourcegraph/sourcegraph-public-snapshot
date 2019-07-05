@@ -189,7 +189,7 @@ type StatusMessageMetadata struct {
 type StatusMessage struct {
 	Message  string                  `json:"message"`
 	Type     StatusMessageType       `json:"type"`
-	Metadata []StatusMessageMetadata `json":metadata"`
+	Metadata []StatusMessageMetadata `json:"metadata"`
 }
 
 type StatusMessagesResponse struct {

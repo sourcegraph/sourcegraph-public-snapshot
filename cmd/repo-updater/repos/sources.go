@@ -119,7 +119,7 @@ type MultiSourceError struct {
 func (s *MultiSourceError) Error() string {
 	errs := new(multierror.Error)
 	for _, e := range s.Errors {
-		multierror.Append(errs, e)
+		errs = multierror.Append(errs, e)
 	}
 	return errs.Error()
 }
