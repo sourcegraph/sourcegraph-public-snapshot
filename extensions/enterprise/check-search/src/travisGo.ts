@@ -88,37 +88,78 @@ function registerStatusProvider(
             provideNotifications: scope =>
                 // TODO!(sqs): dont ignore scope
                 diagnostics.pipe(
-                    switchMap(
-                        async diagnostics =>
-                            (diagnostics.length > 0
-                                ? [
-                                      {
-                                          message: 'Outdated Go version specified in Travis CI configuration',
-                                          type: sourcegraph.NotificationType.Info,
-                                          actions: [
-                                              {
-                                                  plan: {
-                                                      title: 'Use latest Go version in all .travis.yml files',
-                                                      operations: [
-                                                          {
-                                                              command: {
-                                                                  command: FIX_GO_VERSION_COMMAND_ID,
-                                                              },
+                    switchMap(async diagnostics => [
+                        ...((diagnostics.length > 0
+                            ? [
+                                  {
+                                      message: 'Outdated Go version specified in Travis CI configuration',
+                                      type: sourcegraph.NotificationType.Info,
+                                      actions: [
+                                          {
+                                              plan: {
+                                                  title: 'Use latest Go version in all .travis.yml files',
+                                                  operations: [
+                                                      {
+                                                          command: {
+                                                              command: FIX_GO_VERSION_COMMAND_ID,
                                                           },
-                                                      ],
-                                                  },
+                                                      },
+                                                  ],
                                               },
-                                              {
-                                                  command: {
-                                                      command: 'TODO!(sqs)',
-                                                      title: 'Change preferred Go version (1.13)',
-                                                  },
+                                          },
+                                          {
+                                              command: {
+                                                  command: 'TODO!(sqs)',
+                                                  title: 'Change preferred Go version (1.13)',
                                               },
-                                          ],
-                                      },
-                                  ]
-                                : []) as sourcegraph.Notification[]
-                    )
+                                          },
+                                      ],
+                                  },
+                              ]
+                            : []) as sourcegraph.Notification[]),
+                        {
+                            message: 'Build failures on default branch',
+                            type: sourcegraph.NotificationType.Error,
+                            actions: [
+                                {
+                                    command: {
+                                        command: 'TODO!(sqs)',
+                                        title: 'sourcegraph/codeintellify (31 minutes ago)',
+                                    },
+                                },
+                                {
+                                    command: {
+                                        command: 'TODO!(sqs)',
+                                        title: 'sourcegraph/go-diff (7 hours ago)',
+                                    },
+                                },
+                                {
+                                    command: {
+                                        command: 'TODO!(sqs)',
+                                        title: 'sourcegraph/syntect_server (1 day ago)',
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            message: 'Missing Travis CI configuration',
+                            type: sourcegraph.NotificationType.Warning,
+                            actions: [
+                                {
+                                    plan: {
+                                        title: 'Infer .travis.yml (best-effort) for repositories lacking it',
+                                        operations: [
+                                            {
+                                                command: {
+                                                    command: 'TODO!(sqs)',
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    ])
                 ),
         })
     )

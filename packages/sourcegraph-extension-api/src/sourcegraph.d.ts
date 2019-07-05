@@ -1133,6 +1133,10 @@ declare module 'sourcegraph' {
          * The [actions](#Action) that this notification presents.
          */
         readonly actions?: readonly Action[]
+
+        /**
+         *
+         */
     }
 
     /**

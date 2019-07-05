@@ -50,7 +50,7 @@ export const NotificationActions: React.FunctionComponent<Props> = ({
                             action={action}
                             onClick={onCommandActionClick}
                             disabled={disabled}
-                            className="btn btn-sm btn-secondary mr-3 mb-3"
+                            className="btn btn-secondary mr-3 mb-3"
                         />
                     ))}
                 </div>
