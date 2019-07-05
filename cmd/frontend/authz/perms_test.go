@@ -55,7 +55,7 @@ func TestPermsString(t *testing.T) {
 		{Write, "write"},
 		{Read | Write, "read,write"},
 		{Write | Read, "read,write"},
-		{Write | Read, "read,write"},
+		{Write | Read | None, "read,write"},
 	} {
 		if have, want := tc.String(), tc.want; have != want {
 			t.Errorf(
