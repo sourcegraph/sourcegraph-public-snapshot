@@ -803,7 +803,7 @@ func (m *MockAuthzProvider) RepoPerms(ctx context.Context, acct *extsvc.External
 
 	userPerms := m.perms[*acct]
 	for _, repo := range repos {
-		if _, ok := userPerms[repo.Name]; ok {
+		if userPerms[repo.Name].Include(authz.Read) {
 			retPerms = append(retPerms, authz.RepoPerms{
 				Repo:  repo,
 				Perms: authz.Read,

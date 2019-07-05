@@ -103,8 +103,12 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		tr.Finish()
 	}()
 
-	var accts []*extsvc.ExternalAccount
 	authzAllowByDefault, authzProviders := authz.GetProviders()
+	if authzAllowByDefault && len(authzProviders) == 0 {
+		return repos, nil
+	}
+
+	var accts []*extsvc.ExternalAccount
 	if len(authzProviders) > 0 && currentUser != nil {
 		accts, err = ExternalAccounts.List(ctx, ExternalAccountsListOptions{UserID: currentUser.ID})
 		if err != nil {
@@ -112,19 +116,8 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		}
 	}
 
-	accepted := roaring.NewBitmap()                // repositories that have been claimed and have read permissions
-	toverify := make([]*types.Repo, 0, len(repos)) // repositories that have not been claimed by any authz provider
-	for _, repo := range repos {
-		// 🚨 SECURITY: Defensively bar access to repos with no external repo spec (we don't know
-		// where they came from, so can't reliably enforce permissions). If external repo spec is
-		// NOT set, then we exclude the repo (unless there are no authz providers and
-		// `authzAllowByDefault` is true).
-		if repo.ExternalRepo.IsSet() {
-			toverify = append(toverify, repo)
-		} else if authzAllowByDefault && len(authzProviders) == 0 {
-			accepted.Add(uint32(repo.ID))
-		}
-	}
+	toverify := repos[:]
+	verified := roaring.NewBitmap()
 
 	// Walk through all authz providers, checking repo permissions against each. If any own a given
 	// repo, we use its permissions for that repo.
@@ -155,34 +148,40 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 			}
 		}
 
-		// determine which repos "belong" to this authz provider
-		myToVerify, nextToVerify := authzProvider.Repos(ctx, toverify)
+		// 🚨 SECURITY: Repositories that have their ExternalRepo fields unset won't be selected
+		// to the `mine` set by the authz.GetCodeHostRepos function which is used to implement Repos
+		// in each Provider we have, so they will remain in toverify after we looped through all providers.
+		mine, others := authzProvider.Repos(ctx, toverify)
 
 		// check the perms on those repos
-		perms, err := authzProvider.RepoPerms(ctx, providerAcct, myToVerify)
+		perms, err := authzProvider.RepoPerms(ctx, providerAcct, mine)
 		if err != nil {
 			return nil, err
 		}
 
 		for _, r := range perms {
 			if r.Perms.Include(p) {
-				accepted.Add(uint32(r.Repo.ID))
+				verified.Add(uint32(r.Repo.ID))
 			}
 		}
 
 		// continue checking repos that didn't belong to this authz provider
-		toverify = nextToVerify
+		toverify = others
 	}
 
 	if authzAllowByDefault {
 		for _, r := range toverify {
-			accepted.Add(uint32(r.ID))
+			// 🚨 SECURITY: Defensively bar access to repos with no external repo spec (we don't know
+			// where they came from, so can't reliably enforce permissions).
+			if r.ExternalRepo.IsSet() {
+				verified.Add(uint32(r.ID))
+			}
 		}
 	}
 
-	filtered = make([]*types.Repo, 0, accepted.GetCardinality())
+	filtered = make([]*types.Repo, 0, verified.GetCardinality())
 	for _, r := range repos {
-		if accepted.Contains(uint32(r.ID)) {
+		if verified.Contains(uint32(r.ID)) {
 			filtered = append(filtered, r)
 		}
 	}
