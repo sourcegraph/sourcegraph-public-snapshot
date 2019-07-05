@@ -1,4 +1,5 @@
 import { NotificationType } from '@sourcegraph/extension-api-classes'
+import LightbulbIcon from 'mdi-react/LightbulbIcon'
 import React, { useCallback, useState } from 'react'
 import * as sourcegraph from 'sourcegraph'
 import { ActionType } from '../../../../../../shared/src/api/types/action'
@@ -73,10 +74,15 @@ export const StatusNotification: React.FunctionComponent<Props> = ({
     return (
         <div className={`status-notification ${className}`}>
             <div className={`d-flex align-items-start ${contentClassName}`}>
-                <NotificationTypeIcon type={notification.type} className="icon-inline h3 mb-0 mr-3" />
-                <div>
-                    <h3 className="mb-0 font-weight-normal d-flex align-items-center">{notification.message}</h3>
-                    {notification.actions && (
+                <NotificationTypeIcon type={notification.type} className="icon-inline h3 mb-0 mr-3 flex-0" />
+                <div className="flex-1">
+                    <div className="d-flex align-items-start justify-content-between">
+                        <h3 className="mb-0 font-weight-normal">{notification.message}</h3>
+                        <button className="btn btn-success">
+                            <LightbulbIcon className="icon-inline mr-2" /> Fix
+                        </button>
+                    </div>
+                    {notification.actions && false && (
                         <NotificationActions
                             actions={notification.actions}
                             onPlanActionClick={onPlanActionClick}
