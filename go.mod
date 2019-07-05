@@ -80,6 +80,7 @@ require (
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
 	github.com/karlseguin/expect v1.0.1 // indirect
 	github.com/karlseguin/typed v1.1.7 // indirect
+	github.com/karrick/godirwalk v1.10.12
 	github.com/karrick/tparse v2.4.2+incompatible
 	github.com/keegancsmith/rpc v1.1.0
 	github.com/keegancsmith/sqlf v1.1.0
