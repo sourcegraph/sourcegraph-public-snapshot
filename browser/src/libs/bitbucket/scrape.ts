@@ -96,7 +96,7 @@ const getCommitIDFromRevisionSelector = (): string => {
         const { latestCommit }: { latestCommit: string } = JSON.parse(revisionSelectorSpan.dataset.revisionRef!)
         return latestCommit
     } catch (err) {
-        throw new Error(`Could not determine commitID from revision selector: ${err}`)
+        throw new Error('Could not parse JSON from revision selector')
     }
 }
 
