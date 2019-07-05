@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	gitprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -545,44 +546,24 @@ func TestServer_RepoExternalServices(t *testing.T) {
 func TestServer_StatusMessages(t *testing.T) {
 	testCases := []struct {
 		name              string
-		stored            repos.Repos
-		gitserverResponse int
+		gitserverResponse *gitprotocol.AreReposClonedResponse
 		res               *protocol.StatusMessagesResponse
 		err               string
 	}{
 		{
-			name:              "all cloned",
-			stored:            []*repos.Repo{{Name: "foobar"}},
-			gitserverResponse: 1,
+			name: "nothing cloning",
+			gitserverResponse: &gitprotocol.AreReposClonedResponse{
+				Results: map[api.RepoName]bool{"foobar": true},
+			},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
 		},
 		{
-			name:              "more cloned than in DB",
-			stored:            []*repos.Repo{{Name: "foobar"}},
-			gitserverResponse: 2,
-			res: &protocol.StatusMessagesResponse{
-				Messages: []protocol.StatusMessage{},
+			name: "repositories cloning",
+			gitserverResponse: &gitprotocol.AreReposClonedResponse{
+				Results: map[api.RepoName]bool{"foobar": false, "barfoo": false, "barbaz": false},
 			},
-		},
-		{
-			name:              "few not cloned",
-			stored:            []*repos.Repo{{Name: "foobar"}, {Name: "barfoo"}, {Name: "barbaz"}},
-			gitserverResponse: 1,
-			res: &protocol.StatusMessagesResponse{
-				Messages: []protocol.StatusMessage{
-					{
-						Type:    protocol.CloningStatusMessage,
-						Message: "2 repositories enqueued for cloning...",
-					},
-				},
-			},
-		},
-		{
-			name:              "nothing cloned",
-			stored:            []*repos.Repo{{Name: "foobar"}, {Name: "barfoo"}, {Name: "barbaz"}},
-			gitserverResponse: 0,
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
@@ -599,14 +580,8 @@ func TestServer_StatusMessages(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			gitserverClient := &fakeGitserverClient{clonedCountResponse: tc.gitserverResponse}
-
+			gitserverClient := &fakeGitserverClient{areReposClonedResponse: tc.gitserverResponse}
 			store := new(repos.FakeStore)
-			err := store.UpsertRepos(ctx, tc.stored.Clone()...)
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			s := &Server{Store: store, GitserverClient: gitserverClient}
 
 			srv := httptest.NewServer(s.Handler())
@@ -961,11 +936,11 @@ func (s *fakeScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInf
 }
 
 type fakeGitserverClient struct {
-	clonedCountResponse int
+	areReposClonedResponse *gitprotocol.AreReposClonedResponse
 }
 
-func (g *fakeGitserverClient) ClonedCount(ctx context.Context) (int, error) {
-	return g.clonedCountResponse, nil
+func (g *fakeGitserverClient) AreReposCloned(ctx context.Context, names ...api.RepoName) (*gitprotocol.AreReposClonedResponse, error) {
+	return g.areReposClonedResponse, nil
 }
 
 func formatJSON(s string) string {

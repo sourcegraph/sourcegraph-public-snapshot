@@ -375,48 +375,6 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 	return repos, err
 }
 
-// ClonedCount returns a count of all cloned repositories
-func (c *Client) ClonedCount(ctx context.Context) (int, error) {
-	var (
-		wg    sync.WaitGroup
-		mu    sync.Mutex
-		err   error
-		total int
-	)
-	for _, addr := range c.Addrs(ctx) {
-		wg.Add(1)
-		go func(addr string) {
-			defer wg.Done()
-			count, e := c.doClonedCountOne(ctx, addr)
-			mu.Lock()
-			if e != nil {
-				err = e
-			}
-			total += count
-			mu.Unlock()
-		}(addr)
-	}
-	wg.Wait()
-	return total, err
-}
-
-func (c *Client) doClonedCountOne(ctx context.Context, addr string) (int, error) {
-	req, err := http.NewRequest("GET", "http://"+addr+"/cloned-count", nil)
-	if err != nil {
-		return 0, err
-	}
-
-	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-
-	var count protocol.ClonedCountResponse
-	err = json.NewDecoder(resp.Body).Decode(&count)
-	return count.Count, err
-}
-
 // GetGitolitePhabricatorMetadata returns Phabricator metadata for a Gitolite repository fetched via
 // a user-provided command.
 func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repoName api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
@@ -569,6 +527,76 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, err
 		cloned = true
 	}
 	return cloned, nil
+}
+
+func (c *Client) AreReposCloned(ctx context.Context, repos ...api.RepoName) (*protocol.AreReposClonedResponse, error) {
+	numPossibleShards := len(c.Addrs(ctx))
+	shards := make(map[string]*protocol.AreReposClonedRequest, numPossibleShards)
+
+	for _, r := range repos {
+		addr := c.addrForRepo(ctx, r)
+		shard := shards[addr]
+
+		if shard == nil {
+			shard = new(protocol.AreReposClonedRequest)
+			shards[addr] = shard
+		}
+
+		shard.Repos = append(shard.Repos, r)
+	}
+
+	type op struct {
+		req *protocol.AreReposClonedRequest
+		res *protocol.AreReposClonedResponse
+		err error
+	}
+
+	ch := make(chan op, len(shards))
+	for _, req := range shards {
+		go func(o op) {
+			var resp *http.Response
+			resp, o.err = c.httpPost(ctx, o.req.Repos[0], "are-repos-cloned", o.req)
+			if o.err != nil {
+				ch <- o
+				return
+			}
+
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				o.err = &url.Error{
+					URL: resp.Request.URL.String(),
+					Op:  "AreReposCloned",
+					Err: errors.Errorf("AreReposCloned: http status %d", resp.StatusCode),
+				}
+				ch <- o
+				return // we never get an error status code AND result
+			}
+
+			o.res = new(protocol.AreReposClonedResponse)
+			o.err = json.NewDecoder(resp.Body).Decode(o.res)
+			ch <- o
+		}(op{req: req})
+	}
+
+	err := new(multierror.Error)
+	res := protocol.AreReposClonedResponse{
+		Results: make(map[api.RepoName]bool),
+	}
+
+	for i := 0; i < cap(ch); i++ {
+		o := <-ch
+
+		if o.err != nil {
+			err = multierror.Append(err, o.err)
+			continue
+		}
+
+		for repo, cloned := range o.res.Results {
+			res.Results[repo] = cloned
+		}
+	}
+
+	return &res, err.ErrorOrNil()
 }
 
 // RepoInfo retrieves information about one or more repositories on gitserver.

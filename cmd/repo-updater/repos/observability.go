@@ -8,6 +8,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
@@ -142,7 +143,7 @@ type StoreMetrics struct {
 	ListRepos              *OperationMetrics
 	UpsertExternalServices *OperationMetrics
 	ListExternalServices   *OperationMetrics
-	CountRepos             *OperationMetrics
+	ListAllRepoNames       *OperationMetrics
 }
 
 // NewStoreMetrics returns StoreMetrics that need to be registered
@@ -269,7 +270,7 @@ func NewStoreMetrics() StoreMetrics {
 				Help:      "Total number of errors when listing external_services",
 			}, []string{}),
 		},
-		CountRepos: &OperationMetrics{
+		ListAllRepoNames: &OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 				Namespace: "src",
 				Subsystem: "repoupdater",
@@ -434,21 +435,23 @@ func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) 
 	return o.store.ListRepos(ctx, args)
 }
 
-// CountRepos calls into the inner Store and registers the observed results.
-func (o *ObservedStore) CountRepos(ctx context.Context) (count int, err error) {
-	tr, ctx := o.trace(ctx, "Store.CountRepos")
+// ListAllRepoNames calls into the inner Store and registers the observed results.
+func (o *ObservedStore) ListAllRepoNames(ctx context.Context) (names []api.RepoName, err error) {
+	tr, ctx := o.trace(ctx, "Store.ListAllRepoNames")
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
-		o.metrics.CountRepos.Observe(secs, 1, &err)
-		log(o.log, "store.count-repos", &err, "count", count)
+		count := float64(len(names))
 
-		tr.LogFields(otlog.Int("count", count))
+		o.metrics.ListAllRepoNames.Observe(secs, count, &err)
+		log(o.log, "store.list-all-repo-names", &err, "count", len(names))
+
+		tr.LogFields(otlog.Int("count", len(names)))
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
 
-	return o.store.CountRepos(ctx)
+	return o.store.ListAllRepoNames(ctx)
 }
 
 // UpsertRepos calls into the inner Store and registers the observed results.
