@@ -182,82 +182,7 @@ func (rg *readerGrep) matchString(s string) bool {
 // Find returns a LineMatch for each line that matches rg in reader.
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
-func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []protocol.LineMatch, limitHit bool, err error) {
-	if strings.Contains(rg.re.String(), "\\n") {
-		if rg.ignoreCase && rg.transformBuf == nil {
-			rg.transformBuf = make([]byte, zf.MaxLen)
-		}
-
-		// fileMatchBuf is what we run match on, fileBuf is the original
-		// data (for Preview).
-		fileBuf := zf.DataFor(f)
-		fileMatchBuf := fileBuf
-		// If we are ignoring case, we transform the input instead of
-		// relying on the regular expression engine which can be
-		// slow. compile has already lowercased the pattern. We also
-		// trade some correctness for perf by using a non-utf8 aware
-		// lowercase function.
-		if rg.ignoreCase {
-			fileMatchBuf = rg.transformBuf[:len(fileBuf)]
-			bytesToLowerASCII(fileMatchBuf, fileBuf)
-		}
-
-		// Most files will not have a match and we bound the number of matched
-		// files we return. So we can avoid the overhead of parsing out new lines
-		// and repeatedly running the regex engine by running a single match over
-		// the whole file. This does mean we duplicate work when actually
-		// searching for results. We use the same approach when we search
-		// per-line. Additionally if we have a non-empty literalSubstring, we use
-		// that to prune out files since doing bytes.Index is very fast.
-		if !bytes.Contains(fileMatchBuf, rg.literalSubstring) {
-			return nil, false, nil
-		}
-		first := rg.re.FindIndex(fileMatchBuf)
-		if first == nil {
-			return nil, false, nil
-		}
-
-		tempFileBuf := fileBuf
-		tempFileMatchBuf := tempFileBuf
-		lineNumberToLineLength := make(map[int]int)
-		idx := 0
-		for i := 0; len(matches) < maxLineMatches; i++ {
-			advance, lineBuf, err := scanLines(tempFileBuf, true)
-			if err != nil {
-				// ScanLines should never return an err
-				return nil, false, err
-			}
-			if advance == 0 { // EOF
-				break
-			}
-
-			// Add the line number and line length to the map.
-			lineNumberToLineLength[i] = utf8.RuneCount(lineBuf) + 1
-			// Advance file bufs in sync
-			tempFileBuf = tempFileBuf[advance:]
-			tempFileMatchBuf = tempFileMatchBuf[advance:]
-
-			// Check whether we're before the first match.
-			idx += advance
-			if idx < first[0] {
-				continue
-			}
-		}
-
-		matchBuf := fileMatchBuf
-		locs := rg.re.FindAllIndex(matchBuf, maxOffsets)
-		if len(locs) > 0 {
-			lineLimitHit := len(locs) == maxOffsets
-			for _, match := range locs {
-				startingLine, startingOffset, startingLength := getStartingMatch(matchBuf, match[0], match[1], lineNumberToLineLength)
-				endingLine, endingOffset, endingLength := getEndingMatch(matchBuf, match[0], match[1], lineNumberToLineLength)
-				matches = generateMatches(matchBuf, startingLine, startingOffset, startingLength, endingLine, endingOffset, endingLength, match, lineNumberToLineLength, lineLimitHit)
-			}
-
-		}
-		limitHit = len(matches) == maxLineMatches
-		return matches, limitHit, nil
-	}
+func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile, patternIsMultiLine bool) (matches []protocol.LineMatch, limitHit bool, err error) {
 	// fmt.Println("RG.RE NON NEW LINE", rg.re.String())
 	if rg.ignoreCase && rg.transformBuf == nil {
 		rg.transformBuf = make([]byte, zf.MaxLen)
@@ -293,6 +218,20 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 		return nil, false, nil
 	}
 
+	if patternIsMultiLine {
+		matches, limitHit, err = getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+	} else {
+		matches, limitHit, err = getMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+	}
+	if err != nil {
+		return nil, false, err
+	}
+
+	limitHit = len(matches) == maxLineMatches
+	return matches, limitHit, nil
+}
+
+func getMatches(re *regexp.Regexp, fileBuf []byte, fileMatchBuf []byte, maxOffsets int, first []int) (matches []protocol.LineMatch, limitHit bool, err error) {
 	idx := 0
 	for i := 0; len(matches) < maxLineMatches; i++ {
 		advance, lineBuf, err := bufio.ScanLines(fileBuf, true)
@@ -324,7 +263,7 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 			continue
 		}
 
-		locs := rg.re.FindAllIndex(matchBuf, maxOffsets)
+		locs := re.FindAllIndex(matchBuf, maxOffsets)
 		if len(locs) > 0 {
 			lineLimitHit := len(locs) == maxOffsets
 			offsetAndLengths := make([][2]int, len(locs))
@@ -347,6 +286,49 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 				LimitHit:         lineLimitHit,
 			})
 		}
+	}
+	limitHit = len(matches) == maxLineMatches
+	return matches, limitHit, nil
+}
+
+func getMultiLineMatches(re *regexp.Regexp, fileBuf []byte, fileMatchBuf []byte, maxOffsets int, first []int) (matches []protocol.LineMatch, limitHit bool, err error) {
+	tempFileBuf := fileBuf
+	tempFileMatchBuf := tempFileBuf
+	lineNumberToLineLength := make(map[int]int)
+	idx := 0
+	for i := 0; len(matches) < maxLineMatches; i++ {
+		advance, lineBuf, err := scanLines(tempFileBuf, true)
+		if err != nil {
+			// ScanLines should never return an err
+			return nil, false, err
+		}
+		if advance == 0 { // EOF
+			break
+		}
+
+		// Add the line number and line length to the map.
+		lineNumberToLineLength[i] = utf8.RuneCount(lineBuf) + 1
+		// Advance file bufs in sync
+		tempFileBuf = tempFileBuf[advance:]
+		tempFileMatchBuf = tempFileMatchBuf[advance:]
+
+		// Check whether we're before the first match.
+		idx += advance
+		if idx < first[0] {
+			continue
+		}
+	}
+
+	matchBuf := fileMatchBuf
+	locs := re.FindAllIndex(matchBuf, maxOffsets)
+	if len(locs) > 0 {
+		lineLimitHit := len(locs) == maxOffsets
+		for _, match := range locs {
+			startingLine, startingOffset, startingLength := getStartingMatch(matchBuf, match[0], match[1], lineNumberToLineLength)
+			endingLine, endingOffset, endingLength := getEndingMatch(matchBuf, match[0], match[1], lineNumberToLineLength)
+			matches = generateMatches(matchBuf, startingLine, startingOffset, startingLength, endingLine, endingOffset, endingLength, match, lineNumberToLineLength, lineLimitHit)
+		}
+
 	}
 	limitHit = len(matches) == maxLineMatches
 	return matches, limitHit, nil
@@ -433,8 +415,8 @@ func generateMatches(matchBuf []byte, startingLine, startingOffset, startingLeng
 }
 
 // FindZip is a convenience function to run Find on f.
-func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.FileMatch, error) {
-	lm, limitHit, err := rg.Find(zf, f)
+func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile, patternIsMultiLine bool) (protocol.FileMatch, error) {
+	lm, limitHit, err := rg.Find(zf, f, patternIsMultiLine)
 	return protocol.FileMatch{
 		Path:        f.Name,
 		LineMatches: lm,
@@ -443,7 +425,7 @@ func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.Fil
 }
 
 // concurrentFind searches files in zr looking for matches using rg.
-func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool) (fm []protocol.FileMatch, limitHit bool, err error) {
+func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths, patternIsMultiLine bool) (fm []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
 	ext.Component.Set(span, "matcher")
 	if rg.re != nil {
@@ -543,7 +525,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, file
 
 				// process
 				var fm protocol.FileMatch
-				fm, err := rg.FindZip(zf, f)
+				fm, err := rg.FindZip(zf, f, patternIsMultiLine)
 				if err != nil {
 					wgErrOnce.Do(func() {
 						wgErr = err

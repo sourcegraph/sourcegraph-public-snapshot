@@ -211,7 +211,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	archiveFiles.Observe(float64(nFiles))
 	archiveSize.Observe(float64(bytes))
 
-	matches, limitHit, err = concurrentFind(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath)
+	matches, limitHit, err = concurrentFind(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsMultiLine)
 	return matches, limitHit, false, err
 }
 

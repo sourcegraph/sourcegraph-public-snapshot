@@ -16,8 +16,7 @@ type PatternInfo struct {
 	IsCaseSensitive bool
 	FileMatchLimit  int32
 
-	// We do not support IsMultiline
-	IsMultiline     bool
+	IsMultiLine     bool
 	IncludePattern  string
 	IncludePatterns []string
 	ExcludePattern  string
