@@ -1,7 +1,10 @@
 import React, { useCallback } from 'react'
 import { ActionType } from '../../../../../shared/src/api/types/action'
 import { ChangesetCreationStatus } from '../../changesets/preview/backend'
-import { CreateOrPreviewChangesetButton } from '../../tasks/list/item/CreateOrPreviewChangesetButton'
+import {
+    ChangesetButtonOrLink,
+    ChangesetButtonOrLinkExistingChangeset,
+} from '../../tasks/list/item/ChangesetButtonOrLink'
 
 interface Props {
     /** The action. */
@@ -10,17 +13,20 @@ interface Props {
     /** Called when the button is clicked. */
     onClick: (action: ActionType['plan'], creationStatus: ChangesetCreationStatus) => void
 
+    existingChangeset: ChangesetButtonOrLinkExistingChangeset
+
     disabled?: boolean
     className?: string
     buttonClassName?: string
 }
 
 /**
- * A button for a plan action that can be previewed and made into a changeset.
+ * A label and button for a plan action that can be previewed and made into a changeset.
  */
-export const PlanActionButton: React.FunctionComponent<Props> = ({
+export const PlanAction: React.FunctionComponent<Props> = ({
     action,
     onClick,
+    existingChangeset,
     disabled,
     className = '',
     buttonClassName = '',
@@ -31,13 +37,11 @@ export const PlanActionButton: React.FunctionComponent<Props> = ({
     ])
     return (
         <div className={`d-flex flex-column ${className} p-3 border border-success`}>
-            <span className="text-success mb-3">
-                <strong>Fix:</strong> {action.plan.operations[0].command.title}
-            </span>
-            <CreateOrPreviewChangesetButton
+            <span className="text-success mb-3">{action.plan.title}</span>
+            <ChangesetButtonOrLink
                 onClick={onButtonClick}
+                existingChangeset={existingChangeset}
                 disabled={disabled}
-                className=""
                 buttonClassName={buttonClassName}
             />
         </div>

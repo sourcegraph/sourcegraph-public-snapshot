@@ -1620,7 +1620,18 @@ declare module 'sourcegraph' {
         arguments?: any[]
     }
 
+    /**
+     * A plan is a sequence of operations to apply to code.
+     */
     export interface Plan {
+        /**
+         * A descriptive title for the plan.
+         */
+        title: string
+
+        /**
+         * The operations to apply, in sequential order.
+         */
         operations: PlanOperation[] & { length: 1 /* TODO!(sqs): for now, enforce only 1 op */ }
     }
 

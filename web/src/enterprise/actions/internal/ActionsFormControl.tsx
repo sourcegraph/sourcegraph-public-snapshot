@@ -2,7 +2,7 @@ import React from 'react'
 import { Action, isActionType } from '../../../../../shared/src/api/types/action'
 import { ChangesetCreationStatus } from '../../changesets/preview/backend'
 import { CommandActionButton } from './CommandActionButton'
-import { PlanActionButton } from './PlanActionButton'
+import { PlanAction } from './PlanActionButton'
 
 interface Props {
     actions: readonly Action[]
@@ -28,7 +28,7 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
     return (
         <div className={`d-flex flex-column align-items-start ${className}`}>
             {planActions.map((action, i) => (
-                <PlanActionButton key={i} action={action} onClick={onActionClick} className="mb-2" />
+                <PlanAction key={i} action={action} onClick={onActionClick} className="mb-2" />
             ))}
             {commandActions.length > 0 && (
                 <div className="d-flex flex-wrap">

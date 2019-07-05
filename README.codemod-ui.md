@@ -30,14 +30,14 @@ You *might* see some weirdness because Redis isn't similarly isolated. I don't k
 
 ---
 
-## Concepts
+# Concepts
+
+## Changeset
 
 A **changeset** consists of:
 
 - a set of changes to code across one or more repositories
-- optionally, the "blueprints" for how those changes were made, so the changes can be recomputed against an updated base branch
-
-An **auto changeset** is a changeset that has these "blueprints".
+- optionally, the **plan** for how those changes were made, so the changes can be recomputed against an updated base branch
 
 You can create a changeset in 3 ways:
 
@@ -45,3 +45,13 @@ You can create a changeset in 3 ways:
 - performing a search-and-replace
 - clicking a code action in a code file (e.g., "Rename identifier")
 
+## Plan
+
+A changeset's **plan** is the sequence of operations to compute the changeset's change. Unlike a patch (which only has the line-level changes), a changeset with a plan also includes the programmatic steps to compute those changes.
+
+> Example: You want to upgrade all repositories' `lodash` dependencies to version `^3.0.0`. If another change to `package.json` or `yarn.lock` is made before the changeset is merged, it knows how to recompute its updates to those files. If a new repository is added that depends on an older version of `lodash`, it knows to add the new repository to the changeset.
+
+The plan is stored in the changeset. Each operation in the sequence consists of:
+
+- parameters, specified as a JSON object whose schema is defined by the plan
+- a command to invoke (with the parameters and diagnostics passed as arguments)

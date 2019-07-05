@@ -3,11 +3,14 @@ import React, { useCallback, useState } from 'react'
 import * as sourcegraph from 'sourcegraph'
 import { ActionType } from '../../../../../../shared/src/api/types/action'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { useOnActionClickCallback } from '../../../actions/useOnActionClickCallback'
 import { ChangesetCreationStatus, createChangeset } from '../../../changesets/preview/backend'
 import { NotificationActions } from '../../../notifications/actions/NotificationActions'
 import { NotificationTypeIcon } from '../../../notifications/NotificationTypeIcon'
+import {
+    ChangesetButtonOrLinkExistingChangeset,
+    PENDING_CREATION,
+} from '../../../tasks/list/item/ChangesetButtonOrLink'
 
 interface Props extends ExtensionsControllerProps {
     notification: sourcegraph.Notification
@@ -26,18 +29,19 @@ export const StatusNotification: React.FunctionComponent<Props> = ({
     contentClassName = '',
     extensionsController,
 }) => {
-    const [createdChangesetOrLoading, setCreatedChangesetOrLoading] = useState<
-        typeof LOADING | Pick<GQL.IDiscussionThread, 'idWithoutKind' | 'url' | 'status'>
-    >()
+    const [createdChangesetOrLoading, setCreatedChangesetOrLoading] = useState<ChangesetButtonOrLinkExistingChangeset>(
+        null
+    )
     const onPlanActionClick = useCallback(
         async (plan: ActionType['plan'], creationStatus: ChangesetCreationStatus) => {
-            setCreatedChangesetOrLoading(LOADING)
+            setCreatedChangesetOrLoading(PENDING_CREATION)
             try {
                 setCreatedChangesetOrLoading(
                     await createChangeset({
                         title: plan.plan.operations[0].command.title,
                         contents: notification.message,
                         status: creationStatus,
+                        plan: plan.plan,
                         changesetActionDescriptions: [
                             {
                                 title: plan.plan.operations[0].command.title,
@@ -48,7 +52,7 @@ export const StatusNotification: React.FunctionComponent<Props> = ({
                     })
                 )
             } catch (err) {
-                setCreatedChangesetOrLoading(undefined)
+                setCreatedChangesetOrLoading(null)
                 extensionsController.services.notifications.showMessages.next({
                     message: `Error creating changeset: ${err.message}`,
                     type: NotificationType.Error,
@@ -77,6 +81,7 @@ export const StatusNotification: React.FunctionComponent<Props> = ({
                         actions={notification.actions}
                         onPlanActionClick={onPlanActionClick}
                         onCommandActionClick={onCommandActionClick}
+                        existingChangeset={createdChangesetOrLoading}
                         disabled={disabled}
                         className="mt-4"
                     />

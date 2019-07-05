@@ -86,11 +86,11 @@ function registerStatusProvider(
                                           actions: [
                                               {
                                                   plan: {
+                                                      title: 'Use latest Go version in all .travis.yml files',
                                                       operations: [
                                                           {
                                                               command: {
                                                                   command: FIX_GO_VERSION_COMMAND_ID,
-                                                                  title: 'Use Go 1.13 for all Travis CI builds',
                                                               },
                                                           },
                                                       ],
