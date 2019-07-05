@@ -3,6 +3,7 @@ import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
+import SearchIcon from 'mdi-react/SearchIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
@@ -24,16 +25,13 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
-import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
 import { searchQueryForRepoRev, PatternTypeProps, CaseSensitivityProps } from '../search'
-import { submitSearch, QueryState } from '../search/helpers'
-import { QueryInput } from '../search/input/QueryInput'
-import { SearchButton } from '../search/input/SearchButton'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
 import { basename } from '../util/path'
 import { fetchTreeEntries } from './backend'
@@ -155,17 +153,10 @@ interface State {
     /** This tree, or an error. Undefined while loading. */
     treeOrError?: GQL.IGitTree | ErrorLike
 
-    /**
-     * The value of the search query input field.
-     */
-    queryState: QueryState
-
     showOlderCommits?: true
 }
 
 export class TreePage extends React.PureComponent<Props, State> {
-    public state: State = { queryState: { query: '', cursorPosition: 0 } }
-
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
@@ -321,20 +312,17 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 </header>
                             )}
                             <section className="tree-page__section">
-                                <h3 className="tree-page__section-header">
+                                <Link
+                                    className="btn btn-primary d-inline-flex align-items-center"
+                                    to={`/search?${buildSearchURLQuery(
+                                        this.getQueryPrefix(),
+                                        this.props.patternType,
+                                        this.props.caseSensitive
+                                    )}`}
+                                >
+                                    <SearchIcon className="icon-inline" />
                                     Search in this {this.props.filePath ? 'tree' : 'repository'}
-                                </h3>
-                                <Form className="tree-page__section-search" onSubmit={this.onSubmit}>
-                                    <QueryInput
-                                        {...this.props}
-                                        value={this.state.queryState}
-                                        onChange={this.onQueryChange}
-                                        prependQueryForSuggestions={this.getQueryPrefix()}
-                                        autoFocus={true}
-                                        placeholder=""
-                                    />
-                                    <SearchButton />
-                                </Form>
+                                </Link>
                             </section>
                             <TreeEntriesSection
                                 title="Files and directories"
@@ -404,17 +392,6 @@ export class TreePage extends React.PureComponent<Props, State> {
                     ))}
             </div>
         )
-    }
-
-    private onQueryChange = (queryState: QueryState): void => this.setState({ queryState })
-
-    private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
-        event.preventDefault()
-        submitSearch({
-            ...this.props,
-            query: this.getQueryPrefix() + this.state.queryState.query,
-            source: this.props.filePath ? 'tree' : 'repo',
-        })
     }
 
     private getPageTitle(): string {
