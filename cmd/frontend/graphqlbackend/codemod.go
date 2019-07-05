@@ -48,6 +48,22 @@ type codemodResultResolver struct {
 	matches []*searchResultMatchResolver
 }
 
+func (r *codemodResultResolver) ToRepository() (*repositoryResolver, bool) { return nil, false }
+func (r *codemodResultResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
+func (r *codemodResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
+	return nil, false
+}
+func (r *codemodResultResolver) ToCodemodResult() (*codemodResultResolver, bool) {
+	return r, false
+}
+
+func (r *codemodResultResolver) searchResultURIs() (string, string) {
+	return string(r.commit.repo.repo.Name), r.path
+}
+func (r *codemodResultResolver) resultCount() int32 {
+	return int32(len(r.matches))
+}
+
 func (r *codemodResultResolver) Icon() string {
 	return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' style='width:24px;height:24px' viewBox='0 0 24 24'%3E%3Cpath fill='%23a2b0cd' d='M11,6C12.38,6 13.63,6.56 14.54,7.46L12,10H18V4L15.95,6.05C14.68,4.78 12.93,4 11,4C7.47,4 4.57,6.61 4.08,10H6.1C6.56,7.72 8.58,6 11,6M16.64,15.14C17.3,14.24 17.76,13.17 17.92,12H15.9C15.44,14.28 13.42,16 11,16C9.62,16 8.37,15.44 7.46,14.54L10,12H4V18L6.05,15.95C7.32,17.22 9.07,18 11,18C12.55,18 14,17.5 15.14,16.64L20,21.5L21.5,20L16.64,15.14Z' /%3E%3C/svg%3E"
 }
@@ -121,7 +137,7 @@ func validateQuery(q *query.Query) (*args, error) {
 }
 
 // Calls the codemod backend replacer service for a set of repository revisions.
-func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {
+func callCodemod(ctx context.Context, args *search.Args) ([]searchResultResolver, *searchResultsCommon, error) {
 	cmodArgs, err := validateQuery(args.Query)
 	if err != nil {
 		return nil, nil, err
@@ -140,7 +156,7 @@ func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolve
 	var (
 		wg          sync.WaitGroup
 		mu          sync.Mutex
-		unflattened [][]*codemodResultResolver
+		unflattened [][]codemodResultResolver
 		common      = &searchResultsCommon{}
 	)
 	for _, repoRev := range args.Repos {
@@ -173,10 +189,10 @@ func callCodemod(ctx context.Context, args *search.Args) ([]*searchResultResolve
 		return nil, nil, err
 	}
 
-	var results []*searchResultResolver
+	var results []searchResultResolver
 	for _, ur := range unflattened {
 		for _, r := range ur {
-			results = append(results, &searchResultResolver{codemod: r})
+			results = append(results, &r)
 		}
 	}
 	return results, common, nil
@@ -200,7 +216,7 @@ func toMatchResolver(fileURL string, raw *rawCodemodResult) ([]*searchResultMatc
 		nil
 }
 
-func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, args *args) (results []*codemodResultResolver, err error) {
+func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, args *args) (results []codemodResultResolver, err error) {
 	tr, ctx := trace.New(ctx, "callCodemodInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v, replace: %+v", repoRevs, args.matchTemplate, args.rewriteTemplate))
 	defer func() {
 		tr.LazyPrintf("%d results", len(results))
@@ -280,7 +296,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 		if err != nil {
 			return nil, err
 		}
-		result := &codemodResultResolver{
+		result := codemodResultResolver{
 			commit: &gitCommitResolver{
 				repo:     &repositoryResolver{repo: repoRevs.Repo},
 				inputRev: &repoRevs.Revs[0].RevSpec,

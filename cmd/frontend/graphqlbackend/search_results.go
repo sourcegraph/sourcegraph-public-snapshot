@@ -148,13 +148,13 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 
 // searchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type searchResultsResolver struct {
-	results []*searchResultResolver
+	results []searchResultResolver
 	searchResultsCommon
 	alert *searchAlert
 	start time.Time // when the results started being computed
 }
 
-func (sr *searchResultsResolver) Results() []*searchResultResolver {
+func (sr *searchResultsResolver) Results() []searchResultResolver {
 	return sr.results
 }
 
@@ -266,7 +266,7 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	}
 
 	for _, result := range sr.results {
-		if fm := result.fileMatchLike(); fm != nil {
+		if fm, ok := result.ToFileMatch(); ok {
 			rev := ""
 			if fm.inputRev != nil {
 				rev = *fm.inputRev
@@ -278,13 +278,11 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 			if len(fm.symbols) > 0 {
 				add("type:symbol", "type:symbol", 1, fm.JLimitHit, "symbol")
 			}
-		}
-
-		if result.repo != nil {
+		} else if r, ok := result.ToRepository(); ok {
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
-			addRepoFilter(result.repo.Name(), "", 1)
+			addRepoFilter(r.Name(), "", 1)
 		}
 		// Add `case:yes` filter to offer easier access to search results matching with case sensitive set to yes
 		// We use count == 0 and limitHit == false since we can't determine that information without
@@ -423,14 +421,14 @@ func (sr *searchResultsResolver) Sparkline(ctx context.Context) (sparkline []int
 loop:
 	for _, r := range sr.results {
 		r := r // shadow so it doesn't change in the goroutine
-		switch {
-		case r.repo != nil:
+		switch m := r.(type) {
+		case *repositoryResolver:
 			// We don't care about repo results here.
 			continue
-		case r.diff != nil:
+		case *commitSearchResultResolver:
 			// Diff searches are cheap, because we implicitly have author date info.
-			addPoint(r.diff.commit.author.date)
-		case r.fileMatch != nil:
+			addPoint(m.commit.author.date)
+		case *fileMatchResolver:
 			// File match searches are more expensive, because we must blame the
 			// (first) line in order to know its placement in our sparkline.
 			blameOps++
@@ -447,14 +445,14 @@ loop:
 
 				// Blame the file match in order to retrieve date informatino.
 				var err error
-				t, err := sr.blameFileMatch(ctx, r.fileMatch)
+				t, err := sr.blameFileMatch(ctx, m)
 				if err != nil {
 					log15.Warn("failed to blame fileMatch during sparkline generation", "error", err)
 					return
 				}
 				addPoint(t)
 			})
-		case r.codemod != nil:
+		case *codemodResultResolver:
 			continue
 		default:
 			panic("SearchResults.Sparkline unexpected union type state")
@@ -765,7 +763,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	defer cancel()
 
-	repos, missingRepoRevs, _, overLimit, err := r.resolveRepositories(ctx, nil)
+	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -794,9 +792,15 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		Repos:           repos,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
+		Zoekt:           r.zoekt,
 	}
 	if err := args.Pattern.Validate(); err != nil {
 		return nil, &badRequestError{err}
+	}
+
+	err = validateRepoHasFileUsage(r.query)
+	if err != nil {
+		return nil, err
 	}
 
 	// Determine which types of results to return.
@@ -824,7 +828,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	var (
 		requiredWg sync.WaitGroup
 		optionalWg sync.WaitGroup
-		results    []*searchResultResolver
+		results    []searchResultResolver
 		resultsMu  sync.Mutex
 		common     = searchResultsCommon{maxResultsCount: r.maxResults()}
 		commonMu   sync.Mutex
@@ -901,7 +905,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					} else {
 						fileMatches[key] = symbolFileMatch
 						resultsMu.Lock()
-						results = append(results, &searchResultResolver{fileMatch: symbolFileMatch})
+						results = append(results, symbolFileMatch)
 						resultsMu.Unlock()
 					}
 					fileMatchesMu.Unlock()
@@ -941,7 +945,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					} else {
 						fileMatches[key] = r
 						resultsMu.Lock()
-						results = append(results, &searchResultResolver{fileMatch: r})
+						results = append(results, r)
 						resultsMu.Unlock()
 					}
 					fileMatchesMu.Unlock()
@@ -1073,51 +1077,32 @@ func isContextError(ctx context.Context, err error) bool {
 	return ctx.Err() != nil || err == context.Canceled || err == context.DeadlineExceeded
 }
 
-// searchResultResolver is a resolver for the GraphQL union type `SearchResult`
+// searchResultResolver is a resolver for the GraphQL union type `SearchResult`.
+//
+// Supported types:
+//
+//   - *repositoryResolver         // repo name match
+//   - *fileMatchResolver          // text match
+//   - *commitSearchResultResolver // diff or commit match
+//   - *codemodResultResolver      // codemod
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
-type searchResultResolver struct {
-	repo      *repositoryResolver         // repo name match
-	fileMatch *fileMatchResolver          // text match
-	diff      *commitSearchResultResolver // diff or commit match
-	codemod   *codemodResultResolver      // codemod match (and replacement, if any)
-}
+type searchResultResolver interface {
+	ToRepository() (*repositoryResolver, bool)
+	ToFileMatch() (*fileMatchResolver, bool)
+	ToCommitSearchResult() (*commitSearchResultResolver, bool)
+	ToCodemodResult() (*codemodResultResolver, bool)
 
-// fileMatchLike returns r's fileMatch or, if possible, the equivalent fileMatch of its actual
-// result type. It is used by callers that want to analyze this result (e.g., a codemod result) as
-// though it were a fileMatch.
-func (r *searchResultResolver) fileMatchLike() *fileMatchResolver {
-	switch {
-	case r.fileMatch != nil:
-		return r.fileMatch
-	case r.codemod != nil:
-		return &fileMatchResolver{
-			JPath: r.codemod.path,
-			uri:   r.codemod.fileURL,
-			repo:  r.codemod.commit.repo.repo,
-		}
-	}
-	return nil
-}
-
-// getSearchResultURIs returns the repo name and file uri respectiveley
-func getSearchResultURIs(c *searchResultResolver) (string, string) {
-	if fm := c.fileMatchLike(); fm != nil {
-		return string(fm.repo.Name), fm.JPath
-	}
-	if c.repo != nil {
-		return string(c.repo.repo.Name), ""
-	}
-	// Diffs aren't going to be returned with other types of results
-	// and are already ordered in the desired order, so we'll just leave them in place.
-	return "~", "~" // lexicographically last in ASCII
+	// SearchResultURIs returns the repo name and file uri respectiveley
+	searchResultURIs() (string, string)
+	resultCount() int32
 }
 
 // compareSearchResults checks to see if a is less than b.
 // It is implemented separately for easier testing.
-func compareSearchResults(a, b *searchResultResolver) bool {
-	arepo, afile := getSearchResultURIs(a)
-	brepo, bfile := getSearchResultURIs(b)
+func compareSearchResults(a, b searchResultResolver) bool {
+	arepo, afile := a.searchResultURIs()
+	brepo, bfile := b.searchResultURIs()
 
 	if arepo == brepo {
 		return afile < bfile
@@ -1126,40 +1111,8 @@ func compareSearchResults(a, b *searchResultResolver) bool {
 	return arepo < brepo
 }
 
-func sortResults(r []*searchResultResolver) {
+func sortResults(r []searchResultResolver) {
 	sort.Slice(r, func(i, j int) bool { return compareSearchResults(r[i], r[j]) })
-}
-
-func (g *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
-	return g.repo, g.repo != nil
-}
-
-func (g *searchResultResolver) ToFileMatch() (*fileMatchResolver, bool) {
-	return g.fileMatch, g.fileMatch != nil
-}
-
-func (g *searchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
-	return g.diff, g.diff != nil
-}
-
-func (g *searchResultResolver) ToCodemodResult() (*codemodResultResolver, bool) {
-	return g.codemod, g.codemod != nil
-}
-
-func (g *searchResultResolver) resultCount() int32 {
-	switch {
-	case g.fileMatch != nil:
-		if l := len(g.fileMatch.LineMatches()); l > 0 {
-			return int32(l)
-		}
-		return 1 // 1 to count "empty" results like type:path results
-	case g.diff != nil:
-		return 1
-	case g.codemod != nil:
-		return int32(len(g.codemod.matches))
-	default:
-		return 1
-	}
 }
 
 // regexpPatternMatchingExprsInOrder returns a regexp that matches lines that contain
@@ -1172,4 +1125,13 @@ func regexpPatternMatchingExprsInOrder(patterns []string) string {
 		return patterns[0]
 	}
 	return "(" + strings.Join(patterns, ").*?(") + ")" // "?" makes it prefer shorter matches
+}
+
+// Validates usage of the `repohasfile` filter
+func validateRepoHasFileUsage(q *query.Query) error {
+	// Query only contains "repohasfile:" and "type:symbol"
+	if len(q.Fields) == 2 && q.Fields["repohasfile"] != nil && q.Fields["type"] != nil && len(q.Fields["type"]) == 1 && q.Fields["type"][0].Value() == "symbol" {
+		return errors.New("repohasfile does not currently return symbol results. Support for symbol results is coming soon. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates")
+	}
+	return nil
 }

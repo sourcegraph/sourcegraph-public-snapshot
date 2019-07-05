@@ -33,10 +33,6 @@ type Repo struct {
 	Language string
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
-	// CreatedAt is when this repository was created on Sourcegraph.
-	CreatedAt time.Time
-	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
-	UpdatedAt *time.Time
 }
 
 // ExternalService is a connection to an external service.

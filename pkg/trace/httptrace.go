@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/repotrackutil"
+	"github.com/sourcegraph/sourcegraph/pkg/version"
 )
 
 type key int
@@ -45,14 +47,16 @@ var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Help:      "Last time a request finished for a http endpoint.",
 }, metricLabels)
 
-var (
-	sentryDSN string
-
-	ravenReadyOnce sync.Once
-	ravenReady     = make(chan struct{})
-)
-
 func init() {
+	if err := raven.SetDSN(os.Getenv("SENTRY_DSN_BACKEND")); err != nil {
+		log15.Error("sentry.dsn", "error", err)
+	}
+
+	raven.SetRelease(version.Version())
+	raven.SetTagsContext(map[string]string{
+		"service": filepath.Base(os.Args[0]),
+	})
+
 	prometheus.MustRegister(requestDuration)
 	prometheus.MustRegister(requestHeartbeat)
 
@@ -61,19 +65,15 @@ func init() {
 			if conf.Get().Critical.Log == nil {
 				return
 			}
+
 			if conf.Get().Critical.Log.Sentry == nil {
 				return
 			}
-			if conf.Get().Critical.Log.Sentry.Dsn == "" {
-				return
+
+			// An empty dsn value is ignored: not an error.
+			if err := raven.SetDSN(conf.Get().Critical.Log.Sentry.Dsn); err != nil {
+				log15.Error("sentry.dsn", "error", err)
 			}
-
-			sentryDSN = conf.Get().Critical.Log.Sentry.Dsn
-			raven.SetDSN(sentryDSN)
-		})
-
-		ravenReadyOnce.Do(func() {
-			close(ravenReady)
 		})
 	}()
 }
@@ -83,7 +83,7 @@ func init() {
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
 func Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+	return raven.Recoverer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		wireContext, err := opentracing.GlobalTracer().Extract(
@@ -147,8 +147,7 @@ func Middleware(next http.Handler) http.Handler {
 		)
 
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
-		if m.Code/100 != 2 && m.Code/100 != 3 && m.Code/100 != 4 {
-			<-ravenReady
+		if m.Code >= 500 {
 			raven.CaptureError(&httpErr{status: m.Code, method: r.Method, path: r.URL.Path}, map[string]string{
 				"method":        r.Method,
 				"url":           r.URL.String(),
@@ -160,7 +159,7 @@ func Middleware(next http.Handler) http.Handler {
 				"duration":      m.Duration.String(),
 			})
 		}
-	})
+	}))
 }
 
 func TraceRoute(next http.Handler) http.Handler {

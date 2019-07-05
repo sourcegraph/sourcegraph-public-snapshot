@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	gitprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -544,27 +545,30 @@ func TestServer_RepoExternalServices(t *testing.T) {
 
 func TestServer_StatusMessages(t *testing.T) {
 	testCases := []struct {
-		name         string
-		reposInQueue repos.Repos
-		res          *protocol.StatusMessagesResponse
-		err          string
+		name              string
+		gitserverResponse *gitprotocol.AreReposClonedResponse
+		res               *protocol.StatusMessagesResponse
+		err               string
 	}{
 		{
 			name: "nothing cloning",
+			gitserverResponse: &gitprotocol.AreReposClonedResponse{
+				Results: map[api.RepoName]bool{"foobar": true},
+			},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{},
 			},
 		},
 		{
 			name: "repositories cloning",
-			reposInQueue: repos.Repos{
-				{ID: 1}, {ID: 2}, {ID: 3},
+			gitserverResponse: &gitprotocol.AreReposClonedResponse{
+				Results: map[api.RepoName]bool{"foobar": false, "barfoo": false, "barbaz": false},
 			},
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
 						Type:    protocol.CloningStatusMessage,
-						Message: "Currently updating 3 repositories...",
+						Message: "3 repositories enqueued for cloning...",
 					},
 				},
 			},
@@ -576,8 +580,9 @@ func TestServer_StatusMessages(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			scheduler := &fakeScheduler{queue: tc.reposInQueue}
-			s := &Server{Scheduler: scheduler}
+			gitserverClient := &fakeGitserverClient{areReposClonedResponse: tc.gitserverResponse}
+			store := new(repos.FakeStore)
+			s := &Server{Store: store, GitserverClient: gitserverClient}
 
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
@@ -928,6 +933,14 @@ func (s *fakeScheduler) UpdateQueueLen() int {
 func (s *fakeScheduler) UpdateOnce(_ uint32, _ api.RepoName, _ string) {}
 func (s *fakeScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult {
 	return &protocol.RepoUpdateSchedulerInfoResult{}
+}
+
+type fakeGitserverClient struct {
+	areReposClonedResponse *gitprotocol.AreReposClonedResponse
+}
+
+func (g *fakeGitserverClient) AreReposCloned(ctx context.Context, names ...api.RepoName) (*gitprotocol.AreReposClonedResponse, error) {
+	return g.areReposClonedResponse, nil
 }
 
 func formatJSON(s string) string {

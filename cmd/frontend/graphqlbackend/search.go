@@ -12,10 +12,13 @@ import (
 	"sync"
 
 	zoektrpc "github.com/google/zoekt/rpc"
+	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
@@ -63,10 +66,11 @@ func (r *schemaResolver) Search(args *struct {
 	defer tr.Finish()
 	q, err := query.ParseAndCheck(args.Query)
 	if err != nil {
-		return nil, err
+		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
 	}
 	return &searchResolver{
 		query: q,
+		zoekt: IndexedSearch(),
 	}, nil
 }
 
@@ -88,9 +92,10 @@ type searchResolver struct {
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
 	repoRevs, missingRepoRevs []*search.RepositoryRevisions
-	repoResults               []*searchSuggestionResolver
 	repoOverLimit             bool
 	repoErr                   error
+
+	zoekt *searchbackend.Zoekt
 }
 
 // rawQuery returns the original query string input.
@@ -194,22 +199,22 @@ func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, repoResults []*searchSuggestionResolver, overLimit bool, err error) {
+func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, overLimit bool, err error) {
 	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("effectiveRepoFieldValues: %v", effectiveRepoFieldValues))
 	defer func() {
 		if err != nil {
 			tr.SetError(err)
 		} else {
-			tr.LazyPrintf("numRepoRevs: %d, numMissingRepoRevs: %d, numRepoResults: %d, overLimit: %v", len(repoRevs), len(missingRepoRevs), len(repoResults), overLimit)
+			tr.LazyPrintf("numRepoRevs: %d, numMissingRepoRevs: %d, overLimit: %v", len(repoRevs), len(missingRepoRevs), overLimit)
 		}
 		tr.Finish()
 	}()
 	if effectiveRepoFieldValues == nil {
 		r.reposMu.Lock()
 		defer r.reposMu.Unlock()
-		if r.repoRevs != nil || r.missingRepoRevs != nil || r.repoResults != nil || r.repoErr != nil {
+		if r.repoRevs != nil || r.missingRepoRevs != nil || r.repoErr != nil {
 			tr.LazyPrintf("cached")
-			return r.repoRevs, r.missingRepoRevs, r.repoResults, r.repoOverLimit, r.repoErr
+			return r.repoRevs, r.missingRepoRevs, r.repoOverLimit, r.repoErr
 		}
 	}
 
@@ -228,7 +233,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	commitAfter, _ := r.query.StringValue(query.FieldRepoHasCommitAfter)
 
 	tr.LazyPrintf("resolveRepositories - start")
-	repoRevs, missingRepoRevs, repoResults, overLimit, err = resolveRepositories(ctx, resolveRepoOp{
+	repoRevs, missingRepoRevs, overLimit, err = resolveRepositories(ctx, resolveRepoOp{
 		repoFilters:      repoFilters,
 		minusRepoFilters: minusRepoFilters,
 		repoGroupFilters: repoGroupFilters,
@@ -242,11 +247,10 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	if effectiveRepoFieldValues == nil {
 		r.repoRevs = repoRevs
 		r.missingRepoRevs = missingRepoRevs
-		r.repoResults = repoResults
 		r.repoOverLimit = overLimit
 		r.repoErr = err
 	}
-	return repoRevs, missingRepoRevs, repoResults, overLimit, err
+	return repoRevs, missingRepoRevs, overLimit, err
 }
 
 // a patternRevspec maps an include pattern to a list of revisions
@@ -353,7 +357,7 @@ type resolveRepoOp struct {
 	commitAfter      string
 }
 
-func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, repoResolvers []*searchSuggestionResolver, overLimit bool, err error) {
+func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
 	tr, ctx := trace.New(ctx, "resolveRepositories", fmt.Sprintf("%+v", op))
 	defer func() {
 		tr.SetError(err)
@@ -375,7 +379,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	if groupNames := op.repoGroupFilters; len(groupNames) > 0 {
 		groups, err := resolveRepoGroups(ctx)
 		if err != nil {
-			return nil, nil, nil, false, err
+			return nil, nil, false, err
 		}
 		var patterns []string
 		for _, groupName := range groupNames {
@@ -395,7 +399,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	// revision specs, if they had any.
 	includePatternRevs, err := findPatternRevs(includePatterns)
 	if err != nil {
-		return nil, nil, nil, false, err
+		return nil, nil, false, err
 	}
 
 	tr.LazyPrintf("Repos.List - start")
@@ -412,19 +416,16 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	})
 	tr.LazyPrintf("Repos.List - done")
 	if err != nil {
-		return nil, nil, nil, false, err
+		return nil, nil, false, err
 	}
 	overLimit = len(repos) >= maxRepoListSize
 
 	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
-	repoResolvers = make([]*searchSuggestionResolver, 0, len(repos))
 	tr.LazyPrintf("Associate/validate revs - start")
 	for _, repo := range repos {
 		repoRev := &search.RepositoryRevisions{Repo: repo}
 
 		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
-
-		repoResolver := &repositoryResolver{repo: repo}
 
 		// if multiple specified revisions clash, report this usefully:
 		if len(revs) == 0 && clashingRevs != nil {
@@ -466,26 +467,68 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 				// if there is one.
 			}
 
-			if op.commitAfter != "" {
-				ok, err := git.HasCommitAfter(ctx, repoRev.GitserverRepo(), op.commitAfter, rev.RevSpec)
-				if err == nil && !ok {
-					continue
-				}
-			}
-
 			repoRev.Revs = append(repoRev.Revs, rev)
 		}
 
-		repoResolvers = append(repoResolvers, newSearchResultResolver(
-			repoResolver,
-			math.MaxInt32,
-		))
-
 		repoRevisions = append(repoRevisions, repoRev)
 	}
+
 	tr.LazyPrintf("Associate/validate revs - done")
 
-	return repoRevisions, missingRepoRevisions, repoResolvers, overLimit, nil
+	if op.commitAfter != "" {
+		repoRevisions, err = filterRepoHasCommitAfter(ctx, repoRevisions, op.commitAfter)
+	}
+
+	return repoRevisions, missingRepoRevisions, overLimit, err
+}
+
+func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) ([]*search.RepositoryRevisions, error) {
+	var (
+		mut  sync.Mutex
+		pass = []*search.RepositoryRevisions{}
+		res  = make(chan *search.RepositoryRevisions, 100)
+		run  = parallel.NewRun(128)
+	)
+
+	goroutine.Go(func() {
+		for rev := range res {
+			if len(rev.Revs) != 0 {
+				mut.Lock()
+				pass = append(pass, rev)
+				mut.Unlock()
+			}
+			run.Release()
+		}
+	})
+
+	for _, revs := range revisions {
+		run.Acquire()
+
+		revs := revs
+		goroutine.Go(func() {
+			var specifiers []search.RevisionSpecifier
+			for _, rev := range revs.Revs {
+				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
+				if err != nil {
+					if ctx.Err() != nil {
+						run.Error(errors.New("timeout due to repohascommitafter: filter, please try setting a larger timeout: in your query (we are improving this, see https://github.com/sourcegraph/sourcegraph/issues/4614)"))
+						continue
+					}
+					run.Error(err)
+					continue
+				}
+				if ok {
+					specifiers = append(specifiers, rev)
+				}
+			}
+			res <- &search.RepositoryRevisions{Repo: revs.Repo, Revs: specifiers}
+		})
+	}
+
+	err := run.Wait()
+	close(res)
+
+	return pass, err
 }
 
 func optimizeRepoPatternWithHeuristics(repoPattern string) string {
@@ -499,7 +542,7 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 }
 
 func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*searchSuggestionResolver, error) {
-	repos, _, _, overLimit, err := r.resolveRepositories(ctx, nil)
+	repos, _, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -519,6 +562,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		Repos:           repos,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
+		Zoekt:           r.zoekt,
 	}
 	if err := args.Pattern.Validate(); err != nil {
 		return nil, err

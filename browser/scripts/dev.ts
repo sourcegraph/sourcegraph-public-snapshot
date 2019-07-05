@@ -35,7 +35,7 @@ compiler.watch(
 
         buildChrome()
         buildFirefox()
-        tasks.copyPhabricator()
+        tasks.copyIntegrationAssets()
         triggerReload()
     }
 )

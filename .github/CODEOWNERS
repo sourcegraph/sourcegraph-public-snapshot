@@ -58,7 +58,7 @@
 /.gitmodules @beyang
 /.gitattributes @beyang
 /.yarnrc @felixfbecker
-/.eslintrc.js @felixfbecker
+.eslintrc.js @felixfbecker
 /CHANGELOG.md @beyang
 /pkg/httputil @beyang
 /pkg/diskcache @beyang
@@ -82,7 +82,8 @@
 /.mailmap @beyang
 /tsconfig.json @felixfbecker
 /jest.config.base.js @felixfbecker
-/tslint.json @felixfbecker
+tslint.json @felixfbecker
+tslint.config.js @felixfbecker
 /enterprise/cmd @beyang
 /enterprise/pkg @beyang
 /enterprise @beyang

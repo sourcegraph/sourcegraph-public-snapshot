@@ -109,7 +109,7 @@ type BitbucketServerConnection struct {
 	Password                    string                         `json:"password,omitempty"`
 	Repos                       []string                       `json:"repos,omitempty"`
 	RepositoryPathPattern       string                         `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string                       `json:"repositoryQuery"`
+	RepositoryQuery             []string                       `json:"repositoryQuery,omitempty"`
 	Token                       string                         `json:"token,omitempty"`
 	Url                         string                         `json:"url"`
 	Username                    string                         `json:"username"`
@@ -157,9 +157,10 @@ type BrandAssets struct {
 //
 // Only available in Sourcegraph Enterprise.
 type Branding struct {
-	Dark    *BrandAssets `json:"dark,omitempty"`
-	Favicon string       `json:"favicon,omitempty"`
-	Light   *BrandAssets `json:"light,omitempty"`
+	Dark              *BrandAssets `json:"dark,omitempty"`
+	DisableSymbolSpin bool         `json:"disableSymbolSpin,omitempty"`
+	Favicon           string       `json:"favicon,omitempty"`
+	Light             *BrandAssets `json:"light,omitempty"`
 }
 
 // BuiltinAuthProvider description: Configures the builtin username-password authentication provider.
@@ -210,8 +211,9 @@ type ExcludedBitbucketServerRepo struct {
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitHubRepo struct {
-	Id   string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
+	Id      string `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitLabProject struct {
 	Id   int    `json:"id,omitempty"`
@@ -265,7 +267,7 @@ type GitHubConnection struct {
 	Orgs                        []string              `json:"orgs,omitempty"`
 	Repos                       []string              `json:"repos,omitempty"`
 	RepositoryPathPattern       string                `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string              `json:"repositoryQuery"`
+	RepositoryQuery             []string              `json:"repositoryQuery,omitempty"`
 	Token                       string                `json:"token"`
 	Url                         string                `json:"url"`
 }

@@ -2,14 +2,17 @@ import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
-import { BehaviorSubject, from, NEVER, Observable, of, Subject, Subscription, throwError } from 'rxjs'
+import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
 import { filter, skip, switchMap, take } from 'rxjs/operators'
+import * as sinon from 'sinon'
 import { Services } from '../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
+import { PrivateRepoPublicSourcegraphComError } from '../../../../shared/src/backend/errors'
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
-import { IMutation, IQuery } from '../../../../shared/src/graphql/schema'
+import { IQuery } from '../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { resetAllMemoizationCaches } from '../../../../shared/src/util/memoizeObservable'
 import { isDefined } from '../../../../shared/src/util/types'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
@@ -21,6 +24,7 @@ import {
     handleCodeHost,
 } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
+import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
 
 const RENDER = jest.fn()
 
@@ -45,78 +49,7 @@ const createMockPlatformContext = (
 ): CodeIntelligenceProps['platformContext'] => ({
     forceUpdateTooltip: jest.fn(),
     urlToFile: jest.fn(),
-    // Mock implementation of `requestGraphQL()` that returns successful
-    // responses for `ResolveRev` and `BlobContent` queries, so that
-    // code views can be resolved
-    requestGraphQL: <R extends IQuery | IMutation>({
-        request,
-    }: {
-        request: string
-    }): Observable<SuccessGraphQLResult<R>> => {
-        if (request.trim().startsWith('query SiteProductVersion')) {
-            // tslint:disable-next-line: no-object-literal-type-assertion
-            return of({
-                data: {
-                    site: {
-                        productVersion: 'dev',
-                        buildVersion: 'dev',
-                        hasCodeIntelligence: true,
-                    },
-                },
-                errors: undefined,
-            } as SuccessGraphQLResult<R>)
-        }
-        if (request.trim().startsWith('query CurrentUser')) {
-            // tslint:disable-next-line: no-object-literal-type-assertion
-            return of({
-                data: {
-                    currentUser: {
-                        id: 'u1',
-                        displayName: 'Alice',
-                        username: 'alice',
-                        avatarURL: null,
-                        url: 'https://example.com/alice',
-                        settingsURL: 'https://example.com/alice/settings',
-                        emails: [{ email: 'alice@example.com' }],
-                        siteAdmin: false,
-                    },
-                },
-                errors: undefined,
-            } as SuccessGraphQLResult<R>)
-        }
-        if (request.trim().startsWith('query ResolveRev')) {
-            // tslint:disable-next-line: no-object-literal-type-assertion
-            return of({
-                data: {
-                    repository: {
-                        mirrorInfo: {
-                            cloned: true,
-                        },
-                        commit: {
-                            oid: 'foo',
-                        },
-                    },
-                },
-                errors: undefined,
-            } as SuccessGraphQLResult<R>)
-        }
-        if (request.trim().startsWith('query BlobContent')) {
-            // tslint:disable-next-line: no-object-literal-type-assertion
-            return of({
-                data: {
-                    repository: {
-                        commit: {
-                            file: {
-                                content: 'Hello World',
-                            },
-                        },
-                    },
-                },
-                errors: undefined,
-            } as SuccessGraphQLResult<R>)
-        }
-        return throwError(new Error('GraphQL request failed'))
-    },
+    requestGraphQL: mockRequestGraphQL(),
     sideloadedExtensionURL: new Subject<string | null>(),
     settings: NEVER,
     ...partialMocks,
@@ -149,6 +82,7 @@ describe('code_intelligence', () => {
 
         afterEach(() => {
             RENDER.mockClear()
+            resetAllMemoizationCaches()
             subscriptions.unsubscribe()
             subscriptions = new Subscription()
         })
@@ -243,7 +177,7 @@ describe('code_intelligence', () => {
             const toolbarMount = document.createElement('div')
             codeView.appendChild(toolbarMount)
             const fileInfo: FileInfo = {
-                repoName: 'foo',
+                rawRepoName: 'foo',
                 filePath: '/bar.ts',
                 commitID: '1',
             }
@@ -269,7 +203,22 @@ describe('code_intelligence', () => {
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    platformContext: createMockPlatformContext(),
+                    platformContext: createMockPlatformContext({
+                        // Simulate an instance with repositoryPathPattern
+                        requestGraphQL: mockRequestGraphQL({
+                            ...DEFAULT_GRAPHQL_RESPONSES,
+                            ResolveRepo: variables =>
+                                // tslint:disable-next-line: no-object-literal-type-assertion
+                                of({
+                                    data: {
+                                        repository: {
+                                            name: `github/${variables.rawRepoName}`,
+                                        },
+                                    },
+                                    errors: undefined,
+                                } as SuccessGraphQLResult<IQuery>),
+                        }),
+                    }),
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
                     telemetryService: NOOP_TELEMETRY_SERVICE,
                     render: RENDER,
@@ -285,9 +234,10 @@ describe('code_intelligence', () => {
                 {
                     editorId: 'editor#0',
                     isActive: true,
-                    resource: 'git://foo?1#/bar.ts',
+                    // The repo name exposed to extensions is affected by repositoryPathPattern
+                    resource: 'git://github/foo?1#/bar.ts',
                     model: {
-                        uri: 'git://foo?1#/bar.ts',
+                        uri: 'git://github/foo?1#/bar.ts',
                         text: 'Hello World',
                         languageId: 'typescript',
                     },
@@ -309,7 +259,7 @@ describe('code_intelligence', () => {
                 const codeView = createTestElement()
                 codeView.id = 'code'
                 const fileInfo: FileInfo = {
-                    repoName: 'foo',
+                    rawRepoName: 'foo',
                     filePath: '/bar.ts',
                     commitID: '1',
                 }
@@ -397,10 +347,10 @@ describe('code_intelligence', () => {
                 const codeView = createTestElement()
                 codeView.id = 'code'
                 const fileInfo: FileInfo = {
-                    repoName: 'foo',
+                    rawRepoName: 'foo',
                     filePath: '/bar.ts',
                     commitID: '2',
-                    baseRepoName: 'foo',
+                    baseRawRepoName: 'foo',
                     baseFilePath: '/bar.ts',
                     baseCommitID: '1',
                 }
@@ -557,7 +507,7 @@ describe('code_intelligence', () => {
             const codeView2 = createTestElement()
             codeView2.className = 'code'
             const fileInfo: FileInfo = {
-                repoName: 'foo',
+                rawRepoName: 'foo',
                 filePath: '/bar.ts',
                 commitID: '1',
             }
@@ -659,6 +609,252 @@ describe('code_intelligence', () => {
                 .toPromise()
             expect(editors).toEqual([])
             expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(false)
+        })
+
+        test('Hoverifies a view if the code host has no nativeTooltipResolvers', async () => {
+            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const codeView = createTestElement()
+            codeView.id = 'code'
+            const codeElement = document.createElement('span')
+            codeElement.innerText = 'alert(1)'
+            codeView.appendChild(codeElement)
+            const dom = {
+                getCodeElementFromTarget: sinon.spy(() => codeElement),
+                getCodeElementFromLineNumber: sinon.spy(() => codeElement),
+                getLineElementFromLineNumber: sinon.spy(() => codeElement),
+                getLineNumberFromCodeElement: sinon.spy(() => 1),
+            }
+            subscriptions.add(
+                handleCodeHost({
+                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    codeHost: {
+                        type: 'github',
+                        name: 'GitHub',
+                        check: () => true,
+                        codeViewResolvers: [
+                            toCodeViewResolver('#code', {
+                                dom,
+                                resolveFileInfo: codeView =>
+                                    of({
+                                        rawRepoName: 'foo',
+                                        filePath: '/bar.ts',
+                                        commitID: '1',
+                                    }),
+                            }),
+                        ],
+                    },
+                    extensionsController: createMockController(services),
+                    showGlobalDebug: true,
+                    platformContext: createMockPlatformContext(),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
+                })
+            )
+            const editors = await from(services.editor.editors)
+                .pipe(
+                    skip(1),
+                    take(1)
+                )
+                .toPromise()
+            expect(editors.length).toEqual(1)
+            codeView.dispatchEvent(new MouseEvent('mouseover'))
+            sinon.assert.called(dom.getCodeElementFromTarget)
+        })
+
+        test('Does not hoverify a view if the code host has nativeTooltipResolvers and they are enabled from settings', async () => {
+            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const codeView = createTestElement()
+            codeView.id = 'code'
+            const codeElement = document.createElement('span')
+            codeElement.innerText = 'alert(1)'
+            codeView.appendChild(codeElement)
+            const dom = {
+                getCodeElementFromTarget: sinon.spy(() => codeElement),
+                getCodeElementFromLineNumber: sinon.spy(() => codeElement),
+                getLineElementFromLineNumber: sinon.spy(() => codeElement),
+                getLineNumberFromCodeElement: sinon.spy(() => 1),
+            }
+            subscriptions.add(
+                handleCodeHost({
+                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    codeHost: {
+                        type: 'github',
+                        name: 'GitHub',
+                        check: () => true,
+                        nativeTooltipResolvers: [{ selector: '.native', resolveView: element => ({ element }) }],
+                        codeViewResolvers: [
+                            toCodeViewResolver('#code', {
+                                dom,
+                                resolveFileInfo: codeView =>
+                                    of({
+                                        rawRepoName: 'foo',
+                                        filePath: '/bar.ts',
+                                        commitID: '1',
+                                    }),
+                            }),
+                        ],
+                    },
+                    extensionsController: createMockController(services),
+                    showGlobalDebug: true,
+                    platformContext: {
+                        ...createMockPlatformContext(),
+                        settings: of({
+                            subjects: [],
+                            final: {
+                                extensions: {},
+                                'codeHost.useNativeTooltips': true,
+                            },
+                        }),
+                    },
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
+                })
+            )
+            const editors = await from(services.editor.editors)
+                .pipe(
+                    skip(1),
+                    take(1)
+                )
+                .toPromise()
+
+            expect(editors.length).toEqual(1)
+            codeView.dispatchEvent(new MouseEvent('mouseover'))
+            sinon.assert.notCalled(dom.getCodeElementFromTarget)
+        })
+
+        test('Hides native tooltips if they are disabled from settings', async () => {
+            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const codeView = createTestElement()
+            codeView.id = 'code'
+            const codeElement = document.createElement('span')
+            codeElement.innerText = 'alert(1)'
+            codeView.appendChild(codeElement)
+            const nativeTooltip = createTestElement()
+            nativeTooltip.classList.add('native')
+            const dom = {
+                getCodeElementFromTarget: sinon.spy(() => codeElement),
+                getCodeElementFromLineNumber: sinon.spy(() => codeElement),
+                getLineElementFromLineNumber: sinon.spy(() => codeElement),
+                getLineNumberFromCodeElement: sinon.spy(() => 1),
+            }
+            subscriptions.add(
+                handleCodeHost({
+                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    codeHost: {
+                        type: 'github',
+                        name: 'GitHub',
+                        check: () => true,
+                        nativeTooltipResolvers: [{ selector: '.native', resolveView: element => ({ element }) }],
+                        codeViewResolvers: [
+                            toCodeViewResolver('#code', {
+                                dom,
+                                resolveFileInfo: codeView =>
+                                    of({
+                                        rawRepoName: 'foo',
+                                        filePath: '/bar.ts',
+                                        commitID: '1',
+                                    }),
+                            }),
+                        ],
+                    },
+                    extensionsController: createMockController(services),
+                    showGlobalDebug: true,
+                    platformContext: {
+                        ...createMockPlatformContext(),
+                        settings: of({
+                            subjects: [],
+                            final: {
+                                extensions: {},
+                                'codeHost.useNativeTooltips': false,
+                            },
+                        }),
+                    },
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
+                })
+            )
+            const editors = await from(services.editor.editors)
+                .pipe(
+                    skip(1),
+                    take(1)
+                )
+                .toPromise()
+            expect(editors.length).toEqual(1)
+            codeView.dispatchEvent(new MouseEvent('mouseover'))
+            sinon.assert.called(dom.getCodeElementFromTarget)
+            expect(nativeTooltip.classList.contains('native-tooltip--hidden')).toBe(true)
+        })
+
+        test('gracefully handles viewing private repos on a public Sourcegraph instance', async () => {
+            const { services } = await integrationTestContext(undefined, { roots: [], editors: [] })
+            const codeView = createTestElement()
+            codeView.id = 'code'
+            const fileInfo: FileInfo = {
+                rawRepoName: 'github.com/foo',
+                filePath: '/bar.ts',
+                commitID: '1',
+            }
+            subscriptions.add(
+                handleCodeHost({
+                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    codeHost: {
+                        type: 'github',
+                        name: 'GitHub',
+                        check: () => true,
+                        codeViewResolvers: [
+                            toCodeViewResolver('#code', {
+                                dom: {
+                                    getCodeElementFromTarget: jest.fn(),
+                                    getCodeElementFromLineNumber: jest.fn(),
+                                    getLineElementFromLineNumber: jest.fn(),
+                                    getLineNumberFromCodeElement: jest.fn(),
+                                },
+                                resolveFileInfo: () => of(fileInfo),
+                            }),
+                        ],
+                    },
+                    extensionsController: createMockController(services),
+                    showGlobalDebug: true,
+                    platformContext: createMockPlatformContext({
+                        // Simulate an instance where all repo-specific graphQL requests error with
+                        // PrivateRepoPublicSourcegraph
+                        requestGraphQL: mockRequestGraphQL({
+                            ...DEFAULT_GRAPHQL_RESPONSES,
+                            BlobContent: () => throwError(new PrivateRepoPublicSourcegraphComError('BlobContent')),
+                            ResolveRepo: () => throwError(new PrivateRepoPublicSourcegraphComError('ResolveRepo')),
+                            ResolveRev: () => throwError(new PrivateRepoPublicSourcegraphComError('ResolveRev')),
+                        }),
+                    }),
+                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                    telemetryService: NOOP_TELEMETRY_SERVICE,
+                    render: RENDER,
+                })
+            )
+            const editors = await from(services.editor.editors)
+                .pipe(
+                    skip(1),
+                    take(1)
+                )
+                .toPromise()
+            expect(editors).toEqual([
+                {
+                    editorId: 'editor#0',
+                    isActive: true,
+                    // Repo name exposed in URIs is the raw repo name
+                    resource: 'git://github.com/foo?1#/bar.ts',
+                    model: {
+                        uri: 'git://github.com/foo?1#/bar.ts',
+                        // Text is undefined as BlobContent graphQL requests will error
+                        text: undefined,
+                        languageId: 'typescript',
+                    },
+                    selections: [],
+                    type: 'CodeEditor',
+                },
+            ])
         })
     })
 })

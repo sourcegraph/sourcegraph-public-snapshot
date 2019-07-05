@@ -45,10 +45,14 @@ export const Collapsible: React.FunctionComponent<Props> = ({
 
     return (
         <div className={className}>
-            <div className={`d-flex justify-content-between align-items-center ${isExpanded ? 'mb-3' : ''}`}>
+            <div
+                className={`d-flex justify-content-between align-items-center position-relative ${
+                    isExpanded ? 'mb-3' : ''
+                }`}
+            >
                 <span className={titleClassName}>{title}</span>
                 <button
-                    className="btn btn-icon"
+                    className="btn btn-icon stretched-link"
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleIsExpanded}
                 >

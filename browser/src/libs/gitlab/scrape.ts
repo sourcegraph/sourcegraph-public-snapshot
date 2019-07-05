@@ -1,5 +1,6 @@
 import { last, take } from 'lodash'
 
+import { FileSpec, RawRepoSpec, RevSpec } from '../../../../shared/src/util/url'
 import { commitIDFromPermalink } from '../../shared/util/dom'
 import { FileInfo } from '../code_intelligence'
 
@@ -12,22 +13,17 @@ export enum GitLabPageKind {
 /**
  * General information that can be found on any GitLab page that we care about. (i.e. has code)
  */
-interface GitLabInfo {
+interface GitLabInfo extends RawRepoSpec {
     pageKind: GitLabPageKind
 
     owner: string
     projectName: string
-
-    repoName: string
 }
 
 /**
  * Information about single file pages.
  */
-interface GitLabFileInfo extends Pick<GitLabInfo, 'repoName'> {
-    filePath: string
-    rev: string
-}
+interface GitLabFileInfo extends RawRepoSpec, FileSpec, RevSpec {}
 
 /**
  * Gets information about the page.
@@ -59,7 +55,7 @@ export function getPageInfo(): GitLabInfo {
     return {
         owner,
         projectName,
-        repoName: [host, owner, projectName].join('/'),
+        rawRepoName: [host, owner, projectName].join('/'),
         pageKind,
     }
 }
@@ -68,7 +64,7 @@ export function getPageInfo(): GitLabInfo {
  * Gets information about a file view page.
  */
 export function getFilePageInfo(): GitLabFileInfo {
-    const { repoName, owner, projectName } = getPageInfo()
+    const { rawRepoName, owner, projectName } = getPageInfo()
 
     const matches = window.location.pathname.match(new RegExp(`${owner}\/${projectName}\/blob\/(.*?)\/(.*)`))
     if (!matches) {
@@ -79,7 +75,7 @@ export function getFilePageInfo(): GitLabFileInfo {
     const filePath = matches[2]
 
     return {
-        repoName,
+        rawRepoName,
         filePath,
         rev,
     }
@@ -90,7 +86,7 @@ const createErrorBuilder = (message: string) => (kind: string) => new Error(`${m
 /**
  * Information specific to diff pages.
  */
-export interface GitLabDiffInfo extends Pick<GitLabFileInfo, 'repoName'>, Pick<GitLabInfo, 'owner' | 'projectName'> {
+export interface GitLabDiffInfo extends RawRepoSpec, Pick<GitLabInfo, 'owner' | 'projectName'> {
     mergeRequestID: string
 
     diffID?: string
@@ -101,7 +97,7 @@ export interface GitLabDiffInfo extends Pick<GitLabFileInfo, 'repoName'>, Pick<G
  * Scrapes the DOM for the repo name and revision information.
  */
 export function getDiffPageInfo(): GitLabDiffInfo {
-    const { repoName, owner, projectName } = getPageInfo()
+    const { rawRepoName, owner, projectName } = getPageInfo()
 
     const query = new URLSearchParams(window.location.search)
 
@@ -111,7 +107,7 @@ export function getDiffPageInfo(): GitLabDiffInfo {
     }
 
     return {
-        repoName,
+        rawRepoName,
         owner,
         projectName,
         mergeRequestID: matches[1],
@@ -166,7 +162,7 @@ export function getHeadCommitIDFromCodeView(codeView: HTMLElement): FileInfo['co
     return revMatch[1]
 }
 
-interface GitLabCommitPageInfo extends Pick<GitLabFileInfo, 'repoName'>, Pick<GitLabInfo, 'owner' | 'projectName'> {
+interface GitLabCommitPageInfo extends RawRepoSpec, Pick<GitLabInfo, 'owner' | 'projectName'> {
     commitID: FileInfo['commitID']
 }
 
@@ -174,10 +170,10 @@ interface GitLabCommitPageInfo extends Pick<GitLabFileInfo, 'repoName'>, Pick<Gi
  * Get the commit from the URL.
  */
 export function getCommitPageInfo(): GitLabCommitPageInfo {
-    const { repoName, owner, projectName } = getPageInfo()
+    const { rawRepoName, owner, projectName } = getPageInfo()
 
     return {
-        repoName,
+        rawRepoName,
         owner,
         projectName,
         commitID: last(window.location.pathname.split('/'))!,

@@ -22,6 +22,9 @@
         height: 1.5rem;
 
         width: 1.5rem;
+    }
+
+    &__logo-animated {
         &:hover {
             animation: spin 0.5s ease-in-out 1;
 

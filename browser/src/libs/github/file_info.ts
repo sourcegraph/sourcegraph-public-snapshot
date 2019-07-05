@@ -1,75 +1,30 @@
-import { Observable, of, throwError, zip } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
-import { PlatformContext } from '../../../../shared/src/platform/context'
-import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
+import { Observable, of, throwError } from 'rxjs'
 import { FileInfo } from '../code_intelligence'
 import { getCommitIDFromPermalink } from './scrape'
 import { getDeltaFileName, getDiffResolvedRev, getFilePath, parseURL } from './util'
 
-export const resolveDiffFileInfo = (
-    codeView: HTMLElement,
-    requestGraphQL: PlatformContext['requestGraphQL']
-): Observable<FileInfo> =>
-    of(codeView).pipe(
-        map(codeView => {
-            const { repoName } = parseURL()
-
-            return { codeView, repoName }
-        }),
-        map(({ codeView, ...rest }) => {
-            const { headFilePath, baseFilePath } = getDeltaFileName(codeView)
-            if (!headFilePath) {
-                throw new Error('cannot determine file path')
-            }
-
-            return { ...rest, codeView, headFilePath, baseFilePath }
-        }),
-        map(data => {
-            const diffResolvedRev = getDiffResolvedRev(codeView)
-            if (!diffResolvedRev) {
-                throw new Error('cannot determine delta info')
-            }
-
-            return {
-                headRev: diffResolvedRev.headCommitID,
-                baseRev: diffResolvedRev.baseCommitID,
-                ...data,
-            }
-        }),
-        switchMap(({ repoName, headRev, baseRev, ...rest }) => {
-            const resolvingHeadRev = resolveRev({ repoName, rev: headRev, requestGraphQL }).pipe(
-                retryWhenCloneInProgressError()
-            )
-            const resolvingBaseRev = resolveRev({ repoName, rev: baseRev, requestGraphQL }).pipe(
-                retryWhenCloneInProgressError()
-            )
-
-            return zip(resolvingHeadRev, resolvingBaseRev).pipe(
-                map(([headCommitID, baseCommitID]) => ({
-                    repoName,
-                    headRev,
-                    baseRev,
-                    headCommitID,
-                    baseCommitID,
-                    ...rest,
-                }))
-            )
-        }),
-        map(info => ({
-            repoName: info.repoName,
-            filePath: info.headFilePath,
-            commitID: info.headCommitID,
-            rev: info.headRev,
-
-            baseRepoName: info.repoName,
-            baseFilePath: info.baseFilePath || info.headFilePath,
-            baseCommitID: info.baseCommitID,
-            baseRev: info.baseRev,
-
-            headHasFileContents: true,
-            baseHasFileContents: true,
-        }))
-    )
+export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> => {
+    const { rawRepoName } = parseURL()
+    const { headFilePath, baseFilePath } = getDeltaFileName(codeView)
+    if (!headFilePath) {
+        throw new Error('cannot determine file path')
+    }
+    const diffResolvedRev = getDiffResolvedRev(codeView)
+    if (!diffResolvedRev) {
+        throw new Error('cannot determine delta info')
+    }
+    const { headCommitID, baseCommitID } = diffResolvedRev
+    return of({
+        rawRepoName,
+        filePath: headFilePath,
+        commitID: headCommitID,
+        rev: headCommitID,
+        baseRawRepoName: rawRepoName,
+        baseFilePath,
+        baseCommitID,
+        baseRev: baseCommitID,
+    })
+}
 
 export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> => {
     try {
@@ -77,7 +32,7 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> => 
         if (parsedURL.pageType !== 'blob') {
             throw new Error(`Current URL does not match a blob url: ${window.location}`)
         }
-        const { revAndFilePath, repoName } = parsedURL
+        const { revAndFilePath, rawRepoName } = parsedURL
 
         const filePath = getFilePath()
         if (!revAndFilePath.endsWith(filePath)) {
@@ -86,7 +41,7 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> => 
             )
         }
         return of({
-            repoName,
+            rawRepoName,
             filePath,
             commitID: getCommitIDFromPermalink(),
             rev: revAndFilePath.slice(0, -filePath.length),
@@ -120,7 +75,7 @@ export const resolveSnippetFileInfo = (codeView: HTMLElement): Observable<FileIn
         if (parsedURL.pageType !== 'blob') {
             throw new Error(`Snippet URL does not match a blob url: ${snippetPermalinkURL}`)
         }
-        const { revAndFilePath, repoName } = parsedURL
+        const { revAndFilePath, rawRepoName } = parsedURL
         if (!revAndFilePath.startsWith(commitID)) {
             throw new Error(
                 `Could not parse filePath: revAndFilePath ${revAndFilePath} does not start with commitID ${commitID}`
@@ -128,7 +83,7 @@ export const resolveSnippetFileInfo = (codeView: HTMLElement): Observable<FileIn
         }
         const filePath = revAndFilePath.slice(commitID.length + 1)
         return of({
-            repoName,
+            rawRepoName,
             filePath,
             commitID,
             rev: commitID,

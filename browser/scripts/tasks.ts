@@ -44,13 +44,14 @@ function copyDist(toDir: string): void {
     shelljs.cp('-R', 'build/dist/*', toDir)
 }
 
-export function copyPhabricator(): void {
-    shelljs.mkdir('-p', 'build/phabricator/dist/scripts')
-    shelljs.mkdir('-p', 'build/phabricator/dist/css')
-    shelljs.cp('build/dist/js/phabricator.bundle.js', 'build/phabricator/dist/scripts')
-    shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', 'build/phabricator/dist/scripts')
-    shelljs.cp('build/dist/css/style.bundle.css', 'build/phabricator/dist/css')
-    shelljs.cp('src/phabricator/extensionHostFrame.html', 'build/phabricator/dist')
+export function copyIntegrationAssets(): void {
+    shelljs.mkdir('-p', 'build/integration/scripts')
+    shelljs.mkdir('-p', 'build/integration/css')
+    shelljs.cp('build/dist/js/phabricator.bundle.js', 'build/integration/scripts')
+    shelljs.cp('build/dist/js/integration.bundle.js', 'build/integration/scripts')
+    shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', 'build/integration/scripts')
+    shelljs.cp('build/dist/css/style.bundle.css', 'build/integration/css')
+    shelljs.cp('src/phabricator/extensionHostFrame.html', 'build/integration')
 }
 
 const BROWSER_TITLES = {

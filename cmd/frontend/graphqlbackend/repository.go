@@ -152,14 +152,10 @@ func (r *repositoryResolver) Language() string {
 func (r *repositoryResolver) Enabled() bool { return true }
 
 func (r *repositoryResolver) CreatedAt() string {
-	return r.repo.CreatedAt.Format(time.RFC3339)
+	return time.Now().Format(time.RFC3339)
 }
 
 func (r *repositoryResolver) UpdatedAt() *string {
-	if r.repo.UpdatedAt != nil {
-		t := r.repo.UpdatedAt.Format(time.RFC3339)
-		return &t
-	}
 	return nil
 }
 
@@ -184,6 +180,23 @@ func (r *repositoryResolver) Detail() *markdownResolver {
 
 func (r *repositoryResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
+}
+
+func (r *repositoryResolver) ToRepository() (*repositoryResolver, bool) { return r, true }
+func (r *repositoryResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
+func (r *repositoryResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
+	return nil, false
+}
+func (r *repositoryResolver) ToCodemodResult() (*codemodResultResolver, bool) {
+	return nil, false
+}
+
+func (r *repositoryResolver) searchResultURIs() (string, string) {
+	return string(r.repo.Name), ""
+}
+
+func (r *repositoryResolver) resultCount() int32 {
+	return 1
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {

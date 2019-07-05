@@ -582,14 +582,18 @@ func TestRepos_Create(t *testing.T) {
 	ctx := dbtesting.TestContext(t)
 
 	// Add a repo.
-	createRepo(ctx, t, &types.Repo{Name: "a/b"})
+	createRepo(ctx, t, &types.Repo{Name: "a/b", Description: "test"})
 
 	repo, err := Repos.GetByName(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if repo.CreatedAt.IsZero() {
-		t.Fatal("got CreatedAt.IsZero()")
+
+	if got, want := repo.Name, api.RepoName("a/b"); got != want {
+		t.Fatalf("got Name %q, want %q", got, want)
+	}
+	if got, want := repo.Description, "test"; got != want {
+		t.Fatalf("got Description %q, want %q", got, want)
 	}
 }
 
