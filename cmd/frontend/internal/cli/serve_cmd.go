@@ -274,7 +274,7 @@ func (s *httpServers) Wait() {
 
 func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 	for _, o := range allowedOrigins {
-		if o == origin {
+		if o == "*" || o == origin {
 			return true
 		}
 	}
