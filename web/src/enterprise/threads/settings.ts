@@ -1,3 +1,4 @@
+import { ActionType } from '../../../../shared/src/api/types/action'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { FileDiff } from './detail/changes/computeDiff'
 
@@ -73,5 +74,6 @@ export interface ThreadSettings {
     actions?: { [id: string]: string | undefined }
 
     changesetActionDescriptions?: ChangesetAction[]
+    plan?: ActionType['plan']['plan']
     deltas?: ChangesetDelta[]
 }

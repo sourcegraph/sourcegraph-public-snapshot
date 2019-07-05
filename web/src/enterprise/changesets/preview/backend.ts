@@ -22,14 +22,14 @@ export type ChangesetCreationStatus = GQL.ThreadStatus.OPEN_ACTIVE | GQL.ThreadS
 
 interface ChangesetCreationInfo
     extends Pick<GQL.ICreateThreadOnDiscussionsMutationArguments['input'], 'title' | 'contents'>,
-        Pick<ThreadSettings, 'changesetActionDescriptions'> {
+        Pick<ThreadSettings, 'changesetActionDescriptions' | 'plan'> {
     status: ChangesetCreationStatus
 }
 
 export async function createChangeset(
     info: ChangesetCreationInfo
 ): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
-    const settings: ThreadSettings = { changesetActionDescriptions: info.changesetActionDescriptions }
+    const settings: ThreadSettings = { changesetActionDescriptions: info.changesetActionDescriptions, plan: info.plan }
     return createThread({
         ...info,
         type: GQL.ThreadType.CHANGESET,

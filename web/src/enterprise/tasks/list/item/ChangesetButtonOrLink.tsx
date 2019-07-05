@@ -14,8 +14,7 @@ export type ChangesetButtonOrLinkExistingChangeset =
     | typeof PENDING_CREATION
     | Pick<GQL.IDiscussionThread, 'idWithoutKind' | 'status' | 'url'>
 
-interface Props
-    extends Pick<CreateOrPreviewChangesetButtonProps, Exclude<keyof CreateOrPreviewChangesetButtonProps, 'disabled'>> {
+interface Props extends CreateOrPreviewChangesetButtonProps {
     existingChangeset: ChangesetButtonOrLinkExistingChangeset
 }
 
@@ -23,15 +22,25 @@ interface Props
  * A button to create/preview a changeset if no changeset exists yet, or else a link to the existing
  * changeset.
  */
-export const ChangesetButtonOrLink: React.FunctionComponent<Props> = ({ existingChangeset, ...props }) =>
+export const ChangesetButtonOrLink: React.FunctionComponent<Props> = ({
+    existingChangeset,
+    disabled,
+    className = '',
+    ...props
+}) =>
     existingChangeset === LOADING ? (
-        <span className="text-muted">Determining changeset status...</span>
-    ) : existingChangeset === undefined || existingChangeset === PENDING_CREATION ? (
-        <CreateOrPreviewChangesetButton onClick={props.onClick} disabled={existingChangeset === PENDING_CREATION} />
+        <span className={`text-muted ${className}`}>Determining changeset status...</span>
+    ) : existingChangeset === null || existingChangeset === PENDING_CREATION ? (
+        <CreateOrPreviewChangesetButton
+            {...props}
+            onClick={props.onClick}
+            disabled={disabled || existingChangeset === PENDING_CREATION}
+            className={className}
+        />
     ) : existingChangeset.status === GQL.ThreadStatus.PREVIEW ? (
         <Redirect to={existingChangeset.url} push={true} />
     ) : (
-        <Link className="btn btn-secondary" to={existingChangeset.url}>
+        <Link className={`btn btn-secondary ${className}`} to={existingChangeset.url}>
             Changeset #{existingChangeset.idWithoutKind}
         </Link>
     )

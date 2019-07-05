@@ -105,24 +105,11 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
                         workspaceEdit={activeAction.edit}
                         className="overflow-auto p-2 mb-3"
                     />
-                    <div className="m-3">
-                        <ChangesetButtonOrLink
-                            onClick={onCreateThreadClick}
-                            existingChangeset={createdThreadOrLoading}
-                        />
-                        {createdThreadOrLoading === undefined || createdThreadOrLoading === LOADING ? (
-                            <CreateOrPreviewChangesetButton disabled={createdThreadOrLoading === LOADING} />
-                        ) : createdThreadOrLoading.status === GQL.ThreadStatus.PREVIEW ? (
-                            <Redirect to={createdThreadOrLoading.url} push={true} />
-                        ) : (
-                            <>
-                                <Link className="btn btn-secondary" to={createdThreadOrLoading.url}>
-                                    Changeset #{createdThreadOrLoading.idWithoutKind}
-                                </Link>
-                                {justCreated && <strong className="text-success ml-3">Created!</strong>}
-                            </>
-                        )}
-                    </div>
+                    <ChangesetButtonOrLink
+                        onClick={onCreateThreadClick}
+                        existingChangeset={createdThreadOrLoading}
+                        className="m-3"
+                    />
                 </>
             ) : (
                 defaultPreview

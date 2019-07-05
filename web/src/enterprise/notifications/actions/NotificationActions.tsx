@@ -1,13 +1,16 @@
 import React from 'react'
 import { Action, ActionType, isActionType } from '../../../../../shared/src/api/types/action'
 import { CommandActionButton } from '../../actions/internal/CommandActionButton'
-import { PlanActionButton } from '../../actions/internal/PlanActionButton'
+import { PlanAction } from '../../actions/internal/PlanActionButton'
 import { ChangesetCreationStatus } from '../../changesets/preview/backend'
+import { ChangesetButtonOrLinkExistingChangeset } from '../../tasks/list/item/ChangesetButtonOrLink'
 
 interface Props {
     actions: readonly Action[]
     onPlanActionClick: (action: ActionType['plan'], creationStatus: ChangesetCreationStatus) => void
     onCommandActionClick: (action: ActionType['command']) => void
+
+    existingChangeset: ChangesetButtonOrLinkExistingChangeset
 
     disabled?: boolean
     className?: string
@@ -20,6 +23,7 @@ export const NotificationActions: React.FunctionComponent<Props> = ({
     actions,
     onPlanActionClick,
     onCommandActionClick,
+    existingChangeset,
     disabled,
     className,
 }) => {
@@ -28,10 +32,11 @@ export const NotificationActions: React.FunctionComponent<Props> = ({
     return (
         <div className={`d-flex flex-column align-items-start ${className}`}>
             {planActions.map((action, i) => (
-                <PlanActionButton
+                <PlanAction
                     key={i}
                     action={action}
                     onClick={onPlanActionClick}
+                    existingChangeset={existingChangeset}
                     disabled={disabled}
                     className="mr-3 mb-3"
                     buttonClassName="btn btn-success"
