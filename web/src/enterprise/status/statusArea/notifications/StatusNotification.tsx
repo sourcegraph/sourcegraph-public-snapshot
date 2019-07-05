@@ -72,24 +72,22 @@ export const StatusNotification: React.FunctionComponent<Props> = ({
 
     return (
         <div className={`status-notification ${className}`}>
-            <section className={contentClassName}>
-                <h4 className="mb-0 font-weight-normal d-flex align-items-center">
-                    <NotificationTypeIcon type={notification.type} className="icon-inline mr-2" />
-                    {notification.message}
-                </h4>
-            </section>
-            {notification.actions && (
-                <div className={contentClassName}>
-                    <NotificationActions
-                        actions={notification.actions}
-                        onPlanActionClick={onPlanActionClick}
-                        onCommandActionClick={onCommandActionClick}
-                        existingChangeset={createdChangesetOrLoading}
-                        disabled={disabled}
-                        className="mt-4"
-                    />
+            <div className={`d-flex align-items-start ${contentClassName}`}>
+                <NotificationTypeIcon type={notification.type} className="icon-inline h3 mb-0 mr-3" />
+                <div>
+                    <h3 className="mb-0 font-weight-normal d-flex align-items-center">{notification.message}</h3>
+                    {notification.actions && (
+                        <NotificationActions
+                            actions={notification.actions}
+                            onPlanActionClick={onPlanActionClick}
+                            onCommandActionClick={onCommandActionClick}
+                            existingChangeset={createdChangesetOrLoading}
+                            disabled={disabled}
+                            className="mt-4"
+                        />
+                    )}
                 </div>
-            )}
+            </div>
         </div>
     )
 }

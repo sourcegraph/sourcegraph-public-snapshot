@@ -49,7 +49,7 @@ export const StatusNotificationsPage: React.FunctionComponent<Props> = ({
                             <StatusNotification
                                 {...props}
                                 notification={notification}
-                                className="py-4 border-bottom"
+                                className="py-5 border-bottom"
                                 contentClassName="container"
                             />
                         </li>

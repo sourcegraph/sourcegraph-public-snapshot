@@ -36,8 +36,10 @@ export const PlanAction: React.FunctionComponent<Props> = ({
         onClick,
     ])
     return (
-        <div className={`d-flex align-items-stretch border border-success ${className}`}>
-            <span className="text-success p-3">{action.plan.title}</span>
+        <div className={`d-flex align-items-stretch ${className}`}>
+            <span className="p-3 text-success border-left border-bottom border-top border-left-success border-bottom-success border-top-success">
+                {action.plan.title}
+            </span>
             <ChangesetButtonOrLink
                 onClick={onButtonClick}
                 existingChangeset={existingChangeset}

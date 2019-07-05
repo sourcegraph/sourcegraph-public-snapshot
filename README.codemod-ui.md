@@ -55,3 +55,11 @@ The plan is stored in the changeset. Each operation in the sequence consists of:
 
 - parameters, specified as a JSON object whose schema is defined by the plan
 - a command to invoke (with the parameters and diagnostics passed as arguments)
+
+## Status
+
+
+
+## Notification
+
+A notification consists of a message, actions, and contextual information about the current state. 
