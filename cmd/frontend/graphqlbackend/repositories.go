@@ -208,6 +208,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repository
 		if r.opt.LimitOffset != nil && i == r.opt.Limit {
 			break
 		}
+
 		resolvers = append(resolvers, &repositoryResolver{repo: repo})
 	}
 	return resolvers, nil

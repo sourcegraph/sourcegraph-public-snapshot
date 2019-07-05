@@ -6,19 +6,6 @@ Retrospectives are a chance for teams to reflect on past experiences, celebrate 
 
 The [release captain](../releases.md#release-captain) is responsible for facilitating a retrospective for each monthly release, but additional retrospectives may be organized by anyone on the team for any reason (e.g. project retrospective, ops incident, customer incident).
 
-## Completed retrospectives
-
-<!--
-Add links to completed retrospective docs here. These are publicly visible, so make sure they don't include anything sensitive.
--->
-
-- [Sourcegraph 3.0 beta retrospective](3_0_beta.md)
-- [Sourcegraph 3.0 retrospective](3_0.md)
-- [Tomás’ notes on the PostgreSQL upgrade](postgresql_upgrade.md)
-- [Sourcegraph 3.2 retrospective](3_2.md)
-- [Sourcegraph customer license expiration retrospective](customer_license_expiration.md)
-- [Sourcegraph 3.3 retrospective](3_3.md)
-
 ## How to facilitate a retrospective
 
 If you are facilitating a retrospective for a project or release, follow these steps.
@@ -105,3 +92,18 @@ At the end of your retrospective, it’s important to take five minutes to discu
 Remove any sensitive information from the retrospective document and commit it to this directory.
 
 To maintain list formatting, download the Google Doc as plaintext instead of attempting to copy/paste: File > Download As > Plain Text (.txt).
+
+## Completed retrospectives	
+
+<!--	
+Add links to completed retrospective docs here. These are publicly visible, so make sure they don't include anything sensitive.	
+-->	
+
+- [3.0 beta](3_0_beta.md)	
+- [3.0](3_0.md)	
+- [Tomás’ notes on the PostgreSQL upgrade](postgresql_upgrade.md)	
+- [3.2](3_2.md)	
+- [Customer license expiration](customer_license_expiration.md)	
+- [3.3](3_3.md)
+- [3.4](3_4.md)
+- [3.5](3_5.md)

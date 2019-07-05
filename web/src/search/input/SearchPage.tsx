@@ -7,11 +7,12 @@ import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/se
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { Notices } from '../../global/Notices'
-import { Settings } from '../../schema/settings.schema'
+import { QuickLink, Settings } from '../../schema/settings.schema'
 import { ThemePreferenceProps, ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { queryIndexOfScope, submitSearch } from '../helpers'
+import { QuickLinks } from '../QuickLinks'
 import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
@@ -74,6 +75,7 @@ export class SearchPage extends React.Component<Props, State> {
             }
         }
         const hasScopes = this.getScopes().length > 0
+        const quickLinks = this.getQuickLinks()
         return (
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
@@ -101,6 +103,11 @@ export class SearchPage extends React.Component<Props, State> {
                                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 />
                             </div>
+                            {quickLinks.length > 0 && (
+                                <div className="search-page__input-sub-container">
+                                    <QuickLinks quickLinks={quickLinks} />
+                                </div>
+                            )}
                             <QueryBuilder
                                 onFieldsQueryChange={this.onBuilderQueryChange}
                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
@@ -112,6 +119,11 @@ export class SearchPage extends React.Component<Props, State> {
                                 onFieldsQueryChange={this.onBuilderQueryChange}
                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             />
+                            {quickLinks.length > 0 && (
+                                <div className="search-page__input-sub-container">
+                                    <QuickLinks quickLinks={quickLinks} />
+                                </div>
+                            )}
                             <div className="search-page__input-sub-container">
                                 <SearchFilterChips
                                     location={this.props.location}
@@ -161,10 +173,16 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     private getScopes(): ISearchScope[] {
-        const allScopes: ISearchScope[] =
+        return (
             (isSettingsValid<Settings>(this.props.settingsCascade) &&
                 this.props.settingsCascade.final['search.scopes']) ||
             []
-        return allScopes
+        )
+    }
+
+    private getQuickLinks(): QuickLink[] {
+        return (
+            (isSettingsValid<Settings>(this.props.settingsCascade) && this.props.settingsCascade.final.quicklinks) || []
+        )
     }
 }

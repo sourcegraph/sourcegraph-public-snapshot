@@ -11,8 +11,8 @@ A search scope is any valid query. For example, a search scope that defines all 
 Custom search scopes can be specified at 3 different levels:
 
 - By site admins for all users: in the **Global settings** in the site admin area.
-- By org admins for all org members: in the org profile **Configuration** section
-- By users for themselves only: in the user profile **Configuration** section
+- By organization admins for all organization members: in the organization profile **Settings** section
+- By users for themselves only: in the user profile **Settings** section
 
 You can configure search scopes by setting the `search.scopes` to a JSON array of `{name, value}` objects.
 

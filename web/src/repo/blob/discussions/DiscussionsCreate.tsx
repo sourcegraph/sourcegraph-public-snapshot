@@ -99,7 +99,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                 const location = this.props.location
                 const hash = new URLSearchParams(location.hash.slice('#'.length))
                 hash.set('tab', 'discussions')
-                hash.set('threadID', thread.id)
+                hash.set('threadID', thread.idWithoutKind)
                 // TODO(slimsag:discussions): ASAP: focus the new thread's range
                 this.props.history.push(location.pathname + location.search + '#' + hash.toString())
             }),
