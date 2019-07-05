@@ -97,6 +97,8 @@ type PatternInfo struct {
 	// PatternMatchesPath is whether a file whose path matches Pattern (but whose contents don't) should be
 	// considered a match.
 	PatternMatchesPath bool
+
+	IsMultiLine bool
 }
 
 // AllIncludePatterns returns all include patterns (including the deprecated

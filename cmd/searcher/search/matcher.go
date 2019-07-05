@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"regexp"
 	"regexp/syntax"
@@ -182,6 +183,116 @@ func (rg *readerGrep) matchString(s string) bool {
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
 func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []protocol.LineMatch, limitHit bool, err error) {
+	if strings.Contains(rg.re.String(), "\\n") {
+		if rg.ignoreCase && rg.transformBuf == nil {
+			rg.transformBuf = make([]byte, zf.MaxLen)
+		}
+
+		// fileMatchBuf is what we run match on, fileBuf is the original
+		// data (for Preview).
+		fileBuf := zf.DataFor(f)
+		fileMatchBuf := fileBuf
+		// If we are ignoring case, we transform the input instead of
+		// relying on the regular expression engine which can be
+		// slow. compile has already lowercased the pattern. We also
+		// trade some correctness for perf by using a non-utf8 aware
+		// lowercase function.
+		if rg.ignoreCase {
+			fileMatchBuf = rg.transformBuf[:len(fileBuf)]
+			bytesToLowerASCII(fileMatchBuf, fileBuf)
+		}
+
+		// Most files will not have a match and we bound the number of matched
+		// files we return. So we can avoid the overhead of parsing out new lines
+		// and repeatedly running the regex engine by running a single match over
+		// the whole file. This does mean we duplicate work when actually
+		// searching for results. We use the same approach when we search
+		// per-line. Additionally if we have a non-empty literalSubstring, we use
+		// that to prune out files since doing bytes.Index is very fast.
+		if !bytes.Contains(fileMatchBuf, rg.literalSubstring) {
+			return nil, false, nil
+		}
+		first := rg.re.FindIndex(fileMatchBuf)
+		if first == nil {
+			return nil, false, nil
+		}
+
+		tempFileBuf := fileBuf
+		tempFileMatchBuf := tempFileBuf
+		lineNumberToLineLength := make(map[int]int)
+		idx := 0
+		for i := 0; len(matches) < maxLineMatches; i++ {
+			advance, lineBuf, err := scanLines(tempFileBuf, true)
+			if err != nil {
+				// ScanLines should never return an err
+				return nil, false, err
+			}
+			if advance == 0 { // EOF
+				break
+			}
+
+			// matchBuf is what we actually match on. We have already done
+			// the transform of fileBuf in fileMatchBuf. lineBuf is a
+			// prefix of fileBuf, so matchBuf is the corresponding prefix.
+			// matchBuf := fileMatchBuf
+			lineNumberToLineLength[i] = utf8.RuneCount(lineBuf) + 1
+			tempFileBuf = tempFileBuf[advance:]
+			tempFileMatchBuf = tempFileMatchBuf[advance:]
+
+			// Advance file bufs in sync
+			// fileBuf = fileBuf[advance:]
+			// fileMatchBuf = fileMatchBuf[advance:]
+
+			// Check whether we're before the first match.
+			idx += advance
+			if idx < first[0] {
+				continue
+			}
+		}
+
+		matchBuf := fileMatchBuf
+		locs := rg.re.FindAllIndex(matchBuf, maxOffsets)
+		fmt.Println("LOCS", locs)
+		if len(locs) > 0 {
+			lineLimitHit := len(locs) == maxOffsets
+			for _, match := range locs {
+				startingLine, startingOffset, startingLength := getStartingMatch(matchBuf, match[0], match[1], lineNumberToLineLength)
+				endingLine, endingOffset, endingLength := getEndingMatch(matchBuf, match[0], match[1], lineNumberToLineLength)
+				matches = append(matches, protocol.LineMatch{
+					// making a copy of lineBuf is intentional.
+					// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
+					// which currently occurs before Preview has been serialized.
+					// TODO: consider moving the call to Close until after we are
+					// done with Preview, and stop making a copy here.
+					// Special care must be taken to call Close on all possible paths, including error paths.
+					Preview:    string(matchBuf[match[0]]),
+					LineNumber: startingLine,
+					// This won't support non-multiline multiple matches (?)
+					OffsetAndLengths: [][2]int{[2]int{startingOffset, startingLength}},
+					LimitHit:         lineLimitHit,
+				})
+
+				matches = append(matches, protocol.LineMatch{
+					// making a copy of lineBuf is intentional.
+					// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
+					// which currently occurs before Preview has been serialized.
+					// TODO: consider moving the call to Close until after we are
+					// done with Preview, and stop making a copy here.
+					// Special care must be taken to call Close on all possible paths, including error paths.
+					Preview:          string(matchBuf[match[1]]),
+					LineNumber:       endingLine,
+					OffsetAndLengths: [][2]int{[2]int{endingOffset, endingLength}},
+					LimitHit:         lineLimitHit,
+				})
+				fmt.Println("start", match[0], "end", match[1])
+				fmt.Println("startingLine", startingLine, "startingOffset", startingOffset, "startingLength", startingLength, "endingLine", endingLine, "endingOffset", endingOffset, "endingLength", endingLength)
+			}
+
+		}
+		limitHit = len(matches) == maxLineMatches
+		return matches, limitHit, nil
+	}
+	// fmt.Println("RG.RE NON NEW LINE", rg.re.String())
 	if rg.ignoreCase && rg.transformBuf == nil {
 		rg.transformBuf = make([]byte, zf.MaxLen)
 	}
@@ -273,6 +384,67 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 	}
 	limitHit = len(matches) == maxLineMatches
 	return matches, limitHit, nil
+}
+
+// bufio.ScanLines without dropping the terminal \r
+func scanLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+	if i := bytes.IndexByte(data, '\n'); i >= 0 {
+		// We have a full newline-terminated line.
+		return i + 1, data[0:i], nil
+	}
+	// If we're at EOF, we have a final, non-terminated line. Return it.
+	if atEOF {
+		return len(data), data, nil
+	}
+	// Request more data.
+	return 0, nil, nil
+}
+
+func getStartingMatch(fileBuf []byte, matchStartByte int, end int, lineNumberToLineLength map[int]int) (startingLine, startingOffset, startingLength int) {
+	// ReadBytes up til \n. Count how long each line is, store in a map. Determiine which line a match is based on offset.
+	sumBytes := 0
+	fmt.Println("FILEBUF", fileBuf)
+	fmt.Println("!!!!!!!!!!!!!!!!matchStartByte", string(fileBuf[matchStartByte:]))
+
+	for lineNumber := 0; lineNumber < len(lineNumberToLineLength); lineNumber++ {
+		lineLength := lineNumberToLineLength[lineNumber]
+		originalSum := sumBytes
+		sumBytes = sumBytes + lineLength
+		bytesAtBeginningOfLine := (sumBytes - lineLength)
+		fmt.Println("SUMBYTES", sumBytes, "BYTES AT BEGINNING", bytesAtBeginningOfLine, "MATCH START BYTE", matchStartByte, "lineNumber", lineNumber)
+		if sumBytes >= matchStartByte {
+			fmt.Println("this should be the line", string(fileBuf[originalSum:sumBytes]))
+			startingLine = lineNumber
+			startingOffset = matchStartByte - bytesAtBeginningOfLine
+			startingLength = sumBytes - matchStartByte
+			break
+		}
+	}
+	return startingLine, startingOffset, startingLength
+}
+
+func getEndingMatch(fileBuf []byte, start int, matchEndByte int, lineNumberToLineLength map[int]int) (endingLine, endingOffset, endingLength int) {
+	// ReadBytes up til \n. Count how long each line is, store in a map. Determiine which line a match is based on offset.
+	sumBytes := 0
+	fmt.Println("@@@matchEndByte", string(fileBuf[:matchEndByte]))
+	for lineNumber := 0; lineNumber < len(lineNumberToLineLength); lineNumber++ {
+		lineLength := lineNumberToLineLength[lineNumber]
+		sumBytes = sumBytes + lineLength
+		startingBytes := (sumBytes - lineLength)
+		fmt.Println("SUMBYTES", sumBytes, "MATCH END BYTE", matchEndByte, "Line number", lineNumber)
+		if sumBytes >= matchEndByte-1 {
+			endingOffset = 0
+			endingLength = (matchEndByte) - startingBytes
+			fmt.Println("startingBytes", startingBytes, "matchEndBytes", matchEndByte)
+			fmt.Println(endingLength)
+			endingLine = lineNumber
+			break
+		}
+	}
+	return endingLine, endingOffset, endingLength
 }
 
 // FindZip is a convenience function to run Find on f.
