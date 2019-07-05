@@ -17,10 +17,13 @@ func TestSearchPagination_unmarshalSearchCursor(t *testing.T) {
 		UserID:           3,
 	}
 	enc := marshalSearchCursor(want)
-	if enc != "" {
+	if enc == "" {
 		t.Fatal("expected encoded string")
 	}
-	got, err := unmarshalSearchCursor(enc)
+	got, err = unmarshalSearchCursor(&enc)
+	if err != nil {
+		t.Fatal("unexpected error", err)
+	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatal("expected got == want")
 	}

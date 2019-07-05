@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/zoekt"
 	zoektrpc "github.com/google/zoekt/rpc"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
@@ -25,7 +26,11 @@ func TestSearchResults(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
 	getResults := func(t *testing.T, query string) []string {
-		r, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: query})
+		r, err := (&schemaResolver{}).Search(&struct {
+			Query  string
+			Cursor *graphql.ID
+			Limit  *int32
+		}{Query: query})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
@@ -19,7 +20,11 @@ func TestSearchSuggestions(t *testing.T) {
 
 	getSuggestions := func(t *testing.T, query string) []string {
 		t.Helper()
-		r, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: query})
+		r, err := (&schemaResolver{}).Search(&struct {
+			Query  string
+			Cursor *graphql.ID
+			Limit  *int32
+		}{Query: query})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
@@ -104,7 +109,11 @@ func TestSearchSuggestions(t *testing.T) {
 	})
 
 	t.Run("single term invalid regex", func(t *testing.T) {
-		sr, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: "[foo"})
+		sr, err := (&schemaResolver{}).Search(&struct {
+			Query  string
+			Cursor *graphql.ID
+			Limit  *int32
+		}{Query: "[foo"})
 		if err != nil {
 			t.Fatal(err)
 		}
