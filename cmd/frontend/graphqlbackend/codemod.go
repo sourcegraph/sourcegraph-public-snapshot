@@ -54,7 +54,7 @@ func (r *codemodResultResolver) ToCommitSearchResult() (*commitSearchResultResol
 	return nil, false
 }
 func (r *codemodResultResolver) ToCodemodResult() (*codemodResultResolver, bool) {
-	return r, false
+	return r, true
 }
 
 func (r *codemodResultResolver) searchResultURIs() (string, string) {
@@ -195,6 +195,7 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 			results = append(results, &resolver)
 		}
 	}
+
 	return results, common, nil
 }
 
