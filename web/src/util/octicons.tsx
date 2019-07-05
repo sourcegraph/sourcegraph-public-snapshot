@@ -39,7 +39,12 @@ export const ChecklistIcon: React.FunctionComponent<{ className?: string }> = ({
     <Octicon {...defaultProps} icon={Checklist} className={className} />
 )
 
+// TODO!(sqs): not named same name as octicon
 export const ActionsIcon: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
+    <Octicon {...defaultProps} icon={Zap} className={className} />
+)
+
+export const ZapIcon: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
     <Octicon {...defaultProps} icon={Zap} className={className} />
 )
 
