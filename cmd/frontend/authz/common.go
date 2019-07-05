@@ -7,7 +7,7 @@ import (
 
 func GetCodeHostRepos(c *extsvc.CodeHost, repos []*types.Repo) (mine, others []*types.Repo) {
 	for _, repo := range repos {
-		if extsvc.IsHostOf(c, repo.ExternalRepo) {
+		if extsvc.IsHostOf(c, &repo.ExternalRepo) {
 			mine = append(mine, repo)
 		} else {
 			others = append(others, repo)
