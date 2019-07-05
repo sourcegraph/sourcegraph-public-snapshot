@@ -288,7 +288,8 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 			continue
 		}
 		if err := json.Unmarshal(b, &raw); err != nil {
-			log15.Info("Skipping json lines decode error in codemod.")
+			// skip on other decode errors (including e.g., empty
+			// responses if dependencies are not installed)
 			continue
 		}
 		fileURL := fileMatchURI(repoRevs.Repo.Name, repoRevs.Revs[0].RevSpec, raw.URI)
