@@ -9,6 +9,7 @@ import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { mutateGraphQL } from '../../../backend/graphql'
 import { createThread } from '../../../discussions/backend'
 import { fetchRepository } from '../../../repo/settings/backend'
+import { extensionsController } from '../../../search/testHelpers'
 import { computeDiff, FileDiff } from '../../threads/detail/changes/computeDiff'
 import { ChangesetDelta, ThreadSettings } from '../../threads/settings'
 
@@ -27,15 +28,11 @@ interface ChangesetCreationInfo
 }
 
 export async function createChangeset(
-    info: ChangesetCreationInfo
+    { extensionsController }: ExtensionsControllerProps,
+    info: ChangesetCreationInfo & Required<Pick<ChangesetCreationInfo, 'plan'>>
 ): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
-    const settings: ThreadSettings = { changesetActionDescriptions: info.changesetActionDescriptions, plan: info.plan }
-    return createThread({
-        ...info,
-        type: GQL.ThreadType.CHANGESET,
-        project: FAKE_PROJECT_ID,
-        settings: JSON.stringify(settings, null, 2),
-    }).toPromise()
+    const edit = await extensionsController.services.commands.executePlanCommand(info.plan.operations[0].command)
+    return createChangesetFromDiffs(await computeDiff(extensionsController, [{ edit }]), info)
 }
 
 /**
@@ -112,7 +109,11 @@ export async function createChangesetFromDiffs(
         deltas.push(delta)
     }
 
-    const settings: ThreadSettings = { deltas, changesetActionDescriptions: info.changesetActionDescriptions }
+    const settings: ThreadSettings = {
+        deltas,
+        changesetActionDescriptions: info.changesetActionDescriptions,
+        plan: info.plan,
+    }
     return createThread({
         ...info,
         type: GQL.ThreadType.CHANGESET,

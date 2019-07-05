@@ -1,4 +1,5 @@
 import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
+import { WorkspaceEdit } from '../../types/workspaceEdit'
 
 /** A registered command in the command registry. */
 export interface CommandEntry {
@@ -43,6 +44,10 @@ export class CommandRegistry {
 
     public executeCommand(params: ExecuteCommandParams): Promise<any> {
         return executeCommand(this.commandsSnapshot, params)
+    }
+
+    public async executePlanCommand(params: ExecuteCommandParams): Promise<WorkspaceEdit> {
+        return WorkspaceEdit.fromJSON(await this.executeCommand(params))
     }
 
     /** All commands, emitted whenever the set of registered commands changed. */

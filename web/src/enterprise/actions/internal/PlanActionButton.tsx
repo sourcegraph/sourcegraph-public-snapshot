@@ -36,14 +36,14 @@ export const PlanAction: React.FunctionComponent<Props> = ({
         onClick,
     ])
     return (
-        <div className={`d-flex flex-column ${className} p-3 border border-success`}>
-            <span className="text-success mb-3">{action.plan.title}</span>
+        <div className={`d-flex align-items-stretch ${className} `}>
             <ChangesetButtonOrLink
                 onClick={onButtonClick}
                 existingChangeset={existingChangeset}
                 disabled={disabled}
                 buttonClassName={buttonClassName}
             />
+            <span className="text-success p-3">{action.plan.title}</span>
         </div>
     )
 }

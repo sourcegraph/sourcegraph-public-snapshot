@@ -5,6 +5,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../../shared/src/util/strings'
 import { ActionsIcon, ChecklistIcon, DiffIcon, GitCommitIcon } from '../../../util/octicons'
 import { ThreadSettings } from '../../threads/settings'
+import { ChangesetOperationIcon } from '../icons'
 
 interface Props {
     thread: GQL.IDiscussionThread
@@ -31,18 +32,18 @@ export const countChangesetCommits = (c: GQL.IChangeset) => c.commits.length
 
 const ITEMS: SummaryItem[] = [
     {
-        noun: 'action',
-        icon: ActionsIcon,
+        noun: 'operation',
+        icon: ChangesetOperationIcon,
         count: countChangesetActions,
     },
-    { noun: 'Review task', icon: ChecklistIcon, count: null },
+    // TODO!(sqs) { noun: 'Review task', icon: ChecklistIcon, count: null },
     {
         noun: 'repository affected',
         pluralNoun: 'repositories affected',
         icon: RepositoryIcon,
         count: c => c.repositories.length,
     },
-    { noun: 'commit', icon: GitCommitIcon, count: countChangesetCommits },
+    // TODO!(sqs) { noun: 'commit', icon: GitCommitIcon, count: countChangesetCommits },
     {
         noun: 'file changed',
         pluralNoun: 'files changed',

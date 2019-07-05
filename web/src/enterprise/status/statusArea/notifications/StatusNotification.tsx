@@ -37,19 +37,22 @@ export const StatusNotification: React.FunctionComponent<Props> = ({
             setCreatedChangesetOrLoading(PENDING_CREATION)
             try {
                 setCreatedChangesetOrLoading(
-                    await createChangeset({
-                        title: plan.plan.operations[0].command.title,
-                        contents: notification.message,
-                        status: creationStatus,
-                        plan: plan.plan,
-                        changesetActionDescriptions: [
-                            {
-                                title: plan.plan.operations[0].command.title,
-                                timestamp: Date.now(),
-                                user: 'sqs',
-                            },
-                        ],
-                    })
+                    await createChangeset(
+                        { extensionsController },
+                        {
+                            title: plan.plan.operations[0].command.title,
+                            contents: notification.message,
+                            status: creationStatus,
+                            plan: plan.plan,
+                            changesetActionDescriptions: [
+                                {
+                                    title: plan.plan.title,
+                                    timestamp: Date.now(),
+                                    user: 'sqs',
+                                },
+                            ],
+                        }
+                    )
                 )
             } catch (err) {
                 setCreatedChangesetOrLoading(null)
@@ -59,7 +62,7 @@ export const StatusNotification: React.FunctionComponent<Props> = ({
                 })
             }
         },
-        [extensionsController.services.notifications.showMessages, notification.message]
+        [extensionsController, notification.message]
     )
     const isPlanLoading = createdChangesetOrLoading === LOADING
 

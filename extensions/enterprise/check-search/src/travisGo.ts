@@ -1,6 +1,18 @@
 import { flatten } from 'lodash'
 import { from, Observable, of, Subscription, Unsubscribable } from 'rxjs'
-import { map, publishReplay, refCount, startWith, switchMap, toArray, tap } from 'rxjs/operators'
+import {
+    map,
+    publishReplay,
+    refCount,
+    startWith,
+    switchMap,
+    toArray,
+    tap,
+    first,
+    delay,
+    debounceTime,
+    filter,
+} from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { isDefined } from '../../../../shared/src/util/types'
@@ -113,13 +125,18 @@ function registerStatusProvider(
     subscriptions.add(
         sourcegraph.commands.registerPlanCommand<FixGoVersionParams>(
             FIX_GO_VERSION_COMMAND_ID,
-            async (_params, diagnostics) => {
-                sourcegraph.app.activeWindow!.showNotification(
-                    'Hello from plan command',
-                    sourcegraph.NotificationType.Info
-                )
-
-                const { edit } = await computeFixAllActionsFromDiagnostics(diagnostics)
+            async (_params, _diagnostics) => {
+                // TODO!(sqs): diagnostics should be passed from caller based on what plan asks for
+                //
+                // TODO!(sqs): pause to give time for diagnostics to be computed, super hacky
+                const diags = await diagnostics
+                    .pipe(
+                        filter(d => d.some(([, diags]) => diags.length > 0)),
+                        debounceTime(1500),
+                        first()
+                    )
+                    .toPromise()
+                const { edit } = await computeFixAllActionsFromDiagnostics(diags)
                 return edit
             }
         )

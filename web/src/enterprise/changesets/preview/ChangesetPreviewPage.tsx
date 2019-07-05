@@ -70,7 +70,7 @@ export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
                 <ChangesetActionsList {...props} {...context} xchangeset={xchangeset} className="mb-4" />
                 <ChangesetRepositoriesList {...props} {...context} xchangeset={xchangeset} showCommits={true} />
                 <ChangesetCommitsList {...props} {...context} xchangeset={xchangeset} className="d-none" />
-                <ChangesetTasksList {...props} {...context} xchangeset={xchangeset} className="mb-4" />
+                <ChangesetTasksList {...props} {...context} xchangeset={xchangeset} className="mb-4 d-none" />
                 <WithQueryParameter defaultQuery="" history={props.history} location={props.location}>
                     {({ query, onQueryChange }) => (
                         <ChangesetFilesList

@@ -2,6 +2,7 @@ import { ProxyResult, proxyValue } from '@sourcegraph/comlink'
 import { Unsubscribable } from 'rxjs'
 import { ClientCommandsAPI } from '../../client/api/commands'
 import { syncSubscription } from '../../util'
+import { WorkspaceEdit } from '../../types/workspaceEdit'
 
 interface CommandEntry {
     command: string
@@ -23,5 +24,17 @@ export class ExtCommands {
 
     public registerCommand(entry: CommandEntry): Unsubscribable {
         return syncSubscription(this.proxy.$registerCommand(entry.command, proxyValue(entry.callback)))
+    }
+
+    public registerPlanCommand(entry: CommandEntry): Unsubscribable {
+        return syncSubscription(
+            this.proxy.$registerCommand(
+                entry.command,
+                proxyValue(async (...args: any[]) => {
+                    const edit: WorkspaceEdit = await Promise.resolve(entry.callback(...args))
+                    return edit.toJSON()
+                })
+            )
+        )
     }
 }
