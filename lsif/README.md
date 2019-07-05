@@ -9,4 +9,4 @@ Sourcegraph receives and stores LSIF files uploaded using [upload-lsif.sh](uploa
 In this directory:
 
 - [upload-lsif.sh](upload-lsif.sh): a script that uploads an LSIF file to Sourcegraph (usually used in CI, similar to [Codecov's Bash Uploader](https://docs.codecov.io/docs/about-the-codecov-bash-uploader))
-- [server/]: an HTTP server which runs inside of Sourcegraph (for auth), receives and stores LSIF file uploads, and services requests for hovers/defs/refs
+- [server/](server/): an HTTP server which runs inside of Sourcegraph (for auth), receives and stores LSIF file uploads, and services requests for hovers/defs/refs
