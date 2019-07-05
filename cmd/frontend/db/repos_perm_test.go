@@ -75,21 +75,26 @@ func Benchmark_authzFilter(b *testing.B) {
 		}(),
 	}
 
+	{
+		authzAllowByDefault, providers := authz.GetProviders()
+		defer authz.SetProviders(authzAllowByDefault, providers)
+	}
+
 	authz.SetProviders(false, providers)
+
+	ctx := context.Background()
 
 	Mocks.ExternalAccounts.List = func(opt ExternalAccountsListOptions) (
 		accts []*extsvc.ExternalAccount,
 		err error,
 	) {
 		for _, p := range providers {
-			acct, _ := p.FetchAccount(context.Background(), user, nil)
+			acct, _ := p.FetchAccount(ctx, user, nil)
 			accts = append(accts, acct)
 		}
 		return accts, nil
 	}
 	defer func() { Mocks.ExternalAccounts.List = nil }()
-
-	ctx := context.Background()
 
 	b.ReportAllocs()
 	b.ResetTimer()
