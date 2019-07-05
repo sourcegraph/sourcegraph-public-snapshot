@@ -27,7 +27,7 @@ type Syncer struct {
 	// Sync. It's reset with each Sync and if the Sourcer produced no error,
 	// it's set to nil.
 	multiSourceErr   *MultiSourceError
-	multiSourceErrMu sync.Mutex
+	multiSourceErrMu sync.RWMutex
 
 	store   Store
 	sourcer Sourcer
@@ -344,8 +344,8 @@ func (s *Syncer) SetOrResetMultiSourceErr(err error) {
 }
 
 func (s *Syncer) MultiSourceError() *MultiSourceError {
-	s.multiSourceErrMu.Lock()
-	defer s.multiSourceErrMu.Unlock()
+	s.multiSourceErrMu.RLock()
+	defer s.multiSourceErrMu.RUnlock()
 	return s.multiSourceErr
 }
 
