@@ -543,10 +543,17 @@ func TestServer_RepoExternalServices(t *testing.T) {
 }
 
 func TestServer_StatusMessages(t *testing.T) {
+	githubService := &repos.ExternalService{
+		ID:          1,
+		Kind:        "GITHUB",
+		DisplayName: "github.com - test",
+	}
+
 	testCases := []struct {
 		name              string
 		stored            repos.Repos
 		gitserverResponse int
+		syncerErr         *repos.MultiSourceError
 		res               *protocol.StatusMessagesResponse
 		err               string
 	}{
@@ -592,6 +599,27 @@ func TestServer_StatusMessages(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "one syncer err",
+			syncerErr: &repos.MultiSourceError{
+				Errors: []*repos.SourceError{
+					{Err: errors.New("github is down"), ExtSvc: githubService},
+				},
+			},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						Type:    protocol.SyncingErrorMessage,
+						Message: "github is down",
+						Metadata: []protocol.StatusMessageMetadata{
+							{Name: "ext_svc_name", Value: githubService.DisplayName},
+							{Name: "ext_svc_id", Value: fmt.Sprintf("%d", githubService.ID)},
+							{Name: "ext_svc_kind", Value: githubService.Kind},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -607,7 +635,15 @@ func TestServer_StatusMessages(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			s := &Server{Store: store, GitserverClient: gitserverClient}
+			clock := repos.NewFakeClock(time.Now(), 0)
+			syncer := repos.NewSyncer(store, nil, nil, clock.Now)
+			syncer.SetOrResetMultiSourceErr(tc.syncerErr)
+
+			s := &Server{
+				Syncer:          syncer,
+				Store:           store,
+				GitserverClient: gitserverClient,
+			}
 
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
