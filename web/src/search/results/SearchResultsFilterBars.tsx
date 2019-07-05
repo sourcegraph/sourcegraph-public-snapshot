@@ -31,13 +31,36 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
     calculateShowMoreResultsCount,
 }) => (
     <div className="search-results-filter-bars">
-        {((isSearchResults(results) && filters.length > 0) || extensionFilters) && (
+        {isSearchResults(results) &&
+            results.dynamicFilters.filter(filter => isScopeSelected(navbarSearchQuery, filter.value)).length > 0 && (
+                <div className="search-results-filter-bars__row">
+                    Selected options:
+                    <div className="search-results-filter-bars__filters">
+                        {results.dynamicFilters
+                            .filter(filter => filter.value !== '')
+                            .filter(filter => isScopeSelected(navbarSearchQuery, filter.value))
+                            .map((filter, i) => (
+                                <FilterChip
+                                    isSelected={isScopeSelected(navbarSearchQuery, filter.value)}
+                                    onFilterChosen={onFilterClick}
+                                    key={filter.label + filter.value}
+                                    value={filter.value}
+                                    name={filter.label}
+                                />
+                            ))}
+                    </div>
+                </div>
+            )}
+        {((isSearchResults(results) &&
+            filters.filter(filter => !isScopeSelected(navbarSearchQuery, filter.value)).length > 0) ||
+            extensionFilters) && (
             <div className="search-results-filter-bars__row" data-testid="filters-bar">
                 Filters:
                 <div className="search-results-filter-bars__filters">
                     {extensionFilters &&
                         extensionFilters
                             .filter(filter => filter.value !== '')
+                            .filter(filter => !isScopeSelected(navbarSearchQuery, filter.value))
                             .map((filter, i) => (
                                 <FilterChip
                                     isSelected={isScopeSelected(navbarSearchQuery, filter.value)}
@@ -49,6 +72,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                             ))}
                     {filters
                         .filter(filter => filter.value !== '')
+                        .filter(filter => !isScopeSelected(navbarSearchQuery, filter.value))
                         .map((filter, i) => (
                             <FilterChip
                                 isSelected={isScopeSelected(navbarSearchQuery, filter.value)}
@@ -61,36 +85,40 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                 </div>
             </div>
         )}
-        {isSearchResults(results) && results.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
-            <div className="search-results-filter-bars__row" data-testid="repo-filters-bar">
-                Repositories:
-                <div className="search-results-filter-bars__filters">
-                    {results.dynamicFilters
-                        .filter(filter => filter.kind === 'repo' && filter.value !== '')
-                        .map((filter, i) => (
+        {isSearchResults(results) &&
+            results.dynamicFilters
+                .filter(filter => filter.kind === 'repo')
+                .filter(filter => !isScopeSelected(navbarSearchQuery, filter.value)).length > 0 && (
+                <div className="search-results-filter-bars__row" data-testid="repo-filters-bar">
+                    Repositories:
+                    <div className="search-results-filter-bars__filters">
+                        {results.dynamicFilters
+                            .filter(filter => filter.kind === 'repo' && filter.value !== '')
+                            .filter(filter => !isScopeSelected(navbarSearchQuery, filter.value))
+                            .map((filter, i) => (
+                                <FilterChip
+                                    name={filter.label}
+                                    isSelected={isScopeSelected(navbarSearchQuery, filter.value)}
+                                    onFilterChosen={onFilterClick}
+                                    key={filter.value}
+                                    value={filter.value}
+                                    count={filter.count}
+                                    limitHit={filter.limitHit}
+                                />
+                            ))}
+                        {results.limitHit && !/\brepo:/.test(navbarSearchQuery) && (
                             <FilterChip
-                                name={filter.label}
-                                isSelected={isScopeSelected(navbarSearchQuery, filter.value)}
-                                onFilterChosen={onFilterClick}
-                                key={filter.value}
-                                value={filter.value}
-                                count={filter.count}
-                                limitHit={filter.limitHit}
+                                name="Show more"
+                                isSelected={false}
+                                onFilterChosen={onShowMoreResultsClick}
+                                key={`count:${calculateShowMoreResultsCount()}`}
+                                value={`count:${calculateShowMoreResultsCount()}`}
+                                showMore={true}
                             />
-                        ))}
-                    {results.limitHit && !/\brepo:/.test(navbarSearchQuery) && (
-                        <FilterChip
-                            name="Show more"
-                            isSelected={false}
-                            onFilterChosen={onShowMoreResultsClick}
-                            key={`count:${calculateShowMoreResultsCount()}`}
-                            value={`count:${calculateShowMoreResultsCount()}`}
-                            showMore={true}
-                        />
-                    )}
+                        )}
+                    </div>
                 </div>
-            </div>
-        )}
+            )}
         {quickLinks && (
             <div className="search-results-filter-bars__row" data-testid="quicklinks-bar">
                 <div className="search-results-filter-bars__quicklinks">
