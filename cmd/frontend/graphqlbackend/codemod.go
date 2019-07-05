@@ -255,6 +255,9 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
+    // TODO(RVT): Use a separate HTTP client here dedicated to codemod,
+    // not doing so means codemod and searcher share the same HTTP limits
+    // etc. which is fine for now but not if codemod goes in front of users.
 	resp, err := ctxhttp.Do(ctx, searchHTTPClient, req)
 	if err != nil {
 		// If we failed due to cancellation or timeout (with no partial results in the response body), return just that.
