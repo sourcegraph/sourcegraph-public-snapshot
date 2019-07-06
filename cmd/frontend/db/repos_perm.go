@@ -38,59 +38,10 @@ var mockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms
 //
 // - If no authz providers match the repository, consult `authzAllowByDefault`. If true, then return
 //   the repository; otherwise, do not.
-func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (rs []*types.Repo, err error) {
-	tr, ctx := trace.New(ctx, "authzFilter", "")
-	defer func() {
-		if err != nil {
-			tr.SetError(err)
-		}
-		tr.Finish()
-	}()
-
-	if mockAuthzFilter != nil {
-		return mockAuthzFilter(ctx, repos, p)
-	}
-
-	if len(repos) == 0 {
-		return repos, nil
-	}
-	if isInternalActor(ctx) {
-		return repos, nil
-	}
-
+func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filtered []*types.Repo, err error) {
 	var currentUser *types.User
-	if actor.FromContext(ctx).IsAuthenticated() {
-		var err error
-		currentUser, err = Users.GetByCurrentAuthUser(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if currentUser.SiteAdmin {
-			return repos, nil
-		}
-	}
 
-	return getFilteredRepos(ctx, currentUser, repos, p)
-}
-
-// isInternalActor returns true if the actor represents an internal agent (i.e., non-user-bound
-// request that originates from within Sourcegraph itself).
-//
-// 🚨 SECURITY: internal requests bypass authz provider permissions checks, so correctness is
-// important here.
-func isInternalActor(ctx context.Context) bool {
-	return actor.FromContext(ctx).Internal
-}
-
-var pool = sync.Pool{
-	New: func() interface{} {
-		repos := make([]*types.Repo, 0, 2048)
-		return &repos
-	},
-}
-
-func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*types.Repo, p authz.Perms) (filtered []*types.Repo, err error) {
-	tr, ctx := trace.New(ctx, "getFilteredRepos", "")
+	tr, ctx := trace.New(ctx, "authzFilter", "")
 	defer func() {
 		if err != nil {
 			tr.SetError(err)
@@ -110,6 +61,29 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 
 		tr.Finish()
 	}()
+
+	if mockAuthzFilter != nil {
+		return mockAuthzFilter(ctx, repos, p)
+	}
+
+	if len(repos) == 0 {
+		return repos, nil
+	}
+
+	if isInternalActor(ctx) {
+		return repos, nil
+	}
+
+	if actor.FromContext(ctx).IsAuthenticated() {
+		var err error
+		currentUser, err = Users.GetByCurrentAuthUser(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if currentUser.SiteAdmin {
+			return repos, nil
+		}
+	}
 
 	authzAllowByDefault, authzProviders := authz.GetProviders()
 	if authzAllowByDefault && len(authzProviders) == 0 {
@@ -164,7 +138,7 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		var (
 			serviceType = authzProvider.ServiceType()
 			serviceID   = authzProvider.ServiceID()
-			ours        = (*(pool.Get().(*[]*types.Repo)))[:0]
+			ours        = (*(reposPool.Get().(*[]*types.Repo)))[:0]
 			theirs      = toverify[:0]
 		)
 
@@ -180,11 +154,8 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		// check the perms on our repos
 		perms, err := authzProvider.RepoPerms(ctx, providerAcct, ours)
 
-		for i := range ours {
-			ours[i] = nil // Let the GC take these back
-		}
-
-		pool.Put(&ours)
+		clear(ours)
+		reposPool.Put(&ours)
 
 		if err != nil {
 			return nil, err
@@ -217,9 +188,33 @@ func getFilteredRepos(ctx context.Context, currentUser *types.User, repos []*typ
 		}
 	}
 
-	for i := len(filtered); i < len(repos); i++ {
-		repos[i] = nil // Let GC take these back
-	}
+	clear(repos[len(filtered):])
 
 	return filtered, nil
+}
+
+// isInternalActor returns true if the actor represents an internal agent (i.e., non-user-bound
+// request that originates from within Sourcegraph itself).
+//
+// 🚨 SECURITY: internal requests bypass authz provider permissions checks, so correctness is
+// important here.
+func isInternalActor(ctx context.Context) bool {
+	return actor.FromContext(ctx).Internal
+}
+
+// reposPool is used to reduce allocations of []*types.Repo slices in authzFilter.
+var reposPool = sync.Pool{
+	New: func() interface{} {
+		repos := make([]*types.Repo, 0, 2048)
+		return &repos
+	},
+}
+
+// clear is used to reset the pointers in a []*types.Repo slice
+// to nil so that the GC can free the types.Repos they once pointed
+// to
+func clear(rs []*types.Repo) {
+	for i := range rs {
+		rs[i] = nil
+	}
 }
