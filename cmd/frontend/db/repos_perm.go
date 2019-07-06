@@ -98,14 +98,10 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		}
 	}
 
-	verified := roaring.NewBitmap()
-	toverify := getSlice(&reposPool, len(repos))
-
 	// We need to preserve the order of repos and we do in-place mutation
 	// in toverify, so we must copy.
-	for _, r := range repos {
-		toverify = append(toverify, r)
-	}
+	toverify := append(getSlice(&reposPool, len(repos)), repos...)
+	verified := roaring.NewBitmap()
 
 	// Walk through all authz providers, checking repo permissions against each. If any own a given
 	// repo, we use its permissions for that repo.
