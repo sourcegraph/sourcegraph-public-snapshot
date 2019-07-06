@@ -210,9 +210,9 @@ var reposPool = sync.Pool{
 	},
 }
 
-// clear is used to reset the pointers in a []*types.Repo slice
-// to nil so that the GC can free the types.Repos they once pointed
-// to
+// clear resets the pointers in a []*types.Repo slice to nil so that
+// the GC can free the types.Repos they once pointed to. Used together
+// with reposPool, before putting slices back.
 func clear(rs []*types.Repo) {
 	for i := range rs {
 		rs[i] = nil
