@@ -135,14 +135,19 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 			}
 		}
 
-		var (
-			serviceType = authzProvider.ServiceType()
-			serviceID   = authzProvider.ServiceID()
-			ours        = (*(reposPool.Get().(*[]*types.Repo)))[:0]
-			theirs      = toverify[:0]
-		)
+		serviceType := authzProvider.ServiceType()
+		serviceID := authzProvider.ServiceID()
+
+		var ours []*types.Repo
+		buf, ok := reposPool.Get().(*[]*types.Repo)
+		if !ok || buf == nil {
+			ours = make([]*types.Repo, 0, len(toverify))
+		} else {
+			ours = (*buf)[:0]
+		}
 
 		// 🚨 SECURITY: Repositories that have their ExternalRepo fields unset will remain in unverified.
+		theirs := toverify[:0]
 		for _, r := range toverify {
 			if r.ExternalRepo.ServiceType == serviceType && r.ExternalRepo.ServiceID == serviceID {
 				ours = append(ours, r)
@@ -203,12 +208,7 @@ func isInternalActor(ctx context.Context) bool {
 }
 
 // reposPool is used to reduce allocations of []*types.Repo slices in authzFilter.
-var reposPool = sync.Pool{
-	New: func() interface{} {
-		repos := make([]*types.Repo, 0, 2048)
-		return &repos
-	},
-}
+var reposPool = sync.Pool{}
 
 // clear resets the pointers in a []*types.Repo slice to nil so that
 // the GC can free the types.Repos they once pointed to. Used together
