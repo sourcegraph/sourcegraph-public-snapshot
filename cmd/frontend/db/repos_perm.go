@@ -2,18 +2,19 @@ package db
 
 import (
 	"context"
+	"sync"
 
+	"github.com/RoaringBitmap/roaring"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var mockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error)
+var mockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error)
 
 // authzFilter is the enforcement mechanism for repository permissions. It is the root
 // repository-permission-enforcing function (i.e., all other code that wants to check/enforce
@@ -37,63 +38,10 @@ var mockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perm)
 //
 // - If no authz providers match the repository, consult `authzAllowByDefault`. If true, then return
 //   the repository; otherwise, do not.
-func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perm) (rs []*types.Repo, err error) {
-	tr, ctx := trace.New(ctx, "authzFilter", "")
-	defer func() {
-		if err != nil {
-			tr.SetError(err)
-		}
-		tr.Finish()
-	}()
-
-	if mockAuthzFilter != nil {
-		return mockAuthzFilter(ctx, repos, p)
-	}
-
-	if len(repos) == 0 {
-		return repos, nil
-	}
-	if isInternalActor(ctx) {
-		return repos, nil
-	}
-
+func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filtered []*types.Repo, err error) {
 	var currentUser *types.User
-	if actor.FromContext(ctx).IsAuthenticated() {
-		var err error
-		currentUser, err = Users.GetByCurrentAuthUser(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if currentUser.SiteAdmin {
-			return repos, nil
-		}
-	}
 
-	filteredRepoNames, err := getFilteredRepoNames(ctx, currentUser, authz.ToRepos(repos), p)
-	if err != nil {
-		return nil, err
-	}
-
-	filteredRepos := make([]*types.Repo, 0, len(filteredRepoNames))
-	for _, repo := range repos {
-		if _, ok := filteredRepoNames[repo.Name]; ok {
-			filteredRepos = append(filteredRepos, repo)
-		}
-	}
-	return filteredRepos, nil
-}
-
-// isInternalActor returns true if the actor represents an internal agent (i.e., non-user-bound
-// request that originates from within Sourcegraph itself).
-//
-// 🚨 SECURITY: internal requests bypass authz provider permissions checks, so correctness is
-// important here.
-func isInternalActor(ctx context.Context) bool {
-	return actor.FromContext(ctx).Internal
-}
-
-func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos map[authz.Repo]struct{}, p authz.Perm) (accepted map[api.RepoName]struct{}, err error) {
-	tr, ctx := trace.New(ctx, "getFilteredRepoNames", "")
+	tr, ctx := trace.New(ctx, "authzFilter", "")
 	defer func() {
 		if err != nil {
 			tr.SetError(err)
@@ -102,7 +50,7 @@ func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos ma
 		fields := []otlog.Field{
 			otlog.String("permission", string(p)),
 			otlog.Int("repos.count", len(repos)),
-			otlog.Int("authorized.count", len(accepted)),
+			otlog.Int("filtered.count", len(filtered)),
 		}
 
 		if currentUser != nil {
@@ -114,8 +62,35 @@ func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos ma
 		tr.Finish()
 	}()
 
-	var accts []*extsvc.ExternalAccount
+	if mockAuthzFilter != nil {
+		return mockAuthzFilter(ctx, repos, p)
+	}
+
+	if len(repos) == 0 {
+		return repos, nil
+	}
+
+	if isInternalActor(ctx) {
+		return repos, nil
+	}
+
+	if actor.FromContext(ctx).IsAuthenticated() {
+		var err error
+		currentUser, err = Users.GetByCurrentAuthUser(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if currentUser.SiteAdmin {
+			return repos, nil
+		}
+	}
+
 	authzAllowByDefault, authzProviders := authz.GetProviders()
+	if authzAllowByDefault && len(authzProviders) == 0 {
+		return repos, nil
+	}
+
+	var accts []*extsvc.ExternalAccount
 	if len(authzProviders) > 0 && currentUser != nil {
 		accts, err = ExternalAccounts.List(ctx, ExternalAccountsListOptions{UserID: currentUser.ID})
 		if err != nil {
@@ -123,19 +98,10 @@ func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos ma
 		}
 	}
 
-	accepted = make(map[api.RepoName]struct{}) // repositories that have been claimed and have read permissions
-	toverify := make(map[authz.Repo]struct{})  // repositories that have not been claimed by any authz provider
-	for repo := range repos {
-		// 🚨 SECURITY: Defensively bar access to repos with no external repo spec (we don't know
-		// where they came from, so can't reliably enforce permissions). If external repo spec is
-		// NOT set, then we exclude the repo (unless there are no authz providers and
-		// `authzAllowByDefault` is true).
-		if repo.ExternalRepoSpec.IsSet() {
-			toverify[repo] = struct{}{}
-		} else if authzAllowByDefault && len(authzProviders) == 0 {
-			accepted[repo.RepoName] = struct{}{}
-		}
-	}
+	// We need to preserve the order of repos and we do in-place mutation
+	// in toverify, so we must copy.
+	toverify := append(getSlice(&reposPool, len(repos)), repos...)
+	verified := roaring.NewBitmap()
 
 	// Walk through all authz providers, checking repo permissions against each. If any own a given
 	// repo, we use its permissions for that repo.
@@ -152,6 +118,7 @@ func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos ma
 				break
 			}
 		}
+
 		if providerAcct == nil && currentUser != nil { // no existing external account for authz provider
 			if pr, err := authzProvider.FetchAccount(ctx, currentUser, accts); err == nil {
 				providerAcct = pr
@@ -166,28 +133,92 @@ func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos ma
 			}
 		}
 
-		// determine which repos "belong" to this authz provider
-		myToVerify, nextToVerify := authzProvider.Repos(ctx, toverify)
+		serviceType := authzProvider.ServiceType()
+		serviceID := authzProvider.ServiceID()
+		ours := getSlice(&reposPool, len(toverify))
+		theirs := toverify[:0]
 
-		// check the perms on those repos
-		perms, err := authzProvider.RepoPerms(ctx, providerAcct, myToVerify)
+		// 🚨 SECURITY: Repositories that have their ExternalRepo fields unset will remain in unverified.
+		for _, r := range toverify {
+			if r.ExternalRepo.ServiceType == serviceType && r.ExternalRepo.ServiceID == serviceID {
+				ours = append(ours, r)
+			} else {
+				theirs = append(theirs, r) // In-place filtering of toverify
+			}
+		}
+
+		// check the perms on our repos
+		perms, err := authzProvider.RepoPerms(ctx, providerAcct, ours)
+
+		clear(ours)
+		reposPool.Put(&ours)
+
 		if err != nil {
 			return nil, err
 		}
-		for repoToVerify := range myToVerify {
-			if repoPerms, ok := perms[repoToVerify.RepoName]; ok && repoPerms[p] {
-				accepted[repoToVerify.RepoName] = struct{}{}
+
+		for _, r := range perms {
+			if r.Perms.Include(p) {
+				verified.Add(uint32(r.Repo.ID))
 			}
 		}
+
 		// continue checking repos that didn't belong to this authz provider
-		toverify = nextToVerify
+		toverify = theirs
 	}
 
 	if authzAllowByDefault {
-		for r := range toverify {
-			accepted[r.RepoName] = struct{}{}
+		for _, r := range toverify {
+			// 🚨 SECURITY: Defensively bar access to repos with no external repo spec (we don't know
+			// where they came from, so can't reliably enforce permissions).
+			if r.ExternalRepo.IsSet() {
+				verified.Add(uint32(r.ID))
+			}
 		}
 	}
 
-	return accepted, nil
+	filtered = repos[:0]
+	for _, r := range repos {
+		if verified.Contains(uint32(r.ID)) {
+			filtered = append(filtered, r) // In-place filtering
+		}
+	}
+
+	clear(repos[len(filtered):])
+	clear(toverify)
+	reposPool.Put(&toverify)
+
+	return filtered, nil
+}
+
+// isInternalActor returns true if the actor represents an internal agent (i.e., non-user-bound
+// request that originates from within Sourcegraph itself).
+//
+// 🚨 SECURITY: internal requests bypass authz provider permissions checks, so correctness is
+// important here.
+func isInternalActor(ctx context.Context) bool {
+	return actor.FromContext(ctx).Internal
+}
+
+// reposPool is used to reduce allocations of []*types.Repo slices in authzFilter.
+var reposPool = sync.Pool{}
+
+// clear resets the pointers in a []*types.Repo slice to nil so that
+// the GC can free the types.Repos they once pointed to. Used together
+// with reposPool, before putting slices back.
+func clear(rs []*types.Repo) {
+	for i := range rs {
+		rs[i] = nil
+	}
+}
+
+// getSlice attempts to get a []*types.Repo slice from the
+// given sync.Pool. It allocates a new slice of size n if
+// it couldn't be returned by the pool.
+func getSlice(p *sync.Pool, n int) []*types.Repo {
+	if rs, ok := p.Get().(*[]*types.Repo); !ok || rs == nil {
+		return make([]*types.Repo, 0, n)
+	} else {
+		return (*rs)[:0]
+	}
 }
