@@ -292,12 +292,11 @@ func getMatches(re *regexp.Regexp, fileBuf []byte, fileMatchBuf []byte, maxOffse
 }
 
 func getMultiLineMatches(re *regexp.Regexp, fileBuf []byte, fileMatchBuf []byte, maxOffsets int, first []int) (matches []protocol.LineMatch, limitHit bool, err error) {
-	tempFileBuf := fileBuf
-	tempFileMatchBuf := tempFileBuf
 	lineNumberToLineLength := make(map[int]int)
 	idx := 0
+	tempFileMatchBuf := fileBuf
 	for i := 0; len(matches) < maxLineMatches; i++ {
-		advance, lineBuf, err := scanLines(tempFileBuf, true)
+		advance, lineBuf, err := scanLines(fileBuf, true)
 		if err != nil {
 			// ScanLines should never return an err
 			return nil, false, err
@@ -309,7 +308,7 @@ func getMultiLineMatches(re *regexp.Regexp, fileBuf []byte, fileMatchBuf []byte,
 		// Add the line number and line length to the map.
 		lineNumberToLineLength[i] = utf8.RuneCount(lineBuf) + 1
 		// Advance file bufs in sync
-		tempFileBuf = tempFileBuf[advance:]
+		fileBuf = fileBuf[advance:]
 		tempFileMatchBuf = tempFileMatchBuf[advance:]
 
 		// Check whether we're before the first match.
