@@ -17,6 +17,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -161,7 +162,8 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 	)
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
-		go func(repoRev search.RepositoryRevisions) {
+		repoRev := *repoRev // shadow variable so it doesn't change while goroutine is running
+		goroutine.Go(func() {
 			defer wg.Done()
 			results, searchErr := callCodemodInRepo(ctx, repoRev, cmodArgs)
 			if ctx.Err() == context.Canceled {
@@ -182,7 +184,7 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 			if len(results) > 0 {
 				unflattened = append(unflattened, results)
 			}
-		}(*repoRev)
+		})
 	}
 	wg.Wait()
 	if err != nil {
@@ -255,9 +257,9 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-    // TODO(RVT): Use a separate HTTP client here dedicated to codemod,
-    // not doing so means codemod and searcher share the same HTTP limits
-    // etc. which is fine for now but not if codemod goes in front of users.
+	// TODO(RVT): Use a separate HTTP client here dedicated to codemod,
+	// not doing so means codemod and searcher share the same HTTP limits
+	// etc. which is fine for now but not if codemod goes in front of users.
 	resp, err := ctxhttp.Do(ctx, searchHTTPClient, req)
 	if err != nil {
 		// If we failed due to cancellation or timeout (with no partial results in the response body), return just that.
