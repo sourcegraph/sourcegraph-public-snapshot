@@ -263,7 +263,7 @@ func benchConcurrentFind(b *testing.B, p *protocol.Request) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, _, err := concurrentFind(ctx, rg, zf, 0, p.PatternMatchesContent, p.PatternMatchesPath)
+		_, _, err := concurrentFind(ctx, rg, zf, 0, p.PatternMatchesContent, p.PatternMatchesPath, false)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -450,7 +450,7 @@ func TestLineLimit(t *testing.T) {
 				Data:   bytes.Repeat([]byte("A"), test.size),
 			}
 			fakeSrcFile := store.SrcFile{Len: int32(test.size)}
-			matches, limitHit, err := rg.Find(&fakeZipFile, &fakeSrcFile)
+			matches, limitHit, err := rg.Find(&fakeZipFile, &fakeSrcFile, false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -500,7 +500,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, 0, true, false)
+	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, 0, true, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -560,7 +560,7 @@ func TestPathMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, _, err := concurrentFind(context.Background(), rg, zf, 10, true, true)
+	fileMatches, _, err := concurrentFind(context.Background(), rg, zf, 10, true, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
