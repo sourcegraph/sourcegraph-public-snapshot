@@ -99,11 +99,13 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 	}
 
 	verified := roaring.NewBitmap()
-	toverify := make([]*types.Repo, len(repos))
+	toverify := getSlice(&reposPool, len(repos))
 
 	// We need to preserve the order of repos and we do in-place mutation
 	// in toverify, so we must copy.
-	copy(toverify, repos)
+	for _, r := range repos {
+		toverify = append(toverify, r)
+	}
 
 	// Walk through all authz providers, checking repo permissions against each. If any own a given
 	// repo, we use its permissions for that repo.
@@ -137,17 +139,10 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 
 		serviceType := authzProvider.ServiceType()
 		serviceID := authzProvider.ServiceID()
-
-		var ours []*types.Repo
-		buf, ok := reposPool.Get().(*[]*types.Repo)
-		if !ok || buf == nil {
-			ours = make([]*types.Repo, 0, len(toverify))
-		} else {
-			ours = (*buf)[:0]
-		}
+		ours := getSlice(&reposPool, len(toverify))
+		theirs := toverify[:0]
 
 		// 🚨 SECURITY: Repositories that have their ExternalRepo fields unset will remain in unverified.
-		theirs := toverify[:0]
 		for _, r := range toverify {
 			if r.ExternalRepo.ServiceType == serviceType && r.ExternalRepo.ServiceID == serviceID {
 				ours = append(ours, r)
@@ -194,6 +189,8 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 	}
 
 	clear(repos[len(filtered):])
+	clear(toverify)
+	reposPool.Put(&toverify)
 
 	return filtered, nil
 }
@@ -216,5 +213,16 @@ var reposPool = sync.Pool{}
 func clear(rs []*types.Repo) {
 	for i := range rs {
 		rs[i] = nil
+	}
+}
+
+// getSlice attempts to get a []*types.Repo slice from the
+// given sync.Pool. It allocates a new slice of size n if
+// it couldn't be returned by the pool.
+func getSlice(p *sync.Pool, n int) []*types.Repo {
+	if rs, ok := p.Get().(*[]*types.Repo); !ok || rs == nil {
+		return make([]*types.Repo, 0, n)
+	} else {
+		return (*rs)[:0]
 	}
 }
