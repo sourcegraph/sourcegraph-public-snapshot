@@ -50,7 +50,7 @@ export function createDiagnosticsService(): DiagnosticsService {
         ),
         observe: name =>
             collections.pipe(
-                map(collections => collections[name]),
+                map(collections => collections[name] || []),
                 distinctUntilChanged()
             ),
         set: (name, data) => {

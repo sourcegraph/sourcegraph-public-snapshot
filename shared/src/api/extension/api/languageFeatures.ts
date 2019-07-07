@@ -19,8 +19,8 @@ import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
 import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 import { ExtDocuments } from './documents'
-import { fromCodeAction, fromHover, fromLocation, toPosition } from './types'
-import { WorkspaceEdit } from '../../types/workspaceEdit'
+import { fromHover, fromLocation, toPosition } from './types'
+import { fromCodeAction } from '../../types/codeAction'
 
 /** @internal */
 export class ExtLanguageFeatures {
@@ -115,7 +115,8 @@ export class ExtLanguageFeatures {
                         })),
                     }
                 ),
-                (items: null | undefined | CodeAction[]) => (items ? items.map(fromCodeAction) : items)
+                (items: null | undefined | CodeAction[]): clientType.CodeAction[] =>
+                    items ? items.map(fromCodeAction) : []
             )
         )
         return syncSubscription(this.proxy.$registerCodeActionProvider(selector, providerFunction))

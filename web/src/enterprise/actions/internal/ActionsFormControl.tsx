@@ -1,6 +1,8 @@
+import { CodeAction } from '@sourcegraph/extension-api-types'
 import React from 'react'
 import { Action, isActionType } from '../../../../../shared/src/api/types/action'
 import { ChangesetCreationStatus } from '../../changesets/preview/backend'
+import { ActionRadioButton } from './ActionRadioButton'
 import { CommandActionButton } from './CommandActionButton'
 import { PlanAction } from './PlanActionButton'
 
@@ -28,7 +30,15 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
     return (
         <div className={`d-flex flex-column align-items-start ${className}`}>
             {planActions.map((action, i) => (
-                <PlanAction key={i} action={action} onClick={onActionClick} className="mb-2" />
+                // TODO!(sqs) <PlanAction key={i} action={action} onClick={onActionClick} className="mb-2" />
+                <ActionRadioButton
+                    key={i}
+                    action={{ title: action.title } as CodeAction /* TODO!(sqs) */}
+                    onChange={() => alert('TODO!(sqs)')}
+                    buttonClassName="btn btn-primary"
+                    className={`mr-2 mb-2`}
+                    value={false}
+                />
             ))}
             {commandActions.length > 0 && (
                 <div className="d-flex flex-wrap">
@@ -37,7 +47,7 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
                             key={i}
                             action={action}
                             onClick={onActionClick}
-                            className={`${buttonClassName} ${inactiveButtonClassName} mr-2 mb-2`}
+                            className={`${buttonClassName} mr-2 mb-2`}
                         />
                     ))}
                 </div>
