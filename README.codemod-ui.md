@@ -73,7 +73,9 @@ TODO: how to cover new usages of your code, active people on this repo, diagnost
 
 - An auto-changeset means applying the same code action to all current and future instances of a diagnostic. The set of diagnostics is specified as a query mentioning the tags and other criteria (repo/file/etc.) of the diagnostic.
 
-- Categories of diagnostics
+- Diagnostic type: let extensions register diagnostic types, which specify a common set of actions. Should this be registerDiagnosticType (no because that would mean the eslint extension would need to call that too many times, once per eslint rule id); registerDiagnosticActionTemplate (complex, kind of duplicates provideCodeActions); provideBatchCodeActions(takes multiple docs/locations/diagnostics plus a query) which returns a plan? Also it would let you set up notifications. TODO!(sqs): define and simplify the new concepts being introduced.
+
+** The idea is that the heavy lifting is done on the backend beforehand, and the extensions provide the crucial UX flows to make use of that data.
 
 
 ## Notification

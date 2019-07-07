@@ -280,7 +280,7 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING
                 'spaced-comment': 0,
             },
             settings: {
-                react: { version: '16.8' },
+                react: { version: '16.3' },
             },
         }
         const plugins: Record<string, Plugin> = {
