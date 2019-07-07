@@ -30,7 +30,7 @@ enum DependencyStatus {
     Unreviewed = 'unreviewed',
 }
 
-const CODE_DEPENDENCY_RULES = 'DEPENDENCY_RULES'
+const TAG_DEPENDENCY_RULES = 'DEPENDENCY_RULES'
 
 function startDiagnostics(): Unsubscribable {
     const subscriptions = new Subscription()
@@ -216,7 +216,7 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]> = from(sourcegr
                 docs
                     .map(({ uri, text }) => {
                         const diagnostics: sourcegraph.Diagnostic[] = parseDependencies(text)
-                            .map(({ range, ...dep }) => {
+                            .map<sourcegraph.Diagnostic>(({ range, ...dep }) => {
                                 const status = getDependencyStatusFromSettings(settings, dep)
                                 if (status === DependencyStatus.Allowed) {
                                     return null
@@ -230,8 +230,9 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]> = from(sourcegr
                                         status === DependencyStatus.Forbidden
                                             ? sourcegraph.DiagnosticSeverity.Error
                                             : sourcegraph.DiagnosticSeverity.Warning,
-                                    code: CODE_DEPENDENCY_RULES + ':' + JSON.stringify(dep),
-                                } as sourcegraph.Diagnostic
+                                    data: JSON.stringify(dep),
+                                    tags: [TAG_DEPENDENCY_RULES],
+                                }
                             })
                             .filter(isDefined)
                         return diagnostics.length > 0
@@ -289,11 +290,11 @@ function getDependencyStatusFromSettings(settings: Settings, dep: Dependency): D
 }
 
 function isDependencyRulesDiagnostic(diag: sourcegraph.Diagnostic): boolean {
-    return typeof diag.code === 'string' && diag.code.startsWith(CODE_DEPENDENCY_RULES + ':')
+    return diag.tags && diag.tags.includes(TAG_DEPENDENCY_RULES)
 }
 
 function getDiagnosticData(diag: sourcegraph.Diagnostic): Dependency {
-    return JSON.parse((diag.code as string).slice((CODE_DEPENDENCY_RULES + ':').length))
+    return JSON.parse(diag.data!)
 }
 
 function computeRemoveDependencyEdit(

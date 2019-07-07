@@ -71,7 +71,11 @@ TODO: how to cover new usages of your code, active people on this repo, diagnost
 
 - other idea: statuses are just diagnostics (multiple categories thereof, like "wrong go version in CI" and "missing .travis.yml") and actions. there can be "fix all" actions for an entire category of diagnostic that creates a changeset using the default code action for all instances of that diagnostic category. the user can then go diagnostic-by-diagnostic and customize the code action if desired (including ignoring a diagnostic, ie the null code action). any new instances of that diagnostic found are added to the changeset (if it's an auto-changeset) with the default code action. **TODO!(sqs): this seems the most promising and simple**
 
+- An auto-changeset means applying the same code action to all current and future instances of a diagnostic. The set of diagnostics is specified as a query mentioning the tags and other criteria (repo/file/etc.) of the diagnostic.
+
+- Categories of diagnostics
+
 
 ## Notification
 
-A notification consists of a message, actions, and contextual information about the current state.
+A notification consists of a message, actions, and contextual information about the current state. It is derived from a diagnostics query.

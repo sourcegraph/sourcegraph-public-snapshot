@@ -61,7 +61,7 @@ enum RulePolicy {
     Default = 'default',
 }
 
-const CODE_ESLINT = 'eslint'
+const TAG_ESLINT = 'eslint'
 
 function startDiagnostics(): Unsubscribable {
     const subscriptions = new Subscription()
@@ -301,7 +301,8 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]> = from(sourcegr
                                     source: r.source,
                                     range: rangeForLintMessage(doc, r),
                                     severity: linterSeverityToDiagnosticSeverity(r.severity),
-                                    code: CODE_ESLINT + ':' + JSON.stringify(r),
+                                    data: JSON.stringify(r),
+                                    tags: [TAG_ESLINT],
                                 } as sourcegraph.Diagnostic
                             })
                             .filter(isDefined)
@@ -349,11 +350,11 @@ function getRulePolicyFromSettings(settings: Settings, ruleId: string): RulePoli
 }
 
 function isESLintDiagnostic(diag: sourcegraph.Diagnostic): boolean {
-    return typeof diag.code === 'string' && diag.code.startsWith(CODE_ESLINT + ':')
+    return diag.tags && diag.tags.includes(TAG_ESLINT)
 }
 
 function getLintMessageFromDiagnosticData(diag: sourcegraph.Diagnostic): Linter.LintMessage {
-    return JSON.parse((diag.code as string).slice((CODE_ESLINT + ':').length))
+    return JSON.parse(diag.data!)
 }
 
 function createWorkspaceEditFromESLintFix(

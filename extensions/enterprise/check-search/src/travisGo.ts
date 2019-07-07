@@ -19,7 +19,7 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { MAX_RESULTS, OTHER_CODE_ACTIONS, REPO_INCLUDE } from './misc'
 import { memoizedFindTextInFiles } from './util'
 
-const CODE_TRAVIS_GO = 'check-search.travis-go'
+const TAG_TRAVIS_GO = 'travis-go'
 
 const diagnosticCollection = sourcegraph.languages.createDiagnosticCollection('demo0')
 
@@ -225,7 +225,7 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]> = from(sourcegr
                                     message: 'Outdated Go version used in Travis CI',
                                     range,
                                     severity: sourcegraph.DiagnosticSeverity.Warning,
-                                    code: CODE_TRAVIS_GO,
+                                    tags: [TAG_TRAVIS_GO],
                                 } as sourcegraph.Diagnostic)
                         )
                 )
@@ -276,7 +276,7 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
 }
 
 function isTravisGoDiagnostic(diag: sourcegraph.Diagnostic): boolean {
-    return typeof diag.code === 'string' && diag.code === CODE_TRAVIS_GO
+    return diag.tags && diag.tags.includes(TAG_TRAVIS_GO)
 }
 
 function computeFixEdit(
