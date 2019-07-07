@@ -1491,6 +1491,14 @@ declare module 'sourcegraph' {
         readonly range: Range
 
         /**
+         * The type of this diagnostic. There should be at most 1 diagnostic on a file and range
+         * with a given type.
+         *
+         * For example, "eslint.comma-dangle".
+         */
+        readonly type: string
+
+        /**
          * The human-readable message.
          */
         readonly message: string
@@ -1501,8 +1509,8 @@ declare module 'sourcegraph' {
         readonly severity: DiagnosticSeverity
 
         /**
-         * A human-readable string describing the source of this
-         * diagnostic, e.g. 'typescript' or 'super lint'.
+         * A human-readable string describing the source of this diagnostic, such as "typescript" or
+         * "golint".
          */
         readonly source?: string
 
