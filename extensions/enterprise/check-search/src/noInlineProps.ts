@@ -16,7 +16,7 @@ export function registerNoInlineProps(): Unsubscribable {
 
 const ADJUST = 'React.FunctionComponent<'.length
 
-const CODE_NO_INLINE_PROPS = 'NO_INLINE_PROPS'
+const TAG_NO_INLINE_PROPS = 'NO_INLINE_PROPS'
 
 function startDiagnostics(): Unsubscribable {
     const subscriptions = new Subscription()
@@ -64,7 +64,7 @@ function startDiagnostics(): Unsubscribable {
                                             message: 'Use named interface Props instead of inline type for consistency',
                                             range,
                                             severity: sourcegraph.DiagnosticSeverity.Information,
-                                            code: CODE_NO_INLINE_PROPS,
+                                            data: TAG_NO_INLINE_PROPS,
                                         } as sourcegraph.Diagnostic)
                                 )
                             )
@@ -85,7 +85,7 @@ function startDiagnostics(): Unsubscribable {
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {
         provideCodeActions: async (doc, _rangeOrSelection, context): Promise<sourcegraph.CodeAction[]> => {
-            const diag = context.diagnostics.find(d => d.code === CODE_NO_INLINE_PROPS)
+            const diag = context.diagnostics.find(d => d.tags && d.tags.includes(TAG_NO_INLINE_PROPS))
             if (!diag) {
                 return []
             }

@@ -16,7 +16,7 @@ export function registerImportStar(): Unsubscribable {
 
 const mods = [{ binding: 'React', module: 'react' }, { binding: 'H', module: 'history' }]
 
-const CODE_IMPORT_STAR = 'IMPORT_STAR'
+const TAG_IMPORT_STAR = 'IMPORT_STAR'
 
 function startDiagnostics(): Unsubscribable {
     const subscriptions = new Subscription()
@@ -66,7 +66,8 @@ function startDiagnostics(): Unsubscribable {
                                                     'Unnecessary `import * as ...` of module that has default export',
                                                 range,
                                                 severity: sourcegraph.DiagnosticSeverity.Information,
-                                                code: CODE_IMPORT_STAR + ':' + JSON.stringify({ binding, module }),
+                                                data: JSON.stringify({ binding, module }),
+                                                tags: [TAG_IMPORT_STAR],
                                             } as sourcegraph.Diagnostic)
                                     )
                                 )
@@ -123,11 +124,11 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
 }
 
 function isImportStarDiagnostic(diag: sourcegraph.Diagnostic): boolean {
-    return typeof diag.code === 'string' && diag.code.startsWith(CODE_IMPORT_STAR + ':')
+    return diag.tags && diag.tags.includes(TAG_IMPORT_STAR)
 }
 
 function getDiagnosticData(diag: sourcegraph.Diagnostic): { binding: string; module: string } {
-    const { binding, module } = JSON.parse((diag.code as string).slice((CODE_IMPORT_STAR + ':').length))
+    const { binding, module } = JSON.parse(diag.data!)
     return { binding, module }
 }
 

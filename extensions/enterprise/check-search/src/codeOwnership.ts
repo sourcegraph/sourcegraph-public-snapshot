@@ -21,7 +21,7 @@ export function registerCodeOwnership(): Unsubscribable {
 
 interface Settings {}
 
-const CODE_CODE_OWNERSHIP_RULES = 'CODE_OWNERSHIP'
+const TAG_CODE_OWNERSHIP_RULES = 'TAG_OWNERSHIP'
 
 function startDiagnostics(): Unsubscribable {
     const subscriptions = new Subscription()
@@ -220,11 +220,11 @@ interface DiagnosticData {
 }
 
 function isCodeOwnershipDiagnostic(diag: sourcegraph.Diagnostic): boolean {
-    return typeof diag.code === 'string' && diag.code.startsWith(CODE_CODE_OWNERSHIP_RULES + ':')
+    return diag.tags && diag.tags.includes(TAG_CODE_OWNERSHIP_RULES)
 }
 
 function getDiagnosticData(diag: sourcegraph.Diagnostic): DiagnosticData {
-    return JSON.parse((diag.code as string).slice((CODE_CODE_OWNERSHIP_RULES + ':').length))
+    return JSON.parse(diag.data!)
 }
 
 function markSecurityReviewRequired(doc: sourcegraph.TextDocument, fileDiff: ParsedDiff): sourcegraph.Diagnostic[] {
@@ -234,13 +234,11 @@ function markSecurityReviewRequired(doc: sourcegraph.TextDocument, fileDiff: Par
             message: `Independent security review required (PCI-compliant code depends on this file)`,
             range,
             severity: sourcegraph.DiagnosticSeverity.Error,
-            code:
-                CODE_CODE_OWNERSHIP_RULES +
-                ':' +
-                JSON.stringify({
-                    securityReviewRequired: true,
-                    codeOwner: range.start.line % 2 === 0 ? 'tsenart' : 'keegan',
-                } as DiagnosticData),
+            data: JSON.stringify({
+                securityReviewRequired: true,
+                codeOwner: range.start.line % 2 === 0 ? 'tsenart' : 'keegan',
+            } as DiagnosticData),
+            tags: [TAG_CODE_OWNERSHIP_RULES],
         }
     })
 }
@@ -251,7 +249,8 @@ function markEnsureAuthz(doc: sourcegraph.TextDocument): sourcegraph.Diagnostic[
             {
                 message: `Ensure changes preserve/add appropriate GraphQL API authorization and security checks`,
                 severity: sourcegraph.DiagnosticSeverity.Error,
-                code: CODE_CODE_OWNERSHIP_RULES + ':' + JSON.stringify({ authzChecks: true } as DiagnosticData),
+                data: JSON.stringify({ authzChecks: true } as DiagnosticData),
+                tags: [TAG_CODE_OWNERSHIP_RULES],
             },
         ]
     }
@@ -265,7 +264,8 @@ function markTODO(doc: sourcegraph.TextDocument, fileDiff: ParsedDiff): sourcegr
             message: `Remove TODO from code before merging`,
             range,
             severity: sourcegraph.DiagnosticSeverity.Hint,
-            code: CODE_CODE_OWNERSHIP_RULES + ':' + JSON.stringify({ codeOwner: 'alice' } as DiagnosticData),
+            data: JSON.stringify({ codeOwner: 'alice' } as DiagnosticData),
+            tags: [TAG_CODE_OWNERSHIP_RULES],
         }
     })
 }
@@ -274,7 +274,8 @@ function suggestChangelogEntry(): sourcegraph.Diagnostic {
     return {
         message: `Add changelog entry? (Looks like you changed something user-facing.)`,
         severity: sourcegraph.DiagnosticSeverity.Hint,
-        code: CODE_CODE_OWNERSHIP_RULES + ':' + JSON.stringify({ suggestChangelogEntry: true } as DiagnosticData),
+        data: JSON.stringify({ suggestChangelogEntry: true } as DiagnosticData),
+        tags: [TAG_CODE_OWNERSHIP_RULES],
     }
 }
 
@@ -283,7 +284,8 @@ function updateDependents(): sourcegraph.Diagnostic[] {
         {
             message: `Update users of the changed code?`,
             severity: sourcegraph.DiagnosticSeverity.Information,
-            code: CODE_CODE_OWNERSHIP_RULES + ':' + JSON.stringify({ updateDependents: true } as DiagnosticData),
+            data: JSON.stringify({ updateDependents: true } as DiagnosticData),
+            tags: [TAG_CODE_OWNERSHIP_RULES],
         },
     ]
 }

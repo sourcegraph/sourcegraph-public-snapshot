@@ -1507,10 +1507,16 @@ declare module 'sourcegraph' {
         readonly source?: string
 
         /**
-         * A code or identifier for this diagnostic. This is useful for, e.g., associating [code
-         * actions](#CodeActionContext) with this diagnostic.
+         * Opaque data for this diagnostic. This data can be used by other consumers of the
+         * diagnostic, such as [code action providers](#CodeActionProvider), to avoid duplicating
+         * effort.
          */
-        readonly code?: string | number
+        readonly data?: string
+
+        /**
+         * A set of tags for this diagnostic, used in querying and filtering.
+         */
+        readonly tags?: string[]
     }
 
     /**
