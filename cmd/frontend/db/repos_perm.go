@@ -21,8 +21,9 @@ var mockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms
 // permissions and is not itself part of the permission-checking code should call this function).
 //
 // It accepts a list of repositories and a permission type `p` and returns a subset of those
-// repositories (no guarantee on order) for which the currently authenticated user has the specified
-// permission.
+// repositories (preserving their order) for which the currently authenticated user has the specified
+// permissions. NOTE: The repos slice is filtered in place and returned. Do not use it after calling
+// this function.
 //
 // The enforcement policy:
 //
@@ -98,18 +99,24 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		}
 	}
 
-	// We need to preserve the order of repos and we do in-place mutation
-	// in toverify, so we must copy.
-	toverify := append(getSlice(&reposPool, len(repos)), repos...)
-	verified := roaring.NewBitmap()
+	toverify := make(map[string]*[]*types.Repo, len(authzProviders))
+	for _, r := range repos {
+		group := toverify[r.ExternalRepo.ServiceID]
+		if group == nil {
+			group = getSlice(&reposPool, len(repos))
+			toverify[r.ExternalRepo.ServiceID] = group
+			defer func() {
+				clear(*group)
+				reposPool.Put(group)
+			}()
+		}
+		*group = append(*group, r)
+	}
 
 	// Walk through all authz providers, checking repo permissions against each. If any own a given
 	// repo, we use its permissions for that repo.
+	verified := roaring.NewBitmap()
 	for _, authzProvider := range authzProviders {
-		if len(toverify) == 0 {
-			break
-		}
-
 		// determine external account to use
 		var providerAcct *extsvc.ExternalAccount
 		for _, acct := range accts {
@@ -133,26 +140,14 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 			}
 		}
 
-		serviceType := authzProvider.ServiceType()
 		serviceID := authzProvider.ServiceID()
-		ours := getSlice(&reposPool, len(toverify))
-		theirs := toverify[:0]
-
-		// 🚨 SECURITY: Repositories that have their ExternalRepo fields unset will remain in unverified.
-		for _, r := range toverify {
-			if r.ExternalRepo.ServiceType == serviceType && r.ExternalRepo.ServiceID == serviceID {
-				ours = append(ours, r)
-			} else {
-				theirs = append(theirs, r) // In-place filtering of toverify
-			}
+		ours, ok := toverify[serviceID]
+		if !ok {
+			continue
 		}
 
 		// check the perms on our repos
-		perms, err := authzProvider.RepoPerms(ctx, providerAcct, ours)
-
-		clear(ours)
-		reposPool.Put(&ours)
-
+		perms, err := authzProvider.RepoPerms(ctx, providerAcct, *ours)
 		if err != nil {
 			return nil, err
 		}
@@ -163,15 +158,18 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 			}
 		}
 
-		// continue checking repos that didn't belong to this authz provider
-		toverify = theirs
+		delete(toverify, serviceID)
 	}
 
 	if authzAllowByDefault {
-		for _, r := range toverify {
+		for serviceID, rs := range toverify {
 			// 🚨 SECURITY: Defensively bar access to repos with no external repo spec (we don't know
 			// where they came from, so can't reliably enforce permissions).
-			if r.ExternalRepo.IsSet() {
+			if serviceID == "" {
+				continue
+			}
+
+			for _, r := range *rs {
 				verified.Add(uint32(r.ID))
 			}
 		}
@@ -185,8 +183,6 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 	}
 
 	clear(repos[len(filtered):])
-	clear(toverify)
-	reposPool.Put(&toverify)
 
 	return filtered, nil
 }
@@ -215,10 +211,12 @@ func clear(rs []*types.Repo) {
 // getSlice attempts to get a []*types.Repo slice from the
 // given sync.Pool. It allocates a new slice of size n if
 // it couldn't be returned by the pool.
-func getSlice(p *sync.Pool, n int) []*types.Repo {
-	if rs, ok := p.Get().(*[]*types.Repo); !ok || rs == nil {
-		return make([]*types.Repo, 0, n)
-	} else {
-		return (*rs)[:0]
+func getSlice(p *sync.Pool, n int) *[]*types.Repo {
+	if rs, ok := p.Get().(*[]*types.Repo); ok && rs != nil {
+		*rs = (*rs)[:0]
+		return rs
 	}
+
+	rs := make([]*types.Repo, 0, n)
+	return &rs
 }

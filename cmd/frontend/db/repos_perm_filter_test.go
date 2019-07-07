@@ -64,14 +64,6 @@ func (r authzFilter_Test) run(t *testing.T) {
 		Mocks.ExternalAccounts.AssociateUserAndSave = func(userID int32, spec extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) error { return nil }
 		Mocks.ExternalAccounts.List = func(ExternalAccountsListOptions) ([]*extsvc.ExternalAccount, error) { return c.userAccounts, nil }
 
-		getNames := func(rs []*types.Repo) []string {
-			a := make([]string, len(rs))
-			for i, v := range rs {
-				a[i] = string(v.Name)
-			}
-			return a
-		}
-
 		filteredRepos, err := authzFilter(ctx, c.repos, c.perm)
 		if err != nil {
 			t.Fatal(err)
@@ -83,6 +75,14 @@ func (r authzFilter_Test) run(t *testing.T) {
 			t.Errorf("Expected filtered repos\n\t%v\n, but got\n\t%v", e, a)
 		}
 	}
+}
+
+func getNames(rs []*types.Repo) []string {
+	a := make([]string, len(rs))
+	for i, v := range rs {
+		a[i] = string(v.Name)
+	}
+	return a
 }
 
 func Test_authzFilter(t *testing.T) {
@@ -287,7 +287,7 @@ func Test_authzFilter(t *testing.T) {
 			},
 		},
 		{
-			description:         "2 authz providers, ext accounts exist",
+			description:         "3 authz providers, ext accounts exist",
 			authzAllowByDefault: true,
 			authzProviders: []authz.Provider{
 				// Order of Providers matters, so we test that the returned
@@ -331,6 +331,25 @@ func Test_authzFilter(t *testing.T) {
 						},
 					},
 				},
+				&MockAuthzProvider{
+					serviceID:   "https://gitlab.mine/",
+					serviceType: "gitlab",
+					repos: map[api.RepoName]struct{}{
+						"gitlab.mine/u1/r0":  {},
+						"gitlab.mine/u2/r0":  {},
+						"gitlab.mine/org/r0": {},
+					},
+					perms: map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{
+						*acct(1, "gitlab", "https://gitlab.mine/", "u1"): {
+							"gitlab.mine/u1/r0":  authz.Read,
+							"gitlab.mine/org/r0": authz.Read,
+						},
+						*acct(2, "gitlab", "https://gitlab.mine/", "u2"): {
+							"gitlab.mine/u2/r0":  authz.Read,
+							"gitlab.mine/org/r0": authz.Read,
+						},
+					},
+				},
 			},
 			calls: []authzFilter_call{
 				{
@@ -339,8 +358,12 @@ func Test_authzFilter(t *testing.T) {
 					userAccounts: []*extsvc.ExternalAccount{
 						acct(1, "gitlab", "https://gitlab0.mine/", "u1"),
 						acct(1, "gitlab", "https://gitlab1.mine/", "u1"),
+						acct(1, "gitlab", "https://gitlab.mine/", "u1"),
 					},
 					repos: getRepos(
+						"gitlab.mine/u1/r0",
+						"gitlab.mine/u2/r0",
+						"gitlab.mine/org/r0",
 						"gitlab0.mine/u1/r0",
 						"gitlab0.mine/u2/r0",
 						"gitlab0.mine/org/r0",
@@ -351,6 +374,8 @@ func Test_authzFilter(t *testing.T) {
 						"otherHost/r0",
 					),
 					expFilteredRepos: getRepos(
+						"gitlab.mine/u1/r0",
+						"gitlab.mine/org/r0",
 						"gitlab0.mine/u1/r0",
 						"gitlab0.mine/org/r0",
 						"gitlab1.mine/u1/r0",
@@ -367,6 +392,9 @@ func Test_authzFilter(t *testing.T) {
 						acct(1, "gitlab", "https://gitlab1.mine/", "u1"),
 					},
 					repos: getRepos(
+						"gitlab.mine/u1/r0",
+						"gitlab.mine/u2/r0",
+						"gitlab.mine/org/r0",
 						"gitlab0.mine/u1/r0",
 						"gitlab0.mine/u2/r0",
 						"gitlab0.mine/org/r0",
