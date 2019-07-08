@@ -200,7 +200,7 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 	if p.PathPatternsAreCaseSensitive {
 		q.Set("PathPatternsAreCaseSensitive", "true")
 	}
-	if p.IsMultiline {
+	if p.IsMultiLine {
 		q.Set("IsMultiLine", "true")
 	}
 	// TEMP BACKCOMPAT: always set even if false so that searcher can distinguish new frontends that send
