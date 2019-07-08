@@ -425,7 +425,13 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	tr.LazyPrintf("Associate/validate revs - start")
 	for _, repo := range repos {
 		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
-		repoRev := &search.RepositoryRevisions{Repo: repo, Revs: revs}
+		repoRev := &search.RepositoryRevisions{Repo: repo}
+
+		// We do in place filtering to reduce allocations. Common path is no
+		// filtering of revs.
+		if len(revs) > 0 {
+			repoRev.Revs = revs[:0]
+		}
 
 		// if multiple specified revisions clash, report this usefully:
 		if len(revs) == 0 && clashingRevs != nil {
@@ -435,8 +441,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			})
 		}
 		// Check if the repository actually has the revisions that the user specified.
-		for i := range repoRev.Revs {
-			rev := &(repoRev.Revs[i])
+		for _, rev := range revs {
 			if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
 				// Do not validate ref patterns. A ref pattern matching 0 refs is not necessarily
 				// invalid, so it's not clear what validation would even mean.
@@ -467,6 +472,8 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 				// If err != nil and is not one of the err values checked for above, cloning and other errors will be handled later, so just ignore an error
 				// if there is one.
 			}
+
+			repoRev.Revs = append(repoRev.Revs, rev)
 		}
 
 		repoRevisions = append(repoRevisions, repoRev)
