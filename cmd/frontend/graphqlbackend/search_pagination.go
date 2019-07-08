@@ -34,8 +34,8 @@ type searchCursor struct {
 	//    making a request for the same cursor. This is because user A and
 	//    user B may have access to a different set of repositories.
 	//
-	// Note that the user is providing this ID and can forge it, so you cannot
-	// trust it.
+	// Note that when a user is providing a cursor, they can forge any field
+	// they like and as such this user ID cannot be trusted in that case.
 	UserID int32
 }
 
