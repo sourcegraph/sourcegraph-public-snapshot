@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"regexp"
 	"regexp/syntax"
@@ -183,7 +182,6 @@ func (rg *readerGrep) matchString(s string) bool {
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
 func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile, patternIsMultiLine bool) (matches []protocol.LineMatch, limitHit bool, err error) {
-	// fmt.Println("RG.RE NON NEW LINE", rg.re.String())
 	if rg.ignoreCase && rg.transformBuf == nil {
 		rg.transformBuf = make([]byte, zf.MaxLen)
 	}
@@ -388,7 +386,7 @@ func generateMatches(matchBuf []byte, startingLine, startingOffset, startingLeng
 		Preview:    string(matchBuf[match[0]]),
 		LineNumber: startingLine,
 		// This won't support non-multiline multiple matches (?)
-		OffsetAndLengths: [][2]int{[2]int{startingOffset, startingLength}},
+		OffsetAndLengths: [][2]int{{startingOffset, startingLength}},
 		LimitHit:         lineLimitHit,
 	})
 	byteCursor := startingOffset + startingLength
@@ -397,7 +395,7 @@ func generateMatches(matchBuf []byte, startingLine, startingOffset, startingLeng
 		matches = append(matches, protocol.LineMatch{
 			Preview:          string(matchBuf[byteCursor:bytesAtEndOfLine]),
 			LineNumber:       line,
-			OffsetAndLengths: [][2]int{[2]int{0, lineNumberToLineLength[line]}},
+			OffsetAndLengths: [][2]int{{0, lineNumberToLineLength[line]}},
 			LimitHit:         lineLimitHit,
 		})
 		byteCursor = bytesAtEndOfLine
@@ -406,10 +404,9 @@ func generateMatches(matchBuf []byte, startingLine, startingOffset, startingLeng
 	matches = append(matches, protocol.LineMatch{
 		Preview:          string(matchBuf[match[1]]),
 		LineNumber:       endingLine,
-		OffsetAndLengths: [][2]int{[2]int{endingOffset, endingLength}},
+		OffsetAndLengths: [][2]int{{endingOffset, endingLength}},
 		LimitHit:         lineLimitHit,
 	})
-	fmt.Println("matches", matches)
 	return matches
 }
 
