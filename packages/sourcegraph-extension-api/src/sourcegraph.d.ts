@@ -1528,6 +1528,16 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * A query that matches a set of [diagnostics](#Diagnostic).
+     */
+    export interface DiagnosticQuery {
+        /**
+         * Match only diagnostics with the given type.
+         */
+        readonly type: string
+    }
+
+    /**
      * A diagnostics collection is a container that manages a set of [diagnostics](#Diagnostic).
      * Diagnostics are always scoped to a diagnostics collection and a resource.
      *

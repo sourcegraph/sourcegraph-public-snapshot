@@ -1,7 +1,9 @@
 import * as sourcegraph from 'sourcegraph'
 import { Observable, from } from 'rxjs'
 import localforage from 'localforage'
-import { publishReplay, refCount, tap, first } from 'rxjs/operators'
+import { first } from 'rxjs/operators'
+
+localforage.clear()
 
 const USE_PERSISTENT_MEMOIZATION_CACHE = true
 
