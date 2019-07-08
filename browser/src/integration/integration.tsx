@@ -42,12 +42,12 @@ async function init(): Promise<void> {
     if (!sourcegraphURL) {
         throw new Error('window.SOURCEGRAPH_URL is undefined')
     }
-    const style = document.createElement('link')
-    style.setAttribute('rel', 'stylesheet')
-    style.setAttribute('type', 'text/css')
-    style.setAttribute('href', sourcegraphURL + `/.assets/extension/css/style.bundle.css`)
-    style.id = 'sourcegraph-styles'
-    document.getElementsByTagName('head')[0].appendChild(style)
+    const link = document.createElement('link')
+    link.setAttribute('rel', 'stylesheet')
+    link.setAttribute('type', 'text/css')
+    link.setAttribute('href', sourcegraphURL + `/.assets/extension/css/style.bundle.css`)
+    link.id = 'sourcegraph-styles'
+    document.getElementsByTagName('head')[0].appendChild(link)
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     window.SOURCEGRAPH_URL = sourcegraphURL
     await injectModules()
