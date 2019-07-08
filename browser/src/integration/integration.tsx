@@ -37,25 +37,16 @@ setLinkComponent(({ to, children, ...props }) => (
     </a>
 ))
 
-async function fetchCSS(sourcegraphURL: string): Promise<string> {
-    const resp = await fetch(sourcegraphURL + `/.assets/extension/css/style.bundle.css`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: new Headers({ Accept: 'text/html' }),
-    })
-    return resp.text()
-}
-
 async function init(): Promise<void> {
     const sourcegraphURL = window.SOURCEGRAPH_URL
     if (!sourcegraphURL) {
         throw new Error('window.SOURCEGRAPH_URL is undefined')
     }
-    const css = await fetchCSS(sourcegraphURL)
-    const style = document.createElement('style')
+    const style = document.createElement('link')
+    style.setAttribute('rel', 'stylesheet')
     style.setAttribute('type', 'text/css')
+    style.setAttribute('href', sourcegraphURL + `/.assets/extension/css/style.bundle.css`)
     style.id = 'sourcegraph-styles'
-    style.textContent = css
     document.getElementsByTagName('head')[0].appendChild(style)
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     window.SOURCEGRAPH_URL = sourcegraphURL
