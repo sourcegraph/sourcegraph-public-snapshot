@@ -3,6 +3,7 @@ import BellIcon from 'mdi-react/BellIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import { ChecklistIcon } from '../../../../util/octicons'
 import { StatusAreaContext } from '../StatusArea'
 
 interface Props extends Pick<StatusAreaContext, 'status' | 'statusURL'> {
@@ -26,6 +27,15 @@ export const StatusAreaNavbar: React.FunctionComponent<Props> = ({ statusURL, cl
                         activeClassName="status-area-navbar__nav-link--active"
                     >
                         <BellIcon className="icon-inline" /> Notifications{' '}
+                    </NavLink>
+                </li>
+                <li className="status-area-navbar__nav-item nav-item">
+                    <NavLink
+                        to={`${statusURL}/checks`}
+                        className={NAV_LINK_CLASS_NAME}
+                        activeClassName="status-area-navbar__nav-link--active"
+                    >
+                        <ChecklistIcon className="icon-inline" /> Checks
                     </NavLink>
                 </li>
                 <li className="status-area-navbar__nav-item nav-item">

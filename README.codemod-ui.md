@@ -81,3 +81,21 @@ TODO: how to cover new usages of your code, active people on this repo, diagnost
 ## Notification
 
 A notification consists of a message, actions, and contextual information about the current state. It is derived from a diagnostics query.
+
+
+--------
+
+A status contains one or more checks, acts as a container instance for configuring them, plus has the ability to roll-up their results into a single status.
+
+A check defines a class of diagnostics and common actions that can be taken on them:
+
+- ESLint: is configured, runs in CI, all errors are fixed, all recommendations are applied
+- Up-to-date npm dependencies: lockfiles (eg yarn.lock) exist, latest dependency version is in use
+- TypeScript build config: uses Yarn, has standard set of scripts, has standard set of prettierignore/prettierrc/eslintrc/tsconfig/etc. files
+- API usage review: notify me of any new users of a specific package
+- Deployment config: TODO
+- Upgrade a specific library and all call sites: TODO
+
+DiagnosticQuery - some have actions associated with them (eg up-to-date npm deps), some actions are for the entire set of checks (eg TS build config, wouldn't want to do any single step independently...although that probably only applies to auto-changesets, when this is still manual you may want to run some of the steps manually to (eg) create a PR to standardize prettierrc)
+
+** Calling them Status is weird because it adds a new layer/concept above Checks, but it's nice because it can also be used to communicate the status of other things like language analysis, what people are doing, etc. (although that can go in "activity")

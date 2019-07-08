@@ -17,6 +17,7 @@ import { StatusIssuesPage } from './issues/StatusIssuesPage'
 import { StatusAreaNavbar } from './navbar/StatusAreaNavbar'
 import { StatusNotificationsPage } from './notifications/StatusNotificationsPage'
 import { StatusOverview } from './overview/StatusOverview'
+import { StatusChecksPage } from './checks/StatusChecksPage'
 
 const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
@@ -77,6 +78,9 @@ export const StatusArea: React.FunctionComponent<Props> = ({ name, scope, status
                     <Switch>
                         <Route path={statusURL} exact={true}>
                             <StatusNotificationsPage {...context} className="mt-3 container" />
+                        </Route>
+                        <Route path={`${statusURL}/checks`}>
+                            <StatusChecksPage {...context} />
                         </Route>
                         <Route path={`${statusURL}/issues`} exact={true}>
                             <StatusIssuesPage {...context} />
