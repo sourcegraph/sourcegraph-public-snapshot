@@ -65,6 +65,141 @@ const diagnosticCollection = sourcegraph.languages.createDiagnosticCollection('e
 
 const TYPE_ESLINT = 'eslint'
 
+const LOADING: 'loading' = 'loading'
+
+const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING> = from(
+    sourcegraph.workspace.rootChanges
+).pipe(
+    startWith(void 0),
+    map(() => sourcegraph.workspace.roots),
+    switchMap(async roots => {
+        if (roots.length > 0) {
+            return of([]) // TODO!(sqs): dont run in comparison mode
+        }
+
+        const results = flatten(
+            await from(
+                memoizedFindTextInFiles(
+                    { pattern: '', type: 'regexp' },
+                    {
+                        repositories: {
+                            includes: ['TypeScriptSamples'],
+                            type: 'regexp',
+                        },
+                        files: {
+                            includes: ['\\.tsx?$'], // TODO!(sqs): typescript only
+                            type: 'regexp',
+                        },
+                        maxResults: MAX_RESULTS,
+                    }
+                )
+            )
+                .pipe(toArray())
+                .toPromise()
+        )
+        const docs = await Promise.all(
+            results.map(async ({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
+        )
+        console.log(docs.map(d => d.uri))
+
+        const tseslintConfig: TSESLint.ParserOptions = {
+            ecmaVersion: 2018,
+            range: true,
+            sourceType: 'module',
+            filePath: 'foo.tsx',
+            useJSXTextNode: true,
+            ecmaFeatures: { jsx: true },
+        }
+        const linter = new Linter()
+        linter.defineParser('@typescript-eslint/parser', tseslintParser)
+
+        const stdRules = _eslintConfigStandard
+        for (const ruleId of Object.keys(stdRules)) {
+            if (!linter.getRules().has(ruleId)) {
+                delete stdRules[ruleId]
+            }
+        }
+        delete stdRules.indent
+        delete stdRules['space-before-function-paren']
+        delete stdRules['no-undef']
+        delete stdRules['comma-dangle']
+        delete stdRules['no-unused-vars']
+
+        const config: Linter.Config = {
+            parser: '@typescript-eslint/parser',
+            parserOptions: tseslintConfig,
+            rules: {
+                ...stdRules,
+                'no-useless-constructor': 0,
+                'spaced-comment': 0,
+            },
+            settings: {
+                react: { version: '16.3' },
+            },
+        }
+        const plugins: Record<string, Plugin> = {
+            react: require('eslint-plugin-react'),
+            'react-hooks': require('eslint-plugin-react-hooks'),
+        }
+        for (const pluginName of Object.keys(plugins)) {
+            const plugin = plugins[pluginName]
+            for (const ruleName of Object.keys(plugin.rules)) {
+                const rule = plugin.rules[ruleName]
+                linter.defineRule(`${pluginName}/${ruleName}`, rule)
+            }
+            config.rules = {
+                ...config.rules,
+                ...(plugin.configs && plugin.configs.recommended ? plugin.configs.recommended.rules : {}),
+            }
+        }
+        delete config.rules['react/prop-types']
+        config.rules = {
+            ...config.rules,
+            'react-hooks/rules-of-hooks': 'error',
+            'react-hooks/exhaustive-deps': 'error',
+        }
+
+        return from(settingsObservable<Settings>()).pipe(
+            map(settings =>
+                docs
+                    .map(doc => {
+                        const lintMessages = linter
+                            .verify(doc.text, config, {
+                                filename: new URL(doc.uri).pathname.slice(1),
+                            })
+                            .slice(0, 2)
+                        const diagnostics: sourcegraph.Diagnostic[] = lintMessages
+                            .map(r => {
+                                if (r.fatal) {
+                                    return null // TODO!(sqs): dont suppress
+                                }
+                                const rulePolicy = getRulePolicyFromSettings(settings, r.ruleId)
+                                if (rulePolicy === RulePolicy.Ignore) {
+                                    return null
+                                }
+                                return {
+                                    type: TYPE_ESLINT,
+                                    message: r.message,
+                                    source: r.source,
+                                    range: rangeForLintMessage(doc, r),
+                                    severity: linterSeverityToDiagnosticSeverity(r.severity),
+                                    data: JSON.stringify(r),
+                                    tags: [],
+                                } as sourcegraph.Diagnostic
+                            })
+                            .filter(isDefined)
+                        return diagnostics.length > 0
+                            ? ([new URL(doc.uri), diagnostics] as [URL, sourcegraph.Diagnostic[]])
+                            : null
+                    })
+                    .filter(isDefined)
+            )
+        )
+    }),
+    switchMap(results => results),
+    startWith(LOADING)
+)
+
 function startDiagnostics(): Unsubscribable {
     const subscriptions = new Subscription()
 
@@ -213,138 +348,6 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
         },
     }
 }
-
-const LOADING: 'loading' = 'loading'
-
-const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING> = from(
-    sourcegraph.workspace.rootChanges
-).pipe(
-    startWith(void 0),
-    map(() => sourcegraph.workspace.roots),
-    switchMap(async roots => {
-        if (roots.length > 0) {
-            return of([]) // TODO!(sqs): dont run in comparison mode
-        }
-
-        const results = flatten(
-            await from(
-                memoizedFindTextInFiles(
-                    { pattern: '', type: 'regexp' },
-                    {
-                        repositories: {
-                            includes: [REPO_INCLUDE],
-                            type: 'regexp',
-                        },
-                        files: {
-                            includes: ['\\.tsx?$'], // TODO!(sqs): typescript only
-                            type: 'regexp',
-                        },
-                        maxResults: MAX_RESULTS,
-                    }
-                )
-            )
-                .pipe(toArray())
-                .toPromise()
-        )
-        const docs = await Promise.all(
-            results.map(async ({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
-        )
-
-        const tseslintConfig: TSESLint.ParserOptions = {
-            ecmaVersion: 2018,
-            range: true,
-            sourceType: 'module',
-            filePath: 'foo.tsx',
-            useJSXTextNode: true,
-            ecmaFeatures: { jsx: true },
-        }
-        const linter = new Linter()
-        linter.defineParser('@typescript-eslint/parser', tseslintParser)
-
-        // const rules = eslintConfigStandard
-        // for (const ruleId of Object.keys(rules)) {
-        //     if (!linter.getRules().has(ruleId)) {
-        //         delete rules[ruleId]
-        //     }
-        // }
-        // delete rules.indent
-        // delete rules['space-before-function-paren']
-        // delete rules['no-undef']
-        // delete rules['comma-dangle']
-        // delete rules['no-unused-vars']
-        const config: Linter.Config = {
-            parser: '@typescript-eslint/parser',
-            parserOptions: tseslintConfig,
-            rules: {
-                'no-useless-constructor': 0,
-                'spaced-comment': 0,
-            },
-            settings: {
-                react: { version: '16.3' },
-            },
-        }
-        const plugins: Record<string, Plugin> = {
-            react: require('eslint-plugin-react'),
-            'react-hooks': require('eslint-plugin-react-hooks'),
-        }
-        for (const pluginName of Object.keys(plugins)) {
-            const plugin = plugins[pluginName]
-            for (const ruleName of Object.keys(plugin.rules)) {
-                const rule = plugin.rules[ruleName]
-                linter.defineRule(`${pluginName}/${ruleName}`, rule)
-            }
-            config.rules = {
-                ...config.rules,
-                ...(plugin.configs && plugin.configs.recommended ? plugin.configs.recommended.rules : {}),
-            }
-        }
-        delete config.rules['react/prop-types']
-        config.rules = {
-            ...config.rules,
-            'react-hooks/rules-of-hooks': 'error',
-            'react-hooks/exhaustive-deps': 'error',
-        }
-
-        return from(settingsObservable<Settings>()).pipe(
-            map(settings =>
-                docs
-                    .map(doc => {
-                        const lintMessages = linter
-                            .verify(doc.text, config, {
-                                filename: new URL(doc.uri).pathname.slice(1),
-                            })
-                            .slice(0, 2)
-                        const diagnostics: sourcegraph.Diagnostic[] = lintMessages
-                            .map(r => {
-                                if (r.fatal) {
-                                    return null // TODO!(sqs): dont suppress
-                                }
-                                const rulePolicy = getRulePolicyFromSettings(settings, r.ruleId)
-                                if (rulePolicy === RulePolicy.Ignore) {
-                                    return null
-                                }
-                                return {
-                                    type: TYPE_ESLINT,
-                                    message: r.message,
-                                    source: r.source,
-                                    range: rangeForLintMessage(doc, r),
-                                    severity: linterSeverityToDiagnosticSeverity(r.severity),
-                                    data: JSON.stringify(r),
-                                    tags: [],
-                                } as sourcegraph.Diagnostic
-                            })
-                            .filter(isDefined)
-                        return diagnostics.length > 0
-                            ? ([new URL(doc.uri), diagnostics] as [URL, sourcegraph.Diagnostic[]])
-                            : null
-                    })
-                    .filter(isDefined)
-            )
-        )
-    }),
-    switchMap(results => results),
-    startWith(LOADING)
-)
 
 function rangeForLintMessage(doc: sourcegraph.TextDocument, m: Linter.LintMessage): sourcegraph.Range {
     if (m.line === undefined && m.column === undefined) {
