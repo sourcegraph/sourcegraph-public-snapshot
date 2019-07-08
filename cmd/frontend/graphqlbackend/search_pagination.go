@@ -102,5 +102,8 @@ func (r *searchResolver) Cursor(ctx context.Context) graphql.ID {
 //    with the absolute ordering we do here for pagination.
 //
 func (r *searchResolver) paginatedResults(ctx context.Context) (*searchResultsResolver, error) {
+	if r.pagination == nil {
+		panic("(bug) this method should never be called in this state")
+	}
 	panic("TODO: implement")
 }
