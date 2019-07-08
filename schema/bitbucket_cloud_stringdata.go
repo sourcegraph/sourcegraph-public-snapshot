@@ -70,6 +70,12 @@ const BitbucketCloudSchemaJSON = `{
       },
       "examples": [["myproject/myrepo", "myproject/myotherrepo"]]
     },
+    "teams": {
+      "description": "An array of team names identifying Bitbucket Cloud teams whose repositories should be mirrored on Sourcegraph.",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[\\w-]+$" },
+      "examples": [["name"], ["kubernetes", "golang", "facebook"]]
+    },
     "exclude": {
       "description": "A list of repositories to never mirror from this Bitbucket Cloud. Takes precedence over \"repos\" and \"repositoryQuery\".\n\nSupports excluding by name ({\"name\": \"projectKey/repositorySlug\"}) or by ID ({\"id\": 42}).",
       "type": "array",

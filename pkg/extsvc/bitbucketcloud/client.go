@@ -82,7 +82,13 @@ func NewClient(httpClient httpcli.Doer) *Client {
 
 func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries ...string) ([]*Repo, *PageToken, error) {
 	var repos []*Repo
-	next, err := c.page(ctx, "/2.0/repositories/"+c.Username, nil, pageToken, &repos)
+	next, err := c.page(ctx, fmt.Sprintf("/2.0/repositories/%s", c.Username), nil, pageToken, &repos)
+	return repos, next, err
+}
+
+func (c *Client) TeamRepos(ctx context.Context, pageToken *PageToken, teamName string) ([]*Repo, *PageToken, error) {
+	var repos []*Repo
+	next, err := c.page(ctx, fmt.Sprintf("/2.0/teams/%s/repositories", teamName), nil, pageToken, &repos)
 	return repos, next, err
 }
 
@@ -216,15 +222,17 @@ type Repo struct {
 	IsPrivate bool   `json:"is_private"`
 	Links     struct {
 		Clone CloneLinks `json:"clone"`
-		HTML  struct {
-			Href string `json:"href"`
-		} `json:"html"`
+		HTML  Link       `json:"html"`
 	} `json:"links"`
 }
 
 type CloneLinks []struct {
 	Href string `json:"href"`
 	Name string `json:"name"`
+}
+
+type Link struct {
+	Href string `json:"href"`
 }
 
 // HTTPS returns clone link named "https", it returns an error if not found.

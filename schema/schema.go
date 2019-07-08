@@ -107,6 +107,7 @@ type BitbucketCloudConnection struct {
 	Repos                       []string                      `json:"repos,omitempty"`
 	RepositoryPathPattern       string                        `json:"repositoryPathPattern,omitempty"`
 	RepositoryQuery             []string                      `json:"repositoryQuery,omitempty"`
+	Teams                       []string                      `json:"teams,omitempty"`
 	Url                         string                        `json:"url"`
 	Username                    string                        `json:"username"`
 }

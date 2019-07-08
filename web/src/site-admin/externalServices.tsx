@@ -312,6 +312,11 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
 
   // An app password (https://confluence.atlassian.com/bitbucket/app-passwords-828781300.html) with read scope over the repositories to be added to Sourcegraph
   "appPassword": "<app password>",
+
+  // teams: List of teams whose repositories should be selected
+  // "teams": [
+  //   "<team name>"
+  // ],
 }`,
         editorActions: [
             {

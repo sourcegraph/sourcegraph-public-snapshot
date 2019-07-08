@@ -180,6 +180,7 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context) ([]*bitbucketcl
 
 	var wg sync.WaitGroup
 
+	// List all repositories belong to the account
 	wg.Add(1)
 	go func(q string) {
 		defer wg.Done()
@@ -202,6 +203,32 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context) ([]*bitbucketcl
 			ch <- batch{repos: repos}
 		}
 	}("") // TODO(jchen): Fill in this parameter when support "repositoryQuery"
+
+	// List all repositories of teams selected
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		for _, t := range s.config.Teams {
+			page := &bitbucketcloud.PageToken{Pagelen: 100}
+			var err error
+			var repos []*bitbucketcloud.Repo
+			if repos, page, err = s.client.TeamRepos(ctx, page, t); err != nil {
+				ch <- batch{err: errors.Wrapf(err, "bibucketcloud.teams: item=%q, page=%+v", t, page)}
+				return
+			}
+			ch <- batch{repos: repos}
+
+			for page.HasMore() {
+				if page, err = s.client.ReqPage(ctx, page.Next, &repos); err != nil {
+					ch <- batch{err: errors.Wrapf(err, "bibucketcloud.teams: item=%q, page=%+v", t, page)}
+					break
+				}
+
+				ch <- batch{repos: repos}
+			}
+		}
+	}()
 
 	go func() {
 		wg.Wait()
