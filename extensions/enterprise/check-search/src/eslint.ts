@@ -83,11 +83,11 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING
                     { pattern: '', type: 'regexp' },
                     {
                         repositories: {
-                            includes: ['TypeScriptSamples'],
+                            includes: ['react-router'],
                             type: 'regexp',
                         },
                         files: {
-                            includes: ['\\.tsx?$'], // TODO!(sqs): typescript only
+                            includes: ['\\.[jt]sx?$'], // TODO!(sqs): typescript only
                             type: 'regexp',
                         },
                         maxResults: MAX_RESULTS,
@@ -100,7 +100,6 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING
         const docs = await Promise.all(
             results.map(async ({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
         )
-        console.log(docs.map(d => d.uri))
 
         const tseslintConfig: TSESLint.ParserOptions = {
             ecmaVersion: 2018,
@@ -113,25 +112,25 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING
         const linter = new Linter()
         linter.defineParser('@typescript-eslint/parser', tseslintParser)
 
-        const stdRules = _eslintConfigStandard
+        const stdRules = _eslintConfigStandard.rules
         for (const ruleId of Object.keys(stdRules)) {
             if (!linter.getRules().has(ruleId)) {
                 delete stdRules[ruleId]
             }
         }
-        delete stdRules.indent
-        delete stdRules['space-before-function-paren']
-        delete stdRules['no-undef']
-        delete stdRules['comma-dangle']
-        delete stdRules['no-unused-vars']
+        // delete stdRules.indent
+        // delete stdRules['space-before-function-paren']
+        // delete stdRules['no-undef']
+        // delete stdRules['comma-dangle']
+        // delete stdRules['no-unused-vars']
 
         const config: Linter.Config = {
             parser: '@typescript-eslint/parser',
             parserOptions: tseslintConfig,
             rules: {
                 ...stdRules,
-                'no-useless-constructor': 0,
-                'spaced-comment': 0,
+                // 'no-useless-constructor': 0,
+                // 'spaced-comment': 0,
             },
             settings: {
                 react: { version: '16.3' },
