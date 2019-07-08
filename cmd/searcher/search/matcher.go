@@ -296,7 +296,7 @@ func getMultiLineMatches(re *regexp.Regexp, fileBuf []byte, fileMatchBuf []byte,
 	for i := 0; len(matches) < maxLineMatches; i++ {
 		advance, lineBuf, err := scanLines(fileBuf, true)
 		if err != nil {
-			// ScanLines should never return an err
+			// scanLines should never return an err
 			return nil, false, err
 		}
 		if advance == 0 { // EOF
@@ -331,7 +331,7 @@ func getMultiLineMatches(re *regexp.Regexp, fileBuf []byte, fileMatchBuf []byte,
 	return matches, limitHit, nil
 }
 
-// bufio.ScanLines without dropping the terminal \r
+// scanLines is the same implementation of bufio.ScanLines, but does not drop the terminal \r if there is one.
 func scanLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if atEOF && len(data) == 0 {
 		return 0, nil, nil
@@ -348,31 +348,31 @@ func scanLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	return 0, nil, nil
 }
 
-func getStartingMatch(fileBuf []byte, matchStartByte int, end int, lineNumberToLineLength map[int]int) (startingLine, startingOffset, startingLength int) {
+func getStartingMatch(fileBuf []byte, start int, end int, lineNumberToLineLength map[int]int) (startingLine, startingOffset, startingLength int) {
 	sumBytes := 0
 	for lineNumber := 0; lineNumber < len(lineNumberToLineLength); lineNumber++ {
 		lineLength := lineNumberToLineLength[lineNumber]
 		sumBytes = sumBytes + lineLength
-		bytesAtBeginningOfLine := (sumBytes - lineLength)
-		if sumBytes > matchStartByte {
+		bytesAtBeginningOfLine := sumBytes - lineLength
+		if sumBytes > start {
 			startingLine = lineNumber
-			startingOffset = matchStartByte - bytesAtBeginningOfLine
-			startingLength = sumBytes - matchStartByte
+			startingOffset = start - bytesAtBeginningOfLine
+			startingLength = sumBytes - start
 			break
 		}
 	}
 	return startingLine, startingOffset, startingLength
 }
 
-func getEndingMatch(fileBuf []byte, start int, matchEndByte int, lineNumberToLineLength map[int]int) (endingLine, endingOffset, endingLength int) {
+func getEndingMatch(fileBuf []byte, start int, end int, lineNumberToLineLength map[int]int) (endingLine, endingOffset, endingLength int) {
 	sumBytes := 0
 	for lineNumber := 0; lineNumber < len(lineNumberToLineLength); lineNumber++ {
 		lineLength := lineNumberToLineLength[lineNumber]
 		sumBytes = sumBytes + lineLength
-		startingBytes := (sumBytes - lineLength)
-		if sumBytes >= matchEndByte-1 {
+		startingBytes := sumBytes - lineLength
+		if sumBytes >= end-1 {
 			endingOffset = 0
-			endingLength = (matchEndByte) - startingBytes
+			endingLength = end - startingBytes
 			endingLine = lineNumber
 			break
 		}
