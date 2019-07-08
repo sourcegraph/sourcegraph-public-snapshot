@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -105,5 +106,10 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (*searchResultsRe
 	if r.pagination == nil {
 		panic("(bug) this method should never be called in this state")
 	}
+
+	// All paginated search requests should complete within this timeframe.
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	panic("TODO: implement")
 }

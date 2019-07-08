@@ -83,6 +83,9 @@ func (r *schemaResolver) Search(args *struct {
 		if err != nil {
 			return nil, err
 		}
+		if *args.Limit < 1 || *args.Limit > 5000 {
+			return nil, errors.New("search: requested pagination limit outside allowed range (1 - 5000)")
+		}
 		pagination = &searchPaginationInfo{
 			cursor: cursor,
 			limit:  *args.Limit,
