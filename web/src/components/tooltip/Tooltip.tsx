@@ -64,7 +64,6 @@ export class Tooltip extends React.PureComponent<Props, State> {
                 // Set key prop to work around a bug where quickly mousing between 2 elements with tooltips
                 // displays the 2nd element's tooltip as still pointing to the first.
                 key={this.state.subjectSeq}
-                className="tooltip"
                 isOpen={true}
                 target={this.state.subject}
                 placement="auto"

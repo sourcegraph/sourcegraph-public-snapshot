@@ -11,7 +11,7 @@ const GitHubSchemaJSON = `{
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
-  "required": ["url", "token", "repositoryQuery"],
+  "required": ["url", "token"],
   "properties": {
     "url": {
       "description": "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
@@ -61,7 +61,7 @@ const GitHubSchemaJSON = `{
         "type": "object",
         "title": "ExcludedGitHubRepo",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }],
+        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, { "required": ["pattern"] }],
         "properties": {
           "name": {
             "description": "The name of a GitHub repository (\"owner/name\") to exclude from mirroring.",
@@ -72,12 +72,17 @@ const GitHubSchemaJSON = `{
             "description": "The node ID of a GitHub repository (as returned by the GitHub instance's API) to exclude from mirroring. Use this to exclude the repository, even if renamed. Note: This is the GraphQL ID, not the GitHub database ID. eg: \"curl https://api.github.com/repos/vuejs/vue | jq .node_id\"",
             "type": "string",
             "minLength": 1
+          },
+          "pattern": {
+            "description": "Regular expression which matches against the name of a GitHub repository (\"owner/name\").",
+            "type": "string",
+            "format": "regex"
           }
         }
       },
       "examples": [
         [{ "name": "owner/name" }, { "id": "MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==" }],
-        [{ "name": "vuejs/vue" }, { "name": "php/php-src" }]
+        [{ "name": "vuejs/vue" }, { "name": "php/php-src" }, { "pattern": "^topsecretorg/.*" }]
       ]
     },
     "repositoryQuery": {

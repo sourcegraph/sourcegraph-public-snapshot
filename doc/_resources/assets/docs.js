@@ -54,9 +54,10 @@ window.sgdocs = (() => {
         hideMenu()
       }
     }
+    document.addEventListener('keydown', escaped)
 
     function hideMenu() {
-      VERSION_OPTIONS.classList.toggle('show')
+      VERSION_OPTIONS.classList.remove('show')
       document.removeEventListener('click', outsideVersionSelectorListener)
       document.removeEventListener('keydown', escaped)
     }

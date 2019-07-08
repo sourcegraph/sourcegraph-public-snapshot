@@ -161,6 +161,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         const filters = this.getFilters()
         const extensionFilters = this.state.contributions && this.state.contributions.searchFilters
 
+        const quickLinks =
+            (isSettingsValid<Settings>(this.props.settingsCascade) && this.props.settingsCascade.final.quicklinks) || []
+
         return (
             <div className="e2e-search-results search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
@@ -169,6 +172,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     results={this.state.resultsOrError}
                     filters={filters}
                     extensionFilters={extensionFilters}
+                    quickLinks={quickLinks}
                     onFilterClick={this.onDynamicFilterClicked}
                     onShowMoreResultsClick={this.showMoreResults}
                     calculateShowMoreResultsCount={this.calculateCount}

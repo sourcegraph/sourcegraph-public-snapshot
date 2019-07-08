@@ -86,7 +86,7 @@ export class ExtensionsArea extends React.Component<ExtensionsAreaProps, Extensi
         }
 
         return (
-            <div className="extensions-area area--vertical">
+            <div className="extensions-area">
                 <ExtensionsAreaHeader
                     {...this.props}
                     {...context}

@@ -43,11 +43,14 @@ func IsBinary(content []byte) bool {
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
-func Code(ctx context.Context, content []byte, filepath string, disableTimeout bool, isLightTheme bool) (template.HTML, bool, error) {
+func Code(ctx context.Context, content []byte, filepath string, disableTimeout bool, isLightTheme bool, simulateTimeout bool) (template.HTML, bool, error) {
 	if !disableTimeout {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
+	}
+	if simulateTimeout {
+		time.Sleep(4 * time.Second)
 	}
 
 	// Never pass binary files to the syntax highlighter.
@@ -158,10 +161,11 @@ func preSpansToTable(h string) (string, error) {
 		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
 		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(rows)})
 		tr.AppendChild(tdLineNumber)
-
-		codeCell = &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
-		codeCell.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
-		tr.AppendChild(codeCell)
+		codeTd := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tr.AppendChild(codeTd)
+		codeCell = &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: atom.Div.String()}
+		codeTd.AppendChild(codeCell)
+		codeTd.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
 	}
 	newRow()
 	for next != nil {

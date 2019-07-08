@@ -53,7 +53,7 @@ export function initSentry(script: 'content' | 'options' | 'background'): void {
             scope.setTag('extension_version', getExtensionVersion())
             const codeHost = determineCodeHost()
             if (codeHost) {
-                scope.setTag('code_host', codeHost.name)
+                scope.setTag('code_host', codeHost.type)
             }
         })
     })

@@ -1,7 +1,26 @@
 // Command palette
 .command-palette-button--bitbucket-server {
-    position: relative;
-    top: 5px;
+    z-index: 3000;
+    font-size: 13px;
+    svg {
+        // The icon we use is taller than the other items' font size, so make it a bit shorter.
+        height: 13px;
+    }
+}
+
+.command-palette-popover--bitbucket-server {
+    display: block !important;
+    max-width: unset !important;
+
+    header {
+        padding: 8px;
+    }
+    input {
+        max-width: unset !important;
+    }
+    .no-results {
+        padding: 10px;
+    }
 }
 
 // Open on Sourcegraph button

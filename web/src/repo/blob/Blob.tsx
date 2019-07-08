@@ -454,7 +454,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         if (codeCell.querySelector('.line-decoration-attachment-portal')) {
             return
         }
-        const portalNode = document.createElement('span')
+        const portalNode = document.createElement('div')
 
         const id = toPortalID(line)
         portalNode.id = id

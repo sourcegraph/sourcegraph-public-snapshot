@@ -50,10 +50,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 
 func init() {
 	var err error
-	sr := &schemaResolver{
-		recentSearches: &db.RecentSearches{},
-	}
-	GraphQLSchema, err = graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
+	GraphQLSchema, err = graphql.ParseSchema(Schema, &schemaResolver{}, graphql.Tracer(prometheusTracer{}))
 	if err != nil {
 		panic(err)
 	}
@@ -79,6 +76,16 @@ type nodeResolver struct {
 
 func (r *nodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	n, ok := r.node.(*accessTokenResolver)
+	return n, ok
+}
+
+func (r *nodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
+	n, ok := r.node.(*discussionCommentResolver)
+	return n, ok
+}
+
+func (r *nodeResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
+	n, ok := r.node.(*discussionThreadResolver)
 	return n, ok
 }
 
@@ -133,6 +140,9 @@ func (r *nodeResolver) ToGitCommit() (*gitCommitResolver, bool) {
 }
 
 func (r *nodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
+	if NodeToRegistryExtension == nil {
+		return nil, false
+	}
 	return NodeToRegistryExtension(r.node)
 }
 
@@ -162,11 +172,8 @@ type stringLogger interface {
 
 // schemaResolver handles all GraphQL queries for Sourcegraph.  To do this, it
 // uses subresolvers, some of which are globals and some of which are fields on
-// schemaResolver. Eventually, they should all be fields (i.e., dependency
-// injected), but that is being done gradually. Currently, only `recentSearches` is dependency-injected.
-type schemaResolver struct {
-	recentSearches stringLogger
-}
+// schemaResolver.
+type schemaResolver struct{}
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
@@ -185,6 +192,10 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
+	case "DiscussionComment":
+		return discussionCommentByID(ctx, id)
+	case "DiscussionThread":
+		return discussionThreadByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)
@@ -260,7 +271,6 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 		}
 		return nil, err
 	}
-
 	return &repositoryResolver{repo: repo}, nil
 }
 

@@ -69,7 +69,7 @@ func TestSyncer_Sync(t *testing.T) {
 			ctx := context.Background()
 
 			syncer := repos.NewSyncer(tc.store, tc.sourcer, nil, now)
-			_, err := syncer.Sync(ctx, "github")
+			_, err := syncer.Sync(ctx)
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("have error %q, want %q", have, want)

@@ -71,6 +71,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                             <div className="mb-3" key={service.id}>
                                 <ExternalServiceCard
                                     {...getExternalService(service.kind)}
+                                    kind={service.kind}
                                     title={service.displayName}
                                     shortDescription="Update this external service configuration to manage repository mirroring."
                                     to={`/site-admin/external-services/${service.id}`}

@@ -1,5 +1,9 @@
 $navbar-padding-y: ($spacer / 4);
 $navbar-padding-x: ($spacer / 2);
+$nav-tabs-border-color: var(--border-color);
+$nav-tabs-link-hover-border-color: var(--border-color) var(--border-color) transparent;
+$nav-tabs-link-active-color: var(--body-color);
+$nav-tabs-link-active-border-color: var(--border-color) var(--border-color) transparent;
 
 @import 'bootstrap/scss/nav';
 @import 'bootstrap/scss/navbar';
@@ -20,4 +24,11 @@ $navbar-padding-x: ($spacer / 2);
 // onclick handler.
 .nav-link:active {
     box-shadow: none !important;
+}
+
+// Ensure that tabs are all the same height, regardless of whether they have an icon. Without this,
+// tabs with an icon are 38px and tabs without an icon are 37.5px, which causes tabs without an icon
+// to have an undesirable bottom border when active.
+.nav-tabs > .nav-item > .nav-link {
+    height: 100%;
 }

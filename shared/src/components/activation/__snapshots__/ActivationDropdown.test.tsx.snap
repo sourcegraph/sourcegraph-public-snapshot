@@ -74,22 +74,24 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
     tabIndex="-1"
   >
     <div
-      className="activation-dropdown-background"
-    />
-    <div
-      className="activation-dropdown-header"
+      className="dropdown-item-text activation-dropdown-header"
     >
       <h3
-        className="activation-dropdown-header__title"
+        className="mb-1"
       >
         Get started with Sourcegraph
       </h3>
       <p
-        className="activation-dropdown-header__copy"
+        className="mb-0"
       >
         Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.
       </p>
     </div>
+    <div
+      className="dropdown-divider"
+      onClick={[Function]}
+      tabIndex="-1"
+    />
     <div
       className="activation-dropdown-item dropdown-item"
       onClick={[Function]}
@@ -98,16 +100,19 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
         data-tooltip="detail1"
         onClick={[Function]}
       >
-        <span
-          className="activation-item__link"
+        <button
+          className="btn btn-link text-left w-100 p-0"
         >
           <div
-            className="activation-item"
+            className="d-flex justify-content-between"
           >
-            title1
-             
+            <span
+              className="mr-2"
+            >
+              title1
+            </span>
             <svg
-              className="mdi-icon icon-inline activation-item__checkbox--todo"
+              className="mdi-icon icon-inline text-muted"
               fill="currentColor"
               height={24}
               viewBox="0 0 24 24"
@@ -118,7 +123,7 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
               />
             </svg>
           </div>
-        </span>
+        </button>
       </div>
     </div>
     <div
@@ -130,16 +135,18 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
         onClick={[Function]}
       >
         <a
-          className="activation-item__link"
           to="/some/url"
         >
           <div
-            className="activation-item"
+            className="d-flex justify-content-between"
           >
-            title2
-             
+            <span
+              className="mr-2"
+            >
+              title2
+            </span>
             <svg
-              className="mdi-icon icon-inline activation-item__checkbox--todo"
+              className="mdi-icon icon-inline text-muted"
               fill="currentColor"
               height={24}
               viewBox="0 0 24 24"
@@ -231,22 +238,24 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
     tabIndex="-1"
   >
     <div
-      className="activation-dropdown-background"
-    />
-    <div
-      className="activation-dropdown-header"
+      className="dropdown-item-text activation-dropdown-header"
     >
       <h3
-        className="activation-dropdown-header__title"
+        className="mb-1"
       >
         Get started with Sourcegraph
       </h3>
       <p
-        className="activation-dropdown-header__copy"
+        className="mb-0"
       >
         Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.
       </p>
     </div>
+    <div
+      className="dropdown-divider"
+      onClick={[Function]}
+      tabIndex="-1"
+    />
     <div
       className="activation-dropdown-item dropdown-item"
       onClick={[Function]}
@@ -255,16 +264,19 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
         data-tooltip="detail1"
         onClick={[Function]}
       >
-        <span
-          className="activation-item__link"
+        <button
+          className="btn btn-link text-left w-100 p-0"
         >
           <div
-            className="activation-item"
+            className="d-flex justify-content-between"
           >
-            title1
-             
+            <span
+              className="mr-2"
+            >
+              title1
+            </span>
             <svg
-              className="mdi-icon icon-inline activation-item__checkbox--done"
+              className="mdi-icon icon-inline text-success"
               fill="currentColor"
               height={24}
               viewBox="0 0 24 24"
@@ -275,7 +287,7 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
               />
             </svg>
           </div>
-        </span>
+        </button>
       </div>
     </div>
     <div
@@ -287,16 +299,18 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
         onClick={[Function]}
       >
         <a
-          className="activation-item__link"
           to="/some/url"
         >
           <div
-            className="activation-item"
+            className="d-flex justify-content-between"
           >
-            title2
-             
+            <span
+              className="mr-2"
+            >
+              title2
+            </span>
             <svg
-              className="mdi-icon icon-inline activation-item__checkbox--todo"
+              className="mdi-icon icon-inline text-muted"
               fill="currentColor"
               height={24}
               viewBox="0 0 24 24"
@@ -388,22 +402,24 @@ exports[`ActivationDropdown render loading 1`] = `
     tabIndex="-1"
   >
     <div
-      className="activation-dropdown-background"
-    />
-    <div
-      className="activation-dropdown-header"
+      className="dropdown-item-text activation-dropdown-header"
     >
       <h3
-        className="activation-dropdown-header__title"
+        className="mb-1"
       >
         Get started with Sourcegraph
       </h3>
       <p
-        className="activation-dropdown-header__copy"
+        className="mb-0"
       >
         Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.
       </p>
     </div>
+    <div
+      className="dropdown-divider"
+      onClick={[Function]}
+      tabIndex="-1"
+    />
     <div
       className="activation-dropdown-button__loader"
     >

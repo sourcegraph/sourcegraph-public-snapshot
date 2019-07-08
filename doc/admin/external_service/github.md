@@ -22,7 +22,7 @@ To set this up, add GitHub as an external service to Sourcegraph:
 There are four fields for configuring which repositories are mirrored/synchronized:
 
 - [`repos`](github.md#configuration)<br>A list of repositories in `owner/name` format.
-- [`orgs`][github.md#configuration)<br>A list of organizations. 
+- [`orgs`](github.md#configuration)<br>A list of organizations (every repository belonging to the organization will be cloned). 
 - [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires GitHub advanced search queries to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
 - [`exclude`](github.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, 'orgs', and `repositoryQuery` fields.
 

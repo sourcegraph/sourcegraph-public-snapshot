@@ -2,7 +2,7 @@ import H from 'history'
 import { uniqueId } from 'lodash'
 import React, { createRef, useEffect, useLayoutEffect, useState } from 'react'
 import { from } from 'rxjs'
-import { filter, map } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import { EditorId } from '../../../shared/src/api/client/services/editorService'
 import { TextModel } from '../../../shared/src/api/client/services/modelService'
 import { PanelViewWithComponent } from '../../../shared/src/api/client/services/view'
@@ -14,7 +14,6 @@ import { Markdown } from '../../../shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { createLinkClickHandler } from '../../../shared/src/util/linkClickHandler'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
-import { isDefined } from '../../../shared/src/util/types'
 import { LINK_PREVIEW_CLASS } from '../components/linkPreviews/styles'
 import { WebEditorCompletionWidget } from '../components/shared'
 import { setElementTooltip } from '../components/tooltip/Tooltip'
@@ -29,15 +28,15 @@ interface Props extends ExtensionsControllerProps {
  * to allow experimentation with extensions that listen for changes in documents and display
  * Markdown-formatted text.
  */
-export const SnippetsPage: React.FunctionComponent<Props> = props => {
+export const SnippetsPage: React.FunctionComponent<Props> = ({ location, extensionsController, ...props }) => {
     const [textArea, setTextArea] = useState<HTMLTextAreaElement | null>(null)
     const textAreaRef = createRef<HTMLTextAreaElement>()
-    useLayoutEffect(() => setTextArea(textAreaRef.current))
+    useLayoutEffect(() => setTextArea(textAreaRef.current), [textAreaRef])
 
     const [editorId, setEditorId] = useState<EditorId | null>(null)
     const [modelUri, setModelUri] = useState<string | null>(null)
 
-    const urlQuery = new URLSearchParams(props.location.search)
+    const urlQuery = new URLSearchParams(location.search)
 
     const textAreaClassName = urlQuery.has('mono') ? 'text-monospace' : ''
 
@@ -50,9 +49,9 @@ export const SnippetsPage: React.FunctionComponent<Props> = props => {
             languageId: initialModelLanguageId,
             text: initialModelText,
         }
-        props.extensionsController.services.model.addModel(model)
+        extensionsController.services.model.addModel(model)
         setModelUri(model.uri)
-        const editor = props.extensionsController.services.editor.addEditor({
+        const editor = extensionsController.services.editor.addEditor({
             type: 'CodeEditor',
             resource: model.uri,
             selections: [],
@@ -60,18 +59,24 @@ export const SnippetsPage: React.FunctionComponent<Props> = props => {
         })
         setEditorId(editor)
         return () => {
-            props.extensionsController.services.editor.removeEditor(editor)
-            props.extensionsController.services.model.removeModel(model.uri)
+            extensionsController.services.editor.removeEditor(editor)
+            extensionsController.services.model.removeModel(model.uri)
         }
-    }, [initialModelUriScheme, initialModelLanguageId, initialModelText])
+    }, [
+        initialModelUriScheme,
+        initialModelLanguageId,
+        initialModelText,
+        extensionsController.services.model,
+        extensionsController.services.editor,
+    ])
 
     const [panelViews, setPanelViews] = useState<PanelViewWithComponent[] | null>(null)
     useEffect(() => {
-        const subscription = props.extensionsController.services.views
+        const subscription = extensionsController.services.views
             .getViews(ContributableViewContainer.Panel)
             .subscribe(views => setPanelViews(views))
         return () => subscription.unsubscribe()
-    }, [])
+    }, [extensionsController.services.views])
 
     // Add Markdown panel for Markdown snippets.
     const [modelText, setModelText] = useState<string | null>(null)
@@ -79,15 +84,11 @@ export const SnippetsPage: React.FunctionComponent<Props> = props => {
         if (!editorId) {
             return () => void 0
         }
-        const subscription = from(props.extensionsController.services.editor.editors)
-            .pipe(
-                map(editors => editors.find(e => e.editorId === editorId.editorId)),
-                filter(isDefined),
-                map(editor => editor.model.text)
-            )
+        const subscription = from(extensionsController.services.editor.observeEditorAndModel(editorId))
+            .pipe(map(editor => editor.model.text))
             .subscribe(text => setModelText(text || null))
         return () => subscription.unsubscribe()
-    }, [editorId, initialModelLanguageId])
+    }, [editorId, initialModelLanguageId, extensionsController.services.editor])
     const allPanelViews: PanelViewWithComponent[] | null =
         initialModelLanguageId === 'markdown' && modelText !== null
             ? [...(panelViews || []), { title: 'Preview', content: modelText, priority: 0 }]
@@ -104,7 +105,7 @@ export const SnippetsPage: React.FunctionComponent<Props> = props => {
                         <WebEditorCompletionWidget
                             textArea={textArea}
                             editorId={editorId.editorId}
-                            extensionsController={props.extensionsController}
+                            extensionsController={extensionsController}
                         />
                     )}
                     <EditorTextField
@@ -116,7 +117,7 @@ export const SnippetsPage: React.FunctionComponent<Props> = props => {
                         spellCheck={false}
                         rows={12}
                         textAreaRef={textAreaRef}
-                        extensionsController={props.extensionsController}
+                        extensionsController={extensionsController}
                     />
                 </>
             )}
@@ -128,7 +129,7 @@ export const SnippetsPage: React.FunctionComponent<Props> = props => {
                         <div className="card-body" onClick={createLinkClickHandler(props.history)}>
                             <WithLinkPreviews
                                 dangerousInnerHTML={renderMarkdown(view.content)}
-                                extensionsController={props.extensionsController}
+                                extensionsController={extensionsController}
                                 setElementTooltip={setElementTooltip}
                                 linkPreviewContentClass={LINK_PREVIEW_CLASS}
                             >

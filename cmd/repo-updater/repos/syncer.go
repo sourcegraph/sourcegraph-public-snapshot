@@ -26,6 +26,8 @@ type Syncer struct {
 	sourcer Sourcer
 	diffs   chan Diff
 	now     func() time.Time
+
+	syncSignal chan struct{}
 }
 
 // NewSyncer returns a new Syncer that syncs stored repos with
@@ -38,10 +40,11 @@ func NewSyncer(
 	now func() time.Time,
 ) *Syncer {
 	return &Syncer{
-		store:   store,
-		sourcer: sourcer,
-		diffs:   diffs,
-		now:     now,
+		store:      store,
+		sourcer:    sourcer,
+		diffs:      diffs,
+		now:        now,
+		syncSignal: make(chan struct{}, 1),
 	}
 }
 
@@ -51,15 +54,28 @@ func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 		if _, err := s.Sync(ctx); err != nil {
 			log15.Error("Syncer", "error", err)
 		}
-		time.Sleep(interval)
+
+		select {
+		case <-time.After(interval):
+		case <-s.syncSignal:
+		}
 	}
 
 	return ctx.Err()
 }
 
-// Sync synchronizes the repositories of the given external service kinds.
-func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err error) {
-	ctx, save := s.observe(ctx, "Syncer.Sync", strings.Join(kinds, " "))
+// TriggerSync will run Sync as soon as the current Sync has finished running
+// or if no Sync is running.
+func (s *Syncer) TriggerSync() {
+	select {
+	case s.syncSignal <- struct{}{}:
+	default:
+	}
+}
+
+// Sync synchronizes the repositories.
+func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
+	ctx, save := s.observe(ctx, "Syncer.Sync", "")
 	defer save(&diff, &err)
 
 	if s.FailFullSync {
@@ -67,7 +83,7 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err erro
 	}
 
 	var sourced Repos
-	if sourced, err = s.sourced(ctx, kinds...); err != nil {
+	if sourced, err = s.sourced(ctx); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.sourced")
 	}
 
@@ -82,8 +98,7 @@ func (s *Syncer) Sync(ctx context.Context, kinds ...string) (diff Diff, err erro
 	}
 
 	var stored Repos
-	args := StoreListReposArgs{Kinds: kinds}
-	if stored, err = store.ListRepos(ctx, args); err != nil {
+	if stored, err = store.ListRepos(ctx, StoreListReposArgs{}); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
@@ -288,10 +303,8 @@ func merge(o, n *Repo) {
 	o.Update(n)
 }
 
-func (s *Syncer) sourced(ctx context.Context, kinds ...string) ([]*Repo, error) {
-	svcs, err := s.store.ListExternalServices(ctx, StoreListExternalServicesArgs{
-		Kinds: kinds,
-	})
+func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
+	svcs, err := s.store.ListExternalServices(ctx, StoreListExternalServicesArgs{})
 	if err != nil {
 		return nil, err
 	}

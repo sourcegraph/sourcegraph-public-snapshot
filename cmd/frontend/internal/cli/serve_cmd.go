@@ -150,6 +150,7 @@ func Main() error {
 
 	goroutine.Go(func() { bg.MigrateAllSettingsMOTDToNotices(context.Background()) })
 	goroutine.Go(func() { bg.MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(context.Background()) })
+	goroutine.Go(func() { bg.LogSearchQueries(context.Background()) })
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
 	if hooks.AfterDBInit != nil {
@@ -273,7 +274,7 @@ func (s *httpServers) Wait() {
 
 func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 	for _, o := range allowedOrigins {
-		if o == origin {
+		if o == "*" || o == origin {
 			return true
 		}
 	}

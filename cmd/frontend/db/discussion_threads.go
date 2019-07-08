@@ -127,6 +127,10 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 }
 
 func (t *discussionThreads) Get(ctx context.Context, threadID int64) (*types.DiscussionThread, error) {
+	if Mocks.DiscussionThreads.Get != nil {
+		return Mocks.DiscussionThreads.Get(threadID)
+	}
+
 	threads, err := t.List(ctx, &DiscussionThreadsListOptions{
 		ThreadIDs: []int64{threadID},
 	})
@@ -140,6 +144,9 @@ func (t *discussionThreads) Get(ctx context.Context, threadID int64) (*types.Dis
 }
 
 type DiscussionThreadsUpdateOptions struct {
+	// Title, when non-nil, updates the thread's title.
+	Title *string
+
 	// Archive, when non-nil, specifies whether the thread is archived or not.
 	Archive *bool
 
@@ -160,6 +167,12 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 	// TODO(slimsag:discussions): should be in a transaction
 
 	anyUpdate := false
+	if opts.Title != nil {
+		anyUpdate = true
+		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET title=$1 WHERE id=$2 AND deleted_at IS NULL", opts.Title, threadID); err != nil {
+			return nil, err
+		}
+	}
 	if opts.Archive != nil {
 		anyUpdate = true
 		var archivedAt *time.Time

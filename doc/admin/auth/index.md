@@ -313,12 +313,12 @@ Some proxies add a prefix to the username header value. For example, Google IAP 
 Usernames on Sourcegraph are normalized according to the following rules.
 
 - Any portion of the username after a '@' character is removed
-- Any characters not in `[a-zA-Z0-9-]` are replaced with `-`
-- Usernames with consecutive '-' characters are not allowed
-- Usernames that start or end with '-' are not allowed
+- Any characters not in `[a-zA-Z0-9-.]` are replaced with `-`
+- Usernames with consecutive '-' or '.' characters are not allowed
+- Usernames that start or end with '-' or '.' are not allowed
 
 Usernames from authentication providers are normalized before being used in Sourcegraph. Usernames chosen by users are rejected if they do not meet these criteria.
 
-For example, a user whose external username (according the authentication provider) is `alice.smith@example.com` would have the Sourcegraph username `alice-smith`.
+For example, a user whose external username (according the authentication provider) is `alice_smith@example.com` would have the Sourcegraph username `alice-smith`.
 
 If multiple accounts normalize into the same username, only the first user account is created. Other users won't be able to sign in. This is a rare occurrence; contact support if this is a blocker.

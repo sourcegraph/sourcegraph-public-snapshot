@@ -31,12 +31,7 @@ export interface ExternalServiceKindMetadata {
     /**
      * Icon to show in the external service "button"
      */
-    icon: JSX.Element | string
-
-    /**
-     * Color to display next to the icon in the external service "button"
-     */
-    iconBrandColor: 'github' | 'aws' | 'bitbucket' | 'gitlab' | 'gitolite' | 'phabricator' | 'git'
+    icon: React.ComponentType<{ className?: string }>
 
     /**
      * A short description that will appear in the external service "button" under the title
@@ -68,8 +63,6 @@ export interface ExternalServiceKindMetadata {
      */
     defaultConfig: string
 }
-
-const ICON_SIZE = 45
 
 const defaultFormattingOptions: FormattingOptions = {
     eol: '\n',
@@ -108,7 +101,7 @@ const editorActionComments = {
 
 export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
     title: 'GitHub repositories',
-    icon: <GithubCircleIcon size={ICON_SIZE} />,
+    icon: GithubCircleIcon,
     jsonSchema: githubSchemaJSON,
     editorActions: [
         {
@@ -169,7 +162,6 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
             },
         },
     ],
-    iconBrandColor: 'github',
     shortDescription: 'Add GitHub.com repositories',
     longDescription: (
         <span>
@@ -238,8 +230,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     [GQL.ExternalServiceKind.GITHUB]: GITHUB_EXTERNAL_SERVICE,
     [GQL.ExternalServiceKind.AWSCODECOMMIT]: {
         title: 'AWS CodeCommit repositories',
-        icon: <AmazonIcon size={ICON_SIZE} />,
-        iconBrandColor: 'aws',
+        icon: AmazonIcon,
         shortDescription: 'Add AWS CodeCommit repositories.',
         jsonSchema: awsCodeCommitSchemaJSON,
         defaultDisplayName: 'AWS CodeCommit',
@@ -306,8 +297,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.BITBUCKETSERVER]: {
         title: 'Bitbucket Server repositories',
-        icon: <BitbucketIcon size={ICON_SIZE} />,
-        iconBrandColor: 'bitbucket',
+        icon: BitbucketIcon,
         shortDescription: 'Add Bitbucket Server repositories.',
         jsonSchema: bitbucketServerSchemaJSON,
         defaultDisplayName: 'Bitbucket Server',
@@ -330,13 +320,11 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   //  - repos
   //  - exclude
 
-  // repositoryQuery: List of strings, either a special keyword "none" (which disables querying),
-  // or repository search query parameters, e.g "?name=<repo name>&projectname=<project>&visibility=private".
-  // See the list of parameters at:
-  // https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
-  "repositoryQuery": [
-  //   "?name=<repo>\u0026projectname=<project>" // set this to "none" to disable querying
-  ],
+  // repositoryQuery: List of strings: a special keyword "none" (which disables querying),
+  // "all" (which selects all repositories visible to the given token), or any repository
+  // search query parameters (e.g "?name=<repo name>&projectname=<project>&visibility=private")
+  // See the list of parameters at: https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
+  "repositoryQuery": [],
 
   // repos: Explicit list of repositories to select
   // "repos": [
@@ -405,12 +393,29 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
                     return { edits, selectText: value }
                 },
             },
+            {
+                id: 'enablePermissions',
+                label: 'Enforce permissions',
+                run: config => {
+                    const value = {
+                        COMMENT_SENTINEL: true,
+                        identityProvider: { type: 'username' },
+                        oauth: {
+                            consumerKey: '<consumer key>',
+                            signingKey: '<signing key>',
+                        },
+                        ttl: '3h',
+                    }
+                    const comment = `// Follow setup instructions in https://docs.sourcegraph.com/admin/repo/permissions#bitbucket_server`
+                    const edit = editWithComment(config, ['authorization'], value, comment)
+                    return { edits: [edit], selectText: comment }
+                },
+            },
         ],
     },
     [GQL.ExternalServiceKind.GITLAB]: {
         title: 'GitLab projects',
-        icon: <GitLabIcon size={ICON_SIZE} />,
-        iconBrandColor: 'gitlab',
+        icon: GitLabIcon,
         shortDescription: 'Add GitLab projects.',
         jsonSchema: gitlabSchemaJSON,
         defaultDisplayName: 'GitLab',
@@ -592,8 +597,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.GITOLITE]: {
         title: 'Gitolite repositories',
-        icon: <GitIcon size={ICON_SIZE} />,
-        iconBrandColor: 'gitolite',
+        icon: GitIcon,
         shortDescription: 'Add Gitolite repositories.',
         jsonSchema: gitoliteSchemaJSON,
         defaultDisplayName: 'Gitolite',
@@ -628,8 +632,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.PHABRICATOR]: {
         title: 'Phabricator connection',
-        icon: <PhabricatorIcon size={ICON_SIZE} />,
-        iconBrandColor: 'phabricator',
+        icon: PhabricatorIcon,
         shortDescription:
             'Associate Phabricator repositories with existing repositories on Sourcegraph. Mirroring is not supported.',
         jsonSchema: phabricatorSchemaJSON,
@@ -678,8 +681,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
     },
     [GQL.ExternalServiceKind.OTHER]: {
         title: 'Single Git repositories',
-        icon: <GitIcon size={ICON_SIZE} />,
-        iconBrandColor: 'git',
+        icon: GitIcon,
         shortDescription: 'Add single Git repositories by clone URL.',
         jsonSchema: otherExternalServiceSchemaJSON,
         defaultDisplayName: 'Git repositories',
@@ -729,7 +731,7 @@ export function isExternalServiceVariant(s: string): s is ExternalServiceVariant
 }
 
 export interface AddExternalServiceMetadata extends ExternalServiceKindMetadata {
-    serviceKind: GQL.ExternalServiceKind
+    kind: GQL.ExternalServiceKind
     variant?: ExternalServiceVariant
 }
 
@@ -813,7 +815,7 @@ export const ALL_EXTERNAL_SERVICE_ADD_VARIANTS: AddExternalServiceMetadata[] = f
                 const variant = variantString as ExternalServiceVariant
                 return {
                     ...service,
-                    serviceKind: kind,
+                    kind,
                     variant,
                     ...patch,
                 }
@@ -821,7 +823,7 @@ export const ALL_EXTERNAL_SERVICE_ADD_VARIANTS: AddExternalServiceMetadata[] = f
         }
         return {
             ...service,
-            serviceKind: kind,
+            kind,
         }
     })
 )
@@ -831,7 +833,7 @@ export function getExternalService(
     variantForAdd?: ExternalServiceVariant
 ): ExternalServiceKindMetadata {
     const foundVariants = ALL_EXTERNAL_SERVICE_ADD_VARIANTS.filter(
-        serviceVariant => serviceVariant.serviceKind === kind && serviceVariant.variant === variantForAdd
+        serviceVariant => serviceVariant.kind === kind && serviceVariant.variant === variantForAdd
     )
     if (foundVariants.length > 0) {
         return foundVariants[0]

@@ -4,6 +4,17 @@
 export const isDefined = <T>(val: T): val is NonNullable<T> => val !== undefined && val !== null
 
 /**
+ * Negates a type guard.
+ * Returns a function that returns `true` when the input is **not** the type checked for by the given type guard.
+ * It therefor excludes a type from a union type.
+ *
+ * @param isType The type guard that checks whether the given input value should be excluded.
+ */
+export const isNot = <TInput, TExclude extends TInput>(isType: (val: TInput) => val is TExclude) => (
+    value: TInput
+): value is Exclude<TInput, TExclude> => !isType(value)
+
+/**
  * Returns a function that returns `true` if the given `key` of the object is not `null` or `undefined`.
  *
  * I ❤️ TypeScript.

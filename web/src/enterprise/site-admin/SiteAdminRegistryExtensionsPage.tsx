@@ -106,7 +106,7 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                         )}
                         {this.props.node.viewerCanAdminister && (
                             <button
-                                className="btn btn-outline-danger btn-sm ml-1"
+                                className="btn btn-danger btn-sm ml-1"
                                 onClick={this.deleteExtension}
                                 disabled={loading}
                                 title="Delete extension"
@@ -170,7 +170,7 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                 <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
                     <h2 className="mb-0">Registry extensions</h2>
                     <div>
-                        <Link className="btn btn-outline-link mr-sm-2" to="/extensions">
+                        <Link className="btn btn-link mr-sm-2" to="/extensions">
                             View extensions
                         </Link>
                         <Link className="btn btn-primary" to="/extensions/registry/new">

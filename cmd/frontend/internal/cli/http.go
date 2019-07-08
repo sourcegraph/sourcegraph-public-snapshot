@@ -138,6 +138,15 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		// CORS
 		// If the headerOrigin is the development or production Chrome Extension explicitly set the Allow-Control-Allow-Origin
 		// to the incoming header URL. Otherwise use the configured CORS origin.
+		//
+		// Note: API users also rely on this codepath handling wildcards
+		// properly. For example, if Sourcegraph is behind a corporate VPN an
+		// admin may choose to set the CORS origin to "*" and would expect
+		// Sourcegraph to respond appropriately to any Origin request header:
+		//
+		// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
+		// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
+		//
 		headerOrigin := r.Header.Get("Origin")
 		isExtensionRequest := headerOrigin == devExtension || headerOrigin == prodExtension
 

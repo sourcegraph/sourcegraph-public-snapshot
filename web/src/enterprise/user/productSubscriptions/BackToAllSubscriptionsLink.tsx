@@ -6,7 +6,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 export const BackToAllSubscriptionsLink: React.FunctionComponent<{ user: Pick<GQL.IUser, 'settingsURL'> }> = ({
     user,
 }) => (
-    <Link to={`${user.settingsURL!}/subscriptions`} className="btn btn-outline-link btn-sm mb-3">
+    <Link to={`${user.settingsURL!}/subscriptions`} className="btn btn-link btn-sm mb-3">
         <ArrowLeftIcon className="icon-inline" /> All subscriptions
     </Link>
 )

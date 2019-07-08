@@ -1,5 +1,6 @@
 import { combineLatest, merge, Observable, ReplaySubject } from 'rxjs'
 import { map, publishReplay, refCount, switchMap, take } from 'rxjs/operators'
+import { PrivateRepoPublicSourcegraphComError } from '../../../shared/src/backend/errors'
 import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../shared/src/platform/context'
@@ -12,7 +13,6 @@ import { background } from '../browser/runtime'
 import { observeStorageKey } from '../browser/storage'
 import { isInPage } from '../context'
 import { CodeHost } from '../libs/code_intelligence'
-import { PrivateRepoPublicSourcegraphComError } from '../shared/backend/errors'
 import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../shared/util/context'
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
@@ -133,10 +133,10 @@ export function createPlatformContext(
             const blobURL = await background.createBlobURL(bundleURL)
             return blobURL
         },
-        urlToFile: location => {
-            if (urlToFile) {
+        urlToFile: ({ rawRepoName, ...location }) => {
+            if (rawRepoName && urlToFile) {
                 // Construct URL to file on code host, if possible.
-                return urlToFile(sourcegraphURL, location)
+                return urlToFile(sourcegraphURL, { rawRepoName, ...location })
             }
             // Otherwise fall back to linking to Sourcegraph (with an absolute URL).
             return `${sourcegraphURL}${toPrettyBlobURL(location)}`

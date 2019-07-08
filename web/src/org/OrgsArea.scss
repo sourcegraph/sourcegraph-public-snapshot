@@ -1,16 +1,3 @@
-@import '../components/Area';
 @import './area/OrgArea';
 @import './new/NewOrgPage';
 @import '../search/saved-searches/SavedSearchForm';
-
-.orgs-area {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    &__content {
-        height: 100%;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-}

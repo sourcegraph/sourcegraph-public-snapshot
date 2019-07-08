@@ -54,15 +54,15 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
         }
 
         return (
-            <div className="registry-extension-overview-page row">
+            <div className="registry-extension-overview-page d-flex flex-wrap">
                 <PageTitle title={this.props.extension.id} />
-                <div className="col-md-8">
+                <div className="registry-extension-overview-page__readme mr-3">
                     <ExtensionREADME extension={this.props.extension} />
                 </div>
-                <div className="col-md-4">
+                <aside className="registry-extension-overview-page__sidebar">
                     {categories && (
                         <div className="mb-3">
-                            <h3>Categories</h3>
+                            <h3 className="mb-0">Categories</h3>
                             <ul className="list-inline registry-extension-overview-page__categories">
                                 {categories.map((c, i) => (
                                     <li key={i} className="list-inline-item mb-2 small">
@@ -82,7 +82,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                         this.props.extension.manifest.tags &&
                         this.props.extension.manifest.tags.length > 0 && (
                             <div className="mb-3">
-                                <h3>Tags</h3>
+                                <h3 className="mb-0">Tags</h3>
                                 <ul className="list-inline registry-extension-overview-page__tags">
                                     {this.props.extension.manifest.tags.map((t, i) => (
                                         <li key={i} className="list-inline-item mb-2 small">
@@ -201,7 +201,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                             </dd>
                         </dl>
                     </small>
-                </div>
+                </aside>
             </div>
         )
     }

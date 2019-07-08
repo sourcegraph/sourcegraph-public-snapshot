@@ -3,11 +3,13 @@ package db
 import (
 	"context"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -35,7 +37,15 @@ var mockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perm)
 //
 // - If no authz providers match the repository, consult `authzAllowByDefault`. If true, then return
 //   the repository; otherwise, do not.
-func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perm) (rs []*types.Repo, err error) {
+	tr, ctx := trace.New(ctx, "authzFilter", "")
+	defer func() {
+		if err != nil {
+			tr.SetError(err)
+		}
+		tr.Finish()
+	}()
+
 	if mockAuthzFilter != nil {
 		return mockAuthzFilter(ctx, repos, p)
 	}
@@ -83,6 +93,27 @@ func isInternalActor(ctx context.Context) bool {
 }
 
 func getFilteredRepoNames(ctx context.Context, currentUser *types.User, repos map[authz.Repo]struct{}, p authz.Perm) (accepted map[api.RepoName]struct{}, err error) {
+	tr, ctx := trace.New(ctx, "getFilteredRepoNames", "")
+	defer func() {
+		if err != nil {
+			tr.SetError(err)
+		}
+
+		fields := []otlog.Field{
+			otlog.String("permission", string(p)),
+			otlog.Int("repos.count", len(repos)),
+			otlog.Int("authorized.count", len(accepted)),
+		}
+
+		if currentUser != nil {
+			fields = append(fields, otlog.Object("user", currentUser))
+		}
+
+		tr.LogFields(fields...)
+
+		tr.Finish()
+	}()
+
 	var accts []*extsvc.ExternalAccount
 	authzAllowByDefault, authzProviders := authz.GetProviders()
 	if len(authzProviders) > 0 && currentUser != nil {

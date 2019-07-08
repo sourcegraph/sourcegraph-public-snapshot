@@ -177,8 +177,7 @@ func TestSources_ListRepos(t *testing.T) {
 					Url:   "http://127.0.0.1:7990",
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 					RepositoryQuery: []string{
-						"?visibility=private",
-						"?visibility=public",
+						"all",
 					},
 				}),
 			},
@@ -247,11 +246,13 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 					Repos: []string{
 						"sourcegraph/Sourcegraph",
+						"keegancsmith/sqlf",
 						"tsenart/VEGETA",
 					},
 					Exclude: []*schema.ExcludedGitHubRepo{
 						{Name: "tsenart/Vegeta"},
 						{Id: "MDEwOlJlcG9zaXRvcnkxNTM2NTcyNDU="}, // tsenart/patrol ID
+						{Pattern: "^keegancsmith/.*"},
 					},
 				}),
 			},
@@ -342,7 +343,7 @@ func TestSources_ListRepos(t *testing.T) {
 					switch cfg := c.(type) {
 					case *schema.GitHubConnection:
 						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name, id: e.Id})
+							ex = append(ex, excluded{name: e.Name, id: e.Id, pattern: e.Pattern})
 						}
 					case *schema.GitLabConnection:
 						for _, e := range cfg.Exclude {

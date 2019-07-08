@@ -218,7 +218,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                                         A user account on Sourcegraph.com is required to create a subscription so you
                                         can view the license key and invoice.
                                     </small>
-                                    <hr />
+                                    <hr className="my-3" />
                                     <small className="form-text text-muted">
                                         Next, you'll enter payment information and buy the subscription.
                                     </small>

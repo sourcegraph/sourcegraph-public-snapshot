@@ -7,6 +7,7 @@
     "ui/assets": true,
     "browser/build": true,
     "**/coverage": true,
+    "/cmd/management-console/assets/": true,
   },
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",
@@ -28,4 +29,17 @@
   "jest.pathToJest": "yarn -s test",
   "jest.showCoverageOnLoad": false,
   "jest.autoEnable": false, // until we confirm people like it
+  "eslint.autoFixOnSave": true,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    {
+      "language": "typescript",
+      "autoFix": true,
+    },
+    {
+      "language": "typescriptreact",
+      "autoFix": true,
+    },
+  ],
 }

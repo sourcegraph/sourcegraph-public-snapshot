@@ -4,7 +4,6 @@
     position: absolute;
     min-width: 6rem;
     max-width: 32rem;
-    max-height: 15rem;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -43,9 +42,18 @@
         overflow-y: auto;
     }
 
+    &__alert {
+        padding: 0.5rem;
+    }
+
+    &__alert-close {
+        float: right;
+    }
+
     // __content elements are a subset of the __row elements
     // (the ones that contain markdown or code, but not errors or the actions)
     &__content {
+        max-height: 15rem;
         padding: 0.5rem;
         overflow-x: auto;
         word-wrap: normal;

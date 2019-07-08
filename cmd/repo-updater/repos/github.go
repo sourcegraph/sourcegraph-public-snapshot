@@ -23,12 +23,13 @@ import (
 // A GithubSource yields repositories from a single Github connection configured
 // in Sourcegraph via the external services configuration.
 type GithubSource struct {
-	svc          *ExternalService
-	config       *schema.GitHubConnection
-	exclude      map[string]bool
-	githubDotCom bool
-	baseURL      *url.URL
-	client       *github.Client
+	svc             *ExternalService
+	config          *schema.GitHubConnection
+	exclude         map[string]bool
+	excludePatterns []*regexp.Regexp
+	githubDotCom    bool
+	baseURL         *url.URL
+	client          *github.Client
 	// searchClient is for using the GitHub search API, which has an independent
 	// rate limit much lower than non-search API requests.
 	searchClient *github.Client
@@ -81,6 +82,7 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	}
 
 	exclude := make(map[string]bool, len(c.Exclude))
+	var excludePatterns []*regexp.Regexp
 	for _, r := range c.Exclude {
 		if r.Name != "" {
 			exclude[strings.ToLower(r.Name)] = true
@@ -89,12 +91,21 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		if r.Id != "" {
 			exclude[r.Id] = true
 		}
+
+		if r.Pattern != "" {
+			re, err := regexp.Compile(r.Pattern)
+			if err != nil {
+				return nil, err
+			}
+			excludePatterns = append(excludePatterns, re)
+		}
 	}
 
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
 		exclude:          exclude,
+		excludePatterns:  excludePatterns,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
 		client:           github.NewClient(apiURL, c.Token, cli),
@@ -141,7 +152,7 @@ func (s GithubSource) makeRepo(r *github.Repository) *Repo {
 			s.originalHostname,
 			r.NameWithOwner,
 		)),
-		ExternalRepo: *github.ExternalRepoSpec(r, *s.baseURL),
+		ExternalRepo: github.ExternalRepoSpec(r, *s.baseURL),
 		Description:  r.Description,
 		Fork:         r.IsFork,
 		Enabled:      true,
@@ -177,7 +188,16 @@ func (s *GithubSource) authenticatedRemoteURL(repo *github.Repository) string {
 }
 
 func (s *GithubSource) excludes(r *github.Repository) bool {
-	return s.exclude[strings.ToLower(r.NameWithOwner)] || s.exclude[r.ID]
+	if s.exclude[strings.ToLower(r.NameWithOwner)] || s.exclude[r.ID] {
+		return true
+	}
+
+	for _, re := range s.excludePatterns {
+		if re.MatchString(r.NameWithOwner) {
+			return true
+		}
+	}
+	return false
 }
 
 // repositoryPager is a function that returns repositories on a given `page`.

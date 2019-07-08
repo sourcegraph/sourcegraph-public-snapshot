@@ -3,8 +3,6 @@ import OptimizeCssAssetsPlugin from 'optimize-css-assets-webpack-plugin'
 import * as path from 'path'
 import * as webpack from 'webpack'
 
-import { commonStylesheetLoaders, jsRule, tsRule } from '../shared/webpack'
-
 const buildEntry = (...files: string[]) => files.map(file => path.join(__dirname, file))
 
 const contentEntry = '../../src/config/content.entry.js'
@@ -19,6 +17,7 @@ const config: webpack.Configuration = {
         options: buildEntry(extEntry, optionsEntry, '../../src/extension/scripts/options.tsx'),
         inject: buildEntry(extEntry, contentEntry, '../../src/extension/scripts/inject.tsx'),
         phabricator: buildEntry(pageEntry, '../../src/libs/phabricator/extension.tsx'),
+        integration: buildEntry(pageEntry, '../../src/integration/integration.tsx'),
 
         style: path.join(__dirname, '../../src/app.scss'),
         'options-style': path.join(__dirname, '../../src/options.scss'),
@@ -40,8 +39,18 @@ const config: webpack.Configuration = {
     },
     module: {
         rules: [
-            tsRule,
-            jsRule,
+            {
+                test: /\.[jt]sx?$/,
+                use: [
+                    {
+                        loader: 'babel-loader',
+                        options: {
+                            cacheDirectory: true,
+                            configFile: path.join(__dirname, '..', '..', 'babel.config.js'),
+                        },
+                    },
+                ],
+            },
             {
                 // SCSS rule for our own styles and Bootstrap
                 test: /\.(css|sass|scss)$/,
@@ -50,7 +59,20 @@ const config: webpack.Configuration = {
                     {
                         loader: 'css-loader',
                     },
-                    ...commonStylesheetLoaders,
+                    {
+                        loader: 'postcss-loader',
+                        options: {
+                            config: {
+                                path: path.join(__dirname, '../..'),
+                            },
+                        },
+                    },
+                    {
+                        loader: 'sass-loader',
+                        options: {
+                            includePaths: [path.resolve(__dirname, '../../../node_modules')],
+                        },
+                    },
                 ],
             },
         ],

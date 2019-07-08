@@ -62,13 +62,3 @@ $color-light-text-6: #1d2535;
 
 $color-light-border: #cad2e2;
 $color-light-border-2: #e4e9f1;
-
-.bg-striped-secondary {
-    background: repeating-linear-gradient(
-        45deg,
-        var(--secondary),
-        var(--secondary) 10px,
-        transparent 10px,
-        transparent 20px
-    );
-}

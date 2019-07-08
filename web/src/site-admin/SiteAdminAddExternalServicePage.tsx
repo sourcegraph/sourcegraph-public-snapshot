@@ -108,6 +108,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                         <div className="mb-3">
                             <ExternalServiceCard
                                 {...kindMetadata}
+                                kind={this.props.kind}
                                 title={createdExternalService.displayName}
                                 shortDescription="Update this external service configuration to manage repository mirroring."
                                 to={`/site-admin/external-services/${createdExternalService.id}`}
@@ -121,7 +122,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                 ) : (
                     <div>
                         <div className="mb-3">
-                            <ExternalServiceCard {...kindMetadata} />
+                            <ExternalServiceCard {...kindMetadata} kind={this.props.kind} />
                         </div>
                         <div className="mb-4">{kindMetadata.longDescription}</div>
                         <SiteAdminExternalServiceForm

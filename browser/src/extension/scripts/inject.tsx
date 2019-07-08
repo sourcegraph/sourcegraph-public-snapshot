@@ -71,14 +71,28 @@ async function main(): Promise<void> {
         return
     }
 
-    // Add style sheet
-    if (!isSourcegraphServer && !document.getElementById('ext-style-sheet')) {
-        const styleSheet = document.createElement('link')
-        styleSheet.id = 'ext-style-sheet'
-        styleSheet.rel = 'stylesheet'
-        styleSheet.type = 'text/css'
-        styleSheet.href = browser.extension.getURL('css/style.bundle.css')
-        document.head.appendChild(styleSheet)
+    // Add style sheet and wait for it to load to avoid rendering unstyled elements (which causes an
+    // annoying flash/jitter when the stylesheet loads shortly thereafter).
+    if (!isSourcegraphServer) {
+        let styleSheet = document.getElementById('ext-style-sheet') as HTMLLinkElement | null
+        // If does not exist, create
+        if (!styleSheet) {
+            styleSheet = document.createElement('link')
+            styleSheet.id = 'ext-style-sheet'
+            styleSheet.rel = 'stylesheet'
+            styleSheet.type = 'text/css'
+            styleSheet.href = browser.extension.getURL('css/style.bundle.css')
+        }
+        // If not loaded yet, wait for it to load
+        if (!styleSheet.sheet) {
+            await new Promise(resolve => {
+                styleSheet!.addEventListener('load', resolve, { once: true })
+                // If not appended yet, append to <head>
+                if (!styleSheet!.parentNode) {
+                    document.head.appendChild(styleSheet!)
+                }
+            })
+        }
     }
 
     // Add a marker to the DOM that the extension is loaded
@@ -86,7 +100,7 @@ async function main(): Promise<void> {
 
     // For the life time of the content script, add features in reaction to DOM changes
     if (codeHost) {
-        console.log('Detected code host', codeHost.name)
+        console.log('Detected code host', codeHost.type)
         subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION))
     }
 }
