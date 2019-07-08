@@ -435,7 +435,8 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			})
 		}
 		// Check if the repository actually has the revisions that the user specified.
-		for _, rev := range repoRev.Revs {
+		for i := range repoRev.Revs {
+			rev := &(repoRev.Revs[i])
 			if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
 				// Do not validate ref patterns. A ref pattern matching 0 refs is not necessarily
 				// invalid, so it's not clear what validation would even mean.
