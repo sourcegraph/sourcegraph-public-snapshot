@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"testing"
 
@@ -15,20 +14,6 @@ import (
 )
 
 func Benchmark_authzFilter(b *testing.B) {
-	repos := make([]*types.Repo, 30000)
-	for i := range repos {
-		id := i + 1
-		repos[i] = &types.Repo{
-			ID:   api.RepoID(id),
-			Name: api.RepoName(fmt.Sprintf("github.com/organization/repository-%d", i)),
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "a-long-and-random-github-external-id",
-				ServiceType: "github",
-				ServiceID:   "https://github.com/",
-			},
-		}
-	}
-
 	user := &types.User{
 		ID:        42,
 		Username:  "john.doe",
@@ -82,6 +67,29 @@ func Benchmark_authzFilter(b *testing.B) {
 
 	authz.SetProviders(false, providers)
 
+	serviceIDs := make([]string, 0, len(providers))
+	for _, p := range providers {
+		serviceIDs = append(serviceIDs, p.ServiceID())
+	}
+
+	rs := make([]types.Repo, 30000)
+	for i := range rs {
+		id := i + 1
+		serviceID := serviceIDs[i%len(serviceIDs)]
+		rs[i] = types.Repo{
+			ID:           api.RepoID(id),
+			ExternalRepo: api.ExternalRepoSpec{ServiceID: serviceID},
+		}
+	}
+
+	repos := make([][]*types.Repo, b.N)
+	for i := range repos {
+		repos[i] = make([]*types.Repo, len(rs))
+		for j := range repos[i] {
+			repos[i][j] = &rs[j]
+		}
+	}
+
 	ctx := context.Background()
 
 	Mocks.ExternalAccounts.List = func(opt ExternalAccountsListOptions) (
@@ -100,7 +108,7 @@ func Benchmark_authzFilter(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := authzFilter(ctx, repos, authz.Read)
+		_, err := authzFilter(ctx, repos[i], authz.Read)
 		if err != nil {
 			b.Fatal(err)
 		}
