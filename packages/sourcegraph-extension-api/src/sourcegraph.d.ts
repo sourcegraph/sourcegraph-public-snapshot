@@ -1525,6 +1525,64 @@ declare module 'sourcegraph' {
          * A set of tags for this diagnostic, used in querying and filtering.
          */
         readonly tags?: string[]
+
+        /**
+         * The ID of the check that this diagnostic is associated with, if any.
+         */
+        readonly check?: string
+    }
+
+    /**
+     * The check context describes an instance of a check.
+     *
+     * @template C The schema for the check's configuration settings.
+     */
+    export interface CheckContext<C extends object = {}> {
+        /**
+         * The scope of the check.
+         */
+        scope: StatusScope | WorkspaceRoot
+
+        /**
+         * The ID of the check instance. The combination of a check's (type, scope, id) is unique.
+         */
+        id: string
+
+        /**
+         * The configuration settings for the check.
+         */
+        settings: Subscribable<C>
+    }
+
+    /**
+     * A check provider provides diagnostics, actions, and status summaries for a class of problems.
+     *
+     * @template C The schema for the check's configuration settings.
+     */
+    export interface CheckProvider<C extends object = {}> {
+        /**
+         * Provide the check's diagnostics for the given scope.
+         *
+         * @param context The check context for which to provide diagnostics.
+         * @return A set of diagnostics or an observable of such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         *
+         * @todo TODO!(sqs): this is duplicative of the global diagnostics, but that perhaps is a
+         * weird model. maybe make it possible to mark this result as complete (like
+         * `Subscribable<{complete:boolean, results: [URL, Diagnostic[]][]}>`?) and make diagnostics
+         * not global but instead provided by a registered provider?
+         *
+         * @todo TODO!(sqs): the return type is Subscribable not ProviderResult because settings is
+         * a Subscribable, so the result needs to be reactive to its value, and so a constant value
+         * or a promise would not suffice to be correct and reactive.
+         */
+        provideDiagnostics(context: CheckContext): Subscribable<[URL, Diagnostic[]][]>
+
+        provideBatchActions(diagnostics: DiagnosticQuery): ProviderResult<Action[]>
+    }
+
+    export namespace checks {
+        export function registerCheckProvider(type: string, provider: CheckProvider): Unsubscribable
     }
 
     /**

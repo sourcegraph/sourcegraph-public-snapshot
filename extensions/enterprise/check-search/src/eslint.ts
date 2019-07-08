@@ -65,6 +65,8 @@ const diagnosticCollection = sourcegraph.languages.createDiagnosticCollection('e
 
 const TYPE_ESLINT = 'eslint'
 
+const CHECK_ESLINT = TYPE_ESLINT
+
 const LOADING: 'loading' = 'loading'
 
 const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING> = from(
@@ -184,6 +186,7 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING
                                     severity: linterSeverityToDiagnosticSeverity(r.severity),
                                     data: JSON.stringify(r),
                                     tags: [],
+                                    check: CHECK_ESLINT,
                                 } as sourcegraph.Diagnostic
                             })
                             .filter(isDefined)
