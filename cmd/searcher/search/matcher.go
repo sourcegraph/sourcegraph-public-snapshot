@@ -370,7 +370,11 @@ func getEndingMatch(fileBuf []byte, start int, end int, lineNumberToLineLength m
 		lineLength := lineNumberToLineLength[lineNumber]
 		sumBytes = sumBytes + lineLength
 		startingBytes := sumBytes - lineLength
-		if sumBytes >= end-1 {
+		if sumBytes >= end-1 && startingBytes-1 <= start {
+			endingOffset = end - startingBytes
+			endingLine = lineNumber
+			endingLength = 0
+		} else if sumBytes >= end-1 {
 			endingOffset = 0
 			endingLength = end - startingBytes
 			endingLine = lineNumber
