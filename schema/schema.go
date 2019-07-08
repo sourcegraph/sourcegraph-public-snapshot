@@ -91,6 +91,26 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
+// BitbucketCloudAuthorization description: If non-null, enforces Bitbucket Cloud repository permissions.
+type BitbucketCloudAuthorization struct {
+	Ttl string `json:"ttl,omitempty"`
+}
+
+// BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
+type BitbucketCloudConnection struct {
+	AppPassword                 string                        `json:"appPassword"`
+	Authorization               *BitbucketCloudAuthorization  `json:"authorization,omitempty"`
+	Exclude                     []*ExcludedBitbucketCloudRepo `json:"exclude,omitempty"`
+	ExcludePersonalRepositories bool                          `json:"excludePersonalRepositories,omitempty"`
+	GitURLType                  string                        `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool                          `json:"initialRepositoryEnablement,omitempty"`
+	Repos                       []string                      `json:"repos,omitempty"`
+	RepositoryPathPattern       string                        `json:"repositoryPathPattern,omitempty"`
+	RepositoryQuery             []string                      `json:"repositoryQuery,omitempty"`
+	Url                         string                        `json:"url"`
+	Username                    string                        `json:"username"`
+}
+
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
 type BitbucketServerAuthorization struct {
 	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
@@ -204,6 +224,11 @@ type Discussions struct {
 type ExcludedAWSCodeCommitRepo struct {
 	Id   string `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
+}
+type ExcludedBitbucketCloudRepo struct {
+	Id      int    `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedBitbucketServerRepo struct {
 	Id      int    `json:"id,omitempty"`

@@ -9,6 +9,7 @@ import GitLabIcon from 'mdi-react/GitlabIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import awsCodeCommitSchemaJSON from '../../../schema/aws_codecommit.schema.json'
+import bitbucketCloudSchemaJSON from '../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../schema/bitbucket_server.schema.json'
 import githubSchemaJSON from '../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../schema/gitlab.schema.json'
@@ -291,6 +292,35 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
                     const value = { name: '<owner>/<repository>' }
                     const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
                     return { edits, selectText: '{"name": "<owner>/<repository>"}' }
+                },
+            },
+        ],
+    },
+    [GQL.ExternalServiceKind.BITBUCKETCLOUD]: {
+        title: 'Bitbucket.org repositories',
+        icon: BitbucketIcon,
+        shortDescription: 'Add Bitbucket Cloud repositories.',
+        jsonSchema: bitbucketCloudSchemaJSON,
+        defaultDisplayName: 'Bitbucket Cloud',
+        defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+// Bitbucket Cloud external service docs: https://docs.sourcegraph.com/admin/external_service/bitbucket_cloud#configuration
+{
+  "url": "https://bitbucket.org",
+
+  // The username the app password belongs to
+  "username": "<username>",
+
+  // An app password (https://confluence.atlassian.com/bitbucket/app-passwords-828781300.html) with read scope over the repositories to be added to Sourcegraph
+  "appPassword": "<app password>",
+}`,
+        editorActions: [
+            {
+                id: 'setAppPassword',
+                label: 'Set app password',
+                run: config => {
+                    const value = '<app password>'
+                    const edits = setProperty(config, ['appPassword'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
                 },
             },
         ],
