@@ -52,12 +52,18 @@
 
 .theme-dark {
     .repo-header {
-        border-color: #233043;
+        border-color: $color-border;
     }
     .action-item--pressed {
-        background-color: $color-bg-3;
-        border-color: $color-border;
         height: 100%;
+        background: linear-gradient(
+                    to bottom,
+                    transparent 55%,
+                    rgba($color-border-hover, 1) 100%
+                );
+        border-color: $color-border!important;
+        color: $color-text-3;
+        text-shadow: 1px 1px 1px rgba($color-text-3, 0.15);
     }
 }
 
@@ -66,16 +72,14 @@
         border-color: $color-light-border;
     }
     .action-item--pressed {
+        height: 100%;
         background: linear-gradient(
                     to bottom,
-                    rgba($color-light-bg-3, 0.75) 0%,
-                    transparent 45%,
-                    // transparent 55%,
-                    // rgba($color-light-bg-3, 0.75) 100%
+                    transparent 55%,
+                    rgba($color-light-bg-3, 0.75) 100%
                 );
-        border-color: $color-light-border;
-        height: 100%;
+        border-color: $color-light-border!important;
+        color: $color-light-text-6;
         text-shadow: 1px 1px 1px rgba($color-light-text-5, 0.15);
-        color: $color-light-text-5;
     }
 }

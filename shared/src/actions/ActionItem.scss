@@ -7,9 +7,6 @@
     &--variant-action-item &__content {
         justify-content: center;
     }
-    border-left: 1px solid $color-light-bg-1;
-    margin-left: 2px;
-    border-right: 1px solid $color-light-bg-1;
 
     // Show loader on top of the action's content. This avoids changing the element's width when loading, which
     // looks bad.
@@ -25,5 +22,18 @@
         top: 50%;
         left: 50%;
         transform: translateX(-50%) translateY(-50%);
+    }
+}
+.theme-dark {
+    .action-item {
+        border-left: 1px solid $black;
+        border-right: 1px solid $black;
+    }
+}
+
+.theme-light {
+    .action-item {
+        border-left: 1px solid $color-light-border-3;
+        border-right: 1px solid $color-light-border-3;
     }
 }
