@@ -10,14 +10,14 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
-import { Status } from '../status'
 import { ChecksAreaContext } from '../../status/statusesArea/ChecksArea'
-import { useStatusByTypeForScope } from '../util/useStatusByTypeForScope'
-import { StatusIssuesPage } from './issues/StatusIssuesPage'
+import { Status } from '../status'
+import { useCheckByTypeForScope } from '../util/useCheckByTypeForScope'
+import { StatusChecksPage } from './checks/CheckChecksPage'
+import { StatusIssuesPage } from './issues/CheckIssuesPage'
 import { CheckAreaNavbar } from './navbar/CheckAreaNavbar'
 import { StatusNotificationsPage } from './notifications/StatusNotificationsPage'
 import { StatusOverview } from './overview/StatusOverview'
-import { StatusChecksPage } from './checks/StatusChecksPage'
 
 const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
@@ -32,7 +32,7 @@ export interface CheckAreaContext extends ChecksAreaContext, ExtensionsControlle
     /** The status. */
     status: Status
 
-    /** The URL to the status area for this status. */
+    /** The URL to the check area for this check. */
     statusURL: string
 
     location: H.Location
@@ -44,25 +44,25 @@ export interface CheckAreaContext extends ChecksAreaContext, ExtensionsControlle
 const LOADING: 'loading' = 'loading'
 
 /**
- * The area for a single status.
+ * The area for a single check.
  */
 export const CheckArea: React.FunctionComponent<Props> = ({ name, scope, statusURL, ...props }) => {
-    const statusOrError = useStatusByTypeForScope(props.extensionsController, name, scope)
-    if (statusOrError === LOADING) {
+    const checkOrError = useCheckByTypeForScope(props.extensionsController, name, scope)
+    if (checkOrError === LOADING) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
     }
-    if (statusOrError === null) {
-        return <HeroPage icon={AlertCircleIcon} title="Status not found" />
+    if (checkOrError === null) {
+        return <HeroPage icon={AlertCircleIcon} title="Check not found" />
     }
-    if (isErrorLike(statusOrError)) {
-        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={statusOrError.message} />
+    if (isErrorLike(checkOrError)) {
+        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={checkOrError.message} />
     }
 
     const context: CheckAreaContext = {
         ...props,
         name,
         scope,
-        status: statusOrError,
+        status: checkOrError,
         statusURL,
     }
 

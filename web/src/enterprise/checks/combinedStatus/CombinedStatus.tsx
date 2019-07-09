@@ -3,7 +3,7 @@ import React from 'react'
 import { WrappedStatus } from '../../../../../shared/src/api/client/services/statusService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { ChecksAreaContext } from '../statusesArea/ChecksArea'
+import { ChecksAreaContext } from '../list/ChecksArea'
 import { CombinedStatusItem } from './CombinedStatusItem'
 
 export interface CombinedStatusContext {
@@ -11,7 +11,7 @@ export interface CombinedStatusContext {
 }
 
 interface Props
-    extends Pick<ChecksAreaContext, 'statusesURL'>,
+    extends Pick<ChecksAreaContext, 'checksURL'>,
         CombinedStatusContext,
         ExtensionsControllerProps,
         PlatformContextProps {

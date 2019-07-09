@@ -4,11 +4,11 @@ import { Link } from 'react-router-dom'
 import { WrappedStatus } from '../../../../../shared/src/api/client/services/statusService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { StatusStateIcon } from '../components/StatusStateIcon'
-import { ChecksAreaContext } from '../statusesArea/ChecksArea'
+import { StatusStateIcon } from '../components/CheckStateIcon'
+import { ChecksAreaContext } from '../list/ChecksArea'
 import { urlToStatus } from '../url'
 
-interface Props extends Pick<ChecksAreaContext, 'statusesURL'>, ExtensionsControllerProps, PlatformContextProps {
+interface Props extends Pick<ChecksAreaContext, 'checksURL'>, ExtensionsControllerProps, PlatformContextProps {
     status: WrappedStatus
 
     tag: 'li'
@@ -23,13 +23,13 @@ interface Props extends Pick<ChecksAreaContext, 'statusesURL'>, ExtensionsContro
 export const CombinedStatusItem: React.FunctionComponent<Props> = ({
     status: { name, status },
     tag: Tag,
-    statusesURL,
+    checksURL,
     className = '',
 }) => (
     <Tag className={`d-flex flex-wrap align-items-stretch position-relative ${className}`}>
         <StatusStateIcon status={status} className="mr-3" />
         <h3 className="mb-0 font-weight-normal font-size-base">
-            <Link to={urlToStatus(statusesURL, name)} className="stretched-link">
+            <Link to={urlToStatus(checksURL, name)} className="stretched-link">
                 {status.title}
             </Link>
         </h3>
