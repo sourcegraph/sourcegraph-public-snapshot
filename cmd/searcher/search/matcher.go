@@ -387,9 +387,8 @@ func getEndingMatch(fileBuf []byte, start int, end int, lineNumberToLineLength m
 func generateMatches(matchBuf []byte, startingLine, startingOffset, startingLength, endingLine, endingOffset, endingLength int, match []int, lineNumberToLineLength map[int]int, lineLimitHit bool) (matches []protocol.LineMatch) {
 	// Starting line
 	matches = append(matches, protocol.LineMatch{
-		Preview:    string(matchBuf[match[0]]),
-		LineNumber: startingLine,
-		// This won't support non-multiline multiple matches (?)
+		Preview:          string(matchBuf[match[0] : match[0]+startingLength]),
+		LineNumber:       startingLine,
 		OffsetAndLengths: [][2]int{{startingOffset, startingLength}},
 		LimitHit:         lineLimitHit,
 	})
@@ -406,7 +405,7 @@ func generateMatches(matchBuf []byte, startingLine, startingOffset, startingLeng
 	}
 	// Ending line
 	matches = append(matches, protocol.LineMatch{
-		Preview:          string(matchBuf[match[1]]),
+		Preview:          string(matchBuf[match[1]-endingLength : match[1]]),
 		LineNumber:       endingLine,
 		OffsetAndLengths: [][2]int{{endingOffset, endingLength}},
 		LimitHit:         lineLimitHit,
