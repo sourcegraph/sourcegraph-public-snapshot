@@ -15,8 +15,7 @@ import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/s
 import { isDiscussionsEnabled } from '../discussions'
 import { ChangesIcon } from '../enterprise/changes/icons'
 import { ChangesetsNavItem } from '../enterprise/changesets/global/nav/ChangesetsNavItem'
-import { ChecklistIcon, StatusIcon } from '../enterprise/status/icons'
-import { TasksIcon } from '../enterprise/tasks/icons'
+import { ChecksIcon } from '../enterprise/checks/icons'
 import { ThreadsNavItem } from '../enterprise/threads/global/nav/ThreadsNavItem'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
@@ -70,24 +69,15 @@ export class NavLinks extends React.PureComponent<Props> {
                     // TODO!(sqs): only show these on enterprise
                     <>
                         <li className="nav-item">
+                            <LinkWithIconOnlyTooltip
+                                to="/checks"
+                                text="Checks"
+                                icon={ChecksIcon}
+                                className="nav-link btn btn-link px-3 text-decoration-none"
+                            />
+                        </li>
+                        <li className="nav-item">
                             <ChangesetsNavItem className="px-3" />
-                        </li>
-
-                        <li className="nav-item">
-                            <LinkWithIconOnlyTooltip
-                                to="/status"
-                                text="Status"
-                                icon={StatusIcon}
-                                className="nav-link btn btn-link px-3 text-decoration-none"
-                            />
-                        </li>
-                        <li className="nav-item">
-                            <LinkWithIconOnlyTooltip
-                                to="/tasks"
-                                text="Tasks"
-                                icon={TasksIcon}
-                                className="nav-link btn btn-link px-3 text-decoration-none"
-                            />
                         </li>
                         <li className="nav-item mr-1 d-none">
                             <ThreadsNavItem className="px-3" />
