@@ -1,17 +1,24 @@
-import { ProxyInput, ProxyResult, proxyValue, ProxyValue } from '@sourcegraph/comlink'
+import { ProxyInput, ProxyResult, proxyValue } from '@sourcegraph/comlink'
 import * as sourcegraph from 'sourcegraph'
-import { ClientChecksAPI, ProxiedCheckProvider } from '../../client/api/checks'
+import { ClientChecksAPI } from '../../client/api/checks'
 import { syncSubscription } from '../../util'
-import { toProxyableSubscribable, proxySubscribable } from './common'
+import { proxySubscribable, ProxySubscribable } from './common'
 
 export function createExtChecks(
     proxy: ProxyResult<ClientChecksAPI>
 ): Pick<typeof sourcegraph.checks, 'registerCheckProvider'> {
     return {
         registerCheckProvider: (type, providerFactory) => {
-            const proxiedProviderFactory = proxyValue(async (context: sourcegraph.CheckContext<any>) => {
+            const proxiedProviderFactory: ProxyInput<
+                Parameters<ClientChecksAPI['$registerCheckProvider']>[1]
+            > = proxyValue(async context => {
                 const provider = providerFactory(context)
-                return { information: proxySubscribable(provider.information) }
+                // TODO!(sqs): fix type error, remove casts below
+                return {
+                    information: (proxySubscribable(provider.information) as any) as ProxyResult<
+                        ProxySubscribable<sourcegraph.CheckInformation>
+                    >,
+                }
             })
             return syncSubscription(proxy.$registerCheckProvider(type, proxiedProviderFactory))
         },

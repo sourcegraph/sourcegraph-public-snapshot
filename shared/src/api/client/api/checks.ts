@@ -6,15 +6,13 @@ import { CheckService } from '../services/checkService'
 import { wrapRemoteObservable } from './common'
 
 export interface ProxiedCheckProvider {
-    information: ProxySubscribable<sourcegraph.CheckInformation>
+    information: ProxyResult<ProxySubscribable<sourcegraph.CheckInformation>>
 }
 
 export interface ClientChecksAPI extends ProxyValue {
     $registerCheckProvider(
         type: Parameters<typeof sourcegraph.checks.registerCheckProvider>[0],
-        providerFactory: ProxyResult<
-            ((context: sourcegraph.CheckContext<any>) => ProxyResult<ProxiedCheckProvider>) & ProxyValue
-        >
+        providerFactory: ProxyResult<((context: sourcegraph.CheckContext<any>) => ProxiedCheckProvider) & ProxyValue>
     ): Unsubscribable & ProxyValue
 }
 
@@ -23,7 +21,7 @@ export function createClientChecks(checkService: CheckService): ClientChecksAPI 
         $registerCheckProvider: (name, providerFactory) => {
             return proxyValue(
                 checkService.registerCheckProvider(name, context => {
-                    const provider = providerFactory(context) // TODO!(sqs): error handling
+                    const provider = providerFactory(context)
                     return {
                         information: wrapRemoteObservable(provider.then(provider => provider.information)),
                     }

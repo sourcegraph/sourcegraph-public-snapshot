@@ -1,10 +1,7 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol, proxyValue, ProxyInput } from '@sourcegraph/comlink'
-import { from, Unsubscribable, Subscription } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { ProxyResult, proxyValue, ProxyInput } from '@sourcegraph/comlink'
 import * as sourcegraph from 'sourcegraph'
 import { ClientDiagnosticsAPI } from '../../client/api/diagnostics'
-import { DiagnosticCollection } from '../../types/diagnosticCollection'
-import { toDiagnosticData, fromDiagnosticData, DiagnosticData } from '../../types/diagnostic'
+import { fromDiagnostic } from '../../types/diagnostic'
 import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 
@@ -14,13 +11,17 @@ export const createExtDiagnostics = (
 ): Pick<typeof sourcegraph.workspace, 'registerDiagnosticProvider'> => {
     return {
         registerDiagnosticProvider: (
-            name: string,
+            type: string,
             provider: sourcegraph.DiagnosticProvider
         ): sourcegraph.Unsubscribable => {
             const providerFunction: ProxyInput<
                 Parameters<ClientDiagnosticsAPI['$registerDiagnosticProvider']>[1]
-            > = proxyValue(async scope => toProxyableSubscribable(provider.provideDiagnostics(), toLocations))
-            return syncSubscription(proxy.$registerDiagnosticProvider(selector, providerFunction))
+            > = proxyValue(async scope =>
+                toProxyableSubscribable(provider.provideDiagnostics(scope), diagnostics =>
+                    diagnostics ? diagnostics.map(fromDiagnostic) : []
+                )
+            )
+            return syncSubscription(proxy.$registerDiagnosticProvider(type, providerFunction))
         },
     }
 }
