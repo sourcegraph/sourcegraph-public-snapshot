@@ -21,4 +21,4 @@ fi
 curl \
   -F "data=@$file" \
   -H "Authorization: token $SRC_ACCESS_TOKEN" \
-  "$SRC_ENDPOINT/upload?repository=$REPOSITORY&commit=$COMMIT"
+  "$SRC_ENDPOINT/.api/lsif/upload?repository=$REPOSITORY&commit=$COMMIT"
