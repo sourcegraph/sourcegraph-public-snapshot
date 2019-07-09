@@ -5,7 +5,7 @@ import {
     Position,
     Range,
     Selection,
-    StatusScope,
+    CheckScope,
     NotificationScope,
     StatusCompletion,
     StatusResult,
@@ -192,7 +192,7 @@ function createExtensionAPI(
         DiagnosticSeverity,
         WorkspaceEdit,
         NotificationScope,
-        StatusScope,
+        CheckScope,
         StatusCompletion,
         StatusResult,
         app: {

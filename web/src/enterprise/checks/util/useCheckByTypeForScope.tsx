@@ -23,7 +23,7 @@ const STATUS_PROVIDER_REGISTRATION_DELAY = 5000 // ms
 export const useCheckByTypeForScope = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
     name: string,
-    scope: sourcegraph.StatusScope | sourcegraph.WorkspaceRoot
+    scope: sourcegraph.CheckScope | sourcegraph.WorkspaceRoot
 ): typeof LOADING | WrappedStatus | null | ErrorLike => {
     const [checkOrError, setStatusOrError] = useState<typeof LOADING | WrappedStatus | null | ErrorLike>(LOADING)
     useEffect(() => {

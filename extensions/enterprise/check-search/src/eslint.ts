@@ -47,7 +47,7 @@ interface Plugin {
 export function registerESLintRules(): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(startDiagnostics())
-    subscriptions.add(registerStatusProvider(diagnostics))
+    subscriptions.add(registerCheckProvider(diagnostics))
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
     return subscriptions
 }
@@ -164,11 +164,9 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING
             map(settings =>
                 docs
                     .map(doc => {
-                        const lintMessages = linter
-                            .verify(doc.text, config, {
-                                filename: new URL(doc.uri).pathname.slice(1),
-                            })
-                            .slice(0, 2)
+                        const lintMessages = linter.verify(doc.text, config, {
+                            filename: new URL(doc.uri).pathname.slice(1),
+                        })
                         const diagnostics: sourcegraph.Diagnostic[] = lintMessages
                             .map(r => {
                                 if (r.fatal) {
@@ -217,12 +215,12 @@ function startDiagnostics(): Unsubscribable {
     return subscriptions
 }
 
-function registerStatusProvider(
+function registerCheckProvider(
     diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING>
 ): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(
-        sourcegraph.status.registerStatusProvider('eslint', {
+        sourcegraph.checks.registerCheckProvider('eslint', {
             provideStatus: (scope): sourcegraph.Subscribable<sourcegraph.Status | null> => {
                 // TODO!(sqs): dont ignore scope
                 return combineLatest([diagnostics, settingsObservable<Settings>()]).pipe(

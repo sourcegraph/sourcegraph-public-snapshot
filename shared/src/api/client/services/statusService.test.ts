@@ -1,4 +1,4 @@
-import { StatusCompletion, StatusScope, StatusResult, Range } from '@sourcegraph/extension-api-classes'
+import { StatusCompletion, CheckScope, StatusResult, Range } from '@sourcegraph/extension-api-classes'
 import * as sourcegraph from 'sourcegraph'
 import { of, throwError, Unsubscribable, combineLatest, from } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
@@ -17,7 +17,7 @@ const STATUS_1: WrappedStatus = {
 
 const STATUS_2: WrappedStatus = { name: '', status: { title: '2', state: { completion: StatusCompletion.InProgress } } }
 
-const SCOPE = StatusScope.Global
+const SCOPE = CheckScope.Global
 
 const EMPTY_DIAGNOSTICS: Pick<DiagnosticsService, 'observe'> = {
     observe: () => of([]),
