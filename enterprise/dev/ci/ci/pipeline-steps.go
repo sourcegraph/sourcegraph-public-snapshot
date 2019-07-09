@@ -267,7 +267,7 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 			bk.Cmd(getBuildScript()),
 		)
 
-		if app != "server" || c.taggedRelease {
+		if app != "server" || c.taggedRelease || c.patch || c.patchNoTest {
 			cmds = append(cmds,
 				bk.Cmd(fmt.Sprintf("docker push %s:%s", image, c.version)),
 			)
