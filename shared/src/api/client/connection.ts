@@ -123,7 +123,7 @@ export async function createExtensionHostClientConnection(
 
     const clientContent = createClientContent(services.linkPreviews)
 
-    const clientStatus = createClientChecks(services.status)
+    const clientStatus = createClientChecks(services.checks)
     const clientNotifications = createClientNotifications(services.notifications2)
 
     const clientAPI: ClientAPI = {
