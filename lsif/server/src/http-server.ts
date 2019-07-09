@@ -160,6 +160,7 @@ function main() {
                     res.send({ error: `No LSIF data available for ${repository}@${commit}.` })
                     return
                 }
+                throw e
             }
         })
     )

@@ -101,4 +101,39 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
             },
         })
     )
+
+    ctx.subscriptions.add(
+        sourcegraph.languages.registerReferenceProvider(['*'], {
+            provideReferences: async (doc, params) => {
+                console.log('providerefs')
+                const response = await fetch(
+                    path.join(
+                        sourcegraph.internal.sourcegraphURL +
+                            `.api/lsif/request?${queryString.stringify({
+                                repository: repositoryFromDoc(doc),
+                                commit: commitFromDoc(doc),
+                            })}`
+                    ),
+                    {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({
+                            method: 'references',
+                            params: [pathFromDoc(doc), params],
+                        }),
+                    }
+                )
+                console.log(response)
+                const body = await response.json()
+                if (body.error) {
+                    if (body.error === 'No result found') {
+                        return null
+                    }
+                    throw new Error(body.error)
+                }
+                console.log(body)
+                return body.map((reference: any) => ({ ...reference, uri: setPath(doc, reference.uri) }))
+            },
+        })
+    )
 }
