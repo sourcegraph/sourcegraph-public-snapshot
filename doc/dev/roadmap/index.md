@@ -7,7 +7,7 @@ We want Sourcegraph to be:
 
 This roadmap is a curated list of what we are working on now and the direction that we want to move in over the next 12 months. See the [Sourcegraph master plan](https://about.sourcegraph.com/plan) for our high-level product vision.
 
-We ship a release on the [20th day of each month](../releases.md#releases-are-monthly). See [previous Sourcegraph releases](previous_releases.md).
+We ship a release on the [20th day of each month](../releases.md#releases-are-monthly).
 
 **Next release:** [Sourcegraph 3.6](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+milestone%3A3.6+label%3Aroadmap) (ships on July 20, 2019).
 
