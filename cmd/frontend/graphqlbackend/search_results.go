@@ -129,11 +129,10 @@ func dedupSort(repos *types.Repos) {
 
 	j := 0
 	for i := 1; i < len(*repos); i++ {
-		if (*repos)[j].ID == (*repos)[i].ID {
-			continue // Skip duplicate
+		if (*repos)[j].ID != (*repos)[i].ID {
+			j++
+			(*repos)[j] = (*repos)[i]
 		}
-		j++
-		(*repos)[j] = (*repos)[i]
 	}
 
 	*repos = (*repos)[:j+1]
