@@ -2,11 +2,9 @@ import '../../config/polyfill'
 
 import * as H from 'history'
 import React from 'react'
-import { Observable } from 'rxjs'
-import { startWith } from 'rxjs/operators'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
-import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
-import { determineCodeHost, injectCodeIntelligenceToCodeHost } from '../code_intelligence'
+import { injectCodeIntelligence } from '../code_intelligence/inject'
+import { injectExtensionMarker } from '../sourcegraph/inject'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
 import { metaClickOverride } from './util'
 
@@ -14,28 +12,6 @@ import { metaClickOverride } from './util'
 window.SOURCEGRAPH_PHABRICATOR_EXTENSION = true
 
 const IS_EXTENSION = false
-
-// NOT idempotent.
-async function injectModules(): Promise<void> {
-    // This is added so that the browser extension doesn't
-    // interfere with the native Phabricator integration.
-    // TODO this is racy because the script is loaded async
-    const extensionMarker = document.createElement('div')
-    extensionMarker.id = 'sourcegraph-app-background'
-    extensionMarker.style.display = 'none'
-    document.body.appendChild(extensionMarker)
-
-    const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
-        childList: true,
-        subtree: true,
-    }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
-
-    // TODO handle subscription
-    const codeHost = await determineCodeHost()
-    if (codeHost) {
-        await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION)
-    }
-}
 
 setLinkComponent(({ to, children, ...props }) => (
     <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
@@ -52,7 +28,8 @@ function init(): void {
         // passed the bundle url. Legacy Phabricator extensions inject CSS via the loader.js script
         // so we do not need to do this here.
         if (!window.SOURCEGRAPH_BUNDLE_URL && !window.localStorage.getItem('SOURCEGRAPH_BUNDLE_URL')) {
-            injectModules().catch(err => console.error('Unable to inject modules', err))
+            injectExtensionMarker()
+            injectCodeIntelligence(IS_EXTENSION).catch(err => console.error('Unable to inject code intelligence', err))
             metaClickOverride()
             return
         }
@@ -68,7 +45,10 @@ function init(): void {
                     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
                     window.SOURCEGRAPH_URL = sourcegraphURL
                     metaClickOverride()
-                    injectModules().catch(err => console.error('Unable to inject modules', err))
+                    injectExtensionMarker()
+                    injectCodeIntelligence(IS_EXTENSION).catch(err =>
+                        console.error('Unable to inject code intelligence', err)
+                    )
                 })
             )
             .catch(e => console.error(e))

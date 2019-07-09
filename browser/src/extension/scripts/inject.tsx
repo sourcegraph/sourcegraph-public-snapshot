@@ -2,15 +2,13 @@ import '../../config/polyfill'
 
 import * as H from 'history'
 import React from 'react'
-import { Observable, Subscription } from 'rxjs'
-import { startWith } from 'rxjs/operators'
+import { Subscription } from 'rxjs'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
 import { storage } from '../../browser/storage'
-import { determineCodeHost as detectCodeHost, injectCodeIntelligenceToCodeHost } from '../../libs/code_intelligence'
+import { injectCodeIntelligence } from '../../libs/code_intelligence/inject'
 import { initSentry } from '../../libs/sentry'
-import { checkIsSourcegraph, injectSourcegraphApp } from '../../libs/sourcegraph/inject'
+import { checkIsSourcegraph, EXTENSION_MARKER_ID, signalBrowserExtensionInstalled } from '../../libs/sourcegraph/inject'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
-import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
@@ -43,18 +41,16 @@ async function main(): Promise<void> {
     // Allow users to set this via the console.
     ;(window as any).sourcegraphFeatureFlags = featureFlags
 
-    // This is checked for in the webapp
-    const extensionMarker = document.createElement('div')
-    extensionMarker.id = 'sourcegraph-app-background'
-    extensionMarker.style.display = 'none'
-    if (document.getElementById(extensionMarker.id)) {
+    // Check if a native integration is already running on the page,
+    // and abort execution if it's the case.
+    // Note: we should not need this check. Integration scripts are run as
+    // script tags with `defer`, they will be fetched and executed before
+    // DOMContentLoaded fires. Meanwhile, the content script is set to run at document_end,
+    // meaning that it will only execute after DOMContentLoaded has fired.
+    if (document.getElementById(EXTENSION_MARKER_ID)) {
+        console.log('Sourcegraph native integration is already running')
         return
     }
-
-    const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
-        childList: true,
-        subtree: true,
-    }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
 
     const items = await storage.sync.get()
     if (items.disableExtension) {
@@ -64,45 +60,34 @@ async function main(): Promise<void> {
     const sourcegraphServerUrl = items.sourcegraphURL || DEFAULT_SOURCEGRAPH_URL
 
     const isSourcegraphServer = checkIsSourcegraph(sourcegraphServerUrl)
-
-    // Check which code host we are on
-    const codeHost = detectCodeHost()
-    if (!codeHost && !isSourcegraphServer) {
+    if (isSourcegraphServer) {
+        signalBrowserExtensionInstalled()
         return
     }
 
     // Add style sheet and wait for it to load to avoid rendering unstyled elements (which causes an
     // annoying flash/jitter when the stylesheet loads shortly thereafter).
-    if (!isSourcegraphServer) {
-        let styleSheet = document.getElementById('ext-style-sheet') as HTMLLinkElement | null
-        // If does not exist, create
-        if (!styleSheet) {
-            styleSheet = document.createElement('link')
-            styleSheet.id = 'ext-style-sheet'
-            styleSheet.rel = 'stylesheet'
-            styleSheet.type = 'text/css'
-            styleSheet.href = browser.extension.getURL('css/style.bundle.css')
-        }
-        // If not loaded yet, wait for it to load
-        if (!styleSheet.sheet) {
-            await new Promise(resolve => {
-                styleSheet!.addEventListener('load', resolve, { once: true })
-                // If not appended yet, append to <head>
-                if (!styleSheet!.parentNode) {
-                    document.head.appendChild(styleSheet!)
-                }
-            })
-        }
+    let styleSheet = document.getElementById('ext-style-sheet') as HTMLLinkElement | null
+    // If does not exist, create
+    if (!styleSheet) {
+        styleSheet = document.createElement('link')
+        styleSheet.id = 'ext-style-sheet'
+        styleSheet.rel = 'stylesheet'
+        styleSheet.type = 'text/css'
+        styleSheet.href = browser.extension.getURL('css/style.bundle.css')
+    }
+    // If not loaded yet, wait for it to load
+    if (!styleSheet.sheet) {
+        await new Promise(resolve => {
+            styleSheet!.addEventListener('load', resolve, { once: true })
+            // If not appended yet, append to <head>
+            if (!styleSheet!.parentNode) {
+                document.head.appendChild(styleSheet!)
+            }
+        })
     }
 
-    // Add a marker to the DOM that the extension is loaded
-    injectSourcegraphApp(extensionMarker)
-
-    // For the life time of the content script, add features in reaction to DOM changes
-    if (codeHost) {
-        console.log('Detected code host', codeHost.type)
-        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION))
-    }
+    subscriptions.add(await injectCodeIntelligence(IS_EXTENSION))
 }
 
 main().catch(console.error.bind(console))
