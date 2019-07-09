@@ -19,6 +19,15 @@ for the patch release checklist.
 
 ## 5 working days before release (YYYY-MM-DD)
 
+Kick off release testing process:
+- [ ] TODO
+- [ ] Create a new sheet in the [Release test grid Google
+      Sheet](https://docs.google.com/spreadsheets/d/1y7JPkq_KucroiI1Eet2Cd53pt7F7Cx_2NStg8qqUvow/edit). Copy
+      it from the previous iteration's sheet. Consult with the Distribution team about which grid
+      items need to be tested this iteration.
+- [ ] Post in #dev-announce that Release testing has started
+      
+Other items:
 - [ ] Private message each teammate who has open issues in the milestone and ask them to remove any issues that won't be done by the time that the release branch is scheduled to be created.
 - [ ] Verify that there is a draft of the blog post and that it will be ready to be merged on time.
 
