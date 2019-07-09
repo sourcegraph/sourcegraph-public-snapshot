@@ -56,6 +56,8 @@
     }
     .action-item--pressed {
         background-color: $color-bg-3;
+        border-color: $color-border;
+        height: 100%;
     }
 }
 
@@ -64,6 +66,16 @@
         border-color: $color-light-border;
     }
     .action-item--pressed {
-        background-color: $color-light-bg-3;
+        background: linear-gradient(
+                    to bottom,
+                    rgba($color-light-bg-3, 0.75) 0%,
+                    transparent 45%,
+                    // transparent 55%,
+                    // rgba($color-light-bg-3, 0.75) 100%
+                );
+        border-color: $color-light-border;
+        height: 100%;
+        text-shadow: 1px 1px 1px rgba($color-light-text-5, 0.15);
+        color: $color-light-text-5;
     }
 }
