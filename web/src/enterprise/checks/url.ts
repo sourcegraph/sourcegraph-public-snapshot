@@ -1,4 +1,3 @@
-import { CheckWithType } from '../../../../shared/src/api/client/services/checkService'
+import { CheckID } from '../../../../shared/src/api/client/services/checkService'
 
-export const urlToStatus = (checksURL: string, status: Pick<CheckWithType, 'name'> | string): string =>
-    `${checksURL}/${typeof status === 'string' ? status : status.name}`
+export const urlToCheck = (checksURL: string, check: CheckID): string => `${checksURL}/${check.type}/${check.id}`

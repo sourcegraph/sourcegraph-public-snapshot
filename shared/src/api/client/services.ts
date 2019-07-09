@@ -1,5 +1,4 @@
 import { PlatformContext } from '../../platform/context'
-import { createStatusService } from './services/checkService'
 import { ReferenceParams } from '../protocol'
 import { createContextService } from './context/contextService'
 import { CheckTemplateRegistry } from './services/checkTemplates'
@@ -64,5 +63,4 @@ export class Services {
     public readonly views = new ViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
     public readonly checkTemplates = new CheckTemplateRegistry()
-    public readonly status = createStatusService(this.diagnostics)
 }

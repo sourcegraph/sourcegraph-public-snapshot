@@ -13,7 +13,6 @@ import { ErrorLike } from '../../shared/src/util/errors'
 import { parseHash } from '../../shared/src/util/url'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { GlobalContributions } from './contributions'
-import { registerChecksContributions } from './enterprise/checks/__OLD/contributions'
 import { registerCodemodContributions } from './enterprise/codemod/contributions'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
@@ -101,7 +100,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     useEffect(() => {
         const subscription = new Subscription()
         subscription.add(registerCodemodContributions(props))
-        subscription.add(registerChecksContributions(props))
         return () => subscription.unsubscribe()
     })
 

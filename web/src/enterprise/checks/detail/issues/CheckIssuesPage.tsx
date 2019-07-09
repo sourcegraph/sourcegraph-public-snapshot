@@ -21,12 +21,12 @@ const LOADING: 'loading' = 'loading'
 /**
  * The status issues page.
  */
-export const CheckIssuesPage: React.FunctionComponent<Props> = ({ status, className = '', ...props }) => {
+export const CheckIssuesPage: React.FunctionComponent<Props> = ({ check, className = '', ...props }) => {
     const [diagnosticsOrError, setDiagnosticsOrError] = useState<typeof LOADING | DiagnosticInfo[] | ErrorLike>(LOADING)
     useEffect(() => {
         const subscriptions = new Subscription()
         subscriptions.add(
-            from(status.status.diagnostics || of([]))
+            from(check.status.diagnostics || of([]))
                 .pipe(
                     switchMap(diagEntries => toDiagnosticInfos(diagEntries)),
                     catchError(err => [asError(err)]),
@@ -35,7 +35,7 @@ export const CheckIssuesPage: React.FunctionComponent<Props> = ({ status, classN
                 .subscribe(setDiagnosticsOrError)
         )
         return () => subscriptions.unsubscribe()
-    }, [status.status.diagnostics])
+    }, [check.status.diagnostics])
 
     return (
         <div className={`status-issues-page ${className}`}>

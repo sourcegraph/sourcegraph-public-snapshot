@@ -4,7 +4,6 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { PersonLink } from '../../../../user/PersonLink'
-import { CheckThreadActivationStatusButton } from '../../../checks/__OLD/threads/form/CheckThreadActivationStatusButton'
 import { ThreadStatusBadge } from '../../components/threadStatus/ThreadStatusBadge'
 import { ThreadStatusButton } from '../../form/ThreadStatusButton'
 import { ThreadSettings } from '../../settings'
@@ -56,18 +55,6 @@ export const ThreadOverview: React.FunctionComponent<Props> = ({
                     <ThreadStatusItemsProgressBar className="mt-1 mb-3" height="0.3rem" />
                 )}
             </div>
-            <div className="flex-1" />
-            {thread.type === GQL.ThreadType.CHECK && thread.status !== GQL.ThreadStatus.CLOSED && (
-                <CheckThreadActivationStatusButton
-                    {...props}
-                    thread={thread}
-                    onThreadUpdate={onThreadUpdate}
-                    className="ml-2"
-                    buttonClassName={`${
-                        thread.status === GQL.ThreadStatus.INACTIVE ? 'btn-success' : 'btn-link'
-                    } btn-sm`}
-                />
-            )}
             <ThreadStatusButton
                 {...props}
                 thread={thread}

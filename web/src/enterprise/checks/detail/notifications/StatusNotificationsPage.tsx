@@ -21,13 +21,13 @@ const LOADING: 'loading' = 'loading'
  * The status notifications page.
  */
 export const CheckNotificationsPage: React.FunctionComponent<Props> = ({
-    name,
-    status,
+    checkID,
+    check,
     className = '',
     itemClassName = '',
     ...props
 }) => {
-    const notificationsOrError = useNotifications(props.extensionsController, NotificationScope.Global, name)
+    const notificationsOrError = useNotifications(props.extensionsController, NotificationScope.Global, checkID)
     return (
         <div className={`status-notifications-page ${className}`}>
             {isErrorLike(notificationsOrError) ? (

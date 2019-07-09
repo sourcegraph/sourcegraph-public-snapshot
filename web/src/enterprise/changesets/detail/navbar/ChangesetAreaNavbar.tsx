@@ -4,13 +4,13 @@ import { NavLink } from 'react-router-dom'
 import { ChatIcon } from '../../../../../../shared/src/components/icons'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ActionsIcon, DiffIcon, GitCommitIcon } from '../../../../util/octicons'
-import { StatusIcon } from '../../../status/icons'
 import { ThreadSettings } from '../../../threads/settings'
 import {
     countChangesetActions,
     countChangesetCommits,
     countChangesetFilesChanged,
 } from '../../preview/ChangesetSummaryBar'
+import { ChecksIcon } from '../../../checks/icons'
 
 interface Props {
     thread: GQL.IDiscussionThread
@@ -52,7 +52,7 @@ export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="changeset-area-navbar__nav-link--active"
                     >
-                        <StatusIcon className="icon-inline" /> Tasks
+                        <ChecksIcon className="icon-inline" /> Tasks
                     </NavLink>
                 </li>
                 <li className="changeset-area-navbar__nav-item nav-item d-none">

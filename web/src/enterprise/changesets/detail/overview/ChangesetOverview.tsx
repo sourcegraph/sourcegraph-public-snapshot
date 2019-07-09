@@ -7,9 +7,8 @@ import { pluralize } from '../../../../../../shared/src/util/strings'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { Timeline } from '../../../../components/timeline/Timeline'
 import { PersonLink } from '../../../../user/PersonLink'
-import { ChangesetIcon, GitPullRequestIcon } from '../../../../util/octicons'
-import { CheckThreadActivationStatusButton } from '../../../checks/__OLD/threads/form/CheckThreadActivationStatusButton'
-import { StatusIcon } from '../../../status/icons'
+import { GitPullRequestIcon } from '../../../../util/octicons'
+import { ChecksIcon } from '../../../checks/icons'
 import { ThreadStatusBadge } from '../../../threads/components/threadStatus/ThreadStatusBadge'
 import { ThreadHeaderEditableTitle } from '../../../threads/detail/header/ThreadHeaderEditableTitle'
 import { ThreadBreadcrumbs } from '../../../threads/detail/overview/ThreadBreadcrumbs'
@@ -90,14 +89,14 @@ export const ChangesetOverview: React.FunctionComponent<Props> = ({
                 className="bg-body mb-5"
             />
             <div className="d-flex align-items-start bg-body border p-4 mb-5 position-relative">
-                <StatusIcon className="mb-0 mr-3" />
+                <ChecksIcon className="mb-0 mr-3" />
                 <Link to={`${areaURL}/tasks`} className="stretched-link text-body">
                     Review is not complete
                 </Link>
             </div>
             <div className="d-flex align-items-center bg-body border p-4">
                 <button type="button" className="btn btn-secondary text-muted mr-4" disabled={true}>
-                    <GitPullRequest className="mb-0 mr-3" />
+                    <GitPullRequestIcon className="mb-0 mr-3" />
                     Merge all
                 </button>
                 <span className="text-muted">Required review tasks are not yet complete</span>
