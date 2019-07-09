@@ -15,7 +15,7 @@ const LOADING: 'loading' = 'loading'
  */
 export const useCombinedStatusForScope = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
-    scope: sourcegraph.StatusScope | sourcegraph.WorkspaceRoot
+    scope: sourcegraph.CheckScope | sourcegraph.WorkspaceRoot
 ): typeof LOADING | WrappedStatus[] | ErrorLike => {
     const [combinedStatusOrError, setCombinedStatusOrError] = useState<typeof LOADING | WrappedStatus[] | ErrorLike>(
         LOADING

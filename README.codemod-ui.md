@@ -102,3 +102,9 @@ DiagnosticQuery - some have actions associated with them (eg up-to-date npm deps
 
 
 .
+
+---
+
+The extension API for diagnostics is "push" instead of "pull", which is the opposite of the extension APIs for hovers, references, etc. Extensions monitor the workspace state on their own and update diagnostics on their own, instead of registering a diagnostic provider that is invoked per file. The diagnostics API is "push" because the client has no way of knowing which actions might trigger an update of diagnostics (e.g., a change to one file might cause errors in hundreds of other files), so it needs to rely on the extension to listen for its own triggers.
+
+Make diagnostics into a provider

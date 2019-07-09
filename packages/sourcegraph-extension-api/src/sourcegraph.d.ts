@@ -994,7 +994,7 @@ declare module 'sourcegraph' {
     /**
      * The scopes for a status.
      */
-    export enum StatusScope {
+    export enum CheckScope {
         /**
          * A global status.
          */
@@ -1074,26 +1074,74 @@ declare module 'sourcegraph' {
          * @return A status or an observable of such. The lack of a result can be signaled by
          * returning `undefined` or `null`.
          */
-        provideStatus(scope: StatusScope.Global | WorkspaceRoot): ProviderResult<Status>
+        provideStatus(scope: CheckScope.Global | WorkspaceRoot): ProviderResult<Status>
     }
 
     /**
-     * A status is a description of a situation and related actions that can be taken.
+     * A check provider provides diagnostics, actions, and status summaries for a class of problems.
+     *
+     * @template C The schema for the check's configuration settings.
      */
-    export namespace status {
+    export interface CheckProvider<C extends object = {}> {
         /**
-         * Register a status provider.
+         * Provide the check's diagnostics for the given scope.
+         *
+         * @param The scope of the check.
+         * @return A set of diagnostics or an observable of such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         *
+         * @todo TODO!(sqs): this is duplicative of the global diagnostics, but that perhaps is a
+         * weird model. maybe make it possible to mark this result as complete (like
+         * `Subscribable<{complete:boolean, results: [URL, Diagnostic[]][]}>`?) and make diagnostics
+         * not global but instead provided by a registered provider?
+         *
+         * @todo TODO!(sqs): the return type is Subscribable not ProviderResult because settings is
+         * a Subscribable, so the result needs to be reactive to its value, and so a constant value
+         * or a promise would not suffice to be correct and reactive.
+         */
+        provideDiagnostics(scope: CheckScope | WorkspaceRoot): Subscribable<[URL, Diagnostic[]][]>
+
+        provideDiagnostic
+
+        // provideBatchActions(diagnostics: DiagnosticQuery): ProviderResult<Action[]>
+    }
+
+    /**
+     * The check context describes an instance of a check.
+     *
+     * @template C The schema for the check's configuration settings.
+     */
+    export interface CheckContext<C> {
+        /**
+         * The ID of the check instance. The combination of a check's (type, id) is unique.
+         */
+        id: string
+
+        /**
+         * The configuration settings for the check.
+         */
+        settings: Subscribable<C>
+    }
+
+    /**
+     * A check is a set of diagnostics and related actions that can be taken.
+     */
+    export namespace checks {
+        /**
+         * Register a check provider.
          *
          * Multiple providers can be registered. In that case, providers are queried in parallel and
          * the results are merged. A failing provider (rejected promise or exception) will not cause
          * a failure of the whole operation.
          *
-         * @param name The name of the status that this provider provides, such as
-         * "code-ownership-validity".
-         * @param provider A status provider.
+         * @param type The type of the check that this provider provides, such as "eslint".
+         * @param providerFactory A function that returns a check provider for the given context.
          * @return An unsubscribable to unregister this provider.
          */
-        export function registerStatusProvider(name: string, provider: StatusProvider): Unsubscribable
+        export function registerCheckProvider<C extends object = {}>(
+            type: string,
+            providerFactory: (context: CheckContext<C>) => CheckProvider
+        ): Unsubscribable
     }
 
     /**
@@ -1530,59 +1578,6 @@ declare module 'sourcegraph' {
          * The ID of the check that this diagnostic is associated with, if any.
          */
         readonly check?: string
-    }
-
-    /**
-     * The check context describes an instance of a check.
-     *
-     * @template C The schema for the check's configuration settings.
-     */
-    export interface CheckContext<C extends object = {}> {
-        /**
-         * The scope of the check.
-         */
-        scope: StatusScope | WorkspaceRoot
-
-        /**
-         * The ID of the check instance. The combination of a check's (type, scope, id) is unique.
-         */
-        id: string
-
-        /**
-         * The configuration settings for the check.
-         */
-        settings: Subscribable<C>
-    }
-
-    /**
-     * A check provider provides diagnostics, actions, and status summaries for a class of problems.
-     *
-     * @template C The schema for the check's configuration settings.
-     */
-    export interface CheckProvider<C extends object = {}> {
-        /**
-         * Provide the check's diagnostics for the given scope.
-         *
-         * @param context The check context for which to provide diagnostics.
-         * @return A set of diagnostics or an observable of such. The lack of a result can be
-         * signaled by returning `undefined` or `null`.
-         *
-         * @todo TODO!(sqs): this is duplicative of the global diagnostics, but that perhaps is a
-         * weird model. maybe make it possible to mark this result as complete (like
-         * `Subscribable<{complete:boolean, results: [URL, Diagnostic[]][]}>`?) and make diagnostics
-         * not global but instead provided by a registered provider?
-         *
-         * @todo TODO!(sqs): the return type is Subscribable not ProviderResult because settings is
-         * a Subscribable, so the result needs to be reactive to its value, and so a constant value
-         * or a promise would not suffice to be correct and reactive.
-         */
-        provideDiagnostics(context: CheckContext): Subscribable<[URL, Diagnostic[]][]>
-
-        provideBatchActions(diagnostics: DiagnosticQuery): ProviderResult<Action[]>
-    }
-
-    export namespace checks {
-        export function registerCheckProvider(type: string, provider: CheckProvider): Unsubscribable
     }
 
     /**

@@ -11,8 +11,8 @@ import { useCombinedStatusForScope } from '../util/useCombinedStatusForScope'
 import { CombinedStatus } from './CombinedStatus'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
-    /** The status scope. */
-    scope: sourcegraph.StatusScope | sourcegraph.WorkspaceRoot
+    /** The check scope. */
+    scope: sourcegraph.CheckScope | sourcegraph.WorkspaceRoot
 
     checksURL: string
     location: H.Location

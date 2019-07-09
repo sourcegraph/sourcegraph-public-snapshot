@@ -8,19 +8,19 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { HeroPage } from '../../../components/HeroPage'
 import { ChecklistIcon } from '../../../util/octicons'
-import { CombinedStatusPage } from '../../checks/combinedStatus/CombinedStatusPage'
-import { StatusArea } from '../../checks/detail/CheckArea'
+import { CombinedStatusPage } from '../combinedStatus/CombinedStatusPage'
+import { CheckArea } from '../detail/CheckArea'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
 )
 
-export interface StatusesAreaContext extends ExtensionsControllerProps, PlatformContextProps {
-    /** The check scope. */
+export interface ChecksAreaContext extends ExtensionsControllerProps, PlatformContextProps {
+    /** The status scope. */
     scope: sourcegraph.CheckScope | sourcegraph.WorkspaceRoot
 
-    /** The URL to the checks area. */
-    checksURL: string
+    /** The URL to the statuses area. */
+    statusesURL: string
 
     location: H.Location
     history: H.History
@@ -28,15 +28,15 @@ export interface StatusesAreaContext extends ExtensionsControllerProps, Platform
     isLightTheme: boolean
 }
 
-interface Props extends StatusesAreaContext, RouteComponentProps<{}> {}
+interface Props extends ChecksAreaContext, RouteComponentProps<{}> {}
 
 /**
- * The checks area.
+ * The statuses area.
  */
-export const StatusesArea: React.FunctionComponent<Props> = ({ match, ...props }) => {
-    const context: StatusesAreaContext = {
+export const ChecksArea: React.FunctionComponent<Props> = ({ match, ...props }) => {
+    const context: ChecksAreaContext = {
         ...props,
-        checksURL: match.url,
+        statusesURL: match.url,
     }
     return (
         <Switch>
@@ -52,7 +52,7 @@ export const StatusesArea: React.FunctionComponent<Props> = ({ match, ...props }
                 path={`${match.url}/:name`}
                 // tslint:disable-next-line:jsx-no-lambda
                 render={(routeComponentProps: RouteComponentProps<{ name: string }>) => (
-                    <StatusArea
+                    <CheckArea
                         {...context}
                         name={routeComponentProps.match.params.name}
                         statusURL={routeComponentProps.match.url}

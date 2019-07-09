@@ -16,8 +16,8 @@ const NotFoundPage: React.FunctionComponent = () => (
 )
 
 export interface ChecksAreaContext extends ExtensionsControllerProps, PlatformContextProps {
-    /** The status scope. */
-    scope: sourcegraph.StatusScope | sourcegraph.WorkspaceRoot
+    /** The check scope. */
+    scope: sourcegraph.CheckScope | sourcegraph.WorkspaceRoot
 
     /** The URL to the checks area. */
     checksURL: string
