@@ -370,7 +370,7 @@ func getEndingMatch(fileBuf []byte, start int, end int, lineNumberToLineLength m
 		lineLength := lineNumberToLineLength[lineNumber]
 		sumBytes = sumBytes + lineLength
 		startingBytes := sumBytes - lineLength
-		if sumBytes >= end-1 && startingBytes-1 <= start {
+		if sumBytes >= end && startingBytes <= start {
 			// If the match is on a single line (e.g. a line `func Test() {` exists, and the query is "Test() {\n"),
 			// move on to the next line so we can don't return a match overlapping the starting line.
 			continue
