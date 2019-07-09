@@ -1,14 +1,17 @@
-import { isEqual, compact } from 'lodash'
+import { isEqual } from 'lodash'
 import { BehaviorSubject, from, Observable, of, Unsubscribable, Subscribable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap, catchError } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
-import { isDefined } from '../../../util/types'
+import { ErrorLike, asError } from '../../../util/errors'
 
-export interface CheckInformationWithID extends sourcegraph.CheckInformation {
-    type: string
-    id: string
+export interface CheckID {
+    type: Parameters<typeof sourcegraph.checks.registerCheckProvider>[0]
+    id: sourcegraph.CheckContext<any>['id']
 }
+
+export type CheckProviderOrError = CheckID &
+    ({ provider: sourcegraph.CheckProvider; error?: undefined } | { provider?: undefined; error: ErrorLike })
 
 /**
  * A service that manages and queries registered check providers
@@ -16,21 +19,20 @@ export interface CheckInformationWithID extends sourcegraph.CheckInformation {
  */
 export interface CheckService {
     /**
-     * Observe information for all checks provided by all registered providers for a particular scope.
+     * Observe all checks provided by all registered providers for a particular scope.
      *
      * The returned observable emits upon subscription and whenever any check changes.
      */
-    observeChecksInformation(scope: sourcegraph.CheckContext<any>['scope']): Observable<CheckInformationWithID[]>
+    observeChecks(scope: sourcegraph.CheckContext<any>['scope']): Observable<CheckProviderOrError[]>
 
     /**
-     * Observe the check for a particular provider (by type).
+     * Observe a single check.
      *
      * The returned observable emits upon subscription and whenever the check changes.
      */
     observeCheck(
-        type: Parameters<typeof sourcegraph.checks.registerCheckProvider>[0],
         scope: sourcegraph.CheckContext<any>['scope'],
-        id: sourcegraph.CheckContext<any>['id']
+        id: CheckID
     ): Observable<sourcegraph.CheckProvider | null>
 
     /**
@@ -39,7 +41,7 @@ export interface CheckService {
      * @returns An unsubscribable to unregister the provider.
      */
     registerCheckProvider(
-        type: Parameters<typeof sourcegraph.checks.registerCheckProvider>[0],
+        type: CheckID['type'],
         providerFactory: (context: sourcegraph.CheckContext<any>) => sourcegraph.CheckProvider
     ): Unsubscribable
 }
@@ -53,44 +55,38 @@ const DUMMY_CONTEXT: Pick<sourcegraph.CheckContext<{}>, 'id' | 'settings'> = {
 /**
  * Creates a new {@link CheckService}.
  */
-export function createCheckService(logErrors = true): CheckService {
+export function createCheckService(): CheckService {
     interface Registration {
-        type: Parameters<typeof sourcegraph.checks.registerCheckProvider>[0]
+        type: CheckID['type']
         providerFactory: (context: sourcegraph.CheckContext<any>) => sourcegraph.CheckProvider
     }
     const registrations = new BehaviorSubject<Registration[]>([])
 
+    const providerFromFactory = (
+        { type, providerFactory }: Pick<Registration, 'type' | 'providerFactory'>,
+        context: sourcegraph.CheckContext<any>
+    ): CheckProviderOrError => {
+        try {
+            const provider = providerFactory(context)
+            return { type, id: context.id, provider }
+        } catch (err) {
+            return { type, id: context.id, error: asError(err) }
+        }
+    }
+
     return {
-        observeChecksInformation: scope => {
-            return registrations.pipe(
-                switchMap(registrations =>
-                    combineLatestOrDefault(
+        observeChecks: scope => {
+            return registrations
+                .pipe(
+                    map(registrations =>
                         registrations.map(registration =>
-                            from(registration.providerFactory({ ...DUMMY_CONTEXT, scope }).information).pipe(
-                                map(
-                                    info =>
-                                        ({
-                                            ...info,
-                                            type: registration.type,
-                                            id: DUMMY_CONTEXT.id,
-                                        } as CheckInformationWithID)
-                                ),
-                                catchError(err => {
-                                    if (logErrors) {
-                                        console.error(err)
-                                    }
-                                    return of(null)
-                                })
-                            )
+                            providerFromFactory(registration, { ...DUMMY_CONTEXT, scope })
                         )
-                    ).pipe(
-                        map(results => compact(results)),
-                        distinctUntilChanged((a, b) => isEqual(a, b))
                     )
                 )
-            )
+                .pipe(distinctUntilChanged((a, b) => isEqual(a, b)))
         },
-        observeCheck: (type, scope, id) => {
+        observeCheck: (scope, { type, id }) => {
             return registrations.pipe(
                 map(registrations => {
                     const registration = registrations.find(r => r.type === type)
@@ -108,4 +104,33 @@ export function createCheckService(logErrors = true): CheckService {
             return { unsubscribe: unregister }
         },
     }
+}
+
+export type CheckInformationOrError = CheckID &
+    ({ information: sourcegraph.CheckInformation; error?: undefined } | { information?: undefined; error: ErrorLike })
+
+export function observeChecksInformation(
+    service: Pick<CheckService, 'observeChecks'>,
+    scope: sourcegraph.CheckContext<any>['scope']
+): Subscribable<CheckInformationOrError[]> {
+    return service.observeChecks(scope).pipe(
+        switchMap(checks =>
+            combineLatestOrDefault(
+                checks.map<Subscribable<CheckInformationOrError>>(({ type, id, ...other }) =>
+                    other.provider
+                        ? from(other.provider.information).pipe(
+                              map(information => ({
+                                  type,
+                                  id,
+                                  information,
+                              })),
+                              catchError(err => {
+                                  return of({ type, id, error: asError(err) })
+                              })
+                          )
+                        : of({ type, id, error: other.error })
+                )
+            ).pipe(distinctUntilChanged((a, b) => isEqual(a, b)))
+        )
+    )
 }

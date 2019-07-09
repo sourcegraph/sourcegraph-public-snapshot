@@ -1,16 +1,16 @@
 import React from 'react'
 import * as sourcegraph from 'sourcegraph'
-import { iconForStatus } from '../util'
+import { iconForCheck } from '../util'
 
 interface Props {
-    status: Pick<sourcegraph.Status, 'state'>
+    check: Pick<sourcegraph.CheckInformation, 'state'>
     className?: string
 }
 
 /**
  * An icon that conveys the state and result of a check.
  */
-export const CheckStateIcon: React.FunctionComponent<Props> = ({ status, className = '' }) => {
-    const { icon: Icon, className: resultClassName } = iconForStatus(status)
+export const CheckStateIcon: React.FunctionComponent<Props> = ({ check, className = '' }) => {
+    const { icon: Icon, className: resultClassName } = iconForCheck(check)
     return <Icon className={`${className} ${resultClassName}`} />
 }

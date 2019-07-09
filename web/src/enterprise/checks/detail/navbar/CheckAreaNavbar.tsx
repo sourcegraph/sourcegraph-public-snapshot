@@ -6,53 +6,53 @@ import { NavLink } from 'react-router-dom'
 import { ChecklistIcon } from '../../../../util/octicons'
 import { CheckAreaContext } from '../CheckArea'
 
-interface Props extends Pick<CheckAreaContext, 'status' | 'statusURL'> {
+interface Props extends Pick<CheckAreaContext, 'check' | 'checkURL'> {
     className?: string
 }
 
-const NAV_LINK_CLASS_NAME = 'status-area-navbar__nav-link nav-link rounded-0 px-3'
+const NAV_LINK_CLASS_NAME = 'check-area-navbar__nav-link nav-link rounded-0 px-3'
 
 /**
- * The navbar for a single status.
+ * The navbar for a single check.
  */
-export const CheckAreaNavbar: React.FunctionComponent<Props> = ({ statusURL, className = '' }) => (
-    <nav className={`status-area-navbar border-bottom ${className}`}>
+export const CheckAreaNavbar: React.FunctionComponent<Props> = ({ checkURL, className = '' }) => (
+    <nav className={`check-area-navbar border-bottom ${className}`}>
         <div className="container">
             <ul className="nav flex-nowrap">
-                <li className="status-area-navbar__nav-item nav-item">
+                <li className="check-area-navbar__nav-item nav-item">
                     <NavLink
-                        to={statusURL}
+                        to={checkURL}
                         exact={true}
                         className={NAV_LINK_CLASS_NAME}
-                        activeClassName="status-area-navbar__nav-link--active"
+                        activeClassName="check-area-navbar__nav-link--active"
                     >
                         <BellIcon className="icon-inline" /> Notifications{' '}
                     </NavLink>
                 </li>
-                <li className="status-area-navbar__nav-item nav-item">
+                <li className="check-area-navbar__nav-item nav-item">
                     <NavLink
-                        to={`${statusURL}/checks`}
+                        to={`${checkURL}/checks`}
                         className={NAV_LINK_CLASS_NAME}
-                        activeClassName="status-area-navbar__nav-link--active"
+                        activeClassName="check-area-navbar__nav-link--active"
                     >
                         <ChecklistIcon className="icon-inline" /> Checks
                     </NavLink>
                 </li>
-                <li className="status-area-navbar__nav-item nav-item">
+                <li className="check-area-navbar__nav-item nav-item">
                     <NavLink
-                        to={`${statusURL}/issues`}
+                        to={`${checkURL}/issues`}
                         className={NAV_LINK_CLASS_NAME}
-                        activeClassName="status-area-navbar__nav-link--active"
+                        activeClassName="check-area-navbar__nav-link--active"
                     >
                         <AlertCircleOutlineIcon className="icon-inline" /> Issues
                     </NavLink>
                 </li>
                 <li className="flex-1" />
-                <li className="status-area-navbar__nav-item nav-item">
+                <li className="check-area-navbar__nav-item nav-item">
                     <NavLink
-                        to={`${statusURL}/settings`}
+                        to={`${checkURL}/settings`}
                         className={NAV_LINK_CLASS_NAME}
-                        activeClassName="status-area-navbar__nav-link--active"
+                        activeClassName="check-area-navbar__nav-link--active"
                         aria-label="Settings"
                     >
                         <SettingsIcon className="icon-inline" />

@@ -24,7 +24,7 @@ export const useCombinedStatusForScope = (
         const subscriptions = new Subscription()
         subscriptions.add(
             extensionsController.services.status
-                .observeStatuses(scope)
+                .observeChecks(scope)
                 .pipe(
                     catchError(err => [asError(err)]),
                     startWith(LOADING)

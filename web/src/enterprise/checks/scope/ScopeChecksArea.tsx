@@ -3,19 +3,20 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import * as sourcegraph from 'sourcegraph'
+import { CheckID } from '../../../../../shared/src/api/client/services/checkService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { HeroPage } from '../../../components/HeroPage'
 import { ChecklistIcon } from '../../../util/octicons'
-import { CombinedStatusPage } from '../../checks/combinedStatus/CombinedStatusPage'
-import { StatusArea } from '../../checks/detail/CheckArea'
+import { CheckArea } from '../detail/CheckArea'
+import { CombinedStatusPage } from './combinedStatus/CombinedStatusPage'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
 )
 
-export interface StatusesAreaContext extends ExtensionsControllerProps, PlatformContextProps {
+export interface ChecksAreaContext extends ExtensionsControllerProps, PlatformContextProps {
     /** The check scope. */
     scope: sourcegraph.CheckScope | sourcegraph.WorkspaceRoot
 
@@ -28,13 +29,13 @@ export interface StatusesAreaContext extends ExtensionsControllerProps, Platform
     isLightTheme: boolean
 }
 
-interface Props extends StatusesAreaContext, RouteComponentProps<{}> {}
+interface Props extends ChecksAreaContext, RouteComponentProps<{}> {}
 
 /**
- * The checks area.
+ * The checks area for a particular scope.
  */
-export const StatusesArea: React.FunctionComponent<Props> = ({ match, ...props }) => {
-    const context: StatusesAreaContext = {
+export const ChecksArea: React.FunctionComponent<Props> = ({ match, ...props }) => {
+    const context: ChecksAreaContext = {
         ...props,
         checksURL: match.url,
     }
@@ -43,19 +44,19 @@ export const StatusesArea: React.FunctionComponent<Props> = ({ match, ...props }
             <Route path={match.url} exact={true}>
                 <div className="container">
                     <h1 className="h2 my-3 d-flex align-items-center font-weight-normal">
-                        <ChecklistIcon className="icon-inline mr-3" /> Status
+                        <ChecklistIcon className="icon-inline mr-3" /> Checks
                     </h1>
                     <CombinedStatusPage {...context} />
                 </div>
             </Route>
             <Route
-                path={`${match.url}/:name`}
+                path={`${match.url}/:type/:id`}
                 // tslint:disable-next-line:jsx-no-lambda
-                render={(routeComponentProps: RouteComponentProps<{ name: string }>) => (
-                    <StatusArea
+                render={(routeComponentProps: RouteComponentProps<CheckID>) => (
+                    <CheckArea
                         {...context}
-                        name={routeComponentProps.match.params.name}
-                        statusURL={routeComponentProps.match.url}
+                        checkID={routeComponentProps.match.params}
+                        checkURL={routeComponentProps.match.url}
                     />
                 )}
             />

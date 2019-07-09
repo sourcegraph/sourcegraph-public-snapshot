@@ -1,4 +1,4 @@
-import { StatusResult, CheckResult } from '@sourcegraph/extension-api-classes'
+import { CheckCompletion, CheckResult } from '@sourcegraph/extension-api-classes'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CircleIcon from 'mdi-react/CircleIcon'
@@ -8,17 +8,17 @@ import React from 'react'
 import * as sourcegraph from 'sourcegraph'
 
 /**
- * Reports whether the status with the given state is completed.
+ * Reports whether the check with the given state is completed.
  */
-export const statusStateIsCompleted = (
-    state: sourcegraph.Status['state']
+export const checkStateIsCompleted = (
+    state: sourcegraph.CheckInformation['state']
 ): state is { completion: sourcegraph.CheckCompletion; result: sourcegraph.CheckResult } =>
-    state.completion === StatusResult.Completed
+    state.completion === CheckCompletion.Completed
 
 type ThemeColor = 'success' | 'danger' | 'muted' | 'info'
 
-export const themeColorForStatus = (status: Pick<sourcegraph.Status, 'state'>): ThemeColor => {
-    if (statusStateIsCompleted(status.state)) {
+export const themeColorForCheck = (status: Pick<sourcegraph.CheckInformation, 'state'>): ThemeColor => {
+    if (checkStateIsCompleted(status.state)) {
         switch (status.state.result) {
             case CheckResult.Success:
                 return 'success'
@@ -34,13 +34,13 @@ export const themeColorForStatus = (status: Pick<sourcegraph.Status, 'state'>): 
 }
 
 /**
- * Returns the icon and theme color class to use for a status.
+ * Returns the icon and theme color class to use for a check.
  */
-export const iconForStatus = (
-    status: Pick<sourcegraph.Status, 'state'>
+export const iconForCheck = (
+    status: Pick<sourcegraph.CheckInformation, 'state'>
 ): { icon: React.ComponentType<{ className?: string }>; className: string } => {
-    const className = `text-${themeColorForStatus(status)}`
-    if (statusStateIsCompleted(status.state)) {
+    const className = `text-${themeColorForCheck(status)}`
+    if (checkStateIsCompleted(status.state)) {
         switch (status.state.result) {
             case CheckResult.Success:
                 return { icon: CheckIcon, className }
