@@ -109,14 +109,19 @@ export class JsonDatabase extends Database {
 				if (!line || line.length === 0) {
 					return;
 				}
-				let element: Edge | Vertex = JSON.parse(line);
-				switch (element.type) {
-					case ElementTypes.vertex:
-						this.processVertex(element);
-						break;
-					case ElementTypes.edge:
-						this.processEdge(element);
-						break;
+				try {
+					let element: Edge | Vertex = JSON.parse(line);
+					switch (element.type) {
+						case ElementTypes.vertex:
+							this.processVertex(element);
+							break;
+						case ElementTypes.edge:
+							this.processEdge(element);
+							break;
+					}
+				} catch (error) {
+					input.destroy()
+					reject(error)
 				}
 			});
 			rd.on('close', () => {

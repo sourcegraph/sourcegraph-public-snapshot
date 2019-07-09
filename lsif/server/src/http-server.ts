@@ -257,6 +257,8 @@ function main() {
                 }
                 await fs.rename(tempFile.path, diskKey({ repository, commit }))
 
+                await withDB({ repository, commit }, async () => {})
+
                 res.send('Upload successful.')
             })
         })
