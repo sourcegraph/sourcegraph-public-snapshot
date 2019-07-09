@@ -88,7 +88,7 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                             includes: ['\\.[jt]sx?$'], // TODO!(sqs): typescript only
                             type: 'regexp',
                         },
-                        maxResults: MAX_RESULTS,
+                        maxResults: 1, //MAX_RESULTS,
                     }
                 )
             )
@@ -213,9 +213,9 @@ function startDiagnostics(): Unsubscribable {
 function registerCheckProvider(diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING>): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(
-        sourcegraph.checks.registerCheckProvider('eslint', ({ settings }) => ({
-            information: combineLatest([diagnostics, settings]).pipe(
-                map(([diagnostics, _settings]) => {
+        sourcegraph.checks.registerCheckProvider('eslint', () => ({
+            information: diagnostics.pipe(
+                map(diagnostics => {
                     const info: sourcegraph.CheckInformation = {
                         description: {
                             kind: sourcegraph.MarkupKind.Markdown,

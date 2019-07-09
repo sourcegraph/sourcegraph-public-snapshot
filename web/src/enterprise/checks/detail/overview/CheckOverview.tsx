@@ -10,42 +10,56 @@ import { CheckPipelineSection } from './pipeline/CheckPipelineSection'
 import { CheckNotificationSettingsDropdownButton } from './stateBar/CheckNotificationSettingsDropdownButton'
 import { CheckStateBar } from './stateBar/CheckStateBar'
 
-interface Props extends Pick<CheckAreaContext, 'status' | 'statusURL' | 'statusesURL'> {
+interface Props extends Pick<CheckAreaContext, 'checkID' | 'checkInfo' | 'checkURL' | 'checksURL'> {
     className?: string
 }
 
 /**
- * An overview of a status.
+ * An overview of a check.
  */
-export const CheckOverview: React.FunctionComponent<Props> = ({ status, statusURL, statusesURL, className = '' }) => (
-    <div className={`status-overview ${className || ''}`}>
-        <CheckBreadcrumbs status={status} statusURL={statusURL} statusesURL={statusesURL} className="py-3" />
+export const CheckOverview: React.FunctionComponent<Props> = ({
+    checkID,
+    checkInfo,
+    checkURL,
+    checksURL,
+    className = '',
+}) => (
+    <div className={`check-overview ${className || ''}`}>
+        <CheckBreadcrumbs
+            checkID={checkID}
+            checkInfo={checkInfo}
+            checkURL={checkURL}
+            checksURL={checksURL}
+            className="py-3"
+        />
         <hr className="my-0" />
-        <h2 className="my-3 font-weight-normal">{status.status.title}</h2>
-        {status.status.description && <Markdown dangerousInnerHTML={renderMarkdown(status.status.description.value)} />}
+        <h2 className="my-3 font-weight-normal">
+            {checkID.type} {checkID.id}
+        </h2>
+        {checkInfo.description && <Markdown dangerousInnerHTML={renderMarkdown(checkInfo.description.value)} />}
         <Timeline tag="div" className="align-items-stretch mb-3">
             <div className="d-flex align-items-start bg-body border p-3 mb-5">
                 <EyeIcon className="icon-inline mb-0 mr-3" />
                 Checking all repositories
             </div>
-            {status.status.sections && (
+            {checkInfo.sections && (
                 <>
-                    {status.status.sections.settings && (
+                    {checkInfo.sections.settings && (
                         <CheckPipelineSection
                             section="settings"
-                            content={status.status.sections.settings}
+                            content={checkInfo.sections.settings}
                             // tslint:disable-next-line: jsx-no-lambda
                             action={className => (
-                                <Link to={`${statusURL}/settings`} className={`btn ${className}`}>
+                                <Link to={`${checkURL}/settings`} className={`btn ${className}`}>
                                     Configure
                                 </Link>
                             )}
                         />
                     )}
-                    {status.status.sections.notifications && (
+                    {checkInfo.sections.notifications && (
                         <CheckPipelineSection
                             section="notifications"
-                            content={status.status.sections.notifications}
+                            content={checkInfo.sections.notifications}
                             // tslint:disable-next-line: jsx-no-lambda
                             action={className => (
                                 <CheckNotificationSettingsDropdownButton buttonClassName={className} />
@@ -54,7 +68,7 @@ export const CheckOverview: React.FunctionComponent<Props> = ({ status, statusUR
                     )}
                 </>
             )}
-            <CheckStateBar status={status} className="p-3 bg-body" />
+            <CheckStateBar checkInfo={checkInfo} className="p-3 bg-body" />
         </Timeline>
     </div>
 )
