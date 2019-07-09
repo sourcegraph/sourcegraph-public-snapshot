@@ -73,15 +73,15 @@ function createStatusProvider(diagnostics: Observable<[URL, sourcegraph.Diagnost
                         state:
                             diagnostics === LOADING
                                 ? {
-                                      completion: sourcegraph.StatusCompletion.InProgress,
+                                      completion: sourcegraph.CheckResult.InProgress,
                                       message: 'Scanning npm dependencies...',
                                   }
                                 : {
-                                      completion: sourcegraph.StatusCompletion.Completed,
+                                      completion: sourcegraph.CheckResult.Completed,
                                       result:
                                           diagnostics.length > 0
-                                              ? sourcegraph.StatusResult.Failure
-                                              : sourcegraph.StatusResult.Success,
+                                              ? sourcegraph.CheckResult.Failure
+                                              : sourcegraph.CheckResult.Success,
                                       message:
                                           diagnostics.length > 0
                                               ? 'Unapproved npm dependencies found'

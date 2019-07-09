@@ -220,56 +220,51 @@ function registerCheckProvider(
 ): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(
-        sourcegraph.checks.registerCheckProvider('eslint', {
-            provideStatus: (scope): sourcegraph.Subscribable<sourcegraph.Status | null> => {
-                // TODO!(sqs): dont ignore scope
-                return combineLatest([diagnostics, settingsObservable<Settings>()]).pipe(
-                    map(([diagnostics, settings]) => {
-                        const status: sourcegraph.Status = {
-                            title: 'ESLint',
-                            description: {
+        sourcegraph.checks.registerCheckProvider('eslint', ({ settings }) => ({
+            information: combineLatest([diagnostics, settings]).pipe(
+                map(([diagnostics, _settings]) => {
+                    const info: sourcegraph.CheckInformation = {
+                        description: {
+                            kind: sourcegraph.MarkupKind.Markdown,
+                            value: 'Checks code using ESLint, an open-source JavaScript linting utility.',
+                        },
+                        state:
+                            diagnostics === LOADING
+                                ? {
+                                      completion: sourcegraph.CheckCompletion.InProgress,
+                                      message: 'Running ESLint...',
+                                  }
+                                : {
+                                      completion: sourcegraph.CheckCompletion.Completed,
+                                      result:
+                                          diagnostics.length > 0
+                                              ? sourcegraph.CheckResult.Failure
+                                              : sourcegraph.CheckResult.Success,
+                                      message:
+                                          diagnostics.length > 0
+                                              ? 'ESLint problems found'
+                                              : 'Code is compliant with ESLint',
+                                  },
+                        sections: {
+                            settings: {
                                 kind: sourcegraph.MarkupKind.Markdown,
-                                value: 'Checks code using ESLint, an open-source JavaScript linting utility.',
-                            },
-                            state:
-                                diagnostics === LOADING
-                                    ? {
-                                          completion: sourcegraph.StatusCompletion.InProgress,
-                                          message: 'Running ESLint...',
-                                      }
-                                    : {
-                                          completion: sourcegraph.StatusCompletion.Completed,
-                                          result:
-                                              diagnostics.length > 0
-                                                  ? sourcegraph.StatusResult.Failure
-                                                  : sourcegraph.StatusResult.Success,
-                                          message:
-                                              diagnostics.length > 0
-                                                  ? 'ESLint problems found'
-                                                  : 'Code is compliant with ESLint',
-                                      },
-                            sections: {
-                                settings: {
-                                    kind: sourcegraph.MarkupKind.Markdown,
-                                    value: `
+                                value: `
 - Use \`eslint@6.0.1\`
 - Check for new, recommended ESLint rules
 - Ignore projects with only JavaScript files`,
-                                },
-                                notifications: {
-                                    kind: sourcegraph.MarkupKind.Markdown,
-                                    value: `
+                            },
+                            notifications: {
+                                kind: sourcegraph.MarkupKind.Markdown,
+                                value: `
 - Fail changesets that add code not checked by ESLint
 - Notify **@felixfbecker** of new ESLint rules`,
-                                },
                             },
-                            diagnostics: diagnosticCollection,
-                        }
-                        return status
-                    })
-                )
-            },
-        })
+                        },
+                    }
+                    return info
+                })
+            ),
+        }))
     )
     subscriptions.add(
         sourcegraph.notifications.registerNotificationProvider('eslint', {

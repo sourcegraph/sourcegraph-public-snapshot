@@ -1,4 +1,4 @@
-import { StatusCompletion, StatusResult } from '@sourcegraph/extension-api-classes'
+import { StatusResult, CheckResult } from '@sourcegraph/extension-api-classes'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CircleIcon from 'mdi-react/CircleIcon'
@@ -12,21 +12,21 @@ import * as sourcegraph from 'sourcegraph'
  */
 export const statusStateIsCompleted = (
     state: sourcegraph.Status['state']
-): state is { completion: sourcegraph.StatusCompletion; result: sourcegraph.StatusResult } =>
-    state.completion === StatusCompletion.Completed
+): state is { completion: sourcegraph.CheckCompletion; result: sourcegraph.CheckResult } =>
+    state.completion === StatusResult.Completed
 
 type ThemeColor = 'success' | 'danger' | 'muted' | 'info'
 
 export const themeColorForStatus = (status: Pick<sourcegraph.Status, 'state'>): ThemeColor => {
     if (statusStateIsCompleted(status.state)) {
         switch (status.state.result) {
-            case StatusResult.Success:
+            case CheckResult.Success:
                 return 'success'
-            case StatusResult.Failure:
+            case CheckResult.Failure:
                 return 'danger'
-            case StatusResult.Neutral:
+            case CheckResult.Neutral:
                 return 'muted'
-            case StatusResult.ActionRequired:
+            case CheckResult.ActionRequired:
                 return 'info'
         }
     }
@@ -42,13 +42,13 @@ export const iconForStatus = (
     const className = `text-${themeColorForStatus(status)}`
     if (statusStateIsCompleted(status.state)) {
         switch (status.state.result) {
-            case StatusResult.Success:
+            case CheckResult.Success:
                 return { icon: CheckIcon, className }
-            case StatusResult.Failure:
+            case CheckResult.Failure:
                 return { icon: CloseIcon, className }
-            case StatusResult.Neutral:
+            case CheckResult.Neutral:
                 return { icon: CircleIcon, className }
-            case StatusResult.ActionRequired:
+            case CheckResult.ActionRequired:
                 return { icon: AlertCircleOutlineIcon, className }
         }
     }

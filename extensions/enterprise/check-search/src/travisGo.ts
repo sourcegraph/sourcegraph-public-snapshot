@@ -59,8 +59,8 @@ function registerStatusProvider(
                     switchMap<[URL, sourcegraph.Diagnostic[]][], Promise<sourcegraph.Status>>(async diagnostics => ({
                         title: 'Travis CI',
                         state: {
-                            completion: sourcegraph.StatusCompletion.Completed,
-                            result: sourcegraph.StatusResult.Success,
+                            completion: sourcegraph.CheckResult.Completed,
+                            result: sourcegraph.CheckResult.Success,
                             message: 'All builds passing, all repository configuration valid and up-to-date',
                         },
                         sections: {
@@ -77,7 +77,7 @@ function registerStatusProvider(
                     })),
                     startWith<sourcegraph.Status>({
                         title: 'Travis CI',
-                        state: { completion: sourcegraph.StatusCompletion.InProgress },
+                        state: { completion: sourcegraph.CheckResult.InProgress },
                     })
                 )
             },

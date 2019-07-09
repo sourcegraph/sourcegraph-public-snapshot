@@ -7,8 +7,8 @@ import {
     Selection,
     CheckScope,
     NotificationScope,
-    StatusCompletion,
     StatusResult,
+    CheckResult,
     DiagnosticSeverity,
 } from '@sourcegraph/extension-api-classes'
 import { Subscription, Unsubscribable } from 'rxjs'
@@ -193,8 +193,8 @@ function createExtensionAPI(
         WorkspaceEdit,
         NotificationScope,
         CheckScope,
-        StatusCompletion,
-        StatusResult,
+        CheckCompletion,
+        CheckResult,
         app: {
             activeWindowChanges: windows.activeWindowChanges,
             get activeWindow(): sourcegraph.Window | undefined {

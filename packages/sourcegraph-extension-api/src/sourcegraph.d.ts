@@ -913,6 +913,16 @@ declare module 'sourcegraph' {
         readonly baseUri?: URL
     }
 
+    export interface DiagnosticProvider {
+        /**
+         * TODO!(sqs) there should be a way to send partial updates, eg per file, instead of always
+         * sending the full thing.
+         */
+        provideDiagnostics(scope: {
+            /* TODO!(sqs) */
+        }): Subscribable<Diagnostic[]>
+    }
+
     /**
      * The logical workspace that the extension is running in, which may consist of multiple folders, projects, and
      * repositories.
@@ -989,31 +999,36 @@ declare module 'sourcegraph' {
          * @return A promise that resolves to the opened [document](#TextDocument).
          */
         export function openTextDocument(uri: URL): Promise<TextDocument>
+
+        /**
+         * Register a diagnostic provider.
+         */
+        export function registerDiagnosticProvider(name: string, provider: DiagnosticProvider)
     }
 
     /**
-     * The scopes for a status.
+     * The scopes for a check.
      */
     export enum CheckScope {
         /**
-         * A global status.
+         * A global check.
          */
         Global = 'global',
     }
 
     /**
-     * The completion state of a status.
+     * The completion state of a check.
      */
-    export enum StatusCompletion {
+    export enum CheckCompletion {
         Queued = 'queued',
         InProgress = 'in-progress',
         Completed = 'completed',
     }
 
     /**
-     * The overall result of a status.
+     * The overall result of a check.
      */
-    export enum StatusResult {
+    export enum CheckResult {
         Success = 'success',
         Failure = 'failure',
         Neutral = 'neutral',
@@ -1021,28 +1036,23 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A status describes a situation and related actions that can be taken in a particular scope.
+     * Information about a check.
      */
-    export interface Status {
+    export interface CheckInformation {
         /**
-         * The human-readable title of the status.
-         */
-        title: string
-
-        /**
-         * The human-readable description of the status.
+         * The human-readable description of the check.
          */
         description?: MarkupContent & { kind: MarkupKind.Markdown }
 
         /**
-         * The current state of the status.
+         * The current state of the check.
          */
         state:
-            | { message?: string; completion: StatusCompletion.Queued | StatusCompletion.InProgress }
-            | { message?: string; completion: StatusCompletion; result: StatusResult }
+            | { message?: string; completion: CheckCompletion.Queued | CheckCompletion.InProgress }
+            | { message?: string; completion: CheckCompletion; result: CheckResult }
 
         /**
-         * Sections that describe the pipeline and parameters used to compute the status.
+         * Sections that describe the pipeline and parameters used to compute the check.
          *
          * TODO!(sqs): for simplicity, we require these be markdown, but this is kind of a hacky way
          * to do it.
@@ -1051,42 +1061,20 @@ declare module 'sourcegraph' {
             settings?: MarkupContent & { kind: MarkupKind.Markdown }
             notifications?: MarkupContent & { kind: MarkupKind.Markdown }
         }
-
-        /**
-         * Notifications related to the status.
-         */
-        notifications?: Notification[]
-
-        /**
-         * Diagnostics related to the status.
-         */
-        diagnostics?: DiagnosticCollection
-    }
-
-    /**
-     * A status provider provides a status for a particular scope.
-     */
-    export interface StatusProvider {
-        /**
-         * Provide a status for the given scope.
-         *
-         * @param scope The scope to provide a status for.
-         * @return A status or an observable of such. The lack of a result can be signaled by
-         * returning `undefined` or `null`.
-         */
-        provideStatus(scope: CheckScope.Global | WorkspaceRoot): ProviderResult<Status>
     }
 
     /**
      * A check provider provides diagnostics, actions, and status summaries for a class of problems.
-     *
-     * @template C The schema for the check's configuration settings.
      */
-    export interface CheckProvider<C extends object = {}> {
+    export interface CheckProvider {
         /**
-         * Provide the check's diagnostics for the given scope.
+         * Information about the check.
+         */
+        information: Subscribable<CheckInformation>
+
+        /**
+         * Provide the check's diagnostics.
          *
-         * @param The scope of the check.
          * @return A set of diagnostics or an observable of such. The lack of a result can be
          * signaled by returning `undefined` or `null`.
          *
@@ -1099,9 +1087,9 @@ declare module 'sourcegraph' {
          * a Subscribable, so the result needs to be reactive to its value, and so a constant value
          * or a promise would not suffice to be correct and reactive.
          */
-        provideDiagnostics(scope: CheckScope | WorkspaceRoot): Subscribable<[URL, Diagnostic[]][]>
+        // TODO!(sqs) provideDiagnostics(): Subscribable<[URL, Diagnostic[]][]>
 
-        provideDiagnostic
+        // provideDiagnostic TODO!(sqs)
 
         // provideBatchActions(diagnostics: DiagnosticQuery): ProviderResult<Action[]>
     }
@@ -1112,6 +1100,11 @@ declare module 'sourcegraph' {
      * @template C The schema for the check's configuration settings.
      */
     export interface CheckContext<C> {
+        /**
+         * The scope of the check.
+         */
+        scope: CheckScope | WorkspaceRoot
+
         /**
          * The ID of the check instance. The combination of a check's (type, id) is unique.
          */
@@ -1134,6 +1127,7 @@ declare module 'sourcegraph' {
          * the results are merged. A failing provider (rejected promise or exception) will not cause
          * a failure of the whole operation.
          *
+         * @template C The schema for the check's configuration settings.
          * @param type The type of the check that this provider provides, such as "eslint".
          * @param providerFactory A function that returns a check provider for the given context.
          * @return An unsubscribable to unregister this provider.
@@ -1577,7 +1571,7 @@ declare module 'sourcegraph' {
         /**
          * The ID of the check that this diagnostic is associated with, if any.
          */
-        readonly check?: string
+        // TODO!(sqs) readonly check?: string
     }
 
     /**

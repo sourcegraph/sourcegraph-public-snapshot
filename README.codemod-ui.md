@@ -105,6 +105,8 @@ DiagnosticQuery - some have actions associated with them (eg up-to-date npm deps
 
 ---
 
-The extension API for diagnostics is "push" instead of "pull", which is the opposite of the extension APIs for hovers, references, etc. Extensions monitor the workspace state on their own and update diagnostics on their own, instead of registering a diagnostic provider that is invoked per file. The diagnostics API is "push" because the client has no way of knowing which actions might trigger an update of diagnostics (e.g., a change to one file might cause errors in hundreds of other files), so it needs to rely on the extension to listen for its own triggers.
+The extension API for diagnostics is "push" instead of "pull", which is the opposite of the extension APIs for hovers, references, etc. Extensions monitor the workspace state on their own and update diagnostics on their own, instead of registering a diagnostic provider that is invoked per file. The diagnostics API is "push" because the client has no way of knowing which actions might trigger an update of diagnostics (e.g., a change to one file might cause errors in hundreds of other files), so it needs to rely on the extension to listen for its own triggers. TODO!(sqs): Maybe the simple reason is that in VS Code, there is no streaming (ie only Promises, not Observables), so they needed to do it this way (although VS Code's current way has a benefit of being able to send partial updates and not re-sending the entire diagnostics set each time)?
+
+Why have both annotations/diagnostics *and* decorations? They serve different purposes. Annotations/diagnostics are for things that are permanent/long-lived, derived from the code itself and not per-user state, are viewed in aggregate/summary or in a list, and are semantically meaningful to other consumers. Decorations are purely visual and for interactive consumption by a user.
 
 Make diagnostics into a provider
