@@ -4,7 +4,7 @@ import bodyParser from 'body-parser'
 import cors from 'cors'
 import { JsonDatabase } from './json'
 import { Database } from './database'
-import * as fs from 'fs'
+import { fs } from 'mz'
 import * as path from 'path'
 import LRU from 'lru-cache'
 import { withFile } from 'tmp-promise'
@@ -32,7 +32,7 @@ interface Commit {
 }
 interface RepositoryCommit extends Repository, Commit {}
 
-function enforceMaxDiskUsage({
+async function enforceMaxDiskUsage({
     flatDirectory,
     max,
     onBeforeDelete,
@@ -40,13 +40,16 @@ function enforceMaxDiskUsage({
     flatDirectory: string
     max: number
     onBeforeDelete: (filePath: string) => void
-}): string[] {
-    if (!fs.existsSync(flatDirectory)) {
+}): Promise<string[]> {
+    if (!(await fs.exists(flatDirectory))) {
         return []
     }
-    const files = fs
-        .readdirSync(flatDirectory)
-        .map(f => ({ path: path.join(flatDirectory, f), stat: fs.statSync(path.join(flatDirectory, f)) }))
+    const files = await Promise.all(
+        (await fs.readdir(flatDirectory)).map(async f => ({
+            path: path.join(flatDirectory, f),
+            stat: await fs.stat(path.join(flatDirectory, f)),
+        }))
+    )
     let totalSize = files.reduce((subtotal, f) => subtotal + f.stat.size, 0)
     const deletedFiles = []
     for (const f of files.sort((a, b) => a.stat.mtimeMs - b.stat.mtimeMs)) {
@@ -54,7 +57,7 @@ function enforceMaxDiskUsage({
             break
         }
         onBeforeDelete(f.path)
-        fs.unlinkSync(f.path)
+        await fs.unlink(f.path)
         totalSize = totalSize - f.stat.size
         deletedFiles.push(f.path)
     }
@@ -109,7 +112,7 @@ async function withDB(repositoryCommit: RepositoryCommit, action: (db: Database)
         await action(await entry.dbPromise)
     } else {
         //here
-        const length = fs.statSync(diskKey(repositoryCommit)).size
+        const length = (await fs.stat(diskKey(repositoryCommit))).size
         const dbPromise = createDB(repositoryCommit)
         dbLRU.set(diskKey(repositoryCommit), {
             dbPromise: dbPromise,
@@ -183,7 +186,7 @@ function main() {
             checkCommit(commit)
 
             if (!file) {
-                res.send(fs.existsSync(diskKey({ repository, commit })))
+                res.send(await fs.exists(diskKey({ repository, commit })))
                 return
             }
 
@@ -216,7 +219,7 @@ function main() {
             // misbehaving client could upload a bunch of LSIF files for one
             // repository and take up all of the disk space, causing all other
             // LSIF files to get deleted to make room for the new files.
-            enforceMaxDiskUsage({
+            await enforceMaxDiskUsage({
                 flatDirectory: storageRoot,
                 max: Math.max(0, softMaxStorageSize - contentLength),
                 onBeforeDelete: filePath =>
@@ -230,8 +233,8 @@ function main() {
                 // fills up the disk.
                 const stream = req.pipe(fs.createWriteStream(tempFile.path))
                 await new Promise((resolve, reject) => {
-                    stream.on('close', () => {
-                        if (fs.statSync(tempFile.path).size > contentLength) {
+                    stream.on('close', async () => {
+                        if ((await fs.stat(tempFile.path)).size > contentLength) {
                             reject(
                                 Object.assign(
                                     new Error(
@@ -249,11 +252,10 @@ function main() {
                     })
                 })
 
-
-                if (!fs.existsSync(storageRoot)) {
-                    fs.mkdirSync(storageRoot)
+                if (!(await fs.exists(storageRoot))) {
+                    await fs.mkdir(storageRoot)
                 }
-                fs.renameSync(tempFile.path, diskKey({ repository, commit }))
+                await fs.rename(tempFile.path, diskKey({ repository, commit }))
 
                 res.send('Upload successful.')
             })
