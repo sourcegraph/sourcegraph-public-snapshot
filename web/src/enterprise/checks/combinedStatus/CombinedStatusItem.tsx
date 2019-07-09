@@ -1,7 +1,7 @@
 import H from 'history'
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { WrappedStatus } from '../../../../../shared/src/api/client/services/statusService'
+import { CheckWithType } from '../../../../../shared/src/api/client/services/checkService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { StatusStateIcon } from '../components/CheckStateIcon'
@@ -9,7 +9,7 @@ import { ChecksAreaContext } from '../list/ChecksArea'
 import { urlToStatus } from '../url'
 
 interface Props extends Pick<ChecksAreaContext, 'checksURL'>, ExtensionsControllerProps, PlatformContextProps {
-    status: WrappedStatus
+    status: CheckWithType
 
     tag: 'li'
     className?: string

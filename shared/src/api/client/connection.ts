@@ -11,7 +11,6 @@ import { ClientCommands } from './api/commands'
 import { ClientConfiguration } from './api/configuration'
 import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
-import { ClientDiagnostics } from './api/diagnostics'
 import { ClientDocuments } from './api/documents'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
@@ -28,6 +27,7 @@ import {
 } from './services/notifications'
 import { createClientStatus } from './api/status'
 import { createClientNotifications } from './api/notifications'
+import { createClientDiagnostics } from './api/diagnostics'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -73,7 +73,7 @@ export async function createExtensionHostClientConnection(
     const clientContext = new ClientContext((updates: ContextValues) => services.context.updateContext(updates))
     subscription.add(clientContext)
 
-    const clientDiagnostics = new ClientDiagnostics(services.diagnostics)
+    const clientDiagnostics = createClientDiagnostics(services.diagnostics)
     subscription.add(clientDiagnostics)
 
     const clientDocuments = new ClientDocuments(proxy.documents, services.fileSystem, services.model)

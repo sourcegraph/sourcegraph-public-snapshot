@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Subscription } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { WrappedStatus } from '../../../../../shared/src/api/client/services/statusService'
+import { CheckWithType } from '../../../../../shared/src/api/client/services/checkService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 
@@ -16,8 +16,8 @@ const LOADING: 'loading' = 'loading'
 export const useCombinedStatusForScope = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
     scope: sourcegraph.CheckScope | sourcegraph.WorkspaceRoot
-): typeof LOADING | WrappedStatus[] | ErrorLike => {
-    const [combinedStatusOrError, setCombinedStatusOrError] = useState<typeof LOADING | WrappedStatus[] | ErrorLike>(
+): typeof LOADING | CheckWithType[] | ErrorLike => {
+    const [combinedStatusOrError, setCombinedStatusOrError] = useState<typeof LOADING | CheckWithType[] | ErrorLike>(
         LOADING
     )
     useEffect(() => {

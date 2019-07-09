@@ -3,7 +3,7 @@ import * as sourcegraph from 'sourcegraph'
 import { ClientStatusAPI } from '../../client/api/status'
 import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
-import { toTransferableStatus } from '../../types/status'
+import { toTransferableStatus } from '../../types/check'
 
 export function createExtStatus(
     proxy: ProxyResult<ClientStatusAPI>

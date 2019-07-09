@@ -1,25 +1,39 @@
-import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
-import { Unsubscribable } from 'rxjs'
-import { DiagnosticsService } from '../services/diagnosticsService'
-import { fromDiagnosticData, DiagnosticData } from '../../types/diagnostic'
+import { ProxyValue, proxyValueSymbol, ProxyResult, proxyValue } from '@sourcegraph/comlink'
+import { Diagnostic } from '@sourcegraph/extension-api-types'
+import { Unsubscribable, Subscription } from 'rxjs'
+import { DiagnosticService } from '../services/diagnosticService'
+import { ProxySubscribable } from '../../extension/api/common'
+import { wrapRemoteObservable } from './common'
+import { map } from 'rxjs/operators'
+import { toDiagnostic } from '../../types/diagnostic'
 
 /** @internal */
 export interface ClientDiagnosticsAPI extends ProxyValue {
-    // TODO!(sqs): inefficient
-    $acceptDiagnosticCollection(name: string, data: DiagnosticData | null): void
+    $registerDiagnosticProvider(
+        name: string,
+        providerFunction: ProxyResult<((scope: {}) => ProxySubscribable<Diagnostic[]>) & ProxyValue>
+    ): Unsubscribable & ProxyValue
 }
 
 /** @internal */
-export class ClientDiagnostics implements ClientDiagnosticsAPI, Unsubscribable {
-    public readonly [proxyValueSymbol] = true
-
-    constructor(private diagnosticsService: Pick<DiagnosticsService, 'set'>) {}
-
-    public $acceptDiagnosticCollection(name: string, data: DiagnosticData | null): void {
-        this.diagnosticsService.set(name, data ? fromDiagnosticData(data) : null)
-    }
-
-    public unsubscribe(): void {
-        // noop
+export const createClientDiagnostics = (
+    diagnosticService: Pick<DiagnosticService, 'registerDiagnosticProvider'>
+): ClientDiagnosticsAPI & Unsubscribable => {
+    const subscriptions = new Subscription()
+    return {
+        [proxyValueSymbol]: true,
+        $registerDiagnosticProvider: (
+            type: string,
+            providerFunction: ProxyResult<((scope: {}) => ProxySubscribable<Diagnostic[]>) & ProxyValue>
+        ): Unsubscribable & ProxyValue => {
+            const subscription = diagnosticService.registerDiagnosticProvider(type, {
+                provideDiagnostics: scope =>
+                    wrapRemoteObservable(providerFunction(scope)).pipe(
+                        map(diagnostics => diagnostics.map(d => toDiagnostic(d)))
+                    ),
+            })
+            return proxyValue(subscription)
+        },
+        unsubscribe: () => subscriptions.unsubscribe(),
     }
 }

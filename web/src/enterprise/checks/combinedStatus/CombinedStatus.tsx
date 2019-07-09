@@ -1,6 +1,6 @@
 import H from 'history'
 import React from 'react'
-import { WrappedStatus } from '../../../../../shared/src/api/client/services/statusService'
+import { CheckWithType } from '../../../../../shared/src/api/client/services/checkService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ChecksAreaContext } from '../list/ChecksArea'
@@ -15,7 +15,7 @@ interface Props
         CombinedStatusContext,
         ExtensionsControllerProps,
         PlatformContextProps {
-    statuses: WrappedStatus[]
+    statuses: CheckWithType[]
 
     history: H.History
     location: H.Location

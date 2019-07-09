@@ -1,6 +1,6 @@
 import { Observable, BehaviorSubject, from, isObservable, of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import { switchMap, catchError, map, distinctUntilChanged, tap } from 'rxjs/operators'
+import { switchMap, catchError, map, distinctUntilChanged } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { isEqual, flatten, compact } from 'lodash'
 import { isPromise, isSubscribable } from '../../util'

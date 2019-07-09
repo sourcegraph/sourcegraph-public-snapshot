@@ -6,7 +6,11 @@ import { Range } from './location'
  *
  * @see module:sourcegraph.Diagnostic
  */
-export interface Diagnostic extends Pick<sourcegraph.Diagnostic, Exclude<keyof sourcegraph.Diagnostic, 'range'>> {
+export interface Diagnostic
+    extends Pick<sourcegraph.Diagnostic, Exclude<keyof sourcegraph.Diagnostic, 'resource' | 'range'>> {
+    /** The resource that the diagnostic applies to. */
+    resource: string
+
     /** The range that the diagnostic applies to. */
     range: Range
 }
