@@ -10,11 +10,13 @@ interface Props extends Pick<CheckAreaContext, 'check'> {
 /**
  * A bar that displays the state of a check.
  */
-export const CheckStateBar: React.FunctionComponent<Props> = ({ check, className = '' }) => (
-    <div className={`d-flex align-items-center border border-${themeColorForCheck(check.check)} ${className}`}>
-        <CheckStateIcon check={check.check} className="icon-inline mr-3" />
-        {check.check.state.message && (
-            <span className={`text-${themeColorForCheck(check.check)}`}>{check.check.state.message}</span>
+export const CheckStateBar: React.FunctionComponent<Props> = ({ checkProvider, className = '' }) => (
+    <div className={`d-flex align-items-center border border-${themeColorForCheck(checkProvider.check)} ${className}`}>
+        <CheckStateIcon checkInfo={checkProvider.check} className="icon-inline mr-3" />
+        {checkProvider.check.state.message && (
+            <span className={`text-${themeColorForCheck(checkProvider.check)}`}>
+                {checkProvider.check.state.message}
+            </span>
         )}
         <div className="flex-1" />
     </div>

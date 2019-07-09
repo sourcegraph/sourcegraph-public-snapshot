@@ -33,5 +33,5 @@ export const ChecksListPage: React.FunctionComponent<Props> = ({ scope, ...props
     if (isErrorLike(checksOrError)) {
         return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={checksOrError.message} />
     }
-    return <ChecksList {...props} checks={checksOrError} itemClassName="text-truncate" />
+    return <ChecksList {...props} checksInfoOrError={checksOrError} itemClassName="text-truncate" />
 }
