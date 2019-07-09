@@ -4,7 +4,7 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { PersonLink } from '../../../../user/PersonLink'
-import { CheckThreadActivationStatusButton } from '../../../checks/threads/form/CheckThreadActivationStatusButton'
+import { CheckThreadActivationStatusButton } from '../../../checks/__OLD/threads/form/CheckThreadActivationStatusButton'
 import { ThreadStatusBadge } from '../../components/threadStatus/ThreadStatusBadge'
 import { ThreadStatusButton } from '../../form/ThreadStatusButton'
 import { ThreadSettings } from '../../settings'
