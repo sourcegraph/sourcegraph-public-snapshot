@@ -880,22 +880,29 @@ func TestGetStartingMatch(t *testing.T) {
 }
 
 func TestGetEndingMatch(t *testing.T) {
+	type args struct {
+		start, end             int
+		fileBuf                []byte
+		lineNumberToLineLength map[int]int
+	}
+
+	fileBuf := []byte("abcd\nabcd\r\n")
+	lineMap := map[int]int{0: 5, 1: 5}
 	tests := map[string]struct {
-		start            int
-		end              int
+		args
 		endingLineWant   int
 		endingOffsetWant int
 		endingLengthWant int
 	}{
-		"entire second line":  {start: 0, end: 9, endingLineWant: 1, endingOffsetWant: 0, endingLengthWant: 4},
-		"partial second line": {start: 2, end: 6, endingLineWant: 1, endingOffsetWant: 0, endingLengthWant: 1},
-		"partial second line, when matching trailing \n character": {start: 2, end: 5, endingLineWant: 1, endingOffsetWant: 0, endingLengthWant: 0},
+		"entire second line":  {args: args{fileBuf: fileBuf, start: 0, end: 9, lineNumberToLineLength: lineMap}, endingLineWant: 1, endingOffsetWant: 0, endingLengthWant: 4},
+		"partial second line": {args: args{fileBuf: fileBuf, start: 2, end: 6, lineNumberToLineLength: lineMap}, endingLineWant: 1, endingOffsetWant: 0, endingLengthWant: 1},
+		"partial second line, when matching trailing \n character": {args: args{fileBuf: fileBuf, start: 2, end: 5, lineNumberToLineLength: lineMap}, endingLineWant: 1, endingOffsetWant: 0, endingLengthWant: 0},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			fileBuf := []byte("abcd\nabcd\r\n")
-			endingLine, endingOffset, endingLength := getEndingMatch(fileBuf, test.start, test.end, map[int]int{0: 5, 1: 5})
+
+			endingLine, endingOffset, endingLength := getEndingMatch(test.args.fileBuf, test.args.start, test.args.end, test.args.lineNumberToLineLength)
 			if endingLine != test.endingLineWant {
 				t.Errorf("Expected endingLine to be %v, got %v", test.endingLineWant, endingLine)
 			}
@@ -909,4 +916,18 @@ func TestGetEndingMatch(t *testing.T) {
 	}
 }
 
-// func TestGenerateMatches() {}
+// func TestGenerateMatches(t *testing.T) {
+// 	type args struct {
+// 		startingLine,
+// 		startingOffset,
+// 		startingLength,
+// 		endingLine,
+// 		endingOffset,
+// 		endingLength int
+// 	}
+
+// 	tests := map[string]struct{
+// 		args args
+// 		want []protocol.LineMatch
+// 	}
+// }
