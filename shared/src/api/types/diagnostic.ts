@@ -6,6 +6,7 @@ import { Range } from '@sourcegraph/extension-api-classes'
 export function fromDiagnostic(diag: sourcegraph.Diagnostic): Diagnostic {
     return {
         ...diag,
+        resource: diag.resource.toString(),
         range: fromRange(diag.range),
     }
 }
@@ -13,6 +14,7 @@ export function fromDiagnostic(diag: sourcegraph.Diagnostic): Diagnostic {
 export function toDiagnostic(diag: Diagnostic): sourcegraph.Diagnostic {
     return {
         ...diag,
+        resource: new URL(diag.resource),
         range: Range.fromPlain(diag.range),
     }
 }

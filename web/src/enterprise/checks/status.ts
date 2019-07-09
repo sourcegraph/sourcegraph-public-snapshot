@@ -1,3 +1,3 @@
-import { WrappedStatus } from '../../../../shared/src/api/client/services/statusService'
+import { CheckWithType } from '../../../../shared/src/api/client/services/checkService'
 
-export interface Status extends WrappedStatus {}
+export interface Status extends CheckWithType {}

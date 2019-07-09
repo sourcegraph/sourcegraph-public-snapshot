@@ -1,10 +1,10 @@
 import * as sourcegraph from 'sourcegraph'
-import { registerImportStar } from './importStar'
-import { registerNoInlineProps } from './noInlineProps'
-import { registerDependencyRules } from './dependencyRules'
-import { registerCodeOwnership } from './codeOwnership'
-import { registerTravisGo } from './travisGo'
-import { registerSampleStatusProviders } from './sampleStatus'
+// import { registerImportStar } from './importStar'
+// import { registerNoInlineProps } from './noInlineProps'
+// import { registerDependencyRules } from './dependencyRules'
+// import { registerCodeOwnership } from './codeOwnership'
+// import { registerTravisGo } from './travisGo'
+// import { registerSampleStatusProviders } from './sampleStatus'
 import { registerESLintRules } from './eslint'
 
 export function activate(ctx: sourcegraph.ExtensionContext): void {

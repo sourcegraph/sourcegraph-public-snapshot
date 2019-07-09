@@ -913,6 +913,85 @@ declare module 'sourcegraph' {
         readonly baseUri?: URL
     }
 
+    /**
+     * The severity level of a [diagnostic](#Diagnostic).
+     */
+    export enum DiagnosticSeverity {
+        /**
+         * Something not allowed by the rules of a language or other means.
+         */
+        Error = 0,
+
+        /**
+         * Something suspicious but allowed.
+         */
+        Warning = 1,
+
+        /**
+         * Something to inform about but not a problem.
+         */
+        Information = 2,
+
+        /**
+         * Something to hint to a better way of doing it, like proposing
+         * a refactoring.
+         */
+        Hint = 3,
+    }
+
+    /**
+     * Represents a diagnostic, such as a compiler error or warning. Diagnostic objects are only
+     * valid in the scope of a file.
+     */
+    export interface Diagnostic {
+        /**
+         * The resource to which this diagnostic applies.
+         */
+        readonly resource: URL
+
+        /**
+         * The range to which this diagnostic applies.
+         */
+        readonly range: Range
+
+        /**
+         * The human-readable message.
+         */
+        readonly message: string
+
+        /**
+         * The severity, default is [error](#DiagnosticSeverity.Error).
+         */
+        readonly severity: DiagnosticSeverity
+
+        /**
+         * Opaque data for this diagnostic. This data can be used by other consumers of the
+         * diagnostic, such as [code action providers](#CodeActionProvider), to avoid duplicating
+         * effort.
+         */
+        readonly data?: string
+
+        /**
+         * A set of tags for this diagnostic, used in querying and filtering.
+         */
+        readonly tags?: string[]
+
+        /**
+         * The ID of the check that this diagnostic is associated with, if any.
+         */
+        // TODO!(sqs) readonly check?: string
+    }
+
+    /**
+     * A query that matches a set of [diagnostics](#Diagnostic).
+     */
+    export interface DiagnosticQuery {
+        /**
+         * Match only diagnostics with the given type.
+         */
+        readonly type: string
+    }
+
     export interface DiagnosticProvider {
         /**
          * TODO!(sqs) there should be a way to send partial updates, eg per file, instead of always
@@ -1003,7 +1082,7 @@ declare module 'sourcegraph' {
         /**
          * Register a diagnostic provider.
          */
-        export function registerDiagnosticProvider(name: string, provider: DiagnosticProvider)
+        export function registerDiagnosticProvider(type: string, provider: DiagnosticProvider): Unsubscribable
     }
 
     /**
@@ -1070,18 +1149,13 @@ declare module 'sourcegraph' {
         /**
          * Information about the check.
          */
-        information: Subscribable<CheckInformation>
+        readonly information: Subscribable<CheckInformation>
 
         /**
          * Provide the check's diagnostics.
          *
          * @return A set of diagnostics or an observable of such. The lack of a result can be
          * signaled by returning `undefined` or `null`.
-         *
-         * @todo TODO!(sqs): this is duplicative of the global diagnostics, but that perhaps is a
-         * weird model. maybe make it possible to mark this result as complete (like
-         * `Subscribable<{complete:boolean, results: [URL, Diagnostic[]][]}>`?) and make diagnostics
-         * not global but instead provided by a registered provider?
          *
          * @todo TODO!(sqs): the return type is Subscribable not ProviderResult because settings is
          * a Subscribable, so the result needs to be reactive to its value, and so a constant value
@@ -1487,176 +1561,6 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * The event that is emitted when diagnostics change.
-     */
-    export interface DiagnosticChangeEvent {
-        /**
-         * An array of resources for which diagnostics have changed.
-         */
-        readonly uris: URL[]
-    }
-
-    /**
-     * The severity level of a [diagnostic](#Diagnostic).
-     */
-    export enum DiagnosticSeverity {
-        /**
-         * Something not allowed by the rules of a language or other means.
-         */
-        Error = 0,
-
-        /**
-         * Something suspicious but allowed.
-         */
-        Warning = 1,
-
-        /**
-         * Something to inform about but not a problem.
-         */
-        Information = 2,
-
-        /**
-         * Something to hint to a better way of doing it, like proposing
-         * a refactoring.
-         */
-        Hint = 3,
-    }
-
-    /**
-     * Represents a diagnostic, such as a compiler error or warning. Diagnostic objects are only
-     * valid in the scope of a file.
-     */
-    export interface Diagnostic {
-        /**
-         * The range to which this diagnostic applies.
-         */
-        readonly range: Range
-
-        /**
-         * The type of this diagnostic. There should be at most 1 diagnostic on a file and range
-         * with a given type.
-         *
-         * For example, "eslint.comma-dangle".
-         */
-        readonly type: string
-
-        /**
-         * The human-readable message.
-         */
-        readonly message: string
-
-        /**
-         * The severity, default is [error](#DiagnosticSeverity.Error).
-         */
-        readonly severity: DiagnosticSeverity
-
-        /**
-         * A human-readable string describing the source of this diagnostic, such as "typescript" or
-         * "golint".
-         */
-        readonly source?: string
-
-        /**
-         * Opaque data for this diagnostic. This data can be used by other consumers of the
-         * diagnostic, such as [code action providers](#CodeActionProvider), to avoid duplicating
-         * effort.
-         */
-        readonly data?: string
-
-        /**
-         * A set of tags for this diagnostic, used in querying and filtering.
-         */
-        readonly tags?: string[]
-
-        /**
-         * The ID of the check that this diagnostic is associated with, if any.
-         */
-        // TODO!(sqs) readonly check?: string
-    }
-
-    /**
-     * A query that matches a set of [diagnostics](#Diagnostic).
-     */
-    export interface DiagnosticQuery {
-        /**
-         * Match only diagnostics with the given type.
-         */
-        readonly type: string
-    }
-
-    /**
-     * A diagnostics collection is a container that manages a set of [diagnostics](#Diagnostic).
-     * Diagnostics are always scoped to a diagnostics collection and a resource.
-     *
-     * To get an instance of a {@link DiagnosticCollection}, use
-     * [createDiagnosticCollection](#languages.createDiagnosticCollection).
-     */
-    export interface DiagnosticCollection extends Unsubscribable {
-        /**
-         * The name of this diagnostic collection, such as `typescript`. Every diagnostic from this
-         * collection will be associated with this name.
-         */
-        readonly name: string
-
-        /**
-         * Assign diagnostics for given resource. Existing diagnostics for the resource (if any)
-         * will be replaced.
-         *
-         * @param uri A resource identifier.
-         * @param diagnostics Array of diagnostics or `undefined`
-         */
-        set(uri: URL, diagnostics: Diagnostic[] | undefined): void
-
-        /**
-         * Replace all entries in this collection.
-         *
-         * Diagnostics of multiple tuples of the same uri will be merged, e.g `[[file1, [d1]],
-         * [file1, [d2]]]` is equivalent to `[[file1, [d1, d2]]]`. If a diagnostics item is
-         * `undefined` as in `[file1, undefined]` all previous but not subsequent diagnostics are
-         * removed.
-         *
-         * @param entries An array of tuples, like `[[file1, [d1, d2]], [file2, [d3, d4, d5]]]`, or
-         * `undefined`.
-         */
-        set(entries: [URL, Diagnostic[] | undefined][]): void
-
-        /**
-         * Remove all diagnostics from this collection that belong to the provided `uri`. This is
-         * equivalent to `#set(uri, undefined)`.
-         *
-         * @param uri A resource identifier.
-         */
-        delete(uri: URL): void
-
-        /**
-         * Remove all diagnostics from this collection. The same
-         * as calling `#set(undefined)`;
-         */
-        clear(): void
-
-        /**
-         * Get all entries in this collection.
-         */
-        entries(): IterableIterator<[URL, Diagnostic[]]>
-
-        /**
-         * Get the diagnostics for a given resource.
-         *
-         * @param uri A resource identifier.
-         * @returns An immutable array of [diagnostics](#Diagnostic) or `undefined`.
-         */
-        get(uri: URL): readonly Diagnostic[] | undefined
-
-        /**
-         * Check if this collection contains diagnostics for a given resource.
-         *
-         * @param uri A resource identifier.
-         * @returns `true` if this collection has diagnostic for the given resource.
-         */
-        has(uri: URL): boolean
-    }
-
-    /**
      * Contains additional information about the context in which a [code
      * action](#CodeActionProvider.provideCodeActions) is run.
      */
@@ -1852,34 +1756,6 @@ declare module 'sourcegraph' {
             selector: DocumentSelector,
             provider: CompletionItemProvider
         ): Unsubscribable
-
-        /**
-         * A subscribable that emits when the global set of diagnostics changes.
-         */
-        export const diagnosticsChanges: Subscribable<DiagnosticChangeEvent>
-
-        /**
-         * Get all diagnostics for a given resource.
-         *
-         * @param resource A resource
-         * @returns An array of [diagnostics](#Diagnostic) or an empty array.
-         */
-        export function getDiagnostics(resource: URL): Diagnostic[]
-
-        /**
-         * Get all diagnostics.
-         *
-         * @returns An array of uri-diagnostics tuples or an empty array.
-         */
-        export function getDiagnostics(): [URL, Diagnostic[]][]
-
-        /**
-         * Create a diagnostics collection.
-         *
-         * @param name The [name](#DiagnosticCollection.name) of the collection.
-         * @return A new diagnostic collection.
-         */
-        export function createDiagnosticCollection(name: string): DiagnosticCollection
 
         /**
          * Register a code action provider.
@@ -2139,11 +2015,7 @@ declare module 'sourcegraph' {
          */
         export function registerPlanCommand<P extends object = {}>(
             command: string,
-            callback: (
-                params: P,
-                diagnostics: [URL, Diagnostic[]][],
-                ...args: any[]
-            ) => WorkspaceEdit | Promise<WorkspaceEdit>
+            callback: (params: P, diagnostics: Diagnostic[], ...args: any[]) => WorkspaceEdit | Promise<WorkspaceEdit>
         ): Unsubscribable
 
         /**

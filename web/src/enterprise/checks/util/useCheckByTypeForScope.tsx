@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { combineLatest, NEVER, of, Subscription } from 'rxjs'
 import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { WrappedStatus } from '../../../../../shared/src/api/client/services/statusService'
+import { CheckWithType } from '../../../../../shared/src/api/client/services/checkService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 
@@ -24,8 +24,8 @@ export const useCheckByTypeForScope = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
     name: string,
     scope: sourcegraph.CheckScope | sourcegraph.WorkspaceRoot
-): typeof LOADING | WrappedStatus | null | ErrorLike => {
-    const [checkOrError, setStatusOrError] = useState<typeof LOADING | WrappedStatus | null | ErrorLike>(LOADING)
+): typeof LOADING | CheckWithType | null | ErrorLike => {
+    const [checkOrError, setStatusOrError] = useState<typeof LOADING | CheckWithType | null | ErrorLike>(LOADING)
     useEffect(() => {
         const subscriptions = new Subscription()
         subscriptions.add(

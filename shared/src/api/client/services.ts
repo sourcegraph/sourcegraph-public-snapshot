@@ -1,5 +1,5 @@
 import { PlatformContext } from '../../platform/context'
-import { createStatusService } from './services/statusService'
+import { createStatusService } from './services/checkService'
 import { ReferenceParams } from '../protocol'
 import { createContextService } from './context/contextService'
 import { CheckTemplateRegistry } from './services/checkTemplates'
@@ -8,7 +8,7 @@ import { CommandRegistry } from './services/command'
 import { CompletionItemProviderRegistry } from './services/completion'
 import { ContributionRegistry } from './services/contribution'
 import { TextDocumentDecorationProviderRegistry } from './services/decoration'
-import { createDiagnosticsService } from './services/diagnosticsService'
+import { createDiagnosticService } from './services/diagnosticService'
 import { createEditorService } from './services/editorService'
 import { ExtensionsService } from './services/extensionsService'
 import { createFileSystemService } from './services/fileSystemService'
@@ -43,7 +43,7 @@ export class Services {
     public readonly codeActions = new CodeActionProviderRegistry()
     public readonly commands = new CommandRegistry()
     public readonly context = createContextService(this.platformContext)
-    public readonly diagnostics = createDiagnosticsService()
+    public readonly diagnostics = createDiagnosticService()
     public readonly fileSystem = createFileSystemService()
     public readonly workspace = createWorkspaceService()
     public readonly model = createModelService()

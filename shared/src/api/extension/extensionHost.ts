@@ -7,7 +7,7 @@ import {
     Selection,
     CheckScope,
     NotificationScope,
-    StatusResult,
+    CheckCompletion,
     CheckResult,
     DiagnosticSeverity,
 } from '@sourcegraph/extension-api-classes'
@@ -219,6 +219,7 @@ function createExtensionAPI(
             onDidChangeRoots: roots.changes,
             rootChanges: roots.changes,
             openTextDocument: uri => documents.openTextDocument(uri),
+            registerDiagnosticProvider: name => diagnostics.registerDiagnosticProvider(name),
         },
 
         notifications: {
@@ -279,10 +280,6 @@ function createExtensionAPI(
                 selector: sourcegraph.DocumentSelector,
                 provider: sourcegraph.CodeActionProvider
             ) => languageFeatures.registerCodeActionProvider(selector, provider),
-
-            diagnosticsChanges: diagnostics.diagnosticsChanges,
-            getDiagnostics: diagnostics.getDiagnostics.bind(diagnostics),
-            createDiagnosticCollection: name => diagnostics.createDiagnosticCollection(name),
         },
 
         search: {

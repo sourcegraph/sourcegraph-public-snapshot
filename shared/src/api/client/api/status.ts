@@ -2,9 +2,9 @@ import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegr
 import { Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
-import { StatusService } from '../services/statusService'
+import { StatusService } from '../services/checkService'
 import { wrapRemoteObservable } from './common'
-import { TransferableStatus } from '../../types/status'
+import { TransferableStatus } from '../../types/check'
 
 export interface ClientStatusAPI extends ProxyValue {
     $registerStatusProvider(

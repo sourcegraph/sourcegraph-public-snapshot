@@ -61,17 +61,13 @@ enum RulePolicy {
     Default = 'default',
 }
 
-const diagnosticCollection = sourcegraph.languages.createDiagnosticCollection('eslint')
-
 const TYPE_ESLINT = 'eslint'
 
 const CHECK_ESLINT = TYPE_ESLINT
 
 const LOADING: 'loading' = 'loading'
 
-const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING> = from(
-    sourcegraph.workspace.rootChanges
-).pipe(
+const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(sourcegraph.workspace.rootChanges).pipe(
     startWith(void 0),
     map(() => sourcegraph.workspace.roots),
     switchMap(async roots => {
@@ -177,10 +173,11 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING
                                     return null
                                 }
                                 return {
+                                    resource: new URL(doc.uri),
+                                    range: rangeForLintMessage(doc, r),
                                     type: TYPE_ESLINT,
                                     message: r.message,
                                     source: r.source,
-                                    range: rangeForLintMessage(doc, r),
                                     severity: linterSeverityToDiagnosticSeverity(r.severity),
                                     data: JSON.stringify(r),
                                     tags: [],
@@ -202,22 +199,18 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING
 
 function startDiagnostics(): Unsubscribable {
     const subscriptions = new Subscription()
-
-    subscriptions.add(diagnosticCollection)
     subscriptions.add(
-        diagnostics
-            .pipe(filter((diagnostics): diagnostics is [URL, sourcegraph.Diagnostic[]][] => diagnostics !== LOADING))
-            .subscribe(diagnostics => {
-                diagnosticCollection.set(diagnostics)
-            })
+        sourcegraph.workspace.registerDiagnosticProvider('eslint', {
+            provideDiagnostics: _scope =>
+                diagnostics.pipe(
+                    filter((diagnostics): diagnostics is sourcegraph.Diagnostic[] => diagnostics !== LOADING)
+                ),
+        })
     )
-
     return subscriptions
 }
 
-function registerCheckProvider(
-    diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][] | typeof LOADING>
-): Unsubscribable {
+function registerCheckProvider(diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING>): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(
         sourcegraph.checks.registerCheckProvider('eslint', ({ settings }) => ({
@@ -268,18 +261,16 @@ function registerCheckProvider(
     )
     subscriptions.add(
         sourcegraph.notifications.registerNotificationProvider('eslint', {
-            provideNotifications: scope =>
+            provideNotifications: _scope =>
                 // TODO!(sqs): dont ignore scope
                 combineLatest([diagnostics, settingsObservable<Settings>()]).pipe(
                     map(([diagnostics, settings]) => {
                         const rulePolicies = new Map<string, RulePolicy>()
                         if (diagnostics !== LOADING) {
-                            for (const [, diags] of diagnostics) {
-                                for (const diag of diags) {
-                                    const rule = getLintMessageFromDiagnosticData(diag)
-                                    const rulePolicy = getRulePolicyFromSettings(settings, rule.ruleId)
-                                    rulePolicies.set(rule.ruleId, rulePolicy)
-                                }
+                            for (const diag of diagnostics) {
+                                const rule = getLintMessageFromDiagnosticData(diag)
+                                const rulePolicy = getRulePolicyFromSettings(settings, rule.ruleId)
+                                rulePolicies.set(rule.ruleId, rulePolicy)
                             }
                         }
 
