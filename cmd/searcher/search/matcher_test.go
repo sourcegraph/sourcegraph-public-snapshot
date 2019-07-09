@@ -617,7 +617,7 @@ func TestGetMultiLineMatches(t *testing.T) {
 
 		rg.ignoreCase = true
 
-		fileBuf := []byte("a\nb\n\r")
+		fileBuf := []byte("a\nb\r\n")
 		rg.transformBuf = make([]byte, len(fileBuf))
 
 		fileMatchBuf := rg.transformBuf[:len(fileBuf)]
@@ -644,7 +644,7 @@ func TestGetMultiLineMatches(t *testing.T) {
 
 		rg.ignoreCase = true
 
-		fileBuf := []byte("1\na\nb\n\r")
+		fileBuf := []byte("1\na\nb\r\n")
 		rg.transformBuf = make([]byte, len(fileBuf))
 
 		fileMatchBuf := rg.transformBuf[:len(fileBuf)]
@@ -682,7 +682,7 @@ func TestGetMultiLineMatches(t *testing.T) {
 
 		rg.ignoreCase = true
 
-		fileBuf := []byte("a\nb\n\r")
+		fileBuf := []byte("a\nb\r\n")
 		rg.transformBuf = make([]byte, len(fileBuf))
 
 		fileMatchBuf := rg.transformBuf[:len(fileBuf)]
@@ -721,7 +721,7 @@ func TestGetMultiLineMatches(t *testing.T) {
 
 		rg.ignoreCase = true
 
-		fileBuf := []byte("abcd\nb\n\r")
+		fileBuf := []byte("abcd\nb\r\n")
 		rg.transformBuf = make([]byte, len(fileBuf))
 
 		fileMatchBuf := rg.transformBuf[:len(fileBuf)]
@@ -759,7 +759,8 @@ func TestGetMultiLineMatches(t *testing.T) {
 		}
 
 		rg.ignoreCase = true
-		fileBuf := []byte("abcd\nabcd\n\r")
+
+		fileBuf := []byte("abcd\nabcd\r\n")
 		rg.transformBuf = make([]byte, len(fileBuf))
 
 		fileMatchBuf := rg.transformBuf[:len(fileBuf)]
@@ -795,9 +796,10 @@ func TestGetMultiLineMatches(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		rg.ignoreCase = true
 
-		fileBuf := []byte("abcd\nabcd\nabcd\n\r")
+		fileBuf := []byte("abcd\nabcd\nabcd\r\n")
 		rg.transformBuf = make([]byte, len(fileBuf))
 
 		fileMatchBuf := rg.transformBuf[:len(fileBuf)]
@@ -835,8 +837,76 @@ func TestGetMultiLineMatches(t *testing.T) {
 	})
 }
 
-// func TestGetStartingMatch() {}
+func TestGetStartingMatch(t *testing.T) {
+	type args struct {
+		start, end             int
+		fileBuf                []byte
+		lineNumberToLineLength map[int]int
+	}
 
-// func TestGetEndingMatch() {}
+	fileBuf := []byte("abcd\nabcd\r\n")
+	lineMap := map[int]int{0: 5, 1: 5}
+
+	fileBuf2 := []byte("\nabcd\r\n")
+	lineMap2 := map[int]int{0: 1, 1: 4}
+
+	tests := map[string]struct {
+		args
+		startingLineWant   int
+		startingOffsetWant int
+		startingLengthWant int
+	}{
+		"entire first line":  {args: args{fileBuf: fileBuf, start: 0, end: 9, lineNumberToLineLength: lineMap}, startingLineWant: 0, startingOffsetWant: 0, startingLengthWant: 5},
+		"partial first line": {args: args{fileBuf: fileBuf, start: 2, end: 9, lineNumberToLineLength: lineMap}, startingLineWant: 0, startingOffsetWant: 2, startingLengthWant: 3},
+		"partial first line, when matching trailing \n character": {args: args{start: 2, end: 5, fileBuf: fileBuf, lineNumberToLineLength: lineMap}, startingLineWant: 0, startingOffsetWant: 2, startingLengthWant: 3},
+		"entire first line, when matching leading \n character":   {args: args{fileBuf: fileBuf2, start: 0, end: 5, lineNumberToLineLength: lineMap2}, startingLineWant: 0, startingOffsetWant: 0, startingLengthWant: 1},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+
+			startingLine, startingOffset, startingLength := getStartingMatch(test.args.fileBuf, test.args.start, test.args.end, test.args.lineNumberToLineLength)
+			if startingLine != test.startingLineWant {
+				t.Errorf("Expected startingLine to be %v, got %v", test.startingLineWant, startingLine)
+			}
+			if startingOffset != test.startingOffsetWant {
+				t.Errorf("Expected startingOffset to be %v, got %v", test.startingOffsetWant, startingOffset)
+			}
+			if startingLength != test.startingLengthWant {
+				t.Errorf("Expected startingLength to be %v, got %v", test.startingLengthWant, startingLength)
+			}
+		})
+	}
+}
+
+func TestGetEndingMatch(t *testing.T) {
+	tests := map[string]struct {
+		start            int
+		end              int
+		endingLineWant   int
+		endingOffsetWant int
+		endingLengthWant int
+	}{
+		"entire second line":  {start: 0, end: 9, endingLineWant: 1, endingOffsetWant: 0, endingLengthWant: 4},
+		"partial second line": {start: 2, end: 6, endingLineWant: 1, endingOffsetWant: 0, endingLengthWant: 1},
+		"partial second line, when matching trailing \n character": {start: 2, end: 5, endingLineWant: 1, endingOffsetWant: 0, endingLengthWant: 0},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			fileBuf := []byte("abcd\nabcd\r\n")
+			endingLine, endingOffset, endingLength := getEndingMatch(fileBuf, test.start, test.end, map[int]int{0: 5, 1: 5})
+			if endingLine != test.endingLineWant {
+				t.Errorf("Expected endingLine to be %v, got %v", test.endingLineWant, endingLine)
+			}
+			if endingOffset != test.endingOffsetWant {
+				t.Errorf("Expected endingOffset to be %v, got %v", test.endingOffsetWant, endingOffset)
+			}
+			if endingLength != test.endingLengthWant {
+				t.Errorf("Expected endingLength to be %v, got %v", test.endingLengthWant, endingLength)
+			}
+		})
+	}
+}
 
 // func TestGenerateMatches() {}
