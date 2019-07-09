@@ -45,6 +45,13 @@ type Repo struct {
 	*RepoFields
 }
 
+// Repos is an utility type of a list of repos.
+type Repos []*Repo
+
+func (rs Repos) Len() int           { return len(rs) }
+func (rs Repos) Less(i, j int) bool { return rs[i].ID <= rs[j].ID }
+func (rs Repos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
+
 // ExternalService is a connection to an external service.
 type ExternalService struct {
 	ID          int64
