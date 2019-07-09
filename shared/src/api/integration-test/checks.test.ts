@@ -1,5 +1,5 @@
 import { MarkupKind, CheckResult, CheckCompletion, CheckScope } from '@sourcegraph/extension-api-classes'
-import { take, toArray } from 'rxjs/operators'
+import { first } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { integrationTestContext } from './testHelpers'
 import { of, from } from 'rxjs'
@@ -27,12 +27,9 @@ describe('Checks (integration)', () => {
 
             expect(
                 await from(observeChecksInformation(services.checks, CheckScope.Global))
-                    .pipe(
-                        take(2),
-                        toArray()
-                    )
+                    .pipe(first())
                     .toPromise()
-            ).toEqual([CHECK_INFO_1])
+            ).toEqual([{ type: 't', id: 'DUMMY', information: CHECK_INFO_1 }])
 
             subscription.unsubscribe()
         })
