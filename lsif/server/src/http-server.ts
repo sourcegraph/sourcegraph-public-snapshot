@@ -6,8 +6,8 @@ import { JsonDatabase } from './json'
 import { Database } from './database'
 import * as fs from 'fs'
 import * as path from 'path'
-import fileUpload from 'express-fileupload'
 import LRU from 'lru-cache'
+import { withFile } from 'tmp-promise'
 
 // TODO add docstrings
 
@@ -124,13 +124,6 @@ async function withDB(repositoryCommit: RepositoryCommit, action: (db: Database)
 function main() {
     const app = express()
 
-    app.use(
-        fileUpload({
-            limits: { fileSize: maxFileSize },
-            abortOnLimit: true,
-            responseOnLimit: 'Rejecting LSIF file larger than 100MiB to protect against running out of memory.',
-        })
-    )
     app.use(bodyParser.json({ limit: '1mb' }))
     app.use(cors())
 
@@ -211,54 +204,56 @@ function main() {
             checkRepository(repository)
             checkCommit(commit)
 
-            if (!req.files) {
-                res.status(400).send('Expected a file upload.')
-                return
+            const contentLength = parseInt(req.header('Content-Length') || '') || 0
+            if (contentLength > maxFileSize) {
+                throw Object.assign(
+                    new Error(
+                        `The size of the given LSIF file (${contentLength} bytes) exceeds the max of ${maxFileSize}`
+                    ),
+                    { status: 400 }
+                )
             }
-            const ufiles = Object.entries(req.files)
-            const ufile = ufiles[0][1]
-            if (!ufile) {
-                res.status(400).send('No file was uploaded.')
-                return
-            }
-            if (ufiles.length > 1) {
-                res.status(400).send('Only one file can be uploaded at a time.')
-                return
-            }
-            // I suspect @types/express-fileupload is wrong here.
-            if (ufile instanceof Array) {
-                res.status(400).send('Data must be a single file.')
-                return
-            }
-            for (const [index, line] of ufile.data
-                .toString()
-                .split('\n')
-                .entries()) {
-                if (line === '') {
-                    continue
-                }
-                try {
-                    JSON.parse(line)
-                } catch (e) {
-                    res.status(422).send(
-                        `Expected uploaded file to be in newline separated JSON format. First 100 characters of the first offending line ${index}: ${line.slice(
-                            0,
-                            100
-                        )})`
-                    )
-                    return
-                }
-            }
-
+            // TODO enforce max disk usage per-repository. Currently, a
+            // misbehaving client could upload a bunch of LSIF files for one
+            // repository and take up all of the disk space, causing all other
+            // LSIF files to get deleted to make room for the new files.
             enforceMaxDiskUsage({
                 flatDirectory: storageRoot,
-                max: Math.max(0, softMaxStorageSize - ufile.data.byteLength),
+                max: Math.max(0, softMaxStorageSize - contentLength),
                 onBeforeDelete: filePath =>
                     console.log(`Deleting ${filePath} to help keep disk usage under ${softMaxStorageSize}.`),
             })
 
-            await ufile.mv(diskKey({ repository, commit }))
-            res.send('Upload successful.')
+            await withFile(async tempFile => {
+                // TODO bail early if the request body contains more data than was
+                // specified in the Content-Length header. Currently, if a client
+                // lies about the Content-Length, they can send a huge body that
+                // fills up the disk.
+                const stream = req.pipe(fs.createWriteStream(tempFile.path))
+                await new Promise((resolve, reject) => {
+                    stream.on('close', () => {
+                        if (fs.statSync(tempFile.path).size > contentLength) {
+                            reject(
+                                Object.assign(
+                                    new Error(
+                                        `The size of the given LSIF file (${contentLength} bytes) exceeds the specified Content-Length ${contentLength}`
+                                    ),
+                                    { status: 400 }
+                                )
+                            )
+                            return
+                        }
+                        resolve()
+                    })
+                    stream.on('error', error => {
+                        reject(error)
+                    })
+                })
+
+                fs.renameSync(tempFile.path, diskKey({ repository, commit }))
+
+                res.send('Upload successful.')
+            })
         })
     )
 
