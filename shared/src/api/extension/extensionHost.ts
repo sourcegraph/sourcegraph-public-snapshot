@@ -24,16 +24,16 @@ import { ExtConfiguration } from './api/configuration'
 import { ExtContent } from './api/content'
 import { ExtContext } from './api/context'
 import { createDecorationType } from './api/decorations'
-import { ExtDiagnostics } from './api/diagnostics'
+import { createExtDiagnostics } from './api/diagnostics'
 import { ExtDocuments } from './api/documents'
 import { ExtExtensions } from './api/extensions'
 import { ExtLanguageFeatures } from './api/languageFeatures'
 import { ExtRoots } from './api/roots'
 import { ExtSearch } from './api/search'
-import { createExtStatus } from './api/status'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
 import { createExtNotifications } from './api/notifications'
+import { createExtChecks } from './api/checks'
 
 /**
  * Required information when initializing an extension host.
@@ -154,11 +154,9 @@ function createExtensionAPI(
     const search = new ExtSearch(proxy.search)
     const commands = new ExtCommands(proxy.commands)
     const content = new ExtContent(proxy.content)
-    const status = createExtStatus(proxy.status)
     const notifications = createExtNotifications(proxy.notifications)
-
-    const diagnostics = new ExtDiagnostics(proxy.diagnostics)
-    subscription.add(diagnostics)
+    const checks = createExtChecks(proxy.checks)
+    const diagnostics = createExtDiagnostics(proxy.diagnostics)
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -219,16 +217,16 @@ function createExtensionAPI(
             onDidChangeRoots: roots.changes,
             rootChanges: roots.changes,
             openTextDocument: uri => documents.openTextDocument(uri),
-            registerDiagnosticProvider: name => diagnostics.registerDiagnosticProvider(name),
+            registerDiagnosticProvider: (type, provider) => diagnostics.registerDiagnosticProvider(type, provider),
+        },
+
+        checks: {
+            registerCheckProvider: (type, providerFactory) => checks.registerCheckProvider(type, providerFactory),
         },
 
         notifications: {
             registerNotificationProvider: (type, provider) =>
                 notifications.registerNotificationProvider(type, provider),
-        },
-
-        status: {
-            registerStatusProvider: (name, provider) => status.registerStatusProvider(name, provider),
         },
 
         configuration: {

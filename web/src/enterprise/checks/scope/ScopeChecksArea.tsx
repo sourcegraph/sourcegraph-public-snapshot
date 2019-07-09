@@ -10,7 +10,7 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { HeroPage } from '../../../components/HeroPage'
 import { ChecklistIcon } from '../../../util/octicons'
 import { CheckArea } from '../detail/CheckArea'
-import { CombinedStatusPage } from './combinedStatus/CombinedStatusPage'
+import { ChecksListPage } from './list/ChecksListPage'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
@@ -46,7 +46,7 @@ export const ChecksArea: React.FunctionComponent<Props> = ({ match, ...props }) 
                     <h1 className="h2 my-3 d-flex align-items-center font-weight-normal">
                         <ChecklistIcon className="icon-inline mr-3" /> Checks
                     </h1>
-                    <CombinedStatusPage {...context} />
+                    <ChecksListPage {...context} />
                 </div>
             </Route>
             <Route

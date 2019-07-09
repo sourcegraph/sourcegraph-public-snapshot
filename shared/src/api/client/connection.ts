@@ -25,7 +25,7 @@ import {
     ShowMessageRequestParams,
     ShowNotificationParams,
 } from './services/notifications'
-import { createClientStatus } from './api/status'
+import { createClientChecks } from './api/checks'
 import { createClientNotifications } from './api/notifications'
 import { createClientDiagnostics } from './api/diagnostics'
 
@@ -123,7 +123,7 @@ export async function createExtensionHostClientConnection(
 
     const clientContent = createClientContent(services.linkPreviews)
 
-    const clientStatus = createClientStatus(services.status)
+    const clientStatus = createClientChecks(services.status)
     const clientNotifications = createClientNotifications(services.notifications2)
 
     const clientAPI: ClientAPI = {
@@ -139,7 +139,7 @@ export async function createExtensionHostClientConnection(
         content: clientContent,
         diagnostics: clientDiagnostics,
         documents: clientDocuments,
-        status: clientStatus,
+        checks: clientStatus,
         notifications: clientNotifications,
     }
     comlink.expose(clientAPI, endpoints.expose)

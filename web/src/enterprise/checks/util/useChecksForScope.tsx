@@ -1,37 +1,37 @@
 import { useEffect, useState } from 'react'
-import { Subscription } from 'rxjs'
+import { from, Subscription } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { CheckWithType } from '../../../../../shared/src/api/client/services/checkService'
+import {
+    CheckInformationOrError,
+    observeChecksInformation,
+} from '../../../../../shared/src/api/client/services/checkService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 
 const LOADING: 'loading' = 'loading'
 
 /**
- * A React hook that observes a combined status for a particular scope.
+ * A React hook that observes all checks for a particular scope.
  *
- * @param scope The scope in which to compute the status.
+ * @param scope The scope in which to observe the checks.
  */
-export const useCombinedStatusForScope = (
+export const useChecksForScope = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
     scope: sourcegraph.CheckScope | sourcegraph.WorkspaceRoot
-): typeof LOADING | CheckWithType[] | ErrorLike => {
-    const [combinedStatusOrError, setCombinedStatusOrError] = useState<typeof LOADING | CheckWithType[] | ErrorLike>(
-        LOADING
-    )
+): typeof LOADING | CheckInformationOrError[] | ErrorLike => {
+    const [checksOrError, setChecksOrError] = useState<typeof LOADING | CheckInformationOrError[] | ErrorLike>(LOADING)
     useEffect(() => {
         const subscriptions = new Subscription()
         subscriptions.add(
-            extensionsController.services.status
-                .observeChecks(scope)
+            from(observeChecksInformation(extensionsController.services.checks, scope))
                 .pipe(
                     catchError(err => [asError(err)]),
                     startWith(LOADING)
                 )
-                .subscribe(setCombinedStatusOrError)
+                .subscribe(setChecksOrError)
         )
         return () => subscriptions.unsubscribe()
-    }, [extensionsController.services.status, scope])
-    return combinedStatusOrError
+    }, [extensionsController.services.checks, scope])
+    return checksOrError
 }

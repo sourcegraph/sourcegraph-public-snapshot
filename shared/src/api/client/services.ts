@@ -22,6 +22,7 @@ import { createSettingsService } from './services/settings'
 import { ViewProviderRegistry } from './services/view'
 import { createWorkspaceService } from './services/workspaceService'
 import { createNotificationService } from './services/notificationService'
+import { createCheckService } from './services/checkService'
 
 /**
  * Services is a container for all services used by the client application.
@@ -63,4 +64,5 @@ export class Services {
     public readonly views = new ViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
     public readonly checkTemplates = new CheckTemplateRegistry()
+    public readonly checks = createCheckService()
 }
