@@ -4,9 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"regexp"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -24,11 +21,9 @@ import (
 // A BitbucketCloudSource yields repositories from a single BitbucketCloud connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketCloudSource struct {
-	svc             *ExternalService
-	config          *schema.BitbucketCloudConnection
-	exclude         map[string]bool
-	excludePatterns []*regexp.Regexp
-	client          *bitbucketcloud.Client
+	svc    *ExternalService
+	config *schema.BitbucketCloudConnection
+	client *bitbucketcloud.Client
 }
 
 // NewBitbucketCloudSource returns a new BitbucketCloudSource from the given external service.
@@ -55,36 +50,14 @@ func newBitbucketCloudSource(svc *ExternalService, c *schema.BitbucketCloudConne
 		return nil, err
 	}
 
-	exclude := make(map[string]bool, len(c.Exclude))
-	var excludePatterns []*regexp.Regexp
-	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[strings.ToLower(r.Name)] = true
-		}
-
-		if r.Id != 0 {
-			exclude[strconv.Itoa(r.Id)] = true
-		}
-
-		if r.Pattern != "" {
-			re, err := regexp.Compile(r.Pattern)
-			if err != nil {
-				return nil, err
-			}
-			excludePatterns = append(excludePatterns, re)
-		}
-	}
-
 	client := bitbucketcloud.NewClient(cli)
 	client.Username = c.Username
 	client.AppPassword = c.AppPassword
 
 	return &BitbucketCloudSource{
-		svc:             svc,
-		config:          c,
-		exclude:         exclude,
-		excludePatterns: excludePatterns,
-		client:          client,
+		svc:    svc,
+		config: c,
+		client: client,
 	}, nil
 }
 
@@ -128,7 +101,7 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {
 			ServiceType: bitbucketcloud.ServiceType,
 			ServiceID:   host.String(),
 		},
-		Description: r.Name,
+		Description: r.Description,
 		Fork:        r.Parent != nil,
 		Enabled:     true,
 		Sources: map[string]*SourceInfo{
@@ -180,31 +153,31 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context) ([]*bitbucketcl
 
 	var wg sync.WaitGroup
 
-	// List all repositories belong to the account
+	// List all repositories belonging to the account
 	wg.Add(1)
-	go func(q string) {
+	go func() {
 		defer wg.Done()
 
 		page := &bitbucketcloud.PageToken{Pagelen: 100}
 		var err error
 		var repos []*bitbucketcloud.Repo
-		if repos, page, err = s.client.Repos(ctx, page, q); err != nil {
-			ch <- batch{err: errors.Wrapf(err, "bibucketcloud.repositoryQuery: item=%q, page=%+v", q, page)}
+		if repos, page, err = s.client.Repos(ctx, page); err != nil {
+			ch <- batch{err: errors.Wrapf(err, "bibucketcloud.repos: page=%+v", page)}
 			return
 		}
 		ch <- batch{repos: repos}
 
 		for page.HasMore() {
-			if page, err = s.client.ReqPage(ctx, page.Next, &repos); err != nil {
-				ch <- batch{err: errors.Wrapf(err, "bibucketcloud.repositoryQuery: item=%q, page=%+v", q, page)}
+			if repos, page, err = s.client.Repos(ctx, page); err != nil {
+				ch <- batch{err: errors.Wrapf(err, "bibucketcloud.repos: page=%+v", page)}
 				break
 			}
 
 			ch <- batch{repos: repos}
 		}
-	}("") // TODO(jchen): Fill in this parameter when support "repositoryQuery"
+	}()
 
-	// List all repositories of teams selected
+	// List all repositories of teams selected that the account has access to
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -220,7 +193,7 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context) ([]*bitbucketcl
 			ch <- batch{repos: repos}
 
 			for page.HasMore() {
-				if page, err = s.client.ReqPage(ctx, page.Next, &repos); err != nil {
+				if repos, page, err = s.client.TeamRepos(ctx, page, t); err != nil {
 					ch <- batch{err: errors.Wrapf(err, "bibucketcloud.teams: item=%q, page=%+v", t, page)}
 					break
 				}
@@ -250,7 +223,7 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context) ([]*bitbucketcl
 				continue
 			}
 
-			if !seen[repo.UUID] { //&& !s.excludes(repo) { // TODO(jchen): Uncomment this logic when support "exclude"
+			if !seen[repo.UUID] {
 				repos = append(repos, repo)
 				seen[repo.UUID] = true
 			}

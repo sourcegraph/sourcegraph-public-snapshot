@@ -20,7 +20,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-var requestCounter = metrics.NewRequestCounter("bitbucket_cloud", "Total number of requests sent to the Bitbucket Cloud API.")
+var requestCounter = metrics.NewRequestCounter("bitbucket_cloud_requests_count", "Total number of requests sent to the Bitbucket Cloud API.")
 
 // These fields define the self-imposed Bitbucket rate limit (since Bitbucket Cloud does
 // not have a concept of rate limiting in HTTP response headers).
@@ -80,15 +80,36 @@ func NewClient(httpClient httpcli.Doer) *Client {
 	}
 }
 
-func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries ...string) ([]*Repo, *PageToken, error) {
+// Repos returns a list of repositories that are fetched and populated based on user
+// authencicated to this client and given pagination criteria. If the argument pageToken.Next
+// is not empty, it will be used directly as the URL to make the request. The PageToken it
+// returns may also contain the URL to the next page for succeeding requests if any.
+func (c *Client) Repos(ctx context.Context, pageToken *PageToken) ([]*Repo, *PageToken, error) {
 	var repos []*Repo
-	next, err := c.page(ctx, fmt.Sprintf("/2.0/repositories/%s", c.Username), nil, pageToken, &repos)
+	var next *PageToken
+	var err error
+	if pageToken.HasMore() {
+		next, err = c.reqPage(ctx, pageToken.Next, &repos)
+	} else {
+		next, err = c.page(ctx, fmt.Sprintf("/2.0/repositories/%s", c.Username), nil, pageToken, &repos)
+	}
 	return repos, next, err
 }
 
+// TeamRepos returns a list of repositories that are fetched and populated based on given team
+// name and pagination criteria. This includes private repositories, but filtered down to the
+// ones that the user authencicated to this client has access to. If the argument pageToken.Next
+// is not empty, it will be used directly as the URL to make the request. The PageToken it
+// returns may also contain the URL to the next page for succeeding requests if any.
 func (c *Client) TeamRepos(ctx context.Context, pageToken *PageToken, teamName string) ([]*Repo, *PageToken, error) {
 	var repos []*Repo
-	next, err := c.page(ctx, fmt.Sprintf("/2.0/teams/%s/repositories", teamName), nil, pageToken, &repos)
+	var next *PageToken
+	var err error
+	if pageToken.HasMore() {
+		next, err = c.reqPage(ctx, pageToken.Next, &repos)
+	} else {
+		next, err = c.page(ctx, fmt.Sprintf("/2.0/teams/%s/repositories", teamName), nil, pageToken, &repos)
+	}
 	return repos, next, err
 }
 
@@ -102,15 +123,15 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	}
 
 	u := url.URL{Path: path, RawQuery: qry.Encode()}
-	return c.ReqPage(ctx, u.String(), results)
+	return c.reqPage(ctx, u.String(), results)
 }
 
-// ReqPage directly requests resources from given URL assuming all attributes have been
+// reqPage directly requests resources from given URL assuming all attributes have been
 // included in the URL parameter. This is particular useful since the Bitbucket Cloud
 // API 2.0 pagination renders the full link of next page in the response.
 // See more at https://developer.atlassian.com/bitbucket/api/2/reference/meta/pagination
 // However, for the very first request, use method page instead.
-func (c *Client) ReqPage(ctx context.Context, url string, results interface{}) (*PageToken, error) {
+func (c *Client) reqPage(ctx context.Context, url string, results interface{}) (*PageToken, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -213,14 +234,15 @@ func (t *PageToken) Values() url.Values {
 }
 
 type Repo struct {
-	Slug      string `json:"slug"`
-	Name      string `json:"name"`
-	FullName  string `json:"full_name"`
-	UUID      string `json:"uuid"`
-	SCM       string `json:"scm"`
-	Parent    *Repo  `json:"parent"`
-	IsPrivate bool   `json:"is_private"`
-	Links     struct {
+	Slug        string `json:"slug"`
+	Name        string `json:"name"`
+	FullName    string `json:"full_name"`
+	UUID        string `json:"uuid"`
+	SCM         string `json:"scm"`
+	Description string `json:"description"`
+	Parent      *Repo  `json:"parent"`
+	IsPrivate   bool   `json:"is_private"`
+	Links       struct {
 		Clone CloneLinks `json:"clone"`
 		HTML  Link       `json:"html"`
 	} `json:"links"`

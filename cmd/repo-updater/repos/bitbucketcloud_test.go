@@ -28,11 +28,10 @@ func TestBitbucketCloudSource_MakeRepo(t *testing.T) {
 			AppPassword: "secret",
 		},
 		"ssh": {
-			Url:                         "bitbucket.org",
-			Username:                    "alice",
-			AppPassword:                 "secret",
-			GitURLType:                  "ssh",
-			InitialRepositoryEnablement: true,
+			Url:         "bitbucket.org",
+			Username:    "alice",
+			AppPassword: "secret",
+			GitURLType:  "ssh",
 		},
 		"path-pattern": {
 			Url:                   "bitbucket.org",

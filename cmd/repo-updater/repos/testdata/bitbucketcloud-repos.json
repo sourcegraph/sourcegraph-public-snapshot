@@ -6,6 +6,7 @@
     "full_name": "sg/go-langserver",
     "slug": "go-langserver",
     "is_private": true,
+    "description": "Go Language Server",
     "links": {
       "clone": [
         {
@@ -29,6 +30,7 @@
     "full_name": "sg/python-langserver",
     "slug": "python-langserver",
     "is_private": true,
+    "description": "Python Language Server",
     "links": {
       "clone": [
         {
@@ -52,6 +54,7 @@
     "full_name": "sg/python-langserver-fork",
     "slug": "python-langserver-fork",
     "is_private": true,
+    "description": "Python Language Server",
     "links": {
       "clone": [
         {

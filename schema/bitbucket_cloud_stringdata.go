@@ -44,85 +44,11 @@ const BitbucketCloudSchemaJSON = `{
       "type": "string",
       "default": "{host}/{nameWithOwner}"
     },
-    "excludePersonalRepositories": {
-      "description": "Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See https://docs.sourcegraph.com/integration/bitbucket_server#excluding-personal-repositories for more information.",
-      "type": "boolean",
-      "default": false
-    },
-    "repositoryQuery": {
-      "description": "An array of strings specifying which repositories to mirror on Sourcegraph. Each string is a URL query string with parameters that filter the list of returned repos. Examples: \"?name=my-repo&projectname=PROJECT&visibility=private\".\n\nThe special string \"none\" can be used as the only element to disable this feature. Repositories matched by multiple query strings are only imported once. Here's the official Bitbucket Cloud documentation about which query string parameters are valid: https://developer.atlassian.com/bitbucket/api/2/reference/meta/filtering#query-repo",
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      },
-      "default": ["none"],
-      "minItems": 1,
-      "examples": [["?name=my-repo&projectname=PROJECT&visibility=private"]]
-    },
-    "repos": {
-      "description": "An array of repository \"projectKey/repositorySlug\" strings specifying repositories to mirror on Sourcegraph.",
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "string",
-        "pattern": "^[\\w-]+/[\\w.-]+$"
-      },
-      "examples": [["myproject/myrepo", "myproject/myotherrepo"]]
-    },
     "teams": {
       "description": "An array of team names identifying Bitbucket Cloud teams whose repositories should be mirrored on Sourcegraph.",
       "type": "array",
       "items": { "type": "string", "pattern": "^[\\w-]+$" },
       "examples": [["name"], ["kubernetes", "golang", "facebook"]]
-    },
-    "exclude": {
-      "description": "A list of repositories to never mirror from this Bitbucket Cloud. Takes precedence over \"repos\" and \"repositoryQuery\".\n\nSupports excluding by name ({\"name\": \"projectKey/repositorySlug\"}) or by ID ({\"id\": 42}).",
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "object",
-        "title": "ExcludedBitbucketCloudRepo",
-        "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, { "required": ["pattern"] }],
-        "properties": {
-          "name": {
-            "description": "The name of a Bitbucket Cloud repo (\"projectKey/repositorySlug\") to exclude from mirroring.",
-            "type": "string",
-            "pattern": "^[\\w-]+/[\\w.-]+$"
-          },
-          "id": {
-            "description": "The ID of a Bitbucket Cloud repo (as returned by the Bitbucket Cloud's API) to exclude from mirroring.",
-            "type": "integer"
-          },
-          "pattern": {
-            "description": "Regular expression which matches against the name of a Bitbucket Cloud repo.",
-            "type": "string",
-            "format": "regex"
-          }
-        }
-      },
-      "examples": [
-        [{ "name": "myproject/myrepo" }, { "id": 42 }],
-        [{ "name": "myproject/myrepo" }, { "name": "myproject/myotherrepo" }, { "pattern": "^topsecretproject/.*" }]
-      ]
-    },
-    "initialRepositoryEnablement": {
-      "description": "Defines whether repositories from this Bitbucket Cloud should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Cloud repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Cloud); site admins can still disable them explicitly, and they'll remain disabled.",
-      "type": "boolean",
-      "default": false
-    },
-    "authorization": {
-      "title": "BitbucketCloudAuthorization",
-      "description": "If non-null, enforces Bitbucket Cloud repository permissions.",
-      "type": "object",
-      "properties": {
-        "ttl": {
-          "description": "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/1000 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/1000 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
-          "type": "string",
-          "default": "3h"
-        }
-      }
     }
   }
 }
