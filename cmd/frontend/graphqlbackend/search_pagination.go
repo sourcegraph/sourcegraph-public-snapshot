@@ -7,6 +7,8 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // searchCursor represents a decoded search pagination cursor. From an API
@@ -102,10 +104,22 @@ func (r *searchResolver) Cursor(ctx context.Context) graphql.ID {
 //    a timeout, searcing result types in parallel) is fundamentally incompatible
 //    with the absolute ordering we do here for pagination.
 //
-func (r *searchResolver) paginatedResults(ctx context.Context) (*searchResultsResolver, error) {
+func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchResultsResolver, err error) {
 	if r.pagination == nil {
 		panic("(bug) this method should never be called in this state")
 	}
+
+	tr, ctx := trace.New(ctx, "graphql.SearchResults.paginatedResults", r.rawQuery())
+	tr.LogFields(
+		otlog.Int("Cursor.RepositoryOffset", int(r.pagination.cursor.RepositoryOffset)),
+		otlog.Int("Cursor.ResultOffset", int(r.pagination.cursor.ResultOffset)),
+		otlog.Int("Cursor.UserID", int(r.pagination.cursor.UserID)),
+		otlog.Int("Limit", int(r.pagination.limit)),
+	)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 
 	// All paginated search requests should complete within this timeframe.
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
