@@ -9,7 +9,7 @@ import { ClientLanguageFeaturesAPI } from './languageFeatures'
 import { ClientSearchAPI } from './search'
 import { ClientViewsAPI } from './views'
 import { ClientWindowsAPI } from './windows'
-import { ClientStatusAPI } from './status'
+import { ClientChecksAPI } from './checks'
 import { ClientNotificationsAPI } from './notifications'
 
 /**
@@ -29,6 +29,6 @@ export interface ClientAPI {
     content: ClientContentAPI
     diagnostics: ClientDiagnosticsAPI
     documents: ClientDocumentsAPI
-    status: ClientStatusAPI
+    checks: ClientChecksAPI
     notifications: ClientNotificationsAPI
 }

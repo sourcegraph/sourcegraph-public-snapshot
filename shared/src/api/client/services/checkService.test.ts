@@ -9,13 +9,13 @@ import { isDefined } from '../../../util/types'
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const CHECK_INFO_1: sourcegraph.CheckInformation = {
-    state: { completion: CheckCompletion.Completed, result: CheckResult.Success },
     description: { kind: MarkupKind.Markdown, value: 'd1' },
+    state: { completion: CheckCompletion.Completed, result: CheckResult.Success },
 }
 
 const CHECK_INFO_2: sourcegraph.CheckInformation = {
-    state: { completion: CheckCompletion.InProgress },
     description: { kind: MarkupKind.Markdown, value: 'd2' },
+    state: { completion: CheckCompletion.InProgress },
 }
 
 const SCOPE = CheckScope.Global
