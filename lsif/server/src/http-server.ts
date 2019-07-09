@@ -250,7 +250,7 @@ function main() {
                 }
             }
 
-            const deletedFiles = enforceMaxDiskUsage({
+            enforceMaxDiskUsage({
                 flatDirectory: storageRoot,
                 max: Math.max(0, softMaxStorageSize - ufile.data.byteLength),
                 onBeforeDelete: filePath =>
@@ -258,14 +258,7 @@ function main() {
             })
 
             await ufile.mv(diskKey({ repository, commit }))
-            res.send(
-                [
-                    'Upload successful.',
-                    ...(deletedFiles.length > 0
-                        ? ['Deleted old files to make room on disk:', ...deletedFiles.map(f => '- ' + f)]
-                        : []),
-                ].join('\n')
-            )
+            res.send('Upload successful.')
         })
     )
 
