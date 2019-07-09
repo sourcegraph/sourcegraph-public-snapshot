@@ -153,7 +153,22 @@ function main() {
 
             try {
                 await withDB({ repository, commit }, async db => {
-                    res.send((db as any)[method](...params) || { error: 'No result found' })
+                    let result: any
+                    switch (method) {
+                        case 'hover':
+                            result = db.hover(params[0], params[1])
+                            break
+                        case 'definitions':
+                            result = db.definitions(params[0], params[1])
+                            break
+                        case 'references':
+                            result = db.references(params[0], params[1], { includeDeclaration: false })
+                            break
+                        default:
+                            res.status(500).send({ error: `Unknown method ${method}` })
+                            return
+                    }
+                    res.send(result || { error: 'No result found' })
                 })
             } catch (e) {
                 if ('code' in e && e.code === 'ENOENT') {
