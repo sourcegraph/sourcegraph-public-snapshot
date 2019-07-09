@@ -607,3 +607,236 @@ func init() {
 	// Clear out store so we pick up changes in our store writing code.
 	os.RemoveAll(githubStore.Path)
 }
+
+func TestGetMultiLineMatches(t *testing.T) {
+	t.Run("full-file multi-line match", func(t *testing.T) {
+		rg, err := compile(&protocol.PatternInfo{Pattern: "a\nb", IsRegExp: true, IsWordMatch: false, PatternMatchesContent: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rg.ignoreCase = true
+
+		fileBuf := []byte("a\nb\n\r")
+		rg.transformBuf = make([]byte, len(fileBuf))
+
+		fileMatchBuf := rg.transformBuf[:len(fileBuf)]
+		bytesToLowerASCII(fileMatchBuf, fileBuf)
+		first := rg.re.FindIndex(fileMatchBuf)
+
+		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if limitHit {
+			t.Error("did not expect limit to be hit")
+		}
+		if len(matches) != 2 {
+			t.Errorf("Expected 2 matches, got %v", len(matches))
+		}
+	})
+
+	t.Run("match with \n character followed by content", func(t *testing.T) {
+		rg, err := compile(&protocol.PatternInfo{Pattern: "\na", IsRegExp: true, IsWordMatch: false, PatternMatchesContent: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rg.ignoreCase = true
+
+		fileBuf := []byte("1\na\nb\n\r")
+		rg.transformBuf = make([]byte, len(fileBuf))
+
+		fileMatchBuf := rg.transformBuf[:len(fileBuf)]
+		bytesToLowerASCII(fileMatchBuf, fileBuf)
+		first := rg.re.FindIndex(fileMatchBuf)
+
+		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if limitHit {
+			t.Error("did not expect limit to be hit")
+		}
+		if len(matches) != 2 {
+			t.Errorf("Expected 2 matches, got %v", len(matches))
+		}
+		if matches[0].LineNumber != 0 {
+			t.Errorf("Expected first match to be on line 0, but got line %v", matches[0].LineNumber)
+		}
+		if matches[0].OffsetAndLengths[0] != [2]int{1, 1} {
+			t.Errorf("Expected first match offset and length to be [1, 1], but got %v", matches[0].OffsetAndLengths)
+		}
+		if matches[1].LineNumber != 1 {
+			t.Errorf("Expected second match to be on line 1, but got line %v", matches[0].LineNumber)
+		}
+		if matches[1].OffsetAndLengths[0] != [2]int{0, 1} {
+			t.Errorf("Expected second match offset and length to be [0, 1], but got %v", matches[0].OffsetAndLengths)
+		}
+	})
+	t.Run("match with \n character and no second line content", func(t *testing.T) {
+		rg, err := compile(&protocol.PatternInfo{Pattern: "a\n", IsRegExp: true, IsWordMatch: false, PatternMatchesContent: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rg.ignoreCase = true
+
+		fileBuf := []byte("a\nb\n\r")
+		rg.transformBuf = make([]byte, len(fileBuf))
+
+		fileMatchBuf := rg.transformBuf[:len(fileBuf)]
+		bytesToLowerASCII(fileMatchBuf, fileBuf)
+		first := rg.re.FindIndex(fileMatchBuf)
+
+		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if limitHit {
+			t.Error("did not expect limit to be hit")
+		}
+		if len(matches) != 2 {
+			t.Errorf("Expected 2 matches, got %v", len(matches))
+		}
+		if matches[0].LineNumber != 0 {
+			t.Errorf("Expected first match to be on line 0, but got line %v", matches[0].LineNumber)
+		}
+		if matches[0].OffsetAndLengths[0] != [2]int{0, 2} {
+			t.Errorf("Expected first match offset and length to be [0, 2], but got %v", matches[0].OffsetAndLengths)
+		}
+		if matches[1].LineNumber != 1 {
+			t.Errorf("Expected second match to be on line 1, but got line %v", matches[0].LineNumber)
+		}
+		if matches[1].OffsetAndLengths[0] != [2]int{0, 0} {
+			t.Errorf("Expected second match offset and length to be [0, 0], but got %v", matches[0].OffsetAndLengths)
+		}
+	})
+
+	t.Run("partial first line match", func(t *testing.T) {
+		rg, err := compile(&protocol.PatternInfo{Pattern: "cd\nb", IsRegExp: true, IsWordMatch: false, PatternMatchesContent: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rg.ignoreCase = true
+
+		fileBuf := []byte("abcd\nb\n\r")
+		rg.transformBuf = make([]byte, len(fileBuf))
+
+		fileMatchBuf := rg.transformBuf[:len(fileBuf)]
+		bytesToLowerASCII(fileMatchBuf, fileBuf)
+		first := rg.re.FindIndex(fileMatchBuf)
+
+		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if limitHit {
+			t.Error("did not expect limit to be hit")
+		}
+		if len(matches) != 2 {
+			t.Errorf("Expected 2 matches, got %v", len(matches))
+		}
+		if matches[0].LineNumber != 0 {
+			t.Errorf("Expected first match to be on line 0, but got line %v", matches[0].LineNumber)
+		}
+		if matches[0].OffsetAndLengths[0] != [2]int{2, 3} {
+			t.Errorf("Expected first match offset and length to be [2,3], but got %v", matches[0].OffsetAndLengths)
+		}
+		if matches[1].LineNumber != 1 {
+			t.Errorf("Expected second match to be on line 1, got line %v", matches[1].LineNumber)
+		}
+		if matches[1].OffsetAndLengths[0] != [2]int{0, 1} {
+			t.Errorf("Expected second match offset and length to be [0,1], but got %v", matches[1].OffsetAndLengths)
+		}
+	})
+
+	t.Run("partial second line match", func(t *testing.T) {
+		rg, err := compile(&protocol.PatternInfo{Pattern: "abcd\nab", IsRegExp: true, IsWordMatch: false, PatternMatchesContent: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rg.ignoreCase = true
+		fileBuf := []byte("abcd\nabcd\n\r")
+		rg.transformBuf = make([]byte, len(fileBuf))
+
+		fileMatchBuf := rg.transformBuf[:len(fileBuf)]
+		bytesToLowerASCII(fileMatchBuf, fileBuf)
+		first := rg.re.FindIndex(fileMatchBuf)
+
+		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if limitHit {
+			t.Error("did not expect limit to be hit")
+		}
+		if len(matches) != 2 {
+			t.Errorf("Expected 2 matches, got %v", len(matches))
+		}
+		if matches[0].LineNumber != 0 {
+			t.Errorf("Expected first match to be on line 0, but got line %v", matches[0].LineNumber)
+		}
+		if matches[0].OffsetAndLengths[0] != [2]int{0, 5} {
+			t.Errorf("Expected first match offset and length to be [0,5], but got %v", matches[0].OffsetAndLengths)
+		}
+		if matches[1].LineNumber != 1 {
+			t.Errorf("Expected second match to be on line 1, got line %v", matches[1].LineNumber)
+		}
+		if matches[1].OffsetAndLengths[0] != [2]int{0, 2} {
+			t.Errorf("Expected second match offset and length to be [0,2], but got %v", matches[1].OffsetAndLengths)
+		}
+	})
+
+	t.Run("match more than two lines", func(t *testing.T) {
+		rg, err := compile(&protocol.PatternInfo{Pattern: "abcd\nabcd\nabcd", IsRegExp: true, IsWordMatch: false, PatternMatchesContent: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		rg.ignoreCase = true
+
+		fileBuf := []byte("abcd\nabcd\nabcd\n\r")
+		rg.transformBuf = make([]byte, len(fileBuf))
+
+		fileMatchBuf := rg.transformBuf[:len(fileBuf)]
+		bytesToLowerASCII(fileMatchBuf, fileBuf)
+		first := rg.re.FindIndex(fileMatchBuf)
+
+		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if limitHit {
+			t.Error("did not expect limit to be hit")
+		}
+		if len(matches) != 3 {
+			t.Errorf("Expected 3 matches, got %v", len(matches))
+		}
+		if matches[0].LineNumber != 0 {
+			t.Errorf("Expected first match to be on line 0, but got line %v", matches[0].LineNumber)
+		}
+		if matches[0].OffsetAndLengths[0] != [2]int{0, 5} {
+			t.Errorf("Expected first match offset and length to be [0,5], but got %v", matches[0].OffsetAndLengths)
+		}
+		if matches[1].LineNumber != 1 {
+			t.Errorf("Expected second match to be on line 1, got line %v", matches[1].LineNumber)
+		}
+		if matches[1].OffsetAndLengths[0] != [2]int{0, 5} {
+			t.Errorf("Expected first match offset and length to be [0,5], but got %v", matches[1].OffsetAndLengths)
+		}
+		if matches[2].LineNumber != 2 {
+			t.Errorf("Expected second match to be on line 1, got line %v", matches[2].LineNumber)
+		}
+		if matches[2].OffsetAndLengths[0] != [2]int{0, 4} {
+			t.Errorf("Expected first match offset and length to be [0,4], but got %v", matches[2].OffsetAndLengths)
+		}
+	})
+}
+
+// func TestGetStartingMatch() {}
+
+// func TestGetEndingMatch() {}
+
+// func TestGenerateMatches() {}
