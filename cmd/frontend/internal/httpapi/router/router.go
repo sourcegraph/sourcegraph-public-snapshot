@@ -122,5 +122,5 @@ func addTelemetryRoute(m *mux.Router) {
 
 func addGraphQLRoute(m *mux.Router) {
 	m.Path("/graphql").Methods("POST").Name(GraphQL)
-	m.Path("/lsif/{rest:.*}").Methods("POST").Name(LSIF)
+	m.Path("/lsif/{rest:.*}").Methods("GET", "POST").Name(LSIF)
 }

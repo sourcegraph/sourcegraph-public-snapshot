@@ -7,7 +7,6 @@ import { Database } from './database';
 import * as fs from 'fs'
 import * as path from 'path'
 import fileUpload from 'express-fileupload';
-import { body, query, validationResult } from 'express-validator';
 import LRU from 'lru-cache';
 
 // TODO add docstrings
@@ -69,11 +68,16 @@ async function createDB(repositoryCommit: RepositoryCommit): Promise<Database> {
 
 const supportedMethods = ['hover', 'definitions', 'references']
 
-function repositoryCheck(where = body) {
-	return where('repository').isString().withMessage('must specify the repository (usually of the form github.com/user/repo)')
+function checkRepository(repository: any): void {
+	if (typeof repository !== 'string') {
+        throw Object.assign(new Error ('must specify the repository (usually of the form github.com/user/repo)'), { status: 400 })
+    }
 }
-function commitCheck(where = body) {
-	return where('commit').isLength({ min: 40, max: 40 }).withMessage('must be a 40 character hash').isHexadecimal()
+
+function checkCommit(commit: any): void {
+	if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
+        throw Object.assign(new Error ('must specify the commit as a 40 character hash ' + commit), { status: 400 })
+    }
 }
 
 interface LRUDBEntry {
@@ -117,63 +121,72 @@ function main() {
 	})
 
 	app.post(
-		'/request', [
-			repositoryCheck(),
-			commitCheck(),
-			body('method').custom(method => supportedMethods.includes(method)).withMessage('must be one of ' + supportedMethods)
-		],
+		'/request',
 		asyncHandler(async (req, res) => {
-			const errors = validationResult(req);
-			if (!errors.isEmpty()) {
-				res.status(422).json({ errors: errors.array() });
-				return
-			}
+            const {
+                repository,
+                commit,
+            } = req.query
+
+            const {
+                method,
+                params
+            } = req.body
+
+            checkRepository(repository)
+            checkCommit(commit)
+            if (!supportedMethods.includes(method)) {
+                throw Object.assign(new Error('method must be one of ' + supportedMethods), { status: 400 })
+            }
 
 			try {
-				await withDB(req.body, async db => {
-					res.send((db as any)[req.body.method](...req.body.params) || { error: 'No result found' })
+				await withDB({repository, commit}, async db => {
+					res.send((db as any)[method](...params) || { error: 'No result found' })
 				})
 			}catch(e){
 				if ('code' in e && e.code === 'ENOENT') {
-					res.send({'error': `No LSIF data available for ${req.body.repository}@${req.body.commit}.`})
+					res.send({'error': `No LSIF data available for ${repository}@${commit}.`})
 					return
 				}
 			}
 		})
 	)
 
-	app.post(
+	app.get(
 		'/haslsif',
-		[
-			repositoryCheck(),
-			commitCheck()
-		],
 		asyncHandler(async (req, res) => {
-			const errors = validationResult(req);
-			if (!errors.isEmpty()) {
-				res.status(422).json({ errors: errors.array() });
-				return
+            const {
+                repository,
+                commit,
+            } = req.query
+
+            const file = req.body.file
+
+            checkRepository(repository)
+            checkCommit(commit)
+
+			if (!file) {
+				res.send(fs.existsSync(diskKey({repository,commit})))
+                return
 			}
 
-			if (!req.body.file) {
-				res.send(fs.existsSync(diskKey(req.body)))
-			} else {
-				res.send(Boolean((await createDB(req.body)).stat(req.body.file)))
-			}
+            if (typeof file !== 'string') {
+                throw Object.assign(new Error('file must be a string'), { status: 400 })
+            }
+
+            res.send(Boolean((await createDB({repository,commit})).stat(file)))
 		})
 	)
 
 	app.post('/upload',
-		[
-			repositoryCheck(query),
-			commitCheck(query)
-		],
 		asyncHandler(async (req, res) => {
-			const errors = validationResult(req);
-			if (!errors.isEmpty()) {
-				res.status(422).json({ errors: errors.array() });
-				return
-			}
+            const {
+                repository,
+                commit,
+            } = req.query
+
+            checkRepository(repository)
+            checkCommit(commit)
 
 			if (!req.files) {
 				res.status(400).send('Expected a file upload.')
@@ -212,7 +225,7 @@ function main() {
 				onBeforeDelete: filePath => console.log(`Deleting ${filePath} to help keep disk usage under ${softMaxStorageSize}.`)
 			})
 
-			await ufile.mv(diskKey(req.query))
+			await ufile.mv(diskKey({repository, commit}))
 			res.send(['Upload successful.', ...(deletedFiles.length > 0 ? ['Deleted old files to make room on disk:', ...deletedFiles.map(f => '- ' + f)] : [])].join('\n'))
 		}))
 
