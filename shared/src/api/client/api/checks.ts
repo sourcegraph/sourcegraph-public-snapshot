@@ -5,7 +5,7 @@ import { ProxySubscribable } from '../../extension/api/common'
 import { CheckService } from '../services/checkService'
 import { wrapRemoteObservable } from './common'
 
-export interface ProxiedCheckProvider {
+export interface ProxiedCheckProvider extends ProxyValue {
     information: ProxyResult<ProxySubscribable<sourcegraph.CheckInformation>>
 }
 

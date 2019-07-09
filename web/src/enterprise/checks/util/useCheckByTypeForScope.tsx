@@ -1,48 +1,61 @@
 import { useEffect, useState } from 'react'
-import { combineLatest, NEVER, of, Subscription } from 'rxjs'
-import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
+import { combineLatest, from, NEVER, of, Subscription } from 'rxjs'
+import { catchError, delay, map, startWith, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { CheckWithType } from '../../../../../shared/src/api/client/services/checkService'
+import { CheckID } from '../../../../../shared/src/api/client/services/checkService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
+
+interface CheckData {
+    id: CheckID
+    provider: Pick<sourcegraph.CheckProvider, Exclude<keyof sourcegraph.CheckProvider, 'information'>>
+    information: sourcegraph.CheckInformation
+}
 
 const LOADING: 'loading' = 'loading'
 
 /**
- * Wait this long for the status provider to be registered (to allow time for the extension to
+ * Wait this long for the check provider to be registered (to allow time for the extension to
  * activate) before showing "not found".
  */
-const STATUS_PROVIDER_REGISTRATION_DELAY = 5000 // ms
+const CHECK_PROVIDER_REGISTRATION_DELAY = 5000 // ms
 
 /**
- * A React hook that observes a single status (looked up by name) for a particular scope.
+ * A React hook that observes a single check (looked up by ID) for a particular scope.
  *
- * @param name The status name.
- * @param scope The scope in which to compute the status.
+ * @param name The check name.
+ * @param scope The scope in which to compute the check.
  */
 export const useCheckByTypeForScope = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
-    name: string,
-    scope: sourcegraph.CheckScope | sourcegraph.WorkspaceRoot
-): typeof LOADING | CheckWithType | null | ErrorLike => {
-    const [checkOrError, setStatusOrError] = useState<typeof LOADING | CheckWithType | null | ErrorLike>(LOADING)
+    id: CheckID,
+    scope: sourcegraph.CheckContext<any>['scope']
+): typeof LOADING | CheckData | null | ErrorLike => {
+    const [checkOrError, setCheckOrError] = useState<typeof LOADING | CheckData | null | ErrorLike>(LOADING)
     useEffect(() => {
         const subscriptions = new Subscription()
         subscriptions.add(
             combineLatest([
-                extensionsController.services.status.observeStatus(name, scope).pipe(startWith(LOADING)),
+                extensionsController.services.checks.observeCheck(scope, id).pipe(
+                    switchMap(provider =>
+                        provider
+                            ? from(provider.information).pipe(map(information => ({ id, provider, information })))
+                            : of(null)
+                    ),
+                    startWith(LOADING)
+                ),
                 of(true).pipe(
-                    delay(STATUS_PROVIDER_REGISTRATION_DELAY),
+                    delay(CHECK_PROVIDER_REGISTRATION_DELAY),
                     startWith(false)
                 ),
             ])
                 .pipe(
-                    switchMap(([status, isDelayElapsed]) => (status || isDelayElapsed ? of(status) : NEVER)),
+                    switchMap(([check, isDelayElapsed]) => (check || isDelayElapsed ? of(check) : NEVER)),
                     catchError(err => [asError(err)])
                 )
-                .subscribe(setStatusOrError)
+                .subscribe(setCheckOrError)
         )
         return () => subscriptions.unsubscribe()
-    }, [extensionsController.services.status, scope, name])
+    }, [extensionsController.services.checks, scope, id])
     return checkOrError
 }

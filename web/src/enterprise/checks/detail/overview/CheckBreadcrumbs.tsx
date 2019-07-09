@@ -1,29 +1,23 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { StatusStateIcon } from '../../components/StatusStateIcon'
-import { StatusAreaContext } from '../StatusArea'
+import { CheckAreaContext } from '../CheckArea'
 
-interface Props extends Pick<StatusAreaContext, 'status' | 'statusURL' | 'statusesURL'> {
+interface Props extends Pick<CheckAreaContext, 'checkInfo' | 'checkURL' | 'checksURL'> {
     className?: string
 }
 
 /**
- * The breadcrumbs for a status.
+ * The breadcrumbs for a check.
  */
-export const StatusBreadcrumbs: React.FunctionComponent<Props> = ({
-    status,
-    statusURL,
-    statusesURL,
-    className = '',
-}) => (
+export const CheckBreadcrumbs: React.FunctionComponent<Props> = ({ check, checkURL, checksURL, className = '' }) => (
     <nav className={`d-flex align-items-center ${className}`} aria-label="breadcrumb">
         <ol className="breadcrumb">
             <li className="breadcrumb-item">
-                <Link to={statusesURL}>Status</Link>
+                <Link to={checksURL}>Checks</Link>
             </li>
             <li className="breadcrumb-item active font-weight-bold">
-                <Link to={statusURL} className="d-inline-flex align-items-center">
-                    {status.name} <StatusStateIcon status={status.status} className="icon-inline ml-2" />
+                <Link to={checkURL} className="d-inline-flex align-items-center">
+                    {check} <CheckStateIcon check={check.check} className="icon-inline ml-2" />
                 </Link>
             </li>
         </ol>

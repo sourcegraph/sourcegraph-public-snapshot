@@ -4,7 +4,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { Route, Switch } from 'react-router'
-import { CheckProvider } from 'sourcegraph'
+import * as sourcegraph from 'sourcegraph'
 import { CheckID } from '../../../../../shared/src/api/client/services/checkService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -14,7 +14,11 @@ import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
 import { ChecksAreaContext } from '../scope/ScopeChecksArea'
 import { useCheckByTypeForScope } from '../util/useCheckByTypeForScope'
+import { CheckChecksPage } from './checks/CheckChecksPage'
+import { CheckIssuesPage } from './issues/CheckIssuesPage'
 import { CheckAreaNavbar } from './navbar/CheckAreaNavbar'
+import { CheckNotificationsPage } from './notifications/StatusNotificationsPage'
+import { CheckOverview } from './overview/CheckOverview'
 
 const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
@@ -26,8 +30,14 @@ export interface CheckAreaContext extends ChecksAreaContext, ExtensionsControlle
     /** The check ID. */
     checkID: CheckID
 
-    /** The check provider. */
-    check: CheckProvider
+    /**
+     * The check provider, without the CheckInformation (which should be accessed on
+     * {@link CheckAreaContext#checkInfo}).
+     */
+    checkProvider: Pick<sourcegraph.CheckProvider, Exclude<keyof sourcegraph.CheckProvider, 'information'>>
+
+    /** The check's information. */
+    checkInfo: sourcegraph.CheckInformation
 
     /** The URL to the check area for this check. */
     checkURL: string
@@ -57,9 +67,10 @@ export const CheckArea: React.FunctionComponent<Props> = ({ checkID, scope, chec
 
     const context: CheckAreaContext = {
         ...props,
-        checkID,
         scope,
-        check: checkOrError,
+        checkID: checkOrError.id,
+        checkProvider: checkOrError.provider,
+        checkInfo: checkOrError.information,
         checkURL,
     }
 

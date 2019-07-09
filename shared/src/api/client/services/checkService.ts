@@ -29,6 +29,8 @@ export interface CheckService {
      * Observe a single check.
      *
      * The returned observable emits upon subscription and whenever the check changes.
+     *
+     * //TODO!(sqs): make this handle errors in invoking the providerFactory
      */
     observeCheck(
         scope: sourcegraph.CheckContext<any>['scope'],

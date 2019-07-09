@@ -4,22 +4,22 @@ import { Link } from 'react-router-dom'
 import { Markdown } from '../../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 import { Timeline } from '../../../../components/timeline/Timeline'
-import { StatusAreaContext } from '../StatusArea'
-import { StatusBreadcrumbs } from './CheckBreadcrumbs'
-import { StatusPipelineSection } from './pipeline/CheckPipelineSection'
-import { StatusNotificationSettingsDropdownButton } from './stateBar/CheckNotificationSettingsDropdownButton'
-import { StatusStateBar } from './stateBar/CheckStateBar'
+import { CheckAreaContext } from '../CheckArea'
+import { CheckBreadcrumbs } from './CheckBreadcrumbs'
+import { CheckPipelineSection } from './pipeline/CheckPipelineSection'
+import { CheckNotificationSettingsDropdownButton } from './stateBar/CheckNotificationSettingsDropdownButton'
+import { CheckStateBar } from './stateBar/CheckStateBar'
 
-interface Props extends Pick<StatusAreaContext, 'status' | 'statusURL' | 'statusesURL'> {
+interface Props extends Pick<CheckAreaContext, 'status' | 'statusURL' | 'statusesURL'> {
     className?: string
 }
 
 /**
  * An overview of a status.
  */
-export const StatusOverview: React.FunctionComponent<Props> = ({ status, statusURL, statusesURL, className = '' }) => (
+export const CheckOverview: React.FunctionComponent<Props> = ({ status, statusURL, statusesURL, className = '' }) => (
     <div className={`status-overview ${className || ''}`}>
-        <StatusBreadcrumbs status={status} statusURL={statusURL} statusesURL={statusesURL} className="py-3" />
+        <CheckBreadcrumbs status={status} statusURL={statusURL} statusesURL={statusesURL} className="py-3" />
         <hr className="my-0" />
         <h2 className="my-3 font-weight-normal">{status.status.title}</h2>
         {status.status.description && <Markdown dangerousInnerHTML={renderMarkdown(status.status.description.value)} />}
@@ -31,7 +31,7 @@ export const StatusOverview: React.FunctionComponent<Props> = ({ status, statusU
             {status.status.sections && (
                 <>
                     {status.status.sections.settings && (
-                        <StatusPipelineSection
+                        <CheckPipelineSection
                             section="settings"
                             content={status.status.sections.settings}
                             // tslint:disable-next-line: jsx-no-lambda
@@ -43,18 +43,18 @@ export const StatusOverview: React.FunctionComponent<Props> = ({ status, statusU
                         />
                     )}
                     {status.status.sections.notifications && (
-                        <StatusPipelineSection
+                        <CheckPipelineSection
                             section="notifications"
                             content={status.status.sections.notifications}
                             // tslint:disable-next-line: jsx-no-lambda
                             action={className => (
-                                <StatusNotificationSettingsDropdownButton buttonClassName={className} />
+                                <CheckNotificationSettingsDropdownButton buttonClassName={className} />
                             )}
                         />
                     )}
                 </>
             )}
-            <StatusStateBar status={status} className="p-3 bg-body" />
+            <CheckStateBar status={status} className="p-3 bg-body" />
         </Timeline>
     </div>
 )
