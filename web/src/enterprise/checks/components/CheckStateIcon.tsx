@@ -8,9 +8,9 @@ interface Props {
 }
 
 /**
- * An icon that conveys the state and result of a status.
+ * An icon that conveys the state and result of a check.
  */
-export const StatusStateIcon: React.FunctionComponent<Props> = ({ status, className = '' }) => {
+export const CheckStateIcon: React.FunctionComponent<Props> = ({ status, className = '' }) => {
     const { icon: Icon, className: resultClassName } = iconForStatus(status)
     return <Icon className={`${className} ${resultClassName}`} />
 }

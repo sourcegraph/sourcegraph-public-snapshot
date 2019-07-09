@@ -24,7 +24,7 @@ const LOADING = 'loading' as const
 /**
  * A notification associated with a status.
  */
-export const StatusNotification: React.FunctionComponent<Props> = ({
+export const CheckNotification: React.FunctionComponent<Props> = ({
     notification,
     className = '',
     contentClassName = '',

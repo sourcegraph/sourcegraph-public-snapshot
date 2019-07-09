@@ -20,7 +20,7 @@ const LOADING: 'loading' = 'loading'
 /**
  * The status notifications page.
  */
-export const StatusNotificationsPage: React.FunctionComponent<Props> = ({
+export const CheckNotificationsPage: React.FunctionComponent<Props> = ({
     name,
     status,
     className = '',

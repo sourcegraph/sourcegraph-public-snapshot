@@ -19,9 +19,9 @@ interface Props extends Pick<CheckAreaContext, 'status'>, ExtensionsControllerPr
 const LOADING: 'loading' = 'loading'
 
 /**
- * The status checks page.
+ * The status issues page.
  */
-export const StatusChecksPage: React.FunctionComponent<Props> = ({ status, className = '', ...props }) => {
+export const CheckIssuesPage: React.FunctionComponent<Props> = ({ status, className = '', ...props }) => {
     const [diagnosticsOrError, setDiagnosticsOrError] = useState<typeof LOADING | DiagnosticInfo[] | ErrorLike>(LOADING)
     useEffect(() => {
         const subscriptions = new Subscription()
@@ -38,7 +38,7 @@ export const StatusChecksPage: React.FunctionComponent<Props> = ({ status, class
     }, [status.status.diagnostics])
 
     return (
-        <div className={`status-checks-page ${className}`}>
+        <div className={`status-issues-page ${className}`}>
             <DiagnosticsList {...props} diagnosticsOrError={diagnosticsOrError} itemClassName="container-fluid" />
         </div>
     )

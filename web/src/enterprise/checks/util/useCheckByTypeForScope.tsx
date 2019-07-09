@@ -20,12 +20,12 @@ const STATUS_PROVIDER_REGISTRATION_DELAY = 5000 // ms
  * @param name The status name.
  * @param scope The scope in which to compute the status.
  */
-export const useStatusByTypeForScope = (
+export const useCheckByTypeForScope = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
     name: string,
     scope: sourcegraph.StatusScope | sourcegraph.WorkspaceRoot
 ): typeof LOADING | WrappedStatus | null | ErrorLike => {
-    const [statusOrError, setStatusOrError] = useState<typeof LOADING | WrappedStatus | null | ErrorLike>(LOADING)
+    const [checkOrError, setStatusOrError] = useState<typeof LOADING | WrappedStatus | null | ErrorLike>(LOADING)
     useEffect(() => {
         const subscriptions = new Subscription()
         subscriptions.add(
@@ -44,5 +44,5 @@ export const useStatusByTypeForScope = (
         )
         return () => subscriptions.unsubscribe()
     }, [extensionsController.services.status, scope, name])
-    return statusOrError
+    return checkOrError
 }

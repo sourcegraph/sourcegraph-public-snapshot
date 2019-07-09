@@ -9,7 +9,7 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { HeroPage } from '../../../components/HeroPage'
 import { ChecklistIcon } from '../../../util/octicons'
 import { CombinedStatusPage } from '../combinedStatus/CombinedStatusPage'
-import { CheckArea } from '../../checks/statusArea/CheckArea'
+import { CheckArea } from '../detail/CheckArea'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
@@ -19,8 +19,8 @@ export interface ChecksAreaContext extends ExtensionsControllerProps, PlatformCo
     /** The status scope. */
     scope: sourcegraph.StatusScope | sourcegraph.WorkspaceRoot
 
-    /** The URL to the statuses area. */
-    statusesURL: string
+    /** The URL to the checks area. */
+    checksURL: string
 
     location: H.Location
     history: H.History
@@ -31,12 +31,12 @@ export interface ChecksAreaContext extends ExtensionsControllerProps, PlatformCo
 interface Props extends ChecksAreaContext, RouteComponentProps<{}> {}
 
 /**
- * The statuses area.
+ * The checks area.
  */
 export const ChecksArea: React.FunctionComponent<Props> = ({ match, ...props }) => {
     const context: ChecksAreaContext = {
         ...props,
-        statusesURL: match.url,
+        checksURL: match.url,
     }
     return (
         <Switch>
