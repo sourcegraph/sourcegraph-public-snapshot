@@ -1186,8 +1186,10 @@ declare module 'sourcegraph' {
 
         /**
          * The configuration settings for the check.
+         *
+         * @todo TODO!(sqs): add this back, but it will need comlink proxying when sending to the ext host
          */
-        settings: Subscribable<C>
+        // settings: Subscribable<C>
     }
 
     /**

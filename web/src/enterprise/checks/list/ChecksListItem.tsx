@@ -38,5 +38,10 @@ export const ChecksListItem: React.FunctionComponent<Props> = ({
                 {checkInfoOrError.type} {checkInfoOrError.id}
             </Link>
         </h3>
+        {checkInfoOrError.error && (
+            <p className="text-danger" style={{ whiteSpace: 'normal' }}>
+                {checkInfoOrError.error.message}
+            </p>
+        )}
     </Tag>
 )

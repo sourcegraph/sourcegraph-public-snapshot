@@ -15,7 +15,7 @@ export function createExtChecks(
                 const provider = providerFactory(context)
                 // TODO!(sqs): fix type error, remove casts below
                 return proxyValue({
-                    information: (proxySubscribable(provider.information) as any) as ProxyResult<
+                    information: (proxyValue(proxySubscribable(provider.information)) as any) as ProxyResult<
                         ProxySubscribable<sourcegraph.CheckInformation>
                     >,
                 })
