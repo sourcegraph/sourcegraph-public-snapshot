@@ -3,7 +3,7 @@ import asyncHandler from 'express-async-handler'
 import bodyParser from 'body-parser'
 import cors from 'cors'
 import { JsonDatabase } from './json'
-import { Database } from './database'
+import { Database, noopTransformer } from './database'
 import { fs } from 'mz'
 import * as path from 'path'
 import LRU from 'lru-cache'
@@ -254,9 +254,10 @@ function main() {
                 if (!(await fs.exists(storageRoot))) {
                     await fs.mkdir(storageRoot)
                 }
-                await fs.rename(tempFile.path, diskKey({ repository, commit }))
 
-                await withDB({ repository, commit }, async () => {})
+                await new JsonDatabase().load(tempFile.path, () => noopTransformer)
+                dbLRU.del(diskKey({ repository, commit }))
+                await fs.rename(tempFile.path, diskKey({ repository, commit }))
 
                 res.send('Upload successful.')
             })
