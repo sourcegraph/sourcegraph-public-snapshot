@@ -63,31 +63,36 @@ func (c *searchResultsCommon) LimitHit() bool {
 }
 
 func (c *searchResultsCommon) Repositories() []*repositoryResolver {
-	return toRepositoryResolvers(c.repos)
+	return repositoryResolvers(c.repos)
 }
 
 func (c *searchResultsCommon) RepositoriesSearched() []*repositoryResolver {
-	return toRepositoryResolvers(c.searched)
+	return repositoryResolvers(c.searched)
 }
 
 func (c *searchResultsCommon) IndexedRepositoriesSearched() []*repositoryResolver {
-	return toRepositoryResolvers(c.indexed)
+	return repositoryResolvers(c.indexed)
 }
 
 func (c *searchResultsCommon) Cloning() []*repositoryResolver {
-	return toRepositoryResolvers(c.cloning)
+	return repositoryResolvers(c.cloning)
 }
 
 func (c *searchResultsCommon) Missing() []*repositoryResolver {
-	return toRepositoryResolvers(c.missing)
+	return repositoryResolvers(c.missing)
 }
 
 func (c *searchResultsCommon) Timedout() []*repositoryResolver {
-	return toRepositoryResolvers(c.timedout)
+	return repositoryResolvers(c.timedout)
 }
 
 func (c *searchResultsCommon) IndexUnavailable() bool {
 	return c.indexUnavailable
+}
+
+func repositoryResolvers(repos types.Repos) []*repositoryResolver {
+	dedupSort(&repos)
+	return toRepositoryResolvers(repos)
 }
 
 // update updates c with the other data, deduping as necessary. It modifies c but
@@ -111,6 +116,27 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	for repo := range other.partial {
 		c.partial[repo] = struct{}{}
 	}
+}
+
+// dedupSort sorts (by ID in ascending order) and deduplicates
+// the given repos in-place.
+func dedupSort(repos *types.Repos) {
+	if len(*repos) == 0 {
+		return
+	}
+
+	sort.Sort(*repos)
+
+	j := 0
+	for i := 1; i < len(*repos); i++ {
+		if (*repos)[j].ID == (*repos)[i].ID {
+			continue // Skip duplicate
+		}
+		j++
+		(*repos)[j] = (*repos)[i]
+	}
+
+	*repos = (*repos)[:j+1]
 }
 
 // searchResultsResolver is a resolver for the GraphQL type `SearchResults`

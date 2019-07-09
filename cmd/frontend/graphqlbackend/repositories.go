@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"regexp"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -378,26 +377,17 @@ func repoNamesToStrings(repoNames []api.RepoName) []string {
 	return strings
 }
 
-// toRepositoryResolvers converts the given list of repos to a unique
-// sorted deduplicated list of repository resolvers.
-func toRepositoryResolvers(repos types.Repos) []*repositoryResolver {
+func toRepositoryResolvers(repos []*types.Repo) []*repositoryResolver {
 	if len(repos) == 0 {
 		return []*repositoryResolver{}
 	}
 
 	resolvers := make([]*repositoryResolver, len(repos))
-
-	sort.Sort(repos)
-	j := 0
-	for i := 1; i < len(repos); i++ {
-		if repos[j].ID == repos[i].ID {
-			continue // Skip duplicate
-		}
-		j++
-		resolvers[j] = &repositoryResolver{repo: repos[i]}
+	for i := range repos {
+		resolvers[i] = &repositoryResolver{repo: repos[i]}
 	}
 
-	return resolvers[:j+1]
+	return resolvers
 }
 
 func toRepoNames(repos []*types.Repo) []api.RepoName {
