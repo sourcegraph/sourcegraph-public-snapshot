@@ -1,0 +1,54 @@
+{
+  "$schema": "https://raw.githubusercontent.com/sourcegraph/sourcegraph/master/shared/src/schema/extension.schema.json",
+  "name": "lsif",
+  "description": "LSIF",
+  "publisher": "sourcegraph",
+  "activationEvents": [
+    "*"
+  ],
+  "wip": true,
+  "categories": [],
+  "tags": [],
+  "contributes": {
+    "actions": [],
+    "menus": {
+      "editor/title": [],
+      "commandPalette": []
+    },
+    "configuration": {}
+  },
+  "version": "0.0.0-DEVELOPMENT",
+  "license": "MIT",
+  "main": "dist/lsif.js",
+  "scripts": {
+    "tslint": "tslint -p tsconfig.json './src/**/*.ts'",
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "parcel build --out-file dist/lsif.js src/lsif.ts",
+    "symlink-package": "mkdirp dist && lnfs ./package.json ./dist/package.json",
+    "serve": "npm run symlink-package && parcel serve --no-hmr --out-file dist/lsif.js src/lsif.ts",
+    "watch:typecheck": "tsc -p tsconfig.json -w",
+    "watch:build": "tsc -p tsconfig.dist.json -w",
+    "sourcegraph:prepublish": "npm run typecheck && npm run build"
+  },
+  "browserslist": [
+    "last 1 Chrome versions",
+    "last 1 Firefox versions",
+    "last 1 Edge versions",
+    "last 1 Safari versions"
+  ],
+  "devDependencies": {
+    "@sourcegraph/prettierrc": "^3.0.1",
+    "@sourcegraph/tsconfig": "^4.0.0",
+    "@sourcegraph/tslint-config": "^13.3.0",
+    "@types/query-string": "^6.3.0",
+    "lnfs-cli": "^2.1.0",
+    "mkdirp": "^0.5.1",
+    "parcel-bundler": "^1.12.3",
+    "sourcegraph": "^23.0.1",
+    "tslint": "^5.18.0",
+    "typescript": "^3.5.2"
+  },
+  "dependencies": {
+    "query-string": "^6.8.1"
+  }
+}

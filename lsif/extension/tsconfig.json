@@ -1,0 +1,14 @@
+{
+  "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  }
+}
