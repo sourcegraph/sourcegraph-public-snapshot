@@ -32,10 +32,6 @@ interface Commit {
 }
 interface RepositoryCommit extends Repository, Commit {}
 
-if (!fs.existsSync(storageRoot)) {
-    fs.mkdirSync(storageRoot)
-}
-
 function enforceMaxDiskUsage({
     flatDirectory,
     max,
@@ -45,6 +41,9 @@ function enforceMaxDiskUsage({
     max: number
     onBeforeDelete: (filePath: string) => void
 }): string[] {
+    if (!fs.existsSync(flatDirectory)) {
+        return []
+    }
     const files = fs
         .readdirSync(flatDirectory)
         .map(f => ({ path: path.join(flatDirectory, f), stat: fs.statSync(path.join(flatDirectory, f)) }))
@@ -250,6 +249,10 @@ function main() {
                     })
                 })
 
+
+                if (!fs.existsSync(storageRoot)) {
+                    fs.mkdirSync(storageRoot)
+                }
                 fs.renameSync(tempFile.path, diskKey({ repository, commit }))
 
                 res.send('Upload successful.')
