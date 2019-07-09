@@ -1,4 +1,4 @@
-import { StatusCompletion, CheckScope, StatusResult, Range } from '@sourcegraph/extension-api-classes'
+import { StatusResult, CheckScope, CheckResult, Range } from '@sourcegraph/extension-api-classes'
 import * as sourcegraph from 'sourcegraph'
 import { of, throwError, Unsubscribable, combineLatest, from } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
@@ -12,10 +12,10 @@ const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const STATUS_1: WrappedStatus = {
     name: '',
-    status: { title: '1', state: { result: StatusResult.Success, completion: StatusCompletion.Completed } },
+    status: { title: '1', state: { result: CheckResult.Success, completion: StatusResult.Completed } },
 }
 
-const STATUS_2: WrappedStatus = { name: '', status: { title: '2', state: { completion: StatusCompletion.InProgress } } }
+const STATUS_2: WrappedStatus = { name: '', status: { title: '2', state: { completion: StatusResult.InProgress } } }
 
 const SCOPE = CheckScope.Global
 

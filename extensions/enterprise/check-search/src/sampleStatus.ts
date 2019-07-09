@@ -6,8 +6,8 @@ const STATUSES: (sourcegraph.Status & { name: string })[] = [
         name: 'code-churn',
         title: 'Code churn',
         state: {
-            completion: sourcegraph.StatusCompletion.Completed,
-            result: sourcegraph.StatusResult.ActionRequired,
+            completion: sourcegraph.CheckResult.Completed,
+            result: sourcegraph.CheckResult.ActionRequired,
             message: 'High code churn detected',
         },
         notifications: [
