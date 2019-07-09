@@ -111,7 +111,6 @@ async function withDB(repositoryCommit: RepositoryCommit, action: (db: Database)
     if (entry) {
         await action(await entry.dbPromise)
     } else {
-        //here
         const length = (await fs.stat(diskKey(repositoryCommit))).size
         const dbPromise = createDB(repositoryCommit)
         dbLRU.set(diskKey(repositoryCommit), {
