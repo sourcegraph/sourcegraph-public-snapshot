@@ -42,7 +42,9 @@ Here are some examples of reasons to skip code review that are NOT acceptable:
 - "I promised that I would ship this to $CUSTOMER by $DEADLINE"
     - The customer expects the feature to work and be maintained. Code review helps ensure both of these things by increasing the quality and distributing ownership.
 - "This code is experimental"
-    - If the experiment is a success and the code is useful, then it will be easier to have done code reviews incrementally than to expect someone to review the code after the fact. The latter rarely happens successfully.
+    - Our goal is to have a code review culture such that engineers who are working on "experimental" code still find code reviews valuable and worth doing (for all the benefits mentioned in the rest of this document).
+    - All code that is in `master` has the potential to impact customers (e.g. by causing a bug) and other developers at Sourcegraph (e.g. by making it harder to refactor code). As such, it is in our interest to ensure a certain quality level on all code whether or not it is considered "experimental".
+    - Assume that we allowed "experimental" code to bypass code review. How would we know when it is no longer experimental and how would it get reviewed? Either it wouldn't get reviewed, or an engineer would have to review all the code after the fact without a nice PR diff to look at or effective way to make comments. Neither of these outcomes would meet our need of reviewing all non-experimental code.
 - "I don't have someone to review this code"
     - You should find a new person to distribute knowledge, expertise, and context to.
 
