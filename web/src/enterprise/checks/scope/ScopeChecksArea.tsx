@@ -41,7 +41,7 @@ export const ChecksArea: React.FunctionComponent<Props> = ({ match, ...props }) 
     }
     return (
         <Switch>
-            <Route path={match.url} exact={true}>
+            <Route key="hardcoded-key" path={match.url} exact={true}>
                 <div className="container">
                     <h1 className="h2 my-3 d-flex align-items-center font-weight-normal">
                         <ChecklistIcon className="icon-inline mr-3" /> Checks
@@ -51,6 +51,7 @@ export const ChecksArea: React.FunctionComponent<Props> = ({ match, ...props }) 
             </Route>
             <Route
                 path={`${match.url}/:type/:id`}
+                key="hardcoded-key"
                 // tslint:disable-next-line:jsx-no-lambda
                 render={(routeComponentProps: RouteComponentProps<CheckID>) => (
                     <CheckArea
