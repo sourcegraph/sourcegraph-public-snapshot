@@ -225,7 +225,6 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile, patternIsMultiLi
 		return nil, false, err
 	}
 
-	limitHit = len(matches) == maxLineMatches
 	return matches, limitHit, nil
 }
 
