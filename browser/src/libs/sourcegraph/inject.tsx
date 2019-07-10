@@ -25,16 +25,16 @@ export function injectExtensionMarker(): void {
 export function signalBrowserExtensionInstalled(): void {
     injectExtensionMarker()
 
-    window.addEventListener(
-        'load',
-        () => {
-            dispatchSourcegraphEvents()
-        },
-        { once: true }
-    )
-
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         dispatchSourcegraphEvents()
+    } else {
+        window.addEventListener(
+            'load',
+            () => {
+                dispatchSourcegraphEvents()
+            },
+            { once: true }
+        )
     }
 }
 
