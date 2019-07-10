@@ -47,7 +47,7 @@ async function init(): Promise<void> {
     style.setAttribute('type', 'text/css')
     style.id = 'sourcegraph-styles'
     style.textContent = css
-    document.getElementsByTagName('head')[0].appendChild(style)
+    document.head.appendChild(style)
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     window.SOURCEGRAPH_URL = sourcegraphURL
     metaClickOverride()
