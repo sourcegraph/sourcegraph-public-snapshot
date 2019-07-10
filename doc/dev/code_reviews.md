@@ -76,7 +76,7 @@ Don't
 
 ## Who should I get a code review from?
 
-You should get a code review from the person who's approval will give you the most confidence that your change is high quality. If you are modifying existing code, you can use `git blame` to identify the previous author and the previous reviewer becuase they probably will have helpful context.
+You should get a code review from the person who's approval will give you the most confidence that your change is high quality. If you are modifying existing code, you can use `git blame` to identify the previous author and the previous reviewer because they probably will have helpful context.
 
 If your change touches multiple parts of our codebase (e.g. Go, TypeScript), then you might need to get approvals from multiple peers (e.g. a Go reviewers and a TypeScript reviewer).
 
