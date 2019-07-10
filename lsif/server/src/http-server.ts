@@ -26,19 +26,19 @@ function readEnvInt({ key, defaultValue }: { key: string; defaultValue: number }
 /**
  * Where on the file system to store LSIF files.
  */
-const storageRoot = process.env['SRC_LSIF_STORAGE_ROOT'] || 'lsif'
+const STORAGE_ROOT = process.env['SRC_LSIF_STORAGE_ROOT'] || 'lsif'
 
 /**
  * Soft limit on the amount of storage used by LSIF files. Storage can exceed
  * this limit if a single LSIF file is larger than this, otherwise storage will
  * be kept under this limit.
  */
-const softMaxStorage = readEnvInt({ key: 'SRC_LSIF_SOFT_MAX_STORAGE', defaultValue: 100 * 1024 * 1024 * 1024 })
+const SOFT_MAX_STORAGE = readEnvInt({ key: 'SRC_LSIF_SOFT_MAX_STORAGE', defaultValue: 100 * 1024 * 1024 * 1024 })
 
 /**
  * Limit on the file size accepted by the /upload endpoint.
  */
-const maxFileSize = readEnvInt({ key: 'SRC_LSIF_MAX_FILE_SIZE', defaultValue: 100 * 1024 * 1024 })
+const MAX_FILE_SIZE = readEnvInt({ key: 'SRC_LSIF_MAX_FILE_SIZE', defaultValue: 100 * 1024 * 1024 })
 
 /**
  * Soft limit on the total amount of storage occupied by LSIF data loaded in
@@ -48,12 +48,12 @@ const maxFileSize = readEnvInt({ key: 'SRC_LSIF_MAX_FILE_SIZE', defaultValue: 10
  * Empirically based on github.com/sourcegraph/codeintellify, each byte of
  * storage (uncompressed newline-delimited JSON) expands to 3 bytes in memory.
  */
-const softMaxStorageInMemory = readEnvInt({ key: 'SRC_LSIF_SOFT_MAX_STORAGE_IN_MEMORY', defaultValue: 100 * 1024 * 1024 })
+const SOFT_MAX_STORAGE_IN_MEMORY = readEnvInt({ key: 'SRC_LSIF_SOFT_MAX_STORAGE_IN_MEMORY', defaultValue: 100 * 1024 * 1024 })
 
 /**
  * Which port to run the LSIF server on.
  */
-const port = readEnvInt({ key: 'SRC_LSIF_HTTP_PORT', defaultValue: 3185 })
+const PORT = readEnvInt({ key: 'SRC_LSIF_HTTP_PORT', defaultValue: 3185 })
 
 /**
  * An opaque repository ID.
@@ -112,7 +112,7 @@ async function enforceMaxDiskUsage({
  */
 function diskKey({ repository, commit }: RepositoryCommit): string {
     const urlEncodedRepository = encodeURIComponent(repository)
-    return path.join(storageRoot, `urlEncodedRepository:${urlEncodedRepository},commit:${commit}.lsif`)
+    return path.join(STORAGE_ROOT, `urlEncodedRepository:${urlEncodedRepository},commit:${commit}.lsif`)
 }
 
 /**
@@ -168,7 +168,7 @@ interface LRUDBEntry {
  * `Database`s are evicted from the cache to prevent OOM errors.
  */
 const dbLRU = new LRU<String, LRUDBEntry>({
-    max: softMaxStorageInMemory,
+    max: SOFT_MAX_STORAGE_IN_MEMORY,
     length: (entry, key) => entry.length,
     dispose: (key, entry) => entry.dispose(),
 })
@@ -279,10 +279,10 @@ function main() {
             checkCommit(commit)
 
             const contentLength = parseInt(req.header('Content-Length') || '') || 0
-            if (contentLength > maxFileSize) {
+            if (contentLength > MAX_FILE_SIZE) {
                 throw Object.assign(
                     new Error(
-                        `The size of the given LSIF file (${contentLength} bytes) exceeds the max of ${maxFileSize}`
+                        `The size of the given LSIF file (${contentLength} bytes) exceeds the max of ${MAX_FILE_SIZE}`
                     ),
                     { status: 400 }
                 )
@@ -293,10 +293,10 @@ function main() {
             // repository and take up all of the disk space, causing all other
             // LSIF files to get deleted to make room for the new files.
             await enforceMaxDiskUsage({
-                flatDirectory: storageRoot,
-                max: Math.max(0, softMaxStorage - contentLength),
+                flatDirectory: STORAGE_ROOT,
+                max: Math.max(0, SOFT_MAX_STORAGE - contentLength),
                 onBeforeDelete: filePath =>
-                    console.log(`Deleting ${filePath} to help keep disk usage under ${softMaxStorage}.`),
+                    console.log(`Deleting ${filePath} to help keep disk usage under ${SOFT_MAX_STORAGE}.`),
             })
 
             await withFile(async tempFile => {
@@ -332,8 +332,8 @@ function main() {
                 await new JsonDatabase().load(tempFile.path, () => noopTransformer)
 
                 // Replace the old LSIF file with the new file.
-                if (!(await fs.exists(storageRoot))) {
-                    await fs.mkdir(storageRoot)
+                if (!(await fs.exists(STORAGE_ROOT))) {
+                    await fs.mkdir(STORAGE_ROOT)
                 }
                 await fs.rename(tempFile.path, diskKey({ repository, commit }))
 
@@ -345,8 +345,8 @@ function main() {
         })
     )
 
-    app.listen(port, () => {
-        console.log(`Listening for HTTP requests on port ${port}`)
+    app.listen(PORT, () => {
+        console.log(`Listening for HTTP requests on port ${PORT}`)
     })
 }
 
