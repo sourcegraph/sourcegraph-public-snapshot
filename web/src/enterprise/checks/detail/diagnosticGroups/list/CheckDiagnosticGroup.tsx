@@ -4,7 +4,7 @@ import { sortBy } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 import LightbulbIcon from 'mdi-react/LightbulbIcon'
 import MenuRightIcon from 'mdi-react/MenuRightIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import * as sourcegraph from 'sourcegraph'
@@ -103,12 +103,17 @@ export const CheckDiagnosticGroup: React.FunctionComponent<Props> = ({
     const disabled = isPlanLoading || isCommandLoading
 
     const url = urlToCheckDiagnosticGroup(checkDiagnosticsURL, diagnosticGroup.id)
+    const toggleIsExpandedUrl = isExpanded ? checkDiagnosticsURL : url
+    const ToggleIsExpandedIcon = isExpanded ? MenuDownIcon : MenuRightIcon
 
     return (
         <div className={`check-diagnostic-group ${className}`}>
             <div className={contentClassName}>
                 <header>
                     <div className="d-flex align-items-center position-relative">
+                        <Link to={toggleIsExpandedUrl} className="btn btn-link px-0 stretched-link">
+                            <ToggleIsExpandedIcon className="icon-inline" />
+                        </Link>
                         {diagnosticSeverityCounts.map(
                             ([diagnosticSeverity, count]) =>
                                 count > 0 && (
@@ -122,9 +127,7 @@ export const CheckDiagnosticGroup: React.FunctionComponent<Props> = ({
                                 )
                         )}
                         <h3 className="mb-0 font-weight-normal">
-                            <Link to={url} className="stretched-link">
-                                {diagnosticGroup.name}
-                            </Link>
+                            <Link to={url}>{diagnosticGroup.name}</Link>
                         </h3>
                     </div>
                     {/* TODO!(sqs) diagnosticGroup.actions && false && (
@@ -138,17 +141,7 @@ export const CheckDiagnosticGroup: React.FunctionComponent<Props> = ({
                         />
                     )*/}
                 </header>
-                <div className="d-flex align-items-center mt-3">
-                    {isExpanded ? (
-                        <Link to={checkDiagnosticsURL} className="btn btn-link px-0">
-                            <MenuUpIcon className="icon-inline mr-1" /> Details
-                        </Link>
-                    ) : (
-                        <Link to={url} className="btn btn-link px-0">
-                            <MenuRightIcon className="icon-inline mr-1" /> Details
-                        </Link>
-                    )}
-                </div>
+                <div className="d-flex align-items-center mt-3">actions</div>
             </div>
             {isExpanded && (
                 <DiagnosticsList
