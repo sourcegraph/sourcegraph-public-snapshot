@@ -115,12 +115,16 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 	}
 
 	tr, ctx := trace.New(ctx, "graphql.SearchResults.paginatedResults", r.rawQuery())
-	tr.LogFields(
-		otlog.Int("Cursor.RepositoryOffset", int(r.pagination.cursor.RepositoryOffset)),
-		otlog.Int("Cursor.ResultOffset", int(r.pagination.cursor.ResultOffset)),
-		otlog.Int("Cursor.UserID", int(r.pagination.cursor.UserID)),
-		otlog.Int("Limit", int(r.pagination.limit)),
-	)
+	if r.pagination.cursor != nil {
+		tr.LogFields(
+			otlog.Int("Cursor.RepositoryOffset", int(r.pagination.cursor.RepositoryOffset)),
+			otlog.Int("Cursor.ResultOffset", int(r.pagination.cursor.ResultOffset)),
+			otlog.Int("Cursor.UserID", int(r.pagination.cursor.UserID)),
+		)
+	} else {
+		tr.LogFields(otlog.String("Cursor", "nil"))
+	}
+	tr.LogFields(otlog.Int("Limit", int(r.pagination.limit)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
