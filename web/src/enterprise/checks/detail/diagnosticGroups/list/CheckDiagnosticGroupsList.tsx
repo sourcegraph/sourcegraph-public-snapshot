@@ -2,11 +2,18 @@ import H from 'history'
 import React from 'react'
 import * as sourcegraph from 'sourcegraph'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../../../../shared/src/platform/context'
+import { ThemeProps } from '../../../../../theme'
 import { CheckAreaContext } from '../../CheckArea'
 import { CheckDiagnosticGroup } from './CheckDiagnosticGroup'
 
-interface Props extends Pick<CheckAreaContext, 'checkProvider'>, ExtensionsControllerProps {
+interface Props
+    extends Pick<CheckAreaContext, 'checkProvider'>,
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        ThemeProps {
     diagnosticGroups: sourcegraph.DiagnosticGroup[]
+    expandedDiagnosticGroup?: Pick<sourcegraph.DiagnosticGroup, 'id'>
     checkDiagnosticsURL: string
 
     className?: string
@@ -20,6 +27,7 @@ interface Props extends Pick<CheckAreaContext, 'checkProvider'>, ExtensionsContr
  */
 export const CheckDiagnosticGroupsList: React.FunctionComponent<Props> = ({
     diagnosticGroups,
+    expandedDiagnosticGroup,
     checkProvider,
     className = '',
     itemClassName = '',
@@ -31,8 +39,9 @@ export const CheckDiagnosticGroupsList: React.FunctionComponent<Props> = ({
                 <CheckDiagnosticGroup
                     {...props}
                     diagnosticGroup={diagnosticGroup}
-                    className={`card ${itemClassName}`}
-                    contentClassName="card-body"
+                    isExpanded={diagnosticGroup === expandedDiagnosticGroup}
+                    className={`${itemClassName}`}
+                    contentClassName="container"
                 />
             </li>
         ))}
