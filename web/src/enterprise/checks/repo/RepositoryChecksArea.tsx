@@ -47,7 +47,7 @@ export class RepositoryChecksArea extends React.Component<Props> {
                 />
                 <Switch>
                     {/* TODO(sqs) */}
-                    <Route key="hardcoded-key" component={NotFoundPage} />
+                    <Route  component={NotFoundPage} />
                 </Switch>
             </div>
         )

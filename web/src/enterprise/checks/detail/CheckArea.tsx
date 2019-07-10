@@ -87,17 +87,17 @@ export const CheckArea: React.FunctionComponent<Props> = ({ checkID, scope, chec
                 </ErrorBoundary>
                 <ErrorBoundary location={props.location}>
                     <Switch>
-                        <Route key="hardcoded-key" path={checkURL} exact={true}>
+                        <Route  path={checkURL} exact={true}>
                             <Redirect to={`${checkURL}/diagnostics`} />
                         </Route>
-                        <Route key="hardcoded-key" path={`${checkURL}/diagnostics`}>
+                        <Route  path={`${checkURL}/diagnostics`}>
                             <CheckDiagnosticsArea
                                 {...context}
                                 checkDiagnosticsURL={`${checkURL}/diagnostics`}
                                 className="mt-3 container"
                             />
                         </Route>
-                        <Route key="hardcoded-key" component={NotFoundPage} />
+                        <Route  component={NotFoundPage} />
                     </Switch>
                 </ErrorBoundary>
             </div>
