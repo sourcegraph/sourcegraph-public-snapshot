@@ -23,7 +23,15 @@ function setPath(doc: sourcegraph.TextDocument, path: string): string {
     return url.href
 }
 
-async function send({ doc, method, params }: { doc:sourcegraph.TextDocument, method: string; params: any }): Promise<any> {
+async function send({
+    doc,
+    method,
+    params,
+}: {
+    doc: sourcegraph.TextDocument
+    method: string
+    params: any
+}): Promise<any> {
     const response = await fetch(
         path.join(
             sourcegraph.internal.sourcegraphURL +
@@ -51,10 +59,49 @@ async function send({ doc, method, params }: { doc:sourcegraph.TextDocument, met
     return body
 }
 
+const lsifDocs = new Map<string, Promise<boolean>>()
+
+async function hasLSIF(doc: sourcegraph.TextDocument): Promise<boolean> {
+    if (lsifDocs.has(doc.uri)) {
+        return lsifDocs.get(doc.uri)!
+    }
+
+    const hasLSIFPromise = (async () => {
+        const response = await fetch(
+            path.join(
+                sourcegraph.internal.sourcegraphURL +
+                    `.api/lsif/exists?${queryString.stringify({
+                        repository: repositoryFromDoc(doc),
+                        commit: commitFromDoc(doc),
+                        file: pathFromDoc(doc),
+                    })}`
+            ),
+            {
+                method: 'POST',
+            }
+        )
+        const body = await response.json()
+        if (body.error) {
+            throw new Error(body.error)
+        }
+        if (typeof body !== 'boolean') {
+            throw new Error(body)
+        }
+        return body
+    })()
+
+    lsifDocs.set(doc.uri, hasLSIFPromise)
+
+    return hasLSIFPromise
+}
+
 export function activate(ctx: sourcegraph.ExtensionContext): void {
     ctx.subscriptions.add(
         sourcegraph.languages.registerHoverProvider(['*'], {
             provideHover: async (doc, params) => {
+                if (!(await hasLSIF(doc))) {
+                    return null
+                }
                 const body = await send({ doc, method: 'hover', params })
                 return {
                     ...body,
@@ -78,6 +125,9 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
     ctx.subscriptions.add(
         sourcegraph.languages.registerDefinitionProvider(['*'], {
             provideDefinition: async (doc, params) => {
+                if (!(await hasLSIF(doc))) {
+                    return null
+                }
                 const body = await send({ doc, method: 'definitions', params })
                 return body.map((definition: any) => ({ ...definition, uri: setPath(doc, definition.uri) }))
             },
@@ -87,6 +137,9 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
     ctx.subscriptions.add(
         sourcegraph.languages.registerReferenceProvider(['*'], {
             provideReferences: async (doc, params) => {
+                if (!(await hasLSIF(doc))) {
+                    return null
+                }
                 const body = await send({ doc, method: 'references', params })
                 return body.map((reference: any) => ({ ...reference, uri: setPath(doc, reference.uri) }))
             },

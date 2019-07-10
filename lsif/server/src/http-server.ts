@@ -249,7 +249,7 @@ function main() {
         })
     )
 
-    app.get(
+    app.post(
         '/exists',
         asyncHandler(async (req, res) => {
             const { repository, commit, file } = req.query
