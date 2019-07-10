@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -82,7 +83,7 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {
 		// This should never happen
 		panic(errors.Errorf("malformed Bitbucket Cloud config, invalid URL: %q, error: %s", s.config.Url, err))
 	}
-	host = NormalizeBaseURL(host)
+	host = extsvc.NormalizeBaseURL(host)
 
 	urn := s.svc.URN()
 	return &Repo{
@@ -161,15 +162,9 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context) ([]*bitbucketcl
 		page := &bitbucketcloud.PageToken{Pagelen: 100}
 		var err error
 		var repos []*bitbucketcloud.Repo
-		if repos, page, err = s.client.Repos(ctx, page); err != nil {
-			ch <- batch{err: errors.Wrapf(err, "bibucketcloud.repos: page=%+v", page)}
-			return
-		}
-		ch <- batch{repos: repos}
-
-		for page.HasMore() {
-			if repos, page, err = s.client.Repos(ctx, page); err != nil {
-				ch <- batch{err: errors.Wrapf(err, "bibucketcloud.repos: page=%+v", page)}
+		for page.HasMore() || page.Page == 0 {
+			if repos, page, err = s.client.Repos(ctx, page, s.client.Username); err != nil {
+				ch <- batch{err: errors.Wrapf(err, "bibucketcloud.repos: item=%q, page=%+v", s.client.Username, page)}
 				break
 			}
 
@@ -186,14 +181,8 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context) ([]*bitbucketcl
 			page := &bitbucketcloud.PageToken{Pagelen: 100}
 			var err error
 			var repos []*bitbucketcloud.Repo
-			if repos, page, err = s.client.TeamRepos(ctx, page, t); err != nil {
-				ch <- batch{err: errors.Wrapf(err, "bibucketcloud.teams: item=%q, page=%+v", t, page)}
-				return
-			}
-			ch <- batch{repos: repos}
-
-			for page.HasMore() {
-				if repos, page, err = s.client.TeamRepos(ctx, page, t); err != nil {
+			for page.HasMore() || page.Page == 0 {
+				if repos, page, err = s.client.Repos(ctx, page, t); err != nil {
 					ch <- batch{err: errors.Wrapf(err, "bibucketcloud.teams: item=%q, page=%+v", t, page)}
 					break
 				}

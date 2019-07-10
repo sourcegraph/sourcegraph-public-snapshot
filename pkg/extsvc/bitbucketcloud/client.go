@@ -75,40 +75,25 @@ func NewClient(httpClient httpcli.Doer) *Client {
 
 	return &Client{
 		httpClient: httpClient,
-		URL:        &url.URL{Scheme: "https", Host: "api.bitbucket.org", Path: "/2.0"},
+		URL:        &url.URL{Scheme: "https", Host: "api.bitbucket.org"},
 		RateLimit:  rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests),
 	}
 }
 
-// Repos returns a list of repositories that are fetched and populated based on user
-// authencicated to this client and given pagination criteria. If the argument pageToken.Next
-// is not empty, it will be used directly as the URL to make the request. The PageToken it
-// returns may also contain the URL to the next page for succeeding requests if any.
-func (c *Client) Repos(ctx context.Context, pageToken *PageToken) ([]*Repo, *PageToken, error) {
+// Repos returns a list of repositories that are fetched and populated based on given account
+// name and pagination criteria. If the account requested is a team, results will bee filtered
+// down to the ones that the user authencicated to this client has access to.
+// If the argument pageToken.Next is not empty, it will be used directly as the URL to make
+// the request. The PageToken it returns may also contain the URL to the next page for
+// succeeding requests if any.
+func (c *Client) Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error) {
 	var repos []*Repo
 	var next *PageToken
 	var err error
 	if pageToken.HasMore() {
 		next, err = c.reqPage(ctx, pageToken.Next, &repos)
 	} else {
-		next, err = c.page(ctx, fmt.Sprintf("/2.0/repositories/%s", c.Username), nil, pageToken, &repos)
-	}
-	return repos, next, err
-}
-
-// TeamRepos returns a list of repositories that are fetched and populated based on given team
-// name and pagination criteria. This includes private repositories, but filtered down to the
-// ones that the user authencicated to this client has access to. If the argument pageToken.Next
-// is not empty, it will be used directly as the URL to make the request. The PageToken it
-// returns may also contain the URL to the next page for succeeding requests if any.
-func (c *Client) TeamRepos(ctx context.Context, pageToken *PageToken, teamName string) ([]*Repo, *PageToken, error) {
-	var repos []*Repo
-	var next *PageToken
-	var err error
-	if pageToken.HasMore() {
-		next, err = c.reqPage(ctx, pageToken.Next, &repos)
-	} else {
-		next, err = c.page(ctx, fmt.Sprintf("/2.0/teams/%s/repositories", teamName), nil, pageToken, &repos)
+		next, err = c.page(ctx, fmt.Sprintf("/2.0/repositories/%s", accountName), nil, pageToken, &repos)
 	}
 	return repos, next, err
 }
@@ -217,7 +202,7 @@ type PageToken struct {
 
 func (t *PageToken) HasMore() bool {
 	if t == nil {
-		return true
+		return false
 	}
 	return len(t.Next) > 0
 }
@@ -242,10 +227,12 @@ type Repo struct {
 	Description string `json:"description"`
 	Parent      *Repo  `json:"parent"`
 	IsPrivate   bool   `json:"is_private"`
-	Links       struct {
-		Clone CloneLinks `json:"clone"`
-		HTML  Link       `json:"html"`
-	} `json:"links"`
+	Links       Links  `json:"links"`
+}
+
+type Links struct {
+	Clone CloneLinks `json:"clone"`
+	HTML  Link       `json:"html"`
 }
 
 type CloneLinks []struct {

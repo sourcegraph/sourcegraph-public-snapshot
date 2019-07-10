@@ -1,8 +1,8 @@
 [
   {
     "ID": 0,
-    "Name": "/sg/go-langserver",
-    "URI": "/sg/go-langserver",
+    "Name": "bitbucket.org/sg/go-langserver",
+    "URI": "bitbucket.org/sg/go-langserver",
     "Description": "Go Language Server",
     "Language": "",
     "Fork": false,
@@ -14,7 +14,7 @@
     "ExternalRepo": {
       "ID": "{fceb73c7-cef6-4abe-956d-e471281126bc}",
       "ServiceType": "bitbucketCloud",
-      "ServiceID": "bitbucket.org/"
+      "ServiceID": "https://bitbucket.org/"
     },
     "Sources": {
       "extsvc:bitbucketcloud:1": {
@@ -50,8 +50,8 @@
   },
   {
     "ID": 0,
-    "Name": "/sg/python-langserver",
-    "URI": "/sg/python-langserver",
+    "Name": "bitbucket.org/sg/python-langserver",
+    "URI": "bitbucket.org/sg/python-langserver",
     "Description": "Python Language Server",
     "Language": "",
     "Fork": false,
@@ -63,7 +63,7 @@
     "ExternalRepo": {
       "ID": "{fceb73c7-cef6-4abe-956d-e471281126bd}",
       "ServiceType": "bitbucketCloud",
-      "ServiceID": "bitbucket.org/"
+      "ServiceID": "https://bitbucket.org/"
     },
     "Sources": {
       "extsvc:bitbucketcloud:1": {
@@ -99,8 +99,8 @@
   },
   {
     "ID": 0,
-    "Name": "/sg/python-langserver-fork",
-    "URI": "/sg/python-langserver-fork",
+    "Name": "bitbucket.org/sg/python-langserver-fork",
+    "URI": "bitbucket.org/sg/python-langserver-fork",
     "Description": "Python Language Server",
     "Language": "",
     "Fork": true,
@@ -112,7 +112,7 @@
     "ExternalRepo": {
       "ID": "{fceb73c7-cef6-4abe-956d-e471281126be}",
       "ServiceType": "bitbucketCloud",
-      "ServiceID": "bitbucket.org/"
+      "ServiceID": "https://bitbucket.org/"
     },
     "Sources": {
       "extsvc:bitbucketcloud:1": {

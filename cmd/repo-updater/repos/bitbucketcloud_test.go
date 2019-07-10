@@ -23,18 +23,18 @@ func TestBitbucketCloudSource_MakeRepo(t *testing.T) {
 
 	cases := map[string]*schema.BitbucketCloudConnection{
 		"simple": {
-			Url:         "bitbucket.org",
+			Url:         "https://bitbucket.org",
 			Username:    "alice",
 			AppPassword: "secret",
 		},
 		"ssh": {
-			Url:         "bitbucket.org",
+			Url:         "https://bitbucket.org",
 			Username:    "alice",
 			AppPassword: "secret",
 			GitURLType:  "ssh",
 		},
 		"path-pattern": {
-			Url:                   "bitbucket.org",
+			Url:                   "https://bitbucket.org",
 			Username:              "alice",
 			AppPassword:           "secret",
 			RepositoryPathPattern: "bb/{nameWithOwner}",
