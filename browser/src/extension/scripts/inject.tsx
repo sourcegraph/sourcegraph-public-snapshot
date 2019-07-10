@@ -43,7 +43,7 @@ async function main(): Promise<void> {
 
     // Check if a native integration is already running on the page,
     // and abort execution if it's the case.
-    // Note: we should not need this check. Integration scripts are run as
+    // Note: this is just a sanity check. Integration scripts are run as
     // script tags with `defer`, they will be fetched and executed before
     // DOMContentLoaded fires. Meanwhile, the content script is set to run at document_end,
     // meaning that it will only execute after DOMContentLoaded has fired.
