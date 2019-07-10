@@ -52,7 +52,7 @@ Here are some examples of reasons to skip code review that are NOT acceptable:
 
 [This blog post](https://medium.com/@schrockn/on-code-reviews-b1c7c94d868c) effectively explains some principals which our team values.
 
-The code author and code reviewer have a _shared goal_ to bring the PR into a state that meets the needs that motivated the change and meets our quality standards.
+The code author and code reviewer have a _shared goal_ to bring the PR into a state that meets our quality standards and the needs that motivated the change.
 
 
 Do:
