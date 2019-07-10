@@ -10,7 +10,8 @@ For authors:
 
 - Requesting a code review from one of your peers is motivation to ensure that the quality of your code is high.
 - Writing a good PR description (and commit messages) develops your technical communication skills.
-- Having your code reviewed helps you learn how to write better code in the future because you will receive feedback about how your code could be improved.
+- Receiving code review feedback can give you valuable insight into aspects of your change that you hadn't considered (architectural, performance, etc).
+- Receiving feedback about how your code could be improved helps you learn how to write better code in the future.
 
 For reviewers:
 
