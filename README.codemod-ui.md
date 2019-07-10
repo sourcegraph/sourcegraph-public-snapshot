@@ -110,3 +110,35 @@ The extension API for diagnostics is "push" instead of "pull", which is the oppo
 Why have both annotations/diagnostics *and* decorations? They serve different purposes. Annotations/diagnostics are for things that are permanent/long-lived, derived from the code itself and not per-user state, are viewed in aggregate/summary or in a list, and are semantically meaningful to other consumers. Decorations are purely visual and for interactive consumption by a user.
 
 Make diagnostics into a provider
+
+DiagnosticQuery
+
+
+Pipelines, rules, statuses, workflows, policies? They are a diagnostic query (or null) -> action? In general, they are event -> action.
+
+For ESLint:
+
+- TS/JS code that is not checked by ESLint -> set of diagnostics to show where, then null action (or fail build, notify $USER, submit PR to add ESLint)
+- New ESLint rules -> action to notify someone
+
+For updating a dep:
+
+- New version published -> open or modify existing changeset
+
+Changeset:
+
+- Base branch changed -> rerun actions against base branch
+
+Default rules in Check for ESLint:
+
+- Any TS/JS code that ESLint is not running on -> notify all, fail check
+- Any rule failures -> notify all, propose fix
+
+A notification is versioned but has a persistent identifier (eg "this is the persistent notification about the rule that TS/JS code without ESLint should trigger a notification") and can pertain to any number of repositories.
+
+Default rules for package.json standardization:
+
+- Publisher is sourcegraph (diagnostic + code action)
+- License is MIT (diagnostic + code action)
+
+A check shows the diagnostic groups (with related rules, if any) plus the 1-time and automated actions that can be taken on them.

@@ -4,6 +4,13 @@ import { switchMap, catchError, map, distinctUntilChanged } from 'rxjs/operators
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { isEqual, flatten, compact } from 'lodash'
 
+export interface DiagnosticWithType extends sourcegraph.Diagnostic {
+    /**
+     * The type of the diagnostic provider that produced this diagnostic.
+     */
+    type: string
+}
+
 /**
  * A service that manages and queries registered diagnostic providers
  * ({@link sourcegraph.DiagnosticProvider}).
@@ -18,7 +25,7 @@ export interface DiagnosticService {
     observeDiagnostics(
         scope: Parameters<sourcegraph.DiagnosticProvider['provideDiagnostics']>[0],
         type?: Parameters<typeof sourcegraph.workspace.registerDiagnosticProvider>[0]
-    ): Observable<sourcegraph.Diagnostic[]>
+    ): Observable<DiagnosticWithType[]>
 
     /**
      * Register a diagnostic provider.
@@ -43,8 +50,9 @@ export function createDiagnosticService(logErrors = true): DiagnosticService {
                 switchMap(registrations =>
                     combineLatestOrDefault(
                         (type === undefined ? registrations : registrations.filter(r => r.type === type)).map(
-                            ({ provider }) =>
+                            ({ type, provider }) =>
                                 from(provider.provideDiagnostics(scope)).pipe(
+                                    map(diagnostics => diagnostics.map(diagnostic => ({ ...diagnostic, type }))),
                                     catchError(err => {
                                         if (logErrors) {
                                             console.error(err)

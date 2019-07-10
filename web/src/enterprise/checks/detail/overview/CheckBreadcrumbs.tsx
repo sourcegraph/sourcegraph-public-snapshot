@@ -24,7 +24,7 @@ export const CheckBreadcrumbs: React.FunctionComponent<Props> = ({
             </li>
             <li className="breadcrumb-item active font-weight-bold">
                 <Link to={checkURL} className="d-inline-flex align-items-center">
-                    {checkID.type} {checkID.id} <CheckStateIcon checkInfo={checkInfo} className="icon-inline ml-2" />
+                    {checkID.type} <CheckStateIcon checkInfo={checkInfo} className="icon-inline ml-2" />
                 </Link>
             </li>
         </ol>

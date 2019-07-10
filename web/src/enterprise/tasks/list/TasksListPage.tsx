@@ -1,10 +1,10 @@
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../../components/PageTitle'
+import { useDiagnostics } from '../../checks/detail/diagnostics/useDiagnostics'
 import { TasksAreaTitle } from '../components/TasksAreaTitle'
 import { TasksAreaContext } from '../global/TasksArea'
 import { DiagnosticsList } from './DiagnosticsList'
-import { useDiagnostics } from './useDiagnostics'
 
 interface Props extends TasksAreaContext, RouteComponentProps<{}> {}
 

@@ -1,8 +1,8 @@
 import { ProxyInput, ProxyResult, proxyValue } from '@sourcegraph/comlink'
 import * as sourcegraph from 'sourcegraph'
-import { ClientChecksAPI } from '../../client/api/checks'
+import { ClientChecksAPI, ProxiedCheckProvider } from '../../client/api/checks'
 import { syncSubscription } from '../../util'
-import { proxySubscribable, ProxySubscribable } from './common'
+import { proxySubscribable, ProxySubscribable, toProxyableSubscribable } from './common'
 
 export function createExtChecks(
     proxy: ProxyResult<ClientChecksAPI>
@@ -18,6 +18,9 @@ export function createExtChecks(
                     information: (proxyValue(proxySubscribable(provider.information)) as any) as ProxyResult<
                         ProxySubscribable<sourcegraph.CheckInformation>
                     >,
+                    provideDiagnosticGroups: proxyValue(async () =>
+                        proxySubscribable(provider.provideDiagnosticGroups())
+                    ),
                 })
             })
             return syncSubscription(proxy.$registerCheckProvider(type, proxiedProviderFactory))

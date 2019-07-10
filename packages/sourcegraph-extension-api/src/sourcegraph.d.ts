@@ -1142,6 +1142,11 @@ declare module 'sourcegraph' {
         }
     }
 
+    export interface DiagnosticGroup {
+        name: string
+        query: DiagnosticQuery
+    }
+
     /**
      * A check provider provides diagnostics, actions, and status summaries for a class of problems.
      */
@@ -1163,7 +1168,7 @@ declare module 'sourcegraph' {
          */
         // TODO!(sqs) provideDiagnostics(): Subscribable<[URL, Diagnostic[]][]>
 
-        // provideDiagnostic TODO!(sqs)
+        provideDiagnosticGroups(): Subscribable<DiagnosticGroup[]>
 
         // provideBatchActions(diagnostics: DiagnosticQuery): ProviderResult<Action[]>
     }

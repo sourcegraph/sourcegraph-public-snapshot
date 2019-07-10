@@ -7,8 +7,8 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { makeRepoURI } from '../../../../../../shared/src/util/url'
+import { useDiagnostics } from '../../../checks/detail/diagnostics/useDiagnostics'
 import { DiagnosticsList } from '../../../tasks/list/DiagnosticsList'
-import { useDiagnostics } from '../../../tasks/list/useDiagnostics'
 import { ThreadSettings } from '../../../threads/settings'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {

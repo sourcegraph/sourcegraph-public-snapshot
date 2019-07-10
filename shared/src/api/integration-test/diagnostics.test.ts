@@ -16,7 +16,8 @@ describe('Diagnostics (integration)', () => {
         test('provides', async () => {
             const { services, extensionAPI } = await integrationTestContext()
 
-            const subscription = extensionAPI.workspace.registerDiagnosticProvider('t', {
+            const PROVIDER_TYPE = 't'
+            const subscription = extensionAPI.workspace.registerDiagnosticProvider(PROVIDER_TYPE, {
                 provideDiagnostics: () => of([FIXTURE_DIAGNOSTIC_1]),
             })
             await extensionAPI.internal.sync()
@@ -25,7 +26,7 @@ describe('Diagnostics (integration)', () => {
                 await from(services.diagnostics.observeDiagnostics({}))
                     .pipe(first())
                     .toPromise()
-            ).toEqual([FIXTURE_DIAGNOSTIC_1])
+            ).toEqual([{ ...FIXTURE_DIAGNOSTIC_1, type: PROVIDER_TYPE }])
 
             subscription.unsubscribe()
         })

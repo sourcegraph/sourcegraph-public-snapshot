@@ -17,8 +17,8 @@ import { useCheckByTypeForScope } from '../util/useCheckByTypeForScope'
 import { CheckChecksPage } from './checks/CheckChecksPage'
 import { CheckIssuesPage } from './issues/CheckIssuesPage'
 import { CheckAreaNavbar } from './navbar/CheckAreaNavbar'
-import { CheckNotificationsPage } from './notifications/StatusNotificationsPage'
 import { CheckOverview } from './overview/CheckOverview'
+import { CheckDiagnosticsPage } from './diagnostics/CheckDiagnosticsPage'
 
 const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
@@ -85,7 +85,7 @@ export const CheckArea: React.FunctionComponent<Props> = ({ checkID, scope, chec
                 <ErrorBoundary location={props.location}>
                     <Switch>
                         <Route path={checkURL} exact={true}>
-                            <CheckNotificationsPage {...context} className="mt-3 container" />
+                            <CheckDiagnosticsPage {...context} className="mt-3 container" />
                         </Route>
                         <Route path={`${checkURL}/checks`}>
                             <CheckChecksPage {...context} />
