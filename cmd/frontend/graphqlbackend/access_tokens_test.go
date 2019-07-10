@@ -167,7 +167,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return nil, db.ErrNoCurrentUser }
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 		db.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
-			return &types.User{ID: 0, Username: "username"}, nil
+			return &types.User{Username: "username"}, nil
 		}
 		defer func() { db.Mocks.Users.GetByID = nil }()
 
@@ -187,7 +187,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return &types.User{ID: differentNonSiteAdminUID}, nil }
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 		db.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
-			return &types.User{ID: 0, Username: "username"}, nil
+			return &types.User{Username: "username"}, nil
 		}
 		defer func() { db.Mocks.Users.GetByID = nil }()
 
@@ -286,7 +286,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return nil, db.ErrNoCurrentUser }
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 		db.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
-			return &types.User{ID: 0, Username: "username"}, nil
+			return &types.User{Username: "username"}, nil
 		}
 		defer func() { db.Mocks.Users.GetByID = nil }()
 
@@ -307,7 +307,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return &types.User{ID: differentNonSiteAdminUID}, nil }
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 		db.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
-			return &types.User{ID: 0, Username: "username"}, nil
+			return &types.User{Username: "username"}, nil
 		}
 		defer func() { db.Mocks.Users.GetByID = nil }()
 

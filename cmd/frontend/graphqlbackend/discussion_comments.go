@@ -3,11 +3,13 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -18,12 +20,45 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
+func marshalDiscussionCommentID(dbID int64) graphql.ID {
+	return relay.MarshalID("DiscussionComment", strconv.FormatInt(dbID, 36))
+}
+
+func unmarshalDiscussionCommentID(id graphql.ID) (dbID int64, err error) {
+	var dbIDStr string
+	err = relay.UnmarshalSpec(id, &dbIDStr)
+	if err == nil {
+		dbID, err = strconv.ParseInt(dbIDStr, 36, 64)
+	}
+	return
+}
+
+// discussionCommentByID looks up a DiscussionComment by its GraphQL ID.
+func discussionCommentByID(ctx context.Context, id graphql.ID) (*discussionCommentResolver, error) {
+	dbID, err := unmarshalDiscussionCommentID(id)
+	if err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: No authentication is required to get a discussion comment. Discussion comments
+	// are public unless the Sourcegraph instance itself (and inherently, the GraphQL API) is
+	// private.
+	comment, err := db.DiscussionComments.Get(ctx, dbID)
+	if err != nil {
+		return nil, err
+	}
+	return &discussionCommentResolver{c: comment}, nil
+}
+
 type discussionCommentResolver struct {
 	c *types.DiscussionComment
 }
 
 func (r *discussionCommentResolver) ID() graphql.ID {
-	return marshalDiscussionID(r.c.ID)
+	return marshalDiscussionCommentID(r.c.ID)
+}
+
+func (r *discussionCommentResolver) IDWithoutKind() string {
+	return strconv.FormatInt(r.c.ID, 10)
 }
 
 func (r *discussionCommentResolver) Thread(ctx context.Context) (*discussionThreadResolver, error) {
@@ -189,7 +224,7 @@ func (r *discussionsMutationResolver) AddCommentToThread(ctx context.Context, ar
 	}
 
 	// Create the comment on the thread.
-	threadID, err := unmarshalDiscussionID(args.ThreadID)
+	threadID, err := unmarshalDiscussionThreadID(args.ThreadID)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +249,7 @@ func (r *discussionsMutationResolver) UpdateComment(ctx context.Context, args *s
 		ClearReports *bool
 	}
 }) (*discussionThreadResolver, error) {
-	commentID, err := unmarshalDiscussionID(args.Input.CommentID)
+	commentID, err := unmarshalDiscussionThreadID(args.Input.CommentID)
 	if err != nil {
 		return nil, err
 	}

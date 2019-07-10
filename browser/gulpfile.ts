@@ -18,19 +18,22 @@ export function watch(): ChildProcess {
     })
 }
 
-const PHABRICATOR_EXTENSION_FILES = path.join(__dirname, './build/phabricator/dist/**')
-const PHABRICATOR_ASSETS_DIRECTORY = path.join(__dirname, '../ui/assets/extension')
+const INTEGRATION_FILES = path.join(__dirname, './build/integration/**')
+const INTEGRATION_ASSETS_DIRECTORY = path.join(__dirname, '../ui/assets/extension')
 
 /**
  * Copies the phabricator extension over to the ui/assets folder so they can be served by the webapp. The package
  * is published from ./browser.
  */
-export function phabricator(): NodeJS.ReadWriteStream {
-    return gulp.src(PHABRICATOR_EXTENSION_FILES).pipe(gulp.dest(PHABRICATOR_ASSETS_DIRECTORY))
+export function copyIntegrationAssets(): NodeJS.ReadWriteStream {
+    return gulp.src(INTEGRATION_FILES).pipe(gulp.dest(INTEGRATION_ASSETS_DIRECTORY))
 }
 
-export const watchPhabricator = gulp.series(phabricator, async function watchPhabricator(): Promise<void> {
-    await new Promise<never>((_, reject) => {
-        gulp.watch(PHABRICATOR_EXTENSION_FILES, phabricator).on('error', reject)
-    })
-})
+export const watchIntegrationAssets = gulp.series(
+    copyIntegrationAssets,
+    async function watchIntegrationAssets(): Promise<void> {
+        await new Promise<never>((_, reject) => {
+            gulp.watch(INTEGRATION_FILES, copyIntegrationAssets).on('error', reject)
+        })
+    }
+)

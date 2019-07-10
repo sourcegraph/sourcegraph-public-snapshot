@@ -194,7 +194,8 @@ const SiteSchemaJSON = `{
           "dark": {
             "logo": "https://example.com/logo_dark.png",
             "symbol": "https://example.com/search_symbol_dark_24x24.png"
-          }
+          },
+          "disableSymbolSpin": true
         }
       ]
     },

@@ -9,6 +9,7 @@ import { ExtensionHostClient } from '../client/client'
 import { createExtensionHostClientConnection } from '../client/connection'
 import { Services } from '../client/services'
 import { CodeEditor } from '../client/services/editorService'
+import { TextModel } from '../client/services/modelService'
 import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
 
@@ -20,20 +21,17 @@ export function assertToJSON(a: any, expected: any): void {
 
 interface TestInitData {
     roots: readonly WorkspaceRootWithMetadata[]
+    models?: readonly TextModel[]
     editors: readonly Pick<CodeEditor, Exclude<keyof CodeEditor, 'editorId'>>[]
 }
 
 const FIXTURE_INIT_DATA: TestInitData = {
     roots: [{ uri: 'file:///' }],
+    models: [{ uri: 'file:///f', text: 't', languageId: 'l' }],
     editors: [
         {
             type: 'CodeEditor',
             resource: 'file:///f',
-            model: {
-                uri: 'file:///f',
-                languageId: 'l',
-                text: 't',
-            },
             selections: [],
             isActive: true,
         },
@@ -96,8 +94,12 @@ export async function integrationTestContext(
     const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
 
     const extensionAPI = await extensionHost.extensionAPI
-    for (const { model, ...editor } of initModel.editors) {
-        services.model.addModel(model)
+    if (initModel.models) {
+        for (const model of initModel.models) {
+            services.model.addModel(model)
+        }
+    }
+    for (const editor of initModel.editors) {
         services.editor.addEditor(editor)
     }
     services.workspace.roots.next(initModel.roots)

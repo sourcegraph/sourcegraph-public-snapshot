@@ -11,7 +11,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
@@ -44,7 +44,7 @@ func newStore(db dbutil.DB, ttl time.Duration, clock func() time.Time, cache *ca
 // given set of object IDs of the defined type.
 type Permissions struct {
 	UserID    int32
-	Perm      authz.Perm
+	Perm      authz.Perms
 	Type      string
 	IDs       *roaring.Bitmap
 	UpdatedAt time.Time
@@ -52,11 +52,11 @@ type Permissions struct {
 
 // Authorized returns the intersection of the given ids with
 // the authorized ids.
-func (p *Permissions) Authorized(repos map[authz.Repo]struct{}) map[api.RepoName]map[authz.Perm]bool {
-	perms := make(map[api.RepoName]map[authz.Perm]bool, len(repos))
-	for r := range repos {
+func (p *Permissions) Authorized(repos []*types.Repo) []authz.RepoPerms {
+	perms := make([]authz.RepoPerms, 0, len(repos))
+	for _, r := range repos {
 		if r.ID != 0 && p.IDs.Contains(uint32(r.ID)) {
-			perms[r.RepoName] = map[authz.Perm]bool{p.Perm: true}
+			perms = append(perms, authz.RepoPerms{Repo: r, Perms: p.Perm})
 		}
 	}
 	return perms
@@ -153,7 +153,7 @@ func (s *store) loadQuery(p *Permissions, lock string) *sqlf.Query {
 	return sqlf.Sprintf(
 		loadQueryFmtStr+lock,
 		p.UserID,
-		p.Perm,
+		p.Perm.String(),
 		p.Type,
 	)
 }
@@ -262,7 +262,7 @@ func (s *store) upsertQuery(p *Permissions) (*sqlf.Query, error) {
 	return sqlf.Sprintf(
 		upsertQueryFmtStr,
 		p.UserID,
-		p.Perm,
+		p.Perm.String(),
 		p.Type,
 		ids,
 		p.UpdatedAt.UTC(),
@@ -333,7 +333,7 @@ func newCache(ttl time.Duration, clock func() time.Time) *cache {
 
 type cacheKey struct {
 	UserID int32
-	Perm   authz.Perm
+	Perm   authz.Perms
 	Type   string
 }
 
@@ -371,10 +371,6 @@ func (c *cache) update(p *Permissions) {
 }
 
 func newCacheKey(p *Permissions) cacheKey {
-	if p.Perm == "" {
-		panic("empty Perm")
-	}
-
 	if p.Type == "" {
 		panic("empty Type")
 	}

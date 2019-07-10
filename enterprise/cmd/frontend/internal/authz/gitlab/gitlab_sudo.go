@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -117,91 +116,61 @@ func (p *SudoProvider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *SudoProvider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
-	// Note(beyang): this is identical to GitLabOAuthAuthzProvider.Repos, so is not explicitly
-	// unit-tested. If this impl ever changes, unit tests should be added.
-	return authz.GetCodeHostRepos(p.codeHost, repos)
-}
-
-func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
+func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos []*types.Repo) ([]authz.RepoPerms, error) {
 	accountID := "" // empty means public / unauthenticated to the code host
 	if account != nil && account.ServiceID == p.codeHost.ServiceID && account.ServiceType == p.codeHost.ServiceType {
 		accountID = account.AccountID
 	}
 
-	perms := map[api.RepoName]map[authz.Perm]bool{}
+	remaining := repos
+	perms := make([]authz.RepoPerms, 0, len(remaining))
 
-	remaining, _ := p.Repos(ctx, repos)
-	nextRemaining := map[authz.Repo]struct{}{}
-
-	// Populate perms using cached repository visibility information. After this block,
-	// nextRemaining records the repositories that we still have to check.
-	for repo := range remaining {
-		projID, err := strconv.Atoi(repo.ExternalRepoSpec.ID)
+	for _, repo := range remaining {
+		// Populate perms using cached repository visibility information.
+		projID, err := strconv.Atoi(repo.ExternalRepo.ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "GitLab repo external ID did not parse to int")
 		}
-		vis, exists := cacheGetRepoVisibility(p.cache, projID, p.cacheTTL)
-		if !exists {
-			nextRemaining[repo] = struct{}{}
-			continue
-		}
-		if v := vis.Visibility; v == gitlab.Public || (v == gitlab.Internal && accountID != "") {
-			perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: true}
-			continue
-		}
-		nextRemaining[repo] = struct{}{}
-	}
 
-	if len(nextRemaining) == 0 { // shortcut
-		return perms, nil
-	}
-
-	// Populate perms using cached user-can-access-repository information. After this block,
-	// nextRemaining records the repositories that we still have to check.
-	if accountID != "" {
-		remaining, nextRemaining = nextRemaining, map[authz.Repo]struct{}{}
-		for repo := range remaining {
-			projID, err := strconv.Atoi(repo.ExternalRepoSpec.ID)
-			if err != nil {
-				return nil, errors.Wrap(err, "GitLab repo external ID did not parse to int")
-			}
-			userRepo, exists := cacheGetUserRepo(p.cache, accountID, projID, p.cacheTTL)
-			if !exists {
-				nextRemaining[repo] = struct{}{}
+		if vis, exists := cacheGetRepoVisibility(p.cache, projID, p.cacheTTL); exists {
+			if v := vis.Visibility; v == gitlab.Public || (v == gitlab.Internal && accountID != "") {
+				perms = append(perms, authz.RepoPerms{Repo: repo, Perms: authz.Read})
 				continue
 			}
-			perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: userRepo.Read}
 		}
 
-		if len(nextRemaining) == 0 { // shortcut
-			return perms, nil
+		// Populate perms using cached user-can-access-repository information.
+		if accountID != "" {
+			if userRepo, exists := cacheGetUserRepo(p.cache, accountID, projID, p.cacheTTL); exists {
+				rp := authz.RepoPerms{Repo: repo}
+				if userRepo.Read {
+					rp.Perms = authz.Read
+				}
+				perms = append(perms, rp)
+				continue
+			}
 		}
-	}
 
-	// Populate perms for the remaining repos (nextRemaining) by fetching directly from the GitLab
-	// API (and update the user repo-visibility and user-can-access-repo permissions, as well)
-	var sudo string
-	if account != nil {
-		usr, _, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
-		if err != nil {
-			return nil, err
+		// Populate perms by fetching directly from the GitLab
+		// API (and update the user repo-visibility and user-can-access-repo permissions, as well)
+		var sudo string
+		if account != nil {
+			usr, _, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
+			if err != nil {
+				return nil, err
+			}
+			sudo = strconv.Itoa(int(usr.ID))
 		}
-		sudo = strconv.Itoa(int(usr.ID))
-	}
-	for repo := range remaining {
-		projID, err := strconv.Atoi(repo.ExternalRepoSpec.ID)
-		if err != nil {
-			return nil, errors.Wrap(err, "GitLab repo external ID did not parse to int")
-		}
+
 		isAccessible, vis, isContentAccessible, err := p.fetchProjVis(ctx, sudo, projID)
 		if err != nil {
 			log15.Error("Failed to fetch visibility for GitLab project", "projectID", projID, "gitlabHost", p.codeHost.BaseURL.String(), "error", err)
 			continue
 		}
+
 		if isAccessible {
 			// Set perms
-			perms[repo.RepoName] = map[authz.Perm]bool{authz.Read: true}
+			perms = append(perms, authz.RepoPerms{Repo: repo, Perms: authz.Read})
 
 			// Update visibility cache
 			err := cacheSetRepoVisibility(p.cache, projID, repoVisibilityCacheVal{Visibility: vis, TTL: p.cacheTTL})
@@ -228,6 +197,7 @@ func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAc
 			}
 		}
 	}
+
 	return perms, nil
 }
 

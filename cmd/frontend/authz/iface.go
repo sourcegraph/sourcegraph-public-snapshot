@@ -6,16 +6,10 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
 
-// Perm is a type of permission (e.g., "read").
-type Perm string
-
-const Read Perm = "read"
-
-// AuthzProvider defines a source of truth of which repositories a user is authorized to view. The
+// Provider defines a source of truth of which repositories a user is authorized to view. The
 // user is identified by an ExternalAccount instance. Examples of authz providers include the
 // following:
 //
@@ -26,18 +20,11 @@ const Read Perm = "read"
 // In most cases, an authz provider represents a code host, because it is the source of truth for
 // repository permissions.
 type Provider interface {
-	// Repos partitions the set of repositories into two sets: the set of repositories for which
-	// this AuthzProvider is the source of permissions and the set of repositories for which it is
-	// not. Each repository in the input set must be represented in exactly one of the output sets.
-	//
-	// This should not depend on the current user. Implementations should not use the context to
-	// determine anything about the current user.
-	Repos(ctx context.Context, repos map[Repo]struct{}) (mine map[Repo]struct{}, others map[Repo]struct{})
-
-	// RepoPerms accepts an external user account and a set of repos. The external user account
-	// identifies the user to the authz source (e.g., the code host). The return value is a map of
-	// repository permissions. If a repo in the input set is missing from the returned permissions
-	// map, that means "no permissions" on that repo.
+	// RepoPerms accepts an external user account and a set of repos whose external service id and type
+	// matches the Provider's `ServiceID()` and `ServiceType()`. The external user account identifies the
+	// user to the authz source (e.g., the code host). The return value is a slice of repository permissions.
+	// If a repo in the input slice is missing from the returned permissions slice, that means "no permissions"
+	// on that repo.
 	//
 	// Implementations should handle any external account whose ServiceID and ServiceType values
 	// match the `ServiceID()` and `ServiceType()` return values of this authz provider. The caller
@@ -53,7 +40,7 @@ type Provider interface {
 	// permissions it needs to compute.  In practice, most will probably use a combination of (1)
 	// "list all private repos the user has access to", (2) a mechanism to determine which repos are
 	// public/private, and (3) a cache of some sort.
-	RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos map[Repo]struct{}) (map[api.RepoName]map[Perm]bool, error)
+	RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) ([]RepoPerms, error)
 
 	// FetchAccount returns the external account that identifies the user to this authz provider,
 	// taking as input the current list of external accounts associated with the
@@ -78,15 +65,4 @@ type Provider interface {
 	// Validate checks the configuration and credentials of the authz provider and returns any
 	// problems.
 	Validate() (problems []string)
-}
-
-type Repo struct {
-	// ID of the repo on Sourcegraph
-	ID api.RepoID
-
-	// RepoName is the unique name of the repo on Sourcegraph.
-	RepoName api.RepoName
-
-	// ExternalRepoSpec uniquely identifies the external repo that is the source of the repo.
-	api.ExternalRepoSpec
 }

@@ -106,7 +106,7 @@ func (s GitoliteSource) makeRepo(repo *gitolite.Repo) *Repo {
 	return &Repo{
 		Name:         name,
 		URI:          name,
-		ExternalRepo: *gitolite.ExternalRepoSpec(repo, gitolite.ServiceID(s.conn.Host)),
+		ExternalRepo: gitolite.ExternalRepoSpec(repo, gitolite.ServiceID(s.conn.Host)),
 		Enabled:      true,
 		Sources: map[string]*SourceInfo{
 			urn: {

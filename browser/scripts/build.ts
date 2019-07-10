@@ -6,7 +6,7 @@ import * as tasks from './tasks'
 const buildChrome = tasks.buildChrome('prod')
 const buildFirefox = tasks.buildFirefox('prod')
 
-tasks.copyAssets('prod')
+tasks.copyAssets()
 
 const compiler = webpack(config)
 
@@ -24,6 +24,6 @@ compiler.run((err, stats) => {
 
     buildChrome()
     buildFirefox()
-    tasks.copyPhabricator()
+    tasks.copyIntegrationAssets()
     signale.success('Build done')
 })

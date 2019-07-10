@@ -272,13 +272,37 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
+			kind: "BITBUCKETSERVER",
+			desc: "valid with url, username, token, repositoryQuery",
+			config: `
+			{
+				"url": "https://bitbucket.com/",
+				"username": "admin",
+				"token": "secret-token",
+				"repositoryQuery": ["none"]
+			}`,
+			assert: equals("<nil>"),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "valid with url, username, token, repos",
+			config: `
+			{
+				"url": "https://bitbucket.com/",
+				"username": "admin",
+				"token": "secret-token",
+				"repos": ["sourcegraph/sourcegraph"]
+			}`,
+			assert: equals("<nil>"),
+		},
+		{
 			kind:   "BITBUCKETSERVER",
-			desc:   "without url, username nor repositoryQuery",
+			desc:   "without url, username, repositoryQuery nor repos",
 			config: `{}`,
 			assert: includes(
 				"url: url is required",
 				"username: username is required",
-				"repositoryQuery: repositoryQuery is required",
+				"at least one of repositoryQuery or repos must be set",
 			),
 		},
 		{
@@ -325,18 +349,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "invalid certificate",
 			config: `{"certificate": ""}`,
 			assert: includes("certificate: Does not match pattern '^-----BEGIN CERTIFICATE-----\n'"),
-		},
-		{
-			kind: "BITBUCKETSERVER",
-			desc: "valid",
-			config: `
-			{
-				"url": "https://bitbucket.com/",
-				"username": "admin",
-				"token": "secret-token",
-				"repositoryQuery": ["none"]
-			}`,
-			assert: equals("<nil>"),
 		},
 		{
 			kind:   "BITBUCKETSERVER",
@@ -531,13 +543,35 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "GITHUB",
-			desc:   "without url, token nor repositoryQuery",
+			desc:   "without url, token, repositoryQuery nor repos",
 			config: `{}`,
 			assert: includes(
 				"url: url is required",
 				"token: token is required",
-				"repositoryQuery: repositoryQuery is required",
+				"at least one of repositoryQuery or repos must be set",
 			),
+		},
+		{
+			kind: "GITHUB",
+			desc: "with url, token, repositoryQuery",
+			config: `
+			{
+				"url": "https://github.corp.com",
+				"token": "very-secret-token",
+				"repositoryQuery": ["none"],
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind: "GITHUB",
+			desc: "with url, token, repos",
+			config: `
+			{
+				"url": "https://github.corp.com",
+				"token": "very-secret-token",
+				"repos": ["sourcegraph/sourcegraph"],
+			}`,
+			assert: equals(`<nil>`),
 		},
 		{
 			kind:   "GITHUB",

@@ -29,7 +29,7 @@ function ensurePaths(): void {
     shelljs.mkdir('-p', 'build/firefox')
 }
 
-export function copyAssets(env: BuildEnv): void {
+export function copyAssets(): void {
     signale.await('Copy assets')
     const dir = 'build/dist'
     shelljs.rm('-rf', dir)
@@ -39,18 +39,27 @@ export function copyAssets(env: BuildEnv): void {
     signale.success('Assets copied')
 }
 
-function copyDist(toDir: string): void {
-    shelljs.mkdir('-p', toDir)
-    shelljs.cp('-R', 'build/dist/*', toDir)
+function copyExtensionAssets(toDir: string): void {
+    shelljs.mkdir('-p', `${toDir}/js`, `${toDir}/css`, `${toDir}/img`)
+    shelljs.cp('build/dist/js/background.bundle.js', `${toDir}/js`)
+    shelljs.cp('build/dist/js/inject.bundle.js', `${toDir}/js`)
+    shelljs.cp('build/dist/js/options.bundle.js', `${toDir}/js`)
+    shelljs.cp('build/dist/css/style.bundle.css', `${toDir}/css`)
+    shelljs.cp('build/dist/css/options-style.bundle.css', `${toDir}/css`)
+    shelljs.cp('build/dist/css/options-style.bundle.css', `${toDir}/css`)
+    shelljs.cp('-R', 'build/dist/img/*', `${toDir}/img`)
+    shelljs.cp('build/dist/background.html', toDir)
+    shelljs.cp('build/dist/options.html', toDir)
 }
 
-export function copyPhabricator(): void {
-    shelljs.mkdir('-p', 'build/phabricator/dist/scripts')
-    shelljs.mkdir('-p', 'build/phabricator/dist/css')
-    shelljs.cp('build/dist/js/phabricator.bundle.js', 'build/phabricator/dist/scripts')
-    shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', 'build/phabricator/dist/scripts')
-    shelljs.cp('build/dist/css/style.bundle.css', 'build/phabricator/dist/css')
-    shelljs.cp('src/phabricator/extensionHostFrame.html', 'build/phabricator/dist')
+export function copyIntegrationAssets(): void {
+    shelljs.mkdir('-p', 'build/integration/scripts')
+    shelljs.mkdir('-p', 'build/integration/css')
+    shelljs.cp('build/dist/js/phabricator.bundle.js', 'build/integration/scripts')
+    shelljs.cp('build/dist/js/integration.bundle.js', 'build/integration/scripts')
+    shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', 'build/integration/scripts')
+    shelljs.cp('build/dist/css/style.bundle.css', 'build/integration/css')
+    shelljs.cp('src/phabricator/extensionHostFrame.html', 'build/integration')
 }
 
 const BROWSER_TITLES = {
@@ -105,15 +114,15 @@ function buildForBrowser(browser: Browser): (env: BuildEnv) => () => void {
         writeSchema(env, browser, buildDir)
 
         return () => {
-            // Allow only building for specific browser targets. Useful in local dev for faster
-            // builds.
+            // Allow only building for specific browser targets.
+            // Useful in local dev for faster builds.
             if (process.env.TARGETS && !process.env.TARGETS.includes(browser)) {
                 return
             }
 
             signale.await(`Building the ${title} ${env} bundle`)
 
-            copyDist(buildDir)
+            copyExtensionAssets(buildDir)
 
             const zipDest = path.resolve(process.cwd(), `${BUILDS_DIR}/bundles/${BROWSER_BUNDLE_ZIPS[browser]}`)
             if (zipDest) {

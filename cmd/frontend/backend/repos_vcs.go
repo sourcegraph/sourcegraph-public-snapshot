@@ -25,11 +25,7 @@ import (
 // value), those operations will fail. This occurs when the repository isn't cloned on gitserver or
 // when an update is needed (eg in ResolveRevision).
 func CachedGitRepo(ctx context.Context, repo *types.Repo) (*gitserver.Repo, error) {
-	var serviceType string
-	if repo.ExternalRepo != nil {
-		serviceType = repo.ExternalRepo.ServiceType
-	}
-	r, err := quickGitserverRepo(ctx, repo.Name, serviceType)
+	r, err := quickGitserverRepo(ctx, repo.Name, repo.ExternalRepo.ServiceType)
 	if err != nil {
 		return nil, err
 	}
@@ -42,11 +38,7 @@ func CachedGitRepo(ctx context.Context, repo *types.Repo) (*gitserver.Repo, erro
 // GitRepo returns a handle to the Git repository with the up-to-date (as of the time of this call)
 // remote URL. See CachedGitRepo for when this is necessary vs. unnecessary.
 func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
-	var serviceType string
-	if repo.ExternalRepo != nil {
-		serviceType = repo.ExternalRepo.ServiceType
-	}
-	gitserverRepo, err := quickGitserverRepo(ctx, repo.Name, serviceType)
+	gitserverRepo, err := quickGitserverRepo(ctx, repo.Name, repo.ExternalRepo.ServiceType)
 	if err != nil {
 		return gitserver.Repo{Name: repo.Name}, err
 	}

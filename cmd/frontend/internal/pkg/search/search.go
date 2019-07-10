@@ -5,6 +5,7 @@ import (
 	"regexp/syntax"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 )
 
 // PatternInfo is the struct used by vscode pass on search queries. Keep it in
@@ -84,4 +85,6 @@ type Args struct {
 	// repository if this field is true. Another example is we set this field
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
+
+	Zoekt *searchbackend.Zoekt
 }

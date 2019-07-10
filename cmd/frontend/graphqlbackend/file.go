@@ -64,7 +64,7 @@ func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
 }) (string, error) {
 	language := highlight.SyntectLanguageMap[strings.ToLower(args.FuzzyLanguage)]
 	filePath := "file." + language
-	html, _, err := highlight.Code(ctx, []byte(args.Code), filePath, args.DisableTimeout, args.IsLightTheme)
+	html, _, err := highlight.Code(ctx, []byte(args.Code), filePath, args.DisableTimeout, args.IsLightTheme, false)
 	if err != nil {
 		return args.Code, err
 	}
@@ -110,7 +110,8 @@ func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 		html   template.HTML
 		result = &highlightedFileResolver{}
 	)
-	html, result.aborted, err = highlight.Code(ctx, content, r.path, args.DisableTimeout, args.IsLightTheme)
+	simulateTimeout := r.commit.repo.repo.Name == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
+	html, result.aborted, err = highlight.Code(ctx, content, r.path, args.DisableTimeout, args.IsLightTheme, simulateTimeout)
 	if err != nil {
 		return nil, err
 	}

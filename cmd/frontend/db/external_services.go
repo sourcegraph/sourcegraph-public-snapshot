@@ -179,6 +179,11 @@ func (e *ExternalServicesStore) validateGithubConnection(c *schema.GitHubConnect
 	for _, validate := range e.GitHubValidators {
 		err = multierror.Append(err, validate(c))
 	}
+
+	if c.Repos == nil && c.RepositoryQuery == nil {
+		err = multierror.Append(err, errors.New("at least one of repositoryQuery or repos must be set"))
+	}
+
 	return err.ErrorOrNil()
 }
 
@@ -195,6 +200,11 @@ func (e *ExternalServicesStore) validateBitbucketServerConnection(c *schema.Bitb
 	for _, validate := range e.BitbucketServerValidators {
 		err = multierror.Append(err, validate(c, ps))
 	}
+
+	if c.Repos == nil && c.RepositoryQuery == nil {
+		err = multierror.Append(err, errors.New("at least one of repositoryQuery or repos must be set"))
+	}
+
 	return err.ErrorOrNil()
 }
 

@@ -758,6 +758,8 @@ type Query {
         # Return discussion threads matching the query.
         query: String
         # When present, lists only the thread with this ID.
+        #
+        # DEPRECATED: use Query#node instead.
         threadID: ID
         # When present, lists only the threads created by this author.
         authorUserID: ID
@@ -778,6 +780,10 @@ type Query {
         # If the path ends with "/**", any path below that is matched.
         targetRepositoryPath: String
     ): DiscussionThreadConnection!
+    # Looks up a discussion thread by its DiscussionThread#idWithoutKind value.
+    #
+    # To get a discussion thread by its globally unique GraphQL ID, use Query#node.
+    discussionThread(idWithoutKind: String!): DiscussionThread
     # Lists discussion comments.
     discussionComments(
         # Returns the first n comments from the list.
@@ -867,7 +873,7 @@ type Search {
 }
 
 # A search result.
-union SearchResult = FileMatch | CommitSearchResult | Repository
+union SearchResult = FileMatch | CommitSearchResult | Repository | CodemodResult
 
 # An object representing a markdown string.
 type Markdown {
@@ -1059,6 +1065,20 @@ type CommitSearchResult implements GenericSearchResultInterface {
     messagePreview: HighlightedString
     # The matching portion of the diff, if any.
     diffPreview: HighlightedString
+}
+
+# The result of a code modification query.
+type CodemodResult implements GenericSearchResultInterface {
+    # URL to an icon that is displayed with every search result.
+    icon: String!
+    # A markdown string that is rendered prominently.
+    label: Markdown!
+    # The URL of the result.
+    url: String!
+    # A markdown string that is rendered less prominently.
+    detail: Markdown!
+    # A list of matches in this search result.
+    matches: [SearchResultMatch!]!
 }
 
 # A search result that is a diff between two diffable Git objects.
@@ -2547,9 +2567,14 @@ type DiscussionThreadTargetRepo {
 union DiscussionThreadTarget = DiscussionThreadTargetRepo
 
 # A discussion thread around some target (e.g. a file in a repo).
-type DiscussionThread {
+type DiscussionThread implements Node {
     # The discussion thread ID (globally unique).
     id: ID!
+
+    # The discussion thread ID without its kind, which is globally unique among threads but not
+    # among all GraphQL nodes. For example, this is a string like "123" (and DiscussionThread#id is
+    # a string like "RGlzY3Vzc2l...").
+    idWithoutKind: String!
 
     # The user who authored this discussion thread.
     author: User!
@@ -2586,9 +2611,14 @@ type DiscussionThread {
 }
 
 # A comment made within a discussion thread.
-type DiscussionComment {
+type DiscussionComment implements Node {
     # The discussion comment ID (globally unique).
     id: ID!
+
+    # The discussion comment ID without its kind, which is globally unique among comments but not
+    # among all GraphQL nodes. For example, this is a string like "123" (and DiscussionComment#id is
+    # a string like "RGlzY3Vzc2l...").
+    idWithoutKind: String!
 
     # The discussion thread the comment was made in.
     thread: DiscussionThread!

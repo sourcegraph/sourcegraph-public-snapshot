@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
@@ -29,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -40,7 +40,8 @@ import (
 // searchResultsCommon contains fields that should be returned by all funcs
 // that contribute to the overall search result set.
 type searchResultsCommon struct {
-	limitHit bool                      // whether the limit on results was hit
+	limitHit bool // whether the limit on results was hit
+
 	repos    []*types.Repo             // repos that were matched by the repo-related filters
 	searched []*types.Repo             // repos that were searched
 	indexed  []*types.Repo             // repos that were searched using an index
@@ -63,49 +64,36 @@ func (c *searchResultsCommon) LimitHit() bool {
 }
 
 func (c *searchResultsCommon) Repositories() []*repositoryResolver {
-	if c.repos == nil {
-		return []*repositoryResolver{}
-	}
-	return toRepositoryResolvers(c.repos)
+	return repositoryResolvers(c.repos)
 }
 
 func (c *searchResultsCommon) RepositoriesSearched() []*repositoryResolver {
-	if c.searched == nil {
-		return nil
-	}
-	return toRepositoryResolvers(c.searched)
+	return repositoryResolvers(c.searched)
 }
 
 func (c *searchResultsCommon) IndexedRepositoriesSearched() []*repositoryResolver {
-	if c.indexed == nil {
-		return nil
-	}
-	return toRepositoryResolvers(c.indexed)
+	return repositoryResolvers(c.indexed)
 }
 
 func (c *searchResultsCommon) Cloning() []*repositoryResolver {
-	if c.cloning == nil {
-		return nil
-	}
-	return toRepositoryResolvers(c.cloning)
+	return repositoryResolvers(c.cloning)
 }
 
 func (c *searchResultsCommon) Missing() []*repositoryResolver {
-	if c.missing == nil {
-		return nil
-	}
-	return toRepositoryResolvers(c.missing)
+	return repositoryResolvers(c.missing)
 }
 
 func (c *searchResultsCommon) Timedout() []*repositoryResolver {
-	if c.timedout == nil {
-		return nil
-	}
-	return toRepositoryResolvers(c.timedout)
+	return repositoryResolvers(c.timedout)
 }
 
 func (c *searchResultsCommon) IndexUnavailable() bool {
 	return c.indexUnavailable
+}
+
+func repositoryResolvers(repos types.Repos) []*repositoryResolver {
+	dedupSort(&repos)
+	return toRepositoryResolvers(repos)
 }
 
 // update updates c with the other data, deduping as necessary. It modifies c but
@@ -114,28 +102,12 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.limitHit = c.limitHit || other.limitHit
 	c.indexUnavailable = c.indexUnavailable || other.indexUnavailable
 
-	appendUnique := func(dstp *[]*types.Repo, src []*types.Repo) {
-		dst := *dstp
-		sort.Slice(dst, func(i, j int) bool { return dst[i].ID < dst[j].ID })
-		sort.Slice(src, func(i, j int) bool { return src[i].ID < src[j].ID })
-		for _, r := range dst {
-			for len(src) > 0 && src[0].ID <= r.ID {
-				if r != src[0] {
-					dst = append(dst, src[0])
-				}
-				src = src[1:]
-			}
-		}
-		dst = append(dst, src...)
-		sort.Slice(dst, func(i, j int) bool { return dst[i].ID < dst[j].ID })
-		*dstp = dst
-	}
-	appendUnique(&c.repos, other.repos)
-	appendUnique(&c.searched, other.searched)
-	appendUnique(&c.indexed, other.indexed)
-	appendUnique(&c.cloning, other.cloning)
-	appendUnique(&c.missing, other.missing)
-	appendUnique(&c.timedout, other.timedout)
+	c.repos = append(c.repos, other.repos...)
+	c.searched = append(c.searched, other.searched...)
+	c.indexed = append(c.indexed, other.indexed...)
+	c.cloning = append(c.cloning, other.cloning...)
+	c.missing = append(c.missing, other.missing...)
+	c.timedout = append(c.timedout, other.timedout...)
 	c.resultCount += other.resultCount
 
 	if c.partial == nil {
@@ -147,15 +119,35 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	}
 }
 
+// dedupSort sorts (by ID in ascending order) and deduplicates
+// the given repos in-place.
+func dedupSort(repos *types.Repos) {
+	if len(*repos) == 0 {
+		return
+	}
+
+	sort.Sort(*repos)
+
+	j := 0
+	for i := 1; i < len(*repos); i++ {
+		if (*repos)[j].ID != (*repos)[i].ID {
+			j++
+			(*repos)[j] = (*repos)[i]
+		}
+	}
+
+	*repos = (*repos)[:j+1]
+}
+
 // searchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type searchResultsResolver struct {
-	results []*searchResultResolver
+	results []searchResultResolver
 	searchResultsCommon
 	alert *searchAlert
 	start time.Time // when the results started being computed
 }
 
-func (sr *searchResultsResolver) Results() []*searchResultResolver {
+func (sr *searchResultsResolver) Results() []searchResultResolver {
 	return sr.results
 }
 
@@ -267,25 +259,23 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	}
 
 	for _, result := range sr.results {
-		if result.fileMatch != nil {
+		if fm, ok := result.ToFileMatch(); ok {
 			rev := ""
-			if result.fileMatch.inputRev != nil {
-				rev = *result.fileMatch.inputRev
+			if fm.inputRev != nil {
+				rev = *fm.inputRev
 			}
-			addRepoFilter(string(result.fileMatch.repo.Name), rev, len(result.fileMatch.LineMatches()))
-			addLangFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
-			addFileFilter(result.fileMatch.JPath, len(result.fileMatch.LineMatches()), result.fileMatch.JLimitHit)
+			addRepoFilter(string(fm.repo.Name), rev, len(fm.LineMatches()))
+			addLangFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
+			addFileFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
 
-			if len(result.fileMatch.symbols) > 0 {
-				add("type:symbol", "type:symbol", 1, result.fileMatch.JLimitHit, "symbol")
+			if len(fm.symbols) > 0 {
+				add("type:symbol", "type:symbol", 1, fm.JLimitHit, "symbol")
 			}
-		}
-
-		if result.repo != nil {
+		} else if r, ok := result.ToRepository(); ok {
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
-			addRepoFilter(result.repo.Name(), "", 1)
+			addRepoFilter(r.Name(), "", 1)
 		}
 		// Add `case:yes` filter to offer easier access to search results matching with case sensitive set to yes
 		// We use count == 0 and limitHit == false since we can't determine that information without
@@ -424,14 +414,14 @@ func (sr *searchResultsResolver) Sparkline(ctx context.Context) (sparkline []int
 loop:
 	for _, r := range sr.results {
 		r := r // shadow so it doesn't change in the goroutine
-		switch {
-		case r.repo != nil:
+		switch m := r.(type) {
+		case *repositoryResolver:
 			// We don't care about repo results here.
 			continue
-		case r.diff != nil:
+		case *commitSearchResultResolver:
 			// Diff searches are cheap, because we implicitly have author date info.
-			addPoint(r.diff.commit.author.date)
-		case r.fileMatch != nil:
+			addPoint(m.commit.author.date)
+		case *fileMatchResolver:
 			// File match searches are more expensive, because we must blame the
 			// (first) line in order to know its placement in our sparkline.
 			blameOps++
@@ -448,13 +438,15 @@ loop:
 
 				// Blame the file match in order to retrieve date informatino.
 				var err error
-				t, err := sr.blameFileMatch(ctx, r.fileMatch)
+				t, err := sr.blameFileMatch(ctx, m)
 				if err != nil {
 					log15.Warn("failed to blame fileMatch during sparkline generation", "error", err)
 					return
 				}
 				addPoint(t)
 			})
+		case *codemodResultResolver:
+			continue
 		default:
 			panic("SearchResults.Sparkline unexpected union type state")
 		}
@@ -771,7 +763,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	defer cancel()
 
-	repos, missingRepoRevs, _, overLimit, err := r.resolveRepositories(ctx, nil)
+	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -800,6 +792,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		Repos:           repos,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
+		Zoekt:           r.zoekt,
 	}
 	if err := args.Pattern.Validate(); err != nil {
 		return nil, &badRequestError{err}
@@ -814,6 +807,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	var resultTypes []string
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
+	} else if len(r.query.Values(query.FieldReplace)) > 0 {
+		resultTypes = []string{"codemod"}
 	} else {
 		resultTypes, _ = r.query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
@@ -833,7 +828,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	var (
 		requiredWg sync.WaitGroup
 		optionalWg sync.WaitGroup
-		results    []*searchResultResolver
+		results    []searchResultResolver
 		resultsMu  sync.Mutex
 		common     = searchResultsCommon{maxResultsCount: r.maxResults()}
 		commonMu   sync.Mutex
@@ -910,7 +905,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					} else {
 						fileMatches[key] = symbolFileMatch
 						resultsMu.Lock()
-						results = append(results, &searchResultResolver{fileMatch: symbolFileMatch})
+						results = append(results, symbolFileMatch)
 						resultsMu.Unlock()
 					}
 					fileMatchesMu.Unlock()
@@ -950,7 +945,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					} else {
 						fileMatches[key] = r
 						resultsMu.Lock()
-						results = append(results, &searchResultResolver{fileMatch: r})
+						results = append(results, r)
 						resultsMu.Unlock()
 					}
 					fileMatchesMu.Unlock()
@@ -1008,6 +1003,30 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					commonMu.Unlock()
 				}
 			})
+		case "codemod":
+			wg := waitGroup(true)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+
+				codemodResults, codemodCommon, err := performCodemod(ctx, &args)
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "codemod search failed"))
+					multiErrMu.Unlock()
+				}
+				if codemodResults != nil {
+					resultsMu.Lock()
+					results = append(results, codemodResults...)
+					resultsMu.Unlock()
+				}
+				if codemodCommon != nil {
+					commonMu.Lock()
+					common.update(*codemodCommon)
+					commonMu.Unlock()
+				}
+			})
 		}
 	}
 
@@ -1059,33 +1078,32 @@ func isContextError(ctx context.Context, err error) bool {
 	return ctx.Err() != nil || err == context.Canceled || err == context.DeadlineExceeded
 }
 
-// searchResultResolver is a resolver for the GraphQL union type `SearchResult`
+// searchResultResolver is a resolver for the GraphQL union type `SearchResult`.
+//
+// Supported types:
+//
+//   - *repositoryResolver         // repo name match
+//   - *fileMatchResolver          // text match
+//   - *commitSearchResultResolver // diff or commit match
+//   - *codemodResultResolver      // code modification
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
-type searchResultResolver struct {
-	repo      *repositoryResolver         // repo name match
-	fileMatch *fileMatchResolver          // text match
-	diff      *commitSearchResultResolver // diff or commit match
-}
+type searchResultResolver interface {
+	ToRepository() (*repositoryResolver, bool)
+	ToFileMatch() (*fileMatchResolver, bool)
+	ToCommitSearchResult() (*commitSearchResultResolver, bool)
+	ToCodemodResult() (*codemodResultResolver, bool)
 
-// getSearchResultURIs returns the repo name and file uri respectiveley
-func getSearchResultURIs(c *searchResultResolver) (string, string) {
-	if c.fileMatch != nil {
-		return string(c.fileMatch.repo.Name), c.fileMatch.JPath
-	}
-	if c.repo != nil {
-		return string(c.repo.repo.Name), ""
-	}
-	// Diffs aren't going to be returned with other types of results
-	// and are already ordered in the desired order, so we'll just leave them in place.
-	return "~", "~" // lexicographically last in ASCII
+	// SearchResultURIs returns the repo name and file uri respectiveley
+	searchResultURIs() (string, string)
+	resultCount() int32
 }
 
 // compareSearchResults checks to see if a is less than b.
 // It is implemented separately for easier testing.
-func compareSearchResults(a, b *searchResultResolver) bool {
-	arepo, afile := getSearchResultURIs(a)
-	brepo, bfile := getSearchResultURIs(b)
+func compareSearchResults(a, b searchResultResolver) bool {
+	arepo, afile := a.searchResultURIs()
+	brepo, bfile := b.searchResultURIs()
 
 	if arepo == brepo {
 		return afile < bfile
@@ -1094,34 +1112,8 @@ func compareSearchResults(a, b *searchResultResolver) bool {
 	return arepo < brepo
 }
 
-func sortResults(r []*searchResultResolver) {
+func sortResults(r []searchResultResolver) {
 	sort.Slice(r, func(i, j int) bool { return compareSearchResults(r[i], r[j]) })
-}
-
-func (g *searchResultResolver) ToRepository() (*repositoryResolver, bool) {
-	return g.repo, g.repo != nil
-}
-
-func (g *searchResultResolver) ToFileMatch() (*fileMatchResolver, bool) {
-	return g.fileMatch, g.fileMatch != nil
-}
-
-func (g *searchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
-	return g.diff, g.diff != nil
-}
-
-func (g *searchResultResolver) resultCount() int32 {
-	switch {
-	case g.fileMatch != nil:
-		if l := len(g.fileMatch.LineMatches()); l > 0 {
-			return int32(l)
-		}
-		return 1 // 1 to count "empty" results like type:path results
-	case g.diff != nil:
-		return 1
-	default:
-		return 1
-	}
 }
 
 // regexpPatternMatchingExprsInOrder returns a regexp that matches lines that contain
