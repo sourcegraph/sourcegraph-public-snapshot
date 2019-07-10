@@ -217,7 +217,7 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile, patternIsMultiLi
 	}
 
 	if patternIsMultiLine {
-		matches, limitHit, err = getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+		matches, limitHit, err = getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, first)
 	} else {
 		matches, limitHit, err = getMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
 	}
@@ -289,7 +289,7 @@ func getMatches(re *regexp.Regexp, fileBuf []byte, fileMatchBuf []byte, maxOffse
 	return matches, limitHit, nil
 }
 
-func getMultiLineMatches(re *regexp.Regexp, fileBuf []byte, fileMatchBuf []byte, maxOffsets int, first []int) (matches []protocol.LineMatch, limitHit bool, err error) {
+func getMultiLineMatches(re *regexp.Regexp, fileBuf []byte, fileMatchBuf []byte, first []int) (matches []protocol.LineMatch, limitHit bool, err error) {
 	lineNumberToLineLength := make(map[int]int)
 	idx := 0
 	tempFileMatchBuf := fileBuf
@@ -317,9 +317,9 @@ func getMultiLineMatches(re *regexp.Regexp, fileBuf []byte, fileMatchBuf []byte,
 	}
 
 	matchBuf := fileMatchBuf
-	locs := re.FindAllIndex(matchBuf, maxOffsets)
+	locs := re.FindAllIndex(matchBuf, -1)
 	if len(locs) > 0 {
-		lineLimitHit := len(locs) == maxOffsets
+		lineLimitHit := false
 		for _, match := range locs {
 			startingLine, startingOffset, startingLength := getStartingMatch(matchBuf, match[0], match[1], lineNumberToLineLength)
 			endingLine, endingOffset, endingLength := getEndingMatch(matchBuf, match[0], match[1], lineNumberToLineLength)

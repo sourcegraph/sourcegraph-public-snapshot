@@ -624,7 +624,7 @@ func TestGetMultiLineMatches(t *testing.T) {
 		bytesToLowerASCII(fileMatchBuf, fileBuf)
 		first := rg.re.FindIndex(fileMatchBuf)
 
-		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, first)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -651,7 +651,7 @@ func TestGetMultiLineMatches(t *testing.T) {
 		bytesToLowerASCII(fileMatchBuf, fileBuf)
 		first := rg.re.FindIndex(fileMatchBuf)
 
-		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, first)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -689,7 +689,7 @@ func TestGetMultiLineMatches(t *testing.T) {
 		bytesToLowerASCII(fileMatchBuf, fileBuf)
 		first := rg.re.FindIndex(fileMatchBuf)
 
-		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, first)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -728,7 +728,7 @@ func TestGetMultiLineMatches(t *testing.T) {
 		bytesToLowerASCII(fileMatchBuf, fileBuf)
 		first := rg.re.FindIndex(fileMatchBuf)
 
-		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, first)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -767,7 +767,7 @@ func TestGetMultiLineMatches(t *testing.T) {
 		bytesToLowerASCII(fileMatchBuf, fileBuf)
 		first := rg.re.FindIndex(fileMatchBuf)
 
-		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, first)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -806,7 +806,7 @@ func TestGetMultiLineMatches(t *testing.T) {
 		bytesToLowerASCII(fileMatchBuf, fileBuf)
 		first := rg.re.FindIndex(fileMatchBuf)
 
-		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, maxOffsets, first)
+		matches, limitHit, err := getMultiLineMatches(rg.re, fileBuf, fileMatchBuf, first)
 		if err != nil {
 			t.Fatal(err)
 		}
