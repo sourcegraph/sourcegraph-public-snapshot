@@ -59,7 +59,6 @@ Do:
 
 - Take time to understand the context and goal of the PR. If it isn't clear, ask for clarification.
 - Acknowledge what the author did well to balance the tone of the review.
-- Prioritize reviewing the overall design and structure of the code over smaller code syle issues. Only comment on the latter after you explictly approve of the former.
 - Make it clear which comments are blocking your explicit approval (e.g. use "nit:" prefix for minor comments) and approve if all of your comments are minor.
 - If the author were to address all of your comments faithfully and you would be content, then you should also approve to avoid the author needing to wait for a subsequent review without reason (exception: you asked for fundamental or vast/large changes and believe those will need re-review by you).
 - When you are making comments on a PR, use a tone that is kind, empathetic, collaborative, and humble. [Further reading](https://mtlynch.io/human-code-reviews-1/).
@@ -73,6 +72,7 @@ Do:
 
 Don't
 
+- Comment on the details of the PR if you have questions or concerns about the overall direction or design. The former will distract from the latter and might be irrelevant if the PR is reworked.
 - Take longer than one business day to respond to respond to a PR that is ready for your review (or re-review).
 - Have protracted discussions in PR comments. If it can't be settled quickly in a few review round trips, try discussing in person or on a video call because these mediums are higher bandwidth and encourage empathy. Then summarize the results in the PR discussion after the fact.
 
