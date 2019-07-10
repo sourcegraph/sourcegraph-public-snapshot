@@ -1591,8 +1591,7 @@
   integrity sha512-Te7F1RQJLBH4C8wQ2xz0nPC2vpe13F80V+Yv+c3GySOoh4DcLNN4P5u51Kh4aZPqeS5DJ7CKvHyX2SM/1EBXNg==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.0.0"
 
 "@sourcegraph/prettierrc@^3.0.1":
   version "3.0.1"
@@ -2799,10 +2798,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/webpack-dev-server@3.1.6":
-  version "3.1.6"
-  resolved "https://registry.npmjs.org/@types/webpack-dev-server/-/webpack-dev-server-3.1.6.tgz#a674bcdbe045390e6301977790d465f4aeb5b1c0"
-  integrity sha512-fysTHPetk7emf4XPj+GCbwGy56JTIUXWH7FuSABctCU2i+pczOD9bbUqd1+vT18WhqEqsr5v8SPshvm/FL3yDw==
+"@types/webpack-dev-server@3.1.7":
+  version "3.1.7"
+  resolved "https://registry.npmjs.org/@types/webpack-dev-server/-/webpack-dev-server-3.1.7.tgz#a3e7a20366e68bc9853c730b56e994634cb78dac"
+  integrity sha512-VIRkDkBDuOkYRXQ1EG/etisQ3odo6pcjSmA1Si4VYANuNhSBsLxfuPGeGERwCx1nDKxK3aaXnicPzi0gUvxUaw==
   dependencies:
     "@types/connect-history-api-fallback" "*"
     "@types/express" "*"
@@ -10793,7 +10792,7 @@ log-symbols@^3.0.0:
   dependencies:
     chalk "^2.4.2"
 
-loglevel@^1.6.2:
+loglevel@^1.6.3:
   version "1.6.3"
   resolved "https://registry.npmjs.org/loglevel/-/loglevel-1.6.3.tgz#77f2eb64be55a404c9fd04ad16d57c1d6d6b1280"
   integrity sha512-LoEDv5pgpvWgPF4kNYuIp0qqSJVWak/dML0RY74xlzMZiT9w77teNAwKYKWBTYjlokMirg+o3jBwp+vlLrcfAA==
@@ -15273,8 +15272,7 @@ source-map@^0.7.2, source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "23.0.1"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
@@ -17104,10 +17102,10 @@ webpack-dev-middleware@^3.7.0:
     range-parser "^1.2.1"
     webpack-log "^2.0.0"
 
-webpack-dev-server@^3.7.1:
-  version "3.7.1"
-  resolved "https://registry.npmjs.org/webpack-dev-server/-/webpack-dev-server-3.7.1.tgz#ce10ca0ad6cf28b03e2ce9808684a8616039155d"
-  integrity sha512-GSBjjDMQ+uJI/Rcw/NfXDq5QpfE4HviafCy2SdbJ8Q22MwsnyoHd5TbWRfxgkbklsMx+ZNgWIKK+cB28ynjiDQ==
+webpack-dev-server@^3.7.2:
+  version "3.7.2"
+  resolved "https://registry.npmjs.org/webpack-dev-server/-/webpack-dev-server-3.7.2.tgz#f79caa5974b7f8b63268ef5421222a8486d792f5"
+  integrity sha512-mjWtrKJW2T9SsjJ4/dxDC2fkFVUw8jlpemDERqV0ZJIkjjjamR2AbQlr3oz+j4JLhYCHImHnXZK5H06P2wvUew==
   dependencies:
     ansi-html "0.0.7"
     bonjour "^3.5.0"
@@ -17123,7 +17121,7 @@ webpack-dev-server@^3.7.1:
     internal-ip "^4.3.0"
     ip "^1.1.5"
     killable "^1.0.1"
-    loglevel "^1.6.2"
+    loglevel "^1.6.3"
     opn "^5.5.0"
     p-retry "^3.0.1"
     portfinder "^1.0.20"
