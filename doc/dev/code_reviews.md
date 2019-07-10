@@ -47,7 +47,7 @@ Here are some examples of reasons to skip code review that are NOT acceptable:
 
 ## What makes an effective code review?
 
-Read https://medium.com/@schrockn/on-code-reviews-b1c7c94d868c. It is spot on.
+[This blog post](https://medium.com/@schrockn/on-code-reviews-b1c7c94d868c) effectively explains some principals which our team values.
 
 The code author and code reviewer have a _shared goal_ to bring the PR into a state that meets the needs that motivated the change and meets our quality standards.
 
