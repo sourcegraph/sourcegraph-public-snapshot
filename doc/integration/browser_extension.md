@@ -102,4 +102,4 @@ If connected to a private, self-hosted Sourcegraph instance, Sourcegraph browser
 
 ## Security
 
-[Sourcegraph Firefox Add-on security](../integration/product/firefox_security.md)
+[Sourcegraph Firefox Add-on security](firefox_security.md)

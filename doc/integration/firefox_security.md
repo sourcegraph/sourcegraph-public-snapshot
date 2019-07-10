@@ -4,7 +4,7 @@
 
 > _Firefox has determined that the following add-ons are known to cause stability or security problems_
 
-![Firefox browser add-on error](../img/firefox-error.png "Firefox browser add-on error")
+![Firefox browser add-on error](img/firefox-error.png "Firefox browser add-on error")
 
 The Sourcegraph Firefox add-on has been flagged as unsafe by Mozilla because of a compliance issue with Mozilla's policy regarding [add-on development practices](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/AMO/Policy/Reviews#Development_Practices). This issue is specifically related to how we have chosen to implement Sourcegraph extensions.
 
@@ -14,7 +14,7 @@ We made Sourcegraph extensions centrally managed by your Sourcegraph instance, n
 
 Sourcegraph extensions provide a way to extend the functionality of both a Sourcegraph instance and our browser add-on by writing JavaScript code against the Sourcegraph extension API. Sourcegraph uses extensions to implement some core features, for example, code intelligence extensions for different languages. Sourcegraph extensions also provide an opportunity for third-party developers to extend Sourcegraph's functionality.
 
-In the Sourcegraph extension registry, users can always examine the JavaScript bundle of the extension, and, if provided by the author, its source repository. Extensions are always opt-in, except for trusted language extensions providing code intelligence, that are written and maintained by Sourcegraph.
+In the Sourcegraph extension registry, users can always examine the JavaScript bundle of the extension, and, if provided by the author, its source repository. Extensions are always opt-in, except for trusted language extensions providing code intelligence that are written and maintained by Sourcegraph.
 
 Sourcegraph site admins can opt to [only allow specific extensions](https://docs.sourcegraph.com/admin/extensions#allow-only-specific-extensions-from-sourcegraph-com) from the sourcegraph.com public extension registry, or to disable extensions from the public registry altogether. Additionally, enterprise customers can opt to maintain a private extension registry to host trusted extensions privately.
 
@@ -46,4 +46,4 @@ If you decide that you are comfortable trusting the Sourcegraph Mozilla Firefox 
 
 OR
 
-*   If you already restarted with the Sourcegraph add-on disabled, you can go to your [addons page](about:addons) and re-enable Sourcegraph
+*   If you already restarted with the Sourcegraph add-on disabled, you can go to your addons page (i.e. type `about:addons` in the Firefox address bar) and re-enable Sourcegraph.
