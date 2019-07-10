@@ -14,6 +14,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
@@ -54,8 +55,7 @@ func NewHandler(m *mux.Router) http.Handler {
 		panic(err)
 	}
 	proxy := httputil.NewSingleHostReverseProxy(remote)
-	// BEFORE MERGING consider moving this in the GraphQL API instead of at `.api/lsif`
-	// that might make auth easier, especially since /upload will have different permissions from /request
+	m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(proxyHandlerLSIFUpload(proxy))))
 	m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(proxyHandler(proxy))))
 
 	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(registry.HandleRegistry)))
@@ -71,6 +71,17 @@ func NewHandler(m *mux.Router) http.Handler {
 func proxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = mux.Vars(r)["rest"]
+		p.ServeHTTP(w, r)
+	}
+}
+
+func proxyHandlerLSIFUpload(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context()); err != nil {
+			http.Error(w, "Only admins are allowed to upload LSIF data.", http.StatusUnauthorized)
+			return
+		}
+		r.URL.Path = "upload"
 		p.ServeHTTP(w, r)
 	}
 }

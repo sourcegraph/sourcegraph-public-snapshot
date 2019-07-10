@@ -19,7 +19,6 @@ if [[ -z "$SRC_ACCESS_TOKEN" || -z "$REPOSITORY" || -z "$COMMIT" || -z "$file" ]
 fi
 
 curl \
-  --fail \
   -H "Authorization: token $SRC_ACCESS_TOKEN" \
   -H "Content-Type: application/x-ndjson+lsif" \
   "$SRC_ENDPOINT/.api/lsif/upload?repository=$REPOSITORY&commit=$COMMIT" \

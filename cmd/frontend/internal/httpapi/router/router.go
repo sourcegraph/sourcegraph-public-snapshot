@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	LSIF    = "lsif"
-	GraphQL = "graphql"
+	LSIF       = "lsif"
+	LSIFUpload = "lsif.upload"
+	GraphQL    = "graphql"
 
 	Registry = "registry"
 
@@ -122,5 +123,6 @@ func addTelemetryRoute(m *mux.Router) {
 
 func addGraphQLRoute(m *mux.Router) {
 	m.Path("/graphql").Methods("POST").Name(GraphQL)
-	m.Path("/lsif/{rest:.*}").Methods("GET", "POST").Name(LSIF)
+	m.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
+	m.Path("/lsif/{rest:.*}").Methods("POST").Name(LSIF)
 }
