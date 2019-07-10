@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 )
@@ -220,8 +219,8 @@ func Test_SudoProvider_RepoPerms(t *testing.T) {
 	type call struct {
 		description string
 		account     *extsvc.ExternalAccount
-		repos       map[authz.Repo]struct{}
-		expPerms    map[api.RepoName]map[authz.Perm]bool
+		repos       []*types.Repo
+		expPerms    []authz.RepoPerms
 	}
 	type test struct {
 		description string
@@ -272,6 +271,14 @@ func Test_SudoProvider_RepoPerms(t *testing.T) {
 	gitlab.MockGetProject = gitlabMock.GetProject
 	gitlab.MockListTree = gitlabMock.ListTree
 
+	repos := map[string]*types.Repo{
+		"u1/repo1":       repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"),
+		"u2/repo1":       repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"),
+		"u3/repo1":       repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"),
+		"internal/repo1": repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"),
+		"public/repo1":   repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"),
+	}
+
 	tests := []test{
 		{
 			description: "standard config",
@@ -283,77 +290,77 @@ func Test_SudoProvider_RepoPerms(t *testing.T) {
 				{
 					description: "u1 user has expected perms",
 					account:     acct(t, 1, "gitlab", "https://gitlab.mine/", "1", "oauth-u1"),
-					repos: map[authz.Repo]struct{}{
-						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
-						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
-						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
-						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
-						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
+					repos: []*types.Repo{
+						repos["u1/repo1"],
+						repos["u2/repo1"],
+						repos["u3/repo1"],
+						repos["internal/repo1"],
+						repos["public/repo1"],
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
-						"u1/repo1":       {authz.Read: true},
-						"internal/repo1": {authz.Read: true},
-						"public/repo1":   {authz.Read: true},
+					expPerms: []authz.RepoPerms{
+						{Repo: repos["u1/repo1"], Perms: authz.Read},
+						{Repo: repos["internal/repo1"], Perms: authz.Read},
+						{Repo: repos["public/repo1"], Perms: authz.Read},
 					},
 				},
 				{
 					description: "u2 user has expected perms",
 					account:     acct(t, 2, "gitlab", "https://gitlab.mine/", "2", "oauth-u2"),
-					repos: map[authz.Repo]struct{}{
-						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
-						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
-						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
-						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
-						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
+					repos: []*types.Repo{
+						repos["u1/repo1"],
+						repos["u2/repo1"],
+						repos["u3/repo1"],
+						repos["internal/repo1"],
+						repos["public/repo1"],
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
-						"u2/repo1":       {authz.Read: true},
-						"internal/repo1": {authz.Read: true},
-						"public/repo1":   {authz.Read: true},
+					expPerms: []authz.RepoPerms{
+						{Repo: repos["u2/repo1"], Perms: authz.Read},
+						{Repo: repos["internal/repo1"], Perms: authz.Read},
+						{Repo: repos["public/repo1"], Perms: authz.Read},
 					},
 				},
 				{
 					description: "other user has expected perms (internal and public)",
 					account:     acct(t, 4, "gitlab", "https://gitlab.mine/", "555", "oauth-other"),
-					repos: map[authz.Repo]struct{}{
-						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
-						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
-						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
-						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
-						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
+					repos: []*types.Repo{
+						repos["u1/repo1"],
+						repos["u2/repo1"],
+						repos["u3/repo1"],
+						repos["internal/repo1"],
+						repos["public/repo1"],
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
-						"internal/repo1": {authz.Read: true},
-						"public/repo1":   {authz.Read: true},
+					expPerms: []authz.RepoPerms{
+						{Repo: repos["internal/repo1"], Perms: authz.Read},
+						{Repo: repos["public/repo1"], Perms: authz.Read},
 					},
 				},
 				{
 					description: "no token means only public and internal repos",
 					account:     acct(t, 4, "gitlab", "https://gitlab.mine/", "555", ""),
-					repos: map[authz.Repo]struct{}{
-						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
-						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
-						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
-						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
-						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
+					repos: []*types.Repo{
+						repos["u1/repo1"],
+						repos["u2/repo1"],
+						repos["u3/repo1"],
+						repos["internal/repo1"],
+						repos["public/repo1"],
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
-						"internal/repo1": {authz.Read: true},
-						"public/repo1":   {authz.Read: true},
+					expPerms: []authz.RepoPerms{
+						{Repo: repos["internal/repo1"], Perms: authz.Read},
+						{Repo: repos["public/repo1"], Perms: authz.Read},
 					},
 				},
 				{
 					description: "unauthenticated means only public repos",
 					account:     nil,
-					repos: map[authz.Repo]struct{}{
-						repo("u1/repo1", gitlab.ServiceType, "https://gitlab.mine/", "10"):        {},
-						repo("u2/repo1", gitlab.ServiceType, "https://gitlab.mine/", "20"):        {},
-						repo("u3/repo1", gitlab.ServiceType, "https://gitlab.mine/", "30"):        {},
-						repo("internal/repo1", gitlab.ServiceType, "https://gitlab.mine/", "981"): {},
-						repo("public/repo1", gitlab.ServiceType, "https://gitlab.mine/", "991"):   {},
+					repos: []*types.Repo{
+						repos["u1/repo1"],
+						repos["u2/repo1"],
+						repos["u3/repo1"],
+						repos["internal/repo1"],
+						repos["public/repo1"],
 					},
-					expPerms: map[api.RepoName]map[authz.Perm]bool{
-						"public/repo1": {authz.Read: true},
+					expPerms: []authz.RepoPerms{
+						{Repo: repos["public/repo1"], Perms: authz.Read},
 					},
 				},
 			},

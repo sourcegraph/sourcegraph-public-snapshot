@@ -1,12 +1,16 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
 
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -122,5 +126,141 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 	}
 	if want := []string{"foo", `alice@example\.com`, `alice@example\.org`}; !reflect.DeepEqual(x, want) {
 		t.Errorf("got %q, want %q", x, want)
+	}
+}
+
+func Test_highlightMatches(t *testing.T) {
+	type args struct {
+		pattern *regexp.Regexp
+		data    []byte
+	}
+	tests := []struct {
+		name string
+		args args
+		want *highlightedString
+	}{
+		{
+			// https://github.com/sourcegraph/sourcegraph/issues/4512
+			name: "match at end",
+			args: args{
+				pattern: regexp.MustCompile(`白`),
+				data:    []byte(`加一行空白`),
+			},
+			want: &highlightedString{
+				value: "加一行空白",
+				highlights: []*highlightedRange{
+					{
+						line:      1,
+						character: 4,
+						length:    1,
+					},
+				},
+			},
+		},
+		{
+			// https://github.com/sourcegraph/sourcegraph/issues/4512
+			name: "two character match in middle",
+			args: args{
+				pattern: regexp.MustCompile(`行空`),
+				data:    []byte(`加一行空白`),
+			},
+			want: &highlightedString{
+				value: "加一行空白",
+				highlights: []*highlightedRange{
+					{
+						line:      1,
+						character: 2,
+						length:    2,
+					},
+				},
+			},
+		},
+		{
+			// https://github.com/sourcegraph/sourcegraph/issues/4512
+			name: "match at beginning",
+			args: args{
+				pattern: regexp.MustCompile(`加`),
+				data:    []byte(`加一行空白`),
+			},
+			want: &highlightedString{
+				value: "加一行空白",
+				highlights: []*highlightedRange{
+					{
+						line:      1,
+						character: 0,
+						length:    1,
+					},
+				},
+			},
+		},
+
+		{
+			name: "invalid utf-8 ",
+			args: args{
+				pattern: regexp.MustCompile(`.`),
+				data:    []byte("a\xc5z"),
+			},
+			want: &highlightedString{
+				value: "a\xc5z",
+				highlights: []*highlightedRange{
+					{
+						line:      1,
+						character: 0,
+						length:    1,
+					},
+					{
+						line:      1,
+						character: 1,
+						length:    1,
+					},
+					{
+						line:      1,
+						character: 2,
+						length:    1,
+					},
+				},
+			},
+		},
+
+		{
+			name: "multiline",
+			args: args{
+				pattern: regexp.MustCompile(`行`),
+				data:    []byte("加一行空白\n加一空行白"),
+			},
+			want: &highlightedString{
+				value: "加一行空白\n加一空行白",
+				highlights: []*highlightedRange{
+					{
+						line:      1,
+						character: 2,
+						length:    1,
+					},
+					{
+						line:      2,
+						character: 3,
+						length:    1,
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := highlightMatches(tt.args.pattern, tt.args.data); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("highlightMatches() = %v, want %v", spew.Sdump(got), spew.Sdump(tt.want))
+			}
+		})
+	}
+}
+
+func Benchmark_highlightMatches(b *testing.B) {
+	as := bytes.Repeat([]byte{'a'}, 5000)
+	lines := append(as, byte('\n'))
+	lines = append(lines, as...)
+	rx := regexp.MustCompile(`a`)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = highlightMatches(rx, lines)
 	}
 }

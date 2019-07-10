@@ -10,6 +10,44 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
+func TestDiscussionComment_Get(t *testing.T) {
+	resetMocks()
+	mockViewerCanUseDiscussions = func() error { return nil }
+	defer func() { mockViewerCanUseDiscussions = nil }()
+	const (
+		wantCommentID        = 123
+		wantCommentGraphQLID = "RGlzY3Vzc2lvbkNvbW1lbnQ6IjNmIg=="
+	)
+	db.Mocks.DiscussionComments.Get = func(commentID int64) (*types.DiscussionComment, error) {
+		return &types.DiscussionComment{ID: wantCommentID}, nil
+	}
+
+	t.Run("by ID", func(t *testing.T) {
+		gqltesting.RunTests(t, []*gqltesting.Test{
+			{
+				Schema: GraphQLSchema,
+				Query: `
+                                query ($id: ID!) {
+                                        node(id: $id) {
+                                                __typename
+												id
+                                        }
+                                }
+                        `,
+				Variables: map[string]interface{}{"id": wantCommentGraphQLID},
+				ExpectedResult: `
+                                {
+                                        "node": {
+											"__typename": "DiscussionComment",
+											"id": "` + wantCommentGraphQLID + `"
+                                        }
+                                }
+                        `,
+			},
+		})
+	})
+}
+
 func TestDiscussionsMutations_UpdateComment(t *testing.T) {
 	resetMocks()
 	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) { return &types.User{}, nil }
@@ -53,7 +91,7 @@ func TestDiscussionsMutations_UpdateComment(t *testing.T) {
 			Query: `
                                 mutation($contents: String!) {
                                         discussions {
-                                                updateComment(input: {commentID: "123", contents: $contents}) {
+                                                updateComment(input: {commentID: "RGlzY3Vzc2lvbkNvbW1lbnQ6IjNmIg==", contents: $contents}) {
                                                         __typename
                                                 }
                                         }

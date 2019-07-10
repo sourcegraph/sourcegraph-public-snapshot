@@ -117,7 +117,7 @@ type RepoInfo struct {
 	//
 	// TODO(sqs): make this required (non-pointer) when both sides have been upgraded to use it. It is only
 	// optional during the transition period.
-	ExternalRepo *api.ExternalRepoSpec
+	ExternalRepo api.ExternalRepoSpec
 }
 
 func (r *RepoInfo) String() string {

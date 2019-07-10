@@ -45,7 +45,7 @@ type InsertRepoOp struct {
 	Fork         bool
 	Archived     bool
 	Enabled      bool
-	ExternalRepo *ExternalRepoSpec
+	ExternalRepo ExternalRepoSpec
 }
 
 // ExternalRepoSpec specifies a repository on an external service (such as GitHub or GitLab).
@@ -78,13 +78,7 @@ func (r ExternalRepoSpec) IsSet() bool {
 }
 
 // Equal returns true if r is equal to s.
-func (r *ExternalRepoSpec) Equal(s *ExternalRepoSpec) bool {
-	if r == s { // handles the case when r and s are both nil
-		return true
-	}
-	if s == nil || r == nil {
-		return false
-	}
+func (r ExternalRepoSpec) Equal(s *ExternalRepoSpec) bool {
 	return r.ID == s.ID && r.ServiceType == s.ServiceType && r.ServiceID == s.ServiceID
 }
 

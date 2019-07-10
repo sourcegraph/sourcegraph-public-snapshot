@@ -162,15 +162,13 @@ func TestRepos_Upsert(t *testing.T) {
 	if rp.Name != "myrepo" {
 		t.Fatalf("rp.Name: %s != %s", rp.Name, "myrepo")
 	}
-	if rp.ExternalRepo != nil {
-		t.Fatalf("rp.ExternalRepo: %s != %s", rp.ExternalRepo, "<nil>")
-	}
 
-	ext := &api.ExternalRepoSpec{
+	ext := api.ExternalRepoSpec{
 		ID:          "ext:id",
 		ServiceType: "test",
 		ServiceID:   "ext:test",
 	}
+
 	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, Enabled: true, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}

@@ -1,7 +1,29 @@
+import { readFile } from 'mz/fs'
 import { getFixtureBody } from '../code_intelligence/code_intelligence_test_utils'
-import { getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView } from './scrape'
+import { getFileInfoFromSingleFileSourceCodeView, getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView } from './scrape'
 
 describe('Bitbucket scrape.ts', () => {
+    describe('getFileInfoFromSingleFileSourceCodeView()', () => {
+        afterEach(() => {
+            document.body.innerHTML = ''
+        })
+        it('should get the FileInfo for a single file code view', async () => {
+            jsdom.reconfigure({
+                url: 'https://bitbucket.test/projects/SOUR/repos/mux/browse/context.go',
+            })
+            document.body.innerHTML = await readFile(`${__dirname}/__fixtures__/single-file.html`, 'utf-8')
+            const codeView = document.querySelector<HTMLElement>('.file-content')
+            const fileInfo = getFileInfoFromSingleFileSourceCodeView(codeView!)
+            expect(fileInfo).toStrictEqual({
+                commitID: '212aa90d7cec051ab29930d5c56f758f6f69a789',
+                filePath: 'context.go',
+                project: 'SOUR',
+                rawRepoName: 'bitbucket.test/SOUR/mux',
+                repoSlug: 'mux',
+                rev: 'master',
+            })
+        })
+    })
     describe('getDiffFileInfoFromMultiFileDiffCodeView()', () => {
         it('should get the FileInfo for an added file', async () => {
             jsdom.reconfigure({

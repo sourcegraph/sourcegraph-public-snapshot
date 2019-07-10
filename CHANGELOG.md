@@ -22,8 +22,11 @@ All notable changes to Sourcegraph are documented in this file.
 - The GraphQL fields `Repository.createdAt` and `Repository.updatedAt` are deprecated and will be removed in 3.8. Now `createdAt` is always the current time and updatedAt is always null.
 - In the [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) and [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#permissions) `repositoryQuery` is now only required if `repos` is not set.
 - Usernames can now contain the `.` character (#4690).
+- Log messages from query-runner when saved searches fail now include the raw query as part of the message.
 
 ### Fixed
+
+- Commit searches now correctly highlight unicode characters, for example 加. [#4512](https://github.com/sourcegraph/sourcegraph/issues/4512)
 
 ### Removed
 

@@ -46,6 +46,9 @@ type RewriteSpecification struct {
 
 	// A file extension suffix filtering which files to process (e.g., ".go")
 	FileExtension string
+
+	// A directory prefix to exclude (e.g., vendor)
+	DirectoryExclude string
 }
 
 // GitserverRepo returns the repository information necessary to perform gitserver requests.
