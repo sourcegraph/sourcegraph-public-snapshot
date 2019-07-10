@@ -196,7 +196,7 @@ function main() {
     )
 
     app.get(
-        '/haslsif',
+        '/exists',
         asyncHandler(async (req, res) => {
             const { repository, commit } = req.query
 
