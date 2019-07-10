@@ -254,7 +254,9 @@ function main(): void {
                 })
             } catch (e) {
                 if ('code' in e && e.code === 'ENOENT') {
-                    throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), { status: 404 })
+                    throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
+                        status: 404,
+                    })
                 }
                 throw e
             }
