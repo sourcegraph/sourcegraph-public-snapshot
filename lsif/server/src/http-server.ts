@@ -1,12 +1,12 @@
+import bodyParser from 'body-parser'
 import express from 'express'
 import asyncHandler from 'express-async-handler'
-import bodyParser from 'body-parser'
-import { JsonDatabase } from './json'
-import { Database, noopTransformer } from './database'
+import LRU from 'lru-cache'
 import { fs } from 'mz'
 import * as path from 'path'
-import LRU from 'lru-cache'
 import { withFile } from 'tmp-promise'
+import { Database, noopTransformer } from './database'
+import { JsonDatabase } from './json'
 
 /**
  * Reads an integer from an environment variable or defaults to the given value.
@@ -16,7 +16,7 @@ function readEnvInt({ key, defaultValue }: { key: string; defaultValue: number }
     if (!value) {
         return defaultValue
     }
-    const n = parseInt(value)
+    const n = parseInt(value, 10)
     if (isNaN(n)) {
         return defaultValue
     }
@@ -26,6 +26,7 @@ function readEnvInt({ key, defaultValue }: { key: string; defaultValue: number }
 /**
  * Where on the file system to store LSIF files.
  */
+// tslint:disable-next-line: no-string-literal
 const STORAGE_ROOT = process.env['SRC_LSIF_STORAGE_ROOT'] || 'lsif'
 
 /**
@@ -180,7 +181,7 @@ interface LRUDBEntry {
  * An LRU cache mapping `repository@commit`s to in-memory `Database`s. Old
  * `Database`s are evicted from the cache to prevent OOM errors.
  */
-const dbLRU = new LRU<String, LRUDBEntry>({
+const dbLRU = new LRU<string, LRUDBEntry>({
     max: SOFT_MAX_STORAGE_IN_MEMORY,
     length: (entry, key) => entry.length,
     dispose: (key, entry) => entry.dispose(),
@@ -199,8 +200,8 @@ async function withDB(repositoryCommit: RepositoryCommit, action: (db: Database)
         const length = (await fs.stat(diskKey(repositoryCommit))).size
         const dbPromise = createDB(repositoryCommit)
         dbLRU.set(diskKey(repositoryCommit), {
-            dbPromise: dbPromise,
-            length: length,
+            dbPromise,
+            length,
             dispose: () => dbPromise.then(db => db.close()),
         })
         await action(await dbPromise)
@@ -211,7 +212,7 @@ async function withDB(repositoryCommit: RepositoryCommit, action: (db: Database)
  * Runs the HTTP server which accepts LSIF file uploads and responds to
  * hover/defs/refs requests.
  */
-function main() {
+function main(): void {
     const app = express()
 
     // This limit only applies to JSON requests (i.e. the /request endpoint).
@@ -297,7 +298,7 @@ function main() {
             checkRepository(repository)
             checkCommit(commit)
 
-            const contentLength = parseInt(req.header('Content-Length') || '') || 0
+            const contentLength = parseInt(req.header('Content-Length') || '', 10) || 0
             if (contentLength > MAX_FILE_SIZE) {
                 throw Object.assign(
                     new Error(
