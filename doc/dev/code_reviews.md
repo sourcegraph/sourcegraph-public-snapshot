@@ -59,6 +59,7 @@ Do:
 - Acknowledge what the author did well to balance the tone of the review.
 - Prioritize reviewing the overall design and structure of the code over smaller code syle issues. Only comment on the latter after you explictly approve of the former.
 - Make it clear which comments are blocking your explicit approval (e.g. use "nit:" prefix for minor comments) and approve if all of your comments are minor.
+- If the author were to address all of your comments faithfully and you would be content, then you should also approve to avoid the author needing to wait for a subsequent review without reason (exception: you asked for fundamental or vast/large changes and believe those will need re-review by you).
 - When you are making comments on a PR, use a tone that is kind, empathetic, collaborative, and humble. [Further reading](https://mtlynch.io/human-code-reviews-1/).
     | 😕 | 🤗 | Why? |
     |---|---|---|
