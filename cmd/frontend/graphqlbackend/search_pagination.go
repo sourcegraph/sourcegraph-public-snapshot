@@ -3,11 +3,15 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
@@ -105,6 +109,7 @@ func (r *searchResolver) Cursor(ctx context.Context) graphql.ID {
 //    with the absolute ordering we do here for pagination.
 //
 func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchResultsResolver, err error) {
+	start := time.Now()
 	if r.pagination == nil {
 		panic("(bug) this method should never be called in this state")
 	}
@@ -125,5 +130,124 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	panic("TODO: implement")
+	////////////////////////////////////////////////////////////////////////////
+	// TODO(slimsag): before merge: duplicate code from doResults begins here //
+	////////////////////////////////////////////////////////////////////////////
+	forceOnlyResultType := ""
+	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
+	if len(repos) == 0 {
+		alert, err := r.alertForNoResolvedRepos(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return &searchResultsResolver{alert: alert, start: start}, nil
+	}
+	if overLimit {
+		alert, err := r.alertForOverRepoLimit(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return &searchResultsResolver{alert: alert, start: start}, nil
+	}
+
+	p, err := r.getPatternInfo(nil)
+	if err != nil {
+		return nil, err
+	}
+	args := search.Args{
+		Pattern:         p,
+		Repos:           repos,
+		Query:           r.query,
+		UseFullDeadline: r.searchTimeoutFieldSet(),
+		Zoekt:           r.zoekt,
+	}
+	if err := args.Pattern.Validate(); err != nil {
+		return nil, &badRequestError{err}
+	}
+
+	err = validateRepoHasFileUsage(r.query)
+	if err != nil {
+		return nil, err
+	}
+
+	// Determine which types of results to return.
+	var resultTypes []string
+	if forceOnlyResultType != "" {
+		resultTypes = []string{forceOnlyResultType}
+	} else {
+		resultTypes, _ = r.query.StringValues(query.FieldType)
+		if len(resultTypes) == 0 {
+			//resultTypes = []string{"file", "path", "repo", "ref"}
+			resultTypes = []string{"file"}
+		}
+	}
+	for _, resultType := range resultTypes {
+		if resultType == "file" {
+			args.Pattern.PatternMatchesContent = true
+		} else if resultType == "path" {
+			args.Pattern.PatternMatchesPath = true
+		}
+	}
+	tr.LazyPrintf("resultTypes: %v", resultTypes)
+	//////////////////////////////////////////////////////////////////////////
+	// TODO(slimsag): before merge: duplicate code from doResults ends here //
+	//////////////////////////////////////////////////////////////////////////
+
+	if len(resultTypes) != 1 || resultTypes[0] != "file" {
+		return nil, fmt.Errorf("experimental paginated search currently only supports 'file' (text match) result types. Found %q", resultTypes)
+	}
+
+	// Since we're searching a subset of the repositories this query would
+	// search overall, we must sort the repositories deterministically.
+	for _, repoRev := range repos {
+		sort.Slice(repoRev.Revs, func(i, j int) bool {
+			return repoRev.Revs[i].Less(repoRev.Revs[j])
+		})
+	}
+	sort.Slice(repos, func(i, j int) bool {
+		return repoIsLess(repos[i].Repo, repos[j].Repo)
+	})
+
+	common := searchResultsCommon{maxResultsCount: 1000000}
+	fileResults, fileCommon, err := searchFilesInRepos(ctx, &args)
+	// Timeouts are reported through searchResultsCommon so don't report an error for them
+	if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
+		return nil, err
+	}
+	common.update(*fileCommon)
+	results := make([]searchResultResolver, len(fileResults))
+	for _, fr := range fileResults {
+		results = append(results, fr)
+	}
+
+	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results), common.limitHit, len(common.cloning), len(common.missing), len(common.timedout))
+
+	// Alert is a potential alert shown to the user.
+	var alert *searchAlert
+
+	if len(missingRepoRevs) > 0 {
+		alert = r.alertForMissingRepoRevs(missingRepoRevs)
+	}
+
+	sortResults(results)
+
+	return &searchResultsResolver{
+		start:               start,
+		searchResultsCommon: common,
+		results:             results,
+		alert:               alert,
+	}, nil
+}
+
+// repoIsLess sorts repositories first by name then by ID, suitable for use
+// with sort.Slice.
+func repoIsLess(i, j *types.Repo) bool {
+	if i.Name != j.Name {
+		return i.Name < j.Name
+	}
+	return i.ID < j.ID
 }
