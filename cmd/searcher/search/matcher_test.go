@@ -935,61 +935,61 @@ func TestGenerateMatches(t *testing.T) {
 		args args
 		want []protocol.LineMatch
 	}{
-		"starting line and ending line is the same": {args: args{matchBuf: matchBuf, startingLine: 0, startingOffset: 0, startingLength: 5, endingLine: 0, endingOffset: 5, endingLength: 0, match: []int{0, 5}, lineLimitHit: false, lineNumberToLineLength: lineMap}, want: []protocol.LineMatch{protocol.LineMatch{
+		"starting line and ending line is the same": {args: args{matchBuf: matchBuf, startingLine: 0, startingOffset: 0, startingLength: 5, endingLine: 0, endingOffset: 5, endingLength: 0, match: []int{0, 5}, lineLimitHit: false, lineNumberToLineLength: lineMap}, want: []protocol.LineMatch{{
 			Preview:          "abcd\n",
 			LineNumber:       0,
 			OffsetAndLengths: [][2]int{{0, 5}},
 			LimitHit:         false,
-		}, protocol.LineMatch{
+		}, {
 			Preview:          "",
 			LineNumber:       0,
 			OffsetAndLengths: [][2]int{{5, 0}},
 			LimitHit:         false,
 		}}},
-		"consecutive starting and ending lines": {args: args{matchBuf: matchBuf, startingLine: 0, startingOffset: 0, startingLength: 5, endingLine: 1, endingOffset: 0, endingLength: 4, match: []int{0, 9}, lineLimitHit: false, lineNumberToLineLength: lineMap}, want: []protocol.LineMatch{protocol.LineMatch{
+		"consecutive starting and ending lines": {args: args{matchBuf: matchBuf, startingLine: 0, startingOffset: 0, startingLength: 5, endingLine: 1, endingOffset: 0, endingLength: 4, match: []int{0, 9}, lineLimitHit: false, lineNumberToLineLength: lineMap}, want: []protocol.LineMatch{{
 			Preview:          "abcd\n",
 			LineNumber:       0,
 			OffsetAndLengths: [][2]int{{0, 5}},
 			LimitHit:         false,
-		}, protocol.LineMatch{
+		}, {
 			Preview:          "efgh",
 			LineNumber:       1,
 			OffsetAndLengths: [][2]int{{0, 4}},
 			LimitHit:         false,
 		}}},
-		"starting and ending lines with one line in between": {args: args{matchBuf: matchBuf, startingLine: 0, startingOffset: 0, startingLength: 5, endingLine: 2, endingOffset: 0, endingLength: 4, match: []int{0, 14}, lineLimitHit: false, lineNumberToLineLength: lineMap}, want: []protocol.LineMatch{protocol.LineMatch{
+		"starting and ending lines with one line in between": {args: args{matchBuf: matchBuf, startingLine: 0, startingOffset: 0, startingLength: 5, endingLine: 2, endingOffset: 0, endingLength: 4, match: []int{0, 14}, lineLimitHit: false, lineNumberToLineLength: lineMap}, want: []protocol.LineMatch{{
 			Preview:          "abcd\n",
 			LineNumber:       0,
 			OffsetAndLengths: [][2]int{{0, 5}},
 			LimitHit:         false,
-		}, protocol.LineMatch{
+		}, {
 			Preview:          "efgh\n",
 			LineNumber:       1,
 			OffsetAndLengths: [][2]int{{0, 5}},
 			LimitHit:         false,
-		}, protocol.LineMatch{
+		}, {
 			Preview:          "ijkl",
 			LineNumber:       2,
 			OffsetAndLengths: [][2]int{{0, 4}},
 			LimitHit:         false,
 		}}},
-		"starting and ending lines with two lines in between": {args: args{matchBuf: matchBuf, startingLine: 0, startingOffset: 0, startingLength: 5, endingLine: 3, endingOffset: 0, endingLength: 4, match: []int{0, 19}, lineLimitHit: false, lineNumberToLineLength: lineMap}, want: []protocol.LineMatch{protocol.LineMatch{
+		"starting and ending lines with two lines in between": {args: args{matchBuf: matchBuf, startingLine: 0, startingOffset: 0, startingLength: 5, endingLine: 3, endingOffset: 0, endingLength: 4, match: []int{0, 19}, lineLimitHit: false, lineNumberToLineLength: lineMap}, want: []protocol.LineMatch{{
 			Preview:          "abcd\n",
 			LineNumber:       0,
 			OffsetAndLengths: [][2]int{{0, 5}},
 			LimitHit:         false,
-		}, protocol.LineMatch{
+		}, {
 			Preview:          "efgh\n",
 			LineNumber:       1,
 			OffsetAndLengths: [][2]int{{0, 5}},
 			LimitHit:         false,
-		}, protocol.LineMatch{
+		}, {
 			Preview:          "ijkl\n",
 			LineNumber:       2,
 			OffsetAndLengths: [][2]int{{0, 5}},
 			LimitHit:         false,
 		},
-			protocol.LineMatch{
+			{
 				Preview:          "mnop",
 				LineNumber:       3,
 				OffsetAndLengths: [][2]int{{0, 4}},
