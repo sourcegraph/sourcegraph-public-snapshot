@@ -223,7 +223,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 		return nil, err
 	}
 	common.update(*fileCommon)
-	results := make([]searchResultResolver, len(fileResults))
+	results := make([]searchResultResolver, 0, len(fileResults))
 	for _, fr := range fileResults {
 		results = append(results, fr)
 	}
