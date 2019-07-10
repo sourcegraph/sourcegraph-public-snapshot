@@ -132,7 +132,16 @@ async function createDB(repositoryCommit: RepositoryCommit): Promise<Database> {
 /**
  * List of supported `Database` methods.
  */
-const supportedMethods = ['hover', 'definitions', 'references']
+type SupportedMethods = 'hover' | 'definitions' | 'references'
+
+const SUPPORTED_METHODS: SupportedMethods[] = ['hover', 'definitions', 'references']
+
+/**
+ * Type guard for SupportedMethods.
+ */
+function isSupportedMethod(method: string): method is SupportedMethods {
+    return (SUPPORTED_METHODS as string[]).includes(method)
+}
 
 /**
  * Throws an error with status 400 if the repository is invalid.
@@ -217,8 +226,8 @@ function main() {
 
             checkRepository(repository)
             checkCommit(commit)
-            if (!supportedMethods.includes(method)) {
-                throw Object.assign(new Error('method must be one of ' + supportedMethods), { status: 400 })
+            if (!isSupportedMethod(method)) {
+                throw Object.assign(new Error('method must be one of ' + SUPPORTED_METHODS), { status: 400 })
             }
 
             try {
