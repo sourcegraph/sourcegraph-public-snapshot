@@ -12,19 +12,19 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
+import { ThemeProps } from '../../../theme'
 import { ChecksAreaContext } from '../scope/ScopeChecksArea'
 import { useCheckByTypeForScope } from '../util/useCheckByTypeForScope'
 import { CheckChecksPage } from './checks/CheckChecksPage'
 import { CheckDiagnosticsArea } from './diagnosticGroups/CheckDiagnosticsArea'
 import { CheckAreaNavbar } from './navbar/CheckAreaNavbar'
 import { CheckOverview } from './overview/CheckOverview'
-import { ThemeProps } from '../../../theme'
 
 const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
 )
 
-interface Props extends Pick<CheckAreaContext, Exclude<keyof CheckAreaContext, 'check'>> {}
+interface Props extends Pick<CheckAreaContext, Exclude<keyof CheckAreaContext, 'checkProvider' | 'checkInfo'>> {}
 
 export interface CheckAreaContext
     extends ChecksAreaContext,
@@ -87,17 +87,17 @@ export const CheckArea: React.FunctionComponent<Props> = ({ checkID, scope, chec
                 </ErrorBoundary>
                 <ErrorBoundary location={props.location}>
                     <Switch>
-                        <Route path={checkURL} exact={true}>
+                        <Route key="hardcoded-key" path={checkURL} exact={true}>
                             <Redirect to={`${checkURL}/diagnostics`} />
                         </Route>
-                        <Route path={`${checkURL}/diagnostics`}>
+                        <Route key="hardcoded-key" path={`${checkURL}/diagnostics`}>
                             <CheckDiagnosticsArea
                                 {...context}
                                 checkDiagnosticsURL={`${checkURL}/diagnostics`}
                                 className="mt-3 container"
                             />
                         </Route>
-                        <Route component={NotFoundPage} />
+                        <Route key="hardcoded-key" component={NotFoundPage} />
                     </Switch>
                 </ErrorBoundary>
             </div>
