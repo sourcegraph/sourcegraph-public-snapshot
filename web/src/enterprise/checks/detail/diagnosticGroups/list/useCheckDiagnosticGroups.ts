@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { from, Subscription } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
-import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
+import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
+import { asError, ErrorLike } from '../../../../../../../shared/src/util/errors'
 
 const LOADING: 'loading' = 'loading'
 

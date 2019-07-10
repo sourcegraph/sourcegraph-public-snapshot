@@ -990,6 +990,11 @@ declare module 'sourcegraph' {
          * Match only diagnostics with the given type.
          */
         readonly type: string
+
+        /**
+         * Match only diagnostics that have the given tag.
+         */
+        readonly tag?: string
     }
 
     export interface DiagnosticProvider {
@@ -1143,6 +1148,7 @@ declare module 'sourcegraph' {
     }
 
     export interface DiagnosticGroup {
+        id: string
         name: string
         query: DiagnosticQuery
     }

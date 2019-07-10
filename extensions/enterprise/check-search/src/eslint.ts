@@ -61,9 +61,7 @@ enum RulePolicy {
     Default = 'default',
 }
 
-const TYPE_ESLINT = 'eslint'
-
-const CHECK_ESLINT = TYPE_ESLINT
+const CHECK_ESLINT = 'eslint'
 
 const LOADING: 'loading' = 'loading'
 
@@ -175,12 +173,11 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                                 return {
                                     resource: new URL(doc.uri),
                                     range: rangeForLintMessage(doc, r),
-                                    type: TYPE_ESLINT,
                                     message: r.message,
                                     source: r.source,
                                     severity: linterSeverityToDiagnosticSeverity(r.severity),
                                     data: JSON.stringify(r),
-                                    tags: [],
+                                    tags: [r.ruleId],
                                     check: CHECK_ESLINT,
                                 } as sourcegraph.Diagnostic
                             })
@@ -244,12 +241,12 @@ function registerCheckProvider(diagnostics: Observable<sourcegraph.Diagnostic[] 
 - Check for new, recommended ESLint rules
 - Ignore projects with only JavaScript files`,
                             },
-                            notifications: {
+                            /*notifications: {
                                 kind: sourcegraph.MarkupKind.Markdown,
                                 value: `
 - Fail changesets that add code not checked by ESLint
 - Notify **@felixfbecker** of new ESLint rules`,
-                            },
+                            },*/
                         },
                     }
                     return info
@@ -267,8 +264,9 @@ function registerCheckProvider(diagnostics: Observable<sourcegraph.Diagnostic[] 
 
                         const ruleIds = Array.from(ruleIdsSet.values()).sort()
                         return ruleIds.map<sourcegraph.DiagnosticGroup>(ruleId => ({
+                            id: ruleId.replace(/\//g, '-'), // make safe for URL path
                             name: ruleId,
-                            query: { type: 'eslint' },
+                            query: { type: 'eslint', tag: ruleId },
                         }))
                     })
                 )

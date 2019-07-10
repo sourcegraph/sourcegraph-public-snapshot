@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Subscription } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
-import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
-import { DiagnosticInfo, getDiagnosticInfos } from '../../../threads/detail/backend'
+import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
+import { asError, ErrorLike } from '../../../../../../../shared/src/util/errors'
+import { DiagnosticInfo, getDiagnosticInfos } from '../../../../threads/detail/backend'
 
 const LOADING: 'loading' = 'loading'
 

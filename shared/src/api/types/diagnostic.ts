@@ -4,6 +4,9 @@ import { fromRange } from '../extension/api/types'
 import { Range } from '@sourcegraph/extension-api-classes'
 
 export function fromDiagnostic(diag: sourcegraph.Diagnostic): Diagnostic {
+    if (!(diag.resource instanceof URL)) {
+        throw new Error(`invalid Diagnostic#resource`)
+    }
     return {
         ...diag,
         resource: diag.resource.toString(),

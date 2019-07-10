@@ -20,7 +20,8 @@ import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 import { ExtDocuments } from './documents'
 import { fromHover, fromLocation, toPosition } from './types'
-import { fromCodeAction } from '../../types/codeAction'
+import { fromCodeAction, PlainCodeActionsParams, toCodeActionsParams } from '../../types/codeAction'
+import { toDiagnostic, fromDiagnostic } from '../../types/diagnostic'
 
 /** @internal */
 export class ExtLanguageFeatures {
@@ -100,25 +101,15 @@ export class ExtLanguageFeatures {
     public registerCodeActionProvider(selector: DocumentSelector, provider: CodeActionProvider): Unsubscribable {
         const providerFunction: ProxyInput<
             Parameters<ClientLanguageFeaturesAPI['$registerCodeActionProvider']>[1]
-        > = proxyValue(async ({ textDocument, range: rangeOrSelection, context }: CodeActionsParams) =>
-            toProxyableSubscribable(
-                provider.provideCodeActions(
-                    await this.documents.getSync(textDocument.uri),
-                    Selection.isSelection(rangeOrSelection)
-                        ? Selection.fromPlain(rangeOrSelection)
-                        : Range.fromPlain(rangeOrSelection),
-                    {
-                        ...context,
-                        diagnostics: context.diagnostics.map(d => ({
-                            ...d,
-                            range: Range.fromPlain(d.range),
-                        })),
-                    }
-                ),
+        > = proxyValue(async (params: PlainCodeActionsParams) => {
+            const { textDocument, range: rangeOrSelection, context } = toCodeActionsParams(params)
+
+            return toProxyableSubscribable(
+                provider.provideCodeActions(await this.documents.getSync(textDocument.uri), rangeOrSelection, context),
                 (items: null | undefined | CodeAction[]): clientType.CodeAction[] =>
                     items ? items.map(fromCodeAction) : []
             )
-        )
+        })
         return syncSubscription(this.proxy.$registerCodeActionProvider(selector, providerFunction))
     }
 }

@@ -3,7 +3,7 @@ import H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
-import { Route, Switch } from 'react-router'
+import { Redirect, Route, Switch } from 'react-router'
 import * as sourcegraph from 'sourcegraph'
 import { CheckID } from '../../../../../shared/src/api/client/services/checkService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
@@ -15,10 +15,10 @@ import { HeroPage } from '../../../components/HeroPage'
 import { ChecksAreaContext } from '../scope/ScopeChecksArea'
 import { useCheckByTypeForScope } from '../util/useCheckByTypeForScope'
 import { CheckChecksPage } from './checks/CheckChecksPage'
-import { CheckIssuesPage } from './issues/CheckIssuesPage'
+import { CheckDiagnosticsArea } from './diagnosticGroups/CheckDiagnosticsArea'
 import { CheckAreaNavbar } from './navbar/CheckAreaNavbar'
 import { CheckOverview } from './overview/CheckOverview'
-import { CheckDiagnosticsPage } from './diagnostics/CheckDiagnosticsPage'
+import { ThemeProps } from '../../../theme'
 
 const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
@@ -26,7 +26,11 @@ const NotFoundPage = () => (
 
 interface Props extends Pick<CheckAreaContext, Exclude<keyof CheckAreaContext, 'check'>> {}
 
-export interface CheckAreaContext extends ChecksAreaContext, ExtensionsControllerProps, PlatformContextProps {
+export interface CheckAreaContext
+    extends ChecksAreaContext,
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        ThemeProps {
     /** The check ID. */
     checkID: CheckID
 
@@ -45,7 +49,6 @@ export interface CheckAreaContext extends ChecksAreaContext, ExtensionsControlle
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
 }
 
 const LOADING: 'loading' = 'loading'
@@ -85,13 +88,14 @@ export const CheckArea: React.FunctionComponent<Props> = ({ checkID, scope, chec
                 <ErrorBoundary location={props.location}>
                     <Switch>
                         <Route path={checkURL} exact={true}>
-                            <CheckDiagnosticsPage {...context} className="mt-3 container" />
+                            <Redirect to={`${checkURL}/diagnostics`} />
                         </Route>
-                        <Route path={`${checkURL}/checks`}>
-                            <CheckChecksPage {...context} />
-                        </Route>
-                        <Route path={`${checkURL}/issues`} exact={true}>
-                            <CheckIssuesPage {...context} />
+                        <Route path={`${checkURL}/diagnostics`}>
+                            <CheckDiagnosticsArea
+                                {...context}
+                                checkDiagnosticsURL={`${checkURL}/diagnostics`}
+                                className="mt-3 container"
+                            />
                         </Route>
                         <Route component={NotFoundPage} />
                     </Switch>
