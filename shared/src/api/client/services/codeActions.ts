@@ -1,4 +1,4 @@
-import { Range, Selection } from '@sourcegraph/extension-api-types'
+import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import { isEqual } from 'lodash'
 import { from, Observable } from 'rxjs'
 import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'

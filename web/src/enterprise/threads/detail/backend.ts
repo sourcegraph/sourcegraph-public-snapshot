@@ -100,7 +100,9 @@ export const getDiagnosticInfos = (
     ).pipe(switchMap(diagEntries => toDiagnosticInfos(diagEntries)))
 
 function diagnosticQueryMatcher(query: sourcegraph.DiagnosticQuery): (diagnostic: DiagnosticWithType) => boolean {
-    return diagnostic => diagnostic.type === query.type
+    return diagnostic =>
+        diagnostic.type === query.type &&
+        (query.tag !== undefined ? !!diagnostic.tags && diagnostic.tags.includes(query.tag) : true)
 }
 
 export const diagnosticID = (diagnostic: DiagnosticInfo): string =>

@@ -1,4 +1,3 @@
-import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React from 'react'
 import { NavLink } from 'react-router-dom'
@@ -20,8 +19,7 @@ export const CheckAreaNavbar: React.FunctionComponent<Props> = ({ checkURL, clas
             <ul className="nav flex-nowrap">
                 <li className="check-area-navbar__nav-item nav-item">
                     <NavLink
-                        to={checkURL}
-                        exact={true}
+                        to={`${checkURL}/diagnostics`}
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="check-area-navbar__nav-link--active"
                     >
@@ -35,15 +33,6 @@ export const CheckAreaNavbar: React.FunctionComponent<Props> = ({ checkURL, clas
                         activeClassName="check-area-navbar__nav-link--active"
                     >
                         <RuleIcon className="icon-inline" /> Rules
-                    </NavLink>
-                </li>
-                <li className="check-area-navbar__nav-item nav-item">
-                    <NavLink
-                        to={`${checkURL}/issues`}
-                        className={NAV_LINK_CLASS_NAME}
-                        activeClassName="check-area-navbar__nav-link--active"
-                    >
-                        <AlertCircleOutlineIcon className="icon-inline" /> Issues
                     </NavLink>
                 </li>
                 <li className="flex-1" />

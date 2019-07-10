@@ -2,23 +2,27 @@ import { DiagnosticSeverity, NotificationType } from '@sourcegraph/extension-api
 import { sortBy } from 'lodash'
 import LightbulbIcon from 'mdi-react/LightbulbIcon'
 import React, { useCallback, useState } from 'react'
+import { Link } from 'react-router-dom'
 import * as sourcegraph from 'sourcegraph'
-import { ActionType } from '../../../../../../shared/src/api/types/action'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
-import { isErrorLike } from '../../../../../../shared/src/util/errors'
-import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/DiagnosticSeverityIcon'
-import { useOnActionClickCallback } from '../../../actions/useOnActionClickCallback'
-import { ChangesetCreationStatus, createChangeset } from '../../../changesets/preview/backend'
-import { NotificationActions } from '../../../notifications/actions/NotificationActions'
-import { NotificationTypeIcon } from '../../../notifications/NotificationTypeIcon'
+import { ActionType } from '../../../../../../../shared/src/api/types/action'
+import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
+import { isErrorLike } from '../../../../../../../shared/src/util/errors'
+import { DiagnosticSeverityIcon } from '../../../../../diagnostics/components/DiagnosticSeverityIcon'
+import { useOnActionClickCallback } from '../../../../actions/useOnActionClickCallback'
+import { ChangesetCreationStatus, createChangeset } from '../../../../changesets/preview/backend'
+import { NotificationActions } from '../../../../notifications/actions/NotificationActions'
+import { NotificationTypeIcon } from '../../../../notifications/NotificationTypeIcon'
 import {
     ChangesetButtonOrLinkExistingChangeset,
     PENDING_CREATION,
-} from '../../../tasks/list/item/ChangesetButtonOrLink'
-import { useDiagnostics } from './useDiagnostics'
+} from '../../../../tasks/list/item/ChangesetButtonOrLink'
+import { useDiagnostics } from '../detail/useDiagnostics'
+import { urlToCheckDiagnosticGroup } from '../url'
 
 interface Props extends ExtensionsControllerProps {
     diagnosticGroup: sourcegraph.DiagnosticGroup
+    checkDiagnosticsURL: string
+
     className?: string
     contentClassName?: string
 }
@@ -30,6 +34,7 @@ const LOADING = 'loading' as const
  */
 export const CheckDiagnosticGroup: React.FunctionComponent<Props> = ({
     diagnosticGroup,
+    checkDiagnosticsURL,
     className = '',
     contentClassName = '',
     extensionsController,
@@ -86,18 +91,25 @@ export const CheckDiagnosticGroup: React.FunctionComponent<Props> = ({
     const disabled = isPlanLoading || isCommandLoading
 
     return (
-        <div className={`status-notification ${className}`}>
+        <div className={`check-diagnostic-group position-relative ${className}`}>
             <div className={`d-flex align-items-start ${contentClassName}`}>
                 <div className="flex-1">
                     <div className="d-flex align-items-start justify-content-between">
-                        <h3 className="mb-0 font-weight-normal">{diagnosticGroup.name}</h3>
+                        <h3 className="mb-0 font-weight-normal">
+                            <Link
+                                to={urlToCheckDiagnosticGroup(checkDiagnosticsURL, diagnosticGroup.id)}
+                                className="stretched-link"
+                            >
+                                {diagnosticGroup.name}
+                            </Link>
+                        </h3>
                         {diagnosticSeverityCounts.map(
                             ([diagnosticSeverity, count]) =>
                                 count > 0 && (
-                                    <span key={diagnosticSeverity}>
+                                    <span key={diagnosticSeverity} className="d-flex align-items-center">
                                         <DiagnosticSeverityIcon
                                             severity={diagnosticSeverity}
-                                            className="icon-inline h3 mb-0 mr-3 flex-0"
+                                            className="icon-inline mb-0 mr-1"
                                         />
                                         {count}
                                     </span>

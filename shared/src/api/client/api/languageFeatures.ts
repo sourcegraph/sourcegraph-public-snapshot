@@ -10,7 +10,12 @@ import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
 import { wrapRemoteObservable } from './common'
-import { toCodeAction } from '../../types/codeAction'
+import {
+    toCodeAction,
+    fromCodeActionsParams,
+    toCodeActionsParams,
+    PlainCodeActionsParams,
+} from '../../types/codeAction'
 
 /** @internal */
 export interface ClientLanguageFeaturesAPI extends ProxyValue {
@@ -53,7 +58,7 @@ export interface ClientLanguageFeaturesAPI extends ProxyValue {
     $registerCodeActionProvider(
         selector: DocumentSelector,
         providerFunction: ProxyResult<
-            ((params: CodeActionsParams) => ProxySubscribable<CodeAction[] | null | undefined>) & ProxyValue
+            ((params: PlainCodeActionsParams) => ProxySubscribable<CodeAction[] | null | undefined>) & ProxyValue
         >
     ): Unsubscribable & ProxyValue
 }
@@ -149,14 +154,12 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
     public $registerCodeActionProvider(
         documentSelector: DocumentSelector,
         providerFunction: ProxyResult<
-            ((params: CodeActionsParams) => ProxySubscribable<CodeAction[] | null | undefined>) & ProxyValue
+            ((params: PlainCodeActionsParams) => ProxySubscribable<CodeAction[] | null | undefined>) & ProxyValue
         >
     ): Unsubscribable & ProxyValue {
         return proxyValue(
             this.codeActionsRegistry.registerProvider({ documentSelector }, params =>
-                wrapRemoteObservable(
-                    providerFunction({ ...params, range: params.range ? (params.range as any).toJSON() : undefined })
-                ).pipe(
+                wrapRemoteObservable(providerFunction(fromCodeActionsParams(params))).pipe(
                     map(codeActions =>
                         codeActions ? codeActions.map(codeAction => toCodeAction(codeAction)) : codeActions
                     )
