@@ -247,8 +247,7 @@ function main() {
                             result = db.references(params[0], params[1], { includeDeclaration: false })
                             break
                         default:
-                            res.status(500).send({ error: `Unknown method ${method}` })
-                            return
+                            throw new Error(`Unknown method ${method}`)
                     }
                     res.send(result || { error: 'No result found' })
                 })
