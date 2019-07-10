@@ -9,13 +9,14 @@ Code reviews benefit everyone on the team, and the team itself.
 For authors:
 
 - Requesting a code review from one of your peers is motivation to ensure that the quality of your code is high.
-- Writing a good PR description develops your technical communication skills.
+- Writing a good PR description (and commit messages) develops your technical communication skills.
 - Having your code reviewed helps you learn how to write better code in the future because you will receive feedback about how your code could be improved.
 
 For reviewers:
 
 - Reviewing code from others increases your code literacy and empathy. You will learn new things from how your peers write code and you will be more aware of how to write code that is easier for your reviewers to understand
 - Reading PR descriptions increases your technical communication literacy and empathy. You will learn what makes a PR description effective and you will be more aware of how to write of how to write PR descriptions that are easier for your reviewers to understand.
+- Being a reviewer gives you the ability to share knowledge you have that others do not. Every person, regardless of experience level, has both something to learn and something to contribute.
 
 For the team:
 
@@ -31,17 +32,18 @@ Some examples:
 
 - Reverting a previous change to solve a production issue.
 - Minor docs changes.
+- Auto-generated changes, such as when performing a version release, where a reviewer would not have anything of substance to review.
 
 It should be obvious to any other engineer on the team from the PR description and/or diff that it was appropriate for you to not wait for approval.
 
-Here are some examples of unacceptable reasons to skip code review:
+Here are some examples of reasons to skip code review that are NOT acceptable:
 
 - "I promised that I would ship this to $CUSTOMER by $DEADLINE"
     - The customer expects the feature to work and be maintained. Code review helps ensure both of these things by increasing the quality and distributing ownership.
 - "This code is experimental"
     - If the experiment is a success and the code is useful, then it will be easier to have done code reviews incrementally than to expect someone to review the code after the fact. The latter rarely happens successfully.
 - "I don't have someone to review this code"
-    - It sounds like it is time for you to find a new person to distribute knowledge, expertise, and context to.
+    - You should find a new person to distribute knowledge, expertise, and context to.
 
 ## What makes an effective code review?
 
