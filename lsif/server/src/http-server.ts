@@ -9,20 +9,41 @@ import * as path from 'path'
 import LRU from 'lru-cache'
 import { withFile } from 'tmp-promise'
 
+function readEnvInt({ key, def }: { key: string; def: number }): number {
+    const value = process.env[key]
+    if (!value) {
+        return def
+    }
+    const n = parseInt(value)
+    if (isNaN(n)) {
+        return def
+    }
+    return n
+}
+
 // TODO add docstrings
 
-const storageRoot = 'lsif'
-// The storage size can exceed this max if a single LSIF file is larger than
-// this, otherwise disk usage will be kept under this.
-//
-// TODO make this configurable
-const softMaxStorageSize = 100 * 1024 * 1024 * 1024
+// Where on the file system to store LSIF files.
+const storageRoot = process.env['SRC_LSIF_STORAGE_ROOT'] || 'lsif'
 
-// TODO make this configurable
-const maxFileSize = 100 * 1024 * 1024
-// disk usage to memory usage is a ratio of roughly 1:3 (based on sourcegraph/codeintellify)
-// TODO make this configurable
-const softMaxDBSizeLoadedIntoMemory = 100 * 1024 * 1024
+// Soft limit on the amount of storage used by LSIF files. Storage can exceed
+// this limit if a single LSIF file is larger than this, otherwise storage will
+// be kept under this limit.
+const softMaxStorage = readEnvInt({ key: 'SRC_LSIF_SOFT_MAX_STORAGE', def: 100 * 1024 * 1024 * 1024 })
+
+// Limit on the file size accepted by the /upload endpoint.
+const maxFileSize = readEnvInt({ key: 'SRC_LSIF_MAX_FILE_SIZE', def: 100 * 1024 * 1024 })
+
+// Soft limit on the total amount of storage occupied by LSIF data loaded in
+// memory. The actual amount can exceed this if a single LSIF file is larger
+// than this limit, otherwise memory will be kept under this limit.
+//
+// Empirically based on github.com/sourcegraph/codeintellify, each byte of
+// storage (uncompressed newline-delimited JSON) expands to 3 bytes in memory.
+const softMaxStorageInMemory = readEnvInt({ key: 'SRC_LSIF_SOFT_MAX_STORAGE_IN_MEMORY', def: 100 * 1024 * 1024 })
+
+// Which port to run the LSIF server on.
+const port = readEnvInt({ key: 'SRC_LSIF_HTTP_PORT', def: 3185 })
 
 interface Repository {
     repository: string
@@ -101,7 +122,7 @@ interface LRUDBEntry {
 }
 
 const dbLRU = new LRU<String, LRUDBEntry>({
-    max: softMaxDBSizeLoadedIntoMemory,
+    max: softMaxStorageInMemory,
     length: (entry, key) => entry.length,
     dispose: (key, entry) => entry.dispose(),
 })
@@ -220,9 +241,9 @@ function main() {
             // LSIF files to get deleted to make room for the new files.
             await enforceMaxDiskUsage({
                 flatDirectory: storageRoot,
-                max: Math.max(0, softMaxStorageSize - contentLength),
+                max: Math.max(0, softMaxStorage - contentLength),
                 onBeforeDelete: filePath =>
-                    console.log(`Deleting ${filePath} to help keep disk usage under ${softMaxStorageSize}.`),
+                    console.log(`Deleting ${filePath} to help keep disk usage under ${softMaxStorage}.`),
             })
 
             await withFile(async tempFile => {
@@ -264,9 +285,8 @@ function main() {
         })
     )
 
-    // TODO make this configurable
-    app.listen(5000, () => {
-        console.log('Listening for HTTP requests on port 5000')
+    app.listen(port, () => {
+        console.log(`Listening for HTTP requests on port ${port}`)
     })
 }
 

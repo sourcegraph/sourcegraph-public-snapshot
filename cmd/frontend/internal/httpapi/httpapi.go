@@ -48,7 +48,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
 
 	// BEFORE MERGING get this from config
-	target := "http://localhost:5000"
+	target := "http://localhost:3185"
 	remote, err := url.Parse(target)
 	if err != nil {
 		panic(err)
