@@ -33,9 +33,7 @@ export const CheckOverview: React.FunctionComponent<Props> = ({
             className="py-3"
         />
         <hr className="my-0" />
-        <h2 className="my-3 font-weight-normal">
-            {checkID.type} {checkID.id}
-        </h2>
+        <h2 className="my-3 font-weight-normal">{checkID.type}</h2>
         {checkInfo.description && <Markdown dangerousInnerHTML={renderMarkdown(checkInfo.description.value)} />}
         <Timeline tag="div" className="align-items-stretch mb-3">
             <div className="d-flex align-items-start bg-body border p-3 mb-5">

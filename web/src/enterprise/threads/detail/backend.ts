@@ -1,8 +1,9 @@
 import { Range } from '@sourcegraph/extension-api-classes'
-import { sortBy } from 'lodash'
+import { sortBy, uniq } from 'lodash'
 import { combineLatest, from, Observable, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
+import { DiagnosticWithType } from '../../../../../shared/src/api/client/services/diagnosticService'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -14,7 +15,7 @@ import { queryGraphQL } from '../../../backend/graphql'
 import { PullRequestFields, ThreadSettings } from '../settings'
 import { computeDiff, FileDiff } from './changes/computeDiff'
 
-export interface DiagnosticInfo extends sourcegraph.Diagnostic {
+export interface DiagnosticInfo extends DiagnosticWithType {
     entry: Pick<GQL.ITreeEntry, 'path' | 'isDirectory' | 'url'> & {
         commit: Pick<GQL.IGitCommit, 'oid'>
         repository: Pick<GQL.IRepository, 'name'>
@@ -23,8 +24,8 @@ export interface DiagnosticInfo extends sourcegraph.Diagnostic {
 
 // TODO!(sqs): use relative path/rev for DiscussionThreadTargetRepo
 const queryCandidateFile = memoizeObservable(
-    (uri: URL): Observable<[URL, DiagnosticInfo['entry']]> => {
-        const parsed = parseRepoURI(uri.toString())
+    (uri: string): Observable<[URL, DiagnosticInfo['entry']]> => {
+        const parsed = parseRepoURI(uri)
         return queryGraphQL(
             gql`
                 query CandidateFile($repo: String!, $rev: String!, $path: String!) {
@@ -59,43 +60,48 @@ const queryCandidateFile = memoizeObservable(
                 }
                 return data.repository.commit.blob
             }),
-            map(data => [uri, data] as [URL, DiagnosticInfo['entry']])
+            map(data => [new URL(uri), data] as [URL, DiagnosticInfo['entry']])
         )
     },
     uri => uri.toString()
 )
 
-export const queryCandidateFiles = async (uris: URL[]): Promise<[URL, DiagnosticInfo['entry']][]> =>
+export const queryCandidateFiles = async (uris: string[]): Promise<[URL, DiagnosticInfo['entry']][]> =>
     Promise.all(uris.map(uri => queryCandidateFile(uri).toPromise()))
 
-export const toDiagnosticInfos = async (diagEntries: [URL, sourcegraph.Diagnostic[]][]) => {
-    const entries = await queryCandidateFiles(diagEntries.map(([url]) => url))
+export const toDiagnosticInfos = async (diagnostics: DiagnosticWithType[]) => {
+    const uniqueResources = uniq(diagnostics.map(d => d.resource.toString()))
+    const entries = await queryCandidateFiles(uniqueResources)
     const m = new Map<string, DiagnosticInfo['entry']>()
     for (const [url, entry] of entries) {
         m.set(url.toString(), entry)
     }
-    return diagEntries.flatMap(([url, diag]) => {
-        const entry = m.get(url.toString())
+    return diagnostics.map(diag => {
+        const entry = m.get(diag.resource.toString())
         if (!entry) {
-            throw new Error(`no entry for url ${url}`)
+            throw new Error(`no entry for url ${diag.resource}`)
         }
-        // tslint:disable-next-line: no-object-literal-type-assertion
-        return diag.map(d => ({ ...d, entry } as DiagnosticInfo))
+        const info: DiagnosticInfo = { ...diag, entry }
+        return info
     })
 }
 
 /**
- * @param diagnosticCollectionName Only observe diagnostics from the named {@link sourcegraph.DiagnosticCollection}.
+ * @param query Only observe diagnostics matching the {@link sourcegraph.DiagnosticQuery}.
  */
 export const getDiagnosticInfos = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
-    diagnosticCollectionName?: string
+    query?: sourcegraph.DiagnosticQuery
 ): Observable<DiagnosticInfo[]> =>
     from(
-        diagnosticCollectionName === undefined
-            ? extensionsController.services.diagnostics.all
-            : extensionsController.services.diagnostics.observe(diagnosticCollectionName)
+        extensionsController.services.diagnostics
+            .observeDiagnostics({}, query ? query.type : undefined)
+            .pipe(map(diagnostics => (query ? diagnostics.filter(diagnosticQueryMatcher(query)) : diagnostics)))
     ).pipe(switchMap(diagEntries => toDiagnosticInfos(diagEntries)))
+
+function diagnosticQueryMatcher(query: sourcegraph.DiagnosticQuery): (diagnostic: DiagnosticWithType) => boolean {
+    return diagnostic => diagnostic.type === query.type
+}
 
 export const diagnosticID = (diagnostic: DiagnosticInfo): string =>
     `${diagnostic.entry.path}:${diagnostic.range ? diagnostic.range.start.line : '-'}:${

@@ -72,7 +72,7 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
     map(() => sourcegraph.workspace.roots),
     switchMap(async roots => {
         if (roots.length > 0) {
-            return of([]) // TODO!(sqs): dont run in comparison mode
+            return of<sourcegraph.Diagnostic[]>([]) // TODO!(sqs): dont run in comparison mode
         }
 
         const results = flatten(
@@ -158,8 +158,8 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
 
         return from(settingsObservable<Settings>()).pipe(
             map(settings =>
-                docs
-                    .map(doc => {
+                flatten(
+                    docs.map(doc => {
                         const lintMessages = linter.verify(doc.text, config, {
                             filename: new URL(doc.uri).pathname.slice(1),
                         })
@@ -185,11 +185,9 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                                 } as sourcegraph.Diagnostic
                             })
                             .filter(isDefined)
-                        return diagnostics.length > 0
-                            ? ([new URL(doc.uri), diagnostics] as [URL, sourcegraph.Diagnostic[]])
-                            : null
+                        return diagnostics
                     })
-                    .filter(isDefined)
+                )
             )
         )
     }),
@@ -257,6 +255,24 @@ function registerCheckProvider(diagnostics: Observable<sourcegraph.Diagnostic[] 
                     return info
                 })
             ),
+            provideDiagnosticGroups: () => {
+                return diagnostics.pipe(
+                    filter((diagnostics): diagnostics is sourcegraph.Diagnostic[] => diagnostics !== LOADING),
+                    map(diagnostics => {
+                        const ruleIdsSet = new Set<string>()
+                        for (const diag of diagnostics) {
+                            const rule = getLintMessageFromDiagnosticData(diag)
+                            ruleIdsSet.add(rule.ruleId)
+                        }
+
+                        const ruleIds = Array.from(ruleIdsSet.values()).sort()
+                        return ruleIds.map<sourcegraph.DiagnosticGroup>(ruleId => ({
+                            name: ruleId,
+                            query: { type: 'eslint' },
+                        }))
+                    })
+                )
+            },
         }))
     )
     subscriptions.add(
@@ -368,7 +384,8 @@ function getRulePolicyFromSettings(settings: Settings, ruleId: string): RulePoli
 }
 
 function isESLintDiagnostic(diag: sourcegraph.Diagnostic): boolean {
-    return diag.type === TYPE_ESLINT
+    // TODO!(sqs)
+    return true
 }
 
 function getLintMessageFromDiagnosticData(diag: sourcegraph.Diagnostic): Linter.LintMessage {

@@ -1,12 +1,11 @@
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
-import BellIcon from 'mdi-react/BellIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { ChecklistIcon } from '../../../../util/octicons'
+import { DiagnosticsIcon, RuleIcon } from '../../icons'
 import { CheckAreaContext } from '../CheckArea'
 
-interface Props extends Pick<CheckAreaContext, 'check' | 'checkURL'> {
+interface Props extends Pick<CheckAreaContext, 'checkURL'> {
     className?: string
 }
 
@@ -26,7 +25,7 @@ export const CheckAreaNavbar: React.FunctionComponent<Props> = ({ checkURL, clas
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="check-area-navbar__nav-link--active"
                     >
-                        <BellIcon className="icon-inline" /> Notifications{' '}
+                        <DiagnosticsIcon className="icon-inline" /> Diagnostics
                     </NavLink>
                 </li>
                 <li className="check-area-navbar__nav-item nav-item">
@@ -35,7 +34,7 @@ export const CheckAreaNavbar: React.FunctionComponent<Props> = ({ checkURL, clas
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="check-area-navbar__nav-link--active"
                     >
-                        <ChecklistIcon className="icon-inline" /> Checks
+                        <RuleIcon className="icon-inline" /> Rules
                     </NavLink>
                 </li>
                 <li className="check-area-navbar__nav-item nav-item">
