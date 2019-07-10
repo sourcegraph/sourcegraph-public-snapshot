@@ -49,7 +49,10 @@ const MAX_FILE_SIZE = readEnvInt({ key: 'SRC_LSIF_MAX_FILE_SIZE', defaultValue: 
  * Empirically based on github.com/sourcegraph/codeintellify, each byte of
  * storage (uncompressed newline-delimited JSON) expands to 3 bytes in memory.
  */
-const SOFT_MAX_STORAGE_IN_MEMORY = readEnvInt({ key: 'SRC_LSIF_SOFT_MAX_STORAGE_IN_MEMORY', defaultValue: 100 * 1024 * 1024 })
+const SOFT_MAX_STORAGE_IN_MEMORY = readEnvInt({
+    key: 'SRC_LSIF_SOFT_MAX_STORAGE_IN_MEMORY',
+    defaultValue: 100 * 1024 * 1024,
+})
 
 /**
  * Which port to run the LSIF server on. Defaults to 3185.
@@ -276,7 +279,15 @@ function main() {
                 throw Object.assign(new Error('file must be a string'), { status: 400 })
             }
 
-            res.send(Boolean((await createDB({ repository, commit })).stat(file)))
+            try {
+                res.send(Boolean((await createDB({ repository, commit })).stat(file)))
+            } catch (e) {
+                if ('code' in e && e.code === 'ENOENT') {
+                    res.send({ error: `No LSIF data available for ${repository}@${commit}.` })
+                    return
+                }
+                throw e
+            }
         })
     )
 

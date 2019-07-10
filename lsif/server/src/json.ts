@@ -104,6 +104,7 @@ export class JsonDatabase extends Database {
 	public load(file: string, transformerFactory: (projectRoot: string) => UriTransformer): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
 			let input: fs.ReadStream = fs.createReadStream(file, { encoding: 'utf8'});
+            input.on('error', reject)
 			const rd = readline.createInterface(input);
 			rd.on('line', (line: string) => {
 				if (!line || line.length === 0) {
