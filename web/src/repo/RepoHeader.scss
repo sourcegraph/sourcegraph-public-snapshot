@@ -65,5 +65,7 @@
     }
     .action-item--pressed {
         background-color: $color-light-bg-3;
+        height: 100%;
+        color: $color-light-text-1;
     }
 }
