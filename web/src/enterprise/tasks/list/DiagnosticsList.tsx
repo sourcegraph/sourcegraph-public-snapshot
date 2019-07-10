@@ -23,6 +23,7 @@ interface Props
         PlatformContextProps {
     diagnosticsOrError: typeof LOADING | DiagnosticInfo[] | ErrorLike
 
+    className?: string
     history: H.History
     location: H.Location
 }
@@ -32,11 +33,12 @@ interface Props
  */
 export const DiagnosticsList: React.FunctionComponent<Props> = ({
     diagnosticsOrError,
+    className = '',
     itemClassName,
     extensionsController,
     ...props
 }) => (
-    <div className="tasks-list">
+    <div className={`tasks-list ${className}`}>
         {isErrorLike(diagnosticsOrError) ? (
             <div className={itemClassName}>
                 <div className="alert alert-danger mt-2">{diagnosticsOrError.message}</div>

@@ -40,59 +40,66 @@ export const CheckDiagnosticsArea: React.FunctionComponent<Props> = ({
     ...props
 }) => {
     const diagnosticGroupsOrError = useCheckDiagnosticGroups(props.extensionsController, checkProvider)
+    if (isErrorLike(diagnosticGroupsOrError)) {
+        return (
+            <div className={itemClassName}>
+                <div className="alert alert-danger mt-2">{diagnosticGroupsOrError.message}</div>
+            </div>
+        )
+    }
+    if (diagnosticGroupsOrError === LOADING) {
+        return (
+            <div className={itemClassName}>
+                <LoadingSpinner className="mt-3" />
+            </div>
+        )
+    }
+    if (diagnosticGroupsOrError.length === 0) {
+        return (
+            <div className={itemClassName}>
+                <p className="p-2 mb-0 text-muted">No diagnostics found.</p>
+            </div>
+        )
+    }
+
+    const commonProps = {
+        checkProvider,
+        diagnosticGroups: diagnosticGroupsOrError,
+        checkDiagnosticsURL,
+        className: 'w-100',
+        itemClassName: 'my-5 border-bottom',
+    }
     return (
-        <div className={`check-diagnostics-area d-flex align-items-start ${className}`}>
-            {isErrorLike(diagnosticGroupsOrError) ? (
-                <div className={itemClassName}>
-                    <div className="alert alert-danger mt-2">{diagnosticGroupsOrError.message}</div>
-                </div>
-            ) : diagnosticGroupsOrError === LOADING ? (
-                <div className={itemClassName}>
-                    <LoadingSpinner className="mt-3" />
-                </div>
-            ) : diagnosticGroupsOrError.length === 0 ? (
-                <div className={itemClassName}>
-                    <p className="p-2 mb-0 text-muted">No diagnostics found.</p>
-                </div>
-            ) : (
-                <ErrorBoundary location={props.location}>
-                    <Switch>
-                        <Route  path={checkDiagnosticsURL} exact={true}>
-                            <CheckDiagnosticGroupsList
-                                {...props}
-                                checkProvider={checkProvider}
-                                diagnosticGroups={diagnosticGroupsOrError}
-                                checkDiagnosticsURL={checkDiagnosticsURL}
-                                className="flex-1"
-                                itemClassName="my-5"
-                            />
-                        </Route>
-                        <Route
-                            
-                            path={`${checkDiagnosticsURL}/:id`}
-                            exact={true}
-                            // tslint:disable-next-line: jsx-no-lambda
-                            render={(routeComponentProps: RouteComponentProps<{ id: string }>) => {
-                                const diagnosticGroup = diagnosticGroupsOrError.find(
-                                    ({ id }) => routeComponentProps.match.params.id === id
-                                )
-                                return diagnosticGroup ? (
-                                    <CheckDiagnosticGroupPage
-                                        {...props}
-                                        checkProvider={checkProvider}
-                                        diagnosticGroup={diagnosticGroup}
-                                        checkDiagnosticsURL={checkDiagnosticsURL}
-                                    />
-                                ) : (
-                                    <div className="alert alert-danger mt-2">
-                                        The requested diagnostic group was not found.
-                                    </div>
-                                )
-                            }}
-                        />
-                    </Switch>
-                </ErrorBoundary>
-            )}
+        <div className={`check-diagnostics-area ${className}`}>
+            <ErrorBoundary location={props.location}>
+                <Switch>
+                    <Route key="hardcoded-key" path={checkDiagnosticsURL} exact={true}>
+                        <CheckDiagnosticGroupsList {...props} {...commonProps} />
+                    </Route>
+                    <Route
+                        key="hardcoded-key"
+                        path={`${checkDiagnosticsURL}/:id`}
+                        exact={true}
+                        // tslint:disable-next-line: jsx-no-lambda
+                        render={(routeComponentProps: RouteComponentProps<{ id: string }>) => {
+                            const diagnosticGroup = diagnosticGroupsOrError.find(
+                                ({ id }) => routeComponentProps.match.params.id === id
+                            )
+                            return diagnosticGroup ? (
+                                <CheckDiagnosticGroupsList
+                                    {...props}
+                                    {...commonProps}
+                                    expandedDiagnosticGroup={diagnosticGroup}
+                                />
+                            ) : (
+                                <div className="alert alert-danger my-2">
+                                    The requested diagnostic group was not found.
+                                </div>
+                            )
+                        }}
+                    />
+                </Switch>
+            </ErrorBoundary>
         </div>
     )
 }
