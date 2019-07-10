@@ -31,19 +31,20 @@ const STORAGE_ROOT = process.env['SRC_LSIF_STORAGE_ROOT'] || 'lsif'
 /**
  * Soft limit on the amount of storage used by LSIF files. Storage can exceed
  * this limit if a single LSIF file is larger than this, otherwise storage will
- * be kept under this limit.
+ * be kept under this limit. Defaults to 100GB.
  */
 const SOFT_MAX_STORAGE = readEnvInt({ key: 'SRC_LSIF_SOFT_MAX_STORAGE', defaultValue: 100 * 1024 * 1024 * 1024 })
 
 /**
- * Limit on the file size accepted by the /upload endpoint.
+ * Limit on the file size accepted by the /upload endpoint. Defaults to 100MB.
  */
 const MAX_FILE_SIZE = readEnvInt({ key: 'SRC_LSIF_MAX_FILE_SIZE', defaultValue: 100 * 1024 * 1024 })
 
 /**
  * Soft limit on the total amount of storage occupied by LSIF data loaded in
  * memory. The actual amount can exceed this if a single LSIF file is larger
- * than this limit, otherwise memory will be kept under this limit.
+ * than this limit, otherwise memory will be kept under this limit. Defaults to
+ * 100MB.
  *
  * Empirically based on github.com/sourcegraph/codeintellify, each byte of
  * storage (uncompressed newline-delimited JSON) expands to 3 bytes in memory.
@@ -51,7 +52,7 @@ const MAX_FILE_SIZE = readEnvInt({ key: 'SRC_LSIF_MAX_FILE_SIZE', defaultValue: 
 const SOFT_MAX_STORAGE_IN_MEMORY = readEnvInt({ key: 'SRC_LSIF_SOFT_MAX_STORAGE_IN_MEMORY', defaultValue: 100 * 1024 * 1024 })
 
 /**
- * Which port to run the LSIF server on.
+ * Which port to run the LSIF server on. Defaults to 3185.
  */
 const PORT = readEnvInt({ key: 'SRC_LSIF_HTTP_PORT', defaultValue: 3185 })
 
