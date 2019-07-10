@@ -28,13 +28,7 @@ export function signalBrowserExtensionInstalled(): void {
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         dispatchSourcegraphEvents()
     } else {
-        window.addEventListener(
-            'load',
-            () => {
-                dispatchSourcegraphEvents()
-            },
-            { once: true }
-        )
+        window.addEventListener('load', dispatchSourcegraphEvents, { once: true })
     }
 }
 
