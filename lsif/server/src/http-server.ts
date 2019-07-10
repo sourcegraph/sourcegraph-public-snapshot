@@ -11,14 +11,14 @@ import { withFile } from 'tmp-promise'
 /**
  * Reads an integer from an environment variable or defaults to the given value.
  */
-function readEnvInt({ key, def }: { key: string; def: number }): number {
+function readEnvInt({ key, defaultValue }: { key: string; defaultValue: number }): number {
     const value = process.env[key]
     if (!value) {
-        return def
+        return defaultValue
     }
     const n = parseInt(value)
     if (isNaN(n)) {
-        return def
+        return defaultValue
     }
     return n
 }
@@ -33,12 +33,12 @@ const storageRoot = process.env['SRC_LSIF_STORAGE_ROOT'] || 'lsif'
  * this limit if a single LSIF file is larger than this, otherwise storage will
  * be kept under this limit.
  */
-const softMaxStorage = readEnvInt({ key: 'SRC_LSIF_SOFT_MAX_STORAGE', def: 100 * 1024 * 1024 * 1024 })
+const softMaxStorage = readEnvInt({ key: 'SRC_LSIF_SOFT_MAX_STORAGE', defaultValue: 100 * 1024 * 1024 * 1024 })
 
 /**
  * Limit on the file size accepted by the /upload endpoint.
  */
-const maxFileSize = readEnvInt({ key: 'SRC_LSIF_MAX_FILE_SIZE', def: 100 * 1024 * 1024 })
+const maxFileSize = readEnvInt({ key: 'SRC_LSIF_MAX_FILE_SIZE', defaultValue: 100 * 1024 * 1024 })
 
 /**
  * Soft limit on the total amount of storage occupied by LSIF data loaded in
@@ -48,12 +48,12 @@ const maxFileSize = readEnvInt({ key: 'SRC_LSIF_MAX_FILE_SIZE', def: 100 * 1024 
  * Empirically based on github.com/sourcegraph/codeintellify, each byte of
  * storage (uncompressed newline-delimited JSON) expands to 3 bytes in memory.
  */
-const softMaxStorageInMemory = readEnvInt({ key: 'SRC_LSIF_SOFT_MAX_STORAGE_IN_MEMORY', def: 100 * 1024 * 1024 })
+const softMaxStorageInMemory = readEnvInt({ key: 'SRC_LSIF_SOFT_MAX_STORAGE_IN_MEMORY', defaultValue: 100 * 1024 * 1024 })
 
 /**
  * Which port to run the LSIF server on.
  */
-const port = readEnvInt({ key: 'SRC_LSIF_HTTP_PORT', def: 3185 })
+const port = readEnvInt({ key: 'SRC_LSIF_HTTP_PORT', defaultValue: 3185 })
 
 /**
  * An opaque repository ID.
