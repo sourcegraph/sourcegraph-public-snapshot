@@ -28,19 +28,20 @@ const CHECK_PROVIDER_REGISTRATION_DELAY = 5000 // ms
  */
 export const useCheckByTypeForScope = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
-    { type, id }: CheckID,
+    id: CheckID,
     scope: sourcegraph.CheckContext<any>['scope']
 ): typeof LOADING | CheckData | null | ErrorLike => {
     const [checkOrError, setCheckOrError] = useState<typeof LOADING | CheckData | null | ErrorLike>(LOADING)
     useEffect(() => {
+        const idObj: CheckID = { type: id.type, id: id.id } // avoid useEffect rerunning for same type and id when object differs
         const subscriptions = new Subscription()
         subscriptions.add(
             combineLatest([
-                extensionsController.services.checks.observeCheck(scope, { type, id }).pipe(
+                extensionsController.services.checks.observeCheck(scope, idObj).pipe(
                     switchMap(provider =>
                         provider
                             ? from(provider.information).pipe(
-                                  map(information => ({ id: { type, id }, provider, information }))
+                                  map(information => ({ id: idObj, provider, information }))
                               )
                             : of(null)
                     ),
@@ -58,6 +59,6 @@ export const useCheckByTypeForScope = (
                 .subscribe(setCheckOrError)
         )
         return () => subscriptions.unsubscribe()
-    }, [extensionsController.services.checks, scope, id, type])
+    }, [extensionsController.services.checks, scope, id.type, id.id])
     return checkOrError
 }
