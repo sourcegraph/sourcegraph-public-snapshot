@@ -57,7 +57,7 @@ export const CheckDiagnosticsArea: React.FunctionComponent<Props> = ({
             ) : (
                 <ErrorBoundary location={props.location}>
                     <Switch>
-                        <Route key="hardcoded-key" path={checkDiagnosticsURL} exact={true}>
+                        <Route  path={checkDiagnosticsURL} exact={true}>
                             <CheckDiagnosticGroupsList
                                 {...props}
                                 checkProvider={checkProvider}
@@ -68,7 +68,7 @@ export const CheckDiagnosticsArea: React.FunctionComponent<Props> = ({
                             />
                         </Route>
                         <Route
-                            key="hardcoded-key"
+                            
                             path={`${checkDiagnosticsURL}/:id`}
                             exact={true}
                             // tslint:disable-next-line: jsx-no-lambda
