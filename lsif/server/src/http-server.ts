@@ -111,8 +111,8 @@ async function enforceMaxDiskUsage({
  * Computes the filename that contains LSIF data for the given repository@commit.
  */
 function diskKey({ repository, commit }: RepositoryCommit): string {
-    const base64Repository = Buffer.from(repository).toString('base64')
-    return path.join(storageRoot, `base64repository:${base64Repository},commit:${commit}.lsif`)
+    const urlEncodedRepository = encodeURIComponent(repository)
+    return path.join(storageRoot, `urlEncodedRepository:${urlEncodedRepository},commit:${commit}.lsif`)
 }
 
 /**

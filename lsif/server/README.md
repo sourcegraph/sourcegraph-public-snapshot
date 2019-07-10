@@ -36,11 +36,11 @@ The request body must be a JSON object with these properties:
 LSIF files are stored on disk with the following naming convention:
 
 ```
-base64repository:$BASE_64_REPOSITORY,commit:$40_CHAR_HASH.lsif
+urlEncodedRepository:$URL_ENCODED_REPOSITORY,commit:$40_CHAR_HASH.lsif
 ```
 
 For example, for `github.com/sourcegraph/codeintellify` at commit `c21c0da7b2a6cacafcbf90c85a81bf432020ad9b`:
 
 ```
-base64repository:Z2l0aHViLmNvbS9zb3VyY2VncmFwaC9jb2RlaW50ZWxsaWZ5,commit:c21c0da7b2a6cacafcbf90c85a81bf432020ad9b.lsif
+urlEncodedRepository:github.com%2Fsourcegraph%2Fcodeintellify,commit:c21c0da7b2a6cacafcbf90c85a81bf432020ad9b.lsif
 ```
