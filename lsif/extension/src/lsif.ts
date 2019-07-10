@@ -1,6 +1,6 @@
 import * as path from 'path'
-import * as sourcegraph from 'sourcegraph'
 import queryString from 'query-string'
+import * as sourcegraph from 'sourcegraph'
 
 function repositoryFromDoc(doc: sourcegraph.TextDocument): string {
     const url = new URL(doc.uri)
@@ -23,34 +23,39 @@ function setPath(doc: sourcegraph.TextDocument, path: string): string {
     return url.href
 }
 
+async function send({ doc, method, params }: { doc:sourcegraph.TextDocument, method: string; params: any }): Promise<any> {
+    const response = await fetch(
+        path.join(
+            sourcegraph.internal.sourcegraphURL +
+                `.api/lsif/request?${queryString.stringify({
+                    repository: repositoryFromDoc(doc),
+                    commit: commitFromDoc(doc),
+                })}`
+        ),
+        {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                method,
+                params: [pathFromDoc(doc), params],
+            }),
+        }
+    )
+    const body = await response.json()
+    if (body.error) {
+        if (body.error === 'No result found') {
+            return null
+        }
+        throw new Error(body.error)
+    }
+    return body
+}
+
 export function activate(ctx: sourcegraph.ExtensionContext): void {
     ctx.subscriptions.add(
         sourcegraph.languages.registerHoverProvider(['*'], {
             provideHover: async (doc, params) => {
-                const response = await fetch(
-                    path.join(
-                        sourcegraph.internal.sourcegraphURL +
-                            `.api/lsif/request?${queryString.stringify({
-                                repository: repositoryFromDoc(doc),
-                                commit: commitFromDoc(doc),
-                            })}`
-                    ),
-                    {
-                        method: 'POST',
-                        headers: { 'content-type': 'application/json' },
-                        body: JSON.stringify({
-                            method: 'hover',
-                            params: [pathFromDoc(doc), params],
-                        }),
-                    }
-                )
-                const body = await response.json()
-                if (body.error) {
-                    if (body.error === 'No result found') {
-                        return null
-                    }
-                    throw new Error(body.error)
-                }
+                const body = await send({ doc, method: 'hover', params })
                 return {
                     ...body,
                     contents: {
@@ -73,30 +78,7 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
     ctx.subscriptions.add(
         sourcegraph.languages.registerDefinitionProvider(['*'], {
             provideDefinition: async (doc, params) => {
-                const response = await fetch(
-                    path.join(
-                        sourcegraph.internal.sourcegraphURL +
-                            `.api/lsif/request?${queryString.stringify({
-                                repository: repositoryFromDoc(doc),
-                                commit: commitFromDoc(doc),
-                            })}`
-                    ),
-                    {
-                        method: 'POST',
-                        headers: { 'content-type': 'application/json' },
-                        body: JSON.stringify({
-                            method: 'definitions',
-                            params: [pathFromDoc(doc), params],
-                        }),
-                    }
-                )
-                const body = await response.json()
-                if (body.error) {
-                    if (body.error === 'No result found') {
-                        return null
-                    }
-                    throw new Error(body.error)
-                }
+                const body = await send({ doc, method: 'definitions', params })
                 return body.map((definition: any) => ({ ...definition, uri: setPath(doc, definition.uri) }))
             },
         })
@@ -105,33 +87,7 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
     ctx.subscriptions.add(
         sourcegraph.languages.registerReferenceProvider(['*'], {
             provideReferences: async (doc, params) => {
-                console.log('providerefs')
-                const response = await fetch(
-                    path.join(
-                        sourcegraph.internal.sourcegraphURL +
-                            `.api/lsif/request?${queryString.stringify({
-                                repository: repositoryFromDoc(doc),
-                                commit: commitFromDoc(doc),
-                            })}`
-                    ),
-                    {
-                        method: 'POST',
-                        headers: { 'content-type': 'application/json' },
-                        body: JSON.stringify({
-                            method: 'references',
-                            params: [pathFromDoc(doc), params],
-                        }),
-                    }
-                )
-                console.log(response)
-                const body = await response.json()
-                if (body.error) {
-                    if (body.error === 'No result found') {
-                        return null
-                    }
-                    throw new Error(body.error)
-                }
-                console.log(body)
+                const body = await send({ doc, method: 'references', params })
                 return body.map((reference: any) => ({ ...reference, uri: setPath(doc, reference.uri) }))
             },
         })
