@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/xeonx/timeago"
@@ -59,6 +60,25 @@ func (r *commitSearchResultResolver) Detail() *markdownResolver {
 
 func (r *commitSearchResultResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
+}
+
+func (r *commitSearchResultResolver) ToRepository() (*repositoryResolver, bool) { return nil, false }
+func (r *commitSearchResultResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
+func (r *commitSearchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
+	return r, true
+}
+func (r *commitSearchResultResolver) ToCodemodResult() (*codemodResultResolver, bool) {
+	return nil, false
+}
+
+func (r *commitSearchResultResolver) searchResultURIs() (string, string) {
+	// Diffs aren't going to be returned with other types of results
+	// and are already ordered in the desired order, so we'll just leave them in place.
+	return "~", "~" // lexicographically last in ASCII
+}
+
+func (r *commitSearchResultResolver) resultCount() int32 {
+	return 1
 }
 
 var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
@@ -401,25 +421,26 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
 	const maxMatchesPerLine = 25 // arbitrary
 
 	var highlights []*highlightedRange
-	for i, line := range bytes.Split(data, []byte("\n")) {
-		for _, match := range pattern.FindAllIndex(bytes.ToLower(line), maxMatchesPerLine) {
+	for i, line := range bytes.Split(bytes.ToLower(data), []byte("\n")) {
+		for _, match := range pattern.FindAllIndex(line, maxMatchesPerLine) {
 			highlights = append(highlights, &highlightedRange{
 				line:      int32(i + 1),
-				character: int32(match[0]),
-				length:    int32(match[1] - match[0]),
+				character: int32(utf8.RuneCount(line[:match[0]])),
+				length:    int32(utf8.RuneCount(line[:match[1]]) - utf8.RuneCount(line[:match[0]])),
 			})
 		}
 	}
-	return &highlightedString{
+	hls := &highlightedString{
 		value:      string(data),
 		highlights: highlights,
 	}
+	return hls
 }
 
-var mockSearchCommitDiffsInRepos func(args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error)
+var mockSearchCommitDiffsInRepos func(args *search.Args) ([]searchResultResolver, *searchResultsCommon, error)
 
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func searchCommitDiffsInRepos(ctx context.Context, args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {
+func searchCommitDiffsInRepos(ctx context.Context, args *search.Args) ([]searchResultResolver, *searchResultsCommon, error) {
 	if mockSearchCommitDiffsInRepos != nil {
 		return mockSearchCommitDiffsInRepos(args)
 	}
@@ -477,10 +498,10 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.Args) ([]*search
 	return commitSearchResultsToSearchResults(flattened), common, nil
 }
 
-var mockSearchCommitLogInRepos func(args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error)
+var mockSearchCommitLogInRepos func(args *search.Args) ([]searchResultResolver, *searchResultsCommon, error)
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
-func searchCommitLogInRepos(ctx context.Context, args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error) {
+func searchCommitLogInRepos(ctx context.Context, args *search.Args) ([]searchResultResolver, *searchResultsCommon, error) {
 	if mockSearchCommitLogInRepos != nil {
 		return mockSearchCommitLogInRepos(args)
 	}
@@ -538,15 +559,15 @@ func searchCommitLogInRepos(ctx context.Context, args *search.Args) ([]*searchRe
 	return commitSearchResultsToSearchResults(flattened), common, nil
 }
 
-func commitSearchResultsToSearchResults(results []*commitSearchResultResolver) []*searchResultResolver {
+func commitSearchResultsToSearchResults(results []*commitSearchResultResolver) []searchResultResolver {
 	// Show most recent commits first.
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].commit.author.Date() > results[j].commit.author.Date()
 	})
 
-	results2 := make([]*searchResultResolver, len(results))
+	results2 := make([]searchResultResolver, len(results))
 	for i, result := range results {
-		results2[i] = &searchResultResolver{diff: result}
+		results2[i] = result
 	}
 	return results2
 }

@@ -183,6 +183,7 @@ export function mergeSettings<S extends Settings>(values: S[]): S | null {
         'search.scopes': (base: any, add: any) => [...base, ...add],
         'search.savedQueries': (base: any, add: any) => [...base, ...add],
         'search.repositoryGroups': (base: any, add: any) => ({ ...base, ...add }),
+        quicklinks: (base: any, add: any) => [...base, ...add],
     }
     const target = cloneDeep(values[0])
     for (const value of values.slice(1)) {

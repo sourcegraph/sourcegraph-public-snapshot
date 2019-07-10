@@ -111,7 +111,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 			s.baseURL.Hostname(),
 			proj.PathWithNamespace,
 		)),
-		ExternalRepo: *gitlab.ExternalRepoSpec(proj, *s.baseURL),
+		ExternalRepo: gitlab.ExternalRepoSpec(proj, *s.baseURL),
 		Description:  proj.Description,
 		Fork:         proj.ForkedFromProject != nil,
 		Enabled:      true,

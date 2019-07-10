@@ -1,8 +1,10 @@
 import React from 'react'
 import { SearchFilters } from '../../../../shared/src/api/protocol'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { QuickLink } from '../../schema/settings.schema'
 import { FilterChip } from '../FilterChip'
 import { isSearchResults } from '../helpers'
+import { QuickLinks } from '../QuickLinks'
 
 export interface SearchScopeWithOptionalName {
     name?: string
@@ -14,6 +16,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
     results?: GQL.ISearchResults
     filters: SearchScopeWithOptionalName[]
     extensionFilters: SearchFilters[] | undefined
+    quickLinks?: QuickLink[] | undefined
     onFilterClick: (value: string) => void
     onShowMoreResultsClick: (value: string) => void
     calculateShowMoreResultsCount: () => number
@@ -22,6 +25,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
     results,
     filters,
     extensionFilters,
+    quickLinks,
     onFilterClick,
     onShowMoreResultsClick,
     calculateShowMoreResultsCount,
@@ -84,6 +88,13 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                             showMore={true}
                         />
                     )}
+                </div>
+            </div>
+        )}
+        {quickLinks && (
+            <div className="search-results-filter-bars__row" data-testid="quicklinks-bar">
+                <div className="search-results-filter-bars__quicklinks">
+                    <QuickLinks quickLinks={quickLinks} />
                 </div>
             </div>
         )}

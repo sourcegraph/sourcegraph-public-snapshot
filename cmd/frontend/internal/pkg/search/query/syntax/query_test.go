@@ -57,19 +57,22 @@ func TestExpr_String(t *testing.T) {
 
 func TestQuery_WithErrorsQuoted(t *testing.T) {
 	cases := []struct {
+		name string
 		in   string
 		want string
 	}{
-		{in: "", want: ""},
+		{name: "empty", in: "", want: ""},
 		{in: "a", want: "a"},
 		{in: "f:foo bar", want: `f:foo bar`},
 		{in: "f:foo b(ar", want: `f:foo "b(ar"`},
 		{in: "f:foo b(ar b[az", want: `f:foo "b(ar" "b[az"`},
+		{name: "invalid regex in field", in: `f:(a`, want: `"f:(a"`},
+		{name: "invalid regex in negated field", in: `-f:(a`, want: `"-f:(a"`},
 	}
 	for _, c := range cases {
-		name := c.in
-		if c.in == "" {
-			name = "empty"
+		name := c.name
+		if name == "" {
+			name = c.in
 		}
 		t.Run(name, func(t *testing.T) {
 			q := ParseAllowingErrors(c.in)

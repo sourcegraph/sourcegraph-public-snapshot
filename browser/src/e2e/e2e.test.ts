@@ -80,7 +80,7 @@ describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
                     console.warn('Running as root, disabling sandbox')
                     args = [...args, '--no-sandbox', '--disable-setuid-sandbox']
                 }
-                browser = await puppeteer.launch({ args })
+                browser = await puppeteer.launch({ args, headless: false })
             } else {
                 // Make sure CSP is disabled in FF preferences,
                 // because Puppeteer uses new Function() to evaluate code

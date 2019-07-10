@@ -17,8 +17,8 @@ import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
 
 interface Props extends ExtensionsControllerProps {
-    threadID: GQL.ID
-    commentID?: GQL.ID
+    threadIDWithoutKind: string
+    commentIDWithoutKind?: string
     repoID: GQL.ID
     rev: string | undefined
     filePath: string
@@ -50,9 +50,9 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             combineLatest(this.componentUpdates.pipe(startWith(this.props)))
                 .pipe(
-                    distinctUntilChanged(([a], [b]) => a.threadID === b.threadID),
+                    distinctUntilChanged(([a], [b]) => a.threadIDWithoutKind === b.threadIDWithoutKind),
                     switchMap(([props]) =>
-                        fetchDiscussionThreadAndComments(props.threadID).pipe(
+                        fetchDiscussionThreadAndComments(props.threadIDWithoutKind).pipe(
                             map(thread => ({ thread, error: undefined, loading: false })),
                             catchError(error => {
                                 console.error(error)
@@ -82,12 +82,15 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         // TODO(slimsag:discussions): future: test error state + cleanup CSS
 
         const { error, loading, thread } = this.state
-        const { location, commentID } = this.props
+        const { location, commentIDWithoutKind } = this.props
 
         // If the thread is loaded, ensure that the URL hash is updated to
         // reflect the line that the discussion was created on.
         if (thread) {
-            const desiredHash = this.urlHashWithLine(thread, commentID)
+            const desiredHash = this.urlHashWithLine(
+                thread,
+                commentIDWithoutKind ? { idWithoutKind: commentIDWithoutKind } : undefined
+            )
             if (!hashesEqual(desiredHash, location.hash)) {
                 const discussionURL = location.pathname + location.search + desiredHash
                 return <Redirect to={discussionURL} />
@@ -110,6 +113,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                             <DiscussionsComment
                                 key={node.id}
                                 {...this.props}
+                                threadID={thread.id}
                                 comment={node}
                                 onReport={this.onCommentReport}
                                 onClearReports={this.onCommentClearReports}
@@ -135,12 +139,15 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
      * line that it was created on.
      * @param thread The thread to link to.
      */
-    private urlHashWithLine(thread: GQL.IDiscussionThread, commentID?: GQL.ID): string {
+    private urlHashWithLine(
+        thread: Pick<GQL.IDiscussionThread, 'idWithoutKind' | 'target'>,
+        comment?: Pick<GQL.IDiscussionComment, 'idWithoutKind'>
+    ): string {
         const hash = new URLSearchParams()
         hash.set('tab', 'discussions')
-        hash.set('threadID', thread.id)
-        if (commentID) {
-            hash.set('commentID', commentID)
+        hash.set('threadID', thread.idWithoutKind)
+        if (comment) {
+            hash.set('commentID', comment.idWithoutKind)
         }
 
         return thread.target.__typename === 'DiscussionThreadTargetRepo' && thread.target.selection !== null
@@ -163,7 +170,10 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
 
     private onSubmit = (title: string, contents: string) => {
         eventLogger.log('RepliedToDiscussion')
-        return addCommentToThread(this.props.threadID, contents).pipe(
+        if (!this.state.thread) {
+            throw new Error('no thread')
+        }
+        return addCommentToThread(this.state.thread.id, contents).pipe(
             tap(thread => this.setState({ thread })),
             map(thread => undefined),
             catchError(e => throwError(new Error('Error creating comment: ' + asError(e).message)))

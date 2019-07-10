@@ -8,12 +8,13 @@ import (
 	"strconv"
 	"time"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // Provider is an implementation of AuthzProvider that provides repository permissions as
@@ -63,19 +64,33 @@ func (p *Provider) ServiceID() string { return p.codeHost.ServiceID }
 // ServiceType returns the type of this Provider, namely, "bitbucketServer".
 func (p *Provider) ServiceType() string { return p.codeHost.ServiceType }
 
-// Repos returns all Bitbucket Server repos as mine, and all others as others.
-func (p *Provider) Repos(ctx context.Context, repos map[authz.Repo]struct{}) (mine map[authz.Repo]struct{}, others map[authz.Repo]struct{}) {
-	return authz.GetCodeHostRepos(p.codeHost, repos)
-}
-
 // RepoPerms returns the permissions the given external account has in relation to the given set of repos.
 // It performs a single HTTP request against the Bitbucket Server API which returns all repositories
 // the authenticated user has permissions to read.
-func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos map[authz.Repo]struct{}) (map[api.RepoName]map[authz.Perm]bool, error) {
+func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos []*types.Repo) (
+	perms []authz.RepoPerms,
+	err error,
+) {
 	var (
 		userName string
 		userID   int32
 	)
+
+	tr, ctx := trace.New(ctx, "bitbucket.authz.provider.RepoPerms", "")
+	defer func() {
+		tr.LogFields(
+			otlog.String("user.name", userName),
+			otlog.Int32("user.id", userID),
+			otlog.Int("repos.count", len(repos)),
+			otlog.Int("perms.count", len(perms)),
+		)
+
+		if err != nil {
+			tr.SetError(err)
+		}
+
+		tr.Finish()
+	}()
 
 	if acct != nil && acct.ServiceID == p.codeHost.ServiceID && acct.ServiceType == p.codeHost.ServiceType {
 		var user bitbucketserver.User
@@ -87,9 +102,9 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		userName = user.Name
 	}
 
-	ids := make(map[int]authz.Repo, len(repos))
-	for r := range repos {
-		if id, _ := strconv.Atoi(r.ExternalRepoSpec.ID); id != 0 {
+	ids := make(map[int]*types.Repo, len(repos))
+	for _, r := range repos {
+		if id, _ := strconv.Atoi(r.ExternalRepo.ID); id != 0 {
 			ids[id] = r
 		}
 	}
@@ -116,7 +131,7 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		Type:   "repos",
 	}
 
-	err := p.store.LoadPermissions(ctx, &ps, update)
+	err = p.store.LoadPermissions(ctx, &ps, update)
 	if err != nil {
 		return nil, err
 	}
@@ -125,10 +140,24 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 }
 
 // FetchAccount satisfies the authz.Provider interface.
-func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.ExternalAccount) (*extsvc.ExternalAccount, error) {
+func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.ExternalAccount) (acct *extsvc.ExternalAccount, err error) {
 	if user == nil {
 		return nil, nil
 	}
+
+	tr, ctx := trace.New(ctx, "bitbucket.authz.provider.FetchAccount", "")
+	defer func() {
+		tr.LogFields(
+			otlog.String("user.name", user.Username),
+			otlog.Int32("user.id", user.ID),
+		)
+
+		if err != nil {
+			tr.SetError(err)
+		}
+
+		tr.Finish()
+	}()
 
 	bitbucketUser, err := p.user(ctx, user.Username)
 	if err != nil {

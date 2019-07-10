@@ -7,6 +7,7 @@ interface Window {
           }[]
         | undefined
     SOURCEGRAPH_PHABRICATOR_EXTENSION: boolean | undefined
+    SOURCEGRAPH_INTEGRATION: undefined | 'phabricator-integration' | 'bitbucket-integration'
     SG_ENV: 'EXTENSION' | 'PAGE'
     EXTENSION_ENV: 'CONTENT' | 'BACKGROUND' | 'OPTIONS' | null
     SOURCEGRAPH_BUNDLE_URL: string | undefined // Bundle Sourcegraph URL is set from the Phabricator extension.

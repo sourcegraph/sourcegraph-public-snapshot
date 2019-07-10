@@ -152,7 +152,7 @@ func (s GithubSource) makeRepo(r *github.Repository) *Repo {
 			s.originalHostname,
 			r.NameWithOwner,
 		)),
-		ExternalRepo: *github.ExternalRepoSpec(r, *s.baseURL),
+		ExternalRepo: github.ExternalRepoSpec(r, *s.baseURL),
 		Description:  r.Description,
 		Fork:         r.IsFork,
 		Enabled:      true,

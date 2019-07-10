@@ -9,7 +9,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
@@ -34,15 +34,15 @@ func TestProvider_RepoPerms_cacheTTL(t *testing.T) {
 
 	githubMock.getRepositoriesByNodeIDCount = 0
 	userAccount := ua("u0", "t0")
-	repos := map[authz.Repo]struct{}{
-		rp("r0", "u0/r0", "https://github.com/"):     {},
-		rp("r1", "u1/r1", "https://github.com/"):     {},
-		rp("r2", "u1/public", "https://github.com/"): {},
+	repos := []*types.Repo{
+		rp("r0", "u0/r0", "https://github.com/"),
+		rp("r1", "u1/r1", "https://github.com/"),
+		rp("r2", "u1/public", "https://github.com/"),
 	}
-	wantPerms := map[api.RepoName]map[authz.Perm]bool{
-		"r0": readPerms,
-		"r1": noPerms,
-		"r2": readPerms,
+	wantPerms := []authz.RepoPerms{
+		{Repo: repos[0], Perms: authz.Read},
+		{Repo: repos[1], Perms: authz.None},
+		{Repo: repos[2], Perms: authz.Read},
 	}
 	{
 		gotPerms, gotErr := provider.RepoPerms(ctx, userAccount, repos)

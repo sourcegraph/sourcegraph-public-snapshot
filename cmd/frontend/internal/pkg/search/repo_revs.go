@@ -59,6 +59,11 @@ func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
 type RepositoryRevisions struct {
 	Repo *types.Repo
 	Revs []RevisionSpecifier
+	// IndexedHEADCommit contains the HEAD Git commit indexed by Zoekt.
+	// It is written to by zoektIndexedRepos and read later by zoektSearchHEAD.
+	// See https://github.com/sourcegraph/sourcegraph/pull/4702 for the performance
+	// rationale.
+	IndexedHEADCommit api.CommitID
 }
 
 // ParseRepositoryRevisions parses strings that refer to a repository and 0

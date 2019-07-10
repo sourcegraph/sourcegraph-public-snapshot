@@ -4,14 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
 	"time"
-
-	"github.com/pkg/errors"
-
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -22,9 +20,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type repositoryResolver struct {
+	hydration sync.Once
+	err       error
+
 	repo        *types.Repo
 	redirectURL *string
 	icon        string
@@ -66,12 +68,22 @@ func (r *repositoryResolver) Name() string {
 	return string(r.repo.Name)
 }
 
-func (r *repositoryResolver) URI() string {
-	return r.repo.URI
+func (r *repositoryResolver) URI(ctx context.Context) (string, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return r.repo.URI, nil
 }
 
-func (r *repositoryResolver) Description() string {
-	return r.repo.Description
+func (r *repositoryResolver) Description(ctx context.Context) (string, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return r.repo.Description, nil
 }
 
 func (r *repositoryResolver) RedirectURL() *string {
@@ -145,21 +157,34 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver
 	return &gitRefResolver{repo: r, name: refName}, nil
 }
 
-func (r *repositoryResolver) Language() string {
-	return r.repo.Language
+func (r *repositoryResolver) Language(ctx context.Context) string {
+	// The repository language is the most common language at the HEAD commit of the repository.
+	// Note: the repository database field is no longer updated as of
+	// https://github.com/sourcegraph/sourcegraph/issues/2586, so we do not use it anymore and
+	// instead compute the language on the fly.
+
+	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, "")
+	if err != nil {
+		return ""
+	}
+
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo, commitID)
+	if err != nil {
+		return ""
+	}
+	if len(inventory.Languages) == 0 {
+		return ""
+	}
+	return inventory.Languages[0].Name
 }
 
 func (r *repositoryResolver) Enabled() bool { return true }
 
 func (r *repositoryResolver) CreatedAt() string {
-	return r.repo.CreatedAt.Format(time.RFC3339)
+	return time.Now().Format(time.RFC3339)
 }
 
 func (r *repositoryResolver) UpdatedAt() *string {
-	if r.repo.UpdatedAt != nil {
-		t := r.repo.UpdatedAt.Format(time.RFC3339)
-		return &t
-	}
 	return nil
 }
 
@@ -184,6 +209,41 @@ func (r *repositoryResolver) Detail() *markdownResolver {
 
 func (r *repositoryResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
+}
+
+func (r *repositoryResolver) ToRepository() (*repositoryResolver, bool) { return r, true }
+func (r *repositoryResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
+func (r *repositoryResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
+	return nil, false
+}
+func (r *repositoryResolver) ToCodemodResult() (*codemodResultResolver, bool) {
+	return nil, false
+}
+
+func (r *repositoryResolver) searchResultURIs() (string, string) {
+	return string(r.repo.Name), ""
+}
+
+func (r *repositoryResolver) resultCount() int32 {
+	return 1
+}
+
+func (r *repositoryResolver) hydrate(ctx context.Context) error {
+	r.hydration.Do(func() {
+		if r.repo.RepoFields != nil {
+			return
+		}
+
+		log15.Debug("repositoryResolver.hydrate", "repo.ID", r.repo.ID)
+
+		var repo *types.Repo
+		repo, r.err = db.Repos.Get(ctx, r.repo.ID)
+		if r.err == nil {
+			r.repo.RepoFields = repo.RepoFields
+		}
+	})
+
+	return r.err
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {

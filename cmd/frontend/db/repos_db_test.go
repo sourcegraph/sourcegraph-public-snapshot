@@ -34,7 +34,14 @@ func repoNames(repos []*types.Repo) []api.RepoName {
 }
 
 func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: repo.Name, Description: repo.Description, Fork: repo.Fork, Enabled: true}); err != nil {
+	op := api.InsertRepoOp{Name: repo.Name, Enabled: true}
+
+	if repo.RepoFields != nil {
+		op.Description = repo.Description
+		op.Fork = repo.Fork
+	}
+
+	if err := Repos.Upsert(ctx, op); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -65,12 +72,12 @@ func TestRepos_Get(t *testing.T) {
 
 	want := mustCreate(ctx, t, &types.Repo{
 		Name: "r",
-		URI:  "u",
-		ExternalRepo: &api.ExternalRepoSpec{
+		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "a",
 			ServiceType: "b",
 			ServiceID:   "c",
 		},
+		RepoFields: &types.RepoFields{URI: "u"},
 	})
 
 	repo, err := Repos.Get(ctx, want[0].ID)
@@ -87,7 +94,7 @@ func TestRepos_List(t *testing.T) {
 		t.Skip()
 	}
 
-	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 		return repos, nil
 	}
 	defer func() { mockAuthzFilter = nil }()
@@ -111,15 +118,15 @@ func TestRepos_List_fork(t *testing.T) {
 		t.Skip()
 	}
 
-	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 		return repos, nil
 	}
 	defer func() { mockAuthzFilter = nil }()
 	ctx := dbtesting.TestContext(t)
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
-	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", Fork: false})
-	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", Fork: true})
+	mine := mustCreate(ctx, t, &types.Repo{Name: "a/r", RepoFields: &types.RepoFields{Fork: false}})
+	yours := mustCreate(ctx, t, &types.Repo{Name: "b/r", RepoFields: &types.RepoFields{Fork: true}})
 
 	{
 		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true, OnlyForks: true})
@@ -156,7 +163,7 @@ func TestRepos_List_pagination(t *testing.T) {
 		t.Skip()
 	}
 
-	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 		return repos, nil
 	}
 	defer func() { mockAuthzFilter = nil }()
@@ -207,7 +214,7 @@ func TestRepos_List_query1(t *testing.T) {
 		t.Skip()
 	}
 
-	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 		return repos, nil
 	}
 	defer func() { mockAuthzFilter = nil }()
@@ -249,7 +256,7 @@ func TestRepos_List_query2(t *testing.T) {
 		t.Skip()
 	}
 
-	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 		return repos, nil
 	}
 	defer func() { mockAuthzFilter = nil }()
@@ -294,7 +301,7 @@ func TestRepos_List_sort(t *testing.T) {
 		t.Skip()
 	}
 
-	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 		return repos, nil
 	}
 	defer func() { mockAuthzFilter = nil }()
@@ -367,7 +374,7 @@ func TestRepos_List_patterns(t *testing.T) {
 		t.Skip()
 	}
 
-	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 		return repos, nil
 	}
 	defer func() { mockAuthzFilter = nil }()
@@ -424,7 +431,7 @@ func TestRepos_List_patterns(t *testing.T) {
 // TestRepos_List_patterns tests the behavior of Repos.List when called with
 // a QueryPattern.
 func TestRepos_List_queryPattern(t *testing.T) {
-	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perm) ([]*types.Repo, error) {
+	mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 		return repos, nil
 	}
 	defer func() { mockAuthzFilter = nil }()
@@ -582,14 +589,20 @@ func TestRepos_Create(t *testing.T) {
 	ctx := dbtesting.TestContext(t)
 
 	// Add a repo.
-	createRepo(ctx, t, &types.Repo{Name: "a/b"})
+	createRepo(ctx, t, &types.Repo{
+		Name:       "a/b",
+		RepoFields: &types.RepoFields{Description: "test"}})
 
 	repo, err := Repos.GetByName(ctx, "a/b")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if repo.CreatedAt.IsZero() {
-		t.Fatal("got CreatedAt.IsZero()")
+
+	if got, want := repo.Name, api.RepoName("a/b"); got != want {
+		t.Fatalf("got Name %q, want %q", got, want)
+	}
+	if got, want := repo.Description, "test"; got != want {
+		t.Fatalf("got Description %q, want %q", got, want)
 	}
 }
 

@@ -2,7 +2,7 @@ import { isEqual } from 'lodash'
 import React, { createRef, TextareaHTMLAttributes, useEffect, useState } from 'react'
 import { from, Subscription, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, map } from 'rxjs/operators'
-import { CodeEditor, CodeEditorData, EditorId, EditorService } from '../../api/client/services/editorService'
+import { CodeEditorData, EditorId, EditorService } from '../../api/client/services/editorService'
 import { ModelService, TextModel } from '../../api/client/services/modelService'
 import { offsetToPosition, positionToOffset } from '../../api/client/types/textDocument'
 import { ExtensionsControllerProps } from '../../extensions/controller'
@@ -58,18 +58,18 @@ export const EditorTextFieldUtils = {
      * model change.
      */
     updateElementOnEditorOrModelChanges: (
-        editorService: Pick<EditorService, 'editors'>,
+        editorService: Pick<EditorService, 'observeEditorAndModel'>,
         editor: EditorId,
         setValue: (text: string) => void,
         textAreaRef: React.RefObject<Pick<HTMLTextAreaElement, 'value' | 'setSelectionRange'>>
     ): Unsubscribable => {
         const subscriptions = new Subscription()
 
-        const editorChanges = from(editorService.editors).pipe(map(editors => findEditor(editors, editor.editorId)))
-        const modelTextChanges = editorChanges.pipe(
-            map(editor => editor.model.text),
-            distinctUntilChanged(),
-            filter(isDefined)
+        const changes = from(editorService.observeEditorAndModel(editor))
+        const modelTextChanges = changes.pipe(
+            map(({ model: { text } }) => text),
+            filter(isDefined),
+            distinctUntilChanged()
         )
 
         // Update text.
@@ -77,7 +77,7 @@ export const EditorTextFieldUtils = {
 
         // Update selection.
         subscriptions.add(
-            editorChanges
+            changes
                 .pipe(
                     map(editor => editor.selections),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
@@ -167,7 +167,7 @@ export const EditorTextField: React.FunctionComponent<Props> = ({
             textAreaRef
         )
         return () => subscription.unsubscribe()
-    }, [editorId, editorService, onValueChange, textAreaRef])
+    }, [editorId, editorService, modelService, onValueChange, textAreaRef])
 
     return (
         <textarea
@@ -194,12 +194,4 @@ export const EditorTextField: React.FunctionComponent<Props> = ({
             {...textAreaProps}
         />
     )
-}
-
-function findEditor(editors: readonly CodeEditor[], editorId: EditorId['editorId']): CodeEditor {
-    const editor = editors.find(e => e.editorId === editorId)
-    if (!editor) {
-        throw new Error(`editor not found: ${editorId}`)
-    }
-    return editor
 }

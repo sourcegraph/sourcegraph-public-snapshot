@@ -80,6 +80,7 @@ require (
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
 	github.com/karlseguin/expect v1.0.1 // indirect
 	github.com/karlseguin/typed v1.1.7 // indirect
+	github.com/karrick/godirwalk v1.10.12
 	github.com/karrick/tparse v2.4.2+incompatible
 	github.com/keegancsmith/rpc v1.1.0
 	github.com/keegancsmith/sqlf v1.1.0
@@ -125,7 +126,7 @@ require (
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
-	github.com/sourcegraph/docsite v0.0.0-20190303064655-ad3087aa6352
+	github.com/sourcegraph/docsite v0.0.0-20190705114956-7aba76ce11c0
 	github.com/sourcegraph/go-diff v0.5.1-0.20190324182542-c825d9a1a0ca
 	github.com/sourcegraph/go-jsonschema v0.0.0-20190205151546-7939fa138765
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
@@ -154,7 +155,7 @@ require (
 	golang.org/x/net v0.0.0-20190322120337-addf6b3196f6
 	golang.org/x/oauth2 v0.0.0-20190604060849-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190602191015-112230192c58
-	golang.org/x/sys v0.0.0-20190608051445-5b15430b70e3
+	golang.org/x/sys v0.0.0-20190701071227-04f50cda93cb
 	golang.org/x/time v0.0.0-20190401211219-9d24e82272b4
 	golang.org/x/tools v0.0.0-20190322203728-c1a832b0ad89
 	google.golang.org/api v0.1.0 // indirect
