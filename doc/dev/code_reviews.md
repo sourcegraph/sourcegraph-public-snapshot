@@ -77,6 +77,6 @@ You should get a code review from the person who's approval will give you the mo
 
 If your change touches multiple parts of our codebase (e.g. Go, TypeScript), then you might need to get approvals from multiple peers (e.g. a Go reviewers and a TypeScript reviewer).
 
-GitHub will automatically assign reviewers if there is a matching entry in the [CODEOWNERS](../../.github/CODEOWNERS) file, but that doesn't necessarily mean that you need to wait for an approval from everyone. For example, if you are making a change to the search backend then you only need approval from one person on that team, not all of them.
+GitHub will automatically assign reviewers if there is a matching entry in the [CODEOWNERS](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/.github/CODEOWNERS) file, but that doesn't necessarily mean that you need to wait for an approval from everyone. For example, if you are making a change to the search backend then you only need approval from one person on that team, not all of them.
 
 Use your judgement.
