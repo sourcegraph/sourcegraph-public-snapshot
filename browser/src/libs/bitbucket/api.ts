@@ -11,7 +11,12 @@ import { BitbucketRepoInfo } from './scrape'
 // PR API /rest/api/1.0/projects/SG/repos/go-langserver/pull-requests/1
 
 const buildURL = (project: string, repoSlug: string, path: string) =>
-    `${window.location.origin}/rest/api/1.0/projects/${encodeURIComponent(project)}/repos/${repoSlug}${path}`
+    // If possible, use the global `AJS.contextPath()` to reliably construct an absolute URL.
+    // This is possible in the native integration only - browser extension content scripts cannot
+    // access the page's global scope.
+    `${AJS ? AJS.contextPath() : window.location.origin}/rest/api/1.0/projects/${encodeURIComponent(
+        project
+    )}/repos/${repoSlug}${path}`
 
 const get = <T>(url: string): Observable<T> => ajax.get(url).pipe(map(({ response }) => response as T))
 
