@@ -140,6 +140,9 @@ func (r *searchResolver) countIsSet() bool {
 const defaultMaxSearchResults = 30
 
 func (r *searchResolver) maxResults() int32 {
+	if r.pagination != nil {
+		return 100000000
+	}
 	count, _ := r.query.StringValues(query.FieldCount)
 	if len(count) > 0 {
 		n, _ := strconv.Atoi(count[0])

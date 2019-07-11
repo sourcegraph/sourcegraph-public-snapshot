@@ -163,10 +163,11 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 		return nil, err
 	}
 	args := search.Args{
-		Pattern:         p,
-		Repos:           repos,
-		Query:           r.query,
-		UseFullDeadline: r.searchTimeoutFieldSet(),
+		Pattern: p,
+		Repos:   repos,
+		Query:   r.query,
+		//UseFullDeadline: r.searchTimeoutFieldSet(),
+		UseFullDeadline: true,
 		Zoekt:           r.zoekt,
 	}
 	if err := args.Pattern.Validate(); err != nil {
@@ -216,7 +217,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 		return repoIsLess(repos[i].Repo, repos[j].Repo)
 	})
 
-	common := searchResultsCommon{maxResultsCount: 1000000}
+	common := searchResultsCommon{maxResultsCount: r.maxResults()}
 	fileResults, fileCommon, err := searchFilesInRepos(ctx, &args)
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
 	if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
