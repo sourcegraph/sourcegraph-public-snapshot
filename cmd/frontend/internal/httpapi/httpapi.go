@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
@@ -67,24 +66,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	})
 
 	return m
-}
-
-func proxyHandlerLSIF(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = mux.Vars(r)["rest"]
-		p.ServeHTTP(w, r)
-	}
-}
-
-func proxyHandlerLSIFUpload(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context()); err != nil {
-			http.Error(w, "Only admins are allowed to upload LSIF data.", http.StatusUnauthorized)
-			return
-		}
-		r.URL.Path = "upload"
-		p.ServeHTTP(w, r)
-	}
 }
 
 // NewInternalHandler returns a new API handler for internal endpoints that uses
