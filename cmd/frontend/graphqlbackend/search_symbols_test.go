@@ -1,6 +1,9 @@
 package graphqlbackend
 
 import (
+	"fmt"
+	"math/rand"
+	"reflect"
 	"testing"
 	"time"
 
@@ -40,4 +43,51 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 			t.Errorf("rev(%v) got %v want %v", test.rev, got, test.want)
 		}
 	}
+}
+
+func Test_limitSymbolResults(t *testing.T) {
+	t.Run("empty case => unchanged", func(t *testing.T) {
+		var res []*fileMatchResolver
+		res2, limitHit := limitSymbolResults(res, 0)
+		if len(res2) != 0 {
+			t.Errorf("res2 = %+v, want empty", res2)
+		}
+		if limitHit {
+			t.Error("limitHit is true, but the limit should not have been hit")
+		}
+	})
+
+	t.Run("one file match, one symbol", func(t *testing.T) {
+		res := []*fileMatchResolver{
+			{
+				symbols: []*searchSymbolResult{
+					{
+						symbol: protocol.Symbol{
+							Name: fmt.Sprintf("symbol-name-%d", rand.Int()),
+						},
+					},
+				},
+			},
+		}
+
+		t.Run("limit 0 => no file matches", func(t *testing.T) {
+			res2, limitHit := limitSymbolResults(res, 0)
+			if len(res2) != 0 {
+				t.Errorf("res2 = %+v, want empty", res2)
+			}
+			if !limitHit {
+				t.Error("limitHit is false, but the limit should have been hit")
+			}
+		})
+
+		t.Run("limit 1 => unchanged", func(t *testing.T) {
+			res2, limitHit := limitSymbolResults(res, 1)
+			if !reflect.DeepEqual(res2, res) {
+				t.Errorf("res2 = %+v, want %+v", res2, res)
+			}
+			if limitHit {
+				t.Error("limitHit is true")
+			}
+		})
+	})
 }
