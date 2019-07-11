@@ -141,7 +141,10 @@ const defaultMaxSearchResults = 30
 
 func (r *searchResolver) maxResults() int32 {
 	if r.pagination != nil {
-		return 100000000
+		// Paginated search requests always consume an entire result set for a
+		// given repository, so we do not want any limit here. See
+		// search_pagination.go for details on why this is necessary .
+		return math.MaxInt32
 	}
 	count, _ := r.query.StringValues(query.FieldCount)
 	if len(count) > 0 {
