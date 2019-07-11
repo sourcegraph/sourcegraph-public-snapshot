@@ -99,7 +99,7 @@ func Main() {
 	// Next persistence
 	{
 		SetDefaultEnv("SRC_REPOS_DIR", filepath.Join(DataDir, "repos"))
-		SetDefaultEnv("SRC_LSIF_STORAGE_ROOT", filepath.Join(DataDir, "lsif"))
+		SetDefaultEnv("LSIF_STORAGE_ROOT", filepath.Join(DataDir, "lsif"))
 		SetDefaultEnv("CACHE_DIR", filepath.Join(DataDir, "cache"))
 	}
 
