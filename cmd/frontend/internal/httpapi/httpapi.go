@@ -23,6 +23,8 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
+var lsifServerURLFromEnv = env.Get("LSIF_SERVER_URL", "http://lsif-server", "URL at which the lsif-server service can be reached")
+
 // NewHandler returns a new API handler that uses the provided API
 // router, which must have been created by httpapi/router.New, or
 // creates a new one if nil.
@@ -48,15 +50,14 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
 
-	// BEFORE MERGING get this from config
-	target := "http://localhost:3185"
-	remote, err := url.Parse(target)
+	lsifServerURL, err := url.Parse(lsifServerURLFromEnv)
 	if err != nil {
-		panic(err)
+		log15.Error("skipping initialization of the LSIF HTTP API because the environment variable LSIF_SERVER_URL is not a valid URL", "parse_error", err, "value", lsifServerURLFromEnv)
+	} else {
+		proxy := httputil.NewSingleHostReverseProxy(lsifServerURL)
+		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(proxyHandlerLSIFUpload(proxy))))
+		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(proxyHandlerLSIF(proxy))))
 	}
-	proxy := httputil.NewSingleHostReverseProxy(remote)
-	m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(proxyHandlerLSIFUpload(proxy))))
-	m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(proxyHandler(proxy))))
 
 	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(registry.HandleRegistry)))
 
@@ -68,7 +69,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	return m
 }
 
-func proxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
+func proxyHandlerLSIF(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = mux.Vars(r)["rest"]
 		p.ServeHTTP(w, r)

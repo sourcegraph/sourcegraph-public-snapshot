@@ -27,7 +27,7 @@ function readEnvInt({ key, defaultValue }: { key: string; defaultValue: number }
  * Where on the file system to store LSIF files.
  */
 // tslint:disable-next-line: no-string-literal
-const STORAGE_ROOT = process.env['SRC_LSIF_STORAGE_ROOT'] || 'lsif'
+const STORAGE_ROOT = process.env['SRC_LSIF_STORAGE_ROOT'] || 'lsif-storage'
 
 /**
  * Soft limit on the amount of storage used by LSIF files. Storage can exceed
@@ -56,9 +56,9 @@ const SOFT_MAX_STORAGE_IN_MEMORY = readEnvInt({
 })
 
 /**
- * Which port to run the LSIF server on. Defaults to 3185.
+ * Which port to run the LSIF server on. Defaults to 3186.
  */
-const PORT = readEnvInt({ key: 'SRC_LSIF_HTTP_PORT', defaultValue: 3185 })
+const PORT = readEnvInt({ key: 'SRC_LSIF_HTTP_PORT', defaultValue: 3186 })
 
 /**
  * An opaque repository ID.
@@ -357,7 +357,16 @@ function main(): void {
                 if (!(await fs.exists(STORAGE_ROOT))) {
                     await fs.mkdir(STORAGE_ROOT)
                 }
-                await fs.rename(tempFile.path, diskKey({ repository, commit }))
+                // In a Docker container, fs.rename causes "EXDEV: cross-device link not permitted".
+                await new Promise((resolve, reject) =>
+                    fs.copyFile(tempFile.path, diskKey({ repository, commit }), error => {
+                        if (error) {
+                            reject(error)
+                        } else {
+                            resolve()
+                        }
+                    })
+                )
 
                 // Evict the old `Database` from the LRU cache to cause it to pick up the new LSIF data from disk.
                 dbLRU.del(diskKey({ repository, commit }))

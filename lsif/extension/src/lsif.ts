@@ -42,7 +42,10 @@ async function send({
         ),
         {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: new Headers({
+                'content-type': 'application/json',
+                'x-requested-with': 'Sourcegraph LSIF extension',
+            }),
             body: JSON.stringify({
                 method,
                 params: [pathFromDoc(doc), params],
@@ -78,6 +81,7 @@ async function hasLSIF(doc: sourcegraph.TextDocument): Promise<boolean> {
             ),
             {
                 method: 'POST',
+                headers: new Headers({ 'x-requested-with': 'Sourcegraph LSIF extension' }),
             }
         )
         const body = await response.json()
@@ -103,6 +107,9 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
                     return null
                 }
                 const body = await send({ doc, method: 'hover', params })
+                if (!body) {
+                    return null
+                }
                 return {
                     ...body,
                     contents: {
@@ -129,6 +136,9 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
                     return null
                 }
                 const body = await send({ doc, method: 'definitions', params })
+                if (!body) {
+                    return null
+                }
                 return body.map((definition: any) => ({ ...definition, uri: setPath(doc, definition.uri) }))
             },
         })
@@ -141,6 +151,9 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
                     return null
                 }
                 const body = await send({ doc, method: 'references', params })
+                if (!body) {
+                    return null
+                }
                 return body.map((reference: any) => ({ ...reference, uri: setPath(doc, reference.uri) }))
             },
         })

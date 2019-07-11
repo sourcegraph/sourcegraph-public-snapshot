@@ -29,6 +29,7 @@ var defaultEnv = map[string]string{
 	"SRC_SYNTECT_SERVER":    "http://127.0.0.1:9238",
 	"SYMBOLS_URL":           "http://127.0.0.1:3184",
 	"REPLACER_URL":          "http://127.0.0.1:3185",
+	"LSIF_SERVER_URL":       "http://127.0.0.1:3186",
 	"SRC_HTTP_ADDR":         ":8080",
 	"SRC_HTTPS_ADDR":        ":8443",
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
@@ -98,6 +99,7 @@ func Main() {
 	// Next persistence
 	{
 		SetDefaultEnv("SRC_REPOS_DIR", filepath.Join(DataDir, "repos"))
+		SetDefaultEnv("SRC_LSIF_STORAGE_ROOT", filepath.Join(DataDir, "lsif"))
 		SetDefaultEnv("CACHE_DIR", filepath.Join(DataDir, "cache"))
 	}
 
@@ -142,6 +144,7 @@ func Main() {
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
+		`lsif-server: lsif-server`,
 		`management-console: management-console`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
