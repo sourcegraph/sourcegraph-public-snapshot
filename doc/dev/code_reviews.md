@@ -52,7 +52,7 @@ Here are some examples of reasons to skip code review that are NOT acceptable:
 
 ## What makes an effective Pull Request (PR)?
 
-An effective PR minimizes the amount of effort that is required for the reviewer to understand your change so that they can provide high quality feedback in a timely manner.
+An effective PR minimizes the amount of effort that is required for the reviewer to understand your change so that they can provide high quality feedback in a timely manner. [Futher reading](https://www.atlassian.com/blog/git/written-unwritten-guide-pull-requests).
 
 Do:
 
