@@ -1,7 +1,5 @@
 # LSIF code intelligence
 
-BEFOER MERGING consider moving some of this to docs now or later
-
 [LSIF](https://code.visualstudio.com/blogs/2019/02/19/lsif) is a file format that stores code intelligence information such as hover docstrings, definitions, and references.
 
 Sourcegraph receives and stores LSIF files uploaded using [upload-lsif.sh](upload-lsif.sh), then uses that information to provide fast and precise code intelligence when viewing files.
