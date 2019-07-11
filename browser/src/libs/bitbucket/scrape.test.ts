@@ -155,7 +155,7 @@ describe('Bitbucket scrape.ts', () => {
             expect(
                 isCommitsView(
                     new URL(
-                        'https://atlassian.company.org/bitbucket//bitbucket/projects/SOUR/repos/mux/commits/8eaa9f13091105874ef3e20c65922e382cef3c64'
+                        'https://atlassian.company.org/bitbucket/projects/SOUR/repos/mux/commits/8eaa9f13091105874ef3e20c65922e382cef3c64'
                     )
                 )
             ).toBe(true)
