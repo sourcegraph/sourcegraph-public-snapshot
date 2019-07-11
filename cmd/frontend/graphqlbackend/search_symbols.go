@@ -114,13 +114,15 @@ func limitSymbolResults(res []*fileMatchResolver, limit int) (res2 []*fileMatchR
 	nsym := 0
 	for _, r := range res {
 		r2 := *r
-		if nsym+len(r.symbols) >= limit {
+		if nsym+len(r.symbols) > limit {
 			r2.symbols = r2.symbols[:limit-nsym]
-		}
-		res2 = append(res2, &r2)
-		nsym += len(r.symbols)
-		if nsym >= limit {
 			limitHit = true
+		}
+		if len(r2.symbols) > 0 {
+			res2 = append(res2, &r2)
+		}
+		nsym += len(r2.symbols)
+		if nsym >= limit {
 			return
 		}
 	}
