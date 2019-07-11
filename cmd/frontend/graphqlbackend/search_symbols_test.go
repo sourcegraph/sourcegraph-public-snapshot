@@ -1,8 +1,6 @@
 package graphqlbackend
 
 import (
-	"fmt"
-	"math/rand"
 	"reflect"
 	"testing"
 	"time"
@@ -70,7 +68,7 @@ func Test_limitingSymbolResults(t *testing.T) {
 				symbols: []*searchSymbolResult{
 					{
 						symbol: protocol.Symbol{
-							Name: fmt.Sprintf("symbol-name-%d", rand.Int()),
+							Name: "symbol-name-1",
 						},
 					},
 				},
@@ -105,7 +103,7 @@ func Test_limitingSymbolResults(t *testing.T) {
 				symbols: []*searchSymbolResult{
 					{
 						symbol: protocol.Symbol{
-							Name: fmt.Sprintf("symbol-name-%d", rand.Int()),
+							Name: "symbol-name-1",
 						},
 					},
 				},
@@ -114,7 +112,7 @@ func Test_limitingSymbolResults(t *testing.T) {
 				symbols: []*searchSymbolResult{
 					{
 						symbol: protocol.Symbol{
-							Name: fmt.Sprintf("symbol-name-%d", rand.Int()),
+							Name: "symbol-name-2",
 						},
 					},
 				},
