@@ -173,7 +173,8 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		IsRegExp:        patternInfo.IsRegExp,
 		IncludePatterns: patternInfo.IncludePatterns,
 		ExcludePattern:  patternInfo.ExcludePattern,
-		First:           limit,
+		// Ask for limit + 1 so we can detect whether there are more results than the limit.
+		First: limit + 1,
 	})
 	fileMatchesByURI := make(map[string]*fileMatchResolver)
 	fileMatches := make([]*fileMatchResolver, 0)
