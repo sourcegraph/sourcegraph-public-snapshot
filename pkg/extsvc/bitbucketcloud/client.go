@@ -81,7 +81,7 @@ func NewClient(httpClient httpcli.Doer) *Client {
 }
 
 // Repos returns a list of repositories that are fetched and populated based on given account
-// name and pagination criteria. If the account requested is a team, results will bee filtered
+// name and pagination criteria. If the account requested is a team, results will be filtered
 // down to the ones that the app password's user has access to.
 // If the argument pageToken.Next is not empty, it will be used directly as the URL to make
 // the request. The PageToken it returns may also contain the URL to the next page for
