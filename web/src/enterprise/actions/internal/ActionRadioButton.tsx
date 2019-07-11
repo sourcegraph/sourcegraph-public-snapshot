@@ -18,8 +18,8 @@ interface Props {
 
     className?: string
     buttonClassName?: string
-    inactiveButtonClassName?: string
     activeButtonClassName?: string
+    inactiveButtonClassName?: string
 }
 
 /**
@@ -31,8 +31,8 @@ export const ActionRadioButton: React.FunctionComponent<Props> = ({
     onChange,
     className,
     buttonClassName = 'btn btn-link text-decoration-none',
-    inactiveButtonClassName,
     activeButtonClassName,
+    inactiveButtonClassName,
 }) => {
     const onInputChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         e => {

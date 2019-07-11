@@ -11,6 +11,8 @@ interface Props {
 
     className?: string
     buttonClassName?: string
+    activeButtonClassName?: string
+    inactiveButtonClassName?: string
 }
 
 /**
@@ -23,7 +25,9 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
     selectedAction,
     onActionSetSelected,
     className,
-    buttonClassName = 'btn btn-link text-decoration-none',
+    buttonClassName = '',
+    activeButtonClassName = '',
+    inactiveButtonClassName = '',
 }) => {
     const planActions = actions.filter(action => !isCommandOnlyAction(action))
     const commandActions = actions.filter(isCommandOnlyAction)
@@ -35,8 +39,10 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
                     key={i}
                     action={action}
                     onChange={onActionSetSelected}
-                    buttonClassName="btn btn-primary"
                     className="mr-2 mb-2"
+                    buttonClassName={buttonClassName}
+                    activeButtonClassName={activeButtonClassName}
+                    inactiveButtonClassName={inactiveButtonClassName}
                     value={selectedAction === action}
                 />
             ))}
@@ -49,7 +55,7 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
                             onClick={() => {
                                 throw new Error('TODO!')
                             }}
-                            className={`${buttonClassName} mr-2 mb-2`}
+                            className={`${buttonClassName} ${inactiveButtonClassName} mr-2 mb-2`}
                         />
                     ))}
                 </div>

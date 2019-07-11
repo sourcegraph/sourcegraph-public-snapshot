@@ -45,11 +45,16 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
     ...props
 }) => {
     const [selectedAction, setSelectedAction] = useState<Action | undefined>()
-    const onActionSetSelected = useCallback((value: boolean, action: Action): void => {
-        if (value) {
-            setSelectedAction(action)
-        }
-    }, [])
+    const onActionSetSelected = useCallback(
+        (value: boolean, action: Action): void => {
+            if (value) {
+                setSelectedAction(action)
+            } else if (action === selectedAction) {
+                setSelectedAction(undefined)
+            }
+        },
+        [selectedAction]
+    )
 
     const [createdThreadOrLoading, setCreatedThreadOrLoading] = useState<ChangesetButtonOrLinkExistingChangeset>(
         LOADING
@@ -93,6 +98,9 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
                     selectedAction={selectedAction}
                     onActionSetSelected={onActionSetSelected}
                     className="mt-4"
+                    buttonClassName="btn px-2 py-1"
+                    activeButtonClassName="btn-primary"
+                    inactiveButtonClassName="btn-link"
                 />
             ),
         preview:

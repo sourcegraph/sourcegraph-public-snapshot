@@ -173,7 +173,7 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                                 return {
                                     resource: new URL(doc.uri),
                                     range: rangeForLintMessage(doc, r),
-                                    message: r.message,
+                                    message: `${r.message} (${r.ruleId})`,
                                     source: r.source,
                                     severity: linterSeverityToDiagnosticSeverity(r.severity),
                                     data: JSON.stringify(r),
