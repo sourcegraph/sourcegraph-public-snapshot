@@ -4,15 +4,18 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // searchCursor represents a decoded search pagination cursor. From an API
@@ -218,7 +221,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 	})
 
 	common := searchResultsCommon{maxResultsCount: r.maxResults()}
-	fileResults, fileCommon, err := searchFilesInRepos(ctx, &args)
+	fileResults, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
 	if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 		return nil, err
@@ -256,3 +259,171 @@ func repoIsLess(i, j *types.Repo) bool {
 	}
 	return i.ID < j.ID
 }
+
+// paginatedSearchFilesInRepos implements result-level pagination by calling
+// searchFilesInRepos to search over subsets (batches) of the total list of
+// repositories that may have results for this request (args.Repos). It does
+// this by picking some tradeoffs to balance some conflicting facts:
+//
+// 1. Paginated text searches must currently ask Zoekt AND non-indexed search
+//    to produce the entire result set for a repository. This is like querying
+//    for `repo:^exact-repo$ count:1000000` in a non-paginated query, and is
+//    more costly and slower than the default `count:30` used in non-paginated
+//    requests (search for FileMatchLimit) which allows Zoekt/non-indexed
+//    search to stop searching after finding enough results. Another reason for
+//    needing to produce the entire result set for a repository is because
+//    Zoekt does not today produce a stable order of results.
+//
+// 2. With NITH (needle-in-the-haystack) queries, if we don't search enough
+//    repositories in parallel we would substantially harm the performance of
+//    these queries. For example, if we were to search 100 repositories at a
+//    time and there were 1000 repositories to search and only the last 100
+//    repositories had results for you, you need to wait for the first 9
+//    batched searches to complete making your results 10x slower to fetch on
+//    top of the penalty we incur from the larger `count:` mentioned in point
+//    2 above (in the worst case scenario).
+//
+func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, pagination *searchPaginationInfo) ([]*fileMatchResolver, *searchResultsCommon, error) {
+	var (
+		plan = &repoPaginationPlan{
+			pagination:   pagination,
+			repositories: args.Repos,
+			// TODO(slimsag): future: Potentially update and reason about these choices
+			// more. They are mostly arbitrary currently and should instead be
+			// based on measurements from benchmarking + measuring NITH query
+			// performance, etc.
+			searchBucketDivisor: 8,
+			searchBucketMin:     10,
+			searchBucketMax:     1000,
+		}
+		common  = &searchResultsCommon{}
+		results []*fileMatchResolver
+	)
+	err := plan.execute(ctx, func(batch []*search.RepositoryRevisions) (foundResults int, err error) {
+		batchArgs := *args
+		batchArgs.Repos = batch
+		fileResults, fileCommon, err := searchFilesInRepos(ctx, &batchArgs)
+		if err != nil {
+			return 0, err
+		}
+		for _, r := range fileResults {
+			results = append(results, r)
+		}
+		common.update(*fileCommon)
+		return len(fileResults), nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	// TODO: before merge: handle the fact that `results` can (and most often
+	// does) have more results than the user asked for. i.e. we return results
+	// for an entire batch of searches repositories here currently.
+	return results, common, nil
+}
+
+// repoPaginationPlan describes a plan for executing a search function that
+// searches only over a set of repositories (i.e. the search function offers no
+// pagination or result-level pagination capabilities) to provide result-level
+// pagination. That is, if you have a function which can provide a complete
+// list of results for a given repository, this planner can be used to
+// implement result-level pagination on top of that function.
+//
+// It does this by searching over a globally-sorted list of repositories in
+// batches.
+type repoPaginationPlan struct {
+	// pagination is the pagination request we're trying to fulfill.
+	pagination *searchPaginationInfo
+
+	// repositories is the exhaustive and complete list of sorted repositories
+	// to be searched over multiple requests.
+	repositories []*search.RepositoryRevisions
+
+	// parameters for controlling the size of batches that the executor is
+	// called to search. The final batch size is calculated as:
+	//
+	// 	batchSize = numTotalReposOnSourcegraph() / searchBucketDivisor
+	//
+	// With the additional constraint that it must be at least min and no
+	// larger than max.
+	searchBucketDivisor              int
+	searchBucketMin, searchBucketMax int
+}
+
+// execute executes the repository pagination plan by invoking the executor to
+// search batches of repositories.
+func (p *repoPaginationPlan) execute(ctx context.Context, executor func(batch []*search.RepositoryRevisions) (foundResults int, err error)) error {
+	// Determine how large the batches of repositories we will search over will be.
+	batchSize := clamp(numTotalRepos.get(ctx)/p.searchBucketDivisor, p.searchBucketMin, p.searchBucketMax)
+
+	// Determine where in the repositories list we will begin searching.
+	repos := p.repositories
+	if p.pagination.cursor != nil {
+		// Clamping is required here because the repositories the user has
+		// access to could have changed if e.g. permissions for that user
+		// were updated OR if this cursor was generated by a user with
+		// different permissions.
+		repoOffset := clamp(int(p.pagination.cursor.RepositoryOffset), 0, len(repos)-1)
+		repos = repos[repoOffset:]
+	}
+
+	// Search over the repos list in batches.
+	//
+	// TODO(slimsag): future: scrutinize this code for off-by-one errors (I wrote this while sleepy.)
+	for start := 0; start <= len(repos); start += batchSize {
+		if start > len(repos) {
+			break
+		}
+
+		batch := repos[start:clamp(start+batchSize, 0, len(repos)-1)]
+		foundResults, err := executor(batch)
+		if err != nil {
+			return err
+		}
+		if foundResults >= int(p.pagination.limit) {
+			break
+		}
+	}
+	return nil
+}
+
+// clamp clamps x into the range of [min, max].
+func clamp(x, min, max int) int {
+	if x < min {
+		return min
+	}
+	if x > max {
+		return max
+	}
+	return x
+}
+
+// Since we will need to know the number of total repos on Sourcegraph for
+// every paginated search request, but the exact number doesn't matter, we
+// cache the result for a minute to avoid executing many DB count operations.
+type numTotalReposCache struct {
+	sync.RWMutex
+	lastUpdate time.Time
+	count      int
+}
+
+func (n *numTotalReposCache) get(ctx context.Context) int {
+	n.RLock()
+	if !n.lastUpdate.IsZero() && time.Since(n.lastUpdate) < 1*time.Minute {
+		defer n.RUnlock()
+		return n.count
+	}
+	n.RUnlock()
+
+	n.Lock()
+	newCount, err := db.Repos.Count(ctx, db.ReposListOptions{Enabled: true})
+	if err != nil {
+		defer n.Unlock()
+		log15.Error("failed to determine numTotalRepos", "error", err)
+		return n.count
+	}
+	n.count = newCount
+	n.Unlock()
+	return newCount
+}
+
+var numTotalRepos = &numTotalReposCache{}
