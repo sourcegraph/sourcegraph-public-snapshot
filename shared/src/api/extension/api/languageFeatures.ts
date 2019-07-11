@@ -1,5 +1,4 @@
 import { ProxyInput, ProxyResult, proxyValue } from '@sourcegraph/comlink'
-import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Unsubscribable } from 'rxjs'
 import {
@@ -14,14 +13,12 @@ import {
     Action,
 } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
-import { CodeActionsParams } from '../../client/services/codeActions'
 import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
 import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 import { ExtDocuments } from './documents'
 import { fromHover, fromLocation, toPosition } from './types'
 import { fromAction, PlainCodeActionsParams, toCodeActionsParams } from '../../types/action'
-import { toDiagnostic, fromDiagnostic } from '../../types/diagnostic'
 
 /** @internal */
 export class ExtLanguageFeatures {
@@ -106,8 +103,7 @@ export class ExtLanguageFeatures {
 
             return toProxyableSubscribable(
                 provider.provideCodeActions(await this.documents.getSync(textDocument.uri), rangeOrSelection, context),
-                (items: null | undefined | Action[]): clientType.CodeAction>
-                    items ? items.map(fromAction) : []
+                (items: null | undefined | Action[]): clientType.Action[] => (items ? items.map(fromAction) : [])
             )
         })
         return syncSubscription(this.proxy.$registerCodeActionProvider(selector, providerFunction))
