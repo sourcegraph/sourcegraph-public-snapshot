@@ -1,4 +1,3 @@
-import EyeIcon from 'mdi-react/EyeIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Markdown } from '../../../../../../shared/src/components/Markdown'
@@ -36,10 +35,6 @@ export const CheckOverview: React.FunctionComponent<Props> = ({
         <h2 className="my-3 font-weight-normal">{checkID.type}</h2>
         {checkInfo.description && <Markdown dangerousInnerHTML={renderMarkdown(checkInfo.description.value)} />}
         <Timeline tag="div" className="align-items-stretch mb-3">
-            <div className="d-flex align-items-start bg-body border p-3 mb-5">
-                <EyeIcon className="icon-inline mb-0 mr-3" />
-                Checking all repositories
-            </div>
             {checkInfo.sections && (
                 <>
                     {checkInfo.sections.settings && (
