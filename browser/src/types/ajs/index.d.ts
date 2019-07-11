@@ -1,9 +1,14 @@
-declare var AJS:
-    | {
-          /**
-           * The AJS.contextPath() function returns the "path" to the application,
-           * which is needed when creating absolute urls within the application.
-           */
-          contextPath(): string
-      }
-    | undefined
+interface AJS {
+    /**
+     * The AJS.contextPath() function returns the "path" to the application,
+     * which is needed when creating absolute urls within the application.
+     */
+    contextPath(): string
+}
+
+/**
+ * The `AJS` global object provides helper methods to interact with
+ * the UI of Atlassian products. It is only defined when executing in the
+ * Bitbucket Server native integration.
+ */
+declare var AJS: AJS | undefined
