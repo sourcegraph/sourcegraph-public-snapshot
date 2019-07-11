@@ -144,7 +144,7 @@ func Main() {
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
-		`lsif-server: lsif-server`,
+		`lsif-server: node /lsif-server.js`,
 		`management-console: management-console`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
