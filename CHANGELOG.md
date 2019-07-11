@@ -30,6 +30,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.5.2 (unreleased)
+
+### Fixed
+
+- Increased nginx proxy buffer size to fix issue where login failed when SAML AuthnRequest was too large.
+
 ## 3.5.1
 
 ### Added
