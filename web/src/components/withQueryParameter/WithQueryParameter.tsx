@@ -42,3 +42,15 @@ export const WithQueryParameter: React.FunctionComponent<Props> = ({
 
     return children({ query, onQueryChange })
 }
+
+export const withQueryParameter = <P extends object>(
+    component: React.FunctionComponent<P & QueryParameterProps>,
+    defaultQuery = ''
+): React.FunctionComponent<P & Pick<Props, Exclude<keyof Props, 'defaultQuery' | 'children'>>> => {
+    const Component = component
+    return props => (
+        <WithQueryParameter {...props} defaultQuery={defaultQuery}>
+            {queryParameterProps => <Component {...props} {...queryParameterProps} />}
+        </WithQueryParameter>
+    )
+}

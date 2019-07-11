@@ -50,7 +50,7 @@ export interface CheckService {
 
 // TODO!(sqs)
 const DUMMY_CONTEXT: Pick<sourcegraph.CheckContext<{}>, 'id'> = {
-    id: 'DUMMY',
+    id: '1',
 }
 
 /**

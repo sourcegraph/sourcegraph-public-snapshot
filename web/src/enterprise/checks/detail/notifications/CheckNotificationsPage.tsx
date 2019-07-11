@@ -5,7 +5,7 @@ import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { CheckAreaContext } from '../CheckArea'
-import { CheckNotification } from './StatusNotification'
+import { CheckNotification } from './CheckNotification'
 import { useNotifications } from './useNotifications'
 
 interface Props extends Pick<CheckAreaContext, 'checkID' | 'checkInfo'>, ExtensionsControllerProps {
@@ -18,30 +18,27 @@ interface Props extends Pick<CheckAreaContext, 'checkID' | 'checkInfo'>, Extensi
 const LOADING: 'loading' = 'loading'
 
 /**
- * The status notifications page.
+ * The check notifications page.
  */
 export const CheckNotificationsPage: React.FunctionComponent<Props> = ({
     checkID,
     checkInfo,
     className = '',
-    itemClassName = '',
     ...props
 }) => {
-    const notificationsOrError = useNotifications(props.extensionsController, NotificationScope.Global, checkID)
+    const notificationsOrError = useNotifications(
+        props.extensionsController,
+        NotificationScope.Global,
+        checkID.type /* TODO!(sqs) assumes that notif type == check provider type as convention */
+    )
     return (
-        <div className={`status-notifications-page ${className}`}>
+        <div className={`check-notifications-page ${className}`}>
             {isErrorLike(notificationsOrError) ? (
-                <div className={itemClassName}>
-                    <div className="alert alert-danger mt-2">{notificationsOrError.message}</div>
-                </div>
+                <div className="alert alert-danger mt-2">{notificationsOrError.message}</div>
             ) : notificationsOrError === LOADING ? (
-                <div className={itemClassName}>
-                    <LoadingSpinner className="mt-3" />
-                </div>
+                <LoadingSpinner className="mt-3" />
             ) : notificationsOrError.length === 0 ? (
-                <div className={itemClassName}>
-                    <p className="p-2 mb-0 text-muted">No notifications found.</p>
-                </div>
+                <p className="p-2 mb-0 text-muted">No notifications found.</p>
             ) : (
                 <ul className="list-unstyled mb-0">
                     {notificationsOrError.map((notification, i) => (

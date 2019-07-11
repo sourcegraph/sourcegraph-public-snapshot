@@ -1,6 +1,7 @@
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import { NotificationsIcon } from '../../../notifications/icons'
 import { DiagnosticsIcon, RuleIcon } from '../../icons'
 import { CheckAreaContext } from '../CheckArea'
 
@@ -17,6 +18,15 @@ export const CheckAreaNavbar: React.FunctionComponent<Props> = ({ checkURL, clas
     <nav className={`check-area-navbar border-bottom ${className}`}>
         <div className="container">
             <ul className="nav flex-nowrap">
+                <li className="check-area-navbar__nav-item nav-item">
+                    <NavLink
+                        to={`${checkURL}/notifications`}
+                        className={NAV_LINK_CLASS_NAME}
+                        activeClassName="check-area-navbar__nav-link--active"
+                    >
+                        <NotificationsIcon className="icon-inline" /> Notifications
+                    </NavLink>
+                </li>
                 <li className="check-area-navbar__nav-item nav-item">
                     <NavLink
                         to={`${checkURL}/diagnostics`}

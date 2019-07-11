@@ -31,7 +31,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 /**
  * An item in a task list.
  */
-export const TasksListItem: React.FunctionComponent<Props> = ({
+export const DiagnosticsListItem: React.FunctionComponent<Props> = ({
     diagnostic,
     className = '',
     headerClassName = '',
