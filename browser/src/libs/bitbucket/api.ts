@@ -10,11 +10,17 @@ import { BitbucketRepoInfo } from './scrape'
 //
 // PR API /rest/api/1.0/projects/SG/repos/go-langserver/pull-requests/1
 
+/**
+ * Builds the URL to the Bitbucket Server REST API endpoint for the given project/repo/path.
+ *
+ * `path` should have a leading slash.
+ * `project` and `repoSlug` should have neither a leading nor a traling slash.
+ */
 const buildURL = (project: string, repoSlug: string, path: string) =>
     // If possible, use the global `AJS.contextPath()` to reliably construct an absolute URL.
     // This is possible in the native integration only - browser extension content scripts cannot
     // access the page's global scope.
-    `${AJS ? AJS.contextPath() : window.location.origin}/rest/api/1.0/projects/${encodeURIComponent(
+    `${window.AJS ? window.AJS.contextPath() : window.location.origin}/rest/api/1.0/projects/${encodeURIComponent(
         project
     )}/repos/${repoSlug}${path}`
 

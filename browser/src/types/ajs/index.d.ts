@@ -6,9 +6,11 @@ interface AJS {
     contextPath(): string
 }
 
-/**
- * The `AJS` global object provides helper methods to interact with
- * the UI of Atlassian products. It is only defined when executing in the
- * Bitbucket Server native integration.
- */
-declare var AJS: AJS | undefined
+interface Window {
+    /**
+     * The `AJS` global object provides helper methods to interact with
+     * the UI of Atlassian products. It is only defined when executing in the
+     * Bitbucket Server native integration.
+     */
+    AJS?: AJS
+}
