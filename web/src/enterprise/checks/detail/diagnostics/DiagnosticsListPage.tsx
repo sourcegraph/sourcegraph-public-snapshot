@@ -7,7 +7,7 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { withQueryParameter } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { ThemeProps } from '../../../../theme'
-import { DiagnosticsList } from '../../../tasks/list/DiagnosticsList'
+import { DiagnosticsListItem } from '../../../tasks/list/item/DiagnosticsListItem'
 import { useDiagnostics } from './detail/useDiagnostics'
 import { DiagnosticQueryBuilder } from './DiagnosticQueryBuilder'
 
@@ -30,7 +30,7 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
         // tslint:disable-next-line: react-hooks-nesting
         const diagnosticsOrError = useDiagnostics(extensionsController, parsedQuery)
         return (
-            <div className={`check-diagnostics-page ${className}`}>
+            <div className={`diagnostics-list-page ${className}`}>
                 {isErrorLike(diagnosticsOrError) ? (
                     <div className="container">
                         <div className="alert alert-danger mt-2">{diagnosticsOrError.message}</div>
@@ -51,12 +51,19 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
                             onQueryChange={onQueryChange}
                             className="container my-3"
                         />
-                        <DiagnosticsList
-                            {...props}
-                            diagnosticsOrError={diagnosticsOrError}
-                            itemClassName="container-fluid"
-                            extensionsController={extensionsController}
-                        />
+                        <ul className="list-group list-group-flush mb-0">
+                            {diagnosticsOrError.map((diagnostic, i) => (
+                                <li key={i} className={`list-group-item px-0 ${i === 0 ? 'border-top-0' : ''}`}>
+                                    <DiagnosticsListItem
+                                        {...props}
+                                        key={JSON.stringify(diagnostic)}
+                                        diagnostic={diagnostic}
+                                        className="container-fluid"
+                                        extensionsController={extensionsController}
+                                    />
+                                </li>
+                            ))}
+                        </ul>
                     </>
                 )}
             </div>
