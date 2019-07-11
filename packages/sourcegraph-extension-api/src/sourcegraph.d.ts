@@ -1628,9 +1628,6 @@ declare module 'sourcegraph' {
     }
 
     export interface PlanOperation<P extends object = {}> {
-        // TODO!(sqs): refer to a diagnostic provider (which doesnt yet exist) and then let it filter based on that
-        diagnostics?: { codePrefix: string }
-
         parameters?: P
 
         command: Command
@@ -1656,14 +1653,14 @@ declare module 'sourcegraph' {
         readonly edit?: WorkspaceEdit
 
         /**
-         * The [diagnostics](#Diagnostic) that this code action resolves.
-         */
-        readonly diagnostics?: Diagnostic[]
-
-        /**
          * A [command](#Command) that this code action executes.
          */
         readonly command?: Command
+
+        /**
+         * The [diagnostics](#Diagnostic) that this code action resolves.
+         */
+        readonly diagnostics?: Diagnostic[]
     }
 
     /**
