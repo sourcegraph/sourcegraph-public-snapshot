@@ -103,30 +103,39 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 		})
 	}
 	err = run.Wait()
-	res, limitHit := limitSymbolResults(res, limit)
-	common.limitHit = limitHit
-	return res, common, err
+	res2 := limitSymbolResults(res, limit)
+	common.limitHit = symbolCount(res2) < symbolCount(res)
+	return res2, common, err
 }
 
 // limitSymbolResults returns a new version of res containing no more than limit symbol matches,
 // and a boolean telling whether the limit was hit.
-func limitSymbolResults(res []*fileMatchResolver, limit int) (res2 []*fileMatchResolver, limitHit bool) {
+func limitSymbolResults(res []*fileMatchResolver, limit int) []*fileMatchResolver {
+	var res2 []*fileMatchResolver
 	nsym := 0
 	for _, r := range res {
 		r2 := *r
 		if nsym+len(r.symbols) > limit {
 			r2.symbols = r2.symbols[:limit-nsym]
-			limitHit = true
 		}
 		if len(r2.symbols) > 0 {
 			res2 = append(res2, &r2)
 		}
 		nsym += len(r2.symbols)
 		if nsym >= limit {
-			return
+			return res2
 		}
 	}
-	return
+	return res2
+}
+
+// symbolCount returns the total number of symbols in a slice of fileMatchResolvers.
+func symbolCount(fmrs []*fileMatchResolver) int {
+	nsym := 0
+	for _, fmr := range fmrs {
+		nsym += len(fmr.symbols)
+	}
+	return nsym
 }
 
 func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.PatternInfo, query *query.Query, limit int) (res []*fileMatchResolver, err error) {

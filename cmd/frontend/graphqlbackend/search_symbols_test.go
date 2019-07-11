@@ -45,16 +45,23 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 	}
 }
 
-func Test_limitSymbolResults(t *testing.T) {
-	t.Run("empty case => unchanged", func(t *testing.T) {
+func Test_limitingSymbolResults(t *testing.T) {
+	t.Run("empty case", func(t *testing.T) {
 		var res []*fileMatchResolver
-		res2, limitHit := limitSymbolResults(res, 0)
-		if len(res2) != 0 {
-			t.Errorf("res2 = %+v, want empty", res2)
-		}
-		if limitHit {
-			t.Error("limitHit is true, but the limit should not have been hit")
-		}
+
+		t.Run("symbol count is 0", func(t *testing.T) {
+			nsym := symbolCount(res)
+			if nsym != 0 {
+				t.Errorf("symbolCount(res) = %d, want 0", nsym)
+			}
+		})
+
+		t.Run("limiting does not change", func(t *testing.T) {
+			res2 := limitSymbolResults(res, 0)
+			if len(res2) != 0 {
+				t.Errorf("res2 = %+v, want empty", res2)
+			}
+		})
 	})
 
 	t.Run("one file match, one symbol", func(t *testing.T) {
@@ -70,23 +77,24 @@ func Test_limitSymbolResults(t *testing.T) {
 			},
 		}
 
+		t.Run("symbol count is 1", func(t *testing.T) {
+			nsym := symbolCount(res)
+			if nsym != 1 {
+				t.Errorf("symbolCount(res) = %d, want 1", nsym)
+			}
+		})
+
 		t.Run("limit 0 => no file matches", func(t *testing.T) {
-			res2, limitHit := limitSymbolResults(res, 0)
+			res2 := limitSymbolResults(res, 0)
 			if len(res2) != 0 {
 				t.Errorf("res2 = %+v, want empty", res2)
-			}
-			if !limitHit {
-				t.Error("limitHit is false, but the limit should have been hit")
 			}
 		})
 
 		t.Run("limit 1 => unchanged", func(t *testing.T) {
-			res2, limitHit := limitSymbolResults(res, 1)
+			res2 := limitSymbolResults(res, 1)
 			if !reflect.DeepEqual(res2, res) {
 				t.Errorf("res2 = %+v, want %+v", res2, res)
-			}
-			if limitHit {
-				t.Error("limitHit is true")
 			}
 		})
 	})
@@ -113,34 +121,32 @@ func Test_limitSymbolResults(t *testing.T) {
 			},
 		}
 
+		t.Run("symbol count is 2", func(t *testing.T) {
+			nsym := symbolCount(res)
+			if nsym != 2 {
+				t.Errorf("symbolCount(res) = %d, want 2", nsym)
+			}
+		})
+
 		t.Run("limit 0 => no file matches", func(t *testing.T) {
-			res2, limitHit := limitSymbolResults(res, 0)
+			res2 := limitSymbolResults(res, 0)
 			if len(res2) != 0 {
 				t.Errorf("res2 = %+v, want empty", res2)
-			}
-			if !limitHit {
-				t.Error("limitHit is false")
 			}
 		})
 
 		t.Run("limit 1 => one file match", func(t *testing.T) {
 			wantRes2 := res[:1]
-			res2, limitHit := limitSymbolResults(res, 1)
+			res2 := limitSymbolResults(res, 1)
 			if !reflect.DeepEqual(res2, wantRes2) {
 				t.Errorf("res2 = %+v, want %+v", res2, wantRes2)
-			}
-			if !limitHit {
-				t.Error("limitHit is false")
 			}
 		})
 
 		t.Run("limit 2 => unchanged", func(t *testing.T) {
-			res2, limitHit := limitSymbolResults(res, 2)
+			res2 := limitSymbolResults(res, 2)
 			if !reflect.DeepEqual(res2, res) {
 				t.Errorf("res2 = %+v, want %+v", res2, res)
-			}
-			if limitHit {
-				t.Error("limitHit is true")
 			}
 		})
 	})
