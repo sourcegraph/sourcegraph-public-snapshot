@@ -159,7 +159,7 @@ func (sr *searchResultsResolver) MatchCount() int32 {
 }
 
 func (sr *searchResultsResolver) ResultCount() int32 {
-	nsym := sr.countSymbols()
+	nsym := sr.symbolCount()
 	if nsym > 0 {
 		return nsym
 	}
@@ -174,7 +174,7 @@ func (sr *searchResultsResolver) ApproximateResultCount() string {
 	return s
 }
 
-func (sr *searchResultsResolver) countSymbols() int32 {
+func (sr *searchResultsResolver) symbolCount() int32 {
 	var nsym int32
 	for _, srr := range sr.results {
 		fm, ok := srr.ToFileMatch()
