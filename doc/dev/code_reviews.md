@@ -54,7 +54,6 @@ Here are some examples of reasons to skip code review that are NOT acceptable:
 
 The code author and code reviewer have a _shared goal_ to bring the PR into a state that meets our quality standards and the needs that motivated the change.
 
-
 Do:
 
 - Take time to understand the context and goal of the PR. If it isn't clear, ask for clarification.
