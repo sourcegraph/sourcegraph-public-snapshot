@@ -54,8 +54,8 @@ func NewHandler(m *mux.Router) http.Handler {
 		log15.Error("skipping initialization of the LSIF HTTP API because the environment variable LSIF_SERVER_URL is not a valid URL", "parse_error", err, "value", lsifServerURLFromEnv)
 	} else {
 		proxy := httputil.NewSingleHostReverseProxy(lsifServerURL)
-		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(proxyHandlerLSIFUpload(proxy))))
-		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(proxyHandlerLSIF(proxy))))
+		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(lsifUploadProxyHandler(proxy))))
+		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(lsifProxyHandler(proxy))))
 	}
 
 	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(registry.HandleRegistry)))
