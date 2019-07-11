@@ -1,7 +1,7 @@
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../../components/PageTitle'
-import { useDiagnostics } from '../../checks/detail/diagnosticGroups/detail/useDiagnostics'
+import { useDiagnostics } from '../../checks/detail/diagnostics/detail/useDiagnostics'
 import { TasksAreaTitle } from '../components/TasksAreaTitle'
 import { TasksAreaContext } from '../global/TasksArea'
 import { DiagnosticsList } from './DiagnosticsList'

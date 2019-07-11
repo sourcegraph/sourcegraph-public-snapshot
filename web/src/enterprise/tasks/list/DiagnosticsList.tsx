@@ -7,7 +7,7 @@ import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
 import { DiagnosticInfo } from '../../threads/detail/backend'
 import { TasksAreaContext } from '../global/TasksArea'
-import { TasksListItem } from './item/TasksListItem'
+import { DiagnosticsListItem } from './item/DiagnosticsListItem'
 
 export interface TasksListContext {
     itemClassName?: string
@@ -29,7 +29,7 @@ interface Props
 }
 
 /**
- * The list of tasks with a header.
+ * The list of diagnostics with a header.
  */
 export const DiagnosticsList: React.FunctionComponent<Props> = ({
     diagnosticsOrError,
@@ -49,13 +49,13 @@ export const DiagnosticsList: React.FunctionComponent<Props> = ({
             </div>
         ) : diagnosticsOrError.length === 0 ? (
             <div className={itemClassName}>
-                <p className="p-2 mb-0 text-muted">No tasks found.</p>
+                <p className="p-2 mb-0 text-muted">No diagnostics found.</p>
             </div>
         ) : (
             <ul className="list-group list-group-flush mb-0">
                 {diagnosticsOrError.map((task, i) => (
-                    <li key={i} className="list-group-item px-0">
-                        <TasksListItem
+                    <li key={i} className={`list-group-item px-0 ${i === 0 ? 'border-top-0' : ''}`}>
+                        <DiagnosticsListItem
                             {...props}
                             key={JSON.stringify(task)}
                             diagnostic={task}

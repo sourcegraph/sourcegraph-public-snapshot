@@ -142,3 +142,33 @@ Default rules for package.json standardization:
 - License is MIT (diagnostic + code action)
 
 A check shows the diagnostic groups (with related rules, if any) plus the 1-time and automated actions that can be taken on them.
+
+---
+
+In the check area, as a user, I want to:
+
+- See the overall check status
+- Understand and configure the check settings
+- See what automation is currently active for this check
+- See individual problems
+- Fix an individual problem
+- Fix a batch of problems (and preview what will happen)
+
+---
+
+Show all diagnostics individually, but make it easy to batch them when fixing:
+
+1. Set diagnostic query
+1. Default action = ignore, can be changed (batch > apply to all 37)
+1. Choose actions for each diagnostic
+1. 
+
+- "Fix all"
+
+---
+
+Default rules
+
+## ESLint rule
+
+- 

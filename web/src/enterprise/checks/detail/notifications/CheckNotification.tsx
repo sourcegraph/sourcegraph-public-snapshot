@@ -22,7 +22,7 @@ interface Props extends ExtensionsControllerProps {
 const LOADING = 'loading' as const
 
 /**
- * A notification associated with a status.
+ * A notification associated with a check.
  */
 export const CheckNotification: React.FunctionComponent<Props> = ({
     notification,

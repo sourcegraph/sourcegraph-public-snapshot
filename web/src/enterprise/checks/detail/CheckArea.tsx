@@ -15,9 +15,9 @@ import { HeroPage } from '../../../components/HeroPage'
 import { ThemeProps } from '../../../theme'
 import { ChecksAreaContext } from '../scope/ScopeChecksArea'
 import { useCheckByTypeForScope } from '../util/useCheckByTypeForScope'
-import { CheckChecksPage } from './checks/CheckChecksPage'
-import { CheckDiagnosticsArea } from './diagnosticGroups/CheckDiagnosticsArea'
+import { CheckDiagnosticsPage } from './diagnostics/CheckDiagnosticsPage'
 import { CheckAreaNavbar } from './navbar/CheckAreaNavbar'
+import { CheckNotificationsPage } from './notifications/CheckNotificationsPage'
 import { CheckOverview } from './overview/CheckOverview'
 
 const NotFoundPage = () => (
@@ -88,15 +88,15 @@ export const CheckArea: React.FunctionComponent<Props> = ({ checkID, scope, chec
                 <ErrorBoundary location={props.location}>
                     <Switch>
                         <Route path={checkURL} exact={true}>
-                            <Redirect to={`${checkURL}/diagnostics`} />
+                            <Redirect to={`${checkURL}/notifications`} />
+                        </Route>
+                        <Route path={`${checkURL}/notifications`}>
+                            <CheckNotificationsPage {...context} className="mt-3 container" />
                         </Route>
                         <Route path={`${checkURL}/diagnostics`}>
-                            <CheckDiagnosticsArea
-                                {...context}
-                                checkDiagnosticsURL={`${checkURL}/diagnostics`}
-                                className="mt-3"
-                            />
+                            <CheckDiagnosticsPage {...context} />
                         </Route>
+                        <Route path={`${checkURL}/settings`}>TODO!(sqs)</Route>
                         <Route component={NotFoundPage} />
                     </Switch>
                 </ErrorBoundary>
