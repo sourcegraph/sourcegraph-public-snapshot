@@ -22,7 +22,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var lsifServerURLFromEnv = env.Get("LSIF_SERVER_URL", "http://lsif-server", "URL at which the lsif-server service can be reached")
+var lsifServerURLFromEnv = env.Get("LSIF_SERVER_URL", "http://lsif-server:3186", "URL at which the lsif-server service can be reached")
 
 // NewHandler returns a new API handler that uses the provided API
 // router, which must have been created by httpapi/router.New, or
