@@ -10,6 +10,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
 )
 
+func GetenvBitbucketCloudUsername() string {
+	username := os.Getenv("BITBUCKET_CLOUD_USERNAME")
+	if username == "" {
+		username = "unknwon"
+	}
+	return username
+}
+
 // NewTestClient returns a bitbucketcloud.Client that records its interactions
 // to testdata/vcr/.
 func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
@@ -27,7 +35,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	}
 
 	cli := NewClient(hc)
-	cli.Username = os.Getenv("BITBUCKET_CLOUD_USERNAME")
+	cli.Username = GetenvBitbucketCloudUsername()
 	cli.AppPassword = os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD")
 
 	return cli, func() {

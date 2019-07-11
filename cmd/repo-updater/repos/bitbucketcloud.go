@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"sync"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -41,12 +40,7 @@ func newBitbucketCloudSource(svc *ExternalService, c *schema.BitbucketCloudConne
 		cf = NewHTTPClientFactory()
 	}
 
-	opts := []httpcli.Opt{
-		// Use a 30s timeout to avoid running into EOF errors
-		httpcli.NewIdleConnTimeoutOpt(30 * time.Second),
-	}
-
-	cli, err := cf.Doer(opts...)
+	cli, err := cf.Doer()
 	if err != nil {
 		return nil, err
 	}
@@ -119,8 +113,7 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {
 // Bitbucket Cloud app password inserted in the URL userinfo.
 func (s *BitbucketCloudSource) authenticatedRemoteURL(repo *bitbucketcloud.Repo) string {
 	if s.config.GitURLType == "ssh" {
-		url := fmt.Sprintf("git@%s:%s.git", s.config.Url, repo.FullName)
-		return url
+		return fmt.Sprintf("git@%s:%s.git", s.config.Url, repo.FullName)
 	}
 
 	fallbackURL := (&url.URL{

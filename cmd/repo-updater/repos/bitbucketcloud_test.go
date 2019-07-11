@@ -2,14 +2,110 @@ package repos
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
+	"reflect"
+	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"gopkg.in/inconshreveable/log15.v2"
 )
+
+func TestBitbucketCloudSource_ListRepos(t *testing.T) {
+	assertAllReposListed := func(want []string) ReposAssertion {
+		return func(t testing.TB, rs Repos) {
+			t.Helper()
+
+			have := rs.Names()
+			sort.Strings(have)
+			sort.Strings(want)
+
+			if !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
+			}
+		}
+	}
+
+	testCases := []struct {
+		name   string
+		assert ReposAssertion
+		conf   *schema.BitbucketCloudConnection
+		err    string
+	}{
+		{
+			name: "found",
+			assert: assertAllReposListed([]string{
+				"bitbucket.org/Unknwon/boilerdb",
+				"bitbucket.org/Unknwon/scripts",
+				"bitbucket.org/Unknwon/wxvote",
+			}),
+			conf: &schema.BitbucketCloudConnection{
+				Url:         "https://bitbucket.org",
+				Username:    bitbucketcloud.GetenvBitbucketCloudUsername(),
+				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
+			},
+			err: "<nil>",
+		},
+		{
+			name: "with teams",
+			assert: assertAllReposListed([]string{
+				"bitbucket.org/Unknwon/boilerdb",
+				"bitbucket.org/Unknwon/scripts",
+				"bitbucket.org/Unknwon/wxvote",
+				"bitbucket.org/sglocal/mux",
+				"bitbucket.org/sglocal/go-langserver",
+				"bitbucket.org/sglocal/python-langserver",
+			}),
+			conf: &schema.BitbucketCloudConnection{
+				Url:         "https://bitbucket.org",
+				Username:    bitbucketcloud.GetenvBitbucketCloudUsername(),
+				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
+				Teams: []string{
+					"sglocal",
+				},
+			},
+			err: "<nil>",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "BITBUCKETCLOUD-LIST-REPOS/" + tc.name
+		t.Run(tc.name, func(t *testing.T) {
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			svc := &ExternalService{
+				Kind:   "BITBUCKETCLOUD",
+				Config: marshalJSON(t, tc.conf),
+			}
+
+			bbcSrc, err := newBitbucketCloudSource(svc, tc.conf, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			repos, err := bbcSrc.ListRepos(context.Background())
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if tc.assert != nil {
+				tc.assert(t, repos)
+			}
+		})
+	}
+}
 
 func TestBitbucketCloudSource_MakeRepo(t *testing.T) {
 	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketcloud-repos.json"))

@@ -310,7 +310,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
   // The username the app password belongs to
   "username": "<username>",
 
-  // An app password (https://confluence.atlassian.com/bitbucket/app-passwords-828781300.html) with read scope over the repositories to be added to Sourcegraph
+  // An app password (https://confluence.atlassian.com/bitbucket/app-passwords-828781300.html) with read scope over the repositories and teams to be added to Sourcegraph
   "appPassword": "<app password>",
 
   // teams: List of teams whose repositories should be selected
