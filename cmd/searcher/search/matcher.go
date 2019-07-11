@@ -1,7 +1,6 @@
 package search
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"errors"
@@ -216,63 +215,105 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 		return nil, false, nil
 	}
 
-	idx := 0
-	for i := 0; len(matches) < maxLineMatches; i++ {
-		advance, lineBuf, err := bufio.ScanLines(fileBuf, true)
-		if err != nil {
-			// ScanLines should never return an err
-			return nil, false, err
-		}
-		if advance == 0 { // EOF
-			break
-		}
-
-		// matchBuf is what we actually match on. We have already done
-		// the transform of fileBuf in fileMatchBuf. lineBuf is a
-		// prefix of fileBuf, so matchBuf is the corresponding prefix.
-		matchBuf := fileMatchBuf[:len(lineBuf)]
-
-		// Advance file bufs in sync
-		fileBuf = fileBuf[advance:]
-		fileMatchBuf = fileMatchBuf[advance:]
-
-		// Check whether we're before the first match.
-		idx += advance
-		if idx < first[0] {
-			continue
-		}
-
-		// Skip lines that are too long.
-		if len(matchBuf) > maxLineSize {
-			continue
-		}
-
-		locs := rg.re.FindAllIndex(matchBuf, maxOffsets)
-		if len(locs) > 0 {
-			lineLimitHit := len(locs) == maxOffsets
-			offsetAndLengths := make([][2]int, len(locs))
-			for i, match := range locs {
-				start, end := match[0], match[1]
-				offset := utf8.RuneCount(lineBuf[:start])
-				length := utf8.RuneCount(lineBuf[start:end])
-				offsetAndLengths[i] = [2]int{offset, length}
+	locs := rg.re.FindAllIndex(fileMatchBuf, maxFileMatches)
+	lastLineNumber := 0
+	lastMatchIndex := 0
+	lastLineStartIndex := 0
+	if len(locs) > 0 {
+		lineLimitHit := len(locs) == maxOffsets
+		for _, match := range locs {
+			start, end := match[0], match[1]
+			lineStart := lastLineStartIndex + bytes.LastIndex(fileMatchBuf[lastLineStartIndex:start], []byte{'\n'})
+			if lineStart > 0 {
+				lastLineStartIndex = lineStart + 1
 			}
-			matches = append(matches, protocol.LineMatch{
-				// making a copy of lineBuf is intentional.
-				// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
-				// which currently occurs before Preview has been serialized.
-				// TODO: consider moving the call to Close until after we are
-				// done with Preview, and stop making a copy here.
-				// Special care must be taken to call Close on all possible paths, including error paths.
-				Preview:          string(lineBuf),
-				LineNumber:       i,
-				OffsetAndLengths: offsetAndLengths,
-				LimitHit:         lineLimitHit,
-			})
+			if lineStart < len(fileMatchBuf)-1 && len(fileMatchBuf) > 0 {
+				lineStart++
+			}
+			lineEnd := end + bytes.Index(fileMatchBuf[end:], []byte{'\n'})
+			if lineStart < 0 {
+				lineStart = start
+			}
+			if lineEnd < 0 {
+				lineEnd = end
+			}
+			// instead of match[0] in hydrateLineNumbers, use lineStart
+			offset := utf8.RuneCount(fileMatchBuf[lastLineStartIndex:start])
+			length := utf8.RuneCount(fileMatchBuf[start:end])
+
+			lineNumber, matchIndex := hydrateLineNumbers(fileMatchBuf, lastLineNumber, lastMatchIndex, lineStart, match)
+
+			lastMatchIndex = matchIndex
+			lastLineNumber = lineNumber
+
+			// matchBuf is the (full) lines that contain offset:length
+			matchBuf := fileMatchBuf[lineStart:lineEnd]
+			matchLines := bytes.SplitN(matchBuf, []byte{'\n'}, maxLineMatches+1)
+
+			if len(matchLines) > 1 {
+				offsetStart := 0
+				lineNum := lineNumber
+				for i, line := range matchLines {
+					le := length
+					if i == 0 {
+						offsetStart = offset
+					} else {
+						offsetStart = 0
+					}
+					if i == 0 {
+						// start until end of current line
+						n := lineStart + len(line) + 1
+						endOfCurrentLine := bytes.LastIndex(fileMatchBuf[:n], []byte{'\n'})
+						le = endOfCurrentLine - start
+					} else if i == len(matchLines)-1 {
+						startOfCurrentLine := bytes.LastIndex(fileMatchBuf[:end], []byte{'\n'}) + 1
+						le = end - startOfCurrentLine
+					} else {
+						le = len(line)
+					}
+					matches = append(matches, protocol.LineMatch{
+						// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
+						// which currently occurs before Preview has been serialized.
+						// TODO: consider moving the call to Close until after we are
+						// done with Preview, and stop making a copy here.
+						// Special care must be taken to call Close on all possible paths, including error paths.
+						Preview:          string(fileMatchBuf[lineStart:lineEnd]),
+						LineNumber:       lineNum,
+						OffsetAndLengths: [][2]int{[2]int{offsetStart, le}},
+						LimitHit:         lineLimitHit,
+					})
+					lineNum++
+				}
+				lastLineStartIndex = lineStart
+			} else {
+				// TODO see if zoekt does any limits on number of line
+				// matches. Because if it doesn't, we can easily OOM.
+				// TODO should we respect maxLineMatches?
+				// TODO append LineMatches
+				matches = append(matches, protocol.LineMatch{
+					// making a copy of lineBuf is intentional.
+					// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
+					// which currently occurs before Preview has been serialized.
+					// TODO: consider moving the call to Close until after we are
+					// done with Preview, and stop making a copy here.
+					// Special care must be taken to call Close on all possible paths, including error paths.
+					Preview:          string(fileMatchBuf[lineStart:lineEnd]),
+					LineNumber:       lineNumber,
+					OffsetAndLengths: [][2]int{[2]int{offset, length}},
+					LimitHit:         lineLimitHit,
+				})
+			}
+
 		}
+
 	}
 	limitHit = len(matches) == maxLineMatches
 	return matches, limitHit, nil
+}
+
+func hydrateLineNumbers(fileBuf []byte, lastLineNumber, lastMatchIndex, lineStart int, match []int) (lineNumber, matchIndex int) {
+	lineNumber = lastLineNumber + bytes.Count(fileBuf[lastMatchIndex:match[0]], []byte{'\n'})
+	return lineNumber, lineStart
 }
 
 // FindZip is a convenience function to run Find on f.
