@@ -19,6 +19,7 @@ var allDockerImages = []string{
 	"searcher",
 	"server",
 	"symbols",
+	"lsif-server",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
@@ -234,12 +235,19 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
 		}
 
-		cmdDir := "cmd/" + app
-		if _, err := os.Stat(filepath.Join("enterprise", cmdDir)); err != nil {
-			fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
-		} else {
-			cmds = append(cmds, bk.Cmd("pushd enterprise"))
-		}
+		cmdDir := func() string {
+			cmdDirByApp := map[string]string{
+				"lsif-server": "lsif/server",
+			}
+			if cmdDir, ok := cmdDirByApp[app]; ok {
+				return cmdDir
+			}
+			if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
+				fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
+				return "cmd/" + app
+			}
+			return "enterprise/cmd/" + app
+		}()
 
 		preBuildScript := cmdDir + "/pre-build.sh"
 		if _, err := os.Stat(preBuildScript); err == nil {
