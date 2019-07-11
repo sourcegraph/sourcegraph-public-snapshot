@@ -4,7 +4,7 @@ import * as sourcegraph from 'sourcegraph'
 import { ActionType } from '../../../../shared/src/api/types/action'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 
-type Callback = (action: sourcegraph.CodeAction | ActionType['command']) => void
+type Callback = (action: sourcegraph.Action | ActionType['command']) => void
 
 /**
  * A React hook that returns an `onActionClick` callback that executes an action, displaying a
@@ -15,7 +15,7 @@ export const useOnActionClickCallback = (
 ): [Callback, boolean /* isLoading */] => {
     const [isLoading, setIsLoading] = useState(false)
     const callback = useCallback(
-        async (action: sourcegraph.CodeAction | ActionType['command']) => {
+        async (action: sourcegraph.Action | ActionType['command']) => {
             try {
                 const command = 'command' in action ? action.command : undefined
                 if (command) {

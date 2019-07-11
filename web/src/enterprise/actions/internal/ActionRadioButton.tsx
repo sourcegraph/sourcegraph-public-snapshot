@@ -1,10 +1,10 @@
+import { Action } from '@sourcegraph/extension-api-types'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback } from 'react'
-import { CodeAction } from 'sourcegraph'
 
 interface Props {
     /** The action. */
-    action: CodeAction
+    action: Action
 
     /**
      * Whether the action is active.
@@ -14,7 +14,7 @@ interface Props {
     /**
      * Called when the active/inactive value of this action is changed by user interaction.
      */
-    onChange: (value: boolean, action: CodeAction) => void
+    onChange: (value: boolean, action: Action) => void
 
     className?: string
     buttonClassName?: string

@@ -114,7 +114,7 @@ export const getCodeActions = memoizeObservable(
     ({
         diagnostic,
         extensionsController,
-    }: { diagnostic: DiagnosticInfo } & ExtensionsControllerProps): Observable<sourcegraph.CodeAction[]> =>
+    }: { diagnostic: DiagnosticInfo } & ExtensionsControllerProps): Observable<sourcegraph.Action[]> =>
         from(
             extensionsController.services.codeActions.getCodeActions({
                 textDocument: {
@@ -132,13 +132,13 @@ export const getCodeActions = memoizeObservable(
     ({ diagnostic }) => diagnosticID(diagnostic)
 )
 
-export const codeActionID = (codeAction: sourcegraph.CodeAction): string => codeAction.title // TODO!(sqs): codeAction.title is not guaranteed unique
+export const codeActionID = (codeAction: sourcegraph.Action): string => codeAction.title // TODO!(sqs): codeAction.title is not guaranteed unique
 
 export const getActiveCodeAction0 = (
     diagnostic: DiagnosticInfo,
     threadSettings: ThreadSettings,
-    codeActions: sourcegraph.CodeAction[]
-): sourcegraph.CodeAction | undefined => {
+    codeActions: sourcegraph.Action[]
+): sourcegraph.Action | undefined => {
     const activeCodeActionID =
         threadSettings && threadSettings.actions && threadSettings.actions[diagnosticID(diagnostic)]
     return codeActions.find(a => codeActionID(a) === activeCodeActionID) || codeActions[0]
@@ -148,7 +148,7 @@ export const getActiveCodeAction = (
     diagnostic: DiagnosticInfo,
     extensionsController: ExtensionsControllerProps['extensionsController'],
     threadSettings: ThreadSettings
-): Observable<sourcegraph.CodeAction | undefined> =>
+): Observable<sourcegraph.Action | undefined> =>
     getCodeActions({ diagnostic, extensionsController }).pipe(
         map(codeActions => getActiveCodeAction0(diagnostic, threadSettings, codeActions))
     )

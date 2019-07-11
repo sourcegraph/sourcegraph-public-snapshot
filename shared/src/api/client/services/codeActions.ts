@@ -2,7 +2,7 @@ import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import { isEqual } from 'lodash'
 import { from, Observable } from 'rxjs'
 import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
-import { CodeAction, CodeActionContext } from 'sourcegraph'
+import { Action, CodeActionContext } from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentIdentifier } from '../types/textDocument'
 import { DocumentFeatureProviderRegistry } from './registry'
@@ -14,7 +14,7 @@ export interface CodeActionsParams {
     context: CodeActionContext
 }
 
-export type ProvideCodeActionsSignature = (params: CodeActionsParams) => Observable<CodeAction[] | null | undefined>
+export type ProvideCodeActionsSignature = (params: CodeActionsParams) => Observable<Action[] | null | undefined>
 
 /** Provides code actions from all extensions. */
 export class CodeActionProviderRegistry extends DocumentFeatureProviderRegistry<ProvideCodeActionsSignature> {
@@ -24,7 +24,7 @@ export class CodeActionProviderRegistry extends DocumentFeatureProviderRegistry<
      * provider result is omitted from the emission of the observable (the observable does not emit
      * the error).
      */
-    public getCodeActions(params: CodeActionsParams): Observable<CodeAction[] | null> {
+    public getCodeActions(params: CodeActionsParams): Observable<Action[] | null> {
         return getCodeActions(this.providersForDocument(params.textDocument), params)
     }
 }
@@ -42,7 +42,7 @@ export function getCodeActions(
     providers: Observable<ProvideCodeActionsSignature[]>,
     params: CodeActionsParams,
     logErrors = true
-): Observable<CodeAction[] | null> {
+): Observable<Action[] | null> {
     return providers.pipe(
         switchMap(providers =>
             combineLatestOrDefault(
@@ -60,7 +60,7 @@ export function getCodeActions(
                 })
             ).pipe(
                 map(flattenAndCompact),
-                defaultIfEmpty<CodeAction[] | null>(null),
+                defaultIfEmpty<Action[] | null>(null),
                 distinctUntilChanged((a, b) => isEqual(a, b))
             )
         )

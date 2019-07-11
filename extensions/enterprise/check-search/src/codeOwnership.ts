@@ -100,7 +100,7 @@ function startDiagnostics(): Unsubscribable {
 
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {
-        provideCodeActions: (doc, _rangeOrSelection, context): Observable<sourcegraph.CodeAction[]> => {
+        provideCodeActions: (doc, _rangeOrSelection, context): Observable<sourcegraph.Action[]> => {
             const diag = context.diagnostics.find(isCodeOwnershipDiagnostic)
             if (!diag) {
                 return of([])

@@ -1,6 +1,6 @@
 import { applyEdits } from '@sqs/jsonc-parser'
 import { createTwoFilesPatch, Hunk, structuredPatch } from 'diff'
-import { CodeAction, TextEdit } from 'sourcegraph'
+import { Action, TextEdit } from 'sourcegraph'
 import { positionToOffset } from '../../../../../../shared/src/api/client/types/textDocument'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
@@ -26,7 +26,7 @@ export const npmDiffToFileDiffHunk = (hunk: Hunk): GQL.IFileDiffHunk => ({
  */
 export async function computeDiff(
     { services: { fileSystem } }: ExtensionsControllerProps['extensionsController'],
-    codeActions: Pick<CodeAction, 'edit'>[]
+    codeActions: Pick<Action, 'edit'>[]
 ): Promise<FileDiff[]> {
     // TODO!(sqs): handle conflicting edits
     const editsByUri = new Map<string, TextEdit[]>()

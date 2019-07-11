@@ -4,7 +4,7 @@ import CheckboxMarkedCircleOutlineIcon from 'mdi-react/CheckboxMarkedCircleOutli
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import React, { useCallback, useState } from 'react'
-import { CodeAction } from 'sourcegraph'
+import { Action } from 'sourcegraph'
 import { ExtensionsControllerProps } from '../../../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../../../shared/src/graphql/schema'
 import { ActionsDropdownButton } from '../../../../../actions/internal/ActionsDropdownButton'
@@ -15,9 +15,9 @@ interface Props extends ExtensionsControllerProps {
     onThreadUpdate: (thread: GQL.IDiscussionThread) => void
     threadSettings: ThreadSettings
 
-    codeActions: CodeAction[]
-    activeCodeAction: CodeAction | undefined
-    onCodeActionActivate: (codeAction: CodeAction | undefined) => void
+    codeActions: Action[]
+    activeCodeAction: Action | undefined
+    onCodeActionActivate: (codeAction: Action | undefined) => void
 
     className?: string
     buttonClassName?: string

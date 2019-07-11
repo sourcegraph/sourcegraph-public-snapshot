@@ -84,7 +84,7 @@ function startDiagnostics(): Unsubscribable {
 
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {
-        provideCodeActions: async (doc, _rangeOrSelection, context): Promise<sourcegraph.CodeAction[]> => {
+        provideCodeActions: async (doc, _rangeOrSelection, context): Promise<sourcegraph.Action[]> => {
             const diag = context.diagnostics.find(d => d.tags && d.tags.includes(TAG_NO_INLINE_PROPS))
             if (!diag) {
                 return []

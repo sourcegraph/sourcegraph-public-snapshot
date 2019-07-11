@@ -1,6 +1,6 @@
 import * as sourcegraph from 'sourcegraph'
 
-export const OTHER_CODE_ACTIONS: sourcegraph.CodeAction[] = [
+export const OTHER_CODE_ACTIONS: sourcegraph.Action[] = [
     {
         title: 'Open tsconfig.json',
         command: {

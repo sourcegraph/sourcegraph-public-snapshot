@@ -3,12 +3,11 @@ import { Diagnostic } from './diagnostic'
 import { WorkspaceEdit } from './workspaceEdit'
 
 /**
- * A code action.
+ * An action.
  *
- * @see module:sourcegraph.CodeAction
+ * @see module:sourcegraph.Action
  */
-export interface CodeAction
-    extends Pick<sourcegraph.CodeAction, Exclude<keyof sourcegraph.CodeAction, 'edit' | 'diagnostics'>> {
+export interface Action extends Pick<sourcegraph.Action, Exclude<keyof sourcegraph.Action, 'edit' | 'diagnostics'>> {
     readonly edit?: WorkspaceEdit
     readonly diagnostics?: Diagnostic[]
 }

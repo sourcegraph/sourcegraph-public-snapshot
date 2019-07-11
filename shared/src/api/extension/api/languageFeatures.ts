@@ -11,7 +11,7 @@ import {
     Location,
     LocationProvider,
     ReferenceProvider,
-    CodeAction,
+    Action,
 } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
 import { CodeActionsParams } from '../../client/services/codeActions'
@@ -20,7 +20,7 @@ import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 import { ExtDocuments } from './documents'
 import { fromHover, fromLocation, toPosition } from './types'
-import { fromCodeAction, PlainCodeActionsParams, toCodeActionsParams } from '../../types/codeAction'
+import { fromAction, PlainCodeActionsParams, toCodeActionsParams } from '../../types/action'
 import { toDiagnostic, fromDiagnostic } from '../../types/diagnostic'
 
 /** @internal */
@@ -106,8 +106,8 @@ export class ExtLanguageFeatures {
 
             return toProxyableSubscribable(
                 provider.provideCodeActions(await this.documents.getSync(textDocument.uri), rangeOrSelection, context),
-                (items: null | undefined | CodeAction[]): clientType.CodeAction[] =>
-                    items ? items.map(fromCodeAction) : []
+                (items: null | undefined | Action[]): clientType.CodeAction>
+                    items ? items.map(fromAction) : []
             )
         })
         return syncSubscription(this.proxy.$registerCodeActionProvider(selector, providerFunction))

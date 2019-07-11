@@ -1,22 +1,51 @@
 import * as sourcegraph from 'sourcegraph'
+import { Action, Diagnostic, Range, Selection } from '@sourcegraph/extension-api-types'
+import { fromDiagnostic, toDiagnostic } from './diagnostic'
+import { WorkspaceEdit } from './workspaceEdit'
+import { CodeActionsParams } from '../client/services/codeActions'
+import { Range as RangeImpl, Selection as SelectionImpl } from '@sourcegraph/extension-api-classes'
 
-export type Action = sourcegraph.Action
-
-export type ActionType = {
-    plan: { plan: sourcegraph.Plan }
-    command: { command: sourcegraph.Command }
+export function fromAction(codeAction: sourcegraph.Action): Action {
+    return {
+        ...codeAction,
+        diagnostics: codeAction.diagnostics && codeAction.diagnostics.map(fromDiagnostic),
+        edit: codeAction.edit && (codeAction.edit as WorkspaceEdit).toJSON(),
+    }
 }
 
-export function fromAction(action: sourcegraph.Action): Action {
-    return action
+export function toAction(codeAction: Action): sourcegraph.Action {
+    return {
+        ...codeAction,
+        diagnostics: codeAction.diagnostics && codeAction.diagnostics.map(toDiagnostic),
+        edit: codeAction.edit && WorkspaceEdit.fromJSON(codeAction.edit),
+    }
 }
 
-export function toAction(action: Action): sourcegraph.Action {
-    return action
+export interface PlainCodeActionsParams extends Pick<CodeActionsParams, 'textDocument'> {
+    range: Range | Selection
+    context: { diagnostics: Diagnostic[] }
 }
 
-export function isActionType(type: 'plan'): (action: Action) => action is { plan: sourcegraph.Plan }
-export function isActionType(type: 'command'): (action: Action) => action is { command: sourcegraph.Command }
-export function isActionType(type: string): (action: Action) => boolean {
-    return action => !!(action as any)[type]
+export function fromCodeActionsParams(params: CodeActionsParams): PlainCodeActionsParams {
+    return {
+        ...params,
+        range: (params.range as any).toJSON(),
+        context: { ...params.context, diagnostics: params.context.diagnostics.map(fromDiagnostic) },
+    }
+}
+
+export function toCodeActionsParams(params: PlainCodeActionsParams): CodeActionsParams {
+    return {
+        ...params,
+        range: RangeImpl.isRange(params.range)
+            ? RangeImpl.fromPlain(params.range)
+            : SelectionImpl.fromPlain(params.range),
+        context: { ...params.context, diagnostics: params.context.diagnostics.map(toDiagnostic) },
+    }
+}
+
+export function isCommandOnlyAction(
+    action: Action | sourcegraph.Action
+): action is Required<Pick<Action | sourcegraph.Action, 'title' | 'command'>> {
+    return !action.edit && !action.computeEdit && (!action.diagnostics || action.diagnostics.length === 0)
 }
