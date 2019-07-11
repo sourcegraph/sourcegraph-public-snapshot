@@ -8,11 +8,11 @@ import (
 	"sync"
 
 	"github.com/neelance/parallel"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	lsp "github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // searchSymbolResult is a result from symbol search.
@@ -103,12 +103,28 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 		})
 	}
 	err = run.Wait()
-
-	if len(res) > limit {
-		common.limitHit = true
-		res = res[:limit]
-	}
+	res, limitHit := limitSymbolResults(res, limit)
+	common.limitHit = limitHit
 	return res, common, err
+}
+
+// limitSymbolResults returns a new version of res containing no more than limit symbol matches,
+// and a boolean telling whether the limit was hit.
+func limitSymbolResults(res []*fileMatchResolver, limit int) (res2 []*fileMatchResolver, limitHit bool) {
+	nsym := 0
+	for _, r := range res {
+		r2 := *r
+		if nsym+len(r.symbols) >= limit {
+			r2.symbols = r2.symbols[:limit-nsym]
+		}
+		res2 = append(res2, &r2)
+		nsym += len(r.symbols)
+		if nsym >= limit {
+			limitHit = true
+			return
+		}
+	}
+	return
 }
 
 func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.PatternInfo, query *query.Query, limit int) (res []*fileMatchResolver, err error) {
