@@ -137,14 +137,14 @@ const codeViewResolver: ViewResolver<CodeView> = {
         if (isCompareView()) {
             return { element, ...compareDiffCodeView }
         }
-        if (isCommitsView()) {
+        if (isCommitsView(window.location)) {
             return { element, ...commitDiffCodeView }
         }
         if (isSingleFileView(element)) {
             const isDiff = contentView.classList.contains('diff-view')
             return isDiff ? { element, ...singleFileDiffCodeView } : { element, ...singleFileSourceCodeView }
         }
-        if (isPullRequestView()) {
+        if (isPullRequestView(window.location)) {
             return { element, ...pullRequestDiffCodeView }
         }
         console.error('Unknown code view', element)
