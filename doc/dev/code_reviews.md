@@ -2,9 +2,11 @@
 
 All code should be reviewed and approved by an appropriate teammate before being merged into the `master` branch.
 
+Our goal is to have a code review process and culture that everyone would opt-in to even if code reviews weren't required.
+
 ## Why do we require peer code reviews?
 
-Code reviews benefit every person on the team, and the team itself.
+Code reviews are an investment. As an author, it takes extra time and effort to create good PRs, wait for someone to review your code, and address review comments. As a code reviewer, it takes extra time to understand the motivation, design, and implementation of someone else's code so that you can provide valuable feedback. This investment is worth it because it provides benefits to every person on the team and it helps the team as a whole ship features to our customers that are _high quality_ and _maintainable_.
 
 For authors:
 
@@ -48,6 +50,22 @@ Here are some examples of reasons to skip code review that are NOT acceptable:
 - "I don't have someone to review this code"
     - Ask for help to identify someone else on the team with whom you can share your knowledge, context, and ownership.
 
+## What makes an effective Pull Request (PR)?
+
+An effective PR minimizes the amount of effort that is required for the reviewer to understand your change so that they can provide high quality feedback in a timely manner.
+
+Do:
+
+- Prefer small PRs. If a large PR is unavoidable, try to organize it into smaller commits (with good commit messages) that are reviewable independently (and indicate this to the reviewer in the description).
+- Create a draft PR first and review your own diff as if you were reviewing someone else's change. This helps you empathize with your reviewer and can help catch silly mistakes before your reviewer sees them (e.g. forgetting to `git add` a file, forgetting to remove debugging code, etc.).
+- Create meaningful PR title and description that communicates **what** the PR does and **why** (the **how** is the diff). 
+    - Include links to relevant issues (e.g. "closes #1234", "helps #5678").
+    - Include a screenshot, GIF, or video if you are making user facing changes.
+    - Discuss alternative implementations that you considered but didn't pursue (and why).
+    - Describe any remaining open questions that you are seeking feedback on.
+- Make it clear who's review(s) you are waiting for.
+- Politely remind your reviewer that you are waiting for a review if they haven't responded after one business day.
+
 ## What makes an effective code review?
 
 [This blog post](https://medium.com/@schrockn/on-code-reviews-b1c7c94d868c) effectively explains some principals which our team values.
@@ -70,7 +88,7 @@ Do:
     | Why didn't you $X? | What do you think about doing $X? I think it would help with $Y. | A "What" question is better than a "Why" question because the latter sounds accusatory. Either the author considered $X and decided not to, or they didn't consider it, but in either case it is frustrating to the author if the reviewer doesn't explain why they think $X should be considered. |
     | This code is confusing. Can you clarify it? | It was hard for me to understand $X because $Y, but I haven't been able to think of a way to improve it. Do you have any ideas? | Don't declare your opinion as fact; instead, share your subjective experience and try to offer a suggestion for improvement. If you don't have a suggestion, acknowledge that to show that you empathize with the difficulty of improving this code. | 
 
-Don't
+Don't:
 
 - Comment on the details of the PR if you have questions or concerns about the overall direction or design. The former will distract from the latter and might be irrelevant if the PR is reworked.
 - Take longer than one business day to respond to a PR that is ready for your review (or re-review).
@@ -80,7 +98,7 @@ Don't
 
 You should get a code review from the person who's approval will give you the most confidence that your change is high quality. If you are modifying existing code, you can use `git blame` to identify the previous author and the previous reviewer because they probably will have helpful context.
 
-If your change touches multiple parts of our codebase (e.g. Go, TypeScript), then you might need to get approval from multiple peers (e.g. a Go reviewers and a TypeScript reviewer).
+If your change touches multiple parts of our codebase (e.g. Go, TypeScript), then you might need to get approval from multiple peers (e.g. a Go reviewer and a TypeScript reviewer).
 
 GitHub will automatically assign reviewers if there is a matching entry in the [CODEOWNERS](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/.github/CODEOWNERS) file, but that doesn't necessarily mean that you need to wait for an approval from everyone. For example, if you are making a change to the search backend then you only need approval from one person on that team, not all of them.
 
