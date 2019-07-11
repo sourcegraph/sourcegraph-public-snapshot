@@ -349,9 +349,11 @@ type repoPaginationPlan struct {
 	searchBucketMin, searchBucketMax int
 }
 
+type executor func(batch []*search.RepositoryRevisions) (foundResults int, err error)
+
 // execute executes the repository pagination plan by invoking the executor to
 // search batches of repositories.
-func (p *repoPaginationPlan) execute(ctx context.Context, executor func(batch []*search.RepositoryRevisions) (foundResults int, err error)) error {
+func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) error {
 	// Determine how large the batches of repositories we will search over will be.
 	batchSize := clamp(numTotalRepos.get(ctx)/p.searchBucketDivisor, p.searchBucketMin, p.searchBucketMax)
 
@@ -375,7 +377,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, executor func(batch []
 		}
 
 		batch := repos[start:clamp(start+batchSize, 0, len(repos)-1)]
-		foundResults, err := executor(batch)
+		foundResults, err := exec(batch)
 		if err != nil {
 			return err
 		}
