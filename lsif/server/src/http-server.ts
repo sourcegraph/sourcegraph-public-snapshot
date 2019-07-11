@@ -271,6 +271,11 @@ function main(): void {
             checkRepository(repository)
             checkCommit(commit)
 
+            if (!(await fs.exists(diskKey({ repository, commit })))) {
+                res.send(false)
+                return
+            }
+
             if (!file) {
                 res.send(await fs.exists(diskKey({ repository, commit })))
                 return
@@ -284,7 +289,7 @@ function main(): void {
                 res.send(Boolean((await createDB({ repository, commit })).stat(file)))
             } catch (e) {
                 if ('code' in e && e.code === 'ENOENT') {
-                    res.send({ error: `No LSIF data available for ${repository}@${commit}.` })
+                    res.send(false)
                     return
                 }
                 throw e
