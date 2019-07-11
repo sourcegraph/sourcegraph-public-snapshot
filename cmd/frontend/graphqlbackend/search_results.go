@@ -158,33 +158,30 @@ func (sr *searchResultsResolver) MatchCount() int32 {
 	return totalResults
 }
 
-func (sr *searchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
+func (sr *searchResultsResolver) ResultCount() int32 {
+	nsym := sr.countSymbols()
+	if nsym > 0 {
+		return nsym
+	}
+	return sr.MatchCount()
+}
 
 func (sr *searchResultsResolver) ApproximateResultCount() string {
-	wantPlus := sr.LimitHit() || len(sr.cloning) > 0 || len(sr.timedout) > 0
-	nsym := sr.countSymbols()
-	numResults := 0
-	switch {
-	case nsym > 0:
-		numResults = nsym
-	default:
-		numResults = int(sr.ResultCount())
-	}
-	s := strconv.Itoa(numResults)
-	if wantPlus {
+	s := strconv.Itoa(int(sr.ResultCount()))
+	if sr.LimitHit() || len(sr.cloning) > 0 || len(sr.timedout) > 0 {
 		s += "+"
 	}
 	return s
 }
 
-func (sr *searchResultsResolver) countSymbols() int {
-	nsym := 0
+func (sr *searchResultsResolver) countSymbols() int32 {
+	var nsym int32
 	for _, srr := range sr.results {
 		fm, ok := srr.ToFileMatch()
 		if !ok {
 			continue
 		}
-		nsym += len(fm.symbols)
+		nsym += int32(len(fm.symbols))
 	}
 	return nsym
 }
