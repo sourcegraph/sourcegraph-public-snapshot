@@ -90,4 +90,58 @@ func Test_limitSymbolResults(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("two file matches, one symbol per file", func(t *testing.T) {
+		res := []*fileMatchResolver{
+			{
+				symbols: []*searchSymbolResult{
+					{
+						symbol: protocol.Symbol{
+							Name: fmt.Sprintf("symbol-name-%d", rand.Int()),
+						},
+					},
+				},
+			},
+			{
+				symbols: []*searchSymbolResult{
+					{
+						symbol: protocol.Symbol{
+							Name: fmt.Sprintf("symbol-name-%d", rand.Int()),
+						},
+					},
+				},
+			},
+		}
+
+		t.Run("limit 0 => no file matches", func(t *testing.T) {
+			res2, limitHit := limitSymbolResults(res, 0)
+			if len(res2) != 0 {
+				t.Errorf("res2 = %+v, want empty", res2)
+			}
+			if !limitHit {
+				t.Error("limitHit is false")
+			}
+		})
+
+		t.Run("limit 1 => one file match", func(t *testing.T) {
+			wantRes2 := res[:1]
+			res2, limitHit := limitSymbolResults(res, 1)
+			if !reflect.DeepEqual(res2, wantRes2) {
+				t.Errorf("res2 = %+v, want %+v", res2, wantRes2)
+			}
+			if !limitHit {
+				t.Error("limitHit is false")
+			}
+		})
+
+		t.Run("limit 2 => unchanged", func(t *testing.T) {
+			res2, limitHit := limitSymbolResults(res, 2)
+			if !reflect.DeepEqual(res2, res) {
+				t.Errorf("res2 = %+v, want %+v", res2, res)
+			}
+			if limitHit {
+				t.Error("limitHit is true")
+			}
+		})
+	})
 }
