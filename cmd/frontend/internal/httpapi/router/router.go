@@ -58,6 +58,8 @@ func New(base *mux.Router) *mux.Router {
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)
+	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
+	base.Path("/lsif/{rest:.*}").Methods("POST").Name(LSIF)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
@@ -123,6 +125,4 @@ func addTelemetryRoute(m *mux.Router) {
 
 func addGraphQLRoute(m *mux.Router) {
 	m.Path("/graphql").Methods("POST").Name(GraphQL)
-	m.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
-	m.Path("/lsif/{rest:.*}").Methods("POST").Name(LSIF)
 }
