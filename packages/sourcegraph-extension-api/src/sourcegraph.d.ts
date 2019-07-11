@@ -1226,15 +1226,6 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * An action that can be presented to the user as a button.
-     */
-    export type Action =
-        | {
-              plan: Plan
-          }
-        | { command: Command }
-
-    /**
      * The scopes for a notification.
      */
     export enum NotificationScope {
@@ -1262,10 +1253,6 @@ declare module 'sourcegraph' {
          * The [actions](#Action) that this notification presents.
          */
         readonly actions?: readonly Action[]
-
-        /**
-         *
-         */
     }
 
     /**
@@ -1613,35 +1600,14 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A plan is a sequence of operations to apply to code.
-     */
-    export interface Plan {
-        /**
-         * A descriptive title for the plan.
-         */
-        title: string
-
-        /**
-         * The operations to apply, in sequential order.
-         */
-        operations: PlanOperation[] & { length: 1 /* TODO!(sqs): for now, enforce only 1 op */ }
-    }
-
-    export interface PlanOperation<P extends object = {}> {
-        parameters?: P
-
-        command: Command
-    }
-
-    /**
-     * A code action represents a change that can be performed in code, e.g. to fix a problem or to
-     * refactor code.
+     * A code action represents a change that can be performed in code, such as a refactor or a lint
+     * fix.
      *
-     * A CodeAction must set either [`edit`](#CodeAction.edit) and/or a
-     * [`command`](#CodeAction.command). If both are supplied, the `edit` is applied first, then the
-     * command is executed.
+     * TODO!(sqs): update this paragraph -- A CodeAction must set either [`edit`](#CodeAction.edit)
+     * and/or a [`command`](#CodeAction.command). If both are supplied, the `edit` is applied first,
+     * then the command is executed.
      */
-    export interface CodeAction {
+    export interface Action {
         /**
          * A short, human-readable, title for this code action.
          */
@@ -1651,6 +1617,12 @@ declare module 'sourcegraph' {
          * A {@link WorkspaceEdit} that this code action performs.
          */
         readonly edit?: WorkspaceEdit
+
+        /**
+         * A [command](#Command) that is executed to compute the {@link WorkspaceEdit} that this
+         * action performs.
+         */
+        readonly computeEdit?: Command
 
         /**
          * A [command](#Command) that this code action executes.
@@ -1681,7 +1653,7 @@ declare module 'sourcegraph' {
             document: TextDocument,
             range: Range | Selection,
             context: CodeActionContext
-        ): ProviderResult<CodeAction[]>
+        ): ProviderResult<Action[]>
     }
 
     export namespace languages {

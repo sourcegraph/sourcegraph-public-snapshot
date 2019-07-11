@@ -1,4 +1,5 @@
 import { NotificationType } from '@sourcegraph/extension-api-classes'
+import { Action } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useState } from 'react'
 import { Redirect } from 'react-router'
@@ -26,7 +27,7 @@ interface RenderChildrenProps {
 const LOADING: 'loading' = 'loading'
 
 interface Props extends ExtensionsControllerProps {
-    actionsOrError: typeof LOADING | readonly sourcegraph.CodeAction[] | ErrorLike
+    actionsOrError: typeof LOADING | readonly Action[] | ErrorLike
 
     defaultPreview?: React.ReactFragment
 
@@ -43,9 +44,12 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
     children,
     ...props
 }) => {
-    const onActionClick = useOnActionClickCallback(extensionsController)
-
-    const [activeAction, setActiveAction] = useState<sourcegraph.CodeAction | undefined>()
+    const [selectedAction, setSelectedAction] = useState<Action | undefined>()
+    const onActionSetSelected = useCallback((value: boolean, action: Action): void => {
+        if (value) {
+            setSelectedAction(action)
+        }
+    }, [])
 
     const [createdThreadOrLoading, setCreatedThreadOrLoading] = useState<ChangesetButtonOrLinkExistingChangeset>(
         LOADING
@@ -55,7 +59,7 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
         async (creationStatus: ChangesetCreationStatus) => {
             setCreatedThreadOrLoading(PENDING_CREATION)
             try {
-                const action = activeAction
+                const action = selectedAction
                 if (!action) {
                     throw new Error('no active code action')
                 }
@@ -74,7 +78,7 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
                 })
             }
         },
-        [activeAction, extensionsController]
+        [selectedAction, extensionsController]
     )
 
     return children({
@@ -86,23 +90,19 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
             ) : (
                 <ActionsFormControl
                     actions={actionsOrError}
-                    activeAction={activeAction}
-                    onActionClick={onActionClick}
-                    onActionSetActive={setActiveAction}
+                    selectedAction={selectedAction}
+                    onActionSetSelected={onActionSetSelected}
                     className="mt-4"
-                    buttonClassName="btn py-0 px-2 text-decoration-none text-left"
-                    inactiveButtonClassName="btn-link"
-                    activeButtonClassName="border"
                 />
             ),
         preview:
-            activeAction && activeAction.edit ? (
+            selectedAction && selectedAction.edit ? (
                 <>
                     <WorkspaceEditPreview
-                        key={JSON.stringify(activeAction.edit)}
+                        key={JSON.stringify(selectedAction.edit)}
                         {...props}
                         extensionsController={extensionsController}
-                        workspaceEdit={activeAction.edit}
+                        workspaceEdit={selectedAction.edit}
                         className="overflow-auto p-2 mb-3"
                     />
                     <ChangesetButtonOrLink

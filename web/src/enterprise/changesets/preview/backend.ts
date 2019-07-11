@@ -1,3 +1,4 @@
+import { Action } from '@sourcegraph/extension-api-types'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
@@ -9,7 +10,6 @@ import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { mutateGraphQL } from '../../../backend/graphql'
 import { createThread } from '../../../discussions/backend'
 import { fetchRepository } from '../../../repo/settings/backend'
-import { extensionsController } from '../../../search/testHelpers'
 import { computeDiff, FileDiff } from '../../threads/detail/changes/computeDiff'
 import { ChangesetDelta, ThreadSettings } from '../../threads/settings'
 
@@ -41,7 +41,7 @@ export async function createChangeset(
 export async function createChangesetFromCodeAction(
     { extensionsController }: ExtensionsControllerProps,
     diagnostic: sourcegraph.Diagnostic | null, // TODO!(sqs)
-    codeAction: sourcegraph.CodeAction,
+    codeAction: Action,
     info: Pick<ChangesetCreationInfo, 'status'>
 ): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
     return createChangesetFromDiffs(await computeDiff(extensionsController, [codeAction]), {

@@ -10,9 +10,9 @@ import { displayRepoName } from '../../../../../../shared/src/components/RepoFil
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
-import { ActionsWithPreview } from '../../../actions/ActionsWithPreview'
 import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/DiagnosticSeverityIcon'
 import { fetchHighlightedFileLines } from '../../../../repo/backend'
+import { ActionsWithPreview } from '../../../actions/ActionsWithPreview'
 import { DiagnosticInfo, getCodeActions } from '../../../threads/detail/backend'
 
 const LOADING: 'loading' = 'loading'
@@ -40,7 +40,7 @@ export const DiagnosticsListItem: React.FunctionComponent<Props> = ({
     extensionsController,
     ...props
 }) => {
-    const [actionsOrError, setActionsOrError] = useState<typeof LOADING | sourcegraph.CodeAction[] | ErrorLike>(LOADING)
+    const [actionsOrError, setActionsOrError] = useState<typeof LOADING | sourcegraph.Action[] | ErrorLike>(LOADING)
     // Reduce recomputation of code actions when the diagnostic object reference changes but it
     // contains the same data.
     const diagnosticData = JSON.stringify(fromDiagnostic(diagnostic))

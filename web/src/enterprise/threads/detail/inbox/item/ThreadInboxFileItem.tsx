@@ -48,7 +48,7 @@ export const ThreadInboxFileItem: React.FunctionComponent<Props> = ({
     extensionsController,
     ...props
 }) => {
-    const [codeActionsOrError, setCodeActionsOrError] = useState<typeof LOADING | sourcegraph.CodeAction[] | ErrorLike>(
+    const [codeActionsOrError, setCodeActionsOrError] = useState<typeof LOADING | sourcegraph.Action[] | ErrorLike>(
         LOADING
     )
     // tslint:disable-next-line: no-floating-promises
@@ -66,7 +66,7 @@ export const ThreadInboxFileItem: React.FunctionComponent<Props> = ({
     }, [diagnostic, extensionsController])
 
     const onCodeActionActivate = useCallback(
-        async (codeAction: sourcegraph.CodeAction | undefined) => {
+        async (codeAction: sourcegraph.Action | undefined) => {
             onThreadUpdate(
                 await updateThreadSettings(thread, {
                     ...threadSettings,

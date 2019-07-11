@@ -119,7 +119,7 @@ function createStatusProvider(diagnostics: Observable<[URL, sourcegraph.Diagnost
 
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {
-        provideCodeActions: (doc, _rangeOrSelection, context): Observable<sourcegraph.CodeAction[]> => {
+        provideCodeActions: (doc, _rangeOrSelection, context): Observable<sourcegraph.Action[]> => {
             const diag = context.diagnostics.find(isDependencyRulesDiagnostic)
             if (!diag) {
                 return of([])

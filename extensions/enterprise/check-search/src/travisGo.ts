@@ -240,7 +240,7 @@ const diagnostics: Observable<[URL, sourcegraph.Diagnostic[]][]> = from(sourcegr
 
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {
-        provideCodeActions: async (doc, _rangeOrSelection, context): Promise<sourcegraph.CodeAction[]> => {
+        provideCodeActions: async (doc, _rangeOrSelection, context): Promise<sourcegraph.Action[]> => {
             const diag = context.diagnostics.find(isTravisGoDiagnostic)
             if (!diag) {
                 return []
@@ -297,7 +297,7 @@ function computeFixEdit(
     return edit
 }
 
-async function computeFixAllAction(): Promise<Pick<sourcegraph.CodeAction, 'edit' | 'diagnostics'>> {
+async function computeFixAllAction(): Promise<Pick<sourcegraph.Action, 'edit' | 'diagnostics'>> {
     // TODO!(sqs): Make this listen for new diagnostics and include those too, but that might be
     // super inefficient because it's n^2, so maybe an altogether better/different solution is
     // needed.
@@ -315,7 +315,7 @@ async function computeFixAllAction(): Promise<Pick<sourcegraph.CodeAction, 'edit
 
 async function computeFixAllActionsFromDiagnostics(
     allDiags: [URL, sourcegraph.Diagnostic[]][]
-): Promise<Pick<sourcegraph.CodeAction, 'edit' | 'diagnostics'>> {
+): Promise<Pick<sourcegraph.Action, 'edit' | 'diagnostics'>> {
     const edit = new sourcegraph.WorkspaceEdit()
     for (const [uri, diags] of allDiags) {
         const doc = await sourcegraph.workspace.openTextDocument(uri)

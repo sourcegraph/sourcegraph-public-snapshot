@@ -88,7 +88,7 @@ function startDiagnostics(): Unsubscribable {
 
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {
-        provideCodeActions: async (doc, _rangeOrSelection, context): Promise<sourcegraph.CodeAction[]> => {
+        provideCodeActions: async (doc, _rangeOrSelection, context): Promise<sourcegraph.Action[]> => {
             const diag = context.diagnostics.find(isImportStarDiagnostic)
             if (!diag) {
                 return []
@@ -144,7 +144,7 @@ function computeFixEdit(
     return edit
 }
 
-async function computeFixAllAction(): Promise<Pick<sourcegraph.CodeAction, 'edit' | 'diagnostics'>> {
+async function computeFixAllAction(): Promise<Pick<sourcegraph.Action, 'edit' | 'diagnostics'>> {
     // TODO!(sqs): Make this listen for new diagnostics and include those too, but that might be
     // super inefficient because it's n^2, so maybe an altogether better/different solution is
     // needed.

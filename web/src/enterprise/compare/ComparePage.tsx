@@ -7,7 +7,7 @@ interface Props extends ExtensionsControllerProps {
     /**
      * The code actions to apply.
      */
-    codeActions: sourcegraph.CodeAction[]
+    codeActions: sourcegraph.Action[]
 
     className?: string
 }

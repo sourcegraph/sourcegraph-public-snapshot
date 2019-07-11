@@ -1,5 +1,5 @@
 import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
-import { Hover, Location, CodeAction } from '@sourcegraph/extension-api-types'
+import { Hover, Location, Action } from '@sourcegraph/extension-api-types'
 import { map } from 'rxjs/operators'
 import { CompletionList, DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
@@ -10,12 +10,7 @@ import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
 import { wrapRemoteObservable } from './common'
-import {
-    toCodeAction,
-    fromCodeActionsParams,
-    toCodeActionsParams,
-    PlainCodeActionsParams,
-} from '../../types/codeAction'
+import { toAction, fromCodeActionsParams, toCodeActionsParams, PlainCodeActionsParams } from '../../types/action'
 
 /** @internal */
 export interface ClientLanguageFeaturesAPI extends ProxyValue {
@@ -58,7 +53,7 @@ export interface ClientLanguageFeaturesAPI extends ProxyValue {
     $registerCodeActionProvider(
         selector: DocumentSelector,
         providerFunction: ProxyResult<
-            ((params: PlainCodeActionsParams) => ProxySubscribable<CodeAction[] | null | undefined>) & ProxyValue
+            ((params: PlainCodeActionsParams) => ProxySubscribable<Action[] | null | undefined>) & ProxyValue
         >
     ): Unsubscribable & ProxyValue
 }
@@ -154,14 +149,14 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyV
     public $registerCodeActionProvider(
         documentSelector: DocumentSelector,
         providerFunction: ProxyResult<
-            ((params: PlainCodeActionsParams) => ProxySubscribable<CodeAction[] | null | undefined>) & ProxyValue
+            ((params: PlainCodeActionsParams) => ProxySubscribable<Action[] | null | undefined>) & ProxyValue
         >
     ): Unsubscribable & ProxyValue {
         return proxyValue(
             this.codeActionsRegistry.registerProvider({ documentSelector }, params =>
                 wrapRemoteObservable(providerFunction(fromCodeActionsParams(params))).pipe(
                     map(codeActions =>
-                        codeActions ? codeActions.map(codeAction => toCodeAction(codeAction)) : codeActions
+                        codeActions ? codeActions.map(codeAction => toAction(codeAction)) : codeActions
                     )
                 )
             )

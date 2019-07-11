@@ -1,4 +1,4 @@
-export * from './codeAction'
+export * from './action'
 export * from './diagnostic'
 export * from './hover'
 export * from './location'

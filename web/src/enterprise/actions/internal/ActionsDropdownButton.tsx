@@ -1,10 +1,10 @@
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { CodeAction } from 'sourcegraph'
+import { Action } from 'sourcegraph'
 
 interface Props {
-    actions: CodeAction[]
+    actions: Action[]
     className?: string
     buttonClassName?: string
 }

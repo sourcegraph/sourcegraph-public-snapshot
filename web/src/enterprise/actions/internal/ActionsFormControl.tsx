@@ -1,14 +1,13 @@
-import { CodeAction } from '@sourcegraph/extension-api-types'
+import { Action } from '@sourcegraph/extension-api-types'
 import React from 'react'
-import { Action, isActionType } from '../../../../../shared/src/api/types/action'
-import { ChangesetCreationStatus } from '../../changesets/preview/backend'
+import { isCommandOnlyAction } from '../../../../../shared/src/api/types/action'
 import { ActionRadioButton } from './ActionRadioButton'
 import { CommandActionButton } from './CommandActionButton'
-import { PlanAction } from './PlanActionButton'
 
 interface Props {
     actions: readonly Action[]
-    onActionClick: (action: Action, creationStatus?: ChangesetCreationStatus) => void
+    selectedAction: Action | undefined
+    onActionSetSelected: (value: boolean, action: Action) => void
 
     className?: string
     buttonClassName?: string
@@ -21,23 +20,24 @@ interface Props {
  */
 export const ActionsFormControl: React.FunctionComponent<Props> = ({
     actions,
-    onActionClick,
+    selectedAction,
+    onActionSetSelected,
     className,
     buttonClassName = 'btn btn-link text-decoration-none',
 }) => {
-    const planActions = actions.filter(isActionType('plan'))
-    const commandActions = actions.filter(isActionType('command'))
+    const planActions = actions.filter(action => !isCommandOnlyAction(action))
+    const commandActions = actions.filter(isCommandOnlyAction)
+
     return (
         <div className={`d-flex flex-column align-items-start ${className}`}>
             {planActions.map((action, i) => (
-                // TODO!(sqs) <PlanAction key={i} action={action} onClick={onActionClick} className="mb-2" />
                 <ActionRadioButton
                     key={i}
-                    action={{ title: action.title } as CodeAction /* TODO!(sqs) */}
-                    onChange={() => alert('TODO!(sqs)')}
+                    action={action}
+                    onChange={onActionSetSelected}
                     buttonClassName="btn btn-primary"
-                    className={`mr-2 mb-2`}
-                    value={false}
+                    className="mr-2 mb-2"
+                    value={selectedAction === action}
                 />
             ))}
             {commandActions.length > 0 && (
@@ -46,7 +46,9 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
                         <CommandActionButton
                             key={i}
                             action={action}
-                            onClick={onActionClick}
+                            onClick={() => {
+                                throw new Error('TODO!')
+                            }}
                             className={`${buttonClassName} mr-2 mb-2`}
                         />
                     ))}

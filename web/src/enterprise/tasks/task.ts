@@ -3,5 +3,5 @@ import { DiagnosticInfo } from '../threads/detail/backend'
 
 export interface Task {
     diagnostic: DiagnosticInfo
-    codeActions?: sourcegraph.CodeAction[]
+    codeActions?: sourcegraph.Action[]
 }

@@ -13,12 +13,12 @@ const FIXTURE_PARAMS: CodeActionsParams = {
     context: { diagnostics: [] },
 }
 
-const FIXTURE_CODE_ACTION: sourcegraph.CodeAction = {
+const FIXTURE_CODE_ACTION: sourcegraph.Action = {
     title: 'a',
     command: { title: 'c', command: 'c' },
 }
 
-const FIXTURE_CODE_ACTIONS: sourcegraph.CodeAction[] = [FIXTURE_CODE_ACTION]
+const FIXTURE_CODE_ACTIONS: sourcegraph.Action[] = [FIXTURE_CODE_ACTION]
 
 describe('getCodeActions', () => {
     describe('0 providers', () => {
