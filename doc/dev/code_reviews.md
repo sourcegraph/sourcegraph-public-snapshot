@@ -50,6 +50,8 @@ Here are some examples of reasons to skip code review that are NOT acceptable:
 - "I don't have someone to review this code"
     - Ask for help to identify someone else on the team with whom you can share your knowledge, context, and ownership.
 
+If we see that there are too many [PRs being merged without approval](https://github.com/pulls?page=1&q=is%3Apr+org%3Asourcegraph+is%3Amerged+review%3Anone+-author%3Aapp%2Frenovate&utf8=%E2%9C%93) that lack an appropriate reason, then we will have to consider an automated solution to enforce code reviews.
+
 ## What makes an effective Pull Request (PR)?
 
 An effective PR minimizes the amount of effort that is required for the reviewer to understand your change so that they can provide high quality feedback in a timely manner. [Futher reading](https://www.atlassian.com/blog/git/written-unwritten-guide-pull-requests).
