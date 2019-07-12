@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -88,7 +89,7 @@ func (r *searchResolver) Finished(ctx context.Context) bool {
 	if r.pagination == nil {
 		return false // Will always be false for non-paginated requests.
 	}
-	panic("TODO: implement")
+	panic("TODO(slimsag): before merge: implement")
 }
 
 // Cursor returns the cursor that can be passed into a future search request in
@@ -97,7 +98,7 @@ func (r *searchResolver) Cursor(ctx context.Context) graphql.ID {
 	if r.pagination == nil {
 		return "" // Only valid when the original request was a paginated one.
 	}
-	panic("TODO: implement")
+	panic("TODO(slimsag): before merge: implement")
 }
 
 // paginatedResults handles serving paginated search queries. It's logic does
@@ -239,8 +240,6 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 		alert = r.alertForMissingRepoRevs(missingRepoRevs)
 	}
 
-	sortResults(results)
-
 	return &searchResultsResolver{
 		start:               start,
 		searchResultsCommon: common,
@@ -304,6 +303,9 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, paginat
 		for _, r := range fileResults {
 			results = append(results, r)
 		}
+		// TODO(slimsag): future: searchFilesInRepos _does_ appear to guarantee
+		// stable result ordering in our case (with large count:) but we
+		// definitely need a test ensuring this.
 		return results, fileCommon, nil
 	})
 }
@@ -373,18 +375,88 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (result
 		if err != nil {
 			return nil, nil, err
 		}
+		// TODO(slimsag): future: Unlike in non-paginated search, if we see:
+		//
+		// 	len(batchCommon.cloning) > 0 || len(batchCommon.missing) > 0 || len(batchCommon.timedout) > 0 || len(batchCommon.partial) > 0
+		//
+		// We most likely want to cancel the request and return an error?
+		// Otherwise, this breaks ordering guarantees perhaps? Needs more
+		// thought.
 
-		// TODO: before merge: handle the fact that returned results can (and
-		// most often do) have more results than the user asked for. i.e. we
-		// return results for an entire batch of searches repositories here
-		// currently.
+		// Accumulate the results and stop if we have enough for the user.
 		results = append(results, batchResults...)
 		common.update(*batchCommon)
 		if len(results) >= int(p.pagination.limit) {
 			break
 		}
 	}
-	return results, common, err
+	// If we found more results than the user wanted, discard the remaining
+	// ones.
+	//
+	// TODO(slimsag): future: cache these results somewhere because the user is
+	// likely to come back soon for more and we don't need to search a batch of
+	// repositories every time. This would give substantial performance
+	// benefits to subsequent requests against this API.
+	results, common = limitResultSet(results, common, int(p.pagination.limit))
+	return results, common, nil
+}
+
+// limitResultSet returns results with its length limited, and a
+// searchResultsCommon structure reflecting that limited result set.
+func limitResultSet(results []searchResultResolver, common *searchResultsCommon, limit int) ([]searchResultResolver, *searchResultsCommon) {
+	if len(results) < limit {
+		return results, common
+	}
+
+	// Break results into repositories because for each result we need to add
+	// the respective repository to the new common structure.
+	reposByName := map[string]*types.Repo{}
+	for _, r := range common.repos {
+		reposByName[string(r.Name)] = r
+	}
+	resultsByRepo := map[*types.Repo][]searchResultResolver{}
+	for _, r := range results[:limit] {
+		repoName, _ := r.searchResultURIs()
+		repo := reposByName[repoName]
+		resultsByRepo[repo] = append(resultsByRepo[repo], r)
+	}
+
+	// Construct the new searchResultsCommon structure for just the results
+	// we're returning.
+	finalResults := make([]searchResultResolver, 0, limit)
+	finalCommon := &searchResultsCommon{
+		// TODO(slimsag): before merge: document limitHit in schema.graphql
+		limitHit:         false, // irrelevant in paginated search
+		indexUnavailable: common.indexUnavailable,
+		partial:          make(map[api.RepoName]struct{}),
+	}
+	copy := func(repo *types.Repo, targetList *[]*types.Repo, ifInsideList []*types.Repo) {
+		for _, r := range ifInsideList {
+			if repo == r {
+				*targetList = append(*targetList, repo)
+				return
+			}
+		}
+	}
+	for repo, results := range resultsByRepo {
+		// TODO(slimsag): future: approximateResultCount in paginated requests
+		// is certainly wrong because it doesn't account for prior repos in
+		// prior paginated requests with the cursor.
+
+		// Include the results and copy over metadata from the common structure.
+		finalResults = append(finalResults, results...)
+		finalCommon.resultCount += int32(len(results))
+		copy(repo, &finalCommon.repos, common.repos)
+		copy(repo, &finalCommon.searched, common.searched)
+		copy(repo, &finalCommon.indexed, common.indexed)
+		copy(repo, &finalCommon.cloning, common.cloning)
+		copy(repo, &finalCommon.missing, common.missing)
+		copy(repo, &finalCommon.timedout, common.timedout)
+		if _, ok := common.partial[repo.Name]; ok {
+			finalCommon.partial[repo.Name] = struct{}{}
+		}
+	}
+	return finalResults, finalCommon
 }
 
 // clamp clamps x into the range of [min, max].
