@@ -1,7 +1,7 @@
-import { Action } from '@sourcegraph/extension-api-types'
 import H from 'history'
 import React, { useCallback } from 'react'
 import * as sourcegraph from 'sourcegraph'
+import { Action } from '../../../../../../shared/src/api/types/action'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { ThemeProps } from '../../../../theme'
@@ -58,6 +58,7 @@ export const CheckDiagnosticsPage: React.FunctionComponent<Props> = ({
             />
             <div className="check-diagnostics-page__bar border-top">
                 <DiagnosticsChangesetsBar
+                    {...props}
                     changesetPlan={changesetPlan}
                     onChangesetPlanDiagnosticActionSet={onChangesetPlanDiagnosticActionSet}
                     className=""

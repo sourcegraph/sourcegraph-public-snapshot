@@ -1,6 +1,5 @@
-import { Action } from '@sourcegraph/extension-api-types'
 import React from 'react'
-import { isCommandOnlyAction } from '../../../../../shared/src/api/types/action'
+import { isCommandOnlyAction, Action } from '../../../../../shared/src/api/types/action'
 import { ActionRadioButton } from './ActionRadioButton'
 import { CommandActionButton } from './CommandActionButton'
 

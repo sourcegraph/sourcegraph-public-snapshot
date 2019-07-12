@@ -1,7 +1,8 @@
 import { NotificationType } from '@sourcegraph/extension-api-classes'
-import { Action } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useState } from 'react'
+import { Action } from '../../../../shared/src/api/types/action'
+import { WorkspaceEdit } from '../../../../shared/src/api/types/workspaceEdit'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ChangesetCreationStatus, createChangesetFromCodeAction } from '../changesets/preview/backend'
@@ -72,7 +73,7 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
                     key={JSON.stringify(selectedAction.edit)}
                     {...props}
                     extensionsController={extensionsController}
-                    workspaceEdit={selectedAction.edit}
+                    workspaceEdit={WorkspaceEdit.fromJSON(selectedAction.edit)}
                     className="overflow-auto p-2 mb-3"
                 />
             ) : (

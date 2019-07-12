@@ -62,3 +62,35 @@ export async function computeDiff(
     }
     return fileDiffs
 }
+
+// TODO!(sqs) hacky impl
+export function computeDiffStat(
+    fileDiffs: FileDiff[]
+): Pick<GQL.IDiffStat, Exclude<keyof GQL.IDiffStat, '__typename'>> {
+    const diffStat: Pick<GQL.IDiffStat, Exclude<keyof GQL.IDiffStat, '__typename'>> = {
+        added: 0,
+        changed: 0,
+        deleted: 0,
+    }
+    for (const fileDiff of fileDiffs) {
+        for (const hunk of fileDiff.hunks) {
+            const hunkLines = hunk.body.split('\n')
+            for (const [i, line] of hunkLines.entries()) {
+                const prevLineOp = i > 0 ? hunkLines[i - 1][0] : null
+                const nextLineOp = i !== hunkLines.length - 1 ? hunkLines[i + 1][0] : null
+                const lineOp = line[0]
+                if (
+                    lineOp !== ' ' &&
+                    ((prevLineOp !== ' ' && lineOp !== prevLineOp) || (nextLineOp !== ' ' && lineOp !== nextLineOp))
+                ) {
+                    diffStat.changed++
+                } else if (line[0] === '+') {
+                    diffStat.added++
+                } else if (line[0] === '-') {
+                    diffStat.deleted++
+                }
+            }
+        }
+    }
+    return diffStat
+}
