@@ -127,11 +127,9 @@ func (fm *fileMatchResolver) searchResultURIs() (string, string) {
 }
 
 func (fm *fileMatchResolver) resultCount() int32 {
-	if s := len(fm.symbols); s > 0 {
-		return int32(s)
-	}
-	if l := len(fm.LineMatches()); l > 0 {
-		return int32(l)
+	rc := len(fm.symbols) + len(fm.LineMatches())
+	if rc > 0 {
+		return int32(rc)
 	}
 	return 1 // 1 to count "empty" results like type:path results
 }
