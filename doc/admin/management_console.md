@@ -78,9 +78,17 @@ Second, bcrypt your password on any machine:
 2. `pip install bcrypt`
 3. Encrypt your password:
 
-```bash
-PASSWORD='abc123' python -c "import bcrypt; import os; print(bcrypt.hashpw(os.environ['PASSWORD'], bcrypt.gensalt(15)))"
-```
+    a. (**If you have Python 2**):
+
+    ```bash
+    PASSWORD='abc123' python -c "import bcrypt; import os; print(bcrypt.hashpw(os.environ['PASSWORD'], bcrypt.gensalt(15)))"
+    ```
+
+    b. (**If you have Python 3**): 
+
+    ```bash
+    PASSWORD='abc123' python -c "import bcrypt; import os; print(bcrypt.hashpw(os.environ['PASSWORD'].encode('utf-8'), bcrypt.gensalt(15)))"
+    ```
 
 Finally, open a `psql` prompt on your Sourcegraph instance (see ["How do I access my Sourcegraph database?"](faq.md#how-do-i-access-the-sourcegraph-database)) and run:
 
