@@ -4,6 +4,7 @@
     "target": "es2016",
     "module": "esnext",
     "moduleResolution": "node",
+    "lib": ["esnext"],
     "sourceMap": true,
     "declaration": true,
     "outDir": "dist",
