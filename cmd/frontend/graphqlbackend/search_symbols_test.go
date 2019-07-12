@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"github.com/google/go-cmp/cmp"
 	"reflect"
 	"testing"
 	"time"
@@ -147,5 +148,111 @@ func Test_limitingSymbolResults(t *testing.T) {
 				t.Errorf("res2 = %+v, want %+v", res2, res)
 			}
 		})
+	})
+
+	t.Run("two file matches, multiple symbols per file", func(t *testing.T) {
+		res := []*fileMatchResolver{
+			{
+				symbols: []*searchSymbolResult{
+					{symbol: protocol.Symbol{Name: "symbol-name-1"}},
+					{symbol: protocol.Symbol{Name: "symbol-name-2"}},
+				},
+			},
+			{
+				symbols: []*searchSymbolResult{
+					{symbol: protocol.Symbol{Name: "symbol-name-3"}},
+					{symbol: protocol.Symbol{Name: "symbol-name-4"}},
+				},
+			},
+		}
+
+		t.Run("symbol count is 4", func(t *testing.T) {
+			nsym := symbolCount(res)
+			if nsym != 4 {
+				t.Errorf("symbolCount(res) = %d, want 2", nsym)
+			}
+		})
+
+		testCases := []struct {
+			name  string
+			limit int
+			want  []*fileMatchResolver
+		}{
+			{
+				name: "limit 0 => no file matches",
+				want: nil,
+			},
+			{
+				name:  "limit 1 => one file match with one symbol",
+				limit: 1,
+				want: []*fileMatchResolver{
+					{
+						symbols: []*searchSymbolResult{
+							{symbol: protocol.Symbol{Name: "symbol-name-1"}},
+						},
+					},
+				},
+			},
+			{
+				name:  "limit 2 => one file match with all symbols",
+				limit: 2,
+				want: []*fileMatchResolver{
+					{
+						symbols: []*searchSymbolResult{
+							{symbol: protocol.Symbol{Name: "symbol-name-1"}},
+							{symbol: protocol.Symbol{Name: "symbol-name-2"}},
+						},
+					},
+				},
+			},
+			{
+				name:  "limit 3 => two file matches with three symbols",
+				limit: 3,
+				want: []*fileMatchResolver{
+					{
+						symbols: []*searchSymbolResult{
+							{symbol: protocol.Symbol{Name: "symbol-name-1"}},
+							{symbol: protocol.Symbol{Name: "symbol-name-2"}},
+						},
+					},
+					{
+						symbols: []*searchSymbolResult{
+							{symbol: protocol.Symbol{Name: "symbol-name-3"}},
+						},
+					},
+				},
+			},
+			{
+				name:  "limit 4 => two file matches with all symbols",
+				limit: 4,
+				want: []*fileMatchResolver{
+					{
+						symbols: []*searchSymbolResult{
+							{symbol: protocol.Symbol{Name: "symbol-name-1"}},
+							{symbol: protocol.Symbol{Name: "symbol-name-2"}},
+						},
+					},
+					{
+						symbols: []*searchSymbolResult{
+							{symbol: protocol.Symbol{Name: "symbol-name-3"}},
+							{symbol: protocol.Symbol{Name: "symbol-name-4"}},
+						},
+					},
+				},
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				res2 := limitSymbolResults(res, tc.limit)
+				if len(res2) != len(tc.want) {
+					t.Errorf("len(res2)=%d, len(want)=%d", len(res2), len(tc.want))
+				}
+
+				if !reflect.DeepEqual(res2, tc.want) {
+					t.Error(cmp.Diff(res2, tc.want))
+				}
+			})
+		}
 	})
 }
