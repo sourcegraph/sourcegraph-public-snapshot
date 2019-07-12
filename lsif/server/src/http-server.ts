@@ -214,9 +214,6 @@ async function withDB(repositoryCommit: RepositoryCommit, action: (db: Database)
 function main(): void {
     const app = express()
 
-    // This limit only applies to JSON requests (i.e. the /request endpoint).
-    app.use(bodyParser.json({ limit: '1mb' }))
-
     app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
         if (err && err.status) {
             res.status(err.status).send({ message: err.message })
@@ -232,6 +229,7 @@ function main(): void {
 
     app.post(
         '/request',
+        bodyParser.json({ limit: '1mb' }),
         asyncHandler(async (req, res) => {
             const { repository, commit } = req.query
             const { method, params } = req.body
