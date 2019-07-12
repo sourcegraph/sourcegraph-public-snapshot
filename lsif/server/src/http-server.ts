@@ -101,7 +101,7 @@ async function enforceMaxDiskUsage({
         }))
     )
     let totalSize = files.reduce((subtotal, f) => subtotal + f.stat.size, 0)
-    for (const f of files.sort((a, b) => a.stat.mtimeMs - b.stat.mtimeMs)) {
+    for (const f of files.sort((a, b) => a.stat.atimeMs - b.stat.atimeMs)) {
         if (totalSize <= max) {
             break
         }
