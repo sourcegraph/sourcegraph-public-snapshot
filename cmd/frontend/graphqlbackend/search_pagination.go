@@ -224,7 +224,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 	})
 
 	common := searchResultsCommon{maxResultsCount: r.maxResults()}
-	results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
+	_, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
 	if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 		return nil, err
@@ -280,7 +280,7 @@ func repoIsLess(i, j *types.Repo) bool {
 //    top of the penalty we incur from the larger `count:` mentioned in point
 //    2 above (in the worst case scenario).
 //
-func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, pagination *searchPaginationInfo) ([]searchResultResolver, *searchResultsCommon, error) {
+func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, pagination *searchPaginationInfo) (*searchCursor, []searchResultResolver, *searchResultsCommon, error) {
 	plan := &repoPaginationPlan{
 		pagination:   pagination,
 		repositories: args.Repos,
@@ -346,7 +346,7 @@ type executor func(batch []*search.RepositoryRevisions) ([]searchResultResolver,
 //
 // If the executor returns any error, the search will be cancelled and the error
 // returned.
-func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (results []searchResultResolver, common *searchResultsCommon, err error) {
+func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *searchCursor, results []searchResultResolver, common *searchResultsCommon, err error) {
 	// Determine how large the batches of repositories we will search over will be.
 	batchSize := clamp(numTotalRepos.get(ctx)/p.searchBucketDivisor, p.searchBucketMin, p.searchBucketMax)
 
@@ -373,7 +373,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (result
 		batch := repos[start:clamp(start+batchSize, 0, len(repos)-1)]
 		batchResults, batchCommon, err := exec(batch)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		// TODO(slimsag): future: Unlike in non-paginated search, if we see:
 		//
@@ -401,15 +401,23 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (result
 	if cursor := p.pagination.cursor; cursor != nil {
 		offset = int(cursor.ResultOffset)
 	}
-	results, common = sliceSearchResults(results, common, offset, int(p.pagination.limit))
-	return results, common, nil
+	results, common, relativeCursor := sliceSearchResults(results, common, offset, int(p.pagination.limit))
+	absoluteCursor := relativeCursor
+	if p.pagination.cursor != nil {
+		absoluteCursor.RepositoryOffset += p.pagination.cursor.RepositoryOffset
+	}
+	return absoluteCursor, results, common, nil
 }
 
 // sliceSearchResults returns results[offset:offset+limit] and a searchResultsCommon
 // structure reflecting that slice of results.
-func sliceSearchResults(results []searchResultResolver, common *searchResultsCommon, offset, limit int) ([]searchResultResolver, *searchResultsCommon) {
+//
+// Also returned is a cursor indicating (relative to the input results) where
+// the search could be continued.
+func sliceSearchResults(results []searchResultResolver, common *searchResultsCommon, offset, limit int) ([]searchResultResolver, *searchResultsCommon, *searchCursor) {
+	cursor := &searchCursor{RepositoryOffset: 0, ResultOffset: 0}
 	if offset == 0 && len(results) < offset+limit {
-		return results, common
+		return results, common, cursor
 	}
 
 	// Break results into repositories because for each result we need to add
@@ -423,6 +431,33 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 		repoName, _ := r.searchResultURIs()
 		repo := reposByName[repoName]
 		resultsByRepo[repo] = append(resultsByRepo[repo], r)
+	}
+
+	// Create the relative cursor.
+	//
+	// Above we may have sliced the results sorted by repo like so:
+	//
+	// 	results := [a1, a2, a3, b1, b2, b3, c1, c2, c3]
+	// 	results = results[offset:offset+limit] // [a2, a3, b1, b2]
+	//
+	// Since it is within the boundary of B's results, the next paginated
+	// request should use a Cursor.ResultOffset == 2 to indicate we should
+	// resume fetching results starting at b3.
+	lastResultRepo := ""
+	resultsInRepo := int32(0)
+	for i, r := range results[:offset+limit+1] {
+		repo, _ := r.searchResultURIs()
+		if i == offset+limit+1 && repo == lastResultRepo {
+			cursor.ResultOffset = resultsInRepo
+			break
+		}
+		if repo != lastResultRepo {
+			resultsInRepo = 0
+			cursor.RepositoryOffset++
+		} else {
+			resultsInRepo++
+		}
+		lastResultRepo = repo
 	}
 
 	// Construct the new searchResultsCommon structure for just the results
@@ -460,7 +495,7 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 			finalCommon.partial[repo.Name] = struct{}{}
 		}
 	}
-	return finalResults, finalCommon
+	return finalResults, finalCommon, cursor
 }
 
 // clamp clamps x into the range of [min, max].
