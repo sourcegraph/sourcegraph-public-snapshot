@@ -108,8 +108,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 	return res2, common, err
 }
 
-// limitSymbolResults returns a new version of res containing no more than limit symbol matches,
-// and a boolean telling whether the limit was hit.
+// limitSymbolResults returns a new version of res containing no more than limit symbol matches.
 func limitSymbolResults(res []*fileMatchResolver, limit int) []*fileMatchResolver {
 	var res2 []*fileMatchResolver
 	nsym := 0
