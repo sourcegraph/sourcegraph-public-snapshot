@@ -217,6 +217,15 @@ function main(): void {
     // This limit only applies to JSON requests (i.e. the /request endpoint).
     app.use(bodyParser.json({ limit: '1mb' }))
 
+    app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+        if (err && err.status) {
+            res.status(err.status).send({ message: err.message })
+            return
+        }
+        res.status(500).send({ message: 'Unknown error' })
+        console.error(err)
+    })
+
     app.get('/ping', (req, res) => {
         res.send({ pong: 'pong' })
     })
