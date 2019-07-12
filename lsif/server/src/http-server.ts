@@ -263,7 +263,7 @@ function main(): void {
                         default:
                             throw new Error(`Unknown method ${method}`)
                     }
-                    res.send(result || { error: 'No result found' })
+                    res.send(result)
                 })
             } catch (e) {
                 if ('code' in e && e.code === 'ENOENT') {
