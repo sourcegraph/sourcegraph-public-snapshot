@@ -1,10 +1,9 @@
-import * as path from 'path'
 import * as sourcegraph from 'sourcegraph'
 import * as LSP from 'vscode-languageserver-types'
 
 function repositoryFromDoc(doc: sourcegraph.TextDocument): string {
     const url = new URL(doc.uri)
-    return path.join(url.hostname, url.pathname.slice(1))
+    return url.hostname + url.pathname
 }
 
 function commitFromDoc(doc: sourcegraph.TextDocument): string {
