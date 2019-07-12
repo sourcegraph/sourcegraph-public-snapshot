@@ -137,13 +137,13 @@ async function createDB(repositoryCommit: RepositoryCommit): Promise<Database> {
  */
 type SupportedMethods = 'hover' | 'definitions' | 'references'
 
-const SUPPORTED_METHODS: SupportedMethods[] = ['hover', 'definitions', 'references']
+const SUPPORTED_METHODS: Set<SupportedMethods> = new Set(['hover', 'definitions', 'references'])
 
 /**
  * Type guard for SupportedMethods.
  */
 function isSupportedMethod(method: string): method is SupportedMethods {
-    return (SUPPORTED_METHODS as string[]).includes(method)
+    return (SUPPORTED_METHODS as Set<string>).has(method)
 }
 
 /**
