@@ -26,8 +26,7 @@ function readEnvInt({ key, defaultValue }: { key: string; defaultValue: number }
 /**
  * Where on the file system to store LSIF files.
  */
-// tslint:disable-next-line: no-string-literal
-const STORAGE_ROOT = process.env['LSIF_STORAGE_ROOT'] || 'lsif-storage'
+const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
  * Soft limit on the amount of storage used by LSIF files. Storage can exceed
