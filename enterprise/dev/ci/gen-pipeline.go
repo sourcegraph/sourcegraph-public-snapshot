@@ -165,19 +165,16 @@ func main() {
 
 	if strings.HasPrefix(branch, "docker-images-patch-notest/") {
 		version = version + "_patch"
+		if strings.HasSuffix(branch, "/server") {
+			addServerDockerBuild(pipeline, version)
+			pipeline.AddWait()
+		}
 		addDockerImageStep(branch[27:], false)
 		return
 	}
 
 	if !isBextReleaseBranch {
-		pipeline.AddStep(":docker:",
-			bk.Cmd("pushd enterprise"),
-			bk.Cmd("./cmd/server/pre-build.sh"),
-			bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
-			bk.Env("VERSION", version),
-			bk.Cmd("./cmd/server/build.sh"),
-			bk.Cmd("popd"))
-
+		addServerDockerBuild(pipeline, version)
 		pipeline.AddStep(":white_check_mark:",
 			bk.Cmd("./dev/check/all.sh"))
 	}
@@ -345,4 +342,14 @@ func main() {
 	// Clean up to help avoid running out of disk.
 	pipeline.AddStep(":sparkles:",
 		bk.Cmd("docker image rm -f sourcegraph/server:"+version+"_candidate"))
+}
+
+func addServerDockerBuild(pipeline *bk.Pipeline, version string) {
+	pipeline.AddStep(":docker:",
+		bk.Cmd("pushd enterprise"),
+		bk.Cmd("./cmd/server/pre-build.sh"),
+		bk.Env("IMAGE", "sourcegraph/server:"+version+"_candidate"),
+		bk.Env("VERSION", version),
+		bk.Cmd("./cmd/server/build.sh"),
+		bk.Cmd("popd"))
 }
