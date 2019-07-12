@@ -84,7 +84,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			limitHit := len(res) > limit
+			limitHit := symbolCount(res) > limit
 			repoErr = handleRepoSearchResult(common, *repoRevs, limitHit, false, repoErr)
 			if repoErr != nil {
 				if ctx.Err() == nil || errors.Cause(repoErr) != ctx.Err() {
