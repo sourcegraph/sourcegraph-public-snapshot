@@ -2,11 +2,7 @@ import { NotificationType } from '@sourcegraph/extension-api-classes'
 import { Action } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useState } from 'react'
-import { Redirect } from 'react-router'
-import { Link } from 'react-router-dom'
-import * as sourcegraph from 'sourcegraph'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ChangesetCreationStatus, createChangesetFromCodeAction } from '../changesets/preview/backend'
 import {
@@ -14,10 +10,8 @@ import {
     ChangesetButtonOrLinkExistingChangeset,
     PENDING_CREATION,
 } from '../tasks/list/item/ChangesetButtonOrLink'
-import { CreateOrPreviewChangesetButton } from '../tasks/list/item/CreateOrPreviewChangesetButton'
 import { WorkspaceEditPreview } from '../threads/detail/inbox/item/WorkspaceEditPreview'
 import { ActionsFormControl } from './internal/ActionsFormControl'
-import { useOnActionClickCallback } from './useOnActionClickCallback'
 
 interface RenderChildrenProps {
     actions: React.ReactFragment
@@ -28,6 +22,8 @@ const LOADING: 'loading' = 'loading'
 
 interface Props extends ExtensionsControllerProps {
     actionsOrError: typeof LOADING | readonly Action[] | ErrorLike
+    selectedAction: Action | null
+    onActionSelect: (action: Action | null) => void
 
     defaultPreview?: React.ReactFragment
 
@@ -39,27 +35,28 @@ interface Props extends ExtensionsControllerProps {
  */
 export const ActionsWithPreview: React.FunctionComponent<Props> = ({
     actionsOrError,
+    selectedAction,
+    onActionSelect,
     extensionsController,
     defaultPreview,
     children,
     ...props
 }) => {
-    const [selectedAction, setSelectedAction] = useState<Action | undefined>()
     const onActionSetSelected = useCallback(
         (value: boolean, action: Action): void => {
             if (value) {
-                setSelectedAction(action)
+                onActionSelect(action)
             } else if (action === selectedAction) {
-                setSelectedAction(undefined)
+                onActionSelect(null)
             }
         },
-        [selectedAction]
+        [onActionSelect, selectedAction]
     )
 
     const [createdThreadOrLoading, setCreatedThreadOrLoading] = useState<ChangesetButtonOrLinkExistingChangeset>(
         LOADING
     )
-    const [justCreated, setJustCreated] = useState(false)
+    const [, setJustCreated] = useState(false)
     const onCreateThreadClick = useCallback(
         async (creationStatus: ChangesetCreationStatus) => {
             setCreatedThreadOrLoading(PENDING_CREATION)

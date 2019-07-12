@@ -1,5 +1,4 @@
 import React from 'react'
-import { Action, ActionType, isActionType } from '../../../../../shared/src/api/types/action'
 import { CommandActionButton } from '../../actions/internal/CommandActionButton'
 import { PlanAction } from '../../actions/internal/PlanActionButton'
 import { ChangesetCreationStatus } from '../../changesets/preview/backend'
