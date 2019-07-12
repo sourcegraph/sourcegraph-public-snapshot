@@ -129,13 +129,14 @@ export const isCompareView = () => !!document.querySelector('#branch-compare')
 /**
  * Returns true if the active page is a commit view.
  */
-export const isCommitsView = () => /^\/projects\/[^\/]+\/repos\/[^\/]+\/commits\/\w+$/.test(window.location.pathname)
+export const isCommitsView = ({ pathname }: Pick<Location, 'pathname'>): boolean =>
+    /\/projects\/[^\/]+\/repos\/[^\/]+\/commits\/\w+$/.test(pathname)
 
 /**
  * Returns true if the active page is a pull request view.
  */
-export const isPullRequestView = () =>
-    /^\/projects\/[^\/]+\/repos\/[^\/]+\/pull-requests\/\d+/.test(window.location.pathname)
+export const isPullRequestView = ({ pathname }: Pick<Location, 'pathname'>): boolean =>
+    /\/projects\/[^\/]+\/repos\/[^\/]+\/pull-requests\/\d+/.test(pathname)
 
 /**
  * Returns true if the given code view is a single file source or "diff to previous" view.

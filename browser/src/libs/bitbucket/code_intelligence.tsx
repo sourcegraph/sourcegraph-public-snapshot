@@ -137,14 +137,14 @@ const codeViewResolver: ViewResolver<CodeView> = {
         if (isCompareView()) {
             return { element, ...compareDiffCodeView }
         }
-        if (isCommitsView()) {
+        if (isCommitsView(window.location)) {
             return { element, ...commitDiffCodeView }
         }
         if (isSingleFileView(element)) {
             const isDiff = contentView.classList.contains('diff-view')
             return isDiff ? { element, ...singleFileDiffCodeView } : { element, ...singleFileSourceCodeView }
         }
-        if (isPullRequestView()) {
+        if (isPullRequestView(window.location)) {
             return { element, ...pullRequestDiffCodeView }
         }
         console.error('Unknown code view', element)
@@ -196,7 +196,7 @@ export const bitbucketServerCodeHost: CodeHost = {
     getCommandPaletteMount,
     commandPaletteClassProps: {
         buttonClassName:
-            'aui-dropdown2-trigger aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left',
+            'command-list-popover-button--bitbucket-server aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left',
         buttonElement: 'a',
         buttonOpenClassName: 'aui-dropdown2-active active aui-alignment-enabled',
         showCaret: false,
