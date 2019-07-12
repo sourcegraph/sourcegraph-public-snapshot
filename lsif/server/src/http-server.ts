@@ -125,9 +125,9 @@ function diskKey({ repository, commit }: RepositoryCommit): string {
  */
 async function createDB(repositoryCommit: RepositoryCommit): Promise<Database> {
     const db = new JsonDatabase()
-    await db.load(diskKey(repositoryCommit), projectRoot => ({
-        toDatabase: path_ => projectRoot + '/' + path_,
-        fromDatabase: path_ => (path_.startsWith(projectRoot) ? path_.slice(`${projectRoot}/`.length) : path_),
+    await db.load(diskKey(repositoryCommit), projectRootURI => ({
+        toDatabase: pathRelativeToProjectRoot => projectRootURI + '/' + pathRelativeToProjectRoot,
+        fromDatabase: uri => (uri.startsWith(projectRootURI) ? uri.slice(`${projectRootURI}/`.length) : uri),
     }))
     return db
 }
