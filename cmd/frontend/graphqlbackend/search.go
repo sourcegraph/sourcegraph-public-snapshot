@@ -64,10 +64,6 @@ func (r *schemaResolver) Search(args *struct {
 	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
-	//lint:ignore U1000 is used by graphql via reflection
-	Finished(context.Context) bool
-	//lint:ignore U1000 is used by graphql via reflection
-	Cursor(ctx context.Context) graphql.ID
 }, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()

@@ -85,8 +85,8 @@ type searchPaginationInfo struct {
 
 // Finished tells whether or not pagination has consumed all results that are
 // available.
-func (r *searchResolver) Finished(ctx context.Context) bool {
-	if r.pagination == nil {
+func (r *searchResultsResolver) Finished(ctx context.Context) bool {
+	if r.cursor == nil {
 		return false // Will always be false for non-paginated requests.
 	}
 	panic("TODO(slimsag): before merge: implement")
@@ -94,11 +94,11 @@ func (r *searchResolver) Finished(ctx context.Context) bool {
 
 // Cursor returns the cursor that can be passed into a future search request in
 // order to fetch more results starting where this search left off.
-func (r *searchResolver) Cursor(ctx context.Context) graphql.ID {
-	if r.pagination == nil {
+func (r *searchResultsResolver) Cursor(ctx context.Context) graphql.ID {
+	if r.cursor == nil {
 		return "" // Only valid when the original request was a paginated one.
 	}
-	panic("TODO(slimsag): before merge: implement")
+	return marshalSearchCursor(r.cursor)
 }
 
 // paginatedResults handles serving paginated search queries. It's logic does
@@ -224,7 +224,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 	})
 
 	common := searchResultsCommon{maxResultsCount: r.maxResults()}
-	_, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
+	cursor, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
 	if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 		return nil, err
@@ -245,6 +245,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 		searchResultsCommon: common,
 		results:             results,
 		alert:               alert,
+		cursor:              cursor,
 	}, nil
 }
 
@@ -443,11 +444,11 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	// Since it is within the boundary of B's results, the next paginated
 	// request should use a Cursor.ResultOffset == 2 to indicate we should
 	// resume fetching results starting at b3.
-	lastResultRepo := ""
+	lastResultRepo, _ := results[offset].searchResultURIs()
 	resultsInRepo := int32(0)
 	for i, r := range results[:offset+limit+1] {
 		repo, _ := r.searchResultURIs()
-		if i == offset+limit+1 && repo == lastResultRepo {
+		if i == offset+limit && repo == lastResultRepo {
 			cursor.ResultOffset = resultsInRepo
 			break
 		}

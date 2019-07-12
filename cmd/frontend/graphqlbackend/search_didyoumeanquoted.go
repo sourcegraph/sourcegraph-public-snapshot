@@ -8,7 +8,6 @@ import (
 	"strings"
 	"unicode"
 
-	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 )
@@ -55,14 +54,6 @@ func (r *didYouMeanQuotedResolver) Suggestions(context.Context, *searchSuggestio
 
 func (r *didYouMeanQuotedResolver) Stats(context.Context) (*searchResultsStats, error) {
 	return nil, r.err
-}
-
-func (r *didYouMeanQuotedResolver) Finished(context.Context) bool {
-	return false
-}
-
-func (r *didYouMeanQuotedResolver) Cursor(context.Context) graphql.ID {
-	return ""
 }
 
 // proposedQuotedQueries generates various ways of quoting the given query,

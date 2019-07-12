@@ -144,6 +144,10 @@ type searchResultsResolver struct {
 	searchResultsCommon
 	alert *searchAlert
 	start time.Time // when the results started being computed
+
+	// cursor to return for paginated search requests, or nil if the request
+	// wasn't paginated.
+	cursor *searchCursor
 }
 
 func (sr *searchResultsResolver) Results() []searchResultResolver {
