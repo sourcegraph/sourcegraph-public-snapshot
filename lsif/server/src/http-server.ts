@@ -2,6 +2,7 @@ import { wrap } from 'async-middleware'
 import bodyParser from 'body-parser'
 import express from 'express'
 import LRU from 'lru-cache'
+import moveFile from 'move-file'
 import { fs } from 'mz'
 import * as path from 'path'
 import { withFile } from 'tmp-promise'
@@ -368,16 +369,7 @@ function main(): void {
                 if (!(await fs.exists(STORAGE_ROOT))) {
                     await fs.mkdir(STORAGE_ROOT)
                 }
-                // In a Docker container, fs.rename causes "EXDEV: cross-device link not permitted".
-                await new Promise((resolve, reject) =>
-                    fs.copyFile(tempFile.path, diskKey({ repository, commit }), error => {
-                        if (error) {
-                            reject(error)
-                        } else {
-                            resolve()
-                        }
-                    })
-                )
+                await moveFile(tempFile.path, diskKey({ repository, commit }))
 
                 // Evict the old `Database` from the LRU cache to cause it to pick up the new LSIF data from disk.
                 dbLRU.del(diskKey({ repository, commit }))

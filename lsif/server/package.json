@@ -14,6 +14,7 @@
     "express-async-handler": "^1.1.4",
     "lru-cache": "^5.1.1",
     "lsif-protocol": "0.4.0",
+    "move-file": "^1.2.0",
     "mz": "^2.7.0",
     "semver": "^6.0.0",
     "tmp-promise": "^2.0.2",
