@@ -163,11 +163,11 @@ func (sr *searchResultsResolver) ResultCount() int32 {
 }
 
 func (sr *searchResultsResolver) ApproximateResultCount() string {
-	s := strconv.Itoa(int(sr.ResultCount()))
+	count := sr.ResultCount()
 	if sr.LimitHit() || len(sr.cloning) > 0 || len(sr.timedout) > 0 {
-		s += "+"
+		return fmt.Sprintf("%d+", count)
 	}
-	return s
+	return strconv.Itoa(int(count))
 }
 
 func (sr *searchResultsResolver) Alert() *searchAlert { return sr.alert }
