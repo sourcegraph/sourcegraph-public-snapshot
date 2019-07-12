@@ -1,6 +1,6 @@
+import { wrap } from 'async-middleware'
 import bodyParser from 'body-parser'
 import express from 'express'
-import asyncHandler from 'express-async-handler'
 import LRU from 'lru-cache'
 import { fs } from 'mz'
 import * as path from 'path'
@@ -230,7 +230,7 @@ function main(): void {
     app.post(
         '/request',
         bodyParser.json({ limit: '1mb' }),
-        asyncHandler(async (req, res) => {
+        wrap(async (req, res) => {
             const { repository, commit } = req.query
             const { method, params } = req.body
 
@@ -271,7 +271,7 @@ function main(): void {
 
     app.post(
         '/exists',
-        asyncHandler(async (req, res) => {
+        wrap(async (req, res) => {
             const { repository, commit, file } = req.query
 
             checkRepository(repository)
@@ -305,7 +305,7 @@ function main(): void {
 
     app.post(
         '/upload',
-        asyncHandler(async (req, res) => {
+        wrap(async (req, res) => {
             const { repository, commit } = req.query
 
             checkRepository(repository)

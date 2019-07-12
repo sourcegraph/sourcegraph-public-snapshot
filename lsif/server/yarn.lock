@@ -1034,6 +1034,11 @@ async-limiter@^1.0.0, async-limiter@~1.0.0:
   resolved "https://registry.npmjs.org/async-limiter/-/async-limiter-1.0.0.tgz#78faed8c3d074ab81f22b4e985d79e8738f720f8"
   integrity sha512-jp/uFnooOiO+L211eZOoSyzpOITMXx1rBITauYykG3BRYPu8h0UcxsPNB04RR5vo4Tyz3+ay17tR6JVf9qzYWg==
 
+async-middleware@^1.2.1:
+  version "1.2.1"
+  resolved "https://registry.npmjs.org/async-middleware/-/async-middleware-1.2.1.tgz#d97bcd7124a6a2502c42fda21290cf5bb5d563e4"
+  integrity sha1-2XvNcSSmolAsQv2iEpDPW7XVY+Q=
+
 asynckit@^0.4.0:
   version "0.4.0"
   resolved "https://registry.npmjs.org/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
