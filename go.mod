@@ -32,7 +32,6 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/felixfbecker/stringscore v0.0.0-20170928081130-e71a9f1b0749
 	github.com/felixge/httpsnoop v1.0.0
-	github.com/garyburd/go-oauth v0.0.0-20180319155456-bca2e7f09a17 // indirect
 	github.com/garyburd/redigo v1.6.0
 	github.com/gchaincl/sqlhooks v1.1.0
 	github.com/getsentry/raven-go v0.2.0
@@ -56,7 +55,6 @@ require (
 	github.com/google/go-cmp v0.2.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.0.0
-	github.com/google/pprof v0.0.0-20190515194954-54271f7e092f // indirect
 	github.com/google/uuid v1.1.0
 	github.com/google/zoekt v0.0.0-20180530125106-8e284ca7e964
 	github.com/gorilla/context v1.1.1
@@ -71,12 +69,10 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/honeycombio/libhoney-go v1.8.1
-	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/joho/godotenv v1.3.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/json-iterator/go v1.1.6 // indirect
-	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
 	github.com/karlseguin/expect v1.0.1 // indirect
 	github.com/karlseguin/typed v1.1.7 // indirect
