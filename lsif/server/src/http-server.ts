@@ -117,7 +117,7 @@ async function enforceMaxDiskUsage({
  */
 function diskKey({ repository, commit }: RepositoryCommit): string {
     const urlEncodedRepository = encodeURIComponent(repository)
-    return path.join(STORAGE_ROOT, `urlEncodedRepository:${urlEncodedRepository},commit:${commit}.lsif`)
+    return path.join(STORAGE_ROOT, `${urlEncodedRepository}@${commit}.lsif`)
 }
 
 /**
