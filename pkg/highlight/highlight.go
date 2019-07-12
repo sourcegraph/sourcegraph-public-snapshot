@@ -10,9 +10,11 @@ import (
 	"time"
 	"unicode/utf8"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/gosyntect"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -82,6 +84,12 @@ type Metadata struct {
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
 func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err error) {
+	tr, ctx := trace.New(ctx, "highlight.Code", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	if !p.DisableTimeout {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
@@ -112,6 +120,14 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 	// background.
 	code = strings.TrimSuffix(code, "\n")
 
+	// Tracing so we can identify problematic syntax highlighting requests.
+	tr.LogFields(
+		otlog.String("filepath", p.Filepath),
+		otlog.String("repo_name", p.Metadata.RepoName),
+		otlog.String("revision", p.Metadata.Revision),
+		otlog.String("snippet", fmt.Sprintf("%q…", firstCharacters(code, 10))),
+	)
+
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:     code,
 		Filepath: p.Filepath,
@@ -126,6 +142,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 			"revision", p.Metadata.Revision,
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
 		)
+		tr.LogFields(otlog.Bool("timeout", true))
 
 		// Timeout, so render plain table.
 		table, err2 := generatePlainTable(code)
@@ -140,6 +157,10 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 				"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
 				"error", err,
 			)
+			if cause == gosyntect.ErrPanic {
+				tr.LogFields(otlog.Bool("panic", true))
+			}
+
 			// Failed to highlight code, e.g. for a text file. We still need to
 			// generate the table.
 			table, err2 := generatePlainTable(code)
