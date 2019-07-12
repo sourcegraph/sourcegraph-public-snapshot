@@ -5,7 +5,7 @@
   "license": "MIT",
   "version": "0.1.0",
   "engines": {
-    "node": "*"
+    "node": ">=8.0.0"
   },
   "dependencies": {
     "body-parser": "^1.19.0",
