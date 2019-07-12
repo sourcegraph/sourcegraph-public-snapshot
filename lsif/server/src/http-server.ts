@@ -151,7 +151,7 @@ function isSupportedMethod(method: string): method is SupportedMethods {
  */
 function checkRepository(repository: any): void {
     if (typeof repository !== 'string') {
-        throw Object.assign(new Error('must specify the repository (usually of the form github.com/user/repo)'), {
+        throw Object.assign(new Error('Must specify the repository (usually of the form github.com/user/repo)'), {
             status: 400,
         })
     }
@@ -162,7 +162,7 @@ function checkRepository(repository: any): void {
  */
 function checkCommit(commit: any): void {
     if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
-        throw Object.assign(new Error('must specify the commit as a 40 character hash ' + commit), { status: 400 })
+        throw Object.assign(new Error('Must specify the commit as a 40 character hash ' + commit), { status: 400 })
     }
 }
 
@@ -230,7 +230,7 @@ function main(): void {
             checkRepository(repository)
             checkCommit(commit)
             if (!isSupportedMethod(method)) {
-                throw Object.assign(new Error('method must be one of ' + SUPPORTED_METHODS), { status: 400 })
+                throw Object.assign(new Error('Method must be one of ' + SUPPORTED_METHODS), { status: 400 })
             }
 
             try {
@@ -281,7 +281,7 @@ function main(): void {
             }
 
             if (typeof file !== 'string') {
-                throw Object.assign(new Error('file must be a string'), { status: 400 })
+                throw Object.assign(new Error('File must be a string'), { status: 400 })
             }
 
             try {
