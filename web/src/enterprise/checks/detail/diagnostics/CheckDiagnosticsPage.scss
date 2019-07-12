@@ -1,0 +1,9 @@
+.check-diagnostics-page {
+    &__bar {
+        position: sticky;
+        bottom: -0.25px; // fix 1px gap at bottom (https://bugs.chromium.org/p/chromium/issues/detail?id=810352)
+        left: 0;
+        right: 0;
+        background-color: var(--bg-deep);
+    }
+}

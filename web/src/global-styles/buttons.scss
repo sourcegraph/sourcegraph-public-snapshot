@@ -30,11 +30,17 @@ $btn-lg-factor: $lg-factor;
         font-size: var(--font-size-lg) !important;
     }
 
-    &:hover {
-        text-decoration: none;
+    &:not(:disabled) {
+        &:hover {
+            text-decoration: none;
+        }
+        &:focus {
+            @include focus-ring(-1px, 1px);
+        }
     }
-    &:focus {
-        @include focus-ring(-1px, 1px);
+    &:disabled {
+        filter: grayscale(35%);
+        opacity: 0.5;
     }
 }
 
@@ -43,12 +49,14 @@ $btn-lg-factor: $lg-factor;
         background-color: var(--#{$name});
         border-color: var(--#{$name});
         &,
-        &:hover {
+        &:hover:not(:disabled) {
             color: var(--#{$name}-contrast);
         }
-        &:hover,
-        &:focus {
-            background-color: var(--#{$name}-hover);
+        &:not(:disabled) {
+            &:hover,
+            &:focus {
+                background-color: var(--#{$name}-hover);
+            }
         }
     }
 }

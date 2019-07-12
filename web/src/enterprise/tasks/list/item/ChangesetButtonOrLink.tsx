@@ -3,8 +3,8 @@ import React, { useCallback } from 'react'
 import { Redirect } from 'react-router'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { CreateOrPreviewChangesetButton, CreateOrPreviewChangesetButtonProps } from './CreateOrPreviewChangesetButton'
 import { ChangesetIcon } from '../../../changesets/icons'
+import { ChangesetTargetButtonDropdown, CreateOrPreviewChangesetButtonProps } from './ChangesetTargetButtonDropdown'
 
 const LOADING = 'loading' as const
 

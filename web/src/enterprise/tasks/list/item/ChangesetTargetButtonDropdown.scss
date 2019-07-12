@@ -1,0 +1,5 @@
+.changeset-target-button-dropdown {
+    &__dropdown-toggle {
+        border-left: solid 1px darken(map-get($theme-colors, 'success'), 8);
+    }
+}
