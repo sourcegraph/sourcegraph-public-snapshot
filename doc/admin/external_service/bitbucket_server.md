@@ -40,3 +40,20 @@ Sourcegraph by default clones repositories from your Bitbucket Server via HTTP(S
 Bitbucket Server external service connections support the following configuration options, which are specified in the JSON editor in the site admin external services area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/bitbucket_server.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/bitbucket_server) to see rendered content.</div>
+
+## Native extension
+
+For production usage, we recommend installing the Sourcegraph Bitbucket Server plugin for all users (so that each user doesn't need to install the browser extension individually). This involves adding a new extension to the extension directory of your Phabricator instance.
+
+See the [bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin) repository for installation instructions and configuration settings.
+
+The Sourcegraph instance's site admin must [update the `corsOrigin` site config property](../config/site_config.md) to allow the Bitbucket Server plugin to communicate with the Sourcegraph instance. For example:
+
+```json
+{
+  // ...
+  "corsOrigin":
+    "https://my-bitbucket.example.com"
+  // ...
+}
+```
