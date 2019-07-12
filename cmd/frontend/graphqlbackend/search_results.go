@@ -151,6 +151,11 @@ func (sr *searchResultsResolver) Results() []searchResultResolver {
 }
 
 func (sr *searchResultsResolver) MatchCount() int32 {
+	nsym := sr.symbolCount()
+	if nsym > 0 {
+		return nsym
+	}
+
 	var totalResults int32
 	for _, result := range sr.results {
 		totalResults += result.resultCount()
@@ -159,10 +164,6 @@ func (sr *searchResultsResolver) MatchCount() int32 {
 }
 
 func (sr *searchResultsResolver) ResultCount() int32 {
-	nsym := sr.symbolCount()
-	if nsym > 0 {
-		return nsym
-	}
 	return sr.MatchCount()
 }
 
