@@ -6,7 +6,7 @@ import { CommandActionButton } from './CommandActionButton'
 
 interface Props {
     actions: readonly Action[]
-    selectedAction: Action | undefined
+    selectedAction: Action | null
     onActionSetSelected: (value: boolean, action: Action) => void
 
     className?: string

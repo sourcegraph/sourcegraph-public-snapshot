@@ -1,9 +1,12 @@
 import { Range } from '@sourcegraph/extension-api-classes'
+import { Action } from '@sourcegraph/extension-api-types'
 import { sortBy, uniq } from 'lodash'
 import { combineLatest, from, Observable, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { DiagnosticWithType } from '../../../../../shared/src/api/client/services/diagnosticService'
+import { fromAction } from '../../../../../shared/src/api/types/action'
+import { toDiagnostic } from '../../../../../shared/src/api/types/diagnostic'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -105,16 +108,17 @@ function diagnosticQueryMatcher(query: sourcegraph.DiagnosticQuery): (diagnostic
         (query.tag !== undefined ? !!diagnostic.tags && diagnostic.tags.includes(query.tag) : true)
 }
 
-export const diagnosticID = (diagnostic: DiagnosticInfo): string =>
-    `${diagnostic.entry.path}:${diagnostic.range ? diagnostic.range.start.line : '-'}:${
+// TODO!(sqs): this assumes a diag provider never has 2 diagnostics on the same range and resource
+export const diagnosticID = (diagnostic: DiagnosticWithType): string =>
+    `${diagnostic.type}:${diagnostic.resource.toString()}:${diagnostic.range ? diagnostic.range.start.line : '-'}:${
         diagnostic.range ? diagnostic.range.start.character : '-'
-    }:${diagnostic.message}`
+    }`
 
 export const getCodeActions = memoizeObservable(
     ({
         diagnostic,
         extensionsController,
-    }: { diagnostic: DiagnosticInfo } & ExtensionsControllerProps): Observable<sourcegraph.Action[]> =>
+    }: { diagnostic: DiagnosticInfo } & ExtensionsControllerProps): Observable<Action[]> =>
         from(
             extensionsController.services.codeActions.getCodeActions({
                 textDocument: {
@@ -128,17 +132,20 @@ export const getCodeActions = memoizeObservable(
                 range: Range.fromPlain(diagnostic.range),
                 context: { diagnostics: [diagnostic] },
             })
-        ).pipe(map(codeActions => codeActions || [])),
+        ).pipe(
+            map(codeActions => codeActions || []),
+            map(actions => actions.map(fromAction))
+        ),
     ({ diagnostic }) => diagnosticID(diagnostic)
 )
 
-export const codeActionID = (codeAction: sourcegraph.Action): string => codeAction.title // TODO!(sqs): codeAction.title is not guaranteed unique
+export const codeActionID = (codeAction: Action): string => codeAction.title // TODO!(sqs): codeAction.title is not guaranteed unique
 
 export const getActiveCodeAction0 = (
     diagnostic: DiagnosticInfo,
     threadSettings: ThreadSettings,
-    codeActions: sourcegraph.Action[]
-): sourcegraph.Action | undefined => {
+    codeActions: Action[]
+): Action | undefined => {
     const activeCodeActionID =
         threadSettings && threadSettings.actions && threadSettings.actions[diagnosticID(diagnostic)]
     return codeActions.find(a => codeActionID(a) === activeCodeActionID) || codeActions[0]
@@ -148,7 +155,7 @@ export const getActiveCodeAction = (
     diagnostic: DiagnosticInfo,
     extensionsController: ExtensionsControllerProps['extensionsController'],
     threadSettings: ThreadSettings
-): Observable<sourcegraph.Action | undefined> =>
+): Observable<Action | undefined> =>
     getCodeActions({ diagnostic, extensionsController }).pipe(
         map(codeActions => getActiveCodeAction0(diagnostic, threadSettings, codeActions))
     )

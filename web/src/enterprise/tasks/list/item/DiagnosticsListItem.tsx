@@ -1,15 +1,16 @@
+import { Action } from '@sourcegraph/extension-api-types'
 import H from 'history'
-import React, { useEffect, useState } from 'react'
+import { isEqual } from 'lodash'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Subscription } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
 import { fromDiagnostic, toDiagnostic } from '../../../../../../shared/src/api/types/diagnostic'
 import { CodeExcerpt } from '../../../../../../shared/src/components/CodeExcerpt'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
 import { displayRepoName } from '../../../../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
-import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/DiagnosticSeverityIcon'
 import { fetchHighlightedFileLines } from '../../../../repo/backend'
 import { ActionsWithPreview } from '../../../actions/ActionsWithPreview'
@@ -19,6 +20,8 @@ const LOADING: 'loading' = 'loading'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     diagnostic: DiagnosticInfo
+    selectedAction: Action | null // TODO!(sqs): isnt reference-equal to the action in actionsOrError
+    onActionSelect: (diagnostic: DiagnosticInfo, action: Action | null) => void
 
     className?: string
     headerClassName?: string
@@ -33,6 +36,8 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
  */
 export const DiagnosticsListItem: React.FunctionComponent<Props> = ({
     diagnostic,
+    selectedAction,
+    onActionSelect: onDiagnosticActionSelect,
     className = '',
     headerClassName = '',
     headerStyle,
@@ -40,12 +45,17 @@ export const DiagnosticsListItem: React.FunctionComponent<Props> = ({
     extensionsController,
     ...props
 }) => {
-    const [actionsOrError, setActionsOrError] = useState<typeof LOADING | sourcegraph.Action[] | ErrorLike>(LOADING)
+    const [actionsOrError, setActionsOrError] = useState<typeof LOADING | Action[] | ErrorLike>(LOADING)
+
     // Reduce recomputation of code actions when the diagnostic object reference changes but it
     // contains the same data.
     const diagnosticData = JSON.stringify(fromDiagnostic(diagnostic))
     useEffect(() => {
-        const diagnostic2: DiagnosticInfo = { ...toDiagnostic(JSON.parse(diagnosticData)), entry: diagnostic.entry }
+        const diagnostic2: DiagnosticInfo = {
+            ...toDiagnostic(JSON.parse(diagnosticData)),
+            type: diagnostic.type,
+            entry: diagnostic.entry,
+        }
         const subscriptions = new Subscription()
         subscriptions.add(
             getCodeActions({ diagnostic: diagnostic2, extensionsController })
@@ -56,12 +66,26 @@ export const DiagnosticsListItem: React.FunctionComponent<Props> = ({
                 .subscribe(setActionsOrError)
         )
         return () => subscriptions.unsubscribe()
-    }, [diagnosticData, diagnostic.entry, extensionsController])
+    }, [diagnosticData, diagnostic.entry, extensionsController, diagnostic.type])
+
+    const onActionSelect = useCallback(
+        (action: Action | null) => {
+            onDiagnosticActionSelect(diagnostic, action)
+        },
+        [diagnostic, onDiagnosticActionSelect]
+    )
 
     return (
         <ActionsWithPreview
             {...props}
             actionsOrError={actionsOrError}
+            selectedAction={
+                (actionsOrError !== LOADING &&
+                    !isErrorLike(actionsOrError) &&
+                    actionsOrError.find(a => isEqual(a, selectedAction))) ||
+                null
+            }
+            onActionSelect={onActionSelect}
             extensionsController={extensionsController}
             defaultPreview={
                 diagnostic.range && (

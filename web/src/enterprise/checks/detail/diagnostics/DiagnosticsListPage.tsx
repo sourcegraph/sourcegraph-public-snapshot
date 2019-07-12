@@ -1,3 +1,4 @@
+import { Action } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import React from 'react'
@@ -8,11 +9,14 @@ import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { withQueryParameter } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { ThemeProps } from '../../../../theme'
 import { DiagnosticsListItem } from '../../../tasks/list/item/DiagnosticsListItem'
+import { diagnosticID, DiagnosticInfo } from '../../../threads/detail/backend'
 import { useDiagnostics } from './detail/useDiagnostics'
 import { DiagnosticQueryBuilder } from './DiagnosticQueryBuilder'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemeProps {
     baseDiagnosticQuery: sourcegraph.DiagnosticQuery
+    selectedActions: { [diagnosticID: string]: Action | undefined }
+    onActionSelect: (diagnostic: DiagnosticInfo, action: Action | null) => void
 
     className?: string
     history: H.History
@@ -25,10 +29,20 @@ const LOADING: 'loading' = 'loading'
  * A page that lists diagnostics.
  */
 export const DiagnosticsListPage = withQueryParameter<Props>(
-    ({ baseDiagnosticQuery, query, onQueryChange, className = '', extensionsController, ...props }) => {
-        const parsedQuery = parseDiagnosticQuery(query, baseDiagnosticQuery)
+    ({
+        baseDiagnosticQuery,
+        selectedActions,
+        onActionSelect,
+        query,
+        onQueryChange,
+        className = '',
+        extensionsController,
+        ...props
+    }) => {
+        const parsedQuery = parseDiagnosticQuery(baseDiagnosticQuery)
         // tslint:disable-next-line: react-hooks-nesting
         const diagnosticsOrError = useDiagnostics(extensionsController, parsedQuery)
+
         return (
             <div className={`diagnostics-list-page ${className}`}>
                 {isErrorLike(diagnosticsOrError) ? (
@@ -58,6 +72,8 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
                                         {...props}
                                         key={JSON.stringify(diagnostic)}
                                         diagnostic={diagnostic}
+                                        selectedAction={selectedActions[diagnosticID(diagnostic)] || null}
+                                        onActionSelect={onActionSelect}
                                         className="container-fluid"
                                         extensionsController={extensionsController}
                                     />
@@ -71,6 +87,6 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
     }
 )
 
-function parseDiagnosticQuery(query: string, base?: sourcegraph.DiagnosticQuery): sourcegraph.DiagnosticQuery {
+function parseDiagnosticQuery(base?: sourcegraph.DiagnosticQuery): sourcegraph.DiagnosticQuery {
     return base || { type: 'TODO!(sqs)' } // TODO!(sqs)
 }
