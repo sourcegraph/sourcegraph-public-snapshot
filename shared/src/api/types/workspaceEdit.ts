@@ -39,6 +39,10 @@ type JSONFileTextEdit = Pick<FileTextEdit, Exclude<keyof FileTextEdit, 'uri' | '
     edit: clientTypes.TextEdit
 }
 
+export interface SerializedWorkspaceEdit {
+    operations: (JSONFileTextEdit | JSONFileOperation)[]
+}
+
 export class WorkspaceEdit implements sourcegraph.WorkspaceEdit {
     public operations: WorkspaceEditOperation[] = []
 
@@ -124,7 +128,7 @@ export class WorkspaceEdit implements sourcegraph.WorkspaceEdit {
         this.replace(resource, range, '')
     }
 
-    public toJSON(): { operations: (JSONFileTextEdit | JSONFileOperation)[] } {
+    public toJSON(): SerializedWorkspaceEdit {
         return {
             operations: this.operations.map(op => {
                 if (op.type === WorkspaceEditOperationType.FileOperation) {
@@ -143,7 +147,7 @@ export class WorkspaceEdit implements sourcegraph.WorkspaceEdit {
         }
     }
 
-    public static fromJSON(arg: ReturnType<(typeof WorkspaceEdit)['prototype']['toJSON']>): WorkspaceEdit {
+    public static fromJSON(arg: SerializedWorkspaceEdit): WorkspaceEdit {
         const workspaceEdit = new WorkspaceEdit()
         workspaceEdit.operations = arg.operations.map(op => {
             if (op.type === WorkspaceEditOperationType.FileOperation) {

@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
+import { CheckableDropdownItem } from '../../../../components/CheckableDropdownItem'
 import { fetchDiscussionThreads } from '../../../../discussions/backend'
 import { useEffectAsync } from '../../../../util/useEffectAsync'
 import { ChangesetIcon } from '../../../changesets/icons'
@@ -66,13 +67,13 @@ export const ChangesetTargetButtonDropdown: React.FunctionComponent<CreateOrPrev
                 disabled={disabled}
             ></DropdownToggle>
             <DropdownMenu>
-                <DropdownItemCheckable
+                <CheckableDropdownItem
                     onClick={clearAppendToExistingChangeset}
                     checked={appendToExistingChangeset === undefined}
                 >
                     <h5 className="mb-1">New changeset</h5>
                     <span className="text-muted">You can preview the changes before submitting</span>
-                </DropdownItemCheckable>
+                </CheckableDropdownItem>
                 <DropdownItem divider={true} />
                 {threadsOrError === LOADING ? (
                     <DropdownItem header={true} className="py-1">
@@ -89,7 +90,7 @@ export const ChangesetTargetButtonDropdown: React.FunctionComponent<CreateOrPrev
                         </DropdownItem>
                         {threadsOrError.nodes.map(thread => (
                             // tslint:disable-next-line: jsx-no-lambda
-                            <DropdownItemCheckable
+                            <CheckableDropdownItem
                                 key={thread.id}
                                 onClick={() => setAppendToExistingChangeset(thread)}
                                 checked={Boolean(
@@ -97,7 +98,7 @@ export const ChangesetTargetButtonDropdown: React.FunctionComponent<CreateOrPrev
                                 )}
                             >
                                 <span className="text-muted">#{thread.idWithoutKind}</span> {thread.title}
-                            </DropdownItemCheckable>
+                            </CheckableDropdownItem>
                         ))}
                     </>
                 )}
@@ -105,16 +106,3 @@ export const ChangesetTargetButtonDropdown: React.FunctionComponent<CreateOrPrev
         </ButtonDropdown>
     )
 }
-
-const DropdownItemCheckable: React.FunctionComponent<{ onClick: () => void; checked: boolean }> = ({
-    onClick,
-    checked,
-    children,
-}) => (
-    <DropdownItem onClick={onClick}>
-        <div className="d-flex align-items-start">
-            <CheckIcon className={`icon-inline small mr-3 ${checked ? '' : 'hidden'}`} />
-            <div>{children}</div>
-        </div>
-    </DropdownItem>
-)
