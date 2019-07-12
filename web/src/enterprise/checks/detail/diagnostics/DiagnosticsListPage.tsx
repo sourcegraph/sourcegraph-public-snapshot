@@ -1,8 +1,8 @@
-import { Action } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import React from 'react'
 import * as sourcegraph from 'sourcegraph'
+import { Action } from '../../../../../../shared/src/api/types/action'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
@@ -45,6 +45,7 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
 
         return (
             <div className={`diagnostics-list-page ${className}`}>
+                <style>{`.diagnostics-list-page code, .diagnostics-list-page table, .diagnostics-list-page pre, .diagnostics-list-page .markdown, .diagnostics-list-page aside { line-height: 17.25px; background-color: black !important; margin: 0; padding: 0; border-spacing: 0; } .diagnostics-list-page pre { margin-top: 1px !important; margin-left: 9px !important;}`}</style>
                 {isErrorLike(diagnosticsOrError) ? (
                     <div className="container">
                         <div className="alert alert-danger mt-2">{diagnosticsOrError.message}</div>

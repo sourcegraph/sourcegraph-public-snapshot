@@ -1,5 +1,5 @@
-import { Action } from '@sourcegraph/extension-api-types'
 import * as sourcegraph from 'sourcegraph'
+import { Action } from '../../../../../shared/src/api/types/action'
 
 export interface ChangesetPlan {
     // TODO!(sqs): always assume only 1 operation

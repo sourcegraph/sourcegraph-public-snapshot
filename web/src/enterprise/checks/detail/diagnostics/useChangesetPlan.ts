@@ -1,6 +1,6 @@
-import { Action } from '@sourcegraph/extension-api-types'
 import { useCallback, useState } from 'react'
 import { DiagnosticWithType } from '../../../../../../shared/src/api/client/services/diagnosticService'
+import { Action } from '../../../../../../shared/src/api/types/action'
 import { ChangesetPlan, ChangesetPlanDiagnosticAction, ChangesetPlanOperation } from '../../../changesets/plan/plan'
 import { diagnosticID } from '../../../threads/detail/backend'
 
@@ -47,7 +47,7 @@ export const useChangesetPlan = (): ChangesetPlanProps => {
                     console.error('TODO!(sqs): handle this error')
                 }
             }
-            setChangesetPlan({ ...changesetPlan })
+            setChangesetPlan({ ...changesetPlan, operations: [...changesetPlan.operations] })
         },
         [changesetPlan]
     )

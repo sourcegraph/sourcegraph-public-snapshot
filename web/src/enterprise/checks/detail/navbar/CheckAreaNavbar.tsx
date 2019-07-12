@@ -18,7 +18,7 @@ export const CheckAreaNavbar: React.FunctionComponent<Props> = ({ checkURL, clas
     <nav className={`check-area-navbar border-bottom ${className}`}>
         <div className="container">
             <ul className="nav flex-nowrap">
-                <li className="check-area-navbar__nav-item nav-item">
+                <li className="check-area-navbar__nav-item nav-item d-none">
                     <NavLink
                         to={`${checkURL}/notifications`}
                         className={NAV_LINK_CLASS_NAME}
@@ -36,7 +36,7 @@ export const CheckAreaNavbar: React.FunctionComponent<Props> = ({ checkURL, clas
                         <DiagnosticsIcon className="icon-inline" /> Diagnostics
                     </NavLink>
                 </li>
-                <li className="check-area-navbar__nav-item nav-item">
+                <li className="check-area-navbar__nav-item nav-item d-none">
                     <NavLink
                         to={`${checkURL}/checks`}
                         className={NAV_LINK_CLASS_NAME}

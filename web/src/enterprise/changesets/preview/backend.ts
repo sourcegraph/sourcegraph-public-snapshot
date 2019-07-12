@@ -1,4 +1,3 @@
-import { Action } from '@sourcegraph/extension-api-types'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
@@ -12,6 +11,7 @@ import { createThread } from '../../../discussions/backend'
 import { fetchRepository } from '../../../repo/settings/backend'
 import { computeDiff, FileDiff } from '../../threads/detail/changes/computeDiff'
 import { ChangesetDelta, ThreadSettings } from '../../threads/settings'
+import { Action } from '../../../../../shared/src/api/types/action'
 
 export const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
 

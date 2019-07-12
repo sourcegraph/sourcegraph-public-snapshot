@@ -330,10 +330,15 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                               ]
                             : []),
                         {
-                            title: `Ignore all (${lintMessage.ruleId})`,
-                            command: updateRulePoliciesCommand(RulePolicy.Ignore, lintMessage.ruleId),
+                            title: `Disable rule '${lintMessage.ruleId}'`,
+                            edit: createWorkspaceEditForDisablingRule(doc, lintMessage),
                             diagnostics: [diag],
                         },
+                        // {
+                        //     title: `Ignore all (${lintMessage.ruleId})`,
+                        //     command: updateRulePoliciesCommand(RulePolicy.Ignore, lintMessage.ruleId),
+                        //     diagnostics: [diag],
+                        // },
                         {
                             title: `Documentation`,
                             command: {
@@ -399,6 +404,22 @@ function createWorkspaceEditFromESLintFix(
         new URL(doc.uri),
         new sourcegraph.Range(doc.positionAt(fix.range[0]), doc.positionAt(fix.range[1])),
         fix.text
+    )
+    return edit
+}
+
+function createWorkspaceEditForDisablingRule(
+    doc: sourcegraph.TextDocument,
+    lintMessage: Linter.LintMessage,
+    edit = new sourcegraph.WorkspaceEdit()
+): sourcegraph.WorkspaceEdit {
+    const range = rangeForLintMessage(doc, lintMessage)
+    // TODO!(sqs): get indent of previous line - in vscode this is inserted on the client automatically, check out how they do it because that seems neat (https://sourcegraph.com/github.com/microsoft/vscode-tslint@30d1a7ae25b0331466f1a54b4f7d23d60fa2da30/-/blob/tslint-server/src/tslintServer.ts#L618)
+    const indent = doc.text.slice(doc.offsetAt(range.start.with(undefined, 0))).match(/[ \t]*/)
+    edit.insert(
+        new URL(doc.uri),
+        range.start.with(undefined, 0),
+        `${indent ? indent[0] : ''}// eslint-disable-next-line ${lintMessage.ruleId}\n`
     )
     return edit
 }

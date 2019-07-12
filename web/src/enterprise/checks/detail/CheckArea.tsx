@@ -83,7 +83,7 @@ export const CheckArea: React.FunctionComponent<Props> = ({ checkID, scope, chec
                 <ErrorBoundary location={props.location}>
                     <CheckOverview {...context} className="container flex-0 pb-3" />
                     <div className="w-100 border-bottom" />
-                    <CheckAreaNavbar {...context} className="flex-0 sticky-top bg-body d-none" />
+                    <CheckAreaNavbar {...context} className="flex-0 sticky-top bg-body" />
                 </ErrorBoundary>
                 <ErrorBoundary location={props.location}>
                     <Switch>

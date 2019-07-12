@@ -1,6 +1,6 @@
-import { Action } from '@sourcegraph/extension-api-types'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback } from 'react'
+import { Action } from '../../../../../shared/src/api/types/action'
 
 interface Props {
     /** The action. */

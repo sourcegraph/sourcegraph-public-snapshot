@@ -4,6 +4,7 @@ import { pluralize } from '../../../../shared/src/util/strings'
 const NUM_SQUARES = 5
 
 /** Displays a diff stat (visual representation of added, changed, and deleted lines in a diff). */
+// TODO!(sqs): this is buggy - 2 changes + 2 deletions (with no additions) shows up as 2 green, 1 orange, 1 red, 1 gray
 export const DiffStat: React.FunctionComponent<{
     /** Number of additions (added lines). */
     added: number

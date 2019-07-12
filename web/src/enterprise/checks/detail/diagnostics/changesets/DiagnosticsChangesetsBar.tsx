@@ -1,13 +1,20 @@
 import { NotificationType } from '@sourcegraph/extension-api-classes'
-import React, { useCallback, useState } from 'react'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import AlertIcon from 'mdi-react/AlertIcon'
+import React, { useCallback, useEffect, useState } from 'react'
+import { toAction } from '../../../../../../../shared/src/api/types/action'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '../../../../../../../shared/src/util/errors'
 import { pluralize } from '../../../../../../../shared/src/util/strings'
-import { ZapIcon } from '../../../../../util/octicons'
+import { DiffStat } from '../../../../../repo/compare/DiffStat'
+import { DiffIcon, ZapIcon } from '../../../../../util/octicons'
+import { useEffectAsync } from '../../../../../util/useEffectAsync'
 import { ChangesetIcon } from '../../../../changesets/icons'
 import { createChangesetFromCodeAction } from '../../../../changesets/preview/backend'
 import { ChangesetButtonOrLinkExistingChangeset } from '../../../../tasks/list/item/ChangesetButtonOrLink'
 import { ChangesetTargetButtonDropdown } from '../../../../tasks/list/item/ChangesetTargetButtonDropdown'
+import { computeDiff, computeDiffStat, FileDiff } from '../../../../threads/detail/changes/computeDiff'
 import { ChangesetPlanProps } from '../useChangesetPlan'
 
 interface Props extends ChangesetPlanProps, ExtensionsControllerProps {
@@ -61,6 +68,23 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
 
     const isEmpty = changesetPlan.operations.length === 0 || changesetPlan.operations[0].diagnosticActions.length === 0
 
+    const [fileDiffsOrError, setFileDiffsOrError] = useState<typeof LOADING | FileDiff[] | ErrorLike>(LOADING)
+    useEffectAsync(async () => {
+        setFileDiffsOrError(LOADING)
+        try {
+            setFileDiffsOrError(
+                await computeDiff(
+                    extensionsController,
+                    changesetPlan.operations.flatMap(op => op.diagnosticActions.map(({ action }) => toAction(action)))
+                )
+            )
+        } catch (err) {
+            setFileDiffsOrError(asError(err))
+        }
+    }, [changesetPlan.operations, extensionsController])
+    const diffStat =
+        fileDiffsOrError !== LOADING && !isErrorLike(fileDiffsOrError) ? computeDiffStat(fileDiffsOrError) : null
+
     return (
         <div className={`diagnostics-changesets-bar ${flashBorderClassName} ${flashBackgroundClassName} ${className}`}>
             <div className="container py-4 d-flex align-items-center">
@@ -70,19 +94,35 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
                     }}
                     showAddToExistingChangeset={true}
                     buttonClassName="btn-success"
-                    className="mr-3"
+                    className="mr-4"
                     disabled={isEmpty}
                 />
 
                 {!isEmpty ? (
                     <div className={`d-flex align-items-center`}>
-                        <span>
+                        <span className="mr-4">
                             <ZapIcon className="icon-inline" />{' '}
                             <strong>{changesetPlan.operations[0].diagnosticActions.length}</strong>{' '}
                             <span className="text-muted">
                                 {pluralize('action', changesetPlan.operations[0].diagnosticActions.length)}
                             </span>
                         </span>
+                        <div className="mr-4">
+                            <DiffIcon className="icon-inline" />{' '}
+                            {fileDiffsOrError === LOADING ? (
+                                <LoadingSpinner className="icon-inline" />
+                            ) : isErrorLike(fileDiffsOrError) ? (
+                                <AlertIcon className="icon-inline text-danger" title={fileDiffsOrError.message} />
+                            ) : (
+                                <>
+                                    <strong>{fileDiffsOrError.length}</strong>{' '}
+                                    <span className="text-muted">
+                                        {pluralize('file changed', fileDiffsOrError.length, 'files changed')}
+                                    </span>
+                                    {diffStat && <DiffStat {...diffStat} className="ml-3 d-inline-flex" />}
+                                </>
+                            )}
+                        </div>
                     </div>
                 ) : (
                     <div className={`text-muted`}>Select actions to include in changeset...</div>

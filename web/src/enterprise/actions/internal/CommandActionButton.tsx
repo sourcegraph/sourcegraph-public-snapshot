@@ -1,5 +1,5 @@
-import { Action } from '@sourcegraph/extension-api-types'
 import React, { useCallback } from 'react'
+import { Action } from '../../../../../shared/src/api/types/action'
 
 interface Props {
     /** The action. */

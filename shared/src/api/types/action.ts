@@ -1,9 +1,19 @@
 import * as sourcegraph from 'sourcegraph'
-import { Action, Diagnostic, Range, Selection } from '@sourcegraph/extension-api-types'
+import { Diagnostic, Range, Selection } from '@sourcegraph/extension-api-types'
 import { fromDiagnostic, toDiagnostic } from './diagnostic'
-import { WorkspaceEdit } from './workspaceEdit'
+import { WorkspaceEdit, SerializedWorkspaceEdit } from './workspaceEdit'
 import { CodeActionsParams } from '../client/services/codeActions'
 import { Range as RangeImpl, Selection as SelectionImpl } from '@sourcegraph/extension-api-classes'
+
+/**
+ * An action.
+ *
+ * @see module:sourcegraph.Action
+ */
+export interface Action extends Pick<sourcegraph.Action, Exclude<keyof sourcegraph.Action, 'edit' | 'diagnostics'>> {
+    readonly edit?: SerializedWorkspaceEdit // TODO!(sqs): use WorkspaceEdit type
+    readonly diagnostics?: Diagnostic[]
+}
 
 export function fromAction(codeAction: sourcegraph.Action): Action {
     return {
