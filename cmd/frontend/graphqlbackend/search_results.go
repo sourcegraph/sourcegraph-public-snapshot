@@ -158,9 +158,7 @@ func (sr *searchResultsResolver) MatchCount() int32 {
 	return totalResults
 }
 
-func (sr *searchResultsResolver) ResultCount() int32 {
-	return sr.MatchCount()
-}
+func (sr *searchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
 
 func (sr *searchResultsResolver) ApproximateResultCount() string {
 	count := sr.ResultCount()
