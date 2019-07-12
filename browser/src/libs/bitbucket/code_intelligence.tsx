@@ -196,7 +196,7 @@ export const bitbucketServerCodeHost: CodeHost = {
     getCommandPaletteMount,
     commandPaletteClassProps: {
         buttonClassName:
-            'aui-dropdown2-trigger aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left',
+            'command-list-popover-button--bitbucket-server aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left',
         buttonElement: 'a',
         buttonOpenClassName: 'aui-dropdown2-active active aui-alignment-enabled',
         showCaret: false,
