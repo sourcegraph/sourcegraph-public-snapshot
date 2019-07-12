@@ -43,7 +43,7 @@ Bitbucket Server external service connections support the following configuratio
 
 ## Native extension
 
-For production usage, we recommend installing the Sourcegraph Bitbucket Server plugin for all users (so that each user doesn't need to install the browser extension individually). This involves adding a new extension to the extension directory of your Phabricator instance.
+For production usage, we recommend installing the Sourcegraph Bitbucket Server plugin for all users (so that each user doesn't need to install and configure the browser extension individually). This involves adding a new add-on to  your Bitbucket Server instance.
 
 See the [bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin) repository for installation instructions and configuration settings.
 
