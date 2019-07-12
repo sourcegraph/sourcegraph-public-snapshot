@@ -1,10 +1,6 @@
 import * as path from 'path'
 import * as sourcegraph from 'sourcegraph'
-
-interface LocationWithStringURI {
-    range: sourcegraph.Location['range']
-    uri: string
-}
+import * as LSP from 'vscode-languageserver-types'
 
 function repositoryFromDoc(doc: sourcegraph.TextDocument): string {
     const url = new URL(doc.uri)
@@ -139,7 +135,7 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
                 if (!body) {
                     return null
                 }
-                return body.map((definition: LocationWithStringURI) => ({
+                return body.map((definition: LSP.Location) => ({
                     ...definition,
                     uri: setPath(doc, definition.uri),
                 }))
@@ -157,7 +153,7 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
                 if (!body) {
                     return null
                 }
-                return body.map((reference: LocationWithStringURI) => ({
+                return body.map((reference: LSP.Location) => ({
                     ...reference,
                     uri: setPath(doc, reference.uri),
                 }))
