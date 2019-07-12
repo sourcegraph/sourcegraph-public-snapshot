@@ -20,6 +20,10 @@ import (
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	jaegerlog "github.com/uber/jaeger-client-go/log"
 	jaegermetrics "github.com/uber/jaeger-lib/metrics"
+
+	// Tune GOMAXPROCS for kubernetes. All our binaries import this package,
+	// so we tune for all of them.
+	_ "go.uber.org/automaxprocs"
 )
 
 var (
