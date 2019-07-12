@@ -996,6 +996,8 @@ type SearchResults {
     # This string is typically shown to users to indicate the true result count.
     approximateResultCount: String!
     # Whether or not the results limit was hit.
+    #
+    # In paginated requests, this field is always false. Use 'finished' instead.
     limitHit: Boolean!
     # Integers representing the sparkline for the search results.
     sparkline: [Int!]!

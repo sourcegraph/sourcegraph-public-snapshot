@@ -465,7 +465,6 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	// we're returning.
 	finalResults := make([]searchResultResolver, 0, limit)
 	finalCommon := &searchResultsCommon{
-		// TODO(slimsag): before merge: document limitHit in schema.graphql
 		limitHit:         false, // irrelevant in paginated search
 		indexUnavailable: common.indexUnavailable,
 		partial:          make(map[api.RepoName]struct{}),
