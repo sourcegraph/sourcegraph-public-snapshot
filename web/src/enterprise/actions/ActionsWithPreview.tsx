@@ -5,11 +5,7 @@ import React, { useCallback, useState } from 'react'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { ChangesetCreationStatus, createChangesetFromCodeAction } from '../changesets/preview/backend'
-import {
-    ChangesetButtonOrLink,
-    ChangesetButtonOrLinkExistingChangeset,
-    PENDING_CREATION,
-} from '../tasks/list/item/ChangesetButtonOrLink'
+import { ChangesetButtonOrLinkExistingChangeset, PENDING_CREATION } from '../tasks/list/item/ChangesetButtonOrLink'
 import { WorkspaceEditPreview } from '../threads/detail/inbox/item/WorkspaceEditPreview'
 import { ActionsFormControl } from './internal/ActionsFormControl'
 
@@ -53,36 +49,6 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
         [onActionSelect, selectedAction]
     )
 
-    const [createdThreadOrLoading, setCreatedThreadOrLoading] = useState<ChangesetButtonOrLinkExistingChangeset>(
-        LOADING
-    )
-    const [, setJustCreated] = useState(false)
-    const onCreateThreadClick = useCallback(
-        async (creationStatus: ChangesetCreationStatus) => {
-            setCreatedThreadOrLoading(PENDING_CREATION)
-            try {
-                const action = selectedAction
-                if (!action) {
-                    throw new Error('no active code action')
-                }
-                setCreatedThreadOrLoading(
-                    await createChangesetFromCodeAction({ extensionsController }, null, action, {
-                        status: creationStatus,
-                    })
-                )
-                setJustCreated(true)
-                setTimeout(() => setJustCreated(false), 2500)
-            } catch (err) {
-                setCreatedThreadOrLoading(null)
-                extensionsController.services.notifications.showMessages.next({
-                    message: `Error creating changeset: ${err.message}`,
-                    type: NotificationType.Error,
-                })
-            }
-        },
-        [selectedAction, extensionsController]
-    )
-
     return children({
         actions:
             actionsOrError === LOADING ? (
@@ -102,20 +68,13 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
             ),
         preview:
             selectedAction && selectedAction.edit ? (
-                <>
-                    <WorkspaceEditPreview
-                        key={JSON.stringify(selectedAction.edit)}
-                        {...props}
-                        extensionsController={extensionsController}
-                        workspaceEdit={selectedAction.edit}
-                        className="overflow-auto p-2 mb-3"
-                    />
-                    <ChangesetButtonOrLink
-                        onClick={onCreateThreadClick}
-                        existingChangeset={createdThreadOrLoading}
-                        className="m-3"
-                    />
-                </>
+                <WorkspaceEditPreview
+                    key={JSON.stringify(selectedAction.edit)}
+                    {...props}
+                    extensionsController={extensionsController}
+                    workspaceEdit={selectedAction.edit}
+                    className="overflow-auto p-2 mb-3"
+                />
             ) : (
                 defaultPreview
             ),

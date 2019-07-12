@@ -1,2 +1,5 @@
 @import './detail/navbar/CheckAreaNavbar';
 @import './detail/overview/pipeline/CheckPipelineSection';
+@import './detail/diagnostics/changesets/DiagnosticsChangesetsBar';
+@import './detail/diagnostics/CheckDiagnosticsPage';
+@import '../tasks/list/item/ChangesetTargetButtonDropdown';

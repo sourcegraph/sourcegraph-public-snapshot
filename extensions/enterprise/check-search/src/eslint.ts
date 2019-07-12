@@ -86,7 +86,7 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                             includes: ['\\.[jt]sx?$'], // TODO!(sqs): typescript only
                             type: 'regexp',
                         },
-                        maxResults: 1, //MAX_RESULTS,
+                        maxResults: 4, //MAX_RESULTS,
                     }
                 )
             )

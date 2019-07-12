@@ -50,19 +50,19 @@ export const CheckDiagnosticsPage: React.FunctionComponent<Props> = ({
 
     return (
         <div className={`check-diagnostics-page ${className}`}>
-            <div className="container">
-                <DiagnosticsChangesetsBar
-                    changesetPlan={changesetPlan}
-                    onChangesetPlanDiagnosticActionSet={onChangesetPlanDiagnosticActionSet}
-                    className="my-3"
-                />
-            </div>
             <DiagnosticsListPage
                 {...props}
                 baseDiagnosticQuery={baseDiagnosticQuery}
                 selectedActions={selectedActions}
                 onActionSelect={onActionSelect}
             />
+            <div className="check-diagnostics-page__bar border-top">
+                <DiagnosticsChangesetsBar
+                    changesetPlan={changesetPlan}
+                    onChangesetPlanDiagnosticActionSet={onChangesetPlanDiagnosticActionSet}
+                    className=""
+                />
+            </div>
         </div>
     )
 }
