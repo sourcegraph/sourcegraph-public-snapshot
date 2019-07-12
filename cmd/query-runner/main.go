@@ -249,7 +249,7 @@ func performSearch(ctx context.Context, query string) (v *gqlSearchResponse, exe
 		// We didn't find any search results. Some repos are cloning or timed
 		// out, so try again in a few seconds.
 		attempts++
-		log15.Warn("executor: failed to run query found 0 search results due to cloning or timed out repos (retrying in 5s)", "cloning", cloning, "timedout", timedout)
+		log15.Warn("executor: failed to run query found 0 search results due to cloning or timed out repos (retrying in 5s)", "cloning", cloning, "timedout", timedout, "query", query)
 		time.Sleep(5 * time.Second)
 	}
 }

@@ -2,7 +2,7 @@ import { DiffPart } from '@sourcegraph/codeintellify'
 import { DOMFunctions } from '../code_intelligence/code_views'
 
 const getSingleFileLineElementFromLineNumber = (codeView: HTMLElement, line: number): HTMLElement => {
-    const lineNumElem = codeView.querySelector<HTMLElement>(`[data-line-number="${line}"`)
+    const lineNumElem = codeView.querySelector<HTMLElement>(`[data-line-number="${line}"]`)
     if (!lineNumElem) {
         throw new Error(`Line ${line} not found in code view`)
     }
