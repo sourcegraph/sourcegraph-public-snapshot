@@ -397,14 +397,18 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (result
 	// likely to come back soon for more and we don't need to search a batch of
 	// repositories every time. This would give substantial performance
 	// benefits to subsequent requests against this API.
-	results, common = limitResultSet(results, common, int(p.pagination.limit))
+	offset := 0
+	if cursor := p.pagination.cursor; cursor != nil {
+		offset = int(cursor.ResultOffset)
+	}
+	results, common = sliceSearchResults(results, common, offset, int(p.pagination.limit))
 	return results, common, nil
 }
 
-// limitResultSet returns results with its length limited, and a
-// searchResultsCommon structure reflecting that limited result set.
-func limitResultSet(results []searchResultResolver, common *searchResultsCommon, limit int) ([]searchResultResolver, *searchResultsCommon) {
-	if len(results) < limit {
+// sliceSearchResults returns results[offset:offset+limit] and a searchResultsCommon
+// structure reflecting that slice of results.
+func sliceSearchResults(results []searchResultResolver, common *searchResultsCommon, offset, limit int) ([]searchResultResolver, *searchResultsCommon) {
+	if offset == 0 && len(results) < offset+limit {
 		return results, common
 	}
 
@@ -415,7 +419,7 @@ func limitResultSet(results []searchResultResolver, common *searchResultsCommon,
 		reposByName[string(r.Name)] = r
 	}
 	resultsByRepo := map[*types.Repo][]searchResultResolver{}
-	for _, r := range results[:limit] {
+	for _, r := range results[offset : offset+limit] {
 		repoName, _ := r.searchResultURIs()
 		repo := reposByName[repoName]
 		resultsByRepo[repo] = append(resultsByRepo[repo], r)
