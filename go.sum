@@ -538,6 +538,7 @@ github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWif
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/docsite v0.0.0-20190303064655-ad3087aa6352 h1:9s/xIkg2iSZU3SImrLPOqFYMys6p3X44tNjbpLTV2YQ=
 github.com/sourcegraph/docsite v0.0.0-20190303064655-ad3087aa6352/go.mod h1:1eElRn/gHZ24upi+Fh9WHahVE21CtCcZukPRLIe7FGg=
+github.com/sourcegraph/docsite v0.0.0-20190705114956-7aba76ce11c0 h1:53ckHa77SOAgM5vHSTmjLd5Ae6y+a71Ahk3SxWhlgwQ=
 github.com/sourcegraph/docsite v0.0.0-20190705114956-7aba76ce11c0/go.mod h1:1eElRn/gHZ24upi+Fh9WHahVE21CtCcZukPRLIe7FGg=
 github.com/sourcegraph/go-diff v0.5.1-0.20190324182542-c825d9a1a0ca h1:bHqd+XDLw3BN00DDpkmSaeWOQS5N+U+0dqiIzW2hf8s=
 github.com/sourcegraph/go-diff v0.5.1-0.20190324182542-c825d9a1a0ca/go.mod h1:j2dHj3m8aZgQO8lMTcTnBcXkRRRqi34cd2MNlA9u1mE=
@@ -571,6 +572,8 @@ github.com/sourcegraph/zoekt v0.0.0-20190612162303-e59a05433315 h1:STOA1qXy1DqPk
 github.com/sourcegraph/zoekt v0.0.0-20190612162303-e59a05433315/go.mod h1:Sa1TO1+Y/kM0jA9AISpwx6islOvLy7tsnEUKIFwOb7I=
 github.com/sourcegraph/zoekt v0.0.0-20190614204709-c84cd1977f24 h1:XMSPEwhlzcbJj2d23OuSR5hnyNDOafgYSn1zwKKO2U4=
 github.com/sourcegraph/zoekt v0.0.0-20190614204709-c84cd1977f24/go.mod h1:Sa1TO1+Y/kM0jA9AISpwx6islOvLy7tsnEUKIFwOb7I=
+github.com/sourcegraph/zoekt v0.0.0-20190712184556-51c44e6be086 h1:n6m5cZjD5KFvIbq+2oC8Zjp+Psalxuk4RHqqkmwwcc0=
+github.com/sourcegraph/zoekt v0.0.0-20190712184556-51c44e6be086/go.mod h1:tDAyQ+Ui8gE8QxzLA1Gl8KTu+EM5rjerL4GQ6nnFYM8=
 github.com/spf13/afero v1.1.0 h1:bopulORc2JeYaxfHLvJa5NzxviA9PoWhpiiJkru7Ji4=
 github.com/spf13/afero v1.1.0/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/cast v1.2.0 h1:HHl1DSRbEQN2i8tJmtS6ViPyHx35+p51amrdsiTCrkg=

@@ -175,7 +175,7 @@ require (
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20190614204709-c84cd1977f24
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20190712184556-51c44e6be086
 	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
