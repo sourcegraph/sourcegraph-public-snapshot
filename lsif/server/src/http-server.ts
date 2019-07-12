@@ -238,7 +238,7 @@ function main(): void {
             checkRepository(repository)
             checkCommit(commit)
             if (!isSupportedMethod(method)) {
-                throw Object.assign(new Error('Method must be one of ' + SUPPORTED_METHODS), { status: 400 })
+                throw Object.assign(new Error('Method must be one of ' + SUPPORTED_METHODS), { status: 422 })
             }
 
             try {
@@ -318,7 +318,7 @@ function main(): void {
                     new Error(
                         `The size of the given LSIF file (${contentLength} bytes) exceeds the max of ${MAX_FILE_SIZE}`
                     ),
-                    { status: 400 }
+                    { status: 413 }
                 )
             }
 
@@ -349,7 +349,7 @@ function main(): void {
                                     new Error(
                                         `The size of the given LSIF file (${contentLength} bytes) exceeds the specified Content-Length ${contentLength}`
                                     ),
-                                    { status: 400 }
+                                    { status: 413 }
                                 )
                             )
                             return
