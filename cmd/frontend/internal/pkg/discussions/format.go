@@ -78,7 +78,12 @@ func formatTargetRepoLinesHTML(ctx context.Context, tr *types.DiscussionThreadTa
 		// contents along here.
 		isLightTheme := false
 		disableTimeout := false
-		html, _, err := highlight.Code(ctx, []byte(code), *tr.Path, disableTimeout, isLightTheme, false)
+		html, _, err := highlight.Code(ctx, highlight.Params{
+			Content:        []byte(code),
+			Filepath:       *tr.Path,
+			DisableTimeout: disableTimeout,
+			IsLightTheme:   isLightTheme,
+		})
 		if err != nil {
 			return err
 		}
