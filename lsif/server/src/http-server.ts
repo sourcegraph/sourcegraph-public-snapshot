@@ -318,15 +318,60 @@ function main(): void {
             checkRepository(repository)
             checkCommit(commit)
 
-            const contentLength = parseInt(req.header('Content-Length') || '', 10) || 0
-            if (contentLength > MAX_FILE_SIZE) {
+            if (req.header('Content-Length') && parseInt(req.header('Content-Length') || '', 10) > MAX_FILE_SIZE) {
                 throw Object.assign(
                     new Error(
-                        `The size of the given LSIF file (${contentLength} bytes) exceeds the max of ${MAX_FILE_SIZE}`
+                        `The size of the given LSIF file (${req.header(
+                            'Content-Length'
+                        )} bytes) exceeds the max of ${MAX_FILE_SIZE}`
                     ),
                     { status: 413 }
                 )
             }
+
+            let contentLength = 0
+
+            await withFile(async tempFile => {
+                // Pipe the given LSIF data to a temp file.
+                await new Promise((resolve, reject) => {
+                    const tempFileWriteStream = fs.createWriteStream(tempFile.path)
+                    req.on('data', chunk => {
+                        contentLength += chunk.length
+                        if (contentLength > MAX_FILE_SIZE) {
+                            tempFileWriteStream.destroy()
+                            reject(
+                                Object.assign(
+                                    new Error(
+                                        `The size of the given LSIF file (${contentLength} bytes) exceeds the specified Content-Length ${contentLength}`
+                                    ),
+                                    { status: 413 }
+                                )
+                            )
+                        }
+                    }).pipe(tempFileWriteStream)
+
+                    tempFileWriteStream.on('close', resolve)
+                    tempFileWriteStream.on('error', reject)
+                })
+
+                // Load a `Database` from the file to check that it's valid.
+                await new JsonDatabase().load(tempFile.path, () => noopTransformer)
+
+                // Replace the old LSIF file with the new file.
+                try {
+                    await fs.mkdir(STORAGE_ROOT)
+                } catch (e) {
+                    if (e.code !== 'EEXIST') {
+                        throw e
+                    }
+                }
+                await moveFile(tempFile.path, diskKey({ repository, commit }))
+
+                // Evict the old `Database` from the LRU cache to cause it to pick up the new LSIF data from disk.
+                dbLRU.del(diskKey({ repository, commit }))
+
+                res.send('Upload successful.')
+            })
 
             // TODO enforce max disk usage per-repository. Currently, a
             // misbehaving client could upload a bunch of LSIF files for one
@@ -337,50 +382,6 @@ function main(): void {
                 max: Math.max(0, SOFT_MAX_STORAGE - contentLength),
                 onBeforeDelete: filePath =>
                     console.log(`Deleting ${filePath} to help keep disk usage under ${SOFT_MAX_STORAGE}.`),
-            })
-
-            await withFile(async tempFile => {
-                // TODO bail early if the request body contains more data than was
-                // specified in the Content-Length header. Currently, if a client
-                // lies about the Content-Length, they can send a huge body that
-                // fills up the disk.
-
-                // Pipe the given LSIF data to a temp file.
-                const stream = req.pipe(fs.createWriteStream(tempFile.path))
-                await new Promise((resolve, reject) => {
-                    stream.on('close', async () => {
-                        if ((await fs.stat(tempFile.path)).size > contentLength) {
-                            reject(
-                                Object.assign(
-                                    new Error(
-                                        `The size of the given LSIF file (${contentLength} bytes) exceeds the specified Content-Length ${contentLength}`
-                                    ),
-                                    { status: 413 }
-                                )
-                            )
-                            return
-                        }
-                        resolve()
-                    })
-
-                    stream.on('error', error => {
-                        reject(error)
-                    })
-                })
-
-                // Load a `Database` from the file to check that it's valid.
-                await new JsonDatabase().load(tempFile.path, () => noopTransformer)
-
-                // Replace the old LSIF file with the new file.
-                if (!(await fs.exists(STORAGE_ROOT))) {
-                    await fs.mkdir(STORAGE_ROOT)
-                }
-                await moveFile(tempFile.path, diskKey({ repository, commit }))
-
-                // Evict the old `Database` from the LRU cache to cause it to pick up the new LSIF data from disk.
-                dbLRU.del(diskKey({ repository, commit }))
-
-                res.send('Upload successful.')
             })
         })
     )
