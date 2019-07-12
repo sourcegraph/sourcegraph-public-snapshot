@@ -79,6 +79,16 @@ func (r *nodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	return n, ok
 }
 
+func (r *nodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
+	n, ok := r.node.(*discussionCommentResolver)
+	return n, ok
+}
+
+func (r *nodeResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
+	n, ok := r.node.(*discussionThreadResolver)
+	return n, ok
+}
+
 func (r *nodeResolver) ToProductLicense() (ProductLicense, bool) {
 	n, ok := r.node.(ProductLicense)
 	return n, ok
@@ -130,6 +140,9 @@ func (r *nodeResolver) ToGitCommit() (*gitCommitResolver, bool) {
 }
 
 func (r *nodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
+	if NodeToRegistryExtension == nil {
+		return nil, false
+	}
 	return NodeToRegistryExtension(r.node)
 }
 
@@ -179,6 +192,10 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
+	case "DiscussionComment":
+		return discussionCommentByID(ctx, id)
+	case "DiscussionThread":
+		return discussionThreadByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)

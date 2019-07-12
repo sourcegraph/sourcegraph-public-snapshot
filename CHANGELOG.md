@@ -15,6 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The `github.exclude` setting in [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) additionally allows you to specify regular expressions with `{"pattern": "regex"}`.
 - A new [`quicklinks` setting](https://docs.sourcegraph.com/user/quick_links) allows adding links to be displayed on the homepage and search page for all users (or users in an organization).
+- Compatibility with the [Sourcegraph for Bitbucket Server](https://github.com/sourcegraph/bitbucket-server-plugin) plugin.
 - Support for [Bitbucket Cloud](https://bitbucket.org) as a codehost. Configure via the `bitbucketCloud` site config field.
 
 ### Changed
@@ -23,12 +24,19 @@ All notable changes to Sourcegraph are documented in this file.
 - The GraphQL fields `Repository.createdAt` and `Repository.updatedAt` are deprecated and will be removed in 3.8. Now `createdAt` is always the current time and updatedAt is always null.
 - In the [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) and [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#permissions) `repositoryQuery` is now only required if `repos` is not set.
 - Usernames can now contain the `.` character (#4690).
+- Log messages from query-runner when saved searches fail now include the raw query as part of the message.
 
 ### Fixed
 
 - Commit searches now correctly highlight unicode characters, for example 加. [#4512](https://github.com/sourcegraph/sourcegraph/issues/4512)
 
 ### Removed
+
+## 3.5.2 (unreleased)
+
+### Fixed
+
+- Increased nginx proxy buffer size to fix issue where login failed when SAML AuthnRequest was too large.
 
 ## 3.5.1
 

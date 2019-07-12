@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -888,6 +889,29 @@ func TestSearchResultsHydration(t *testing.T) {
 
 		case *repositoryResolver:
 			assertRepoResolverHydrated(ctx, t, r, hydratedRepo)
+		}
+	}
+}
+
+func Test_dedupSort(t *testing.T) {
+	repos := make(types.Repos, 512)
+	for i := range repos {
+		repos[i] = &types.Repo{ID: api.RepoID(i % 256)}
+	}
+
+	rand.Shuffle(len(repos), func(i, j int) {
+		repos[i], repos[j] = repos[j], repos[i]
+	})
+
+	dedupSort(&repos)
+
+	if have, want := len(repos), 256; have != want {
+		t.Fatalf("have %d unique repos, want: %d", have, want)
+	}
+
+	for i, r := range repos {
+		if have, want := api.RepoID(i), r.ID; have != want {
+			t.Errorf("%dth repo id = %d, want %d", i, have, want)
 		}
 	}
 }

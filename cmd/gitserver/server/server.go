@@ -226,7 +226,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
 	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
 	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
-	mux.HandleFunc("/are-repos-cloned", s.handleAreReposCloned)
 	mux.HandleFunc("/repo", s.handleDeprecatedRepoInfo) // TODO(slimsag): Remove this after 3.3 is released.
 	mux.HandleFunc("/repos", s.handleRepoInfo)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
@@ -372,30 +371,6 @@ func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
-	}
-}
-
-func (s *Server) handleAreReposCloned(w http.ResponseWriter, r *http.Request) {
-	var req protocol.AreReposClonedRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	resp := protocol.AreReposClonedResponse{
-		Results: make(map[api.RepoName]bool, len(req.Repos)),
-	}
-
-	for _, repoName := range req.Repos {
-		normalized := protocol.NormalizeRepo(repoName)
-		dir := path.Join(s.ReposDir, string(normalized))
-
-		resp.Results[repoName] = repoCloned(dir)
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 }
 

@@ -378,10 +378,15 @@ func repoNamesToStrings(repoNames []api.RepoName) []string {
 }
 
 func toRepositoryResolvers(repos []*types.Repo) []*repositoryResolver {
-	resolvers := make([]*repositoryResolver, len(repos))
-	for i, repo := range repos {
-		resolvers[i] = &repositoryResolver{repo: repo}
+	if len(repos) == 0 {
+		return []*repositoryResolver{}
 	}
+
+	resolvers := make([]*repositoryResolver, len(repos))
+	for i := range repos {
+		resolvers[i] = &repositoryResolver{repo: repos[i]}
+	}
+
 	return resolvers
 }
 

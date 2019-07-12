@@ -41,9 +41,21 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 	case c.patchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
-		pipelineOperations = []func(*bk.Pipeline){
-			addDockerImage(c, c.branch[27:], false),
+		app := c.branch[27:]
+		if app == "server" {
+			pipelineOperations = append(pipelineOperations,
+				addServerDockerImageCandidate(c),
+				wait,
+			)
 		}
+		pipelineOperations = append(pipelineOperations, addDockerImage(c, app, false))
+		if app == "server" {
+			pipelineOperations = append(pipelineOperations,
+				wait,
+				addCleanUpServerDockerImageCandidate(c),
+			)
+		}
+
 	case c.isBextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.

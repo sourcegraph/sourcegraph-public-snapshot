@@ -61,7 +61,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         const { location, comment, onReport, onClearReports, onDelete } = this.props
-        const isTargeted = new URLSearchParams(location.hash).get('commentID') === comment.id
+        const isTargeted = new URLSearchParams(location.hash).get('commentID') === comment.idWithoutKind
 
         // TODO(slimsag:discussions): ASAP: markdown links, headings, etc lead to #
 
