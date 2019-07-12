@@ -1,3 +1,8 @@
+// lsp-client currently doesn't export the conversion functions from the
+// top-level.
+//
+// tslint:disable-next-line: no-submodule-imports
+import { convertHover, convertLocations } from '@sourcegraph/lsp-client/dist/lsp-conversion'
 import * as sourcegraph from 'sourcegraph'
 import * as LSP from 'vscode-languageserver-types'
 
@@ -31,32 +36,25 @@ async function send({
     method: string
     params: any[]
 }): Promise<any> {
-    const urlParams = new URLSearchParams()
-    urlParams.set('repository', repositoryFromDoc(doc))
-    urlParams.set('commit', commitFromDoc(doc))
+    const url = new URL('.api/lsif/request', sourcegraph.internal.sourcegraphURL)
+    url.searchParams.set('repository', repositoryFromDoc(doc))
+    url.searchParams.set('commit', commitFromDoc(doc))
 
-    const response = await fetch(
-        path.join(sourcegraph.internal.sourcegraphURL + `.api/lsif/request?${urlParams.toString()}`),
-        {
-            method: 'POST',
-            headers: new Headers({
-                'content-type': 'application/json',
-                'x-requested-with': 'Sourcegraph LSIF extension',
-            }),
-            body: JSON.stringify({
-                method,
-                params,
-            }),
-        }
-    )
-    const body = await response.json()
-    if (body.error) {
-        if (body.error === 'No result found') {
-            return null
-        }
-        throw new Error(body.error)
+    const response = await fetch(url.href, {
+        method: 'POST',
+        headers: new Headers({
+            'content-type': 'application/json',
+            'x-requested-with': 'Sourcegraph LSIF extension',
+        }),
+        body: JSON.stringify({
+            method,
+            params,
+        }),
+    })
+    if (!response.ok) {
+        throw new Error(`LSIF /request returned ${response.statusText}`)
     }
-    return body
+    return await response.json()
 }
 
 const lsifDocs = new Map<string, Promise<boolean>>()
@@ -66,27 +64,20 @@ async function hasLSIF(doc: sourcegraph.TextDocument): Promise<boolean> {
         return lsifDocs.get(doc.uri)!
     }
 
-    const urlParams = new URLSearchParams()
-    urlParams.set('repository', repositoryFromDoc(doc))
-    urlParams.set('commit', commitFromDoc(doc))
-    urlParams.set('file', pathFromDoc(doc))
+    const url = new URL('.api/lsif/exists', sourcegraph.internal.sourcegraphURL)
+    url.searchParams.set('repository', repositoryFromDoc(doc))
+    url.searchParams.set('commit', commitFromDoc(doc))
+    url.searchParams.set('file', pathFromDoc(doc))
 
     const hasLSIFPromise = (async () => {
-        const response = await fetch(
-            path.join(sourcegraph.internal.sourcegraphURL + `.api/lsif/exists?${urlParams.toString()}`),
-            {
-                method: 'POST',
-                headers: new Headers({ 'x-requested-with': 'Sourcegraph LSIF extension' }),
-            }
-        )
-        const body = await response.json()
-        if (body.error) {
-            throw new Error(body.error)
+        const response = await fetch(url.href, {
+            method: 'POST',
+            headers: new Headers({ 'x-requested-with': 'Sourcegraph LSIF extension' }),
+        })
+        if (!response.ok) {
+            throw new Error(`LSIF /exists returned ${response.statusText}`)
         }
-        if (typeof body !== 'boolean') {
-            throw new Error(body)
-        }
-        return body
+        return await response.json()
     })()
 
     lsifDocs.set(doc.uri, hasLSIFPromise)
@@ -101,25 +92,11 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
                 if (!(await hasLSIF(doc))) {
                     return null
                 }
-                const body = await send({ doc, method: 'hover', params: [pathFromDoc(doc), pos] })
-                if (!body) {
+                const hover: LSP.Hover | null = await send({ doc, method: 'hover', params: [pathFromDoc(doc), pos] })
+                if (!hover) {
                     return null
                 }
-                return {
-                    ...body,
-                    contents: {
-                        value: body.contents
-                            .map((content: { language: string; value: string } | string) =>
-                                typeof content === 'string'
-                                    ? content
-                                    : content.language
-                                    ? ['```' + content.language, content.value, '```'].join('\n')
-                                    : content.value
-                            )
-                            .join('\n'),
-                        kind: sourcegraph.MarkupKind.Markdown,
-                    },
-                }
+                return convertHover(sourcegraph, hover)
             },
         })
     )
@@ -130,14 +107,15 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
                 if (!(await hasLSIF(doc))) {
                     return null
                 }
-                const body = await send({ doc, method: 'definitions', params: [pathFromDoc(doc), pos] })
+                const body: LSP.Location | LSP.Location[] | null = await send({ doc, method: 'definitions', params: [pathFromDoc(doc), pos] })
                 if (!body) {
                     return null
                 }
-                return body.map((definition: LSP.Location) => ({
+                const locations = Array.isArray(body) ? body : [body]
+                return convertLocations(sourcegraph, locations.map((definition: LSP.Location) => ({
                     ...definition,
                     uri: setPath(doc, definition.uri),
-                }))
+                })))
             },
         })
     )
@@ -148,14 +126,14 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
                 if (!(await hasLSIF(doc))) {
                     return null
                 }
-                const body = await send({ doc, method: 'references', params: [pathFromDoc(doc), pos] })
-                if (!body) {
+                const locations: LSP.Location[] | null = await send({ doc, method: 'references', params: [pathFromDoc(doc), pos] })
+                if (!locations) {
                     return null
                 }
-                return body.map((reference: LSP.Location) => ({
+                return convertLocations(sourcegraph, locations.map((reference: LSP.Location) => ({
                     ...reference,
                     uri: setPath(doc, reference.uri),
-                }))
+                })))
             },
         })
     )

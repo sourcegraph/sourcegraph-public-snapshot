@@ -48,6 +48,7 @@
     "typescript": "^3.5.2"
   },
   "dependencies": {
+    "@sourcegraph/lsp-client": "^2.0.0-beta.2",
     "vscode-languageserver-types": "^3.14.0"
   }
 }
