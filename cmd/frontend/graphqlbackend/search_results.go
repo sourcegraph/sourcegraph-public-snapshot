@@ -170,18 +170,6 @@ func (sr *searchResultsResolver) ApproximateResultCount() string {
 	return s
 }
 
-func (sr *searchResultsResolver) symbolCount() int32 {
-	var nsym int32
-	for _, srr := range sr.results {
-		fm, ok := srr.ToFileMatch()
-		if !ok {
-			continue
-		}
-		nsym += int32(len(fm.symbols))
-	}
-	return nsym
-}
-
 func (sr *searchResultsResolver) Alert() *searchAlert { return sr.alert }
 
 func (sr *searchResultsResolver) ElapsedMilliseconds() int32 {
