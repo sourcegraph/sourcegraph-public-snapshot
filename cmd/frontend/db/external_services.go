@@ -387,7 +387,7 @@ func (c *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context
 	return connections, nil
 }
 
-// ListBitbucketServerConnections returns a list of BitbucketServer configs.
+// ListBitbucketCloudConnections returns a list of BitbucketCloud configs.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *ExternalServicesStore) ListBitbucketCloudConnections(ctx context.Context) ([]*schema.BitbucketCloudConnection, error) {
