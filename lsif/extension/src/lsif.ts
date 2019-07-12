@@ -29,7 +29,7 @@ async function send({
 }: {
     doc: sourcegraph.TextDocument
     method: string
-    params: any
+    params: any[]
 }): Promise<any> {
     const urlParams = new URLSearchParams()
     urlParams.set('repository', repositoryFromDoc(doc))
@@ -45,7 +45,7 @@ async function send({
             }),
             body: JSON.stringify({
                 method,
-                params: [pathFromDoc(doc), params],
+                params,
             }),
         }
     )
@@ -100,11 +100,11 @@ async function hasLSIF(doc: sourcegraph.TextDocument): Promise<boolean> {
 export function activate(ctx: sourcegraph.ExtensionContext): void {
     ctx.subscriptions.add(
         sourcegraph.languages.registerHoverProvider(['*'], {
-            provideHover: async (doc, params) => {
+            provideHover: async (doc, pos) => {
                 if (!(await hasLSIF(doc))) {
                     return null
                 }
-                const body = await send({ doc, method: 'hover', params })
+                const body = await send({ doc, method: 'hover', params: [pathFromDoc(doc), pos] })
                 if (!body) {
                     return null
                 }
@@ -129,11 +129,11 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
 
     ctx.subscriptions.add(
         sourcegraph.languages.registerDefinitionProvider(['*'], {
-            provideDefinition: async (doc, params) => {
+            provideDefinition: async (doc, pos) => {
                 if (!(await hasLSIF(doc))) {
                     return null
                 }
-                const body = await send({ doc, method: 'definitions', params })
+                const body = await send({ doc, method: 'definitions', params: [pathFromDoc(doc), pos] })
                 if (!body) {
                     return null
                 }
@@ -144,11 +144,11 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
 
     ctx.subscriptions.add(
         sourcegraph.languages.registerReferenceProvider(['*'], {
-            provideReferences: async (doc, params) => {
+            provideReferences: async (doc, pos) => {
                 if (!(await hasLSIF(doc))) {
                     return null
                 }
-                const body = await send({ doc, method: 'references', params })
+                const body = await send({ doc, method: 'references', params: [pathFromDoc(doc), pos] })
                 if (!body) {
                     return null
                 }
