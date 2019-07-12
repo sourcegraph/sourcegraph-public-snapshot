@@ -180,7 +180,7 @@ func Test_limitingSymbolResults(t *testing.T) {
 		}{
 			{
 				name: "limit 0 => no file matches",
-				want: nil,
+				want: []*fileMatchResolver{},
 			},
 			{
 				name:  "limit 1 => one file match with one symbol",

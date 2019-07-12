@@ -110,7 +110,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 
 // limitSymbolResults returns a new version of res containing no more than limit symbol matches.
 func limitSymbolResults(res []*fileMatchResolver, limit int) []*fileMatchResolver {
-	var res2 []*fileMatchResolver
+	res2 := make([]*fileMatchResolver, 0, len(res))
 	nsym := 0
 	for _, r := range res {
 		r2 := *r
