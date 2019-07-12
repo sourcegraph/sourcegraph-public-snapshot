@@ -205,6 +205,8 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 	// TODO(slimsag): before merge: duplicate code from doResults ends here //
 	//////////////////////////////////////////////////////////////////////////
 
+	// TODO(slimsag): future: support non-file result types in the paginated
+	// search API.
 	if len(resultTypes) != 1 || resultTypes[0] != "file" {
 		return nil, fmt.Errorf("experimental paginated search currently only supports 'file' (text match) result types. Found %q", resultTypes)
 	}
@@ -221,16 +223,12 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 	})
 
 	common := searchResultsCommon{maxResultsCount: r.maxResults()}
-	fileResults, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
+	results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
 	// Timeouts are reported through searchResultsCommon so don't report an error for them
 	if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 		return nil, err
 	}
 	common.update(*fileCommon)
-	results := make([]searchResultResolver, 0, len(fileResults))
-	for _, fr := range fileResults {
-		results = append(results, fr)
-	}
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results), common.limitHit, len(common.cloning), len(common.missing), len(common.timedout))
 
@@ -283,42 +281,31 @@ func repoIsLess(i, j *types.Repo) bool {
 //    top of the penalty we incur from the larger `count:` mentioned in point
 //    2 above (in the worst case scenario).
 //
-func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, pagination *searchPaginationInfo) ([]*fileMatchResolver, *searchResultsCommon, error) {
-	var (
-		plan = &repoPaginationPlan{
-			pagination:   pagination,
-			repositories: args.Repos,
-			// TODO(slimsag): future: Potentially update and reason about these choices
-			// more. They are mostly arbitrary currently and should instead be
-			// based on measurements from benchmarking + measuring NITH query
-			// performance, etc.
-			searchBucketDivisor: 8,
-			searchBucketMin:     10,
-			searchBucketMax:     1000,
-		}
-		common  = &searchResultsCommon{}
-		results []*fileMatchResolver
-	)
-	err := plan.execute(ctx, func(batch []*search.RepositoryRevisions) (foundResults int, err error) {
+func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, pagination *searchPaginationInfo) ([]searchResultResolver, *searchResultsCommon, error) {
+	plan := &repoPaginationPlan{
+		pagination:   pagination,
+		repositories: args.Repos,
+		// TODO(slimsag): future: Potentially update and reason about these choices
+		// more. They are mostly arbitrary currently and should instead be
+		// based on measurements from benchmarking + measuring NITH query
+		// performance, etc.
+		searchBucketDivisor: 8,
+		searchBucketMin:     10,
+		searchBucketMax:     1000,
+	}
+	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]searchResultResolver, *searchResultsCommon, error) {
 		batchArgs := *args
 		batchArgs.Repos = batch
 		fileResults, fileCommon, err := searchFilesInRepos(ctx, &batchArgs)
 		if err != nil {
-			return 0, err
+			return nil, nil, err
 		}
+		results := make([]searchResultResolver, 0, len(fileResults))
 		for _, r := range fileResults {
 			results = append(results, r)
 		}
-		common.update(*fileCommon)
-		return len(fileResults), nil
+		return results, fileCommon, nil
 	})
-	if err != nil {
-		return nil, nil, err
-	}
-	// TODO: before merge: handle the fact that `results` can (and most often
-	// does) have more results than the user asked for. i.e. we return results
-	// for an entire batch of searches repositories here currently.
-	return results, common, nil
 }
 
 // repoPaginationPlan describes a plan for executing a search function that
@@ -349,11 +336,15 @@ type repoPaginationPlan struct {
 	searchBucketMin, searchBucketMax int
 }
 
-type executor func(batch []*search.RepositoryRevisions) (foundResults int, err error)
+// executor is a function which searches a batch of repositories.
+type executor func(batch []*search.RepositoryRevisions) ([]searchResultResolver, *searchResultsCommon, error)
 
 // execute executes the repository pagination plan by invoking the executor to
 // search batches of repositories.
-func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) error {
+//
+// If the executor returns any error, the search will be cancelled and the error
+// returned.
+func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (results []searchResultResolver, common *searchResultsCommon, err error) {
 	// Determine how large the batches of repositories we will search over will be.
 	batchSize := clamp(numTotalRepos.get(ctx)/p.searchBucketDivisor, p.searchBucketMin, p.searchBucketMax)
 
@@ -371,21 +362,29 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) error {
 	// Search over the repos list in batches.
 	//
 	// TODO(slimsag): future: scrutinize this code for off-by-one errors (I wrote this while sleepy.)
+	common = &searchResultsCommon{}
 	for start := 0; start <= len(repos); start += batchSize {
 		if start > len(repos) {
 			break
 		}
 
 		batch := repos[start:clamp(start+batchSize, 0, len(repos)-1)]
-		foundResults, err := exec(batch)
+		batchResults, batchCommon, err := exec(batch)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
-		if foundResults >= int(p.pagination.limit) {
+
+		// TODO: before merge: handle the fact that returned results can (and
+		// most often do) have more results than the user asked for. i.e. we
+		// return results for an entire batch of searches repositories here
+		// currently.
+		results = append(results, batchResults...)
+		common.update(*batchCommon)
+		if len(results) >= int(p.pagination.limit) {
 			break
 		}
 	}
-	return nil
+	return results, common, err
 }
 
 // clamp clamps x into the range of [min, max].
