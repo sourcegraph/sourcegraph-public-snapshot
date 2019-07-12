@@ -48,7 +48,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 			}),
 			conf: &schema.BitbucketCloudConnection{
 				Url:         "https://bitbucket.org",
-				Username:    bitbucketcloud.GetenvBitbucketCloudUsername(),
+				Username:    bitbucketcloud.GetenvTestBitbucketCloudUsername(),
 				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 			},
 			err: "<nil>",
@@ -65,7 +65,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 			}),
 			conf: &schema.BitbucketCloudConnection{
 				Url:         "https://bitbucket.org",
-				Username:    bitbucketcloud.GetenvBitbucketCloudUsername(),
+				Username:    bitbucketcloud.GetenvTestBitbucketCloudUsername(),
 				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 				Teams: []string{
 					"sglocal",

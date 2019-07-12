@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
 )
 
-func GetenvBitbucketCloudUsername() string {
+func GetenvTestBitbucketCloudUsername() string {
 	username := os.Getenv("BITBUCKET_CLOUD_USERNAME")
 	if username == "" {
 		username = "unknwon"
@@ -35,7 +35,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	}
 
 	cli := NewClient(hc)
-	cli.Username = GetenvBitbucketCloudUsername()
+	cli.Username = GetenvTestBitbucketCloudUsername()
 	cli.AppPassword = os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD")
 
 	return cli, func() {

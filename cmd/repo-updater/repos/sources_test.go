@@ -176,7 +176,7 @@ func TestSources_ListRepos(t *testing.T) {
 				Kind: "BITBUCKETCLOUD",
 				Config: marshalJSON(t, &schema.BitbucketCloudConnection{
 					Url:         "https://bitbucket.org",
-					Username:    bitbucketcloud.GetenvBitbucketCloudUsername(),
+					Username:    bitbucketcloud.GetenvTestBitbucketCloudUsername(),
 					AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 				}),
 			},

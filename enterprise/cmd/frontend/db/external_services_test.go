@@ -290,7 +290,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"url": "https://bitbucket.org/",
 				"username": "admin",
 				"appPassword": "app-password",
-				"teams": ["sglocal"]
+				"teams": ["sglocal", "sg_local"]
 			}`,
 			assert: equals("<nil>"),
 		},
@@ -315,6 +315,15 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "invalid git url type",
 			config: `{"gitURLType": "bad"}`,
 			assert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid team name",
+			config: `{"teams": ["sg-local", "sg local"]}`,
+			assert: includes(
+				`teams.0: Does not match pattern '^\w+$'`,
+				`teams.1: Does not match pattern '^\w+$'`,
+			),
 		},
 		{
 			kind: "BITBUCKETSERVER",
