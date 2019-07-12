@@ -1,6 +1,11 @@
 import * as path from 'path'
 import * as sourcegraph from 'sourcegraph'
 
+interface LocationWithStringURI {
+    range: sourcegraph.Location['range']
+    uri: string
+}
+
 function repositoryFromDoc(doc: sourcegraph.TextDocument): string {
     const url = new URL(doc.uri)
     return path.join(url.hostname, url.pathname.slice(1))
@@ -73,10 +78,7 @@ async function hasLSIF(doc: sourcegraph.TextDocument): Promise<boolean> {
 
     const hasLSIFPromise = (async () => {
         const response = await fetch(
-            path.join(
-                sourcegraph.internal.sourcegraphURL +
-                    `.api/lsif/exists?${urlParams.toString()}`
-            ),
+            path.join(sourcegraph.internal.sourcegraphURL + `.api/lsif/exists?${urlParams.toString()}`),
             {
                 method: 'POST',
                 headers: new Headers({ 'x-requested-with': 'Sourcegraph LSIF extension' }),
@@ -137,7 +139,10 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
                 if (!body) {
                     return null
                 }
-                return body.map((definition: any) => ({ ...definition, uri: setPath(doc, definition.uri) }))
+                return body.map((definition: LocationWithStringURI) => ({
+                    ...definition,
+                    uri: setPath(doc, definition.uri),
+                }))
             },
         })
     )
@@ -152,7 +157,10 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
                 if (!body) {
                     return null
                 }
-                return body.map((reference: any) => ({ ...reference, uri: setPath(doc, reference.uri) }))
+                return body.map((reference: LocationWithStringURI) => ({
+                    ...reference,
+                    uri: setPath(doc, reference.uri),
+                }))
             },
         })
     )
