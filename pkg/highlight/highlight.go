@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -58,6 +59,20 @@ type Params struct {
 	// Whether or not to simulate the syntax highlighter taking too long to
 	// respond.
 	SimulateTimeout bool
+
+	// Metadata provides optional metadata about the code we're highlighting.
+	Metadata Metadata
+}
+
+// Metadata contains metadata about a request to highlight code. It is used to
+// ensure that when syntax highlighting takes a long time or errors out, we
+// can log enough information to track down what the problematic code we were
+// trying to highlight was.
+//
+// All fields are optional.
+type Metadata struct {
+	RepoName string
+	Revision string
 }
 
 // Code highlights the given file content with the given filepath (must contain
@@ -66,7 +81,7 @@ type Params struct {
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
-func Code(ctx context.Context, p Params) (template.HTML, bool, error) {
+func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err error) {
 	if !p.DisableTimeout {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
@@ -104,11 +119,27 @@ func Code(ctx context.Context, p Params) (template.HTML, bool, error) {
 	})
 
 	if ctx.Err() == context.DeadlineExceeded {
+		log15.Warn(
+			"syntax highlighting took longer than 3s, this *could* indicate a bug in Sourcegraph",
+			"filepath", p.Filepath,
+			"repo_name", p.Metadata.RepoName,
+			"revision", p.Metadata.Revision,
+			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
+		)
+
 		// Timeout, so render plain table.
 		table, err2 := generatePlainTable(code)
 		return table, true, err2
 	} else if err != nil {
 		if cause := errors.Cause(err); cause == gosyntect.ErrRequestTooLarge || cause == gosyntect.ErrPanic {
+			log15.Error(
+				"syntax highlighting failed (this is a bug, please report it)",
+				"filepath", p.Filepath,
+				"repo_name", p.Metadata.RepoName,
+				"revision", p.Metadata.Revision,
+				"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
+				"error", err,
+			)
 			// Failed to highlight code, e.g. for a text file. We still need to
 			// generate the table.
 			table, err2 := generatePlainTable(code)
@@ -122,6 +153,14 @@ func Code(ctx context.Context, p Params) (template.HTML, bool, error) {
 		return "", false, err
 	}
 	return template.HTML(table), false, nil
+}
+
+func firstCharacters(s string, n int) string {
+	v := []rune(s)
+	if len(v) < 10 {
+		return string(v)
+	}
+	return string(v[:10])
 }
 
 // preSpansToTable takes the syntect data structure, which looks like:
