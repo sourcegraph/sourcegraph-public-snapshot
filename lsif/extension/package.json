@@ -40,15 +40,11 @@
     "@sourcegraph/prettierrc": "^3.0.1",
     "@sourcegraph/tsconfig": "^4.0.0",
     "@sourcegraph/tslint-config": "^13.3.0",
-    "@types/query-string": "^6.3.0",
     "lnfs-cli": "^2.1.0",
     "mkdirp": "^0.5.1",
     "parcel-bundler": "^1.12.3",
     "sourcegraph": "^23.0.1",
     "tslint": "^5.18.0",
     "typescript": "^3.5.2"
-  },
-  "dependencies": {
-    "query-string": "^6.8.1"
   }
 }

@@ -1,5 +1,4 @@
 import * as path from 'path'
-import queryString from 'query-string'
 import * as sourcegraph from 'sourcegraph'
 
 function repositoryFromDoc(doc: sourcegraph.TextDocument): string {
@@ -32,14 +31,12 @@ async function send({
     method: string
     params: any
 }): Promise<any> {
+    const urlParams = new URLSearchParams()
+    urlParams.set('repository', repositoryFromDoc(doc))
+    urlParams.set('commit', commitFromDoc(doc))
+
     const response = await fetch(
-        path.join(
-            sourcegraph.internal.sourcegraphURL +
-                `.api/lsif/request?${queryString.stringify({
-                    repository: repositoryFromDoc(doc),
-                    commit: commitFromDoc(doc),
-                })}`
-        ),
+        path.join(sourcegraph.internal.sourcegraphURL + `.api/lsif/request?${urlParams.toString()}`),
         {
             method: 'POST',
             headers: new Headers({
@@ -69,15 +66,16 @@ async function hasLSIF(doc: sourcegraph.TextDocument): Promise<boolean> {
         return lsifDocs.get(doc.uri)!
     }
 
+    const urlParams = new URLSearchParams()
+    urlParams.set('repository', repositoryFromDoc(doc))
+    urlParams.set('commit', commitFromDoc(doc))
+    urlParams.set('file', pathFromDoc(doc))
+
     const hasLSIFPromise = (async () => {
         const response = await fetch(
             path.join(
                 sourcegraph.internal.sourcegraphURL +
-                    `.api/lsif/exists?${queryString.stringify({
-                        repository: repositoryFromDoc(doc),
-                        commit: commitFromDoc(doc),
-                        file: pathFromDoc(doc),
-                    })}`
+                    `.api/lsif/exists?${urlParams.toString()}`
             ),
             {
                 method: 'POST',
