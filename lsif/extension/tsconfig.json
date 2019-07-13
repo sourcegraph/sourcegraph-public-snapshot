@@ -5,6 +5,7 @@
     "module": "esnext",
     "moduleResolution": "node",
     "lib": ["esnext"],
+    "skipLibCheck": true,
     "sourceMap": true,
     "declaration": true,
     "outDir": "dist",
