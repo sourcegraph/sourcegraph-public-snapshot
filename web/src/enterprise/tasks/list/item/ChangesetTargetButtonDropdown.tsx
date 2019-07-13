@@ -65,7 +65,7 @@ export const ChangesetTargetButtonDropdown: React.FunctionComponent<CreateOrPrev
                 className="changeset-target-button-dropdown__dropdown-toggle pl-1 pr-2"
                 caret={true}
                 disabled={disabled}
-            ></DropdownToggle>
+            />
             <DropdownMenu>
                 <CheckableDropdownItem
                     onClick={clearAppendToExistingChangeset}
