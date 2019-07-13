@@ -1,6 +1,9 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertIcon from 'mdi-react/AlertIcon'
+import AnimationPlayIcon from 'mdi-react/AnimationPlayIcon'
 import CheckAllIcon from 'mdi-react/CheckAllIcon'
+import CheckBoxMultipleOutlineIcon from 'mdi-react/CheckBoxMultipleOutlineIcon'
+import PlayCircleIcon from 'mdi-react/PlayCircleIcon'
 import React, { useEffect, useState } from 'react'
 import { from, Subscription } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
@@ -9,7 +12,6 @@ import { ExtensionsControllerProps } from '../../../../../../../shared/src/exten
 import { asError, ErrorLike, isErrorLike } from '../../../../../../../shared/src/util/errors'
 import { ActionsIcon } from '../../../../../util/octicons'
 import { CheckAreaContext } from '../../CheckArea'
-import PlayCircleIcon from 'mdi-react/PlayCircleIcon'
 
 interface Props extends Pick<CheckAreaContext, 'checkProvider'>, ExtensionsControllerProps {
     parsedQuery: sourcegraph.DiagnosticQuery
@@ -50,8 +52,9 @@ export const DiagnosticsBatchActions: React.FunctionComponent<Props> = ({
 
     return (
         <div className={`d-flex align-items-center ${className}`}>
-            <span className="text-muted px-3 py-2">
-                <PlayCircleIcon className="icon-inline" /> Batch actions:
+            <span className="text-muted mr-3 py-1">
+                <CheckBoxMultipleOutlineIcon className="icon-inline d-none" />
+                <AnimationPlayIcon className="icon-inline" /> Batch actions:
             </span>
             {batchActionsOrError === LOADING ? (
                 <LoadingSpinner className="icon-inline" />
@@ -61,7 +64,11 @@ export const DiagnosticsBatchActions: React.FunctionComponent<Props> = ({
                 <span className="text-muted">None</span>
             ) : (
                 batchActionsOrError.map((action, i) => (
-                    <button key={i} className="btn py-1 btn-secondary" disabled={disabled}>
+                    <button
+                        key={i}
+                        className={`btn py-1 mr-3 ${i === 0 ? 'btn-primary' : 'btn-secondary'}`}
+                        disabled={disabled}
+                    >
                         {action.title}
                     </button>
                 ))

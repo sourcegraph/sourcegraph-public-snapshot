@@ -3,6 +3,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseBoxIcon from 'mdi-react/CloseBoxIcon'
+import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -62,15 +63,15 @@ export const DiagnosticQueryBuilder: React.FunctionComponent<Props> = ({
                 links={[
                     {
                         icon: AlertCircleOutlineIcon,
-                        label: 'open',
+                        label: 'unresolved',
                         count: 12,
                         queryField: 'is',
-                        queryValues: ['open'], // TODO!(sqs): un-hardcode
+                        queryValues: ['unresolved'], // TODO!(sqs): un-hardcode
                         removeQueryFields: QUERY_FIELDS_IN_USE,
                     },
                     {
-                        icon: CheckIcon,
-                        label: 'pending fix',
+                        icon: ProgressCheckIcon,
+                        label: 'pending resolution',
                         count: 7,
                         queryField: 'is',
                         queryValues: ['pending'], // TODO!(sqs): un-hardcode
