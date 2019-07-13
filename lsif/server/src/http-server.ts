@@ -342,7 +342,7 @@ function main(): void {
                             reject(
                                 Object.assign(
                                     new Error(
-                                        `The size of the given LSIF file (${contentLength} bytes) exceeds the specified Content-Length ${contentLength}`
+                                        `The size of the given LSIF file (${contentLength} bytes so far) exceeds the max of ${MAX_FILE_SIZE}`
                                     ),
                                     { status: 413 }
                                 )
