@@ -117,7 +117,7 @@ export const ListHeaderQueryLinksNav: React.FunctionComponent<Props> = ({
                 <ListHeaderQueryLink
                     {...linkProps}
                     query={query}
-                    className={`nav-link p-1 ${itemClassName}`}
+                    className={`nav-link ${itemClassName}`}
                     activeClassName={itemActiveClassName}
                     inactiveClassName={itemInactiveClassName}
                     location={location}

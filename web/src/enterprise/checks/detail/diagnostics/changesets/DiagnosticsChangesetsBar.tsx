@@ -91,8 +91,6 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
     return (
         <div className={`diagnostics-changesets-bar ${flashBorderClassName} ${flashBackgroundClassName} ${className}`}>
             <div className="container py-4 d-flex align-items-center">
-                <DiagnosticsBatchActionsButtonDropdown className="mr-5" buttonClassName="btn-secondary" />
-                <span className="text-muted mr-5">|</span>
                 <ChangesetTargetButtonDropdown
                     onClick={() => {
                         throw new Error('TODO!(sqs)')
