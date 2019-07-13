@@ -18,7 +18,7 @@ import { ChangesetButtonOrLinkExistingChangeset } from '../../../../tasks/list/i
 import { ChangesetTargetButtonDropdown } from '../../../../tasks/list/item/ChangesetTargetButtonDropdown'
 import { computeDiff, computeDiffStat, FileDiff } from '../../../../threads/detail/changes/computeDiff'
 import { ChangesetPlanProps } from '../useChangesetPlan'
-import { DiagnosticsBatchActionsButtonDropdown } from './DiagnosticsBatchActionsDropdownButton'
+import { DiagnosticsBatchActions } from './DiagnosticsBatchActions'
 
 interface Props extends ChangesetPlanProps, ExtensionsControllerProps {
     className?: string
