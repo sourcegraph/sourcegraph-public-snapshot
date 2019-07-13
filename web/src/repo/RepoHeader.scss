@@ -56,7 +56,6 @@
     }
     .action-item--pressed {
         background-color: $color-bg-3;
-        height: 100%;
         color: $color-text-3;
     }
 }
@@ -67,7 +66,6 @@
     }
     .action-item--pressed {
         background-color: $color-light-bg-3;
-        height: 100%;
-        color: $color-light-text-5;
+        color: $color-light-text-1;
     }
 }
