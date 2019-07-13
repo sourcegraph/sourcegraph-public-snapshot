@@ -53,7 +53,7 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
 
     const [fileDiffsOrError, setFileDiffsOrError] = useState<typeof LOADING | null | FileDiff[] | ErrorLike>(LOADING)
     useEffectAsync(async () => {
-        setFileDiffsOrError(LOADING) // TODO!(sqs) causes jitter
+        // setFileDiffsOrError(LOADING) // TODO!(sqs) causes jitter
         try {
             setFileDiffsOrError(
                 selectedAction && selectedAction.computeEdit
