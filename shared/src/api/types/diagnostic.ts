@@ -2,6 +2,7 @@ import * as sourcegraph from 'sourcegraph'
 import { Diagnostic } from '@sourcegraph/extension-api-types'
 import { fromRange } from '../extension/api/types'
 import { Range } from '@sourcegraph/extension-api-classes'
+import { isEqual } from 'lodash'
 
 export function fromDiagnostic(diag: sourcegraph.Diagnostic): Diagnostic {
     if (!(diag.resource instanceof URL)) {
@@ -31,4 +32,13 @@ export const fromDiagnosticData = (data: DiagnosticData): [URL, sourcegraph.Diag
 
 export const toDiagnosticData = (data: readonly [URL, readonly sourcegraph.Diagnostic[]][]): DiagnosticData => {
     return data.map(([uri, diagnostics]) => [uri.toString(), diagnostics.map(fromDiagnostic)])
+}
+
+export const isDiagnosticQueryEqual = (a: sourcegraph.DiagnosticQuery, b: sourcegraph.DiagnosticQuery): boolean => {
+    return (
+        a.type === b.type &&
+        a.tag === b.tag &&
+        isEqual(a.document, b.document) &&
+        (a.range && b.range ? a.range.isEqual(b.range) : false)
+    )
 }

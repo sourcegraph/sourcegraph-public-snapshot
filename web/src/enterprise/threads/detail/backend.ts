@@ -1,14 +1,17 @@
 import { Range } from '@sourcegraph/extension-api-classes'
+import { Diagnostic } from '@sourcegraph/extension-api-types'
 import { sortBy, uniq } from 'lodash'
 import { combineLatest, from, Observable, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { DiagnosticWithType } from '../../../../../shared/src/api/client/services/diagnosticService'
-import { fromAction, Action } from '../../../../../shared/src/api/types/action'
+import { match } from '../../../../../shared/src/api/client/types/textDocument'
+import { Action, fromAction } from '../../../../../shared/src/api/types/action'
 import { toDiagnostic } from '../../../../../shared/src/api/types/diagnostic'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { getModeFromPath } from '../../../../../shared/src/languages'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
 import { isDefined } from '../../../../../shared/src/util/types'
@@ -104,6 +107,12 @@ export const getDiagnosticInfos = (
 function diagnosticQueryMatcher(query: sourcegraph.DiagnosticQuery): (diagnostic: DiagnosticWithType) => boolean {
     return diagnostic =>
         diagnostic.type === query.type &&
+        (!query.document ||
+            match([query.document], {
+                uri: diagnostic.resource.toString(),
+                languageId: /*TODO!(sqs)*/ getModeFromPath(diagnostic.resource.pathname),
+            })) &&
+        (!query.range || query.range.isEqual(diagnostic.range)) &&
         (query.tag !== undefined ? !!diagnostic.tags && diagnostic.tags.includes(query.tag) : true)
 }
 
@@ -112,6 +121,24 @@ export const diagnosticID = (diagnostic: DiagnosticWithType): string =>
     `${diagnostic.type}:${diagnostic.resource.toString()}:${diagnostic.range ? diagnostic.range.start.line : '-'}:${
         diagnostic.range ? diagnostic.range.start.character : '-'
     }`
+
+// TODO!(sqS): this is a bad idea because there is no canonical json representation of diagnosticquery
+export const diagnosticQueryKey = (query: sourcegraph.DiagnosticQuery): string =>
+    JSON.stringify({ ...query, range: query.range ? (query.range as any).toJSON() : undefined })
+
+export const diagnosticQueryForSingleDiagnostic = (diagnostic: DiagnosticWithType): sourcegraph.DiagnosticQuery => {
+    if (diagnostic.tags && diagnostic.tags.length >= 2) {
+        throw new Error(
+            'TODO!(sqs) not supported because DiagnosticQuery#tag is singleton for simplicity now, but that can be easily improved if needed'
+        )
+    }
+    return {
+        type: diagnostic.type,
+        document: { pattern: diagnostic.resource.toString() },
+        range: diagnostic.range,
+        tag: diagnostic.tags ? diagnostic.tags[0] : undefined,
+    }
+}
 
 export const getCodeActions = memoizeObservable(
     ({
