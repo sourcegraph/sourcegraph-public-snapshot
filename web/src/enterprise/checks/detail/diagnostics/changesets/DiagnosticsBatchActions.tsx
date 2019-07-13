@@ -12,8 +12,12 @@ import { ExtensionsControllerProps } from '../../../../../../../shared/src/exten
 import { asError, ErrorLike, isErrorLike } from '../../../../../../../shared/src/util/errors'
 import { ActionsIcon } from '../../../../../util/octicons'
 import { CheckAreaContext } from '../../CheckArea'
+import { ChangesetPlanProps } from '../useChangesetPlan'
 
-interface Props extends Pick<CheckAreaContext, 'checkProvider'>, ExtensionsControllerProps {
+interface Props
+    extends Pick<ChangesetPlanProps, 'onChangesetPlanBatchActionClick'>,
+        Pick<CheckAreaContext, 'checkProvider'>,
+        ExtensionsControllerProps {
     parsedQuery: sourcegraph.DiagnosticQuery
     disabled?: boolean
     className?: string
@@ -26,13 +30,14 @@ const LOADING = 'loading' as const
  */
 export const DiagnosticsBatchActions: React.FunctionComponent<Props> = ({
     parsedQuery,
+    onChangesetPlanBatchActionClick,
     checkProvider,
     disabled,
     className = '',
 }) => {
-    const [batchActionsOrError, setBatchActionsOrError] = useState<typeof LOADING | sourcegraph.Action[] | ErrorLike>(
-        LOADING
-    )
+    const [batchActionsOrError, setBatchActionsOrError] = useState<
+        typeof LOADING | sourcegraph.Operation[] | ErrorLike
+    >(LOADING)
     const jsonParsedQuery = JSON.stringify(parsedQuery)
     useEffect(() => {
         const parsedQuery = JSON.parse(jsonParsedQuery) // avoid rerenders when object is not reference-equal
@@ -63,13 +68,15 @@ export const DiagnosticsBatchActions: React.FunctionComponent<Props> = ({
             ) : batchActionsOrError.length === 0 ? (
                 <span className="text-muted">None</span>
             ) : (
-                batchActionsOrError.map((action, i) => (
+                batchActionsOrError.map((op, i) => (
                     <button
                         key={i}
                         className={`btn py-1 mr-3 ${i === 0 ? 'btn-primary' : 'btn-secondary'}`}
                         disabled={disabled}
+                        // tslint:disable-next-line: jsx-no-lambda
+                        onClick={() => onChangesetPlanBatchActionClick(op)}
                     >
-                        {action.title}
+                        {op.message}
                     </button>
                 ))
             )}

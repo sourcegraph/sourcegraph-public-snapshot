@@ -25,7 +25,7 @@ import { computeDiff, computeDiffStat, FileDiff } from '../../../../threads/deta
 import { ChangesetPlanProps } from '../useChangesetPlan'
 import { DiagnosticsBatchActions } from './DiagnosticsBatchActions'
 
-interface Props extends ChangesetPlanProps, ExtensionsControllerProps {
+interface Props extends Pick<ChangesetPlanProps, 'changesetPlan'>, ExtensionsControllerProps {
     className?: string
 }
 
@@ -139,7 +139,9 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
                             {fileDiffsOrError === LOADING ? (
                                 <LoadingSpinner className="icon-inline" />
                             ) : isErrorLike(fileDiffsOrError) ? (
-                                <AlertIcon className="icon-inline text-danger" title={fileDiffsOrError.message} />
+                                <span title={fileDiffsOrError.message}>
+                                    <AlertIcon className="icon-inline text-danger" />
+                                </span>
                             ) : (
                                 <>
                                     <strong>{fileDiffsOrError.length}</strong>{' '}

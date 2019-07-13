@@ -2,6 +2,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import React from 'react'
 import * as sourcegraph from 'sourcegraph'
+import { DiagnosticWithType } from '../../../../../../shared/src/api/client/services/diagnosticService'
 import { Action } from '../../../../../../shared/src/api/types/action'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
@@ -20,14 +21,16 @@ import { CheckAreaContext } from '../CheckArea'
 import { DiagnosticsBatchActions } from './changesets/DiagnosticsBatchActions'
 import { useDiagnostics } from './detail/useDiagnostics'
 import { DiagnosticQueryBuilder } from './DiagnosticQueryBuilder'
+import { ChangesetPlanProps } from './useChangesetPlan'
 
 interface Props
-    extends Pick<CheckAreaContext, 'checkProvider'>,
+    extends Pick<ChangesetPlanProps, 'onChangesetPlanBatchActionClick'>,
+        Pick<CheckAreaContext, 'checkProvider'>,
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps {
     baseDiagnosticQuery: sourcegraph.DiagnosticQuery
-    opsByDiagnosticQueryKey: { [diagnosticQueryKey: string]: ChangesetPlanOperation | undefined }
+    getSelectedActionForDiagnostic: (diagnostic: DiagnosticWithType) => ChangesetPlanOperation | null
     onActionSelect: (diagnostic: DiagnosticInfo, action: Action | null) => void
 
     className?: string
@@ -43,8 +46,9 @@ const LOADING: 'loading' = 'loading'
 export const DiagnosticsListPage = withQueryParameter<Props>(
     ({
         baseDiagnosticQuery,
-        opsByDiagnosticQueryKey,
+        getSelectedActionForDiagnostic,
         onActionSelect,
+        onChangesetPlanBatchActionClick,
         checkProvider,
         query,
         onQueryChange,
@@ -82,6 +86,7 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
                             />
                             <div className="d-flex align-items-center mt-3 ml-3">
                                 <DiagnosticsBatchActions
+                                    onChangesetPlanBatchActionClick={onChangesetPlanBatchActionClick}
                                     checkProvider={checkProvider}
                                     parsedQuery={parsedQuery}
                                     extensionsController={extensionsController}
@@ -95,7 +100,7 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
                                         {...props}
                                         key={JSON.stringify(diagnostic)}
                                         diagnostic={diagnostic}
-                                        selectedAction={getSelectedAction(diagnostic, opsByDiagnosticQueryKey)}
+                                        selectedAction={getSelectedActionForDiagnostic(diagnostic)}
                                         onActionSelect={onActionSelect}
                                         className="container-fluid"
                                         extensionsController={extensionsController}
@@ -112,11 +117,4 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
 
 function parseDiagnosticQuery(base?: sourcegraph.DiagnosticQuery): sourcegraph.DiagnosticQuery {
     return base || { type: 'TODO!(sqs)' } // TODO!(sqs)
-}
-
-function getSelectedAction(
-    diagnostic: DiagnosticInfo,
-    opsByDiagnosticQueryKey: Props['opsByDiagnosticQueryKey']
-): Pick<ChangesetPlanOperation, 'editCommand'> | null {
-    return opsByDiagnosticQueryKey[diagnosticQueryKey(diagnosticQueryForSingleDiagnostic(diagnostic))] || null
 }

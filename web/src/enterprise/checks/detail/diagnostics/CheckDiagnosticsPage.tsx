@@ -1,12 +1,14 @@
 import H from 'history'
 import React, { useCallback } from 'react'
 import * as sourcegraph from 'sourcegraph'
+import { DiagnosticWithType } from '../../../../../../shared/src/api/client/services/diagnosticService'
 import { Action } from '../../../../../../shared/src/api/types/action'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
+import { propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { ThemeProps } from '../../../../theme'
 import { ChangesetPlanOperation } from '../../../changesets/plan/plan'
-import { DiagnosticInfo, diagnosticQueryKey } from '../../../threads/detail/backend'
+import { DiagnosticInfo, diagnosticQueryKey, diagnosticQueryMatcher } from '../../../threads/detail/backend'
 import { CheckAreaContext } from '../CheckArea'
 import { DiagnosticsChangesetsBar } from './changesets/DiagnosticsChangesetsBar'
 import { DiagnosticsListPage } from './DiagnosticsListPage'
@@ -32,17 +34,9 @@ export const CheckDiagnosticsPage: React.FunctionComponent<Props> = ({
     className = '',
     ...props
 }) => {
-    const { changesetPlan, onChangesetPlanDiagnosticActionSet } = useChangesetPlan()
+    const { changesetPlan, onChangesetPlanDiagnosticActionSet, onChangesetPlanBatchActionClick } = useChangesetPlan()
     const baseDiagnosticQuery: sourcegraph.DiagnosticQuery = { type: checkID.type }
 
-    const opsByDiagnosticQueryKey: { [diagnosticQueryKey: string]: ChangesetPlanOperation | undefined } = {}
-    for (const op of changesetPlan.operations) {
-        // TODO!(sqs): assumes always has diagnostics set
-        if (!op.diagnostics) {
-            throw new Error('TODO!(sqs) not implemented')
-        }
-        opsByDiagnosticQueryKey[diagnosticQueryKey(op.diagnostics)] = op
-    }
     const onActionSelect = useCallback(
         (diagnostic: DiagnosticInfo, action: Action | null) => {
             onChangesetPlanDiagnosticActionSet(diagnostic, action)
@@ -50,13 +44,22 @@ export const CheckDiagnosticsPage: React.FunctionComponent<Props> = ({
         [onChangesetPlanDiagnosticActionSet]
     )
 
+    const getSelectedActionForDiagnostic = useCallback(
+        (diagnostic: DiagnosticWithType) =>
+            changesetPlan.operations
+                .filter(propertyIsDefined('diagnostics'))
+                .find(op => diagnosticQueryMatcher(op.diagnostics)(diagnostic)) || null,
+        [changesetPlan.operations]
+    )
+
     return (
         <div className={`check-diagnostics-page ${className}`}>
             <DiagnosticsListPage
                 {...props}
+                getSelectedActionForDiagnostic={getSelectedActionForDiagnostic}
                 baseDiagnosticQuery={baseDiagnosticQuery}
-                opsByDiagnosticQueryKey={opsByDiagnosticQueryKey}
                 onActionSelect={onActionSelect}
+                onChangesetPlanBatchActionClick={onChangesetPlanBatchActionClick}
                 checkProvider={checkProvider}
             />
             <div className="check-diagnostics-page__bar border-top">
@@ -64,7 +67,6 @@ export const CheckDiagnosticsPage: React.FunctionComponent<Props> = ({
                     {...props}
                     changesetPlan={changesetPlan}
                     onChangesetPlanDiagnosticActionSet={onChangesetPlanDiagnosticActionSet}
-                    className=""
                 />
             </div>
         </div>

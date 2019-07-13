@@ -1,15 +1,15 @@
 import { useCallback, useState } from 'react'
-import { DiagnosticQuery } from 'sourcegraph'
+import * as sourcegraph from 'sourcegraph'
 import { DiagnosticWithType } from '../../../../../../shared/src/api/client/services/diagnosticService'
 import { Action } from '../../../../../../shared/src/api/types/action'
 import { isDiagnosticQueryEqual } from '../../../../../../shared/src/api/types/diagnostic'
 import { ChangesetPlan, ChangesetPlanOperation } from '../../../changesets/plan/plan'
-import { diagnosticID, diagnosticQueryForSingleDiagnostic } from '../../../threads/detail/backend'
+import { diagnosticQueryForSingleDiagnostic } from '../../../threads/detail/backend'
 
 export interface ChangesetPlanProps {
     changesetPlan: ChangesetPlan
-    // onChangesetPlanChange: (plan: ChangesetPlan) => void
     onChangesetPlanDiagnosticActionSet: (diagnostic: DiagnosticWithType, action: Action | null) => void
+    onChangesetPlanBatchActionClick: (operation: sourcegraph.Operation) => void
 }
 
 /**
@@ -59,5 +59,12 @@ export const useChangesetPlan = (): ChangesetPlanProps => {
         [changesetPlan]
     )
 
-    return { changesetPlan, onChangesetPlanDiagnosticActionSet }
+    const onChangesetPlanBatchActionClick = useCallback<ChangesetPlanProps['onChangesetPlanBatchActionClick']>(
+        op => {
+            setChangesetPlan({ ...changesetPlan, operations: [...changesetPlan.operations, op] })
+        },
+        [changesetPlan]
+    )
+
+    return { changesetPlan, onChangesetPlanDiagnosticActionSet, onChangesetPlanBatchActionClick }
 }

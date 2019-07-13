@@ -286,9 +286,17 @@ function registerCheckProvider(diagnostics: Observable<sourcegraph.Diagnostic[] 
             provideDiagnosticBatchActions: query =>
                 diagnosticsRuleIds.pipe(
                     map(ruleIds => [
-                        { title: 'Fix all auto-fixable problems' },
-                        ...ruleIds.map<sourcegraph.Action>(ruleId => ({
-                            title: `Fix '${ruleId}'`,
+                        {
+                            message: 'Fix all auto-fixable problems',
+                            diagnostics: {
+                                type: 'eslint' /* TODO!(sqs) support >1 tag, so we can do, tag: 'auto-fixable' */,
+                            },
+                            editCommand: { command: FIX_EDIT_COMMAND },
+                        },
+                        ...ruleIds.map(ruleId => ({
+                            message: `Fix '${ruleId}'`,
+                            diagnostics: { type: 'eslint', tag: ruleId },
+                            editCommand: { command: FIX_EDIT_COMMAND },
                         })),
                     ])
                 ),
@@ -460,7 +468,8 @@ function updateRulePoliciesCommand(
 async function fixEditCommandCallback(diagnostic: sourcegraph.Diagnostic): Promise<sourcegraph.WorkspaceEdit> {
     const r: Linter.LintMessage = JSON.parse(diagnostic.data)
     const doc = await sourcegraph.workspace.openTextDocument(diagnostic.resource)
-    return createWorkspaceEditFromESLintFix(doc, r.fix)
+    // TODO!(sqs): when DiagnosticQuery supports >1 tag, then remove this `new WorkspaceEdit()` branch and just ensure fixEditCommandCallback only gets called for diagnostics with a new tab `auto-fixable`
+    return r.fix ? createWorkspaceEditFromESLintFix(doc, r.fix) : new sourcegraph.WorkspaceEdit()
 }
 
 async function disableRuleOnLineCommandCallback(

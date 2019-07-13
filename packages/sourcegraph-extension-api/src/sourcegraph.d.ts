@@ -1165,6 +1165,28 @@ declare module 'sourcegraph' {
         query: DiagnosticQuery
     }
 
+    export interface Operation {
+        /**
+         * A message that describes what this operation does (similar to a commit message).
+         */
+        message: string
+
+        /**
+         * A query that describes a set of diagnostics that this operation resolves. The action's
+         * command is executed with the matching diagnostics as arguments.
+         */
+        diagnostics?: DiagnosticQuery
+
+        /**
+         * A command that, when executed, returns a {@link WorkspaceEdit}. The edits from a
+         * changeset's operations are applied sequentially to determine the diff.
+         *
+         * If a {@link ChangesetPlanOperation#diagnosticQuery} is specified, the edits are assumed to
+         * resolve all diagnostics that match the query.
+         */
+        editCommand: Pick<sourcegraph.Command, 'command' | 'arguments'>
+    }
+
     /**
      * A check provider provides diagnostics, actions, and status summaries for a class of problems.
      */
@@ -1188,8 +1210,8 @@ declare module 'sourcegraph' {
 
         provideDiagnosticGroups(): Subscribable<DiagnosticGroup[]>
 
-        // TODO!(sqs): make optional
-        provideDiagnosticBatchActions(query: DiagnosticQuery): Subscribable<Action[]>
+        // TODO!(sqs): make optional, improve return type
+        provideDiagnosticBatchActions(query: DiagnosticQuery): Subscribable<Operation[]>
 
         // provideBatchActions(diagnostics: DiagnosticQuery): ProviderResult<Action[]>
     }
