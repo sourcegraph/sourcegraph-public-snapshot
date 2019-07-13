@@ -14,13 +14,14 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/ut
 import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/DiagnosticSeverityIcon'
 import { fetchHighlightedFileLines } from '../../../../repo/backend'
 import { ActionsWithPreview } from '../../../actions/ActionsWithPreview'
+import { ChangesetPlanOperation } from '../../../changesets/plan/plan'
 import { DiagnosticInfo, getCodeActions } from '../../../threads/detail/backend'
 
 const LOADING: 'loading' = 'loading'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     diagnostic: DiagnosticInfo
-    selectedAction: Action | null // TODO!(sqs): isnt reference-equal to the action in actionsOrError
+    selectedAction: Pick<ChangesetPlanOperation, 'editCommand'> | null
     onActionSelect: (diagnostic: DiagnosticInfo, action: Action | null) => void
 
     className?: string
@@ -80,9 +81,10 @@ export const DiagnosticsListItem: React.FunctionComponent<Props> = ({
             {...props}
             actionsOrError={actionsOrError}
             selectedAction={
-                (actionsOrError !== LOADING &&
+                (selectedAction &&
+                    actionsOrError !== LOADING &&
                     !isErrorLike(actionsOrError) &&
-                    actionsOrError.find(a => isEqual(a, selectedAction))) ||
+                    actionsOrError.find(a => isEqual(a.computeEdit, selectedAction.editCommand))) ||
                 null
             }
             onActionSelect={onActionSelect}

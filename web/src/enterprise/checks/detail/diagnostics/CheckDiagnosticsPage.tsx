@@ -5,7 +5,8 @@ import { Action } from '../../../../../../shared/src/api/types/action'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { ThemeProps } from '../../../../theme'
-import { DiagnosticInfo } from '../../../threads/detail/backend'
+import { ChangesetPlanOperation } from '../../../changesets/plan/plan'
+import { DiagnosticInfo, diagnosticQueryKey } from '../../../threads/detail/backend'
 import { CheckAreaContext } from '../CheckArea'
 import { DiagnosticsChangesetsBar } from './changesets/DiagnosticsChangesetsBar'
 import { DiagnosticsListPage } from './DiagnosticsListPage'
@@ -34,12 +35,13 @@ export const CheckDiagnosticsPage: React.FunctionComponent<Props> = ({
     const { changesetPlan, onChangesetPlanDiagnosticActionSet } = useChangesetPlan()
     const baseDiagnosticQuery: sourcegraph.DiagnosticQuery = { type: checkID.type }
 
-    const selectedActions: { [diagnosticID: string]: Action | undefined } = {}
+    const opsByDiagnosticQueryKey: { [diagnosticQueryKey: string]: ChangesetPlanOperation | undefined } = {}
     for (const op of changesetPlan.operations) {
-        // TODO!(sqs): assumes only 1 op
-        for (const entry of op.diagnosticActions) {
-            selectedActions[entry.diagnosticID] = entry.action
+        // TODO!(sqs): assumes always has diagnostics set
+        if (!op.diagnostics) {
+            throw new Error('TODO!(sqs) not implemented')
         }
+        opsByDiagnosticQueryKey[diagnosticQueryKey(op.diagnostics)] = op
     }
     const onActionSelect = useCallback(
         (diagnostic: DiagnosticInfo, action: Action | null) => {
@@ -53,7 +55,7 @@ export const CheckDiagnosticsPage: React.FunctionComponent<Props> = ({
             <DiagnosticsListPage
                 {...props}
                 baseDiagnosticQuery={baseDiagnosticQuery}
-                selectedActions={selectedActions}
+                opsByDiagnosticQueryKey={opsByDiagnosticQueryKey}
                 onActionSelect={onActionSelect}
                 checkProvider={checkProvider}
             />

@@ -8,8 +8,14 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { withQueryParameter } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { ThemeProps } from '../../../../theme'
+import { ChangesetPlanOperation } from '../../../changesets/plan/plan'
 import { DiagnosticsListItem } from '../../../tasks/list/item/DiagnosticsListItem'
-import { diagnosticID, DiagnosticInfo } from '../../../threads/detail/backend'
+import {
+    diagnosticID,
+    DiagnosticInfo,
+    diagnosticQueryForSingleDiagnostic,
+    diagnosticQueryKey,
+} from '../../../threads/detail/backend'
 import { CheckAreaContext } from '../CheckArea'
 import { DiagnosticsBatchActions } from './changesets/DiagnosticsBatchActions'
 import { useDiagnostics } from './detail/useDiagnostics'
@@ -21,7 +27,7 @@ interface Props
         PlatformContextProps,
         ThemeProps {
     baseDiagnosticQuery: sourcegraph.DiagnosticQuery
-    selectedActions: { [diagnosticID: string]: Action | undefined }
+    opsByDiagnosticQueryKey: { [diagnosticQueryKey: string]: ChangesetPlanOperation | undefined }
     onActionSelect: (diagnostic: DiagnosticInfo, action: Action | null) => void
 
     className?: string
@@ -37,7 +43,7 @@ const LOADING: 'loading' = 'loading'
 export const DiagnosticsListPage = withQueryParameter<Props>(
     ({
         baseDiagnosticQuery,
-        selectedActions,
+        opsByDiagnosticQueryKey,
         onActionSelect,
         checkProvider,
         query,
@@ -89,7 +95,7 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
                                         {...props}
                                         key={JSON.stringify(diagnostic)}
                                         diagnostic={diagnostic}
-                                        selectedAction={selectedActions[diagnosticID(diagnostic)] || null}
+                                        selectedAction={getSelectedAction(diagnostic, opsByDiagnosticQueryKey)}
                                         onActionSelect={onActionSelect}
                                         className="container-fluid"
                                         extensionsController={extensionsController}
@@ -106,4 +112,11 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
 
 function parseDiagnosticQuery(base?: sourcegraph.DiagnosticQuery): sourcegraph.DiagnosticQuery {
     return base || { type: 'TODO!(sqs)' } // TODO!(sqs)
+}
+
+function getSelectedAction(
+    diagnostic: DiagnosticInfo,
+    opsByDiagnosticQueryKey: Props['opsByDiagnosticQueryKey']
+): Pick<ChangesetPlanOperation, 'editCommand'> | null {
+    return opsByDiagnosticQueryKey[diagnosticQueryKey(diagnosticQueryForSingleDiagnostic(diagnostic))] || null
 }
