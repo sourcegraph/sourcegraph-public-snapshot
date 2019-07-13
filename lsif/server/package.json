@@ -1,5 +1,5 @@
 {
-  "name": "lsif-server-http",
+  "name": "lsif-server",
   "description": "LSIF Server with an HTTP API",
   "author": "Microsoft Corporation and Sourcegraph",
   "license": "MIT",
