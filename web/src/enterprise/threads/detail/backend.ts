@@ -104,7 +104,9 @@ export const getDiagnosticInfos = (
             .pipe(map(diagnostics => (query ? diagnostics.filter(diagnosticQueryMatcher(query)) : diagnostics)))
     ).pipe(switchMap(diagEntries => toDiagnosticInfos(diagEntries)))
 
-function diagnosticQueryMatcher(query: sourcegraph.DiagnosticQuery): (diagnostic: DiagnosticWithType) => boolean {
+export function diagnosticQueryMatcher(
+    query: sourcegraph.DiagnosticQuery
+): (diagnostic: DiagnosticWithType) => boolean {
     return diagnostic =>
         diagnostic.type === query.type &&
         (!query.document ||

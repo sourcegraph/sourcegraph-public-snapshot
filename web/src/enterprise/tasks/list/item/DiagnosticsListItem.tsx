@@ -3,6 +3,7 @@ import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Subscription } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
+import * as sourcegraph from 'sourcegraph'
 import { Action } from '../../../../../../shared/src/api/types/action'
 import { fromDiagnostic, toDiagnostic } from '../../../../../../shared/src/api/types/diagnostic'
 import { CodeExcerpt } from '../../../../../../shared/src/components/CodeExcerpt'
@@ -84,7 +85,7 @@ export const DiagnosticsListItem: React.FunctionComponent<Props> = ({
                 (selectedAction &&
                     actionsOrError !== LOADING &&
                     !isErrorLike(actionsOrError) &&
-                    actionsOrError.find(a => isEqual(a.computeEdit, selectedAction.editCommand))) ||
+                    actionsOrError.find(a => commandIsEqual(a.computeEdit, selectedAction.editCommand))) ||
                 null
             }
             onActionSelect={onActionSelect}
@@ -152,4 +153,8 @@ export const DiagnosticsListItem: React.FunctionComponent<Props> = ({
             )}
         </ActionsWithPreview>
     )
+}
+
+function commandIsEqual(a: sourcegraph.Command, b: sourcegraph.Command): boolean {
+    return a.command === b.command && isEqual(a.arguments || [], b.arguments || [])
 }
