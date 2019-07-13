@@ -121,6 +121,10 @@ func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 		Filepath:       r.path,
 		DisableTimeout: args.DisableTimeout,
 		IsLightTheme:   args.IsLightTheme,
+		Metadata: highlight.Metadata{
+			RepoName: string(r.commit.repo.repo.Name),
+			Revision: string(r.commit.oid),
+		},
 	})
 	if err != nil {
 		return nil, err

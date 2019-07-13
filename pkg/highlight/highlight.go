@@ -10,11 +10,15 @@ import (
 	"time"
 	"unicode/utf8"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/gosyntect"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -54,6 +58,20 @@ type Params struct {
 
 	// Whether or not the light theme should be used to highlight the code.
 	IsLightTheme bool
+
+	// Metadata provides optional metadata about the code we're highlighting.
+	Metadata Metadata
+}
+
+// Metadata contains metadata about a request to highlight code. It is used to
+// ensure that when syntax highlighting takes a long time or errors out, we
+// can log enough information to track down what the problematic code we were
+// trying to highlight was.
+//
+// All fields are optional.
+type Metadata struct {
+	RepoName string
+	Revision string
 }
 
 // Code highlights the given file content with the given filepath (must contain
@@ -62,7 +80,21 @@ type Params struct {
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
-func Code(ctx context.Context, p Params) (template.HTML, bool, error) {
+func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err error) {
+	var prometheusStatus string
+	tr, ctx := trace.New(ctx, "highlight.Code", "")
+	defer func() {
+		if prometheusStatus != "" {
+			requestCounter.WithLabelValues(prometheusStatus).Inc()
+		} else if err != nil {
+			requestCounter.WithLabelValues("error").Inc()
+		} else {
+			requestCounter.WithLabelValues("success").Inc()
+		}
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	if !p.DisableTimeout {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
@@ -90,6 +122,14 @@ func Code(ctx context.Context, p Params) (template.HTML, bool, error) {
 	// background.
 	code = strings.TrimSuffix(code, "\n")
 
+	// Tracing so we can identify problematic syntax highlighting requests.
+	tr.LogFields(
+		otlog.String("filepath", p.Filepath),
+		otlog.String("repo_name", p.Metadata.RepoName),
+		otlog.String("revision", p.Metadata.Revision),
+		otlog.String("snippet", fmt.Sprintf("%q…", firstCharacters(code, 10))),
+	)
+
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:     code,
 		Filepath: p.Filepath,
@@ -97,11 +137,34 @@ func Code(ctx context.Context, p Params) (template.HTML, bool, error) {
 	})
 
 	if ctx.Err() == context.DeadlineExceeded {
+		log15.Warn(
+			"syntax highlighting took longer than 3s, this *could* indicate a bug in Sourcegraph",
+			"filepath", p.Filepath,
+			"repo_name", p.Metadata.RepoName,
+			"revision", p.Metadata.Revision,
+			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
+		)
+		tr.LogFields(otlog.Bool("timeout", true))
+		prometheusStatus = "timeout"
+
 		// Timeout, so render plain table.
 		table, err2 := generatePlainTable(code)
 		return table, true, err2
 	} else if err != nil {
 		if cause := errors.Cause(err); cause == gosyntect.ErrRequestTooLarge || cause == gosyntect.ErrPanic {
+			log15.Error(
+				"syntax highlighting failed (this is a bug, please report it)",
+				"filepath", p.Filepath,
+				"repo_name", p.Metadata.RepoName,
+				"revision", p.Metadata.Revision,
+				"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
+				"error", err,
+			)
+			if cause == gosyntect.ErrPanic {
+				tr.LogFields(otlog.Bool("panic", true))
+				prometheusStatus = "panic"
+			}
+
 			// Failed to highlight code, e.g. for a text file. We still need to
 			// generate the table.
 			table, err2 := generatePlainTable(code)
@@ -115,6 +178,25 @@ func Code(ctx context.Context, p Params) (template.HTML, bool, error) {
 		return "", false, err
 	}
 	return template.HTML(table), false, nil
+}
+
+var requestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "syntax_highlighting",
+	Name:      "requests",
+	Help:      "Counts syntax highlighting requests and their success vs. failure rate.",
+}, []string{"status"})
+
+func init() {
+	prometheus.MustRegister(requestCounter)
+}
+
+func firstCharacters(s string, n int) string {
+	v := []rune(s)
+	if len(v) < 10 {
+		return string(v)
+	}
+	return string(v[:10])
 }
 
 // preSpansToTable takes the syntect data structure, which looks like:
