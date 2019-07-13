@@ -37,30 +37,53 @@ func IsBinary(content []byte) bool {
 	return !utf8.Valid(content) && !strings.HasPrefix(http.DetectContentType(content), "text/")
 }
 
+// Params defines mandatory and optional parameters to use when highlighting
+// code.
+type Params struct {
+	// Content is the file content.
+	Content []byte
+
+	// Filepath is used to detect the language, it must contain at least the
+	// file name + extension.
+	Filepath string
+
+	// DisableTimeout indicates whether or not a user has requested to wait as
+	// long as needed to get highlighted results (this should never be on by
+	// default, as some files can take a very long time to highlight).
+	DisableTimeout bool
+
+	// Whether or not the light theme should be used to highlight the code.
+	IsLightTheme bool
+
+	// Whether or not to simulate the syntax highlighter taking too long to
+	// respond.
+	SimulateTimeout bool
+}
+
 // Code highlights the given file content with the given filepath (must contain
 // at least the file name + extension) and returns the properly escaped HTML
 // table representing the highlighted code.
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
-func Code(ctx context.Context, content []byte, filepath string, disableTimeout bool, isLightTheme bool, simulateTimeout bool) (template.HTML, bool, error) {
-	if !disableTimeout {
+func Code(ctx context.Context, p Params) (template.HTML, bool, error) {
+	if !p.DisableTimeout {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
 	}
-	if simulateTimeout {
+	if p.SimulateTimeout {
 		time.Sleep(4 * time.Second)
 	}
 
 	// Never pass binary files to the syntax highlighter.
-	if IsBinary(content) {
+	if IsBinary(p.Content) {
 		return "", false, errors.New("cannot render binary file")
 	}
-	code := string(content)
+	code := string(p.Content)
 
 	themechoice := "Sourcegraph"
-	if isLightTheme {
+	if p.IsLightTheme {
 		themechoice = "Sourcegraph (light)"
 	}
 
@@ -76,7 +99,7 @@ func Code(ctx context.Context, content []byte, filepath string, disableTimeout b
 
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:     code,
-		Filepath: filepath,
+		Filepath: p.Filepath,
 		Theme:    themechoice,
 	})
 
