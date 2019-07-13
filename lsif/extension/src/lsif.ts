@@ -30,11 +30,13 @@ function setPath(doc: sourcegraph.TextDocument, path: string): string {
 async function send({
     doc,
     method,
-    params,
+    path,
+    position,
 }: {
     doc: sourcegraph.TextDocument
     method: string
-    params: any[]
+    path: string
+    position: LSP.Position
 }): Promise<any> {
     const url = new URL('.api/lsif/request', sourcegraph.internal.sourcegraphURL)
     url.searchParams.set('repository', repositoryFromDoc(doc))
@@ -48,7 +50,8 @@ async function send({
         }),
         body: JSON.stringify({
             method,
-            params,
+            path,
+            position,
         }),
     })
     if (!response.ok) {
@@ -88,11 +91,16 @@ async function hasLSIF(doc: sourcegraph.TextDocument): Promise<boolean> {
 export function activate(ctx: sourcegraph.ExtensionContext): void {
     ctx.subscriptions.add(
         sourcegraph.languages.registerHoverProvider(['*'], {
-            provideHover: async (doc, pos) => {
+            provideHover: async (doc, position) => {
                 if (!(await hasLSIF(doc))) {
                     return null
                 }
-                const hover: LSP.Hover | null = await send({ doc, method: 'hover', params: [pathFromDoc(doc), pos] })
+                const hover: LSP.Hover | null = await send({
+                    doc,
+                    method: 'hover',
+                    path: pathFromDoc(doc),
+                    position,
+                })
                 if (!hover) {
                     return null
                 }
@@ -103,37 +111,53 @@ export function activate(ctx: sourcegraph.ExtensionContext): void {
 
     ctx.subscriptions.add(
         sourcegraph.languages.registerDefinitionProvider(['*'], {
-            provideDefinition: async (doc, pos) => {
+            provideDefinition: async (doc, position) => {
                 if (!(await hasLSIF(doc))) {
                     return null
                 }
-                const body: LSP.Location | LSP.Location[] | null = await send({ doc, method: 'definitions', params: [pathFromDoc(doc), pos] })
+                const body: LSP.Location | LSP.Location[] | null = await send({
+                    doc,
+                    method: 'definitions',
+                    path: pathFromDoc(doc),
+                    position,
+                })
                 if (!body) {
                     return null
                 }
                 const locations = Array.isArray(body) ? body : [body]
-                return convertLocations(sourcegraph, locations.map((definition: LSP.Location) => ({
-                    ...definition,
-                    uri: setPath(doc, definition.uri),
-                })))
+                return convertLocations(
+                    sourcegraph,
+                    locations.map((definition: LSP.Location) => ({
+                        ...definition,
+                        uri: setPath(doc, definition.uri),
+                    }))
+                )
             },
         })
     )
 
     ctx.subscriptions.add(
         sourcegraph.languages.registerReferenceProvider(['*'], {
-            provideReferences: async (doc, pos) => {
+            provideReferences: async (doc, position) => {
                 if (!(await hasLSIF(doc))) {
                     return null
                 }
-                const locations: LSP.Location[] | null = await send({ doc, method: 'references', params: [pathFromDoc(doc), pos] })
+                const locations: LSP.Location[] | null = await send({
+                    doc,
+                    method: 'references',
+                    path: pathFromDoc(doc),
+                    position,
+                })
                 if (!locations) {
                     return null
                 }
-                return convertLocations(sourcegraph, locations.map((reference: LSP.Location) => ({
-                    ...reference,
-                    uri: setPath(doc, reference.uri),
-                })))
+                return convertLocations(
+                    sourcegraph,
+                    locations.map((reference: LSP.Location) => ({
+                        ...reference,
+                        uri: setPath(doc, reference.uri),
+                    }))
+                )
             },
         })
     )

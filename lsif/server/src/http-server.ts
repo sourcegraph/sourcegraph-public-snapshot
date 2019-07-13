@@ -239,7 +239,7 @@ function main(): void {
         bodyParser.json({ limit: '1mb' }),
         wrap(async (req, res) => {
             const { repository, commit } = req.query
-            const { method, params } = req.body
+            const { path, position, method } = req.body
 
             checkRepository(repository)
             checkCommit(commit)
@@ -252,13 +252,13 @@ function main(): void {
                     let result: any
                     switch (method) {
                         case 'hover':
-                            result = db.hover(params[0], params[1])
+                            result = db.hover(path, position)
                             break
                         case 'definitions':
-                            result = db.definitions(params[0], params[1])
+                            result = db.definitions(path, position)
                             break
                         case 'references':
-                            result = db.references(params[0], params[1], { includeDeclaration: false })
+                            result = db.references(path, position, { includeDeclaration: false })
                             break
                         default:
                             throw new Error(`Unknown method ${method}`)
