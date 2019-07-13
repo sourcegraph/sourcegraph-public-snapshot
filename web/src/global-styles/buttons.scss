@@ -34,7 +34,7 @@ $btn-lg-factor: $lg-factor;
         &:hover {
             text-decoration: none;
         }
-        &:focus {
+        &.focus-visible {
             @include focus-ring(-1px, 1px);
         }
     }
@@ -54,7 +54,7 @@ $btn-lg-factor: $lg-factor;
         }
         &:not(:disabled) {
             &:hover,
-            &:focus {
+            &.focus-visible {
                 background-color: var(--#{$name}-hover);
             }
         }
@@ -70,7 +70,7 @@ $btn-lg-factor: $lg-factor;
     background-color: transparent;
 
     &:hover,
-    &:focus {
+    &.focus-visible {
         color: var(--link-hover-color);
         text-decoration: var(--link-hover-decoration);
     }

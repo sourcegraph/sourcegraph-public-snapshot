@@ -10,6 +10,7 @@ import { withQueryParameter } from '../../../../components/withQueryParameter/Wi
 import { ThemeProps } from '../../../../theme'
 import { DiagnosticsListItem } from '../../../tasks/list/item/DiagnosticsListItem'
 import { diagnosticID, DiagnosticInfo } from '../../../threads/detail/backend'
+import { DiagnosticsBatchActionsButtonDropdown } from './changesets/DiagnosticsBatchActionsDropdownButton'
 import { useDiagnostics } from './detail/useDiagnostics'
 import { DiagnosticQueryBuilder } from './DiagnosticQueryBuilder'
 
@@ -61,11 +62,12 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
                 ) : (
                     <>
                         <DiagnosticQueryBuilder
+                            {...props}
                             parsedQuery={parsedQuery}
                             query={query}
                             onQueryChange={onQueryChange}
-                            className="container my-3"
                         />
+                        <DiagnosticsBatchActionsButtonDropdown className="mr-5" buttonClassName="btn-secondary" />
                         <ul className="list-group list-group-flush mb-0">
                             {diagnosticsOrError.map((diagnostic, i) => (
                                 <li key={i} className={`list-group-item px-0 ${i === 0 ? 'border-top-0' : ''}`}>
