@@ -61,16 +61,18 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
                     </div>
                 ) : (
                     <>
-                        <DiagnosticQueryBuilder
-                            {...props}
-                            parsedQuery={parsedQuery}
-                            extraActions={
-                                <DiagnosticsBatchActionsButtonDropdown className="ml-5" buttonClassName="btn-primary" />
-                            }
-                            query={query}
-                            onQueryChange={onQueryChange}
-                        />
-                        <ul className="list-group list-group-flush mb-0 border-top">
+                        <div className="diagnostics-list-page__toolbar bg-body border-bottom p-3">
+                            <DiagnosticQueryBuilder
+                                {...props}
+                                parsedQuery={parsedQuery}
+                                query={query}
+                                onQueryChange={onQueryChange}
+                            />
+                            <div className="d-flex align-items-center mt-3">
+                                <DiagnosticsBatchActionsButtonDropdown buttonClassName="btn-primary" />
+                            </div>
+                        </div>
+                        <ul className="list-group list-group-flush mb-0">
                             {diagnosticsOrError.map((diagnostic, i) => (
                                 <li key={i} className={`list-group-item px-0 ${i === 0 ? 'border-top-0' : ''}`}>
                                     <DiagnosticsListItem

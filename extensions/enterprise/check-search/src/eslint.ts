@@ -271,6 +271,9 @@ function registerCheckProvider(diagnostics: Observable<sourcegraph.Diagnostic[] 
                     })
                 )
             },
+            provideDiagnosticBatchActions: query => {
+                return of<sourcegraph.Action[]>([{ title: 'Fix all' }])
+            },
         }))
     )
     subscriptions.add(
@@ -339,14 +342,14 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                         //     command: updateRulePoliciesCommand(RulePolicy.Ignore, lintMessage.ruleId),
                         //     diagnostics: [diag],
                         // },
-                        {
-                            title: `Documentation`,
-                            command: {
-                                title: '',
-                                command: 'open',
-                                arguments: [`https://eslint.org/docs/rules/${lintMessage.ruleId}`],
-                            },
-                        },
+                        // {
+                        //     title: `Documentation`,
+                        //     command: {
+                        //         title: '',
+                        //         command: 'open',
+                        //         arguments: [`https://eslint.org/docs/rules/${lintMessage.ruleId}`],
+                        //     },
+                        // },
                     ].filter(isDefined)
                 })
             )
