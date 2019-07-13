@@ -1,3 +1,4 @@
+import CheckAllIcon from 'mdi-react/CheckAllIcon'
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
@@ -23,7 +24,7 @@ export const DiagnosticsBatchActionsButtonDropdown: React.FunctionComponent<Crea
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className={className}>
             <DropdownToggle color="" className={buttonClassName} caret={true} disabled={disabled}>
-                Batch actions
+                <CheckAllIcon className="icon-inline mr-2" /> Batch actions
             </DropdownToggle>
             <DropdownMenu>
                 <DropdownItem header={true} className="py-1">
