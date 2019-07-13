@@ -19,6 +19,7 @@ import { DiagnosticQueryBuilderFilterDropdownButton } from './DiagnosticQueryBui
 
 interface Props extends QueryParameterProps {
     parsedQuery: sourcegraph.DiagnosticQuery
+    extraActions?: React.ReactFragment
 
     className?: string
     location: H.Location
@@ -31,6 +32,7 @@ const QUERY_FIELDS_IN_USE = ['is']
  */
 export const DiagnosticQueryBuilder: React.FunctionComponent<Props> = ({
     parsedQuery,
+    extraActions,
     query,
     onQueryChange,
     className = '',
@@ -87,7 +89,7 @@ export const DiagnosticQueryBuilder: React.FunctionComponent<Props> = ({
                     </div>
                 </div>
             </Form>
-            <div className="d-flex align-items-center">
+            <div className="d-flex align-items-center my-3 px-3">
                 <ListHeaderQueryLinksNav
                     query={query}
                     links={[
@@ -142,6 +144,8 @@ export const DiagnosticQueryBuilder: React.FunctionComponent<Props> = ({
                     queryPlaceholderText="Filter repositories"
                     buttonClassName="btn-link"
                 />
+                <div className="flex-1" />
+                {extraActions}
             </div>
         </div>
     )
