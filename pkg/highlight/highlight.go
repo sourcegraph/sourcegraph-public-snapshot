@@ -12,6 +12,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/gosyntect"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
@@ -84,8 +85,16 @@ type Metadata struct {
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
 func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err error) {
+	var prometheusStatus string
 	tr, ctx := trace.New(ctx, "highlight.Code", "")
 	defer func() {
+		if prometheusStatus != "" {
+			requestCounter.WithLabelValues(prometheusStatus).Inc()
+		} else if err != nil {
+			requestCounter.WithLabelValues("error").Inc()
+		} else {
+			requestCounter.WithLabelValues("success").Inc()
+		}
 		tr.SetError(err)
 		tr.Finish()
 	}()
@@ -143,6 +152,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
 		)
 		tr.LogFields(otlog.Bool("timeout", true))
+		prometheusStatus = "timeout"
 
 		// Timeout, so render plain table.
 		table, err2 := generatePlainTable(code)
@@ -159,6 +169,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 			)
 			if cause == gosyntect.ErrPanic {
 				tr.LogFields(otlog.Bool("panic", true))
+				prometheusStatus = "panic"
 			}
 
 			// Failed to highlight code, e.g. for a text file. We still need to
@@ -174,6 +185,17 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		return "", false, err
 	}
 	return template.HTML(table), false, nil
+}
+
+var requestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "syntax_highlighting",
+	Name:      "requests",
+	Help:      "Counts syntax highlighting requests and their success vs. failure rate.",
+}, []string{"status"})
+
+func init() {
+	prometheus.MustRegister(requestCounter)
 }
 
 func firstCharacters(s string, n int) string {
