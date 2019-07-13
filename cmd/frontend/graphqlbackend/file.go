@@ -115,7 +115,6 @@ func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 		html   template.HTML
 		result = &highlightedFileResolver{}
 	)
-	simulateTimeout := r.commit.repo.repo.Name == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
 	html, result.aborted, err = highlight.Code(ctx, highlight.Params{
 		Content:        content,
 		Filepath:       r.path,
