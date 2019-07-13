@@ -1176,6 +1176,9 @@ declare module 'sourcegraph' {
 
         provideDiagnosticGroups(): Subscribable<DiagnosticGroup[]>
 
+        // TODO!(sqs): make optional
+        provideDiagnosticBatchActions(query: DiagnosticQuery): Subscribable<Action[]>
+
         // provideBatchActions(diagnostics: DiagnosticQuery): ProviderResult<Action[]>
     }
 

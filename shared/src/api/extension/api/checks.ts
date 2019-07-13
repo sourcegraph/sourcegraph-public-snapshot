@@ -21,6 +21,9 @@ export function createExtChecks(
                     provideDiagnosticGroups: proxyValue(async () =>
                         proxySubscribable(provider.provideDiagnosticGroups())
                     ),
+                    provideDiagnosticBatchActions: proxyValue(async (query: sourcegraph.DiagnosticQuery) =>
+                        proxySubscribable(provider.provideDiagnosticBatchActions(query))
+                    ),
                 })
             })
             return syncSubscription(proxy.$registerCheckProvider(type, proxiedProviderFactory))

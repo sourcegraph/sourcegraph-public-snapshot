@@ -8,6 +8,9 @@ import { wrapRemoteObservable } from './common'
 export interface ProxiedCheckProvider extends ProxyValue {
     information: ProxyResult<ProxySubscribable<sourcegraph.CheckInformation>>
     provideDiagnosticGroups: ProxyResult<(() => ProxySubscribable<sourcegraph.DiagnosticGroup[]>) & ProxyValue>
+    provideDiagnosticBatchActions: ProxyResult<
+        ((query: sourcegraph.DiagnosticQuery) => ProxySubscribable<sourcegraph.Action[]>) & ProxyValue
+    >
 }
 
 export interface ClientChecksAPI extends ProxyValue {
@@ -27,6 +30,10 @@ export function createClientChecks(checkService: CheckService): ClientChecksAPI 
                         information: wrapRemoteObservable(provider.then(provider => provider.information)),
                         provideDiagnosticGroups: () =>
                             wrapRemoteObservable(provider.then(provider => provider.provideDiagnosticGroups())),
+                        provideDiagnosticBatchActions: query =>
+                            wrapRemoteObservable(
+                                provider.then(provider => provider.provideDiagnosticBatchActions(query))
+                            ),
                     }
                 })
             )
