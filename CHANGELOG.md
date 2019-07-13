@@ -33,11 +33,17 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-## 3.5.2 (unreleased)
+## 3.5.2
+
+### Added
+
+- Syntax highlighting requests that fail are now logged and traced. A new Prometheus metric `src_syntax_highlighting_requests` allows monitoring and alerting. [#4877](https://github.com/sourcegraph/sourcegraph/issues/4877).
+- Sourcegraph's SAML authentication now supports RSA PKCS#1 v1.5. [#4869](https://github.com/sourcegraph/sourcegraph/pull/4869)
 
 ### Fixed
 
-- Increased nginx proxy buffer size to fix issue where login failed when SAML AuthnRequest was too large.
+- Increased nginx proxy buffer size to fix issue where login failed when SAML AuthnRequest was too large. [#4849](https://github.com/sourcegraph/sourcegraph/pull/4849)
+- A regression in 3.3.8 where `"corsOrigin": "*"` was improperly forbidden. [#4424](https://github.com/sourcegraph/sourcegraph/issues/4424)
 
 ## 3.5.1
 
@@ -160,6 +166,12 @@ All notable changes to Sourcegraph are documented in this file.
 - Fully resolved the search performance regression in v3.2.0, restoring performance of search back to the same levels it was before changes made in v3.2.0.
 - Fix a bug where using a repo search filter with the prefix `github.com` only searched for repos whose name starts with `github.com`, even though no `^` was specified in the search filter. (#4103)
 - Fixed an issue where files that fail syntax highlighting would incorrectly render an error instead of gracefully falling back to their plaintext form.
+
+## 3.3.9
+
+### Added
+
+- Syntax highlighting requests that fail are now logged and traced. A new Prometheus metric `src_syntax_highlighting_requests` allows monitoring and alerting. [#4877](https://github.com/sourcegraph/sourcegraph/issues/4877).
 
 ## 3.3.8
 
