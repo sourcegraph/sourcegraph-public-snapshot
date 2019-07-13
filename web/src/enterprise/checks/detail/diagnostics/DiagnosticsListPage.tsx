@@ -10,11 +10,16 @@ import { withQueryParameter } from '../../../../components/withQueryParameter/Wi
 import { ThemeProps } from '../../../../theme'
 import { DiagnosticsListItem } from '../../../tasks/list/item/DiagnosticsListItem'
 import { diagnosticID, DiagnosticInfo } from '../../../threads/detail/backend'
-import { DiagnosticsBatchActionsButtonDropdown } from './changesets/DiagnosticsBatchActionsDropdownButton'
+import { CheckAreaContext } from '../CheckArea'
+import { DiagnosticsBatchActions } from './changesets/DiagnosticsBatchActions'
 import { useDiagnostics } from './detail/useDiagnostics'
 import { DiagnosticQueryBuilder } from './DiagnosticQueryBuilder'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemeProps {
+interface Props
+    extends Pick<CheckAreaContext, 'checkProvider'>,
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        ThemeProps {
     baseDiagnosticQuery: sourcegraph.DiagnosticQuery
     selectedActions: { [diagnosticID: string]: Action | undefined }
     onActionSelect: (diagnostic: DiagnosticInfo, action: Action | null) => void
@@ -34,6 +39,7 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
         baseDiagnosticQuery,
         selectedActions,
         onActionSelect,
+        checkProvider,
         query,
         onQueryChange,
         className = '',
@@ -69,7 +75,11 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
                                 onQueryChange={onQueryChange}
                             />
                             <div className="d-flex align-items-center mt-3">
-                                <DiagnosticsBatchActionsButtonDropdown buttonClassName="btn-primary" />
+                                <DiagnosticsBatchActions
+                                    checkProvider={checkProvider}
+                                    parsedQuery={parsedQuery}
+                                    extensionsController={extensionsController}
+                                />
                             </div>
                         </div>
                         <ul className="list-group list-group-flush mb-0">

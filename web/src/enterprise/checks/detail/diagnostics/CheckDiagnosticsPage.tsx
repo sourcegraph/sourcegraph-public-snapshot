@@ -55,6 +55,7 @@ export const CheckDiagnosticsPage: React.FunctionComponent<Props> = ({
                 baseDiagnosticQuery={baseDiagnosticQuery}
                 selectedActions={selectedActions}
                 onActionSelect={onActionSelect}
+                checkProvider={checkProvider}
             />
             <div className="check-diagnostics-page__bar border-top">
                 <DiagnosticsChangesetsBar

@@ -1,5 +1,5 @@
 $btn-padding-x: $spacer;
-$btn-padding-y: $spacer * 0.75;
+$btn-padding-y: $spacer * 0.65;
 $btn-sm-factor: $sm-factor * 0.8;
 $btn-lg-factor: $lg-factor;
 
@@ -9,7 +9,6 @@ $btn-lg-factor: $lg-factor;
     align-items: center;
     user-select: none;
     border: $btn-border-width solid transparent;
-    cursor: pointer;
     font-weight: normal;
     line-height: $line-height-base;
     vertical-align: middle;
@@ -31,6 +30,7 @@ $btn-lg-factor: $lg-factor;
     }
 
     &:not(:disabled) {
+        cursor: pointer;
         &:hover {
             text-decoration: none;
         }
