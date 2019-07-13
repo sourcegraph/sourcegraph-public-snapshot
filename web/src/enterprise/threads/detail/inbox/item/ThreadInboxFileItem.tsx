@@ -134,7 +134,7 @@ export const ThreadInboxFileItem: React.FunctionComponent<Props> = ({
                             <WorkspaceEditPreview
                                 key={JSON.stringify(activeCodeAction.edit)}
                                 {...props}
-                                workspaceEdit={activeCodeAction.edit}
+                                fileDiffs={activeCodeAction.edit}
                                 extensionsController={extensionsController}
                                 className="border-top overflow-auto"
                             />

@@ -168,3 +168,5 @@ Show all diagnostics individually, but make it easy to batch them when fixing:
 TODO - show a bar above "Filter v" or at the bottom that shows (1) the number of actions chosen for diagnostics, (2) the total diffstat and number of repos affected, (3) "Batch" > "Apply $TITLE to all (N)", (4) "New changeset"
 
 ---
+
+An operation is an action applied to a set of diagnostics, or just an action. 

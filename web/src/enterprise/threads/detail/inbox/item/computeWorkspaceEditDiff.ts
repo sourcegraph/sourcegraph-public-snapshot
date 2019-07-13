@@ -1,11 +1,11 @@
-import { WorkspaceEdit } from 'sourcegraph'
+import { WorkspaceEdit } from '../../../../../../../shared/src/api/types/workspaceEdit'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
-import { computeDiff } from '../../changes/computeDiff'
+import { computeDiffFromEdits } from '../../changes/computeDiff'
 
 export async function computeWorkspaceEditDiff(
     extensionsController: ExtensionsControllerProps['extensionsController'],
     workspaceEdit: WorkspaceEdit
 ): Promise<{ diff: string }> {
-    const fileDiffs = await computeDiff(extensionsController, [{ edit: workspaceEdit }])
+    const fileDiffs = await computeDiffFromEdits(extensionsController, [workspaceEdit])
     return { diff: fileDiffs.map(d => d.hunks.map(h => h.body).join('\n')).join('\n\n') }
 }

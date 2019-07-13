@@ -992,6 +992,18 @@ declare module 'sourcegraph' {
         readonly type: string
 
         /**
+         * Match only diagnostics on documents that satisfy the filter.
+         */
+        readonly document?: DocumentFilter
+
+        /**
+         * Match only diagnostics with a specific range in the document. The start and end positions
+         * of the range must both match exactly. If the range is specified, the document must also
+         * be specified.
+         */
+        readonly range?: Range
+
+        /**
          * Match only diagnostics that have the given tag.
          */
         readonly tag?: string
@@ -1990,17 +2002,21 @@ declare module 'sourcegraph' {
         export function registerCommand(command: string, callback: (...args: any[]) => any): Unsubscribable
 
         /**
-         * Registers a command that is invoked to compute a [plan](#Plan).
+         * Registers a command that is used as an [action's](#Action) edit command to compute a
+         * [workspace edit](#WorkspaceEdit) when the action is performed.
          *
-         * @template P The plan parameters type.
+         * The command is invoked once per diagnostic that matches the action's
+         * {@link DiagnosticQuery} (or once overall if the action is not associated with any
+         * {@link DiagnosticQuery}, in which case the first argument is `null`).
+         *
          * @param command A unique identifier for the command.
          * @param callback A command function.
          * @return Unsubscribable to unregister this command.
          * @throws Registering a command with an existing command identifier throws an error.
          */
-        export function registerPlanCommand<P extends object = {}>(
+        export function registerActionEditCommand(
             command: string,
-            callback: (params: P, diagnostics: Diagnostic[], ...args: any[]) => WorkspaceEdit | Promise<WorkspaceEdit>
+            callback: (diagnostic: Diagnostic | null, ...args: any[]) => WorkspaceEdit | Promise<WorkspaceEdit>
         ): Unsubscribable
 
         /**

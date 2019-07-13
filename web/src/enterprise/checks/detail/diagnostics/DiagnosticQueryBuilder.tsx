@@ -130,7 +130,7 @@ export const DiagnosticQueryBuilder: React.FunctionComponent<Props> = ({
                         onBlur={onBlur}
                     />
                     <div className="input-group-append">
-                        <Link className="btn btn-link">
+                        <Link to="TODO!(sqs)" className="btn btn-link">
                             <CloseBoxIcon className="icon-inline mr-2" />
                             Clear filters
                         </Link>

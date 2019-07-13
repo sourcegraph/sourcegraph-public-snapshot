@@ -1,5 +1,4 @@
 import * as sourcegraph from 'sourcegraph'
-import { Action } from '../../../../../shared/src/api/types/action'
 
 export interface ChangesetPlan {
     // TODO!(sqs): always assume only 1 operation
@@ -7,12 +6,23 @@ export interface ChangesetPlan {
 }
 
 export interface ChangesetPlanOperation {
-    diagnosticQuery: sourcegraph.DiagnosticQuery | 'TODO!(sqs)'
-    diagnosticActions: ChangesetPlanDiagnosticAction[]
-}
+    /**
+     * A message that describes what this operation does (similar to a commit message).
+     */
+    message: string
 
-export interface ChangesetPlanDiagnosticAction {
-    // TODO!(sqs): think about how to do diagnostic identifiers
-    diagnosticID: string
-    action: Action
+    /**
+     * A query that describes a set of diagnostics that this operation resolves. The action's
+     * command is executed with the matching diagnostics as arguments.
+     */
+    diagnostics?: sourcegraph.DiagnosticQuery
+
+    /**
+     * A command that, when executed, returns a {@link sourcegraph.WorkspaceEdit}. The edits from a
+     * changeset's operations are applied sequentially to determine the diff.
+     *
+     * If a {@link ChangesetPlanOperation#diagnosticQuery} is specified, the edits are assumed to
+     * resolve all diagnostics that match the query.
+     */
+    editCommand: Pick<sourcegraph.Command, 'command' | 'arguments'>
 }

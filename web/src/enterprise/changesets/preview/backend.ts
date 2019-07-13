@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
+import { Action } from '../../../../../shared/src/api/types/action'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -11,7 +12,6 @@ import { createThread } from '../../../discussions/backend'
 import { fetchRepository } from '../../../repo/settings/backend'
 import { computeDiff, FileDiff } from '../../threads/detail/changes/computeDiff'
 import { ChangesetDelta, ThreadSettings } from '../../threads/settings'
-import { Action } from '../../../../../shared/src/api/types/action'
 
 export const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
 
@@ -31,7 +31,7 @@ export async function createChangeset(
     { extensionsController }: ExtensionsControllerProps,
     info: ChangesetCreationInfo & Required<Pick<ChangesetCreationInfo, 'plan'>>
 ): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
-    const edit = await extensionsController.services.commands.executePlanCommand(info.plan.operations[0].command)
+    const edit = await extensionsController.services.commands.executeActionEditCommand(info.plan.operations[0].command)
     return createChangesetFromDiffs(await computeDiff(extensionsController, [{ edit }]), info)
 }
 
