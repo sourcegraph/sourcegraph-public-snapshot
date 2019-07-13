@@ -2,7 +2,9 @@ import { NotificationType } from '@sourcegraph/extension-api-classes'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertIcon from 'mdi-react/AlertIcon'
 import React, { useCallback, useEffect, useState } from 'react'
+import { DropdownToggle } from 'reactstrap'
 import { toAction } from '../../../../../../../shared/src/api/types/action'
+import { RepositoryIcon } from '../../../../../../../shared/src/components/icons'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../../shared/src/util/errors'
@@ -16,6 +18,7 @@ import { ChangesetButtonOrLinkExistingChangeset } from '../../../../tasks/list/i
 import { ChangesetTargetButtonDropdown } from '../../../../tasks/list/item/ChangesetTargetButtonDropdown'
 import { computeDiff, computeDiffStat, FileDiff } from '../../../../threads/detail/changes/computeDiff'
 import { ChangesetPlanProps } from '../useChangesetPlan'
+import { DiagnosticsBatchActionsButtonDropdown } from './DiagnosticsBatchActionsDropdownButton'
 
 interface Props extends ChangesetPlanProps, ExtensionsControllerProps {
     className?: string
@@ -88,6 +91,8 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
     return (
         <div className={`diagnostics-changesets-bar ${flashBorderClassName} ${flashBackgroundClassName} ${className}`}>
             <div className="container py-4 d-flex align-items-center">
+                <DiagnosticsBatchActionsButtonDropdown className="mr-5" buttonClassName="btn-secondary" />
+                <span className="text-muted mr-5">|</span>
                 <ChangesetTargetButtonDropdown
                     onClick={() => {
                         throw new Error('TODO!(sqs)')
@@ -99,7 +104,7 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
                 />
 
                 {!isEmpty ? (
-                    <div className={`d-flex align-items-center`}>
+                    <div className={`flex-1 d-flex align-items-center`}>
                         <span className="mr-4">
                             <ZapIcon className="icon-inline" />{' '}
                             <strong>{changesetPlan.operations[0].diagnosticActions.length}</strong>{' '}
@@ -123,6 +128,20 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
                                 </>
                             )}
                         </div>
+                        <span className="mr-4">
+                            <RepositoryIcon className="icon-inline" /> {/* TODO!(sqs): fake computation */}
+                            <strong>
+                                {1 + Math.floor(changesetPlan.operations[0].diagnosticActions.length / 5)}
+                            </strong>{' '}
+                            <span className="text-muted">
+                                {pluralize(
+                                    'repository affected',
+                                    1 + Math.floor(changesetPlan.operations[0].diagnosticActions.length / 5),
+                                    'repositories affected'
+                                )}
+                            </span>
+                        </span>
+                        <div className="flex-1"></div>
                     </div>
                 ) : (
                     <div className={`text-muted`}>Select actions to include in changeset...</div>
