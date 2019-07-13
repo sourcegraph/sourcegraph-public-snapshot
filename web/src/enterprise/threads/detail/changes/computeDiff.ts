@@ -1,11 +1,15 @@
+import { Diagnostic } from '@sourcegraph/extension-api-types'
 import { applyEdits } from '@sqs/jsonc-parser'
 import { createTwoFilesPatch, Hunk, structuredPatch } from 'diff'
-import { Action, TextEdit } from 'sourcegraph'
+import { TextEdit } from 'sourcegraph'
 import { positionToOffset } from '../../../../../../shared/src/api/client/types/textDocument'
+import { Action } from '../../../../../../shared/src/api/types/action'
+import { WorkspaceEdit } from '../../../../../../shared/src/api/types/workspaceEdit'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { propertyIsDefined } from '../../../../../../shared/src/util/types'
+import { isDefined } from '../../../../../../shared/src/util/types'
 import { parseRepoURI } from '../../../../../../shared/src/util/url'
+import { ChangesetPlanOperation } from '../../../changesets/plan/plan'
 
 export interface FileDiff extends Pick<GQL.IFileDiff, 'oldPath' | 'newPath'> {
     hunks: GQL.IFileDiffHunk[]
@@ -25,12 +29,28 @@ export const npmDiffToFileDiffHunk = (hunk: Hunk): GQL.IFileDiffHunk => ({
  * Computes the combined diff from applying all active code actions' workspace edits.
  */
 export async function computeDiff(
-    { services: { fileSystem } }: ExtensionsControllerProps['extensionsController'],
-    codeActions: Pick<Action, 'edit'>[]
+    extensionsController: ExtensionsControllerProps['extensionsController'],
+    actionInvocations: { actionEditCommand: ChangesetPlanOperation['editCommand']; diagnostic: Diagnostic | null }[]
+): Promise<FileDiff[]> {
+    const edits = await Promise.all(
+        actionInvocations.map(async ({ actionEditCommand, diagnostic }) => {
+            const edit = await extensionsController.services.commands.executeActionEditCommand(
+                diagnostic,
+                actionEditCommand
+            )
+            return edit && WorkspaceEdit.fromJSON(edit)
+        })
+    )
+    return computeDiffFromEdits(extensionsController, edits.filter(isDefined))
+}
+
+export async function computeDiffFromEdits(
+    extensionsController: ExtensionsControllerProps['extensionsController'],
+    workspaceEdits: WorkspaceEdit[]
 ): Promise<FileDiff[]> {
     // TODO!(sqs): handle conflicting edits
     const editsByUri = new Map<string, TextEdit[]>()
-    for (const { edit } of codeActions.filter(propertyIsDefined('edit'))) {
+    for (const edit of workspaceEdits) {
         for (const [uri, edits] of edit.textEdits()) {
             const existingEdits = editsByUri.get(uri.toString()) || []
             editsByUri.set(uri.toString(), [...existingEdits, ...edits])
@@ -39,7 +59,7 @@ export async function computeDiff(
 
     const fileDiffs: FileDiff[] = []
     for (const [uri, edits] of editsByUri) {
-        const oldText = await fileSystem.readFile(new URL(uri))
+        const oldText = await extensionsController.services.fileSystem.readFile(new URL(uri))
         const newText = applyEdits(
             oldText,
             edits.map(edit => {

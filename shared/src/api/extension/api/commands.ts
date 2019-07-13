@@ -1,8 +1,11 @@
 import { ProxyResult, proxyValue } from '@sourcegraph/comlink'
+import * as sourcegraph from 'sourcegraph'
 import { Unsubscribable } from 'rxjs'
 import { ClientCommandsAPI } from '../../client/api/commands'
 import { syncSubscription } from '../../util'
 import { WorkspaceEdit } from '../../types/workspaceEdit'
+import { Diagnostic } from '@sourcegraph/extension-api-types'
+import { toDiagnostic } from '../../types/diagnostic'
 
 interface CommandEntry {
     command: string
@@ -26,12 +29,14 @@ export class ExtCommands {
         return syncSubscription(this.proxy.$registerCommand(entry.command, proxyValue(entry.callback)))
     }
 
-    public registerPlanCommand(entry: CommandEntry): Unsubscribable {
+    public registerActionEditCommand(entry: CommandEntry): Unsubscribable {
         return syncSubscription(
             this.proxy.$registerCommand(
                 entry.command,
-                proxyValue(async (...args: any[]) => {
-                    const edit: WorkspaceEdit = await Promise.resolve(entry.callback(...args))
+                proxyValue(async (diagnostic: Diagnostic | null, ...args: any[]) => {
+                    const edit: WorkspaceEdit = await Promise.resolve(
+                        entry.callback(diagnostic !== null ? toDiagnostic(diagnostic) : null, ...args)
+                    )
                     return edit.toJSON()
                 })
             )

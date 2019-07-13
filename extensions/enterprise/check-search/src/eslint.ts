@@ -44,11 +44,18 @@ interface Plugin {
     rules: Record<string, Rule.RuleModule>
 }
 
+const FIX_EDIT_COMMAND = 'eslint.fix'
+const DISABLE_RULE_ON_LINE_COMMAND = 'eslint.disableRuleOnLine'
+
 export function registerESLintRules(): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(startDiagnostics())
     subscriptions.add(registerCheckProvider(diagnostics))
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
+    subscriptions.add(sourcegraph.commands.registerActionEditCommand(FIX_EDIT_COMMAND, fixEditCommandCallback))
+    subscriptions.add(
+        sourcegraph.commands.registerActionEditCommand(DISABLE_RULE_ON_LINE_COMMAND, disableRuleOnLineCommandCallback)
+    )
     return subscriptions
 }
 
@@ -279,7 +286,7 @@ function registerCheckProvider(diagnostics: Observable<sourcegraph.Diagnostic[] 
             provideDiagnosticBatchActions: query =>
                 diagnosticsRuleIds.pipe(
                     map(ruleIds => [
-                        { title: 'Fix all' },
+                        { title: 'Fix all auto-fixable problems' },
                         ...ruleIds.map<sourcegraph.Action>(ruleId => ({
                             title: `Fix '${ruleId}'`,
                         })),
@@ -339,6 +346,7 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                                   {
                                       title: `Fix`,
                                       edit: createWorkspaceEditFromESLintFix(doc, lintMessage.fix),
+                                      computeEdit: { title: 'Fix', command: FIX_EDIT_COMMAND },
                                       diagnostics: [diag],
                                   },
                               ]
@@ -346,6 +354,7 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                         {
                             title: `Disable rule '${lintMessage.ruleId}'`,
                             edit: createWorkspaceEditForDisablingRule(doc, lintMessage),
+                            computeEdit: { title: 'Disable rule on line', command: DISABLE_RULE_ON_LINE_COMMAND },
                             diagnostics: [diag],
                         },
                         // {
@@ -446,4 +455,18 @@ function updateRulePoliciesCommand(
     ruleId: string
 ): sourcegraph.Command {
     return { title: '', command: 'updateConfiguration', arguments: [['eslint.rules', ruleId], rulePolicy] }
+}
+
+async function fixEditCommandCallback(diagnostic: sourcegraph.Diagnostic): Promise<sourcegraph.WorkspaceEdit> {
+    const r: Linter.LintMessage = JSON.parse(diagnostic.data)
+    const doc = await sourcegraph.workspace.openTextDocument(diagnostic.resource)
+    return createWorkspaceEditFromESLintFix(doc, r.fix)
+}
+
+async function disableRuleOnLineCommandCallback(
+    diagnostic: sourcegraph.Diagnostic
+): Promise<sourcegraph.WorkspaceEdit> {
+    const r: Linter.LintMessage = JSON.parse(diagnostic.data)
+    const doc = await sourcegraph.workspace.openTextDocument(diagnostic.resource)
+    return createWorkspaceEditForDisablingRule(doc, r)
 }

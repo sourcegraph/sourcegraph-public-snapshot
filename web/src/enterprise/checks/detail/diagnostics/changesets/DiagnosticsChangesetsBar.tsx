@@ -1,9 +1,13 @@
 import { NotificationType } from '@sourcegraph/extension-api-classes'
+import { Diagnostic } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { flatten } from 'lodash'
 import AlertIcon from 'mdi-react/AlertIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { DropdownToggle } from 'reactstrap'
-import { toAction } from '../../../../../../../shared/src/api/types/action'
+import { first, map } from 'rxjs/operators'
+import { Action, toAction } from '../../../../../../../shared/src/api/types/action'
+import { fromDiagnostic } from '../../../../../../../shared/src/api/types/diagnostic'
 import { RepositoryIcon } from '../../../../../../../shared/src/components/icons'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
@@ -16,6 +20,7 @@ import { ChangesetIcon } from '../../../../changesets/icons'
 import { createChangesetFromCodeAction } from '../../../../changesets/preview/backend'
 import { ChangesetButtonOrLinkExistingChangeset } from '../../../../tasks/list/item/ChangesetButtonOrLink'
 import { ChangesetTargetButtonDropdown } from '../../../../tasks/list/item/ChangesetTargetButtonDropdown'
+import { getDiagnosticInfos } from '../../../../threads/detail/backend'
 import { computeDiff, computeDiffStat, FileDiff } from '../../../../threads/detail/changes/computeDiff'
 import { ChangesetPlanProps } from '../useChangesetPlan'
 import { DiagnosticsBatchActions } from './DiagnosticsBatchActions'
@@ -69,21 +74,41 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
         }
     }, [extensionsController])
 
-    const isEmpty = changesetPlan.operations.length === 0 || changesetPlan.operations[0].diagnosticActions.length === 0
+    const isEmpty = changesetPlan.operations.length === 0
 
     const [fileDiffsOrError, setFileDiffsOrError] = useState<typeof LOADING | FileDiff[] | ErrorLike>(LOADING)
-    useEffectAsync(async () => {
-        setFileDiffsOrError(LOADING)
-        try {
-            setFileDiffsOrError(
-                await computeDiff(
-                    extensionsController,
-                    changesetPlan.operations.flatMap(op => op.diagnosticActions.map(({ action }) => toAction(action)))
+    useEffect(() => {
+        const do2 = async () => {
+            setFileDiffsOrError(LOADING)
+            try {
+                setFileDiffsOrError(
+                    await computeDiff(
+                        extensionsController,
+                        flatten(
+                            await Promise.all(
+                                changesetPlan.operations.map(async op => {
+                                    const diagnostics: (Diagnostic | null)[] = op.diagnostics
+                                        ? await getDiagnosticInfos(extensionsController, op.diagnostics)
+                                              .pipe(
+                                                  first() /*TODO!(sqs) remove first, make reactive*/,
+                                                  map(diagnostics => diagnostics.map(fromDiagnostic))
+                                              )
+                                              .toPromise()
+                                        : [null]
+                                    return diagnostics.map(diagnostic => ({
+                                        actionEditCommand: op.editCommand,
+                                        diagnostic,
+                                    }))
+                                })
+                            )
+                        )
+                    )
                 )
-            )
-        } catch (err) {
-            setFileDiffsOrError(asError(err))
+            } catch (err) {
+                setFileDiffsOrError(asError(err))
+            }
         }
+        do2()
     }, [changesetPlan.operations, extensionsController])
     const diffStat =
         fileDiffsOrError !== LOADING && !isErrorLike(fileDiffsOrError) ? computeDiffStat(fileDiffsOrError) : null
@@ -104,10 +129,9 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
                 {!isEmpty ? (
                     <div className={`flex-1 d-flex align-items-center`}>
                         <span className="mr-4">
-                            <ZapIcon className="icon-inline" />{' '}
-                            <strong>{changesetPlan.operations[0].diagnosticActions.length}</strong>{' '}
+                            <ZapIcon className="icon-inline" /> <strong>{changesetPlan.operations.length}</strong>{' '}
                             <span className="text-muted">
-                                {pluralize('action', changesetPlan.operations[0].diagnosticActions.length)}
+                                {pluralize('operation', changesetPlan.operations.length)}
                             </span>
                         </span>
                         <div className="mr-4">
@@ -128,13 +152,11 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
                         </div>
                         <span className="mr-4">
                             <RepositoryIcon className="icon-inline" /> {/* TODO!(sqs): fake computation */}
-                            <strong>
-                                {1 + Math.floor(changesetPlan.operations[0].diagnosticActions.length / 5)}
-                            </strong>{' '}
+                            <strong>{1 + Math.floor(changesetPlan.operations.length / 5)}</strong>{' '}
                             <span className="text-muted">
                                 {pluralize(
                                     'repository affected',
-                                    1 + Math.floor(changesetPlan.operations[0].diagnosticActions.length / 5),
+                                    1 + Math.floor(changesetPlan.operations.length / 5),
                                     'repositories affected'
                                 )}
                             </span>

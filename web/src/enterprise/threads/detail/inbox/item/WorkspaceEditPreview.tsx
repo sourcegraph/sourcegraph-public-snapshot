@@ -1,46 +1,20 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { useState } from 'react'
-import * as sourcegraph from 'sourcegraph'
+import React from 'react'
 import { Markdown } from '../../../../../../../shared/src/components/Markdown'
-import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
-import { asError, ErrorLike, isErrorLike } from '../../../../../../../shared/src/util/errors'
 import { renderMarkdown } from '../../../../../../../shared/src/util/markdown'
-import { useEffectAsync } from '../../../../../util/useEffectAsync'
-import { computeWorkspaceEditDiff } from './computeWorkspaceEditDiff'
+import { FileDiff } from '../../changes/computeDiff'
 
-interface Props extends ExtensionsControllerProps {
+interface Props {
     // TODO!(sqs): cant show file create/rename/delete operations unless we use our internal
     // WorkspaceEdit type's #operations field.
-    workspaceEdit: sourcegraph.WorkspaceEdit
+    fileDiffs: FileDiff[]
 
     className?: string
 }
 
-const LOADING: 'loading' = 'loading'
-
 /**
  * Previews a workspace edit's changes.
  */
-export const WorkspaceEditPreview: React.FunctionComponent<Props> = ({
-    workspaceEdit,
-    className = '',
-    extensionsController,
-}) => {
-    const [rawDiff, setRawDiff] = useState<typeof LOADING | { diff: string } | ErrorLike>(LOADING)
-    useEffectAsync(async () => {
-        setRawDiff(LOADING)
-        try {
-            setRawDiff(await computeWorkspaceEditDiff(extensionsController, workspaceEdit))
-        } catch (err) {
-            setRawDiff(asError(err))
-        }
-    }, [workspaceEdit, extensionsController])
-
-    return rawDiff === LOADING ? (
-        <LoadingSpinner className="icon-inline m-2" />
-    ) : isErrorLike(rawDiff) ? (
-        <span className="text-danger m-2">{rawDiff.message}</span>
-    ) : (
-        <Markdown dangerousInnerHTML={renderMarkdown('```diff\n' + rawDiff.diff + '\n```')} className={className} />
-    )
+export const WorkspaceEditPreview: React.FunctionComponent<Props> = ({ fileDiffs, className = '' }) => {
+    const rawDiff = fileDiffs.map(d => d.hunks.map(h => h.body).join('\n')).join('\n\n')
+    return <Markdown dangerousInnerHTML={renderMarkdown('```diff\n' + rawDiff + '\n```')} className={className} />
 }

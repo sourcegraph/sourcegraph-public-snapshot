@@ -291,7 +291,7 @@ function createExtensionAPI(
 
         commands: {
             registerCommand: (command, callback) => commands.registerCommand({ command, callback }),
-            registerPlanCommand: (command, callback) => commands.registerPlanCommand({ command, callback }),
+            registerActionEditCommand: (command, callback) => commands.registerActionEditCommand({ command, callback }),
             executeCommand: (command: string, ...args: any[]) => commands.executeCommand(command, args),
         },
 

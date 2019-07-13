@@ -20,12 +20,7 @@ export const ComparePage: React.FunctionComponent<Props> = ({ codeActions, class
         {codeActions.map(
             (codeAction, i) =>
                 codeAction.edit && (
-                    <WorkspaceEditPreview
-                        key={i}
-                        {...props}
-                        workspaceEdit={codeAction.edit}
-                        className="overflow-auto"
-                    />
+                    <WorkspaceEditPreview key={i} {...props} fileDiffs={codeAction.edit} className="overflow-auto" />
                 )
         )}
     </div>

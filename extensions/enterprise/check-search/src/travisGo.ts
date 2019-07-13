@@ -164,20 +164,10 @@ function registerStatusProvider(
         })
     )
     subscriptions.add(
-        sourcegraph.commands.registerPlanCommand<FixGoVersionParams>(
+        sourcegraph.commands.registerActionEditCommand(
             FIX_GO_VERSION_COMMAND_ID,
-            async (_params, _diagnostics) => {
-                // TODO!(sqs): diagnostics should be passed from caller based on what plan asks for
-                //
-                // TODO!(sqs): pause to give time for diagnostics to be computed, super hacky
-                const diags = await diagnostics
-                    .pipe(
-                        filter(d => d.some(([, diags]) => diags.length > 0)),
-                        debounceTime(1500),
-                        first()
-                    )
-                    .toPromise()
-                const { edit } = await computeFixAllActionsFromDiagnostics(diags)
+            async (diagnostic: sourcegraph.Diagnostic) => {
+                const { edit } = await computeFixAllActionsFromDiagnostics([diagnostic])
                 return edit
             }
         )
@@ -314,16 +304,14 @@ async function computeFixAllAction(): Promise<Pick<sourcegraph.Action, 'edit' | 
 }
 
 async function computeFixAllActionsFromDiagnostics(
-    allDiags: [URL, sourcegraph.Diagnostic[]][]
+    diagnostics: sourcegraph.Diagnostic[]
 ): Promise<Pick<sourcegraph.Action, 'edit' | 'diagnostics'>> {
     const edit = new sourcegraph.WorkspaceEdit()
-    for (const [uri, diags] of allDiags) {
-        const doc = await sourcegraph.workspace.openTextDocument(uri)
-        for (const diag of diags) {
-            computeFixEdit(diag, doc, edit)
-        }
+    for (const diag of diagnostics) {
+        const doc = await sourcegraph.workspace.openTextDocument(diag.resource)
+        computeFixEdit(diag, doc, edit)
     }
-    return { edit, diagnostics: flatten(allDiags.map(([, diagnostics]) => diagnostics)) }
+    return { edit, diagnostics: diagnostics }
 }
 
 function findMatchRanges(text: string, pattern: RegExp): sourcegraph.Range[] {

@@ -22,7 +22,7 @@ export const useChangesetPlan = (): ChangesetPlanProps => {
         (diagnostic, action) => {
             let op: ChangesetPlanOperation
             if (changesetPlan.operations.length === 0) {
-                op = { diagnosticQuery: 'TODO!(sqs)', diagnosticActions: [] }
+                op = { diagnostics: 'TODO!(sqs)', diagnosticActions: [] }
                 changesetPlan.operations.push(op)
             } else {
                 // TODO!(sqs): always assume adding to or removing from 1st op, and there is never more than 1 op

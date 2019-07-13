@@ -86,6 +86,7 @@ export const DiagnosticsListItem: React.FunctionComponent<Props> = ({
                 null
             }
             onActionSelect={onActionSelect}
+            diagnostic={fromDiagnostic(diagnostic)}
             extensionsController={extensionsController}
             defaultPreview={
                 diagnostic.range && (
