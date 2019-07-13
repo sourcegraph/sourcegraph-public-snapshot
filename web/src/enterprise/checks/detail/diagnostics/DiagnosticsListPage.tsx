@@ -74,7 +74,7 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
                                 query={query}
                                 onQueryChange={onQueryChange}
                             />
-                            <div className="d-flex align-items-center mt-3">
+                            <div className="d-flex align-items-center mt-3 ml-3">
                                 <DiagnosticsBatchActions
                                     checkProvider={checkProvider}
                                     parsedQuery={parsedQuery}

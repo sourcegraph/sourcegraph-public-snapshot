@@ -205,6 +205,20 @@ function startDiagnostics(): Unsubscribable {
     return subscriptions
 }
 
+const diagnosticsRuleIds = diagnostics.pipe(
+    filter((diagnostics): diagnostics is sourcegraph.Diagnostic[] => diagnostics !== LOADING),
+    map(diagnostics => {
+        const ruleIdsSet = new Set<string>()
+        for (const diag of diagnostics) {
+            const rule = getLintMessageFromDiagnosticData(diag)
+            ruleIdsSet.add(rule.ruleId)
+        }
+
+        const ruleIds = Array.from(ruleIdsSet.values()).sort()
+        return ruleIds
+    })
+)
+
 function registerCheckProvider(diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING>): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(
@@ -252,28 +266,25 @@ function registerCheckProvider(diagnostics: Observable<sourcegraph.Diagnostic[] 
                     return info
                 })
             ),
-            provideDiagnosticGroups: () => {
-                return diagnostics.pipe(
-                    filter((diagnostics): diagnostics is sourcegraph.Diagnostic[] => diagnostics !== LOADING),
-                    map(diagnostics => {
-                        const ruleIdsSet = new Set<string>()
-                        for (const diag of diagnostics) {
-                            const rule = getLintMessageFromDiagnosticData(diag)
-                            ruleIdsSet.add(rule.ruleId)
-                        }
-
-                        const ruleIds = Array.from(ruleIdsSet.values()).sort()
-                        return ruleIds.map<sourcegraph.DiagnosticGroup>(ruleId => ({
+            provideDiagnosticGroups: () =>
+                diagnosticsRuleIds.pipe(
+                    map(ruleIds =>
+                        ruleIds.map<sourcegraph.DiagnosticGroup>(ruleId => ({
                             id: ruleId.replace(/\//g, '-'), // make safe for URL path
                             name: ruleId,
                             query: { type: 'eslint', tag: ruleId },
                         }))
-                    })
-                )
-            },
-            provideDiagnosticBatchActions: query => {
-                return of<sourcegraph.Action[]>([{ title: 'Fix all' }])
-            },
+                    )
+                ),
+            provideDiagnosticBatchActions: query =>
+                diagnosticsRuleIds.pipe(
+                    map(ruleIds => [
+                        { title: 'Fix all' },
+                        ...ruleIds.map<sourcegraph.Action>(ruleId => ({
+                            title: `Fix '${ruleId}'`,
+                        })),
+                    ])
+                ),
         }))
     )
     subscriptions.add(
