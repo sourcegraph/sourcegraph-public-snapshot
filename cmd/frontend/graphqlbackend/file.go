@@ -66,7 +66,7 @@ func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
 	filePath := "file." + language
 	html, _, err := highlight.Code(ctx, highlight.Params{
 		Content:         []byte(args.Code),
-		Filepath:        filepath,
+		Filepath:        filePath,
 		DisableTimeout:  args.DisableTimeout,
 		IsLightTheme:    args.IsLightTheme,
 	})
