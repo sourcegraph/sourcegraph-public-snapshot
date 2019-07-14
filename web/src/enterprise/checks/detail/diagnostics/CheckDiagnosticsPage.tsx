@@ -7,8 +7,7 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { ThemeProps } from '../../../../theme'
-import { ChangesetPlanOperation } from '../../../changesets/plan/plan'
-import { DiagnosticInfo, diagnosticQueryKey, diagnosticQueryMatcher } from '../../../threads/detail/backend'
+import { DiagnosticInfo, diagnosticQueryMatcher } from '../../../threads/detail/backend'
 import { CheckAreaContext } from '../CheckArea'
 import { DiagnosticsChangesetsBar } from './changesets/DiagnosticsChangesetsBar'
 import { DiagnosticsListPage } from './DiagnosticsListPage'
@@ -53,7 +52,7 @@ export const CheckDiagnosticsPage: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className={`check-diagnostics-page ${className}`}>
+        <div className={`check-diagnostics-page flex-1 d-flex flex-column ${className}`}>
             <DiagnosticsListPage
                 {...props}
                 getSelectedActionForDiagnostic={getSelectedActionForDiagnostic}
@@ -61,13 +60,10 @@ export const CheckDiagnosticsPage: React.FunctionComponent<Props> = ({
                 onActionSelect={onActionSelect}
                 onChangesetPlanBatchActionClick={onChangesetPlanBatchActionClick}
                 checkProvider={checkProvider}
+                className="flex-1"
             />
             <div className="check-diagnostics-page__bar border-top">
-                <DiagnosticsChangesetsBar
-                    {...props}
-                    changesetPlan={changesetPlan}
-                    onChangesetPlanDiagnosticActionSet={onChangesetPlanDiagnosticActionSet}
-                />
+                <DiagnosticsChangesetsBar {...props} changesetPlan={changesetPlan} />
             </div>
         </div>
     )

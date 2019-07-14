@@ -17,7 +17,6 @@ import { ChecksAreaContext } from '../scope/ScopeChecksArea'
 import { useCheckByTypeForScope } from '../util/useCheckByTypeForScope'
 import { CheckDiagnosticsPage } from './diagnostics/CheckDiagnosticsPage'
 import { CheckAreaNavbar } from './navbar/CheckAreaNavbar'
-import { CheckNotificationsPage } from './notifications/CheckNotificationsPage'
 import { CheckOverview } from './overview/CheckOverview'
 
 const NotFoundPage = () => (
@@ -89,9 +88,6 @@ export const CheckArea: React.FunctionComponent<Props> = ({ checkID, scope, chec
                     <Switch>
                         <Route path={checkURL} exact={true}>
                             <Redirect to={`${checkURL}/notifications`} />
-                        </Route>
-                        <Route path={`${checkURL}/notifications`}>
-                            <CheckNotificationsPage {...context} className="mt-3 container" />
                         </Route>
                         <Route path={`${checkURL}/diagnostics`}>
                             <CheckDiagnosticsPage {...context} />

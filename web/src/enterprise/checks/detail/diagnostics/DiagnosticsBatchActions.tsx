@@ -8,11 +8,11 @@ import React, { useEffect, useState } from 'react'
 import { from, Subscription } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
-import { asError, ErrorLike, isErrorLike } from '../../../../../../../shared/src/util/errors'
-import { ActionsIcon } from '../../../../../util/octicons'
-import { CheckAreaContext } from '../../CheckArea'
-import { ChangesetPlanProps } from '../useChangesetPlan'
+import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
+import { ActionsIcon } from '../../../../util/octicons'
+import { CheckAreaContext } from '../CheckArea'
+import { ChangesetPlanProps } from './useChangesetPlan'
 
 interface Props
     extends Pick<ChangesetPlanProps, 'onChangesetPlanBatchActionClick'>,
