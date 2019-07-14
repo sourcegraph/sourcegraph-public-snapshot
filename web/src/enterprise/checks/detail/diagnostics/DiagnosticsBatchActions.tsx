@@ -56,29 +56,33 @@ export const DiagnosticsBatchActions: React.FunctionComponent<Props> = ({
     // TODO!(sqs): actually compute what the actions are instead of hardcoding
 
     return (
-        <div className={`d-flex align-items-center ${className}`}>
-            <span className="text-muted mr-3 py-1">
+        <div className={`d-flex align-items-center w-100 ${className}`}>
+            <div className="text-nowrap text-muted mr-3 py-1">
                 <CheckBoxMultipleOutlineIcon className="icon-inline d-none" />
                 <AnimationPlayIcon className="icon-inline" /> Batch actions:
-            </span>
+            </div>
             {batchActionsOrError === LOADING ? (
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(batchActionsOrError) ? (
-                <AlertIcon className="icon-inline text-danger" title={batchActionsOrError.message} />
+                <span title={batchActionsOrError.message}>
+                    <AlertIcon className="icon-inline text-danger" />
+                </span>
             ) : batchActionsOrError.length === 0 ? (
                 <span className="text-muted">None</span>
             ) : (
-                batchActionsOrError.map((op, i) => (
-                    <button
-                        key={i}
-                        className={`btn py-1 mr-3 ${i === 0 ? 'btn-primary' : 'btn-secondary'}`}
-                        disabled={disabled}
-                        // tslint:disable-next-line: jsx-no-lambda
-                        onClick={() => onChangesetPlanBatchActionClick(op)}
-                    >
-                        {op.message}
-                    </button>
-                ))
+                <div className="flex-1 d-flex overflow-auto">
+                    {batchActionsOrError.map((op, i) => (
+                        <button
+                            key={i}
+                            className={`btn ${i === 0 ? 'btn-primary' : 'btn-secondary'} text-nowrap py-1 mr-3 `}
+                            disabled={disabled}
+                            // tslint:disable-next-line: jsx-no-lambda
+                            onClick={() => onChangesetPlanBatchActionClick(op)}
+                        >
+                            {op.message}
+                        </button>
+                    ))}
+                </div>
             )}
         </div>
     )

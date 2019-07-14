@@ -12,9 +12,9 @@ import { createThreadAreaContext, ThreadAreaContext } from '../../threads/detail
 import { ChangesetsAreaContext } from '../global/ChangesetsArea'
 import { useChangesetByID } from '../util/useChangesetByID'
 import { useExtraChangesetInfo } from '../util/useExtraChangesetInfo'
-import { ChangesetActionsList } from './changes/ChangesetActionsList'
 import { ChangesetChangesPage } from './changes/ChangesetChangesPage'
 import { ChangesetCommitsList } from './changes/ChangesetCommitsList'
+import { ChangesetPlanOperationsList } from './changes/ChangesetPlanOperationsList'
 import { ChangesetRepositoriesList } from './changes/ChangesetRepositoriesList'
 import { ChangesetTasksList } from './changes/ChangesetTasksList'
 import { ChangesetAreaNavbar } from './navbar/ChangesetAreaNavbar'
@@ -89,11 +89,11 @@ export const ChangesetArea: React.FunctionComponent<Props> = props => {
                             )}
                         />
                         <Route
-                            path={`${props.match.url}/actions`}
+                            path={`${props.match.url}/operations`}
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <ChangesetActionsList
+                                <ChangesetPlanOperationsList
                                     {...context}
                                     {...routeComponentProps}
                                     xchangeset={xchangeset}

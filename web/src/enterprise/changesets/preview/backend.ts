@@ -1,8 +1,5 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
-import { Action } from '../../../../../shared/src/api/types/action'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
@@ -10,8 +7,8 @@ import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { mutateGraphQL } from '../../../backend/graphql'
 import { createThread } from '../../../discussions/backend'
 import { fetchRepository } from '../../../repo/settings/backend'
-import { computeDiff, FileDiff } from '../../threads/detail/changes/computeDiff'
-import { ChangesetDelta, ThreadSettings } from '../../threads/settings'
+import { FileDiff } from '../../threads/detail/changes/computeDiff'
+import { ChangesetDelta, GitHubPRLink, ThreadSettings } from '../../threads/settings'
 
 export const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
 
@@ -22,33 +19,9 @@ export const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
 export type ChangesetCreationStatus = GQL.ThreadStatus.OPEN_ACTIVE | GQL.ThreadStatus.PREVIEW
 
 interface ChangesetCreationInfo
-    extends Pick<GQL.ICreateThreadOnDiscussionsMutationArguments['input'], 'title' | 'contents'>,
+    extends Required<Pick<GQL.ICreateThreadOnDiscussionsMutationArguments['input'], 'title' | 'contents'>>,
         Pick<ThreadSettings, 'plan'> {
     status: ChangesetCreationStatus
-}
-
-/**
- * Create a changeset by applying the {@link codeAction}.
- */
-export async function createChangesetFromCodeAction(
-    { extensionsController }: ExtensionsControllerProps,
-    diagnostic: sourcegraph.Diagnostic | null, // TODO!(sqs)
-    codeAction: Action,
-    info: Pick<ChangesetCreationInfo, 'status'>
-): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
-    return createChangesetFromDiffs(await computeDiff(extensionsController, [codeAction]), {
-        ...info,
-        title: diagnostic ? `${diagnostic.message}: ${codeAction.title}` : codeAction.title,
-        contents: '',
-        changesetActionDescriptions: [
-            {
-                user: 'sqs',
-                timestamp: Date.now(),
-                title: codeAction.title,
-                detail: diagnostic ? diagnostic.message : 'TODO!(sqs)',
-            },
-        ],
-    })
 }
 
 /**
@@ -58,6 +31,13 @@ export async function createChangesetFromDiffs(
     fileDiffs: FileDiff[],
     info: ChangesetCreationInfo
 ): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
+    const githubToken = localStorage.getItem('githubToken')
+    if (githubToken === null) {
+        throw new Error(
+            "You must set a GitHub access token (`localStorage.githubToken='...'` in your browser's JavaScript console) then try again."
+        )
+    }
+
     const fileDiffsByRepo = new Map<string, FileDiff[]>()
     for (const fileDiff of fileDiffs) {
         const repo = parseRepoURI(fileDiff.newPath!).repoName
@@ -67,12 +47,14 @@ export async function createChangesetFromDiffs(
     }
 
     const deltas: ChangesetDelta[] = []
+    const relatedPRs: GitHubPRLink[] = []
     for (const [repoName, fileDiffs] of fileDiffsByRepo) {
         const repo = await fetchRepository(repoName).toPromise()
+        const branchName = info.title!.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() // TODO!(sqs)
         const delta: ChangesetDelta = {
             repository: repo.id,
-            base: 'master' /* TODO!(sqs) */,
-            head: 'refs/changesets/preview/1',
+            base: 'refs/heads/master' /* TODO!(sqs) */,
+            head: `refs/heads/${branchName}` /* TODO!(sqs) */,
         }
 
         const baseCommit = parseRepoURI(fileDiffs[0].newPath!).commitID!
@@ -83,28 +65,28 @@ export async function createChangesetFromDiffs(
                 baseCommit,
                 patch: fileDiffs.map(({ patch }) => patch).join('\n'),
                 commitMessage:
-                    info.changesetActionDescriptions && info.changesetActionDescriptions.length > 0
-                        ? `${info.changesetActionDescriptions
-                              .map(c => c.title)
-                              .join(', ')}\n\n${info.changesetActionDescriptions
-                              .filter(c => c.detail)
-                              .map(
-                                  c =>
-                                      `- ${info.changesetActionDescriptions!.length > 1 ? `${c.title}: ` : ''}${
-                                          c.detail
-                                      }`
-                              )
-                              .join('\n')}`
+                    info.plan && info.plan.operations.length > 0
+                        ? info.plan.operations.map(c => c.message).join(', ')
                         : 'Changeset commit',
             },
         }).toPromise()
         deltas.push(delta)
+
+        // TODO!(sqs) hack create github PRs
+        relatedPRs.push(
+            await createGitHubPR(githubToken, {
+                repositoryName: repoName,
+                baseRefName: delta.base,
+                headRefName: delta.head,
+                title: info.title || 'Sourcegraph changeset',
+            })
+        )
     }
 
     const settings: ThreadSettings = {
         deltas,
-        changesetActionDescriptions: info.changesetActionDescriptions,
         plan: info.plan,
+        relatedPRs,
     }
     return createThread({
         ...info,
@@ -138,4 +120,93 @@ function gitCreateRefFromPatch(
             return data.git.createRefFromPatch
         })
     )
+}
+
+async function createGitHubPR(
+    githubToken: string,
+    {
+        repositoryName,
+        baseRefName,
+        headRefName,
+        title,
+    }: {
+        repositoryName: string
+        baseRefName: string
+        headRefName: string
+        title: string
+    }
+): Promise<GitHubPRLink> {
+    const GITHUB_GRAPHQL_API_URL = 'https://api.github.com/graphql'
+    const githubRequestGraphQL = async (query: string, variables: { [name: string]: any }) => {
+        const resp = await fetch(GITHUB_GRAPHQL_API_URL, {
+            method: 'POST',
+            headers: { Authorization: `bearer ${githubToken}`, 'Content-Type': 'application/json; charset=utf-8' },
+            body: JSON.stringify({ query, variables }),
+        })
+        if (resp.status !== 200) {
+            throw new Error(`Error from ${GITHUB_GRAPHQL_API_URL}: ${await resp.text()}`)
+        }
+        const { data, errors } = await resp.json()
+        if (errors && errors.length > 0) {
+            throw createAggregateError(errors)
+        }
+        return data
+    }
+
+    const [, owner, name] = repositoryName.split('/')
+    const {
+        repository: { id: repositoryId },
+    } = await githubRequestGraphQL(
+        `
+    query ($owner: String!, $name: String!) {
+        repository(owner: $owner, name: $name) {
+            id
+        }
+    }`,
+        { owner, name }
+    )
+
+    interface CreatePullRequestPayload {
+        pullRequest: { id: GQL.ID; number: number; url: string }
+    }
+    try {
+        const payload: { createPullRequest: CreatePullRequestPayload } = await githubRequestGraphQL(
+            `
+    mutation ($input: CreatePullRequestInput!) {
+        createPullRequest(input: $input) {
+            pullRequest {
+                id
+                number
+                url
+            }
+        }
+    }`,
+            { input: { repositoryId, baseRefName, headRefName, title } }
+        )
+        return { ...payload.createPullRequest.pullRequest, repositoryName }
+    } catch (err) {
+        if (err.message.includes('A pull request already exists')) {
+            const prs: {
+                node: { pullRequests: { nodes: CreatePullRequestPayload['pullRequest'][] } }
+            } = await githubRequestGraphQL(
+                `
+            query ($repositoryId: ID!, $headRefName: String!) {
+                node(id: $repositoryId) {
+                    ... on Repository {
+                        pullRequests(first: 1, headRefName: $headRefName)  {
+                            nodes {
+                                id
+                                number
+                                url
+                            }
+                        }
+                    }
+                }
+            }`,
+                { repositoryId, headRefName }
+            )
+            return { ...prs.node.pullRequests.nodes[0], repositoryName }
+        }
+        throw err
+    }
 }

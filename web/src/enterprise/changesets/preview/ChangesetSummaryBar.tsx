@@ -22,8 +22,8 @@ interface SummaryItem {
     count: number | ((changeset: GQL.IChangeset, threadSettings: ThreadSettings) => number) | null
 }
 
-export const countChangesetActions = (c: GQL.IChangeset, s: ThreadSettings) =>
-    s.changesetActionDescriptions ? s.changesetActionDescriptions.length : 0
+export const countChangesetOperations = (c: GQL.IChangeset, s: ThreadSettings) =>
+    s.plan ? s.plan.operations.length : 0
 
 export const countChangesetFilesChanged = (c: GQL.IChangeset) =>
     c.repositoryComparisons.reduce((n, c) => n + (c.fileDiffs.totalCount || 0), 0)
@@ -34,7 +34,7 @@ const ITEMS: SummaryItem[] = [
     {
         noun: 'operation',
         icon: ChangesetOperationIcon,
-        count: countChangesetActions,
+        count: countChangesetOperations,
     },
     // TODO!(sqs) { noun: 'Review task', icon: ChecklistIcon, count: null },
     {

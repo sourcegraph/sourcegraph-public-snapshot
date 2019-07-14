@@ -1,16 +1,17 @@
+import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import { ChatIcon } from '../../../../../../shared/src/components/icons'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ActionsIcon, DiffIcon, GitCommitIcon } from '../../../../util/octicons'
+import { ChecksIcon } from '../../../checks/icons'
 import { ThreadSettings } from '../../../threads/settings'
 import {
-    countChangesetActions,
     countChangesetCommits,
     countChangesetFilesChanged,
+    countChangesetOperations,
 } from '../../preview/ChangesetSummaryBar'
-import { ChecksIcon } from '../../../checks/icons'
 
 interface Props {
     thread: GQL.IDiscussionThread
@@ -46,7 +47,7 @@ export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({
                         <span className="badge badge-secondary ml-1">{thread.comments.totalCount - 1}</span>
                     </NavLink>
                 </li>
-                <li className="changeset-area-navbar__nav-item nav-item">
+                <li className="changeset-area-navbar__nav-item nav-item d-none">
                     <NavLink
                         to={`${areaURL}/tasks`}
                         className={NAV_LINK_CLASS_NAME}
@@ -55,15 +56,15 @@ export const ChangesetAreaNavbar: React.FunctionComponent<Props> = ({
                         <ChecksIcon className="icon-inline" /> Tasks
                     </NavLink>
                 </li>
-                <li className="changeset-area-navbar__nav-item nav-item d-none">
+                <li className="changeset-area-navbar__nav-item nav-item">
                     <NavLink
-                        to={`${areaURL}/actions`}
+                        to={`${areaURL}/operations`}
                         className={NAV_LINK_CLASS_NAME}
                         activeClassName="changeset-area-navbar__nav-link--active"
                     >
-                        <ActionsIcon className="icon-inline" /> Actions{' '}
+                        <ActionsIcon className="icon-inline" /> Operations{' '}
                         <span className="badge badge-secondary ml-1">
-                            {countChangesetActions(xchangeset, threadSettings)}
+                            {countChangesetOperations(xchangeset, threadSettings)}
                         </span>
                     </NavLink>
                 </li>
