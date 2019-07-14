@@ -87,7 +87,7 @@ export const CheckArea: React.FunctionComponent<Props> = ({ checkID, scope, chec
                 <ErrorBoundary location={props.location}>
                     <Switch>
                         <Route path={checkURL} exact={true}>
-                            <Redirect to={`${checkURL}/notifications`} />
+                            <Redirect to={`${checkURL}/diagnostics`} />
                         </Route>
                         <Route path={`${checkURL}/diagnostics`}>
                             <CheckDiagnosticsPage {...context} />

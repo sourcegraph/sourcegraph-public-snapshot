@@ -2,6 +2,9 @@ package git
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -27,6 +30,10 @@ func (GraphQLResolver) CreateRefFromPatch(ctx context.Context, arg *struct {
 		targetRef = defaultBranch.Name()
 	}
 
+	if !strings.HasPrefix(repo.Name(), "github.com/sd9/") && !strings.HasPrefix(repo.Name(), "github.com/sd9org/") {
+		return nil, errors.New("refusing to modify non-sd9 test repo") // TODO!(sqs)
+	}
+
 	commitID, err := gitserver.DefaultClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name()),
 		BaseCommit: api.CommitID(arg.Input.BaseCommit),
@@ -42,12 +49,13 @@ func (GraphQLResolver) CreateRefFromPatch(ctx context.Context, arg *struct {
 	if err != nil {
 		return nil, err
 	}
-	// // TODO!(sqs): this ref will be blown away when gitserver updates next time
-	// cmd := gitserver.DefaultClient.Command("git", "update-ref", "--", arg.Input.Name, commitID)
-	// cmd.Repo = gitserver.Repo{Name: api.RepoName(repo.Name())}
-	// if err := cmd.Run(ctx); err != nil {
-	// 	return nil, err
-	// }
+
+	// Push up the update to GitHub. TODO!(sqs) this only makes sense for the demo
+	cmd := gitserver.DefaultClient.Command("git", "push", "-f", "--", "origin", "refs/heads/master:refs/heads/master", arg.Input.Name+":"+arg.Input.Name)
+	cmd.Repo = gitserver.Repo{Name: api.RepoName(repo.Name())}
+	if out, err := cmd.CombinedOutput(ctx); err != nil {
+		return nil, fmt.Errorf("%s\n\n%s", err, out)
+	}
 
 	return &gitCreateRefFromPatchPayload{ref: graphqlbackend.NewGitRefResolver(repo, arg.Input.Name, graphqlbackend.GitObjectID(commitID))}, nil
 }

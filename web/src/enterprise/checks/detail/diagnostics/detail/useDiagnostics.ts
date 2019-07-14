@@ -18,9 +18,9 @@ export const useDiagnostics = (
     query?: sourcegraph.DiagnosticQuery
 ): typeof LOADING | DiagnosticInfo[] | ErrorLike => {
     const [diagnosticsOrError, setDiagnosticsOrError] = useState<typeof LOADING | DiagnosticInfo[] | ErrorLike>(LOADING)
-    const jsonQuery = JSON.stringify(query)
+    const jsonQuery = query && JSON.stringify(query)
     useEffect(() => {
-        const query = JSON.parse(jsonQuery) // avoid rerunning when object is equivalent but not reference-equal
+        const query = jsonQuery && JSON.parse(jsonQuery) // avoid rerunning when object is equivalent but not reference-equal
         const subscriptions = new Subscription()
         subscriptions.add(
             getDiagnosticInfos(extensionsController, query)

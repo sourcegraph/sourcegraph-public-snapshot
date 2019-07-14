@@ -1,7 +1,7 @@
 import { NotificationType } from '@sourcegraph/extension-api-classes'
 import { Diagnostic } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { flatten } from 'lodash'
+import { flatten, uniq } from 'lodash'
 import AlertIcon from 'mdi-react/AlertIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React, { useCallback, useEffect, useState } from 'react'
@@ -14,6 +14,7 @@ import { ExtensionsControllerProps } from '../../../../../../../shared/src/exten
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../../shared/src/util/errors'
 import { pluralize } from '../../../../../../../shared/src/util/strings'
+import { parseRepoURI } from '../../../../../../../shared/src/util/url'
 import { DiffStat } from '../../../../../repo/compare/DiffStat'
 import { DiffIcon, ZapIcon } from '../../../../../util/octicons'
 import { createChangesetFromDiffs } from '../../../../changesets/preview/backend'
@@ -120,6 +121,11 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
         do2()
     }, [changesetPlan, extensionsController, fileDiffsOrError])
 
+    const repositoriesAffected =
+        fileDiffsOrError !== LOADING &&
+        !isErrorLike(fileDiffsOrError) &&
+        uniq(fileDiffsOrError.map(fileDiff => parseRepoURI(fileDiff.newPath || fileDiff.oldPath!).repoName)).length
+
     return (
         <div className={`diagnostics-changesets-bar ${flashBorderClassName} ${flashBackgroundClassName} ${className}`}>
             <div className="container py-4 d-flex align-items-center">
@@ -128,6 +134,7 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
                         onClick={onCreateThreadClick}
                         buttonClassName="btn-success"
                         className="mr-4"
+                        loading={createdThreadOrLoading === LOADING}
                         disabled={
                             isEmpty ||
                             fileDiffsOrError === LOADING ||
@@ -165,17 +172,15 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
                                 </>
                             )}
                         </div>
-                        <span className="mr-4">
-                            <RepositoryIcon className="icon-inline" /> {/* TODO!(sqs): fake computation */}
-                            <strong>{1 + Math.floor(changesetPlan.operations.length / 5)}</strong>{' '}
-                            <span className="text-muted">
-                                {pluralize(
-                                    'repository affected',
-                                    1 + Math.floor(changesetPlan.operations.length / 5),
-                                    'repositories affected'
-                                )}
+                        {typeof repositoriesAffected === 'number' && (
+                            <span className="mr-4">
+                                <RepositoryIcon className="icon-inline" /> {/* TODO!(sqs): fake computation */}
+                                <strong>{repositoriesAffected}</strong>{' '}
+                                <span className="text-muted">
+                                    {pluralize('repository affected', repositoriesAffected, 'repositories affected')}
+                                </span>
                             </span>
-                        </span>
+                        )}
                         <div className="flex-1" />
                     </div>
                 ) : (

@@ -62,6 +62,17 @@ export interface ChangesetAction {
     detail?: string
 }
 
+export interface GitHubPRLink {
+    repositoryName: string
+    number: number
+    url: string
+
+    /**
+     * GitHub GraphQL ID of the pull request.
+     */
+    id: string
+}
+
 export interface ThreadSettings {
     queries?: string[]
     pullRequests?: PullRequest[]
@@ -78,6 +89,7 @@ export interface ThreadSettings {
     changesetActionDescriptions?: ChangesetAction[]
 
     plan?: ChangesetPlan
+    relatedPRs?: GitHubPRLink[]
 
     /** @deprecated */
     deltas?: ChangesetDelta[]

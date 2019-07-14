@@ -86,14 +86,14 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                     { pattern: '', type: 'regexp' },
                     {
                         repositories: {
-                            includes: ['react-router'],
+                            includes: [REPO_INCLUDE],
                             type: 'regexp',
                         },
                         files: {
                             includes: ['\\.[jt]sx?$'], // TODO!(sqs): typescript only
                             type: 'regexp',
                         },
-                        maxResults: 4, //MAX_RESULTS,
+                        maxResults: 50, //MAX_RESULTS,
                     }
                 )
             )

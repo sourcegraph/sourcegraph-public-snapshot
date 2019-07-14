@@ -16,6 +16,10 @@
     display: block !important;
 }
 
+.d-inline-block {
+    display: inline-block !important;
+}
+
 @media only screen and (min-width: 700px) {
     .d-sm-none {
         display: none !important;

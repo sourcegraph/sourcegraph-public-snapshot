@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
@@ -11,6 +12,7 @@ export interface CreateOrPreviewChangesetButtonProps {
     onClick: () => void
 
     disabled?: boolean
+    loading?: boolean
     className?: string
     buttonClassName?: string
 }
@@ -23,6 +25,7 @@ const LOADING: 'loading' = 'loading'
 export const ChangesetTargetButtonDropdown: React.FunctionComponent<CreateOrPreviewChangesetButtonProps> = ({
     onClick,
     disabled,
+    loading,
     className = '',
     buttonClassName = '',
 }) => {
@@ -46,6 +49,8 @@ export const ChangesetTargetButtonDropdown: React.FunctionComponent<CreateOrPrev
     >()
     const clearAppendToExistingChangeset = useCallback(() => setAppendToExistingChangeset(undefined), [])
 
+    const Icon = loading ? LoadingSpinner : ChangesetIcon
+
     return (
         <ButtonDropdown
             isOpen={isOpen}
@@ -53,7 +58,13 @@ export const ChangesetTargetButtonDropdown: React.FunctionComponent<CreateOrPrev
             className={`changeset-target-button-dropdown ${className}`}
         >
             <button className={`btn ${buttonClassName}`} onClick={onClick} disabled={disabled}>
-                <ChangesetIcon className="icon-inline mr-1" />
+                <div
+                    style={{
+                        width: '22px' /* TODO!(sqs): avoid jitter bc loading spinner is not as wide as other icon */,
+                    }}
+                >
+                    <Icon className="icon-inline mr-1" />
+                </div>
                 {appendToExistingChangeset === undefined
                     ? 'New changeset'
                     : `Add to changeset #${appendToExistingChangeset.idWithoutKind}`}

@@ -7,7 +7,7 @@ import { pluralize } from '../../../../../../shared/src/util/strings'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { Timeline } from '../../../../components/timeline/Timeline'
 import { PersonLink } from '../../../../user/PersonLink'
-import { GitPullRequestIcon } from '../../../../util/octicons'
+import { ActionsIcon, GitPullRequestIcon } from '../../../../util/octicons'
 import { ChecksIcon } from '../../../checks/icons'
 import { ThreadStatusBadge } from '../../../threads/components/threadStatus/ThreadStatusBadge'
 import { ThreadHeaderEditableTitle } from '../../../threads/detail/header/ThreadHeaderEditableTitle'
@@ -16,7 +16,8 @@ import { ThreadDescription } from '../../../threads/detail/overview/ThreadDescri
 import { ThreadStatusButton } from '../../../threads/form/ThreadStatusButton'
 import { ThreadSettings } from '../../../threads/settings'
 import { countChangesetFilesChanged } from '../../preview/ChangesetSummaryBar'
-import { ChangesetActionsList } from '../changes/ChangesetActionsList'
+import { ChangesetReviewLink } from '../changes/ChangesetReviewLink'
+import { ChangesetReviewsList } from '../changes/ChangesetReviewsList'
 
 interface Props extends ExtensionsControllerProps {
     thread: GQL.IDiscussionThread
@@ -75,25 +76,38 @@ export const ChangesetOverview: React.FunctionComponent<Props> = ({
         />
         <ThreadDescription {...props} thread={thread} onThreadUpdate={onThreadUpdate} className="mb-4" />
         <Timeline className="align-items-stretch mb-4">
-            <div className="d-flex align-items-start bg-body border p-4 mb-5">
+            {threadSettings.plan && (
+                <div className="d-flex align-items-start bg-body border p-4 mb-5 position-relative">
+                    <ActionsIcon className="mb-0 mr-3" />
+                    <Link to={`${areaURL}/operations`} className="stretched-link text-body">
+                        {threadSettings.plan.operations.length}{' '}
+                        {pluralize('operation', threadSettings.plan.operations.length)} applied
+                    </Link>
+                </div>
+            )}
+            <div className="d-flex align-items-center bg-body border p-4 mb-5">
                 <GitPullRequestIcon className="icon-inline mb-0 mr-3" />
                 Changes requested to {countChangesetFilesChanged(xchangeset)}{' '}
                 {pluralize('file', countChangesetFilesChanged(xchangeset))} in {xchangeset.repositories.length}{' '}
-                {pluralize('repository', xchangeset.repositories.length, 'repositories')}
+                {pluralize('repository', xchangeset.repositories.length, 'repositories')}:
+                {threadSettings.relatedPRs &&
+                    threadSettings.relatedPRs.map((link, i) => (
+                        <ChangesetReviewLink
+                            key={i}
+                            link={link}
+                            showRepositoryName={true}
+                            showIcon={true}
+                            className="p-2 mr-3"
+                            iconClassName="small text-success"
+                        />
+                    ))}
             </div>
-            <ChangesetActionsList
-                {...props}
-                thread={thread}
-                threadSettings={threadSettings}
-                xchangeset={xchangeset}
-                className="bg-body mb-5"
-            />
-            <div className="d-flex align-items-start bg-body border p-4 mb-5 position-relative">
+            {/* <div className="d-flex align-items-start bg-body border p-4 mb-5 position-relative">
                 <ChecksIcon className="mb-0 mr-3" />
                 <Link to={`${areaURL}/tasks`} className="stretched-link text-body">
                     Review is not complete
                 </Link>
-            </div>
+            </div> */}
             <div className="d-flex align-items-center bg-body border p-4">
                 <button type="button" className="btn btn-secondary text-muted mr-4" disabled={true}>
                     <GitPullRequestIcon className="mb-0 mr-3" />

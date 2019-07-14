@@ -1,6 +1,7 @@
 import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { parseRepoURI } from '../../../../../../shared/src/util/url'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { ActionsIcon } from '../../../../util/octicons'
 import { ThreadSettings } from '../../../threads/settings'
@@ -14,23 +15,26 @@ interface Props extends ExtensionsControllerProps {
 }
 
 /**
- * A list of actions run in a changeset.
+ * A list of operations performed by a changeset.
  */
-export const ChangesetActionsList: React.FunctionComponent<Props> = ({ threadSettings, className = '' }) =>
-    threadSettings.changesetActionDescriptions && threadSettings.changesetActionDescriptions.length > 0 ? (
+export const ChangesetPlanOperationsList: React.FunctionComponent<Props> = ({ threadSettings, className = '' }) =>
+    threadSettings.plan && threadSettings.plan.operations.length > 0 ? (
         <div className={`changeset-actions-list ${className}`}>
             <ul className="list-group">
-                {threadSettings.changesetActionDescriptions.map((a, i) => (
+                {threadSettings.plan.operations.map((op, i) => (
                     <li key={i} className="list-group-item d-flex align-items-start">
                         <ActionsIcon className="icon-inline small mr-2" />
                         <header>
-                            <h6 className="mb-0 font-size-base mr-4">{a.title}</h6>
-                            {a.detail && <span className="text-muted">{a.detail}</span>}
+                            <h6 className="mb-0 font-size-base font-weight-normal mr-4">{op.message}</h6>
                         </header>
                         <div className="flex-1"></div>
-                        <small className="text-muted">
-                            <strong>@{a.user}</strong> <Timestamp date={a.timestamp} noAbout={true} />
-                        </small>
+                        {op.diagnostics && (
+                            <small className="text-muted mt-1">
+                                {op.diagnostics.document &&
+                                    op.diagnostics.document.pattern &&
+                                    parseRepoURI(op.diagnostics.document.pattern).filePath}
+                            </small>
+                        )}
                     </li>
                 ))}
             </ul>

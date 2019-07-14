@@ -1,5 +1,4 @@
 import H from 'history'
-import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import React from 'react'
 import { RepositoryIcon } from '../../../../../../shared/src/components/icons'
@@ -10,7 +9,6 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { pluralize } from '../../../../../../shared/src/util/strings'
 import { GitCommitNode } from '../../../../repo/commits/GitCommitNode'
 import { DiffStat } from '../../../../repo/compare/DiffStat'
-import { GitRefTag } from '../../../../repo/GitRefTag'
 import { GitCommitIcon } from '../../../../util/octicons'
 import { ThreadSettings } from '../../../threads/settings'
 
@@ -52,16 +50,21 @@ export const ChangesetRepositoriesList: React.FunctionComponent<Props> = ({
                             {c.range.headRevSpec.expr}
                         </span>
                         <div className="flex-1"></div>
-                        <small className="mr-3">
-                            <GitCommitIcon className="icon-inline" /> {c.commits.nodes.length}{' '}
-                            {pluralize('commit', c.commits.nodes.length)}
-                        </small>
+                        {!showCommits && (
+                            <small className="mr-3">
+                                <GitCommitIcon className="icon-inline" /> {c.commits.nodes.length}{' '}
+                                {pluralize('commit', c.commits.nodes.length)}
+                            </small>
+                        )}
                         <DiffStat {...c.fileDiffs.diffStat} />
                     </div>
                     {showCommits && (
-                        <ul className="list-group ml-6">
+                        <ul className="list-group">
                             {c.commits.nodes.map((commit, i) => (
-                                <li key={i} className="list-group-item border-0 d-flex align-items-start">
+                                <li
+                                    key={i}
+                                    className="list-group-item border-0 d-flex align-items-start pb-0 px-0 border-left ml-4 pl-4"
+                                >
                                     <GitCommitIcon className="icon-inline mr-3 text-muted" />
                                     <GitCommitNode
                                         repoName={c.baseRepository.name}
