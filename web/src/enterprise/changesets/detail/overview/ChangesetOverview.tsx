@@ -81,27 +81,34 @@ export const ChangesetOverview: React.FunctionComponent<Props> = ({
                     <ActionsIcon className="mb-0 mr-3" />
                     <Link to={`${areaURL}/operations`} className="stretched-link text-body">
                         {threadSettings.plan.operations.length}{' '}
-                        {pluralize('operation', threadSettings.plan.operations.length)} applied
+                        {pluralize('operation', threadSettings.plan.operations.length)} applied{' '}
+                        <span className="text-muted">
+                            {' '}
+                            &mdash; {countChangesetFilesChanged(xchangeset)}{' '}
+                            {pluralize('file', countChangesetFilesChanged(xchangeset))} changed in{' '}
+                            {xchangeset.repositories.length}{' '}
+                            {pluralize('repository', xchangeset.repositories.length, 'repositories')}
+                        </span>
                     </Link>
                 </div>
             )}
-            <div className="d-flex align-items-center bg-body border p-4 mb-5">
-                <GitPullRequestIcon className="icon-inline mb-0 mr-3" />
-                Changes requested to {countChangesetFilesChanged(xchangeset)}{' '}
-                {pluralize('file', countChangesetFilesChanged(xchangeset))} in {xchangeset.repositories.length}{' '}
-                {pluralize('repository', xchangeset.repositories.length, 'repositories')}:
-                {threadSettings.relatedPRs &&
-                    threadSettings.relatedPRs.map((link, i) => (
+            {threadSettings.relatedPRs && (
+                <div className="d-flex align-items-center bg-body border p-4 mb-5">
+                    <GitPullRequestIcon className="icon-inline mb-0 mr-3" />
+                    Waiting for approval on {threadSettings.relatedPRs.length}{' '}
+                    {pluralize('pull request', threadSettings.relatedPRs.length)}: <span className="mr-2"></span>
+                    {threadSettings.relatedPRs.map((link, i) => (
                         <ChangesetReviewLink
                             key={i}
                             link={link}
                             showRepositoryName={true}
                             showIcon={true}
-                            className="p-2 mr-3"
+                            className="p-2 mr-2"
                             iconClassName="small text-success"
                         />
                     ))}
-            </div>
+                </div>
+            )}
             {/* <div className="d-flex align-items-start bg-body border p-4 mb-5 position-relative">
                 <ChecksIcon className="mb-0 mr-3" />
                 <Link to={`${areaURL}/tasks`} className="stretched-link text-body">
@@ -113,7 +120,7 @@ export const ChangesetOverview: React.FunctionComponent<Props> = ({
                     <GitPullRequestIcon className="mb-0 mr-3" />
                     Merge all
                 </button>
-                <span className="text-muted">Required review tasks are not yet complete</span>
+                <span className="text-muted">Requires all pull requests to be approved</span>
             </div>
         </Timeline>
     </div>

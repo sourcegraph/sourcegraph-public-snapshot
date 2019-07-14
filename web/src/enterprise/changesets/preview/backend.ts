@@ -46,8 +46,8 @@ export async function createChangesetFromDiffs(
         fileDiffsByRepo.set(repo, repoFileDiffs)
     }
 
-    const deltas: ChangesetDelta[] = []
-    const relatedPRs: GitHubPRLink[] = []
+    const deltas: Promise<ChangesetDelta>[] = []
+    const relatedPRs: Promise<GitHubPRLink>[] = []
     for (const [repoName, fileDiffs] of fileDiffsByRepo) {
         const repo = await fetchRepository(repoName).toPromise()
         const branchName = info.title!.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() // TODO!(sqs)
@@ -58,23 +58,26 @@ export async function createChangesetFromDiffs(
         }
 
         const baseCommit = parseRepoURI(fileDiffs[0].newPath!).commitID!
-        await gitCreateRefFromPatch({
-            input: {
-                repository: delta.repository,
-                name: delta.head,
-                baseCommit,
-                patch: fileDiffs.map(({ patch }) => patch).join('\n'),
-                commitMessage:
-                    info.plan && info.plan.operations.length > 0
-                        ? info.plan.operations.map(c => c.message).join(', ')
-                        : 'Changeset commit',
-            },
-        }).toPromise()
-        deltas.push(delta)
+        deltas.push(
+            gitCreateRefFromPatch({
+                input: {
+                    repository: delta.repository,
+                    name: delta.head,
+                    baseCommit,
+                    patch: fileDiffs.map(({ patch }) => patch).join('\n'),
+                    commitMessage:
+                        info.plan && info.plan.operations.length > 0
+                            ? info.plan.operations.map(c => c.message).join(', ')
+                            : 'Changeset commit',
+                },
+            })
+                .toPromise()
+                .then(() => delta)
+        )
 
         // TODO!(sqs) hack create github PRs
         relatedPRs.push(
-            await createGitHubPR(githubToken, {
+            createGitHubPR(githubToken, {
                 repositoryName: repoName,
                 baseRefName: delta.base,
                 headRefName: delta.head,
@@ -84,9 +87,9 @@ export async function createChangesetFromDiffs(
     }
 
     const settings: ThreadSettings = {
-        deltas,
+        deltas: await Promise.all(deltas),
         plan: info.plan,
-        relatedPRs,
+        relatedPRs: await Promise.all(await relatedPRs),
     }
     return createThread({
         ...info,
