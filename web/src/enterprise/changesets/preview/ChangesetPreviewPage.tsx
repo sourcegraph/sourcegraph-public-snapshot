@@ -10,7 +10,7 @@ import { GitPullRequestIcon } from '../../../util/octicons'
 import { createThreadAreaContext } from '../../threads/detail/ThreadArea'
 import { ChangesetCommitsList } from '../detail/changes/ChangesetCommitsList'
 import { ChangesetFilesList } from '../detail/changes/ChangesetFilesList'
-import { ChangesetPlanOperationsList } from '../detail/changes/ChangesetPlanOperationsList'
+import { ChangesetOperationsList } from '../detail/changes/ChangesetOperationsList'
 import { ChangesetRepositoriesList } from '../detail/changes/ChangesetRepositoriesList'
 import { ChangesetTasksList } from '../detail/changes/ChangesetTasksList'
 import { ChangesetsAreaContext } from '../global/ChangesetsArea'
@@ -67,7 +67,7 @@ export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
             </div>
             <hr className="my-4" />
             <div className="container">
-                <ChangesetPlanOperationsList {...props} {...context} xchangeset={xchangeset} className="mb-4" />
+                <ChangesetOperationsList {...props} {...context} xchangeset={xchangeset} className="mb-4" />
                 <ChangesetRepositoriesList {...props} {...context} xchangeset={xchangeset} showCommits={true} />
                 <ChangesetCommitsList {...props} {...context} xchangeset={xchangeset} className="d-none" />
                 <ChangesetTasksList {...props} {...context} xchangeset={xchangeset} className="mb-4 d-none" />

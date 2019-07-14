@@ -14,7 +14,7 @@ import { useChangesetByID } from '../util/useChangesetByID'
 import { useExtraChangesetInfo } from '../util/useExtraChangesetInfo'
 import { ChangesetChangesPage } from './changes/ChangesetChangesPage'
 import { ChangesetCommitsList } from './changes/ChangesetCommitsList'
-import { ChangesetPlanOperationsList } from './changes/ChangesetPlanOperationsList'
+import { ChangesetOperationsList } from './changes/ChangesetOperationsList'
 import { ChangesetRepositoriesList } from './changes/ChangesetRepositoriesList'
 import { ChangesetTasksList } from './changes/ChangesetTasksList'
 import { ChangesetAreaNavbar } from './navbar/ChangesetAreaNavbar'
@@ -93,7 +93,7 @@ export const ChangesetArea: React.FunctionComponent<Props> = props => {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <ChangesetPlanOperationsList
+                                <ChangesetOperationsList
                                     {...context}
                                     {...routeComponentProps}
                                     xchangeset={xchangeset}
