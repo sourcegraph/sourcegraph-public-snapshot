@@ -18,9 +18,9 @@ import {
     diagnosticQueryKey,
 } from '../../../threads/detail/backend'
 import { CheckAreaContext } from '../CheckArea'
-import { DiagnosticsBatchActions } from './changesets/DiagnosticsBatchActions'
 import { useDiagnostics } from './detail/useDiagnostics'
 import { DiagnosticQueryBuilder } from './DiagnosticQueryBuilder'
+import { DiagnosticsBatchActions } from './DiagnosticsBatchActions'
 import { ChangesetPlanProps } from './useChangesetPlan'
 
 interface Props

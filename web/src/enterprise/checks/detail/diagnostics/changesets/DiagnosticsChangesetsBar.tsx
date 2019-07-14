@@ -3,10 +3,11 @@ import { Diagnostic } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { flatten } from 'lodash'
 import AlertIcon from 'mdi-react/AlertIcon'
+import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React, { useCallback, useEffect, useState } from 'react'
-import { DropdownToggle } from 'reactstrap'
+import { Redirect } from 'react-router'
+import { UncontrolledPopover } from 'reactstrap'
 import { first, map } from 'rxjs/operators'
-import { Action, toAction } from '../../../../../../../shared/src/api/types/action'
 import { fromDiagnostic } from '../../../../../../../shared/src/api/types/diagnostic'
 import { RepositoryIcon } from '../../../../../../../shared/src/components/icons'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
@@ -15,21 +16,19 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../../../shared/src
 import { pluralize } from '../../../../../../../shared/src/util/strings'
 import { DiffStat } from '../../../../../repo/compare/DiffStat'
 import { DiffIcon, ZapIcon } from '../../../../../util/octicons'
-import { useEffectAsync } from '../../../../../util/useEffectAsync'
-import { ChangesetIcon } from '../../../../changesets/icons'
-import { createChangesetFromCodeAction } from '../../../../changesets/preview/backend'
-import { ChangesetButtonOrLinkExistingChangeset } from '../../../../tasks/list/item/ChangesetButtonOrLink'
+import { createChangesetFromDiffs } from '../../../../changesets/preview/backend'
 import { ChangesetTargetButtonDropdown } from '../../../../tasks/list/item/ChangesetTargetButtonDropdown'
 import { getDiagnosticInfos } from '../../../../threads/detail/backend'
 import { computeDiff, computeDiffStat, FileDiff } from '../../../../threads/detail/changes/computeDiff'
 import { ChangesetPlanProps } from '../useChangesetPlan'
-import { DiagnosticsBatchActions } from './DiagnosticsBatchActions'
 
 interface Props extends Pick<ChangesetPlanProps, 'changesetPlan'>, ExtensionsControllerProps {
     className?: string
 }
 
 const LOADING = 'loading' as const
+
+const DEBUG = localStorage.getItem('debug') !== null
 
 /**
  * A bar displaying the changesets related to a set of diagnostics, plus a preview of and statistics
@@ -49,30 +48,6 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
     }
     const flashBorderClassName = justChanged ? 'diagnostics-changesets-bar--flash-border' : ''
     const flashBackgroundClassName = justChanged ? 'diagnostics-changesets-bar--flash-bg' : ''
-
-    const [createdThreadOrLoading, setCreatedThreadOrLoading] = useState<ChangesetButtonOrLinkExistingChangeset>(
-        LOADING
-    )
-    const onCreateThreadClick = useCallback(async () => {
-        setCreatedThreadOrLoading(PENDING_CREATION)
-        try {
-            const action = selectedAction
-            if (!action) {
-                throw new Error('no active code action')
-            }
-            setCreatedThreadOrLoading(
-                await createChangesetFromCodeAction({ extensionsController }, null, action, {
-                    status: GQL.ThreadStatus.PREVIEW,
-                })
-            )
-        } catch (err) {
-            setCreatedThreadOrLoading(null)
-            extensionsController.services.notifications.showMessages.next({
-                message: `Error creating changeset: ${err.message}`,
-                type: NotificationType.Error,
-            })
-        }
-    }, [extensionsController])
 
     const isEmpty = changesetPlan.operations.length === 0
 
@@ -113,18 +88,56 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
     const diffStat =
         fileDiffsOrError !== LOADING && !isErrorLike(fileDiffsOrError) ? computeDiffStat(fileDiffsOrError) : null
 
+    const [createdThreadOrLoading, setCreatedThreadOrLoading] = useState<
+        null | typeof LOADING | Pick<GQL.IDiscussionThread, 'id' | 'url'>
+    >(null)
+    const onCreateThreadClick = useCallback(() => {
+        const do2 = async () => {
+            setCreatedThreadOrLoading(LOADING)
+            try {
+                if (fileDiffsOrError === LOADING || isErrorLike(fileDiffsOrError)) {
+                    throw new Error('file diffs not available')
+                }
+                setCreatedThreadOrLoading(
+                    await createChangesetFromDiffs(fileDiffsOrError, {
+                        status: GQL.ThreadStatus.PREVIEW,
+                        plan: changesetPlan,
+                        title: `Fix eslint issues`, // TODO!(sqs): un-hardcode eslint
+                        contents: `Fixes eslint issues in ${fileDiffsOrError.length} ${pluralize(
+                            'file',
+                            fileDiffsOrError.length
+                        )}`,
+                    })
+                )
+            } catch (err) {
+                setCreatedThreadOrLoading(null)
+                extensionsController.services.notifications.showMessages.next({
+                    message: `Error creating changeset: ${err.message}`,
+                    type: NotificationType.Error,
+                })
+            }
+        }
+        do2()
+    }, [changesetPlan, extensionsController, fileDiffsOrError])
+
     return (
         <div className={`diagnostics-changesets-bar ${flashBorderClassName} ${flashBackgroundClassName} ${className}`}>
             <div className="container py-4 d-flex align-items-center">
-                <ChangesetTargetButtonDropdown
-                    onClick={() => {
-                        throw new Error('TODO!(sqs)')
-                    }}
-                    showAddToExistingChangeset={true}
-                    buttonClassName="btn-success"
-                    className="mr-4"
-                    disabled={isEmpty}
-                />
+                {createdThreadOrLoading === null || createdThreadOrLoading === LOADING ? (
+                    <ChangesetTargetButtonDropdown
+                        onClick={onCreateThreadClick}
+                        buttonClassName="btn-success"
+                        className="mr-4"
+                        disabled={
+                            isEmpty ||
+                            fileDiffsOrError === LOADING ||
+                            isErrorLike(fileDiffsOrError) ||
+                            createdThreadOrLoading === LOADING
+                        }
+                    />
+                ) : (
+                    <Redirect to={createdThreadOrLoading.url} push={true} />
+                )}
 
                 {!isEmpty ? (
                     <div className={`flex-1 d-flex align-items-center`}>
@@ -163,10 +176,40 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
                                 )}
                             </span>
                         </span>
-                        <div className="flex-1"></div>
+                        <div className="flex-1" />
                     </div>
                 ) : (
                     <div className={`text-muted`}>Select actions to include in changeset...</div>
+                )}
+                <div className="flex-1" />
+                {DEBUG && (
+                    <>
+                        <button id="diagnostic-changesets-bar__popover-trigger" type="button" className="btn btn-link">
+                            <InformationOutlineIcon className="icon-inline" />
+                        </button>
+                        <UncontrolledPopover
+                            trigger="click"
+                            placement="top"
+                            target="diagnostic-changesets-bar__popover-trigger"
+                        >
+                            <div className="card bg-body">
+                                <h5 className="card-header">
+                                    Changeset <span className="badge badge-secondary">Debug</span>
+                                </h5>
+                                <pre
+                                    style={{
+                                        overflow: 'auto',
+                                        width: '40vw',
+                                        height: '50vh',
+                                        fontSize: '11px',
+                                    }}
+                                    className="card-body"
+                                >
+                                    {JSON.stringify(changesetPlan, null, 2)}
+                                </pre>
+                            </div>
+                        </UncontrolledPopover>
+                    </>
                 )}
             </div>
         </div>

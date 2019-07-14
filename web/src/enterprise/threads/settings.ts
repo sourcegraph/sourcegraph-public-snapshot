@@ -1,6 +1,5 @@
-import { ActionType } from '../../../../shared/src/api/types/action'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { FileDiff } from './detail/changes/computeDiff'
+import { ChangesetPlan } from '../changesets/plan/plan'
 
 export type PullRequest = {
     repo: string
@@ -71,9 +70,15 @@ export interface ThreadSettings {
     slackNotificationRules?: [SlackNotificationRule]
     emailNotificationRules?: [EmailNotificationRule]
     webhooks?: [WebhookRule]
+
+    /** @deprecated */
     actions?: { [id: string]: string | undefined }
 
+    /** @deprecated */
     changesetActionDescriptions?: ChangesetAction[]
-    plan?: ActionType['plan']['plan']
+
+    plan?: ChangesetPlan
+
+    /** @deprecated */
     deltas?: ChangesetDelta[]
 }

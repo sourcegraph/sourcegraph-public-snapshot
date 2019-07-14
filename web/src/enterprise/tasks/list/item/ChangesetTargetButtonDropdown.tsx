@@ -1,4 +1,3 @@
-import CheckIcon from 'mdi-react/CheckIcon'
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
@@ -7,7 +6,6 @@ import { CheckableDropdownItem } from '../../../../components/CheckableDropdownI
 import { fetchDiscussionThreads } from '../../../../discussions/backend'
 import { useEffectAsync } from '../../../../util/useEffectAsync'
 import { ChangesetIcon } from '../../../changesets/icons'
-import { ChangesetCreationStatus } from '../../../changesets/preview/backend'
 
 export interface CreateOrPreviewChangesetButtonProps {
     onClick: () => void
@@ -44,7 +42,7 @@ export const ChangesetTargetButtonDropdown: React.FunctionComponent<CreateOrPrev
     }, [])
 
     const [appendToExistingChangeset, setAppendToExistingChangeset] = useState<
-        Pick<GQL.IDiscussionThread, 'idWithoutKind'>
+        Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind'>
     >()
     const clearAppendToExistingChangeset = useCallback(() => setAppendToExistingChangeset(undefined), [])
 
@@ -89,9 +87,9 @@ export const ChangesetTargetButtonDropdown: React.FunctionComponent<CreateOrPrev
                             Add to existing changeset...
                         </DropdownItem>
                         {threadsOrError.nodes.map(thread => (
-                            // tslint:disable-next-line: jsx-no-lambda
                             <CheckableDropdownItem
                                 key={thread.id}
+                                // tslint:disable-next-line: jsx-no-lambda
                                 onClick={() => setAppendToExistingChangeset(thread)}
                                 checked={Boolean(
                                     appendToExistingChangeset && appendToExistingChangeset.id === thread.id

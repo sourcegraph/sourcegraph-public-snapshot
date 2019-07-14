@@ -23,16 +23,8 @@ export type ChangesetCreationStatus = GQL.ThreadStatus.OPEN_ACTIVE | GQL.ThreadS
 
 interface ChangesetCreationInfo
     extends Pick<GQL.ICreateThreadOnDiscussionsMutationArguments['input'], 'title' | 'contents'>,
-        Pick<ThreadSettings, 'changesetActionDescriptions' | 'plan'> {
+        Pick<ThreadSettings, 'plan'> {
     status: ChangesetCreationStatus
-}
-
-export async function createChangeset(
-    { extensionsController }: ExtensionsControllerProps,
-    info: ChangesetCreationInfo & Required<Pick<ChangesetCreationInfo, 'plan'>>
-): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
-    const edit = await extensionsController.services.commands.executeActionEditCommand(info.plan.operations[0].command)
-    return createChangesetFromDiffs(await computeDiff(extensionsController, [{ edit }]), info)
 }
 
 /**
