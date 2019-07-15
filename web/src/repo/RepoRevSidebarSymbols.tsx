@@ -98,6 +98,8 @@ export class RepoRevSidebarSymbols extends React.PureComponent<Props> {
             switchMap(props =>
                 fetchSymbols(props.repoID, props.rev || '', {
                     ...args,
+                    // `includePatterns` expects regexes, so first escape the
+                    // path.
                     includePatterns: [escapeRegExp(props.activePath)],
                 })
             )
