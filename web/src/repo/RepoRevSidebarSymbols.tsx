@@ -1,5 +1,5 @@
 import * as H from 'history'
-import { isEqual } from 'lodash'
+import { escapeRegExp, isEqual } from 'lodash'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
@@ -98,7 +98,7 @@ export class RepoRevSidebarSymbols extends React.PureComponent<Props> {
             switchMap(props =>
                 fetchSymbols(props.repoID, props.rev || '', {
                     ...args,
-                    includePatterns: [props.activePath],
+                    includePatterns: [escapeRegExp(props.activePath)],
                 })
             )
         )
