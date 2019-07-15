@@ -230,6 +230,9 @@ README.md @sqs
 /cmd/frontend/graphqlbackend/discussion* @slimsag
 /cmd/frontend/db/discussion* @slimsag
 
+# LSIF
+/lsif/ @chrismwendt @sourcegraph/code-nav
+
 # Development
 /dev/fakehub @ijt
 /dev/repogen @ijt
