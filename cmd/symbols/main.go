@@ -30,15 +30,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-var (
-	cacheDir       = env.Get("CACHE_DIR", "/tmp/symbols-cache", "directory to store cached symbols")
-	cacheSizeMB    = env.Get("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache in megabytes")
-	ctagsProcesses = env.Get("CTAGS_PROCESSES", strconv.Itoa(runtime.NumCPU()), "number of ctags child processes to run")
-)
-
 const port = "3184"
 
 func main() {
+	var (
+		cacheDir       = env.Get("CACHE_DIR", "/tmp/symbols-cache", "directory to store cached symbols")
+		cacheSizeMB    = env.Get("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache in megabytes")
+		ctagsProcesses = env.Get("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of ctags child processes to run")
+	)
+
 	env.Lock()
 	env.HandleHelpFlag()
 	log.SetFlags(0)
