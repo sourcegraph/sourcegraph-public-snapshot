@@ -9,7 +9,17 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
-## 3.6.0 (unreleased)
+## 3.7.0 (unreleased)
+
+### Added
+
+### Changed
+
+### Fixed
+
+### Removed
+
+## 3.6.0
 
 ### Added
 
@@ -32,8 +42,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Commit searches now correctly highlight unicode characters, for example 加. [#4512](https://github.com/sourcegraph/sourcegraph/issues/4512)
 - Symbol searches now show the number of symbol matches rather than the number of file matches found. [#4578](https://github.com/sourcegraph/sourcegraph/issues/4578)
 - Symbol searches with truncated results now show a `+` on the results page to signal that some results have been omitted. [#4579](https://github.com/sourcegraph/sourcegraph/issues/4579)
-
-### Removed
 
 ## 3.5.2
 
