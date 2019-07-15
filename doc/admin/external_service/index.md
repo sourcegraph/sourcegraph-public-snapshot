@@ -4,6 +4,7 @@ Sourcegraph can sync repositories from code hosts and other similar external ser
 
 - [GitHub](github.md)
 - [GitLab](gitlab.md)
+- [Bitbucket Cloud](bitbucket_cloud.md)
 - [Bitbucket Server](bitbucket_server.md)
 - [Phabricator](phabricator.md)
 - [Gitolite](gitolite.md)
