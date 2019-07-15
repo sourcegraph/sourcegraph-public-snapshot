@@ -173,10 +173,12 @@ function checkCommit(commit: any): void {
  */
 interface LRUDBEntry {
     dbPromise: Promise<Database>
-    // The size of the underlying LSIF file. This directly contributes to the
-    // size of the cache. Ideally, this would be set to the amount of memory
-    // that the `Database` uses, but calculating the memory usage is difficult
-    // so this uses the file size as a rough heuristic.
+    /**
+     * The size of the underlying LSIF file. This directly contributes to the
+     * size of the cache. Ideally, this would be set to the amount of memory
+     * that the `Database` uses, but calculating the memory usage is difficult
+     * so this uses the file size as a rough heuristic.
+     */
     length: number
     dispose: () => void
 }
@@ -263,7 +265,7 @@ function main(): void {
                         default:
                             throw new Error(`Unknown method ${method}`)
                     }
-                    res.header('content-type', 'application/json').send(result || 'null')
+                    res.send(result).json()
                 })
             } catch (e) {
                 if ('code' in e && e.code === 'ENOENT') {
