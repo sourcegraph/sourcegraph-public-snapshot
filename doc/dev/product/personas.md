@@ -308,3 +308,5 @@ TBD
 
 - Early adopter/tinkerer/open source enthusiast (personality/attitude focused, rather than job/role focused)
 - Security engineer
+  - https://app.hubspot.com/contacts/2762526/contact/15807951
+  - https://app.hubspot.com/contacts/2762526/contact/16031951
