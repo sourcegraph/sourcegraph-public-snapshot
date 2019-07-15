@@ -18,7 +18,7 @@ export const ChangesetReviewLink: React.FunctionComponent<Props> = ({
     showRepositoryName,
     showIcon = true,
     className = '',
-    iconClassName = '',
+    iconClassName = 'text-success', // TODO!(sqs): get PR status
 }) => (
     <a className={`d-flex align-items-center ${className}`} href={link.url} target="_blank">
         {showIcon && <GitPullRequestIcon className={`icon-inline mr-1 ${iconClassName}`} />}{' '}
