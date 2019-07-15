@@ -52,7 +52,7 @@ const SiteSchemaJSON = `{
           "description": "Enables the external service status indicator in the navigation bar.",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "disabled"
+          "default": "enabled"
         }
       },
       "group": "Experimental",
