@@ -23,6 +23,10 @@ import (
 
 	// Tune GOMAXPROCS for kubernetes. All our binaries import this package,
 	// so we tune for all of them.
+	//
+	// TODO it is surprising that we do this here. We should create a standard
+	// import for sourcegraph binaries which would have less surprising
+	// behaviour.
 	_ "go.uber.org/automaxprocs"
 )
 
