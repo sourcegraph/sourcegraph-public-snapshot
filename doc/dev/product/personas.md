@@ -88,7 +88,7 @@ An individual contributor who is responsible for coding and scripting on process
 #### Role
 
 - DevOps team
-- Production Engineering team (this new term is preferred by some companiesS)
+- Production Engineering team (this new term is preferred by some companies)
 
 #### Problems
 
