@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 - In the [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) and [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#permissions) `repositoryQuery` is now only required if `repos` is not set.
 - Usernames can now contain the `.` character (#4690).
 - Log messages from query-runner when saved searches fail now include the raw query as part of the message.
+- The status indicator in the navigation bar is now enabled by default
 
 ### Fixed
 
