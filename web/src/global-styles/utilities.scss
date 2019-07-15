@@ -85,6 +85,14 @@
     justify-content: flex-end !important;
 }
 
+.sticky-top {
+    @supports (position: sticky) {
+        position: sticky;
+        top: 0;
+        z-index: $zindex-sticky;
+    }
+}
+
 .w-100 {
     width: 100% !important;
 }
