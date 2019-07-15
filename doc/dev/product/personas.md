@@ -1,10 +1,10 @@
 # Personas
 
-"The persona is an archetype description of an imaginary but very plausible user that personifies these traits – especially their behaviors, attitudes, and goals."[^1]
+> The persona is an archetype description of an imaginary but very plausible user that personifies these traits – especially their behaviors, attitudes, and goals.
+>
+> Personas help you prioritize what’s important. If you have decided to make “Mary” the target for this release, then if this feature is critical for “Mary” then put it in, if it’s for “Sam” then it’s out. As you can see, just as important as deciding who a release is for, is deciding who it is not for. It is an extremely common mistake for a product to try to please everyone and end up pleasing no one. This process can help prevent that.
 
-"Personas help you prioritize what’s important. If you have decided to make “Mary” the target for this release, then if this feature is critical for “Mary” then put it in, if it’s for “Sam” then it’s out. As you can see, just as important as deciding who a release is for, is deciding who it is not for. It is an extremely common mistake for a product to try to please everyone and end up pleasing no one. This process can help prevent that."[^1]
-
-[^1]: https://svpg.com/personas-for-product-management/
+Source: "[Personas for Product Management](https://svpg.com/personas-for-product-management/)"
 
 ### Questions:
 
@@ -79,7 +79,7 @@ TBD
 - https://app.hubspot.com/contacts/2762526/contact/13456355/
 - https://app.hubspot.com/contacts/2762526/contact/15873101/
 
-## DevOps Engineer
+## DevOps/Production Engineering Engineer
 
 #### Who
 
@@ -87,7 +87,8 @@ An individual contributor who is responsible for coding and scripting on process
 
 #### Role
 
-DevOps Engineer
+- DevOps team
+- Production Engineering team (this new term is preferred by some companiesS)
 
 #### Problems
 
@@ -175,7 +176,7 @@ Middle manager with enough sway to get Sourcegraph widely used, but not enough t
 
 - Engineering Manager (not specifically for developer infrastructure, tooling, etc.)
 - Engineering Lead
-- Director of DevOps
+- Director of DevOps (or Director of Production Engineering)
 - Directory of Delivery
 
 #### Problems
