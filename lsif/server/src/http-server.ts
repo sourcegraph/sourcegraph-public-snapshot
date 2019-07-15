@@ -173,10 +173,12 @@ function checkCommit(commit: any): void {
  */
 interface LRUDBEntry {
     dbPromise: Promise<Database>
-    // The size of the underlying LSIF file. This directly contributes to the
-    // size of the cache. Ideally, this would be set to the amount of memory
-    // that the `Database` uses, but calculating the memory usage is difficult
-    // so this uses the file size as a rough heuristic.
+    /**
+     * The size of the underlying LSIF file. This directly contributes to the
+     * size of the cache. Ideally, this would be set to the amount of memory
+     * that the `Database` uses, but calculating the memory usage is difficult
+     * so this uses the file size as a rough heuristic.
+     */
     length: number
     dispose: () => void
 }
