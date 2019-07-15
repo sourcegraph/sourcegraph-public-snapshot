@@ -105,7 +105,12 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 
 # Management console webapp
 [ -n "${OFFLINE-}" ] || {
-    pushd ./cmd/management-console/web && yarn  --no-progress && popd
+    pushd ./cmd/management-console/web && yarn --no-progress && popd
+}
+
+# LSIF server
+[ -n "${OFFLINE-}" ] || {
+    pushd ./lsif/server && yarn --no-progress && popd
 }
 
 printf >&2 "\nStarting all binaries...\n\n"
