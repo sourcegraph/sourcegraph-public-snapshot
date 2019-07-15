@@ -18,11 +18,11 @@ Currently, all repositories belonging the user configured will be synced.
 
 In addition, there is one more field for configuring which repositories are mirrored:
 
-- [`teams`](bitbucket_cloud.md#configuration)<br>A list of teams whose repositories should be selected.
+- [`teams`](bitbucket_cloud.md#configuration)<br>A list of teams that the configured user has access to whose repositories should be synced.
 
 ### HTTPS cloning
 
-Sourcegraph by default clones repositories from your Bitbucket Cloud via HTTP(S), using the username and app password you provide in the configuration. The [`username`](bitbucket_cloud.md#configuration) and [`appPassword`](bitbucket_cloud.md#configuration) fields are always used when cloning, so they are required.
+Sourcegraph clones repositories from your Bitbucket Cloud via HTTP(S), using the [`username`](bitbucket_cloud.md#configuration) and [`appPassword`](bitbucket_cloud.md#configuration) required fields you provide in the configuration.
 
 ## Configuration
 
