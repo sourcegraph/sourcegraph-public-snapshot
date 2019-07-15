@@ -58,22 +58,6 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/ListRepos/Pagination", testStoreListReposPagination(store)},
 		{"DBStore/Syncer/Sync", testSyncerSync(store)},
 		{"DBStore/Syncer/SyncSubset", testSyncSubset(store)},
-		{
-			"Migrations/GitLabSetDefaultProjectQuery",
-			testGitLabSetDefaultProjectQueryMigration(store),
-		},
-		{
-			"Migrations/BitbucketServerUsername",
-			testBitbucketServerUsernameMigration(store),
-		},
-		{
-			"Migrations/AWSCodeCommitSetBogusGitCredentialsMigration",
-			testAWSCodeCommitSetBogusGitCredentialsMigration(store),
-		},
-		{
-			"Migrations/EnabledStateDeprecationMigration",
-			testEnabledStateDeprecationMigration(store),
-		},
 	} {
 		t.Run(tc.name, tc.test)
 	}
