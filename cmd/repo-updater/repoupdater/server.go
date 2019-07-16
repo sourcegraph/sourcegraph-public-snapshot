@@ -305,7 +305,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			Kind:        req.ExternalService.Kind,
 			DisplayName: req.ExternalService.DisplayName,
 			Config:      req.ExternalService.Config,
-		}, nil)
+		}, repos.NewHTTPClientFactory())
 		if err != nil {
 			errch <- err
 			return
