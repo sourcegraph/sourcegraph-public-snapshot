@@ -1,8 +1,11 @@
+import H from 'history'
 import React, { useCallback, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 interface Item {
     text: string
+    url: H.LocationDescriptor
     count?: number
 }
 
@@ -63,11 +66,16 @@ export const DiagnosticQueryBuilderFilterDropdownButton: React.FunctionComponent
                 </DropdownItem>
                 <DropdownItem divider={true} />
                 {itemsFiltered.length > 0 ? (
-                    itemsFiltered.map(({ text, count }) => (
-                        <DropdownItem key={text} className="d-flex align-items-center justify-content-between">
+                    itemsFiltered.map(({ text, url, count }) => (
+                        <Link
+                            key={text}
+                            to={url}
+                            className="dropdown-item d-flex align-items-center justify-content-between"
+                            onClick={toggleIsOpen}
+                        >
                             <span className="text-truncate">{text}</span>{' '}
                             {typeof count === 'number' && <span className="ml-3 badge badge-secondary">{count}</span>}
-                        </DropdownItem>
+                        </Link>
                     ))
                 ) : (
                     <DropdownItem header={true}>No {pluralNoun} found</DropdownItem>

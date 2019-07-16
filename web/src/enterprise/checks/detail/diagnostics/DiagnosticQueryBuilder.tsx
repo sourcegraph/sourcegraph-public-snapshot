@@ -1,37 +1,42 @@
 import H from 'history'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { sortBy } from 'lodash'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
 import CloseBoxIcon from 'mdi-react/CloseBoxIcon'
 import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import * as sourcegraph from 'sourcegraph'
+import { DiagnosticWithType } from '../../../../../../shared/src/api/client/services/diagnosticService'
+import { isDefined } from '../../../../../../shared/src/util/types'
+import { parseRepoURI } from '../../../../../../shared/src/util/url'
 import { Form } from '../../../../components/Form'
 import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
+import { DiagnosticInfo, diagnosticQueryMatcher } from '../../../threads/detail/backend'
 import {
-    ListHeaderQueryLinksButtonGroup,
-    ListHeaderQueryLinksNav,
-} from '../../../threads/components/ListHeaderQueryLinks'
+    appendToDiagnosticQuery,
+    DiagnosticResolutionStatus,
+    isInDiagnosticQuery,
+    replaceInDiagnosticQuery,
+} from './diagnosticQuery'
 import { DiagnosticQueryBuilderQuickFilterDropdownButton } from './DiagnosticQueryBuilderQuickFilterDropdownButton'
-import { DiagnosticQueryBuilderRepositoryFilterDropdownButton } from './DiagnosticQueryBuilderRepositoryFilterDropdownButton'
 import { DiagnosticQueryBuilderFilterDropdownButton } from './DiagnosticQueryBuilderTagFilterDropdownButton'
+import { ChangesetPlanProps } from './useChangesetPlan'
 
-interface Props extends QueryParameterProps {
-    parsedQuery: sourcegraph.DiagnosticQuery
+interface Props extends Pick<ChangesetPlanProps, 'changesetPlan'>, QueryParameterProps {
+    defaultQuery: string
+    diagnostics: DiagnosticInfo[]
 
     className?: string
     location: H.Location
 }
 
-const QUERY_FIELDS_IN_USE = ['is']
-
 /**
  * A query builder for a diagnostic query.
  */
 export const DiagnosticQueryBuilder: React.FunctionComponent<Props> = ({
-    parsedQuery,
+    defaultQuery,
+    diagnostics,
+    changesetPlan,
     query,
     onQueryChange,
     className = '',
@@ -56,41 +61,76 @@ export const DiagnosticQueryBuilder: React.FunctionComponent<Props> = ({
         []
     )
 
+    const urlToQuery = useCallback(
+        (diagnosticQuery: string): H.LocationDescriptor => {
+            const params = new URLSearchParams(location.search)
+            params.set('q', diagnosticQuery)
+            return `?${params.toString()}`
+        },
+        [location.search]
+    )
+
+    const diagnosticStatuses = useMemo((): Record<DiagnosticResolutionStatus, number> => {
+        const counts: Record<DiagnosticResolutionStatus, number> = { unresolved: 0, pending: 0 }
+        const matchers = changesetPlan.operations
+            .map(op => (op.diagnostics ? diagnosticQueryMatcher(op.diagnostics) : undefined))
+            .filter(isDefined)
+        const matchesAny = (d: DiagnosticWithType): boolean => matchers.some(m => m(d))
+        for (const d of diagnostics) {
+            if (matchesAny(d)) {
+                counts.pending++
+            } else {
+                counts.unresolved++
+            }
+        }
+        return counts
+    }, [changesetPlan.operations, diagnostics])
+
+    const diagnosticTags = useMemo(() => {
+        const counts: { [tag: string]: number } = {}
+        for (const tag of diagnostics.flatMap(d => d.tags || [])) {
+            counts[tag] = (counts[tag] || 0) + 1
+        }
+        return sortBy(Object.entries(counts), 1).reverse()
+    }, [diagnostics])
+
+    const diagnosticRepositories = useMemo(() => {
+        const counts: { [repo: string]: number } = {}
+        for (const diagnostic of diagnostics) {
+            const repo = parseRepoURI(diagnostic.resource.toString()).repoName
+            counts[repo] = (counts[repo] || 0) + 1
+        }
+        return sortBy(Object.entries(counts), 1).reverse()
+    }, [diagnostics])
+
     return (
         <div className={`diagnostic-query-builder d-flex align-items-center ${className}`}>
-            <ListHeaderQueryLinksNav
-                query={query}
-                links={[
-                    {
-                        icon: AlertCircleOutlineIcon,
-                        label: 'unresolved',
-                        count: 12,
-                        queryField: 'is',
-                        queryValues: ['unresolved'], // TODO!(sqs): un-hardcode
-                        removeQueryFields: QUERY_FIELDS_IN_USE,
-                    },
-                    {
-                        icon: ProgressCheckIcon,
-                        label: 'pending resolution',
-                        count: 7,
-                        queryField: 'is',
-                        queryValues: ['pending'], // TODO!(sqs): un-hardcode
-                        removeQueryFields: QUERY_FIELDS_IN_USE,
-                    },
-                ]}
-                location={location}
-                itemClassName="p-3"
-                itemActiveClassName="font-weight-bold"
-                itemInactiveClassName="btn-link"
-            />
+            <Link
+                to={urlToQuery(replaceInDiagnosticQuery(query, 'is:', DiagnosticResolutionStatus.Unresolved))}
+                className={`btn btn-link ${isInDiagnosticQuery(query, 'is:', DiagnosticResolutionStatus.Unresolved)}`}
+                onClick={() => alert('TODO: unimplemented')}
+            >
+                <AlertCircleOutlineIcon className="icon-inline mr-1" />
+                {diagnosticStatuses.unresolved} unresolved
+            </Link>
+            <Link
+                to={urlToQuery(replaceInDiagnosticQuery(query, 'is:', DiagnosticResolutionStatus.PendingResolution))}
+                className={`btn btn-link ${isInDiagnosticQuery(
+                    query,
+                    'is:',
+                    DiagnosticResolutionStatus.PendingResolution
+                )}`}
+                onClick={() => alert('TODO: unimplemented')}
+            >
+                <ProgressCheckIcon className="icon-inline mr-1" />
+                {diagnosticStatuses.pending} pending resolution
+            </Link>
             <DiagnosticQueryBuilderFilterDropdownButton
-                items={[
-                    { text: 'no-undef', count: 41 },
-                    { text: 'sourcegraph/import-submodule', count: 21 },
-                    { text: 'semicolon', count: 17 },
-                    { text: 'react-hooks/deps', count: 11 },
-                    { text: 'module', count: 3 },
-                ]}
+                items={diagnosticTags.map(([tag, count]) => ({
+                    text: tag,
+                    url: urlToQuery(appendToDiagnosticQuery(query, 'tag:', tag)),
+                    count,
+                }))}
                 pluralNoun="tags"
                 buttonText="Tags"
                 headerText="Filter by tag"
@@ -98,13 +138,11 @@ export const DiagnosticQueryBuilder: React.FunctionComponent<Props> = ({
                 buttonClassName="btn-link"
             />
             <DiagnosticQueryBuilderFilterDropdownButton
-                items={[
-                    { text: 'github.com/sourcegraph/sourcegraph', count: 41 },
-                    { text: 'github.com/sourcegraph/codeintellify', count: 21 },
-                    { text: 'github.com/sourcegraph/javascript-typescript-langserver', count: 17 },
-                    { text: 'github.com/sourcegraph/event-positions', count: 11 },
-                    { text: 'github.com/sourcegraph/icons', count: 3 },
-                ]}
+                items={diagnosticRepositories.map(([repo, count]) => ({
+                    text: repo,
+                    url: urlToQuery(appendToDiagnosticQuery(query, 'repo:', repo)),
+                    count,
+                }))}
                 pluralNoun="repositories"
                 buttonText="Repositories"
                 headerText="Filter by repository"
@@ -130,7 +168,7 @@ export const DiagnosticQueryBuilder: React.FunctionComponent<Props> = ({
                         onBlur={onBlur}
                     />
                     <div className="input-group-append">
-                        <Link to="TODO!(sqs)" className="btn btn-link">
+                        <Link to={urlToQuery(defaultQuery)} className="btn btn-link">
                             <CloseBoxIcon className="icon-inline mr-2" />
                             Clear filters
                         </Link>

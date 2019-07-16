@@ -57,7 +57,7 @@ export const DiagnosticsBatchActions: React.FunctionComponent<Props> = ({
 
     return (
         <div className={`d-flex align-items-center w-100 ${className}`}>
-            <div className="text-nowrap text-muted mr-3 py-1">
+            <div className="text-nowrap text-muted mr-3 py-2">
                 <CheckBoxMultipleOutlineIcon className="icon-inline d-none" />
                 <AnimationPlayIcon className="icon-inline" /> Batch actions:
             </div>

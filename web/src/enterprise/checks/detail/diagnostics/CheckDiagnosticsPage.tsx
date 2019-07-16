@@ -34,7 +34,6 @@ export const CheckDiagnosticsPage: React.FunctionComponent<Props> = ({
     ...props
 }) => {
     const { changesetPlan, onChangesetPlanDiagnosticActionSet, onChangesetPlanBatchActionClick } = useChangesetPlan()
-    const baseDiagnosticQuery: sourcegraph.DiagnosticQuery = { type: checkID.type }
 
     const onActionSelect = useCallback(
         (diagnostic: DiagnosticInfo, action: Action | null) => {
@@ -56,11 +55,12 @@ export const CheckDiagnosticsPage: React.FunctionComponent<Props> = ({
             <DiagnosticsListPage
                 {...props}
                 getSelectedActionForDiagnostic={getSelectedActionForDiagnostic}
-                baseDiagnosticQuery={baseDiagnosticQuery}
                 onActionSelect={onActionSelect}
+                changesetPlan={changesetPlan}
                 onChangesetPlanBatchActionClick={onChangesetPlanBatchActionClick}
                 checkProvider={checkProvider}
                 className="flex-1"
+                defaultQuery={`type:${checkID.type}`}
             />
             <div className="check-diagnostics-page__bar border-top">
                 <DiagnosticsChangesetsBar {...props} changesetPlan={changesetPlan} />

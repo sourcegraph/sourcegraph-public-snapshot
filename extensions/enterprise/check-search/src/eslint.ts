@@ -93,7 +93,7 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                             includes: ['\\.[jt]sx?$'], // TODO!(sqs): typescript only
                             type: 'regexp',
                         },
-                        maxResults: 50, //MAX_RESULTS,
+                        maxResults: 12, //MAX_RESULTS,
                     }
                 )
             )
@@ -279,7 +279,7 @@ function registerCheckProvider(diagnostics: Observable<sourcegraph.Diagnostic[] 
                         ruleIds.map<sourcegraph.DiagnosticGroup>(ruleId => ({
                             id: ruleId.replace(/\//g, '-'), // make safe for URL path
                             name: ruleId,
-                            query: { type: 'eslint', tag: ruleId },
+                            query: { type: 'eslint', tag: [ruleId] },
                         }))
                     )
                 ),
@@ -291,12 +291,12 @@ function registerCheckProvider(diagnostics: Observable<sourcegraph.Diagnostic[] 
                             diagnostics: {
                                 type: 'eslint' /* TODO!(sqs) support >1 tag, so we can do, tag: 'auto-fixable' */,
                             },
-                            editCommand: { command: FIX_EDIT_COMMAND },
+                            editCommand: { command: FIX_EDIT_COMMAND, arguments: [] },
                         },
                         ...ruleIds.map(ruleId => ({
                             message: `Fix '${ruleId}'`,
-                            diagnostics: { type: 'eslint', tag: ruleId },
-                            editCommand: { command: FIX_EDIT_COMMAND },
+                            diagnostics: { type: 'eslint', tag: [ruleId] },
+                            editCommand: { command: FIX_EDIT_COMMAND, arguments: [] },
                         })),
                     ])
                 ),

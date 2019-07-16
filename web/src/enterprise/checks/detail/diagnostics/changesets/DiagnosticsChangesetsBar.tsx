@@ -7,7 +7,7 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Redirect } from 'react-router'
 import { UncontrolledPopover } from 'reactstrap'
-import { first, map } from 'rxjs/operators'
+import { filter, first, map } from 'rxjs/operators'
 import { fromDiagnostic } from '../../../../../../../shared/src/api/types/diagnostic'
 import { RepositoryIcon } from '../../../../../../../shared/src/components/icons'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
@@ -19,7 +19,7 @@ import { DiffStat } from '../../../../../repo/compare/DiffStat'
 import { DiffIcon, ZapIcon } from '../../../../../util/octicons'
 import { createChangesetFromDiffs } from '../../../../changesets/preview/backend'
 import { ChangesetTargetButtonDropdown } from '../../../../tasks/list/item/ChangesetTargetButtonDropdown'
-import { getDiagnosticInfos } from '../../../../threads/detail/backend'
+import { diagnosticQueryMatcher, getDiagnosticInfos } from '../../../../threads/detail/backend'
 import { computeDiff, computeDiffStat, FileDiff } from '../../../../threads/detail/changes/computeDiff'
 import { ChangesetPlanProps } from '../useChangesetPlan'
 
@@ -64,9 +64,14 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
                             await Promise.all(
                                 changesetPlan.operations.map(async op => {
                                     const diagnostics: (Diagnostic | null)[] = op.diagnostics
-                                        ? await getDiagnosticInfos(extensionsController, op.diagnostics)
+                                        ? await getDiagnosticInfos(extensionsController, op.diagnostics.type)
                                               .pipe(
                                                   first() /*TODO!(sqs) remove first, make reactive*/,
+                                                  map(diagnostics =>
+                                                      op.diagnostics
+                                                          ? diagnostics.filter(diagnosticQueryMatcher(op.diagnostics))
+                                                          : diagnostics
+                                                  ),
                                                   map(diagnostics => diagnostics.map(fromDiagnostic))
                                               )
                                               .toPromise()

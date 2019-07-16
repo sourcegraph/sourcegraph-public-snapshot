@@ -44,12 +44,11 @@ export const WithQueryParameter: React.FunctionComponent<Props> = ({
 }
 
 export const withQueryParameter = <P extends object>(
-    component: React.FunctionComponent<P & QueryParameterProps>,
-    defaultQuery = ''
-): React.FunctionComponent<P & Pick<Props, Exclude<keyof Props, 'defaultQuery' | 'children'>>> => {
+    component: React.FunctionComponent<P & QueryParameterProps>
+): React.FunctionComponent<P & Pick<Props, Exclude<keyof Props, 'children'>>> => {
     const Component = component
     return props => (
-        <WithQueryParameter {...props} defaultQuery={defaultQuery}>
+        <WithQueryParameter {...props}>
             {queryParameterProps => <Component {...props} {...queryParameterProps} />}
         </WithQueryParameter>
     )

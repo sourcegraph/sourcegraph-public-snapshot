@@ -16,22 +16,25 @@ import {
     DiagnosticInfo,
     diagnosticQueryForSingleDiagnostic,
     diagnosticQueryKey,
+    diagnosticQueryMatcher,
 } from '../../../threads/detail/backend'
 import { CheckAreaContext } from '../CheckArea'
 import { useDiagnostics } from './detail/useDiagnostics'
+import { parseDiagnosticQuery } from './diagnosticQuery'
 import { DiagnosticQueryBuilder } from './DiagnosticQueryBuilder'
 import { DiagnosticsBatchActions } from './DiagnosticsBatchActions'
 import { ChangesetPlanProps } from './useChangesetPlan'
 
 interface Props
-    extends Pick<ChangesetPlanProps, 'onChangesetPlanBatchActionClick'>,
+    extends Pick<ChangesetPlanProps, 'changesetPlan' | 'onChangesetPlanBatchActionClick'>,
         Pick<CheckAreaContext, 'checkProvider'>,
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps {
-    baseDiagnosticQuery: sourcegraph.DiagnosticQuery
     getSelectedActionForDiagnostic: (diagnostic: DiagnosticWithType) => ChangesetPlanOperation | null
     onActionSelect: (diagnostic: DiagnosticInfo, action: Action | null) => void
+
+    defaultQuery: string
 
     className?: string
     history: H.History
@@ -45,9 +48,10 @@ const LOADING: 'loading' = 'loading'
  */
 export const DiagnosticsListPage = withQueryParameter<Props>(
     ({
-        baseDiagnosticQuery,
         getSelectedActionForDiagnostic,
         onActionSelect,
+        defaultQuery,
+        changesetPlan,
         onChangesetPlanBatchActionClick,
         checkProvider,
         query,
@@ -56,9 +60,14 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
         extensionsController,
         ...props
     }) => {
-        const parsedQuery = parseDiagnosticQuery(baseDiagnosticQuery)
+        const parsedQuery = parseDiagnosticQuery(query)
         // tslint:disable-next-line: react-hooks-nesting
-        const diagnosticsOrError = useDiagnostics(extensionsController, parsedQuery)
+        const diagnosticsOrError = useDiagnostics(extensionsController, parsedQuery.type)
+
+        const filteredDiagnosticsOrError =
+            diagnosticsOrError !== LOADING && !isErrorLike(diagnosticsOrError)
+                ? diagnosticsOrError.filter(diagnosticQueryMatcher(parsedQuery))
+                : []
 
         return (
             <div className={`diagnostics-list-page ${className}`}>
@@ -71,16 +80,14 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
                     <div className="container">
                         <LoadingSpinner className="mt-3" />
                     </div>
-                ) : diagnosticsOrError.length === 0 ? (
-                    <div className="container">
-                        <p className="p-2 mb-0 text-muted">No diagnostics found.</p>
-                    </div>
                 ) : (
                     <>
                         <div className="diagnostics-list-page__toolbar bg-body border-bottom p-3">
                             <DiagnosticQueryBuilder
                                 {...props}
-                                parsedQuery={parsedQuery}
+                                defaultQuery={defaultQuery}
+                                diagnostics={diagnosticsOrError}
+                                changesetPlan={changesetPlan}
                                 query={query}
                                 onQueryChange={onQueryChange}
                             />
@@ -93,28 +100,30 @@ export const DiagnosticsListPage = withQueryParameter<Props>(
                                 />
                             </div>
                         </div>
-                        <ul className="list-group list-group-flush mb-0">
-                            {diagnosticsOrError.map((diagnostic, i) => (
-                                <li key={i} className={`list-group-item px-0 ${i === 0 ? 'border-top-0' : ''}`}>
-                                    <DiagnosticsListItem
-                                        {...props}
-                                        key={JSON.stringify(diagnostic)}
-                                        diagnostic={diagnostic}
-                                        selectedAction={getSelectedActionForDiagnostic(diagnostic)}
-                                        onActionSelect={onActionSelect}
-                                        className="container-fluid"
-                                        extensionsController={extensionsController}
-                                    />
-                                </li>
-                            ))}
-                        </ul>
+                        {filteredDiagnosticsOrError.length === 0 ? (
+                            <div className="container">
+                                <p className="p-2 mb-0 text-muted">No diagnostics found.</p>
+                            </div>
+                        ) : (
+                            <ul className="list-group list-group-flush mb-0">
+                                {filteredDiagnosticsOrError.map((diagnostic, i) => (
+                                    <li key={i} className={`list-group-item px-0 ${i === 0 ? 'border-top-0' : ''}`}>
+                                        <DiagnosticsListItem
+                                            {...props}
+                                            key={JSON.stringify(diagnostic)}
+                                            diagnostic={diagnostic}
+                                            selectedAction={getSelectedActionForDiagnostic(diagnostic)}
+                                            onActionSelect={onActionSelect}
+                                            className="container-fluid"
+                                            extensionsController={extensionsController}
+                                        />
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </>
                 )}
             </div>
         )
     }
 )
-
-function parseDiagnosticQuery(base?: sourcegraph.DiagnosticQuery): sourcegraph.DiagnosticQuery {
-    return base || { type: 'TODO!(sqs)' } // TODO!(sqs)
-}
