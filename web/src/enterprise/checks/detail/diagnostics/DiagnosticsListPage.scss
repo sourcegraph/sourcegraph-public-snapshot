@@ -1,7 +1,7 @@
 .diagnostics-list-page {
     &__toolbar {
         position: sticky;
-        top: 0;
+        top: 40px; // TODO!(sqs) hardcoded height of CheckAreaNavbar
         left: 0;
         right: 0;
     }
