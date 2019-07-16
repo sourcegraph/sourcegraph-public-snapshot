@@ -13,6 +13,7 @@ import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
 import { ThemeProps } from '../../../theme'
+import { ThreadActionsArea } from '../../threads/detail/actions/ThreadActionsArea'
 import { ChecksAreaContext } from '../scope/ScopeChecksArea'
 import { useCheckByTypeForScope } from '../util/useCheckByTypeForScope'
 import { CheckDiagnosticsPage } from './diagnostics/CheckDiagnosticsPage'
@@ -105,6 +106,19 @@ export const CheckArea: React.FunctionComponent<Props> = ({ checkID, scope, chec
                         <Route path={`${checkURL}/diagnostics`}>
                             <CheckDiagnosticsPage {...context} />
                         </Route>
+                        <Route
+                            path={`${checkURL}/settings2`}
+                            // tslint:disable-next-line: jsx-no-lambda
+                            render={routeComponentProps => (
+                                <ThreadActionsArea
+                                    {...context}
+                                    {...routeComponentProps}
+                                    thread={{ url: 'x' }}
+                                    threadSettings={{}}
+                                    className="container mt-4"
+                                />
+                            )}
+                        />
                         <Route path={`${checkURL}/settings`}>TODO!(sqs)</Route>
                         <Route component={NotFoundPage} />
                     </Switch>
