@@ -11,19 +11,17 @@ const LOADING: 'loading' = 'loading'
 /**
  * A React hook that observes diagnostics.
  *
- * @param query Only observe diagnostics matching the {@link sourcegraph.DiagnosticQuery}.
+ * @param type Only observe diagnostics matching the type.
  */
 export const useDiagnostics = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
-    query?: sourcegraph.DiagnosticQuery
+    type?: sourcegraph.DiagnosticQuery['type']
 ): typeof LOADING | DiagnosticInfo[] | ErrorLike => {
     const [diagnosticsOrError, setDiagnosticsOrError] = useState<typeof LOADING | DiagnosticInfo[] | ErrorLike>(LOADING)
-    const jsonQuery = query && JSON.stringify(query)
     useEffect(() => {
-        const query = jsonQuery && JSON.parse(jsonQuery) // avoid rerunning when object is equivalent but not reference-equal
         const subscriptions = new Subscription()
         subscriptions.add(
-            getDiagnosticInfos(extensionsController, query)
+            getDiagnosticInfos(extensionsController, type)
                 .pipe(
                     catchError(err => [asError(err)]),
                     startWith(LOADING)
@@ -31,6 +29,6 @@ export const useDiagnostics = (
                 .subscribe(setDiagnosticsOrError)
         )
         return () => subscriptions.unsubscribe()
-    }, [extensionsController, jsonQuery])
+    }, [extensionsController, type])
     return diagnosticsOrError
 }

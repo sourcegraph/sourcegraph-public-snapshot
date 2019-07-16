@@ -96,13 +96,11 @@ export const toDiagnosticInfos = async (diagnostics: DiagnosticWithType[]) => {
  */
 export const getDiagnosticInfos = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
-    query?: sourcegraph.DiagnosticQuery
+    type?: sourcegraph.DiagnosticQuery['type']
 ): Observable<DiagnosticInfo[]> =>
-    from(
-        extensionsController.services.diagnostics
-            .observeDiagnostics({}, query ? query.type : undefined)
-            .pipe(map(diagnostics => (query ? diagnostics.filter(diagnosticQueryMatcher(query)) : diagnostics)))
-    ).pipe(switchMap(diagEntries => toDiagnosticInfos(diagEntries)))
+    from(extensionsController.services.diagnostics.observeDiagnostics({}, type)).pipe(
+        switchMap(diagEntries => toDiagnosticInfos(diagEntries))
+    )
 
 export function diagnosticQueryMatcher(
     query: sourcegraph.DiagnosticQuery
@@ -110,12 +108,13 @@ export function diagnosticQueryMatcher(
     return diagnostic =>
         diagnostic.type === query.type &&
         (!query.document ||
-            match([query.document], {
+            match(query.document, {
                 uri: diagnostic.resource.toString(),
                 languageId: /*TODO!(sqs)*/ getModeFromPath(diagnostic.resource.pathname),
             })) &&
         (!query.range || query.range.isEqual(diagnostic.range)) &&
-        (query.tag !== undefined ? !!diagnostic.tags && diagnostic.tags.includes(query.tag) : true)
+        (query.tag !== undefined ? query.tag.every(tag => diagnostic.tags && diagnostic.tags.includes(tag)) : true) &&
+        (query.message === undefined || diagnostic.message.toLowerCase().includes(query.message.toLowerCase()))
 }
 
 // TODO!(sqs): this assumes a diag provider never has 2 diagnostics on the same range and resource
@@ -128,19 +127,12 @@ export const diagnosticID = (diagnostic: DiagnosticWithType): string =>
 export const diagnosticQueryKey = (query: sourcegraph.DiagnosticQuery): string =>
     JSON.stringify({ ...query, range: query.range ? (query.range as any).toJSON() : undefined })
 
-export const diagnosticQueryForSingleDiagnostic = (diagnostic: DiagnosticWithType): sourcegraph.DiagnosticQuery => {
-    if (diagnostic.tags && diagnostic.tags.length >= 2) {
-        throw new Error(
-            'TODO!(sqs) not supported because DiagnosticQuery#tag is singleton for simplicity now, but that can be easily improved if needed'
-        )
-    }
-    return {
-        type: diagnostic.type,
-        document: { pattern: diagnostic.resource.toString() },
-        range: diagnostic.range,
-        tag: diagnostic.tags ? diagnostic.tags[0] : undefined,
-    }
-}
+export const diagnosticQueryForSingleDiagnostic = (diagnostic: DiagnosticWithType): sourcegraph.DiagnosticQuery => ({
+    type: diagnostic.type,
+    document: [{ pattern: diagnostic.resource.toString() }],
+    range: diagnostic.range,
+    tag: diagnostic.tags,
+})
 
 export const getCodeActions = memoizeObservable(
     ({

@@ -989,12 +989,12 @@ declare module 'sourcegraph' {
         /**
          * Match only diagnostics with the given type.
          */
-        readonly type: string
+        readonly type?: string
 
         /**
-         * Match only diagnostics on documents that satisfy the filter.
+         * Match only diagnostics on documents that satisfy any of the document filters.
          */
-        readonly document?: DocumentFilter
+        readonly document?: DocumentFilter[]
 
         /**
          * Match only diagnostics with a specific range in the document. The start and end positions
@@ -1004,9 +1004,14 @@ declare module 'sourcegraph' {
         readonly range?: Range
 
         /**
-         * Match only diagnostics that have the given tag.
+         * Match only diagnostics whose message contains this substring (case-insensitive).
          */
-        readonly tag?: string
+        readonly message?: string
+
+        /**
+         * Match only diagnostics that have all of the given tags.
+         */
+        readonly tag?: string[]
     }
 
     export interface DiagnosticProvider {
