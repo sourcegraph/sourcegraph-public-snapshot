@@ -17,6 +17,7 @@ import { ChecksAreaContext } from '../scope/ScopeChecksArea'
 import { useCheckByTypeForScope } from '../util/useCheckByTypeForScope'
 import { CheckDiagnosticsPage } from './diagnostics/CheckDiagnosticsPage'
 import { CheckAreaNavbar } from './navbar/CheckAreaNavbar'
+import { CheckBreadcrumbs } from './overview/CheckBreadcrumbs'
 import { CheckOverview } from './overview/CheckOverview'
 
 const NotFoundPage = () => (
@@ -55,7 +56,7 @@ const LOADING: 'loading' = 'loading'
 /**
  * The area for a single check.
  */
-export const CheckArea: React.FunctionComponent<Props> = ({ checkID, scope, checkURL, ...props }) => {
+export const CheckArea: React.FunctionComponent<Props> = ({ checkID, scope, checkURL, checksURL, ...props }) => {
     const checkOrError = useCheckByTypeForScope(props.extensionsController, checkID, scope)
     if (checkOrError === LOADING) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
@@ -73,16 +74,28 @@ export const CheckArea: React.FunctionComponent<Props> = ({ checkID, scope, chec
         checkID: checkOrError.id,
         checkProvider: checkOrError.provider,
         checkInfo: checkOrError.information,
+        checksURL,
         checkURL,
     }
 
     return (
         <div className="status-area flex-1 d-flex overflow-hidden">
-            <div className="d-flex flex-column flex-1 overflow-auto">
+            <div className="flex-1 d-flex flex-column overflow-auto">
                 <ErrorBoundary location={props.location}>
+                    <div className="container flex-0">
+                        <CheckBreadcrumbs
+                            checkID={checkID}
+                            checkInfo={checkOrError.information}
+                            checkURL={checkURL}
+                            checksURL={checksURL}
+                            className="py-3"
+                        />
+                        <hr className="my-0" />
+                        <h2 className="my-3 font-weight-normal">{checkID.type}</h2>
+                    </div>
                     <CheckOverview {...context} className="container flex-0 pb-3" />
                     <div className="w-100 border-bottom" />
-                    <CheckAreaNavbar {...context} className="flex-0 sticky-top bg-body d-none" />
+                    <CheckAreaNavbar {...context} className="flex-0 sticky-top bg-body" />
                 </ErrorBoundary>
                 <ErrorBoundary location={props.location}>
                     <Switch>

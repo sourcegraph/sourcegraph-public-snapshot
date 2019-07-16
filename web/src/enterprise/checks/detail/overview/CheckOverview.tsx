@@ -4,7 +4,6 @@ import { Markdown } from '../../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 import { Timeline } from '../../../../components/timeline/Timeline'
 import { CheckAreaContext } from '../CheckArea'
-import { CheckBreadcrumbs } from './CheckBreadcrumbs'
 import { CheckPipelineSection } from './pipeline/CheckPipelineSection'
 import { CheckNotificationSettingsDropdownButton } from './stateBar/CheckNotificationSettingsDropdownButton'
 import { CheckStateBar } from './stateBar/CheckStateBar'
@@ -24,15 +23,6 @@ export const CheckOverview: React.FunctionComponent<Props> = ({
     className = '',
 }) => (
     <div className={`check-overview ${className || ''}`}>
-        <CheckBreadcrumbs
-            checkID={checkID}
-            checkInfo={checkInfo}
-            checkURL={checkURL}
-            checksURL={checksURL}
-            className="py-3"
-        />
-        <hr className="my-0" />
-        <h2 className="my-3 font-weight-normal">{checkID.type}</h2>
         {checkInfo.description && <Markdown dangerousInnerHTML={renderMarkdown(checkInfo.description.value)} />}
         <Timeline tag="div" className="align-items-stretch mb-3">
             {checkInfo.sections && (
