@@ -127,6 +127,13 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                                 disabled={this.state.loading}
                                 autoFocus={true}
                             />
+                            <small
+                                id="site-admin-create-user-page__form-username-help"
+                                className="form-text text-muted"
+                            >
+                                A username consists of letters, numbers, hyphens (-), dots (.) and may not begin or end
+                                with a hyphen nor a dot.
+                            </small>
                         </div>
                         <div className="form-group site-admin-create-user-page__form-group">
                             <label htmlFor="site-admin-create-user-page__form-email">Email</label>
