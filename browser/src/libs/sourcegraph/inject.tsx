@@ -24,14 +24,10 @@ export function injectExtensionMarker(): void {
 }
 
 /**
- * Injects the extension marker and dispatches a custom event
- * to signal to Sourcegraph web app that the browser extension is installed.
- *
- *  Not idempotent.
+ * Dispatches a custom event to signal to Sourcegraph web app
+ * that the browser extension is installed.
  */
 export function signalBrowserExtensionInstalled(): void {
-    injectExtensionMarker()
-
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         dispatchSourcegraphEvents()
     } else {

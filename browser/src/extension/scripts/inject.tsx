@@ -2,7 +2,8 @@ import '../../config/polyfill'
 
 import * as H from 'history'
 import React from 'react'
-import { Subscription } from 'rxjs'
+import { fromEvent, Subscription } from 'rxjs'
+import { first } from 'rxjs/operators'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
 import { storage } from '../../browser/storage'
 import { injectCodeIntelligence } from '../../libs/code_intelligence/inject'
@@ -10,6 +11,7 @@ import { initSentry } from '../../libs/sentry'
 import {
     checkIsSourcegraph,
     EXTENSION_MARKER_ID,
+    injectExtensionMarker,
     NATIVE_INTEGRATION_ACTIVATED,
     signalBrowserExtensionInstalled,
 } from '../../libs/sourcegraph/inject'
@@ -54,18 +56,12 @@ async function main(): Promise<void> {
         console.log('Sourcegraph native integration is already running')
         return
     }
-    // If the extension marker isn't present, listen for a custom event sent by the native
+    // If the extension marker isn't present, inject it and listen for a custom event sent by the native
     // integration to signal its activation.
-    const nativeIntegrationActivationEventReceived = new Promise<void>(resolve =>
-        document.addEventListener(
-            NATIVE_INTEGRATION_ACTIVATED,
-            () => {
-                console.log('Native integration activation event received')
-                resolve()
-            },
-            { once: true }
-        )
-    )
+    injectExtensionMarker()
+    const nativeIntegrationActivationEventReceived = fromEvent(document, NATIVE_INTEGRATION_ACTIVATED)
+        .pipe(first())
+        .toPromise()
 
     const items = await storage.sync.get()
     if (items.disableExtension) {
@@ -107,6 +103,7 @@ async function main(): Promise<void> {
     // Clean up susbscription if the native integration gets activated
     // later in the lifetime of the content script.
     await nativeIntegrationActivationEventReceived
+    console.log('Native integration activation event received')
     subscriptions.unsubscribe()
 }
 
