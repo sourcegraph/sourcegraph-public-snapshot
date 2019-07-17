@@ -66,7 +66,12 @@ export class Tooltip extends React.PureComponent<Props, State> {
                 key={this.state.subjectSeq}
                 isOpen={true}
                 target={this.state.subject}
-                placement="auto"
+                placement="bottom"
+                modifiers={{
+                    flip: {
+                        behavior: ['bottom'],
+                    },
+                }}
             >
                 {this.state.content}
             </BootstrapTooltip>
