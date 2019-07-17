@@ -41,16 +41,30 @@ export function getHoverActions(
     {
         extensionsController,
         platformContext,
-    }: ExtensionsControllerProps & PlatformContextProps<'urlToFile' | 'requestGraphQL'>,
+    }: ExtensionsControllerProps<'services'> & PlatformContextProps<'urlToFile' | 'requestGraphQL'>,
     hoverContext: HoveredToken & HoverContext
-): Observable<ActionItemAction[]> {
+): Observable<ActionItemAction[] | null> {
     return getHoverActionsContext({ extensionsController, platformContext }, hoverContext).pipe(
-        switchMap(context =>
-            extensionsController.services.contribution
-                .getContributions(undefined, context)
-                .pipe(map(contributions => getContributedActionItems(contributions, ContributableMenu.Hover)))
-        )
+        switchMap(getHoverActionsFromContext({ extensionsController }))
     )
+}
+
+/**
+ * Fetches the contributed hover actions for a given context.
+ * Emits `null` if no actions are contributed.
+ *
+ * @internal exported for testing only
+ */
+export function getHoverActionsFromContext({
+    extensionsController,
+}: ExtensionsControllerProps<'services'>): (
+    context: Context<TextDocumentPositionParams>
+) => Observable<ActionItemAction[] | null> {
+    return context =>
+        extensionsController.services.contribution.getContributions(undefined, context).pipe(
+            map(contributions => getContributedActionItems(contributions, ContributableMenu.Hover)),
+            map(actions => (actions.length > 0 ? actions : null))
+        )
 }
 
 /**

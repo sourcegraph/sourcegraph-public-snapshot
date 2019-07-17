@@ -2,7 +2,7 @@ import { HoveredToken, LOADER_DELAY } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
 import { createMemoryHistory } from 'history'
 import { BehaviorSubject, from, Observable, of, throwError } from 'rxjs'
-import { first, map } from 'rxjs/operators'
+import { first } from 'rxjs/operators'
 // tslint:disable-next-line:no-submodule-imports
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
@@ -13,16 +13,22 @@ import { ContributionRegistry } from '../api/client/services/contribution'
 import { createTestEditorService } from '../api/client/services/editorService.test'
 import { ProvideTextDocumentLocationSignature } from '../api/client/services/location'
 import { WorkspaceRootWithMetadata, WorkspaceService } from '../api/client/services/workspaceService'
-import { ContributableMenu, ReferenceParams, TextDocumentPositionParams } from '../api/protocol'
+import { ReferenceParams, TextDocumentPositionParams } from '../api/protocol'
 import { PrivateRepoPublicSourcegraphComError } from '../backend/errors'
-import { getContributedActionItems } from '../contributions/contributions'
+import { Controller } from '../extensions/controller'
 import { SuccessGraphQLResult } from '../graphql/graphql'
 import { IMutation, IQuery } from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
 import { EMPTY_SETTINGS_CASCADE } from '../settings/settings'
 import { resetAllMemoizationCaches } from '../util/memoizeObservable'
 import { FileSpec, PositionSpec, RawRepoSpec, RepoSpec, RevSpec, toPrettyBlobURL, ViewStateSpec } from '../util/url'
-import { getDefinitionURL, getHoverActionsContext, HoverActionsContext, registerHoverContributions } from './actions'
+import {
+    getDefinitionURL,
+    getHoverActionsContext,
+    getHoverActionsFromContext,
+    HoverActionsContext,
+    registerHoverContributions,
+} from './actions'
 import { HoverContext } from './HoverOverlay'
 
 const FIXTURE_PARAMS: TextDocumentPositionParams = {
@@ -387,27 +393,24 @@ describe('registerHoverContributions()', () => {
         getLocations: () => of(of(null)),
     }
     const history = createMemoryHistory()
+    const extensionsController = {
+        services: {
+            contribution,
+            commands,
+            workspace: testWorkspaceService(),
+            textDocumentDefinition,
+        } as Services,
+    } as Pick<Controller, 'services'>
     const subscription = registerHoverContributions({
-        extensionsController: {
-            services: {
-                contribution,
-                commands,
-                workspace: testWorkspaceService(),
-                textDocumentDefinition,
-            },
-        },
+        extensionsController,
         platformContext: { urlToFile, requestGraphQL },
         history,
     })
     afterAll(() => subscription.unsubscribe())
 
     const getHoverActions = (context: HoverActionsContext) =>
-        contribution
-            .getContributions(undefined, context)
-            .pipe(
-                first(),
-                map(contributions => getContributedActionItems(contributions, ContributableMenu.Hover))
-            )
+        getHoverActionsFromContext({ extensionsController })(context)
+            .pipe(first())
             .toPromise()
 
     describe('getHoverActions()', () => {
@@ -477,7 +480,7 @@ describe('registerHoverContributions()', () => {
                     'findReferences.url': null,
                     hoverPosition: FIXTURE_PARAMS,
                 })
-            ).resolves.toEqual([]))
+            ).resolves.toEqual(null))
 
         it('shows goToDefinition.preloaded when goToDefinition.url is available', async () =>
             expect(
@@ -537,7 +540,7 @@ describe('registerHoverContributions()', () => {
                     'findReferences.url': '/r@v/-/blob/f#L2:2&tab=references',
                     hoverPosition: FIXTURE_PARAMS,
                 })
-            ).resolves.toEqual([]))
+            ).resolves.toEqual(null))
     })
 
     describe('goToDefinition command', () => {
