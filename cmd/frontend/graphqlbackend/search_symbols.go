@@ -8,11 +8,11 @@ import (
 	"sync"
 
 	"github.com/neelance/parallel"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	lsp "github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // searchSymbolResult is a result from symbol search.
@@ -84,7 +84,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			limitHit := len(res) > limit
+			limitHit := symbolCount(res) > limit
 			repoErr = handleRepoSearchResult(common, *repoRevs, limitHit, false, repoErr)
 			if repoErr != nil {
 				if ctx.Err() == nil || errors.Cause(repoErr) != ctx.Err() {
@@ -103,12 +103,38 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 		})
 	}
 	err = run.Wait()
+	res2 := limitSymbolResults(res, limit)
+	common.limitHit = symbolCount(res2) < symbolCount(res)
+	return res2, common, err
+}
 
-	if len(res) > limit {
-		common.limitHit = true
-		res = res[:limit]
+// limitSymbolResults returns a new version of res containing no more than limit symbol matches.
+func limitSymbolResults(res []*fileMatchResolver, limit int) []*fileMatchResolver {
+	res2 := make([]*fileMatchResolver, 0, len(res))
+	nsym := 0
+	for _, r := range res {
+		r2 := *r
+		if nsym+len(r.symbols) > limit {
+			r2.symbols = r2.symbols[:limit-nsym]
+		}
+		if len(r2.symbols) > 0 {
+			res2 = append(res2, &r2)
+		}
+		nsym += len(r2.symbols)
+		if nsym >= limit {
+			return res2
+		}
 	}
-	return res, common, err
+	return res2
+}
+
+// symbolCount returns the total number of symbols in a slice of fileMatchResolvers.
+func symbolCount(fmrs []*fileMatchResolver) int {
+	nsym := 0
+	for _, fmr := range fmrs {
+		nsym += len(fmr.symbols)
+	}
+	return nsym
 }
 
 func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.PatternInfo, query *query.Query, limit int) (res []*fileMatchResolver, err error) {
@@ -146,7 +172,8 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		IsRegExp:        patternInfo.IsRegExp,
 		IncludePatterns: patternInfo.IncludePatterns,
 		ExcludePattern:  patternInfo.ExcludePattern,
-		First:           limit,
+		// Ask for limit + 1 so we can detect whether there are more results than the limit.
+		First: limit + 1,
 	})
 	fileMatchesByURI := make(map[string]*fileMatchResolver)
 	fileMatches := make([]*fileMatchResolver, 0)

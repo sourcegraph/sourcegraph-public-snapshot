@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
@@ -186,6 +187,24 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(gitoliteService.URN()),
 	)
 
+	bitbucketCloudService := &repos.ExternalService{
+		ID:   60,
+		Kind: "BITBUCKETCLOUD",
+	}
+
+	bitbucketCloudRepo := (&repos.Repo{
+		Name:     "bitbucket.org/team/foo",
+		Metadata: &bitbucketcloud.Repo{},
+		Enabled:  true,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "{e164a64c-bd73-4a40-b447-d71b43f328a8}",
+			ServiceID:   "https://bitbucket.org/",
+			ServiceType: "bitbucketCloud",
+		},
+	}).With(
+		repos.Opt.RepoSources(bitbucketCloudService.URN()),
+	)
+
 	clock := repos.NewFakeClock(time.Now(), 0)
 
 	type testCase struct {
@@ -210,6 +229,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		{repo: awsCodeCommitRepo, svc: awsCodeCommitService},
 		{repo: otherRepo, svc: otherService},
 		{repo: gitoliteRepo, svc: gitoliteService},
+		{repo: bitbucketCloudRepo, svc: bitbucketCloudService},
 	} {
 		svcdup := tc.svc.With(repos.Opt.ExternalServiceID(tc.svc.ID + 1))
 		testCases = append(testCases,
@@ -495,6 +515,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					update = &gitlab.Project{Archived: true}
 				case "bitbucketserver":
 					update = &bitbucketserver.Repo{Public: true}
+				case "bitbucketcloud":
+					update = &bitbucketcloud.Repo{IsPrivate: true}
 				case "awscodecommit":
 					update = &awscodecommit.Repository{Description: "new description"}
 				case "other", "gitolite":

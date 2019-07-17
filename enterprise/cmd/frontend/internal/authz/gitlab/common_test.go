@@ -9,7 +9,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
@@ -348,10 +348,10 @@ func acct(t *testing.T, userID int32, serviceType, serviceID, accountID, oauthTo
 	}
 }
 
-func repo(uri, serviceType, serviceID, id string) authz.Repo {
-	return authz.Repo{
-		RepoName: api.RepoName(uri),
-		ExternalRepoSpec: api.ExternalRepoSpec{
+func repo(uri, serviceType, serviceID, id string) *types.Repo {
+	return &types.Repo{
+		Name: api.RepoName(uri),
+		ExternalRepo: api.ExternalRepoSpec{
 			ID:          id,
 			ServiceType: serviceType,
 			ServiceID:   serviceID,

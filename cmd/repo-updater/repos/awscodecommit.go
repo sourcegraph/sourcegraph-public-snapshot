@@ -125,7 +125,7 @@ func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) (*Repo, erro
 	return &Repo{
 		Name:         string(reposource.AWSRepoName(s.config.RepositoryPathPattern, r.Name)),
 		URI:          string(reposource.AWSRepoName("", r.Name)),
-		ExternalRepo: *awscodecommit.ExternalRepoSpec(r, serviceID),
+		ExternalRepo: awscodecommit.ExternalRepoSpec(r, serviceID),
 		Description:  r.Description,
 		Enabled:      true,
 		Sources: map[string]*SourceInfo{

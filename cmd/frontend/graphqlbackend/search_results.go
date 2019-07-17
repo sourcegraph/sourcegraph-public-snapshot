@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
@@ -28,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -39,7 +39,8 @@ import (
 // searchResultsCommon contains fields that should be returned by all funcs
 // that contribute to the overall search result set.
 type searchResultsCommon struct {
-	limitHit bool                      // whether the limit on results was hit
+	limitHit bool // whether the limit on results was hit
+
 	repos    []*types.Repo             // repos that were matched by the repo-related filters
 	searched []*types.Repo             // repos that were searched
 	indexed  []*types.Repo             // repos that were searched using an index
@@ -62,49 +63,36 @@ func (c *searchResultsCommon) LimitHit() bool {
 }
 
 func (c *searchResultsCommon) Repositories() []*repositoryResolver {
-	if c.repos == nil {
-		return []*repositoryResolver{}
-	}
-	return toRepositoryResolvers(c.repos)
+	return repositoryResolvers(c.repos)
 }
 
 func (c *searchResultsCommon) RepositoriesSearched() []*repositoryResolver {
-	if c.searched == nil {
-		return nil
-	}
-	return toRepositoryResolvers(c.searched)
+	return repositoryResolvers(c.searched)
 }
 
 func (c *searchResultsCommon) IndexedRepositoriesSearched() []*repositoryResolver {
-	if c.indexed == nil {
-		return nil
-	}
-	return toRepositoryResolvers(c.indexed)
+	return repositoryResolvers(c.indexed)
 }
 
 func (c *searchResultsCommon) Cloning() []*repositoryResolver {
-	if c.cloning == nil {
-		return nil
-	}
-	return toRepositoryResolvers(c.cloning)
+	return repositoryResolvers(c.cloning)
 }
 
 func (c *searchResultsCommon) Missing() []*repositoryResolver {
-	if c.missing == nil {
-		return nil
-	}
-	return toRepositoryResolvers(c.missing)
+	return repositoryResolvers(c.missing)
 }
 
 func (c *searchResultsCommon) Timedout() []*repositoryResolver {
-	if c.timedout == nil {
-		return nil
-	}
-	return toRepositoryResolvers(c.timedout)
+	return repositoryResolvers(c.timedout)
 }
 
 func (c *searchResultsCommon) IndexUnavailable() bool {
 	return c.indexUnavailable
+}
+
+func repositoryResolvers(repos types.Repos) []*repositoryResolver {
+	dedupSort(&repos)
+	return toRepositoryResolvers(repos)
 }
 
 // update updates c with the other data, deduping as necessary. It modifies c but
@@ -113,28 +101,12 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.limitHit = c.limitHit || other.limitHit
 	c.indexUnavailable = c.indexUnavailable || other.indexUnavailable
 
-	appendUnique := func(dstp *[]*types.Repo, src []*types.Repo) {
-		dst := *dstp
-		sort.Slice(dst, func(i, j int) bool { return dst[i].ID < dst[j].ID })
-		sort.Slice(src, func(i, j int) bool { return src[i].ID < src[j].ID })
-		for _, r := range dst {
-			for len(src) > 0 && src[0].ID <= r.ID {
-				if r != src[0] {
-					dst = append(dst, src[0])
-				}
-				src = src[1:]
-			}
-		}
-		dst = append(dst, src...)
-		sort.Slice(dst, func(i, j int) bool { return dst[i].ID < dst[j].ID })
-		*dstp = dst
-	}
-	appendUnique(&c.repos, other.repos)
-	appendUnique(&c.searched, other.searched)
-	appendUnique(&c.indexed, other.indexed)
-	appendUnique(&c.cloning, other.cloning)
-	appendUnique(&c.missing, other.missing)
-	appendUnique(&c.timedout, other.timedout)
+	c.repos = append(c.repos, other.repos...)
+	c.searched = append(c.searched, other.searched...)
+	c.indexed = append(c.indexed, other.indexed...)
+	c.cloning = append(c.cloning, other.cloning...)
+	c.missing = append(c.missing, other.missing...)
+	c.timedout = append(c.timedout, other.timedout...)
 	c.resultCount += other.resultCount
 
 	if c.partial == nil {
@@ -144,6 +116,26 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	for repo := range other.partial {
 		c.partial[repo] = struct{}{}
 	}
+}
+
+// dedupSort sorts (by ID in ascending order) and deduplicates
+// the given repos in-place.
+func dedupSort(repos *types.Repos) {
+	if len(*repos) == 0 {
+		return
+	}
+
+	sort.Sort(*repos)
+
+	j := 0
+	for i := 1; i < len(*repos); i++ {
+		if (*repos)[j].ID != (*repos)[i].ID {
+			j++
+			(*repos)[j] = (*repos)[i]
+		}
+	}
+
+	*repos = (*repos)[:j+1]
 }
 
 // searchResultsResolver is a resolver for the GraphQL type `SearchResults`
@@ -452,6 +444,8 @@ loop:
 				}
 				addPoint(t)
 			})
+		case *codemodResultResolver:
+			continue
 		default:
 			panic("SearchResults.Sparkline unexpected union type state")
 		}
@@ -805,6 +799,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	var resultTypes []string
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
+	} else if len(r.query.Values(query.FieldReplace)) > 0 {
+		resultTypes = []string{"codemod"}
 	} else {
 		resultTypes, _ = r.query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
@@ -999,6 +995,30 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					commonMu.Unlock()
 				}
 			})
+		case "codemod":
+			wg := waitGroup(true)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+
+				codemodResults, codemodCommon, err := performCodemod(ctx, &args)
+				// Timeouts are reported through searchResultsCommon so don't report an error for them
+				if err != nil && !isContextError(ctx, err) {
+					multiErrMu.Lock()
+					multiErr = multierror.Append(multiErr, errors.Wrap(err, "codemod search failed"))
+					multiErrMu.Unlock()
+				}
+				if codemodResults != nil {
+					resultsMu.Lock()
+					results = append(results, codemodResults...)
+					resultsMu.Unlock()
+				}
+				if codemodCommon != nil {
+					commonMu.Lock()
+					common.update(*codemodCommon)
+					commonMu.Unlock()
+				}
+			})
 		}
 	}
 
@@ -1057,12 +1077,14 @@ func isContextError(ctx context.Context, err error) bool {
 //   - *repositoryResolver         // repo name match
 //   - *fileMatchResolver          // text match
 //   - *commitSearchResultResolver // diff or commit match
+//   - *codemodResultResolver      // code modification
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type searchResultResolver interface {
 	ToRepository() (*repositoryResolver, bool)
 	ToFileMatch() (*fileMatchResolver, bool)
 	ToCommitSearchResult() (*commitSearchResultResolver, bool)
+	ToCodemodResult() (*codemodResultResolver, bool)
 
 	// SearchResultURIs returns the repo name and file uri respectiveley
 	searchResultURIs() (string, string)

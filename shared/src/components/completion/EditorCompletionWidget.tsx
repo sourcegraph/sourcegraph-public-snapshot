@@ -8,14 +8,12 @@ import {
     delay,
     distinctUntilChanged,
     first,
-    map,
     share,
     switchMap,
     takeUntil,
     throttleTime,
 } from 'rxjs/operators'
 import { CompletionItem, CompletionList } from 'sourcegraph'
-import { CodeEditor, EditorId } from '../../api/client/services/editorService'
 import { offsetToPosition, positionToOffset } from '../../api/client/types/textDocument'
 import { ExtensionsControllerProps } from '../../extensions/controller'
 import { asError, ErrorLike } from '../../util/errors'
@@ -49,7 +47,7 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
         typeof LOADING | CompletionList | null | ErrorLike
     >(null)
     useEffect(() => {
-        const subscription = from(editorService.editors)
+        const subscription = from(editorService.observeEditorAndModel({ editorId }))
             .pipe(
                 debounceTime(0), // Debounce multiple synchronous changes so we only handle them once.
                 // These throttles are tweaked for maximum perceived responsiveness. They can
@@ -61,7 +59,6 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
                 // so we never skip an update.
                 throttleTime(100, undefined, { leading: true, trailing: true }),
                 throttleTimeWindow(500, 2),
-                map(editors => findEditor(editors, editorId)),
                 distinctUntilChanged((a, b) => isEqual(a.selections, b.selections) && a.model.text === b.model.text),
                 switchMap(editor => {
                     if (editor.selections.length === 0) {
@@ -85,15 +82,12 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
             )
             .subscribe(setCompletionListOrError)
         return () => subscription.unsubscribe()
-    }, [completionItemsService, editorId, editorService.editors])
+    }, [completionItemsService, editorId, editorService, editorService.editors])
 
     const onSelectItem = async (item: CompletionItem) => {
-        const editor = findEditor(
-            await from(editorService.editors)
-                .pipe(first())
-                .toPromise(),
-            editorId
-        )
+        const editor = await from(editorService.observeEditorAndModel({ editorId }))
+            .pipe(first())
+            .toPromise()
         const [sel, ...secondarySelections] = editor.selections
         if (!sel) {
             throw new Error('no selection')
@@ -145,12 +139,4 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
             onSelectItem={onSelectItem}
         />
     )
-}
-
-function findEditor(editors: readonly CodeEditor[], editorId: EditorId['editorId']): CodeEditor {
-    const editor = editors.find(e => e.editorId === editorId)
-    if (!editor) {
-        throw new Error(`editor not found: ${editorId}`)
-    }
-    return editor
 }

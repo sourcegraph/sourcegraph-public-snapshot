@@ -11,6 +11,44 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
+func TestDiscussionThread_Get(t *testing.T) {
+	resetMocks()
+	mockViewerCanUseDiscussions = func() error { return nil }
+	defer func() { mockViewerCanUseDiscussions = nil }()
+	const (
+		wantThreadID        = 123
+		wantThreadGraphQLID = "RGlzY3Vzc2lvblRocmVhZDoiM2Yi"
+	)
+	db.Mocks.DiscussionThreads.Get = func(threadID int64) (*types.DiscussionThread, error) {
+		return &types.DiscussionThread{ID: wantThreadID}, nil
+	}
+
+	t.Run("by ID", func(t *testing.T) {
+		gqltesting.RunTests(t, []*gqltesting.Test{
+			{
+				Schema: GraphQLSchema,
+				Query: `
+                                query ($id: ID!) {
+                                        node(id: $id) {
+                                                __typename
+												id
+                                        }
+                                }
+                        `,
+				Variables: map[string]interface{}{"id": wantThreadGraphQLID},
+				ExpectedResult: `
+                                {
+                                        "node": {
+											"__typename": "DiscussionThread",
+											"id": "` + wantThreadGraphQLID + `"
+                                        }
+                                }
+                        `,
+			},
+		})
+	})
+}
+
 func TestDiscussionSelectionRelativeTo(t *testing.T) {
 	i32 := func(i int32) *int32 {
 		return &i
@@ -135,7 +173,7 @@ func TestDiscussionsMutations_UpdateThread(t *testing.T) {
 			Query: `
                                 mutation($title: String!) {
                                         discussions {
-                                                updateThread(input: {threadID: "123", title: $title}) {
+                                                updateThread(input: {threadID: "RGlzY3Vzc2lvblRocmVhZDoiM2Yi", title: $title}) {
                                                         title
                                                 }
                                         }

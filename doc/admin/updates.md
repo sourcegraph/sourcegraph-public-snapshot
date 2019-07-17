@@ -1,9 +1,5 @@
 # Upgrading Sourcegraph
 
-## Upgrading to 3.0.1+
-
-Read our [migration guide](migration/3_0.md) for `2.x` and `3.0.0`.
-
 ## For single-node deployments (`sourcegraph/server`)
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates.

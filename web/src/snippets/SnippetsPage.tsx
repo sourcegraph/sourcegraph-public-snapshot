@@ -2,7 +2,7 @@ import H from 'history'
 import { uniqueId } from 'lodash'
 import React, { createRef, useEffect, useLayoutEffect, useState } from 'react'
 import { from } from 'rxjs'
-import { filter, map } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import { EditorId } from '../../../shared/src/api/client/services/editorService'
 import { TextModel } from '../../../shared/src/api/client/services/modelService'
 import { PanelViewWithComponent } from '../../../shared/src/api/client/services/view'
@@ -14,7 +14,6 @@ import { Markdown } from '../../../shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { createLinkClickHandler } from '../../../shared/src/util/linkClickHandler'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
-import { isDefined } from '../../../shared/src/util/types'
 import { LINK_PREVIEW_CLASS } from '../components/linkPreviews/styles'
 import { WebEditorCompletionWidget } from '../components/shared'
 import { setElementTooltip } from '../components/tooltip/Tooltip'
@@ -85,15 +84,11 @@ export const SnippetsPage: React.FunctionComponent<Props> = ({ location, extensi
         if (!editorId) {
             return () => void 0
         }
-        const subscription = from(extensionsController.services.editor.editors)
-            .pipe(
-                map(editors => editors.find(e => e.editorId === editorId.editorId)),
-                filter(isDefined),
-                map(editor => editor.model.text)
-            )
+        const subscription = from(extensionsController.services.editor.observeEditorAndModel(editorId))
+            .pipe(map(editor => editor.model.text))
             .subscribe(text => setModelText(text || null))
         return () => subscription.unsubscribe()
-    }, [editorId, initialModelLanguageId, extensionsController.services.editor.editors])
+    }, [editorId, initialModelLanguageId, extensionsController.services.editor])
     const allPanelViews: PanelViewWithComponent[] | null =
         initialModelLanguageId === 'markdown' && modelText !== null
             ? [...(panelViews || []), { title: 'Preview', content: modelText, priority: 0 }]

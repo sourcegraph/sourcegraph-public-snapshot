@@ -7,30 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-// RepoIdentifier identifies a single repository by providing ID, Name and the
-// ExternalRepo
-type RepoIdentifier interface {
-	RepoID() api.RepoID
-	RepoName() api.RepoName
-	ExternalRepoSpec() *api.ExternalRepoSpec
-}
-
-// Repo represents a source code repository.
-type Repo struct {
-	// ID is the unique numeric ID for this repository.
-	ID api.RepoID
-
-	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
-	// service itself).
-	ExternalRepo *api.ExternalRepoSpec
-
-	// Name is the name for this repository (e.g., "github.com/user/repo"). It
-	// is the same as URI, unless the user configures a non-default
-	// repositoryPathPattern.
-	//
-	// Previously, this was called RepoURI.
-	Name api.RepoName
-
+// RepoFields are lazy loaded data fields on a Repo (from the DB).
+type RepoFields struct {
 	// URI is the full name for this repository (e.g.,
 	// "github.com/user/repo"). See the documentation for the Name field.
 	URI string
@@ -48,9 +26,31 @@ type Repo struct {
 	Fork bool
 }
 
-func (r *Repo) RepoID() api.RepoID                      { return r.ID }
-func (r *Repo) RepoName() api.RepoName                  { return r.Name }
-func (r *Repo) ExternalRepoSpec() *api.ExternalRepoSpec { return r.ExternalRepo }
+// Repo represents a source code repository.
+type Repo struct {
+	// ID is the unique numeric ID for this repository.
+	ID api.RepoID
+	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// service itself).
+	ExternalRepo api.ExternalRepoSpec
+	// Name is the name for this repository (e.g., "github.com/user/repo"). It
+	// is the same as URI, unless the user configures a non-default
+	// repositoryPathPattern.
+	//
+	// Previously, this was called RepoURI.
+	Name api.RepoName
+
+	// RepoFields contains fields that are loaded from the DB only when necessary.
+	// This is to reduce memory usage when loading thousands of repos.
+	*RepoFields
+}
+
+// Repos is an utility type of a list of repos.
+type Repos []*Repo
+
+func (rs Repos) Len() int           { return len(rs) }
+func (rs Repos) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
+func (rs Repos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
 // ExternalService is a connection to an external service.
 type ExternalService struct {

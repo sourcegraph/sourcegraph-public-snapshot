@@ -9,6 +9,7 @@ import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 const discussionCommentFieldsFragment = gql`
     fragment DiscussionCommentFields on DiscussionComment {
         id
+        idWithoutKind
         author {
             ...UserFields
         }
@@ -26,6 +27,7 @@ const discussionCommentFieldsFragment = gql`
 const discussionThreadFieldsFragment = gql`
     fragment DiscussionThreadFields on DiscussionThread {
         id
+        idWithoutKind
         author {
             ...UserFields
         }
@@ -161,19 +163,16 @@ export function fetchDiscussionThreads(opts: {
 /**
  * Fetches a discussion thread and its comments.
  */
-export function fetchDiscussionThreadAndComments(threadID: GQL.ID): Observable<GQL.IDiscussionThread> {
+export function fetchDiscussionThreadAndComments(threadIDWithoutKind: string): Observable<GQL.IDiscussionThread> {
     return queryGraphQL(
         gql`
-            query DiscussionThreadComments($threadID: ID!) {
-                discussionThreads(threadID: $threadID) {
-                    totalCount
-                    nodes {
-                        ...DiscussionThreadFields
-                        comments {
-                            totalCount
-                            nodes {
-                                ...DiscussionCommentFields
-                            }
+            query DiscussionThreadComments($threadIDWithoutKind: String!) {
+                discussionThread(idWithoutKind: $threadIDWithoutKind) {
+                    ...DiscussionThreadFields
+                    comments {
+                        totalCount
+                        nodes {
+                            ...DiscussionCommentFields
                         }
                     }
                 }
@@ -181,19 +180,13 @@ export function fetchDiscussionThreadAndComments(threadID: GQL.ID): Observable<G
             ${discussionThreadFieldsFragment}
             ${discussionCommentFieldsFragment}
         `,
-        { threadID }
+        { threadIDWithoutKind }
     ).pipe(
         map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.discussionThreads ||
-                !data.discussionThreads.nodes ||
-                data.discussionThreads.nodes.length !== 1 ||
-                (errors && errors.length > 0)
-            ) {
+            if (!data || !data.discussionThread || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
-            return data.discussionThreads.nodes[0]
+            return data.discussionThread
         })
     )
 }

@@ -403,7 +403,8 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 
 	tr.LazyPrintf("Repos.List - start")
-	repos, err := backend.Repos.List(ctx, db.ReposListOptions{
+	repos, err := db.Repos.List(ctx, db.ReposListOptions{
+		OnlyRepoIDs:     true,
 		IncludePatterns: includePatterns,
 		ExcludePattern:  unionRegExps(excludePatterns),
 		Enabled:         true,
@@ -423,9 +424,14 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
 	tr.LazyPrintf("Associate/validate revs - start")
 	for _, repo := range repos {
+		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
 		repoRev := &search.RepositoryRevisions{Repo: repo}
 
-		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
+		// We do in place filtering to reduce allocations. Common path is no
+		// filtering of revs.
+		if len(revs) > 0 {
+			repoRev.Revs = revs[:0]
+		}
 
 		// if multiple specified revisions clash, report this usefully:
 		if len(revs) == 0 && clashingRevs != nil {

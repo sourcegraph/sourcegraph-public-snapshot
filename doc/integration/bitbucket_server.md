@@ -7,6 +7,7 @@ Feature | Supported?
 [Repository syncing](../admin/external_service/bitbucket_server.md) | ✅
 [Repository permissions](../admin/external_service/bitbucket_server.md#repository-permissions) | ✅
 [Browser extension](#browser-extension) | ✅
+[Native extension](../admin/external_service/bitbucket_server.md#native-extension) | ✅
 
 ## Repository syncing
 

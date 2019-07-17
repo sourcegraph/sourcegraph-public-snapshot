@@ -26,7 +26,7 @@
                             </button>
                         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-                            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.4.4"}} {{$previousReleaseVersion := "3.4"}} {{$currentReleaseRevspec := "v3.5.0"}} {{$currentReleaseVersion := "3.5"}} {{$nextReleaseVersion := "master"}}
+                            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.4.5"}} {{$previousReleaseVersion := "3.4"}} {{$currentReleaseRevspec := "v3.5.2"}} {{$currentReleaseVersion := "3.5"}} {{$nextReleaseVersion := "master"}}
                             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
                             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
                             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -124,13 +124,14 @@
                             <li><a href="/admin/external_service">External services</a></li>
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
-                                    <li><a href="/admin/external_service/aws_codecommit">AWS CodeCommit</a></li>
-                                    <li><a href="/admin/external_service/bitbucket_server">Bitbucket Server</a></li>
-                                    <li><a href="/admin/external_service/github">GitHub external service</a></li>
+                                    <li><a href="/admin/external_service/github">GitHub</a></li>
                                     <li><a href="/admin/external_service/gitlab">GitLab</a></li>
-                                    <li><a href="/admin/external_service/gitolite">Gitolite</a></li>
-                                    <li><a href="/admin/external_service/other">Other Git repository hosts</a></li>
+                                    <li><a href="/admin/external_service/bitbucket_cloud">Bitbucket Cloud</a></li>
+                                    <li><a href="/admin/external_service/bitbucket_server">Bitbucket Server</a></li>
                                     <li><a href="/admin/external_service/phabricator">Phabricator</a></li>
+                                    <li><a href="/admin/external_service/gitolite">Gitolite</a></li>
+                                    <li><a href="/admin/external_service/aws_codecommit">AWS CodeCommit</a></li>
+                                    <li><a href="/admin/external_service/other">Other Git repository hosts</a></li>
                                 </ul>
                             </li>
                             <li><a href="/admin/federation">Federation</a></li>
@@ -208,17 +209,19 @@
                     <li class="content-nav-no-hover">
                         <a class="content-nav-section-header" href="/integration">Integrations</a>
                         <ul class="content-nav-section-group">
-                            <li><a href="/integration/aws_codecommit">AWS CodeCommit integration with Sourcegraph</a></li>
-                            <li><a href="/integration/bitbucket_server">Bitbucket Server integration with Sourcegraph</a></li>
-                            <li><a href="/integration/browser_search_engine">Browser search engine shortcuts</a></li>
-                            <li><a href="/integration/editor">Editor integrations</a></li>
-                            <li><a href="/integration/google_gsuite">G Suite and Chrome Enterprise integration</a></li>
-                            <li><a href="/integration/github">GitHub integration with Sourcegraph</a></li>
-                            <li><a href="/integration/gitlab">GitLab integration with Sourcegraph</a></li>
-                            <li><a href="/integration/gitolite">Gitolite integration with Sourcegraph</a></li>
-                            <li><a href="/integration/lightstep">LightStep integration with Sourcegraph</a></li>
-                            <li><a href="/integration/phabricator">Phabricator integration with Sourcegraph</a></li>
-                            <li><a href="/integration/browser_extension">Sourcegraph browser extension</a></li>
+                                <li><a href="/integration/github">GitHub</a></li>
+                                <li><a href="/integration/gitlab">GitLab</a></li>                                
+                                <li><a href="/integration/bitbucket_cloud">Bitbucket Cloud</a></li>
+                                <li><a href="/integration/bitbucket_server">Bitbucket Server</a></li>
+                                <li><a href="/integration/phabricator">Phabricator</a></li>
+                                <li><a href="/integration/aws_codecommit">AWS CodeCommit</a></li>
+                                <li><a href="/integration/gitolite">Gitolite</a></li>                                
+                                <hr />
+                                <li><a href="/integration/browser_extension">Browser extension</a></li>
+                                <li><a href="/integration/browser_search_engine">Browser search engine shortcuts</a></li>
+                                <li><a href="/integration/editor">Editor integrations</a></li>
+                                <li><a href="/integration/google_gsuite">G Suite and Chrome Enterprise integration</a></li>        
+                                <li><a href="/integration/lightstep">LightStep</a></li>
                         </ul>
                     </li>
                 </ul>

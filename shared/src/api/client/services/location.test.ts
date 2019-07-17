@@ -61,7 +61,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
                             type: 'CodeEditor' as const,
                             selections: [new Selection(1, 2, 3, 4).toPlain()],
                             resource: 'u',
-                            model: { uri: 'u', languageId: 'l', text: 't' },
+                            model: { languageId: 'l' },
                         },
                     ])
                 ).toBe('a', {
@@ -85,7 +85,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
                             type: 'CodeEditor' as const,
                             selections: [new Selection(1, 2, 3, 4).toPlain()],
                             resource: 'u',
-                            model: { uri: 'u', languageId: 'l', text: 't' },
+                            model: { languageId: 'l' },
                         },
                     ])
                 ).toBe('a', {

@@ -117,16 +117,20 @@ Sourcegraph instance:
 - Authorization callback URL: `https://sourcegraph.example.com/.auth/gitlab/callback`
 - Scopes: `api`, `read_user`
 
+Then add the following lines to your critical configuration:
+
 ```json
 {
     // ...
-    {
-      "type": "gitlab",
-      "displayName": "GitLab",
-      "clientID": "replace-with-the-oauth-application-id",
-      "clientSecret": "replace-with-the-oauth-secret",
-      "url": "https://gitlab.example.com"
-    }
+    "auth.providers": [
+      {
+        "type": "gitlab",
+        "displayName": "GitLab",
+        "clientID": "replace-with-the-oauth-application-id",
+        "clientSecret": "replace-with-the-oauth-secret",
+        "url": "https://gitlab.example.com"
+      }
+    ]
 ```
 
 Replace the `clientID` and `clientSecret` values with the values from your GitLab OAuth app
