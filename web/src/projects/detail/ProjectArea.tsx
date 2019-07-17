@@ -11,6 +11,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
+import { RulesArea } from '../../enterprise/a8n/rules/scope/ScopeRulesArea'
 import { ChangesetsArea } from '../../enterprise/changesets/global/ChangesetsArea'
 import { ChecksArea } from '../../enterprise/checks/scope/ScopeChecksArea'
 import { ThreadsArea } from '../../enterprise/threads/global/ThreadsArea'
@@ -85,12 +86,12 @@ export const ProjectArea: React.FunctionComponent<Props> = props => {
     }
 
     const context: ProjectAreaContext & {
-        areaURL: string
+        projectURL: string
     } = {
         ...props,
         project: projectOrError,
         onProjectUpdate: setProjectOrError,
-        areaURL: props.match.url,
+        projectURL: props.match.url,
     }
 
     return (
@@ -111,6 +112,14 @@ export const ProjectArea: React.FunctionComponent<Props> = props => {
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => <ChangesetsArea {...context} {...routeComponentProps} />}
+                        />
+                        <Route
+                            path={`${props.match.url}/rules`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            // tslint:disable-next-line:jsx-no-lambda
+                            render={routeComponentProps => (
+                                <RulesArea {...context} {...routeComponentProps} scope={projectOrError} />
+                            )}
                         />
                         <Route
                             path={`${props.match.url}/checks`}

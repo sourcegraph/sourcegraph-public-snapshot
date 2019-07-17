@@ -91,6 +91,10 @@ func (v *gqlProject) Labels(ctx context.Context, args *graphqlutil.ConnectionArg
 	return graphqlbackend.LabelsDefinedIn(ctx, v.ID(), args)
 }
 
+func (v *gqlProject) Rules(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.RuleConnection, error) {
+	return graphqlbackend.RulesDefinedIn(ctx, v.ID(), args)
+}
+
 func (v *gqlProject) URL() string { return fmt.Sprintf("/p/%d", v.db.ID) }
 
 // MockProjectByDBID mocks (GraphQLResolver).ProjectByDBID, for use in tests only.

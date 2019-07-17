@@ -229,6 +229,8 @@
 // 1528395582_discussion_threads_multiple_targets.up.sql (322B)
 // 1528395583_add_projects.down.sql (383B)
 // 1528395583_add_projects.up.sql (2.283kB)
+// 1528395584_a8n.down.sql (45B)
+// 1528395584_a8n.up.sql (255B)
 
 package migrations
 
@@ -4877,6 +4879,46 @@ func _1528395583_add_projectsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395584_a8nDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2a\xcd\x49\x2d\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x1b\x2f\x90\x2c\x2d\x00\x00\x00")
+
+func _1528395584_a8nDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395584_a8nDownSql,
+		"1528395584_a8n.down.sql",
+	)
+}
+
+func _1528395584_a8nDownSql() (*asset, error) {
+	bytes, err := _1528395584_a8nDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395584_a8n.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xec, 0x64, 0x88, 0x7d, 0x27, 0x33, 0xc1, 0x37, 0x71, 0x51, 0xc0, 0x1b, 0x56, 0x42, 0x36, 0x3e, 0x2d, 0xcd, 0xd8, 0xaf, 0x52, 0xa7, 0x6f, 0xbe, 0x61, 0x6, 0xc9, 0x3e, 0x1a, 0x2e, 0xd0, 0x96}}
+	return a, nil
+}
+
+var __1528395584_a8nUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\x8f\xc1\x4a\x03\x31\x10\x86\xcf\x99\xa7\x98\xe3\x2e\xe4\x0d\xf6\x94\x66\x47\x09\x66\x13\x49\x23\xd8\x53\xa9\xdd\x50\x46\x6a\xba\x24\x11\x7c\x7c\xd1\x55\x56\xaf\xdf\x7c\x03\xdf\xbf\xa3\x7b\xe3\x06\x00\x1d\x48\x45\xc2\xa8\x76\x96\xb0\xbc\x5f\x53\xc5\x0e\x04\xcf\xf8\xc2\x97\x9a\x0a\x9f\xae\xf8\x18\xcc\xa4\xc2\x01\x1f\xe8\x20\x41\x2c\xe5\xf6\x9a\xce\xed\xb8\x2a\x9c\x1b\x3a\x1f\xd1\x3d\x59\x8b\x81\xee\x28\x90\xd3\xb4\xc7\x1f\xab\x76\x3c\xf7\xe8\x1d\x8e\x64\x29\x12\x6a\xb5\xd7\x6a\x24\x09\x22\x9f\xde\x12\xb6\xf4\xb1\xbd\x4b\x10\x73\xaa\xe7\xc2\x4b\xe3\x5b\xfe\xbe\x49\x10\x35\xb5\xc6\xf9\x52\xff\xbb\xd0\x0f\xbf\xe5\xc6\x8d\xf4\xbc\x96\x1f\xff\xb4\x79\xb7\xb2\x6e\x63\xfd\xd7\x5c\x3f\x4d\x26\x0e\xf0\x19\x00\x00\xff\xff\xbe\x99\x65\xf1\xff\x00\x00\x00")
+
+func _1528395584_a8nUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395584_a8nUpSql,
+		"1528395584_a8n.up.sql",
+	)
+}
+
+func _1528395584_a8nUpSql() (*asset, error) {
+	bytes, err := _1528395584_a8nUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395584_a8n.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x88, 0x99, 0x24, 0x22, 0x1b, 0x10, 0x9c, 0xc0, 0x67, 0x72, 0x7c, 0x63, 0xd1, 0xb6, 0xba, 0x0, 0xfd, 0x3c, 0xa0, 0x7c, 0xd0, 0xc5, 0xae, 0xb, 0x28, 0xfb, 0x41, 0x5b, 0x3f, 0xcb, 0x5a, 0x13}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5425,6 +5467,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395583_add_projects.down.sql": _1528395583_add_projectsDownSql,
 
 	"1528395583_add_projects.up.sql": _1528395583_add_projectsUpSql,
+
+	"1528395584_a8n.down.sql": _1528395584_a8nDownSql,
+
+	"1528395584_a8n.up.sql": _1528395584_a8nUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5697,6 +5743,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395582_discussion_threads_multiple_targets.up.sql":       {_1528395582_discussion_threads_multiple_targetsUpSql, map[string]*bintree{}},
 	"1528395583_add_projects.down.sql":                            {_1528395583_add_projectsDownSql, map[string]*bintree{}},
 	"1528395583_add_projects.up.sql":                              {_1528395583_add_projectsUpSql, map[string]*bintree{}},
+	"1528395584_a8n.down.sql":                                     {_1528395584_a8nDownSql, map[string]*bintree{}},
+	"1528395584_a8n.up.sql":                                       {_1528395584_a8nUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

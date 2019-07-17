@@ -129,6 +129,11 @@ func (r *NodeResolver) ToRepository() (*RepositoryResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToRule() (Rule, bool) {
+	n, ok := r.Node.(Rule)
+	return n, ok
+}
+
 func (r *NodeResolver) ToUser() (*UserResolver, bool) {
 	n, ok := r.Node.(*UserResolver)
 	return n, ok
@@ -228,6 +233,8 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 		return ProjectByID(ctx, id)
 	case "Repository":
 		return repositoryByID(ctx, id)
+	case "Rule":
+		return RuleByID(ctx, id)
 	case "User":
 		return UserByID(ctx, id)
 	case "Org":

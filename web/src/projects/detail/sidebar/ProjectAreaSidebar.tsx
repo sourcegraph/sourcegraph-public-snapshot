@@ -6,6 +6,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CollapsibleSidebar } from '../../../components/collapsibleSidebar/CollapsibleSidebar'
+import { RulesIcon } from '../../../enterprise/a8n/icons'
 import { ChecksIcon } from '../../../enterprise/checks/icons'
 import { ThreadsIcon } from '../../../enterprise/threads/icons'
 import { NavItemWithIconDescriptor } from '../../../util/contributions'
@@ -15,7 +16,7 @@ import { LabelIcon } from '../../icons'
 
 interface Props extends ExtensionsControllerProps {
     project: GQL.IProject
-    areaURL: string
+    projectURL: string
     className?: string
 }
 
@@ -23,7 +24,8 @@ const LINKS: NavItemWithIconDescriptor[] = [
     { to: '', label: 'Project', icon: HomeVariantIcon, exact: true },
     { to: '/tree', label: 'Repository', icon: FolderTextIcon },
     { to: '/changesets', label: 'Changesets', icon: GitPullRequestIcon },
-    { to: '/checks', label: 'Checks', icon: ChecksIcon },
+    { to: '/rules', label: 'Rules', icon: RulesIcon },
+    // { to: '/checks', label: 'Checks', icon: ChecksIcon },
     { to: '/threads', label: 'Threads', icon: ThreadsIcon },
     { to: '/labels', label: 'Labels', icon: LabelIcon },
     { to: '/settings', label: 'Settings', icon: SettingsIcon },
@@ -32,7 +34,7 @@ const LINKS: NavItemWithIconDescriptor[] = [
 /**
  * The sidebar for the project area (for a single project).
  */
-export const ProjectAreaSidebar: React.FunctionComponent<Props> = ({ project, areaURL, className = '' }) => (
+export const ProjectAreaSidebar: React.FunctionComponent<Props> = ({ project, projectURL, className = '' }) => (
     <CollapsibleSidebar
         localStorageKey="project-area__sidebar"
         side="left"
@@ -44,7 +46,7 @@ export const ProjectAreaSidebar: React.FunctionComponent<Props> = ({ project, ar
             <>
                 <h3 className="mb-0">
                     <Link
-                        to={areaURL}
+                        to={projectURL}
                         className="project-area-sidebar__nav-link d-block text-decoration-none shadow-none text-body p-3 text-truncate h5 mb-2"
                         data-tooltip={expanded ? '' : project.name}
                     >
@@ -59,7 +61,7 @@ export const ProjectAreaSidebar: React.FunctionComponent<Props> = ({ project, ar
                     {LINKS.map(({ to, label, icon: Icon, exact }, i) => (
                         <li key={i} className="nav-item">
                             <NavLink
-                                to={areaURL + to}
+                                to={projectURL + to}
                                 exact={exact}
                                 className="project-area-sidebar__nav-link nav-link p-3 text-nowrap d-flex align-items-center"
                                 activeClassName="project-area-sidebar__nav-link--active"

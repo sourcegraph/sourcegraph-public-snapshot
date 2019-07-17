@@ -1,5 +1,6 @@
 import Octicon, {
     Checklist,
+    CircuitBoard,
     Diff,
     GitCommit,
     GitPullRequest,
@@ -58,4 +59,8 @@ export const UnmuteIcon: React.FunctionComponent<{ className?: string }> = ({ cl
 
 export const MuteIcon: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
     <Octicon {...defaultProps} icon={Mute} className={className} />
+)
+
+export const CircuitBoardIcon: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
+    <Octicon {...defaultProps} icon={CircuitBoard} className={className} />
 )
