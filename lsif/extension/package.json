@@ -50,5 +50,8 @@
   "dependencies": {
     "@sourcegraph/lsp-client": "^2.0.0-beta.2",
     "vscode-languageserver-types": "^3.14.0"
+  },
+  "resolutions": {
+    "lodash": "4.17.13"
   }
 }
