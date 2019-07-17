@@ -280,5 +280,9 @@ func Branding() *schema.Branding {
 }
 
 func ShowStatusIndicator() bool {
-	return Get().ExperimentalFeatures.StatusIndicator == "enabled"
+	val := Get().ExperimentalFeatures.StatusIndicator
+	if val == "" {
+		return true
+	}
+	return val == "enabled"
 }
