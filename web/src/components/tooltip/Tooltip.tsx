@@ -67,6 +67,11 @@ export class Tooltip extends React.PureComponent<Props, State> {
                 isOpen={true}
                 target={this.state.subject}
                 placement="auto"
+                modifiers={{
+                    flip: {
+                        enabled: false,
+                    },
+                }}
             >
                 {this.state.content}
             </BootstrapTooltip>
