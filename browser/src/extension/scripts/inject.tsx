@@ -56,7 +56,7 @@ async function main(): Promise<void> {
     }
     // If the extension marker isn't present, listen for a custom event sent by the native
     // integration to signal its activation.
-    const nativeIntegrationActivationEventReceived = new Promise<boolean>(resolve =>
+    const nativeIntegrationActivationEventReceived = new Promise<void>(resolve =>
         document.addEventListener(
             NATIVE_INTEGRATION_ACTIVATED,
             () => {
