@@ -46,7 +46,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- Usernames and org names can now contain the `.` character (#4690).
+- Usernames and org names can now contain the `.` character (#4674).
 
 ### Added
 
