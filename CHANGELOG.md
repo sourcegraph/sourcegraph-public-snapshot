@@ -26,7 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The `github.exclude` setting in [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) additionally allows you to specify regular expressions with `{"pattern": "regex"}`.
 - A new [`quicklinks` setting](https://docs.sourcegraph.com/user/quick_links) allows adding links to be displayed on the homepage and search page for all users (or users in an organization).
 - Compatibility with the [Sourcegraph for Bitbucket Server](https://github.com/sourcegraph/bitbucket-server-plugin) plugin.
-- Support for [Bitbucket Cloud](https://bitbucket.org) as a codehost. Create a new external service and make sure repos sync, get updated, and can be deleted.
+- Support for [Bitbucket Cloud](https://bitbucket.org) as an external service.
 
 ### Changed
 
