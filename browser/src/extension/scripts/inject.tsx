@@ -7,7 +7,12 @@ import { setLinkComponent } from '../../../../shared/src/components/Link'
 import { storage } from '../../browser/storage'
 import { injectCodeIntelligence } from '../../libs/code_intelligence/inject'
 import { initSentry } from '../../libs/sentry'
-import { checkIsSourcegraph, EXTENSION_MARKER_ID, signalBrowserExtensionInstalled } from '../../libs/sourcegraph/inject'
+import {
+    checkIsSourcegraph,
+    EXTENSION_MARKER_ID,
+    NATIVE_INTEGRATION_ACTIVATED,
+    signalBrowserExtensionInstalled,
+} from '../../libs/sourcegraph/inject'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
@@ -43,14 +48,24 @@ async function main(): Promise<void> {
 
     // Check if a native integration is already running on the page,
     // and abort execution if it's the case.
-    // Note: this is just a sanity check. Integration scripts are run as
-    // script tags with `defer`, they will be fetched and executed before
-    // DOMContentLoaded fires. Meanwhile, the content script is set to run at document_end,
-    // meaning that it will only execute after DOMContentLoaded has fired.
-    if (document.getElementById(EXTENSION_MARKER_ID)) {
+    // If the native integration was activated before the content script, we can
+    // synchronously check for the presence of the extension marker.
+    if (document.getElementById(EXTENSION_MARKER_ID) !== null) {
         console.log('Sourcegraph native integration is already running')
         return
     }
+    // If the extension marker isn't present, listen for a custom event sent by the native
+    // integration to signal its activation.
+    const nativeIntegrationActivationEventReceived = new Promise<boolean>(resolve =>
+        document.addEventListener(
+            NATIVE_INTEGRATION_ACTIVATED,
+            () => {
+                console.log('Native integration activation event received')
+                resolve()
+            },
+            { once: true }
+        )
+    )
 
     const items = await storage.sync.get()
     if (items.disableExtension) {
@@ -88,6 +103,11 @@ async function main(): Promise<void> {
     }
 
     subscriptions.add(await injectCodeIntelligence(IS_EXTENSION))
+
+    // Clean up susbscription if the native integration gets activated
+    // later in the lifetime of the content script.
+    await nativeIntegrationActivationEventReceived
+    subscriptions.unsubscribe()
 }
 
 main().catch(console.error.bind(console))
