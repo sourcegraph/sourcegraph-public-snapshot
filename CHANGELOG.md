@@ -35,6 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 - In the [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) and [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#permissions) `repositoryQuery` is now only required if `repos` is not set.
 - Log messages from query-runner when saved searches fail now include the raw query as part of the message.
 - The status indicator in the navigation bar is now enabled by default
+- Usernames and org names can now contain the `.` character. [#4674](https://github.com/sourcegraph/sourcegraph/issues/4674)
 
 ### Fixed
 
@@ -46,7 +47,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- Usernames and org names can now contain the `.` character (#4674).
+- Usernames and org names can now contain the `.` character. [#4674](https://github.com/sourcegraph/sourcegraph/issues/4674)
 
 ### Added
 
@@ -91,8 +92,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed repository search patterns which contain `.*`. Previously our optimizer would ignore `.*`, which in some cases would lead to our repository search excluding some repositories from the results.
 - Fixed an issue where the Phabricator native integration would be broken on recent Phabricator versions. This fix depends on v1.2 of the [Phabricator extension](https://github.com/sourcegraph/phabricator-extension).
 - Fixed an issue where the "Empty repository" banner would be shown on a repository page when starting to clone a repository.
-- Prevent data inconsistency on cached archives due to restarts. (#4366)
-- On the /extensions page, the UI is now less ambiguous when an extension has not been activated. (#4446)
+- Prevent data inconsistency on cached archives due to restarts. [#4366](https://github.com/sourcegraph/sourcegraph/pull/4366)
+- On the /extensions page, the UI is now less ambiguous when an extension has not been activated. [#4446](https://github.com/sourcegraph/sourcegraph/issues/4446)
 
 ## 3.4.5
 
@@ -106,7 +107,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixed an out of bounds error in the GraphQL repository query. (#4426)
+- Fixed an out of bounds error in the GraphQL repository query. [#4426](https://github.com/sourcegraph/sourcegraph/issues/4426)
 
 ## 3.4.3
 
