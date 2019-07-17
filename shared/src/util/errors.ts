@@ -51,15 +51,25 @@ export const normalizeAjaxError = (err: any): void => {
         return
     }
     if (typeof err.status === 'number') {
-        if (err.status === 0) {
-            err.message = 'Unable to reach server. Check your network connection and try again in a moment.'
-        } else {
-            err.message = `Unexpected HTTP error: ${err.status}`;
-            if (err.xhr && err.xhr.statusText) {
-                err.message += ` ${err.xhr.statusText}`
-            } else if (err.status == 504) {
-                err.message += ": gateway timeout"
-            }
-        }
+        let xhrStatusText = err.xhr ? err.xhr.statusText : "";
+        err.message = normalizeAjaxError2(err.status, xhrStatusText);
     }
+};
+
+/**
+ * Makes error messages for ajax errors with a testable signature.
+ * @param status HTTP status code
+ * @param xhrStatusText Status text of the xhr field of the AjaxError, or "" if that field is null
+ */
+export const normalizeAjaxError2 = (status: number, xhrStatusText: string): string => {
+    if (status === 0) {
+        return 'Unable to reach server. Check your network connection and try again in a moment.'
+    }
+    let msg = `Unexpected HTTP error: ${status}`;
+    if (xhrStatusText) {
+        msg += ` ${xhrStatusText}`
+    } else if (status == 504) {
+        msg += " gateway timeout"
+    }
+    return msg
 };
