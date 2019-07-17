@@ -349,6 +349,9 @@ type Mutation {
     git: GitMutation!
     # Mutations related to changesets.
     changesets: ChangesetsMutation!
+
+    # Mutations related to rules.
+    rules: RulesMutation!
 }
 
 # Mutations related to projects.
@@ -1228,6 +1231,10 @@ type CodemodResult implements GenericSearchResultInterface {
     detail: Markdown!
     # A list of matches in this search result.
     matches: [SearchResultMatch!]!
+    # The commit whose contents the codemod was run against.
+    commit: GitCommit!
+    # The raw diff of the modification.
+    rawDiff: String!
 }
 
 # A search result that is a diff between two diffable Git objects.
@@ -3959,19 +3966,30 @@ type StatusMessage {
 type Project implements Node {
     # The globally unique ID of this project.
     id: ID!
+
     # The ID of this project that is unique among all other projects but not among all GraphQL
     # nodes.
     idWithoutKind: String!
+
     # The name of this project.
     name: String!
+
     # The namespace where this project is defined.
     namespace: Namespace!
+
     # The labels defined by this project. This is the set of labels that may be applied to the
     # project's labelable resources.
     labels(
         # Return the first n labels from the list.
         first: Int
     ): LabelConnection!
+
+    # The rules defined in this project.
+    rules(
+        # Return the first n rules from the list.
+        first: Int
+    ): RuleConnection!
+
     # The URL to this project.
     url: String!
 }
@@ -4029,6 +4047,9 @@ input GitCreateRefFromPatchInput {
 
     # The patch to apply, in unified diff format.
     patch: String!
+
+    # The commit message for the commit.
+    commitMessage: String!
 }
 
 # The payload for GitMutation.createRefFromPatch.
@@ -4068,5 +4089,78 @@ input ChangesetsCreateChangesetInput {
 type ChangesetsCreateChangesetPayload {
     # The newly created changeset thread.
     thread: DiscussionThread!
+}
+
+# Mutations related to rules.
+type RulesMutation {
+    # Create a rule associated with a project. Returns the newly created rule.
+    createRule(input: CreateRuleInput!): Rule!
+
+    # Update a rule. Returns the updated rule.
+    updateRule(input: UpdateRuleInput!): Rule!
+
+    # Delete a rule. All objects that were associated with or created by this rule remain (and are
+    # not deleted when the rule is deleted).
+    deleteRule(rule: ID!): EmptyResponse
+}
+
+# Input arguments for creating a rule.
+input CreateRuleInput {
+    # The ID of the project where this rule is defined.
+    project: ID!
+
+    # The name of the rule.
+    name: String!
+
+    # The (optional) description of the rule.
+    description: String
+
+    # The JSON settings object for the rule.
+    settings: String
+}
+
+# Input arguments for updating a rule.
+input UpdateRuleInput {
+    # The ID of the rule to update.
+    id: ID!
+
+    # The new name of the rule (if non-null).
+    name: String
+
+    # The new description of the rule. If it is the non-null empty string, the description is set to null.
+    description: String
+
+    # The new JSON settings object for the rule (if non-null).
+    settings: String
+}
+
+# A rule describes a condition and an action that should be taken when the condition is true.
+type Rule implements Node {
+    # The unique ID for the rule.
+    id: ID!
+
+    # The project where this rule is defined.
+    project: Project!
+
+    # The name of the rule.
+    name: String!
+
+    # The (optional) description of the rule.
+    description: String
+
+    # The JSON settings object for the rule (in JSONC, with comments and trailing commas allowed).
+    settings: String!
+}
+
+# A list of rules.
+type RuleConnection {
+    # A list of rules.
+    nodes: [Rule!]!
+
+    # The total number of rules in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 `

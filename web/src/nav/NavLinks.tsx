@@ -22,6 +22,7 @@ import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
+import { AutomationIcon } from '../enterprise/a8n/icons'
 
 interface Props
     extends SettingsCascadeProps,
@@ -73,6 +74,14 @@ export class NavLinks extends React.PureComponent<Props> {
                                 to="/checks"
                                 text="Checks"
                                 icon={ChecksIcon}
+                                className="nav-link btn btn-link px-3 text-decoration-none d-none"
+                            />
+                        </li>
+                        <li className="nav-item">
+                            <LinkWithIconOnlyTooltip
+                                to="/automation"
+                                text="Automation"
+                                icon={AutomationIcon}
                                 className="nav-link btn btn-link px-3 text-decoration-none"
                             />
                         </li>

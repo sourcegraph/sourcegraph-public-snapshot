@@ -95,6 +95,7 @@ type Project interface {
 	Name() string
 	Namespace(context.Context) (*NamespaceResolver, error)
 	Labels(context.Context, *graphqlutil.ConnectionArgs) (LabelConnection, error)
+	Rules(context.Context, *graphqlutil.ConnectionArgs) (RuleConnection, error)
 	URL() string
 
 	// DBID is exposed for internal use but is not in the GraphQL API.
