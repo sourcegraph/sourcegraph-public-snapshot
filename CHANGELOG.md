@@ -45,6 +45,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.5.2
 
+### Changed
+
+- Usernames and org names can now contain the `.` character (#4674).
+
 ### Added
 
 - Syntax highlighting requests that fail are now logged and traced. A new Prometheus metric `src_syntax_highlighting_requests` allows monitoring and alerting. [#4877](https://github.com/sourcegraph/sourcegraph/issues/4877).
