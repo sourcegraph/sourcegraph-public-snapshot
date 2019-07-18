@@ -2,7 +2,7 @@
 
 exports[`ExtensionCard renders 1`] = `
 <div
-  className="d-flex col-sm-6 col-md-6 col-lg-4 pb-4"
+  className="d-flex"
 >
   <div
     className="extension-card card"
@@ -73,7 +73,13 @@ exports[`ExtensionCard renders 1`] = `
         />
         <li
           className="nav-item"
-        />
+        >
+          <span
+            className="text-muted "
+          >
+            Disabled
+          </span>
+        </li>
       </ul>
     </div>
   </div>

@@ -1,11 +1,11 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as H from 'history'
+import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import * as React from 'react'
+import { UncontrolledPopover } from 'reactstrap'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ExecutableExtension } from '../api/client/services/extensionsService'
 import { Link } from '../components/Link'
-import { PopoverButton } from '../components/PopoverButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
@@ -141,16 +141,17 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
 }
 
 /** A button that toggles the visibility of the ExtensionStatus element in a popover. */
-export class ExtensionStatusPopover extends React.PureComponent<Props & { location: H.Location }> {
+export class ExtensionStatusPopover extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
-            <PopoverButton
-                placement="auto-end"
-                hideOnChange={this.props.location}
-                popoverElement={<ExtensionStatus {...this.props} />}
-            >
-                <span className="text-muted">Ext</span>
-            </PopoverButton>
+            <>
+                <button type="button" id="extension-status-popover" className="btn btn-link text-decoration-none px-2">
+                    <span className="text-muted">Ext</span> <MenuUpIcon className="icon-inline" />
+                </button>
+                <UncontrolledPopover placement="auto-end" target="extension-status-popover">
+                    <ExtensionStatus {...this.props} />
+                </UncontrolledPopover>
+            </>
         )
     }
 }

@@ -53,11 +53,9 @@ func TestSearch(t *testing.T) {
 			name:        "empty query against empty repo gets no results",
 			searchQuery: "",
 			reposListMock: func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error) {
-				return []*types.Repo{
-					{
-						Name: "test",
-					},
-				}, nil
+				return []*types.Repo{{Name: "test"}},
+
+					nil
 			},
 			repoRevsMock: func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
 				return api.CommitID(""), nil
@@ -80,9 +78,7 @@ func TestSearch(t *testing.T) {
 			defer conf.Mock(nil)
 			vars := map[string]interface{}{"query": tc.searchQuery}
 			db.Mocks.Repos.List = tc.reposListMock
-			sr := &schemaResolver{
-				recentSearches: &NopRecentSearches{},
-			}
+			sr := &schemaResolver{}
 			schema, err := graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
 			if err != nil {
 				t.Fatal(err)

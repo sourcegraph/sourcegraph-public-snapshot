@@ -1,7 +1,8 @@
 import H from 'history'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React from 'react'
-import { LinkOrButton } from '../../../shared/src/components/LinkOrButton'
+import { Link } from 'react-router-dom'
+import * as GQL from '../../../shared/src/graphql/schema'
 
 interface ExternalServiceCardProps {
     /**
@@ -12,55 +13,46 @@ interface ExternalServiceCardProps {
     /**
      * Icon to show in the external service "button"
      */
-    icon: JSX.Element | string
-
-    /**
-     * Color to display next to the icon in the external service "button"
-     */
-    iconBrandColor: 'github' | 'aws' | 'bitbucket' | 'gitlab' | 'gitolite' | 'phabricator' | 'git'
+    icon: React.ComponentType<{ className?: string }>
 
     /**
      * A short description that will appear in the external service "button" under the title
      */
     shortDescription: string
 
-    /**
-     * Default display name
-     */
-    defaultDisplayName: string
+    kind: GQL.ExternalServiceKind
 
-    /**
-     * Default external service configuration
-     */
-    defaultConfig: string
     to?: H.LocationDescriptor
+    className?: string
 }
-export class ExternalServiceCard extends React.PureComponent<ExternalServiceCardProps, {}> {
-    public render(): JSX.Element {
-        const cardContent = (
-            <div className="external-service-card">
-                <div
-                    className={`external-service-card__icon external-service-card__icon--${this.props.iconBrandColor}`}
-                >
-                    {this.props.icon}
-                </div>
-                <div className="external-service-card__main">
-                    <h3 className="external-service-card__main-header">{this.props.title}</h3>
-                    <p className="external-service-card__main-body">{this.props.shortDescription}</p>
-                </div>
-                {this.props.to && <ChevronRightIcon className="align-self-center" />}
+
+export const ExternalServiceCard: React.FunctionComponent<ExternalServiceCardProps> = ({
+    title,
+    icon: Icon,
+    shortDescription,
+    to,
+    kind,
+    className = '',
+}) => {
+    const children = (
+        <div className={`p-3 d-flex align-items-start border ${className}`}>
+            <Icon className="icon-inline h3 mb-0 mr-3" />
+            <div className="flex-1">
+                <h3 className="mb-0">{title}</h3>
+                <p className="mb-0 text-muted">{shortDescription}</p>
             </div>
-        )
-        if (this.props.to) {
-            return (
-                <LinkOrButton
-                    className={`external-service-card--${this.props.iconBrandColor} linked-external-service-card--${this.props.iconBrandColor} linked-external-service-card`}
-                    to={this.props.to}
-                >
-                    {cardContent}
-                </LinkOrButton>
-            )
-        }
-        return <div className={`external-service-card--${this.props.iconBrandColor}`}>{cardContent}</div>
-    }
+            {to && <ChevronRightIcon className="align-self-center" />}
+        </div>
+    )
+    return to ? (
+        <Link
+            className="d-block text-left text-body text-decoration-none"
+            to={to}
+            data-e2e-external-service-card-link={kind}
+        >
+            {children}
+        </Link>
+    ) : (
+        children
+    )
 }

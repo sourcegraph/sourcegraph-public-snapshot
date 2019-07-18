@@ -62,16 +62,6 @@
     &__reports:hover {
         text-decoration: underline;
     }
-    &__admin {
-        background: $color-bg-5;
-        color: var(--link-color);
-        height: 100%;
-        display: flex;
-        align-items: center;
-        border-radius: 1rem;
-        padding-left: 0.5rem;
-        padding-right: 0.325rem;
-    }
 }
 
 @keyframes highlight-light {

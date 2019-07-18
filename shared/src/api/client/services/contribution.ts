@@ -34,7 +34,7 @@ export class ContributionRegistry {
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
     public constructor(
-        private editorService: Pick<EditorService, 'editors'>,
+        private editorService: Pick<EditorService, 'editorsAndModels'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private context: Subscribable<Context<any>>
     ) {}
@@ -110,7 +110,7 @@ export class ContributionRegistry {
                     )
                 )
             ),
-            this.editorService.editors,
+            this.editorService.editorsAndModels,
             this.settingsService.data,
             this.context
         ).pipe(
@@ -181,7 +181,7 @@ export function mergeContributions(contributions: Evaluated<Contributions>[]): E
             } else {
                 for (const [menu, items] of Object.entries(c.menus) as [
                     ContributableMenu,
-                    Evaluated<MenuItemContribution>[],
+                    Evaluated<MenuItemContribution>[]
                 ][]) {
                     const mergedItems = merged.menus[menu]
                     if (!mergedItems) {

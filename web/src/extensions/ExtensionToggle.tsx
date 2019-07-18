@@ -13,6 +13,8 @@ import { isExtensionAdded } from './extension/extension'
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
     /** The extension that this element is for. */
     extension: Pick<ConfiguredRegistryExtension, 'id'>
+
+    className?: string
 }
 
 /**
@@ -89,6 +91,7 @@ export class ExtensionToggle extends React.PureComponent<Props> {
                 value={isExtensionEnabled(this.props.settingsCascade.final, this.props.extension.id)}
                 onToggle={this.onToggle}
                 title={title}
+                className={this.props.className}
             />
         )
     }

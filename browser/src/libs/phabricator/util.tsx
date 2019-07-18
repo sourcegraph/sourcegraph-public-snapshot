@@ -162,14 +162,14 @@ export async function getPhabricatorState(
             return null
         }
         match.callsign = callsign
-        const { repoName } = await getRepoDetailsFromCallsign(callsign, requestGraphQL)
+        const { rawRepoName } = await getRepoDetailsFromCallsign(callsign, requestGraphQL)
         const commitID = getCommitIDFromPageTag()
         if (!commitID) {
             console.error('cannot determine commitIDision from page')
             return null
         }
         return {
-            repoName,
+            rawRepoName,
             filePath: match.filePath,
             mode: PhabricatorMode.Diffusion,
             commitID,
@@ -204,7 +204,7 @@ export async function getPhabricatorState(
             console.error(`differential id not found on page.`)
             return null
         }
-        const { repoName } = await getRepoDetailsFromCallsign(callsign, requestGraphQL)
+        const { rawRepoName } = await getRepoDetailsFromCallsign(callsign, requestGraphQL)
         let baseRev = `phabricator/base/${diffID}`
         let headRev = `phabricator/diff/${diffID}`
 
@@ -243,9 +243,9 @@ export async function getPhabricatorState(
             }
         }
         return {
-            baseRepoName: repoName,
+            baseRawRepoName: rawRepoName,
             baseRev,
-            headRepoName: repoName,
+            headRawRepoName: rawRepoName,
             headRev, // This will be blank on GitHub, but on a manually staged instance should exist
             differentialID,
             diffID,
@@ -263,7 +263,7 @@ export async function getPhabricatorState(
             callsign: revisionMatch[1],
             rev: revisionMatch[2],
         }
-        const { repoName } = await getRepoDetailsFromCallsign(match.callsign, requestGraphQL)
+        const { rawRepoName } = await getRepoDetailsFromCallsign(match.callsign, requestGraphQL)
         const headCommitID = match.rev
         const baseCommitID = getBaseCommitIDFromRevisionPage()
         if (!baseCommitID) {
@@ -271,7 +271,7 @@ export async function getPhabricatorState(
             return null
         }
         return {
-            repoName,
+            rawRepoName,
             baseCommitID,
             headCommitID,
             mode: PhabricatorMode.Revision,
@@ -298,14 +298,14 @@ export async function getPhabricatorState(
             return null
         }
         match.callsign = callsign
-        const { repoName } = await getRepoDetailsFromCallsign(callsign, requestGraphQL)
+        const { rawRepoName } = await getRepoDetailsFromCallsign(callsign, requestGraphQL)
         const commitID = getCommitIDFromPageTag()
         if (!commitID) {
             console.error('cannot determine revision from page.')
             return null
         }
         return {
-            repoName,
+            rawRepoName,
             filePath: match.filePath,
             mode: PhabricatorMode.Change,
             commitID,
@@ -339,7 +339,7 @@ export async function getPhabricatorState(
             return null
         }
 
-        const { repoName } = await getRepoDetailsFromCallsign(callsign, requestGraphQL)
+        const { rawRepoName } = await getRepoDetailsFromCallsign(callsign, requestGraphQL)
         let baseRev = `phabricator/base/${diffID}`
         let headRev = `phabricator/diff/${diffID}`
 
@@ -360,9 +360,9 @@ export async function getPhabricatorState(
         }
 
         return {
-            baseRepoName: repoName,
+            baseRawRepoName: rawRepoName,
             baseRev,
-            headRepoName: repoName,
+            headRawRepoName: rawRepoName,
             headRev, // This will be blank on GitHub, but on a manually staged instance should exist
             differentialID,
             diffID,

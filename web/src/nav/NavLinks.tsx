@@ -14,6 +14,7 @@ import { isDiscussionsEnabled } from '../discussions'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
+import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
 
 interface Props
@@ -29,6 +30,8 @@ interface Props
     history: H.History
     authenticatedUser: GQL.IUser | null
     showDotComMarketing: boolean
+    isSourcegraphDotCom: boolean
+    showStatusIndicator: boolean
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -42,25 +45,11 @@ export class NavLinks extends React.PureComponent<Props> {
         return (
             <ul className="nav-links nav align-items-center pl-2 pr-1">
                 {/* Show "Search" link on small screens when GlobalNavbar hides the SearchNavbarItem. */}
-                {this.props.location.pathname !== '/search' && this.props.location.pathname !== '/welcome' && (
+                {this.props.location.pathname !== '/search' && (
                     <li className="nav-item d-sm-none">
                         <Link className="nav-link" to="/search">
                             Search
                         </Link>
-                    </li>
-                )}
-                {this.props.showDotComMarketing && this.props.location.pathname !== '/welcome' && (
-                    <li className="nav-item">
-                        <Link to="/welcome" className="nav-link">
-                            Welcome
-                        </Link>
-                    </li>
-                )}
-                {this.props.showDotComMarketing && this.props.location.pathname === '/welcome' && (
-                    <li className="nav-item">
-                        <a href="https://docs.sourcegraph.com" className="nav-link" target="_blank">
-                            Docs
-                        </a>
                     </li>
                 )}
                 <WebActionsNavItems {...this.props} menu={ContributableMenu.GlobalNav} />
@@ -69,9 +58,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                {(!this.props.showDotComMarketing ||
-                    !!this.props.authenticatedUser ||
-                    this.props.location.pathname !== '/welcome') && (
+                {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
                     <li className="nav-item">
                         <Link to="/explore" className="nav-link">
                             Explore
@@ -80,13 +67,11 @@ export class NavLinks extends React.PureComponent<Props> {
                 )}
                 {!this.props.authenticatedUser && (
                     <>
-                        {this.props.location.pathname !== '/welcome' && (
-                            <li className="nav-item">
-                                <Link to="/extensions" className="nav-link">
-                                    Extensions
-                                </Link>
-                            </li>
-                        )}
+                        <li className="nav-item">
+                            <Link to="/extensions" className="nav-link">
+                                Extensions
+                            </Link>
+                        </li>
                         {this.props.location.pathname !== '/sign-in' && (
                             <li className="nav-item mx-1">
                                 <Link className="nav-link btn btn-primary" to="/sign-in">
@@ -101,22 +86,32 @@ export class NavLinks extends React.PureComponent<Props> {
                                 </a>
                             </li>
                         )}
-                        {this.props.location.pathname !== '/welcome' && (
-                            <li className="nav-item">
-                                <Link to="/help" className="nav-link">
-                                    Help
-                                </Link>
-                            </li>
-                        )}
+                        <li className="nav-item">
+                            <Link to="/help" className="nav-link">
+                                Help
+                            </Link>
+                        </li>
                     </>
                 )}
-                {this.props.location.pathname !== '/welcome' && (
+                {!this.props.isSourcegraphDotCom &&
+                    this.props.showStatusIndicator &&
+                    this.props.authenticatedUser &&
+                    this.props.authenticatedUser.siteAdmin && (
+                        <li className="nav-item">
+                            <StatusMessagesNavItem
+                                fetchMessages={fetchAllStatusMessages}
+                                isSiteAdmin={this.props.authenticatedUser.siteAdmin}
+                            />
+                        </li>
+                    )}
+                <li className="nav-item">
                     <WebCommandListPopoverButton
                         {...this.props}
+                        buttonClassName="nav-link btn btn-link"
                         menu={ContributableMenu.CommandPalette}
                         toggleVisibilityKeybinding={this.props.keybindings.commandPalette}
                     />
-                )}
+                </li>
                 {this.props.authenticatedUser && (
                     <li className="nav-item">
                         <UserNavItem

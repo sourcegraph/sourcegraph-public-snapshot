@@ -1,38 +1,80 @@
 import { Selection } from '@sourcegraph/extension-api-types'
 import { noop } from 'lodash'
-import { from, of, Subscribable } from 'rxjs'
+import { from, NEVER, of, Subscribable } from 'rxjs'
 import { first, map } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
-import { CodeEditor, createEditorService, EditorService, getActiveCodeEditorPosition } from './editorService'
+import {
+    CodeEditorWithPartialModel,
+    createEditorService,
+    EditorService,
+    getActiveCodeEditorPosition,
+} from './editorService'
 import { ModelService, TextModel } from './modelService'
 
 export function createTestEditorService(
-    editors: Subscribable<readonly CodeEditor[]> = of([])
-): Pick<EditorService, 'editors'> {
-    return { editors }
+    editorsAndModels: Subscribable<readonly CodeEditorWithPartialModel[]> = of([])
+): Pick<EditorService, 'editorsAndModels'> {
+    return { editorsAndModels }
 }
 
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('EditorService', () => {
-    describe('editors', () => {
-        test('merges in model data', () => {
+    test('editors', () => {
+        scheduler().run(({ expectObservable }) => {
+            const editorService = createEditorService({
+                models: NEVER,
+                removeModel: jest.fn(),
+            })
+            const { editorId } = editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'u',
+                selections: [],
+                isActive: true,
+            })
+            expectObservable(from(editorService.editors)).toBe('a', {
+                a: [{ editorId, type: 'CodeEditor', resource: 'u', selections: [], isActive: true }],
+            })
+        })
+    })
+
+    describe('editorsAndModels', () => {
+        test('emits on model language change but not text change', () => {
             scheduler().run(({ cold, expectObservable }) => {
                 const editorService = createEditorService({
-                    models: cold<TextModel[]>('a', { a: [{ uri: 'u', text: 't', languageId: 'l' }] }),
+                    models: cold<TextModel[]>('abc', {
+                        a: [{ uri: 'u', text: 't', languageId: 'l' }],
+                        b: [{ uri: 'u', text: 't2', languageId: 'l' }],
+                        c: [{ uri: 'u', text: 't2', languageId: 'l2' }],
+                    }),
                     removeModel: jest.fn(),
                 })
-                editorService.addEditor({ type: 'CodeEditor', resource: 'u', selections: [], isActive: true })
-                expectObservable(
-                    from(editorService.editors).pipe(
-                        map(editors => editors.map(e => ({ resource: e.resource, model: e.model })))
-                    )
-                ).toBe('a', {
+                const { editorId } = editorService.addEditor({
+                    type: 'CodeEditor',
+                    resource: 'u',
+                    selections: [],
+                    isActive: true,
+                })
+                expectObservable(from(editorService.editorsAndModels)).toBe('a-c', {
                     a: [
                         {
+                            editorId,
+                            type: 'CodeEditor',
                             resource: 'u',
+                            selections: [],
+                            isActive: true,
                             model: { uri: 'u', text: 't', languageId: 'l' },
+                        },
+                    ],
+                    c: [
+                        {
+                            editorId,
+                            type: 'CodeEditor',
+                            resource: 'u',
+                            selections: [],
+                            isActive: true,
+                            model: { uri: 'u', text: 't2', languageId: 'l2' },
                         },
                     ],
                 })
@@ -58,9 +100,60 @@ describe('EditorService', () => {
                 resource: 'u',
                 selections: [],
                 isActive: true,
-                model: { uri: 'u', text: 't', languageId: 'l' },
             },
         ])
+    })
+
+    describe('observeEditorAndModel', () => {
+        test('merges in model', () => {
+            scheduler().run(({ cold, expectObservable }) => {
+                const editorService = createEditorService({
+                    models: cold<TextModel[]>('ab', {
+                        a: [{ uri: 'u', text: 't', languageId: 'l' }],
+                        b: [{ uri: 'u', text: 't2', languageId: 'l' }],
+                    }),
+                    removeModel: jest.fn(),
+                })
+                const editor = editorService.addEditor({
+                    type: 'CodeEditor',
+                    resource: 'u',
+                    selections: [],
+                    isActive: true,
+                })
+                expectObservable(from(editorService.observeEditorAndModel(editor))).toBe('ab', {
+                    a: {
+                        ...editor,
+                        type: 'CodeEditor',
+                        resource: 'u',
+                        selections: [],
+                        isActive: true,
+                        model: { uri: 'u', text: 't', languageId: 'l' },
+                    },
+                    b: {
+                        ...editor,
+                        type: 'CodeEditor',
+                        resource: 'u',
+                        selections: [],
+                        isActive: true,
+                        model: { uri: 'u', text: 't2', languageId: 'l' },
+                    },
+                })
+            })
+        })
+
+        test('emits error if editor does not exist', () => {
+            scheduler().run(({ expectObservable }) => {
+                const editorService = createEditorService({
+                    models: of<TextModel[]>([]),
+                    removeModel: jest.fn(),
+                })
+                expectObservable(from(editorService.observeEditorAndModel({ editorId: 'x' }))).toBe(
+                    '#',
+                    {},
+                    new Error('editor not found: x')
+                )
+            })
+        })
     })
 
     describe('setSelections', () => {

@@ -5,13 +5,12 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
 import OptimizeCssAssetsPlugin from 'optimize-css-assets-webpack-plugin'
 import * as path from 'path'
-// @ts-ignore
-import rxPaths from 'rxjs/_esm5/path-mapping'
 import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
+import { isDefined } from '../shared/src/util/types'
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
-console.log('Using mode', mode)
+console.error('Using mode', mode)
 
 const devtool = mode === 'production' ? 'source-map' : 'cheap-module-eval-source-map'
 
@@ -19,30 +18,13 @@ const rootDir = path.resolve(__dirname, '..')
 const nodeModulesPath = path.resolve(__dirname, '..', 'node_modules')
 const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
-const babelLoader: webpack.RuleSetUseItem = {
-    loader: 'babel-loader',
-    options: {
-        cacheDirectory: true,
-        configFile: path.join(__dirname, 'babel.config.js'),
-    },
-}
-
-const typescriptLoader: webpack.RuleSetUseItem = {
-    loader: 'ts-loader',
-    options: {
-        compilerOptions: {
-            target: 'es6',
-            module: 'esnext',
-            noEmit: false,
-        },
-        experimentalWatchApi: true,
-        happyPackMode: true, // Typechecking is done by a separate tsc process, disable here for performance
-    },
-}
-
 const isEnterpriseBuild = !!process.env.ENTERPRISE
 const enterpriseDir = path.resolve(__dirname, 'src', 'enterprise')
-const sourceRoots = [path.resolve(__dirname, 'src'), path.resolve(rootDir, 'shared')]
+
+const styleEntrypoints = [
+    path.join(__dirname, 'src', 'main.scss'),
+    isEnterpriseBuild ? path.join(__dirname, 'src', 'enterprise.scss') : null,
+].filter(isDefined)
 
 const config: webpack.Configuration = {
     context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
@@ -61,16 +43,28 @@ const config: webpack.Configuration = {
                 },
             }),
         ],
+
+        ...(mode === 'development'
+            ? {
+                  removeAvailableModules: false,
+                  removeEmptyChunks: false,
+                  splitChunks: false,
+              }
+            : {}),
     },
     entry: {
         // Enterprise vs. OSS builds use different entrypoints. For app (TypeScript), a single entrypoint is used
         // (enterprise or OSS). For style (SCSS), the OSS entrypoint is always used, and the enterprise entrypoint
         // is appended for enterprise builds.
-        app: isEnterpriseBuild ? path.join(enterpriseDir, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
-        style: [
-            path.join(__dirname, 'src', 'main.scss'),
-            isEnterpriseBuild ? path.join(__dirname, 'src', 'enterprise.scss') : null,
-        ].filter((path): path is string => !!path),
+        app: [
+            'react-hot-loader/patch',
+            isEnterpriseBuild ? path.join(enterpriseDir, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
+
+            // In development, use style-loader for CSS and include the styles in the app
+            // entrypoint. The style.bundle.css file will be empty.
+            ...(mode === 'development' ? styleEntrypoints : []),
+        ],
+        style: mode === 'production' ? styleEntrypoints : [path.join(__dirname, 'src', 'util', 'empty.css')],
 
         'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
         'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
@@ -114,31 +108,55 @@ const config: webpack.Configuration = {
     resolve: {
         extensions: ['.mjs', '.ts', '.tsx', '.js'],
         mainFields: ['es2015', 'module', 'browser', 'main'],
-        alias: { ...rxPaths() },
     },
     module: {
         rules: [
+            // Run hot-loading-related Babel plugins on our application code only (because they'd be
+            // slow to run on all JavaScript code).
             {
-                test: /\.tsx?$/,
-                include: sourceRoots,
-                use: [babelLoader, typescriptLoader],
+                test: /\.[jt]sx?$/,
+                include: path.join(__dirname, 'src'),
+                use: [
+                    {
+                        loader: 'babel-loader',
+                        options: {
+                            cacheDirectory: true,
+                            plugins: [
+                                'react-hot-loader/babel',
+                                [
+                                    '@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper',
+                                    {
+                                        modulePattern: 'web/src/.*\\.tsx$',
+                                        componentNamePattern: 'Page$',
+                                    },
+                                ],
+                            ],
+                        },
+                    },
+                ],
             },
             {
-                test: /\.m?js$/,
-                use: [babelLoader],
+                test: /\.[jt]sx?$/,
+                exclude: path.join(__dirname, 'src'),
+                use: [
+                    {
+                        loader: 'babel-loader',
+                        options: {
+                            cacheDirectory: true,
+                            configFile: path.join(__dirname, 'babel.config.js'),
+                        },
+                    },
+                ],
             },
             {
-                test: /\.mjs$/,
-                include: nodeModulesPath,
-                type: 'javascript/auto',
+                include: path.join(__dirname, 'src', 'util', 'empty.css'),
+                use: [MiniCssExtractPlugin.loader, 'css-loader'],
             },
             {
                 test: /\.(sass|scss)$/,
                 use: [
-                    MiniCssExtractPlugin.loader,
-                    {
-                        loader: 'css-loader',
-                    },
+                    mode === 'production' ? MiniCssExtractPlugin.loader : 'style-loader',
+                    'css-loader',
                     {
                         loader: 'postcss-loader',
                         options: {

@@ -117,7 +117,7 @@ type RepoInfo struct {
 	//
 	// TODO(sqs): make this required (non-pointer) when both sides have been upgraded to use it. It is only
 	// optional during the transition period.
-	ExternalRepo *api.ExternalRepoSpec
+	ExternalRepo api.ExternalRepoSpec
 }
 
 func (r *RepoInfo) String() string {
@@ -145,6 +145,10 @@ type RepoUpdateRequest struct {
 	URL string `json:"url"`
 }
 
+func (a *RepoUpdateRequest) String() string {
+	return fmt.Sprintf("RepoUpdateRequest{%s, %s}", a.Repo, a.URL)
+}
+
 // RepoUpdateResponse is a response type to a RepoUpdateRequest.
 type RepoUpdateResponse struct {
 	// ID of the repo that got an update request.
@@ -168,4 +172,19 @@ type ExternalServiceSyncRequest struct {
 type ExternalServiceSyncResult struct {
 	ExternalService api.ExternalService
 	Error           string
+}
+
+type StatusMessageType string
+
+const (
+	CloningStatusMessage StatusMessageType = "CLONING"
+)
+
+type StatusMessage struct {
+	Message string            `json:"message"`
+	Type    StatusMessageType `json:"type"`
+}
+
+type StatusMessagesResponse struct {
+	Messages []StatusMessage `json:"messages"`
 }

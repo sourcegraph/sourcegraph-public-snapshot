@@ -91,6 +91,16 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
+// BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
+type BitbucketCloudConnection struct {
+	AppPassword           string   `json:"appPassword"`
+	GitURLType            string   `json:"gitURLType,omitempty"`
+	RepositoryPathPattern string   `json:"repositoryPathPattern,omitempty"`
+	Teams                 []string `json:"teams,omitempty"`
+	Url                   string   `json:"url"`
+	Username              string   `json:"username"`
+}
+
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
 type BitbucketServerAuthorization struct {
 	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
@@ -109,7 +119,7 @@ type BitbucketServerConnection struct {
 	Password                    string                         `json:"password,omitempty"`
 	Repos                       []string                       `json:"repos,omitempty"`
 	RepositoryPathPattern       string                         `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string                       `json:"repositoryQuery"`
+	RepositoryQuery             []string                       `json:"repositoryQuery,omitempty"`
 	Token                       string                         `json:"token,omitempty"`
 	Url                         string                         `json:"url"`
 	Username                    string                         `json:"username"`
@@ -157,9 +167,10 @@ type BrandAssets struct {
 //
 // Only available in Sourcegraph Enterprise.
 type Branding struct {
-	Dark    *BrandAssets `json:"dark,omitempty"`
-	Favicon string       `json:"favicon,omitempty"`
-	Light   *BrandAssets `json:"light,omitempty"`
+	Dark              *BrandAssets `json:"dark,omitempty"`
+	DisableSymbolSpin bool         `json:"disableSymbolSpin,omitempty"`
+	Favicon           string       `json:"favicon,omitempty"`
+	Light             *BrandAssets `json:"light,omitempty"`
 }
 
 // BuiltinAuthProvider description: Configures the builtin username-password authentication provider.
@@ -210,8 +221,9 @@ type ExcludedBitbucketServerRepo struct {
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitHubRepo struct {
-	Id   string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
+	Id      string `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitLabProject struct {
 	Id   int    `json:"id,omitempty"`
@@ -223,7 +235,8 @@ type ExcludedGitoliteRepo struct {
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
-	Discussions string `json:"discussions,omitempty"`
+	Discussions     string `json:"discussions,omitempty"`
+	StatusIndicator string `json:"statusIndicator,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -264,7 +277,7 @@ type GitHubConnection struct {
 	Orgs                        []string              `json:"orgs,omitempty"`
 	Repos                       []string              `json:"repos,omitempty"`
 	RepositoryPathPattern       string                `json:"repositoryPathPattern,omitempty"`
-	RepositoryQuery             []string              `json:"repositoryQuery"`
+	RepositoryQuery             []string              `json:"repositoryQuery,omitempty"`
 	Token                       string                `json:"token"`
 	Url                         string                `json:"url"`
 }
@@ -411,6 +424,11 @@ type PhabricatorConnection struct {
 	Token string   `json:"token,omitempty"`
 	Url   string   `json:"url,omitempty"`
 }
+type QuickLink struct {
+	Description string `json:"description,omitempty"`
+	Name        string `json:"name"`
+	Url         string `json:"url"`
+}
 type Repos struct {
 	Callsign string `json:"callsign"`
 	Path     string `json:"path"`
@@ -464,15 +482,17 @@ type Sentry struct {
 
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
-	AlertsShowPatchUpdates bool                      `json:"alerts.showPatchUpdates,omitempty"`
-	Extensions             map[string]bool           `json:"extensions,omitempty"`
-	Motd                   []string                  `json:"motd,omitempty"`
-	Notices                []*Notice                 `json:"notices,omitempty"`
-	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
-	SearchContextLines     int                       `json:"search.contextLines,omitempty"`
-	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`
-	SearchSavedQueries     []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
-	SearchScopes           []*SearchScope            `json:"search.scopes,omitempty"`
+	AlertsShowPatchUpdates    bool                      `json:"alerts.showPatchUpdates,omitempty"`
+	CodeHostUseNativeTooltips bool                      `json:"codeHost.useNativeTooltips,omitempty"`
+	Extensions                map[string]bool           `json:"extensions,omitempty"`
+	Motd                      []string                  `json:"motd,omitempty"`
+	Notices                   []*Notice                 `json:"notices,omitempty"`
+	NotificationsSlack        *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
+	Quicklinks                []*QuickLink              `json:"quicklinks,omitempty"`
+	SearchContextLines        int                       `json:"search.contextLines,omitempty"`
+	SearchRepositoryGroups    map[string][]string       `json:"search.repositoryGroups,omitempty"`
+	SearchSavedQueries        []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
+	SearchScopes              []*SearchScope            `json:"search.scopes,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.

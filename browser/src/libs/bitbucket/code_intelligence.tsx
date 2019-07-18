@@ -137,14 +137,14 @@ const codeViewResolver: ViewResolver<CodeView> = {
         if (isCompareView()) {
             return { element, ...compareDiffCodeView }
         }
-        if (isCommitsView()) {
+        if (isCommitsView(window.location)) {
             return { element, ...commitDiffCodeView }
         }
         if (isSingleFileView(element)) {
             const isDiff = contentView.classList.contains('diff-view')
             return isDiff ? { element, ...singleFileDiffCodeView } : { element, ...singleFileSourceCodeView }
         }
-        if (isPullRequestView()) {
+        if (isPullRequestView(window.location)) {
             return { element, ...pullRequestDiffCodeView }
         }
         console.error('Unknown code view', element)
@@ -189,12 +189,22 @@ export const checkIsBitbucket = (): boolean =>
     !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
 
 export const bitbucketServerCodeHost: CodeHost = {
-    name: 'bitbucket-server',
+    type: 'bitbucket-server',
+    name: 'Bitbucket Server',
     check: checkIsBitbucket,
     codeViewResolvers: [codeViewResolver],
     getCommandPaletteMount,
     commandPaletteClassProps: {
-        popoverClassName: 'searchable-selector command-palette-popover--bitbucket-server',
+        buttonClassName:
+            'command-list-popover-button--bitbucket-server aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left',
+        buttonElement: 'a',
+        buttonOpenClassName: 'aui-dropdown2-active active aui-alignment-enabled',
+        showCaret: false,
+        popoverClassName:
+            'command-palette-popover--bitbucket-server aui-dropdown2 aui-style-default aui-layer aui-dropdown2-in-header aui-alignment-element aui-alignment-side-bottom aui-alignment-snap-left aui-alignment-enabled aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left',
+        popoverInnerClassName: 'aui-dropdown2-section',
+        formClassName: 'aui',
+        inputClassName: 'text',
         resultsContainerClassName: 'results',
         listClassName: 'results-list',
         listItemClassName: 'result',
@@ -218,4 +228,5 @@ export const bitbucketServerCodeHost: CodeHost = {
         className: 'aui-button',
         iconClassName: 'aui-icon',
     },
+    codeViewsRequireTokenization: false,
 }

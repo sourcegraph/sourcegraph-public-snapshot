@@ -10,11 +10,15 @@ import (
 	"time"
 	"unicode/utf8"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/gosyntect"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -37,27 +41,81 @@ func IsBinary(content []byte) bool {
 	return !utf8.Valid(content) && !strings.HasPrefix(http.DetectContentType(content), "text/")
 }
 
+// Params defines mandatory and optional parameters to use when highlighting
+// code.
+type Params struct {
+	// Content is the file content.
+	Content []byte
+
+	// Filepath is used to detect the language, it must contain at least the
+	// file name + extension.
+	Filepath string
+
+	// DisableTimeout indicates whether or not a user has requested to wait as
+	// long as needed to get highlighted results (this should never be on by
+	// default, as some files can take a very long time to highlight).
+	DisableTimeout bool
+
+	// Whether or not the light theme should be used to highlight the code.
+	IsLightTheme bool
+
+	// Whether or not to simulate the syntax highlighter taking too long to
+	// respond.
+	SimulateTimeout bool
+
+	// Metadata provides optional metadata about the code we're highlighting.
+	Metadata Metadata
+}
+
+// Metadata contains metadata about a request to highlight code. It is used to
+// ensure that when syntax highlighting takes a long time or errors out, we
+// can log enough information to track down what the problematic code we were
+// trying to highlight was.
+//
+// All fields are optional.
+type Metadata struct {
+	RepoName string
+	Revision string
+}
+
 // Code highlights the given file content with the given filepath (must contain
 // at least the file name + extension) and returns the properly escaped HTML
 // table representing the highlighted code.
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
-func Code(ctx context.Context, content []byte, filepath string, disableTimeout bool, isLightTheme bool) (template.HTML, bool, error) {
-	if !disableTimeout {
+func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err error) {
+	var prometheusStatus string
+	tr, ctx := trace.New(ctx, "highlight.Code", "")
+	defer func() {
+		if prometheusStatus != "" {
+			requestCounter.WithLabelValues(prometheusStatus).Inc()
+		} else if err != nil {
+			requestCounter.WithLabelValues("error").Inc()
+		} else {
+			requestCounter.WithLabelValues("success").Inc()
+		}
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if !p.DisableTimeout {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
 	}
+	if p.SimulateTimeout {
+		time.Sleep(4 * time.Second)
+	}
 
 	// Never pass binary files to the syntax highlighter.
-	if IsBinary(content) {
+	if IsBinary(p.Content) {
 		return "", false, errors.New("cannot render binary file")
 	}
-	code := string(content)
+	code := string(p.Content)
 
 	themechoice := "Sourcegraph"
-	if isLightTheme {
+	if p.IsLightTheme {
 		themechoice = "Sourcegraph (light)"
 	}
 
@@ -71,18 +129,49 @@ func Code(ctx context.Context, content []byte, filepath string, disableTimeout b
 	// background.
 	code = strings.TrimSuffix(code, "\n")
 
+	// Tracing so we can identify problematic syntax highlighting requests.
+	tr.LogFields(
+		otlog.String("filepath", p.Filepath),
+		otlog.String("repo_name", p.Metadata.RepoName),
+		otlog.String("revision", p.Metadata.Revision),
+		otlog.String("snippet", fmt.Sprintf("%q…", firstCharacters(code, 10))),
+	)
+
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:     code,
-		Filepath: filepath,
+		Filepath: p.Filepath,
 		Theme:    themechoice,
 	})
 
 	if ctx.Err() == context.DeadlineExceeded {
+		log15.Warn(
+			"syntax highlighting took longer than 3s, this *could* indicate a bug in Sourcegraph",
+			"filepath", p.Filepath,
+			"repo_name", p.Metadata.RepoName,
+			"revision", p.Metadata.Revision,
+			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
+		)
+		tr.LogFields(otlog.Bool("timeout", true))
+		prometheusStatus = "timeout"
+
 		// Timeout, so render plain table.
 		table, err2 := generatePlainTable(code)
 		return table, true, err2
 	} else if err != nil {
 		if cause := errors.Cause(err); cause == gosyntect.ErrRequestTooLarge || cause == gosyntect.ErrPanic {
+			log15.Error(
+				"syntax highlighting failed (this is a bug, please report it)",
+				"filepath", p.Filepath,
+				"repo_name", p.Metadata.RepoName,
+				"revision", p.Metadata.Revision,
+				"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
+				"error", err,
+			)
+			if cause == gosyntect.ErrPanic {
+				tr.LogFields(otlog.Bool("panic", true))
+				prometheusStatus = "panic"
+			}
+
 			// Failed to highlight code, e.g. for a text file. We still need to
 			// generate the table.
 			table, err2 := generatePlainTable(code)
@@ -96,6 +185,25 @@ func Code(ctx context.Context, content []byte, filepath string, disableTimeout b
 		return "", false, err
 	}
 	return template.HTML(table), false, nil
+}
+
+var requestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "syntax_highlighting",
+	Name:      "requests",
+	Help:      "Counts syntax highlighting requests and their success vs. failure rate.",
+}, []string{"status"})
+
+func init() {
+	prometheus.MustRegister(requestCounter)
+}
+
+func firstCharacters(s string, n int) string {
+	v := []rune(s)
+	if len(v) < 10 {
+		return string(v)
+	}
+	return string(v[:10])
 }
 
 // preSpansToTable takes the syntect data structure, which looks like:
@@ -158,10 +266,11 @@ func preSpansToTable(h string) (string, error) {
 		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
 		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(rows)})
 		tr.AppendChild(tdLineNumber)
-
-		codeCell = &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
-		codeCell.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
-		tr.AppendChild(codeCell)
+		codeTd := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tr.AppendChild(codeTd)
+		codeCell = &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: atom.Div.String()}
+		codeTd.AppendChild(codeCell)
+		codeTd.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
 	}
 	newRow()
 	for next != nil {

@@ -14,7 +14,7 @@ describe('<ViewOnSourcegraphButton />', () => {
     it('renders a link', () => {
         renderViewContextOnSourcegraph({
             sourcegraphURL: 'https://test.com',
-            getContext: () => ({ repoName: 'test', privateRepository: false }),
+            getContext: () => ({ rawRepoName: 'test', privateRepository: false }),
             viewOnSourcegraphButtonClassProps: {
                 className: 'test',
             },
@@ -30,7 +30,7 @@ describe('<ViewOnSourcegraphButton />', () => {
         renderViewContextOnSourcegraph({
             sourcegraphURL: 'https://test.com',
             getContext: () => ({
-                repoName: 'test',
+                rawRepoName: 'test',
                 rev: 'test',
                 privateRepository: false,
             }),
@@ -51,7 +51,7 @@ describe('<ViewOnSourcegraphButton />', () => {
         renderViewContextOnSourcegraph({
             sourcegraphURL: 'https://sourcegraph.com',
             getContext: () => ({
-                repoName: 'test',
+                rawRepoName: 'test',
                 rev: 'test',
                 privateRepository: false,
             }),
@@ -76,7 +76,7 @@ describe('<ViewOnSourcegraphButton />', () => {
         renderViewContextOnSourcegraph({
             sourcegraphURL: 'https://test.com',
             getContext: () => ({
-                repoName: 'test',
+                rawRepoName: 'test',
                 rev: 'test',
                 privateRepository: false,
             }),

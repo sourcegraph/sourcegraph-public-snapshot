@@ -35,7 +35,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <ButtonDropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="nav-link py-0">
+            <ButtonDropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="py-0">
                 <DropdownToggle
                     caret={true}
                     className="bg-transparent d-flex align-items-center e2e-user-nav-item-toggle"

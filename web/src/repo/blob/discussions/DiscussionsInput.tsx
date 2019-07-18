@@ -40,6 +40,9 @@ interface Props extends ExtensionsControllerProps {
     location: H.Location
     history: H.History
 
+    /** The initial contents (used when editing an existing comment). */
+    initialContents?: string
+
     /** The label to display on the submit button. */
     submitLabel: string
 
@@ -102,7 +105,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
     // TODO(slimsag:discussions): ASAP: "preview" tab does not get reset after you submit a comment
 
     public componentDidMount(): void {
-        const textAreaValueChanges = this.valueChanges.pipe(startWith(''))
+        const textAreaValueChanges = this.valueChanges.pipe(startWith(this.props.initialContents || ''))
 
         // Update input model and editor.
         const editorResets = new Subject<void>()
@@ -119,7 +122,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         const model: TextModel = {
                             uri: uniqueId(`${COMMENT_URI_SCHEME}://`),
                             languageId: 'plaintext',
-                            text: '',
+                            text: this.props.initialContents || '',
                         }
                         this.props.extensionsController.services.model.addModel(model)
                         const editor = this.props.extensionsController.services.editor.addEditor({

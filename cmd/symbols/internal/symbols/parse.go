@@ -75,7 +75,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 	var (
 		mu  sync.Mutex // protects symbols and err
 		wg  sync.WaitGroup
-		sem = make(chan struct{}, runtime.NumCPU())
+		sem = make(chan struct{}, runtime.GOMAXPROCS(0))
 	)
 	tr.LazyPrintf("parse")
 	totalParseRequests := 0

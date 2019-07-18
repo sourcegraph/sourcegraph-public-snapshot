@@ -76,11 +76,5 @@ func isPhabricatorAsset(path string) bool {
 	if strings.Contains(path, "phabricator.bundle.js") {
 		return true
 	}
-	if strings.Contains(path, "sgdev.bundle.sj") {
-		return true
-	}
-	if strings.Contains(path, "umami.bundle.sj") {
-		return true
-	}
 	return false
 }

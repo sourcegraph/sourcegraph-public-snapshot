@@ -2,11 +2,14 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/pkg/errors"
@@ -16,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -126,11 +130,11 @@ func queryEqual(a zoektquery.Q, b zoektquery.Q) bool {
 	return zoektquery.Map(a, sortChildren).String() == zoektquery.Map(b, sortChildren).String()
 }
 
-func TestQueryToZoektFileOnlyQuery(t *testing.T) {
+func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 	cases := []struct {
 		Name    string
 		Pattern *search.PatternInfo
-		Query   string
+		Query   []string
 		// This should be the same value passed in to either FilePatternsReposMustInclude or FilePatternsReposMustExclude
 		ListOfFilePaths []string
 	}{
@@ -146,7 +150,7 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query:           `f:"test.md"`,
+			Query:           []string{`f:"test.md"`},
 			ListOfFilePaths: []string{"test.md"},
 		},
 		{
@@ -161,7 +165,7 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query:           `f:"t" f:"d"`,
+			Query:           []string{`f:"t"`, `f:"d"`},
 			ListOfFilePaths: []string{"t", "d"},
 		},
 		{
@@ -176,7 +180,7 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query:           `f:"test.md"`,
+			Query:           []string{`f:"test.md"`},
 			ListOfFilePaths: []string{"test.md"},
 		},
 		{
@@ -191,22 +195,29 @@ func TestQueryToZoektFileOnlyQuery(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 				PathPatternsAreCaseSensitive: false,
 			},
-			Query:           `f:"t" f:"d"`,
+			Query:           []string{`f:"t"`, `f:"d"`},
 			ListOfFilePaths: []string{"t", "d"},
 		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			q, err := zoektquery.Parse(tt.Query)
-			if err != nil {
-				t.Fatalf("failed to parse %q: %v", tt.Query, err)
+			queries := []zoektquery.Q{}
+			for _, query := range tt.Query {
+				q, err := zoektquery.Parse(query)
+				if err != nil {
+					t.Fatalf("failed to parse %q: %v", tt.Query, err)
+				}
+				queries = append(queries, q)
 			}
-			got, err := queryToZoektFileOnlyQuery(tt.Pattern, tt.ListOfFilePaths)
+
+			got, err := queryToZoektFileOnlyQueries(tt.Pattern, tt.ListOfFilePaths)
 			if err != nil {
 				t.Fatal("queryToZoektQuery failed:", err)
 			}
-			if !queryEqual(got, q) {
-				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), q.String())
+			for i, gotQuery := range got {
+				if !queryEqual(gotQuery, queries[i]) {
+					t.Fatalf("mismatched queries\ngot  %s\nwant %s", gotQuery.String(), queries[i].String())
+				}
 			}
 		})
 	}
@@ -246,6 +257,8 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 	defer func() { mockSearchFilesInRepo = nil }()
 
+	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{}}}
+
 	q, err := query.ParseAndCheck("foo")
 	if err != nil {
 		t.Fatal(err)
@@ -257,6 +270,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		},
 		Repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
 		Query: q,
+		Zoekt: zoekt,
 	}
 	results, common, err := searchFilesInRepos(context.Background(), args)
 	if err != nil {
@@ -285,10 +299,51 @@ func TestSearchFilesInRepos(t *testing.T) {
 		},
 		Repos: makeRepositoryRevisions("foo/no-rev@dev"),
 		Query: q,
+		Zoekt: zoekt,
 	}
 	_, _, err = searchFilesInRepos(context.Background(), args)
 	if !git.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
+	}
+}
+
+func TestRepoShouldBeSearched(t *testing.T) {
+	mockTextSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+		repoName := repo.Name
+		switch repoName {
+		case "foo/one":
+			return []*fileMatchResolver{
+				{
+					uri: "git://" + string(repoName) + "?1a2b3c#" + "main.go",
+				},
+			}, false, nil
+		case "foo/no-filematch":
+			return []*fileMatchResolver{}, false, nil
+		default:
+			return nil, false, errors.New("Unexpected repo")
+		}
+	}
+	defer func() { mockTextSearch = nil }()
+	info := &search.PatternInfo{
+		FileMatchLimit:               defaultMaxSearchResults,
+		Pattern:                      "foo",
+		FilePatternsReposMustInclude: []string{"main"},
+	}
+
+	shouldBeSearched, err := repoShouldBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/one", URL: "http://example.com/foo/one"}, "1a2b3c", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !shouldBeSearched {
+		t.Errorf("expected repo to be searched, got shouldn't be searched")
+	}
+
+	shouldBeSearched, err = repoShouldBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/no-filematch", URL: "http://example.com/foo/no-filematch"}, "1a2b3c", time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if shouldBeSearched {
+		t.Errorf("expected repo to not be searched, got should be searched")
 	}
 }
 
@@ -309,12 +364,18 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 type fakeSearcher struct {
 	result *zoekt.SearchResult
 
+	repos *zoekt.RepoList
+
 	// Default all unimplemented zoekt.Searcher methods to panic.
 	zoekt.Searcher
 }
 
 func (ss *fakeSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	return ss.result, nil
+}
+
+func (ss *fakeSearcher) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error) {
+	return ss.repos, nil
 }
 
 type errorSearcher struct {
@@ -332,21 +393,20 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
 	defer cancel()
 	type args struct {
-		ctx              context.Context
-		query            *search.PatternInfo
-		indexedRevisions map[*search.RepositoryRevisions]string
-		repos            []*search.RepositoryRevisions
-		useFullDeadline  bool
-		searcher         zoekt.Searcher
-		opts             zoekt.SearchOptions
-		since            func(time.Time) time.Duration
+		ctx             context.Context
+		query           *search.PatternInfo
+		repos           []*search.RepositoryRevisions
+		useFullDeadline bool
+		searcher        zoekt.Searcher
+		opts            zoekt.SearchOptions
+		since           func(time.Time) time.Duration
 	}
 
 	singleRepositoryRevisions := []*search.RepositoryRevisions{
-		{Repo: &types.Repo{}},
-	}
-	singleIndexedRevisions := map[*search.RepositoryRevisions]string{
-		singleRepositoryRevisions[0]: "abc",
+		{
+			Repo:              &types.Repo{},
+			IndexedHEADCommit: "abc",
+		},
 	}
 
 	tests := []struct {
@@ -360,14 +420,13 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		{
 			name: "returns no error if search completed with no matches before timeout",
 			args: args{
-				ctx:              context.Background(),
-				query:            &search.PatternInfo{PathPatternsAreRegExps: true},
-				indexedRevisions: singleIndexedRevisions,
-				repos:            singleRepositoryRevisions,
-				useFullDeadline:  false,
-				searcher:         &fakeSearcher{result: &zoekt.SearchResult{}},
-				opts:             zoekt.SearchOptions{MaxWallTime: time.Second},
-				since:            func(time.Time) time.Duration { return time.Second - time.Millisecond },
+				ctx:             context.Background(),
+				query:           &search.PatternInfo{PathPatternsAreRegExps: true},
+				repos:           singleRepositoryRevisions,
+				useFullDeadline: false,
+				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
+				opts:            zoekt.SearchOptions{MaxWallTime: time.Second},
+				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
@@ -377,14 +436,13 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		{
 			name: "returns error if max wall time is exceeded but no matches have been found yet",
 			args: args{
-				ctx:              context.Background(),
-				query:            &search.PatternInfo{PathPatternsAreRegExps: true},
-				indexedRevisions: singleIndexedRevisions,
-				repos:            singleRepositoryRevisions,
-				useFullDeadline:  false,
-				searcher:         &fakeSearcher{result: &zoekt.SearchResult{}},
-				opts:             zoekt.SearchOptions{MaxWallTime: time.Second},
-				since:            func(time.Time) time.Duration { return time.Second },
+				ctx:             context.Background(),
+				query:           &search.PatternInfo{PathPatternsAreRegExps: true},
+				repos:           singleRepositoryRevisions,
+				useFullDeadline: false,
+				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
+				opts:            zoekt.SearchOptions{MaxWallTime: time.Second},
+				since:           func(time.Time) time.Duration { return time.Second },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
@@ -394,14 +452,13 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		{
 			name: "returns error if context timeout already passed",
 			args: args{
-				ctx:              zeroTimeoutCtx,
-				query:            &search.PatternInfo{PathPatternsAreRegExps: true},
-				indexedRevisions: singleIndexedRevisions,
-				repos:            singleRepositoryRevisions,
-				useFullDeadline:  true,
-				searcher:         &fakeSearcher{result: &zoekt.SearchResult{}},
-				opts:             zoekt.SearchOptions{},
-				since:            func(time.Time) time.Duration { return 0 },
+				ctx:             zeroTimeoutCtx,
+				query:           &search.PatternInfo{PathPatternsAreRegExps: true},
+				repos:           singleRepositoryRevisions,
+				useFullDeadline: true,
+				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
+				opts:            zoekt.SearchOptions{},
+				since:           func(time.Time) time.Duration { return 0 },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
@@ -411,14 +468,13 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		{
 			name: "returns error if searcher returns an error",
 			args: args{
-				ctx:              context.Background(),
-				query:            &search.PatternInfo{PathPatternsAreRegExps: true},
-				indexedRevisions: singleIndexedRevisions,
-				repos:            singleRepositoryRevisions,
-				useFullDeadline:  true,
-				searcher:         &errorSearcher{err: errors.New("womp womp")},
-				opts:             zoekt.SearchOptions{},
-				since:            func(time.Time) time.Duration { return 0 },
+				ctx:             context.Background(),
+				query:           &search.PatternInfo{PathPatternsAreRegExps: true},
+				repos:           singleRepositoryRevisions,
+				useFullDeadline: true,
+				searcher:        &errorSearcher{err: errors.New("womp womp")},
+				opts:            zoekt.SearchOptions{},
+				since:           func(time.Time) time.Duration { return 0 },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
@@ -428,7 +484,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.repos, tt.args.indexedRevisions, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts, tt.args.since)
+			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.repos, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts, tt.args.since)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
@@ -466,14 +522,17 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 			args: args{
 				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1"}, PathPatternsAreRegExps: true},
 				searcher: &fakeSearcher{result: &zoekt.SearchResult{
-					Files: []zoekt.FileMatch{{
-						FileName:   "1.md",
-						Repository: "github.com/test/1",
-						LineMatches: []zoekt.LineMatch{{
-							FileName: true,
-						}}},
+					Files: []zoekt.FileMatch{
+						{
+							FileName:   "1.md",
+							Repository: "github.com/test/1",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}},
+						},
 					},
-					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1"}}},
+					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1"},
+				}},
 				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
 				repoHasFileFlagIsInQuery:        true,
 				negatedRepoHasFileFlagIsInQuery: false,
@@ -481,24 +540,93 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
 		},
 		{
+			name: "returns filtered repoSet when multiple repoHasFileFlags are in query",
+			args: args{
+				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1", "2"}, PathPatternsAreRegExps: true},
+				searcher: &fakeSearcher{result: &zoekt.SearchResult{
+					Files: []zoekt.FileMatch{
+						{
+							FileName:   "1.md",
+							Repository: "github.com/test/1",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}},
+						},
+						{
+							FileName:   "1.md",
+							Repository: "github.com/test/2",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}},
+						},
+						{
+							FileName:   "2.md",
+							Repository: "github.com/test/2",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}},
+						},
+					},
+					RepoURLs: map[string]string{"github.com/test/2": "github.com/test/2"},
+				}},
+				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
+				repoHasFileFlagIsInQuery:        true,
+				negatedRepoHasFileFlagIsInQuery: false,
+			},
+			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/2": true}},
+		},
+		{
 			name: "returns filtered repoSet when negated repoHasFileFlag is in query",
 			args: args{
 				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustExclude: []string{"1"}, PathPatternsAreRegExps: true},
 				searcher: &fakeSearcher{result: &zoekt.SearchResult{
-					Files: []zoekt.FileMatch{{
-						FileName:   "1.md",
-						Repository: "github.com/test/1",
-						LineMatches: []zoekt.LineMatch{{
-							FileName: true,
-						}}},
+					Files: []zoekt.FileMatch{
+						{
+							FileName:   "1.md",
+							Repository: "github.com/test/1",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}},
+						},
 					},
-					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1"}}},
+					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1"},
+				}},
 				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
 				repoHasFileFlagIsInQuery:        false,
 				negatedRepoHasFileFlagIsInQuery: true,
 			},
 			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/2": true}},
-		}}
+		},
+		{
+			name: "returns a new repoSet that includes at most the repos from original repoSet",
+			args: args{
+				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1"}, PathPatternsAreRegExps: true},
+				searcher: &fakeSearcher{result: &zoekt.SearchResult{
+					Files: []zoekt.FileMatch{
+						{
+							FileName:   "1.md",
+							Repository: "github.com/test/1",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}},
+						},
+						{
+							FileName:   "1.md",
+							Repository: "github.com/test/2",
+							LineMatches: []zoekt.LineMatch{{
+								FileName: true,
+							}},
+						},
+					},
+					RepoURLs: map[string]string{"github.com/test/1": "github.com/test/1", "github.com/test/2": "github.com/test/2"},
+				}},
+				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+				repoHasFileFlagIsInQuery:        false,
+				negatedRepoHasFileFlagIsInQuery: true,
+			},
+			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+		},
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -511,6 +639,129 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_zoektIndexedRepos(t *testing.T) {
+	repos := makeRepositoryRevisions(
+		"foo/indexed-one@",
+		"foo/indexed-two@",
+		"foo/indexed-three@",
+		"foo/unindexed-one",
+		"foo/unindexed-two",
+	)
+
+	zoektRepoList := &zoekt.RepoList{
+		Repos: []*zoekt.RepoListEntry{
+			{
+				Repository: zoekt.Repository{
+					Name:     "foo/indexed-one",
+					Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+				},
+			},
+			{
+				Repository: zoekt.Repository{
+					Name:     "foo/indexed-two",
+					Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+				},
+			},
+			{
+				Repository: zoekt.Repository{
+					Name: "foo/indexed-three",
+					Branches: []zoekt.RepositoryBranch{
+						{Name: "HEAD", Version: "deadbeef"},
+						{Name: "foobar", Version: "deadcow"},
+					},
+				},
+			},
+		},
+	}
+
+	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: zoektRepoList}}
+	ctx := context.Background()
+
+	makeIndexed := func(repos []*search.RepositoryRevisions) []*search.RepositoryRevisions {
+		var indexed []*search.RepositoryRevisions
+		for _, r := range repos {
+			rev := *r
+			rev.IndexedHEADCommit = "deadbeef"
+			indexed = append(indexed, &rev)
+		}
+		return indexed
+	}
+
+	cases := []struct {
+		name      string
+		repos     []*search.RepositoryRevisions
+		indexed   []*search.RepositoryRevisions
+		unindexed []*search.RepositoryRevisions
+	}{{
+		name:      "all",
+		repos:     repos,
+		indexed:   makeIndexed(repos[:3]),
+		unindexed: repos[3:],
+	}, {
+		name:      "one unindexed",
+		repos:     repos[3:4],
+		indexed:   repos[:0],
+		unindexed: repos[3:4],
+	}, {
+		name:      "one indexed",
+		repos:     repos[:1],
+		indexed:   makeIndexed(repos[:1]),
+		unindexed: repos[:0],
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			indexed, unindexed, err := zoektIndexedRepos(ctx, zoekt, tc.repos)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(tc.indexed, indexed) {
+				diff := cmp.Diff(tc.indexed, indexed)
+				t.Error("unexpected indexed:", diff)
+			}
+			if !reflect.DeepEqual(tc.unindexed, unindexed) {
+				diff := cmp.Diff(tc.unindexed, unindexed)
+				t.Error("unexpected unindexed:", diff)
+			}
+		})
+	}
+}
+
+func Benchmark_zoektIndexedRepos(b *testing.B) {
+	repoNames := []string{}
+	zoektRepos := []*zoekt.RepoListEntry{}
+
+	for i := 0; i < 10000; i++ {
+		indexedName := fmt.Sprintf("foo/indexed-%d@", i)
+		unindexedName := fmt.Sprintf("foo/unindexed-%d@", i)
+
+		repoNames = append(repoNames, indexedName, unindexedName)
+
+		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
+			Repository: zoekt.Repository{
+				Name:     strings.TrimSuffix(indexedName, "@"),
+				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+			},
+		})
+	}
+
+	repos := makeRepositoryRevisions(repoNames...)
+	z := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{Repos: zoektRepos}}}
+	ctx := context.Background()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for n := 0; n < b.N; n++ {
+		_, _, _ = zoektIndexedRepos(ctx, z, repos)
+	}
+}
+
+func sortRepoRevsByName(repoRevs []*search.RepositoryRevisions) func(int, int) bool {
+	return func(i, j int) bool { return repoRevs[i].Repo.Name < repoRevs[j].Repo.Name }
 }
 
 func init() {

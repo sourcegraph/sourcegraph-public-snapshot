@@ -70,6 +70,7 @@ $theme-colors-light: (
 @import './libs/phabricator/style.scss';
 @import './libs/code_intelligence/HoverOverlay.scss';
 @import './libs/code_intelligence/external_links';
+@import './libs/code_intelligence/native_tooltips';
 @import './shared';
 
 .sourcegraph-options-menu {
@@ -101,11 +102,6 @@ $theme-colors-light: (
             border-left-color: #e4e9f1 !important;
             border-right-color: #e4e9f1 !important;
         }
-    }
-    // A .btn-outline-link button class that displays an unsaturated outline around a link.
-    .btn.btn-outline-link {
-        color: $link-color !important;
-        @include button-outline-variant(#ced4da);
     }
     .input-group {
         .form-control {

@@ -10,7 +10,7 @@ import { HoverMerged } from '../api/client/types/hover'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 
-const renderShallow = (element: React.ReactElement<HoverOverlayProps>): React.ReactElement<any> => {
+const renderShallow = (element: React.ReactElement<HoverOverlayProps<string>>): React.ReactElement<any> => {
     const renderer = createRenderer()
     renderer.render(element)
     return renderer.getRenderOutput()
@@ -20,7 +20,7 @@ describe('HoverOverlay', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: async () => void 0 }
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => void 0 }
     const history = H.createMemoryHistory({ keyLength: 0 })
-    const commonProps: HoverOverlayProps = {
+    const commonProps = {
         location: history.location,
         telemetryService: NOOP_TELEMETRY_SERVICE,
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
@@ -112,6 +112,30 @@ describe('HoverOverlay', () => {
                     {...commonProps}
                     actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
                     hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
+                />
+            )
+        ).toMatchSnapshot()
+    })
+
+    test('actions, hover and alert present', () => {
+        expect(
+            renderShallow(
+                <HoverOverlay
+                    {...commonProps}
+                    actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
+                    hoverOrError={{
+                        contents: [{ kind: MarkupKind.Markdown, value: 'v' }],
+                        alerts: [
+                            {
+                                type: 'a' as const,
+                                content: (
+                                    <>
+                                        b <small>c</small> <code>d</code>
+                                    </>
+                                ),
+                            },
+                        ],
+                    }}
                 />
             )
         ).toMatchSnapshot()

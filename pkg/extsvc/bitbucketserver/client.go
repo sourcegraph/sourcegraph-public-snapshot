@@ -69,7 +69,7 @@ type Client struct {
 
 	// OAuth client used to authenticate requests, if set via SetOAuth.
 	// Takes precedence over Token and Username / Password authentication.
-	oauth *oauth.Client
+	Oauth *oauth.Client
 }
 
 // NewClient returns a new Bitbucket Server API client at url. If a nil
@@ -115,7 +115,7 @@ func (c *Client) SetOAuth(consumerKey, signingKey string) error {
 		return err
 	}
 
-	c.oauth = &oauth.Client{
+	c.Oauth = &oauth.Client{
 		Credentials:     oauth.Credentials{Token: consumerKey},
 		PrivateKey:      key,
 		SignatureMethod: oauth.RSASHA1,
@@ -129,7 +129,7 @@ func (c *Client) SetOAuth(consumerKey, signingKey string) error {
 // Application Link in Bitbucket Server is configured to allow user impersonation,
 // returning an error otherwise.
 func (c *Client) Sudo(username string) (*Client, error) {
-	if c.oauth == nil {
+	if c.Oauth == nil {
 		return nil, errors.New("bitbucketserver.Client: OAuth not configured")
 	}
 
@@ -239,6 +239,35 @@ func (c *Client) Users(ctx context.Context, pageToken *PageToken, fs ...UserFilt
 	var users []*User
 	next, err := c.page(ctx, "rest/api/1.0/users", qry, pageToken, &users)
 	return users, next, err
+}
+
+// UserPermissions retrieves the global permissions assigned to the user with the given
+// username. Used to validate that the client is authenticated as an admin.
+func (c *Client) UserPermissions(ctx context.Context, username string) (perms []Perm, _ error) {
+	qry := url.Values{"filter": {username}}
+
+	type permission struct {
+		User       *User `json:"user"`
+		Permission Perm  `json:"permission"`
+	}
+
+	var ps []permission
+	err := c.send(ctx, "GET", "rest/api/1.0/admin/permissions/users", qry, nil, &struct {
+		Values []permission `json:"values"`
+	}{
+		Values: ps,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, p := range ps {
+		if p.User.Name == username {
+			perms = append(perms, p.Permission)
+		}
+	}
+
+	return perms, nil
 }
 
 // CreateUser creates the given User returning an error in case of failure.
@@ -470,14 +499,14 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 
 func (c *Client) authenticate(req *http.Request) error {
 	// Authenticate request, in order of preference.
-	if c.oauth != nil {
+	if c.Oauth != nil {
 		if c.Username != "" {
 			qry := req.URL.Query()
 			qry.Set("user_id", c.Username)
 			req.URL.RawQuery = qry.Encode()
 		}
 
-		if err := c.oauth.SetAuthorizationHeader(
+		if err := c.Oauth.SetAuthorizationHeader(
 			req.Header,
 			&oauth.Credentials{Token: ""}, // Token must be empty
 			req.Method,

@@ -2,10 +2,10 @@
 
 exports[`RegistryExtensionOverviewPage renders 1`] = `
 <div
-  className="registry-extension-overview-page row"
+  className="registry-extension-overview-page d-flex flex-wrap"
 >
   <div
-    className="col-md-8"
+    className="registry-extension-overview-page__readme mr-3"
   >
     <div
       className="markdown undefined"
@@ -17,13 +17,15 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
       }
     />
   </div>
-  <div
-    className="col-md-4"
+  <aside
+    className="registry-extension-overview-page__sidebar"
   >
     <div
       className="mb-3"
     >
-      <h3>
+      <h3
+        className="mb-0"
+      >
         Categories
       </h3>
       <ul
@@ -56,7 +58,9 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
     <div
       className="mb-3"
     >
-      <h3>
+      <h3
+        className="mb-0"
+      >
         Tags
       </h3>
       <ul
@@ -142,6 +146,6 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
         </dd>
       </dl>
     </small>
-  </div>
+  </aside>
 </div>
 `;

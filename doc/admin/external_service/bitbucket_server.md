@@ -17,9 +17,15 @@ To set this up, add Bitbucket Server as an external service to Sourcegraph:
 There are four fields for configuring which repositories are mirrored:
 
 - [`repos`](bitbucket_server.md#configuration)<br>A list of repositories in `projectKey/repositorySlug` format.
-- [`repositoryQuery`](bitbucket_server.md#configuration)<br>A list of strings with one pre-defined option (`none`), and/or a [Bitbucket Server Repo Search Request Query Parameters](https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355).
+- [`repositoryQuery`](bitbucket_server.md#configuration)<br>A list of strings with some pre-defined options (`none`, `all`), and/or a [Bitbucket Server Repo Search Request Query Parameters](https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355).
 - [`exclude`](bitbucket_server.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, and `repositoryQuery` fields.
 - ['excludePersonalRepositories'](bitbucket_server.md#configuration)<br>With this enabled, Sourcegraph will exclude any personal repositories from being imported, even if it has access to them.
+
+## Repository permissions
+
+By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use
+Bitbucket Server's repository permissions, see [Repository permissions](../repo/permissions.md#bitbucket_server).
+
 
 ### Authentication for older Bitbucket Server versions
 
@@ -34,3 +40,20 @@ Sourcegraph by default clones repositories from your Bitbucket Server via HTTP(S
 Bitbucket Server external service connections support the following configuration options, which are specified in the JSON editor in the site admin external services area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/bitbucket_server.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/bitbucket_server) to see rendered content.</div>
+
+## Native extension
+
+For production usage, we recommend installing the Sourcegraph Bitbucket Server plugin for all users (so that each user doesn't need to install and configure the browser extension individually). This involves adding a new add-on to  your Bitbucket Server instance.
+
+See the [bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin) repository for installation instructions and configuration settings.
+
+The Sourcegraph instance's site admin must [update the `corsOrigin` site config property](../config/site_config.md) to allow the Bitbucket Server plugin to communicate with the Sourcegraph instance. For example:
+
+```json
+{
+  // ...
+  "corsOrigin":
+    "https://my-bitbucket.example.com"
+  // ...
+}
+```

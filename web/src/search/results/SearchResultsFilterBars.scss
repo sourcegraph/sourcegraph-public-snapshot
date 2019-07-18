@@ -1,3 +1,5 @@
+@import '../QuickLinks';
+
 .search-results-filter-bars {
     &__row {
         display: flex;
@@ -17,6 +19,20 @@
 
     &__filters {
         margin-left: 0.5rem;
+        display: flex;
+        overflow-x: auto;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        &--no-label {
+            margin-left: 0;
+        }
+    }
+
+    &__quicklinks {
+        margin: 0.25rem 0 0.25rem 0;
         display: flex;
         overflow-x: auto;
 

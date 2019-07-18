@@ -6,6 +6,7 @@ import { PlatformContext } from '../../../../shared/src/platform/context'
 import {
     FileSpec,
     PositionSpec,
+    RawRepoSpec,
     RepoSpec,
     ResolvedRevSpec,
     RevSpec,
@@ -16,6 +17,7 @@ import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { CodeHost, MountGetter } from '../code_intelligence'
 import { CodeView, toCodeViewResolver } from '../code_intelligence/code_views'
+import { NativeTooltip } from '../code_intelligence/native_tooltips'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../code_intelligence/util/selections'
 import { ViewResolver } from '../code_intelligence/views'
 import { markdownBodyViewResolver } from './content_views'
@@ -261,11 +263,18 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
     return mount
 }
 
+const nativeTooltipResolver: ViewResolver<NativeTooltip> = {
+    selector: '.js-tagsearch-popover',
+    resolveView: element => ({ element }),
+}
+
 export const githubCodeHost: CodeHost = {
-    name: 'github',
+    type: 'github',
+    name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     textFieldResolvers: [commentTextFieldResolver],
+    nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
         const header = document.querySelector('.repohead-details-container')
         const repoHeaderHasPrivateMarker = !!(header && header.querySelector('.private'))
@@ -282,6 +291,7 @@ export const githubCodeHost: CodeHost = {
     check: checkIsGitHub,
     getCommandPaletteMount,
     commandPaletteClassProps: {
+        buttonClassName: 'Header-link',
         popoverClassName: 'Box',
         formClassName: 'p-1',
         inputClassName: 'form-control input-sm header-search-input jump-to-field',
@@ -311,24 +321,42 @@ export const githubCodeHost: CodeHost = {
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn',
+        alertClassName: 'alert-info',
     },
     setElementTooltip,
     linkPreviewContentClass: 'text-small text-gray p-1 mx-1 border rounded-1 bg-gray text-gray-dark',
     urlToFile: (
         sourcegraphURL: string,
-        location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec> & { part?: DiffPart }
+        location: Partial<RepoSpec> &
+            RawRepoSpec &
+            RevSpec &
+            FileSpec &
+            Partial<PositionSpec> &
+            Partial<ViewStateSpec> & { part?: DiffPart }
     ) => {
         if (location.viewState) {
             // A view state means that a panel must be shown, and panels are currently only supported on
             // Sourcegraph (not code hosts).
-            return toAbsoluteBlobURL(sourcegraphURL, location)
+            return toAbsoluteBlobURL(sourcegraphURL, {
+                ...location,
+                repoName: location.repoName || location.rawRepoName,
+            })
+        }
+
+        // Make sure the location is also on this github instance, return an absolute URL otherwise.
+        const sameCodeHost = location.rawRepoName.startsWith(window.location.hostname)
+        if (!sameCodeHost) {
+            return toAbsoluteBlobURL(sourcegraphURL, {
+                ...location,
+                repoName: location.repoName || location.rawRepoName,
+            })
         }
 
         const rev = location.rev || 'HEAD'
         // If we're provided options, we can make the j2d URL more specific.
-        const { repoName } = parseURL()
+        const { rawRepoName } = parseURL()
 
-        const sameRepo = repoName === location.repoName
+        const sameRepo = rawRepoName === location.rawRepoName
         // Stay on same page in PR if possible.
         if (sameRepo && location.part) {
             const containers = getFileContainers()
@@ -349,6 +377,7 @@ export const githubCodeHost: CodeHost = {
         const fragment = location.position
             ? `#L${location.position.line}${location.position.character ? ':' + location.position.character : ''}`
             : ''
-        return `https://${location.repoName}/blob/${rev}/${location.filePath}${fragment}`
+        return `https://${location.rawRepoName}/blob/${rev}/${location.filePath}${fragment}`
     },
+    codeViewsRequireTokenization: true,
 }

@@ -3,7 +3,7 @@
 exports[`util parseURL() blob page 1`] = `
 Object {
   "pageType": "blob",
-  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
   "revAndFilePath": "3.3/shared/src/hover/HoverOverlay.tsx",
 }
 `;
@@ -11,7 +11,7 @@ Object {
 exports[`util parseURL() branch name with forward slashes 1`] = `
 Object {
   "pageType": "blob",
-  "repoName": "ghe.sgdev.org/beyang/mux",
+  "rawRepoName": "ghe.sgdev.org/beyang/mux",
   "revAndFilePath": "jr/branch/mux.go",
 }
 `;
@@ -19,35 +19,35 @@ Object {
 exports[`util parseURL() commit page 1`] = `
 Object {
   "pageType": "commit",
-  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
 }
 `;
 
 exports[`util parseURL() compare page 1`] = `
 Object {
   "pageType": "compare",
-  "repoName": "github.com/sourcegraph/sourcegraph-basic-code-intel",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph-basic-code-intel",
 }
 `;
 
 exports[`util parseURL() pull request list 1`] = `
 Object {
   "pageType": "other",
-  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
 }
 `;
 
 exports[`util parseURL() pull request page 1`] = `
 Object {
   "pageType": "pull",
-  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
 }
 `;
 
 exports[`util parseURL() selections - range 1`] = `
 Object {
   "pageType": "blob",
-  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
   "revAndFilePath": "master/jest.config.base.js",
 }
 `;
@@ -55,7 +55,7 @@ Object {
 exports[`util parseURL() selections - single line 1`] = `
 Object {
   "pageType": "blob",
-  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
   "revAndFilePath": "master/jest.config.base.js",
 }
 `;
@@ -63,7 +63,7 @@ Object {
 exports[`util parseURL() snippet permalink 1`] = `
 Object {
   "pageType": "blob",
-  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
   "revAndFilePath": "6a91ccec97a46bfb511b7ff58d790554a7d075c8/client/browser/src/shared/repo/backend.tsx",
 }
 `;
@@ -71,13 +71,13 @@ Object {
 exports[`util parseURL() tree page 1`] = `
 Object {
   "pageType": "tree",
-  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
 }
 `;
 
 exports[`util parseURL() wiki page 1`] = `
 Object {
   "pageType": "other",
-  "repoName": "github.com/sourcegraph/sourcegraph",
+  "rawRepoName": "github.com/sourcegraph/sourcegraph",
 }
 `;

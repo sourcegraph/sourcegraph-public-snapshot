@@ -10,7 +10,6 @@ export interface BitbucketRepoInfo {
 
 const LINK_SELECTORS = ['a.raw-view-link', 'a.source-view-link', 'a.mode-source']
 
-// TODO this needs to take repositoryPathPatterns into account!
 const bitbucketToSourcegraphRepoName = ({ repoSlug, project }: BitbucketRepoInfo): string =>
     [window.location.hostname, project, repoSlug].join('/')
 
@@ -28,7 +27,7 @@ const bitbucketToSourcegraphRepoName = ({ repoSlug, project }: BitbucketRepoInfo
  */
 const getFileInfoFromLinkInSingleFileView = (
     codeView: HTMLElement
-): Pick<FileInfo, 'repoName' | 'filePath' | 'rev'> & BitbucketRepoInfo => {
+): Pick<FileInfo, 'rawRepoName' | 'filePath' | 'rev'> & BitbucketRepoInfo => {
     const errors: Error[] = []
     for (const selector of LINK_SELECTORS) {
         try {
@@ -58,7 +57,7 @@ const getFileInfoFromLinkInSingleFileView = (
             const rev = atMatch ? atMatch[1] : at
 
             return {
-                repoName: bitbucketToSourcegraphRepoName({ repoSlug, project }),
+                rawRepoName: bitbucketToSourcegraphRepoName({ repoSlug, project }),
                 filePath,
                 rev,
                 project,
@@ -88,16 +87,29 @@ export const getCommitIDFromLink = (selector = 'a.commitid'): string => {
     return commitID
 }
 
+const getCommitIDFromRevisionSelector = (): string => {
+    const revisionSelectorSpan = document.querySelector<HTMLElement>('span[data-revision-ref]')
+    if (!revisionSelectorSpan) {
+        throw new Error('Could not find span[data-revision-ref] element')
+    }
+    try {
+        const { latestCommit }: { latestCommit: string } = JSON.parse(revisionSelectorSpan.dataset.revisionRef!)
+        return latestCommit
+    } catch (err) {
+        throw new Error('Could not parse JSON from revision selector')
+    }
+}
+
 /**
  * Gets the file info on a single-file source code view
  */
 export const getFileInfoFromSingleFileSourceCodeView = (
     codeViewElement: HTMLElement
-): BitbucketRepoInfo & Pick<FileInfo, 'repoName' | 'filePath' | 'rev' | 'commitID'> => {
-    const { repoName, filePath, rev, project, repoSlug } = getFileInfoFromLinkInSingleFileView(codeViewElement)
-    const commitID = getCommitIDFromLink()
+): BitbucketRepoInfo & Pick<FileInfo, 'rawRepoName' | 'filePath' | 'rev' | 'commitID'> => {
+    const { rawRepoName, filePath, rev, project, repoSlug } = getFileInfoFromLinkInSingleFileView(codeViewElement)
+    const commitID = getCommitIDFromRevisionSelector()
     return {
-        repoName,
+        rawRepoName,
         filePath,
         rev,
         commitID,
@@ -117,13 +129,14 @@ export const isCompareView = () => !!document.querySelector('#branch-compare')
 /**
  * Returns true if the active page is a commit view.
  */
-export const isCommitsView = () => /^\/projects\/[^\/]+\/repos\/[^\/]+\/commits\/\w+$/.test(window.location.pathname)
+export const isCommitsView = ({ pathname }: Pick<Location, 'pathname'>): boolean =>
+    /\/projects\/[^\/]+\/repos\/[^\/]+\/commits\/\w+$/.test(pathname)
 
 /**
  * Returns true if the active page is a pull request view.
  */
-export const isPullRequestView = () =>
-    /^\/projects\/[^\/]+\/repos\/[^\/]+\/pull-requests\/\d+/.test(window.location.pathname)
+export const isPullRequestView = ({ pathname }: Pick<Location, 'pathname'>): boolean =>
+    /\/projects\/[^\/]+\/repos\/[^\/]+\/pull-requests\/\d+/.test(pathname)
 
 /**
  * Returns true if the given code view is a single file source or "diff to previous" view.
@@ -216,16 +229,16 @@ const getBaseFilePathForDiffCodeView = ({
  */
 export const getFileInfoFromSingleFileDiffCodeView = (
     codeViewElement: HTMLElement
-): BitbucketRepoInfo & Pick<FileInfo, 'repoName' | 'baseRepoName' | 'filePath' | 'baseFilePath' | 'commitID'> => {
-    const { repoName, project, repoSlug, filePath } = getFileInfoFromLinkInSingleFileView(codeViewElement)
+): BitbucketRepoInfo & Pick<FileInfo, 'rawRepoName' | 'baseRawRepoName' | 'filePath' | 'baseFilePath' | 'commitID'> => {
+    const { rawRepoName, project, repoSlug, filePath } = getFileInfoFromLinkInSingleFileView(codeViewElement)
     const commitID = getCommitIDFromLink()
     const changeTypeElement = getChangeTypeElement({ codeViewElement })
     const changeType = getChangeType({ changeTypeElement })
     const baseFilePath = getBaseFilePathForDiffCodeView({ changeTypeElement, changeType, filePath })
-    const baseRepoName = changeType !== 'ADD' ? repoName : undefined
+    const baseRawRepoName = changeType !== 'ADD' ? rawRepoName : undefined
     return {
-        repoName,
-        baseRepoName,
+        rawRepoName,
+        baseRawRepoName,
         filePath,
         baseFilePath,
         commitID,
@@ -243,7 +256,7 @@ export const getFileInfoFromSingleFileDiffCodeView = (
  */
 export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
     codeViewElement: HTMLElement
-): BitbucketRepoInfo & Pick<FileInfo, 'repoName' | 'baseRepoName' | 'filePath' | 'baseFilePath' | 'rev'> => {
+): BitbucketRepoInfo & Pick<FileInfo, 'rawRepoName' | 'baseRawRepoName' | 'filePath' | 'baseFilePath' | 'rev'> => {
     // Get the file path from the breadcrumbs
     const breadcrumbsElement = codeViewElement.querySelector('.breadcrumbs')
     if (!breadcrumbsElement) {
@@ -260,17 +273,17 @@ export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
         throw new Error(`Location did not match regexp`)
     }
     const [, project, repoSlug] = pathMatch
-    const repoName = bitbucketToSourcegraphRepoName({ project, repoSlug })
+    const rawRepoName = bitbucketToSourcegraphRepoName({ project, repoSlug })
 
     // Get base file path from the change type indicator
     const changeTypeElement = getChangeTypeElement({ codeViewElement })
     const changeType = getChangeType({ changeTypeElement })
     const baseFilePath = getBaseFilePathForDiffCodeView({ changeTypeElement, changeType, filePath })
-    const baseRepoName = changeType !== 'ADD' ? repoName : undefined // if the file was added, there is no base
+    const baseRawRepoName = changeType !== 'ADD' ? rawRepoName : undefined // if the file was added, there is no base
 
     return {
-        repoName,
-        baseRepoName,
+        rawRepoName,
+        baseRawRepoName,
         filePath,
         baseFilePath,
         project,
@@ -281,7 +294,10 @@ export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
 export const getFileInfoFromCommitDiffCodeView = (
     codeViewElement: HTMLElement
 ): BitbucketRepoInfo &
-    Pick<FileInfo, 'repoName' | 'baseRepoName' | 'filePath' | 'baseFilePath' | 'rev' | 'commitID' | 'baseCommitID'> => {
+    Pick<
+        FileInfo,
+        'rawRepoName' | 'baseRawRepoName' | 'filePath' | 'baseFilePath' | 'rev' | 'commitID' | 'baseCommitID'
+    > => {
     const commitID = getCommitIDFromLink('.commit-badge-oneline .commitid')
     const baseCommitID = getCommitIDFromLink('.commit-parents .commitid')
 

@@ -1,10 +1,11 @@
 import { HoveredToken, LOADER_DELAY } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
 import { createMemoryHistory } from 'history'
-import { BehaviorSubject, from, Observable, of } from 'rxjs'
+import { BehaviorSubject, from, Observable, of, throwError } from 'rxjs'
 import { first, map } from 'rxjs/operators'
 // tslint:disable-next-line:no-submodule-imports
 import { TestScheduler } from 'rxjs/testing'
+import * as sinon from 'sinon'
 import { ActionItemAction } from '../actions/ActionItem'
 import { Services } from '../api/client/services'
 import { CommandRegistry } from '../api/client/services/command'
@@ -13,9 +14,14 @@ import { createTestEditorService } from '../api/client/services/editorService.te
 import { ProvideTextDocumentLocationSignature } from '../api/client/services/location'
 import { WorkspaceRootWithMetadata, WorkspaceService } from '../api/client/services/workspaceService'
 import { ContributableMenu, ReferenceParams, TextDocumentPositionParams } from '../api/protocol'
+import { PrivateRepoPublicSourcegraphComError } from '../backend/errors'
 import { getContributedActionItems } from '../contributions/contributions'
+import { SuccessGraphQLResult } from '../graphql/graphql'
+import { IMutation, IQuery } from '../graphql/schema'
+import { PlatformContext } from '../platform/context'
 import { EMPTY_SETTINGS_CASCADE } from '../settings/settings'
-import { toPrettyBlobURL } from '../util/url'
+import { resetAllMemoizationCaches } from '../util/memoizeObservable'
+import { FileSpec, PositionSpec, RawRepoSpec, RepoSpec, RevSpec, toPrettyBlobURL, ViewStateSpec } from '../util/url'
 import { getDefinitionURL, getHoverActionsContext, HoverActionsContext, registerHoverContributions } from './actions'
 import { HoverContext } from './HoverOverlay'
 
@@ -50,10 +56,27 @@ function testWorkspaceService(
 // Use toPrettyBlobURL as the urlToFile passed to these functions because it results in the most readable/familiar
 // expected test output.
 const urlToFile = toPrettyBlobURL
+const requestGraphQL: PlatformContext['requestGraphQL'] = <R extends IQuery | IMutation>({
+    variables,
+}: {
+    variables: { [key: string]: any }
+}) =>
+    // tslint:disable-next-line no-object-literal-type-assertion
+    of({
+        data: {
+            repository: {
+                uri: variables.repoName,
+                mirrorInfo: {
+                    cloned: true,
+                },
+            },
+        },
+    } as SuccessGraphQLResult<R>)
 
 const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('getHoverActionsContext', () => {
+    beforeEach(() => resetAllMemoizationCaches())
     test('shows a loader for the definition if slow', () =>
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
@@ -78,7 +101,7 @@ describe('getHoverActionsContext', () => {
                                     },
                                 },
                             },
-                            platformContext: { urlToFile },
+                            platformContext: { urlToFile, requestGraphQL },
                         },
                         FIXTURE_HOVER_CONTEXT
                     )
@@ -142,7 +165,7 @@ describe('getHoverActionsContext', () => {
                                     },
                                 },
                             },
-                            platformContext: { urlToFile },
+                            platformContext: { urlToFile, requestGraphQL },
                         },
                         FIXTURE_HOVER_CONTEXT
                     )
@@ -178,10 +201,11 @@ describe('getHoverActionsContext', () => {
 })
 
 describe('getDefinitionURL', () => {
+    beforeEach(() => resetAllMemoizationCaches())
     test('emits null if the locations result is null', async () =>
         expect(
             getDefinitionURL(
-                { urlToFile },
+                { urlToFile, requestGraphQL },
                 {
                     workspace: testWorkspaceService(),
                     textDocumentDefinition: { getLocations: () => of(of(null)) },
@@ -195,7 +219,7 @@ describe('getDefinitionURL', () => {
     test('emits null if the locations result is empty', async () =>
         expect(
             getDefinitionURL(
-                { urlToFile },
+                { urlToFile, requestGraphQL },
                 {
                     workspace: testWorkspaceService(),
                     textDocumentDefinition: { getLocations: () => of(of([])) },
@@ -207,11 +231,83 @@ describe('getDefinitionURL', () => {
         ).resolves.toBe(null))
 
     describe('if there is exactly 1 location result', () => {
+        test('resolves the raw repo name and passes it to urlToFile()', async () => {
+            const requestGraphQL = <R extends IQuery | IMutation>({ variables }: { [key: string]: any }) =>
+                // tslint:disable-next-line no-object-literal-type-assertion
+                of({
+                    data: {
+                        repository: {
+                            uri: `github.com/${variables.repoName}`,
+                            mirrorInfo: {
+                                cloned: true,
+                            },
+                        },
+                    },
+                } as SuccessGraphQLResult<R>)
+            const urlToFile = sinon.spy(
+                (
+                    location: RepoSpec &
+                        Partial<RawRepoSpec> &
+                        RevSpec &
+                        FileSpec &
+                        Partial<PositionSpec> &
+                        Partial<ViewStateSpec>
+                ) => ''
+            )
+            await getDefinitionURL(
+                { urlToFile, requestGraphQL },
+                {
+                    workspace: testWorkspaceService(),
+                    textDocumentDefinition: {
+                        getLocations: () => of<Observable<Location[]>>(of([{ uri: 'git://r3?c3#f' }])),
+                    },
+                },
+                FIXTURE_PARAMS
+            )
+                .pipe(first())
+                .toPromise()
+            sinon.assert.calledOnce(urlToFile)
+            expect(urlToFile.getCalls()[0].args[0]).toMatchObject({
+                filePath: 'f',
+                position: undefined,
+                rawRepoName: 'github.com/r3',
+                repoName: 'r3',
+                rev: 'v3',
+            })
+        })
+
+        test('fails gracefully when resolveRawRepoName() fails with a PrivateRepoPublicSourcegraph error', async () => {
+            const requestGraphQL = () => throwError(new PrivateRepoPublicSourcegraphComError('ResolveRawRepoName'))
+            const urlToFile = sinon.spy()
+            await getDefinitionURL(
+                { urlToFile, requestGraphQL },
+                {
+                    workspace: testWorkspaceService(),
+                    textDocumentDefinition: {
+                        getLocations: () => of<Observable<Location[]>>(of([{ uri: 'git://r3?c3#f' }])),
+                    },
+                },
+                FIXTURE_PARAMS
+            )
+                .pipe(first())
+                .toPromise()
+            sinon.assert.calledOnce(urlToFile)
+            sinon.assert.calledWith(urlToFile, {
+                commitID: undefined,
+                filePath: 'f',
+                position: undefined,
+                range: undefined,
+                rawRepoName: 'r3',
+                repoName: 'r3',
+                rev: 'v3',
+            })
+        })
+
         describe('when the result is inside the current root', () => {
             test('emits the definition URL the user input revision (not commit SHA) of the root', async () =>
                 expect(
                     getDefinitionURL(
-                        { urlToFile },
+                        { urlToFile, requestGraphQL },
                         {
                             workspace: testWorkspaceService(),
                             textDocumentDefinition: {
@@ -229,7 +325,7 @@ describe('getDefinitionURL', () => {
             test('emits the definition URL with range', async () =>
                 expect(
                     getDefinitionURL(
-                        { urlToFile },
+                        { urlToFile, requestGraphQL },
                         {
                             workspace: testWorkspaceService(),
                             textDocumentDefinition: {
@@ -245,7 +341,7 @@ describe('getDefinitionURL', () => {
             test('emits the definition URL without range', async () =>
                 expect(
                     getDefinitionURL(
-                        { urlToFile },
+                        { urlToFile, requestGraphQL },
                         {
                             workspace: testWorkspaceService(),
                             textDocumentDefinition: {
@@ -264,7 +360,7 @@ describe('getDefinitionURL', () => {
     test('emits the definition panel URL if there is more than 1 location result', async () =>
         expect(
             getDefinitionURL(
-                { urlToFile },
+                { urlToFile, requestGraphQL },
                 {
                     workspace: testWorkspaceService([{ uri: 'git://r?c', inputRevision: 'v' }]),
                     textDocumentDefinition: {
@@ -280,6 +376,7 @@ describe('getDefinitionURL', () => {
 })
 
 describe('registerHoverContributions()', () => {
+    beforeEach(() => resetAllMemoizationCaches())
     const contribution = new ContributionRegistry(
         createTestEditorService(of([])),
         { data: of(EMPTY_SETTINGS_CASCADE) },
@@ -299,7 +396,7 @@ describe('registerHoverContributions()', () => {
                 textDocumentDefinition,
             },
         },
-        platformContext: { urlToFile },
+        platformContext: { urlToFile, requestGraphQL },
         history,
     })
     afterAll(() => subscription.unsubscribe())
@@ -346,7 +443,7 @@ describe('registerHoverContributions()', () => {
             altAction: undefined,
         }
 
-        it.only('shows goToDefinition (non-preloaded) when the definition is loading', async () =>
+        it('shows goToDefinition (non-preloaded) when the definition is loading', async () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': true,

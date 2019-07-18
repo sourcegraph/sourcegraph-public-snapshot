@@ -174,7 +174,8 @@ export const phabricatorCodeHost: CodeHost = {
         diffusionSourceCodeViewResolver,
         phabSourceCodeViewResolver,
     ],
-    name: 'phabricator',
+    type: 'phabricator',
+    name: 'Phabricator',
     check: checkIsPhabricator,
 
     // TODO: handle parsing selected line number from Phabricator href,
@@ -186,4 +187,5 @@ export const phabricatorCodeHost: CodeHost = {
     hoverOverlayClassProps: {
         actionItemClassName: 'button grey hover-overlay-action-item--phabricator',
     },
+    codeViewsRequireTokenization: true,
 }

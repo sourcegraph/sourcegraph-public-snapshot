@@ -6,6 +6,31 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { USE_CODEMOD } from '../enterprise/codemod'
+
+const genericSearchResultInterfaceFields = gql`
+  __typename
+  label {
+      html
+  }
+  url
+  icon
+  detail {
+      html
+  }
+  matches {
+      url
+      body {
+          text
+          html
+      }
+      highlights {
+          line
+          character
+          length
+      }
+  }
+`
 
 export function search(
     query: string,
@@ -15,8 +40,13 @@ export function search(
      * Emits whenever a search is executed, and whenever an extension registers a query transformer.
      */
     return extensionsController.services.queryTransformer.transformQuery(query).pipe(
-        switchMap(query =>
-            queryGraphQL(
+        switchMap(query => {
+            const codemodActive = USE_CODEMOD
+                ? `... on CodemodResult {
+                ${genericSearchResultInterfaceFields}
+            }`
+                : ''
+            return queryGraphQL(
                 gql`
                     query Search($query: String!) {
                         search(query: $query) {
@@ -43,33 +73,13 @@ export function search(
                                     kind
                                 }
                                 results {
+                                    __typename
                                     ... on Repository {
-                                        __typename
                                         id
                                         name
-                                        url
-                                        label {
-                                            html
-                                        }
-                                        icon
-                                        detail {
-                                            html
-                                        }
-                                        matches {
-                                            url
-                                            body {
-                                                text
-                                                html
-                                            }
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
-                                        }
+                                        ${genericSearchResultInterfaceFields}
                                     }
                                     ... on FileMatch {
-                                        __typename
                                         file {
                                             path
                                             url
@@ -95,28 +105,9 @@ export function search(
                                         }
                                     }
                                     ... on CommitSearchResult {
-                                        __typename
-                                        label {
-                                            html
-                                        }
-                                        url
-                                        icon
-                                        detail {
-                                            html
-                                        }
-                                        matches {
-                                            url
-                                            body {
-                                                text
-                                                html
-                                            }
-                                            highlights {
-                                                line
-                                                character
-                                                length
-                                            }
-                                        }
+                                        ${genericSearchResultInterfaceFields}
                                     }
+                                    ${codemodActive}
                                 }
                                 alert {
                                     title
@@ -141,7 +132,7 @@ export function search(
                 }),
                 catchError(error => [asError(error)])
             )
-        )
+        })
     )
 }
 

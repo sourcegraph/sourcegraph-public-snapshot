@@ -189,7 +189,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="repository-commit-page area" ref={this.nextRepositoryCommitPageElement}>
+            <div className="repository-commit-page container mt-3" ref={this.nextRepositoryCommitPageElement}>
                 <PageTitle
                     title={
                         this.state.commitOrError && !isErrorLike(this.state.commitOrError)
@@ -197,60 +197,56 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             : `Commit ${this.props.match.params.revspec}`
                     }
                 />
-                <div className="area__content">
-                    {this.state.commitOrError === undefined ? (
-                        <LoadingSpinner className="icon-inline mt-2" />
-                    ) : isErrorLike(this.state.commitOrError) ? (
-                        <div className="alert alert-danger mt-2">
-                            Error: {upperFirst(this.state.commitOrError.message)}
-                        </div>
-                    ) : (
-                        <>
-                            <div className="card repository-commit-page__card">
-                                <div className="card-body">
-                                    <GitCommitNode
-                                        node={this.state.commitOrError}
-                                        repoName={this.props.repo.name}
-                                        expandCommitMessageBody={true}
-                                        showSHAAndParentsRow={true}
-                                    />
-                                </div>
+                {this.state.commitOrError === undefined ? (
+                    <LoadingSpinner className="icon-inline mt-2" />
+                ) : isErrorLike(this.state.commitOrError) ? (
+                    <div className="alert alert-danger mt-2">Error: {upperFirst(this.state.commitOrError.message)}</div>
+                ) : (
+                    <>
+                        <div className="card repository-commit-page__card">
+                            <div className="card-body">
+                                <GitCommitNode
+                                    node={this.state.commitOrError}
+                                    repoName={this.props.repo.name}
+                                    expandCommitMessageBody={true}
+                                    showSHAAndParentsRow={true}
+                                />
                             </div>
-                            <div className="mb-3" />
-                            <FileDiffConnection
-                                listClassName="list-group list-group-flush"
-                                noun="changed file"
-                                pluralNoun="changed files"
-                                queryConnection={this.queryDiffs}
-                                nodeComponent={FileDiffNode}
-                                nodeComponentProps={{
-                                    ...this.props,
-                                    base: {
-                                        repoName: this.props.repo.name,
-                                        repoID: this.props.repo.id,
-                                        rev: commitParentOrEmpty(this.state.commitOrError),
-                                        commitID: commitParentOrEmpty(this.state.commitOrError),
-                                    },
-                                    head: {
-                                        repoName: this.props.repo.name,
-                                        repoID: this.props.repo.id,
-                                        rev: this.state.commitOrError.oid,
-                                        commitID: this.state.commitOrError.oid,
-                                    },
-                                    lineNumbers: true,
-                                    hoverifier: this.hoverifier,
-                                }}
-                                updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}`}
-                                defaultFirst={25}
-                                hideSearch={true}
-                                noSummaryIfAllNodesVisible={true}
-                                history={this.props.history}
-                                location={this.props.location}
-                                extensionsController={this.props.extensionsController}
-                            />
-                        </>
-                    )}
-                </div>
+                        </div>
+                        <div className="mb-3" />
+                        <FileDiffConnection
+                            listClassName="list-group list-group-flush"
+                            noun="changed file"
+                            pluralNoun="changed files"
+                            queryConnection={this.queryDiffs}
+                            nodeComponent={FileDiffNode}
+                            nodeComponentProps={{
+                                ...this.props,
+                                base: {
+                                    repoName: this.props.repo.name,
+                                    repoID: this.props.repo.id,
+                                    rev: commitParentOrEmpty(this.state.commitOrError),
+                                    commitID: commitParentOrEmpty(this.state.commitOrError),
+                                },
+                                head: {
+                                    repoName: this.props.repo.name,
+                                    repoID: this.props.repo.id,
+                                    rev: this.state.commitOrError.oid,
+                                    commitID: this.state.commitOrError.oid,
+                                },
+                                lineNumbers: true,
+                                hoverifier: this.hoverifier,
+                            }}
+                            updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}`}
+                            defaultFirst={25}
+                            hideSearch={true}
+                            noSummaryIfAllNodesVisible={true}
+                            history={this.props.history}
+                            location={this.props.location}
+                            extensionsController={this.props.extensionsController}
+                        />
+                    </>
+                )}
                 {this.state.hoverOverlayProps && (
                     <WebHoverOverlay
                         {...this.props}

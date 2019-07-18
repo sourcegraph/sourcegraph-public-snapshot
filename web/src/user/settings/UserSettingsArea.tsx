@@ -92,14 +92,14 @@ export const UserSettingsArea = withAuthenticatedUser(
             }
 
             return (
-                <div className="user-settings-area area">
+                <div className="d-flex">
                     <UserSettingsSidebar
                         items={this.props.sideBarItems}
                         authProviders={this.state.authProviders}
                         {...this.props}
-                        className="area__sidebar"
+                        className="flex-0 mr-3"
                     />
-                    <div className="area__content">
+                    <div className="flex-1">
                         <ErrorBoundary location={this.props.location}>
                             <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                                 <Switch>

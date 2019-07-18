@@ -272,13 +272,91 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals(`<nil>`),
 		},
 		{
-			kind:   "BITBUCKETSERVER",
-			desc:   "without url, username nor repositoryQuery",
+			kind: "BITBUCKETCLOUD",
+			desc: "valid with url, username, appPassword",
+			config: `
+			{
+				"url": "https://bitbucket.org/",
+				"username": "admin",
+				"appPassword": "app-password"
+			}`,
+			assert: equals("<nil>"),
+		},
+		{
+			kind: "BITBUCKETCLOUD",
+			desc: "valid with url, username, appPassword, teams",
+			config: `
+			{
+				"url": "https://bitbucket.org/",
+				"username": "admin",
+				"appPassword": "app-password",
+				"teams": ["sglocal", "sg_local"]
+			}`,
+			assert: equals("<nil>"),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "without url, username nor appPassword",
 			config: `{}`,
 			assert: includes(
 				"url: url is required",
 				"username: username is required",
-				"repositoryQuery: repositoryQuery is required",
+				"appPassword: appPassword is required",
+			),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "bad url scheme",
+			config: `{"url": "badscheme://bitbucket.org"}`,
+			assert: includes("url: Does not match pattern '^https?://'"),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid git url type",
+			config: `{"gitURLType": "bad"}`,
+			assert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid team name",
+			config: `{"teams": ["sg-local", "sg local"]}`,
+			assert: includes(
+				`teams.0: Does not match pattern '^\w+$'`,
+				`teams.1: Does not match pattern '^\w+$'`,
+			),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "valid with url, username, token, repositoryQuery",
+			config: `
+			{
+				"url": "https://bitbucket.com/",
+				"username": "admin",
+				"token": "secret-token",
+				"repositoryQuery": ["none"]
+			}`,
+			assert: equals("<nil>"),
+		},
+		{
+			kind: "BITBUCKETSERVER",
+			desc: "valid with url, username, token, repos",
+			config: `
+			{
+				"url": "https://bitbucket.com/",
+				"username": "admin",
+				"token": "secret-token",
+				"repos": ["sourcegraph/sourcegraph"]
+			}`,
+			assert: equals("<nil>"),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
+			desc:   "without url, username, repositoryQuery nor repos",
+			config: `{}`,
+			assert: includes(
+				"url: url is required",
+				"username: username is required",
+				"at least one of repositoryQuery or repos must be set",
 			),
 		},
 		{
@@ -325,18 +403,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "invalid certificate",
 			config: `{"certificate": ""}`,
 			assert: includes("certificate: Does not match pattern '^-----BEGIN CERTIFICATE-----\n'"),
-		},
-		{
-			kind: "BITBUCKETSERVER",
-			desc: "valid",
-			config: `
-			{
-				"url": "https://bitbucket.com/",
-				"username": "admin",
-				"token": "secret-token",
-				"repositoryQuery": ["none"]
-			}`,
-			assert: equals("<nil>"),
 		},
 		{
 			kind:   "BITBUCKETSERVER",
@@ -531,13 +597,35 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "GITHUB",
-			desc:   "without url, token nor repositoryQuery",
+			desc:   "without url, token, repositoryQuery nor repos",
 			config: `{}`,
 			assert: includes(
 				"url: url is required",
 				"token: token is required",
-				"repositoryQuery: repositoryQuery is required",
+				"at least one of repositoryQuery or repos must be set",
 			),
+		},
+		{
+			kind: "GITHUB",
+			desc: "with url, token, repositoryQuery",
+			config: `
+			{
+				"url": "https://github.corp.com",
+				"token": "very-secret-token",
+				"repositoryQuery": ["none"],
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind: "GITHUB",
+			desc: "with url, token, repos",
+			config: `
+			{
+				"url": "https://github.corp.com",
+				"token": "very-secret-token",
+				"repos": ["sourcegraph/sourcegraph"],
+			}`,
+			assert: equals(`<nil>`),
 		},
 		{
 			kind:   "GITHUB",

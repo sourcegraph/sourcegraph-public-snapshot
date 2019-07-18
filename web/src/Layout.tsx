@@ -24,6 +24,7 @@ import { KeybindingsProps } from './keybindings'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { fetchHighlightedFileLines } from './repo/backend'
+import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
@@ -60,6 +61,7 @@ export interface LayoutProps
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
+    repoContainerRoutes: ReadonlyArray<RepoContainerRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
     routes: ReadonlyArray<LayoutRouteProps>
@@ -113,7 +115,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             <ErrorBoundary location={props.location}>
                 <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                     <Switch>
-                        {props.routes.map(route => {
+                        {props.routes.map(({ render, ...route }) => {
                             const isFullWidth = !route.forceNarrowWidth
                             return (
                                 <Route
@@ -130,7 +132,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                                 }`,
                                             ].join(' ')}
                                         >
-                                            {route.render({ ...props, ...routeComponentProps })}
+                                            {render({ ...props, ...routeComponentProps })}
                                         </div>
                                     )}
                                 />

@@ -2,15 +2,20 @@ import '../../config/polyfill'
 
 import * as H from 'history'
 import React from 'react'
-import { Observable, Subscription } from 'rxjs'
-import { startWith } from 'rxjs/operators'
+import { fromEvent, Subscription } from 'rxjs'
+import { first } from 'rxjs/operators'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
 import { storage } from '../../browser/storage'
-import { determineCodeHost as detectCodeHost, injectCodeIntelligenceToCodeHost } from '../../libs/code_intelligence'
+import { injectCodeIntelligence } from '../../libs/code_intelligence/inject'
 import { initSentry } from '../../libs/sentry'
-import { checkIsSourcegraph, injectSourcegraphApp } from '../../libs/sourcegraph/inject'
+import {
+    checkIsSourcegraph,
+    EXTENSION_MARKER_ID,
+    injectExtensionMarker,
+    NATIVE_INTEGRATION_ACTIVATED,
+    signalBrowserExtensionInstalled,
+} from '../../libs/sourcegraph/inject'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
-import { MutationRecordLike, observeMutations } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
@@ -43,18 +48,20 @@ async function main(): Promise<void> {
     // Allow users to set this via the console.
     ;(window as any).sourcegraphFeatureFlags = featureFlags
 
-    // This is checked for in the webapp
-    const extensionMarker = document.createElement('div')
-    extensionMarker.id = 'sourcegraph-app-background'
-    extensionMarker.style.display = 'none'
-    if (document.getElementById(extensionMarker.id)) {
+    // Check if a native integration is already running on the page,
+    // and abort execution if it's the case.
+    // If the native integration was activated before the content script, we can
+    // synchronously check for the presence of the extension marker.
+    if (document.getElementById(EXTENSION_MARKER_ID) !== null) {
+        console.log('Sourcegraph native integration is already running')
         return
     }
-
-    const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
-        childList: true,
-        subtree: true,
-    }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
+    // If the extension marker isn't present, inject it and listen for a custom event sent by the native
+    // integration to signal its activation.
+    injectExtensionMarker()
+    const nativeIntegrationActivationEventReceived = fromEvent(document, NATIVE_INTEGRATION_ACTIVATED)
+        .pipe(first())
+        .toPromise()
 
     const items = await storage.sync.get()
     if (items.disableExtension) {
@@ -64,31 +71,40 @@ async function main(): Promise<void> {
     const sourcegraphServerUrl = items.sourcegraphURL || DEFAULT_SOURCEGRAPH_URL
 
     const isSourcegraphServer = checkIsSourcegraph(sourcegraphServerUrl)
-
-    // Check which code host we are on
-    const codeHost = detectCodeHost()
-    if (!codeHost && !isSourcegraphServer) {
+    if (isSourcegraphServer) {
+        signalBrowserExtensionInstalled()
         return
     }
 
-    // Add style sheet
-    if (!isSourcegraphServer && !document.getElementById('ext-style-sheet')) {
-        const styleSheet = document.createElement('link')
+    // Add style sheet and wait for it to load to avoid rendering unstyled elements (which causes an
+    // annoying flash/jitter when the stylesheet loads shortly thereafter).
+    let styleSheet = document.getElementById('ext-style-sheet') as HTMLLinkElement | null
+    // If does not exist, create
+    if (!styleSheet) {
+        styleSheet = document.createElement('link')
         styleSheet.id = 'ext-style-sheet'
         styleSheet.rel = 'stylesheet'
         styleSheet.type = 'text/css'
         styleSheet.href = browser.extension.getURL('css/style.bundle.css')
-        document.head.appendChild(styleSheet)
+    }
+    // If not loaded yet, wait for it to load
+    if (!styleSheet.sheet) {
+        await new Promise(resolve => {
+            styleSheet!.addEventListener('load', resolve, { once: true })
+            // If not appended yet, append to <head>
+            if (!styleSheet!.parentNode) {
+                document.head.appendChild(styleSheet!)
+            }
+        })
     }
 
-    // Add a marker to the DOM that the extension is loaded
-    injectSourcegraphApp(extensionMarker)
+    subscriptions.add(await injectCodeIntelligence(IS_EXTENSION))
 
-    // For the life time of the content script, add features in reaction to DOM changes
-    if (codeHost) {
-        console.log('Detected code host', codeHost.name)
-        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION))
-    }
+    // Clean up susbscription if the native integration gets activated
+    // later in the lifetime of the content script.
+    await nativeIntegrationActivationEventReceived
+    console.log('Native integration activation event received')
+    subscriptions.unsubscribe()
 }
 
 main().catch(console.error.bind(console))

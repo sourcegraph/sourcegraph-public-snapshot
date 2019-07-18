@@ -11,7 +11,9 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
@@ -25,6 +27,8 @@ type Store interface {
 
 	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
+
+	ListAllRepoNames(context.Context) ([]api.RepoName, error)
 }
 
 // StoreListReposArgs is a query arguments type used by
@@ -79,12 +83,12 @@ type TxStore interface {
 // DBStore implements the Store interface for reading and writing repos directly
 // from the Postgres database.
 type DBStore struct {
-	db     DB
+	db     dbutil.DB
 	txOpts sql.TxOptions
 }
 
 // NewDBStore instantiates and returns a new DBStore with prepared statements.
-func NewDBStore(ctx context.Context, db DB, txOpts sql.TxOptions) *DBStore {
+func NewDBStore(ctx context.Context, db dbutil.DB, txOpts sql.TxOptions) *DBStore {
 	return &DBStore{db: db, txOpts: txOpts}
 }
 
@@ -92,11 +96,11 @@ func NewDBStore(ctx context.Context, db DB, txOpts sql.TxOptions) *DBStore {
 // This method will return an error if the underlying DB cannot be interface upgraded
 // to a TxBeginner.
 func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
-	if _, ok := s.db.(Tx); ok { // Already in a Tx.
+	if _, ok := s.db.(dbutil.Tx); ok { // Already in a Tx.
 		return nil, errors.New("dbstore: already in a transaction")
 	}
 
-	tb, ok := s.db.(TxBeginner)
+	tb, ok := s.db.(dbutil.TxBeginner)
 	if !ok { // Not a Tx nor a TxBeginner, error.
 		return nil, errors.New("dbstore: not transactable")
 	}
@@ -120,7 +124,7 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 // When the error value pointed to by the first given `err` is nil, or when no error
 // pointer is given, the transaction is commited. Otherwise, it's rolled-back.
 func (s *DBStore) Done(errs ...*error) {
-	switch tx, ok := s.db.(Tx); {
+	switch tx, ok := s.db.(dbutil.Tx); {
 	case !ok:
 		return
 	case len(errs) == 0:
@@ -364,6 +368,38 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 			limit,
 		)
 	}
+}
+
+// ListAllRepoNames lists the names of all stored repos
+func (s DBStore) ListAllRepoNames(ctx context.Context) (names []api.RepoName, _ error) {
+	return names, s.paginate(ctx, 0, 0, listAllRepoNamesQuery,
+		func(sc scanner) (last, count int64, err error) {
+			var (
+				id   int64
+				name api.RepoName
+			)
+			if err = sc.Scan(&id, &name); err != nil {
+				return 0, 0, err
+			}
+			names = append(names, name)
+			return id, 1, nil
+		},
+	)
+}
+
+const listAllRepoNamesQueryFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.ListAllRepoNames
+SELECT
+  id,
+  name
+FROM repo
+WHERE id > %s
+AND deleted_at IS NULL
+ORDER BY id ASC LIMIT %s
+`
+
+func listAllRepoNamesQuery(cursor, limit int64) *sqlf.Query {
+	return sqlf.Sprintf(listAllRepoNamesQueryFmtstr, cursor, limit)
 }
 
 // a paginatedQuery returns a query with the given pagination
@@ -747,8 +783,8 @@ func scanExternalService(svc *ExternalService, s scanner) error {
 		&svc.DisplayName,
 		&svc.Config,
 		&svc.CreatedAt,
-		&nullTime{&svc.UpdatedAt},
-		&nullTime{&svc.DeletedAt},
+		&dbutil.NullTime{Time: &svc.UpdatedAt},
+		&dbutil.NullTime{Time: &svc.DeletedAt},
 	)
 }
 
@@ -757,15 +793,15 @@ func scanRepo(r *Repo, s scanner) error {
 	err := s.Scan(
 		&r.ID,
 		&r.Name,
-		&nullString{&r.URI},
+		&dbutil.NullString{S: &r.URI},
 		&r.Description,
 		&r.Language,
 		&r.CreatedAt,
-		&nullTime{&r.UpdatedAt},
-		&nullTime{&r.DeletedAt},
-		&nullString{&r.ExternalRepo.ServiceType},
-		&nullString{&r.ExternalRepo.ServiceID},
-		&nullString{&r.ExternalRepo.ID},
+		&dbutil.NullTime{Time: &r.UpdatedAt},
+		&dbutil.NullTime{Time: &r.DeletedAt},
+		&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
+		&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
+		&dbutil.NullString{S: &r.ExternalRepo.ID},
 		&r.Enabled,
 		&r.Archived,
 		&r.Fork,
@@ -788,6 +824,8 @@ func scanRepo(r *Repo, s scanner) error {
 		r.Metadata = new(gitlab.Project)
 	case "bitbucketserver":
 		r.Metadata = new(bitbucketserver.Repo)
+	case "bitbucketcloud":
+		r.Metadata = new(bitbucketcloud.Repo)
 	case "awscodecommit":
 		r.Metadata = new(awscodecommit.Repository)
 	case "gitolite":

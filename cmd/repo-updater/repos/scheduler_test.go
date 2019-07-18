@@ -271,7 +271,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := newUpdateScheduler()
+			s := NewUpdateScheduler()
 
 			for _, call := range test.calls {
 				s.updateQueue.enqueue(&call.repo, call.priority)
@@ -437,7 +437,7 @@ func TestUpdateQueue_remove(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := newUpdateScheduler()
+			s := NewUpdateScheduler()
 			setupInitialQueue(s, test.initialQueue)
 
 			// Perform the removals.
@@ -509,7 +509,7 @@ func TestUpdateQueue_acquireNext(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := newUpdateScheduler()
+			s := NewUpdateScheduler()
 			setupInitialQueue(s, test.initialQueue)
 
 			// Test aquireNext.
@@ -685,7 +685,7 @@ func TestSchedule_upsert(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := newUpdateScheduler()
+			s := NewUpdateScheduler()
 			setupInitialSchedule(s, test.initialSchedule)
 
 			for _, call := range test.upsertCalls {
@@ -863,7 +863,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := newUpdateScheduler()
+			s := NewUpdateScheduler()
 			setupInitialSchedule(s, test.initialSchedule)
 
 			for _, call := range test.updateCalls {
@@ -961,7 +961,7 @@ func TestSchedule_remove(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := newUpdateScheduler()
+			s := NewUpdateScheduler()
 			setupInitialSchedule(s, test.initialSchedule)
 
 			for _, call := range test.removeCalls {
@@ -1123,7 +1123,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := newUpdateScheduler()
+			s := NewUpdateScheduler()
 
 			setupInitialSchedule(s, test.initialSchedule)
 
@@ -1254,7 +1254,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			}
 			defer func() { requestRepoUpdate = nil }()
 
-			s := newUpdateScheduler()
+			s := NewUpdateScheduler()
 
 			// unbuffer the channel
 			s.updateQueue.notifyEnqueue = make(chan struct{})
@@ -1608,7 +1608,7 @@ func TestUpdateScheduler_updateSource(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := newUpdateScheduler()
+			s := NewUpdateScheduler()
 			s.sourceRepos = test.initialSourceRepos
 			setupInitialSchedule(s, test.initialSchedule)
 			setupInitialQueue(s, test.initialQueue)

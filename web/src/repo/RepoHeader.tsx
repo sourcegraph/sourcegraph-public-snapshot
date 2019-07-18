@@ -1,7 +1,10 @@
 import * as H from 'history'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
+import { UncontrolledPopover } from 'reactstrap'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { LinkOrButton } from '../../../shared/src/components/LinkOrButton'
 import { displayRepoName, splitPath } from '../../../shared/src/components/RepoFileLink'
@@ -9,7 +12,6 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { PopoverButton } from '../components/PopoverButton'
 import { WebActionsNavItems } from '../components/shared'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { ActionButtonDescriptor } from '../util/contributions'
@@ -187,32 +189,33 @@ export class RepoHeader extends React.PureComponent<Props, State> {
         }
         return (
             <nav className="repo-header navbar navbar-expand">
-                <div className="navbar-nav">
-                    <PopoverButton
-                        className="repo-header__section-btn repo-header__repo"
-                        globalKeyBinding="r"
-                        link={
+                <div className="d-flex align-items-center">
+                    <Link
+                        to={
                             this.props.resolvedRev && !isErrorLike(this.props.resolvedRev)
                                 ? this.props.resolvedRev.rootTreeURL
                                 : this.props.repo.url
                         }
-                        popoverElement={
-                            <RepositoriesPopover
-                                currentRepo={this.props.repo.id}
-                                history={this.props.history}
-                                location={this.props.location}
-                            />
-                        }
-                        hideOnChange={this.props.repo.name}
+                        className="repo-header__repo"
                     >
                         {repoDir ? `${repoDir}/` : ''}
                         <span className="repo-header__repo-basename">{repoBase}</span>
-                    </PopoverButton>
+                    </Link>
+                    <button type="button" id="repo-popover" className="btn btn-link px-0">
+                        <MenuDownIcon className="icon-inline" />
+                    </button>
+                    <UncontrolledPopover placement="bottom-start" target="repo-popover" trigger="legacy">
+                        <RepositoriesPopover
+                            currentRepo={this.props.repo.id}
+                            history={this.props.history}
+                            location={this.props.location}
+                        />
+                    </UncontrolledPopover>
                 </div>
                 {navActions.map((a, i) => (
                     <div className="navbar-nav" key={a.element.key || i}>
                         <ChevronRightIcon className="icon-inline repo-header__icon-chevron" />
-                        <div className="repo-header__rev">{a.element}</div>
+                        {a.element}
                     </div>
                 ))}
                 <ul className="navbar-nav">

@@ -20,15 +20,15 @@ export class ActivationChecklistItem extends React.PureComponent<ActivationCheck
             this.props.onClick(e, this.props.history)
         }
     }
+
     public render(): JSX.Element {
         const checkboxElem = (
-            <div className={'activation-item'}>
-                {this.props.title}
-                &nbsp;
+            <div className="d-flex justify-content-between">
+                <span className="mr-2">{this.props.title}</span>
                 {this.props.done ? (
-                    <CheckIcon className="icon-inline activation-item__checkbox--done" />
+                    <CheckIcon className="icon-inline text-success" />
                 ) : (
-                    <CheckboxBlankCircleIcon className="icon-inline activation-item__checkbox--todo" />
+                    <CheckboxBlankCircleIcon className="icon-inline text-muted" />
                 )}
             </div>
         )
@@ -36,11 +36,9 @@ export class ActivationChecklistItem extends React.PureComponent<ActivationCheck
         return (
             <div onClick={this.onClick} data-tooltip={this.props.detail}>
                 {this.props.link ? (
-                    <Link className={'activation-item__link'} {...this.props.link}>
-                        {checkboxElem}
-                    </Link>
+                    <Link {...this.props.link}>{checkboxElem}</Link>
                 ) : (
-                    <span className="activation-item__link">{checkboxElem}</span>
+                    <button className="btn btn-link text-left w-100 p-0">{checkboxElem}</button>
                 )}
             </div>
         )
@@ -51,6 +49,7 @@ export interface ActivationChecklistProps {
     history: H.History
     steps: ActivationStep[]
     completed?: ActivationCompletionStatus
+    className?: string
 }
 
 /**
@@ -58,24 +57,20 @@ export interface ActivationChecklistProps {
  */
 export class ActivationChecklist extends React.PureComponent<ActivationChecklistProps, {}> {
     public render(): JSX.Element {
-        return (
-            <div className="activation-checklist">
-                {this.props.completed ? (
-                    this.props.steps.map(step => (
-                        <div key={step.id} className="activation-checklist__item">
-                            <ActivationChecklistItem
-                                {...step}
-                                history={this.props.history}
-                                done={(this.props.completed && this.props.completed[step.id]) || false}
-                            />
-                        </div>
-                    ))
-                ) : (
-                    <div>
-                        <LoadingSpinner className="icon-inline" />
+        return this.props.completed ? (
+            <div className={`list-group list-group-flush ${this.props.className || ''}`}>
+                {this.props.steps.map(step => (
+                    <div key={step.id} className="list-group-item list-group-item-action">
+                        <ActivationChecklistItem
+                            {...step}
+                            history={this.props.history}
+                            done={(this.props.completed && this.props.completed[step.id]) || false}
+                        />
                     </div>
-                )}
+                ))}
             </div>
+        ) : (
+            <LoadingSpinner className="icon-inline my-2" />
         )
     }
 }

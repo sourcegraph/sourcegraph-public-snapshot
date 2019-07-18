@@ -1,6 +1,9 @@
 # Lines starting with '#' are comments.
 # Each line is a file pattern followed by one or more owners.
 # https://help.github.com/articles/about-codeowners/
+#
+# Order is important; the last matching pattern takes the most
+# precedence.
 
 # Top-level catch-alls (these are weaker confidence and might need to be reassigned at some point)
 /enterprise/cmd/frontend @beyang @slimsag
@@ -58,7 +61,7 @@
 /.gitmodules @beyang
 /.gitattributes @beyang
 /.yarnrc @felixfbecker
-/CHANGELOG.md @beyang
+.eslintrc.js @felixfbecker
 /pkg/httputil @beyang
 /pkg/diskcache @beyang
 /pkg/sysreq @beyang
@@ -81,7 +84,8 @@
 /.mailmap @beyang
 /tsconfig.json @felixfbecker
 /jest.config.base.js @felixfbecker
-/tslint.json @felixfbecker
+tslint.json @felixfbecker
+tslint.config.js @felixfbecker
 /enterprise/cmd @beyang
 /enterprise/pkg @beyang
 /enterprise @beyang
@@ -90,7 +94,6 @@
 /prettier.config.js @felixfbecker
 /.editorconfig @felixfbecker
 /jest.config.js @felixfbecker
-/go.mod @beyang
 /cmd @beyang @slimsag
 /pkg @beyang @slimsag
 /enterprise/cmd/frontend/internal/registry @sqs @beyang
@@ -113,12 +116,10 @@
 /pkg/eventlogger @dadlerj
 
 # Auth
-/cmd/frontend/authz/ @beyang
 /cmd/frontend/auth/ @beyang
 /cmd/frontend/internal/auth/ @beyang
 /cmd/frontend/internal/session/ @beyang
 /cmd/frontend/external/session/session.go @beyang
-/enterprise/cmd/frontend/internal/authz @beyang
 /enterprise/cmd/frontend/auth @beyang
 /enterprise/dev/auth-provider @beyang
 /cmd/frontend/graphqlbackend/*session* @beyang
@@ -147,6 +148,11 @@
 /pkg/api/ @sourcegraph/core-services
 /pkg/jsonc @tsenart @slimsag
 /pkg/extsvc @sourcegraph/core-services
+/cmd/frontend/authz/ @sourcegraph/core-services
+/enterprise/cmd/frontend/internal/authz @sourcegraph/core-services
+# authz overrides (still owned by beyang for now)
+/enterprise/cmd/frontend/internal/authz/*github* @beyang
+/enterprise/cmd/frontend/internal/authz/*gitlab* @beyang
 
 # Code nav
 /cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-nav
@@ -224,6 +230,9 @@ README.md @sqs
 /cmd/frontend/graphqlbackend/discussion* @slimsag
 /cmd/frontend/db/discussion* @slimsag
 
+# LSIF
+/lsif/ @chrismwendt @sourcegraph/code-nav
+
 # Development
 /dev/fakehub @ijt
 /dev/repogen @ijt
@@ -246,3 +255,5 @@ README.md @sqs
 **/package.json
 **/yarn.lock
 /go.sum
+/go.mod
+/CHANGELOG.md

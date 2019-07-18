@@ -25,9 +25,9 @@ export const PerformanceWarningAlert: React.FunctionComponent = () => (
                 deploy to a cluster
             </Link>
             &nbsp;for optimal performance.&nbsp;
-            <Link className="site-alert__link" to="https://about.sourcegraph.com/contact">
+            <a className="site-alert__link" href="https://about.sourcegraph.com/contact">
                 Contact us
-            </Link>
+            </a>
             &nbsp;for support or to learn more.
         </div>
     </DismissibleAlert>

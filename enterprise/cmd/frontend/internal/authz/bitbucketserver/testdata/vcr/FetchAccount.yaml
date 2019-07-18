@@ -7,6 +7,39 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/users/engineer1
+    method: GET
+  response:
+    body: '{"name":"engineer1","emailAddress":"engineer1@mycorp.com","id":3,"displayName":"Mr.
+      Engineer 1","active":true,"slug":"engineer1","type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/users/engineer1"}]}}'
+    headers:
+      Cache-Control:
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 11 Jun 2019 12:53:28 GMT
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@180MHBDx773x448x0'
+      X-Asen:
+      - SEN-14109642
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
     url: http://127.0.0.1:7990/rest/api/1.0/users/engineer2
     method: GET
   response:
@@ -18,13 +51,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1734x0'
+      - '@180MHBDx773x449x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -51,13 +84,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1735x0'
+      - '@180MHBDx773x450x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -84,142 +117,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1736x0'
+      - '@180MHBDx773x451x0'
       X-Asen:
-      - SEN-L13737326
-      X-Auserid:
-      - "1"
-      X-Ausername:
-      - admin
-      X-Content-Type-Options:
-      - nosniff
-    status: '200 '
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/users/engineer1
-    method: GET
-  response:
-    body: '{"name":"engineer1","emailAddress":"engineer1@mycorp.com","id":3,"displayName":"Mr.
-      Engineer 1","active":true,"slug":"engineer1","type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/users/engineer1"}]}}'
-    headers:
-      Cache-Control:
-      - no-cache, no-transform
-      Content-Type:
-      - application/json;charset=UTF-8
-      Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
-      Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
-      X-Arequestid:
-      - '@U33524x915x1737x0'
-      X-Asen:
-      - SEN-L13737326
-      X-Auserid:
-      - "1"
-      X-Ausername:
-      - admin
-      X-Content-Type-Options:
-      - nosniff
-    status: '200 '
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/admin/groups?filter=engineers
-    method: GET
-  response:
-    body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"name":"engineers","deletable":true}],"start":0}'
-    headers:
-      Cache-Control:
-      - no-cache, no-transform
-      Content-Type:
-      - application/json;charset=UTF-8
-      Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
-      Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
-      X-Arequestid:
-      - '@U33524x915x1738x0'
-      X-Asen:
-      - SEN-L13737326
-      X-Auserid:
-      - "1"
-      X-Ausername:
-      - admin
-      X-Content-Type-Options:
-      - nosniff
-    status: '200 '
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/admin/groups?filter=scientists
-    method: GET
-  response:
-    body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"name":"scientists","deletable":true}],"start":0}'
-    headers:
-      Cache-Control:
-      - no-cache, no-transform
-      Content-Type:
-      - application/json;charset=UTF-8
-      Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
-      Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
-      X-Arequestid:
-      - '@U33524x915x1739x0'
-      X-Asen:
-      - SEN-L13737326
-      X-Auserid:
-      - "1"
-      X-Ausername:
-      - admin
-      X-Content-Type-Options:
-      - nosniff
-    status: '200 '
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/admin/groups?filter=secret-project
-    method: GET
-  response:
-    body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"name":"secret-project","deletable":true}],"start":0}'
-    headers:
-      Cache-Control:
-      - no-cache, no-transform
-      Content-Type:
-      - application/json;charset=UTF-8
-      Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
-      Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
-      X-Arequestid:
-      - '@U33524x915x1740x0'
-      X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -245,13 +149,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1741x0'
+      - '@180MHBDx773x452x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -267,23 +171,23 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/projects/SECRET
+    url: http://127.0.0.1:7990/rest/api/1.0/admin/groups?filter=engineers
     method: GET
   response:
-    body: '{"key":"SECRET","id":1,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SECRET"}]}}'
+    body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"name":"engineers","deletable":true}],"start":0}'
     headers:
       Cache-Control:
       - no-cache, no-transform
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1742x0'
+      - '@180MHBDx773x453x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -299,23 +203,23 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/projects/SUPERSECRET
+    url: http://127.0.0.1:7990/rest/api/1.0/admin/groups?filter=scientists
     method: GET
   response:
-    body: '{"key":"SUPERSECRET","id":2,"name":"Super Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SUPERSECRET"}]}}'
+    body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"name":"scientists","deletable":true}],"start":0}'
     headers:
       Cache-Control:
       - no-cache, no-transform
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1743x0'
+      - '@180MHBDx773x454x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -331,23 +235,23 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/projects/PRIVATE
+    url: http://127.0.0.1:7990/rest/api/1.0/admin/groups?filter=secret-project
     method: GET
   response:
-    body: '{"key":"PRIVATE","id":3,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE"}]}}'
+    body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"name":"secret-project","deletable":true}],"start":0}'
     headers:
       Cache-Control:
       - no-cache, no-transform
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1744x0'
+      - '@180MHBDx773x455x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -373,13 +277,109 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1745x0'
+      - '@180MHBDx773x456x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/SECRET
+    method: GET
+  response:
+    body: '{"key":"SECRET","id":1,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SECRET"}]}}'
+    headers:
+      Cache-Control:
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 11 Jun 2019 12:53:28 GMT
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@180MHBDx773x457x0'
+      X-Asen:
+      - SEN-14109642
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/SUPERSECRET
+    method: GET
+  response:
+    body: '{"key":"SUPERSECRET","id":2,"name":"Super Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SUPERSECRET"}]}}'
+    headers:
+      Cache-Control:
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 11 Jun 2019 12:53:28 GMT
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@180MHBDx773x458x0'
+      X-Asen:
+      - SEN-14109642
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/PRIVATE
+    method: GET
+  response:
+    body: '{"key":"PRIVATE","id":3,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE"}]}}'
+    headers:
+      Cache-Control:
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 11 Jun 2019 12:53:28 GMT
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@180MHBDx773x459x0'
+      X-Asen:
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -398,20 +398,20 @@ interactions:
     url: http://127.0.0.1:7990/rest/api/1.0/projects/SECRET/repos/secret-repo
     method: GET
   response:
-    body: '{"slug":"secret-repo","id":1,"name":"secret-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SECRET","id":1,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SECRET"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@127.0.0.1:7999/secret/secret-repo.git","name":"ssh"},{"href":"http://127.0.0.1:7990/scm/secret/secret-repo.git","name":"http"}],"self":[{"href":"http://127.0.0.1:7990/projects/SECRET/repos/secret-repo/browse"}]}}'
+    body: '{"slug":"secret-repo","id":1,"name":"secret-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SECRET","id":1,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SECRET"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/secret/secret-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/secret/secret-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/SECRET/repos/secret-repo/browse"}]}}'
     headers:
       Cache-Control:
       - no-cache, no-transform
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1746x0'
+      - '@180MHBDx773x460x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -438,13 +438,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1747x0'
+      - '@180MHBDx773x461x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -470,13 +470,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1748x0'
+      - '@180MHBDx773x462x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -502,13 +502,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1749x0'
+      - '@180MHBDx773x463x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -534,15 +534,15 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@U33524x915x1750x0'
+      - '@180MHBDx773x464x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -568,15 +568,15 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@U33524x915x1751x0'
+      - '@180MHBDx773x465x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -602,15 +602,15 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@U33524x915x1752x0'
+      - '@180MHBDx773x466x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -636,15 +636,15 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@U33524x915x1753x0'
+      - '@180MHBDx773x467x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -670,15 +670,15 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@U33524x915x1754x0'
+      - '@180MHBDx773x468x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -704,15 +704,15 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@U33524x915x1755x0'
+      - '@180MHBDx773x469x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -738,15 +738,15 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@U33524x915x1756x0'
+      - '@180MHBDx773x470x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -772,13 +772,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1757x0'
+      - '@180MHBDx773x471x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:
@@ -805,13 +805,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Sat, 08 Jun 2019 15:15:37 GMT
+      - Tue, 11 Jun 2019 12:53:28 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@U33524x915x1758x0'
+      - '@180MHBDx773x472x0'
       X-Asen:
-      - SEN-L13737326
+      - SEN-14109642
       X-Auserid:
       - "1"
       X-Ausername:

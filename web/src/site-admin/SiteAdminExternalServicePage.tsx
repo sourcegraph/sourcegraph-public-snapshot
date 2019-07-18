@@ -125,7 +125,10 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 )}
                 {externalService && (
                     <div className="mb-3">
-                        <ExternalServiceCard {...getExternalService(externalService.kind)} />
+                        <ExternalServiceCard
+                            {...getExternalService(externalService.kind)}
+                            kind={externalService.kind}
+                        />
                     </div>
                 )}
                 {externalService && externalServiceCategory && (

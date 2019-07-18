@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { RepoNotFoundError } from '../../../../shared/src/backend/errors'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
-import { RepoNotFoundError } from './errors'
 
 export const queryRepositoryComparisonFileDiffs = memoizeObservable(
     ({

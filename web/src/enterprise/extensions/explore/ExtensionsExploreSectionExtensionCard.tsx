@@ -7,12 +7,11 @@ import { LinkOrSpan } from '../../../../../shared/src/components/LinkOrSpan'
 export const ExtensionsExploreSectionExtensionCard: React.FunctionComponent<{
     extensionID: string
     description?: string
-    url?: string
-}> = ({ extensionID: title, description = '', url }) => (
-    <LinkOrSpan to={url} className="extensions-explore-section__card__content">
-        <div className="extensions-explore-section__card__content__body">
-            <p className="extensions-explore-section__card__content__body__title">{title}</p>
-            {description && <p className="extensions-explore-section__card__content__body__text">{description}</p>}
-        </div>
+    url: string
+    className?: string
+}> = ({ extensionID: title, description = '', url, className = '' }) => (
+    <LinkOrSpan to={url} className={className}>
+        <h4 className="mb-0">{title}</h4>
+        {description && <small>{description}</small>}
     </LinkOrSpan>
 )

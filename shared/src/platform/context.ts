@@ -4,7 +4,7 @@ import { SettingsEdit } from '../api/client/services/settings'
 import { GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
-import { FileSpec, PositionSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
+import { FileSpec, PositionSpec, RawRepoSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */
@@ -106,7 +106,9 @@ export interface PlatformContext {
      * @param location The specific repository, revision, file, position, and view state to generate the URL for.
      * @return The URL to the file with the specified options.
      */
-    urlToFile(location: RepoSpec & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec>): string
+    urlToFile(
+        location: RepoSpec & Partial<RawRepoSpec> & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec>
+    ): string
 
     /**
      * The URL to the Sourcegraph site that the user's session is associated with. This refers to

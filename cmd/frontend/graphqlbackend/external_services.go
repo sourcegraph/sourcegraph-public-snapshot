@@ -45,7 +45,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 
 	res := &externalServiceResolver{externalService: externalService}
 	if err := syncExternalService(ctx, externalService); err != nil {
-		res.warning = fmt.Sprintf("External service created, but we encountered a problem while syncing the external service: %s", err)
+		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
 	return res, nil
@@ -90,7 +90,7 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 
 	res := &externalServiceResolver{externalService: externalService}
 	if err = syncExternalService(ctx, externalService); err != nil {
-		res.warning = fmt.Sprintf("External service updated, but we encountered a problem while syncing the external service: %s", err)
+		res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 	}
 
 	return res, nil

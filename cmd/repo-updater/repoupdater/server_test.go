@@ -109,7 +109,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	t.Run("found", func(t *testing.T) {
 		want := protocol.RepoLookupResult{
 			Repo: &protocol.RepoInfo{
-				ExternalRepo: &api.ExternalRepoSpec{
+				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "a",
 					ServiceType: github.ServiceType,
 					ServiceID:   "https://github.com/",
@@ -429,7 +429,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		ctx := context.Background()
 
 		t.Run(tc.name, func(t *testing.T) {
-			s := &Server{Store: tc.store}
+			s := &Server{Store: tc.store, Scheduler: &fakeScheduler{}}
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
 			cli := repoupdater.Client{URL: srv.URL}
@@ -537,6 +537,122 @@ func TestServer_RepoExternalServices(t *testing.T) {
 
 			if have, want := res, tc.svcs; !reflect.DeepEqual(have, want) {
 				t.Errorf("response:\n%s", cmp.Diff(have, want))
+			}
+		})
+	}
+}
+
+func TestServer_StatusMessages(t *testing.T) {
+	testCases := []struct {
+		name            string
+		stored          repos.Repos
+		gitserverCloned []string
+		res             *protocol.StatusMessagesResponse
+		err             string
+	}{
+		{
+			name:            "all cloned",
+			gitserverCloned: []string{"foobar"},
+			stored:          []*repos.Repo{{Name: "foobar"}},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{},
+			},
+		},
+		{
+			name:            "nothing cloned",
+			stored:          []*repos.Repo{{Name: "foobar"}},
+			gitserverCloned: []string{},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						Type:    protocol.CloningStatusMessage,
+						Message: "1 repositories enqueued for cloning...",
+					},
+				},
+			},
+		},
+		{
+			name:            "subset cloned",
+			stored:          []*repos.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			gitserverCloned: []string{"foobar"},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						Type:    protocol.CloningStatusMessage,
+						Message: "1 repositories enqueued for cloning...",
+					},
+				},
+			},
+		},
+		{
+			name:            "more cloned than stored",
+			stored:          []*repos.Repo{{Name: "foobar"}},
+			gitserverCloned: []string{"foobar", "barfoo"},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{},
+			},
+		},
+		{
+			name:            "cloned different than stored",
+			stored:          []*repos.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			gitserverCloned: []string{"one", "two", "three"},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						Type:    protocol.CloningStatusMessage,
+						Message: "2 repositories enqueued for cloning...",
+					},
+				},
+			},
+		},
+		{
+			name:            "case insensitivity",
+			gitserverCloned: []string{"foobar"},
+			stored:          []*repos.Repo{{Name: "FOOBar"}},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{},
+			},
+		},
+		{
+			name:            "case insensitivity to gitserver names",
+			gitserverCloned: []string{"FOOBar"},
+			stored:          []*repos.Repo{{Name: "FOOBar"}},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		ctx := context.Background()
+
+		t.Run(tc.name, func(t *testing.T) {
+			gitserverClient := &fakeGitserverClient{listClonedResponse: tc.gitserverCloned}
+
+			store := new(repos.FakeStore)
+			err := store.UpsertRepos(ctx, tc.stored.Clone()...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			s := &Server{Store: store, GitserverClient: gitserverClient}
+
+			srv := httptest.NewServer(s.Handler())
+			defer srv.Close()
+			cli := repoupdater.Client{URL: srv.URL}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			res, err := cli.StatusMessages(ctx)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if have, want := res, tc.res; !reflect.DeepEqual(have, want) {
+				t.Errorf("response: %s", cmp.Diff(have, want))
 			}
 		})
 	}
@@ -655,7 +771,7 @@ func TestRepoLookup(t *testing.T) {
 			},
 			stored: []*repos.Repo{githubRepository},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: &api.ExternalRepoSpec{
+				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
 					ServiceID:   "https://github.com/",
@@ -678,7 +794,7 @@ func TestRepoLookup(t *testing.T) {
 			},
 			stored: []*repos.Repo{awsCodeCommitRepository},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: &api.ExternalRepoSpec{
+				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 					ServiceType: awscodecommit.ServiceType,
 					ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
@@ -704,7 +820,7 @@ func TestRepoLookup(t *testing.T) {
 				repo: githubRepository,
 			},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: &api.ExternalRepoSpec{
+				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
 					ServiceID:   "https://github.com/",
@@ -731,7 +847,7 @@ func TestRepoLookup(t *testing.T) {
 				repo: githubRepository,
 			},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: &api.ExternalRepoSpec{
+				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: github.ServiceType,
 					ServiceID:   "https://github.com/",
@@ -855,6 +971,30 @@ type fakeGithubDotComSource struct {
 
 func (s *fakeGithubDotComSource) GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error) {
 	return s.repo.Clone(), s.err
+}
+
+type fakeScheduler struct {
+	queue repos.Repos
+}
+
+func (s *fakeScheduler) UpdateQueueLen() int {
+	if s.queue != nil {
+		return s.queue.Len()
+	}
+	return 0
+}
+
+func (s *fakeScheduler) UpdateOnce(_ uint32, _ api.RepoName, _ string) {}
+func (s *fakeScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult {
+	return &protocol.RepoUpdateSchedulerInfoResult{}
+}
+
+type fakeGitserverClient struct {
+	listClonedResponse []string
+}
+
+func (g *fakeGitserverClient) ListCloned(ctx context.Context) ([]string, error) {
+	return g.listClonedResponse, nil
 }
 
 func formatJSON(s string) string {

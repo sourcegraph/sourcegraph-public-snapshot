@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -35,12 +36,18 @@ func main() {
 	initAuthz()
 
 	hooks.AfterDBInit = func() {
+		dsn := conf.Get().ServiceConnections.PostgresDSN
+		authzDB, err := dbutil.NewDB(dsn, "frontend-authz")
+		if err != nil {
+			log.Fatalf("failed to initialize db: %v", err)
+		}
+
 		ctx := context.Background()
 		go func() {
 			t := time.NewTicker(5 * time.Second)
 			for range t.C {
 				allowAccessByDefault, authzProviders, _, _ :=
-					iauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices)
+					iauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, authzDB)
 				authz.SetProviders(allowAccessByDefault, authzProviders)
 			}
 		}()

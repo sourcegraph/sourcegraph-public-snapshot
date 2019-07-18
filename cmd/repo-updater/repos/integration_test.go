@@ -3,11 +3,13 @@ package repos_test
 import (
 	"context"
 	"database/sql"
+	"flag"
 	"testing"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -17,6 +19,8 @@ import (
 // This is meant to ensure each test case has a clean slate.
 var errRollback = errors.New("tx: rollback")
 
+var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
+
 func TestIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -25,7 +29,7 @@ func TestIntegration(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db, cleanup := testDatabase(t)
+	db, cleanup := dbtest.NewDB(t, *dsn)
 	defer cleanup()
 
 	dbstore := repos.NewDBStore(ctx, db, sql.TxOptions{
@@ -54,30 +58,6 @@ func TestIntegration(t *testing.T) {
 		{"DBStore/ListRepos/Pagination", testStoreListReposPagination(store)},
 		{"DBStore/Syncer/Sync", testSyncerSync(store)},
 		{"DBStore/Syncer/SyncSubset", testSyncSubset(store)},
-		{
-			"Migrations/GithubSetDefaultRepositoryQuery",
-			testGithubSetDefaultRepositoryQueryMigration(store),
-		},
-		{
-			"Migrations/GitLabSetDefaultProjectQuery",
-			testGitLabSetDefaultProjectQueryMigration(store),
-		},
-		{
-			"Migrations/BitbucketServerSetDefaultRepositoryQuery",
-			testBitbucketServerSetDefaultRepositoryQueryMigration(store),
-		},
-		{
-			"Migrations/BitbucketServerUsername",
-			testBitbucketServerUsernameMigration(store),
-		},
-		{
-			"Migrations/AWSCodeCommitSetBogusGitCredentialsMigration",
-			testAWSCodeCommitSetBogusGitCredentialsMigration(store),
-		},
-		{
-			"Migrations/EnabledStateDeprecationMigration",
-			testEnabledStateDeprecationMigration(store),
-		},
 	} {
 		t.Run(tc.name, tc.test)
 	}

@@ -11,6 +11,7 @@
 - [ ] Phabricator
 - [ ] Phabricator integration
 - [ ] Bitbucket
+- [ ] Bitbucket integration
 - [ ] Gitlab
 
 ##### Browsers

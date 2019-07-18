@@ -5,11 +5,17 @@ You can use Sourcegraph with Git repositories hosted on [Bitbucket Server](https
 Feature | Supported?
 ------- | ----------
 [Repository syncing](../admin/external_service/bitbucket_server.md) | ✅
+[Repository permissions](../admin/external_service/bitbucket_server.md#repository-permissions) | ✅
 [Browser extension](#browser-extension) | ✅
+[Native extension](../admin/external_service/bitbucket_server.md#native-extension) | ✅
 
 ## Repository syncing
 
 Site admins can [add Bitbucket Server repositories to Sourcegraph](../admin/external_service/bitbucket_server.md).
+
+## Repository permissions
+
+Site admins can [configure Sourcegraph to respect Bitbucket Server's repository access permissions](../admin/external_service/bitbucket_server.md#repository-permissions).
 
 ## Browser extension
 

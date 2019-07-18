@@ -221,6 +221,10 @@
 // 1528395578_.up.sql (714B)
 // 1528395579_.down.sql (35B)
 // 1528395579_.up.sql (175B)
+// 1528395580_create_user_permissions_table.down.sql (56B)
+// 1528395580_create_user_permissions_table.up.sql (331B)
+// 1528395581_allows_dots_in_usernames.down.sql (349B)
+// 1528395581_allows_dots_in_usernames.up.sql (355B)
 
 package migrations
 
@@ -4709,6 +4713,86 @@ func _1528395579_UpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395580_create_user_permissions_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x2d\x4e\x2d\x8a\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x72\x9d\x7d\x74\x38\x00\x00\x00")
+
+func _1528395580_create_user_permissions_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395580_create_user_permissions_tableDownSql,
+		"1528395580_create_user_permissions_table.down.sql",
+	)
+}
+
+func _1528395580_create_user_permissions_tableDownSql() (*asset, error) {
+	bytes, err := _1528395580_create_user_permissions_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395580_create_user_permissions_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x99, 0x3e, 0xe, 0xa0, 0x73, 0x4c, 0x4a, 0xe0, 0xbd, 0xaf, 0x8d, 0xb5, 0x8c, 0xd8, 0x14, 0x5c, 0xe4, 0x36, 0xc1, 0x51, 0xae, 0x19, 0x3d, 0xcd, 0xaa, 0x9a, 0x14, 0xaf, 0x84, 0x19, 0x4b, 0xac}}
+	return a, nil
+}
+
+var __1528395580_create_user_permissions_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x8f\x41\x6a\xc3\x30\x10\x45\xf7\x73\x8a\xbf\x4c\xc1\x37\xf0\x4a\x71\x44\x31\x28\x32\x75\xe5\xb5\x50\xaa\xa1\xa8\x60\x47\xb5\x46\xd0\xf4\xf4\x25\x6d\x68\x13\x4a\x66\x35\xcc\xfb\x30\xff\x6d\xf5\x63\x6f\x5b\xa2\x6e\xd4\xca\x69\x38\xb5\x35\x1a\xb5\xf0\xea\x33\xaf\x73\x2a\x25\x1d\x97\x82\x0d\xe1\xe7\x98\x22\xce\x93\x16\xe1\x57\x5e\x61\x07\x07\x3b\x19\xd3\x10\xf0\x97\x07\x84\x3f\xe4\x06\x1e\x0f\x6f\xfc\x22\x5e\x4e\x99\xef\xc2\x14\x0b\x70\x38\x09\x87\x1b\x5a\x73\x0c\xc2\xd1\x07\x01\x24\xcd\x5c\x24\xcc\x59\x3e\x7f\x33\xf4\xd0\x12\x29\xe3\xf4\x78\xa7\x3d\xa9\xdd\x0e\xdd\x60\x9f\xdd\xa8\x7a\xeb\xfe\xf1\xef\xdd\x5f\x4a\xd4\x25\xbd\x57\xa6\xc9\xf6\x4f\x93\xc6\xe6\x22\xdd\x5c\xd9\x35\xd7\x32\xe7\xdf\xdd\xb0\xdf\xf7\xae\xa5\xaf\x00\x00\x00\xff\xff\xcf\x39\x93\x60\x4b\x01\x00\x00")
+
+func _1528395580_create_user_permissions_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395580_create_user_permissions_tableUpSql,
+		"1528395580_create_user_permissions_table.up.sql",
+	)
+}
+
+func _1528395580_create_user_permissions_tableUpSql() (*asset, error) {
+	bytes, err := _1528395580_create_user_permissions_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395580_create_user_permissions_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x31, 0xde, 0xaf, 0x7, 0x25, 0x82, 0x88, 0xc1, 0x37, 0x36, 0xde, 0x3e, 0xc8, 0x94, 0xad, 0x69, 0x45, 0xf1, 0x6d, 0x8, 0xe3, 0xa0, 0x36, 0x3f, 0xbb, 0x4b, 0xa8, 0x94, 0x64, 0xcb, 0x1f, 0xaf}}
+	return a, nil
+}
+
+var __1528395581_allows_dots_in_usernamesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\xe6\x72\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x01\x0b\xc6\xe7\x25\xe6\xa6\xc6\x97\x25\xe6\x64\xa6\xc4\x27\x67\x24\x16\x15\xeb\x70\x39\xba\xb8\x10\x54\xc5\xe5\xec\xe1\xea\xec\xad\xa0\x01\x12\x57\xa8\x53\x50\x8f\x8b\x4e\xd4\xad\x72\xd4\x8d\x32\xd0\xb5\x8c\xd5\xb0\xb7\x42\xe2\xd5\xe8\x6a\xd8\xdb\x22\xf1\x35\x35\xb5\x54\xd4\x35\xd1\x9c\x57\x5a\x9c\x5a\x84\xe9\x3e\xb0\x68\x3c\x88\x24\xe8\x48\xdc\x4a\x61\x2e\x85\xc9\x91\xe9\x5a\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\x72\x9e\x45\x86\x5d\x01\x00\x00")
+
+func _1528395581_allows_dots_in_usernamesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395581_allows_dots_in_usernamesDownSql,
+		"1528395581_allows_dots_in_usernames.down.sql",
+	)
+}
+
+func _1528395581_allows_dots_in_usernamesDownSql() (*asset, error) {
+	bytes, err := _1528395581_allows_dots_in_usernamesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395581_allows_dots_in_usernames.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x1e, 0x65, 0x10, 0xd8, 0x95, 0x0, 0x5, 0xf8, 0x4f, 0xfe, 0xa7, 0x33, 0xc9, 0x19, 0x9c, 0x8e, 0x11, 0x5f, 0x9d, 0x79, 0x65, 0x6a, 0xf9, 0x72, 0xe6, 0xf2, 0xb7, 0x2a, 0x7f, 0x42, 0x60, 0xf7}}
+	return a, nil
+}
+
+var __1528395581_allows_dots_in_usernamesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\xe6\x72\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x01\x0b\xc6\xe7\x25\xe6\xa6\xc6\x97\x25\xe6\x64\xa6\xc4\x27\x67\x24\x16\x15\xeb\x70\x39\xba\xb8\x10\x54\xc5\xe5\xec\xe1\xea\xec\xad\xa0\x01\x12\x57\xa8\x53\x50\x8f\x8b\x4e\xd4\xad\x72\xd4\x8d\x32\xd0\xb5\x8c\xd5\xb0\xb7\x42\xe2\xd5\x44\xeb\xea\xc5\x6a\xd8\xdb\x22\x09\x69\x6a\x6a\xa9\xa8\x6b\xa2\xb9\xb0\xb4\x38\xb5\x08\xd3\x89\x60\xd1\x78\x10\x49\xd0\x9d\xb8\x95\xc2\x1c\x0b\x93\x23\xdf\xc1\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\xa8\x98\x32\xb2\x63\x01\x00\x00")
+
+func _1528395581_allows_dots_in_usernamesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395581_allows_dots_in_usernamesUpSql,
+		"1528395581_allows_dots_in_usernames.up.sql",
+	)
+}
+
+func _1528395581_allows_dots_in_usernamesUpSql() (*asset, error) {
+	bytes, err := _1528395581_allows_dots_in_usernamesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395581_allows_dots_in_usernames.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x76, 0x56, 0x31, 0x9d, 0xe6, 0x87, 0xfe, 0x57, 0x99, 0xf, 0x68, 0x62, 0xc2, 0x1b, 0xca, 0x33, 0x44, 0xb8, 0x65, 0x8c, 0x8f, 0xc4, 0xf, 0x44, 0x7f, 0x28, 0x6b, 0x4b, 0x35, 0x84, 0x3b, 0x8c}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5241,6 +5325,14 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395579_.down.sql": _1528395579_DownSql,
 
 	"1528395579_.up.sql": _1528395579_UpSql,
+
+	"1528395580_create_user_permissions_table.down.sql": _1528395580_create_user_permissions_tableDownSql,
+
+	"1528395580_create_user_permissions_table.up.sql": _1528395580_create_user_permissions_tableUpSql,
+
+	"1528395581_allows_dots_in_usernames.down.sql": _1528395581_allows_dots_in_usernamesDownSql,
+
+	"1528395581_allows_dots_in_usernames.up.sql": _1528395581_allows_dots_in_usernamesUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5505,6 +5597,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395578_.up.sql":                                          {_1528395578_UpSql, map[string]*bintree{}},
 	"1528395579_.down.sql":                                        {_1528395579_DownSql, map[string]*bintree{}},
 	"1528395579_.up.sql":                                          {_1528395579_UpSql, map[string]*bintree{}},
+	"1528395580_create_user_permissions_table.down.sql":           {_1528395580_create_user_permissions_tableDownSql, map[string]*bintree{}},
+	"1528395580_create_user_permissions_table.up.sql":             {_1528395580_create_user_permissions_tableUpSql, map[string]*bintree{}},
+	"1528395581_allows_dots_in_usernames.down.sql":                {_1528395581_allows_dots_in_usernamesDownSql, map[string]*bintree{}},
+	"1528395581_allows_dots_in_usernames.up.sql":                  {_1528395581_allows_dots_in_usernamesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

@@ -17,7 +17,7 @@ import {
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
-import { fetchAllRepositoriesAndPollIfAnyCloning } from './backend'
+import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
 
 interface RepositoryNodeProps extends ActivationProps {
     node: GQL.IRepository
@@ -178,7 +178,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
     }
 
     private queryRepositories = (args: FilteredConnectionQueryArgs) =>
-        fetchAllRepositoriesAndPollIfAnyCloning({ ...args })
+        fetchAllRepositoriesAndPollIfEmptyOrAnyCloning({ ...args })
 
     private onDidUpdateRepository = () => this.repositoryUpdates.next()
 }

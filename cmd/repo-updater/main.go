@@ -14,13 +14,12 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -28,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 const port = "3182"
@@ -44,8 +44,10 @@ func main() {
 	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
 		log.Fatalf("sourcegraph-frontend not reachable: %v", err)
 	}
+	log15.Debug("detected frontend ready")
 
 	gitserver.DefaultClient.WaitForGitServers(ctx)
+	log15.Debug("detected gitservers ready")
 
 	dsn := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
@@ -58,7 +60,7 @@ func main() {
 			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
 		}
 	})
-	db, err := repos.NewDB(dsn)
+	db, err := dbutil.NewDB(dsn, "repo-updater")
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
@@ -73,6 +75,7 @@ func main() {
 			m.UpsertRepos,
 			m.ListExternalServices,
 			m.UpsertExternalServices,
+			m.ListAllRepoNames,
 		} {
 			om.MustRegister(prometheus.DefaultRegisterer)
 		}
@@ -94,25 +97,12 @@ func main() {
 		src = repos.NewSourcer(cf, repos.ObservedSource(log15.Root(), m))
 	}
 
-	migrations := []repos.Migration{
-		repos.GithubSetDefaultRepositoryQueryMigration(clock),
-		repos.GitLabSetDefaultProjectQueryMigration(clock),
-		repos.BitbucketServerUsernameMigration(clock), // Needs to run before EnabledStateDeprecationMigration
-		repos.BitbucketServerSetDefaultRepositoryQueryMigration(clock),
-		repos.AWSCodeCommitSetBogusGitCredentialsMigration(clock),
+	scheduler := repos.NewUpdateScheduler()
+	server := repoupdater.Server{
+		Store:           store,
+		Scheduler:       scheduler,
+		GitserverClient: gitserver.DefaultClient,
 	}
-
-	if !envvar.SourcegraphDotComMode() {
-		migrations = append(migrations, repos.EnabledStateDeprecationMigration(src, clock))
-	}
-
-	for _, m := range migrations {
-		if err := m.Run(ctx, store); err != nil {
-			log.Fatalf("failed to run migration: %s", err)
-		}
-	}
-
-	server := repoupdater.Server{Store: store}
 
 	var handler http.Handler
 	{
@@ -162,7 +152,7 @@ func main() {
 			if !envvar.SourcegraphDotComMode() {
 				rs := diff.Repos()
 				if !conf.Get().DisableAutoGitUpdates {
-					repos.Scheduler.Update(rs...)
+					scheduler.Update(rs...)
 				}
 
 				go func() {
@@ -173,6 +163,7 @@ func main() {
 			}
 		}
 	}()
+	log15.Debug("started new repo syncer updates scheduler relay thread")
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
@@ -182,7 +173,8 @@ func main() {
 	}
 
 	// Git fetches scheduler
-	go repos.RunScheduler(ctx)
+	go repos.RunScheduler(ctx, scheduler)
+	log15.Debug("started scheduler")
 
 	host := ""
 	if env.InsecureDev {
@@ -198,7 +190,7 @@ func main() {
 		Name: "Repo Updater State",
 		Path: "/repo-updater-state",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			d, err := json.MarshalIndent(repos.Scheduler.DebugDump(), "", "  ")
+			d, err := json.MarshalIndent(scheduler.DebugDump(), "", "  ")
 			if err != nil {
 				http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
 				return

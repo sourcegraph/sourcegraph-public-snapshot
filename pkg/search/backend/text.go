@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,10 +23,10 @@ type Zoekt struct {
 	// tests.
 	DisableCache bool
 
-	mu       sync.Mutex
+	mu       sync.RWMutex
 	state    int32 // 0 not running, 1 running, 2 stopped
-	listResp *zoekt.RepoList
-	listErr  error
+	set      map[string]*zoekt.Repository
+	err      error
 	disabled bool
 }
 
@@ -41,26 +42,26 @@ func (c *Zoekt) String() string {
 }
 
 // ListAll returns the response of List without any restrictions.
-func (c *Zoekt) ListAll(ctx context.Context) (*zoekt.RepoList, error) {
+func (c *Zoekt) ListAll(ctx context.Context) (map[string]*zoekt.Repository, error) {
 	if !c.Enabled() {
 		// By returning an empty list Text.Search won't send any queries to
 		// Zoekt.
-		return &zoekt.RepoList{}, nil
+		return map[string]*zoekt.Repository{}, nil
 	}
 
-	c.mu.Lock()
-	r, err := c.listResp, c.listErr
-	c.mu.Unlock()
+	c.mu.RLock()
+	set, err := c.set, c.err
+	c.mu.RUnlock()
 
 	// No cached responses, start up and just do uncached query.
-	if r == nil && err == nil {
+	if set == nil && err == nil {
 		if !c.DisableCache {
 			go c.start()
 		}
-		r, err = c.Client.List(ctx, &zoektquery.Const{Value: true})
+		set, err = c.list(ctx)
 	}
 
-	return r, err
+	return set, err
 }
 
 // SetEnabled will disable zoekt if b is false.
@@ -77,6 +78,20 @@ func (c *Zoekt) Enabled() bool {
 	b := c.disabled
 	c.mu.Unlock()
 	return c.Client != nil && !b
+}
+
+func (c *Zoekt) list(ctx context.Context) (map[string]*zoekt.Repository, error) {
+	resp, err := c.Client.List(ctx, &zoektquery.Const{Value: true})
+	if err != nil {
+		return nil, err
+	}
+
+	set := make(map[string]*zoekt.Repository, len(resp.Repos))
+	for _, r := range resp.Repos {
+		set[strings.ToLower(r.Repository.Name)] = &r.Repository
+	}
+
+	return set, nil
 }
 
 // start starts a goroutine that keeps the listResp and listErr fields updated
@@ -101,33 +116,28 @@ func (c *Zoekt) start() {
 			c.mu.Lock()
 			defer c.mu.Unlock()
 			if c.state == 1 {
-				c.state = 0
-				c.listResp, c.listErr = nil, nil
+				c.state, c.set, c.err = 0, nil, nil
 			}
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		listResp, listErr := c.Client.List(ctx, &zoektquery.Const{Value: true})
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		set, err := c.list(ctx)
 		cancel()
 
-		// Only update on error once it has happened 3 times in a row. This is
-		// to prevent us caching transient errors, and instead fallback on the
-		// old list.
-		update := true
-		if listErr != nil {
+		if err != nil {
 			errorCount++
-			if errorCount <= 3 {
-				update = false
-			}
 		} else {
 			errorCount = 0
 		}
 
 		c.mu.Lock()
 		state = c.state
-		if update {
-			c.listResp, c.listErr = listResp, listErr
+		// Only update on error once it has happened 3 times in a row. This is
+		// to prevent us caching transient errors, and instead fallback on the
+		// old list.
+		if errorCount == 0 || errorCount > 3 {
+			c.set, c.err = set, err
 		}
 		c.mu.Unlock()
 

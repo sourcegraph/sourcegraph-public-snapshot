@@ -43,7 +43,7 @@ export class ExtensionCard extends React.PureComponent<Props> {
         }
 
         return (
-            <div className="d-flex col-sm-6 col-md-6 col-lg-4 pb-4">
+            <div className="d-flex">
                 <div className="extension-card card">
                     <LinkOrSpan
                         to={node.registryExtension && node.registryExtension.url}
