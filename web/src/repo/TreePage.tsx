@@ -40,6 +40,7 @@ import { basename } from '../util/path'
 import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
+import { RepoSettingsLSIFPage } from './settings/RepoSettingsLSIFPage'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -351,6 +352,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     hideSearch={true}
                                 />
                             </div>
+                            <RepoSettingsLSIFPage repoName={this.props.repoName} />
                         </>
                     ))}
             </div>

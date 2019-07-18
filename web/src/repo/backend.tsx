@@ -235,6 +235,32 @@ export const fetchFileExternalLinks = memoizeObservable(
     makeRepoURI
 )
 
+export const fetchRepositoryServiceType = memoizeObservable(
+    (repoName: string): Observable<string | undefined> =>
+        queryGraphQL(
+            gql`
+                query RepositoryServiceType($repoName: String!) {
+                    repository(name: $repoName) {
+                        externalRepository {
+                            serviceType
+                        }
+                    }
+                }
+            `,
+            {
+                repoName,
+            }
+        ).pipe(
+            map(({ data, errors }) => {
+                if (!data || !data.repository || !data.repository.externalRepository) {
+                    throw createAggregateError(errors)
+                }
+                return data.repository.externalRepository.serviceType
+            })
+        ),
+    repoName => repoName
+)
+
 export const fetchTree = memoizeObservable(
     (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.IGitTree> =>
         queryGraphQL(

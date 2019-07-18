@@ -534,3 +534,19 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 		HasNextPage: page*100 < response.TotalCount,
 	}, nil
 }
+
+type restTopics struct {
+	Names []string `json:"names"`
+}
+
+// ListTopicsOnRepository does stuff
+func (c *Client) ListTopicsOnRepository(ctx context.Context, ownerAndName string) ([]string, error) {
+	var result restTopics
+	if err := c.requestGet(ctx, "", fmt.Sprintf("/repos/%s/topics", ownerAndName), &result); err != nil {
+		if HTTPErrorCode(err) == http.StatusNotFound {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return result.Names, nil
+}

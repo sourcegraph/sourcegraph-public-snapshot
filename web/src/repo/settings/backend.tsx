@@ -40,6 +40,9 @@ export function fetchRepository(name: string): Observable<GQL.IRepository> {
                             displayName
                         }
                     }
+                    externalRepository {
+                        serviceType
+                    }
                 }
             }
         `,
