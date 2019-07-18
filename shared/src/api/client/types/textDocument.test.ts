@@ -36,6 +36,7 @@ describe('score', () => {
         expect(score([{ pattern: 'file:///*.txt' }], 'file:///f.txt', 'l')).toBe(10)
         expect(score([{ pattern: '**/*.txt' }], 'file:///f.txt', 'l')).toBe(10)
         expect(score([{ pattern: '*.txt' }], 'file:///f.txt', 'l')).toBe(5)
+        expect(score([{ pattern: '*.go' }], 'git://127.0.0.1-3434/repos/.git?51c44e6be08627c613f787032a2759162bf6f7c2#web/api.go', 'l')).toBe(5)
         expect(score([{ pattern: 'f.txt' }], 'file:///f.txt', 'l')).toBe(10)
         expect(score([{ pattern: 'x' }], 'file:///f.txt', 'l')).toBe(0)
         expect(score([{ pattern: 'f.txt', language: 'x' }], 'file:///f.txt', 'l')).toBe(0)
