@@ -144,7 +144,7 @@ func Main() {
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
-		`lsif-server: node /lsif-server.js`,
+		`lsif-server: node /lsif-server.js | grep -v 'Listening for HTTP requests'`,
 		`management-console: management-console`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
