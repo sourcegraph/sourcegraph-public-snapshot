@@ -49,9 +49,12 @@ func init() {
 	// TODO it is surprising that we do this here. We should create a standard
 	// import for sourcegraph binaries which would have less surprising
 	// behaviour.
-	maxprocs.Set(maxprocs.Logger(func(format string, a ...interface{}) {
+	_, err := maxprocs.Set(maxprocs.Logger(func(format string, a ...interface{}) {
 		log15.Debug("automaxprocs", "msg", fmt.Sprintf(format, a...))
 	}))
+	if err != nil {
+		log15.Error("automaxprocs failed", "error", err)
+	}
 }
 
 func condensedFormat(r *log15.Record) []byte {
