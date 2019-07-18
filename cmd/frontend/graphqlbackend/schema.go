@@ -4150,6 +4150,9 @@ type Rule implements Node {
 
     # The JSON settings object for the rule (in JSONC, with comments and trailing commas allowed).
     settings: String!
+
+    # The URL to this rule.
+    url: String!
 }
 
 # A list of rules.

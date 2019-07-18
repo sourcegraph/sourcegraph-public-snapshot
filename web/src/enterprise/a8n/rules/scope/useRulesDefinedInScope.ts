@@ -9,11 +9,11 @@ import { RuleScope } from '../types'
 const LOADING: 'loading' = 'loading'
 
 /**
- * A React hook that observes all rules for a particular scope.
+ * A React hook that observes all rules queried from the GraphQL API defined in a particular scope.
  *
- * @param scope The scope in which to observe the rules.
+ * @param scope The scope in which to observe the rules defined.
  */
-export const useRulesForScope = (scope: RuleScope): typeof LOADING | GQL.IRule[] | ErrorLike => {
+export const useRulesDefinedInScope = (scope: RuleScope): typeof LOADING | GQL.IRule[] | ErrorLike => {
     const [rulesOrError, setRulesOrError] = useState<typeof LOADING | GQL.IRule[] | ErrorLike>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
@@ -23,7 +23,11 @@ export const useRulesForScope = (scope: RuleScope): typeof LOADING | GQL.IRule[]
                         __typename
                         ... on Project {
                             rules {
-                                nodes
+                                nodes {
+                                    id
+                                    name
+                                    url
+                                }
                             }
                         }
                     }
@@ -43,6 +47,6 @@ export const useRulesForScope = (scope: RuleScope): typeof LOADING | GQL.IRule[]
             )
             .subscribe(setRulesOrError, err => setRulesOrError(asError(err)))
         return () => subscription.unsubscribe()
-    }, [rulesOrError, scope])
+    }, [scope])
     return rulesOrError
 }

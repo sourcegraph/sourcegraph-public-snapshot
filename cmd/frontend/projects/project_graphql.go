@@ -95,7 +95,12 @@ func (v *gqlProject) Rules(ctx context.Context, args *graphqlutil.ConnectionArgs
 	return graphqlbackend.RulesDefinedIn(ctx, v.ID(), args)
 }
 
-func (v *gqlProject) URL() string { return fmt.Sprintf("/p/%d", v.db.ID) }
+func (v *gqlProject) URL() string { return URLToProject(v.db.ID) }
+
+// URLToProject returns the URL to the project.
+func URLToProject(dbID int64) string {
+	return fmt.Sprintf("/p/%d", dbID)
+}
 
 // MockProjectByDBID mocks (GraphQLResolver).ProjectByDBID, for use in tests only.
 var MockProjectByDBID func(int64) (graphqlbackend.Project, error)
