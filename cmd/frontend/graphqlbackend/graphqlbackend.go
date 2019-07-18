@@ -79,6 +79,11 @@ func (r *NodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToChangesetCampaign() (ChangesetCampaign, bool) {
+	n, ok := r.Node.(ChangesetCampaign)
+	return n, ok
+}
+
 func (r *NodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
 	n, ok := r.Node.(*discussionCommentResolver)
 	return n, ok
@@ -207,6 +212,8 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
+	case "ChangesetCampaign":
+		return ChangesetCampaignByID(ctx, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":

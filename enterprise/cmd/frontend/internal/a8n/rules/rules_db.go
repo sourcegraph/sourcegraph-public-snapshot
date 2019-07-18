@@ -15,7 +15,7 @@ type dbRule struct {
 	ProjectID   int64  // the project that defines the rule
 	Name        string // the name (case-preserving)
 	Description *string
-	Settings       string // the hex settings code (omitting the '#' prefix)
+	Settings    string // the JSON settings
 }
 
 // errRuleNotFound occurs when a database operation expects a specific rule to exist but it does
@@ -46,7 +46,7 @@ func (dbRules) Create(ctx context.Context, rule *dbRule) (*dbRule, error) {
 type dbRuleUpdate struct {
 	Name        *string
 	Description *string
-	Settings       *string
+	Settings    *string
 }
 
 // Update updates a rule given its ID.
