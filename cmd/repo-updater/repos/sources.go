@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
@@ -81,25 +80,24 @@ const sourceTimeout = 30 * time.Minute
 // Successive calls to its ListRepos method may yield different results.
 type Source interface {
 	// ListRepos returns all the repos a source yields.
-	ListRepos(context.Context) ([]*Repo, error)
+	ListRepos(context.Context, chan *SourceResult)
 	// ExternalServices returns the ExternalServices for the Source.
 	ExternalServices() ExternalServices
 }
 
 // Sources is a list of Sources that implements the Source interface.
 type Sources []Source
+type SourceResult struct {
+	Source Source
+	Repo   *Repo
+	Err    error
+}
 
 // ListRepos lists all the repos of all the sources and returns the
 // aggregate result.
-func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
+func (srcs Sources) ListRepos(ctx context.Context, results chan *SourceResult) {
 	if len(srcs) == 0 {
-		return nil, nil
-	}
-
-	type result struct {
-		src   Source
-		repos []*Repo
-		err   error
+		return
 	}
 
 	// Group sources by external service kind so that we execute requests
@@ -107,39 +105,13 @@ func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
 	// but we do it for any source to be conservative.
 	// See https://developer.github.com/v3/guides/best-practices-for-integrators/#dealing-with-abuse-rate-limits)
 
-	var wg sync.WaitGroup
-	ch := make(chan result)
 	for _, sources := range group(srcs) {
-		wg.Add(1)
 		go func(sources Sources) {
-			defer wg.Done()
 			for _, src := range sources {
-				if repos, err := src.ListRepos(ctx); err != nil {
-					ch <- result{src: src, err: err}
-				} else {
-					ch <- result{src: src, repos: repos}
-				}
+				src.ListRepos(ctx, results)
 			}
 		}(sources)
 	}
-
-	go func() {
-		wg.Wait()
-		close(ch)
-	}()
-
-	var repos []*Repo
-	errs := new(multierror.Error)
-
-	for r := range ch {
-		if r.err != nil {
-			errs = multierror.Append(errs, r.err)
-		} else {
-			repos = append(repos, r.repos...)
-		}
-	}
-
-	return repos, errs.ErrorOrNil()
 }
 
 // ExternalServices returns the ExternalServices from the given Sources.
