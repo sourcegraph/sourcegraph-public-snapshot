@@ -91,6 +91,10 @@ func (v *gqlProject) Labels(ctx context.Context, args *graphqlutil.ConnectionArg
 	return graphqlbackend.LabelsDefinedIn(ctx, v.ID(), args)
 }
 
+func (v *gqlProject) ChangesetCampaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ChangesetCampaignConnection, error) {
+	return graphqlbackend.ChangesetCampaignsDefinedIn(ctx, v.ID(), args)
+}
+
 func (v *gqlProject) Rules(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.RuleConnection, error) {
 	return graphqlbackend.RulesDefinedIn(ctx, v.ID(), args)
 }

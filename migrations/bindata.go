@@ -231,6 +231,8 @@
 // 1528395583_add_projects.up.sql (2.283kB)
 // 1528395584_a8n.down.sql (45B)
 // 1528395584_a8n.up.sql (255B)
+// 1528395585_changeset_campaigns.down.sql (59B)
+// 1528395585_changeset_campaigns.up.sql (272B)
 
 package migrations
 
@@ -4919,6 +4921,46 @@ func _1528395584_a8nUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395585_changeset_campaignsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\x4f\x4e\xcc\x2d\x48\xcc\x4c\xcf\x2b\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xb4\x21\x5a\x38\x3b\x00\x00\x00")
+
+func _1528395585_changeset_campaignsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395585_changeset_campaignsDownSql,
+		"1528395585_changeset_campaigns.down.sql",
+	)
+}
+
+func _1528395585_changeset_campaignsDownSql() (*asset, error) {
+	bytes, err := _1528395585_changeset_campaignsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395585_changeset_campaigns.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd3, 0xd, 0x48, 0xc4, 0x58, 0xcb, 0x5, 0x9d, 0xcd, 0x5c, 0xc0, 0xfe, 0xc7, 0xd2, 0xfe, 0x96, 0xdd, 0xb8, 0xcd, 0xe3, 0x2f, 0xfd, 0x13, 0xd6, 0x3, 0xc1, 0xc6, 0x77, 0x31, 0xeb, 0x93, 0x83}}
+	return a, nil
+}
+
+var __1528395585_changeset_campaignsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x6c\xcf\xcf\x4a\xc4\x30\x10\xc7\xf1\x73\xe7\x29\xe6\xd8\x42\xdf\xa0\xa7\x6c\x3a\x4a\x30\x4d\x24\x1b\xc1\x3d\x95\x98\x86\x3a\xe2\x66\x4b\x93\x83\x8f\x2f\xfe\x63\x3d\xec\x79\x3e\x03\xdf\xdf\x81\xee\x95\x19\x00\xa4\x23\xe1\x09\xbd\x38\x68\xc2\xf8\x1a\xf2\x9a\x4a\xaa\x73\x0c\xe7\x2d\xf0\x9a\x0b\xb6\xd0\xf0\x82\x2f\xbc\x96\xb4\x73\x78\xc7\x47\xa7\x26\xe1\x4e\xf8\x40\xa7\x1e\x9a\x6d\xbf\xbc\xa5\x58\xe7\x1f\xc2\xb9\xa2\xb1\x1e\xcd\x93\xd6\xe8\xe8\x8e\x1c\x19\x49\x47\xfc\x55\xa5\xe5\xa5\x43\x6b\x70\x24\x4d\x9e\x50\x8a\xa3\x14\x23\xf5\xd0\xe4\x70\x4e\x58\xd3\xc7\xf5\xbd\x87\x66\x49\x25\xee\xbc\x55\xbe\xe4\xef\x1b\x74\xc3\x5f\xae\x32\x23\x3d\xdf\xca\x9d\xff\x05\x59\x73\x4b\xb4\x57\xd1\x7d\xed\xb7\xd3\xa4\xfc\x00\x9f\x01\x00\x00\xff\xff\x86\x4a\xc7\xb6\x10\x01\x00\x00")
+
+func _1528395585_changeset_campaignsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395585_changeset_campaignsUpSql,
+		"1528395585_changeset_campaigns.up.sql",
+	)
+}
+
+func _1528395585_changeset_campaignsUpSql() (*asset, error) {
+	bytes, err := _1528395585_changeset_campaignsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395585_changeset_campaigns.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3, 0x7f, 0xd4, 0xd0, 0x55, 0x2, 0x2c, 0x46, 0x70, 0xff, 0x5, 0xca, 0x2, 0xf1, 0x3a, 0xc8, 0x8, 0xa5, 0x54, 0x87, 0x3a, 0x1f, 0x1d, 0xdc, 0x12, 0xad, 0x8a, 0x3f, 0x55, 0x7e, 0x26, 0xbc}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5471,6 +5513,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395584_a8n.down.sql": _1528395584_a8nDownSql,
 
 	"1528395584_a8n.up.sql": _1528395584_a8nUpSql,
+
+	"1528395585_changeset_campaigns.down.sql": _1528395585_changeset_campaignsDownSql,
+
+	"1528395585_changeset_campaigns.up.sql": _1528395585_changeset_campaignsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5745,6 +5791,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395583_add_projects.up.sql":                              {_1528395583_add_projectsUpSql, map[string]*bintree{}},
 	"1528395584_a8n.down.sql":                                     {_1528395584_a8nDownSql, map[string]*bintree{}},
 	"1528395584_a8n.up.sql":                                       {_1528395584_a8nUpSql, map[string]*bintree{}},
+	"1528395585_changeset_campaigns.down.sql":                     {_1528395585_changeset_campaignsDownSql, map[string]*bintree{}},
+	"1528395585_changeset_campaigns.up.sql":                       {_1528395585_changeset_campaignsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
