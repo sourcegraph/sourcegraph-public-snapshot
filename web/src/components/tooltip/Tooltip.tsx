@@ -67,6 +67,8 @@ export class Tooltip extends React.PureComponent<Props, State> {
                 isOpen={true}
                 target={this.state.subject}
                 placement="auto"
+                // This is a workaround to an issue with tooltips in reactstrap that causes the entire page to freeze.
+                // Remove when https://github.com/reactstrap/reactstrap/issues/1482 is fixed.
                 modifiers={{
                     flip: {
                         enabled: false,
