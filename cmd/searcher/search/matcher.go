@@ -219,91 +219,88 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 	lastLineNumber := 0
 	lastMatchIndex := 0
 	lastLineStartIndex := 0
-	if len(locs) > 0 {
-		lineLimitHit := len(locs) == maxOffsets
-		for _, match := range locs {
-			start, end := match[0], match[1]
-			lineStart := lastLineStartIndex + bytes.LastIndex(fileMatchBuf[lastLineStartIndex:start], []byte{'\n'})
-			if lineStart > 0 {
-				lastLineStartIndex = lineStart + 1
-			}
-			if lineStart < len(fileMatchBuf)-1 && len(fileMatchBuf) > 0 {
-				lineStart++
-			}
-			lineEnd := end + bytes.Index(fileMatchBuf[end:], []byte{'\n'})
-			if lineStart < 0 {
-				lineStart = start
-			}
-			if lineEnd < 0 {
-				lineEnd = end
-			}
-			// instead of match[0] in hydrateLineNumbers, use lineStart
-			offset := utf8.RuneCount(fileMatchBuf[lastLineStartIndex:start])
-			length := utf8.RuneCount(fileMatchBuf[start:end])
+	lineLimitHit := len(locs) == maxOffsets
+	for _, match := range locs {
+		start, end := match[0], match[1]
+		lineStart := lastLineStartIndex + bytes.LastIndex(fileMatchBuf[lastLineStartIndex:start], []byte{'\n'})
+		if lineStart > 0 {
+			lastLineStartIndex = lineStart + 1
+		}
+		if lineStart < len(fileMatchBuf)-1 && len(fileMatchBuf) > 0 {
+			lineStart++
+		}
+		lineEnd := end + bytes.Index(fileMatchBuf[end:], []byte{'\n'})
+		if lineStart < 0 {
+			lineStart = start
+		}
+		if lineEnd < 0 {
+			lineEnd = end
+		}
+		// instead of match[0] in hydrateLineNumbers, use lineStart
+		offset := utf8.RuneCount(fileMatchBuf[lastLineStartIndex:start])
+		length := utf8.RuneCount(fileMatchBuf[start:end])
 
-			lineNumber, matchIndex := hydrateLineNumbers(fileMatchBuf, lastLineNumber, lastMatchIndex, lineStart, match)
+		lineNumber, matchIndex := hydrateLineNumbers(fileMatchBuf, lastLineNumber, lastMatchIndex, lineStart, match)
 
-			lastMatchIndex = matchIndex
-			lastLineNumber = lineNumber
+		lastMatchIndex = matchIndex
+		lastLineNumber = lineNumber
 
-			// matchBuf is the (full) lines that contain offset:length
-			matchBuf := fileMatchBuf[lineStart:lineEnd]
-			matchLines := bytes.SplitN(matchBuf, []byte{'\n'}, maxLineMatches+1)
+		// matchBuf is the (full) lines that contain offset:length
+		matchBuf := fileMatchBuf[lineStart:lineEnd]
+		matchLines := bytes.SplitN(matchBuf, []byte{'\n'}, maxLineMatches+1)
 
-			if len(matchLines) > 1 {
-				offsetStart := 0
-				lineNum := lineNumber
-				for i, line := range matchLines {
-					le := length
-					if i == 0 {
-						offsetStart = offset
-					} else {
-						offsetStart = 0
-					}
-					if i == 0 {
-						// start until end of current line
-						n := lineStart + len(line) + 1
-						endOfCurrentLine := bytes.LastIndex(fileMatchBuf[:n], []byte{'\n'})
-						le = endOfCurrentLine - start
-					} else if i == len(matchLines)-1 {
-						startOfCurrentLine := bytes.LastIndex(fileMatchBuf[:end], []byte{'\n'}) + 1
-						le = end - startOfCurrentLine
-					} else {
-						le = len(line)
-					}
-					matches = append(matches, protocol.LineMatch{
-						// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
-						// which currently occurs before Preview has been serialized.
-						// TODO: consider moving the call to Close until after we are
-						// done with Preview, and stop making a copy here.
-						// Special care must be taken to call Close on all possible paths, including error paths.
-						Preview:          string(fileMatchBuf[lineStart:lineEnd]),
-						LineNumber:       lineNum,
-						OffsetAndLengths: [][2]int{[2]int{offsetStart, le}},
-						LimitHit:         lineLimitHit,
-					})
-					lineNum++
+		if len(matchLines) > 1 {
+			offsetStart := 0
+			lineNum := lineNumber
+			for i, line := range matchLines {
+				le := length
+				if i == 0 {
+					offsetStart = offset
+				} else {
+					offsetStart = 0
 				}
-				lastLineStartIndex = lineStart
-			} else {
-				// TODO see if zoekt does any limits on number of line
-				// matches. Because if it doesn't, we can easily OOM.
-				// TODO should we respect maxLineMatches?
-				// TODO append LineMatches
+				if i == 0 {
+					// start until end of current line
+					n := lineStart + len(line) + 1
+					endOfCurrentLine := bytes.LastIndex(fileMatchBuf[:n], []byte{'\n'})
+					le = endOfCurrentLine - start
+				} else if i == len(matchLines)-1 {
+					startOfCurrentLine := bytes.LastIndex(fileMatchBuf[:end], []byte{'\n'}) + 1
+					le = end - startOfCurrentLine
+				} else {
+					le = len(line)
+				}
 				matches = append(matches, protocol.LineMatch{
-					// making a copy of lineBuf is intentional.
 					// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
 					// which currently occurs before Preview has been serialized.
 					// TODO: consider moving the call to Close until after we are
 					// done with Preview, and stop making a copy here.
 					// Special care must be taken to call Close on all possible paths, including error paths.
 					Preview:          string(fileMatchBuf[lineStart:lineEnd]),
-					LineNumber:       lineNumber,
-					OffsetAndLengths: [][2]int{[2]int{offset, length}},
+					LineNumber:       lineNum,
+					OffsetAndLengths: [][2]int{[2]int{offsetStart, le}},
 					LimitHit:         lineLimitHit,
 				})
+				lineNum++
 			}
-
+			lastLineStartIndex = lineStart
+		} else {
+			// TODO see if zoekt does any limits on number of line
+			// matches. Because if it doesn't, we can easily OOM.
+			// TODO should we respect maxLineMatches?
+			// TODO append LineMatches
+			matches = append(matches, protocol.LineMatch{
+				// making a copy of lineBuf is intentional.
+				// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
+				// which currently occurs before Preview has been serialized.
+				// TODO: consider moving the call to Close until after we are
+				// done with Preview, and stop making a copy here.
+				// Special care must be taken to call Close on all possible paths, including error paths.
+				Preview:          string(fileMatchBuf[lineStart:lineEnd]),
+				LineNumber:       lineNumber,
+				OffsetAndLengths: [][2]int{[2]int{offset, length}},
+				LimitHit:         lineLimitHit,
+			})
 		}
 
 	}
