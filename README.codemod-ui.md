@@ -170,3 +170,35 @@ TODO - show a bar above "Filter v" or at the bottom that shows (1) the number of
 ---
 
 An operation is an action applied to a set of diagnostics, or just an action. 
+
+
+--------
+
+
+- Changeset = (repository, branch, PR link, operation[], rule[])
+- Changeset campaign = (name, changeset[], rule[]) - cross-repository
+
+What about something that finds a lot of diagnostics across many repositories and requires action on them, but where that action isn't opening a diff? Is a changeset just a special case of an issue?
+
+Do we need a campaign, or can it just be a label?
+
+- Issue = (repository, issue link, diagnostic[], comment[]) -- upon 1st diagnostic action that performs edit, upgrade the issue into a changeset
+- Changeset = Issue & (branch, PR link, comment[], operation[])
+- Campaign = (name, issue[], changeset[], rule[])
+
+* An issue seems heavyweight for assigning diagnostics.
+
+* A campaign's rule can say how to group the actions by changeset/issue (eg by code owner)
+
+For fixing invalid codeowners:
+
+- First make an issue on all repositories listing the problems and linking to Sourcegraph to select the fix (TODO or if you wanted to bypass that step and just pick the autofix, how would that look?)
+- Then when the fix was chosen on each issue, create a changeset whose commit closes the issue
+
+== Rules have conditions (which is the same as search syntax) + actions --- this reuses search stuff and makes it easy to go from a search to a rule
+
+TODO think about how this would work for "i want all instances of ___ to be reviewed and approved" eg call sites
+
+Campaign rules:
+
+- Campaign = (name, changeset[],
