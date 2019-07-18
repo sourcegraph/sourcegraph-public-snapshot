@@ -1,4 +1,3 @@
-import H from 'history'
 import React from 'react'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { RulesAreaContext } from '../scope/ScopeRulesArea'
@@ -10,9 +9,6 @@ export interface RulesListContext {
 
 interface Props extends Pick<RulesAreaContext, 'rulesURL'>, RulesListContext {
     rules: GQL.IRule[]
-
-    history: H.History
-    location: H.Location
 }
 
 /**
@@ -20,16 +16,20 @@ interface Props extends Pick<RulesAreaContext, 'rulesURL'>, RulesListContext {
  */
 export const RulesList: React.FunctionComponent<Props> = ({ itemClassName, rules, ...props }) => (
     <div className="rules-list">
-        <ul className="list-group mb-0">
-            {rules.map(rule => (
-                <RulesListItem
-                    {...props}
-                    key={rule.id}
-                    tag="li"
-                    rule={rule}
-                    className={`list-group-item list-group-item-action ${itemClassName}`}
-                />
-            ))}
-        </ul>
+        {rules.length > 0 ? (
+            <ul className="list-group mb-0">
+                {rules.map(rule => (
+                    <RulesListItem
+                        {...props}
+                        key={rule.id}
+                        tag="li"
+                        rule={rule}
+                        className={`list-group-item list-group-item-action ${itemClassName}`}
+                    />
+                ))}
+            </ul>
+        ) : (
+            <p className="text-muted">No rules.</p>
+        )}
     </div>
 )

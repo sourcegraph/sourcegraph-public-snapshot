@@ -80,6 +80,7 @@ type Rule interface {
 	Name() string
 	Description() *string
 	Settings() string
+	URL() string
 }
 
 // RuleConnection is the interface for the GraphQL type RuleConnection.

@@ -2,10 +2,12 @@ package rules
 
 import (
 	"context"
+	"path"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/projects"
 )
 
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
@@ -50,12 +52,16 @@ func unmarshalRuleID(id graphql.ID) (dbID int64, err error) {
 	return
 }
 
+func (v *gqlRule) Project(ctx context.Context) (graphqlbackend.Project, error) {
+	return graphqlbackend.ProjectByDBID(ctx, v.db.ProjectID)
+}
+
 func (v *gqlRule) Name() string { return v.db.Name }
 
 func (v *gqlRule) Description() *string { return v.db.Description }
 
 func (v *gqlRule) Settings() string { return v.db.Settings }
 
-func (v *gqlRule) Project(ctx context.Context) (graphqlbackend.Project, error) {
-	return graphqlbackend.ProjectByDBID(ctx, v.db.ProjectID)
+func (v *gqlRule) URL() string {
+	return path.Join(projects.URLToProject(v.db.ProjectID), "rules", string(v.ID()))
 }
