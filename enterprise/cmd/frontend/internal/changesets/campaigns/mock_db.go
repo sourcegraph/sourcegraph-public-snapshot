@@ -1,7 +1,7 @@
 package campaigns
 
 type dbMocks struct {
-	campaigns mockChangesetCampaigns
+	campaigns mockCampaigns
 }
 
 var mocks dbMocks

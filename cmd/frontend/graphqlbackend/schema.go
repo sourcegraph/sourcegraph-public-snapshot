@@ -350,8 +350,8 @@ type Mutation {
     # Mutations related to changesets.
     changesets: ChangesetsMutation!
 
-    # Mutations related to changeset campaigns.
-    changesetCampaigns: ChangesetCampaignsMutation!
+    # Mutations related to campaigns.
+    campaigns: CampaignsMutation!
 
     # Mutations related to rules.
     rules: RulesMutation!
@@ -3987,11 +3987,11 @@ type Project implements Node {
         first: Int
     ): LabelConnection!
 
-    # The changeset campaigns defined in this project.
-    changesetCampaigns(
-        # Return the first n changeset campaigns from the list.
+    # The campaigns defined in this project.
+    campaigns(
+        # Return the first n campaigns from the list.
         first: Int
-    ): ChangesetCampaignConnection!
+    ): CampaignConnection!
 
     # The rules defined in this project.
     rules(
@@ -4100,69 +4100,69 @@ type ChangesetsCreateChangesetPayload {
     thread: DiscussionThread!
 }
 
-# Mutations related to changeset campaigns.
-type ChangesetCampaignsMutation {
-    # Create a changeset campaign associated with a project. Returns the newly created changeset
+# Mutations related to campaigns.
+type CampaignsMutation {
+    # Create a campaign associated with a project. Returns the newly created changeset
     # campaign.
-    createChangesetCampaign(input: CreateChangesetCampaignInput!): ChangesetCampaign!
+    createCampaign(input: CreateCampaignInput!): Campaign!
 
-    # Update a changeset campaign. Returns the updated changeset campaign.
-    updateChangesetCampaign(input: UpdateChangesetCampaignInput!): ChangesetCampaign!
+    # Update a campaign. Returns the updated campaign.
+    updateCampaign(input: UpdateCampaignInput!): Campaign!
 
-    # Delete a changeset campaign. All objects that were associated with or created by this campaign
-    # remain (and are not deleted when the campaign is deleted).
-    deleteChangesetCampaign(changesetCampaign: ID!): EmptyResponse
+    # Delete a campaign. All objects that were associated with or created by this campaign remain
+    # (and are not deleted when the campaign is deleted).
+    deleteCampaign(changesetCampaign: ID!): EmptyResponse
 }
 
-# Input arguments for creating a changeset campaign.
-input CreateChangesetCampaignInput {
-    # The ID of the project where this changeset campaign is defined.
+# Input arguments for creating a campaign.
+input CreateCampaignInput {
+    # The ID of the project where this campaign is defined.
     project: ID!
 
-    # The name of the changeset campaign.
+    # The name of the campaign.
     name: String!
 
-    # The (optional) description of the changeset campaign.
+    # The (optional) description of the campaign.
     description: String
 }
 
-# Input arguments for updating a changeset campaign.
-input UpdateChangesetCampaignInput {
-    # The ID of the changeset campaign to update.
+# Input arguments for updating a campaign.
+input UpdateCampaignInput {
+    # The ID of the campaign to update.
     id: ID!
 
-    # The new name of the changeset campaign (if non-null).
+    # The new name of the campaign (if non-null).
     name: String
 
-    # The new description of the changeset campaign. If it is the non-null empty string, the
-    # description is set to null.
+    # The new description of the campaign. If it is the non-null empty string, the description is
+    # set to null.
     description: String
 }
 
-# A changeset campaign is a set of related changesets.
-type ChangesetCampaign implements Node {
-    # The unique ID for the changeset campaign.
+# A campaign is a set of related issues and changesets.
+type Campaign implements Node {
+    # The unique ID for the campaign.
     id: ID!
 
-    # The project where this changeset campaign is defined.
+    # The project where this campaign is defined.
     project: Project!
 
-    # The name of the changeset campaign.
+    # The name of the campaign.
     name: String!
 
-    # The (optional) description of the changeset campaign.
+    # The (optional) description of the campaign.
     description: String
 
-    # The URL to this changeset campaign.
+    # The URL to this campaign.
     url: String!
 }
 
-# A list of changeset campaigns.
-type ChangesetCampaignConnection {
-    # A list of changeset campaigns.
-    nodes: [ChangesetCampaign!]!
+# A list of campaigns.
+type CampaignConnection {
+    # A list of campaigns.
+    nodes: [Campaign!]!
 
-    # The total number of changeset campaigns in the connection.
+    # The total number of campaigns in the connection.
     totalCount: Int!
 
     # Pagination information.

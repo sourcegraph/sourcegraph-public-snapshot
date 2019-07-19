@@ -9,46 +9,46 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
-// dbChangesetCampaign describes a changeset campaign.
-type dbChangesetCampaign struct {
+// dbCampaign describes a campaign.
+type dbCampaign struct {
 	ID          int64
-	ProjectID   int64  // the project that defines the changeset campaign
+	ProjectID   int64  // the project that defines the campaign
 	Name        string // the name (case-preserving)
 	Description *string
 }
 
-// errChangesetCampaignNotFound occurs when a database operation expects a specific changeset
+// errCampaignNotFound occurs when a database operation expects a specific changeset
 // campaign to exist but it does not exist.
-var errChangesetCampaignNotFound = errors.New("changesetCampaign not found")
+var errCampaignNotFound = errors.New("campaign not found")
 
-type dbChangesetCampaigns struct{}
+type dbCampaigns struct{}
 
-// Create creates a changeset campaign. The changesetCampaign argument's (ChangesetCampaign).ID
-// field is ignored. The database ID of the new changeset campaign is returned.
-func (dbChangesetCampaigns) Create(ctx context.Context, changesetCampaign *dbChangesetCampaign) (*dbChangesetCampaign, error) {
+// Create creates a campaign. The campaign argument's (Campaign).ID
+// field is ignored. The database ID of the new campaign is returned.
+func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign) (*dbCampaign, error) {
 	if mocks.campaigns.Create != nil {
-		return mocks.campaigns.Create(changesetCampaign)
+		return mocks.campaigns.Create(campaign)
 	}
 
 	var id int64
 	if err := dbconn.Global.QueryRowContext(ctx,
 		`INSERT INTO changeset_campaigns(project_id, name, description) VALUES($1, $2, $3, $4) RETURNING id`,
-		changesetCampaign.ProjectID, changesetCampaign.Name, changesetCampaign.Description,
+		campaign.ProjectID, campaign.Name, campaign.Description,
 	).Scan(&id); err != nil {
 		return nil, err
 	}
-	created := *changesetCampaign
+	created := *campaign
 	created.ID = id
 	return &created, nil
 }
 
-type dbChangesetCampaignUpdate struct {
+type dbCampaignUpdate struct {
 	Name        *string
 	Description *string
 }
 
-// Update updates a changeset campaign given its ID.
-func (s dbChangesetCampaigns) Update(ctx context.Context, id int64, update dbChangesetCampaignUpdate) (*dbChangesetCampaign, error) {
+// Update updates a campaign given its ID.
+func (s dbCampaigns) Update(ctx context.Context, id int64, update dbCampaignUpdate) (*dbCampaign, error) {
 	if mocks.campaigns.Update != nil {
 		return mocks.campaigns.Update(id, update)
 	}
@@ -76,15 +76,15 @@ func (s dbChangesetCampaigns) Update(ctx context.Context, id int64, update dbCha
 		return nil, err
 	}
 	if len(results) == 0 {
-		return nil, errChangesetCampaignNotFound
+		return nil, errCampaignNotFound
 	}
 	return results[0], nil
 }
 
-// GetByID retrieves the changesetCampaign (if any) given its ID.
+// GetByID retrieves the campaign (if any) given its ID.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this changesetCampaign.
-func (s dbChangesetCampaigns) GetByID(ctx context.Context, id int64) (*dbChangesetCampaign, error) {
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this campaign.
+func (s dbCampaigns) GetByID(ctx context.Context, id int64) (*dbCampaign, error) {
 	if mocks.campaigns.GetByID != nil {
 		return mocks.campaigns.GetByID(id)
 	}
@@ -94,19 +94,19 @@ func (s dbChangesetCampaigns) GetByID(ctx context.Context, id int64) (*dbChanges
 		return nil, err
 	}
 	if len(results) == 0 {
-		return nil, errChangesetCampaignNotFound
+		return nil, errCampaignNotFound
 	}
 	return results[0], nil
 }
 
-// dbChangesetCampaignsListOptions contains options for listing campaigns.
-type dbChangesetCampaignsListOptions struct {
+// dbCampaignsListOptions contains options for listing campaigns.
+type dbCampaignsListOptions struct {
 	Query     string // only list campaigns matching this query (case-insensitively)
 	ProjectID int64  // only list campaigns defined in this project
 	*db.LimitOffset
 }
 
-func (o dbChangesetCampaignsListOptions) sqlConditions() []*sqlf.Query {
+func (o dbCampaignsListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.Query != "" {
 		conds = append(conds, sqlf.Sprintf("name LIKE %s", "%"+o.Query+"%"))
@@ -117,11 +117,11 @@ func (o dbChangesetCampaignsListOptions) sqlConditions() []*sqlf.Query {
 	return conds
 }
 
-// List lists all changeset campaigns that satisfy the options.
+// List lists all campaigns that satisfy the options.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to list with the specified
 // options.
-func (s dbChangesetCampaigns) List(ctx context.Context, opt dbChangesetCampaignsListOptions) ([]*dbChangesetCampaign, error) {
+func (s dbCampaigns) List(ctx context.Context, opt dbCampaignsListOptions) ([]*dbCampaign, error) {
 	if mocks.campaigns.List != nil {
 		return mocks.campaigns.List(opt)
 	}
@@ -129,7 +129,7 @@ func (s dbChangesetCampaigns) List(ctx context.Context, opt dbChangesetCampaigns
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (s dbChangesetCampaigns) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbChangesetCampaign, error) {
+func (s dbCampaigns) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbCampaign, error) {
 	q := sqlf.Sprintf(`
 SELECT id, project_id, name, description FROM campaigns
 WHERE (%s)
@@ -141,16 +141,16 @@ ORDER BY name ASC
 	return s.query(ctx, q)
 }
 
-func (dbChangesetCampaigns) query(ctx context.Context, query *sqlf.Query) ([]*dbChangesetCampaign, error) {
+func (dbCampaigns) query(ctx context.Context, query *sqlf.Query) ([]*dbCampaign, error) {
 	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var results []*dbChangesetCampaign
+	var results []*dbCampaign
 	for rows.Next() {
-		var t dbChangesetCampaign
+		var t dbCampaign
 		if err := rows.Scan(&t.ID, &t.ProjectID, &t.Name, &t.Description); err != nil {
 			return nil, err
 		}
@@ -159,10 +159,10 @@ func (dbChangesetCampaigns) query(ctx context.Context, query *sqlf.Query) ([]*db
 	return results, nil
 }
 
-// Count counts all changeset campaigns that satisfy the options (ignoring limit and offset).
+// Count counts all campaigns that satisfy the options (ignoring limit and offset).
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to count the campaigns.
-func (dbChangesetCampaigns) Count(ctx context.Context, opt dbChangesetCampaignsListOptions) (int, error) {
+func (dbCampaigns) Count(ctx context.Context, opt dbCampaignsListOptions) (int, error) {
 	if mocks.campaigns.Count != nil {
 		return mocks.campaigns.Count(opt)
 	}
@@ -175,17 +175,17 @@ func (dbChangesetCampaigns) Count(ctx context.Context, opt dbChangesetCampaignsL
 	return count, nil
 }
 
-// Delete deletes a changeset campaign given its ID.
+// Delete deletes a campaign given its ID.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the changeset campaign.
-func (s dbChangesetCampaigns) DeleteByID(ctx context.Context, id int64) error {
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the campaign.
+func (s dbCampaigns) DeleteByID(ctx context.Context, id int64) error {
 	if mocks.campaigns.DeleteByID != nil {
 		return mocks.campaigns.DeleteByID(id)
 	}
 	return s.delete(ctx, sqlf.Sprintf("id=%d", id))
 }
 
-func (dbChangesetCampaigns) delete(ctx context.Context, cond *sqlf.Query) error {
+func (dbCampaigns) delete(ctx context.Context, cond *sqlf.Query) error {
 	conds := []*sqlf.Query{cond, sqlf.Sprintf("TRUE")}
 	q := sqlf.Sprintf("DELETE FROM campaigns WHERE (%s)", sqlf.Join(conds, ") AND ("))
 
@@ -198,17 +198,17 @@ func (dbChangesetCampaigns) delete(ctx context.Context, cond *sqlf.Query) error 
 		return err
 	}
 	if nrows == 0 {
-		return errChangesetCampaignNotFound
+		return errCampaignNotFound
 	}
 	return nil
 }
 
-// mockChangesetCampaigns mocks the changeset campaigns-related DB operations.
-type mockChangesetCampaigns struct {
-	Create     func(*dbChangesetCampaign) (*dbChangesetCampaign, error)
-	Update     func(int64, dbChangesetCampaignUpdate) (*dbChangesetCampaign, error)
-	GetByID    func(int64) (*dbChangesetCampaign, error)
-	List       func(dbChangesetCampaignsListOptions) ([]*dbChangesetCampaign, error)
-	Count      func(dbChangesetCampaignsListOptions) (int, error)
+// mockCampaigns mocks the campaigns-related DB operations.
+type mockCampaigns struct {
+	Create     func(*dbCampaign) (*dbCampaign, error)
+	Update     func(int64, dbCampaignUpdate) (*dbCampaign, error)
+	GetByID    func(int64) (*dbCampaign, error)
+	List       func(dbCampaignsListOptions) ([]*dbCampaign, error)
+	Count      func(dbCampaignsListOptions) (int, error)
 	DeleteByID func(int64) error
 }

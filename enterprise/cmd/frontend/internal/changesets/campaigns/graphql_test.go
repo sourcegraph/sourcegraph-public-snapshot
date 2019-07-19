@@ -9,5 +9,5 @@ import (
 )
 
 func init() {
-	graphqlbackend.ChangesetCampaigns = GraphQLResolver{}
+	graphqlbackend.Campaigns = GraphQLResolver{}
 }
