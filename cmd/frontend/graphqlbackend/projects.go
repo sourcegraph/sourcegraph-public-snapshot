@@ -95,7 +95,7 @@ type Project interface {
 	Name() string
 	Namespace(context.Context) (*NamespaceResolver, error)
 	Labels(context.Context, *graphqlutil.ConnectionArgs) (LabelConnection, error)
-	ChangesetCampaigns(context.Context, *graphqlutil.ConnectionArgs) (ChangesetCampaignConnection, error)
+	Campaigns(context.Context, *graphqlutil.ConnectionArgs) (CampaignConnection, error)
 	Rules(context.Context, *graphqlutil.ConnectionArgs) (RuleConnection, error)
 	URL() string
 
