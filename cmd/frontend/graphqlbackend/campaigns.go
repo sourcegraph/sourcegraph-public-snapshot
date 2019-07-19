@@ -43,6 +43,8 @@ type CampaignsResolver interface {
 	CreateCampaign(context.Context, *CreateCampaignArgs) (Campaign, error)
 	UpdateCampaign(context.Context, *UpdateCampaignArgs) (Campaign, error)
 	DeleteCampaign(context.Context, *DeleteCampaignArgs) (*EmptyResponse, error)
+	AddThreadsToCampaign(context.Context, *AddRemoveThreadsToFromCampaignArgs) (*EmptyResponse, error)
+	RemoveThreadsFromCampaign(context.Context, *AddRemoveThreadsToFromCampaignArgs) (*EmptyResponse, error)
 
 	// CampaignByID is called by the CampaignByID func but is not in the GraphQL API.
 	CampaignByID(context.Context, graphql.ID) (Campaign, error)
@@ -70,6 +72,11 @@ type UpdateCampaignArgs struct {
 
 type DeleteCampaignArgs struct {
 	Campaign graphql.ID
+}
+
+type AddRemoveThreadsToFromCampaignArgs struct {
+	Campaign graphql.ID
+	Threads  []graphql.ID
 }
 
 // Campaign is the interface for the GraphQL type Campaign.

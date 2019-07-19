@@ -150,3 +150,63 @@ func TestGraphQL_DeleteCampaign(t *testing.T) {
 		},
 	})
 }
+
+func TestGraphQL_AddRemoveThreadsToFromCampaign(t *testing.T) {
+	resetMocks()
+	const wantCampaignID = 2
+	mocks.campaigns.GetByID = func(id int64) (*dbCampaign, error) {
+		if id != wantCampaignID {
+			t.Errorf("got ID %d, want %d", id, wantCampaignID)
+		}
+		return &dbCampaign{ID: wantCampaignID}, nil
+	}
+	const wantThreadID = 3
+	db.Mocks.DiscussionThreads.Get = func(int64) (*types.DiscussionThread, error) {
+		return &types.DiscussionThread{ID: wantThreadID}, nil
+	}
+	addRemoveThreadsToFromCampaign := func(campaign int64, threads []int64) error {
+		if campaign != wantCampaignID {
+			t.Errorf("got %d, want %d", campaign, wantCampaignID)
+		}
+		if want := []int64{wantThreadID}; !reflect.DeepEqual(threads, want) {
+			t.Errorf("got %v, want %v", threads, want)
+		}
+		return nil
+	}
+
+	tests := map[string]*func(thread int64, threads []int64) error{
+		"addThreadsToCampaign":      &mocks.campaignsThreads.AddThreadsToCampaign,
+		"removeThreadsFromCampaign": &mocks.campaignsThreads.RemoveThreadsFromCampaign,
+	}
+	for name, mockFn := range tests {
+		t.Run(name, func(t *testing.T) {
+			*mockFn = addRemoveThreadsToFromCampaign
+			defer func() { *mockFn = nil }()
+
+			gqltesting.RunTests(t, []*gqltesting.Test{
+				{
+					Context: backend.WithAuthzBypass(context.Background()),
+					Schema:  graphqlbackend.GraphQLSchema,
+					Query: `
+				mutation {
+					campaigns {
+						` + name + `(campaign: "Q2FtcGFpZ246Mg==", threads: ["RGlzY3Vzc2lvblRocmVhZDoiMyI="]) {
+							__typename
+						}
+					}
+				}
+			`,
+					ExpectedResult: `
+				{
+					"campaigns": {
+						"` + name + `": {
+							"__typename": "EmptyResponse"
+						}
+					}
+				}
+			`,
+				},
+			})
+		})
+	}
+}
