@@ -1,8 +1,8 @@
 package httpapi
 
 import (
+	"crypto/hmac"
 	"crypto/sha256"
-	"crypto/subtle"
 	"strings"
 
 	"encoding/hex"
@@ -20,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+
+	"strconv"
 )
 
 var verificationGitHubToken = env.Get("LSIF_VERIFICATION_GITHUB_TOKEN", "", "The GitHub token that is used to verify that a user owns a repository.")
@@ -33,36 +35,33 @@ func lsifProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.
 	}
 }
 
-func generateUploadToken(repoID api.RepoID) string {
-	sum := sha256.Sum256([]byte(fmt.Sprintf("token:%d:%s", repoID, lsifUploadSecret)))
-	return hex.EncodeToString(sum[:])
+func generateUploadToken(repoID api.RepoID) []byte {
+	mac := hmac.New(sha256.New, []byte(lsifUploadSecret))
+	mac.Write([]byte(strconv.Itoa(int(repoID))))
+	return mac.Sum(nil)
 }
 
-func generateChallenge(repoID api.RepoID, userID int32) string {
-	// Must be different from the upload token, different for each user, and
-	// different for each repository
-	sum := sha256.Sum256([]byte(fmt.Sprintf("challenge:%d:%d:%s", userID, repoID, lsifUploadSecret)))
+func generateChallenge(userID int32) string {
+	// Must be different from the upload token and different for each user
+	sum := sha256.Sum256([]byte(fmt.Sprintf("%d:%s", userID, lsifUploadSecret)))
 	// The first 10 hex digits is enough to be fairly confident that a GitHub
 	// topic of this name doesn't already exist on the repository.
 	return hex.EncodeToString(sum[:])[:10]
 }
 
-func lsifChallengeHandler(w http.ResponseWriter, r *http.Request) {
-	repositories, ok := r.URL.Query()["repository"]
-	if !ok || len(repositories) == 0 {
-		http.Error(w, "No repository was specified.", http.StatusBadRequest)
-		return
-	}
-	repository := repositories[0]
-
-	repo, err := backend.Repos.GetByName(r.Context(), api.RepoName(repository))
+// isValidUploadToken checks whether token is a valid upload token for repoID.
+func isValidUploadToken(repoID api.RepoID, token string) bool {
+	gotMAC, err := hex.DecodeString(token)
 	if err != nil {
-		http.Error(w, "Unknown repository.", http.StatusUnauthorized)
-		return
+		return false
 	}
 
+	return hmac.Equal(gotMAC, generateUploadToken(repoID))
+}
+
+func lsifChallengeHandler(w http.ResponseWriter, r *http.Request) {
 	actor := actor.FromContext(r.Context())
-	jData, err := json.Marshal(struct{ Challenge string }{Challenge: generateChallenge(repo.ID, actor.UID)})
+	jData, err := json.Marshal(struct{ Challenge string }{Challenge: generateChallenge(actor.UID)})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -109,11 +108,12 @@ func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 	for _, v := range topics {
 		set[v] = true
 	}
-	success := set[generateChallenge(repo.ID, actor.UID)]
+	success := set[generateChallenge(actor.UID)]
 
 	var payload interface{}
 	if success {
-		payload = struct{ Token string }{Token: generateUploadToken(repo.ID)}
+		token := generateUploadToken(repo.ID)
+		payload = struct{ Token string }{Token: hex.EncodeToString(token[:])}
 	} else {
 		payload = struct{ Failure string }{Failure: "Topic not found."}
 	}
@@ -148,7 +148,7 @@ func lsifUploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, 
 			return
 		}
 
-		if subtle.ConstantTimeCompare([]byte(givenToken), []byte(generateUploadToken(repo.ID))) != 1 {
+		if !isValidUploadToken(repo.ID, givenToken) {
 			http.Error(w, "Invalid LSIF upload token.", http.StatusUnauthorized)
 			return
 		}
