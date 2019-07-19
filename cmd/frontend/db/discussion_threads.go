@@ -328,9 +328,6 @@ func (opts *DiscussionThreadsListOptions) SetFromQuery(ctx context.Context, quer
 			if s := strings.ToUpper(value); types.IsValidThreadStatus(s) {
 				opts.Status = types.ThreadStatus(s)
 			}
-			if s := strings.ToLower(value); s == "open" || s == "active" {
-				opts.Status = types.ThreadStatusOpenActive
-			}
 		},
 
 		// syntax: `title:"some title"` or "title:sometitle"

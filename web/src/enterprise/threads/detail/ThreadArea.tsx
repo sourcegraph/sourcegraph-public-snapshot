@@ -78,7 +78,7 @@ export const ThreadArea: React.FunctionComponent<Props> = props => {
         return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={threadOrError.message} />
     }
 
-    const isCheck = threadOrError && !isErrorLike(threadOrError) && threadOrError.type === GQL.ThreadType.CHECK
+    const isCheck = threadOrError && !isErrorLike(threadOrError) && threadOrError.type === GQL.ThreadType.ISSUE
     const sections = {
         review: true,
         changes: isCheck,

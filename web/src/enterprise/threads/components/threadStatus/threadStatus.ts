@@ -11,14 +11,13 @@ export interface ThreadStatusFields extends Pick<GQL.IDiscussionThread, 'status'
 type ThreadStatusColor = 'success' | 'danger' | 'info' | 'secondary'
 
 const STATUS_COLOR: Record<GQL.ThreadStatus, ThreadStatusColor> = {
-    OPEN_ACTIVE: 'success',
-    INACTIVE: 'info',
+    OPEN: 'success',
     CLOSED: 'danger',
     PREVIEW: 'secondary',
 }
 
 const threadIcon = (thread: ThreadStatusFields): React.ComponentType<{ className?: string }> =>
-    thread.type === GQL.ThreadType.CHECK
+    thread.type === GQL.ThreadType.ISSUE
         ? ChecksIcon
         : thread.type === GQL.ThreadType.CHANGESET
         ? GitPullRequestIcon
@@ -26,10 +25,8 @@ const threadIcon = (thread: ThreadStatusFields): React.ComponentType<{ className
 
 const statusText = (thread: ThreadStatusFields) => {
     switch (thread.status) {
-        case GQL.ThreadStatus.OPEN_ACTIVE:
-            return thread.type === GQL.ThreadType.CHECK ? 'Active' : 'Open'
-        case GQL.ThreadStatus.INACTIVE:
-            return 'Inactive'
+        case GQL.ThreadStatus.OPEN:
+            return 'Open'
         case GQL.ThreadStatus.CLOSED:
             return 'Closed'
         case GQL.ThreadStatus.PREVIEW:
@@ -38,7 +35,7 @@ const statusText = (thread: ThreadStatusFields) => {
 }
 
 const threadTooltip = (thread: ThreadStatusFields): string =>
-    `${statusText(thread)} ${thread.type === GQL.ThreadType.CHECK ? 'check' : 'thread'}`
+    `${statusText(thread)} ${thread.type === GQL.ThreadType.ISSUE ? 'check' : 'thread'}`
 
 /**
  * Returns information about how to display the thread's status.

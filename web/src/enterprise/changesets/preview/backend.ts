@@ -13,10 +13,10 @@ import { ChangesetDelta, GitHubPRLink, ThreadSettings } from '../../threads/sett
 export const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
 
 /**
- * The initial status for a changeset thread when creating it. {@link GQL.ThreadStatus.OPEN_ACTIVE}
+ * The initial status for a changeset thread when creating it. {@link GQL.ThreadStatus.OPEN}
  * is for "Create changeset" and {@link GQL.ThreadStatus.PREVIEW} is for "Preview changeset".
  */
-export type ChangesetCreationStatus = GQL.ThreadStatus.OPEN_ACTIVE | GQL.ThreadStatus.PREVIEW
+export type ChangesetCreationStatus = GQL.ThreadStatus.OPEN | GQL.ThreadStatus.PREVIEW
 
 interface ChangesetCreationInfo
     extends Required<Pick<GQL.ICreateThreadOnDiscussionsMutationArguments['input'], 'title' | 'contents'>>,
