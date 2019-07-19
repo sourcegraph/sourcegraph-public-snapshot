@@ -10,17 +10,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/projects"
 )
 
-func TestGraphQL_Project_ChangesetCampaignConnection(t *testing.T) {
+func TestGraphQL_Project_CampaignConnection(t *testing.T) {
 	resetMocks()
 	const (
 		wantProjectID           = 3
-		wantChangesetCampaignID = 2
+		wantCampaignID = 2
 	)
 	projects.MockProjectByDBID = func(id int64) (graphqlbackend.Project, error) {
 		return projects.TestNewProject(wantProjectID, "", 0, 0), nil
 	}
-	mocks.campaigns.List = func(dbChangesetCampaignsListOptions) ([]*dbChangesetCampaign, error) {
-		return []*dbChangesetCampaign{{ID: wantChangesetCampaignID, Name: "n"}}, nil
+	mocks.campaigns.List = func(dbCampaignsListOptions) ([]*dbCampaign, error) {
+		return []*dbCampaign{{ID: wantCampaignID, Name: "n"}}, nil
 	}
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
@@ -31,7 +31,7 @@ func TestGraphQL_Project_ChangesetCampaignConnection(t *testing.T) {
 				{
 					node(id: "UHJvamVjdDoy") {
 						... on Project {
-							changesetCampaigns {
+							campaigns {
 								nodes {
 									name
 								}
@@ -47,7 +47,7 @@ func TestGraphQL_Project_ChangesetCampaignConnection(t *testing.T) {
 			ExpectedResult: `
 				{
 					"node": {
-						"changesetCampaigns": {
+						"campaigns": {
 							"nodes": [
 								{
 									"name": "n"

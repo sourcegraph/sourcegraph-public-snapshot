@@ -202,3 +202,15 @@ TODO think about how this would work for "i want all instances of ___ to be revi
 Campaign rules:
 
 - Campaign = (name, changeset[],
+
+>
+
+Codemod workflow:
+
+- Find a bunch of candidates to fix
+- Make changesets, grouped by (repository, code owner)
+
+Review API consumers workflow:
+
+- Find all instances of ee
+- Create issues, grouped by (repository, code owner)
