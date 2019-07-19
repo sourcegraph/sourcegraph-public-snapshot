@@ -11,7 +11,6 @@ interface Props {
 interface State {
     challenge?: string
     verifying?: boolean
-    error?: string
     tokenOrError?: string | ErrorLike
 }
 
@@ -25,7 +24,7 @@ type VerifyResponse =
       }
     | { Token: string }
 
-async function fetchChallenge(repoName: string): Promise<string> {
+async function fetchChallenge(): Promise<string> {
     const response: ChallengeResponse = await (await fetch(new URL('/.api/lsif/challenge', window.location.href).href, {
         headers: {
             'X-Requested-With': 'Sourcegraph',
@@ -42,20 +41,12 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
     }
 
     public async componentDidMount(): Promise<void> {
-        try {
-            this.setState({
-                challenge: await fetchChallenge(this.props.repoName),
-            })
-        } catch (error) {
-            this.setState({ error })
-        }
+        this.setState({
+            challenge: await fetchChallenge(),
+        })
     }
 
     public render(): JSX.Element | null {
-        if (this.state.error) {
-            return <div className="alert alert-danger">{this.state.error.toString()}</div>
-        }
-
         // Only verification for GitHub will been implemented for GopherCon.
         if (!this.props.repoName.startsWith('github.com')) {
             return <div>LSIF is currently only supported for GitHub.com repositories.</div>
