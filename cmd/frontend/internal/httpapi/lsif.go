@@ -35,10 +35,13 @@ func lsifProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.
 	}
 }
 
-func generateUploadToken(repoID api.RepoID) []byte {
+func generateUploadToken(repoID api.RepoID) ([]byte, error) {
 	mac := hmac.New(sha256.New, []byte(lsifUploadSecret))
-	mac.Write([]byte(strconv.Itoa(int(repoID))))
-	return mac.Sum(nil)
+	_, err := mac.Write([]byte(strconv.Itoa(int(repoID))))
+	if err != nil {
+		return nil, err
+	}
+	return mac.Sum(nil), nil
 }
 
 func generateChallenge(userID int32) string {
@@ -56,7 +59,12 @@ func isValidUploadToken(repoID api.RepoID, tokenString string) bool {
 		return false
 	}
 
-	return hmac.Equal(tokenBytes, generateUploadToken(repoID))
+	uploadToken, err := generateUploadToken(repoID)
+	if err != nil {
+		return false
+	}
+
+	return hmac.Equal(tokenBytes, uploadToken)
 }
 
 func lsifChallengeHandler(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +75,7 @@ func lsifChallengeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(json)
+	_, err = w.Write(json)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -109,7 +117,11 @@ func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 
 	var payload interface{}
 	if success {
-		token := generateUploadToken(repo.ID)
+		token, err := generateUploadToken(repo.ID)
+		if err != nil {
+			http.Error(w, "Unable to generate LSIF upload token.", http.StatusInternalServerError)
+			return
+		}
 		payload = struct{ Token string }{Token: hex.EncodeToString(token[:])}
 	} else {
 		payload = struct{ Failure string }{Failure: "Topic not found."}
@@ -120,7 +132,7 @@ func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(json)
+	_, err = w.Write(json)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
