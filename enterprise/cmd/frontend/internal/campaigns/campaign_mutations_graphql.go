@@ -7,16 +7,18 @@ import (
 )
 
 func (GraphQLResolver) CreateCampaign(ctx context.Context, arg *graphqlbackend.CreateCampaignArgs) (graphqlbackend.Campaign, error) {
-	project, err := graphqlbackend.ProjectByID(ctx, arg.Input.Project)
+	v := &dbCampaign{
+		Name:        arg.Input.Name,
+		Description: arg.Input.Description,
+	}
+
+	var err error
+	v.NamespaceUserID, v.NamespaceOrgID, err = graphqlbackend.NamespaceDBIDByID(ctx, arg.Input.Namespace)
 	if err != nil {
 		return nil, err
 	}
 
-	campaign, err := dbCampaigns{}.Create(ctx, &dbCampaign{
-		ProjectID:   project.DBID(),
-		Name:        arg.Input.Name,
-		Description: arg.Input.Description,
-	})
+	campaign, err := dbCampaigns{}.Create(ctx, v)
 	if err != nil {
 		return nil, err
 	}

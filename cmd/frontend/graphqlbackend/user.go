@@ -282,6 +282,10 @@ func (r *UserResolver) Projects(ctx context.Context, args *graphqlutil.Connectio
 	return ProjectsInNamespace(ctx, r.ID(), args)
 }
 
+func (r *UserResolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignConnection, error) {
+	return CampaignsInNamespace(ctx, r.ID(), args)
+}
+
 func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	OldPassword string
 	NewPassword string

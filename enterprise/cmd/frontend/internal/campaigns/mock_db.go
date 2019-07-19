@@ -1,7 +1,8 @@
 package campaigns
 
 type dbMocks struct {
-	campaigns mockCampaigns
+	campaigns        mockCampaigns
+	campaignsThreads mockCampaignsThreads
 }
 
 var mocks dbMocks

@@ -2298,11 +2298,21 @@ type Hunk {
 interface Namespace {
     # The globally unique ID of this namespace.
     id: ID!
+
+    # The URL to this namespace.
+    url: String!
+
     # The projects in this namespace.
     projects(
         # Return the first n projects from the list.
         first: Int
     ): ProjectConnection!
+
+    # The campaigns in this namespace.
+    campaigns(
+        # Return the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
 }
 
 # A list of users.
@@ -2415,6 +2425,12 @@ type User implements Node & SettingsSubject & Namespace {
         # Return the first n projects from the list.
         first: Int
     ): ProjectConnection!
+
+    # The campaigns defined by this user.
+    campaigns(
+        # Return the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -2609,6 +2625,12 @@ type Org implements Node & SettingsSubject & Namespace {
         # Return the first n projects from the list.
         first: Int
     ): ProjectConnection!
+
+    # The campaigns owned by this organization.
+    campaigns(
+        # Return the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
 }
 
 # The result of Mutation.inviteUserToOrganization.
@@ -3987,12 +4009,6 @@ type Project implements Node {
         first: Int
     ): LabelConnection!
 
-    # The campaigns defined in this project.
-    campaigns(
-        # Return the first n campaigns from the list.
-        first: Int
-    ): CampaignConnection!
-
     # The rules defined in this project.
     rules(
         # Return the first n rules from the list.
@@ -4102,8 +4118,7 @@ type ChangesetsCreateChangesetPayload {
 
 # Mutations related to campaigns.
 type CampaignsMutation {
-    # Create a campaign associated with a project. Returns the newly created changeset
-    # campaign.
+    # Create a campaign in a namespace. Returns the newly created campaign.
     createCampaign(input: CreateCampaignInput!): Campaign!
 
     # Update a campaign. Returns the updated campaign.
@@ -4111,13 +4126,13 @@ type CampaignsMutation {
 
     # Delete a campaign. All objects that were associated with or created by this campaign remain
     # (and are not deleted when the campaign is deleted).
-    deleteCampaign(changesetCampaign: ID!): EmptyResponse
+    deleteCampaign(campaign: ID!): EmptyResponse
 }
 
 # Input arguments for creating a campaign.
 input CreateCampaignInput {
-    # The ID of the project where this campaign is defined.
-    project: ID!
+    # The ID of the namespace where this campaign is defined.
+    namespace: ID!
 
     # The name of the campaign.
     name: String!
@@ -4144,8 +4159,8 @@ type Campaign implements Node {
     # The unique ID for the campaign.
     id: ID!
 
-    # The project where this campaign is defined.
-    project: Project!
+    # The namespace where this campaign is defined.
+    namespace: Namespace!
 
     # The name of the campaign.
     name: String!

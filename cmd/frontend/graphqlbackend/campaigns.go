@@ -22,13 +22,13 @@ func CampaignByID(ctx context.Context, id graphql.ID) (Campaign, error) {
 	return Campaigns.CampaignByID(ctx, id)
 }
 
-// CampaignsDefinedIn returns an instance of the GraphQL CampaignConnection type with the list of
-// changeset campaigns defined in a project.
-func CampaignsDefinedIn(ctx context.Context, project graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error) {
+// CampaignsInNamespace returns an instance of the GraphQL CampaignConnection type with the list of
+// campaigns defined in a namespace.
+func CampaignsInNamespace(ctx context.Context, namespace graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error) {
 	if Campaigns == nil {
 		return nil, errors.New("campaigns is not implemented")
 	}
-	return Campaigns.CampaignsDefinedIn(ctx, project, arg)
+	return Campaigns.CampaignsInNamespace(ctx, namespace, arg)
 }
 
 func (schemaResolver) Campaigns() (CampaignsResolver, error) {
@@ -47,13 +47,14 @@ type CampaignsResolver interface {
 	// CampaignByID is called by the CampaignByID func but is not in the GraphQL API.
 	CampaignByID(context.Context, graphql.ID) (Campaign, error)
 
-	// CampaignsDefinedIn is called by the CampaignsDefinedIn func but is not in the GraphQL API.
-	CampaignsDefinedIn(ctx context.Context, project graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error)
+	// CampaignsInNamespace is called by the CampaignsInNamespace func but is not in the GraphQL
+	// API.
+	CampaignsInNamespace(ctx context.Context, namespace graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error)
 }
 
 type CreateCampaignArgs struct {
 	Input struct {
-		Project     graphql.ID
+		Namespace   graphql.ID
 		Name        string
 		Description *string
 	}
@@ -74,10 +75,10 @@ type DeleteCampaignArgs struct {
 // Campaign is the interface for the GraphQL type Campaign.
 type Campaign interface {
 	ID() graphql.ID
-	Project(context.Context) (Project, error)
+	Namespace(context.Context) (*NamespaceResolver, error)
 	Name() string
 	Description() *string
-	URL() string
+	URL(context.Context) (string, error)
 }
 
 // CampaignConnection is the interface for the GraphQL type CampaignConnection.

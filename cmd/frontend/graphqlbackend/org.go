@@ -175,6 +175,10 @@ func (o *OrgResolver) Projects(ctx context.Context, args *graphqlutil.Connection
 	return ProjectsInNamespace(ctx, o.ID(), args)
 }
 
+func (o *OrgResolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignConnection, error) {
+	return CampaignsInNamespace(ctx, o.ID(), args)
+}
+
 func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string

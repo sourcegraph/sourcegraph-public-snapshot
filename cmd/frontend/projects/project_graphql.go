@@ -69,22 +69,7 @@ func unmarshalProjectID(id graphql.ID) (dbID int64, err error) {
 func (v *gqlProject) Name() string { return v.db.Name }
 
 func (v *gqlProject) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
-	switch {
-	case v.db.NamespaceUserID != 0:
-		org, err := graphqlbackend.OrgByIDInt32(ctx, v.db.NamespaceOrgID)
-		if err != nil {
-			return nil, err
-		}
-		return &graphqlbackend.NamespaceResolver{Namespace: org}, nil
-	case v.db.NamespaceOrgID != 0:
-		org, err := graphqlbackend.OrgByIDInt32(ctx, v.db.NamespaceOrgID)
-		if err != nil {
-			return nil, err
-		}
-		return &graphqlbackend.NamespaceResolver{Namespace: org}, nil
-	default:
-		return nil, fmt.Errorf("unrecognized namespace for project %s", v.ID())
-	}
+	return graphqlbackend.NamespaceByDBID(ctx, v.db.NamespaceUserID, v.db.NamespaceOrgID)
 }
 
 func (v *gqlProject) Labels(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.LabelConnection, error) {
@@ -92,7 +77,7 @@ func (v *gqlProject) Labels(ctx context.Context, args *graphqlutil.ConnectionArg
 }
 
 func (v *gqlProject) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
-	return graphqlbackend.CampaignsDefinedIn(ctx, v.ID(), args)
+	return graphqlbackend.CampaignsInNamespace(ctx, v.ID(), args)
 }
 
 func (v *gqlProject) Rules(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.RuleConnection, error) {

@@ -8,14 +8,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-func (GraphQLResolver) CampaignsDefinedIn(ctx context.Context, projectID graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
-	// Check existence.
-	project, err := graphqlbackend.ProjectByID(ctx, projectID)
+func (GraphQLResolver) CampaignsInNamespace(ctx context.Context, namespace graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
+	var opt dbCampaignsListOptions
+	var err error
+	opt.NamespaceUserID, opt.NamespaceOrgID, err = graphqlbackend.NamespaceDBIDByID(ctx, namespace)
 	if err != nil {
 		return nil, err
 	}
 
-	list, err := dbCampaigns{}.List(ctx, dbCampaignsListOptions{ProjectID: project.DBID()})
+	list, err := dbCampaigns{}.List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +28,7 @@ func (GraphQLResolver) CampaignsDefinedIn(ctx context.Context, projectID graphql
 }
 
 type campaignConnection struct {
-	arg   *graphqlutil.ConnectionArgs
+	arg       *graphqlutil.ConnectionArgs
 	campaigns []*gqlCampaign
 }
 
