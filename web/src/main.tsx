@@ -16,6 +16,8 @@ import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHe
 import { extensionsAreaRoutes } from './extensions/routes'
 import { keybindings } from './keybindings'
 import './main.scss'
+import { orgAreaHeaderNavItems } from './org/area/navitems'
+import { orgAreaRoutes } from './org/area/routes'
 import { repoHeaderActionButtons } from './repo/repoHeaderActionButtons'
 import { repoContainerRoutes, repoRevContainerRoutes } from './repo/routes'
 import { routes } from './routes'
@@ -43,6 +45,8 @@ window.addEventListener('DOMContentLoaded', () => {
             userAreaHeaderNavItems={userAreaHeaderNavItems}
             userSettingsSideBarItems={userSettingsSideBarItems}
             userSettingsAreaRoutes={userSettingsAreaRoutes}
+            orgAreaRoutes={orgAreaRoutes}
+            orgAreaHeaderNavItems={orgAreaHeaderNavItems}
             repoContainerRoutes={repoContainerRoutes}
             repoRevContainerRoutes={repoRevContainerRoutes}
             repoHeaderActionButtons={repoHeaderActionButtons}

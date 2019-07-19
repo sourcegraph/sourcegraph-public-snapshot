@@ -4,6 +4,8 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { ExtensionsControllerNotificationProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { HeroPage } from '../components/HeroPage'
+import { RouteDescriptor } from '../util/contributions'
+import { NamespaceCampaignsPage } from './campaigns/NamespaceCampaignsPage'
 import { NamespaceProjectsPage } from './projects/NamespaceProjectsPage'
 
 const NotFoundPage: React.FunctionComponent = () => (
@@ -19,19 +21,26 @@ export interface NamespaceAreaContext extends ExtensionsControllerNotificationPr
     isLightTheme: boolean
 }
 
-interface NamespaceAreaProps extends NamespaceAreaContext, RouteComponentProps<{}> {}
+export interface NamespaceAreaRoute extends RouteDescriptor<NamespaceAreaContext> {}
+
+interface Props extends NamespaceAreaContext, RouteComponentProps<{}> {}
 
 /**
  * The namespace area.
  */
-export const NamespaceArea: React.FunctionComponent<NamespaceAreaProps> = ({ match, ...props }) => {
+export const NamespaceArea: React.FunctionComponent<Props> = ({ match, ...props }) => {
     const context: NamespaceAreaContext = props
     return (
         <div className="container mt-3">
             <Switch>
                 <Route
+                    path={`${match.url}/campaigns`}
+                    exact={true}
+                    // tslint:disable-next-line:jsx-no-lambda
+                    render={routeComponentProps => <NamespaceCampaignsPage {...routeComponentProps} {...context} />}
+                />
+                <Route
                     path={`${match.url}/projects`}
-                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                     exact={true}
                     // tslint:disable-next-line:jsx-no-lambda
                     render={routeComponentProps => <NamespaceProjectsPage {...routeComponentProps} {...context} />}

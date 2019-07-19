@@ -24,6 +24,8 @@ import { GlobalDebug } from './global/GlobalDebug'
 import { KeybindingsProps } from './keybindings'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
+import { OrgAreaRoute } from './org/area/OrgArea'
+import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { fetchHighlightedFileLines } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
@@ -62,6 +64,8 @@ export interface LayoutProps
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
+    orgAreaHeaderNavItems: ReadonlyArray<OrgAreaHeaderNavItem>
+    orgAreaRoutes: ReadonlyArray<OrgAreaRoute>
     repoContainerRoutes: ReadonlyArray<RepoContainerRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>

@@ -1,5 +1,6 @@
 import React from 'react'
 import { Redirect } from 'react-router'
+import { namespaceAreaRoutes } from '../../namespaces/routes'
 import { lazyComponent } from '../../util/lazyComponent'
 import { UserAreaRoute } from './UserArea'
 
@@ -42,10 +43,7 @@ export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
             'UserSavedSearchesUpdateForm'
         ),
     },
-    {
-        path: '/namespace',
-        render: lazyComponent(() => import('../../namespaces/NamespaceArea'), 'NamespaceArea'),
-    },
+    ...namespaceAreaRoutes,
 
     // Redirect from previous /users/:username/account -> /users/:username/settings/profile.
     {

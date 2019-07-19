@@ -41,9 +41,9 @@ interface Props {
 }
 
 /**
- * A form to update a project.
+ * A form to edit a project.
  */
-export const UpdateProjectForm: React.FunctionComponent<Props> = ({
+export const EditProjectForm: React.FunctionComponent<Props> = ({
     project,
     onDismiss,
     onProjectUpdate,
