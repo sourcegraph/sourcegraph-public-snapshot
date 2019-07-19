@@ -1,18 +1,18 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useEffect, useState } from 'react'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { Form } from '../../components/Form'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { Form } from '../../../components/Form'
 
-export interface ProjectFormData extends Pick<GQL.IProject, 'name'> {}
+export interface CampaignFormData extends Pick<GQL.ICampaign, 'name'> {}
 
 interface Props {
-    initialValue?: ProjectFormData
+    initialValue?: CampaignFormData
 
     /** Called when the form is dismissed with no action taken. */
     onDismiss: () => void
 
     /** Called when the form is submitted. */
-    onSubmit: (project: ProjectFormData) => void
+    onSubmit: (campaign: CampaignFormData) => void
 
     buttonText: string
     isLoading: boolean
@@ -21,12 +21,12 @@ interface Props {
 }
 
 /**
- * A form to create or edit a project.
+ * A form to create or edit a campaign.
  */
-export const ProjectForm: React.FunctionComponent<Props> = ({
+export const CampaignForm: React.FunctionComponent<Props> = ({
     initialValue = { name: '' },
     onDismiss,
-    onSubmit: onSubmitProject,
+    onSubmit: onSubmitCampaign,
     buttonText,
     isLoading,
     className = '',
@@ -41,23 +41,23 @@ export const ProjectForm: React.FunctionComponent<Props> = ({
     const onSubmit = useCallback<React.FormEventHandler>(
         async e => {
             e.preventDefault()
-            onSubmitProject({ name })
+            onSubmitCampaign({ name })
         },
-        [name, onSubmitProject]
+        [name, onSubmitCampaign]
     )
 
     return (
         <Form className={`form ${className}`} onSubmit={onSubmit}>
             <div className="form-row align-items-end">
                 <div className="form-group mb-md-0 col-md-3">
-                    <label htmlFor="project-form__name">Name</label>
+                    <label htmlFor="campaign-form__name">Name</label>
                     <input
                         type="text"
-                        id="project-form__name"
+                        id="campaign-form__name"
                         className="form-control"
                         required={true}
                         minLength={1}
-                        placeholder="Project name"
+                        placeholder="Campaign name"
                         value={name}
                         onChange={onNameChange}
                         autoFocus={true}

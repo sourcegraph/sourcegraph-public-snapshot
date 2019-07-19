@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { ExtensionsControllerNotificationProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { ProjectIcon } from '../../projects/icons'
-import { UpdateProjectForm } from './EditProjectForm'
+import { EditProjectForm } from './EditProjectForm'
 import { ProjectDeleteButton } from './ProjectDeleteButton'
 
 interface Props extends ExtensionsControllerNotificationProps {
@@ -22,7 +22,7 @@ export const ProjectRow: React.FunctionComponent<Props> = ({ project, onProjectU
     const toggleIsEditing = useCallback(() => setIsEditing(!isEditing), [isEditing])
 
     return isEditing ? (
-        <UpdateProjectForm project={project} onProjectUpdate={onProjectUpdate} onDismiss={toggleIsEditing} />
+        <EditProjectForm project={project} onProjectUpdate={onProjectUpdate} onDismiss={toggleIsEditing} />
     ) : (
         <div className="d-flex align-items-center justify-content-between">
             <h3 className="mb-0">

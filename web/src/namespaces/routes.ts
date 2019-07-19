@@ -15,4 +15,8 @@ export const namespaceAreaRoutes: ReadonlyArray<NamespaceAreaRoute> = [
         path: '/searches/:id',
         render: lazyComponent(() => import('../savedSearches/SavedSearchUpdateForm'), 'SavedSearchUpdateForm'),
     },
+    {
+        path: '/projects',
+        render: lazyComponent(() => import('./projects/NamespaceProjectsPage'), 'NamespaceProjectsPage'),
+    },
 ]
