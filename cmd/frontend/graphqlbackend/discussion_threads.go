@@ -234,15 +234,10 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 
 	// Apply default status.
 	var status types.ThreadStatus
-	switch {
-	case args.Input.Status != nil:
+	if args.Input.Status != nil {
 		status = *args.Input.Status
-	case args.Input.Type == types.ThreadTypeThread || args.Input.Type == types.ThreadTypeChangeset:
-		status = types.ThreadStatusOpenActive
-	case args.Input.Type == types.ThreadTypeCheck:
-		status = types.ThreadStatusInactive
-	default:
-		return nil, fmt.Errorf("unexpected thread type %q", args.Input.Type)
+	} else {
+		status = types.ThreadStatusOpen
 	}
 
 	// 🚨 SECURITY: Ensure the viewer can view the project (which is a requirement for creating a

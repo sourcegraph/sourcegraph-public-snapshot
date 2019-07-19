@@ -27,28 +27,28 @@ type ThreadType string
 
 const (
 	ThreadTypeThread    ThreadType = "THREAD"
-	ThreadTypeCheck                = "CHECK"
+	ThreadTypeIssue                = "ISSUE"
 	ThreadTypeChangeset            = "CHANGESET"
 )
 
 // IsValidThreadType reports whether t is a valid thread type.
 func IsValidThreadType(t string) bool {
-	return ThreadType(t) == ThreadTypeThread || ThreadType(t) == ThreadTypeCheck || ThreadType(t) == ThreadTypeChangeset
+	return ThreadType(t) == ThreadTypeThread || ThreadType(t) == ThreadTypeIssue || ThreadType(t) == ThreadTypeChangeset
 }
 
 // ThreadStatus enumerates the possible thread statuses.
 type ThreadStatus string
 
 const (
-	ThreadStatusPreview    ThreadStatus = "PREVIEW"
-	ThreadStatusOpenActive              = "OPEN_ACTIVE"
-	ThreadStatusInactive                = "INACTIVE"
-	ThreadStatusClosed                  = "CLOSED"
+	ThreadStatusPreview ThreadStatus = "PREVIEW"
+	ThreadStatusOpen                 = "OPEN"
+	ThreadStatusMerged               = "MERGED"
+	ThreadStatusClosed               = "CLOSED"
 )
 
 // IsValidThreadStatus reports whether t is a valid thread status.
 func IsValidThreadStatus(t string) bool {
-	return ThreadStatus(t) == ThreadStatusPreview || ThreadStatus(t) == ThreadStatusOpenActive || ThreadStatus(t) == ThreadStatusInactive || ThreadStatus(t) == ThreadStatusClosed
+	return ThreadStatus(t) == ThreadStatusPreview || ThreadStatus(t) == ThreadStatusOpen || ThreadStatus(t) == ThreadStatusMerged || ThreadStatus(t) == ThreadStatusClosed
 }
 
 // DiscussionThreadTargetRepo mirrors the underlying discussion_threads_target_repo field types exactly.

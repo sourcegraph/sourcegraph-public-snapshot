@@ -28,7 +28,7 @@ export const ThreadBreadcrumbs: React.FunctionComponent<Props> = ({ thread, proj
             )}
             <li className="breadcrumb-item">
                 <Link
-                    to={`${project ? project.url : ''}${thread.type === GQL.ThreadType.CHECK ? '/checks' : '/threads'}`}
+                    to={`${project ? project.url : ''}${thread.type === GQL.ThreadType.ISSUE ? '/checks' : '/threads'}`}
                 >
                     {upperFirst(threadNoun(thread.type, true))}
                 </Link>

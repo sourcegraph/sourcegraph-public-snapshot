@@ -495,9 +495,9 @@ input DiscussionThreadTargetRepoSelectionInput {
 enum ThreadType {
     # A normal discussion thread.
     THREAD
-    # A check.
-    CHECK
-    # A changeset.
+    # An issue (with diagnostics).
+    ISSUE
+    # A changeset (with edits).
     CHANGESET
 }
 
@@ -505,10 +505,10 @@ enum ThreadType {
 enum ThreadStatus {
     # Preview (for changesets).
     PREVIEW
-    # Open (for threads and changesets) or active (for checks).
-    OPEN_ACTIVE
-    # Inactive (for checks only). In this state, checks do not perform any "write" operations.
-    INACTIVE
+    # Open.
+    OPEN
+    # Merged (for changesets).
+    MERGED
     # Closed.
     CLOSED
 }

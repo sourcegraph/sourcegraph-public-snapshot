@@ -51,7 +51,7 @@ export const ThreadOverview: React.FunctionComponent<Props> = ({
                         <PersonLink user={thread.author} />
                     </strong>
                 </small>
-                {thread.type === GQL.ThreadType.CHECK && (
+                {thread.type === GQL.ThreadType.ISSUE && (
                     <ThreadStatusItemsProgressBar className="mt-1 mb-3" height="0.3rem" />
                 )}
             </div>

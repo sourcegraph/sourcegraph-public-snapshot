@@ -41,10 +41,7 @@ export const ThreadStatusButton: React.FunctionComponent<Props> = ({
                 // of its actions (which is probably undesirable).
                 const updatedThread = await updateThread({
                     threadID: thread.id,
-                    status:
-                        thread.status === GQL.ThreadStatus.OPEN_ACTIVE
-                            ? GQL.ThreadStatus.CLOSED
-                            : GQL.ThreadStatus.OPEN_ACTIVE,
+                    status: thread.status === GQL.ThreadStatus.OPEN ? GQL.ThreadStatus.CLOSED : GQL.ThreadStatus.OPEN,
                 })
                 onThreadUpdate(updatedThread)
             } catch (err) {
