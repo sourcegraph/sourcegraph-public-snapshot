@@ -47,11 +47,6 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        // Only verification for GitHub will been implemented for GopherCon.
-        if (!this.props.repoName.startsWith('github.com')) {
-            return <div>LSIF is currently only supported for GitHub.com repositories.</div>
-        }
-
         return (
             <div className="lsif-verification">
                 {this.state.tokenOrError && !isErrorLike(this.state.tokenOrError) ? (
