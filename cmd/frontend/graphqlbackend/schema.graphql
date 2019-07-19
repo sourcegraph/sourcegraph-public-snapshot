@@ -394,13 +394,17 @@ input UpdateProjectInput {
 type LabelsMutation {
     # Create a label associated with a project. Returns the newly created label.
     createLabel(input: CreateLabelInput!): Label!
+
     # Update a label. Returns the updated label.
     updateLabel(input: UpdateLabelInput!): Label!
+
     # Delete a label. All objects that were labeled with this label remain (and are not deleted when
     # the label is deleted).
     deleteLabel(label: ID!): EmptyResponse
+
     # Add labels to a labelable object. Returns the object.
     addLabelsToLabelable(labelable: ID!, labels: [ID!]!): Labelable!
+
     # Remove labels from a labelable object. Returns the object.
     removeLabelsFromLabelable(labelable: ID!, labels: [ID!]!): Labelable!
 }
@@ -4129,11 +4133,17 @@ type CampaignsMutation {
     createCampaign(input: CreateCampaignInput!): Campaign!
 
     # Update a campaign. Returns the updated campaign.
-    updateCampaign(input: UpdateCampaignInput!): Campaign!
+    updateCampaign(input: UpdateCampaignInput!): Campaign
 
-    # Delete a campaign. All objects that were associated with or created by this campaign remain
+    # Delete a campaign. All threads that were associated with or created by this campaign remain
     # (and are not deleted when the campaign is deleted).
     deleteCampaign(campaign: ID!): EmptyResponse
+
+    # Add threads to a campaign.
+    addThreadsToCampaign(campaign: ID!, threads: [ID!]!): EmptyResponse
+
+    # Remove threads from a campaign.
+    removeThreadsFromCampaign(campaign: ID!, threads: [ID!]!): EmptyResponse
 }
 
 # Input arguments for creating a campaign.

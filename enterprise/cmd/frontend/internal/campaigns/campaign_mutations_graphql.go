@@ -3,6 +3,7 @@ package campaigns
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
@@ -46,4 +47,62 @@ func (GraphQLResolver) DeleteCampaign(ctx context.Context, arg *graphqlbackend.D
 		return nil, err
 	}
 	return nil, dbCampaigns{}.DeleteByID(ctx, gqlCampaign.db.ID)
+}
+
+func (GraphQLResolver) AddThreadsToCampaign(ctx context.Context, arg *graphqlbackend.AddRemoveThreadsToFromCampaignArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := addRemoveThreadsToFromCampaign(ctx, arg.Campaign, arg.Threads, nil); err != nil {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (GraphQLResolver) RemoveThreadsFromCampaign(ctx context.Context, arg *graphqlbackend.AddRemoveThreadsToFromCampaignArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := addRemoveThreadsToFromCampaign(ctx, arg.Campaign, nil, arg.Threads); err != nil {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func addRemoveThreadsToFromCampaign(ctx context.Context, campaignID graphql.ID, addThreads []graphql.ID, removeThreads []graphql.ID) error {
+	// 🚨 SECURITY: Any viewer can add/remove threads to/from a campaign.
+	campaign, err := campaignByID(ctx, campaignID)
+	if err != nil {
+		return err
+	}
+
+	if len(addThreads) > 0 {
+		addThreadIDs, err := getThreadDBIDs(ctx, addThreads)
+		if err != nil {
+			return err
+		}
+		if err := (dbCampaignsThreads{}).AddThreadsToCampaign(ctx, campaign.db.ID, addThreadIDs); err != nil {
+			return err
+		}
+	}
+
+	if len(removeThreads) > 0 {
+		removeThreadIDs, err := getThreadDBIDs(ctx, removeThreads)
+		if err != nil {
+			return err
+		}
+		if err := (dbCampaignsThreads{}).RemoveThreadsFromCampaign(ctx, campaign.db.ID, removeThreadIDs); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func getThreadDBIDs(ctx context.Context, threads []graphql.ID) ([]int64, error) {
+	dbIDs := make([]int64, len(threads))
+	for i, threadID := range threads {
+		// 🚨 SECURITY: Only organization members and site admins may create threads in an
+		// organization. The threadByID function performs this check.
+		thread, err := graphqlbackend.DiscussionThreadByID(ctx, threadID)
+		if err != nil {
+			return nil, err
+		}
+		dbIDs[i] = thread.DBID()
+	}
+	return dbIDs, nil
 }
