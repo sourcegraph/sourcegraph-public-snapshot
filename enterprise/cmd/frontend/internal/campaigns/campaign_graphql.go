@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/projects"
 )
 
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
@@ -52,14 +51,18 @@ func unmarshalCampaignID(id graphql.ID) (dbID int64, err error) {
 	return
 }
 
-func (v *gqlCampaign) Project(ctx context.Context) (graphqlbackend.Project, error) {
-	return graphqlbackend.ProjectByDBID(ctx, v.db.ProjectID)
+func (v *gqlCampaign) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
+	return graphqlbackend.NamespaceByDBID(ctx, v.db.NamespaceUserID, v.db.NamespaceOrgID)
 }
 
 func (v *gqlCampaign) Name() string { return v.db.Name }
 
 func (v *gqlCampaign) Description() *string { return v.db.Description }
 
-func (v *gqlCampaign) URL() string {
-	return path.Join(projects.URLToProject(v.db.ProjectID), "campaigns", string(v.ID()))
+func (v *gqlCampaign) URL(ctx context.Context) (string, error) {
+	namespace, err := v.Namespace(ctx)
+	if err != nil {
+		return "", err
+	}
+	return path.Join(namespace.URL(), "campaigns", string(v.ID())), nil
 }

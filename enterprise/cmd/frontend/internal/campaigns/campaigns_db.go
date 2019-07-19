@@ -11,29 +11,37 @@ import (
 
 // dbCampaign describes a campaign.
 type dbCampaign struct {
-	ID          int64
-	ProjectID   int64  // the project that defines the campaign
-	Name        string // the name (case-preserving)
-	Description *string
+	ID              int64
+	NamespaceUserID int32  // the user namespace where this campaign is defined
+	NamespaceOrgID  int32  // the org namespace where this campaign is defined
+	Name            string // the name (case-preserving)
+	Description     *string
 }
 
-// errCampaignNotFound occurs when a database operation expects a specific changeset
-// campaign to exist but it does not exist.
+// errCampaignNotFound occurs when a database operation expects a specific campaign to exist but it
+// does not exist.
 var errCampaignNotFound = errors.New("campaign not found")
 
 type dbCampaigns struct{}
 
-// Create creates a campaign. The campaign argument's (Campaign).ID
-// field is ignored. The database ID of the new campaign is returned.
+// Create creates a campaign. The campaign argument's (Campaign).ID field is ignored. The database
+// ID of the new campaign is returned.
 func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign) (*dbCampaign, error) {
 	if mocks.campaigns.Create != nil {
 		return mocks.campaigns.Create(campaign)
 	}
 
+	nilIfZero := func(v int32) *int32 {
+		if v == 0 {
+			return nil
+		}
+		return &v
+	}
+
 	var id int64
 	if err := dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO changeset_campaigns(project_id, name, description) VALUES($1, $2, $3, $4) RETURNING id`,
-		campaign.ProjectID, campaign.Name, campaign.Description,
+		`INSERT INTO campaigns(namespace_user_id, namespace_org_id, name, description) VALUES($1, $2, $3, $4) RETURNING id`,
+		nilIfZero(campaign.NamespaceUserID), nilIfZero(campaign.NamespaceOrgID), campaign.Name, campaign.Description,
 	).Scan(&id); err != nil {
 		return nil, err
 	}
@@ -71,7 +79,7 @@ func (s dbCampaigns) Update(ctx context.Context, id int64, update dbCampaignUpda
 		return nil, nil
 	}
 
-	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE campaigns SET %v WHERE id=%s RETURNING id, project_id, name, description`, sqlf.Join(setFields, ", "), id))
+	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE campaigns SET %v WHERE id=%s RETURNING id, namespace_user_id, namespace_org_id, name, description`, sqlf.Join(setFields, ", "), id))
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +109,9 @@ func (s dbCampaigns) GetByID(ctx context.Context, id int64) (*dbCampaign, error)
 
 // dbCampaignsListOptions contains options for listing campaigns.
 type dbCampaignsListOptions struct {
-	Query     string // only list campaigns matching this query (case-insensitively)
-	ProjectID int64  // only list campaigns defined in this project
+	Query           string // only list campaigns matching this query (case-insensitively)
+	NamespaceUserID int32  // only list campaigns in this user's namespace
+	NamespaceOrgID  int32  // only list campaigns in this org's namespace
 	*db.LimitOffset
 }
 
@@ -111,8 +120,11 @@ func (o dbCampaignsListOptions) sqlConditions() []*sqlf.Query {
 	if o.Query != "" {
 		conds = append(conds, sqlf.Sprintf("name LIKE %s", "%"+o.Query+"%"))
 	}
-	if o.ProjectID != 0 {
-		conds = append(conds, sqlf.Sprintf("project_id=%d", o.ProjectID))
+	if o.NamespaceUserID != 0 {
+		conds = append(conds, sqlf.Sprintf("namespace_user_id=%d", o.NamespaceUserID))
+	}
+	if o.NamespaceOrgID != 0 {
+		conds = append(conds, sqlf.Sprintf("namespace_org_id=%d", o.NamespaceOrgID))
 	}
 	return conds
 }
@@ -131,7 +143,7 @@ func (s dbCampaigns) List(ctx context.Context, opt dbCampaignsListOptions) ([]*d
 
 func (s dbCampaigns) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbCampaign, error) {
 	q := sqlf.Sprintf(`
-SELECT id, project_id, name, description FROM campaigns
+SELECT id, namespace_user_id, namespace_org_id, name, description FROM campaigns
 WHERE (%s)
 ORDER BY name ASC
 %s`,
@@ -151,8 +163,15 @@ func (dbCampaigns) query(ctx context.Context, query *sqlf.Query) ([]*dbCampaign,
 	var results []*dbCampaign
 	for rows.Next() {
 		var t dbCampaign
-		if err := rows.Scan(&t.ID, &t.ProjectID, &t.Name, &t.Description); err != nil {
+		var namespaceUserID, namespaceOrgID *int32
+		if err := rows.Scan(&t.ID, &namespaceUserID, &namespaceOrgID, &t.Name, &t.Description); err != nil {
 			return nil, err
+		}
+		if namespaceUserID != nil {
+			t.NamespaceUserID = *namespaceUserID
+		}
+		if namespaceOrgID != nil {
+			t.NamespaceOrgID = *namespaceOrgID
 		}
 		results = append(results, &t)
 	}

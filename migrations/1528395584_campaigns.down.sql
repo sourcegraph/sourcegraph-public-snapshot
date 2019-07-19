@@ -1,0 +1,6 @@
+BEGIN;
+
+DROP TABLE IF EXISTS campaigns_threads;
+DROP TABLE IF EXISTS campaigns;
+
+COMMIT;

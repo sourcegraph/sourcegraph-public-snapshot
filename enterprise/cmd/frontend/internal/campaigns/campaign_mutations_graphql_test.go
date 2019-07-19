@@ -7,20 +7,21 @@ import (
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/projects"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
 func TestGraphQL_CreateCampaign(t *testing.T) {
 	resetMocks()
-	const wantProjectID = 1
-	projects.MockProjectByDBID = func(id int64) (graphqlbackend.Project, error) {
-		return projects.TestNewProject(wantProjectID, "", 0, 0), nil
+	const wantOrgID = 1
+	db.Mocks.Orgs.GetByID = func(context.Context, int32) (*types.Org, error) {
+		return &types.Org{ID: wantOrgID}, nil
 	}
 	wantCampaign := &dbCampaign{
-		ProjectID:   wantProjectID,
-		Name:        "n",
-		Description: strptr("d"),
+		NamespaceOrgID: wantOrgID,
+		Name:           "n",
+		Description:    strptr("d"),
 	}
 	mocks.campaigns.Create = func(campaign *dbCampaign) (*dbCampaign, error) {
 		if !reflect.DeepEqual(campaign, wantCampaign) {
@@ -38,7 +39,7 @@ func TestGraphQL_CreateCampaign(t *testing.T) {
 			Query: `
 				mutation {
 					campaigns {
-						createCampaign(input: { project: "T3JnOjE=", name: "n", description: "d" }) {
+						createCampaign(input: { namespace: "T3JnOjE=", name: "n", description: "d" }) {
 							id
 							name
 						}
@@ -49,7 +50,7 @@ func TestGraphQL_CreateCampaign(t *testing.T) {
 				{
 					"campaigns": {
 						"createCampaign": {
-							"id": "Q2hhbmdlc2V0Q2FtcGFpZ246Mg==",
+							"id": "Q2FtcGFpZ246Mg==",
 							"name": "n"
 						}
 					}
@@ -73,10 +74,10 @@ func TestGraphQL_UpdateCampaign(t *testing.T) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
 		return &dbCampaign{
-			ID:          2,
-			ProjectID:   1,
-			Name:        "n1",
-			Description: strptr("d1"),
+			ID:             2,
+			NamespaceOrgID: 1,
+			Name:           "n1",
+			Description:    strptr("d1"),
 		}, nil
 	}
 
@@ -87,7 +88,7 @@ func TestGraphQL_UpdateCampaign(t *testing.T) {
 			Query: `
 				mutation {
 					campaigns {
-						updateCampaign(input: { id: "Q2hhbmdlc2V0Q2FtcGFpZ246Mg==", name: "n1", description: "d1" }) {
+						updateCampaign(input: { id: "Q2FtcGFpZ246Mg==", name: "n1", description: "d1" }) {
 							id
 							name
 							description
@@ -99,7 +100,7 @@ func TestGraphQL_UpdateCampaign(t *testing.T) {
 				{
 					"campaigns": {
 						"updateCampaign": {
-							"id": "Q2hhbmdlc2V0Q2FtcGFpZ246Mg==",
+							"id": "Q2FtcGFpZ246Mg==",
 							"name": "n1",
 							"description": "d1"
 						}
@@ -133,7 +134,7 @@ func TestGraphQL_DeleteCampaign(t *testing.T) {
 			Query: `
 				mutation {
 					campaigns {
-						deleteCampaign(campaign: "Q2hhbmdlc2V0Q2FtcGFpZ246Mg==") {
+						deleteCampaign(campaign: "Q2FtcGFpZ246Mg==") {
 							alwaysNil
 						}
 					}

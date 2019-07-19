@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/projects"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
@@ -16,25 +15,21 @@ func TestDB_Campaigns(t *testing.T) {
 	resetMocks()
 	ctx := dbtesting.TestContext(t)
 
+	user1, err := db.Users.Create(ctx, db.NewUser{Username: "user1"})
+	if err != nil {
+		t.Fatal(err)
+	}
 	org1, err := db.Orgs.Create(ctx, "org1", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	proj1, err := projects.TestCreateProject(ctx, "p1", 0, org1.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	proj2, err := projects.TestCreateProject(ctx, "p2", 0, org1.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	wantCampaign0 := &dbCampaign{ProjectID: proj1, Name: "n0", Description: strptr("d0")}
+	wantCampaign0 := &dbCampaign{NamespaceUserID: user1.ID, Name: "n0", Description: strptr("d0")}
 	campaign0, err := dbCampaigns{}.Create(ctx, wantCampaign0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	campaign1, err := dbCampaigns{}.Create(ctx, &dbCampaign{ProjectID: proj1, Name: "n1", Description: strptr("d1")})
+	campaign1, err := dbCampaigns{}.Create(ctx, &dbCampaign{NamespaceUserID: user1.ID, Name: "n1", Description: strptr("d1")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,8 +81,8 @@ func TestDB_Campaigns(t *testing.T) {
 	}
 
 	{
-		// List proj1's campaigns.
-		ts, err := dbCampaigns{}.List(ctx, dbCampaignsListOptions{ProjectID: proj1})
+		// List user1's campaigns.
+		ts, err := dbCampaigns{}.List(ctx, dbCampaignsListOptions{NamespaceUserID: user1.ID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -99,7 +94,7 @@ func TestDB_Campaigns(t *testing.T) {
 
 	{
 		// List proj2's campaigns.
-		ts, err := dbCampaigns{}.List(ctx, dbCampaignsListOptions{ProjectID: proj2})
+		ts, err := dbCampaigns{}.List(ctx, dbCampaignsListOptions{NamespaceOrgID: org1.ID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -125,7 +120,7 @@ func TestDB_Campaigns(t *testing.T) {
 		if err := (dbCampaigns{}).DeleteByID(ctx, campaign0.ID); err != nil {
 			t.Fatal(err)
 		}
-		ts, err := dbCampaigns{}.List(ctx, dbCampaignsListOptions{ProjectID: proj1})
+		ts, err := dbCampaigns{}.List(ctx, dbCampaignsListOptions{NamespaceUserID: user1.ID})
 		if err != nil {
 			t.Fatal(err)
 		}

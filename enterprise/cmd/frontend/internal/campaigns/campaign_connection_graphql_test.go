@@ -6,18 +6,19 @@ import (
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/projects"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
-func TestGraphQL_Project_CampaignConnection(t *testing.T) {
+func TestGraphQL_Namespace_CampaignConnection(t *testing.T) {
 	resetMocks()
 	const (
-		wantProjectID           = 3
+		wantOrgID      = 3
 		wantCampaignID = 2
 	)
-	projects.MockProjectByDBID = func(id int64) (graphqlbackend.Project, error) {
-		return projects.TestNewProject(wantProjectID, "", 0, 0), nil
+	db.Mocks.Orgs.GetByID = func(context.Context, int32) (*types.Org, error) {
+		return &types.Org{ID: wantOrgID}, nil
 	}
 	mocks.campaigns.List = func(dbCampaignsListOptions) ([]*dbCampaign, error) {
 		return []*dbCampaign{{ID: wantCampaignID, Name: "n"}}, nil
@@ -29,8 +30,8 @@ func TestGraphQL_Project_CampaignConnection(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				{
-					node(id: "UHJvamVjdDoy") {
-						... on Project {
+					node(id: "T3JnOjM=") {
+						... on Org {
 							campaigns {
 								nodes {
 									name

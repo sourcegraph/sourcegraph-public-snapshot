@@ -12,7 +12,7 @@ func (GraphQLResolver) CreateProject(ctx context.Context, arg *graphqlbackend.Cr
 	}
 
 	var err error
-	v.NamespaceUserID, v.NamespaceOrgID, err = getNamespaceDBID(ctx, arg.Input.Namespace)
+	v.NamespaceUserID, v.NamespaceOrgID, err = graphqlbackend.NamespaceDBIDByID(ctx, arg.Input.Namespace)
 	if err != nil {
 		return nil, err
 	}
