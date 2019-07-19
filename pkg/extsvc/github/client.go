@@ -236,6 +236,9 @@ func (c *Client) requestGet(ctx context.Context, token, requestURI string, resul
 
 	// Include node_id (GraphQL ID) in response. See
 	// https://developer.github.com/changes/2017-12-19-graphql-node-id/.
+	//
+	// Enable the repository topics API. See
+	// https://developer.github.com/v3/repos/#list-all-topics-for-a-repository
 	req.Header.Add("Accept", "application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json")
 
 	return c.do(ctx, token, req, result)

@@ -50,24 +50,24 @@ func generateChallenge(userID int32) string {
 }
 
 // isValidUploadToken checks whether token is a valid upload token for repoID.
-func isValidUploadToken(repoID api.RepoID, token string) bool {
-	gotMAC, err := hex.DecodeString(token)
+func isValidUploadToken(repoID api.RepoID, tokenString string) bool {
+	tokenBytes, err := hex.DecodeString(tokenString)
 	if err != nil {
 		return false
 	}
 
-	return hmac.Equal(gotMAC, generateUploadToken(repoID))
+	return hmac.Equal(tokenBytes, generateUploadToken(repoID))
 }
 
 func lsifChallengeHandler(w http.ResponseWriter, r *http.Request) {
 	actor := actor.FromContext(r.Context())
-	jData, err := json.Marshal(struct{ Challenge string }{Challenge: generateChallenge(actor.UID)})
+	json, err := json.Marshal(struct{ Challenge string }{Challenge: generateChallenge(actor.UID)})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(jData)
+	w.Write(json)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -75,18 +75,12 @@ func lsifChallengeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
-	repositories, ok := r.URL.Query()["repository"]
-	if !ok || len(repositories) == 0 {
-		http.Error(w, "No repository was specified.", http.StatusBadRequest)
-		return
-	}
-	repository := repositories[0]
-
+	repository := r.URL.Query().Get("repository")
 	if !strings.HasPrefix(repository, "github.com") {
 		http.Error(w, "Only github.com repositories support verification.", http.StatusUnprocessableEntity)
 		return
 	}
-	ownerAndName := strings.TrimPrefix(repository, "github.com")
+	ownerAndName := strings.TrimPrefix(repository, "github.com/")
 
 	repo, err := backend.Repos.GetByName(r.Context(), api.RepoName(repository))
 	if err != nil {
@@ -104,15 +98,14 @@ func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 	client := github.NewClient(apiURL, verificationGitHubToken, nil)
 	topics, err := client.ListTopicsOnRepository(r.Context(), ownerAndName)
 	if err != nil {
-		fmt.Println(err)
 		http.Error(w, "Error listing topics.", http.StatusInternalServerError)
 		return
 	}
-	set := make(map[string]bool)
+	topicsSet := make(map[string]bool)
 	for _, v := range topics {
-		set[v] = true
+		topicsSet[v] = true
 	}
-	success := set[generateChallenge(actor.UID)]
+	success := topicsSet[generateChallenge(actor.UID)]
 
 	var payload interface{}
 	if success {
@@ -121,13 +114,13 @@ func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		payload = struct{ Failure string }{Failure: "Topic not found."}
 	}
-	jData, err := json.Marshal(payload)
+	json, err := json.Marshal(payload)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(jData)
+	w.Write(json)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -136,27 +129,13 @@ func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 
 func lsifUploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tokens, ok := r.URL.Query()["upload_token"]
-		if !ok || len(tokens) == 0 {
-			http.Error(w, "No LSIF upload token was given.", http.StatusBadRequest)
-			return
-		}
-		givenToken := tokens[0]
-
-		repositories, ok := r.URL.Query()["repository"]
-		if !ok || len(repositories) == 0 {
-			http.Error(w, "No repository was specified.", http.StatusBadRequest)
-			return
-		}
-		repository := repositories[0]
-
-		repo, err := backend.Repos.GetByName(r.Context(), api.RepoName(repository))
+		repo, err := backend.Repos.GetByName(r.Context(), api.RepoName(r.URL.Query().Get("repository")))
 		if err != nil {
 			http.Error(w, "Unknown repository.", http.StatusUnauthorized)
 			return
 		}
 
-		if !isValidUploadToken(repo.ID, givenToken) {
+		if !isValidUploadToken(repo.ID, r.URL.Query().Get("upload_token")) {
 			http.Error(w, "Invalid LSIF upload token.", http.StatusUnauthorized)
 			return
 		}

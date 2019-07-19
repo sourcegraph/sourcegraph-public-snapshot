@@ -43,13 +43,6 @@ export const RepoSettingsSidebar: React.FunctionComponent<Props> = (props: Props
                     >
                         Mirroring
                     </NavLink>
-                    <NavLink
-                        to={`/${props.repo.name}/-/settings/lsif`}
-                        exact={true}
-                        className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
-                    >
-                        LSIF
-                    </NavLink>
                 </div>
             </div>
             <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
