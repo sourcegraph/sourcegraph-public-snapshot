@@ -265,7 +265,7 @@ function main(): void {
                         default:
                             throw new Error(`Unknown method ${method}`)
                     }
-                    res.send(result).json()
+                    res.json(result || null)
                 })
             } catch (e) {
                 if ('code' in e && e.code === 'ENOENT') {
