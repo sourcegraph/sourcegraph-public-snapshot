@@ -1,14 +1,15 @@
 import H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useCallback, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
+import { isDefined } from '../../../../../../shared/src/util/types'
+import { BreadcrumbItem, Breadcrumbs } from '../../../../components/breadcrumbs/Breadcrumbs'
 import { HeroPage } from '../../../../components/HeroPage'
 import { RuleArea } from '../detail/RuleArea'
 import { RulesNewPage } from '../new/RulesNewPage'
-import { BreadcrumbItem, RulesAreaBreadcrumbs } from '../RulesAreaBreadcrumbs'
 import { RuleScope } from '../types'
 import { RulesListPage } from './list/RulesListPage'
 
@@ -43,14 +44,17 @@ export const RulesArea: React.FunctionComponent<Props> = ({ scope, match, ...pro
     }
     const newRuleURL = `${context.rulesURL}/new`
 
+    const breadcrumbItems: BreadcrumbItem[] = useMemo(
+        () =>
+            [{ text: scope.name, to: scope.url }, { text: 'Rules', to: context.rulesURL }, breadcrumbItem].filter(
+                isDefined
+            ),
+        [breadcrumbItem, context.rulesURL, scope.name, scope.url]
+    )
+
     return (
         <div className="container">
-            <RulesAreaBreadcrumbs
-                scopeItem={{ text: scope.name, to: scope.url }}
-                activeItem={breadcrumbItem}
-                rulesURL={context.rulesURL}
-                className="my-4"
-            />
+            <Breadcrumbs items={breadcrumbItems} className="my-4" />
             <Switch>
                 <Route path={match.url} exact={true}>
                     <RulesListPage {...context} newRuleURL={newRuleURL} />

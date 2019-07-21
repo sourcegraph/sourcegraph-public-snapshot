@@ -46,7 +46,7 @@ interface Props extends Pick<NamespaceAreaContext, 'namespace'>, ExtensionsContr
 /**
  * Lists a namespace's campaigns.
  */
-export const NamespaceCampaignsPage: React.FunctionComponent<Props> = ({ namespace, ...props }) => {
+export const CampaignsListPage: React.FunctionComponent<Props> = ({ namespace, ...props }) => {
     const [campaignsOrError, setCampaignsOrError] = useState<typeof LOADING | GQL.ICampaignConnection | ErrorLike>(
         LOADING
     )
@@ -67,7 +67,7 @@ export const NamespaceCampaignsPage: React.FunctionComponent<Props> = ({ namespa
     ])
 
     return (
-        <div className="namespace-campaigns-page">
+        <div className="campaigns-list-page">
             <div className="d-flex align-items-center justify-content-between mb-3">
                 <h2 className="mb-0">Campaigns</h2>
                 <button type="button" className="btn btn-success" onClick={toggleIsShowingNewCampaignForm}>
