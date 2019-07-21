@@ -3,9 +3,9 @@ import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsControllerNotificationProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { CampaignsIcon } from '../../campaigns/icons'
-import { CampaignDeleteButton } from './CampaignDeleteButton'
-import { EditCampaignForm } from './EditCampaignForm'
+import { CampaignDeleteButton } from '../common/CampaignDeleteButton'
+import { EditCampaignForm } from '../common/EditCampaignForm'
+import { CampaignsIcon } from '../icons'
 
 interface Props extends ExtensionsControllerNotificationProps {
     campaign: GQL.ICampaign
