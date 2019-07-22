@@ -6,6 +6,7 @@ import { fromEvent, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
 import { storage } from '../../browser/storage'
+import { determineCodeHost } from '../../libs/code_intelligence'
 import { injectCodeIntelligence } from '../../libs/code_intelligence/inject'
 import { initSentry } from '../../libs/sentry'
 import {
@@ -24,7 +25,8 @@ window.addEventListener('unload', () => subscriptions.unsubscribe(), { once: tru
 
 assertEnv('CONTENT')
 
-initSentry('content')
+const codeHost = determineCodeHost()
+initSentry('content', codeHost && codeHost.type)
 
 setLinkComponent(({ to, children, ...props }) => (
     <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
