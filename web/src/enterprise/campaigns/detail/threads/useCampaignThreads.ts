@@ -26,6 +26,7 @@ export const useCampaignThreads = (
             gql`
                 query CampaignThreads($campaign: ID!) {
                     node(id: $campaign) {
+                        __typename
                         ... on Campaign {
                             threads {
                                 nodes {
