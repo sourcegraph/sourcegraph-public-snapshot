@@ -6,7 +6,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
@@ -65,4 +67,19 @@ func (v *gqlCampaign) URL(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return path.Join(namespace.URL(), "campaigns", string(v.ID())), nil
+}
+
+func (v *gqlCampaign) Threads(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.DiscussionThreadConnection, error) {
+	opt := dbCampaignsThreadsListOptions{CampaignID: v.db.ID}
+	arg.Set(&opt.LimitOffset)
+	l, err := dbCampaignsThreads{}.List(ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	threadIDs := make([]int64, len(l))
+	for i, e := range l {
+		threadIDs[i] = e.Thread
+	}
+	return graphqlbackend.NewDiscussionThreadConnectionWithListOptions(db.DiscussionThreadsListOptions{ThreadIDs: threadIDs}), nil
 }

@@ -14,7 +14,7 @@ import { ErrorBoundary } from '../../../../components/ErrorBoundary'
 import { HeroPage } from '../../../../components/HeroPage'
 import { ThemeProps } from '../../../../theme'
 import { RulesAreaContext } from '../scope/ScopeRulesArea'
-import { useRuleByID } from './useRuleForScopeByID'
+import { useRuleByID } from './useRuleByID'
 
 export interface RuleAreaContext extends RulesAreaContext, ExtensionsControllerProps, PlatformContextProps, ThemeProps {
     /** The rule ID. */

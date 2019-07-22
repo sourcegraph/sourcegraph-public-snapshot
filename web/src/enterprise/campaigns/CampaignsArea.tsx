@@ -1,13 +1,13 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { ExtensionsControllerNotificationProps } from '../../../../shared/src/extensions/controller'
 import { isDefined } from '../../../../shared/src/util/types'
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { NamespaceAreaContext } from '../../namespaces/NamespaceArea'
 import { CampaignArea } from './detail/CampaignArea'
 import { CampaignsListPage } from './list/CampaignsListPage'
+import { CampaignsNewPage } from './new/CampaignsNewPage'
 
 export interface CampaignsAreaContext extends NamespaceAreaContext {
     /** The URL to the campaigns area. */
@@ -16,7 +16,8 @@ export interface CampaignsAreaContext extends NamespaceAreaContext {
     setBreadcrumbItem: (breadcrumbItem: BreadcrumbItem | undefined) => void
 }
 
-interface Props extends CampaignsAreaContext {}
+interface Props
+    extends Pick<CampaignsAreaContext, Exclude<keyof CampaignsAreaContext, 'campaignsURL' | 'setBreadcrumbItem'>> {}
 
 /**
  * The campaigns area for a namespace's campaigns.
@@ -45,17 +46,17 @@ export const CampaignsArea: React.FunctionComponent<Props> = props => {
         <div className="namespace-campaigns-area">
             <Breadcrumbs items={breadcrumbItems} className="my-4" />
             <Switch>
-                <Route path={props.namespace.url}>
-                    <CampaignsListPage {...props} />
+                <Route path={context.campaignsURL} exact={true}>
+                    <CampaignsListPage {...context} newCampaignURL={newCampaignURL} />
                 </Route>
                 <Route path={newCampaignURL} exact={true}>
                     <CampaignsNewPage {...context} />
                 </Route>
                 <Route
-                    path={`${props.namespace.url}/:campaignID`}
+                    path={`${context.campaignsURL}/:campaignID`}
                     // tslint:disable-next-line:jsx-no-lambda
                     render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
-                        <CampaignArea {...props} campaignID={routeComponentProps.match.params.campaignID} />
+                        <CampaignArea {...context} campaignID={routeComponentProps.match.params.campaignID} />
                     )}
                 />
                 <Route>

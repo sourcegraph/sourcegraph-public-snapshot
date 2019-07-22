@@ -18,7 +18,7 @@ export const useRulesDefinedInScope = (scope: RuleScope): typeof LOADING | GQL.I
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
-                query RulesDefinedIn($project: ID!) {
+                query RulesDefinedInScope($project: ID!) {
                     node(id: $project) {
                         __typename
                         ... on Project {

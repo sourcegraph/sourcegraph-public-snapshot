@@ -3,86 +3,78 @@ import H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
-import { ThemeProps } from '../../../theme'
 import { CampaignsAreaContext } from '../CampaignsArea'
+import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
+import { useCampaignByID } from './useCampaignByID'
 
-export interface CampaignAreaContext
-    extends CampaignsAreaContext,
-        ExtensionsControllerProps,
-        PlatformContextProps,
-        ThemeProps {
-    /** The rule ID. */
-    ruleID: GQL.ID
+export interface CampaignAreaContext extends CampaignsAreaContext {
+    /** The campaign ID. */
+    campaignID: GQL.ID
 
-    /** The rule, queried from the GraphQL API. */
-    rule: GQL.ICampaign
+    /** The campaign, queried from the GraphQL API. */
+    campaign: GQL.ICampaign
 
     location: H.Location
-    history: H.History
-    authenticatedUser: GQL.IUser | null
 }
 
-interface Props extends Pick<CampaignAreaContext, Exclude<keyof CampaignAreaContext, 'rule'>> {}
+interface Props extends Pick<CampaignAreaContext, Exclude<keyof CampaignAreaContext, 'campaign'>> {}
 
 const LOADING = 'loading' as const
 
 /**
- * The area for a single rule.
+ * The area for a single campaign.
  */
-export const CampaignArea: React.FunctionComponent<Props> = ({ ruleID, setBreadcrumbItem, ...props }) => {
-    const ruleOrError = useCampaignByID(ruleID)
+export const CampaignArea: React.FunctionComponent<Props> = ({ campaignID, setBreadcrumbItem, ...props }) => {
+    const campaignOrError = useCampaignByID(campaignID)
 
     useEffect(() => {
         setBreadcrumbItem(
-            ruleOrError !== LOADING && ruleOrError !== null && !isErrorLike(ruleOrError)
-                ? { text: ruleOrError.name, to: ruleOrError.url }
+            campaignOrError !== LOADING && campaignOrError !== null && !isErrorLike(campaignOrError)
+                ? { text: campaignOrError.name, to: campaignOrError.url }
                 : undefined
         )
         return () => setBreadcrumbItem(undefined)
-    }, [ruleOrError, setBreadcrumbItem])
+    }, [campaignOrError, setBreadcrumbItem])
 
-    if (ruleOrError === LOADING) {
+    if (campaignOrError === LOADING) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
     }
-    if (ruleOrError === null) {
+    if (campaignOrError === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
-    if (isErrorLike(ruleOrError)) {
-        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={ruleOrError.message} />
+    if (isErrorLike(campaignOrError)) {
+        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={campaignOrError.message} />
     }
 
     const context: CampaignAreaContext = {
         ...props,
-        ruleID,
-        rule: ruleOrError,
+        campaignID,
+        campaign: campaignOrError,
         setBreadcrumbItem,
     }
 
     return (
-        <div className="rule-area flex-1">
+        <div className="campaign-area flex-1">
             <div className="d-flex align-items-center justify-content-between border-top border-bottom py-3 my-3">
                 <div className="d-flex align-items-center">
                     <div className="badge border border-success text-success font-size-base py-2 px-3 mr-3">Active</div>
                     Last action 11 minutes ago
                 </div>
                 <div>
-                    <Link className="btn btn-secondary mr-2" to="#TODO">
-                        Deactivate
-                    </Link>
-                    <Link className="btn btn-secondary mr-2" to="#edit">
+                    <Link className="btn btn-secondary mr-2" to="#editTODO!(sqs)">
                         Delete
                     </Link>
                 </div>
             </div>
-            <h2>{ruleOrError.name}</h2>
+            <h2>{campaignOrError.name}</h2>
             <div className="flex-1 d-flex flex-column overflow-auto">
-                <ErrorBoundary location={props.location}>RULE AREA</ErrorBoundary>
+                <ErrorBoundary location={props.location}>
+                    <CampaignThreadsListPage {...context} />
+                </ErrorBoundary>
             </div>
         </div>
     )

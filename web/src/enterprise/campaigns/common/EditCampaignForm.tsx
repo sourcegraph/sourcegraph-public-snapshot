@@ -4,7 +4,7 @@ import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../../backend/graphql'
-import { CampaignForm, CampaignFormData } from './CampaignForm'
+import { CampaignForm, CampaignFormData } from '../form/CampaignForm'
 
 const updateCampaign = (input: GQL.IUpdateCampaignInput): Promise<void> =>
     mutateGraphQL(

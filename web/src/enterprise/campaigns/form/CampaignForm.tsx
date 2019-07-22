@@ -1,15 +1,16 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useEffect, useState } from 'react'
+import TextareaAutosize from 'react-textarea-autosize'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 
-export interface CampaignFormData extends Pick<GQL.ICampaign, 'name'> {}
+export interface CampaignFormData extends Pick<GQL.ICampaign, 'name' | 'description'> {}
 
 interface Props {
     initialValue?: CampaignFormData
 
     /** Called when the form is dismissed with no action taken. */
-    onDismiss: () => void
+    onDismiss?: () => void
 
     /** Called when the form is submitted. */
     onSubmit: (campaign: CampaignFormData) => void
@@ -24,7 +25,7 @@ interface Props {
  * A form to create or edit a campaign.
  */
 export const CampaignForm: React.FunctionComponent<Props> = ({
-    initialValue = { name: '' },
+    initialValue = { name: '', description: null },
     onDismiss,
     onSubmit: onSubmitCampaign,
     buttonText,
@@ -38,12 +39,19 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
     )
     useEffect(() => setName(initialValue.name), [initialValue.name])
 
+    const [description, setDescription] = useState(initialValue.description)
+    const onDescriptionChange = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(
+        e => setDescription(e.currentTarget.value),
+        []
+    )
+    useEffect(() => setDescription(initialValue.description), [initialValue.description])
+
     const onSubmit = useCallback<React.FormEventHandler>(
         async e => {
             e.preventDefault()
-            onSubmitCampaign({ name })
+            onSubmitCampaign({ name, description })
         },
-        [name, onSubmitCampaign]
+        [description, name, onSubmitCampaign]
     )
 
     return (
@@ -63,10 +71,24 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
                         autoFocus={true}
                     />
                 </div>
+                <div className="form-group mb-md-0 col-md-3">
+                    <label htmlFor="campaign-form__description">Description</label>
+                    <TextareaAutosize
+                        type="text"
+                        id="campaign-form__description"
+                        className="form-control"
+                        placeholder="Description"
+                        value={description || ''}
+                        minRows={3}
+                        onChange={onDescriptionChange}
+                    />
+                </div>
                 <div className="form-group mb-md-0 col-md-3 text-right">
-                    <button type="reset" className="btn btn-secondary mr-2" onClick={onDismiss}>
-                        Cancel
-                    </button>
+                    {onDismiss && (
+                        <button type="reset" className="btn btn-secondary mr-2" onClick={onDismiss}>
+                            Cancel
+                        </button>
+                    )}
                     <button type="submit" disabled={isLoading} className="btn btn-success">
                         {isLoading ? <LoadingSpinner className="icon-inline" /> : buttonText}
                     </button>
