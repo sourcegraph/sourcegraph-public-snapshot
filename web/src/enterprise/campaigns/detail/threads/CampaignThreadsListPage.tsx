@@ -1,19 +1,23 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React from 'react'
+import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { pluralize } from '../../../../../../shared/src/util/strings'
 import { CampaignAreaContext } from '../CampaignArea'
+import { AddThreadToCampaignDropdownButton } from './AddThreadToCampaignDropdownButton'
 import { CampaignThreadListItem } from './CampaignThreadListItem'
+import { useCampaignThreads } from './useCampaignThreads'
 
-interface Props extends Pick<CampaignAreaContext, 'campaign'> {}
+interface Props extends Pick<CampaignAreaContext, 'campaign'>, ExtensionsControllerProps {}
 
 const LOADING = 'loading' as const
 
 export const CampaignThreadsListPage: React.FunctionComponent<Props> = ({ campaign, ...props }) => {
-    const [threadsOrError, onThreadsUpdate] = useCampaignThreads(campaign.id)
+    const [threadsOrError, onThreadsUpdate] = useCampaignThreads(campaign)
 
     return (
         <div className="campaign-threads-list-page">
+            <AddThreadToCampaignDropdownButton {...props} campaign={campaign} onAdd={onThreadsUpdate} />
             {threadsOrError === LOADING ? (
                 <LoadingSpinner className="icon-inline mt-3" />
             ) : isErrorLike(threadsOrError) ? (

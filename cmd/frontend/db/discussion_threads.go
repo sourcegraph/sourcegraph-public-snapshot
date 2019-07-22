@@ -553,8 +553,13 @@ func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds 
 		// just do prefix/suffix fuzziness for now.
 		conds = append(conds, sqlf.Sprintf("title NOT ILIKE %v", "%"+*opts.NotTitleQuery+"%"))
 	}
-	if len(opts.ThreadIDs) > 0 {
-		conds = append(conds, sqlf.Sprintf("id = ANY(%v)", pq.Array(opts.ThreadIDs)))
+	if opts.ThreadIDs != nil {
+		// TODO!(sqs): make other XyzIDs fields consider a non-nil empty slice to be "no matches" rather than "all matches".
+		if len(opts.ThreadIDs) > 0 {
+			conds = append(conds, sqlf.Sprintf("id = ANY(%v)", pq.Array(opts.ThreadIDs)))
+		} else {
+			conds = append(conds, sqlf.Sprintf("FALSE"))
+		}
 	}
 	if len(opts.NotThreadIDs) > 0 {
 		conds = append(conds, sqlf.Sprintf("id != ANY(%v)", pq.Array(opts.NotThreadIDs)))
