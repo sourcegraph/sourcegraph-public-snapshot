@@ -10,7 +10,7 @@ const LOADING: 'loading' = 'loading'
 /**
  * A React hook that observes a rule queried from the GraphQL API by ID.
  *
- * @param scope The scope in which to observe the rules.
+ * @param id The GraphQL ID of the rule.
  */
 export const useRuleByID = (id: GQL.ID): typeof LOADING | GQL.IRule | null | ErrorLike => {
     const [ruleOrError, setRuleOrError] = useState<typeof LOADING | GQL.IRule | null | ErrorLike>(LOADING)

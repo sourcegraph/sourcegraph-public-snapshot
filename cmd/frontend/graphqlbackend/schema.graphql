@@ -4187,6 +4187,12 @@ type Campaign implements Node {
 
     # The URL to this campaign.
     url: String!
+
+    # A list of threads (including issues and changesets) in this campaign.
+    threads(
+        # Return the first n threads from the list.
+        first: Int
+    ): DiscussionThreadConnection!
 }
 
 # A list of campaigns.

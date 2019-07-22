@@ -1,87 +1,29 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { useCallback, useMemo, useState } from 'react'
-import { map } from 'rxjs/operators'
+import React from 'react'
+import { Link } from 'react-router-dom'
 import { ExtensionsControllerNotificationProps } from '../../../../../shared/src/extensions/controller'
-import { gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { pluralize } from '../../../../../shared/src/util/strings'
-import { queryGraphQL } from '../../../backend/graphql'
 import { NamespaceAreaContext } from '../../../namespaces/NamespaceArea'
-import { CampaignRow } from './CampaignRow'
-import { NewCampaignForm } from './NewCampaignForm'
-
-const queryNamespaceCampaigns = (namespace: GQL.ID): Promise<GQL.ICampaignConnection> =>
-    queryGraphQL(
-        gql`
-            query NamespaceCampaigns($namespace: ID!) {
-                namespace(id: $namespace) {
-                    campaigns {
-                        nodes {
-                            id
-                            name
-                            url
-                        }
-                        totalCount
-                    }
-                }
-            }
-        `,
-        { namespace }
-    )
-        .pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.namespace || !data.namespace.campaigns || (errors && errors.length > 0)) {
-                    throw createAggregateError(errors)
-                }
-                return data.namespace.campaigns
-            })
-        )
-        .toPromise()
+import { CampaignListItem } from './CampaignListItem'
+import { useCampaignsDefinedInNamespace } from './useCampaignsDefinedInNamespace'
 
 const LOADING: 'loading' = 'loading'
 
-interface Props extends Pick<NamespaceAreaContext, 'namespace'>, ExtensionsControllerNotificationProps {}
+interface Props extends Pick<NamespaceAreaContext, 'namespace'>, ExtensionsControllerNotificationProps {
+    newCampaignURL: string
+}
 
 /**
  * Lists a namespace's campaigns.
  */
-export const CampaignsListPage: React.FunctionComponent<Props> = ({ namespace, ...props }) => {
-    const [campaignsOrError, setCampaignsOrError] = useState<typeof LOADING | GQL.ICampaignConnection | ErrorLike>(
-        LOADING
-    )
-    const loadCampaigns = useCallback(async () => {
-        setCampaignsOrError(LOADING)
-        try {
-            setCampaignsOrError(await queryNamespaceCampaigns(namespace.id))
-        } catch (err) {
-            setCampaignsOrError(asError(err))
-        }
-    }, [namespace])
-    // tslint:disable-next-line: no-floating-promises
-    useMemo(loadCampaigns, [namespace])
-
-    const [isShowingNewCampaignForm, setIsShowingNewCampaignForm] = useState(false)
-    const toggleIsShowingNewCampaignForm = useCallback(() => setIsShowingNewCampaignForm(!isShowingNewCampaignForm), [
-        isShowingNewCampaignForm,
-    ])
-
+export const CampaignsListPage: React.FunctionComponent<Props> = ({ namespace, newCampaignURL, ...props }) => {
+    const [campaignsOrError] = useCampaignsDefinedInNamespace(namespace)
     return (
         <div className="campaigns-list-page">
-            <div className="d-flex align-items-center justify-content-between mb-3">
-                <h2 className="mb-0">Campaigns</h2>
-                <button type="button" className="btn btn-success" onClick={toggleIsShowingNewCampaignForm}>
-                    New campaign
-                </button>
-            </div>
-            {isShowingNewCampaignForm && (
-                <NewCampaignForm
-                    namespace={namespace}
-                    onDismiss={toggleIsShowingNewCampaignForm}
-                    onCampaignCreate={loadCampaigns}
-                    className="my-3 p-2 border rounded"
-                />
-            )}
+            <Link to={newCampaignURL} className="btn btn-primary mb-3">
+                New campaign
+            </Link>
             {campaignsOrError === LOADING ? (
                 <LoadingSpinner className="icon-inline mt-3" />
             ) : isErrorLike(campaignsOrError) ? (
@@ -96,8 +38,8 @@ export const CampaignsListPage: React.FunctionComponent<Props> = ({ namespace, .
                     {campaignsOrError.nodes.length > 0 ? (
                         <ul className="list-group list-group-flush">
                             {campaignsOrError.nodes.map(campaign => (
-                                <li key={campaign.id} className="list-group-item p-2">
-                                    <CampaignRow {...props} campaign={campaign} onCampaignUpdate={loadCampaigns} />
+                                <li key={campaign.id} className="list-group-item">
+                                    <CampaignListItem {...props} campaign={campaign} />
                                 </li>
                             ))}
                         </ul>
