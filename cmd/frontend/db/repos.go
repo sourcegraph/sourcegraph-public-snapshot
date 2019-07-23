@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	regexpsyntax "regexp/syntax"
 	"strings"
 
@@ -123,7 +124,8 @@ FROM repo
 WHERE deleted_at IS NULL
 AND enabled = true
 AND %%s
-LIMIT 10000`
+ORDER BY fork, COALESCE(updated_at - (CASE WHEN created_at = '0001-01-01 00:00:00+00' THEN NOW() ELSE created_at END), '0') DESC
+`
 
 var getBySQLColumns = []string{
 	"id",
@@ -146,8 +148,13 @@ func (s *repos) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sq
 		columns = columns[:5]
 	}
 
+	grbq := getRepoByQueryFmtstr
+	lim := os.Getenv("SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
+	if lim != "" {
+		grbq += "\nLIMIT " + lim
+	}
 	q := sqlf.Sprintf(
-		fmt.Sprintf(getRepoByQueryFmtstr, strings.Join(columns, ",")),
+		fmt.Sprintf(grbq, strings.Join(columns, ",")),
 		querySuffix,
 	)
 
