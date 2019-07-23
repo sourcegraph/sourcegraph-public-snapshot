@@ -9,10 +9,10 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { ThreadDropdownMenu } from './ThreadDropdownMenu'
 
-const addThreadToCampaign = (input: GQL.IAddThreadsToCampaignOnCampaignsMutationArguments): Promise<void> =>
+const addThreadsToCampaign = (input: GQL.IAddThreadsToCampaignOnCampaignsMutationArguments): Promise<void> =>
     mutateGraphQL(
         gql`
-            mutation AddThreadToCampaign($campaign: ID!, $threads: [ID!]!) {
+            mutation AddThreadsToCampaign($campaign: ID!, $threads: [ID!]!) {
                 campaigns {
                     addThreadsToCampaign(campaign: $campaign, threads: $threads) {
                         alwaysNil
@@ -31,11 +31,14 @@ const addThreadToCampaign = (input: GQL.IAddThreadsToCampaignOnCampaignsMutation
 interface Props extends ExtensionsControllerNotificationProps {
     campaign: Pick<GQL.ICampaign, 'id'>
     onAdd: () => void
+
+    className?: string
 }
 
 export const AddThreadToCampaignDropdownButton: React.FunctionComponent<Props> = ({
     campaign,
     onAdd,
+    className = '',
     extensionsController,
 }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -44,10 +47,11 @@ export const AddThreadToCampaignDropdownButton: React.FunctionComponent<Props> =
     const onThreadAdd = useCallback(
         async (thread: Pick<GQL.IDiscussionThread, 'id'>) => {
             try {
-                await addThreadToCampaign({
+                await addThreadsToCampaign({
                     campaign: campaign.id,
                     threads: [thread.id],
                 })
+                onAdd()
             } catch (err) {
                 extensionsController.services.notifications.showMessages.next({
                     message: `Error adding thread to campaign: ${err.message}`,
@@ -55,11 +59,11 @@ export const AddThreadToCampaignDropdownButton: React.FunctionComponent<Props> =
                 })
             }
         },
-        [campaign.id, extensionsController.services.notifications.showMessages]
+        [campaign.id, extensionsController.services.notifications.showMessages, onAdd]
     )
 
     return (
-        <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen}>
+        <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className={className}>
             <DropdownToggle color="" className="btn btn-primary">
                 <PlusBoxIcon className="icon-inline mr-2" /> Add thread
             </DropdownToggle>

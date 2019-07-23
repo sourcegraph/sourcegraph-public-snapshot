@@ -34,7 +34,6 @@ export const ThreadDropdownMenu: React.FunctionComponent<Props> = ({ onThreadCli
 
     return (
         <DropdownMenu {...props}>
-            <DropdownItem divider={true} />
             {threadsOrError === LOADING ? (
                 <DropdownItem header={true} className="py-1">
                     Loading threads...
@@ -44,17 +43,12 @@ export const ThreadDropdownMenu: React.FunctionComponent<Props> = ({ onThreadCli
                     Error loading existing threads
                 </DropdownItem>
             ) : (
-                <>
-                    <DropdownItem header={true} className="py-1">
-                        Attach to existing thread...
+                threadsOrError.nodes.slice(0, MAX_THREADS).map(thread => (
+                    // tslint:disable-next-line: jsx-no-lambda
+                    <DropdownItem key={thread.id} onClick={() => onThreadClick(thread)}>
+                        <small className="text-muted">#{thread.idWithoutKind}</small> {thread.title}
                     </DropdownItem>
-                    {threadsOrError.nodes.slice(0, MAX_THREADS).map(thread => (
-                        // tslint:disable-next-line: jsx-no-lambda
-                        <DropdownItem key={thread.id} onClick={() => onThreadClick(thread)}>
-                            <small className="text-muted">#{thread.idWithoutKind}</small> {thread.title}
-                        </DropdownItem>
-                    ))}
-                </>
+                ))
             )}
         </DropdownMenu>
     )
