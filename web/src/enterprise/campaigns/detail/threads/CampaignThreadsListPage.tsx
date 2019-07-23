@@ -17,7 +17,12 @@ export const CampaignThreadsListPage: React.FunctionComponent<Props> = ({ campai
 
     return (
         <div className="campaign-threads-list-page">
-            <AddThreadToCampaignDropdownButton {...props} campaign={campaign} onAdd={onThreadsUpdate} />
+            <AddThreadToCampaignDropdownButton
+                {...props}
+                campaign={campaign}
+                onAdd={onThreadsUpdate}
+                className="mb-3"
+            />
             {threadsOrError === LOADING ? (
                 <LoadingSpinner className="icon-inline mt-3" />
             ) : isErrorLike(threadsOrError) ? (
@@ -33,7 +38,12 @@ export const CampaignThreadsListPage: React.FunctionComponent<Props> = ({ campai
                         <ul className="list-group list-group-flush">
                             {threadsOrError.nodes.map(thread => (
                                 <li key={thread.id} className="list-group-item">
-                                    <CampaignThreadListItem {...props} thread={thread} />
+                                    <CampaignThreadListItem
+                                        {...props}
+                                        campaign={campaign}
+                                        thread={thread}
+                                        onUpdate={onThreadsUpdate}
+                                    />
                                 </li>
                             ))}
                         </ul>
