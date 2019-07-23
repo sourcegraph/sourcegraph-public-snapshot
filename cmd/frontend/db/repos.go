@@ -122,7 +122,8 @@ SELECT %s
 FROM repo
 WHERE deleted_at IS NULL
 AND enabled = true
-AND %%s`
+AND %%s
+LIMIT 10000`
 
 var getBySQLColumns = []string{
 	"id",
@@ -719,9 +720,9 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 		enabled = true
 		language = r.Language
 		// Ignore Enabled for deciding to update
-		insert = ((op.Description != r.Description) ||
+		insert = (op.Description != r.Description) ||
 			(op.Fork != r.Fork) ||
-			(!op.ExternalRepo.Equal(&r.ExternalRepo)))
+			(!op.ExternalRepo.Equal(&r.ExternalRepo))
 	}
 
 	if !insert {
