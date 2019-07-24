@@ -1,14 +1,15 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"gopkg.in/inconshreveable/log15.v2"
 	"io"
 	"net/http"
 	"os"
-	"strconv"
-
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -199,28 +200,43 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		lim := os.Getenv("SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
-		lim2, err := strconv.Atoi(lim)
+	var res []*types.Repo
+	switch envvar.SourcegraphDotComMode() {
+	case true:
+		limEnv := os.Getenv("SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
+		lim := "10000"
+		if limEnv != "" {
+			lim = limEnv
+		}
+		query := fmt.Sprintf(`
+			SELECT name
+			FROM repo
+			WHERE deleted_at IS NULL
+			AND enabled = true
+			ORDER BY fork, COALESCE(updated_at - (CASE WHEN created_at = '0001-01-01 00:00:00+00' THEN NOW() ELSE created_at END), '0')
+			LIMIT %s
+`, lim)
+		rows, err := dbconn.Global.QueryContext(context.Background(), query)
 		if err != nil {
-			return errors.Wrap(err, "failed to parse SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
+			return errors.Wrap(err, "running SQL query")
 		}
-		opt.Limit = lim2
-		opt.OrderBy = []db.RepoListSort {
-			{
-				Field: "fork",
-				Descending: false,
-			},
-			{
-				Field: "COALESCE(updated_at - (CASE WHEN created_at = '0001-01-01 00:00:00+00' THEN NOW() ELSE created_at END), '0')",
-				Descending: true,
-			},
-		}
-	}
+		defer rows.Close()
 
-	res, err := backend.Repos.List(r.Context(), opt)
-	if err != nil {
-		return err
+		for rows.Next() {
+			var repo types.Repo
+			if err := rows.Scan(&repo.Name); err != nil {
+				return errors.Wrap(err, "scanning row")
+			}
+			res = append(res, &repo)
+		}
+		if err = rows.Err(); err != nil {
+			return errors.Wrap(err, "iterating over repo SQL query rows")
+		}
+	case false:
+		res, err = backend.Repos.List(r.Context(), opt)
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
 	}
 
 	// BACKCOMPAT: Add a "URI" field because zoekt-sourcegraph-indexserver expects one to exist
