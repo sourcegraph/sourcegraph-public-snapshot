@@ -1430,6 +1430,13 @@ type Repository implements Node & GenericSearchResultInterface {
         # Return Git tags whose names match the query.
         query: String
     ): GitRefConnection!
+
+    # A list of changesets for this repository.
+    changesets(
+        # Returns the first n changesets from the list.
+        first: Int
+    ): ChangesetConnection!
+
     # A Git comparison in this repository between a base and head commit.
     comparison(
         # The base of the diff ("old" or "left-hand side"), or "HEAD" if not specified.
@@ -2867,9 +2874,6 @@ type DiscussionThread implements Node & Labelable {
         # Returns the first n labels from the list.
         first: Int
     ): LabelConnection!
-
-    # TODO!(sqs): make Changeset a top-level type
-    changeset: Changeset
 }
 
 # A comment made within a discussion thread.
@@ -4094,14 +4098,23 @@ type GitCreateRefFromPatchPayload {
 #
 # TODO!(sqs): make this a top-level type, not just a sub-type of DiscussionThread
 type Changeset {
-    # The list of repositories affected by this changeset.
-    repositories: [Repository!]!
+    # The title of the changeset.
+    title: String!
 
-    # The list of commits (from one or more repositories) in this changeset.
-    commits: [GitCommit!]!
+    # The external URL of the changeset, if any.
+    externalURL: String
+}
 
-    # The comparisons of before and after this changeset is applied for all affected repositories.
-    repositoryComparisons: [RepositoryComparison!]!
+# A list of changesets.
+type ChangesetConnection {
+    # A list of changesets.
+    nodes: [Changeset!]!
+
+    # The total number of changesets in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # Mutations related to changesets.
@@ -4112,15 +4125,15 @@ type ChangesetsMutation {
 
 # Input arguments for ChangesetsMutation.createChangeset.
 input ChangesetsCreateChangesetInput {
+    repository: ID!
     title: String!
-    body: String!
-    project: ID!
+    externalURL: String
 }
 
 # The payload for ChangesetsMutation.createChangeset.
 type ChangesetsCreateChangesetPayload {
-    # The newly created changeset thread.
-    thread: DiscussionThread!
+    # The newly created changeset.
+    changeset: Changeset!
 }
 
 # Mutations related to campaigns.
@@ -4189,6 +4202,16 @@ type Campaign implements Node {
         # Return the first n threads from the list.
         first: Int
     ): DiscussionThreadConnection!
+
+    # The list of repositories affected by this campaign's changesets.
+    repositories: [Repository!]!
+
+    # The list of commits (from one or more repositories) in this campaign's changesets.
+    commits: [GitCommit!]!
+
+    # The comparisons of before and after this campaign's changesets are applied (on all affected
+    # repositories).
+    repositoryComparisons: [RepositoryComparison!]!
 }
 
 # A list of campaigns.

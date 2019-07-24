@@ -37,6 +37,7 @@ import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
 import { ThemeProps } from '../theme'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
+import { GitPullRequestIcon } from '../util/octicons'
 import { basename } from '../util/path'
 import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
@@ -247,6 +248,9 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         </Link>
                                         <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/tags`}>
                                             <TagIcon className="icon-inline" /> Tags
+                                        </Link>
+                                        <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/changesets`}>
+                                            <GitPullRequestIcon className="icon-inline" /> Pull requests
                                         </Link>
                                         <Link
                                             className="btn btn-secondary"

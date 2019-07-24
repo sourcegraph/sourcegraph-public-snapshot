@@ -1437,13 +1437,6 @@ type Repository implements Node & GenericSearchResultInterface {
         # Return Git tags whose names match the query.
         query: String
     ): GitRefConnection!
-    # A Git comparison in this repository between a base and head commit.
-    comparison(
-        # The base of the diff ("old" or "left-hand side"), or "HEAD" if not specified.
-        base: String
-        # The head of the diff ("new" or "right-hand side"), or "HEAD" if not specified.
-        head: String
-    ): RepositoryComparison!
 
     # A list of changesets for this repository.
     changesets(
@@ -1451,6 +1444,13 @@ type Repository implements Node & GenericSearchResultInterface {
         first: Int
     ): ChangesetConnection!
 
+    # A Git comparison in this repository between a base and head commit.
+    comparison(
+        # The base of the diff ("old" or "left-hand side"), or "HEAD" if not specified.
+        base: String
+        # The head of the diff ("new" or "right-hand side"), or "HEAD" if not specified.
+        head: String
+    ): RepositoryComparison!
     # The repository's contributors.
     contributors(
         # The Git revision range to compute contributors in.
@@ -2881,9 +2881,6 @@ type DiscussionThread implements Node & Labelable {
         # Returns the first n labels from the list.
         first: Int
     ): LabelConnection!
-
-    # TODO!(sqs): make Changeset a top-level type
-    changeset: Changeset
 }
 
 # A comment made within a discussion thread.
