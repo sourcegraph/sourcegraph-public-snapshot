@@ -2,7 +2,11 @@ package httpapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -62,6 +66,18 @@ func Test_serveReposList(t *testing.T) {
 		return URIs
 	}
 
+	t.Run("all repos are returned for non-sourcegraph.com", func(t *testing.T) {
+		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+			return repos, nil
+		}
+		defer func() { db.MockAuthzFilter = nil }()
+		URIs := getRepoURIsViaHTTP()
+		wantURIs := []string{"github.com/quickhack", "github.com/vim"}
+		if !reflect.DeepEqual(URIs, wantURIs) {
+			t.Errorf("got %v, want %v", URIs, wantURIs)
+		}
+	})
+
 	t.Run("long-interval repos are returned for sourcegraph.com when limit is set", func(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(false)
@@ -72,14 +88,6 @@ func Test_serveReposList(t *testing.T) {
 				t.Errorf("got %v, want %v", URIs, wantURIs)
 			}
 		})
-	})
-
-	t.Run("all repos are returned for non-sourcegraph.com", func(t *testing.T) {
-		URIs := getRepoURIsViaHTTP()
-		wantURIs := []string{"github.com/quickhack", "github.com/vim"}
-		if !reflect.DeepEqual(URIs, wantURIs) {
-			t.Errorf("got %v, want %v", URIs, wantURIs)
-		}
 	})
 }
 
