@@ -13,10 +13,19 @@ func (GraphQLResolver) ThreadsForRepository(ctx context.Context, repositoryID gr
 	if err != nil {
 		return nil, err
 	}
-
-	list, err := dbThreads{}.List(ctx, dbThreadsListOptions{
+	return threadsByOptions(ctx, dbThreadsListOptions{
 		RepositoryID: repo.DBID(),
-	})
+	}, arg)
+}
+
+func ThreadsByIDs(ctx context.Context, threadIDs []int64, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
+	return threadsByOptions(ctx, dbThreadsListOptions{
+		ThreadIDs: threadIDs,
+	}, arg)
+}
+
+func threadsByOptions(ctx context.Context, options dbThreadsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
+	list, err := dbThreads{}.List(ctx, options)
 	if err != nil {
 		return nil, err
 	}

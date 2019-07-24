@@ -75,6 +75,7 @@ type DeleteThreadArgs struct {
 // Thread is the interface for the GraphQL type Thread.
 type Thread interface {
 	ID() graphql.ID
+	DBID() int64
 	Repository(context.Context) (*RepositoryResolver, error)
 	Title() string
 	ExternalURL() *string

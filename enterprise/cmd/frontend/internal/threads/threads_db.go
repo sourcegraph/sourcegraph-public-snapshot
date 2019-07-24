@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -33,7 +34,7 @@ func (dbThreads) Create(ctx context.Context, thread *dbThread) (*dbThread, error
 
 	var id int64
 	if err := dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO threads(repository_id, title, externalURL) VALUES($1, $2, $3) RETURNING id`,
+		`INSERT INTO threads(repository_id, title, external_url) VALUES($1, $2, $3) RETURNING id`,
 		thread.RepositoryID, thread.Title, thread.ExternalURL,
 	).Scan(&id); err != nil {
 		return nil, err
@@ -104,6 +105,7 @@ func (s dbThreads) GetByID(ctx context.Context, id int64) (*dbThread, error) {
 type dbThreadsListOptions struct {
 	Query        string     // only list threads matching this query (case-insensitively)
 	RepositoryID api.RepoID // only list threads in this repository
+	ThreadIDs    []int64
 	*db.LimitOffset
 }
 
@@ -114,6 +116,13 @@ func (o dbThreadsListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("repository_id=%d", o.RepositoryID))
+	}
+	if o.ThreadIDs != nil {
+		if len(o.ThreadIDs) > 0 {
+			conds = append(conds, sqlf.Sprintf("id = ANY(%v)", pq.Array(o.ThreadIDs)))
+		} else {
+			conds = append(conds, sqlf.Sprintf("FALSE"))
+		}
 	}
 	return conds
 }
@@ -212,4 +221,16 @@ type mockThreads struct {
 	List       func(dbThreadsListOptions) ([]*dbThread, error)
 	Count      func(dbThreadsListOptions) (int, error)
 	DeleteByID func(int64) error
+}
+
+// TestCreateThread creates a thread in the DB, for use in tests only.
+func TestCreateThread(ctx context.Context, title string, repositoryID api.RepoID) (id int64, err error) {
+	thread, err := dbThreads{}.Create(ctx, &dbThread{
+		RepositoryID: repositoryID,
+		Title:        title,
+	})
+	if err != nil {
+		return 0, err
+	}
+	return thread.ID, nil
 }

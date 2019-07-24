@@ -105,6 +105,28 @@ func TestDB_Threads(t *testing.T) {
 	}
 
 	{
+		// List threads by IDs.
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{ThreadIDs: []int64{thread0.ID}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := []*dbThread{thread0}; !reflect.DeepEqual(ts, want) {
+			t.Errorf("got %+v, want %+v", ts, want)
+		}
+	}
+
+	{
+		// List threads by empty list of IDs.
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{ThreadIDs: []int64{}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(ts) != 0 {
+			t.Errorf("got %+v, want empty", ts)
+		}
+	}
+
+	{
 		// Delete a thread.
 		if err := (dbThreads{}).DeleteByID(ctx, thread0.ID); err != nil {
 			t.Fatal(err)

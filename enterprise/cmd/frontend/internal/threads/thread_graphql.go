@@ -51,6 +51,8 @@ func unmarshalThreadID(id graphql.ID) (dbID int64, err error) {
 	return
 }
 
+func (v *gqlThread) DBID() int64 { return v.db.ID }
+
 func (v *gqlThread) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	return graphqlbackend.RepositoryByDBID(ctx, v.db.RepositoryID)
 }
