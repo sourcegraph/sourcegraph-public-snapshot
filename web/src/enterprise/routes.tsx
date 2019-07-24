@@ -25,6 +25,10 @@ export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
         render: lazyComponent(() => import('./checks/global/GlobalChecksArea'), 'GlobalChecksArea'),
     },
     {
+        path: '/campaigns',
+        render: lazyComponent(() => import('./checks/global/GlobalChecksArea'), 'GlobalChecksArea'),
+    },
+    {
         path: '/changesets',
         render: lazyComponent(() => import('./changesets/global/ChangesetsArea'), 'ChangesetsArea'),
     },

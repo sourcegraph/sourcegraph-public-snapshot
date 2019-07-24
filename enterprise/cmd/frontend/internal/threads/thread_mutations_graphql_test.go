@@ -21,8 +21,8 @@ func TestGraphQL_CreateThread(t *testing.T) {
 	}
 	wantThread := &dbThread{
 		RepositoryID: wantRepositoryID,
-		Title:        "n",
-		ExternalURL:  strptr("d"),
+		Title:        "t",
+		ExternalURL:  strptr("u"),
 		Status:       graphqlbackend.ThreadStatusOpen,
 		Type:         graphqlbackend.ThreadTypeThread,
 	}
@@ -42,7 +42,7 @@ func TestGraphQL_CreateThread(t *testing.T) {
 			Query: `
 				mutation {
 					threads {
-						createThread(input: { repository: "T3JnOjE=", title: "n", externalURL: "d", type: THREAD }) {
+						createThread(input: { repository: "T3JnOjE=", title: "t", externalURL: "u", type: THREAD }) {
 							id
 							title
 						}
@@ -54,7 +54,7 @@ func TestGraphQL_CreateThread(t *testing.T) {
 					"threads": {
 						"createThread": {
 							"id": "VGhyZWFkOjI=",
-							"title": "n"
+							"title": "t"
 						}
 					}
 				}

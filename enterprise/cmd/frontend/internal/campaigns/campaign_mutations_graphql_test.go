@@ -5,13 +5,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-
-	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
 func TestGraphQL_CreateCampaign(t *testing.T) {
@@ -163,9 +162,8 @@ func TestGraphQL_AddRemoveThreadsToFromCampaign(t *testing.T) {
 		return &dbCampaign{ID: wantCampaignID}, nil
 	}
 	const wantThreadID = 3
-	db.Mocks.DiscussionThreads.Get = func(int64) (*types.DiscussionThread, error) {
-		return &types.DiscussionThread{ID: wantThreadID}, nil
-	}
+	mockGetThreadDBIDs = func([]graphql.ID) ([]int64, error) { return []int64{wantThreadID}, nil }
+	defer func() { mockGetThreadDBIDs = nil }()
 	addRemoveThreadsToFromCampaign := func(campaign int64, threads []int64) error {
 		if campaign != wantCampaignID {
 			t.Errorf("got %d, want %d", campaign, wantCampaignID)

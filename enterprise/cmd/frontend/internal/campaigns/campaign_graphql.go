@@ -7,7 +7,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
@@ -93,28 +92,19 @@ type delta struct {
 }
 
 func (v *gqlCampaign) getDeltas(ctx context.Context) ([]*delta, error) {
-	// TODO!(sqs)
-	l, err := dbCampaignsThreads{}.List(ctx, dbCampaignsThreadsListOptions{CampaignID: v.db.ID})
+	threadConnection, err := v.Threads(ctx, &graphqlutil.ConnectionArgs{})
 	if err != nil {
 		return nil, err
 	}
-	threadIDs := make([]int64, len(l))
-	for i, e := range l {
-		threadIDs[i] = e.Thread
-	}
-
-	threads, err := db.DiscussionThreads.List(ctx, &db.DiscussionThreadsListOptions{ThreadIDs: threadIDs})
+	threads, err := threadConnection.Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	var deltas []*delta
 	for _, thread := range threads {
-		if thread.Settings == nil {
-			continue
-		}
 		var settings struct{ Deltas []*delta }
-		if err := json.Unmarshal([]byte(*thread.Settings), &settings); err != nil {
+		if err := json.Unmarshal([]byte(thread.Settings()), &settings); err != nil {
 			return nil, err
 		}
 		deltas = append(deltas, settings.Deltas...)

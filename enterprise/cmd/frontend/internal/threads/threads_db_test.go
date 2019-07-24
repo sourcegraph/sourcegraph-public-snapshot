@@ -16,7 +16,7 @@ func TestDB_Threads(t *testing.T) {
 	resetMocks()
 	ctx := dbtesting.TestContext(t)
 
-	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{Name: "r"}); err != nil {
+	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{Name: "r", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 	repo0, err := db.Repos.GetByName(ctx, "r")

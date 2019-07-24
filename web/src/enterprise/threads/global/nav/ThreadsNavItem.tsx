@@ -28,7 +28,7 @@ export const ThreadsNavItem: React.FunctionComponent<Props> = ({ className = '' 
             <DropdownToggle tag="span" data-toggle="dropdown" aria-expanded={isOpen} onMouseEnter={setIsOpenTrue}>
                 <LinkWithIconOnlyTooltip
                     to="/threads"
-                    text="Issues"
+                    text="Threads"
                     icon={ThreadsIcon}
                     className={`nav-link btn btn-link text-decoration-none ${className}`}
                 />

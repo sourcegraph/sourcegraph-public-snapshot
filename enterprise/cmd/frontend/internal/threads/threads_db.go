@@ -40,7 +40,7 @@ func (dbThreads) Create(ctx context.Context, thread *dbThread) (*dbThread, error
 
 	var id int64
 	if err := dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO threads(`+selectColumns+`) VALUES(null, $1, $2, $3, $4, $5, $6) RETURNING id`,
+		`INSERT INTO threads(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6) RETURNING id`,
 		thread.RepositoryID,
 		thread.Title,
 		thread.ExternalURL,

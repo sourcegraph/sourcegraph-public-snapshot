@@ -14,6 +14,7 @@ import { LinkWithIconOnlyTooltip } from '../components/LinkWithIconOnlyTooltip'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { isDiscussionsEnabled } from '../discussions'
 import { AutomationIcon } from '../enterprise/a8n/icons'
+import { CampaignsIcon } from '../enterprise/campaigns/icons'
 import { ChangesIcon } from '../enterprise/changes/icons'
 import { ChangesetsNavItem } from '../enterprise/changesets/global/nav/ChangesetsNavItem'
 import { ChecksIcon } from '../enterprise/checks/icons'
@@ -23,7 +24,6 @@ import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
-import { CampaignsIcon } from '../enterprise/campaigns/icons'
 
 interface Props
     extends SettingsCascadeProps,
@@ -72,14 +72,6 @@ export class NavLinks extends React.PureComponent<Props> {
                     <>
                         <li className="nav-item d-none">
                             <LinkWithIconOnlyTooltip
-                                to="/checks"
-                                text="Checks"
-                                icon={ChecksIcon}
-                                className="nav-link btn btn-link px-3 text-decoration-none d-none"
-                            />
-                        </li>
-                        <li className="nav-item">
-                            <LinkWithIconOnlyTooltip
                                 to="/automation"
                                 text="Automation"
                                 icon={AutomationIcon}
@@ -99,23 +91,6 @@ export class NavLinks extends React.PureComponent<Props> {
                         </li>
                         <li className="nav-item mr-1">
                             <ThreadsNavItem className="px-3" />
-                        </li>
-                        <li className="nav-item">
-                            <Link
-                                to="/notifications"
-                                data-tooltip="Notifications"
-                                className="nav-link btn btn-link px-3 text-decoration-none"
-                            >
-                                <BellIcon className="icon-inline" />
-                            </Link>
-                        </li>
-                        <li className="nav-item d-none">
-                            <LinkWithIconOnlyTooltip
-                                to="/changes"
-                                text="Changes"
-                                icon={ChangesIcon}
-                                className="nav-link btn btn-link px-3 text-decoration-none"
-                            />
                         </li>
                     </>
                 )}

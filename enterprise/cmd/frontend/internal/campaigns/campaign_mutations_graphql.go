@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
 func (GraphQLResolver) CreateCampaign(ctx context.Context, arg *graphqlbackend.CreateCampaignArgs) (graphqlbackend.Campaign, error) {
@@ -93,12 +94,18 @@ func addRemoveThreadsToFromCampaign(ctx context.Context, campaignID graphql.ID, 
 	return nil
 }
 
-func getThreadDBIDs(ctx context.Context, threads []graphql.ID) ([]int64, error) {
-	dbIDs := make([]int64, len(threads))
-	for i, threadID := range threads {
+var mockGetThreadDBIDs func(threadIDs []graphql.ID) ([]int64, error)
+
+func getThreadDBIDs(ctx context.Context, threadIDs []graphql.ID) ([]int64, error) {
+	if mockGetThreadDBIDs != nil {
+		return mockGetThreadDBIDs(threadIDs)
+	}
+
+	dbIDs := make([]int64, len(threadIDs))
+	for i, threadID := range threadIDs {
 		// 🚨 SECURITY: Only organization members and site admins may create threads in an
 		// organization. The threadByID function performs this check.
-		thread, err := graphqlbackend.ThreadByID(ctx, threadID)
+		thread, err := threads.GraphQLResolver{}.ThreadByID(ctx, threadID)
 		if err != nil {
 			return nil, err
 		}

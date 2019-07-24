@@ -33,7 +33,7 @@ func TestDB_CampaignsThreads(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = user // TODO!(sqs)
-	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{Name: "r"}); err != nil {
+	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{Name: "r", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 	repo, err := db.Repos.GetByName(ctx, "r")
@@ -44,7 +44,7 @@ func TestDB_CampaignsThreads(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	thread1, err := threads.TestCreateThread(ctx, "t0", repo.ID)
+	thread1, err := threads.TestCreateThread(ctx, "t1", repo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
