@@ -6,6 +6,6 @@ import (
 )
 
 func init() {
-	// Contribute the GraphQL type CampaignsMutation.
+	// Contribute the GraphQL types CampaignsQuery and CampaignsMutation.
 	graphqlbackend.Campaigns = campaigns.GraphQLResolver{}
 }

@@ -8,6 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
+func (GraphQLResolver) Campaigns(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
+	return campaignsByOptions(ctx, dbCampaignsListOptions{}, arg)
+}
+
 func (GraphQLResolver) CampaignsInNamespace(ctx context.Context, namespace graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
 	var opt dbCampaignsListOptions
 	var err error
@@ -15,7 +19,10 @@ func (GraphQLResolver) CampaignsInNamespace(ctx context.Context, namespace graph
 	if err != nil {
 		return nil, err
 	}
+	return campaignsByOptions(ctx, opt, arg)
+}
 
+func campaignsByOptions(ctx context.Context, opt dbCampaignsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
 	list, err := dbCampaigns{}.List(ctx, opt)
 	if err != nil {
 		return nil, err

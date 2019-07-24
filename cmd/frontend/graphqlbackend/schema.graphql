@@ -359,8 +359,21 @@ type Mutation {
     # Mutations related to repositories' Git data.
     git: GitMutation!
 
-    # Mutations related to campaigns.
-    campaigns: CampaignsMutation!
+    # Create a campaign in a namespace. Returns the newly created campaign.
+    createCampaign(input: CreateCampaignInput!): Campaign!
+
+    # Update a campaign. Returns the updated campaign.
+    updateCampaign(input: UpdateCampaignInput!): Campaign
+
+    # Delete a campaign. All threads that were associated with or created by this campaign remain
+    # (and are not deleted when the campaign is deleted).
+    deleteCampaign(campaign: ID!): EmptyResponse
+
+    # Add threads to a campaign.
+    addThreadsToCampaign(campaign: ID!, threads: [ID!]!): EmptyResponse
+
+    # Remove threads from a campaign.
+    removeThreadsFromCampaign(campaign: ID!, threads: [ID!]!): EmptyResponse
 
     # Mutations related to rules.
     rules: RulesMutation!
@@ -951,6 +964,12 @@ type Query {
 
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
+
+    # A list of campaigns. TODO!(sqs)
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
 
     # Look up a project.
     project(idWithoutKind: String!): Project
@@ -4160,25 +4179,6 @@ input GitCreateRefFromPatchInput {
 type GitCreateRefFromPatchPayload {
     # The newly created ref.
     ref: GitRef!
-}
-
-# Mutations related to campaigns.
-type CampaignsMutation {
-    # Create a campaign in a namespace. Returns the newly created campaign.
-    createCampaign(input: CreateCampaignInput!): Campaign!
-
-    # Update a campaign. Returns the updated campaign.
-    updateCampaign(input: UpdateCampaignInput!): Campaign
-
-    # Delete a campaign. All threads that were associated with or created by this campaign remain
-    # (and are not deleted when the campaign is deleted).
-    deleteCampaign(campaign: ID!): EmptyResponse
-
-    # Add threads to a campaign.
-    addThreadsToCampaign(campaign: ID!, threads: [ID!]!): EmptyResponse
-
-    # Remove threads from a campaign.
-    removeThreadsFromCampaign(campaign: ID!, threads: [ID!]!): EmptyResponse
 }
 
 # Input arguments for creating a campaign.

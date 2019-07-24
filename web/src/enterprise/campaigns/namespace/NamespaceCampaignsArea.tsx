@@ -1,31 +1,44 @@
+import H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { isDefined } from '../../../../shared/src/util/types'
-import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/Breadcrumbs'
-import { HeroPage } from '../../components/HeroPage'
-import { NamespaceAreaContext } from '../../namespaces/NamespaceArea'
-import { CampaignArea } from './detail/CampaignArea'
-import { CampaignsListPage } from './list/CampaignsListPage'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { isDefined } from '../../../../../shared/src/util/types'
+import { BreadcrumbItem, Breadcrumbs } from '../../../components/breadcrumbs/Breadcrumbs'
+import { HeroPage } from '../../../components/HeroPage'
+import { NamespaceAreaContext } from '../../../namespaces/NamespaceArea'
+import { ThemeProps } from '../../../theme'
+import { CampaignArea } from '../detail/CampaignArea'
+import { NamespaceCampaignsListPage } from './list/NamespaceCampaignsListPage'
 import { CampaignsNewPage } from './new/CampaignsNewPage'
 
-export interface CampaignsAreaContext extends NamespaceAreaContext {
+export interface NamespaceCampaignsAreaContext
+    extends Pick<NamespaceAreaContext, 'namespace'>,
+        ExtensionsControllerProps,
+        ThemeProps {
     /** The URL to the campaigns area. */
     campaignsURL: string
 
-    setBreadcrumbItem: (breadcrumbItem: BreadcrumbItem | undefined) => void
+    setBreadcrumbItem?: (breadcrumbItem: BreadcrumbItem | undefined) => void
+
+    location: H.Location
+    authenticatedUser: GQL.IUser | null
 }
 
 interface Props
-    extends Pick<CampaignsAreaContext, Exclude<keyof CampaignsAreaContext, 'campaignsURL' | 'setBreadcrumbItem'>> {}
+    extends Pick<
+        NamespaceCampaignsAreaContext,
+        Exclude<keyof NamespaceCampaignsAreaContext, 'campaignsURL' | 'setBreadcrumbItem'>
+    > {}
 
 /**
- * The campaigns area for a namespace's campaigns.
+ * The campaigns area for a namespace.
  */
-export const CampaignsArea: React.FunctionComponent<Props> = props => {
+export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...props }) => {
     const [breadcrumbItem, setBreadcrumbItem] = useState<BreadcrumbItem>()
 
-    const context: CampaignsAreaContext = {
+    const context: NamespaceCampaignsAreaContext = {
         ...props,
         campaignsURL: `${props.namespace.url}/campaigns`,
         setBreadcrumbItem,
@@ -47,7 +60,7 @@ export const CampaignsArea: React.FunctionComponent<Props> = props => {
             <Breadcrumbs items={breadcrumbItems} className="my-4" />
             <Switch>
                 <Route path={context.campaignsURL} exact={true}>
-                    <CampaignsListPage {...context} newCampaignURL={newCampaignURL} />
+                    <NamespaceCampaignsListPage {...context} newCampaignURL={newCampaignURL} />
                 </Route>
                 <Route path={newCampaignURL} exact={true}>
                     <CampaignsNewPage {...context} />

@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { Redirect } from 'react-router'
 import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { mutateGraphQL } from '../../../backend/graphql'
-import { ModalPage } from '../../../components/ModalPage'
-import { PageTitle } from '../../../components/PageTitle'
-import { CampaignsAreaContext } from '../CampaignsArea'
-import { CampaignForm, CampaignFormData } from '../form/CampaignForm'
+import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
+import { mutateGraphQL } from '../../../../backend/graphql'
+import { ModalPage } from '../../../../components/ModalPage'
+import { PageTitle } from '../../../../components/PageTitle'
+import { CampaignForm, CampaignFormData } from '../../form/CampaignForm'
+import { NamespaceCampaignsAreaContext } from '../NamespaceCampaignsArea'
 
 const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICampaign> =>
     mutateGraphQL(
@@ -30,7 +30,7 @@ const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICampaign>
         )
         .toPromise()
 
-interface Props extends Pick<CampaignsAreaContext, 'namespace' | 'setBreadcrumbItem'> {}
+interface Props extends Pick<NamespaceCampaignsAreaContext, 'namespace' | 'setBreadcrumbItem'> {}
 
 const LOADING = 'loading' as const
 

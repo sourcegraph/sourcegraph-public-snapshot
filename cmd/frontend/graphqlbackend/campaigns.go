@@ -8,16 +8,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-// Campaigns is the implementation of the GraphQL type CampaignsMutation. If it is not set at
-// runtime, a "not implemented" error is returned to API clients who invoke it.
+// Campaigns is the implementation of the GraphQL campaigns queries and mutations. If it is not set
+// at runtime, a "not implemented" error is returned to API clients who invoke it.
 //
 // This is contributed by enterprise.
 var Campaigns CampaignsResolver
 
+var errCampaignsNotImplemented = errors.New("campaigns is not implemented")
+
 // CampaignByID is called to look up a Campaign given its GraphQL ID.
 func CampaignByID(ctx context.Context, id graphql.ID) (Campaign, error) {
 	if Campaigns == nil {
-		return nil, errors.New("campaigns is not implemented")
+		return nil, errCampaignsNotImplemented
 	}
 	return Campaigns.CampaignByID(ctx, id)
 }
@@ -26,20 +28,59 @@ func CampaignByID(ctx context.Context, id graphql.ID) (Campaign, error) {
 // campaigns defined in a namespace.
 func CampaignsInNamespace(ctx context.Context, namespace graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error) {
 	if Campaigns == nil {
-		return nil, errors.New("campaigns is not implemented")
+		return nil, errCampaignsNotImplemented
 	}
 	return Campaigns.CampaignsInNamespace(ctx, namespace, arg)
 }
 
-func (schemaResolver) Campaigns() (CampaignsResolver, error) {
+func (schemaResolver) Campaigns(ctx context.Context, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error) {
 	if Campaigns == nil {
-		return nil, errors.New("campaigns is not implemented")
+		return nil, errCampaignsNotImplemented
 	}
-	return Campaigns, nil
+	return Campaigns.Campaigns(ctx, arg)
 }
 
-// CampaignsResolver is the interface for the GraphQL type CampaignsMutation.
+func (r schemaResolver) CreateCampaign(ctx context.Context, arg *CreateCampaignArgs) (Campaign, error) {
+	if Campaigns == nil {
+		return nil, errCampaignsNotImplemented
+	}
+	return Campaigns.CreateCampaign(ctx, arg)
+}
+
+func (r schemaResolver) UpdateCampaign(ctx context.Context, arg *UpdateCampaignArgs) (Campaign, error) {
+	if Campaigns == nil {
+		return nil, errCampaignsNotImplemented
+	}
+	return Campaigns.UpdateCampaign(ctx, arg)
+}
+
+func (r schemaResolver) DeleteCampaign(ctx context.Context, arg *DeleteCampaignArgs) (*EmptyResponse, error) {
+	if Campaigns == nil {
+		return nil, errCampaignsNotImplemented
+	}
+	return Campaigns.DeleteCampaign(ctx, arg)
+}
+
+func (r schemaResolver) AddThreadsToCampaign(ctx context.Context, arg *AddRemoveThreadsToFromCampaignArgs) (*EmptyResponse, error) {
+	if Campaigns == nil {
+		return nil, errCampaignsNotImplemented
+	}
+	return Campaigns.AddThreadsToCampaign(ctx, arg)
+}
+
+func (r schemaResolver) RemoveThreadsFromCampaign(ctx context.Context, arg *AddRemoveThreadsToFromCampaignArgs) (*EmptyResponse, error) {
+	if Campaigns == nil {
+		return nil, errCampaignsNotImplemented
+	}
+	return Campaigns.RemoveThreadsFromCampaign(ctx, arg)
+}
+
+// CampaignsResolver is the interface for the GraphQL campaigns queries and mutations.
 type CampaignsResolver interface {
+	// Queries
+	Campaigns(context.Context, *graphqlutil.ConnectionArgs) (CampaignConnection, error)
+
+	// Mutations
 	CreateCampaign(context.Context, *CreateCampaignArgs) (Campaign, error)
 	UpdateCampaign(context.Context, *UpdateCampaignArgs) (Campaign, error)
 	DeleteCampaign(context.Context, *DeleteCampaignArgs) (*EmptyResponse, error)

@@ -7,11 +7,12 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
-import { CampaignsAreaContext } from '../CampaignsArea'
+import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsArea'
 import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
 import { useCampaignByID } from './useCampaignByID'
 
-export interface CampaignAreaContext extends CampaignsAreaContext {
+export interface CampaignAreaContext
+    extends Pick<NamespaceCampaignsAreaContext, Exclude<keyof NamespaceCampaignsAreaContext, 'namespace'>> {
     /** The campaign ID. */
     campaignID: GQL.ID
 
@@ -32,12 +33,18 @@ export const CampaignArea: React.FunctionComponent<Props> = ({ campaignID, setBr
     const campaignOrError = useCampaignByID(campaignID)
 
     useEffect(() => {
-        setBreadcrumbItem(
-            campaignOrError !== LOADING && campaignOrError !== null && !isErrorLike(campaignOrError)
-                ? { text: campaignOrError.name, to: campaignOrError.url }
-                : undefined
-        )
-        return () => setBreadcrumbItem(undefined)
+        if (setBreadcrumbItem) {
+            setBreadcrumbItem(
+                campaignOrError !== LOADING && campaignOrError !== null && !isErrorLike(campaignOrError)
+                    ? { text: campaignOrError.name, to: campaignOrError.url }
+                    : undefined
+            )
+        }
+        return () => {
+            if (setBreadcrumbItem) {
+                setBreadcrumbItem(undefined)
+            }
+        }
     }, [campaignOrError, setBreadcrumbItem])
 
     if (campaignOrError === LOADING) {

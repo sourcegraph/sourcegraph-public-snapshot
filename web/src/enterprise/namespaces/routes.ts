@@ -6,6 +6,6 @@ export const enterpriseNamespaceAreaRoutes: ReadonlyArray<NamespaceAreaRoute> = 
     ...namespaceAreaRoutes,
     {
         path: '/campaigns',
-        render: lazyComponent(() => import('../campaigns/CampaignsArea'), 'CampaignsArea'),
+        render: lazyComponent(() => import('../campaigns/namespace/NamespaceCampaignsArea'), 'NamespaceCampaignsArea'),
     },
 ]

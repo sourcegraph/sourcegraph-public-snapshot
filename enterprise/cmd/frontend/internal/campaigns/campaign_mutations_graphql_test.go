@@ -39,21 +39,17 @@ func TestGraphQL_CreateCampaign(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					campaigns {
-						createCampaign(input: { namespace: "T3JnOjE=", name: "n", description: "d" }) {
-							id
-							name
-						}
+					createCampaign(input: { namespace: "T3JnOjE=", name: "n", description: "d" }) {
+						id
+						name
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"campaigns": {
-						"createCampaign": {
-							"id": "Q2FtcGFpZ246Mg==",
-							"name": "n"
-						}
+					"createCampaign": {
+						"id": "Q2FtcGFpZ246Mg==",
+						"name": "n"
 					}
 				}
 			`,
@@ -88,23 +84,19 @@ func TestGraphQL_UpdateCampaign(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					campaigns {
-						updateCampaign(input: { id: "Q2FtcGFpZ246Mg==", name: "n1", description: "d1" }) {
-							id
-							name
-							description
-						}
+					updateCampaign(input: { id: "Q2FtcGFpZ246Mg==", name: "n1", description: "d1" }) {
+						id
+						name
+						description
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"campaigns": {
-						"updateCampaign": {
-							"id": "Q2FtcGFpZ246Mg==",
-							"name": "n1",
-							"description": "d1"
-						}
+					"updateCampaign": {
+						"id": "Q2FtcGFpZ246Mg==",
+						"name": "n1",
+						"description": "d1"
 					}
 				}
 			`,
@@ -134,18 +126,14 @@ func TestGraphQL_DeleteCampaign(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					campaigns {
-						deleteCampaign(campaign: "Q2FtcGFpZ246Mg==") {
-							alwaysNil
-						}
+					deleteCampaign(campaign: "Q2FtcGFpZ246Mg==") {
+						alwaysNil
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"campaigns": {
-						"deleteCampaign": null
-					}
+					"deleteCampaign": null
 				}
 			`,
 		},
@@ -189,19 +177,15 @@ func TestGraphQL_AddRemoveThreadsToFromCampaign(t *testing.T) {
 					Schema:  graphqlbackend.GraphQLSchema,
 					Query: `
 				mutation {
-					campaigns {
-						` + name + `(campaign: "Q2FtcGFpZ246Mg==", threads: ["RGlzY3Vzc2lvblRocmVhZDoiMyI="]) {
-							__typename
-						}
+					` + name + `(campaign: "Q2FtcGFpZ246Mg==", threads: ["RGlzY3Vzc2lvblRocmVhZDoiMyI="]) {
+						__typename
 					}
 				}
 			`,
 					ExpectedResult: `
 				{
-					"campaigns": {
-						"` + name + `": {
-							"__typename": "EmptyResponse"
-						}
+					"` + name + `": {
+						"__typename": "EmptyResponse"
 					}
 				}
 			`,
