@@ -123,11 +123,14 @@ func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	topicsSet := make(map[string]bool)
-	for _, v := range topics {
-		topicsSet[v] = true
+	success := false
+	challenge := generateChallenge(actor.UID, lsifUploadSecret)
+	for _, topic := range topics {
+		if challenge == topic {
+			success = true
+			break
+		}
 	}
-	success := topicsSet[generateChallenge(actor.UID, lsifUploadSecret)]
 
 	var payload interface{}
 	if success {
