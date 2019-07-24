@@ -2,11 +2,12 @@ package httpapi
 
 import (
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"gopkg.in/inconshreveable/log15.v2"
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"

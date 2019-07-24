@@ -2,9 +2,10 @@ package db
 
 import (
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"reflect"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
