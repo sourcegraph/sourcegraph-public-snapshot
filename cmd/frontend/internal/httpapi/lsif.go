@@ -23,6 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
+var apiURL = url.URL{Scheme: "https", Host: "api.github.com"}
+
 func lsifProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = mux.Vars(r)["rest"]
@@ -108,12 +110,7 @@ func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 
 	actor := actor.FromContext(r.Context())
 
-	apiURL, err := url.Parse("https://api.github.com")
-	if err != nil {
-		http.Error(w, "Error parsing API URL.", http.StatusInternalServerError)
-		return
-	}
-	client := github.NewClient(apiURL, conf.Get().LsifVerificationGithubToken, nil)
+	client := github.NewClient(&apiURL, conf.Get().LsifVerificationGithubToken, nil)
 	topics, err := client.ListTopicsOnRepository(r.Context(), ownerAndName)
 	if err != nil {
 		http.Error(w, "Error listing topics.", http.StatusInternalServerError)
