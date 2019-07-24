@@ -18,6 +18,7 @@ import { ThreadOverview } from './overview/ThreadOverview'
 import { ThreadSettingsPage } from './settings/ThreadSettingsPage'
 import { ThreadAreaSidebar } from './sidebar/ThreadAreaSidebar'
 import { ThreadAreaNavbar } from './ThreadAreaNavbar'
+import { ThreadlikeAreaContext } from '../../threadlike/ThreadlikeArea'
 
 const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
@@ -25,16 +26,9 @@ const NotFoundPage = () => (
 
 interface Props extends ThreadsAreaContext, RouteComponentProps<{ threadID: string }> {}
 
-export interface ThreadAreaContext extends Pick<ThreadsAreaContext, Exclude<keyof ThreadsAreaContext, 'project'>> {
-    /** The thread. */
-    thread: GQL.IDiscussionThread
-
-    /** Called to update the thread. */
-    onThreadUpdate: (thread: GQL.IDiscussionThread) => void
-
-    /** The thread's parsed JSON settings. */
-    threadSettings: ThreadSettings
-
+export interface ThreadAreaContext
+    extends Pick<ThreadsAreaContext, Exclude<keyof ThreadsAreaContext, 'project'>>,
+        ThreadlikeAreaContext {
     /** The project containing the thread. TODO! */
     project: Pick<GQL.IProject, 'id' | 'name' | 'url'> | null
 

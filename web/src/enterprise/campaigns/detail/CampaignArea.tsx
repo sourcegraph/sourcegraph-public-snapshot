@@ -66,6 +66,7 @@ export const CampaignArea: React.FunctionComponent<Props> = ({ campaignID, setBr
 
     return (
         <div className="campaign-area flex-1">
+            <style>{`.user-area-header, .org-header { display: none; } /* TODO!(sqs): hack */`}</style>
             <div className="d-flex align-items-center justify-content-between border-top border-bottom py-3 my-3">
                 <div className="d-flex align-items-center">
                     <div className="badge border border-success text-success font-size-base py-2 px-3 mr-3">Active</div>

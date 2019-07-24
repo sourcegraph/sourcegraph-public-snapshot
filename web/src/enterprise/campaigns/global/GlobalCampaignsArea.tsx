@@ -8,14 +8,14 @@ interface Props
     extends RouteComponentProps<{}>,
         Pick<
             NamespaceCampaignsAreaContext,
-            Exclude<keyof NamespaceCampaignsAreaContext, 'namespace' | 'setBreadcrumbItem'>
+            Exclude<keyof NamespaceCampaignsAreaContext, 'campaignsURL' | 'namespace' | 'setBreadcrumbItem'>
         > {}
 
 /**
  * The global campaigns area.
  */
 export const GlobalCampaignsArea: React.FunctionComponent<Props> = ({ match, ...props }) => {
-    const context: NamespaceCampaignsAreaContext = {
+    const context: Pick<NamespaceCampaignsAreaContext, Exclude<keyof NamespaceCampaignsAreaContext, 'namespace'>> = {
         ...props,
         campaignsURL: match.url,
     }
@@ -26,13 +26,6 @@ export const GlobalCampaignsArea: React.FunctionComponent<Props> = ({ match, ...
                     <GlobalCampaignsListPage {...context} />
                 </div>
             </Route>
-            <Route
-                path={`${context.campaignsURL}/:campaignID`}
-                // tslint:disable-next-line: jsx-no-lambda
-                render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
-                    <CampaignArea {...context} campaignID={routeComponentProps.match.params.campaignID} />
-                )}
-            />
         </Switch>
     )
 }
