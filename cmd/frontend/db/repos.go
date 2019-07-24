@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
 	regexpsyntax "regexp/syntax"
 	"strings"
 
@@ -123,9 +122,7 @@ SELECT %s
 FROM repo
 WHERE deleted_at IS NULL
 AND enabled = true
-AND %%s
-ORDER BY fork, COALESCE(updated_at - (CASE WHEN created_at = '0001-01-01 00:00:00+00' THEN NOW() ELSE created_at END), '0') DESC
-`
+AND %%s`
 
 var getBySQLColumns = []string{
 	"id",
@@ -148,13 +145,8 @@ func (s *repos) getReposBySQL(ctx context.Context, minimal bool, querySuffix *sq
 		columns = columns[:5]
 	}
 
-	grbq := getRepoByQueryFmtstr
-	lim := os.Getenv("SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
-	if lim != "" {
-		grbq += "\nLIMIT " + lim
-	}
 	q := sqlf.Sprintf(
-		fmt.Sprintf(grbq, strings.Join(columns, ",")),
+		fmt.Sprintf(getRepoByQueryFmtstr, strings.Join(columns, ",")),
 		querySuffix,
 	)
 
@@ -727,9 +719,9 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 		enabled = true
 		language = r.Language
 		// Ignore Enabled for deciding to update
-		insert = (op.Description != r.Description) ||
+		insert = ((op.Description != r.Description) ||
 			(op.Fork != r.Fork) ||
-			(!op.ExternalRepo.Equal(&r.ExternalRepo))
+			(!op.ExternalRepo.Equal(&r.ExternalRepo)))
 	}
 
 	if !insert {

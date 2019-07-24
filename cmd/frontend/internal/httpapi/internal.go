@@ -2,8 +2,11 @@ package httpapi
 
 import (
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"io"
 	"net/http"
+	"os"
+	"strconv"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -195,6 +198,26 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+
+	if envvar.SourcegraphDotComMode() {
+		lim := os.Getenv("SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
+		lim2, err := strconv.Atoi(lim)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
+		}
+		opt.Limit = lim2
+		opt.OrderBy = []db.RepoListSort {
+			{
+				Field: "fork",
+				Descending: false,
+			},
+			{
+				Field: "COALESCE(updated_at - (CASE WHEN created_at = '0001-01-01 00:00:00+00' THEN NOW() ELSE created_at END), '0')",
+				Descending: true,
+			},
+		}
+	}
+
 	res, err := backend.Repos.List(r.Context(), opt)
 	if err != nil {
 		return err
