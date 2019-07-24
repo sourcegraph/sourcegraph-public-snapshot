@@ -52,8 +52,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	lsifServerURL, err := url.Parse(lsifServerURLFromEnv)
 	if err != nil {
 		log15.Error("skipping initialization of the LSIF HTTP API because the environment variable LSIF_SERVER_URL is not a valid URL", "parse_error", err, "value", lsifServerURLFromEnv)
-	} else if !HasLSIFUploadSecret {
-		log15.Error("skipping initialization of the LSIF HTTP API because the environment variable LSIF_UPLOAD_SECRET has not been set")
 	} else {
 		proxy := httputil.NewSingleHostReverseProxy(lsifServerURL)
 		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(lsifUploadProxyHandler(proxy))))

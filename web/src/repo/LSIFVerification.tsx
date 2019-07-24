@@ -9,7 +9,7 @@ interface Props {
 }
 
 interface State {
-    challenge?: string
+    challengeOrError?: string | ErrorLike
     verifying?: boolean
     tokenOrError?: string | ErrorLike
 }
@@ -25,12 +25,18 @@ type VerifyResponse =
     | { token: string }
 
 async function fetchChallenge(): Promise<string> {
-    const response: ChallengeResponse = await (await fetch(new URL('/.api/lsif/challenge', window.location.href).href, {
+    const response = await fetch(new URL('/.api/lsif/challenge', window.location.href).href, {
         headers: {
             'X-Requested-With': 'Sourcegraph',
         },
-    })).json()
-    return response.challenge
+    })
+    if (response.status !== 200) {
+        throw new Error(
+            'Unable to fetch the LSIF challenge. Make sure lsifUploadSecret is set in the site configuration.'
+        )
+    }
+    const json: ChallengeResponse = await response.json()
+    return json.challenge
 }
 
 export class LSIFVerification extends React.PureComponent<Props, State> {
@@ -42,11 +48,15 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
 
     public async componentDidMount(): Promise<void> {
         this.setState({
-            challenge: await fetchChallenge(),
+            challengeOrError: await fetchChallenge().catch(error => error),
         })
     }
 
     public render(): JSX.Element | null {
+        if (isErrorLike(this.state.challengeOrError)) {
+            return <div className="alert alert-danger">{this.state.challengeOrError.toString()}</div>
+        }
+
         return (
             <div className="lsif-verification">
                 {this.state.tokenOrError && !isErrorLike(this.state.tokenOrError) ? (
@@ -63,9 +73,9 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
                             the following name:
                         </div>
 
-                        {this.state.challenge ? (
+                        {this.state.challengeOrError ? (
                             <>
-                                <CopyableText text={this.state.challenge} size={16} />
+                                <CopyableText text={this.state.challengeOrError} size={16} />
                                 <button
                                     className="btn btn-primary"
                                     disabled={this.state.verifying}
