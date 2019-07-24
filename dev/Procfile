@@ -18,3 +18,5 @@ management-console-web: cd ./cmd/management-console/web && ./serve.sh
 docsite: .bin/docsite -config doc/docsite.json serve -http=localhost:5080
 lsif-server: yarn --cwd lsif/server run serve
 # prometheus: ./dev/prometheus.sh
+# grafana: ./dev/grafana.sh
+
