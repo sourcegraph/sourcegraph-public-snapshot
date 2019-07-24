@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
@@ -150,6 +150,24 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*typ
 	}()
 
 	return db.Repos.List(ctx, opt)
+}
+
+// ListWithLongestInterval calls db.Repos.ListWithLongestInterval, with tracing.
+func (s *repos) ListWithLongestInterval(ctx context.Context, lim string) (URIs []string, err error) {
+	if Mocks.Repos.List != nil {
+		return Mocks.Repos.ListWithLongestInterval(ctx, lim)
+	}
+
+	ctx, done := trace(ctx, "Repos", "ListWithLongestInterval", map[string]interface{}{"lim": lim}, &err)
+	defer func() {
+		if err == nil {
+			span := opentracing.SpanFromContext(ctx)
+			span.LogFields(otlog.Int("result.len", len(URIs)))
+		}
+		done()
+	}()
+
+	return db.Repos.ListWithLongestInterval(ctx, lim)
 }
 
 var inventoryCache = rcache.New("inv")
