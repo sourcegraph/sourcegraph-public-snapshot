@@ -233,6 +233,8 @@
 // 1528395584_a8n.up.sql (255B)
 // 1528395584_campaigns.down.sql (89B)
 // 1528395584_campaigns.up.sql (974B)
+// 1528395585_add_threads.down.sql (47B)
+// 1528395585_add_threads.up.sql (268B)
 // 1528395585_changeset_campaigns.down.sql (59B)
 // 1528395585_changeset_campaigns.up.sql (272B)
 
@@ -4963,6 +4965,46 @@ func _1528395584_campaignsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395585_add_threadsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xc9\x28\x4a\x4d\x4c\x29\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x18\x00\x84\x8e\x2f\x00\x00\x00")
+
+func _1528395585_add_threadsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395585_add_threadsDownSql,
+		"1528395585_add_threads.down.sql",
+	)
+}
+
+func _1528395585_add_threadsDownSql() (*asset, error) {
+	bytes, err := _1528395585_add_threadsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395585_add_threads.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x18, 0x44, 0xff, 0x96, 0x87, 0xca, 0x40, 0x72, 0x42, 0x36, 0xa7, 0xbf, 0xad, 0x4a, 0x1a, 0xa3, 0xd2, 0xdd, 0x49, 0x6a, 0x12, 0x64, 0x7d, 0xe4, 0xe6, 0x5d, 0xc8, 0x52, 0x2a, 0x7b, 0xb4, 0x55}}
+	return a, nil
+}
+
+var __1528395585_add_threadsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\x8f\xc1\x6a\xc3\x30\x0c\x86\xef\x7e\x0a\x1d\x13\xd8\x1b\xe4\xe4\x3a\xda\x30\x73\xec\xe1\x7a\xb0\x9e\x42\x86\x45\x27\x30\xed\x70\x34\xe8\xde\x7e\xac\xc5\x81\xe8\xfa\x7d\xfc\x7c\x3a\xe0\x8b\xf5\x83\x52\x26\xa2\x4e\x08\x49\x1f\x1c\x82\x7c\x55\x5a\xf2\x0a\x9d\x82\xc7\x71\x86\x4f\x3e\xaf\x54\x79\x29\xf0\x16\xed\xa4\xe3\x09\x5e\xf1\xf4\xd4\x84\x4a\xdf\xd7\x95\xe5\x5a\x7f\x67\xce\xc0\x17\xa1\x33\x55\xf0\x21\x81\x7f\x77\x0e\x22\x3e\x63\x44\x6f\xf0\x78\x37\x3b\xce\x3d\x04\x0f\x23\x3a\x4c\x08\x46\x1f\x8d\x1e\x71\x1b\x13\x96\x42\x20\x74\x93\x6d\x61\x63\x74\x13\xaa\x97\xa5\xcc\x3f\xb5\xdc\x15\xd5\x0f\x2d\xde\xfa\x11\x3f\x5a\xfc\xbc\x4f\x0a\xbe\x81\x6e\x07\xfa\xff\xdf\xc3\x34\xd9\x34\xa8\xbf\x00\x00\x00\xff\xff\xaa\x75\x6d\x1e\x0c\x01\x00\x00")
+
+func _1528395585_add_threadsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395585_add_threadsUpSql,
+		"1528395585_add_threads.up.sql",
+	)
+}
+
+func _1528395585_add_threadsUpSql() (*asset, error) {
+	bytes, err := _1528395585_add_threadsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395585_add_threads.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8e, 0x82, 0xda, 0xa5, 0xb8, 0xd7, 0x54, 0x7c, 0x22, 0xb1, 0xb4, 0x54, 0x49, 0x4d, 0x36, 0xd6, 0x7, 0x2f, 0xdb, 0x1a, 0xc, 0xd4, 0xcf, 0xcf, 0xe1, 0x87, 0x2d, 0xd9, 0xd0, 0x7e, 0xb3, 0xef}}
+	return a, nil
+}
+
 var __1528395585_changeset_campaignsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\x4f\x4e\xcc\x2d\x48\xcc\x4c\xcf\x2b\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xb4\x21\x5a\x38\x3b\x00\x00\x00")
 
 func _1528395585_changeset_campaignsDownSqlBytes() ([]byte, error) {
@@ -5560,6 +5602,10 @@ var _bindata = map[string]func() (*asset, error){
 
 	"1528395584_campaigns.up.sql": _1528395584_campaignsUpSql,
 
+	"1528395585_add_threads.down.sql": _1528395585_add_threadsDownSql,
+
+	"1528395585_add_threads.up.sql": _1528395585_add_threadsUpSql,
+
 	"1528395585_changeset_campaigns.down.sql": _1528395585_changeset_campaignsDownSql,
 
 	"1528395585_changeset_campaigns.up.sql": _1528395585_changeset_campaignsUpSql,
@@ -5839,6 +5885,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395584_a8n.up.sql":                                       {_1528395584_a8nUpSql, map[string]*bintree{}},
 	"1528395584_campaigns.down.sql":                               {_1528395584_campaignsDownSql, map[string]*bintree{}},
 	"1528395584_campaigns.up.sql":                                 {_1528395584_campaignsUpSql, map[string]*bintree{}},
+	"1528395585_add_threads.down.sql":                             {_1528395585_add_threadsDownSql, map[string]*bintree{}},
+	"1528395585_add_threads.up.sql":                               {_1528395585_add_threadsUpSql, map[string]*bintree{}},
 	"1528395585_changeset_campaigns.down.sql":                     {_1528395585_changeset_campaignsDownSql, map[string]*bintree{}},
 	"1528395585_changeset_campaigns.up.sql":                       {_1528395585_changeset_campaignsUpSql, map[string]*bintree{}},
 }}

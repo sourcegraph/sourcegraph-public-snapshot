@@ -56,6 +56,8 @@ func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryRes
 	return &RepositoryResolver{repo: repo}, nil
 }
 
+var RepositoryByDBID = repositoryByIDInt32
+
 func (r *RepositoryResolver) ID() graphql.ID {
 	return marshalRepositoryID(r.repo.ID)
 }
@@ -66,6 +68,8 @@ func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
 }
+
+func (r *RepositoryResolver) DBID() api.RepoID { return r.repo.ID }
 
 func (r *RepositoryResolver) Name() string {
 	return string(r.repo.Name)
@@ -401,6 +405,10 @@ func makePhabClientForOrigin(ctx context.Context, origin string) (*phabricator.C
 	}
 
 	return nil, errors.Errorf("no phabricator was configured for: %s", origin)
+}
+
+func (r *RepositoryResolver) Threads(ctx context.Context, arg *graphqlutil.ConnectionArgs) (ThreadConnection, error) {
+	return ThreadsForRepository(ctx, r.ID(), arg)
 }
 
 func (r *RepositoryResolver) Changesets(ctx context.Context, arg *graphqlutil.ConnectionArgs) (ChangesetConnection, error) {

@@ -357,6 +357,9 @@ type Mutation {
     # Mutations related to changesets.
     changesets: ChangesetsMutation!
 
+    # Mutations related to threads.
+    threads: ThreadsMutation!
+
     # Mutations related to campaigns.
     campaigns: CampaignsMutation!
 
@@ -1437,6 +1440,12 @@ type Repository implements Node & GenericSearchResultInterface {
         # Return Git tags whose names match the query.
         query: String
     ): GitRefConnection!
+
+    # A list of threads for this repository.
+    threads(
+        # Returns the first n threads from the list.
+        first: Int
+    ): ThreadConnection!
 
     # A list of changesets for this repository.
     changesets(
@@ -4067,6 +4076,74 @@ type LabelConnection {
     nodes: [Label!]!
     # The total number of labels in the connection.
     totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# Mutations related to threads.
+type ThreadsMutation {
+    # Create a thread in a namespace. Returns the newly created thread.
+    createThread(input: CreateThreadInput!): Thread!
+
+    # Update a thread. Returns the updated thread.
+    updateThread(input: UpdateThreadInput!): Thread
+
+    # Delete a thread. All threads that were associated with or created by this thread remain
+    # (and are not deleted when the thread is deleted).
+    deleteThread(thread: ID!): EmptyResponse
+}
+
+# Input arguments for creating a thread.
+input CreateThreadInput {
+    # The ID of this thread's repository.
+    repository: ID!
+
+    # The title of the thread.
+    title: String!
+
+    # The (optional) external URL of the thread.
+    externalURL: String
+}
+
+# Input arguments for updating a thread.
+input UpdateThreadInput {
+    # The ID of the thread to update.
+    id: ID!
+
+    # The new title of the thread (if non-null).
+    title: String
+
+    # The new external URL of the thread. If it is the non-null empty string, the external URL is
+    # set to null.
+    externalURL: String
+}
+
+# A thread is an issue or changeset.
+type Thread implements Node {
+    # The unique ID for the thread.
+    id: ID!
+
+    # The repository that contains this thread.
+    repository: Repository!
+
+    # The title of the thread.
+    title: String!
+
+    # The (optional) external URL of the thread.
+    externalURL: String
+
+    # The URL to this thread on Sourcegraph.
+    url: String!
+}
+
+# A list of threads.
+type ThreadConnection {
+    # A list of threads.
+    nodes: [Thread!]!
+
+    # The total number of threads in the connection.
+    totalCount: Int!
+
     # Pagination information.
     pageInfo: PageInfo!
 }
