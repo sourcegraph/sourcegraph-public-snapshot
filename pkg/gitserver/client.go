@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -130,6 +131,27 @@ func (a *archiveReader) Close() error {
 	return a.base.Close()
 }
 
+// ArchiveURL returns a URL from which an archive of the given Git repository can
+// be downloaded from.
+func (c *Client) ArchiveURL(ctx context.Context, repo Repo, opt ArchiveOptions) *url.URL {
+	q := url.Values{
+		"repo":    {string(repo.Name)},
+		"treeish": {opt.Treeish},
+		"format":  {opt.Format},
+	}
+
+	for _, path := range opt.Paths {
+		q.Add("path", path)
+	}
+
+	return &url.URL{
+		Scheme:   "http",
+		Host:     c.addrForRepo(ctx, repo.Name),
+		Path:     "/archive",
+		RawQuery: q.Encode(),
+	}
+}
+
 // Archive produces an archive from a Git repository.
 func (c *Client) Archive(ctx context.Context, repo Repo, opt ArchiveOptions) (_ io.ReadCloser, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Archive")
@@ -143,23 +165,14 @@ func (c *Client) Archive(ctx context.Context, repo Repo, opt ArchiveOptions) (_ 
 		span.Finish()
 	}()
 
-	q := url.Values{
-		"repo":    {string(repo.Name)},
-		"treeish": {opt.Treeish},
-		"format":  {opt.Format},
-	}
-
-	for _, path := range opt.Paths {
-		q.Add("path", path)
-	}
-
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
 		deadlineExceededCounter.Inc()
 		return nil, err
 	}
 
-	resp, err := c.do(ctx, repo.Name, "GET", "archive?"+q.Encode(), nil)
+	u := c.ArchiveURL(ctx, repo, opt)
+	resp, err := c.do(ctx, repo.Name, "GET", u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -746,8 +759,13 @@ func (c *Client) do(ctx context.Context, repo api.RepoName, method, op string, p
 		return nil, err
 	}
 
-	addr := c.addrForRepo(ctx, repo)
-	req, err := http.NewRequest(method, "http://"+addr+"/"+op, bytes.NewReader(reqBody))
+	uri := op
+	if !strings.HasPrefix(op, "http") {
+		uri = "http://" + c.addrForRepo(ctx, repo) + "/" + op
+	}
+
+	log.Printf("uri: %q", uri)
+	req, err := http.NewRequest(method, uri, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}

@@ -447,14 +447,25 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	src, err := gitserver.DefaultClient.Archive(r.Context(), repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar"})
+	opts := gitserver.ArchiveOptions{
+		Treeish: string(commit),
+		Format:  "tar",
+	}
+
+	if r.URL.Query().Get("redirect") == "1" {
+		location := gitserver.DefaultClient.ArchiveURL(r.Context(), repo, opts)
+		w.Header().Set("Location", location.String())
+		w.WriteHeader(http.StatusFound)
+		return nil
+	}
+
+	src, err := gitserver.DefaultClient.Archive(r.Context(), repo, opts)
 	if err != nil {
 		return err
 	}
 	defer src.Close()
 
 	w.Header().Set("Content-Type", "application/x-tar")
-	w.WriteHeader(http.StatusOK)
 	_, err = io.Copy(w, src)
 	return err
 }
