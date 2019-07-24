@@ -42,7 +42,7 @@ func getLSIFUploadSecret() ([]byte, error) {
 
 func generateUploadToken(repoID api.RepoID, lsifUploadSecret []byte) ([]byte, error) {
 	mac := hmac.New(sha256.New, []byte(lsifUploadSecret))
-	_, err := mac.Write([]byte(strconv.Itoa(int(repoID))))
+	_, err := mac.Write([]byte(strconv.FormatInt(int64(repoID), 10)))
 	if err != nil {
 		return nil, err
 	}
