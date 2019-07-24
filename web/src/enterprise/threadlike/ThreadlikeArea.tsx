@@ -7,10 +7,9 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { parseJSON } from '../../settings/configuration'
 import { RouteDescriptor } from '../../util/contributions'
-import { ThreadSettingsPage } from '../threads/detail/settings/ThreadSettingsPage'
-import { ThreadAreaSidebar } from '../threads/detail/sidebar/ThreadAreaSidebar'
 import { ThreadSettings } from '../threads/settings'
 import { ThreadlikeAreaNavbar } from './navbar/ThreadlikeAreaNavbar'
+import { ThreadlikeAreaSidebar } from './sidebar/ThreadlikeAreaSidebar'
 
 interface ThreadlikeProps {
     /** The thread. */
@@ -86,15 +85,6 @@ export const ThreadlikeArea: React.FunctionComponent<Props> = ({
                                 render={routeComponentProps => page.render({ ...routeComponentProps, ...context })}
                             />
                         ))}
-                        <Route
-                            path={`${context.thread.url}/settings`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <ThreadSettingsPage {...context} {...routeComponentProps} className="container mt-5" />
-                            )}
-                        />
                         <Route>
                             <HeroPage
                                 icon={MapSearchIcon}
@@ -105,7 +95,7 @@ export const ThreadlikeArea: React.FunctionComponent<Props> = ({
                     </Switch>
                 </ErrorBoundary>
             </div>
-            <ThreadAreaSidebar {...context} className="changeset-area__sidebar flex-0" history={props.history} />
+            <ThreadlikeAreaSidebar {...context} className="threadlike-area__sidebar flex-0" history={props.history} />
         </div>
     )
 }

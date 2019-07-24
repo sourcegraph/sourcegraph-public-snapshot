@@ -7,6 +7,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
+import { ThreadlikeArea } from '../../threadlike/ThreadlikeArea'
 import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsArea'
 import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
 import { useCampaignByID } from './useCampaignByID'
@@ -20,6 +21,7 @@ export interface CampaignAreaContext
     campaign: GQL.ICampaign
 
     location: H.Location
+    history: H.History
 }
 
 interface Props extends Pick<CampaignAreaContext, Exclude<keyof CampaignAreaContext, 'campaign'>> {}
@@ -67,23 +69,11 @@ export const CampaignArea: React.FunctionComponent<Props> = ({ campaignID, setBr
     return (
         <div className="campaign-area flex-1">
             <style>{`.user-area-header, .org-header { display: none; } /* TODO!(sqs): hack */`}</style>
-            <div className="d-flex align-items-center justify-content-between border-top border-bottom py-3 my-3">
-                <div className="d-flex align-items-center">
-                    <div className="badge border border-success text-success font-size-base py-2 px-3 mr-3">Active</div>
-                    Last action 11 minutes ago
-                </div>
-                <div>
-                    <Link className="btn btn-secondary mr-2" to="#editTODO!(sqs)">
-                        Delete
-                    </Link>
-                </div>
-            </div>
-            <h2>{campaignOrError.name}</h2>
-            <div className="flex-1 d-flex flex-column overflow-auto">
-                <ErrorBoundary location={props.location}>
-                    <CampaignThreadsListPage {...context} />
-                </ErrorBoundary>
-            </div>
+            <ThreadlikeArea
+                {...context}
+                overviewComponent={CampaignOverview}
+                pages={[{ title: 'Threads', path: '', render: () => <CampaignThreadsListPage {...context} /> }]}
+            />
         </div>
     )
 }

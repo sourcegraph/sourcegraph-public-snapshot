@@ -1,4 +1,3 @@
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -32,17 +31,6 @@ export const ThreadlikeAreaNavbar: React.FunctionComponent<Props> = ({ thread, p
                         </NavLink>
                     </li>
                 ))}
-                <li className="flex-1" />
-                <li className="threadlike-area-navbar__nav-item nav-item">
-                    <NavLink
-                        to={`${thread.url}/settings`}
-                        className={NAV_LINK_CLASS_NAME}
-                        activeClassName="threadlike-area-navbar__nav-link--active"
-                        aria-label="Settings"
-                    >
-                        <SettingsIcon className="icon-inline" />
-                    </NavLink>
-                </li>
             </ul>
         </div>
     </nav>

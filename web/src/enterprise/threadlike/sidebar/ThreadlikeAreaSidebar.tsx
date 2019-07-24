@@ -1,41 +1,31 @@
-import H from 'history'
 import BellIcon from 'mdi-react/BellIcon'
 import UserGroupIcon from 'mdi-react/UserGroupIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import React from 'react'
-import { Toggle } from '../../../../../../shared/src/components/Toggle'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { CollapsibleSidebar } from '../../../../components/collapsibleSidebar/CollapsibleSidebar'
-import { LabelIcon } from '../../../../projects/icons'
-import { ThreadDeleteButton } from '../../form/ThreadDeleteButton'
-import { ThreadSettings } from '../../settings'
-import { CopyThreadLinkButton } from './CopyThreadLinkButton'
+import { Toggle } from '../../../../../shared/src/components/Toggle'
+import { CollapsibleSidebar } from '../../../components/collapsibleSidebar/CollapsibleSidebar'
+import { LabelIcon } from '../../../projects/icons'
+import { ThreadlikeAreaContext } from '../ThreadlikeArea'
 
-interface Props extends ExtensionsControllerProps {
-    thread: GQL.IDiscussionThread
-    onThreadUpdate: (thread: GQL.IDiscussionThread) => void
-    threadSettings: ThreadSettings
-    areaURL: string
+interface Props extends Pick<ThreadlikeAreaContext, 'thread'> {
     className?: string
-    history: H.History
 }
 
 /**
- * The sidebar for the thread area (for a single thread).
+ * The sidebar for a single threadlike.
  */
-export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, className = '', ...props }) => (
+export const ThreadlikeAreaSidebar: React.FunctionComponent<Props> = ({ thread, className = '' }) => (
     <CollapsibleSidebar
-        localStorageKey="thread-area__sidebar"
+        localStorageKey="threadlike-area__sidebar"
         side="right"
-        className={`thread-area-sidebar d-flex flex-column border-left ${className}`}
-        collapsedClassName="thread-area-sidebar--collapsed"
-        expandedClassName="thread-area-sidebar--expanded"
+        className={`threadlike-area-sidebar d-flex flex-column border-left ${className}`}
+        collapsedClassName="threadlike-area-sidebar--collapsed"
+        expandedClassName="threadlike-area-sidebar--expanded"
     >
         {expanded => (
             <>
                 <ul className="list-group list-group-flush px-2">
-                    <li className="list-group-item thread-area-sidebar__item">
+                    <li className="list-group-item threadlike-area-sidebar__item">
                         {expanded ? (
                             <>
                                 <h6 className="font-weight-normal mb-0">Assignee</h6>
@@ -47,7 +37,7 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
                             <UserIcon className="icon-inline" data-tooltip={`Assignee: @sqs`} />
                         )}
                     </li>
-                    <li className="list-group-item thread-area-sidebar__item">
+                    <li className="list-group-item threadlike-area-sidebar__item">
                         {expanded ? (
                             <>
                                 <h6 className="font-weight-normal mb-0">Labels</h6>
@@ -57,7 +47,7 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
                                         .split(' ')
                                         .filter(w => w.length >= 3)
                                         .map((label, i) => (
-                                            <span key={i} className={`badge mr-1 ${badgeColorClass(label)}`}>
+                                            <span key={i} className={`badge mr-1 TODO!(sqs)`}>
                                                 {label}
                                             </span>
                                         ))}
@@ -67,7 +57,7 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
                             <LabelIcon className="icon-inline" data-tooltip="Labels TODO!(sqs)" />
                         )}
                     </li>
-                    <li className="list-group-item thread-area-sidebar__item">
+                    <li className="list-group-item threadlike-area-sidebar__item">
                         {expanded ? (
                             <>
                                 <h6 className="font-weight-normal mb-0">3 participants</h6>
@@ -77,7 +67,7 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
                             <UserGroupIcon className="icon-inline" data-tooltip="TODO!(sqs)" />
                         )}
                     </li>
-                    <li className="list-group-item thread-area-sidebar__item">
+                    <li className="list-group-item threadlike-area-sidebar__item">
                         {expanded ? (
                             <h6 className="font-weight-normal mb-0 d-flex align-items-center justify-content-between">
                                 Notifications <Toggle value={true} />
@@ -86,7 +76,7 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
                             <BellIcon className="icon-inline" data-tooltip="TODO!(sqs)" />
                         )}
                     </li>
-                    <li className="list-group-item thread-area-sidebar__item">
+                    {/* TODO!(sqs) <li className="list-group-item threadlike-area-sidebar__item">
                         {expanded ? (
                             <h6 className="font-weight-normal mb-0 d-flex align-items-center justify-content-between">
                                 Link
@@ -103,9 +93,9 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
                                 className="btn btn-link btn-link-sm text-decoration-none px-0"
                             />
                         )}
-                    </li>
-                    {expanded && (
-                        <li className="list-group-item thread-area-sidebar__item">
+                        </li>*/}
+                    {/* TODO!(sqs) expanded && (
+                        <li className="list-group-item threadlike-area-sidebar__item">
                             <ThreadDeleteButton
                                 {...props}
                                 thread={thread}
@@ -114,18 +104,9 @@ export const ThreadAreaSidebar: React.FunctionComponent<Props> = ({ thread, clas
                                 includeNounInLabel={true}
                             />
                         </li>
-                    )}
+                    )*/}
                 </ul>
             </>
         )}
     </CollapsibleSidebar>
 )
-
-function badgeColorClass(label: string): string {
-    if (label === 'security' || label.endsWith('sec')) {
-        return 'badge-danger'
-    }
-    const CLASSES = ['badge-primary', 'badge-warning', 'badge-info', 'badge-success', 'badge-danger']
-    const k = label.split('').reduce((sum, c) => (sum += c.charCodeAt(0)), 0)
-    return CLASSES[k % CLASSES.length]
-}

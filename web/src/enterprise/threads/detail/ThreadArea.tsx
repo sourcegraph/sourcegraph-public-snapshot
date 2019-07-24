@@ -8,6 +8,8 @@ import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
 import { fetchDiscussionThreadAndComments } from '../../../discussions/backend'
 import { parseJSON } from '../../../settings/configuration'
+import { ThreadlikeAreaSidebar } from '../../threadlike/sidebar/ThreadlikeAreaSidebar'
+import { ThreadlikeAreaContext } from '../../threadlike/ThreadlikeArea'
 import { ThreadsAreaContext } from '../global/ThreadsArea'
 import { ThreadSettings } from '../settings'
 import { ThreadActionsArea } from './actions/ThreadActionsArea'
@@ -16,9 +18,7 @@ import { ThreadDiscussionPage } from './discussion/ThreadDiscussionPage'
 import { ThreadInboxPage } from './inbox/ThreadInboxPage'
 import { ThreadOverview } from './overview/ThreadOverview'
 import { ThreadSettingsPage } from './settings/ThreadSettingsPage'
-import { ThreadAreaSidebar } from './sidebar/ThreadAreaSidebar'
 import { ThreadAreaNavbar } from './ThreadAreaNavbar'
-import { ThreadlikeAreaContext } from '../../threadlike/ThreadlikeArea'
 
 const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested page was not found." />
@@ -165,7 +165,7 @@ export const ThreadArea: React.FunctionComponent<Props> = props => {
                     </Switch>
                 </ErrorBoundary>
             </div>
-            <ThreadAreaSidebar {...context} className="thread-area__sidebar flex-0" history={props.history} />
+            <ThreadlikeAreaSidebar {...context} className="thread-area__sidebar flex-0" history={props.history} />
         </div>
     )
 }

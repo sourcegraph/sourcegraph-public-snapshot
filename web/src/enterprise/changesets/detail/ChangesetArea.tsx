@@ -5,9 +5,9 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
+import { ThreadlikeAreaSidebar } from '../../threadlike/sidebar/ThreadlikeAreaSidebar'
 import { ThreadDiscussionPage } from '../../threads/detail/discussion/ThreadDiscussionPage'
 import { ThreadSettingsPage } from '../../threads/detail/settings/ThreadSettingsPage'
-import { ThreadAreaSidebar } from '../../threads/detail/sidebar/ThreadAreaSidebar'
 import { createThreadAreaContext, ThreadAreaContext } from '../../threads/detail/ThreadArea'
 import { ChangesetsAreaContext } from '../global/ChangesetsArea'
 import { useChangesetByID } from '../util/useChangesetByID'
@@ -141,7 +141,7 @@ export const ChangesetArea: React.FunctionComponent<Props> = props => {
                     </Switch>
                 </ErrorBoundary>
             </div>
-            <ThreadAreaSidebar {...context} className="changeset-area__sidebar flex-0" history={props.history} />
+            <ThreadlikeAreaSidebar {...context} className="changeset-area__sidebar flex-0" history={props.history} />
         </div>
     )
 }
