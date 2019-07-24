@@ -461,6 +461,12 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if repo == "" || format == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		log15.Error("gitserver.archive", "error", "empty repo or format")
+		return
+	}
+
 	req := &protocol.ExecRequest{
 		Repo: api.RepoName(repo),
 		Args: []string{
