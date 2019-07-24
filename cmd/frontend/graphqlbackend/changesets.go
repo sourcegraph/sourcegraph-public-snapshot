@@ -45,11 +45,11 @@ type Changeset interface {
 }
 
 type ChangesetsCreateChangesetInput struct {
-	Title   string
-	Body    string
-	Project graphql.ID
+	Repository  graphql.ID
+	Title       string
+	ExternalURL *string
 }
 
 type ChangesetsCreateChangesetPayload interface {
-	Thread() *discussionThreadResolver
+	Changeset() Changeset
 }
