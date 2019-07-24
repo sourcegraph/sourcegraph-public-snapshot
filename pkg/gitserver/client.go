@@ -764,7 +764,6 @@ func (c *Client) do(ctx context.Context, repo api.RepoName, method, op string, p
 		uri = "http://" + c.addrForRepo(ctx, repo) + "/" + op
 	}
 
-	log.Printf("uri: %q", uri)
 	req, err := http.NewRequest(method, uri, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
