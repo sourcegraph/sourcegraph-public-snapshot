@@ -139,6 +139,11 @@ func (r *NodeResolver) ToRule() (Rule, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToThread() (Thread, bool) {
+	n, ok := r.Node.(Thread)
+	return n, ok
+}
+
 func (r *NodeResolver) ToUser() (*UserResolver, bool) {
 	n, ok := r.Node.(*UserResolver)
 	return n, ok
@@ -256,6 +261,8 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 		return savedSearchByID(ctx, id)
 	case "Site":
 		return siteByGQLID(ctx, id)
+	case "Thread":
+		return ThreadByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}
