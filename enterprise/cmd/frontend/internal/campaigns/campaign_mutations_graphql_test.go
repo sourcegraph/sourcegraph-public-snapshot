@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+
+	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
 func TestGraphQL_CreateCampaign(t *testing.T) {
