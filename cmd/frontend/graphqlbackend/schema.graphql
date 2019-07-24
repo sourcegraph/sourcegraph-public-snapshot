@@ -1444,6 +1444,13 @@ type Repository implements Node & GenericSearchResultInterface {
         # The head of the diff ("new" or "right-hand side"), or "HEAD" if not specified.
         head: String
     ): RepositoryComparison!
+
+    # A list of changesets for this repository.
+    changesets(
+        # Returns the first n changesets from the list.
+        first: Int
+    ): ChangesetConnection!
+
     # The repository's contributors.
     contributors(
         # The Git revision range to compute contributors in.
@@ -4101,14 +4108,23 @@ type GitCreateRefFromPatchPayload {
 #
 # TODO!(sqs): make this a top-level type, not just a sub-type of DiscussionThread
 type Changeset {
-    # The list of repositories affected by this changeset.
-    repositories: [Repository!]!
+    # The title of the changeset.
+    title: String!
 
-    # The list of commits (from one or more repositories) in this changeset.
-    commits: [GitCommit!]!
+    # The external URL of the changeset, if any.
+    externalURL: String
+}
 
-    # The comparisons of before and after this changeset is applied for all affected repositories.
-    repositoryComparisons: [RepositoryComparison!]!
+# A list of changesets.
+type ChangesetConnection {
+    # A list of changesets.
+    nodes: [Changeset!]!
+
+    # The total number of changesets in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # Mutations related to changesets.
@@ -4119,15 +4135,15 @@ type ChangesetsMutation {
 
 # Input arguments for ChangesetsMutation.createChangeset.
 input ChangesetsCreateChangesetInput {
+    repository: ID!
     title: String!
-    body: String!
-    project: ID!
+    externalURL: String
 }
 
 # The payload for ChangesetsMutation.createChangeset.
 type ChangesetsCreateChangesetPayload {
-    # The newly created changeset thread.
-    thread: DiscussionThread!
+    # The newly created changeset.
+    changeset: Changeset!
 }
 
 # Mutations related to campaigns.
@@ -4196,6 +4212,16 @@ type Campaign implements Node {
         # Return the first n threads from the list.
         first: Int
     ): DiscussionThreadConnection!
+
+    # The list of repositories affected by this campaign's changesets.
+    repositories: [Repository!]!
+
+    # The list of commits (from one or more repositories) in this campaign's changesets.
+    commits: [GitCommit!]!
+
+    # The comparisons of before and after this campaign's changesets are applied (on all affected
+    # repositories).
+    repositoryComparisons: [RepositoryComparison!]!
 }
 
 # A list of campaigns.
