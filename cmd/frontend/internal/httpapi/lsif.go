@@ -21,8 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-
-	"strconv"
 )
 
 func lsifProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
@@ -40,9 +38,9 @@ func getLSIFUploadSecret() ([]byte, error) {
 	return []byte(lsifUploadSecret), nil
 }
 
-func generateUploadToken(repoID api.RepoID, lsifUploadSecret []byte) ([]byte, error) {
+func generateUploadToken(repoID string, lsifUploadSecret []byte) ([]byte, error) {
 	mac := hmac.New(sha256.New, []byte(lsifUploadSecret))
-	_, err := mac.Write([]byte(strconv.FormatInt(int64(repoID), 10)))
+	_, err := mac.Write([]byte(repoID))
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +56,7 @@ func generateChallenge(userID int32, lsifUploadSecret []byte) string {
 }
 
 // isValidUploadToken checks whether token is a valid upload token for repoID.
-func isValidUploadToken(repoID api.RepoID, tokenString string, lsifUploadSecret []byte) bool {
+func isValidUploadToken(repoID string, tokenString string, lsifUploadSecret []byte) bool {
 	tokenBytes, err := hex.DecodeString(tokenString)
 	if err != nil {
 		return false
@@ -136,7 +134,7 @@ func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 
 	var payload interface{}
 	if success {
-		token, err := generateUploadToken(repo.ID, lsifUploadSecret)
+		token, err := generateUploadToken(repo.ExternalRepo.ID, lsifUploadSecret)
 		if err != nil {
 			http.Error(w, "Unable to generate LSIF upload token.", http.StatusInternalServerError)
 			return
@@ -176,7 +174,7 @@ func lsifUploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, 
 			return
 		}
 
-		if !isValidUploadToken(repo.ID, r.URL.Query().Get("upload_token"), lsifUploadSecret) {
+		if !isValidUploadToken(repo.ExternalRepo.ID, r.URL.Query().Get("upload_token"), lsifUploadSecret) {
 			http.Error(w, "Invalid LSIF upload token.", http.StatusUnauthorized)
 			return
 		}
