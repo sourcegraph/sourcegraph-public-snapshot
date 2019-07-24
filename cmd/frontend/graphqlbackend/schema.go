@@ -800,66 +800,24 @@ type Query {
     # The configuration for clients.
     clientConfiguration: ClientConfigurationDetails!
     # Runs a search.
-    #
-    # (experimental) Sourcegraph 3.6 added support for cursor-based paginated
-    # search requests. The typical request flow looks like:
-    #
-    # - Fetch results 0-100: 'search(query:"some query", cursor:null, limit:100)'
-    # - Fetch results 100-200: 'search(query:"some query", cursor:SearchResults.cursor, limit:100)'
-    #
-    # And so on, until SearchResults.finished is true.
-    #
-    # It is important to take note that Sourcegraph performs (nearly) live
-    # searches and as such when intending to display results to a user it is
-    # very important to choose a small 'limit' in order to get a response
-    # quickly in all cases. For example, a request for 'limit:10000' may
-    # complete very quickly if the search term is a common one found in most
-    # repositories whereas it may take much longer if the result exists in only
-    # one repository and Sourcegraph has to search all other repositories first.
-    #
-    # In general, to get the best performance:
-    #
-    # - User interfaces intending to display results should specify very
-    #   conservative limits around 2x as many results will fit on the screen at
-    #   a given time.
-    # - Programatic consumption of search results should specify generous limits
-    #   around 1,000 to 5,000 (max), depending on their real-time nature.
-    #
-    # Paginated search results have a few edge cases which are defined as follows:
-    #
-    # 1. If new results are introduced while a query or subsequent query is
-    #    ongoing, Sourcegraph MAY include those results.
-    # 2. If results are removed while a query or subsequent query is ongoing,
-    #    Sourcegraph MAY skip over some results in the total set.
-    # 3. The order in which results are returned MAY change between Sourcegraph
-    #    versions.
-    #
-    # In the event one of the above three exceptions do occur, Sourcegraph will
-    # be returning to you a subset of the overall result set. An easy way to
-    # visualize the behavior is as follows:
-    #
-    # 1. Sourcegraph has a complete ordered result set '[a, b, c, ..., z]'
-    # 2. At any point you may request a subset of that complete result set via
-    #    a paginated request acting like array indexing / slicing.
-    # 3. At any point in time the addition/removal of results, or upgrade of
-    #    Sourcegraph may alter Sourcegraph's complete search result set and
-    #    add/remove or reorder elements in that array.
-    # 4. Subsequent requests for paginated results, hence, would observe that
-    #    change which may be surprising.
-    #
-    # While we do want to improve this behavior, in most use cases it is fine
-    # as continued requests for the entire result set will result in eventual
-    # consistency.
     search(
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
 
-        # (experimental) When specified, indicates that this request should be
-        # paginated and fetch results starting at this cursor.
+        # (experimental) Sourcegraph 3.7 added support for cursor-based paginated
+        # search requests when this field is specified. For details, see
+        # https://docs.sourcegraph.com/api/graphql/examples
+        #
+        # When specified, indicates that this request should be paginated and
+        # fetch results starting at this cursor.
         cursor: ID
 
-        # (experimental) When specified, indicates that this request should be
-        # paginated and results should be limited to this amount.
+        # (experimental) Sourcegraph 3.7 added support for cursor-based paginated
+        # search requests when this field is specified. For details, see
+        # https://docs.sourcegraph.com/api/graphql/examples
+        #
+        # When specified, indicates that this request should be paginated and
+        # results should be limited to this amount.
         #
         # A future request can be made for more results by passing in the
         # 'SearchResults.cursor' that is returned.
