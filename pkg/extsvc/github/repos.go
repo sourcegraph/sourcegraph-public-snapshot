@@ -539,7 +539,7 @@ type restTopics struct {
 	Names []string `json:"names"`
 }
 
-// ListTopicsOnRepository does stuff
+// ListTopicsOnRepository lists topics on the given repository.
 func (c *Client) ListTopicsOnRepository(ctx context.Context, ownerAndName string) ([]string, error) {
 	var result restTopics
 	if err := c.requestGet(ctx, "", fmt.Sprintf("/repos/%s/topics", ownerAndName), &result); err != nil {
