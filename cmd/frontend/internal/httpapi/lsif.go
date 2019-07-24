@@ -72,6 +72,10 @@ func isValidUploadToken(repoID string, tokenString string, lsifUploadSecret []by
 	return hmac.Equal(tokenBytes, uploadToken)
 }
 
+type LSIFChallengeResponse struct {
+	Challenge string `json:"challenge"`
+}
+
 func lsifChallengeHandler(w http.ResponseWriter, r *http.Request) {
 	lsifUploadSecret, err := getLSIFUploadSecret()
 	if err != nil {
@@ -79,9 +83,7 @@ func lsifChallengeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	actor := actor.FromContext(r.Context())
-	json, err := json.Marshal(struct {
-		Challenge string `json:"challenge"`
-	}{Challenge: generateChallenge(actor.UID, lsifUploadSecret)})
+	json, err := json.Marshal(LSIFChallengeResponse{Challenge: generateChallenge(actor.UID, lsifUploadSecret)})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -92,6 +94,11 @@ func lsifChallengeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+type LSIFVerifyResponse struct {
+	Token   string `json:"token"`
+	Failure string `json:"failure"`
 }
 
 func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
@@ -139,13 +146,9 @@ func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Unable to generate LSIF upload token.", http.StatusInternalServerError)
 			return
 		}
-		payload = struct {
-			Token string `json:"token"`
-		}{Token: hex.EncodeToString(token[:])}
+		payload = LSIFVerifyResponse{Token: hex.EncodeToString(token[:])}
 	} else {
-		payload = struct {
-			Failure string `json:"failure"`
-		}{Failure: "Topic not found."}
+		payload = LSIFVerifyResponse{Failure: "Topic not found."}
 	}
 	json, err := json.Marshal(payload)
 	if err != nil {
