@@ -193,10 +193,12 @@ func (c *Client) Archive(ctx context.Context, repo Repo, opt ArchiveOptions) (_ 
 			return nil, err
 		}
 		resp.Body.Close()
-		return nil, &vcs.RepoNotExistError{
-			Repo:            repo.Name,
-			CloneInProgress: payload.CloneInProgress,
-			CloneProgress:   payload.CloneProgress,
+		return nil, &badRequestError{
+			error: &vcs.RepoNotExistError{
+				Repo:            repo.Name,
+				CloneInProgress: payload.CloneInProgress,
+				CloneProgress:   payload.CloneProgress,
+			},
 		}
 	default:
 		resp.Body.Close()
@@ -204,9 +206,8 @@ func (c *Client) Archive(ctx context.Context, repo Repo, opt ArchiveOptions) (_ 
 	}
 }
 
-type badRequestError struct{ msg string }
+type badRequestError struct{ error }
 
-func (e badRequestError) Error() string    { return e.msg }
 func (e badRequestError) BadRequest() bool { return true }
 
 func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
