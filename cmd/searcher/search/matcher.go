@@ -210,10 +210,6 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 	if !bytes.Contains(fileMatchBuf, rg.literalSubstring) {
 		return nil, false, nil
 	}
-	first := rg.re.FindIndex(fileMatchBuf)
-	if first == nil {
-		return nil, false, nil
-	}
 
 	locs := rg.re.FindAllIndex(fileMatchBuf, maxFileMatches)
 	lastLineNumber := 0
