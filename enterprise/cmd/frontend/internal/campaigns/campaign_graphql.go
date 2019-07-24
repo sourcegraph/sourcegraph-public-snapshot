@@ -63,11 +63,14 @@ func (v *gqlCampaign) Name() string { return v.db.Name }
 func (v *gqlCampaign) Description() *string { return v.db.Description }
 
 func (v *gqlCampaign) URL(ctx context.Context) (string, error) {
-	namespace, err := v.Namespace(ctx)
-	if err != nil {
-		return "", err
-	}
-	return path.Join(namespace.URL(), "campaigns", string(v.ID())), nil
+	// namespace, err := v.Namespace(ctx)
+	// if err != nil {
+	// 	return "", err
+	// }
+	// return path.Join(namespace.URL(), "campaigns", string(v.ID())), nil
+	//
+	// TODO!(sqs): use global url?
+	return path.Join("/campaigns", string(v.ID())), nil
 }
 
 func (v *gqlCampaign) Threads(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {

@@ -21,13 +21,13 @@ export const GlobalCampaignsArea: React.FunctionComponent<Props> = ({ match, ...
     }
     return (
         <Switch>
-            <Route path="" exact={true}>
+            <Route path={context.campaignsURL} exact={true}>
                 <div className="container mt-4">
                     <GlobalCampaignsListPage {...context} />
                 </div>
             </Route>
             <Route
-                path="/:campaignID"
+                path={`${context.campaignsURL}/:campaignID`}
                 // tslint:disable-next-line: jsx-no-lambda
                 render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
                     <CampaignArea {...context} campaignID={routeComponentProps.match.params.campaignID} />
