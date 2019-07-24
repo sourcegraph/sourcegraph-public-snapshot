@@ -329,7 +329,7 @@ func (s *repos) ListWithLongestInterval(ctx context.Context, lim string) (URIs [
 		ORDER BY fork, COALESCE(updated_at - (CASE WHEN created_at = '0001-01-01 00:00:00+00' THEN NOW() ELSE created_at END), '0') DESC
 		LIMIT %s
 `, lim)
-	rows, err := dbconn.Global.QueryContext(context.Background(), query)
+	rows, err := dbconn.Global.QueryContext(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "running SQL query")
 	}
