@@ -13,7 +13,7 @@ CREATE INDEX campaigns_namespace_org_id ON campaigns(namespace_org_id);
 
 CREATE TABLE campaigns_threads (
 	campaign_id bigint NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
-	thread_id bigint REFERENCES discussion_threads(id) ON DELETE CASCADE
+	thread_id bigint NOT NULL REFERENCES threads(id) ON DELETE CASCADE
 );
 CREATE INDEX campaigns_threads_campaign_id ON campaigns_threads(campaign_id);
 CREATE INDEX campaigns_threads_thread_id ON campaigns_threads(thread_id) WHERE thread_id IS NOT NULL;

@@ -98,7 +98,7 @@ func getThreadDBIDs(ctx context.Context, threads []graphql.ID) ([]int64, error) 
 	for i, threadID := range threads {
 		// 🚨 SECURITY: Only organization members and site admins may create threads in an
 		// organization. The threadByID function performs this check.
-		thread, err := graphqlbackend.DiscussionThreadByID(ctx, threadID)
+		thread, err := graphqlbackend.ThreadByID(ctx, threadID)
 		if err != nil {
 			return nil, err
 		}

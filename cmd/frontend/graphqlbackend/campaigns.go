@@ -86,7 +86,7 @@ type Campaign interface {
 	Name() string
 	Description() *string
 	URL(context.Context) (string, error)
-	Threads(context.Context, *graphqlutil.ConnectionArgs) (DiscussionThreadConnection, error)
+	Threads(context.Context, *graphqlutil.ConnectionArgs) (ThreadConnection, error)
 	Repositories(context.Context) ([]*RepositoryResolver, error)
 	Commits(context.Context) ([]*GitCommitResolver, error)
 	RepositoryComparisons(context.Context) ([]*RepositoryComparisonResolver, error)
