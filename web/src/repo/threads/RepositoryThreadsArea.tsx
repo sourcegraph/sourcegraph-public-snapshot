@@ -8,7 +8,7 @@ import { pluralize } from '../../../../shared/src/util/strings'
 import { RepoContainerContext } from '../RepoContainer'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
-import { useRepositoryChangesets } from './useRepositoryChangesets'
+import { useRepositoryThreads } from './useRepositoryThreads'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -19,44 +19,44 @@ interface Props
 const LOADING: 'loading' = 'loading'
 
 /**
- * A list of the repository's changesets.
+ * A list of the repository's threads.
  */
-export const RepositoryChangesetsArea: React.FunctionComponent<Props> = ({
+export const RepositoryThreadsArea: React.FunctionComponent<Props> = ({
     repo,
     repoHeaderContributionsLifecycleProps,
 }) => {
-    const changesetsOrError = useRepositoryChangesets(repo)
+    const threadsOrError = useRepositoryThreads(repo)
     return (
-        <div className="repository-changesets-area">
+        <div className="repository-threads-area">
             <RepoHeaderContributionPortal
                 position="nav"
-                element={<RepoHeaderBreadcrumbNavItem key="changesets">Changesets</RepoHeaderBreadcrumbNavItem>}
+                element={<RepoHeaderBreadcrumbNavItem key="threads">Pull requests</RepoHeaderBreadcrumbNavItem>}
                 repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
             />
             <div className="container mt-4">
-                {changesetsOrError === LOADING ? (
+                {threadsOrError === LOADING ? (
                     <LoadingSpinner className="icon-inline mt-3" />
-                ) : isErrorLike(changesetsOrError) ? (
-                    <div className="alert alert-danger mt-3">{changesetsOrError.message}</div>
+                ) : isErrorLike(threadsOrError) ? (
+                    <div className="alert alert-danger mt-3">{threadsOrError.message}</div>
                 ) : (
                     <div className="card">
                         <div className="card-header">
                             <span className="text-muted">
-                                {changesetsOrError.totalCount} {pluralize('changeset', changesetsOrError.totalCount)}
+                                {threadsOrError.totalCount} {pluralize('pull request', threadsOrError.totalCount)}
                             </span>
                         </div>
-                        {changesetsOrError.nodes.length > 0 ? (
+                        {threadsOrError.nodes.length > 0 ? (
                             <ul className="list-group list-group-flush">
-                                {changesetsOrError.nodes.map((changeset, i) => (
+                                {threadsOrError.nodes.map((thread, i) => (
                                     <li key={i} className="list-group-item position-relative">
-                                        <LinkOrSpan to={changeset.externalURL} className="stretched-link">
-                                            {changeset.title}
+                                        <LinkOrSpan to={thread.externalURL} className="stretched-link">
+                                            {thread.title}
                                         </LinkOrSpan>
                                     </li>
                                 ))}
                             </ul>
                         ) : (
-                            <div className="p-2 text-muted">No changesets.</div>
+                            <div className="p-2 text-muted">No threads.</div>
                         )}
                     </div>
                 )}

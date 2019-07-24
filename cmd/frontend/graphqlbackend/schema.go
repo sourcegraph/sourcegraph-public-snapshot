@@ -493,28 +493,6 @@ input DiscussionThreadTargetRepoSelectionInput {
     linesAfter: [String!]
 }
 
-# The types of discussion threads.
-enum ThreadType {
-    # A normal discussion thread.
-    THREAD
-    # An issue (with diagnostics).
-    ISSUE
-    # A changeset (with edits).
-    CHANGESET
-}
-
-# The statuses of discussion threads.
-enum ThreadStatus {
-    # Preview (for changesets).
-    PREVIEW
-    # Open.
-    OPEN
-    # Merged (for changesets).
-    MERGED
-    # Closed.
-    CLOSED
-}
-
 # A discussion thread that is centered around:
 #
 # - A repository.
@@ -575,20 +553,6 @@ input DiscussionThreadCreateInput {
 
     # The first target of this discussion thread, if any.
     target: DiscussionThreadTargetInput
-
-    # The settings for the thread.
-    settings: String
-
-    # The type of thread to create.
-    type: ThreadType!
-
-    # The initial status of the thread upon creation.
-    #
-    # For threads and changesets (DiscussionThreadCreateInput#type == ThreadType.THREAD or
-    # ThreadType.CHANGESET), the default status is ThreadStatus.OPEN_ACTIVE. For checks
-    # (DiscussionThreadCreateInput#type == ThreadType.CHECK), the default status is
-    # ThreadStatus.INACTIVE.
-    status: ThreadStatus
 }
 
 # Describes an update mutation to an existing thread.
@@ -599,14 +563,8 @@ input DiscussionThreadUpdateInput {
     # When non-null, indicates that the thread's title should be updated to the specified value.
     title: String
 
-    # When non-null, indicates that the thread's settings should be updated to the specified value.
-    settings: String
-
     # When non-null, indicates that the thread should be archived.
     archive: Boolean
-
-    # When non-null, updates the thread's status.
-    status: ThreadStatus
 
     # When non-null, indicates that the thread should be deleted. Only admins
     # can perform this action.
@@ -2809,11 +2767,6 @@ type DiscussionThread implements Node & Labelable {
     # The discussion thread ID (globally unique).
     id: ID!
 
-    # The discussion thread ID without its kind, which is globally unique among threads but not
-    # among all GraphQL nodes. For example, this is a string like "123" (and DiscussionThread#id is
-    # a string like "RGlzY3Vzc2l...").
-    idWithoutKind: String!
-
     # The project that this discussion thread is associated with.
     project: Project!
 
@@ -2837,18 +2790,6 @@ type DiscussionThread implements Node & Labelable {
 
     # The first target of this discussion thread.
     target: DiscussionThreadTarget @deprecated(reason: "use targets instead")
-
-    # The settings for this discussion thread.
-    settings: String!
-
-    # The status of this discussion thread.
-    status: ThreadStatus!
-
-    # The type of this discussion thread.
-    type: ThreadType!
-
-    # The URL where this thread can be viewed in isolation.
-    url: String!
 
     # The URL at which this thread can be viewed inline (i.e. in the file blob view).
     #
@@ -4078,6 +4019,28 @@ type ThreadsMutation {
     deleteThread(thread: ID!): EmptyResponse
 }
 
+# The types of threads.
+enum ThreadType {
+    # A thread with discussions and a set of locations.
+    THREAD
+    # A thread with discussions and a set of diagnostics.
+    ISSUE
+    # A thread with discussions and a set of edits.
+    CHANGESET
+}
+
+# The statuses of threads.
+enum ThreadStatus {
+    # Preview (for changesets).
+    PREVIEW
+    # Open.
+    OPEN
+    # Merged (for changesets).
+    MERGED
+    # Closed.
+    CLOSED
+}
+
 # Input arguments for creating a thread.
 input CreateThreadInput {
     # The ID of this thread's repository.
@@ -4088,6 +4051,15 @@ input CreateThreadInput {
 
     # The (optional) external URL of the thread.
     externalURL: String
+
+    # The settings for the thread.
+    settings: String
+
+    # The initial status of the thread upon creation.
+    status: ThreadStatus
+
+    # The type of thread to create.
+    type: ThreadType!
 }
 
 # Input arguments for updating a thread.
@@ -4101,12 +4073,23 @@ input UpdateThreadInput {
     # The new external URL of the thread. If it is the non-null empty string, the external URL is
     # set to null.
     externalURL: String
+
+    # The new settings for the thread (if non-null).
+    settings: String
+
+    # The new status of the thread (if non-null).
+    status: ThreadStatus
 }
 
 # A thread is an issue or changeset.
 type Thread implements Node {
     # The unique ID for the thread.
     id: ID!
+
+    # The thread ID without its kind, which is globally unique among threads but not among all
+    # GraphQL nodes. For example, this is a string like "123" (and Thread#id is a string like
+    # "RGlzY3Vzc2l...").
+    idWithoutKind: String!
 
     # The repository that contains this thread.
     repository: Repository!
@@ -4119,6 +4102,15 @@ type Thread implements Node {
 
     # The URL to this thread on Sourcegraph.
     url: String!
+
+    # The settings for this thread.
+    settings: String!
+
+    # The status of this thread.
+    status: ThreadStatus!
+
+    # The type of this thread.
+    type: ThreadType!
 }
 
 # A list of threads.

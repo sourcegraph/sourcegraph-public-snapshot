@@ -57,6 +57,9 @@ type CreateThreadArgs struct {
 		Repository  graphql.ID
 		Title       string
 		ExternalURL *string
+		Settings    *string
+		Status      *ThreadStatus
+		Type        ThreadType
 	}
 }
 
@@ -65,6 +68,8 @@ type UpdateThreadArgs struct {
 		ID          graphql.ID
 		Title       *string
 		ExternalURL *string
+		Settings    *string
+		Status      *ThreadStatus
 	}
 }
 
@@ -72,14 +77,45 @@ type DeleteThreadArgs struct {
 	Thread graphql.ID
 }
 
+type ThreadType string
+
+const (
+	ThreadTypeThread    ThreadType = "THREAD"
+	ThreadTypeIssue                = "ISSUE"
+	ThreadTypeChangeset            = "CHANGESET"
+)
+
+// IsValidThreadType reports whether t is a valid thread type.
+func IsValidThreadType(t string) bool {
+	return ThreadType(t) == ThreadTypeThread || ThreadType(t) == ThreadTypeIssue || ThreadType(t) == ThreadTypeChangeset
+}
+
+type ThreadStatus string
+
+const (
+	ThreadStatusPreview ThreadStatus = "PREVIEW"
+	ThreadStatusOpen                 = "OPEN"
+	ThreadStatusMerged               = "MERGED"
+	ThreadStatusClosed               = "CLOSED"
+)
+
+// IsValidThreadStatus reports whether t is a valid thread status.
+func IsValidThreadStatus(t string) bool {
+	return ThreadStatus(t) == ThreadStatusPreview || ThreadStatus(t) == ThreadStatusOpen || ThreadStatus(t) == ThreadStatusMerged || ThreadStatus(t) == ThreadStatusClosed
+}
+
 // Thread is the interface for the GraphQL type Thread.
 type Thread interface {
 	ID() graphql.ID
+	IDWithoutKind() string
 	DBID() int64
 	Repository(context.Context) (*RepositoryResolver, error)
 	Title() string
 	ExternalURL() *string
 	URL(context.Context) (string, error)
+	Settings() string
+	Status() ThreadStatus
+	Type() ThreadType
 }
 
 // ThreadConnection is the interface for the GraphQL type ThreadConnection.

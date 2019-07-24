@@ -23,6 +23,8 @@ func TestGraphQL_CreateThread(t *testing.T) {
 		RepositoryID: wantRepositoryID,
 		Title:        "n",
 		ExternalURL:  strptr("d"),
+		Status:       graphqlbackend.ThreadStatusOpen,
+		Type:         graphqlbackend.ThreadTypeThread,
 	}
 	mocks.threads.Create = func(thread *dbThread) (*dbThread, error) {
 		if !reflect.DeepEqual(thread, wantThread) {
@@ -40,7 +42,7 @@ func TestGraphQL_CreateThread(t *testing.T) {
 			Query: `
 				mutation {
 					threads {
-						createThread(input: { repository: "T3JnOjE=", title: "n", externalURL: "d" }) {
+						createThread(input: { repository: "T3JnOjE=", title: "n", externalURL: "d", type: THREAD }) {
 							id
 							title
 						}
