@@ -352,13 +352,14 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     hideSearch={true}
                                 />
                             </div>
-                            {window.context.sourcegraphDotComMode && this.props.repoName.startsWith('github.com') && (
-                                <div className="tree-page__section">
-                                    <h3 className="tree-page__section-header">LSIF</h3>
+                            {(window.context.sourcegraphDotComMode || window.context.deployType === 'dev') &&
+                                this.props.repoName.startsWith('github.com') && (
+                                    <div className="tree-page__section">
+                                        <h3 className="tree-page__section-header">LSIF</h3>
 
-                                    <LSIFVerification repoName={this.props.repoName} />
-                                </div>
-                            )}
+                                        <LSIFVerification repoName={this.props.repoName} />
+                                    </div>
+                                )}
                         </>
                     ))}
             </div>
