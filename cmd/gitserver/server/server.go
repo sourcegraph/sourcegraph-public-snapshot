@@ -221,6 +221,7 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/archive", s.handleArchive)
 	mux.HandleFunc("/exec", s.handleExec)
 	mux.HandleFunc("/list", s.handleList)
 	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
@@ -445,13 +446,60 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
+	var (
+		q       = r.URL.Query()
+		treeish = q.Get("treeish")
+		repo    = q.Get("repo")
+		format  = q.Get("format")
+		paths   = q["path"]
+	)
+
+	if err := checkSpecArgSafety(treeish); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log15.Error("gitserver.archive.CheckSpecArgSafety", "error", err)
+		return
+	}
+
+	req := &protocol.ExecRequest{
+		Repo: api.RepoName(repo),
+		Args: []string{
+			"archive",
+
+			// Suppresses fatal error when the repo contains paths matching **/.git/** and instead
+			// includes those files (to allow archiving invalid such repos). This is unexpected
+			// behavior; the --worktree-attributes flag should merely let us specify a gitattributes
+			// file that contains `**/.git/** export-ignore`, but it actually makes everything work as
+			// desired. Tested by the "repo with .git dir" test case.
+			"--worktree-attributes",
+
+			"--format=" + format,
+		},
+	}
+
+	if format == "zip" {
+		// Compression level of 0 (no compression) seems to perform the
+		// best overall on fast network links, but this has not been tuned
+		// thoroughly.
+		req.Args = append(req.Args, "-0")
+	}
+
+	req.Args = append(req.Args, treeish, "--")
+	req.Args = append(req.Args, paths...)
+
+	s.exec(w, r, req)
+}
+
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	var req protocol.ExecRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	s.exec(w, r, &req)
+}
 
+func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
 	// Flush writes more aggressively than standard net/http so that clients
 	// with a context deadline see as much partial response body as possible.
 	if fw := newFlushingResponseWriter(w); fw != nil {

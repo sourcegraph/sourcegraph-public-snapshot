@@ -34,7 +34,7 @@ func TestMerger_MergeBase(t *testing.T) {
 		wantMergeBase string // can be any revspec; is resolved during test
 	}{
 		"git cmd": {
-			repo: makeGitRepository(t, cmds...),
+			repo: git.MakeGitRepository(t, cmds...),
 			a:    "master", b: "b2",
 			wantMergeBase: "testbase",
 		},

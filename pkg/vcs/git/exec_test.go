@@ -52,7 +52,7 @@ func TestExecSafe(t *testing.T) {
 		},
 	}
 
-	repo := makeGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z")
+	repo := git.MakeGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z")
 
 	for _, test := range tests {
 		t.Run(fmt.Sprint(test.args), func(t *testing.T) {

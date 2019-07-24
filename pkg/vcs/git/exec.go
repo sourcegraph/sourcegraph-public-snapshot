@@ -88,7 +88,7 @@ func readUntilTimeout(ctx context.Context, cmd *gitserver.Cmd) (data []byte, com
 		} else if err != nil && err != context.DeadlineExceeded {
 			data = bytes.TrimSpace(data)
 			if isBadObjectErr(string(data), "") || isInvalidRevisionRangeError(string(data), "") {
-				return nil, true, &RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: "UNKNOWN"}
+				return nil, true, &gitserver.RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: "UNKNOWN"}
 			}
 			if len(data) > 100 {
 				data = append(data[:100], []byte("... (truncated)")...)
@@ -265,7 +265,7 @@ func (c *commandRetryer) run() error {
 		if vcs.IsRepoNotExist(err) {
 			return true // The repository doesn't exist yet, so retry after pulling.
 		}
-		if IsRevisionNotFound(err) {
+		if gitserver.IsRevisionNotFound(err) {
 			// If we didn't find HEAD, the repo is empty and there is no reason to retry.
 			// Otherwise, the revision wasn't found, so we try again.
 			return c.cmd.EnsureRevision != "HEAD"

@@ -35,7 +35,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 		wantCommitID api.CommitID
 	}{
 		"git cmd": {
-			repo:         makeGitRepository(t, gitCommands...),
+			repo:         git.MakeGitRepository(t, gitCommands...),
 			branch:       "master",
 			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
 		},
@@ -66,9 +66,9 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 		wantErr func(error) bool
 	}{
 		"git cmd": {
-			repo:    makeGitRepository(t, gitCommands...),
+			repo:    git.MakeGitRepository(t, gitCommands...),
 			branch:  "doesntexist",
-			wantErr: git.IsRevisionNotFound,
+			wantErr: gitserver.IsRevisionNotFound,
 		},
 	}
 
@@ -98,7 +98,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 		wantCommitID api.CommitID
 	}{
 		"git cmd": {
-			repo:         makeGitRepository(t, gitCommands...),
+			repo:         git.MakeGitRepository(t, gitCommands...),
 			tag:          "t",
 			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
 		},
@@ -129,9 +129,9 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 		wantErr func(error) bool
 	}{
 		"git cmd": {
-			repo:    makeGitRepository(t, gitCommands...),
+			repo:    git.MakeGitRepository(t, gitCommands...),
 			tag:     "doesntexist",
-			wantErr: git.IsRevisionNotFound,
+			wantErr: gitserver.IsRevisionNotFound,
 		},
 	}
 

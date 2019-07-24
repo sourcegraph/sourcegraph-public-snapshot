@@ -16,8 +16,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+// checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
+// cause it to be interpreted as a git command line argument.
+func checkSpecArgSafety(spec string) error {
+	if strings.HasPrefix(spec, "-") {
+		return errors.New("invalid git revision spec (begins with '-')")
+	}
+	return nil
+}
 
 // runWithRemoteOpts runs the command after applying the remote options.
 // If progress is not nil, all output is written to it in a separate goroutine.
