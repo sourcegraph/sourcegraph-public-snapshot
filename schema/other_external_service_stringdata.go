@@ -33,6 +33,11 @@ const OtherExternalServiceSchemaJSON = `{
         "format": "uri-reference",
         "examples": ["path/to/my/repo", "path/to/my/repo.git/"]
       }
+    },
+    "repositoryPathPattern": {
+      "description": "The pattern used to generate the corresponding Sourcegraph repository name for the repositories. In the pattern, the variable \"{base}\" is replaced with the Git clone base URL host and path, and \"{repo}\" is replaced with the repository path taken from the ` + "`" + `repos` + "`" + ` field.\n\nFor example, if your Git clone base URL is https://git.example.com/repos and ` + "`" + `repos` + "`" + ` contains the value \"my/repo\", then a repositoryPathPattern of \"{base}/{repo}\" would mean that a repository at https://git.example.com/repos/my/repo is available on Sourcegraph at https://sourcegraph.example.com/git.example.com/repos/my/repo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
+      "type": "string",
+      "default": "{base}/{repo}"
     }
   }
 }
