@@ -2,6 +2,7 @@ package campaigns
 
 import (
 	"context"
+	"encoding/json"
 	"path"
 
 	"github.com/graph-gophers/graphql-go"
@@ -82,4 +83,99 @@ func (v *gqlCampaign) Threads(ctx context.Context, arg *graphqlutil.ConnectionAr
 		threadIDs[i] = e.Thread
 	}
 	return graphqlbackend.NewDiscussionThreadConnectionWithListOptions(db.DiscussionThreadsListOptions{ThreadIDs: threadIDs}), nil
+}
+
+// TODO!(sqs)
+type delta struct {
+	Repository graphql.ID
+	Base, Head string
+}
+
+func (v *gqlCampaign) getDeltas(ctx context.Context) ([]*delta, error) {
+	// TODO!(sqs)
+	l, err := dbCampaignsThreads{}.List(ctx, dbCampaignsThreadsListOptions{CampaignID: v.db.ID})
+	if err != nil {
+		return nil, err
+	}
+	threadIDs := make([]int64, len(l))
+	for i, e := range l {
+		threadIDs[i] = e.Thread
+	}
+
+	threads, err := db.DiscussionThreads.List(ctx, &db.DiscussionThreadsListOptions{ThreadIDs: threadIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	var deltas []*delta
+	for _, thread := range threads {
+		if thread.Settings == nil {
+			continue
+		}
+		var settings struct{ Deltas []*delta }
+		if err := json.Unmarshal([]byte(*thread.Settings), &settings); err != nil {
+			return nil, err
+		}
+		deltas = append(deltas, settings.Deltas...)
+	}
+
+	return deltas, nil
+}
+
+func (v *gqlCampaign) Repositories(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
+	deltas, err := v.getDeltas(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rs := make([]*graphqlbackend.RepositoryResolver, len(deltas))
+	for i, delta := range deltas {
+		var err error
+		rs[i], err = graphqlbackend.RepositoryByID(ctx, delta.Repository)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return rs, nil
+}
+
+func (v *gqlCampaign) Commits(ctx context.Context) ([]*graphqlbackend.GitCommitResolver, error) {
+	rcs, err := v.RepositoryComparisons(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var allCommits []*graphqlbackend.GitCommitResolver
+	for _, rc := range rcs {
+		cc := rc.Commits(&graphqlutil.ConnectionArgs{})
+		commits, err := cc.Nodes(ctx)
+		if err != nil {
+			return nil, err
+		}
+		allCommits = append(allCommits, commits...)
+	}
+	return allCommits, nil
+}
+
+func (v *gqlCampaign) RepositoryComparisons(ctx context.Context) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
+	deltas, err := v.getDeltas(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rcs := make([]*graphqlbackend.RepositoryComparisonResolver, len(deltas))
+	for i, delta := range deltas {
+		repo, err := graphqlbackend.RepositoryByID(ctx, delta.Repository)
+		if err != nil {
+			return nil, err
+		}
+		rcs[i], err = graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
+			Base: &delta.Base,
+			Head: &delta.Head,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	return rcs, nil
 }

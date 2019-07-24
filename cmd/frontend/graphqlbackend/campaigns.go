@@ -87,6 +87,9 @@ type Campaign interface {
 	Description() *string
 	URL(context.Context) (string, error)
 	Threads(context.Context, *graphqlutil.ConnectionArgs) (DiscussionThreadConnection, error)
+	Repositories(context.Context) ([]*RepositoryResolver, error)
+	Commits(context.Context) ([]*GitCommitResolver, error)
+	RepositoryComparisons(context.Context) ([]*RepositoryComparisonResolver, error)
 }
 
 // CampaignConnection is the interface for the GraphQL type CampaignConnection.

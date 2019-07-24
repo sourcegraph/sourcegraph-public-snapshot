@@ -9,20 +9,15 @@ import (
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
 func TestGraphQL_CreateChangeset(t *testing.T) {
 	resetMocks()
 	const wantOrgID = 1
-	db.Mocks.Orgs.GetByID = func(context.Context, int32) (*types.Org, error) {
-		return &types.Org{ID: wantOrgID}, nil
-	}
 	wantChangeset := &dbChangeset{
 		NamespaceOrgID: wantOrgID,
-		Name:           "n",
+		title:          "n",
 	}
 	mocks.changesets.Create = func(changeset *dbChangeset) (*dbChangeset, error) {
 		if !reflect.DeepEqual(changeset, wantChangeset) {
