@@ -11,7 +11,6 @@ set -e
 #
 docker run --detach \
     --name=prometheus \
-    --network=sourcegraph \
     --cpus=4 \
     --memory=8g \
     -p 0.0.0.0:9090:9090 \
