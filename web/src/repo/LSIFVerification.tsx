@@ -15,14 +15,14 @@ interface State {
 }
 
 interface ChallengeResponse {
-    Challenge: string
+    challenge: string
 }
 
 type VerifyResponse =
     | {
-          Failure: string
+          failure: string
       }
-    | { Token: string }
+    | { token: string }
 
 async function fetchChallenge(): Promise<string> {
     const response: ChallengeResponse = await (await fetch(new URL('/.api/lsif/challenge', window.location.href).href, {
@@ -30,7 +30,7 @@ async function fetchChallenge(): Promise<string> {
             'X-Requested-With': 'Sourcegraph',
         },
     })).json()
-    return response.Challenge
+    return response.challenge
 }
 
 export class LSIFVerification extends React.PureComponent<Props, State> {
@@ -97,10 +97,10 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
                     'X-Requested-With': 'Sourcegraph',
                 },
             })).json()
-            if ('Failure' in response) {
-                throw new Error(response.Failure)
+            if ('failure' in response) {
+                throw new Error(response.failure)
             }
-            this.setState({ tokenOrError: response.Token })
+            this.setState({ tokenOrError: response.token })
         } catch (error) {
             this.setState({ tokenOrError: error })
         } finally {

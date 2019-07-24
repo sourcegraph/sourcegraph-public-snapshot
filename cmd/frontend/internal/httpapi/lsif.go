@@ -69,7 +69,9 @@ func isValidUploadToken(repoID api.RepoID, tokenString string) bool {
 
 func lsifChallengeHandler(w http.ResponseWriter, r *http.Request) {
 	actor := actor.FromContext(r.Context())
-	json, err := json.Marshal(struct{ Challenge string }{Challenge: generateChallenge(actor.UID)})
+	json, err := json.Marshal(struct {
+		Challenge string `json:"challenge"`
+	}{Challenge: generateChallenge(actor.UID)})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -122,9 +124,13 @@ func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Unable to generate LSIF upload token.", http.StatusInternalServerError)
 			return
 		}
-		payload = struct{ Token string }{Token: hex.EncodeToString(token[:])}
+		payload = struct {
+			Token string `json:"token"`
+		}{Token: hex.EncodeToString(token[:])}
 	} else {
-		payload = struct{ Failure string }{Failure: "Topic not found."}
+		payload = struct {
+			Failure string `json:"token"`
+		}{Failure: "Topic not found."}
 	}
 	json, err := json.Marshal(payload)
 	if err != nil {
