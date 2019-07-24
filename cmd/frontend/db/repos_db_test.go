@@ -581,8 +581,6 @@ func TestRepos_List_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	})
 }
 
-// TODO(ijt): Add a test for the func that will list repos on sourcegraph.com.
-
 func TestRepos_Create(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
