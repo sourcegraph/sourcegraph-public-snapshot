@@ -149,7 +149,7 @@ require (
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/automaxprocs v1.2.0
 	golang.org/x/crypto v0.0.0-20190320223903-b7391e95e576
-	golang.org/x/net v0.0.0-20190322120337-addf6b3196f6
+	golang.org/x/net v0.0.0-20190724020954-ca1201d0de80
 	golang.org/x/oauth2 v0.0.0-20190604060849-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190602191015-112230192c58
 	golang.org/x/sys v0.0.0-20190701071227-04f50cda93cb
