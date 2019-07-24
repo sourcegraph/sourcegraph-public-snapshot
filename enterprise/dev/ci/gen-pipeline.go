@@ -9,7 +9,8 @@ import (
 )
 
 func main() {
-	pipeline, err := ci.GeneratePipeline(ci.ComputeConfig())
+	config := ci.ComputeConfig()
+	pipeline, err := ci.GeneratePipeline(config)
 	if err != nil {
 		panic(err)
 	}

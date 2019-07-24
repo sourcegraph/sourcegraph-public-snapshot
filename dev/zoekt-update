@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+
+export GO111MODULE=on
+
+upstream=github.com/google/zoekt
+fork=github.com/sourcegraph/zoekt
+
+module="$(go get ${fork}@master 2>&1 | grep -E -o ${fork}'@v0.0.0-[0-9a-z-]+')"
+
+go mod edit "-replace=${upstream}=${module}"

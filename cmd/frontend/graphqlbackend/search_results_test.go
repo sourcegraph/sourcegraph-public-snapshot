@@ -920,3 +920,88 @@ func Test_dedupSort(t *testing.T) {
 		}
 	}
 }
+
+func Test_searchResultsResolver_ApproximateResultCount(t *testing.T) {
+	type fields struct {
+		results             []searchResultResolver
+		searchResultsCommon searchResultsCommon
+		alert               *searchAlert
+		start               time.Time
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name:   "empty",
+			fields: fields{},
+			want:   "0",
+		},
+
+		{
+			name: "file matches",
+			fields: fields{
+				results: []searchResultResolver{&fileMatchResolver{}},
+			},
+			want: "1",
+		},
+
+		{
+			name: "file matches limit hit",
+			fields: fields{
+				results:             []searchResultResolver{&fileMatchResolver{}},
+				searchResultsCommon: searchResultsCommon{limitHit: true},
+			},
+			want: "1+",
+		},
+
+		{
+			name: "symbol matches",
+			fields: fields{
+				results: []searchResultResolver{
+					&fileMatchResolver{
+						symbols: []*searchSymbolResult{
+							// 1
+							{},
+							// 2
+							{},
+						},
+					},
+				},
+			},
+			want: "2",
+		},
+
+		{
+			name: "symbol matches limit hit",
+			fields: fields{
+				results: []searchResultResolver{
+					&fileMatchResolver{
+						symbols: []*searchSymbolResult{
+							// 1
+							{},
+							// 2
+							{},
+						},
+					},
+				},
+				searchResultsCommon: searchResultsCommon{limitHit: true},
+			},
+			want: "2+",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sr := &searchResultsResolver{
+				results:             tt.fields.results,
+				searchResultsCommon: tt.fields.searchResultsCommon,
+				alert:               tt.fields.alert,
+				start:               tt.fields.start,
+			}
+			if got := sr.ApproximateResultCount(); got != tt.want {
+				t.Errorf("searchResultsResolver.ApproximateResultCount() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

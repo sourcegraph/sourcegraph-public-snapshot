@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
@@ -169,6 +170,14 @@ func TestSources_ListRepos(t *testing.T) {
 					ProjectQuery: []string{
 						"?search=gokulkarthick",
 					},
+				}),
+			},
+			{
+				Kind: "BITBUCKETCLOUD",
+				Config: marshalJSON(t, &schema.BitbucketCloudConnection{
+					Url:         "https://bitbucket.org",
+					Username:    bitbucketcloud.GetenvTestBitbucketCloudUsername(),
+					AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 				}),
 			},
 			{
@@ -644,6 +653,7 @@ func TestSources_ListRepos(t *testing.T) {
 			err: "<nil>",
 		})
 	}
+
 	{
 		svcs := ExternalServices{
 			{

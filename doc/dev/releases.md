@@ -47,7 +47,7 @@ What is the process we follow to release?
 
 The release captain is _responsible_ for managing the release process and ensuring that the release happens on time. The release captain may _delegate_ work to other teammates, but such delegation does not absolve the release captain of their responsibility to ensure that delegated work gets done.
 
-No later than 5 _working days_ before the release day the release captain creates a tracking issue using the [release issue template](release_issue_template.md) and assigns it to themselves to complete.
+The release captain should create a tracking issue using the [release issue template](release_issue_template.md) at the beginning of the release cycle.
 
 ### Release templates
 

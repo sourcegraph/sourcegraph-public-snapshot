@@ -1188,6 +1188,7 @@ type ExternalServiceConnection {
 # A specific kind of external service.
 enum ExternalServiceKind {
     AWSCODECOMMIT
+    BITBUCKETCLOUD
     BITBUCKETSERVER
     GITHUB
     GITLAB

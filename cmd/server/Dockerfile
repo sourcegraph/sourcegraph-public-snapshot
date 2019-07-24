@@ -44,7 +44,7 @@ RUN apk update && apk add --no-cache \
     # https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/postgresql.md#version-requirements
     'bash=4.4.19-r1' 'postgresql-contrib=11.4-r0' 'postgresql=11.4-r0' \
     'redis=3.2.12-r0' bind-tools ca-certificates git@edge \
-    mailcap nginx openssh-client su-exec tini
+    mailcap nginx openssh-client su-exec tini nodejs=10.14.2-r0
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)

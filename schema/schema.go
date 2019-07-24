@@ -91,6 +91,16 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
+// BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
+type BitbucketCloudConnection struct {
+	AppPassword           string   `json:"appPassword"`
+	GitURLType            string   `json:"gitURLType,omitempty"`
+	RepositoryPathPattern string   `json:"repositoryPathPattern,omitempty"`
+	Teams                 []string `json:"teams,omitempty"`
+	Url                   string   `json:"url"`
+	Username              string   `json:"username"`
+}
+
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
 type BitbucketServerAuthorization struct {
 	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`

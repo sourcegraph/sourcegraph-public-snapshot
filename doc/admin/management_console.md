@@ -13,7 +13,7 @@ The management console is built-in to the same Docker image and published on por
 ```
 $ docker ps
 CONTAINER ID        IMAGE                              PORTS
-394ff36a8c3c        sourcegraph/server:3.5.1           0.0.0.0:2633->2633/tcp, 0.0.0.0:7080->7080/tcp
+394ff36a8c3c        sourcegraph/server:3.6.0           0.0.0.0:2633->2633/tcp, 0.0.0.0:7080->7080/tcp
 ```
 
 Usually, you can access it through the public internet via https://my.server.ip:2633, or https://localhost:2633 when testing locally.
@@ -78,9 +78,17 @@ Second, bcrypt your password on any machine:
 2. `pip install bcrypt`
 3. Encrypt your password:
 
-```bash
-PASSWORD='abc123' python -c "import bcrypt; import os; print(bcrypt.hashpw(os.environ['PASSWORD'], bcrypt.gensalt(15)))"
-```
+    a. (**If you have Python 2**):
+
+    ```bash
+    PASSWORD='abc123' python -c "import bcrypt; import os; print(bcrypt.hashpw(os.environ['PASSWORD'], bcrypt.gensalt(15)))"
+    ```
+
+    b. (**If you have Python 3**): 
+
+    ```bash
+    PASSWORD='abc123' python -c "import bcrypt; import os; print(bcrypt.hashpw(os.environ['PASSWORD'].encode('utf-8'), bcrypt.gensalt(15)))"
+    ```
 
 Finally, open a `psql` prompt on your Sourcegraph instance (see ["How do I access my Sourcegraph database?"](faq.md#how-do-i-access-the-sourcegraph-database)) and run:
 

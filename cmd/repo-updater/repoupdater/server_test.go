@@ -605,6 +605,22 @@ func TestServer_StatusMessages(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:            "case insensitivity",
+			gitserverCloned: []string{"foobar"},
+			stored:          []*repos.Repo{{Name: "FOOBar"}},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{},
+			},
+		},
+		{
+			name:            "case insensitivity to gitserver names",
+			gitserverCloned: []string{"FOOBar"},
+			stored:          []*repos.Repo{{Name: "FOOBar"}},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
