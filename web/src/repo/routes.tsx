@@ -27,10 +27,6 @@ const RepositoryReleasesArea = lazyComponent(
     () => import('./releases/RepositoryReleasesArea'),
     'RepositoryReleasesArea'
 )
-const RepositoryChangesetsArea = lazyComponent(
-    () => import('./changesets/RepositoryChangesetsArea'),
-    'RepositoryChangesetsArea'
-)
 const RepoSettingsArea = lazyComponent(() => import('./settings/RepoSettingsArea'), 'RepoSettingsArea')
 const RepositoryCompareArea = lazyComponent(() => import('./compare/RepositoryCompareArea'), 'RepositoryCompareArea')
 const RepositoryStatsArea = lazyComponent(() => import('./stats/RepositoryStatsArea'), 'RepositoryStatsArea')
@@ -61,12 +57,8 @@ export const repoContainerRoutes: ReadonlyArray<RepoContainerRoute> = [
         ),
     },
     {
-        path: '/-/changesets',
-        render: context => (
-            <RepositoryGitDataContainer repoName={context.repo.name}>
-                <RepositoryChangesetsArea {...context} />
-            </RepositoryGitDataContainer>
-        ),
+        path: '/-/threads',
+        render: lazyComponent(() => import('./threads/RepositoryThreadsArea'), 'RepositoryThreadsArea'),
     },
     {
         path: '/-/compare/:spec*',

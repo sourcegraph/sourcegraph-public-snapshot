@@ -29,7 +29,11 @@ func TestDB_Threads(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	thread1, err := dbThreads{}.Create(ctx, &dbThread{RepositoryID: repo0.ID, Title: "t1", ExternalURL: strptr("u1")})
+	thread1, err := dbThreads{}.Create(ctx, &dbThread{
+		RepositoryID: repo0.ID,
+		Title:        "t1",
+		ExternalURL:  strptr("u1"),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

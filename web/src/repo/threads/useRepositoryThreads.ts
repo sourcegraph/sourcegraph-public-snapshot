@@ -8,24 +8,22 @@ import { queryGraphQL } from '../../backend/graphql'
 const LOADING: 'loading' = 'loading'
 
 /**
- * A React hook that observes a repository's changesets (queried from the GraphQL API).
+ * A React hook that observes a repository's threads (queried from the GraphQL API).
  *
- * @param repository The repository whose changesets to observe.
+ * @param repository The repository whose threads to observe.
  */
-export const useRepositoryChangesets = (
+export const useRepositoryThreads = (
     repository: Pick<GQL.IRepository, 'id'>
-): typeof LOADING | GQL.IChangesetConnection | ErrorLike => {
-    const [changesetsOrError, setChangesetsOrError] = useState<typeof LOADING | GQL.IChangesetConnection | ErrorLike>(
-        LOADING
-    )
+): typeof LOADING | GQL.IThreadConnection | ErrorLike => {
+    const [threadsOrError, setThreadsOrError] = useState<typeof LOADING | GQL.IThreadConnection | ErrorLike>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
-                query RepositoryChangesets($repository: ID!) {
+                query RepositoryThreads($repository: ID!) {
                     node(id: $repository) {
                         __typename
                         ... on Repository {
-                            changesets {
+                            threads {
                                 nodes {
                                     title
                                     externalURL
@@ -44,12 +42,12 @@ export const useRepositoryChangesets = (
                     if (!data.node || data.node.__typename !== 'Repository') {
                         throw new Error('not a repository')
                     }
-                    return data.node.changesets
+                    return data.node.threads
                 }),
                 startWith(LOADING)
             )
-            .subscribe(setChangesetsOrError, err => setChangesetsOrError(asError(err)))
+            .subscribe(setThreadsOrError, err => setThreadsOrError(asError(err)))
         return () => subscription.unsubscribe()
     }, [repository])
-    return changesetsOrError
+    return threadsOrError
 }

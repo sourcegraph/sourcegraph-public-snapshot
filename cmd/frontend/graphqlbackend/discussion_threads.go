@@ -195,9 +195,6 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		Title    *string
 		Contents string
 		Target   *discussionThreadTargetInput
-		Settings *string
-		Type     types.ThreadType
-		Status   *types.ThreadStatus
 	}
 }) (*discussionThreadResolver, error) {
 	if args.Input.Title == nil {
@@ -232,14 +229,6 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		}
 	}
 
-	// Apply default status.
-	var status types.ThreadStatus
-	if args.Input.Status != nil {
-		status = *args.Input.Status
-	} else {
-		status = types.ThreadStatusOpen
-	}
-
 	// 🚨 SECURITY: Ensure the viewer can view the project (which is a requirement for creating a
 	// thread in it).
 	project, err := ProjectByID(ctx, args.Input.Project)
@@ -252,9 +241,6 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		AuthorUserID: currentUser.user.ID,
 		ProjectID:    project.DBID(),
 		Title:        *args.Input.Title,
-		Settings:     args.Input.Settings,
-		Type:         args.Input.Type,
-		Status:       status,
 	}
 	thread, err := db.DiscussionThreads.Create(ctx, newThread)
 	if err != nil {
@@ -293,7 +279,6 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 		Title    *string
 		Settings *string
 		Archive  *bool
-		Status   *types.ThreadStatus
 		Delete   *bool
 	}
 }) (*discussionThreadResolver, error) {
@@ -315,24 +300,14 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 		delete = *args.Input.Delete
 	}
 
-	var status types.ThreadStatus
-	if args.Input.Status != nil {
-		if !types.IsValidThreadStatus(string(*args.Input.Status)) {
-			return nil, errors.New("unknown thread status")
-		}
-		status = *args.Input.Status
-	}
-
 	threadID, err := unmarshalDiscussionThreadID(args.Input.ThreadID)
 	if err != nil {
 		return nil, err
 	}
 	thread, err := db.DiscussionThreads.Update(ctx, threadID, &db.DiscussionThreadsUpdateOptions{
-		Status:   status,
-		Archive:  args.Input.Archive,
-		Delete:   delete,
-		Settings: args.Input.Settings,
-		Title:    args.Input.Title,
+		Archive: args.Input.Archive,
+		Delete:  delete,
+		Title:   args.Input.Title,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionThreads.Update")
@@ -721,10 +696,6 @@ func (d *discussionThreadResolver) ID() graphql.ID {
 
 func (d *discussionThreadResolver) DBID() int64 { return d.t.ID }
 
-func (d *discussionThreadResolver) IDWithoutKind() string {
-	return strconv.FormatInt(d.t.ID, 10)
-}
-
 func (d *discussionThreadResolver) Project(ctx context.Context) (Project, error) {
 	return ProjectByDBID(ctx, d.t.ProjectID)
 }
@@ -753,30 +724,6 @@ func (d *discussionThreadResolver) Target(ctx context.Context) (*discussionThrea
 	// that is of a different __typename. The documentation has always required callers to handle
 	// unrecognized __typenames gracefully.
 	return &discussionThreadTargetResolver{unrecognized: true}, nil
-}
-
-func (d *discussionThreadResolver) Settings(ctx context.Context) string {
-	if settings := d.t.Settings; settings != nil {
-		return *settings
-	}
-	return "{}"
-}
-
-func (d *discussionThreadResolver) Status() types.ThreadStatus {
-	return d.t.Status
-}
-
-func (d *discussionThreadResolver) Type() types.ThreadType {
-	return types.ThreadType(d.t.Type)
-}
-
-func (d *discussionThreadResolver) URL(ctx context.Context) string {
-	// TODO!(sqs): hardcoded /p/
-	var preview string
-	if d.t.Status == types.ThreadStatusPreview {
-		preview = "preview/"
-	}
-	return fmt.Sprintf("/p/%d/%s/%s%s", d.t.ProjectID, strings.ToLower(string(d.t.Type))+"s", preview, d.IDWithoutKind())
 }
 
 func (d *discussionThreadResolver) InlineURL(ctx context.Context) (*string, error) {

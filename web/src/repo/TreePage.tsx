@@ -248,7 +248,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/tags`}>
                                             <TagIcon className="icon-inline" /> Tags
                                         </Link>
-                                        <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/changesets`}>
+                                        <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/threads`}>
                                             <GitPullRequestIcon className="icon-inline" /> Pull requests
                                         </Link>
                                         <Link

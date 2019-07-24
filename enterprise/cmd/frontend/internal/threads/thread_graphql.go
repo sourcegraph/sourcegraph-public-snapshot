@@ -3,6 +3,7 @@ package threads
 import (
 	"context"
 	"path"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -51,6 +52,10 @@ func unmarshalThreadID(id graphql.ID) (dbID int64, err error) {
 	return
 }
 
+func (v *gqlThread) IDWithoutKind() string {
+	return strconv.FormatInt(v.db.ID, 10)
+}
+
 func (v *gqlThread) DBID() int64 { return v.db.ID }
 
 func (v *gqlThread) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
@@ -67,4 +72,19 @@ func (v *gqlThread) URL(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return path.Join(repository.URL(), "threads", string(v.ID())), nil
+}
+
+func (v *gqlThread) Settings() string {
+	if settings := v.db.Settings; settings != nil {
+		return *settings
+	}
+	return "{}"
+}
+
+func (v *gqlThread) Status() graphqlbackend.ThreadStatus {
+	return v.db.Status
+}
+
+func (v *gqlThread) Type() graphqlbackend.ThreadType {
+	return v.db.Type
 }

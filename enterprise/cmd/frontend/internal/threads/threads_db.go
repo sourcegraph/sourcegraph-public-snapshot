@@ -7,6 +7,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
@@ -17,6 +18,9 @@ type dbThread struct {
 	RepositoryID api.RepoID // the repository associated with this thread
 	Title        string
 	ExternalURL  *string
+	Settings     *string
+	Status       graphqlbackend.ThreadStatus
+	Type         graphqlbackend.ThreadType
 }
 
 // errThreadNotFound occurs when a database operation expects a specific thread to exist but it does
@@ -24,6 +28,8 @@ type dbThread struct {
 var errThreadNotFound = errors.New("thread not found")
 
 type dbThreads struct{}
+
+const selectColumns = "id, repository_id, title, external_url, settings, status, type"
 
 // Create creates a thread. The thread argument's (Thread).ID field is ignored. The database ID of
 // the new thread is returned.
@@ -34,8 +40,13 @@ func (dbThreads) Create(ctx context.Context, thread *dbThread) (*dbThread, error
 
 	var id int64
 	if err := dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO threads(repository_id, title, external_url) VALUES($1, $2, $3) RETURNING id`,
-		thread.RepositoryID, thread.Title, thread.ExternalURL,
+		`INSERT INTO threads(`+selectColumns+`) VALUES(null, $1, $2, $3, $4, $5, $6) RETURNING id`,
+		thread.RepositoryID,
+		thread.Title,
+		thread.ExternalURL,
+		thread.Settings,
+		thread.Status,
+		thread.Type,
 	).Scan(&id); err != nil {
 		return nil, err
 	}
@@ -47,6 +58,8 @@ func (dbThreads) Create(ctx context.Context, thread *dbThread) (*dbThread, error
 type dbThreadUpdate struct {
 	Title       *string
 	ExternalURL *string
+	Settings    *string
+	Status      *graphqlbackend.ThreadStatus
 }
 
 // Update updates a thread given its ID.
@@ -68,12 +81,18 @@ func (s dbThreads) Update(ctx context.Context, id int64, update dbThreadUpdate) 
 		}
 		setFields = append(setFields, sqlf.Sprintf("external_url=%s", value))
 	}
+	if update.Settings != nil {
+		setFields = append(setFields, sqlf.Sprintf("settings=%s", *update.Settings))
+	}
+	if update.Status != nil {
+		setFields = append(setFields, sqlf.Sprintf("status=%s", *update.Status))
+	}
 
 	if len(setFields) == 0 {
 		return nil, nil
 	}
 
-	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE threads SET %v WHERE id=%s RETURNING id, repository_id, title, external_url`, sqlf.Join(setFields, ", "), id))
+	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE threads SET %v WHERE id=%s RETURNING `+selectColumns, sqlf.Join(setFields, ", "), id))
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +125,8 @@ type dbThreadsListOptions struct {
 	Query        string     // only list threads matching this query (case-insensitively)
 	RepositoryID api.RepoID // only list threads in this repository
 	ThreadIDs    []int64
+	Status       graphqlbackend.ThreadStatus
+	Type         graphqlbackend.ThreadType
 	*db.LimitOffset
 }
 
@@ -119,10 +140,16 @@ func (o dbThreadsListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.ThreadIDs != nil {
 		if len(o.ThreadIDs) > 0 {
-			conds = append(conds, sqlf.Sprintf("id = ANY(%v)", pq.Array(o.ThreadIDs)))
+			conds = append(conds, sqlf.Sprintf("id=ANY(%v)", pq.Array(o.ThreadIDs)))
 		} else {
 			conds = append(conds, sqlf.Sprintf("FALSE"))
 		}
+	}
+	if o.Status != "" {
+		conds = append(conds, sqlf.Sprintf("status=%s", o.Status))
+	}
+	if o.Type != "" {
+		conds = append(conds, sqlf.Sprintf("type=%s", o.Type))
 	}
 	return conds
 }
@@ -141,7 +168,7 @@ func (s dbThreads) List(ctx context.Context, opt dbThreadsListOptions) ([]*dbThr
 
 func (s dbThreads) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbThread, error) {
 	q := sqlf.Sprintf(`
-SELECT id, repository_id, title, external_url FROM threads
+SELECT `+selectColumns+` FROM threads
 WHERE (%s)
 ORDER BY title ASC
 %s`,
@@ -161,7 +188,15 @@ func (dbThreads) query(ctx context.Context, query *sqlf.Query) ([]*dbThread, err
 	var results []*dbThread
 	for rows.Next() {
 		var t dbThread
-		if err := rows.Scan(&t.ID, &t.RepositoryID, &t.Title, &t.ExternalURL); err != nil {
+		if err := rows.Scan(
+			&t.ID,
+			&t.RepositoryID,
+			&t.Title,
+			&t.ExternalURL,
+			&t.Settings,
+			&t.Status,
+			&t.Type,
+		); err != nil {
 			return nil, err
 		}
 		results = append(results, &t)
