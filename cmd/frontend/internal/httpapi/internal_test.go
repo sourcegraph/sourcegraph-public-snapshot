@@ -3,15 +3,16 @@ package httpapi
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
 func Test_serveReposList(t *testing.T) {
@@ -66,7 +67,7 @@ func Test_serveReposList(t *testing.T) {
 		defer envvar.MockSourcegraphDotComMode(false)
 		withEnv("SOURCEGRAPH_REPOS_TO_INDEX_LIMIT", "1", func() {
 			URIs := getRepoURIsViaHTTP()
-			wantURIs := []string {"github.com/vim"}
+			wantURIs := []string{"github.com/vim"}
 			if !reflect.DeepEqual(URIs, wantURIs) {
 				t.Errorf("got %v, want %v", URIs, wantURIs)
 			}
@@ -75,7 +76,7 @@ func Test_serveReposList(t *testing.T) {
 
 	t.Run("all repos are returned for non-sourcegraph.com", func(t *testing.T) {
 		URIs := getRepoURIsViaHTTP()
-		wantURIs := []string {"github.com/quickhack", "github.com/vim"}
+		wantURIs := []string{"github.com/quickhack", "github.com/vim"}
 		if !reflect.DeepEqual(URIs, wantURIs) {
 			t.Errorf("got %v, want %v", URIs, wantURIs)
 		}
