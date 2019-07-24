@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -191,17 +193,16 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveReposList(w http.ResponseWriter, r *http.Request) error {
-	var opt db.ReposListOptions
-	err := json.NewDecoder(r.Body).Decode(&opt)
-	if err != nil {
-		return err
-	}
-
+	var err error
 	var res []*types.Repo
-	switch true {
+	switch envvar.SourcegraphDotComMode() {
 	case true:
 		res, err = listReposForSgDotCom(r.Context())
 	case false:
+		var opt db.ReposListOptions
+		if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+			return err
+		}
 		res, err = backend.Repos.List(r.Context(), opt)
 	}
 	if err != nil {
@@ -236,9 +237,6 @@ func listReposForSgDotCom(ctx context.Context) (res []*types.Repo, err error) {
 	lim := "10000"
 	if limEnv != "" {
 		lim = limEnv
-	}
-	if !conf.SearchIndexEnabled() {
-		return nil, errors.New("search indexing is not enabled")
 	}
 	// Grab a bunch of repos that are likely to be fairly popular,
 	// to demo Sourcegraph search.
