@@ -1,11 +1,8 @@
 package httpapi
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"gopkg.in/inconshreveable/log15.v2"
 	"io"
 	"net/http"
@@ -204,34 +201,14 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	switch envvar.SourcegraphDotComMode() {
 	case true:
 		limEnv := os.Getenv("SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
+		// Default to 10k longest lived repos if the env var isn't set.
 		lim := "10000"
 		if limEnv != "" {
 			lim = limEnv
 		}
-		query := fmt.Sprintf(`
-			SELECT name
-			FROM repo
-			WHERE deleted_at IS NULL
-			AND enabled = true
-			ORDER BY fork, COALESCE(updated_at - (CASE WHEN created_at = '0001-01-01 00:00:00+00' THEN NOW() ELSE created_at END), '0')
-			LIMIT %s
-`, lim)
-		rows, err := dbconn.Global.QueryContext(context.Background(), query)
-		if err != nil {
-			return errors.Wrap(err, "running SQL query")
-		}
-		defer rows.Close()
-
-		for rows.Next() {
-			var repo types.Repo
-			if err := rows.Scan(&repo.Name); err != nil {
-				return errors.Wrap(err, "scanning row")
-			}
-			res = append(res, &repo)
-		}
-		if err = rows.Err(); err != nil {
-			return errors.Wrap(err, "iterating over repo SQL query rows")
-		}
+		// Grab a bunch of repos that are likely to be fairly popular, for the
+		// purpose of demoing sourcegraph search.
+		db.Repos.ListWithLongestInterval(r.Context(), lim)
 	case false:
 		res, err = backend.Repos.List(r.Context(), opt)
 		if err != nil {
