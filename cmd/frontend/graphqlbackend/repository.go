@@ -408,7 +408,3 @@ func makePhabClientForOrigin(ctx context.Context, origin string) (*phabricator.C
 func (r *RepositoryResolver) Threads(ctx context.Context, arg *graphqlutil.ConnectionArgs) (ThreadConnection, error) {
 	return ThreadsForRepository(ctx, r.ID(), arg)
 }
-
-func (r *RepositoryResolver) Changesets(ctx context.Context, arg *graphqlutil.ConnectionArgs) (ChangesetConnection, error) {
-	return ChangesetsForRepository(ctx, r, arg)
-}

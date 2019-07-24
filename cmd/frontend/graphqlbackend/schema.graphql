@@ -352,13 +352,12 @@ type Mutation {
     projects: ProjectsMutation!
     # Mutations related to labels.
     labels: LabelsMutation!
-    # Mutations related to repositories' Git data.
-    git: GitMutation!
-    # Mutations related to changesets.
-    changesets: ChangesetsMutation!
 
     # Mutations related to threads.
     threads: ThreadsMutation!
+
+    # Mutations related to repositories' Git data.
+    git: GitMutation!
 
     # Mutations related to campaigns.
     campaigns: CampaignsMutation!
@@ -1443,12 +1442,6 @@ type Repository implements Node & GenericSearchResultInterface {
         # Returns the first n threads from the list.
         first: Int
     ): ThreadConnection!
-
-    # A list of changesets for this repository.
-    changesets(
-        # Returns the first n changesets from the list.
-        first: Int
-    ): ChangesetConnection!
 
     # A Git comparison in this repository between a base and head commit.
     comparison(
@@ -4085,8 +4078,7 @@ type ThreadsMutation {
     # Update a thread. Returns the updated thread.
     updateThread(input: UpdateThreadInput!): Thread
 
-    # Delete a thread. All threads that were associated with or created by this thread remain
-    # (and are not deleted when the thread is deleted).
+    # Delete a thread.
     deleteThread(thread: ID!): EmptyResponse
 }
 
@@ -4173,48 +4165,6 @@ input GitCreateRefFromPatchInput {
 type GitCreateRefFromPatchPayload {
     # The newly created ref.
     ref: GitRef!
-}
-
-# A changeset is a set of changes to code, along with related discussion and automation.
-#
-# TODO!(sqs): make this a top-level type, not just a sub-type of DiscussionThread
-type Changeset {
-    # The title of the changeset.
-    title: String!
-
-    # The external URL of the changeset, if any.
-    externalURL: String
-}
-
-# A list of changesets.
-type ChangesetConnection {
-    # A list of changesets.
-    nodes: [Changeset!]!
-
-    # The total number of changesets in the connection.
-    totalCount: Int!
-
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
-# Mutations related to changesets.
-type ChangesetsMutation {
-    # Create a changeset.
-    createChangeset(input: ChangesetsCreateChangesetInput!): ChangesetsCreateChangesetPayload
-}
-
-# Input arguments for ChangesetsMutation.createChangeset.
-input ChangesetsCreateChangesetInput {
-    repository: ID!
-    title: String!
-    externalURL: String
-}
-
-# The payload for ChangesetsMutation.createChangeset.
-type ChangesetsCreateChangesetPayload {
-    # The newly created changeset.
-    changeset: Changeset!
 }
 
 # Mutations related to campaigns.

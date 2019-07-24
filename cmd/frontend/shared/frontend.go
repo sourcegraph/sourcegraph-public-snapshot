@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/changesets"
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/projects"
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/repos/git"
