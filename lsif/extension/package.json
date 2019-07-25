@@ -39,7 +39,7 @@
   "devDependencies": {
     "@sourcegraph/prettierrc": "^3.0.1",
     "@sourcegraph/tsconfig": "^4.0.0",
-    "@sourcegraph/tslint-config": "^13.3.0",
+    "@sourcegraph/tslint-config": "^13.4.0",
     "lnfs-cli": "^2.1.0",
     "mkdirp": "^0.5.1",
     "parcel-bundler": "^1.12.3",
