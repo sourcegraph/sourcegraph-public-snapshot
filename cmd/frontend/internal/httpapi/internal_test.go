@@ -46,7 +46,7 @@ func Test_serveReposList(t *testing.T) {
 		}
 		resp.Body.Close()
 		if err != nil {
-			log.Fatalf("closing response body: %v", err)
+			t.Fatalf("closing response body: %v", err)
 		}
 		var URIs []string
 		for _, r := range repos {
