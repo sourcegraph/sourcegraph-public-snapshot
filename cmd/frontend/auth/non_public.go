@@ -96,6 +96,11 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
+	// Permission is checked later by validating the LSIF upload token.
+	if strings.HasPrefix(req.URL.Path, "/.api/lsif/upload") {
+		return true
+	}
+
 	apiRouteName := matchedRouteName(req, router.Router())
 	if apiRouteName == router.UI {
 		// Test against UI router. (Some of its handlers inject private data into the title or meta tags.)

@@ -514,6 +514,8 @@ type SiteConfiguration struct {
 	GitMaxConcurrentClones            int                         `json:"gitMaxConcurrentClones,omitempty"`
 	GithubClientID                    string                      `json:"githubClientID,omitempty"`
 	GithubClientSecret                string                      `json:"githubClientSecret,omitempty"`
+	LsifUploadSecret                  string                      `json:"lsifUploadSecret,omitempty"`
+	LsifVerificationGithubToken       string                      `json:"lsifVerificationGithubToken,omitempty"`
 	MaxReposToSearch                  int                         `json:"maxReposToSearch,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
 	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`

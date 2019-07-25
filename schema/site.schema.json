@@ -59,6 +59,16 @@
       "examples": ["https://my-phabricator.example.com https://my-bitbucket.example.com"],
       "group": "Security"
     },
+    "lsifVerificationGithubToken": {
+      "description": "The GitHub token that is used to verify that a user owns a repository.",
+      "type": "string",
+      "group": "Security"
+    },
+    "lsifUploadSecret": {
+      "description": "Used to generate LSIF upload tokens. Must be long (20+ bytes) to make offline brute-force attacks difficult.",
+      "type": "string",
+      "group": "Security"
+    },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",
