@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +15,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -51,6 +53,7 @@ func TestClient_Archive(t *testing.T) {
 	tests := map[string]struct {
 		repo gitserver.Repo
 		want map[string]string
+		err  error
 	}{
 		"git cmd": {
 			repo: git.MakeGitRepository(t, gitCommands...),
@@ -64,15 +67,23 @@ func TestClient_Archive(t *testing.T) {
 			repo: gitserver.Repo{Name: api.RepoName(repoWithDotGitDir), URL: repoWithDotGitDir},
 			want: map[string]string{"file1": "hello\n", ".git/mydir/file2": "milton\n", ".git/mydir/": "", ".git/": ""},
 		},
+		"repo not found": {
+			repo: gitserver.Repo{Name: api.RepoName("not-found")},
+			err:  errors.New("repository does not exist: not-found"),
+		},
 	}
 
 	ctx := context.Background()
 	for label, test := range tests {
 		rc, err := cli.Archive(ctx, test.repo, gitserver.ArchiveOptions{Treeish: "HEAD", Format: "zip"})
-		if err != nil {
-			t.Errorf("%s: Archive: %s", label, err)
+		if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
+			t.Errorf("%s: Archive: have err %v, want %v", label, have, want)
+		}
+
+		if rc == nil {
 			continue
 		}
+
 		defer rc.Close()
 		data, err := ioutil.ReadAll(rc)
 		if err != nil {
