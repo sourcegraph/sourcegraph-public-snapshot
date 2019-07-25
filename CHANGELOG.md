@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Repos with greatest `updated_at - created_at` are prioritized for indexing, to support `repo:`-free queries on sourcegraph.com. [#4958](https://github.com/sourcegraph/sourcegraph/issues/4958).
+
 ### Changed
 
 ### Fixed
