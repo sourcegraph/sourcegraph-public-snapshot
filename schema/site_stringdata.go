@@ -70,7 +70,7 @@ const SiteSchemaJSON = `{
       "group": "Security"
     },
     "lsifUploadSecret": {
-      "description": "Used to generate LSIF upload tokens. Must be long (160+ bits) to make offline brute-force attacks difficult.",
+      "description": "Used to generate LSIF upload tokens. Must be long (20+ bytes) to make offline brute-force attacks difficult.",
       "type": "string",
       "group": "Security"
     },
