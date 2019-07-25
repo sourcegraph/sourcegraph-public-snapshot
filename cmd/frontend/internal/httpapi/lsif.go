@@ -104,7 +104,7 @@ type LSIFVerifyResponse struct {
 func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 	repository := r.URL.Query().Get("repository")
 	if !strings.HasPrefix(repository, "github.com") {
-		http.Error(w, "Only github.com repositories support verification.", http.StatusUnprocessableEntity)
+		http.Error(w, "Only github.com repositories support verification. See https://github.com/sourcegraph/sourcegraph/issues/4967", http.StatusUnprocessableEntity)
 		return
 	}
 	ownerAndName := strings.TrimPrefix(repository, "github.com/")
