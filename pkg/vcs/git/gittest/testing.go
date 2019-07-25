@@ -1,8 +1,11 @@
-package git_test
+package gittest
 
 import (
 	"bytes"
-	"context"
+	"encoding/json"
+	"flag"
+	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -17,28 +20,63 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-var times = []string{
-	appleTime("2006-01-02T15:04:05Z"),
-	appleTime("2014-05-06T19:20:21Z"),
+var logTmpDirs = flag.Bool("logtmpdirs", false, "log the temporary directories used by each test for inspection/debugging")
+
+// baseTempDir is the parent directory for all temporary directories
+// used by tests. Before each test run, all of its subdirectories are
+// removed.
+var baseTempDir = filepath.Join(os.TempDir(), "go-vcs-test")
+
+func init() {
+	// Remove and recreate baseTempDir.
+	// if err := os.RemoveAll(baseTempDir); err != nil {
+	// 	log.Fatal(err)
+	// }
+	if err := os.MkdirAll(baseTempDir, 0700); err != nil {
+		log.Fatal(err)
+	}
 }
 
-var nonexistentCommitID = api.CommitID(strings.Repeat("a", 40))
-
-var ctx = context.Background()
-
-// initGitRepository initializes a new Git repository and runs cmds in a new
-// temporary directory (returned as dir).
-func initGitRepository(t testing.TB, cmds ...string) string {
-	dir := initGitRepositoryWorkingCopy(t, cmds...)
-	makeGitRepositoryBare(t, dir)
+// MakeTmpDir creates a temporary directory underneath baseTempDir.
+func MakeTmpDir(t testing.TB, suffix string) string {
+	dir, err := ioutil.TempDir(baseTempDir, suffix)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if *logTmpDirs {
+		t.Logf("Using temp dir %s", dir)
+	}
 	return dir
 }
 
-func initGitRepositoryWorkingCopy(t testing.TB, cmds ...string) (dir string) {
-	dir = makeTmpDir(t, "git")
+func AsJSON(v interface{}) string {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
+var Times = []string{
+	AppleTime("2006-01-02T15:04:05Z"),
+	AppleTime("2014-05-06T19:20:21Z"),
+}
+
+var NonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
+
+// InitGitRepository initializes a new Git repository and runs cmds in a new
+// temporary directory (returned as dir).
+func InitGitRepository(t testing.TB, cmds ...string) string {
+	dir := InitGitRepositoryWorkingCopy(t, cmds...)
+	MakeGitRepositoryBare(t, dir)
+	return dir
+}
+
+func InitGitRepositoryWorkingCopy(t testing.TB, cmds ...string) (dir string) {
+	dir = MakeTmpDir(t, "git")
 	cmds = append([]string{"git init"}, cmds...)
 	for _, cmd := range cmds {
-		out, err := gitCommand(dir, "bash", "-c", cmd).CombinedOutput()
+		out, err := GitCommand(dir, "bash", "-c", cmd).CombinedOutput()
 		if err != nil {
 			t.Fatalf("Command %q failed. Output was:\n\n%s", cmd, out)
 		}
@@ -46,9 +84,9 @@ func initGitRepositoryWorkingCopy(t testing.TB, cmds ...string) (dir string) {
 	return dir
 }
 
-func makeGitRepositoryBare(t testing.TB, dir string) {
+func MakeGitRepositoryBare(t testing.TB, dir string) {
 	out, err :=
-		gitCommand(dir, "git", "config", "--bool", "core.bare", "true").
+		GitCommand(dir, "git", "config", "--bool", "core.bare", "true").
 			CombinedOutput()
 	if err != nil {
 		t.Fatalf("Failed to convert to bare repo: %s\nOut: %s", err, out)
@@ -64,21 +102,21 @@ func makeGitRepositoryBare(t testing.TB, dir string) {
 	}
 }
 
-func gitCommand(dir, name string, args ...string) *exec.Cmd {
+func GitCommand(dir, name string, args ...string) *exec.Cmd {
 	c := exec.Command(name, args...)
 	c.Dir = dir
 	c.Env = append(c.Env, "GIT_CONFIG="+path.Join(dir, ".git", "config"))
 	return c
 }
 
-// makeGitRepository calls initGitRepository to create a new Git repository and returns a handle to
+// MakeGitRepository calls initGitRepository to create a new Git repository and returns a handle to
 // it.
-func makeGitRepository(t testing.TB, cmds ...string) gitserver.Repo {
-	dir := initGitRepository(t, cmds...)
+func MakeGitRepository(t testing.TB, cmds ...string) gitserver.Repo {
+	dir := InitGitRepository(t, cmds...)
 	return gitserver.Repo{Name: api.RepoName(dir), URL: dir}
 }
 
-func commitsEqual(a, b *git.Commit) bool {
+func CommitsEqual(a, b *git.Commit) bool {
 	if (a == nil) != (b == nil) {
 		return false
 	}
@@ -97,7 +135,7 @@ func commitsEqual(a, b *git.Commit) bool {
 	return reflect.DeepEqual(a, b)
 }
 
-func mustParseTime(layout, value string) time.Time {
+func MustParseTime(layout, value string) time.Time {
 	tm, err := time.Parse(layout, value)
 	if err != nil {
 		panic(err.Error())
@@ -105,7 +143,7 @@ func mustParseTime(layout, value string) time.Time {
 	return tm
 }
 
-func appleTime(t string) string {
+func AppleTime(t string) string {
 	ti, _ := time.Parse(time.RFC3339, t)
 	return ti.Local().Format("200601021504.05")
 }
@@ -119,7 +157,7 @@ func appleTime(t string) string {
 // because for example Git for Windows (http://git-scm.com) is not aware of symlinks and computes link file's SHA which
 // may differ from original file content's SHA.
 // As a temporary workaround, we calculating SHA hash by asking git/hg to compute it
-func computeCommitHash(repoDir string, git bool) string {
+func ComputeCommitHash(repoDir string, git bool) string {
 	buf := &bytes.Buffer{}
 
 	if git {

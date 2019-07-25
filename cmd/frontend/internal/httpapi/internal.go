@@ -3,7 +3,6 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -481,16 +480,17 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	src, err := git.Archive(r.Context(), repo, git.ArchiveOptions{Treeish: string(commit), Format: "tar"})
-	if err != nil {
-		return err
+	opts := gitserver.ArchiveOptions{
+		Treeish: string(commit),
+		Format:  "tar",
 	}
-	defer src.Close()
 
-	w.Header().Set("Content-Type", "application/x-tar")
-	w.WriteHeader(http.StatusOK)
-	_, err = io.Copy(w, src)
-	return err
+	location := gitserver.DefaultClient.ArchiveURL(r.Context(), repo, opts)
+
+	w.Header().Set("Location", location.String())
+	w.WriteHeader(http.StatusFound)
+
+	return nil
 }
 
 func handlePing(w http.ResponseWriter, r *http.Request) {

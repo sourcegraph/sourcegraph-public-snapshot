@@ -1,4 +1,4 @@
-package git
+package gitserver
 
 import (
 	"fmt"

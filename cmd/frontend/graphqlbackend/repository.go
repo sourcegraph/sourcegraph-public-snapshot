@@ -112,7 +112,7 @@ type repositoryCommitArgs struct {
 func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitArgs) (*gitCommitResolver, error) {
 	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
 	if err != nil {
-		if git.IsRevisionNotFound(err) {
+		if gitserver.IsRevisionNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
@@ -148,7 +148,7 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver
 
 	// If we fail to get the default branch due to cloning or being empty, we return nothing.
 	if err != nil {
-		if vcs.IsCloneInProgress(err) || git.IsRevisionNotFound(err) {
+		if vcs.IsCloneInProgress(err) || gitserver.IsRevisionNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
@@ -299,7 +299,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	}
 
 	// If we already created the commit
-	if commit, err := getCommit(); commit != nil || (err != nil && !git.IsRevisionNotFound(err)) {
+	if commit, err := getCommit(); commit != nil || (err != nil && !gitserver.IsRevisionNotFound(err)) {
 		return commit, err
 	}
 

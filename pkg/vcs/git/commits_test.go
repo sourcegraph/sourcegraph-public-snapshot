@@ -1,6 +1,7 @@
 package git_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -8,7 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git/gittest"
 )
+
+var ctx = context.Background()
 
 func TestRepository_GetCommit(t *testing.T) {
 	t.Parallel()
@@ -19,8 +23,8 @@ func TestRepository_GetCommit(t *testing.T) {
 	}
 	wantGitCommit := &git.Commit{
 		ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-		Author:    git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-		Committer: &git.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+		Author:    git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+		Committer: &git.Signature{Name: "c", Email: "c@c.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 		Message:   "bar",
 		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 	}
@@ -30,7 +34,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		wantCommit *git.Commit
 	}{
 		"git cmd": {
-			repo:       makeGitRepository(t, gitCommands...),
+			repo:       gittest.MakeGitRepository(t, gitCommands...),
 			id:         "b266c7e3ca00b1a17ad0b1449825d0854225c007",
 			wantCommit: wantGitCommit,
 		},
@@ -43,12 +47,12 @@ func TestRepository_GetCommit(t *testing.T) {
 			continue
 		}
 
-		if !commitsEqual(commit, test.wantCommit) {
+		if !gittest.CommitsEqual(commit, test.wantCommit) {
 			t.Errorf("%s: got commit == %+v, want %+v", label, commit, test.wantCommit)
 		}
 
 		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := git.GetCommit(ctx, test.repo, nil, nonexistentCommitID); !git.IsRevisionNotFound(err) {
+		if _, err := git.GetCommit(ctx, test.repo, nil, gittest.NonExistentCommitID); !gitserver.IsRevisionNotFound(err) {
 			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 		}
 	}
@@ -121,7 +125,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 			gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
 		}
 
-		repo := makeGitRepository(t, gitCommands...)
+		repo := gittest.MakeGitRepository(t, gitCommands...)
 		got, err := git.HasCommitAfter(ctx, repo, tc.after, tc.revspec)
 		if err != nil || got != tc.want {
 			t.Errorf("got %t hascommitafter, want %t", got, tc.want)
@@ -141,15 +145,15 @@ func TestRepository_Commits(t *testing.T) {
 	wantGitCommits := []*git.Commit{
 		{
 			ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			Author:    git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-			Committer: &git.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+			Author:    git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+			Committer: &git.Signature{Name: "c", Email: "c@c.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 			Message:   "bar",
 			Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 		},
 		{
 			ID:        "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
-			Author:    git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Author:    git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Message:   "foo",
 			Parents:   nil,
 		},
@@ -161,7 +165,7 @@ func TestRepository_Commits(t *testing.T) {
 		wantTotal   uint
 	}{
 		"git cmd": {
-			repo:        makeGitRepository(t, gitCommands...),
+			repo:        gittest.MakeGitRepository(t, gitCommands...),
 			id:          "b266c7e3ca00b1a17ad0b1449825d0854225c007",
 			wantCommits: wantGitCommits,
 			wantTotal:   2,
@@ -197,13 +201,13 @@ func TestRepository_Commits(t *testing.T) {
 			if i < len(test.wantCommits) {
 				wantC = test.wantCommits[i]
 			}
-			if !commitsEqual(gotC, wantC) {
+			if !gittest.CommitsEqual(gotC, wantC) {
 				t.Errorf("%s: got commit %d == %+v, want %+v", label, i, gotC, wantC)
 			}
 		}
 
 		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := git.Commits(ctx, test.repo, git.CommitsOptions{Range: string(nonexistentCommitID)}); !git.IsRevisionNotFound(err) {
+		if _, err := git.Commits(ctx, test.repo, git.CommitsOptions{Range: string(gittest.NonExistentCommitID)}); !gitserver.IsRevisionNotFound(err) {
 			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 		}
 	}
@@ -220,8 +224,8 @@ func TestRepository_Commits_options(t *testing.T) {
 	wantGitCommits := []*git.Commit{
 		{
 			ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			Author:    git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-			Committer: &git.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+			Author:    git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+			Committer: &git.Signature{Name: "c", Email: "c@c.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 			Message:   "bar",
 			Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 		},
@@ -229,8 +233,8 @@ func TestRepository_Commits_options(t *testing.T) {
 	wantGitCommits2 := []*git.Commit{
 		{
 			ID:        "ade564eba4cf904492fb56dcd287ac633e6e082c",
-			Author:    git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
-			Committer: &git.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
+			Author:    git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
+			Committer: &git.Signature{Name: "c", Email: "c@c.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
 			Message:   "qux",
 			Parents:   []api.CommitID{"b266c7e3ca00b1a17ad0b1449825d0854225c007"},
 		},
@@ -242,13 +246,13 @@ func TestRepository_Commits_options(t *testing.T) {
 		wantTotal   uint
 	}{
 		"git cmd": {
-			repo:        makeGitRepository(t, gitCommands...),
+			repo:        gittest.MakeGitRepository(t, gitCommands...),
 			opt:         git.CommitsOptions{Range: "ade564eba4cf904492fb56dcd287ac633e6e082c", N: 1, Skip: 1},
 			wantCommits: wantGitCommits,
 			wantTotal:   1,
 		},
 		"git cmd Head": {
-			repo: makeGitRepository(t, gitCommands...),
+			repo: gittest.MakeGitRepository(t, gitCommands...),
 			opt: git.CommitsOptions{
 				Range: "b266c7e3ca00b1a17ad0b1449825d0854225c007...ade564eba4cf904492fb56dcd287ac633e6e082c",
 			},
@@ -286,7 +290,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			if i < len(test.wantCommits) {
 				wantC = test.wantCommits[i]
 			}
-			if !commitsEqual(gotC, wantC) {
+			if !gittest.CommitsEqual(gotC, wantC) {
 				t.Errorf("%s: got commit %d == %+v, want %+v", label, i, gotC, wantC)
 			}
 		}
@@ -299,7 +303,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"touch file1",
-		"touch --date=2006-01-02T15:04:05Z file1 || touch -t " + times[0] + " file1",
+		"touch --date=2006-01-02T15:04:05Z file1 || touch -t " + gittest.Times[0] + " file1",
 		"git add file1",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
@@ -307,8 +311,8 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	wantGitCommits := []*git.Commit{
 		{
 			ID:        "546a3ef26e581624ef997cb8c0ba01ee475fc1dc",
-			Author:    git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Author:    git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Message:   "commit2",
 			Parents:   []api.CommitID{"a04652fa1998a0a7d2f2f77ecb7021de943d3aab"},
 		},
@@ -320,7 +324,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		wantTotal   uint
 	}{
 		"git cmd Path 0": {
-			repo: makeGitRepository(t, gitCommands...),
+			repo: gittest.MakeGitRepository(t, gitCommands...),
 			opt: git.CommitsOptions{
 				Range: "master",
 				Path:  "doesnt-exist",
@@ -329,7 +333,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 			wantTotal:   0,
 		},
 		"git cmd Path 1": {
-			repo: makeGitRepository(t, gitCommands...),
+			repo: gittest.MakeGitRepository(t, gitCommands...),
 			opt: git.CommitsOptions{
 				Range: "master",
 				Path:  "file1",
@@ -368,7 +372,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 			if i < len(test.wantCommits) {
 				wantC = test.wantCommits[i]
 			}
-			if !commitsEqual(gotC, wantC) {
+			if !gittest.CommitsEqual(gotC, wantC) {
 				t.Errorf("%s: got commit %d == %+v, want %+v", label, i, gotC, wantC)
 			}
 		}
