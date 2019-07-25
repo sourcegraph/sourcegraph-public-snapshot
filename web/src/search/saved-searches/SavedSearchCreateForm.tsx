@@ -72,21 +72,19 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
         }
 
         return (
-            <>
-                <SavedSearchForm
-                    {...this.props}
-                    submitLabel="Add saved search"
-                    title="Add saved search"
-                    defaultValues={
-                        this.props.orgID
-                            ? { orgID: this.props.orgID, ...defaultValue }
-                            : { userID: this.props.userID, ...defaultValue }
-                    }
-                    onSubmit={this.onSubmit}
-                    loading={this.state.createdOrError === LOADING}
-                    error={isErrorLike(this.state.createdOrError) ? this.state.createdOrError : undefined}
-                />
-            </>
+            <SavedSearchForm
+                {...this.props}
+                submitLabel="Add saved search"
+                title="Add saved search"
+                defaultValues={
+                    this.props.orgID
+                        ? { orgID: this.props.orgID, ...defaultValue }
+                        : { userID: this.props.userID, ...defaultValue }
+                }
+                onSubmit={this.onSubmit}
+                loading={this.state.createdOrError === LOADING}
+                error={isErrorLike(this.state.createdOrError) ? this.state.createdOrError : undefined}
+            />
         )
     }
 
