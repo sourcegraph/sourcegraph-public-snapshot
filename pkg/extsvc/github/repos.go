@@ -535,13 +535,13 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 	}, nil
 }
 
-type restTopics struct {
+type restTopicsResponse struct {
 	Names []string `json:"names"`
 }
 
 // ListTopicsOnRepository lists topics on the given repository.
 func (c *Client) ListTopicsOnRepository(ctx context.Context, ownerAndName string) ([]string, error) {
-	var result restTopics
+	var result restTopicsResponse
 	if err := c.requestGet(ctx, "", fmt.Sprintf("/repos/%s/topics", ownerAndName), &result); err != nil {
 		if HTTPErrorCode(err) == http.StatusNotFound {
 			return nil, ErrNotFound
