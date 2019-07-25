@@ -1,5 +1,6 @@
 import React from 'react'
 import { Redirect } from 'react-router'
+import { namespaceAreaRoutes } from '../../namespaces/routes'
 import { lazyComponent } from '../../util/lazyComponent'
 import { OrgAreaRoute } from './OrgArea'
 
@@ -39,6 +40,7 @@ export const orgAreaRoutes: ReadonlyArray<OrgAreaRoute> = [
             'OrgSavedSearchesUpdateForm'
         ),
     },
+    ...namespaceAreaRoutes,
 
     // Redirect from previous /orgs/:orgname/account -> /orgs/:orgname/settings/profile.
     {
