@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -452,22 +451,12 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 		Format:  "tar",
 	}
 
-	if r.URL.Query().Get("redirect") == "1" {
-		location := gitserver.DefaultClient.ArchiveURL(r.Context(), repo, opts)
-		w.Header().Set("Location", location.String())
-		w.WriteHeader(http.StatusFound)
-		return nil
-	}
+	location := gitserver.DefaultClient.ArchiveURL(r.Context(), repo, opts)
 
-	src, err := gitserver.DefaultClient.Archive(r.Context(), repo, opts)
-	if err != nil {
-		return err
-	}
-	defer src.Close()
+	w.Header().Set("Location", location.String())
+	w.WriteHeader(http.StatusFound)
 
-	w.Header().Set("Content-Type", "application/x-tar")
-	_, err = io.Copy(w, src)
-	return err
+	return nil
 }
 
 func handlePing(w http.ResponseWriter, r *http.Request) {
