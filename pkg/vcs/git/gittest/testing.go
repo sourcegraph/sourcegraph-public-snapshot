@@ -1,4 +1,4 @@
-package git
+package gittest
 
 import (
 	"bytes"
@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 var logTmpDirs = flag.Bool("logtmpdirs", false, "log the temporary directories used by each test for inspection/debugging")
@@ -115,7 +116,7 @@ func MakeGitRepository(t testing.TB, cmds ...string) gitserver.Repo {
 	return gitserver.Repo{Name: api.RepoName(dir), URL: dir}
 }
 
-func CommitsEqual(a, b *Commit) bool {
+func CommitsEqual(a, b *git.Commit) bool {
 	if (a == nil) != (b == nil) {
 		return false
 	}

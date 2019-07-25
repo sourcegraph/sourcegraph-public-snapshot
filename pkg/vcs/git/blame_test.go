@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git/gittest"
 )
 
 func TestRepository_BlameFile(t *testing.T) {
@@ -23,11 +24,11 @@ func TestRepository_BlameFile(t *testing.T) {
 	gitWantHunks := []*git.Hunk{
 		{
 			StartLine: 1, EndLine: 2, StartByte: 0, EndByte: 6, CommitID: "e6093374dcf5725d8517db0dccbbf69df65dbde0",
-			Message: "foo", Author: git.Signature{Name: "a", Email: "a@a.com", Date: git.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Message: "foo", Author: git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 		},
 		{
 			StartLine: 2, EndLine: 3, StartByte: 6, EndByte: 12, CommitID: "fad406f4fe02c358a09df0d03ec7a36c2c8a20f1",
-			Message: "foo", Author: git.Signature{Name: "a", Email: "a@a.com", Date: git.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Message: "foo", Author: git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 		},
 	}
 	tests := map[string]struct {
@@ -38,7 +39,7 @@ func TestRepository_BlameFile(t *testing.T) {
 		wantHunks []*git.Hunk
 	}{
 		"git cmd": {
-			repo: git.MakeGitRepository(t, gitCommands...),
+			repo: gittest.MakeGitRepository(t, gitCommands...),
 			path: "f",
 			opt: &git.BlameOptions{
 				NewestCommit: "master",
@@ -62,7 +63,7 @@ func TestRepository_BlameFile(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(hunks, test.wantHunks) {
-			t.Errorf("%s: hunks != wantHunks\n\nhunks ==========\n%s\n\nwantHunks ==========\n%s", label, git.AsJSON(hunks), git.AsJSON(test.wantHunks))
+			t.Errorf("%s: hunks != wantHunks\n\nhunks ==========\n%s\n\nwantHunks ==========\n%s", label, gittest.AsJSON(hunks), gittest.AsJSON(test.wantHunks))
 		}
 	}
 }

@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git/gittest"
 )
 
 func TestClient_Archive(t *testing.T) {
@@ -34,7 +34,7 @@ func TestClient_Archive(t *testing.T) {
 		return []string{u.Host}
 	}
 
-	repoWithDotGitDir := git.MakeTmpDir(t, "repo-with-dot-git-dir")
+	repoWithDotGitDir := gittest.MakeTmpDir(t, "repo-with-dot-git-dir")
 	if err := createRepoWithDotGitDir(repoWithDotGitDir); err != nil {
 		t.Fatal(err)
 	}
@@ -42,11 +42,11 @@ func TestClient_Archive(t *testing.T) {
 	gitCommands := []string{
 		"mkdir dir1",
 		"echo -n infile1 > dir1/file1",
-		"touch --date=2006-01-02T15:04:05Z dir1 dir1/file1 || touch -t " + git.Times[0] + " dir1 dir1/file1",
+		"touch --date=2006-01-02T15:04:05Z dir1 dir1/file1 || touch -t " + gittest.Times[0] + " dir1 dir1/file1",
 		"git add dir1/file1",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"echo -n infile2 > 'file 2'",
-		"touch --date=2014-05-06T19:20:21Z 'file 2' || touch -t " + git.Times[1] + " 'file 2'",
+		"touch --date=2014-05-06T19:20:21Z 'file 2' || touch -t " + gittest.Times[1] + " 'file 2'",
 		"git add 'file 2'",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2014-05-06T19:20:21Z git commit -m commit2 --author='a <a@a.com>' --date 2014-05-06T19:20:21Z",
 	}
@@ -56,7 +56,7 @@ func TestClient_Archive(t *testing.T) {
 		err  error
 	}{
 		"git cmd": {
-			repo: git.MakeGitRepository(t, gitCommands...),
+			repo: gittest.MakeGitRepository(t, gitCommands...),
 			want: map[string]string{
 				"dir1/":      "",
 				"dir1/file1": "infile1",

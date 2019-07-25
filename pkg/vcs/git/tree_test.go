@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git/gittest"
 )
 
 func TestRepository_FileSystem_Symlinks(t *testing.T) {
@@ -21,7 +22,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	gitCommands := []string{
 		"touch file1",
 		"ln -s file1 link1",
-		"touch --date=2006-01-02T15:04:05Z file1 link1 || touch -t " + git.Times[0] + " file1 link1",
+		"touch --date=2006-01-02T15:04:05Z file1 link1 || touch -t " + gittest.Times[0] + " file1 link1",
 		"git add link1 file1",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
@@ -39,7 +40,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		commitID api.CommitID
 	}{
 		"git cmd": {
-			repo:     git.MakeGitRepository(t, gitCommands...),
+			repo:     gittest.MakeGitRepository(t, gitCommands...),
 			commitID: gitCommitID,
 		},
 	}
@@ -48,7 +49,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 		var commitID string
 		if test.commitID == "" {
-			commitID = git.ComputeCommitHash(test.repo.URL, true)
+			commitID = gittest.ComputeCommitHash(test.repo.URL, true)
 		} else {
 			commitID = string(test.commitID)
 		}
@@ -132,11 +133,11 @@ func TestRepository_FileSystem(t *testing.T) {
 	gitCommands := []string{
 		"mkdir dir1",
 		"echo -n infile1 > dir1/file1",
-		"touch --date=2006-01-02T15:04:05Z dir1 dir1/file1 || touch -t " + git.Times[0] + " dir1 dir1/file1",
+		"touch --date=2006-01-02T15:04:05Z dir1 dir1/file1 || touch -t " + gittest.Times[0] + " dir1 dir1/file1",
 		"git add dir1/file1",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"echo -n infile2 > 'file 2'",
-		"touch --date=2014-05-06T19:20:21Z 'file 2' || touch -t " + git.Times[1] + " 'file 2'",
+		"touch --date=2014-05-06T19:20:21Z 'file 2' || touch -t " + gittest.Times[1] + " 'file 2'",
 		"git add 'file 2'",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2014-05-06T19:20:21Z git commit -m commit2 --author='a <a@a.com>' --date 2014-05-06T19:20:21Z",
 		"git rm 'dir1/file1' 'file 2'",
@@ -147,7 +148,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		first, second, third api.CommitID
 	}{
 		"git cmd": {
-			repo:   git.MakeGitRepository(t, gitCommands...),
+			repo:   gittest.MakeGitRepository(t, gitCommands...),
 			first:  "b6602ca96bdc0ab647278577a3c6edcb8fe18fb0",
 			second: "c5151eceb40d5e625716589b745248e1a6c6228d",
 			third:  "ba3c51080ed4a5b870952ecd7f0e15f255b24cca",
@@ -330,10 +331,10 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 		repo gitserver.Repo
 	}{
 		"git cmd (quotepath=on)": {
-			repo: git.MakeGitRepository(t, append([]string{"git config core.quotepath on"}, gitCommands...)...),
+			repo: gittest.MakeGitRepository(t, append([]string{"git config core.quotepath on"}, gitCommands...)...),
 		},
 		"git cmd (quotepath=off)": {
-			repo: git.MakeGitRepository(t, append([]string{"git config core.quotepath off"}, gitCommands...)...),
+			repo: gittest.MakeGitRepository(t, append([]string{"git config core.quotepath off"}, gitCommands...)...),
 		},
 	}
 
@@ -376,7 +377,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	t.Parallel()
 
-	submodDir := git.InitGitRepository(t,
+	submodDir := gittest.InitGitRepository(t,
 		"touch f",
 		"git add f",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
@@ -391,7 +392,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		repo gitserver.Repo
 	}{
 		"git cmd": {
-			repo: git.MakeGitRepository(t, gitCommands...),
+			repo: gittest.MakeGitRepository(t, gitCommands...),
 		},
 	}
 

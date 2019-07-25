@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git/gittest"
 )
 
 func TestMerger_MergeBase(t *testing.T) {
@@ -34,7 +35,7 @@ func TestMerger_MergeBase(t *testing.T) {
 		wantMergeBase string // can be any revspec; is resolved during test
 	}{
 		"git cmd": {
-			repo: git.MakeGitRepository(t, cmds...),
+			repo: gittest.MakeGitRepository(t, cmds...),
 			a:    "master", b: "b2",
 			wantMergeBase: "testbase",
 		},

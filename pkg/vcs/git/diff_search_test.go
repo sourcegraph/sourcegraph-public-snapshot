@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git/gittest"
 )
 
 func TestRepository_RawLogDiffSearch(t *testing.T) {
@@ -34,7 +35,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 		want map[*git.RawLogDiffSearchOptions][]*git.LogCommitSearchResult
 	}{
 		"git cmd": {
-			repo: git.MakeGitRepository(t, gitCommands...),
+			repo: gittest.MakeGitRepository(t, gitCommands...),
 			want: map[*git.RawLogDiffSearchOptions][]*git.LogCommitSearchResult{
 				{
 					Query: git.TextSearchOptions{Pattern: "root"},
@@ -43,8 +44,8 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 					{
 						Commit: git.Commit{
 							ID:        "b9b2349a02271ca96e82c70f384812f9c62c26ab",
-							Author:    git.Signature{Name: "a", Email: "a@a.com", Date: git.MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-							Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: git.MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+							Author:    git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+							Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 							Message:   "branch1",
 							Parents:   []api.CommitID{"ce72ece27fd5c8180cfbc1c412021d32fd1cda0d"},
 						},
@@ -55,8 +56,8 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 					{
 						Commit: git.Commit{
 							ID:        "ce72ece27fd5c8180cfbc1c412021d32fd1cda0d",
-							Author:    git.Signature{Name: "a", Email: "a@a.com", Date: git.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-							Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: git.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+							Author:    git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+							Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 							Message:   "root",
 						},
 						Refs:       []string{"refs/heads/master", "refs/tags/mytag"},
@@ -73,8 +74,8 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 					{
 						Commit: git.Commit{
 							ID:        "b9b2349a02271ca96e82c70f384812f9c62c26ab",
-							Author:    git.Signature{Name: "a", Email: "a@a.com", Date: git.MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-							Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: git.MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+							Author:    git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+							Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 							Message:   "branch1",
 							Parents:   []api.CommitID{"ce72ece27fd5c8180cfbc1c412021d32fd1cda0d"},
 						},
@@ -84,8 +85,8 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 					{
 						Commit: git.Commit{
 							ID:        "ce72ece27fd5c8180cfbc1c412021d32fd1cda0d",
-							Author:    git.Signature{Name: "a", Email: "a@a.com", Date: git.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-							Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: git.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+							Author:    git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+							Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 							Message:   "root",
 						},
 						Refs:       []string{"refs/heads/master", "refs/tags/mytag"},
@@ -119,7 +120,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 				r.DiffHighlights = nil // Highlights is tested separately
 			}
 			if !reflect.DeepEqual(results, want) {
-				t.Errorf("%s: %+v: got %+v, want %+v", label, *opt, git.AsJSON(results), git.AsJSON(want))
+				t.Errorf("%s: %+v: got %+v, want %+v", label, *opt, gittest.AsJSON(results), gittest.AsJSON(want))
 			}
 		}
 	}
@@ -137,7 +138,7 @@ func TestRepository_RawLogDiffSearch_emptyCommit(t *testing.T) {
 		want map[*git.RawLogDiffSearchOptions][]*git.LogCommitSearchResult
 	}{
 		"git cmd": {
-			repo: git.MakeGitRepository(t, gitCommands...),
+			repo: gittest.MakeGitRepository(t, gitCommands...),
 			want: map[*git.RawLogDiffSearchOptions][]*git.LogCommitSearchResult{
 				{
 					Paths: git.PathOptions{IncludePatterns: []string{"/xyz.txt"}, IsRegExp: true},
@@ -160,7 +161,7 @@ func TestRepository_RawLogDiffSearch_emptyCommit(t *testing.T) {
 				r.DiffHighlights = nil // Highlights is tested separately
 			}
 			if !reflect.DeepEqual(results, want) {
-				t.Errorf("%s: %+v: got %+v, want %+v", label, *opt, git.AsJSON(results), git.AsJSON(want))
+				t.Errorf("%s: %+v: got %+v, want %+v", label, *opt, gittest.AsJSON(results), gittest.AsJSON(want))
 			}
 		}
 	}
