@@ -33,7 +33,7 @@ func Test_serveReposList(t *testing.T) {
 		defer ts.Close()
 		resp, err := http.Post(ts.URL, "application/json; charset=utf8", bytes.NewReader([]byte(`{"Enabled": true, "Index": true}`)))
 		if err != nil {
-			log.Fatalf("calling http.Get: %v", err)
+			t.Fatalf("calling http.Get: %v", err)
 		}
 		// Parse the response as in zoekt-sourcegraph-indexserver/main.go.
 		type repo struct {
