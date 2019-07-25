@@ -97,8 +97,8 @@ func lsifChallengeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type LSIFVerifyResponse struct {
-	Token   string `json:"token"`
-	Failure string `json:"failure"`
+	Token   string `json:"token,omitempty"`
+	Failure string `json:"failure,omitempty"`
 }
 
 func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
