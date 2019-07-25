@@ -541,8 +541,13 @@ type restTopicsResponse struct {
 
 // ListTopicsOnRepository lists topics on the given repository.
 func (c *Client) ListTopicsOnRepository(ctx context.Context, ownerAndName string) ([]string, error) {
+	owner, name, err := SplitRepositoryNameWithOwner(ownerAndName)
+	if err != nil {
+		return nil, err
+	}
+
 	var result restTopicsResponse
-	if err := c.requestGet(ctx, "", fmt.Sprintf("/repos/%s/topics", ownerAndName), &result); err != nil {
+	if err := c.requestGet(ctx, "", fmt.Sprintf("/repos/%s/%s/topics", owner, name), &result); err != nil {
 		if HTTPErrorCode(err) == http.StatusNotFound {
 			return nil, ErrNotFound
 		}
