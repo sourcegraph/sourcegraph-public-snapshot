@@ -1,19 +1,22 @@
-import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { OrgAvatar } from '../OrgAvatar'
 import { OrgAreaPageProps } from './OrgArea'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
+    navItems: ReadonlyArray<OrgAreaHeaderNavItem>
     className?: string
 }
+
+export type OrgAreaHeaderContext = Pick<Props, 'org'>
+
+export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {}
 
 /**
  * Header for the organization area.
  */
-export const OrgHeader: React.FunctionComponent<Props> = ({ org, match, className = '' }) => (
+export const OrgHeader: React.FunctionComponent<Props> = ({ org, navItems, match, className = '' }) => (
     <div className={`org-header ${className}`}>
         <div className="container">
             {org && (
@@ -24,37 +27,20 @@ export const OrgHeader: React.FunctionComponent<Props> = ({ org, match, classNam
                     </h2>
                     <div className="d-flex align-items-end justify-content-between">
                         <ul className="nav nav-tabs border-bottom-0">
-                            <li className="nav-item">
-                                <NavLink to={`${match.url}`} exact={true} className="nav-link" activeClassName="active">
-                                    Overview
-                                </NavLink>
-                            </li>
-                            <li className="nav-item">
-                                <NavLink
-                                    to={`${match.url}/members`}
-                                    exact={true}
-                                    className="nav-link"
-                                    activeClassName="active"
-                                >
-                                    <UserIcon className="icon-inline" /> Members
-                                </NavLink>
-                            </li>
-                            <li className="nav-item">
-                                <NavLink
-                                    to={`${match.url}/searches`}
-                                    exact={false}
-                                    className="nav-link"
-                                    activeClassName="active"
-                                >
-                                    <FeatureSearchOutlineIcon className="icon-inline" /> Saved searches
-                                </NavLink>
-                            </li>
-                            {org.viewerCanAdminister && (
-                                <li className="nav-item">
-                                    <NavLink to={`${match.url}/settings`} className="nav-link" activeClassName="active">
-                                        <SettingsIcon className="icon-inline" /> Settings
-                                    </NavLink>
-                                </li>
+                            {navItems.map(
+                                ({ to, label, exact, icon: Icon, condition = () => true }) =>
+                                    condition({ org }) && (
+                                        <li key={label} className="nav-item">
+                                            <NavLink
+                                                to={match.url + to}
+                                                className="nav-link"
+                                                activeClassName="active"
+                                                exact={exact}
+                                            >
+                                                {Icon && <Icon className="icon-inline" />} {label}
+                                            </NavLink>
+                                        </li>
+                                    )
                             )}
                         </ul>
                         <div className="flex-1" />

@@ -2,8 +2,9 @@ import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Omit } from 'utility-types'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { Form } from '../../components/Form'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { Form } from '../components/Form'
+import { NamespaceProps } from '../namespaces'
 
 export interface SavedQueryFields {
     id: GQL.ID
@@ -11,19 +12,16 @@ export interface SavedQueryFields {
     query: string
     notify: boolean
     notifySlack: boolean
-    userID: GQL.ID | null
-    orgID: GQL.ID | null
     slackWebhookURL: string | null
 }
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, NamespaceProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
     defaultValues?: Partial<SavedQueryFields>
     title?: string
     submitLabel: string
-    emailNotificationLabel: string
     onSubmit: (fields: Omit<SavedQueryFields, 'id'>) => void
     loading: boolean
     error?: any
@@ -37,15 +35,8 @@ export class SavedSearchForm extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        const {
-            description = '',
-            query = '',
-            notify = false,
-            notifySlack = false,
-            userID = null,
-            orgID = null,
-            slackWebhookURL = '',
-        } = props.defaultValues || {}
+        const { description = '', query = '', notify = false, notifySlack = false, slackWebhookURL = '' } =
+            props.defaultValues || {}
 
         this.state = {
             values: {
@@ -53,8 +44,6 @@ export class SavedSearchForm extends React.Component<Props, State> {
                 query,
                 notify,
                 notifySlack,
-                userID,
-                orgID,
                 slackWebhookURL,
             },
         }
@@ -129,7 +118,13 @@ export class SavedSearchForm extends React.Component<Props, State> {
                                     defaultChecked={notify}
                                     onChange={this.createInputChangeHandler('notify')}
                                 />{' '}
-                                <span>{this.props.emailNotificationLabel}</span>
+                                <span>
+                                    {this.props.namespace.__typename === 'Org'
+                                        ? 'Send email notifications to all members of this organization'
+                                        : this.props.namespace.__typename === 'User'
+                                        ? 'Send email notifications to my email'
+                                        : 'Email notifications'}
+                                </span>
                             </label>
                         </div>
                     </div>

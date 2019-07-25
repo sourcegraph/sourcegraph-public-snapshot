@@ -3,14 +3,14 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap } from 'rxjs/operators'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { fetchSavedSearch, updateSavedSearch } from '../../search/backend'
-import { SavedQueryFields, SavedSearchForm } from '../../search/saved-searches/SavedSearchForm'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { NamespaceProps } from '../namespaces'
+import { fetchSavedSearch, updateSavedSearch } from '../search/backend'
+import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
-interface Props extends RouteComponentProps<{ id: GQL.ID }> {
+interface Props extends RouteComponentProps<{ id: GQL.ID }>, NamespaceProps {
     authenticatedUser: GQL.IUser | null
-    emailNotificationLabel: string
 }
 
 const LOADING: 'loading' = 'loading'
@@ -62,8 +62,8 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                                 input.query,
                                 input.notify,
                                 input.notifySlack,
-                                input.userID,
-                                input.orgID
+                                this.props.namespace.__typename === 'User' ? this.props.namespace.id : null,
+                                this.props.namespace.__typename === 'Org' ? this.props.namespace.id : null
                             ).pipe(
                                 mapTo(null),
                                 mergeMap(() =>
@@ -107,8 +107,6 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                             notify: savedSearch.notify,
                             notifySlack: savedSearch.notifySlack,
                             slackWebhookURL: savedSearch.slackWebhookURL,
-                            userID: savedSearch.userID,
-                            orgID: savedSearch.orgID,
                         }}
                         loading={this.state.updatedOrError === LOADING}
                         // tslint:disable-next-line:jsx-no-lambda

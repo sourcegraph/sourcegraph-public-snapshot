@@ -32,14 +32,6 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
     if (!props.authenticatedUser) {
         return null
     }
-
-    const transferProps: OrgAreaPageProps = {
-        authenticatedUser: props.authenticatedUser,
-        org: props.org,
-        onOrganizationUpdate: props.onOrganizationUpdate,
-        platformContext: props.platformContext,
-        settingsCascade: props.settingsCascade,
-    }
     return (
         <div className="d-flex">
             <OrgSettingsSidebar {...props} className="flex-0 mr-3" />
@@ -55,17 +47,16 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                 render={routeComponentProps => (
                                     <SettingsArea
                                         {...routeComponentProps}
-                                        {...transferProps}
-                                        subject={transferProps.org}
+                                        {...props}
+                                        subject={props.org}
                                         isLightTheme={props.isLightTheme}
                                         extraHeader={
                                             <>
-                                                {transferProps.authenticatedUser &&
-                                                    transferProps.org.viewerCanAdminister &&
-                                                    !transferProps.org.viewerIsMember && (
+                                                {props.authenticatedUser &&
+                                                    props.org.viewerCanAdminister &&
+                                                    !props.org.viewerIsMember && (
                                                         <SiteAdminAlert className="sidebar__alert">
-                                                            Viewing settings for{' '}
-                                                            <strong>{transferProps.org.name}</strong>
+                                                            Viewing settings for <strong>{props.org.name}</strong>
                                                         </SiteAdminAlert>
                                                     )}
                                                 <p>
@@ -83,7 +74,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                 exact={true}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
-                                    <OrgSettingsProfilePage {...routeComponentProps} {...transferProps} />
+                                    <OrgSettingsProfilePage {...routeComponentProps} {...props} />
                                 )}
                             />
                             <Route component={NotFoundPage} />

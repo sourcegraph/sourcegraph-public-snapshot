@@ -3,18 +3,14 @@ import { RouteComponentProps } from 'react-router'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { createSavedSearch } from '../../search/backend'
-import { SavedQueryFields, SavedSearchForm } from '../../search/saved-searches/SavedSearchForm'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { NamespaceProps } from '../namespaces'
+import { createSavedSearch } from '../search/backend'
+import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
-interface Props extends RouteComponentProps {
-    /** The URL path to return to after successfully creating a saved search.  */
-    returnPath: string
+interface Props extends RouteComponentProps, NamespaceProps {
     authenticatedUser: GQL.IUser | null
-    emailNotificationLabel: string
-    orgID?: GQL.ID
-    userID?: GQL.ID
 }
 
 const LOADING: 'loading' = 'loading'
@@ -45,8 +41,8 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                                 fields.query,
                                 fields.notify,
                                 fields.notifySlack,
-                                fields.userID,
-                                fields.orgID
+                                this.props.namespace.__typename === 'User' ? this.props.namespace.id : null,
+                                this.props.namespace.__typename === 'Org' ? this.props.namespace.id : null
                             ).pipe(
                                 map(() => true),
                                 catchError(error => [error])
@@ -57,7 +53,7 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                 .subscribe(createdOrError => {
                     this.setState({ createdOrError })
                     if (createdOrError === true) {
-                        this.props.history.push(this.props.returnPath)
+                        this.props.history.push(`${this.props.namespace.url}/searches`)
                     }
                 })
         )
@@ -72,21 +68,15 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
         }
 
         return (
-            <>
-                <SavedSearchForm
-                    {...this.props}
-                    submitLabel="Add saved search"
-                    title="Add saved search"
-                    defaultValues={
-                        this.props.orgID
-                            ? { orgID: this.props.orgID, ...defaultValue }
-                            : { userID: this.props.userID, ...defaultValue }
-                    }
-                    onSubmit={this.onSubmit}
-                    loading={this.state.createdOrError === LOADING}
-                    error={isErrorLike(this.state.createdOrError) ? this.state.createdOrError : undefined}
-                />
-            </>
+            <SavedSearchForm
+                {...this.props}
+                submitLabel="Add saved search"
+                title="Add saved search"
+                defaultValues={defaultValue}
+                onSubmit={this.onSubmit}
+                loading={this.state.createdOrError === LOADING}
+                error={isErrorLike(this.state.createdOrError) ? this.state.createdOrError : undefined}
+            />
         )
     }
 

@@ -1,12 +1,14 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { HeroPage } from '../components/HeroPage'
 import { ThemeProps } from '../theme'
-import { OrgArea } from './area/OrgArea'
+import { OrgArea, OrgAreaRoute } from './area/OrgArea'
+import { OrgAreaHeaderNavItem } from './area/OrgHeader'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
 
 const NotFoundPage = () => (
@@ -17,7 +19,15 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<any>, PlatformContextProps, SettingsCascadeProps, ThemeProps {
+interface Props
+    extends RouteComponentProps<any>,
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        SettingsCascadeProps,
+        ThemeProps {
+    orgAreaRoutes: ReadonlyArray<OrgAreaRoute>
+    orgAreaHeaderNavItems: ReadonlyArray<OrgAreaHeaderNavItem>
+
     authenticatedUser: GQL.IUser | null
 }
 
