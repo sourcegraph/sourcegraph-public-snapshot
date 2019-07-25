@@ -1,8 +1,8 @@
 import * as H from 'history'
 import * as React from 'react'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { Form } from '../../components/Form'
-import { Select } from '../../components/Select'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { Form } from '../components/Form'
+import { Select } from '../components/Select'
 
 interface Props {
     location: H.Location

@@ -7,10 +7,11 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { deleteSavedSearch, fetchSavedSearches } from '../../search/backend'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { buildSearchURLQuery } from '../../../shared/src/util/url'
+import { NamespaceProps } from '../namespaces'
+import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
 
 interface NodeProps extends RouteComponentProps {
     savedSearch: GQL.ISavedSearch
@@ -93,10 +94,7 @@ interface State {
     savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
 }
 
-interface Props extends RouteComponentProps<{}> {
-    orgID?: GQL.ID
-    userID?: GQL.ID
-}
+interface Props extends RouteComponentProps<{}>, NamespaceProps {}
 
 export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()
@@ -150,13 +148,18 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                         !isErrorLike(this.state.savedSearchesOrError) &&
                         this.state.savedSearchesOrError.length > 0 &&
                         this.state.savedSearchesOrError
-                            .filter(search =>
-                                this.props.orgID
-                                    ? search.orgID === this.props.orgID
-                                    : search.userID === this.props.userID
+                            .filter(
+                                search =>
+                                    search.orgID === this.props.namespace.id ||
+                                    search.userID === this.props.namespace.id
                             )
                             .map(search => (
-                                <SavedSearchNode {...this.props} savedSearch={search} onDelete={this.onDelete} />
+                                <SavedSearchNode
+                                    key={search.id}
+                                    {...this.props}
+                                    savedSearch={search}
+                                    onDelete={this.onDelete}
+                                />
                             ))}
                 </div>
             </div>
