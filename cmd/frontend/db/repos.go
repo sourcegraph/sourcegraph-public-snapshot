@@ -320,14 +320,14 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 // created_at and updated_at. In ad-hoc queries this query has resulted in many
 // popular repositories being returned, so it would probably be a good
 // experience for people trying out search.
-func (s *repos) ListWithLongestInterval(ctx context.Context, lim string) (URIs []string, err error) {
+func (s *repos) ListWithLongestInterval(ctx context.Context, lim int) (URIs []string, err error) {
 	query := fmt.Sprintf(`
 		SELECT uri
 		FROM repo
 		WHERE deleted_at IS NULL
 		AND enabled = true
 		ORDER BY fork, COALESCE(updated_at - (CASE WHEN created_at = '0001-01-01 00:00:00+00' THEN NOW() ELSE created_at END), '0') DESC
-		LIMIT %s
+		LIMIT %d
 `, lim)
 	rows, err := dbconn.Global.QueryContext(context.Background(), query)
 	if err != nil {
@@ -335,6 +335,7 @@ func (s *repos) ListWithLongestInterval(ctx context.Context, lim string) (URIs [
 	}
 	defer rows.Close()
 
+	URIs = make([]string, 0, lim)
 	for rows.Next() {
 		var u string
 		if err := rows.Scan(&u); err != nil {

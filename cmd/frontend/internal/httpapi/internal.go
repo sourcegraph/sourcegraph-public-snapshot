@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
@@ -219,6 +220,8 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	for i, repo := range res {
 		res2[i] = &repoWithBackcompatURIField{
 			URI: string(repo.Name),
+			// The setting of the Repo field has been removed because the only caller of this handler
+			// wasn't using it: zoekt-sourcegraph-indexserver.
 		}
 	}
 
@@ -234,9 +237,13 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 func listReposForSgDotCom(ctx context.Context) (res []*types.Repo, err error) {
 	limEnv := os.Getenv("SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
 	// Default to 10k longest lived repos if the env var isn't set.
-	lim := "10000"
+	lim := 10000
 	if limEnv != "" {
-		lim = limEnv
+		le, err := strconv.Atoi(limEnv)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing $SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
+		}
+		lim = le
 	}
 	// Grab a bunch of repos that are likely to be fairly popular,
 	// to demo Sourcegraph search.

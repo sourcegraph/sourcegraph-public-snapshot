@@ -225,7 +225,7 @@ func TestRepos_ListWithLongestInterval(t *testing.T) {
 
 	t.Run("empty table gives no repos", func(t *testing.T) {
 		ctx := dbtesting.TestContext(t)
-		URIs, err := Repos.ListWithLongestInterval(ctx, "ALL")
+		URIs, err := Repos.ListWithLongestInterval(ctx, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -253,7 +253,7 @@ func TestRepos_ListWithLongestInterval(t *testing.T) {
 			}
 		}
 
-		URIs, err := Repos.ListWithLongestInterval(ctx, "2")
+		URIs, err := Repos.ListWithLongestInterval(ctx, 2)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -280,7 +280,7 @@ func TestRepos_ListWithLongestInterval(t *testing.T) {
 			}
 		}
 
-		URIs, err := Repos.ListWithLongestInterval(ctx, "1")
+		URIs, err := Repos.ListWithLongestInterval(ctx, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -302,7 +302,7 @@ func TestRepos_ListWithLongestInterval(t *testing.T) {
 			}
 		}
 
-		URIs, err := Repos.ListWithLongestInterval(ctx, "1")
+		URIs, err := Repos.ListWithLongestInterval(ctx, 1)
 		if err != nil {
 			t.Fatal(err)
 		}

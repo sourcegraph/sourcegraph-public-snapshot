@@ -153,7 +153,7 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*typ
 }
 
 // ListWithLongestInterval calls db.Repos.ListWithLongestInterval, with tracing.
-func (s *repos) ListWithLongestInterval(ctx context.Context, lim string) (URIs []string, err error) {
+func (s *repos) ListWithLongestInterval(ctx context.Context, lim int) (URIs []string, err error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.ListWithLongestInterval(ctx, lim)
 	}
