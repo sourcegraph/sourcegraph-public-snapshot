@@ -1,0 +1,36 @@
+{
+  "builders": [
+    {
+      "profile": "sourcegraph-default",
+      "ami_name": "sourcegraph-packer-test_{{timestamp}}",
+      "instance_type": "m3.medium",
+      "region": "us-east-1",
+      "source_ami_filter": {
+        "filters": {
+          "virtualization-type": "hvm",
+          "name": "amzn2-ami-hvm*-2.0*-x86_64-ebs",
+          "root-device-type": "ebs",
+          "architecture": "x86_64"
+        },
+        "owners": ["amazon"],
+        "most_recent": true
+      },
+      "ssh_username": "ec2-user",
+      "type": "amazon-ebs"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "script": "./bootstrap-docker.sh"
+    },
+    {
+      "type": "shell",
+      "script": "./run-sourcegraph-image.sh"
+    },
+    {
+      "type": "shell",
+      "script": "./cleanup.sh"
+    }
+  ]
+}
