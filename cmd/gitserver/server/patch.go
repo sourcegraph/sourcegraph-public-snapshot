@@ -128,7 +128,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	if out, err := run(cmd); err != nil {
 		log15.Error("Failed to commit patch.", "ref", req.TargetRef, "output", out)
 
-		http.Error(w, "gitserver: commiting patch - "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "gitserver: committing patch - "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

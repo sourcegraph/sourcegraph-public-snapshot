@@ -975,7 +975,7 @@ declare namespace chrome.contextMenus {
         wasChecked?: boolean
         /**
          * Since browser 35.
-         * The URL of the page where the menu item was clicked. This property is not set if the click occured in a context where there is no current page, such as in a launcher context menu.
+         * The URL of the page where the menu item was clicked. This property is not set if the click occurred in a context where there is no current page, such as in a launcher context menu.
          */
         pageUrl: string
         /**
@@ -2518,7 +2518,7 @@ declare namespace chrome.extension {
      * True for content scripts running inside incognito tabs, and for extension pages running inside an incognito process. The latter only applies to extensions with 'split' incognito_behavior.
      */
     export var inIncognitoContext: boolean
-    /** Set for the lifetime of a callback if an ansychronous extension api has resulted in an error. If no error has occured lastError will be undefined. */
+    /** Set for the lifetime of a callback if an ansychronous extension api has resulted in an error. If no error has occurred lastError will be undefined. */
     export var lastError: LastError
 
     /** Returns the JavaScript 'window' object for the background page running inside the current extension. Returns null if the extension has no background page. */
@@ -3059,7 +3059,7 @@ declare namespace chrome.fileSystemProvider {
     /** Raised when aborting an operation with operationRequestId is requested. The operation executed with operationRequestId must be immediately stopped and successCallback of this abort request executed. If aborting fails, then errorCallback must be called. Note, that callbacks of the aborted operation must not be called, as they will be ignored. Despite calling errorCallback, the request may be forcibly aborted. */
     export var onAbortRequested: OperationRequestedEvent
     /**
-     * Raised when showing a configuration dialog for fileSystemId is requested. If it's handled, the file_system_provider.configurable manfiest option must be set to true.
+     * Raised when showing a configuration dialog for fileSystemId is requested. If it's handled, the file_system_provider.configurable manifest option must be set to true.
      * @since Since browser 44.
      */
     export var onConfigureRequested: RequestedEvent
@@ -5050,7 +5050,7 @@ declare namespace chrome.proxy {
         proxyForFtp?: ProxyServer
         /** Optional. The proxy server to be used for HTTP requests. */
         proxyForHttp?: ProxyServer
-        /** Optional. The proxy server to be used for everthing else or if any of the specific proxyFor... is not specified. */
+        /** Optional. The proxy server to be used for everything else or if any of the specific proxyFor... is not specified. */
         fallbackProxy?: ProxyServer
         /** Optional. The proxy server to be used for all per-URL requests (that is http, https, and ftp). */
         singleProxy?: ProxyServer

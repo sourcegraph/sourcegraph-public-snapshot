@@ -587,7 +587,7 @@ func getRecloneTime(gitDir string) (time.Time, error) {
 	return time.Unix(sec, 0), nil
 }
 
-// randDuration returns a psuedo-random duration between [0, d)
+// randDuration returns a pseudo-random duration between [0, d)
 func randDuration(d time.Duration) time.Duration {
 	return time.Duration(rand.Int63n(int64(d)))
 }

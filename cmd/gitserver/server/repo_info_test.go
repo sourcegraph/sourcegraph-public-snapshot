@@ -106,7 +106,7 @@ func TestServer_handleRepoInfo(t *testing.T) {
 		}
 	})
 
-	t.Run("mutliple", func(t *testing.T) {
+	t.Run("multiple", func(t *testing.T) {
 		origRepoCloned := repoCloned
 		repoCloned = func(dir string) bool { return false }
 		defer func() { repoCloned = origRepoCloned }()

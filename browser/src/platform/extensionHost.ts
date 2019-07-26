@@ -90,7 +90,7 @@ export function createExtensionHost(sourcegraphURL: string): Observable<Endpoint
  * as a comlink Endpoint to transport messages between the content script and the extension host.
  *
  * It is necessary to wrap the port using MessageChannelAdapter because browser.runtime.Port objects do not support
- * transfering MessagePort objects (see https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md).
+ * transferring MessagePort objects (see https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md).
  *
  */
 function endpointFromPort(port: browser.runtime.Port): MessagePort {

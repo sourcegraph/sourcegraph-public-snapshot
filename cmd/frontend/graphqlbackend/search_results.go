@@ -729,7 +729,7 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 			return nil, nil, errors.WithMessage(err, `invalid "timeout:" value (examples: "timeout:2s", "timeout:200ms")`)
 		}
 	} else if r.countIsSet() {
-		// If `count:` is set but `timeout:` is not explicitely set, use the max timeout
+		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout
 	}
 	// don't run queries longer than 1 minute.
