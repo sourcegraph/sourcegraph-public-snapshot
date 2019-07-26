@@ -13,7 +13,7 @@ import { ThemeProps } from '../theme'
  */
 const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
-interface Props
+export interface DynamicallyImportedMonacoSettingsEditorProps
     extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'language'>,
         ThemeProps {
     value: string
@@ -43,7 +43,10 @@ const MonacoSettingsEditor = React.lazy(async () => ({
 }))
 
 /** Displays a MonacoSettingsEditor component without loading Monaco in the current Webpack chunk. */
-export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent<Props, State> {
+export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent<
+    DynamicallyImportedMonacoSettingsEditorProps,
+    State
+> {
     public state: State = {}
 
     private subscriptions = new Subscription()

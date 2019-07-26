@@ -1,4 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { JSONSchema6 } from 'json-schema'
 import React, { useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -7,8 +8,9 @@ import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 import siteSchemaJSON from '../../../schema/site.schema.json'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { JSONSchemaInstanceEditor } from '../components/jsonSchemaInstanceEditor/JSONSchemaInstanceEditor'
 import { PageTitle } from '../components/PageTitle'
-import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
+import { parseJSON } from '../settings/configuration'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
@@ -195,7 +197,7 @@ export const SiteAdminConfigurationPage: React.FunctionComponent<Props> = props 
                 <div className="alert alert-danger">Error loading site configuration: {siteConfig.message}</div>
             ) : (
                 <div>
-                    <DynamicallyImportedMonacoSettingsEditor
+                    <JSONSchemaInstanceEditor
                         value={effectiveContents.effectiveContents}
                         jsonSchema={siteSchemaJSON}
                         canEdit={true}
@@ -205,6 +207,10 @@ export const SiteAdminConfigurationPage: React.FunctionComponent<Props> = props 
                         isLightTheme={props.isLightTheme}
                         onSave={updateSiteConfig}
                         history={props.history}
+                        form={{
+                            schema: siteSchemaJSON as JSONSchema6,
+                            formData: parseJSON(effectiveContents.effectiveContents),
+                        }}
                     />
                     <p className="form-text text-muted">
                         <small>

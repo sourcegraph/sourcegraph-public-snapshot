@@ -1,0 +1,11 @@
+.json-schema-instance-editor {
+    .btn > i {
+        display: none;
+    }
+    .btn-add::after {
+        content: 'Add';
+    }
+    .btn.array-item-remove::after {
+        content: 'Remove';
+    }
+}
