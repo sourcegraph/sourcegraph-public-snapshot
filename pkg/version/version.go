@@ -3,7 +3,7 @@ package version
 const devVersion = "dev" // version string for unreleased development builds
 
 // version is configured at build time via ldflags like this:
-// -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=1.2.3"
+// -ldflags "-X sourcegraph.com/pkg/version.version=1.2.3"
 var version = devVersion
 
 // Version returns the version string configured at build time.

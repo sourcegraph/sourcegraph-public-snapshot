@@ -17,7 +17,7 @@ export GOOS=linux
 export CGO_ENABLED=0
 
 for pkg in github.com/sourcegraph/sourcegraph/cmd/repo-updater; do
-    go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
+    go build -ldflags "-X sourcegraph.com/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
 
 docker build -f cmd/repo-updater/Dockerfile -t $IMAGE $OUTPUT \

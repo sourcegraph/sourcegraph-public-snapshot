@@ -40,7 +40,7 @@ for pkg in $server_pkg \
     github.com/google/zoekt/cmd/zoekt-webserver $additional_images; do
 
     go build \
-      -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION"  \
+      -ldflags "-X sourcegraph.com/pkg/version.version=$VERSION"  \
       -buildmode exe \
       -installsuffix netgo \
       -tags "dist netgo" \
