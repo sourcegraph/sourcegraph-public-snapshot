@@ -4,6 +4,6 @@
 cd $(dirname "${BASH_SOURCE[0]}")/../../..
 set -ex
 
-export SERVER_PKG=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/enterprise/cmd/server}
+export SERVER_PKG=${SERVER_PKG:-sourcegraph.com/enterprise/cmd/server}
 
-./cmd/server/build.sh github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/management-console
+./cmd/server/build.sh sourcegraph.com/enterprise/cmd/frontend sourcegraph.com/enterprise/cmd/management-console

@@ -6,7 +6,7 @@ echo "--- go enterprise import"
 
 set -euxf -o pipefail
 
-prefix=github.com/sourcegraph/sourcegraph/enterprise
+prefix=sourcegraph.com/enterprise
 template='{{with $pkg := .}}{{ range $pkg.Imports }}{{ printf "%s imports %s\n" $pkg.ImportPath .}}{{end}}{{end}}'
 
 if go list ./../../... \

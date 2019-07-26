@@ -16,7 +16,7 @@ export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
 
-for pkg in github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend; do
+for pkg in sourcegraph.com/enterprise/cmd/frontend; do
     go build -ldflags "-X sourcegraph.com/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
 

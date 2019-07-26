@@ -17,7 +17,7 @@ import (
 
 // dbExtension describes an extension in the extension registry.
 //
-// It is the internal form of github.com/sourcegraph/sourcegraph/pkg/registry.Extension (which is
+// It is the internal form of sourcegraph.com/pkg/registry.Extension (which is
 // the external API type). These types should generally be kept in sync, but registry.Extension
 // updates require backcompat.
 type dbExtension struct {

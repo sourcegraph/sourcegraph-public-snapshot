@@ -12,7 +12,7 @@ template='{{with $pkg := .}}{{ range $pkg.Deps }}{{ printf "%s imports %s\n" $pk
 
 if go list ./../../cmd/management-console/... \
         | xargs go list -f "$template" \
-        | grep -E "github.com/sourcegraph/sourcegraph/pkg/conf$"; then
+        | grep -E "sourcegraph.com/pkg/conf$"; then
     echo "Error: the management console is not allowed to import pkg/conf"
     exit 1
 fi

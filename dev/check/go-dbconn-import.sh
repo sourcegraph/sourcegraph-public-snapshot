@@ -7,13 +7,13 @@ echo "--- go dbconn import"
 
 set -euf -o pipefail
 
-allowed='^sourcegraph.com/cmd/frontend|github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend|sourcegraph.com/cmd/management-console|github.com/sourcegraph/sourcegraph/enterprise/cmd/management-console'
+allowed='^sourcegraph.com/cmd/frontend|sourcegraph.com/enterprise/cmd/frontend|sourcegraph.com/cmd/management-console|sourcegraph.com/enterprise/cmd/management-console'
 template='{{with $pkg := .}}{{ range $pkg.Deps }}{{ printf "%s imports %s\n" $pkg.ImportPath .}}{{end}}{{end}}'
 
 if go list ./../../cmd/... ../../enterprise/cmd/... \
         | grep -Ev "$allowed" \
         | xargs go list -f "$template" \
-        | grep "github.com/sourcegraph/sourcegraph/pkg/db/dbconn"; then
+        | grep "sourcegraph.com/pkg/db/dbconn"; then
     echo "Error: the above service(s) are not allowed to import pkg/db/dbconn"
     exit 1
 fi
