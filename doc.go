@@ -3,4 +3,4 @@
 //
 // See https://sourcegraph.com and the README.md file for more
 // information.
-package sourcegraph // import "github.com/sourcegraph/sourcegraph"
+package sourcegraph // import "sourcegraph.com"

@@ -1,5 +1,5 @@
 // gitserver is the gitserver server.
-package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
+package main
 
 import (
 	"log"
