@@ -96,7 +96,7 @@ Here is an example git commit history:
 
 1. The release captain creates the `3.0` release branch at commit `B`.
 1. The release captain tags the release candidate `v3.0.0-rc.1` at commit `B`.
-1. A feature is commited to `master` in commit `C`. It will not ship in `3.0`.
+1. A feature is committed to `master` in commit `C`. It will not ship in `3.0`.
 1. An issue is found in the release candidate and a fix is committed to `master` in commit `D`.
 1. The release captain cherry picks `D` from `master` into `3.0`.
 1. The release captain tags `v3.0.0` on the `3.0` release branch.

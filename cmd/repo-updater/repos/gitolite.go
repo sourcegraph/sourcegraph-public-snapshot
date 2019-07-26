@@ -119,7 +119,7 @@ func (s GitoliteSource) makeRepo(repo *gitolite.Repo) *Repo {
 }
 
 // GitolitePhabricatorMetadataSyncer creates Phabricator repos (in the phabricator_repo table) for each Gitolite
-// repo provided in it's Sync method. This is to satisfiy the contract established by the "phabricator" setting in the
+// repo provided in it's Sync method. This is to satisfy the contract established by the "phabricator" setting in the
 // Gitolite external service configuration.
 //
 // TODO(tsenart): This is a HUGE hack, but it lives to see another day. Erradicating this technical debt

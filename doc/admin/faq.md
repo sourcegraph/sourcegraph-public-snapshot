@@ -1,4 +1,4 @@
-# Adminstration FAQ
+# Administration FAQ
 
 ## How do I expose my Sourcegraph instance to a different host port when running locally?
 

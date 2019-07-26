@@ -23,7 +23,7 @@ const (
 	// extensions published to Sourcegraph.com.
 	FeatureExtensionRegistry Feature = "private-extension-registry"
 
-	// FeatureRemoteExtensionsAllowDisallow is whether the site admin may explictly specify a list
+	// FeatureRemoteExtensionsAllowDisallow is whether the site admin may explicitly specify a list
 	// of allowed remote extensions and prevent any other remote extensions from being used. It does
 	// not apply to locally published extensions.
 	FeatureRemoteExtensionsAllowDisallow = "remote-extensions-allow-disallow"
@@ -47,7 +47,7 @@ func isFeatureEnabled(info license.Info, feature Feature) bool {
 		// Enterprise Starter does not support a local extension registry.
 		return !info.HasTag(EnterpriseStarterTag)
 	case FeatureRemoteExtensionsAllowDisallow:
-		// Enterprise Starter does not support explictly allowing/disallowing remote extensions by
+		// Enterprise Starter does not support explicitly allowing/disallowing remote extensions by
 		// extension ID.
 		return !info.HasTag(EnterpriseStarterTag)
 	}

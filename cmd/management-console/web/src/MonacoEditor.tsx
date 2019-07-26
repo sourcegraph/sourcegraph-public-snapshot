@@ -83,7 +83,7 @@ export class MonacoEditor extends React.Component<Props, {}> {
     public componentDidMount(): void {
         const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
 
-        // TODO(slimsag): I do not understand why this cast is neccessary, and there must be a good reason
+        // TODO(slimsag): I do not understand why this cast is necessary, and there must be a good reason
         monaco.editor.onDidCreateEditor(editor => this.onDidCreateEditor(editor as monaco.editor.IStandaloneCodeEditor))
         monaco.editor.onDidCreateModel(model => this.onDidCreateModel(model))
 
