@@ -1,4 +1,4 @@
-module github.com/sourcegraph/sourcegraph
+module sourcegraph.com
 
 require (
 	cloud.google.com/go v0.34.0
