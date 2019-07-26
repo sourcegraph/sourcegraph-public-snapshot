@@ -24,4 +24,5 @@ export EXTSVC_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/external-services-con
 export GOMOD_ROOT=$PWD
 export PROCFILE=$PWD/dev/Procfile
 export ENTERPRISE_COMMANDS="frontend management-console"
+export ENTERPRISE=1
 ../dev/launch.sh
