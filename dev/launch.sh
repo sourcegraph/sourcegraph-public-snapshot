@@ -114,5 +114,5 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 }
 
 printf >&2 "\nStarting all binaries...\n\n"
-export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE:-dev/Procfile}"
+export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
 exec $GOREMAN start

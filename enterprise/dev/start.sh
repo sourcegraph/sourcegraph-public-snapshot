@@ -22,7 +22,6 @@ export CRITICAL_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/critical-config.jso
 export SITE_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/site-config.json
 export EXTSVC_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json
 export GOMOD_ROOT=$PWD
-export PROCFILE=$PWD/dev/Procfile
 export WATCH_ADDITIONAL_GO_DIRS="$PWD/cmd $PWD/dev $PWD/pkg"
 export ENTERPRISE_COMMANDS="frontend management-console"
 export ENTERPRISE=1
