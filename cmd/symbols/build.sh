@@ -70,7 +70,7 @@ function buildLibsqlite3Pcre() {
 
 # Builds the symbols executable.
 function buildExecutable() {
-    symbolsPackage="github.com/sourcegraph/sourcegraph/cmd/symbols"
+    symbolsPackage="sourcegraph.com/cmd/symbols"
 
     case "$BUILD_TYPE" in
         dev)

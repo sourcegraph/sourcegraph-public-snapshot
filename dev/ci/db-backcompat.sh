@@ -63,7 +63,7 @@ function runTest() {
 
         # All DB tests are assumed to import the ./cmd/frontend/db/testing package, so use that to
         # find which packages' tests need to be run.
-        PACKAGES_WITH_DB_TEST=$(go list -f '{{$printed := false}}{{range .TestImports}}{{if and (not $printed) (eq . "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing")}}{{$.ImportPath}}{{$printed = true}}{{end}}{{end}}' ./...)
+        PACKAGES_WITH_DB_TEST=$(go list -f '{{$printed := false}}{{range .TestImports}}{{if and (not $printed) (eq . "sourcegraph.com/cmd/frontend/db/testing")}}{{$.ImportPath}}{{$printed = true}}{{end}}{{end}}' ./...)
 
         set -ex
         # Test without cache, because schema change does not

@@ -18,11 +18,11 @@ export CGO_ENABLED=0
 
 # Additional images passed in here when this script is called externally by our
 # enterprise build scripts.
-additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/management-console}
+additional_images=${@:-sourcegraph.com/cmd/frontend sourcegraph.com/cmd/management-console}
 
 # Overridable server package path for when this script is called externally by
 # our enterprise build scripts.
-server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
+server_pkg=${SERVER_PKG:-sourcegraph.com/cmd/server}
 
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
 bindir="$OUTPUT/usr/local/bin"
@@ -30,11 +30,11 @@ mkdir -p "$bindir"
 
 echo "--- go build"
 for pkg in $server_pkg \
-    github.com/sourcegraph/sourcegraph/cmd/github-proxy \
-    github.com/sourcegraph/sourcegraph/cmd/gitserver \
-    github.com/sourcegraph/sourcegraph/cmd/query-runner \
-    github.com/sourcegraph/sourcegraph/cmd/repo-updater \
-    github.com/sourcegraph/sourcegraph/cmd/searcher \
+    sourcegraph.com/cmd/github-proxy \
+    sourcegraph.com/cmd/gitserver \
+    sourcegraph.com/cmd/query-runner \
+    sourcegraph.com/cmd/repo-updater \
+    sourcegraph.com/cmd/searcher \
     github.com/google/zoekt/cmd/zoekt-archive-index \
     github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
     github.com/google/zoekt/cmd/zoekt-webserver $additional_images; do

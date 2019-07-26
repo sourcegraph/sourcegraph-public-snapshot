@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-path_to_package=${1:-github.com/sourcegraph/sourcegraph/cmd/management-console}
+path_to_package=${1:-sourcegraph.com/cmd/management-console}
 # We want to build multiple go binaries, so we use a custom build step on CI.
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 set -ex

@@ -109,7 +109,7 @@ do_install() {
 			fi
 		done
 		if [ $replaced == false ]; then
-			cmds="$cmds github.com/sourcegraph/sourcegraph/cmd/$cmd"
+			cmds="$cmds sourcegraph.com/cmd/$cmd"
 		fi
 	done
 	if ( cd $GOMOD_ROOT && go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race=$race $cmds ); then

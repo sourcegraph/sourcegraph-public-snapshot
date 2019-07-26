@@ -6,8 +6,8 @@ set -ex
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 
 export GOBIN=${PWD}/.bin
-go list github.com/sourcegraph/sourcegraph/cmd/... \
-  | grep -o 'github.com/sourcegraph/sourcegraph/cmd/[^/]*$' \
+go list sourcegraph.com/cmd/... \
+  | grep -o 'sourcegraph.com/cmd/[^/]*$' \
   | xargs go install -v
 
 find . \( -name vendor -type d -prune \) -or -name '*_test.go' -exec dirname '{}' \; \

@@ -36,7 +36,7 @@ for i; do
 	esac
 done
 
-$generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend || failed=true; }
+$generate_graphql && { go generate sourcegraph.com/cmd/frontend/graphqlbackend || failed=true; }
 $generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || failed=true; }
 
 if $all_cmds; then

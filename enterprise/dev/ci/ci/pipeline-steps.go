@@ -243,7 +243,7 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 				return cmdDir
 			}
 			if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
-				fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
+				fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building sourcegraph.com/cmd/%s instead\n", app, app)
 				return "cmd/" + app
 			}
 			return "enterprise/cmd/" + app

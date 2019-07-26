@@ -7,7 +7,7 @@ echo "--- go dbconn import"
 
 set -euf -o pipefail
 
-allowed='^github.com/sourcegraph/sourcegraph/cmd/frontend|github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend|github.com/sourcegraph/sourcegraph/cmd/management-console|github.com/sourcegraph/sourcegraph/enterprise/cmd/management-console'
+allowed='^sourcegraph.com/cmd/frontend|github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend|sourcegraph.com/cmd/management-console|github.com/sourcegraph/sourcegraph/enterprise/cmd/management-console'
 template='{{with $pkg := .}}{{ range $pkg.Deps }}{{ printf "%s imports %s\n" $pkg.ImportPath .}}{{end}}{{end}}'
 
 if go list ./../../cmd/... ../../enterprise/cmd/... \

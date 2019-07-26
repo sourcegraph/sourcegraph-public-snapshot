@@ -37,7 +37,7 @@ func validateCustom(cfg Unified) (problems []string) {
 	}
 
 	// Auth provider config validation is contributed by the
-	// github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/... packages (using
+	// sourcegraph.com/cmd/frontend/internal/auth/... packages (using
 	// ContributeValidator).
 
 	{
