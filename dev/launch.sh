@@ -17,8 +17,6 @@ fi
 export GO111MODULE=on
 go run ./pkg/version/minversion
 
-export GOMOD_ROOT="${GOMOD_ROOT:-$PWD}"
-
 # Verify postgresql config.
 hash psql 2>/dev/null || {
     # "brew install postgresql@9.6" does not put psql on the $PATH by default;
