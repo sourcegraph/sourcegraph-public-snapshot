@@ -65,7 +65,7 @@ func TestMonitor_RecommendedWaitForBackgroundOp_RetryAfter(t *testing.T) {
 	}{
 		// 30 seconds remaining from now until retry
 		{now.Add(30 * time.Second), now, 30 * time.Second},
-		// 0 seconds remaing from now until retry
+		// 0 seconds remaining from now until retry
 		{now.Add(30 * time.Second), now.Add(30 * time.Second), 0},
 		// -30 seconds remaining from now until retry
 		{now.Add(30 * time.Second), now.Add(60 * time.Second), 0},

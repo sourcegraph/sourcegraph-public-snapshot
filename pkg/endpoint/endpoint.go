@@ -37,7 +37,7 @@ type Map struct {
 // the endpoints for the Kubernetes service. The values returned by Get will
 // look like http://endpoint:port/path.
 //
-// If the scheme is not prefixed with "k8s+", a space seperated list of URLs is
+// If the scheme is not prefixed with "k8s+", a space separated list of URLs is
 // expected. The map will consistently hash against these URLs in this case.
 // This is useful for specifying non-Kubernetes endpoints.
 //

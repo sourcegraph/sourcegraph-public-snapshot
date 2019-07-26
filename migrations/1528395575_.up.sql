@@ -42,7 +42,7 @@ ADD CONSTRAINT discussion_threads_target_repo_repo_id_fkey
 -- Hard delete existing soft deleted rows.
 DELETE FROM repo WHERE deleted_at IS NOT NULL;
 
--- Ensure we don't accidently soft delete going forward.
+-- Ensure we don't accidentally soft delete going forward.
 ALTER TABLE repo ADD CONSTRAINT deleted_at_unused CHECK (deleted_at IS NULL);
 
 COMMIT;

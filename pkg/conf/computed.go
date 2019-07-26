@@ -43,7 +43,7 @@ func init() {
 		var criticalDecoded schema.CriticalConfiguration
 		_ = json.Unmarshal(legacyConf, &criticalDecoded)
 
-		// Backwards compatability for deprecated environment variables
+		// Backwards compatibility for deprecated environment variables
 		// that we previously considered deprecated but are actually
 		// widespread in use in user's deployments and/or are suggested for
 		// use in our public documentation (i.e., even though these were
