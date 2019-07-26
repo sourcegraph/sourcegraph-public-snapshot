@@ -181,51 +181,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             )
         }
 
-        // Avoid user confusion with values.yaml properties mixed in with site config properties.
-        const contents =
-            this.state.site && this.state.site.configuration && this.state.site.configuration.effectiveContents
-        const legacyKubernetesConfigProps = [
-            'alertmanagerConfig',
-            'alertmanagerURL',
-            'authProxyIP',
-            'authProxyPassword',
-            'deploymentOverrides',
-            'gitoliteIP',
-            'gitserverCount',
-            'gitserverDiskSize',
-            'gitserverSSH',
-            'httpNodePort',
-            'httpsNodePort',
-            'indexedSearchDiskSize',
-            'langGo',
-            'langJava',
-            'langJavaScript',
-            'langPHP',
-            'langPython',
-            'langSwift',
-            'langTypeScript',
-            'nodeSSDPath',
-            'phabricatorIP',
-            'prometheus',
-            'pyPIIP',
-            'rbac',
-            'storageClass',
-            'useAlertManager',
-        ].filter(prop => contents && contents.includes(`"${prop}"`))
-        if (legacyKubernetesConfigProps.length > 0) {
-            alerts.push(
-                <div
-                    key="legacy-cluster-props-present"
-                    className="alert alert-info site-admin-configuration-page__alert"
-                >
-                    The configuration contains properties that are valid only in the
-                    <code>values.yaml</code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
-                    <code>{legacyKubernetesConfigProps.join(' ')}</code>. You can disregard the validation warnings for
-                    these properties reported by the configuration editor.
-                </div>
-            )
-        }
-
         const isReloading = typeof this.state.reloadStartedAt === 'number'
 
         return (
@@ -251,7 +206,12 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 {this.state.site && this.state.site.configuration && (
                     <div>
                         <DynamicallyImportedMonacoSettingsEditor
-                            value={contents || ''}
+                            value={
+                                (this.state.site &&
+                                    this.state.site.configuration &&
+                                    this.state.site.configuration.effectiveContents) ||
+                                ''
+                            }
                             jsonSchema={siteSchemaJSON}
                             onDirtyChange={this.onDirtyChange}
                             canEdit={true}
