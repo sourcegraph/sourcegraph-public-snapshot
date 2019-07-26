@@ -4,16 +4,16 @@ import (
 	"net/http"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	"sourcegraph.com/cmd/frontend/envvar"
+	"sourcegraph.com/cmd/frontend/internal/auth/userpasswd"
+	"sourcegraph.com/cmd/frontend/registry"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"sourcegraph.com/cmd/frontend/globals"
+	"sourcegraph.com/cmd/frontend/internal/app/errorutil"
+	"sourcegraph.com/cmd/frontend/internal/app/router"
+	"sourcegraph.com/cmd/frontend/internal/app/ui"
+	"sourcegraph.com/cmd/frontend/internal/session"
+	"sourcegraph.com/pkg/trace"
 )
 
 // NewHandler returns a new app handler that uses the app router.

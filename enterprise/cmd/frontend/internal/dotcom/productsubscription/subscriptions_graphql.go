@@ -11,17 +11,17 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	db_ "github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
 	stripe "github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
 	"github.com/stripe/stripe-go/event"
 	"github.com/stripe/stripe-go/invoice"
 	"github.com/stripe/stripe-go/plan"
 	"github.com/stripe/stripe-go/sub"
+	"sourcegraph.com/cmd/frontend/backend"
+	db_ "sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/graphqlbackend"
+	"sourcegraph.com/cmd/frontend/graphqlbackend/graphqlutil"
+	"sourcegraph.com/enterprise/cmd/frontend/internal/dotcom/billing"
 )
 
 func init() {

@@ -3,8 +3,8 @@ package backend
 import (
 	"context"
 
-	symbolsclient "github.com/sourcegraph/sourcegraph/pkg/symbols"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	symbolsclient "sourcegraph.com/pkg/symbols"
+	"sourcegraph.com/pkg/symbols/protocol"
 )
 
 // Symbols backend.

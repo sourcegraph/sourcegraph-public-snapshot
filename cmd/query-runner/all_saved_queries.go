@@ -9,9 +9,9 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/query-runner/queryrunnerapi"
+	"sourcegraph.com/pkg/api"
 )
 
 var allSavedQueries = &allSavedQueriesCached{}

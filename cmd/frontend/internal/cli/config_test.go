@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+	"sourcegraph.com/pkg/conf/conftypes"
 )
 
 func TestPostgresDSN(t *testing.T) {

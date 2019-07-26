@@ -8,14 +8,14 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/conf/reposource"
+	"sourcegraph.com/pkg/extsvc"
+	"sourcegraph.com/pkg/extsvc/bitbucketcloud"
+	"sourcegraph.com/pkg/httpcli"
+	"sourcegraph.com/pkg/jsonc"
+	"sourcegraph.com/schema"
 )
 
 // A BitbucketCloudSource yields repositories from a single BitbucketCloud connection configured

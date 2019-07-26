@@ -21,13 +21,13 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/management-console/assets"
-	"github.com/sourcegraph/sourcegraph/cmd/management-console/shared/internal/tlscertgen"
-	"github.com/sourcegraph/sourcegraph/pkg/db/confdb"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/cmd/management-console/assets"
+	"sourcegraph.com/cmd/management-console/shared/internal/tlscertgen"
+	"sourcegraph.com/pkg/db/confdb"
+	"sourcegraph.com/pkg/db/dbconn"
+	"sourcegraph.com/pkg/db/globalstatedb"
+	"sourcegraph.com/pkg/debugserver"
+	"sourcegraph.com/pkg/env"
 )
 
 const port = "2633"

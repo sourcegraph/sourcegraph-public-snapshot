@@ -10,10 +10,10 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/graphqlbackend/graphqlutil"
+	"sourcegraph.com/pkg/gitserver"
+	"sourcegraph.com/pkg/vcs/git"
 )
 
 // 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base

@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/db/dbconn"
+	"sourcegraph.com/pkg/jsonc"
 )
 
 type savedQuery struct {

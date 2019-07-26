@@ -10,12 +10,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/defaults"
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
 	multierror "github.com/hashicorp/go-multierror"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/conf/reposource"
+	"sourcegraph.com/pkg/extsvc/awscodecommit"
+	"sourcegraph.com/pkg/httpcli"
+	"sourcegraph.com/pkg/jsonc"
+	"sourcegraph.com/schema"
 )
 
 // An AWSCodeCommitSource yields repositories from a single AWS Code Commit

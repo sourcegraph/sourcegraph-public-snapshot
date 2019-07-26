@@ -8,10 +8,10 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/db/dbconn"
+	"sourcegraph.com/pkg/extsvc"
+	"sourcegraph.com/pkg/trace"
 )
 
 // userExternalAccountNotFoundError is the error that is returned when a user external account is not found.

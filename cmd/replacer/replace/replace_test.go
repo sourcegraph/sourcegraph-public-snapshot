@@ -15,11 +15,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/replacer/protocol"
-	"github.com/sourcegraph/sourcegraph/cmd/replacer/replace"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/cmd/replacer/protocol"
+	"sourcegraph.com/cmd/replacer/replace"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/gitserver"
+	"sourcegraph.com/pkg/store"
 )
 
 func TestReplace(t *testing.T) {

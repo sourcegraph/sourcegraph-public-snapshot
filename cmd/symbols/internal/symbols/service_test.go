@@ -16,11 +16,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	symbolsclient "github.com/sourcegraph/sourcegraph/pkg/symbols"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"sourcegraph.com/cmd/symbols/internal/pkg/ctags"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/gitserver"
+	symbolsclient "sourcegraph.com/pkg/symbols"
+	"sourcegraph.com/pkg/symbols/protocol"
 )
 
 func init() {

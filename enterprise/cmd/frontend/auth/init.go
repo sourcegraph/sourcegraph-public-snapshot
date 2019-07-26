@@ -4,15 +4,15 @@ package auth
 import (
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/githuboauth"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/gitlaboauth"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/httpheader"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/openidconnect"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/saml"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/auth"
+	"sourcegraph.com/cmd/frontend/external/app"
+	"sourcegraph.com/enterprise/cmd/frontend/auth/githuboauth"
+	"sourcegraph.com/enterprise/cmd/frontend/auth/gitlaboauth"
+	"sourcegraph.com/enterprise/cmd/frontend/auth/httpheader"
+	"sourcegraph.com/enterprise/cmd/frontend/auth/openidconnect"
+	"sourcegraph.com/enterprise/cmd/frontend/auth/saml"
+	"sourcegraph.com/pkg/conf"
 )
 
 func init() {

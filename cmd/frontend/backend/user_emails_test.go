@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/txemail"
+	"sourcegraph.com/pkg/txemail"
 )
 
 func TestSendUserEmailVerificationEmail(t *testing.T) {

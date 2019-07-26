@@ -1,6 +1,6 @@
 package graphqlutil
 
-import "github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+import "sourcegraph.com/cmd/frontend/db"
 
 // graphqlutil.ConnectionArgs is the common set of arguments to GraphQL fields that return connections (lists).
 type ConnectionArgs struct {

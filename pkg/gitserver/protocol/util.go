@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/pkg/api"
 )
 
 func NormalizeRepo(input api.RepoName) api.RepoName {

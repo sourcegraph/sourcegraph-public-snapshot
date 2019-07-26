@@ -11,12 +11,12 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/eventlogger"
-	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
-	"github.com/sourcegraph/sourcegraph/pkg/pubsub/pubsubutil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/internal/app/tracking"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/eventlogger"
+	"sourcegraph.com/pkg/hubspot"
+	"sourcegraph.com/pkg/pubsub/pubsubutil"
 )
 
 var (

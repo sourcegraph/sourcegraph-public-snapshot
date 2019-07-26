@@ -20,13 +20,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	searchapi "github.com/sourcegraph/sourcegraph/pkg/search"
-	"github.com/sourcegraph/sourcegraph/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/cmd/searcher/protocol"
+	"sourcegraph.com/cmd/searcher/search"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/gitserver"
+	searchapi "sourcegraph.com/pkg/search"
+	"sourcegraph.com/pkg/search/query"
+	"sourcegraph.com/pkg/store"
 )
 
 func TestSearch(t *testing.T) {

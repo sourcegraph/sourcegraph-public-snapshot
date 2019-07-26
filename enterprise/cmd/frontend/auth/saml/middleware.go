@@ -11,10 +11,10 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"sourcegraph.com/cmd/frontend/auth"
+	"sourcegraph.com/cmd/frontend/auth/providers"
+	"sourcegraph.com/cmd/frontend/external/session"
+	"sourcegraph.com/pkg/actor"
 )
 
 // All SAML endpoints are under this path prefix.

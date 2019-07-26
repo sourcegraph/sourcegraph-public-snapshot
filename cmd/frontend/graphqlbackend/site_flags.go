@@ -3,11 +3,11 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"sourcegraph.com/cmd/frontend/envvar"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/conf"
 )
 
 func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, error) {

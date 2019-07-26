@@ -15,10 +15,10 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/metrics"
-	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
+	"sourcegraph.com/pkg/httpcli"
+	"sourcegraph.com/pkg/metrics"
+	"sourcegraph.com/pkg/ratelimit"
+	"sourcegraph.com/pkg/rcache"
 )
 
 var requestCounter = metrics.NewRequestCounter("gitlab", "Total number of requests sent to the GitLab API.")

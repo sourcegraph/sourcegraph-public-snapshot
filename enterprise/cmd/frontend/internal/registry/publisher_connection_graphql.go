@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	"sourcegraph.com/cmd/frontend/graphqlbackend"
+	"sourcegraph.com/cmd/frontend/graphqlbackend/graphqlutil"
+	frontendregistry "sourcegraph.com/cmd/frontend/registry"
 )
 
 func init() {

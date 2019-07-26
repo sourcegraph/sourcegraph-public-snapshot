@@ -4,10 +4,10 @@ import (
 	"context"
 
 	graphql "github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/globals"
+	"sourcegraph.com/cmd/frontend/internal/auth/userpasswd"
 )
 
 type randomizeUserPasswordResult struct {

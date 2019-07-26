@@ -10,12 +10,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"sourcegraph.com/cmd/frontend/authz"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/envvar"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/db/dbconn"
+	"sourcegraph.com/pkg/db/dbtesting"
 )
 
 func Test_serveReposList(t *testing.T) {

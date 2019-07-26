@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"sourcegraph.com/pkg/vcs/git"
 )
 
 type signatureResolver struct {

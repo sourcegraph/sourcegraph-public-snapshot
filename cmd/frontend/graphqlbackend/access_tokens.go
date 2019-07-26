@@ -8,12 +8,12 @@ import (
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/cmd/frontend/authz"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/graphqlbackend/graphqlutil"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/conf"
 )
 
 type createAccessTokenInput struct {

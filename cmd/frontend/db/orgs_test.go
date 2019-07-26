@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"sourcegraph.com/pkg/db/dbtesting"
 )
 
 func TestOrgs_ValidNames(t *testing.T) {

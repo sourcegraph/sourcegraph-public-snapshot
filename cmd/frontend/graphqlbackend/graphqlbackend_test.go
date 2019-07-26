@@ -6,7 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/db"
 )
 
 func TestRepository(t *testing.T) {

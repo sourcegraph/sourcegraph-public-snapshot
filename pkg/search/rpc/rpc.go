@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/keegancsmith/rpc"
-	"github.com/sourcegraph/sourcegraph/pkg/search"
-	"github.com/sourcegraph/sourcegraph/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/pkg/search/rpc/internal/srv"
+	"sourcegraph.com/pkg/search"
+	"sourcegraph.com/pkg/search/query"
+	"sourcegraph.com/pkg/search/rpc/internal/srv"
 )
 
 // DefaultRPCPath is the rpc path

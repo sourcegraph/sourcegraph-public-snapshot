@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/highlight"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/internal/pkg/markdown"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/highlight"
+	"sourcegraph.com/pkg/vcs/git"
 )
 
 func (r *gitTreeEntryResolver) Content(ctx context.Context) (string, error) {

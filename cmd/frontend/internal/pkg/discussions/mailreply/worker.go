@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/internal/pkg/discussions"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/rcache"
 )
 
 // StartWorker should be invoked only after the DB has been initialized. It

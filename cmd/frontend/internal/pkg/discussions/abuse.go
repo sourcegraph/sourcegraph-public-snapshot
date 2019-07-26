@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/internal/goroutine"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/txemail"
+	"sourcegraph.com/pkg/txemail/txtypes"
 )
 
 // NotifyCommentReported should be invoked after a user has reported a comment.

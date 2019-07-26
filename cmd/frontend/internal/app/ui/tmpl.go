@@ -13,9 +13,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/templates"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/cmd/frontend/internal/app/assets"
+	"sourcegraph.com/cmd/frontend/internal/app/templates"
+	"sourcegraph.com/pkg/env"
 )
 
 // TODO(slimsag): tests for everything in this file

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/migrations"
+	"sourcegraph.com/migrations"
 )
 
 func TestIDConstraints(t *testing.T) {

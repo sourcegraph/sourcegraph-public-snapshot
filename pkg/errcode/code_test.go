@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/pkg/errcode"
 )
 
 func TestHTTP(t *testing.T) {

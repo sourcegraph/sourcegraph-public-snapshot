@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	stripe "github.com/stripe/stripe-go"
+	"sourcegraph.com/cmd/frontend/graphqlbackend"
 )
 
 // ToSubscriptionItemsParams converts a value of GraphQL type ProductSubscriptionInput into a

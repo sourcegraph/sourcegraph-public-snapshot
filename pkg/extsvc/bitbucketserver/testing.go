@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
+	"sourcegraph.com/pkg/httpcli"
+	"sourcegraph.com/pkg/httptestutil"
 )
 
 // NewTestClient returns a bitbucketserver.Client that records its interactions

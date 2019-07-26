@@ -5,11 +5,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/auth"
+	"sourcegraph.com/cmd/frontend/auth/providers"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/schema"
 )
 
 func NewHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {

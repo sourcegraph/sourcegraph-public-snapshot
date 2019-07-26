@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/server/shared/assets"
+	"sourcegraph.com/cmd/server/shared/assets"
 )
 
 var nginxConf = assets.MustAsset("nginx.conf")

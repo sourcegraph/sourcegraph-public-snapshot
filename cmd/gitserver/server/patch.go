@@ -12,8 +12,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/gitserver/protocol"
 )
 
 var patchID uint64

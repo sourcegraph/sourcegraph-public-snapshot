@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/pkg/conf"
 )
 
 func rlimitCheck(ctx context.Context) (problem, fix string, err error) {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/enterprise/pkg/license"
+	"sourcegraph.com/pkg/errcode"
 )
 
 // Feature is a product feature that is selectively activated based on the current license key.

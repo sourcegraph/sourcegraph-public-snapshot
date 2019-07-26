@@ -6,8 +6,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/routevar"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/pkg/routevar"
 )
 
 // NOTE: Keep in sync with services/backend/httpapi/repo_shield.go

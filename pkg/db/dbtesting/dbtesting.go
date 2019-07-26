@@ -15,8 +15,8 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/db/dbconn"
 )
 
 // MockHashPassword if non-nil is used instead of db.hashPassword. This is useful

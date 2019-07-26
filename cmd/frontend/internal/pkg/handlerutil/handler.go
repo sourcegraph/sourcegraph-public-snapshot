@@ -16,7 +16,7 @@ import (
 
 	"github.com/neelance/parallel"
 
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/pkg/errcode"
 )
 
 var (

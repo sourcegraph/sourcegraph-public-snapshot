@@ -3,11 +3,11 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/conf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"sourcegraph.com/cmd/frontend/globals"
 )
 
 // Alert implements the GraphQL type Alert.

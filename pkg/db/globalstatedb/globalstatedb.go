@@ -10,9 +10,9 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"golang.org/x/crypto/bcrypt"
+	"sourcegraph.com/pkg/db/dbconn"
+	"sourcegraph.com/pkg/db/dbutil"
 )
 
 type State struct {

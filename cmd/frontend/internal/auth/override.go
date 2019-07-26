@@ -3,13 +3,13 @@ package auth
 import (
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/auth"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/internal/session"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/extsvc"
 )
 
 const (

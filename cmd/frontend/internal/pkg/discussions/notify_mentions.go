@@ -8,16 +8,16 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mentions"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/internal/goroutine"
+	"sourcegraph.com/cmd/frontend/internal/pkg/discussions/mentions"
+	"sourcegraph.com/cmd/frontend/internal/pkg/markdown"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/errcode"
+	"sourcegraph.com/pkg/txemail"
+	"sourcegraph.com/pkg/txemail/txtypes"
 )
 
 // NotifyNewThread should be invoked after a new thread (and its first comment)

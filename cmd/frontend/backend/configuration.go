@@ -3,10 +3,10 @@ package backend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/jsonc"
+	"sourcegraph.com/schema"
 )
 
 // Configuration backend.

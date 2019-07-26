@@ -9,8 +9,8 @@ import (
 	"github.com/kr/text"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/sysreq"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/sysreq"
 )
 
 const skipSysReqsEnvVar = "SRC_SKIP_REQS"

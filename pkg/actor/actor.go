@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"sourcegraph.com/pkg/trace"
 )
 
 // Actor represents an agent that accesses resources. It can represent an anonymous user, an

@@ -3,9 +3,9 @@ package registry
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/cmd/frontend/graphqlbackend"
+	"sourcegraph.com/cmd/frontend/registry"
+	"sourcegraph.com/pkg/conf"
 )
 
 func init() {

@@ -3,13 +3,13 @@ package httpapi
 import (
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/authz"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/errcode"
 )
 
 // AccessTokenAuthMiddleware authenticates the user based on the

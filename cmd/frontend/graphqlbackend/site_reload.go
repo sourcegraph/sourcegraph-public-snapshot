@@ -5,10 +5,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/processrestart"
 )
 
 // canReloadSite is whether the current site can be reloaded via the API. Currently

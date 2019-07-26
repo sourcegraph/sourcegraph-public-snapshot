@@ -1,10 +1,10 @@
 package registry
 
 import (
-	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/registry"
+	frontendregistry "sourcegraph.com/cmd/frontend/registry"
+	"sourcegraph.com/enterprise/cmd/frontend/internal/licensing"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/registry"
 )
 
 func init() {

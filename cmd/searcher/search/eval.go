@@ -25,14 +25,14 @@ import (
 	"sort"
 
 	"github.com/pkg/errors"
-	srcapi "github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	api "github.com/sourcegraph/sourcegraph/pkg/search"
-	"github.com/sourcegraph/sourcegraph/pkg/search/matchtree"
-	"github.com/sourcegraph/sourcegraph/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
 	"golang.org/x/net/trace"
+	srcapi "sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/errcode"
+	"sourcegraph.com/pkg/gitserver"
+	api "sourcegraph.com/pkg/search"
+	"sourcegraph.com/pkg/search/matchtree"
+	"sourcegraph.com/pkg/search/query"
+	"sourcegraph.com/pkg/store"
 )
 
 // This file adapts zoekt's matchtree to work on content without any indexes.

@@ -13,13 +13,13 @@ import (
 
 	"github.com/google/zoekt"
 	zoektrpc "github.com/google/zoekt/rpc"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search/query"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/db/dbtesting"
+	searchbackend "sourcegraph.com/pkg/search/backend"
 )
 
 func TestSearchResults(t *testing.T) {

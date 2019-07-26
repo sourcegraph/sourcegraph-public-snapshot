@@ -3,9 +3,9 @@ package conf
 import (
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/pkg/conf/conftypes"
+	"sourcegraph.com/pkg/jsonc"
+	"sourcegraph.com/schema"
 )
 
 // parseConfigData parses the provided config string into the given cfg struct

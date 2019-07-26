@@ -13,11 +13,11 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/pkg/gitserver"
 
 	"github.com/golang/gddo/httputil"
 	"github.com/gorilla/mux"
-	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
+	"sourcegraph.com/pkg/vfsutil"
 )
 
 // Examples:

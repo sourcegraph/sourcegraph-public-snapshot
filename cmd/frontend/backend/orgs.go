@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/errcode"
 )
 
 var ErrNotAuthenticated = errors.New("not authenticated")

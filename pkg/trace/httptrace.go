@@ -18,10 +18,10 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/repotrackutil"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/repotrackutil"
+	"sourcegraph.com/pkg/version"
 )
 
 type key int

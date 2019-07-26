@@ -8,8 +8,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"sourcegraph.com/cmd/frontend/globals"
+	"sourcegraph.com/pkg/trace"
 )
 
 // goImportMetaTag represents a go-import meta tag.

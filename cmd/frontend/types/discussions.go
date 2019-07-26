@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/pkg/api"
 )
 
 // DiscussionThread mirrors the underlying discussion_threads field types exactly.

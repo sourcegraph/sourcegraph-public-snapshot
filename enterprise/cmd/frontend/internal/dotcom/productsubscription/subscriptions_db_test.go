@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/db/dbtesting"
 )
 
 func TestProductSubscriptions_Create(t *testing.T) {

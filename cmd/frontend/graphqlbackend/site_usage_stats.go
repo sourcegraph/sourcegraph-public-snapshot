@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"sourcegraph.com/cmd/frontend/envvar"
+	"sourcegraph.com/cmd/frontend/internal/pkg/usagestats"
+	"sourcegraph.com/cmd/frontend/types"
 )
 
 func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {

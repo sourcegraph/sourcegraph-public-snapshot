@@ -5,10 +5,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"sourcegraph.com/pkg/httpcli"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/httputil"
+	"sourcegraph.com/pkg/httputil"
 )
 
 // NormalizeBaseURL modifies the input and returns a normalized form of the a base URL with insignificant

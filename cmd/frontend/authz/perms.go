@@ -1,7 +1,7 @@
 package authz
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"sourcegraph.com/cmd/frontend/types"
 )
 
 // RepoPerms contains a repo and the permissions a given user

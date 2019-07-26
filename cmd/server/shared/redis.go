@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/sourcegraph/sourcegraph/cmd/server/shared/assets"
+	"sourcegraph.com/cmd/server/shared/assets"
 )
 
 var redisConfTmpl = template.Must(template.New("redis.conf").Parse(assets.MustAssetString("redis.conf.tmpl")))

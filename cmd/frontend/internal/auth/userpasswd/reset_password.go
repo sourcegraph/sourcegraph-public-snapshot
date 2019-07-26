@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/globals"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/errcode"
+	"sourcegraph.com/pkg/txemail"
+	"sourcegraph.com/pkg/txemail/txtypes"
 )
 
 // HandleResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.

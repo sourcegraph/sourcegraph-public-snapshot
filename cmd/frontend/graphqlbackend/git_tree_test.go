@@ -7,12 +7,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/vcs/git"
+	"sourcegraph.com/pkg/vcs/util"
 )
 
 func TestGitTree(t *testing.T) {

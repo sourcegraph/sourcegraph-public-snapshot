@@ -3,10 +3,10 @@ package gitlaboauth
 import (
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/cmd/frontend/auth"
+	"sourcegraph.com/enterprise/cmd/frontend/auth/oauth"
+	"sourcegraph.com/pkg/extsvc/gitlab"
+	"sourcegraph.com/schema"
 )
 
 const authPrefix = auth.AuthURLPrefix + "/gitlab"

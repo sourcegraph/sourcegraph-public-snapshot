@@ -14,10 +14,10 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/metrics"
 	"golang.org/x/time/rate"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/httpcli"
+	"sourcegraph.com/pkg/metrics"
 )
 
 var requestCounter = metrics.NewRequestCounter("bitbucket_cloud_requests_count", "Total number of requests sent to the Bitbucket Cloud API.")

@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/db/dbtesting"
 )
 
 func TestMigrateAllSettingsMOTDToNotices(t *testing.T) {

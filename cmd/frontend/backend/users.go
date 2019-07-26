@@ -6,9 +6,9 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/randstring"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/randstring"
 )
 
 func MakeRandomHardToGuessPassword() string {

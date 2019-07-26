@@ -3,8 +3,8 @@ package db
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/db/dbtesting"
 )
 
 func TestSettings_ListAll(t *testing.T) {

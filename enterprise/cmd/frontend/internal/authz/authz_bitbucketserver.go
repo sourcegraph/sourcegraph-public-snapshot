@@ -8,11 +8,11 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	bbsauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/cmd/frontend/authz"
+	bbsauthz "sourcegraph.com/enterprise/cmd/frontend/internal/authz/bitbucketserver"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/extsvc/bitbucketserver"
+	"sourcegraph.com/schema"
 )
 
 func bitbucketServerProviders(

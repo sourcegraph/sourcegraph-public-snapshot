@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 	"golang.org/x/crypto/bcrypt"
+	"sourcegraph.com/pkg/db/dbconn"
+	"sourcegraph.com/pkg/db/dbtesting"
 )
 
 func TestGet(t *testing.T) {

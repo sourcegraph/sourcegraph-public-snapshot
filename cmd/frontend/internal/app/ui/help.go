@@ -6,8 +6,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"sourcegraph.com/cmd/frontend/envvar"
+	"sourcegraph.com/pkg/version"
 )
 
 // serveHelp redirects to documentation pages on https://docs.sourcegraph.com for the current

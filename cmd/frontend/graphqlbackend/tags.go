@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	graphql "github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/db"
 )
 
 func (r *schemaResolver) SetTag(ctx context.Context, args *struct {

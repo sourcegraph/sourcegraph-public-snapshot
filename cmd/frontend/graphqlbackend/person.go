@@ -5,9 +5,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/errcode"
 )
 
 type personResolver struct {

@@ -5,12 +5,12 @@ import (
 	"net/url"
 
 	"github.com/dghubble/gologin/github"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	gh "github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
+	"sourcegraph.com/cmd/frontend/envvar"
+	"sourcegraph.com/enterprise/cmd/frontend/auth/oauth"
+	"sourcegraph.com/pkg/extsvc"
+	gh "sourcegraph.com/pkg/extsvc/github"
+	"sourcegraph.com/schema"
 )
 
 const sessionKey = "githuboauth@0"

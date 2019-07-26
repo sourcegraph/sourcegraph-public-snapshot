@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/pkg/api"
 )
 
 // RepoSource is a wrapper around a repository source (typically a code host config) that provides a

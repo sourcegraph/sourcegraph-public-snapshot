@@ -12,12 +12,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/extsvc/github"
+	"sourcegraph.com/pkg/httpcli"
+	"sourcegraph.com/pkg/rcache"
+	"sourcegraph.com/schema"
 )
 
 func TestExampleRepositoryQuerySplit(t *testing.T) {

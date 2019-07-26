@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/api"
 )
 
 func TestGuessRepoNameFromRemoteURL(t *testing.T) {

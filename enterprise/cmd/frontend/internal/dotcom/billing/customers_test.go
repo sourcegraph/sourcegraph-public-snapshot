@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/db/dbtesting"
 )
 
 func TestGetOrAssignUserCustomerID(t *testing.T) {

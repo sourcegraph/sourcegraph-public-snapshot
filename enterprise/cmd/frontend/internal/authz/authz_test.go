@@ -8,14 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	bbsauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/cmd/frontend/auth/providers"
+	"sourcegraph.com/cmd/frontend/authz"
+	"sourcegraph.com/cmd/frontend/types"
+	bbsauthz "sourcegraph.com/enterprise/cmd/frontend/internal/authz/bitbucketserver"
+	"sourcegraph.com/enterprise/cmd/frontend/internal/authz/gitlab"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/extsvc"
+	"sourcegraph.com/schema"
 )
 
 type gitlabAuthzProviderParams struct {

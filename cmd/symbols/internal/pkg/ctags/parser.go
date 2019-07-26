@@ -11,7 +11,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/pkg/env"
 )
 
 type Entry struct {

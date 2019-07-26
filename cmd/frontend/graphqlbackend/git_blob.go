@@ -3,9 +3,9 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/gitserver"
+	"sourcegraph.com/pkg/vcs/git"
 )
 
 func (r *gitTreeEntryResolver) Blame(ctx context.Context,

@@ -3,8 +3,8 @@ package bg
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/db"
 )
 
 var QueryLogChan = make(chan QueryLogItem, 100)

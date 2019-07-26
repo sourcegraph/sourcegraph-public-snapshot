@@ -12,15 +12,15 @@ import (
 	"github.com/goware/urlx"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/extsvc/awscodecommit"
+	"sourcegraph.com/pkg/extsvc/bitbucketserver"
+	"sourcegraph.com/pkg/extsvc/github"
+	"sourcegraph.com/pkg/extsvc/gitlab"
+	"sourcegraph.com/pkg/extsvc/gitolite"
+	"sourcegraph.com/pkg/jsonc"
+	"sourcegraph.com/schema"
 )
 
 // An ExternalService is defines a Source that yields Repos.

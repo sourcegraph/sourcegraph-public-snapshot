@@ -7,10 +7,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/graphqlbackend/graphqlutil"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/vcs/git"
 )
 
 func (r *gitTreeEntryResolver) IsRoot() bool {

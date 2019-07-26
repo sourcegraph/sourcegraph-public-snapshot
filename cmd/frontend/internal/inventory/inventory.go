@@ -7,7 +7,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
+	"sourcegraph.com/cmd/frontend/internal/inventory/filelang"
 )
 
 // Inventory summarizes a tree's contents (e.g., which programming

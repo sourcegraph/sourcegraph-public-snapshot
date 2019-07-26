@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/cmd/frontend/internal/cli"
+	"sourcegraph.com/pkg/env"
 )
 
 // Main is the main function that runs the frontend process.

@@ -16,10 +16,10 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git/gittest"
+	"sourcegraph.com/cmd/gitserver/server"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/gitserver"
+	"sourcegraph.com/pkg/vcs/git/gittest"
 )
 
 func TestClient_Archive(t *testing.T) {

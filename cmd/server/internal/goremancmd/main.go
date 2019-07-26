@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
+	"sourcegraph.com/cmd/server/internal/goreman"
 )
 
 func do() error {

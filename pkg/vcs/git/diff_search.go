@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"sourcegraph.com/pkg/gitserver"
+	"sourcegraph.com/pkg/pathmatch"
+	"sourcegraph.com/pkg/trace"
 )
 
 // TextSearchOptions contains common options for text search commands.

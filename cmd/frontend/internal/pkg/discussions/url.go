@@ -8,8 +8,8 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/types"
 )
 
 // URLToInlineThread returns a URL to the discussion thread's 'inline' view

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/schema"
 )
 
 func TestServer_handleGet(t *testing.T) {

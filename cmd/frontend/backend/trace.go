@@ -10,8 +10,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	tracepkg "github.com/sourcegraph/sourcegraph/pkg/trace"
+	"sourcegraph.com/pkg/actor"
+	tracepkg "sourcegraph.com/pkg/trace"
 )
 
 var metricLabels = []string{"method", "success"}

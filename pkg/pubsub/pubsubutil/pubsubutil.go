@@ -7,8 +7,8 @@ import (
 	"errors"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/env"
 )
 
 // PubSubProjectID is used to create a new pubsub client.

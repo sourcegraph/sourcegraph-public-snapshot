@@ -7,11 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema" // Import for side effects so that the UI router gets created and is accessible in the
+	"sourcegraph.com/cmd/frontend/auth"
+	_ "sourcegraph.com/cmd/frontend/internal/app/ui"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/schema" // Import for side effects so that the UI router gets created and is accessible in the
 	// ../app/ui/router package's Router var.
 )
 

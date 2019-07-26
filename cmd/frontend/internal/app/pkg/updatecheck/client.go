@@ -18,12 +18,12 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/envvar"
+	"sourcegraph.com/cmd/frontend/internal/pkg/siteid"
+	"sourcegraph.com/cmd/frontend/internal/pkg/usagestats"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/version"
 )
 
 // Status of the check for software updates for Sourcegraph.

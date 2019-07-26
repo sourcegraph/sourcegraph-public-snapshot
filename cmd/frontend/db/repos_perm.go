@@ -6,12 +6,12 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/authz"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/extsvc"
+	"sourcegraph.com/pkg/trace"
 )
 
 var MockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error)

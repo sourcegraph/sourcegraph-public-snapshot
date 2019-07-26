@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/pkg/db/dbtesting"
+	"sourcegraph.com/pkg/errcode"
 )
 
 // 🚨 SECURITY: This tests the routine that creates org invitations and returns the invitation secret value

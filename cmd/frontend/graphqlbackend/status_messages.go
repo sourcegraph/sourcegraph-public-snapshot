@@ -3,9 +3,9 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/repoupdater"
 )
 
 func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageResolver, error) {

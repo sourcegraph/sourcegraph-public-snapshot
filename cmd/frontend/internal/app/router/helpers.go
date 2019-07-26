@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/pkg/api"
 )
 
 func URLToRepoTreeEntry(repo api.RepoName, rev, path string) *url.URL {

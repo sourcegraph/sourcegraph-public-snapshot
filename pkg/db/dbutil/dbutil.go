@@ -19,8 +19,8 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/migrations"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/migrations"
 )
 
 // Transaction calls f within a transaction, rolling back if any error is

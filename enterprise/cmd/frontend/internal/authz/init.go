@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/authz"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/schema"
 )
 
 type ExternalServicesStore interface {

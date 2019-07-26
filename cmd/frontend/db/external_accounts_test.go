@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"sourcegraph.com/pkg/db/dbtesting"
+	"sourcegraph.com/pkg/extsvc"
 )
 
 func TestExternalAccounts_LookupUserAndSave(t *testing.T) {

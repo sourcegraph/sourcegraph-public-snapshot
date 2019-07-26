@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/errcode"
 )
 
 func TestSetActorDeleteSession(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+	"sourcegraph.com/pkg/conf/conftypes"
 )
 
 // ContributeValidator adds the site configuration validator function to the validation process. It

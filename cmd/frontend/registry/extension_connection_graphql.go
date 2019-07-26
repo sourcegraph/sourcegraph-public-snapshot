@@ -5,9 +5,9 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/registry"
+	"sourcegraph.com/cmd/frontend/graphqlbackend"
+	"sourcegraph.com/cmd/frontend/graphqlbackend/graphqlutil"
+	"sourcegraph.com/pkg/registry"
 )
 
 // makePrioritizeExtensionIDsSet returns a set whose values are the elements of

@@ -16,11 +16,11 @@ import (
 	"net/url"
 
 	"github.com/gorilla/mux"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/extsvc/github"
 )
 
 var apiURL = url.URL{Scheme: "https", Host: "api.github.com"}

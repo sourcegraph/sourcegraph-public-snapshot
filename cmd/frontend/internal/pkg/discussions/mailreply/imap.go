@@ -18,8 +18,8 @@ import (
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/client"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"golang.org/x/net/html/charset"
+	"sourcegraph.com/pkg/conf"
 )
 
 // Message represents an IMAP message.

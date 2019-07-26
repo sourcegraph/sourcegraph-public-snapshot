@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/schema"
 )
 
 func TestAuthPublic(t *testing.T) {

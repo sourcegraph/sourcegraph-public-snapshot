@@ -20,10 +20,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/debugserver"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/tracer"
 )
 
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))

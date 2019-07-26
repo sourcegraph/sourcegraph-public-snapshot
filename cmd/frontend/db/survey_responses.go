@@ -8,8 +8,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/db/dbconn"
 )
 
 // SurveyResponseListOptions specifies the options for listing survey responses.

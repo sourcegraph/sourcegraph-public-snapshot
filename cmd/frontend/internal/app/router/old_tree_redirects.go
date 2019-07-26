@@ -5,8 +5,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/routevar"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/routevar"
 
 	"github.com/gorilla/mux"
 )

@@ -23,8 +23,8 @@ import (
 	"golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/cmd/searcher/protocol"
+	"sourcegraph.com/pkg/store"
 
 	"github.com/pkg/errors"
 

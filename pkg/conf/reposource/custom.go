@@ -9,8 +9,8 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/conf"
 )
 
 func init() {

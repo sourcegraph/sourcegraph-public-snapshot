@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/pkg/api"
 )
 
 type MockSettings struct {

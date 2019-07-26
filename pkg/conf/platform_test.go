@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/schema"
 )
 
 func TestExtensions(t *testing.T) {

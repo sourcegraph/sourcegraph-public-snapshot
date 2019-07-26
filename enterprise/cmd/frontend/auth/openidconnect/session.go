@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"sourcegraph.com/cmd/frontend/auth/providers"
+	"sourcegraph.com/cmd/frontend/external/session"
 )
 
 const sessionKey = "oidc@0"

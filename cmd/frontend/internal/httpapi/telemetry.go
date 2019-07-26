@@ -12,10 +12,10 @@ import (
 	"github.com/gorilla/mux"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/eventlogger"
+	"sourcegraph.com/cmd/frontend/envvar"
+	"sourcegraph.com/cmd/frontend/internal/pkg/usagestats"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/eventlogger"
 )
 
 var telemetryHandler http.Handler

@@ -7,13 +7,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	gitserverprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/gitserver"
+	gitserverprotocol "sourcegraph.com/pkg/gitserver/protocol"
+	"sourcegraph.com/pkg/mutablelimiter"
+	"sourcegraph.com/pkg/repoupdater/protocol"
 )
 
 // schedulerConfig tracks the active scheduler configuration.

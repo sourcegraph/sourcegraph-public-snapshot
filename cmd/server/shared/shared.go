@@ -13,7 +13,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
+	"sourcegraph.com/cmd/server/internal/goreman"
 )
 
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.

@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"sourcegraph.com/cmd/frontend/envvar"
+	"sourcegraph.com/pkg/version"
 )
 
 func TestServeHelp(t *testing.T) {

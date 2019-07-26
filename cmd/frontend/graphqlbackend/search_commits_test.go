@@ -13,11 +13,11 @@ import (
 	"github.com/davecgh/go-spew/spew"
 
 	"github.com/kylelemons/godebug/pretty"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search/query"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/vcs/git"
 )
 
 func TestSearchCommitsInRepo(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	"github.com/aws/aws-sdk-go-v2/service/codecommit"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
+	"sourcegraph.com/pkg/rcache"
 )
 
 // Client is a AWS CodeCommit API client.

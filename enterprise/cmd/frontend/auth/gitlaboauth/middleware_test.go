@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/cmd/frontend/auth/providers"
+	"sourcegraph.com/cmd/frontend/external/session"
+	"sourcegraph.com/enterprise/cmd/frontend/auth/oauth"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/schema"
 )
 
 // TestMiddleware exercises the Middleware with requests that simulate the OAuth 2 login flow on

@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/schema"
 )
 
 // PlatformConfiguration contains site configuration for the Sourcegraph platform.

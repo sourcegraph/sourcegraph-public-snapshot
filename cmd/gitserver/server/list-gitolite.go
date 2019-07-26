@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
+	"sourcegraph.com/pkg/extsvc/gitolite"
 )
 
 func (s *Server) handleListGitolite(w http.ResponseWriter, r *http.Request) {

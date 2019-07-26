@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/cmd/frontend/graphqlbackend"
+	frontendregistry "sourcegraph.com/cmd/frontend/registry"
+	"sourcegraph.com/enterprise/cmd/frontend/internal/licensing"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/errcode"
 )
 
 func init() {

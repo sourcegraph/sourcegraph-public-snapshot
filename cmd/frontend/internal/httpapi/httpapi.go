@@ -12,14 +12,14 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
-	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/envvar"
+	"sourcegraph.com/cmd/frontend/internal/app/pkg/updatecheck"
+	apirouter "sourcegraph.com/cmd/frontend/internal/httpapi/router"
+	"sourcegraph.com/cmd/frontend/internal/pkg/handlerutil"
+	"sourcegraph.com/cmd/frontend/registry"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/trace"
 )
 
 var lsifServerURLFromEnv = env.Get("LSIF_SERVER_URL", "http://lsif-server:3186", "URL at which the lsif-server service can be reached")

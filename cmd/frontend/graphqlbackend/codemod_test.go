@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search/query"
 )
 
 func TestCodemod_validateArgsNoRegex(t *testing.T) {

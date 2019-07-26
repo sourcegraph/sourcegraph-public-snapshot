@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/db/globalstatedb"
 )
 
 func TestNotInited(t *testing.T) {

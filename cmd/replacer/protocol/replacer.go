@@ -2,8 +2,8 @@
 package protocol
 
 import (
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/gitserver"
 )
 
 // Request represents a request to replacer

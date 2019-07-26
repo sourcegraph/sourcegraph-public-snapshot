@@ -10,12 +10,12 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/envvar"
+	uirouter "sourcegraph.com/cmd/frontend/internal/app/ui/router"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/errcode"
 )
 
 func init() {

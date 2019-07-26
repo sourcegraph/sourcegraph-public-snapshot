@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/graphqlbackend/graphqlutil"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/gituri"
+	"sourcegraph.com/pkg/symbols/protocol"
 )
 
 type symbolsArgs struct {

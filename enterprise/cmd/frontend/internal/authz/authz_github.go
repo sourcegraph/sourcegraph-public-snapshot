@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	permgh "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/github"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/cmd/frontend/authz"
+	permgh "sourcegraph.com/enterprise/cmd/frontend/internal/authz/github"
+	"sourcegraph.com/schema"
 )
 
 func githubProviders(ctx context.Context, githubs []*schema.GitHubConnection) (

@@ -19,15 +19,15 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
-	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/conf/conftypes"
+	"sourcegraph.com/pkg/extsvc/bitbucketcloud"
+	"sourcegraph.com/pkg/extsvc/phabricator"
+	"sourcegraph.com/pkg/httpcli"
+	"sourcegraph.com/pkg/httptestutil"
+	"sourcegraph.com/schema"
 )
 
 func TestOtherRepoName(t *testing.T) {

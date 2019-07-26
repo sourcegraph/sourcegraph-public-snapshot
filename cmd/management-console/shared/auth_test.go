@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
+	"sourcegraph.com/pkg/db/globalstatedb"
 )
 
 func TestAuthMiddleware(t *testing.T) {

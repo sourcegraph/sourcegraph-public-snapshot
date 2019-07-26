@@ -6,10 +6,10 @@ import (
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"sourcegraph.com/cmd/frontend/auth"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/extsvc"
 )
 
 // getOrCreateUser gets or creates a user account based on the OpenID Connect token. It returns the

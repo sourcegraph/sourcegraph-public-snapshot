@@ -24,17 +24,17 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search/query"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/errcode"
+	"sourcegraph.com/pkg/gitserver"
+	"sourcegraph.com/pkg/mutablelimiter"
+	searchbackend "sourcegraph.com/pkg/search/backend"
+	"sourcegraph.com/pkg/trace"
+	"sourcegraph.com/pkg/vcs/git"
 )
 
 var (

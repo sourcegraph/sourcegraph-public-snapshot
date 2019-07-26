@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
+	"sourcegraph.com/pkg/db/dbutil"
 )
 
 // NewDB returns a connection to a clean, new temporary testing database

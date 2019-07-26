@@ -2,8 +2,8 @@ package github
 
 import (
 	"github.com/google/go-github/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"golang.org/x/oauth2"
+	"sourcegraph.com/pkg/extsvc"
 )
 
 func GetExternalAccountData(data *extsvc.ExternalAccountData) (usr *github.User, tok *oauth2.Token, err error) {

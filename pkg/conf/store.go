@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+	"sourcegraph.com/pkg/conf/conftypes"
 )
 
 // Store manages the in-memory storage, access,

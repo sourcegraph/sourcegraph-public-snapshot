@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/httpcli"
 )
 
 // RequestCounter wraps a Prometheus request counter that is incremented by requests made by derived

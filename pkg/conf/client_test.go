@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/conf/conftypes"
 )
 
 func TestClient_continuouslyUpdate(t *testing.T) {

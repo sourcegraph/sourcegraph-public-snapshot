@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
+	"sourcegraph.com/pkg/rcache"
 )
 
 func TestUnmarshal(t *testing.T) {

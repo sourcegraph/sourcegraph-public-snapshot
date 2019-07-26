@@ -9,17 +9,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/cmd/frontend/globals"
+	"sourcegraph.com/schema"
 
 	"github.com/gregjones/httpcache"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/httputil"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/registry"
+	"sourcegraph.com/cmd/frontend/envvar"
+	"sourcegraph.com/cmd/frontend/graphqlbackend"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/httputil"
+	"sourcegraph.com/pkg/jsonc"
+	"sourcegraph.com/pkg/registry"
 )
 
 func init() {

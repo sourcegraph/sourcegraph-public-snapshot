@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/conf/conftypes"
 )
 
 type client struct {

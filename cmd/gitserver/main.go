@@ -15,10 +15,10 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"sourcegraph.com/cmd/gitserver/server"
+	"sourcegraph.com/pkg/debugserver"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/tracer"
 )
 
 var (

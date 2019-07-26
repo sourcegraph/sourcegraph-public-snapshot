@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/gitserver"
 )
 
 func TestPrepareZip(t *testing.T) {

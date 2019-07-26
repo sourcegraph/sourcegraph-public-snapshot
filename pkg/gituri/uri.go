@@ -6,7 +6,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/pkg/api"
 )
 
 // A URI is a wrapper around url.URL that makes it easier to get and

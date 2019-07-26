@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"sourcegraph.com/pkg/db/dbconn"
+	"sourcegraph.com/pkg/db/dbtesting"
 )
 
 func TestRecentSearches_Log(t *testing.T) {

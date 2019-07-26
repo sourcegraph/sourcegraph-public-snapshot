@@ -9,7 +9,7 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"sourcegraph.com/cmd/frontend/types"
 )
 
 func init() {

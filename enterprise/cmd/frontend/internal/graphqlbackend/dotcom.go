@@ -3,9 +3,9 @@
 package graphqlbackend
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
+	"sourcegraph.com/cmd/frontend/graphqlbackend"
+	"sourcegraph.com/enterprise/cmd/frontend/internal/dotcom/billing"
+	"sourcegraph.com/enterprise/cmd/frontend/internal/dotcom/productsubscription"
 )
 
 func init() {

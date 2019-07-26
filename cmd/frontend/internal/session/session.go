@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/redispool"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/errcode"
+	"sourcegraph.com/pkg/redispool"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 

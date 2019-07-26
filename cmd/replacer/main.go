@@ -18,14 +18,14 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/replacer/replace"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
+	"sourcegraph.com/cmd/replacer/replace"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/debugserver"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/gitserver"
+	"sourcegraph.com/pkg/store"
 
-	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"sourcegraph.com/pkg/tracer"
 )
 
 var cacheDir = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")

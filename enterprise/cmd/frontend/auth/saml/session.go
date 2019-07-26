@@ -6,8 +6,8 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/schema"
 )
 
 // SignOut returns the URL where the user can initiate a logout from the SAML IdentityProvider, if

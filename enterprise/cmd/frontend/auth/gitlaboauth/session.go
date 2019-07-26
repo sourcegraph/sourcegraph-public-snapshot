@@ -9,14 +9,14 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"golang.org/x/oauth2"
+	"sourcegraph.com/cmd/frontend/auth"
+	"sourcegraph.com/cmd/frontend/auth/providers"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/enterprise/cmd/frontend/auth/oauth"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/extsvc"
+	"sourcegraph.com/pkg/extsvc/gitlab"
 )
 
 type sessionIssuerHelper struct {

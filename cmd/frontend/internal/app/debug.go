@@ -9,9 +9,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/pkg/debugserver"
+	"sourcegraph.com/pkg/env"
 )
 
 // addDebugHandlers registers the reverse proxies to each services debug

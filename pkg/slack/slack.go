@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/pkg/env"
 
 	"github.com/pkg/errors"
 )

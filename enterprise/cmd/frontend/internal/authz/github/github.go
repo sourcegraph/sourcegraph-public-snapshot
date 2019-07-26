@@ -8,11 +8,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
+	"sourcegraph.com/cmd/frontend/authz"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/extsvc"
+	"sourcegraph.com/pkg/extsvc/github"
+	"sourcegraph.com/pkg/rcache"
 )
 
 // Provider implements authz.Provider for GitHub repository permissions.

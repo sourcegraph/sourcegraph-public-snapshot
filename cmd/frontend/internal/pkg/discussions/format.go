@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/highlight"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/highlight"
 )
 
 func formatTargetRepoLinesText(tr *types.DiscussionThreadTargetRepo) string {

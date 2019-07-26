@@ -7,10 +7,10 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"golang.org/x/crypto/ssh"
+	"sourcegraph.com/enterprise/pkg/license"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/env"
 )
 
 // publicKey is the public key used to verify product license keys.

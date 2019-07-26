@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/db/dbconn"
 )
 
 // dbPublisher is a publisher of extensions to the registry.

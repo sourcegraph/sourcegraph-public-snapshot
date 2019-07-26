@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/schema"
 )
 
 // diff returns names of the Go fields that have different values between the

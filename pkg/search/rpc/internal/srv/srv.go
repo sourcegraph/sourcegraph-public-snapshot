@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/search"
-	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	"sourcegraph.com/pkg/search"
+	"sourcegraph.com/pkg/search/query"
 )
 
 type SearchArgs struct {

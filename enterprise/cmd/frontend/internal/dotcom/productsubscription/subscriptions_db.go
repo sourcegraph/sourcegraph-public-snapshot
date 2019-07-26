@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/db/dbconn"
 )
 
 // dbSubscription describes an product subscription row in the product_subscriptions DB

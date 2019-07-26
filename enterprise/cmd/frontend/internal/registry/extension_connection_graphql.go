@@ -5,8 +5,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	"sourcegraph.com/cmd/frontend/graphqlbackend"
+	"sourcegraph.com/cmd/frontend/registry"
 )
 
 func init() {

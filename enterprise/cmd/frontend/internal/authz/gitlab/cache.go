@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"sourcegraph.com/pkg/extsvc/gitlab"
 )
 
 type cache interface {

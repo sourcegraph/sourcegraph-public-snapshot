@@ -13,14 +13,14 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/db/confdb"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/globals"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/conf/conftypes"
+	"sourcegraph.com/pkg/db/confdb"
+	"sourcegraph.com/pkg/jsonc"
 )
 
 func printConfigValidation() {

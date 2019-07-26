@@ -5,8 +5,8 @@ package authz
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/extsvc"
 )
 
 // Provider defines a source of truth of which repositories a user is authorized to view. The

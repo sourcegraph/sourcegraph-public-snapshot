@@ -1,6 +1,6 @@
 package main
 
-import "github.com/sourcegraph/sourcegraph/cmd/server/shared"
+import "sourcegraph.com/cmd/server/shared"
 
 func main() {
 	shared.Main()

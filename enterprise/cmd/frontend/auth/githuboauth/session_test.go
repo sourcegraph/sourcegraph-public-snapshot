@@ -11,12 +11,12 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	githubsvc "github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"golang.org/x/oauth2"
+	"sourcegraph.com/cmd/frontend/auth"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/extsvc"
+	githubsvc "sourcegraph.com/pkg/extsvc/github"
 )
 
 func init() {

@@ -5,13 +5,13 @@ import (
 	"database/sql"
 
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"sourcegraph.com/cmd/frontend/types"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/db/dbconn"
+	"sourcegraph.com/pkg/trace"
 )
 
 type savedSearches struct{}

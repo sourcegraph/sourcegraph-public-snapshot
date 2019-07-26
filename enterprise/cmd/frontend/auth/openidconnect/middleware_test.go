@@ -15,13 +15,13 @@ import (
 	"time"
 
 	oidc "github.com/coreos/go-oidc"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/cmd/frontend/auth"
+	"sourcegraph.com/cmd/frontend/auth/providers"
+	"sourcegraph.com/cmd/frontend/external/session"
+	"sourcegraph.com/enterprise/cmd/frontend/internal/licensing"
+	"sourcegraph.com/enterprise/pkg/license"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/schema"
 )
 
 // providerJSON is the JSON structure the OIDC provider returns at its discovery endpoing

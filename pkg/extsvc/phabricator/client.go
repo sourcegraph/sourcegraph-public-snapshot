@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/uber/gonduit"
 	"github.com/uber/gonduit/core"
 	"github.com/uber/gonduit/requests"
+	"sourcegraph.com/pkg/httpcli"
 )
 
 // A Client provides high level methods to a Phabricator Conduit API.

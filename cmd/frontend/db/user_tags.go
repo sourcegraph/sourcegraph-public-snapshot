@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"sourcegraph.com/pkg/db/dbconn"
 )
 
 // SetTag adds (present=true) or removes (present=false) a tag from the given user's set of tags. An

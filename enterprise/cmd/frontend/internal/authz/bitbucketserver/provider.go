@@ -10,11 +10,11 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"sourcegraph.com/cmd/frontend/authz"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/extsvc"
+	"sourcegraph.com/pkg/extsvc/bitbucketserver"
+	"sourcegraph.com/pkg/trace"
 )
 
 // Provider is an implementation of AuthzProvider that provides repository permissions as

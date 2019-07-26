@@ -17,15 +17,15 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"golang.org/x/net/context/ctxhttp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/internal/goroutine"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search/query"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/errcode"
+	"sourcegraph.com/pkg/trace"
+	"sourcegraph.com/pkg/vcs/git"
 )
 
 type rawCodemodResult struct {

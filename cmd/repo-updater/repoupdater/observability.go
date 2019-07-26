@@ -9,8 +9,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/repo-updater/repos"
 )
 
 // HandlerMetrics encapsulates the Prometheus metrics of an http.Handler.

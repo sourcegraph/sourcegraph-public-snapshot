@@ -8,16 +8,16 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/envvar"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/extsvc/github"
+	"sourcegraph.com/pkg/extsvc/gitlab"
+	"sourcegraph.com/pkg/gitserver"
+	"sourcegraph.com/pkg/repoupdater"
+	"sourcegraph.com/pkg/repoupdater/protocol"
+	"sourcegraph.com/pkg/vcs/git"
 )
 
 // CachedGitRepo returns a handle to the Git repository that does not know the remote URL. If

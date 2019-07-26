@@ -1,8 +1,8 @@
 package hubspotutil
 
 import (
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/hubspot"
 )
 
 // HubSpotHAPIKey is used by some requests to access their respective API endpoints

@@ -1,6 +1,6 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
+import "sourcegraph.com/cmd/frontend/internal/pkg/markdown"
 
 type markdownResolver struct {
 	text string

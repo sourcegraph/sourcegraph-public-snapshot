@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/errcode"
+	"sourcegraph.com/pkg/extsvc"
 )
 
 var MockGetAndSaveUser func(ctx context.Context, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error)

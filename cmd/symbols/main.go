@@ -20,13 +20,13 @@ import (
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"sourcegraph.com/cmd/symbols/internal/pkg/ctags"
+	"sourcegraph.com/cmd/symbols/internal/symbols"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/debugserver"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/gitserver"
+	"sourcegraph.com/pkg/tracer"
 )
 
 const port = "3184"

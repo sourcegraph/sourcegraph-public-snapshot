@@ -3,8 +3,8 @@ package reposource
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/schema"
 )
 
 type GitHub struct {

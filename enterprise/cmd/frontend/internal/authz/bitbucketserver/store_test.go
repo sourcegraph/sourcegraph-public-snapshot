@@ -11,8 +11,8 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
+	"sourcegraph.com/cmd/frontend/authz"
+	"sourcegraph.com/pkg/db/dbtest"
 )
 
 func BenchmarkStore(b *testing.B) {

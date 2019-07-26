@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search/query"
+	"sourcegraph.com/cmd/frontend/types"
+	searchbackend "sourcegraph.com/pkg/search/backend"
 )
 
 func TestSearchRepositories(t *testing.T) {

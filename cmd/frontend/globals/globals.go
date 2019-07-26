@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"sync/atomic"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/conf"
 )
 
 var externalURLWatchers uint32

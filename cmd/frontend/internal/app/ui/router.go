@@ -18,12 +18,12 @@ import (
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/randstring"
-	"github.com/sourcegraph/sourcegraph/pkg/routevar"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"sourcegraph.com/cmd/frontend/envvar"
+	uirouter "sourcegraph.com/cmd/frontend/internal/app/ui/router"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/randstring"
+	"sourcegraph.com/pkg/routevar"
+	"sourcegraph.com/pkg/trace"
 )
 
 const (

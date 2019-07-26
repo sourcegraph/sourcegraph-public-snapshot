@@ -9,7 +9,7 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"sourcegraph.com/pkg/httpcli"
 )
 
 // A Sourcer converts the given ExternalServices to Sources

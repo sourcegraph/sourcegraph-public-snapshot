@@ -7,21 +7,21 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"sourcegraph.com/cmd/frontend/envvar"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/globals"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/gitserver"
+	"sourcegraph.com/pkg/jsonc"
+	"sourcegraph.com/pkg/txemail"
+	"sourcegraph.com/pkg/vcs/git"
 )
 
 func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {

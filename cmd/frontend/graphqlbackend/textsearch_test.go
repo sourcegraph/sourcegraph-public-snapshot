@@ -13,14 +13,14 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search/query"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/errcode"
+	"sourcegraph.com/pkg/gitserver"
+	searchbackend "sourcegraph.com/pkg/search/backend"
+	"sourcegraph.com/pkg/vcs"
 )
 
 func TestQueryToZoektQuery(t *testing.T) {

@@ -3,7 +3,7 @@ package git
 import (
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/pkg/api"
 )
 
 // Mocks is used to mock behavior in tests. Tests must call ResetMocks() when finished to ensure its

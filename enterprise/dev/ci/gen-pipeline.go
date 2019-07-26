@@ -5,7 +5,7 @@ package main
 import (
 	"os"
 
-	ci "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/ci"
+	ci "sourcegraph.com/enterprise/dev/ci/ci"
 )
 
 func main() {

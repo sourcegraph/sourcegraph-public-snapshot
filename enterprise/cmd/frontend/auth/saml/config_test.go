@@ -3,8 +3,8 @@ package saml
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/schema"
 )
 
 func TestValidateCustom(t *testing.T) {

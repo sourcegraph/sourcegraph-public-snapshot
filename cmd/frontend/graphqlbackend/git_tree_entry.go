@@ -9,14 +9,14 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/graphqlbackend/externallink"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/conf/reposource"
+	"sourcegraph.com/pkg/vcs/git"
+	"sourcegraph.com/schema"
 )
 
 // gitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git

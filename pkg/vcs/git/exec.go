@@ -11,8 +11,8 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/pkg/gitserver"
+	"sourcegraph.com/pkg/vcs"
 )
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could

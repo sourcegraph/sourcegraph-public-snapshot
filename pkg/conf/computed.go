@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/legacyconf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/conf/confdefaults"
+	"sourcegraph.com/pkg/conf/conftypes"
+	"sourcegraph.com/pkg/jsonc"
+	"sourcegraph.com/pkg/legacyconf"
+	"sourcegraph.com/schema"
 )
 
 func init() {

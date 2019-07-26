@@ -3,9 +3,9 @@ package userpasswd
 import (
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/schema"
 )
 
 // ResetPasswordEnabled reports whether the reset-password flow is enabled (per site config).

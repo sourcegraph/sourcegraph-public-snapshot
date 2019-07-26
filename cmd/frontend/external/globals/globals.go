@@ -5,7 +5,7 @@ package globals
 import (
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"sourcegraph.com/cmd/frontend/globals"
 )
 
 func ExternalURL() *url.URL {

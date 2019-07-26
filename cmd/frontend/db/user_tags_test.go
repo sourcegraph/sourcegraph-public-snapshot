@@ -5,8 +5,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/pkg/db/dbtesting"
+	"sourcegraph.com/pkg/errcode"
 )
 
 func TestUsers_SetTag(t *testing.T) {

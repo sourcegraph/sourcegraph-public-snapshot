@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	dbquery "github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	dbquery "sourcegraph.com/cmd/frontend/db/query"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/gitserver"
+	"sourcegraph.com/pkg/search/query"
 )
 
 // RevisionSpecifier represents either a revspec or a ref glob. At most one

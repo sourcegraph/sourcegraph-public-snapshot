@@ -10,13 +10,13 @@ import (
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
-	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/honey"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/registry"
-	"github.com/sourcegraph/sourcegraph/schema"
+	frontendregistry "sourcegraph.com/cmd/frontend/registry"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/errcode"
+	"sourcegraph.com/pkg/honey"
+	"sourcegraph.com/pkg/jsonc"
+	"sourcegraph.com/pkg/registry"
+	"sourcegraph.com/schema"
 )
 
 func init() {

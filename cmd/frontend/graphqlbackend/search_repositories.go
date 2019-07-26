@@ -4,9 +4,9 @@ import (
 	"context"
 	"regexp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search/query"
+	searchbackend "sourcegraph.com/pkg/search/backend"
 )
 
 var mockSearchRepositories func(args *search.Args) ([]searchResultResolver, *searchResultsCommon, error)

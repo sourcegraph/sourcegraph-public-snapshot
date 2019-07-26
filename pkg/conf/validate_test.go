@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/pkg/conf/conftypes"
+	"sourcegraph.com/schema"
 )
 
 func TestValidate(t *testing.T) {

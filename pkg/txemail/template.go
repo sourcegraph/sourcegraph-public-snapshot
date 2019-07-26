@@ -8,7 +8,7 @@ import (
 
 	"github.com/microcosm-cc/bluemonday"
 	gfm "github.com/shurcooL/github_flavored_markdown"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
+	"sourcegraph.com/pkg/txemail/txtypes"
 )
 
 // MustParseTemplate calls ParseTemplate and panics if an error is returned.

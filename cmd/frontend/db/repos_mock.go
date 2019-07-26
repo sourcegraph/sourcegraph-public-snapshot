@@ -5,8 +5,8 @@ import (
 
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/api"
 )
 
 type MockRepos struct {

@@ -14,11 +14,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/gosyntect"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/trace"
 )
 
 var (

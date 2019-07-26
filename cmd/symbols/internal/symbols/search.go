@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/pkg/env"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/pkg/api"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/keegancsmith/sqlf"
@@ -21,9 +21,9 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/symbols/protocol"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.

@@ -26,8 +26,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
 	"golang.org/x/crypto/ssh"
+	"sourcegraph.com/enterprise/pkg/license"
 )
 
 var (

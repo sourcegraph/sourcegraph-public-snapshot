@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/pkg/extsvc/bitbucketserver"
+	"sourcegraph.com/schema"
 )
 
 func TestBitbucketServerSource_MakeRepo(t *testing.T) {

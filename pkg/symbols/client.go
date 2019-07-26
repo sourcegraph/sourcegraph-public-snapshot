@@ -16,11 +16,11 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"golang.org/x/net/context/ctxhttp"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/endpoint"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/symbols/protocol"
 )
 
 var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")

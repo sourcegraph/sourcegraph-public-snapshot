@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/pkg/api"
 )
 
 // A RepoRev specifies a repo at a revision. The revision need not be an absolute

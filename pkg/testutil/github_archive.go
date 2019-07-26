@@ -11,9 +11,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"golang.org/x/net/context/ctxhttp"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/gitserver"
 )
 
 func FetchTarFromGithub(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {

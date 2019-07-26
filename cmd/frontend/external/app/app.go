@@ -3,8 +3,8 @@
 package app
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
+	"sourcegraph.com/cmd/frontend/internal/app"
+	"sourcegraph.com/cmd/frontend/internal/app/jscontext"
 )
 
 type SignOutURL = app.SignOutURL

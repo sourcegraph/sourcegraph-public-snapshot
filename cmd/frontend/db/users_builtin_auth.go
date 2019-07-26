@@ -8,10 +8,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/randstring"
 	"golang.org/x/crypto/bcrypt"
+	"sourcegraph.com/pkg/db/dbconn"
+	"sourcegraph.com/pkg/db/dbtesting"
+	"sourcegraph.com/pkg/randstring"
 )
 
 func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool, error) {

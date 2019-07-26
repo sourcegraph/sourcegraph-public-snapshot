@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/pkg/conf/conftypes"
+	"sourcegraph.com/schema"
 )
 
 // Unified represents the overall global Sourcegraph configuration from various

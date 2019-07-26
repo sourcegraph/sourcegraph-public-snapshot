@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/schema"
 )
 
 func TestForbidAllMiddleware(t *testing.T) {

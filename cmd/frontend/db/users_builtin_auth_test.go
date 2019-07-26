@@ -3,7 +3,7 @@ package db
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"sourcegraph.com/pkg/db/dbtesting"
 )
 
 func TestUsers_BuiltinAuth(t *testing.T) {

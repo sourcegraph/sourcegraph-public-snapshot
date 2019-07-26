@@ -7,18 +7,18 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
+	"sourcegraph.com/pkg/errcode"
+	"sourcegraph.com/pkg/hubspot/hubspotutil"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/internal/app/tracking"
+	"sourcegraph.com/cmd/frontend/internal/pkg/suspiciousnames"
+	"sourcegraph.com/cmd/frontend/internal/session"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/conf"
 )
 
 type credentials struct {

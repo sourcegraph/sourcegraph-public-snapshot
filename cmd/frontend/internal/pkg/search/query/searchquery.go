@@ -3,8 +3,8 @@
 package query
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search/query/syntax"
+	"sourcegraph.com/cmd/frontend/internal/pkg/search/query/types"
 )
 
 // All field names.

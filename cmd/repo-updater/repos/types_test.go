@@ -4,13 +4,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/extsvc/awscodecommit"
+	"sourcegraph.com/pkg/extsvc/bitbucketserver"
+	"sourcegraph.com/pkg/extsvc/github"
+	"sourcegraph.com/pkg/extsvc/gitlab"
+	"sourcegraph.com/pkg/extsvc/gitolite"
+	"sourcegraph.com/pkg/jsonc"
 )
 
 func TestExternalService_Exclude(t *testing.T) {

@@ -6,12 +6,12 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	githubcodehost "github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
+	"sourcegraph.com/cmd/frontend/auth/providers"
+	"sourcegraph.com/enterprise/cmd/frontend/auth/oauth"
+	"sourcegraph.com/pkg/conf"
+	githubcodehost "sourcegraph.com/pkg/extsvc/github"
+	"sourcegraph.com/schema"
 )
 
 func Test_parseConfig(t *testing.T) {

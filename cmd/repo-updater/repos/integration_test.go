@@ -8,10 +8,10 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/repo-updater/repos"
+	"sourcegraph.com/pkg/db/dbtest"
+	"sourcegraph.com/pkg/trace"
 )
 
 // This error is passed to txstore.Done in order to always

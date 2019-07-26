@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"sourcegraph.com/cmd/frontend/types"
 )
 
 type MockOrgs struct {

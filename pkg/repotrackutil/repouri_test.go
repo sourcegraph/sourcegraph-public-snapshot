@@ -3,7 +3,7 @@ package repotrackutil
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/pkg/api"
 )
 
 func TestGetTrackedRepo(t *testing.T) {

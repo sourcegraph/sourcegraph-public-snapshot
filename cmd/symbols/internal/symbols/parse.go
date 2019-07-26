@@ -12,11 +12,11 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/symbols/internal/pkg/ctags"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/symbols/protocol"
 )
 
 // startParsers starts the parser process pool.

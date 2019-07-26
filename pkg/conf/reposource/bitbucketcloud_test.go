@@ -3,7 +3,7 @@ package reposource
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/schema"
 )
 
 func TestBitbucketCloud_cloneURLToRepoName(t *testing.T) {

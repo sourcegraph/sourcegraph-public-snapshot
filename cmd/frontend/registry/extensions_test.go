@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/pkg/registry"
+	"sourcegraph.com/cmd/frontend/graphqlbackend"
+	"sourcegraph.com/pkg/registry"
 )
 
 func TestSplitExtensionID(t *testing.T) {

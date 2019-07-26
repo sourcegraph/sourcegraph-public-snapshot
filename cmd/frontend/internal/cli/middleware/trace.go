@@ -6,7 +6,7 @@ import (
 	"net/http/httputil"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/pkg/env"
 )
 
 var httpTrace, _ = strconv.ParseBool(env.Get("HTTP_TRACE", "false", "dump HTTP requests (including body) to stderr"))

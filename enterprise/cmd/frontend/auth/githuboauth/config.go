@@ -2,9 +2,9 @@ package githuboauth
 
 import (
 	"github.com/dghubble/gologin"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/cmd/frontend/auth/providers"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/schema"
 )
 
 func init() {

@@ -1,9 +1,9 @@
 package db
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/enterprise/cmd/frontend/internal/authz"
+	"sourcegraph.com/schema"
 )
 
 // NewExternalServicesStore returns an OSS db.ExternalServicesStore set with

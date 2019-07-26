@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/db"
 )
 
 func TestRepositories(t *testing.T) {

@@ -13,9 +13,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/extsvc/bitbucketcloud"
+	"sourcegraph.com/schema"
 )
 
 func TestBitbucketCloudSource_ListRepos(t *testing.T) {

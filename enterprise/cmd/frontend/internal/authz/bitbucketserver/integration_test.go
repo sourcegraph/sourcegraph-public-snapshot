@@ -4,7 +4,7 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
+	"sourcegraph.com/pkg/db/dbtest"
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")

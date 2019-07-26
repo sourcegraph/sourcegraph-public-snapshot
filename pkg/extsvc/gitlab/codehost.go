@@ -4,8 +4,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/extsvc"
 )
 
 // ServiceType is the (api.ExternalRepoSpec).ServiceType value for GitLab projects. The ServiceID

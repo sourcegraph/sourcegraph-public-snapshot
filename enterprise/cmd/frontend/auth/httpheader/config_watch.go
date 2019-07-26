@@ -1,8 +1,8 @@
 package httpheader
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/cmd/frontend/auth/providers"
+	"sourcegraph.com/pkg/conf"
 )
 
 // Watch for configuration changes related to the http-header auth provider.

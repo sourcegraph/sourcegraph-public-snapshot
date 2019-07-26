@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/conf"
 )
 
 func (r *UserResolver) Session(ctx context.Context) (*sessionResolver, error) {

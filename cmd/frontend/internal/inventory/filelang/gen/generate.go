@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	goon "github.com/shurcooL/go-goon"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"gopkg.in/yaml.v2"
+	"sourcegraph.com/cmd/frontend/internal/inventory/filelang"
 )
 
 var (

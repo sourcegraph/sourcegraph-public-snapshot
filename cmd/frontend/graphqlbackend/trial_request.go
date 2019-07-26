@@ -3,11 +3,11 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/cmd/frontend/internal/pkg/siteid"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/errcode"
+	"sourcegraph.com/pkg/hubspot/hubspotutil"
 )
 
 type trialRequestForHubSpot struct {

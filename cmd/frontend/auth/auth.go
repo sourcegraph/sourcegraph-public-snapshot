@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
+	"sourcegraph.com/cmd/frontend/internal/pkg/suspiciousnames"
 )
 
 // AuthURLPrefix is the URL path prefix under which to attach authentication handlers

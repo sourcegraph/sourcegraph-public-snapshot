@@ -10,27 +10,27 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/routevar"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/actor"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/errcode"
+	"sourcegraph.com/pkg/gitserver"
+	"sourcegraph.com/pkg/repoupdater"
+	"sourcegraph.com/pkg/routevar"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"sourcegraph.com/cmd/frontend/backend"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/cmd/frontend/envvar"
+	"sourcegraph.com/cmd/frontend/internal/app/assetsutil"
+	"sourcegraph.com/cmd/frontend/internal/app/jscontext"
+	"sourcegraph.com/cmd/frontend/internal/pkg/handlerutil"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/vcs"
 )
 
 type InjectedHTML struct {

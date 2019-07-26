@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/db/dbtesting"
+	"sourcegraph.com/pkg/errcode"
 )
 
 // registryExtensionNamesForTests is a list of test cases containing valid and invalid registry

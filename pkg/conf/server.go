@@ -9,7 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+	"sourcegraph.com/pkg/conf/conftypes"
 )
 
 // ConfigurationSource provides direct access to read and write to the

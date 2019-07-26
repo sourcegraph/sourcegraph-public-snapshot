@@ -9,7 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/pkg/diskcache"
+	"sourcegraph.com/pkg/diskcache"
 )
 
 // ArchiveCacheDir is the location on disk that archives are cached. It is

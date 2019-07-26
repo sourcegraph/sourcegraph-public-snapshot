@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/jsonc"
 )
 
 // settingsCascade implements the GraphQL type SettingsCascade (and the deprecated type ConfigurationCascade).

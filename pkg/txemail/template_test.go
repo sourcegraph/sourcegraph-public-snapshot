@@ -3,8 +3,8 @@ package txemail
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 	gophermail "gopkg.in/jpoehls/gophermail.v0"
+	"sourcegraph.com/pkg/txemail/txtypes"
 )
 
 func TestParseTemplate(t *testing.T) {

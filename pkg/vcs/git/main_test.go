@@ -9,8 +9,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/cmd/gitserver/server"
+	"sourcegraph.com/pkg/gitserver"
 )
 
 func TestMain(m *testing.M) {

@@ -11,14 +11,14 @@ import (
 	"github.com/gitchander/permutation"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
+	"sourcegraph.com/cmd/repo-updater/repos"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/extsvc/awscodecommit"
+	"sourcegraph.com/pkg/extsvc/bitbucketcloud"
+	"sourcegraph.com/pkg/extsvc/bitbucketserver"
+	"sourcegraph.com/pkg/extsvc/github"
+	"sourcegraph.com/pkg/extsvc/gitlab"
+	"sourcegraph.com/pkg/extsvc/gitolite"
 )
 
 func TestSyncer_Sync(t *testing.T) {

@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	graphql "github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"sourcegraph.com/cmd/frontend/backend"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/jsonc"
 )
 
 func (schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*settingsSubject, error) {

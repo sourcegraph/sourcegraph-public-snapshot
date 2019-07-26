@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	frontendregistry "sourcegraph.com/cmd/frontend/registry"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/errcode"
 )
 
 func init() {

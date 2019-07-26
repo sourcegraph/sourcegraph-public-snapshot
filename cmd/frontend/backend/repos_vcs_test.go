@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"sourcegraph.com/cmd/frontend/types"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/repoupdater"
+	"sourcegraph.com/pkg/repoupdater/protocol"
+	"sourcegraph.com/pkg/vcs/git"
 )
 
 func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {

@@ -1,9 +1,9 @@
 package main
 
 import (
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
+	_ "sourcegraph.com/cmd/frontend/internal/app/assets"
+	_ "sourcegraph.com/cmd/frontend/registry"
+	"sourcegraph.com/cmd/frontend/shared"
 )
 
 // Note: All frontend code should be added to shared.Main, not here. See that

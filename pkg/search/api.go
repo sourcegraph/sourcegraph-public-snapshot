@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/search/query"
 )
 
 // FileMatch contains all the matches within a file.

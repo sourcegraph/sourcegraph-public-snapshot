@@ -8,8 +8,8 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/kylelemons/godebug/pretty"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/schema"
 )
 
 // This test lives in cmd/enterprise because it tests a proprietary

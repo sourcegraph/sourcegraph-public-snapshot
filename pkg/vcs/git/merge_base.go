@@ -7,8 +7,8 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/gitserver"
 )
 
 // MergeBase returns the merge base commit for the specified commits.

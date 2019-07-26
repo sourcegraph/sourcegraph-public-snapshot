@@ -6,8 +6,8 @@ import (
 	"html"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/pkg/errcode"
 )
 
 // NewPreCreateUserHook returns a PreCreateUserHook closure with

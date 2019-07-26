@@ -14,7 +14,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
+	"sourcegraph.com/pkg/db/globalstatedb"
 )
 
 var (

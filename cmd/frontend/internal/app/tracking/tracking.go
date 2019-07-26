@@ -8,9 +8,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
-	"github.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
+	"sourcegraph.com/cmd/frontend/envvar"
+	"sourcegraph.com/pkg/hubspot"
+	"sourcegraph.com/pkg/hubspot/hubspotutil"
 )
 
 // SyncUser handles creating or syncing a user profile in HubSpot, and if provided,

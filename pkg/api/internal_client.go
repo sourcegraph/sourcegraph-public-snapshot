@@ -9,12 +9,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/context/ctxhttp"
+	"sourcegraph.com/pkg/conf/conftypes"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/jsonc"
+	"sourcegraph.com/pkg/txemail/txtypes"
+	"sourcegraph.com/schema"
 )
 
 var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", "sourcegraph-frontend-internal", "HTTP address for internal frontend HTTP API.")

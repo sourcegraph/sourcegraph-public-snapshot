@@ -3,7 +3,7 @@ package auth
 import (
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/pkg/conf"
 )
 
 // ForbidAllRequestsMiddleware forbids all requests. It is used when no auth provider is configured (as

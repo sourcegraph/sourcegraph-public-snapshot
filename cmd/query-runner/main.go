@@ -18,12 +18,12 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/eventlogger"
-	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"sourcegraph.com/cmd/query-runner/queryrunnerapi"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/debugserver"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/eventlogger"
+	"sourcegraph.com/pkg/tracer"
 )
 
 var forceRunInterval = env.Get("FORCE_RUN_INTERVAL", "", "Force an interval to run saved queries at, instead of assuming query execution time * 30 (query that takes 2s to run, runs every 60s)")

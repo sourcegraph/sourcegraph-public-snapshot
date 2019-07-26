@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"sourcegraph.com/pkg/conf"
+	"sourcegraph.com/pkg/errcode"
+	"sourcegraph.com/pkg/jsonc"
 )
 
 // validateExtensionManifest validates a JSON extension manifest for syntax.

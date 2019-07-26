@@ -6,7 +6,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"sourcegraph.com/cmd/frontend/graphqlbackend"
 )
 
 func init() {

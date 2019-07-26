@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/pkg/env"
 )
 
 func init() {

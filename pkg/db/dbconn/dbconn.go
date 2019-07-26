@@ -26,9 +26,9 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/migrations"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/migrations"
+	"sourcegraph.com/pkg/env"
 )
 
 var (

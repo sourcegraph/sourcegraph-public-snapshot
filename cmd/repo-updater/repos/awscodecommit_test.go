@@ -3,9 +3,9 @@ package repos
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"sourcegraph.com/pkg/extsvc/awscodecommit"
+	"sourcegraph.com/pkg/httpcli"
+	"sourcegraph.com/schema"
 )
 
 func TestAWSCodeCommitSource_Exclude(t *testing.T) {

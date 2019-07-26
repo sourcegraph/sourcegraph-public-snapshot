@@ -3,8 +3,8 @@ package productsubscription
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"sourcegraph.com/cmd/frontend/db"
+	"sourcegraph.com/pkg/db/dbtesting"
 )
 
 func TestProductLicenses_Create(t *testing.T) {

@@ -4,9 +4,9 @@ import (
 	"log"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	stripe "github.com/stripe/stripe-go"
+	"sourcegraph.com/cmd/frontend/external/app"
+	"sourcegraph.com/pkg/env"
 )
 
 var (

@@ -9,9 +9,9 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"sourcegraph.com/pkg/api"
+	"sourcegraph.com/pkg/db/dbconn"
+	"sourcegraph.com/pkg/trace"
 )
 
 type settings struct{}

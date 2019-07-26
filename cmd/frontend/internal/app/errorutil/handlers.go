@@ -8,10 +8,10 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/cmd/frontend/internal/pkg/handlerutil"
+	"sourcegraph.com/pkg/env"
+	"sourcegraph.com/pkg/trace"
 )
 
 // Handler is a wrapper func for app HTTP handlers that enables app
