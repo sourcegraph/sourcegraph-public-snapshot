@@ -46,7 +46,7 @@ describe('NavLinks', () => {
         'executeCommand' | 'services'
     >['extensionsController'] = { executeCommand: async () => void 0, services: {} as any }
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => void 0 }
-    const KEYBINDINGS: KeybindingsProps['keybindings'] = { commandPalette: [] }
+    const KEYBINDINGS: KeybindingsProps['keybindings'] = { commandPalette: [], switchTheme: [] }
     const SETTINGS_CASCADE: SettingsCascadeProps['settingsCascade'] = { final: null, subjects: null }
     // tslint:disable-next-line:no-object-literal-type-assertion
     const USER = { username: 'u' } as GQL.IUser
