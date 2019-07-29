@@ -17,8 +17,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- Out-of-the-box TypeScript code intelligence is much better with an updated ctags version with a built-in TypeScript parser.
-
 ### Fixed
 
 ### Removed
