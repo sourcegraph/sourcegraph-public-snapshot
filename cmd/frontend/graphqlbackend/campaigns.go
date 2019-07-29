@@ -139,7 +139,6 @@ type Campaign interface {
 	Name() string
 	Description() *string
 	IsPreview() bool
-	Settings() string
 	URL(context.Context) (string, error)
 	Threads(context.Context, *graphqlutil.ConnectionArgs) (ThreadConnection, error)
 	Repositories(context.Context) ([]*RepositoryResolver, error)

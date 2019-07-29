@@ -53,13 +53,13 @@ func unmarshalThreadID(id graphql.ID) (dbID int64, err error) {
 	return
 }
 
-func (GraphQLResolver) ThreadInRepository(ctx context.Context, repositoryID graphql.ID, threadIDInRepository string) (graphqlbackend.Thread, error) {
-	threadID, err := strconv.ParseInt(threadIDInRepository, 10, 64)
+func (GraphQLResolver) ThreadInRepository(ctx context.Context, repositoryID graphql.ID, number string) (graphqlbackend.Thread, error) {
+	threadDBID, err := strconv.ParseInt(number, 10, 64)
 	if err != nil {
 		return nil, err
 	}
 	// TODO!(sqs): access checks
-	thread, err := threadByDBID(ctx, threadID)
+	thread, err := threadByDBID(ctx, threadDBID)
 	if err != nil {
 		return nil, err
 	}
@@ -78,13 +78,13 @@ func (GraphQLResolver) ThreadInRepository(ctx context.Context, repositoryID grap
 	return thread, nil
 }
 
-func (v *gqlThread) IDInRepository() string { return strconv.FormatInt(v.db.ID, 10) }
-
-func (v *gqlThread) DBID() int64 { return v.db.ID }
-
 func (v *gqlThread) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	return graphqlbackend.RepositoryByDBID(ctx, v.db.RepositoryID)
 }
+
+func (v *gqlThread) Number() string { return strconv.FormatInt(v.db.ID, 10) }
+
+func (v *gqlThread) DBID() int64 { return v.db.ID }
 
 func (v *gqlThread) Title() string { return v.db.Title }
 
@@ -95,7 +95,7 @@ func (v *gqlThread) URL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return path.Join(repository.URL(), "-", "threads", v.IDInRepository()), nil
+	return path.Join(repository.URL(), "-", "threads", v.Number()), nil
 }
 
 func (v *gqlThread) Settings() string {
@@ -107,10 +107,6 @@ func (v *gqlThread) Settings() string {
 
 func (v *gqlThread) Status() graphqlbackend.ThreadStatus {
 	return v.db.Status
-}
-
-func (v *gqlThread) Type() graphqlbackend.ThreadType {
-	return v.db.Type
 }
 
 func (v *gqlThread) RepositoryComparison(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {

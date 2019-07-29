@@ -353,14 +353,27 @@ type Mutation {
     # Mutations related to labels.
     labels: LabelsMutation!
 
-    # Create a thread in a namespace. Returns the newly created thread.
+    # Create a thread in a repository. Returns the newly created thread.
     createThread(input: CreateThreadInput!): Thread!
 
     # Update a thread. Returns the updated thread.
-    updateThread(input: UpdateThreadInput!): Thread
+    updateThread(input: UpdateThreadInput!): Thread!
 
     # Delete a thread.
     deleteThread(thread: ID!): EmptyResponse
+
+    # Create a changeset in a repository. Returns the newly created changeset.
+    createChangeset(input: CreateChangesetInput!): Changeset!
+
+    # Update a changeset. Returns the updated changeset.
+    updateChangeset(input: UpdateChangesetInput!): Changeset!
+
+    # Publish a changeset that was created as a preview. This will result in the head branch and changeset
+    # being created on the associated upstream repository. The updated changeset is returned.
+    publishPreviewChangeset(campaign: ID!): Changeset!
+
+    # Delete a changeset.
+    deleteChangeset(changeset: ID!): EmptyResponse
 
     # Mutations related to repositories' Git data.
     git: GitMutation!
@@ -1437,7 +1450,7 @@ type Repository implements Node & GenericSearchResultInterface {
     ): GitRefConnection!
 
     # The specified thread in this repository.
-    thread(idInRepository: String!): Thread
+    thread(number: String!): Thread
 
     # A list of threads in this repository.
     threads(
@@ -4067,24 +4080,29 @@ type LabelConnection {
     pageInfo: PageInfo!
 }
 
-# The types of threads.
-enum ThreadType {
-    # A thread with discussions and a set of locations.
-    THREAD
-    # A thread with discussions and a set of diagnostics.
-    ISSUE
-    # A thread with discussions and a set of edits.
-    CHANGESET
+# A node that is associated with a repository.
+interface RepositoryNode {
+    # The repository associated with this node.
+    repository: Repository!
+}
+
+# A node associated with a repository and addressable by the combination of (repository, number).
+interface RepositoryAndNumberAddressable {
+    # An ID for the node that is only unique within the node's repository. For a globally unique
+    # identifier, use Node.id.
+    number: String!
+}
+
+# A comment.
+interface Comment {
+    # The comment body.
+    body: String!
 }
 
 # The statuses of threads.
 enum ThreadStatus {
-    # Preview (for changesets).
-    PREVIEW
     # Open.
     OPEN
-    # Merged (for changesets).
-    MERGED
     # Closed.
     CLOSED
 }
@@ -4097,17 +4115,11 @@ input CreateThreadInput {
     # The title of the thread.
     title: String!
 
+    # The body of the thread.
+    body: String
+
     # The (optional) external URL of the thread.
     externalURL: String
-
-    # The settings for the thread.
-    settings: String
-
-    # The initial status of the thread upon creation.
-    status: ThreadStatus
-
-    # The type of thread to create.
-    type: ThreadType!
 }
 
 # Input arguments for updating a thread.
@@ -4115,52 +4127,43 @@ input UpdateThreadInput {
     # The ID of the thread to update.
     id: ID!
 
-    # The new title of the thread (if non-null).
+    # The new title of the thread.
     title: String
+
+    # The new body of the thread.
+    body: String
 
     # The new external URL of the thread. If it is the non-null empty string, the external URL is
     # set to null.
     externalURL: String
-
-    # The new settings for the thread (if non-null).
-    settings: String
-
-    # The new status of the thread (if non-null).
-    status: ThreadStatus
 }
 
 # A thread is an issue or changeset.
-type Thread implements Node {
+type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Comment {
     # The unique ID for the thread.
     id: ID!
-
-    # The thread ID that is shorter but only unique within the thread's repository. For a globally
-    # unique identifier, use Thread.id.
-    idInRepository: String!
 
     # The repository that contains this thread.
     repository: Repository!
 
+    # The thread ID that is only unique within the thread's repository. For a globally unique
+    # identifier, use Thread.id.
+    number: String!
+
     # The title of the thread.
     title: String!
+
+    # The body of the thread.
+    body: String
+
+    # The status of this thread.
+    status: ThreadStatus!
 
     # The (optional) external URL of the thread.
     externalURL: String
 
     # The URL to this thread on Sourcegraph.
     url: String!
-
-    # The settings for this thread.
-    settings: String!
-
-    # The status of this thread.
-    status: ThreadStatus!
-
-    # The type of this thread.
-    type: ThreadType!
-
-    # The comparison between this changeset's base and head. TODO!(sqs) changeset
-    repositoryComparison: RepositoryComparison
 }
 
 # A list of threads.
@@ -4169,6 +4172,96 @@ type ThreadConnection {
     nodes: [Thread!]!
 
     # The total number of threads in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# The statuses of changesets.
+enum ChangesetStatus {
+    # Open.
+    OPEN
+    # Merged.
+    MERGED
+    # Closed.
+    CLOSED
+}
+
+# Input arguments for creating a changeset.
+input CreateChangesetInput {
+    # The ID of this changeset's repository.
+    repository: ID!
+
+    # The title of the changeset.
+    title: String!
+
+    # The body of the changeset.
+    body: String
+
+    # The (optional) external URL of the changeset.
+    externalURL: String
+
+    # Whether the changeset is a preview.
+    preview: Boolean
+}
+
+# Input arguments for updating a changeset.
+input UpdateChangesetInput {
+    # The ID of the changeset to update.
+    id: ID!
+
+    # The new title of the changeset.
+    title: String
+
+    # The new body of the changeset.
+    body: String
+
+    # The new external URL of the changeset. If it is the non-null empty string, the external URL is
+    # set to null.
+    externalURL: String
+}
+
+# A changeset is an issue or changeset.
+type Changeset implements Node & RepositoryNode & RepositoryAndNumberAddressable & Comment {
+    # The unique ID for the changeset.
+    id: ID!
+
+    # The repository that contains this changeset.
+    repository: Repository!
+
+    # The changeset ID that is only unique within the changeset's repository. For a
+    # globally unique identifier, use Changeset.id.
+    number: String!
+
+    # The title of the changeset.
+    title: String!
+
+    # The body of the changeset.
+    body: String
+
+    # The status of this changeset.
+    status: ChangesetStatus!
+
+    # Whether this changeset is a preview.
+    isPreview: Boolean!
+
+    # The (optional) external URL of the changeset.
+    externalURL: String
+
+    # The URL to this changeset on Sourcegraph.
+    url: String!
+
+    # The comparison between this changeset's base and head.
+    repositoryComparison: RepositoryComparison!
+}
+
+# A list of changesets.
+type ChangesetConnection {
+    # A list of changesets.
+    nodes: [Changeset!]!
+
+    # The total number of changesets in the connection.
     totalCount: Int!
 
     # Pagination information.
@@ -4244,11 +4337,8 @@ type Campaign implements Node {
     # The (optional) description of the campaign.
     description: String
 
-    # Whether this campaign is in preview status.
+    # Whether this campaign is a preview.
     isPreview: Boolean!
-
-    # Settings (in JSON) for the campaign. TODO!(sqs): remove?
-    settings: String!
 
     # The URL to this campaign.
     url: String!

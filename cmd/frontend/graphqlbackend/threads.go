@@ -8,8 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-// Threads is the implementation of the GraphQL threads queries and mutations. If it is not set at
-// runtime, a "not implemented" error is returned to API clients who invoke it.
+// Threads is the implementation of the GraphQL API for threads queries and mutations. If it is not
+// set at runtime, a "not implemented" error is returned to API clients who invoke it.
 //
 // This is contributed by enterprise.
 var Threads ThreadsResolver
@@ -25,11 +25,11 @@ func ThreadByID(ctx context.Context, id graphql.ID) (Thread, error) {
 }
 
 // ThreadInRepository returns a specific thread in the specified repository.
-func ThreadInRepository(ctx context.Context, repository graphql.ID, threadIDInRepository string) (Thread, error) {
+func ThreadInRepository(ctx context.Context, repository graphql.ID, number string) (Thread, error) {
 	if Threads == nil {
 		return nil, errThreadsNotImplemented
 	}
-	return Threads.ThreadInRepository(ctx, repository, threadIDInRepository)
+	return Threads.ThreadInRepository(ctx, repository, number)
 }
 
 // ThreadsForRepository returns an instance of the GraphQL ThreadConnection type with the list of
@@ -83,78 +83,62 @@ type ThreadsResolver interface {
 	ThreadByID(context.Context, graphql.ID) (Thread, error)
 
 	// ThreadInRepository is called by the ThreadInRepository func but is not in the GraphQL API.
-	ThreadInRepository(ctx context.Context, repository graphql.ID, threadIDInRepository string) (Thread, error)
+	ThreadInRepository(ctx context.Context, repository graphql.ID, number string) (Thread, error)
 
 	// ThreadsForRepository is called by the ThreadsForRepository func but is not in the GraphQL
 	// API.
 	ThreadsForRepository(ctx context.Context, repository graphql.ID, arg *graphqlutil.ConnectionArgs) (ThreadConnection, error)
 }
 
+type createThreadCommonInput struct {
+	Repository  graphql.ID
+	Title       string
+	Body        *string
+	ExternalURL *string
+}
+
 type CreateThreadArgs struct {
-	Input struct {
-		Repository  graphql.ID
-		Title       string
-		ExternalURL *string
-		Settings    *string
-		Status      *ThreadStatus
-		Type        ThreadType
-	}
+	Input createThreadCommonInput
+}
+
+type updateThreadCommonInput struct {
+	ID          graphql.ID
+	Title       *string
+	Body        *string
+	ExternalURL *string
 }
 
 type UpdateThreadArgs struct {
-	Input struct {
-		ID          graphql.ID
-		Title       *string
-		ExternalURL *string
-		Settings    *string
-		Status      *ThreadStatus
-	}
+	Input updateThreadCommonInput
 }
 
 type DeleteThreadArgs struct {
 	Thread graphql.ID
 }
 
-type ThreadType string
-
-const (
-	ThreadTypeThread    ThreadType = "THREAD"
-	ThreadTypeIssue                = "ISSUE"
-	ThreadTypeChangeset            = "CHANGESET"
-)
-
-// IsValidThreadType reports whether t is a valid thread type.
-func IsValidThreadType(t string) bool {
-	return ThreadType(t) == ThreadTypeThread || ThreadType(t) == ThreadTypeIssue || ThreadType(t) == ThreadTypeChangeset
-}
-
 type ThreadStatus string
 
 const (
-	ThreadStatusPreview ThreadStatus = "PREVIEW"
-	ThreadStatusOpen                 = "OPEN"
-	ThreadStatusMerged               = "MERGED"
-	ThreadStatusClosed               = "CLOSED"
+	ThreadStatusOpen   ThreadStatus = "OPEN"
+	ThreadStatusClosed              = "CLOSED"
 )
 
-// IsValidThreadStatus reports whether t is a valid thread status.
-func IsValidThreadStatus(t string) bool {
-	return ThreadStatus(t) == ThreadStatusPreview || ThreadStatus(t) == ThreadStatusOpen || ThreadStatus(t) == ThreadStatusMerged || ThreadStatus(t) == ThreadStatusClosed
+// threadCommon is the shared interface among threads, issues, and changesets.
+type threadCommon interface {
+	ID() graphql.ID
+	DBID() int64
+	Repository(context.Context) (*RepositoryResolver, error)
+	Number() string
+	Title() string
+	Body() string
+	ExternalURL() *string
+	URL(context.Context) (string, error)
 }
 
 // Thread is the interface for the GraphQL type Thread.
 type Thread interface {
-	ID() graphql.ID
-	IDInRepository() string
-	DBID() int64
-	Repository(context.Context) (*RepositoryResolver, error)
-	Title() string
-	ExternalURL() *string
-	URL(context.Context) (string, error)
-	Settings() string
+	threadCommon
 	Status() ThreadStatus
-	Type() ThreadType
-	RepositoryComparison(context.Context) (*RepositoryComparisonResolver, error)
 }
 
 // ThreadConnection is the interface for the GraphQL type ThreadConnection.
