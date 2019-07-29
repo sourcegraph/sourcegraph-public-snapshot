@@ -341,18 +341,20 @@ func hydrateLineNumbers(fileBuf []byte, lastLineNumber, lastMatchIndex, lineStar
 
 // TODO document invariants
 // TODO test corner cases, ie start / end containing new lines / being on buf boundaries / etc.
-func appendMatches(matches []protocol.LineMatch, buf []byte, lineNumber, start, end int) []protocol.LineMatch {
+// matchLineBuf is a byte slice that contains the full line(s) that the match appears on.
+func appendMatches(matches []protocol.LineMatch, matchLineBuf []byte, lineNumber, start, end int) []protocol.LineMatch {
 	// If any newlines appear between start and end, we need to append multiple LineMatch.
 	// We assume there are no newlines before start.
-	for len(buf) > 0 {
+	for len(matchLineBuf) > 0 {
 		var line []byte
-		if eol := bytes.Index(buf[start:], []byte{'\n'}); eol < 0 {
-			line = buf
-			buf = []byte{}
+		if eol := bytes.Index(matchLineBuf[start:], []byte{'\n'}); eol < 0 {
+			line = matchLineBuf
+			matchLineBuf = []byte{}
 		} else {
 			eol += start
-			line = buf[:eol]
-			buf = buf[eol+1:]
+			// start is 0 indexed, so add 1 to include the new line at the end of the line
+			line = matchLineBuf[:eol+1]
+			matchLineBuf = matchLineBuf[eol+1:]
 		}
 
 		e := end
