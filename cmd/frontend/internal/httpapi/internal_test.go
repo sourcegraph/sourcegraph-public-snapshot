@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -40,11 +39,7 @@ func Test_serveReposList(t *testing.T) {
 			URI string
 		}
 		var repos []repo
-		bod, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = json.Unmarshal(bod, &repos)
+		err = json.NewDecoder(resp.Body).Decode(&repos)
 		if err != nil {
 			t.Fatalf("json decoding response: %v", err)
 		}
