@@ -22,8 +22,11 @@ if [[ -z "$SRC_ACCESS_TOKEN" || -z "$REPOSITORY" || -z "$COMMIT" || -z "$file" ]
   exit 1
 fi
 
+gzip -k -c "$file" > "$file.gz"
+
 curl \
   -H "Authorization: token $SRC_ACCESS_TOKEN" \
   -H "Content-Type: application/x-ndjson+lsif" \
+  -H "Content-Encoding: gzip" \
   "$SRC_ENDPOINT/.api/lsif/upload?repository=$(urlencode "$REPOSITORY")&commit=$(urlencode "$COMMIT")" \
-  --data-binary "@$file"
+  --data-binary "@$file.gz"
