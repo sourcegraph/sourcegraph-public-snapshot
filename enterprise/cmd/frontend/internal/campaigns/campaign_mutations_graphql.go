@@ -42,6 +42,15 @@ func (GraphQLResolver) UpdateCampaign(ctx context.Context, arg *graphqlbackend.U
 	return &gqlCampaign{db: campaign}, nil
 }
 
+func (GraphQLResolver) PublishPreviewCampaign(ctx context.Context, arg *graphqlbackend.PublishPreviewCampaignArgs) (graphqlbackend.Campaign, error) {
+	gqlCampaign, err := campaignByID(ctx, arg.Campaign)
+	if err != nil {
+		return nil, err
+	}
+	panic("TODO!(sqs)")
+	return gqlCampaign, nil
+}
+
 func (GraphQLResolver) DeleteCampaign(ctx context.Context, arg *graphqlbackend.DeleteCampaignArgs) (*graphqlbackend.EmptyResponse, error) {
 	gqlCampaign, err := campaignByID(ctx, arg.Campaign)
 	if err != nil {

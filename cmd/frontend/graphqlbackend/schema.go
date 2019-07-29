@@ -358,11 +358,15 @@ type Mutation {
     # Mutations related to repositories' Git data.
     git: GitMutation!
 
-    # Create a campaign in a namespace. Returns the newly created campaign.
+    # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
 
-    # Update a campaign. Returns the updated campaign.
-    updateCampaign(input: UpdateCampaignInput!): Campaign
+    # Update a campaign. The updated campaign is returned.
+    updateCampaign(input: UpdateCampaignInput!): Campaign!
+
+    # Publish a campaign that was created as a preview. This will result in branches and changesets
+    # being created on all affected repositories. The updated campaign is returned.
+    publishPreviewCampaign(campaign: ID!): Campaign!
 
     # Delete a campaign. All threads that were associated with or created by this campaign remain
     # (and are not deleted when the campaign is deleted).
@@ -4228,7 +4232,10 @@ type Campaign implements Node {
     # The (optional) description of the campaign.
     description: String
 
-    # Settings (in JSON) for the campaign.
+    # Whether this campaign is in preview status.
+    isPreview: Boolean!
+
+    # Settings (in JSON) for the campaign. TODO!(sqs): remove?
     settings: String!
 
     # The URL to this campaign.
