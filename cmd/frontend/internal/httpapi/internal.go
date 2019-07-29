@@ -195,10 +195,9 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	var err error
 	var res []*types.Repo
-	switch envvar.SourcegraphDotComMode() {
-	case true:
+	if envvar.SourcegraphDotComMode() {
 		res, err = listReposForSgDotCom(r.Context())
-	case false:
+	} else {
 		var opt db.ReposListOptions
 		if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
 			return err
@@ -214,9 +213,10 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	// repository name). This is a legacy of the rename from "repo URI" to
 	// "repo name".
 	type repoWithBackcompatURIField struct {
-		Name string `json:URI`
-		// The Repo field has been removed because the only caller of this handler
-		// (zoekt-sourcegraph-indexserver) wasn't using it.
+		Name string `json:"URI"`
+		// The Repo field has been removed because the only caller of
+		// this handler (zoekt-sourcegraph-indexserver) wasn't using
+		// it.
 	}
 	res2 := make([]repoWithBackcompatURIField, len(res))
 	for i, repo := range res {
