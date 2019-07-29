@@ -66,10 +66,10 @@ The release captain should create a tracking issue using the [release issue temp
 | 3.4 | @beyang | 2019-05-20 (Monday) |
 | 3.5 | @ggilmore | 2019-06-20 (Thursday) |
 | 3.6 | @keegancsmith | 2019-07-20 (Saturday) |
-| 3.7 | @beyang | 2019-08-20 (Tuesday) |
+| 3.7 | @attfarhan | 2019-08-20 (Tuesday) |
 | 3.8 | @lguychard | 2019-09-20 (Friday) |
 | 3.9 | @tsenart| 2019-10-20 (Sunday) |
-| 3.10 | @attfarhan | 2019-11-20 (Wednesday) |
+| 3.10 | @beyang | 2019-11-20 (Wednesday) |
 | 3.11 | @chrismwendt | 2019-12-20 (Saturday) |
 | 3.12 | @vanesa | 2020-01-20 (Monday, MLK) |
 | 3.13 | @felixfbecker | 2020-02-20 (Thursday) |
