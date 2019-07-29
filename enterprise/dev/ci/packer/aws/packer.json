@@ -22,15 +22,15 @@
   "provisioners": [
     {
       "type": "shell",
-      "script": "./bootstrap-docker.sh"
+      "script": "./scripts/bootstrap-docker.sh"
     },
     {
       "type": "shell",
-      "script": "./run-sourcegraph-image.sh"
+      "script": "./scripts/run-sourcegraph-image.sh"
     },
     {
       "type": "shell",
-      "script": "./cleanup.sh"
+      "script": "./scripts/cleanup.sh"
     }
   ]
 }
