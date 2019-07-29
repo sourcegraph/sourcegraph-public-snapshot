@@ -195,10 +195,9 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	var err error
 	var res []*types.Repo
-	switch envvar.SourcegraphDotComMode() {
-	case true:
+	if envvar.SourcegraphDotComMode() {
 		res, err = listReposForSgDotCom(r.Context())
-	case false:
+	} else {
 		var opt db.ReposListOptions
 		if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
 			return err
