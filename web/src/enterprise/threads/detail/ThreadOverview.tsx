@@ -10,7 +10,6 @@ interface Props extends Pick<ThreadAreaContext, 'thread'> {
  */
 export const ThreadOverview: React.FunctionComponent<Props> = ({ thread, className = '' }) => (
     <div className={`thread-overview ${className || ''}`}>
-        <h2>{thread.name}</h2>
-        {thread.description && <p>{thread.description}</p>}
+        <h2>{thread.title}</h2>
     </div>
 )

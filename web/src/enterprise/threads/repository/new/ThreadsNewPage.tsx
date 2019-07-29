@@ -28,14 +28,14 @@ const createThread = (input: GQL.ICreateThreadInput): Promise<GQL.IThread> =>
         )
         .toPromise()
 
-interface Props extends Pick<RepositoryThreadsAreaContext, 'namespace' | 'setBreadcrumbItem'> {}
+interface Props extends Pick<RepositoryThreadsAreaContext, 'repo' | 'setBreadcrumbItem'> {}
 
 const LOADING = 'loading' as const
 
 /**
  * Shows a form to create a new thread.
  */
-export const ThreadsNewPage: React.FunctionComponent<Props> = ({ namespace, setBreadcrumbItem }) => {
+export const ThreadsNewPage: React.FunctionComponent<Props> = ({ repo, setBreadcrumbItem }) => {
     useEffect(() => {
         if (setBreadcrumbItem) {
             setBreadcrumbItem({ text: 'New' })
@@ -47,20 +47,20 @@ export const ThreadsNewPage: React.FunctionComponent<Props> = ({ namespace, setB
         }
     }, [setBreadcrumbItem])
 
-    const [creationOrError, setCreationOrError] = useState<null | typeof LOADING | Pick<GQL.IRule, 'url'> | ErrorLike>(
-        null
-    )
+    const [creationOrError, setCreationOrError] = useState<
+        null | typeof LOADING | Pick<GQL.IThread, 'url'> | ErrorLike
+    >(null)
     const onSubmit = useCallback(
         async (data: ThreadFormData) => {
             setCreationOrError(LOADING)
             try {
-                setCreationOrError(await createThread({ ...data, namespace: namespace.id }))
+                setCreationOrError(await createThread({ ...data, repository: repo.id, type: GQL.ThreadType.THREAD }))
             } catch (err) {
                 setCreationOrError(asError(err))
                 alert(err.message) // TODO!(sqs)
             }
         },
-        [namespace.id]
+        [repo.id]
     )
 
     return (

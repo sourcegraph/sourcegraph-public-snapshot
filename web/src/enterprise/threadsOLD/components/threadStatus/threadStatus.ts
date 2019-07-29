@@ -1,7 +1,7 @@
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { GitPullRequestIcon } from '../../../../util/octicons'
 import { ChecksIcon } from '../../../checks/icons'
-import { ThreadsIcon } from '../../icons'
+import { ThreadsIcon } from '../../../threads/icons'
 
 /**
  * The subset of {@link GQL.IDiscussionThread}'s that is needed for displaying the thread's status icons.

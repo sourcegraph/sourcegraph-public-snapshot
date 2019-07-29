@@ -15,9 +15,6 @@ import { useCampaignByID } from './useCampaignByID'
 
 export interface CampaignAreaContext
     extends Pick<NamespaceCampaignsAreaContext, Exclude<keyof NamespaceCampaignsAreaContext, 'namespace'>> {
-    /** The campaign ID. */
-    campaignID: GQL.ID
-
     /** The campaign, queried from the GraphQL API. */
     campaign: GQL.ICampaign
 
@@ -30,7 +27,10 @@ export interface CampaignAreaContext
 
 interface Props
     extends Pick<CampaignAreaContext, Exclude<keyof CampaignAreaContext, 'campaign' | 'onCampaignUpdate'>>,
-        RouteComponentProps<never> {
+        RouteComponentProps<{}> {
+    /** The campaign ID. */
+    campaignID: GQL.ID
+
     header: React.ReactFragment
 }
 
@@ -48,13 +48,13 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
     match,
     ...props
 }) => {
-    const [campaignOrError, onCampaignUpdate] = useCampaignByID(campaignID)
+    const [campaign, onCampaignUpdate] = useCampaignByID(campaignID)
 
     useEffect(() => {
         if (setBreadcrumbItem) {
             setBreadcrumbItem(
-                campaignOrError !== LOADING && campaignOrError !== null && !isErrorLike(campaignOrError)
-                    ? { text: campaignOrError.name, to: campaignOrError.url }
+                campaign !== LOADING && campaign !== null && !isErrorLike(campaign)
+                    ? { text: campaign.name, to: campaign.url }
                     : undefined
             )
         }
@@ -63,22 +63,21 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                 setBreadcrumbItem(undefined)
             }
         }
-    }, [campaignOrError, setBreadcrumbItem])
+    }, [campaign, setBreadcrumbItem])
 
-    if (campaignOrError === LOADING) {
+    if (campaign === LOADING) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
     }
-    if (campaignOrError === null) {
+    if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
-    if (isErrorLike(campaignOrError)) {
-        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={campaignOrError.message} />
+    if (isErrorLike(campaign)) {
+        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={campaign.message} />
     }
 
     const context: CampaignAreaContext = {
         ...props,
-        campaignID,
-        campaign: campaignOrError,
+        campaign,
         onCampaignUpdate,
         setBreadcrumbItem,
     }

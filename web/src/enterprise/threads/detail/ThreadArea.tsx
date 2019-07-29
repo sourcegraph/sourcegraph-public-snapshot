@@ -8,16 +8,12 @@ import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { HeroPage } from '../../../components/HeroPage'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { RepositoryThreadsAreaContext } from '../repository/RepositoryThreadsArea'
-import { ThreadRepositoriesList } from './repositories/ThreadRepositoriesList'
+import { ChangesetCommitsList } from './commits/ChangesetCommitsList'
 import { ThreadOverview } from './ThreadOverview'
-import { ThreadThreadsListPage } from './threads/ThreadThreadsListPage'
-import { useThreadByID } from './useThreadByID'
+import { useThreadByIDInRepository } from './useThreadByID'
 
 export interface ThreadAreaContext
-    extends Pick<RepositoryThreadsAreaContext, Exclude<keyof RepositoryThreadsAreaContext, 'namespace'>> {
-    /** The thread ID. */
-    threadID: GQL.ID
-
+    extends Pick<RepositoryThreadsAreaContext, Exclude<keyof RepositoryThreadsAreaContext, 'repository'>> {
     /** The thread, queried from the GraphQL API. */
     thread: GQL.IThread
 
@@ -30,7 +26,12 @@ export interface ThreadAreaContext
 
 interface Props
     extends Pick<ThreadAreaContext, Exclude<keyof ThreadAreaContext, 'thread' | 'onThreadUpdate'>>,
-        RouteComponentProps<never> {
+        RouteComponentProps<{}> {
+    /**
+     * The thread ID in its repository (i.e., the `Thread.idInRepository` GraphQL API field).
+     */
+    threadIDInRepository: GQL.IThread['idInRepository']
+
     header: React.ReactFragment
 }
 
@@ -43,18 +44,18 @@ const PAGE_CLASS_NAME = 'container mt-4'
  */
 export const ThreadArea: React.FunctionComponent<Props> = ({
     header,
-    threadID,
+    threadIDInRepository,
     setBreadcrumbItem,
     match,
     ...props
 }) => {
-    const [threadOrError, onThreadUpdate] = useThreadByID(threadID)
+    const [thread, onThreadUpdate] = useThreadByIDInRepository(props.repo.id, threadIDInRepository)
 
     useEffect(() => {
         if (setBreadcrumbItem) {
             setBreadcrumbItem(
-                threadOrError !== LOADING && threadOrError !== null && !isErrorLike(threadOrError)
-                    ? { text: threadOrError.name, to: threadOrError.url }
+                thread !== LOADING && thread !== null && !isErrorLike(thread)
+                    ? { text: `#${thread.idInRepository}`, to: thread.url }
                     : undefined
             )
         }
@@ -63,22 +64,21 @@ export const ThreadArea: React.FunctionComponent<Props> = ({
                 setBreadcrumbItem(undefined)
             }
         }
-    }, [threadOrError, setBreadcrumbItem])
+    }, [thread, setBreadcrumbItem])
 
-    if (threadOrError === LOADING) {
+    if (thread === LOADING) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
     }
-    if (threadOrError === null) {
+    if (thread === null) {
         return <HeroPage icon={AlertCircleIcon} title="Thread not found" />
     }
-    if (isErrorLike(threadOrError)) {
-        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={threadOrError.message} />
+    if (isErrorLike(thread)) {
+        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={thread.message} />
     }
 
     const context: ThreadAreaContext = {
         ...props,
-        threadID,
-        thread: threadOrError,
+        thread,
         onThreadUpdate,
         setBreadcrumbItem,
     }
@@ -92,14 +92,9 @@ export const ThreadArea: React.FunctionComponent<Props> = ({
                 overviewComponent={ThreadOverview}
                 pages={[
                     {
-                        title: 'Threads',
-                        path: '',
-                        render: () => <ThreadThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
-                    },
-                    {
                         title: 'Commits',
                         path: '/commits',
-                        render: () => <ThreadRepositoriesList {...context} className={PAGE_CLASS_NAME} />,
+                        render: () => <ChangesetCommitsList {...context} className={PAGE_CLASS_NAME} />,
                     },
                     // { title: 'Changes', path: '/changes', render: () => <ThreadChangesListPage {...context} /> },
                 ]}

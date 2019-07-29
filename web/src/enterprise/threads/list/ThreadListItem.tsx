@@ -4,18 +4,15 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ThreadsIcon } from '../icons'
 
 interface Props {
-    thread: Pick<GQL.IThread, 'name' | 'url'>
+    thread: Pick<GQL.IThread, 'idInRepository' | 'title' | 'url'>
 }
 
 /**
  * An item in the list of threads.
  */
 export const ThreadListItem: React.FunctionComponent<Props> = ({ thread }) => (
-    <div className="d-flex align-items-center justify-content-between">
-        <h3 className="mb-0">
-            <Link to={thread.url} className="text-decoration-none">
-                <ThreadsIcon className="icon-inline" /> {thread.name}
-            </Link>
-        </h3>
-    </div>
+    <Link to={thread.url} className="d-flex align-items-center text-decoration-none">
+        <ThreadsIcon className="icon-inline mr-2" /> <span className="text-muted mr-2">#{thread.idInRepository}</span>{' '}
+        {thread.title}
+    </Link>
 )

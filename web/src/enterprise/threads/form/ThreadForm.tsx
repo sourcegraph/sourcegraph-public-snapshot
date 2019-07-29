@@ -1,10 +1,9 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useEffect, useState } from 'react'
-import TextareaAutosize from 'react-textarea-autosize'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 
-export interface ThreadFormData extends Pick<GQL.IThread, 'name' | 'description'> {}
+export interface ThreadFormData extends Pick<GQL.IThread, 'title'> {}
 
 interface Props {
     initialValue?: ThreadFormData
@@ -25,33 +24,26 @@ interface Props {
  * A form to create or edit a thread.
  */
 export const ThreadForm: React.FunctionComponent<Props> = ({
-    initialValue = { name: '', description: null },
+    initialValue = { title: '' },
     onDismiss,
     onSubmit: onSubmitThread,
     buttonText,
     isLoading,
     className = '',
 }) => {
-    const [name, setName] = useState(initialValue.name)
+    const [title, setTitle] = useState(initialValue.title)
     const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        e => setName(e.currentTarget.value),
+        e => setTitle(e.currentTarget.value),
         []
     )
-    useEffect(() => setName(initialValue.name), [initialValue.name])
-
-    const [description, setDescription] = useState(initialValue.description)
-    const onDescriptionChange = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(
-        e => setDescription(e.currentTarget.value),
-        []
-    )
-    useEffect(() => setDescription(initialValue.description), [initialValue.description])
+    useEffect(() => setTitle(initialValue.title), [initialValue.title])
 
     const onSubmit = useCallback<React.FormEventHandler>(
         async e => {
             e.preventDefault()
-            onSubmitThread({ name, description })
+            onSubmitThread({ title })
         },
-        [description, name, onSubmitThread]
+        [title, onSubmitThread]
     )
 
     return (
@@ -65,22 +57,10 @@ export const ThreadForm: React.FunctionComponent<Props> = ({
                         className="form-control"
                         required={true}
                         minLength={1}
-                        placeholder="Thread name"
-                        value={name}
+                        placeholder="Thread title"
+                        value={title}
                         onChange={onNameChange}
                         autoFocus={true}
-                    />
-                </div>
-                <div className="form-group mb-md-0 col-md-3">
-                    <label htmlFor="thread-form__description">Description</label>
-                    <TextareaAutosize
-                        type="text"
-                        id="thread-form__description"
-                        className="form-control"
-                        placeholder="Description"
-                        value={description || ''}
-                        minRows={3}
-                        onChange={onDescriptionChange}
                     />
                 </div>
                 <div className="form-group mb-md-0 col-md-3 text-right">

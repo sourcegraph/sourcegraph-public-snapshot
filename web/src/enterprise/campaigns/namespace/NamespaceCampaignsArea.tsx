@@ -61,11 +61,11 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
         <>
             <Switch>
                 <Route path={context.campaignsURL} exact={true}>
-                    breadcrumbs
+                    {breadcrumbs}
                     <NamespaceCampaignsListPage {...context} newCampaignURL={newCampaignURL} />
                 </Route>
                 <Route path={newCampaignURL} exact={true}>
-                    breadcrumbs
+                    {breadcrumbs}
                     <CampaignsNewPage {...context} />
                 </Route>
                 <Route
@@ -74,6 +74,7 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
                     render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
                         <CampaignArea
                             {...context}
+                            {...routeComponentProps}
                             campaignID={routeComponentProps.match.params.campaignID}
                             header={breadcrumbs}
                         />

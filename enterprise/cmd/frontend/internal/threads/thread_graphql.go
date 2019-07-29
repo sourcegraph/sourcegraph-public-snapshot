@@ -112,3 +112,22 @@ func (v *gqlThread) Status() graphqlbackend.ThreadStatus {
 func (v *gqlThread) Type() graphqlbackend.ThreadType {
 	return v.db.Type
 }
+
+func (v *gqlThread) RepositoryComparison(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
+	settings, err := GetSettings(v)
+	if err != nil {
+		return nil, err
+	}
+	if settings.Delta == nil {
+		return nil, nil
+	}
+
+	repo, err := v.Repository(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
+		Base: &settings.Delta.Base,
+		Head: &settings.Delta.Head,
+	})
+}

@@ -1,21 +1,21 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
-import { NamespaceAreaContext } from '../../../../namespaces/NamespaceArea'
 import { ThreadsList } from '../../list/ThreadsList'
 import { useThreads } from '../../list/useThreads'
+import { RepositoryThreadsAreaContext } from '../RepositoryThreadsArea'
 
-interface Props extends Pick<NamespaceAreaContext, 'namespace'>, ExtensionsControllerNotificationProps {
+interface Props extends Pick<RepositoryThreadsAreaContext, 'repo'>, ExtensionsControllerNotificationProps {
     newThreadURL: string | null
 }
 
 /**
- * Lists a namespace's threads.
+ * Lists a repository's threads.
  */
-export const NamespaceThreadsListPage: React.FunctionComponent<Props> = ({ newThreadURL, namespace, ...props }) => {
-    const threads = useThreads(namespace)
+export const RepositoryThreadsListPage: React.FunctionComponent<Props> = ({ newThreadURL, repo, ...props }) => {
+    const threads = useThreads(repo)
     return (
-        <div className="namespace-threads-list-page">
+        <div className="repository-threads-list-page">
             {newThreadURL && (
                 <Link to={newThreadURL} className="btn btn-primary mb-3">
                     New thread

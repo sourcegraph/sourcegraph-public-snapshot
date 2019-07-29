@@ -89,9 +89,9 @@ export class NavLinks extends React.PureComponent<Props> {
                         <li className="nav-item">
                             <ChangesetsNavItem className="px-3" />
                         </li>
-                        <li className="nav-item mr-1">
+                        {/*<li className="nav-item mr-1">
                             <ThreadsNavItem className="px-3" />
-                        </li>
+                </li>*/}
                     </>
                 )}
                 {!this.props.authenticatedUser && (

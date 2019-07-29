@@ -47,9 +47,9 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
         }
     }, [setBreadcrumbItem])
 
-    const [creationOrError, setCreationOrError] = useState<null | typeof LOADING | Pick<GQL.IRule, 'url'> | ErrorLike>(
-        null
-    )
+    const [creationOrError, setCreationOrError] = useState<
+        null | typeof LOADING | Pick<GQL.ICampaign, 'url'> | ErrorLike
+    >(null)
     const onSubmit = useCallback(
         async (data: CampaignFormData) => {
             setCreationOrError(LOADING)

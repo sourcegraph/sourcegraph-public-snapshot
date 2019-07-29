@@ -8,7 +8,6 @@ import { HeroPage } from '../../../components/HeroPage'
 import { WithQueryParameter } from '../../../components/withQueryParameter/WithQueryParameter'
 import { GitPullRequestIcon } from '../../../util/octicons'
 import { createThreadAreaContext } from '../../threadsOLD/detail/ThreadArea'
-import { ChangesetCommitsList } from '../detail/changes/ChangesetCommitsList'
 import { ChangesetFilesList } from '../detail/changes/ChangesetFilesList'
 import { ChangesetOperationsList } from '../detail/changes/ChangesetOperationsList'
 import { ChangesetRepositoriesList } from '../detail/changes/ChangesetRepositoriesList'
@@ -69,7 +68,6 @@ export const ChangesetPreviewPage: React.FunctionComponent<Props> = props => {
             <div className="container">
                 <ChangesetOperationsList {...props} {...context} xchangeset={xchangeset} className="mb-4" />
                 <ChangesetRepositoriesList {...props} {...context} xchangeset={xchangeset} showCommits={true} />
-                <ChangesetCommitsList {...props} {...context} xchangeset={xchangeset} className="d-none" />
                 <ChangesetTasksList {...props} {...context} xchangeset={xchangeset} className="mb-4 d-none" />
                 <WithQueryParameter defaultQuery="" history={props.history} location={props.location}>
                     {({ query, onQueryChange }) => (

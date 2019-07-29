@@ -2,14 +2,15 @@ package campaigns
 
 import (
 	"context"
-	"encoding/json"
 	"path"
+	"sort"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
@@ -92,49 +93,40 @@ func (v *gqlCampaign) Threads(ctx context.Context, arg *graphqlutil.ConnectionAr
 	return threads.ThreadsByIDs(ctx, threadIDs, arg)
 }
 
-// TODO!(sqs)
-type delta struct {
-	Repository graphql.ID
-	Base, Head string
-}
-
-func (v *gqlCampaign) getDeltas(ctx context.Context) ([]*delta, error) {
+func (v *gqlCampaign) getThreads(ctx context.Context) ([]graphqlbackend.Thread, error) {
 	threadConnection, err := v.Threads(ctx, &graphqlutil.ConnectionArgs{})
 	if err != nil {
 		return nil, err
 	}
-	threads, err := threadConnection.Nodes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var deltas []*delta
-	for _, thread := range threads {
-		var settings struct{ Deltas []*delta }
-		if err := json.Unmarshal([]byte(thread.Settings()), &settings); err != nil {
-			return nil, err
-		}
-		deltas = append(deltas, settings.Deltas...)
-	}
-
-	return deltas, nil
+	return threadConnection.Nodes(ctx)
 }
 
 func (v *gqlCampaign) Repositories(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
-	deltas, err := v.getDeltas(ctx)
+	threadNodes, err := v.getThreads(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	rs := make([]*graphqlbackend.RepositoryResolver, len(deltas))
-	for i, delta := range deltas {
-		var err error
-		rs[i], err = graphqlbackend.RepositoryByID(ctx, delta.Repository)
+	byRepositoryDBID := map[api.RepoID]*graphqlbackend.RepositoryResolver{}
+	for _, thread := range threadNodes {
+		repo, err := thread.Repository(ctx)
 		if err != nil {
 			return nil, err
 		}
+		key := repo.DBID()
+		if _, seen := byRepositoryDBID[key]; !seen {
+			byRepositoryDBID[key] = repo
+		}
 	}
-	return rs, nil
+
+	repos := make([]*graphqlbackend.RepositoryResolver, 0, len(byRepositoryDBID))
+	for _, repo := range byRepositoryDBID {
+		repos = append(repos, repo)
+	}
+	sort.Slice(repos, func(i, j int) bool {
+		return repos[i].DBID() < repos[j].DBID()
+	})
+	return repos, nil
 }
 
 func (v *gqlCampaign) Commits(ctx context.Context) ([]*graphqlbackend.GitCommitResolver, error) {
@@ -156,23 +148,23 @@ func (v *gqlCampaign) Commits(ctx context.Context) ([]*graphqlbackend.GitCommitR
 }
 
 func (v *gqlCampaign) RepositoryComparisons(ctx context.Context) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
-	deltas, err := v.getDeltas(ctx)
+	threadConnection, err := v.Threads(ctx, &graphqlutil.ConnectionArgs{})
+	if err != nil {
+		return nil, err
+	}
+	threadNodes, err := threadConnection.Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	rcs := make([]*graphqlbackend.RepositoryComparisonResolver, len(deltas))
-	for i, delta := range deltas {
-		repo, err := graphqlbackend.RepositoryByID(ctx, delta.Repository)
+	rcs := make([]*graphqlbackend.RepositoryComparisonResolver, 0, len(threadNodes))
+	for _, thread := range threadNodes {
+		rc, err := thread.RepositoryComparison(ctx)
 		if err != nil {
 			return nil, err
 		}
-		rcs[i], err = graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
-			Base: &delta.Base,
-			Head: &delta.Head,
-		})
-		if err != nil {
-			return nil, err
+		if rc != nil {
+			rcs = append(rcs, rc)
 		}
 	}
 	return rcs, nil

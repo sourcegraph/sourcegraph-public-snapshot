@@ -2,20 +2,24 @@ import H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { displayRepoName } from '../../../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { BreadcrumbItem, Breadcrumbs } from '../../../components/breadcrumbs/Breadcrumbs'
 import { HeroPage } from '../../../components/HeroPage'
-import { NamespaceAreaContext } from '../../../namespaces/NamespaceArea'
+import { RepoContainerContext } from '../../../repo/RepoContainer'
+import { RepoHeaderBreadcrumbNavItem } from '../../../repo/RepoHeaderBreadcrumbNavItem'
+import { RepoHeaderContributionPortal } from '../../../repo/RepoHeaderContributionPortal'
 import { ThemeProps } from '../../../theme'
 import { ThreadArea } from '../detail/ThreadArea'
-import { NamespaceThreadsListPage } from './list/NamespaceThreadsListPage'
+import { RepositoryThreadsListPage } from './list/RepositoryThreadsListPage'
 import { ThreadsNewPage } from './new/ThreadsNewPage'
 
-export interface RepositoryThreadsAreaContext extends ExtensionsControllerProps, ThemeProps {
-    repository: Pick<GQL.IRepository, 'id' | 'url'>
-
+export interface RepositoryThreadsAreaContext
+    extends Pick<RepoContainerContext, 'repo' | 'repoHeaderContributionsLifecycleProps'>,
+        ExtensionsControllerProps,
+        ThemeProps {
     /** The URL to the repository threads area. */
     threadsURL: string
 
@@ -34,12 +38,15 @@ interface Props
 /**
  * The threads area for a repository.
  */
-export const RepositoryThreadsArea: React.FunctionComponent<Props> = ({ ...props }) => {
+export const RepositoryThreadsArea: React.FunctionComponent<Props> = ({
+    repoHeaderContributionsLifecycleProps,
+    ...props
+}) => {
     const [breadcrumbItem, setBreadcrumbItem] = useState<BreadcrumbItem>()
 
     const context: RepositoryThreadsAreaContext = {
         ...props,
-        threadsURL: `${props.repository.url}/-/threads`,
+        threadsURL: `${props.repo.url}/-/threads`,
         setBreadcrumbItem,
     }
     const newThreadURL = `${context.threadsURL}/new`
@@ -47,33 +54,44 @@ export const RepositoryThreadsArea: React.FunctionComponent<Props> = ({ ...props
     const breadcrumbItems: BreadcrumbItem[] = useMemo(
         () =>
             [
-                { text: props.namespace.namespaceName, to: props.namespace.url },
+                { text: displayRepoName(props.repo.name), to: props.repo.url },
                 { text: 'Threads', to: context.threadsURL },
                 breadcrumbItem,
             ].filter(isDefined),
-        [breadcrumbItem, context.threadsURL, props.namespace.namespaceName, props.namespace.url]
+        [breadcrumbItem, context.threadsURL, props.repo.name, props.repo.url]
     )
 
     const breadcrumbs = <Breadcrumbs items={breadcrumbItems} className="my-4" />
 
     return (
         <>
+            <style>{`.repo-header{display:none !important;}` /* TODO!(sqs) */}</style>
+            <RepoHeaderContributionPortal
+                position="nav"
+                element={<RepoHeaderBreadcrumbNavItem key="threads">Threads</RepoHeaderBreadcrumbNavItem>}
+                repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
+            />
             <Switch>
                 <Route path={context.threadsURL} exact={true}>
-                    breadcrumbs
-                    <NamespaceThreadsListPage {...context} newThreadURL={newThreadURL} />
+                    <div className="container">
+                        {breadcrumbs}
+                        <RepositoryThreadsListPage {...context} newThreadURL={newThreadURL} />
+                    </div>
                 </Route>
                 <Route path={newThreadURL} exact={true}>
-                    breadcrumbs
-                    <ThreadsNewPage {...context} />
+                    <div className="container">
+                        {breadcrumbs}
+                        <ThreadsNewPage {...context} />
+                    </div>
                 </Route>
                 <Route
-                    path={`${context.threadsURL}/:threadID`}
+                    path={`${context.threadsURL}/:threadIDInRepository`}
                     // tslint:disable-next-line:jsx-no-lambda
-                    render={(routeComponentProps: RouteComponentProps<{ threadID: string }>) => (
+                    render={(routeComponentProps: RouteComponentProps<{ threadIDInRepository: string }>) => (
                         <ThreadArea
                             {...context}
-                            threadID={routeComponentProps.match.params.threadID}
+                            {...routeComponentProps}
+                            threadIDInRepository={routeComponentProps.match.params.threadIDInRepository}
                             header={breadcrumbs}
                         />
                     )}

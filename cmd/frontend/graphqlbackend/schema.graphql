@@ -4158,6 +4158,9 @@ type Thread implements Node {
 
     # The type of this thread.
     type: ThreadType!
+
+    # The comparison between this changeset's base and head. TODO!(sqs) changeset
+    repositoryComparison: RepositoryComparison
 }
 
 # A list of threads.

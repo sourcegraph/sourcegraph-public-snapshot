@@ -1,21 +1,20 @@
 import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { ThreadArea } from '../detail/ThreadArea'
-import { NamespaceThreadsAreaContext } from '..../repository/NamespaceThreadsArea
+import { RepositoryThreadsAreaContext } from '../repository/RepositoryThreadsArea'
 import { GlobalThreadsListPage } from './list/GlobalThreadsListPage'
 
 interface Props
     extends RouteComponentProps<{}>,
         Pick<
-            NamespaceThreadsAreaContext,
-            Exclude<keyof NamespaceThreadsAreaContext, 'threadsURL' | 'namespace' | 'setBreadcrumbItem'>
+            RepositoryThreadsAreaContext,
+            Exclude<keyof RepositoryThreadsAreaContext, 'threadsURL' | 'repository' | 'setBreadcrumbItem'>
         > {}
 
 /**
  * The global threads area.
  */
 export const GlobalThreadsArea: React.FunctionComponent<Props> = ({ match, ...props }) => {
-    const context: Pick<NamespaceThreadsAreaContext, Exclude<keyof NamespaceThreadsAreaContext, 'namespace'>> = {
+    const context: Pick<RepositoryThreadsAreaContext, Exclude<keyof RepositoryThreadsAreaContext, 'repository'>> = {
         ...props,
         threadsURL: match.url,
     }

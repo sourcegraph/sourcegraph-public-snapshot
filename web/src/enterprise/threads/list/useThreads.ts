@@ -7,61 +7,69 @@ import { queryGraphQL } from '../../../backend/graphql'
 
 const LOADING: 'loading' = 'loading'
 
+const threadFields = gql`
+    fragment ThreadFields on Thread {
+        id
+        idInRepository
+        title
+        url
+    }
+`
+
 /**
  * A React hook that observes threads queried from the GraphQL API.
  *
- * @param namespace The (optional) namespace in which to observe the threads defined.
+ * @param repository The (optional) repository in which to observe the threads.
  */
 export const useThreads = (
-    namespace?: Pick<GQL.INamespace, 'id'>
+    repository?: Pick<GQL.IRepository, 'id'>
 ): typeof LOADING | GQL.IThreadConnection | ErrorLike => {
     const [threads, setThreads] = useState<typeof LOADING | GQL.IThreadConnection | ErrorLike>(LOADING)
     useEffect(() => {
-        const results = namespace
+        const results = repository
             ? queryGraphQL(
                   gql`
-                      query ThreadsDefinedInNamespace($namespace: ID!) {
-                          namespace(id: $namespace) {
-                              threads {
-                                  nodes {
-                                      id
-                                      name
-                                      description
-                                      url
+                      query RepositoryThreads($repository: ID!) {
+                          node(id: $repository) {
+                              __typename
+                              ... on Repository {
+                                  threads {
+                                      nodes {
+                                          ...ThreadFields
+                                      }
+                                      totalCount
                                   }
-                                  totalCount
                               }
                           }
                       }
+                      ${threadFields}
                   `,
-                  { namespace: namespace.id }
+                  { repository: repository.id }
               ).pipe(
                   map(dataOrThrowErrors),
                   map(data => {
-                      if (!data.namespace) {
-                          throw new Error('not a namespace')
+                      if (!data.node || data.node.__typename !== 'Repository') {
+                          throw new Error('invalid repository')
                       }
-                      return data.namespace.threads
+                      return data.node.threads
                   })
               )
             : queryGraphQL(gql`
                   query Threads {
                       threads {
                           nodes {
-                              id
-                              name
-                              description
-                              url
+                              ...ThreadFields
                           }
                           totalCount
                       }
                   }
+                  ${threadFields}
               `).pipe(
                   map(dataOrThrowErrors),
                   map(data => data.threads)
               )
         const subscription = results.pipe(startWith(LOADING)).subscribe(setThreads, err => setThreads(asError(err)))
         return () => subscription.unsubscribe()
-    }, [namespace])
+    }, [repository])
     return threads
 }

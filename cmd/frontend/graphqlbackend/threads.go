@@ -154,6 +154,7 @@ type Thread interface {
 	Settings() string
 	Status() ThreadStatus
 	Type() ThreadType
+	RepositoryComparison(context.Context) (*RepositoryComparisonResolver, error)
 }
 
 // ThreadConnection is the interface for the GraphQL type ThreadConnection.

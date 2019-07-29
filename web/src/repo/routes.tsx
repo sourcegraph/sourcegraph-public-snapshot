@@ -57,10 +57,6 @@ export const repoContainerRoutes: ReadonlyArray<RepoContainerRoute> = [
         ),
     },
     {
-        path: '/-/threads',
-        render: lazyComponent(() => import('./threads/RepositoryThreadsArea'), 'RepositoryThreadsArea'),
-    },
-    {
         path: '/-/compare/:spec*',
         render: context => (
             <RepositoryGitDataContainer repoName={context.repo.name}>

@@ -10,13 +10,13 @@ const LOADING: 'loading' = 'loading'
 /**
  * A React hook that observes a campaign queried from the GraphQL API by ID.
  *
- * @param id The scope in which to observe the campaign.
+ * @param campaign The campaign ID.
  */
-export const useCampaignByID = (id: GQL.ID): [typeof LOADING | GQL.ICampaign | null | ErrorLike, () => void] => {
+export const useCampaignByID = (campaign: GQL.ID): [typeof LOADING | GQL.ICampaign | null | ErrorLike, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
 
-    const [campaignOrError, setCampaignOrError] = useState<typeof LOADING | GQL.ICampaign | null | ErrorLike>(LOADING)
+    const [result, setResult] = useState<typeof LOADING | GQL.ICampaign | null | ErrorLike>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
@@ -33,7 +33,7 @@ export const useCampaignByID = (id: GQL.ID): [typeof LOADING | GQL.ICampaign | n
                     }
                 }
             `,
-            { campaign: id }
+            { campaign }
         )
             .pipe(
                 map(dataOrThrowErrors),
@@ -45,8 +45,8 @@ export const useCampaignByID = (id: GQL.ID): [typeof LOADING | GQL.ICampaign | n
                 }),
                 startWith(LOADING)
             )
-            .subscribe(setCampaignOrError, err => setCampaignOrError(asError(err)))
+            .subscribe(setResult, err => setResult(asError(err)))
         return () => subscription.unsubscribe()
-    }, [id, updateSequence])
-    return [campaignOrError, incrementUpdateSequence]
+    }, [campaign, updateSequence])
+    return [result, incrementUpdateSequence]
 }
