@@ -24,41 +24,50 @@ type Other struct {
 
 var _ RepoSource = Other{}
 
-func (c Other) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
-	parsedCloneURL, baseURL, match, err := parseURLs(cloneURL, c.Url)
+const DefaultRepositoryPathPattern = "{base}/{repo}"
+
+func (c Other) CloneURLToRepoURI(cloneURL string) (string, error) {
+	return cloneURLToRepoName(cloneURL, c.Url, DefaultRepositoryPathPattern)
+}
+
+func (c Other) CloneURLToRepoName(cloneURL string) (api.RepoName, error) {
+	repoName, err := cloneURLToRepoName(cloneURL, c.Url, c.RepositoryPathPattern)
+	return api.RepoName(repoName), err
+}
+
+func cloneURLToRepoName(cloneURL, baseURL, repositoryPathPattern string) (string, error) {
+	parsedCloneURL, parsedBaseURL, match, err := parseURLs(cloneURL, baseURL)
 	if err != nil {
 		return "", err
 	}
 	if !match {
-		return "", urlMismatchErr{cloneURL: cloneURL, hostURL: c.Url}
+		return "", urlMismatchErr{cloneURL: cloneURL, hostURL: baseURL}
 	}
 
-	basePrefix := baseURL.Path
+	basePrefix := parsedBaseURL.Path
 	if !strings.HasSuffix(basePrefix, "/") {
 		basePrefix = basePrefix + "/"
 	}
-	if parsedCloneURL.Path != baseURL.Path && !strings.HasPrefix(parsedCloneURL.Path, basePrefix) {
-		return "", urlMismatchErr{cloneURL: cloneURL, hostURL: c.Url}
+	if parsedCloneURL.Path != parsedBaseURL.Path && !strings.HasPrefix(parsedCloneURL.Path, basePrefix) {
+		return "", urlMismatchErr{cloneURL: cloneURL, hostURL: baseURL}
 	}
 	relativeRepoPath := strings.TrimPrefix(parsedCloneURL.Path, basePrefix)
 
 	base := url.URL{
-		Host: baseURL.Host,
-		Path: baseURL.Path,
+		Host: parsedBaseURL.Host,
+		Path: parsedBaseURL.Path,
 	}
-	return OtherRepoName(c.RepositoryPathPattern, base.String(), relativeRepoPath), nil
+	return OtherRepoName(repositoryPathPattern, base.String(), relativeRepoPath), nil
 }
 
 var otherRepoNameReplacer = strings.NewReplacer(":", "-", "@", "-", "//", "")
 
-func OtherRepoName(repositoryPathPattern, base, relativeRepoPath string) api.RepoName {
+func OtherRepoName(repositoryPathPattern, base, relativeRepoPath string) string {
 	if repositoryPathPattern == "" {
-		repositoryPathPattern = "{base}/{repo}"
+		repositoryPathPattern = DefaultRepositoryPathPattern
 	}
-	return api.RepoName(
-		strings.NewReplacer(
-			"{base}", otherRepoNameReplacer.Replace(strings.TrimSuffix(base, "/")),
-			"{repo}", otherRepoNameReplacer.Replace(strings.TrimSuffix(strings.TrimPrefix(relativeRepoPath, "/"), ".git")),
-		).Replace(repositoryPathPattern),
-	)
+	return strings.NewReplacer(
+		"{base}", otherRepoNameReplacer.Replace(strings.TrimSuffix(base, "/")),
+		"{repo}", otherRepoNameReplacer.Replace(strings.TrimSuffix(strings.TrimPrefix(relativeRepoPath, "/"), ".git")),
+	).Replace(repositoryPathPattern)
 }

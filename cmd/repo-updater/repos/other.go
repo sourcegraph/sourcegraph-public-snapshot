@@ -87,17 +87,21 @@ func otherRepoCloneURL(base *url.URL, repo string) (*url.URL, error) {
 
 func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*Repo, error) {
 	repoURL := u.String()
-	repoName, err := reposource.Other{s.conn}.CloneURLToRepoName(u.String())
+	repoSource := reposource.Other{s.conn}
+	repoName, err := repoSource.CloneURLToRepoName(u.String())
 	if err != nil {
 		return nil, err
 	}
-
+	repoURI, err := repoSource.CloneURLToRepoURI(u.String())
+	if err != nil {
+		return nil, err
+	}
 	u.Path, u.RawQuery = "", ""
 	serviceID := u.String()
 
 	return &Repo{
 		Name: string(repoName),
-		URI:  string(repoName),
+		URI:  repoURI,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          string(repoName),
 			ServiceType: "other",
