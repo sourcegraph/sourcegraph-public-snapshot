@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { ThreadSettings } from '../../../../../web/src/enterprise/threads/settings'
+import { ThreadSettings } from '../../../../../web/src/enterprise/threadsOLD/settings'
 import { FeatureProviderRegistry } from './registry'
 
 export interface CheckTemplate {

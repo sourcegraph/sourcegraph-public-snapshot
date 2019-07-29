@@ -8,7 +8,7 @@ import { isDefined } from '../../../../../../shared/src/util/types'
 import { parseRepoURI } from '../../../../../../shared/src/util/url'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { ActionsIcon } from '../../../../util/octicons'
-import { ThreadSettings } from '../../../threads/settings'
+import { ThreadSettings } from '../../../threadsOLD/settings'
 
 interface Props extends ExtensionsControllerProps {
     thread: GQL.IDiscussionThread

@@ -19,8 +19,8 @@ import { DiffStat } from '../../../../../repo/compare/DiffStat'
 import { DiffIcon, ZapIcon } from '../../../../../util/octicons'
 import { createChangesetFromDiffs } from '../../../../changesets/preview/backend'
 import { ChangesetTargetButtonDropdown } from '../../../../tasks/list/item/ChangesetTargetButtonDropdown'
-import { diagnosticQueryMatcher, getDiagnosticInfos } from '../../../../threads/detail/backend'
-import { computeDiff, computeDiffStat, FileDiff } from '../../../../threads/detail/changes/computeDiff'
+import { diagnosticQueryMatcher, getDiagnosticInfos } from '../../../../threadsOLD/detail/backend'
+import { computeDiff, computeDiffStat, FileDiff } from '../../../../threadsOLD/detail/changes/computeDiff'
 import { ChangesetPlanProps } from '../useChangesetPlan'
 
 interface Props extends Pick<ChangesetPlanProps, 'changesetPlan'>, ExtensionsControllerProps {

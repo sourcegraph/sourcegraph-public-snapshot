@@ -9,6 +9,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsArea'
 import { CampaignOverview } from './CampaignOverview'
+import { CampaignRepositoriesList } from './repositories/CampaignRepositoriesList'
 import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
 import { useCampaignByID } from './useCampaignByID'
 
@@ -34,6 +35,8 @@ interface Props
 }
 
 const LOADING = 'loading' as const
+
+const PAGE_CLASS_NAME = 'container mt-4'
 
 /**
  * The area for a single campaign.
@@ -87,7 +90,19 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                 context={context}
                 header={header}
                 overviewComponent={CampaignOverview}
-                pages={[{ title: 'Threads', path: '', render: () => <CampaignThreadsListPage {...context} /> }]}
+                pages={[
+                    {
+                        title: 'Threads',
+                        path: '',
+                        render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
+                    },
+                    {
+                        title: 'Commits',
+                        path: '/commits',
+                        render: () => <CampaignRepositoriesList {...context} className={PAGE_CLASS_NAME} />,
+                    },
+                    // { title: 'Changes', path: '/changes', render: () => <CampaignChangesListPage {...context} /> },
+                ]}
                 location={props.location}
                 match={match}
             />

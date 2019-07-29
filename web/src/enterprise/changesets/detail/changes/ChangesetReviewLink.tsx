@@ -1,6 +1,6 @@
 import React from 'react'
 import { GitPullRequestIcon } from '../../../../util/octicons'
-import { GitHubPRLink } from '../../../threads/settings'
+import { GitHubPRLink } from '../../../threadsOLD/settings'
 
 interface Props {
     link: GitHubPRLink

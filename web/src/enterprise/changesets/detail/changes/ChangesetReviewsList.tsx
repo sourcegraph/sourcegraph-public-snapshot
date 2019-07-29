@@ -1,5 +1,5 @@
 import React from 'react'
-import { ThreadSettings } from '../../../threads/settings'
+import { ThreadSettings } from '../../../threadsOLD/settings'
 import { ChangesetReviewLink } from './ChangesetReviewLink'
 
 interface Props {

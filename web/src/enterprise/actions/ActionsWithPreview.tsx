@@ -5,8 +5,8 @@ import { Action } from '../../../../shared/src/api/types/action'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { useEffectAsync } from '../../util/useEffectAsync'
-import { computeDiff, FileDiff } from '../threads/detail/changes/computeDiff'
-import { WorkspaceEditPreview } from '../threads/detail/inbox/item/WorkspaceEditPreview'
+import { computeDiff, FileDiff } from '../threadsOLD/detail/changes/computeDiff'
+import { WorkspaceEditPreview } from '../threadsOLD/detail/inbox/item/WorkspaceEditPreview'
 import { ActionsFormControl } from './internal/ActionsFormControl'
 
 interface RenderChildrenProps {

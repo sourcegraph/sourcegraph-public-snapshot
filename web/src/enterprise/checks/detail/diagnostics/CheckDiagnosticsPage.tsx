@@ -7,7 +7,7 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { ThemeProps } from '../../../../theme'
-import { DiagnosticInfo, diagnosticQueryMatcher } from '../../../threads/detail/backend'
+import { DiagnosticInfo, diagnosticQueryMatcher } from '../../../threadsOLD/detail/backend'
 import { CheckAreaContext } from '../CheckArea'
 import { DiagnosticsChangesetsBar } from './changesets/DiagnosticsChangesetsBar'
 import { DiagnosticsListPage } from './DiagnosticsListPage'

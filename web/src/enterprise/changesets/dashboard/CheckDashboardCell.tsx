@@ -9,7 +9,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { pluralize } from '../../../../../shared/src/util/strings'
 import { parseJSON } from '../../../settings/configuration'
-import { Changeset, computeChangesets, getChangesetExternalStatus } from '../../threads/detail/backend'
+import { Changeset, computeChangesets, getChangesetExternalStatus } from '../../threadsOLD/detail/backend'
 
 interface Props extends ExtensionsControllerProps {
     thread: GQL.IDiscussionThread

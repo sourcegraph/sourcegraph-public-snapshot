@@ -4,7 +4,7 @@ import { catchError, startWith } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import { asError, ErrorLike } from '../../../../../../../shared/src/util/errors'
-import { DiagnosticInfo, getDiagnosticInfos } from '../../../../threads/detail/backend'
+import { DiagnosticInfo, getDiagnosticInfos } from '../../../../threadsOLD/detail/backend'
 
 const LOADING: 'loading' = 'loading'
 

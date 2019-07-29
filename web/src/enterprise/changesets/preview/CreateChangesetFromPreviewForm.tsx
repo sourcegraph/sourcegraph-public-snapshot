@@ -5,7 +5,7 @@ import { ExtensionsControllerNotificationProps } from '../../../../../shared/src
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 import { updateThread } from '../../../discussions/backend'
-import { ThreadSettings } from '../../threads/settings'
+import { ThreadSettings } from '../../threadsOLD/settings'
 
 interface Props extends ExtensionsControllerNotificationProps {
     thread: GQL.IDiscussionThread

@@ -2,8 +2,8 @@ import H from 'history'
 import React from 'react'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
-import { ListHeaderQueryLinksButtonGroup } from '../../../threads/components/ListHeaderQueryLinks'
-import { ThreadsListFilter } from '../../../threads/list/ThreadsListFilter'
+import { ListHeaderQueryLinksButtonGroup } from '../../../threadsOLD/components/ListHeaderQueryLinks'
+import { ThreadsListFilter } from '../../../threadsOLD/list/ThreadsListFilter'
 
 interface Props extends QueryParameterProps {
     kind: GQL.ThreadType

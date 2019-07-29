@@ -1,9 +1,9 @@
 import H from 'history'
 import React from 'react'
 import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
-import { ListHeaderQueryLinksButtonGroup } from '../../../threads/components/ListHeaderQueryLinks'
-import { ThreadsAreaContext } from '../../../threads/global/ThreadsArea'
-import { ThreadsListFilter } from '../../../threads/list/ThreadsListFilter'
+import { ListHeaderQueryLinksButtonGroup } from '../../../threadsOLD/components/ListHeaderQueryLinks'
+import { ThreadsAreaContext } from '../../../threadsOLD/global/ThreadsArea'
+import { ThreadsListFilter } from '../../../threadsOLD/list/ThreadsListFilter'
 
 interface Props extends QueryParameterProps, Pick<ThreadsAreaContext, 'type' | 'authenticatedUser'> {
     location: H.Location

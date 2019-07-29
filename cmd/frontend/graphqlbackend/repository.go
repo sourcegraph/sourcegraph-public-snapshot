@@ -407,6 +407,10 @@ func makePhabClientForOrigin(ctx context.Context, origin string) (*phabricator.C
 	return nil, errors.Errorf("no phabricator was configured for: %s", origin)
 }
 
+func (r *RepositoryResolver) Thread(ctx context.Context, arg struct{ IDInRepository string }) (Thread, error) {
+	return ThreadInRepository(ctx, r.ID(), arg.IDInRepository)
+}
+
 func (r *RepositoryResolver) Threads(ctx context.Context, arg *graphqlutil.ConnectionArgs) (ThreadConnection, error) {
 	return ThreadsForRepository(ctx, r.ID(), arg)
 }

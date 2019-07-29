@@ -6,7 +6,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
-import { ThreadSettings } from '../enterprise/threads/settings'
+import { ThreadSettings } from '../enterprise/threadsOLD/settings'
 
 const discussionCommentFieldsFragment = gql`
     fragment DiscussionCommentFields on DiscussionComment {

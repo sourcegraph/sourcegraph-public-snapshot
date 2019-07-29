@@ -11,7 +11,7 @@ import { isDefined } from '../../../../../../shared/src/util/types'
 import { parseRepoURI } from '../../../../../../shared/src/util/url'
 import { Form } from '../../../../components/Form'
 import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
-import { DiagnosticInfo, diagnosticQueryMatcher } from '../../../threads/detail/backend'
+import { DiagnosticInfo, diagnosticQueryMatcher } from '../../../threadsOLD/detail/backend'
 import {
     appendToDiagnosticQuery,
     DiagnosticResolutionStatus,

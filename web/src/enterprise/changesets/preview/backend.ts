@@ -7,8 +7,8 @@ import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { mutateGraphQL } from '../../../backend/graphql'
 import { createThread } from '../../../discussions/backend'
 import { fetchRepository } from '../../../repo/settings/backend'
-import { FileDiff } from '../../threads/detail/changes/computeDiff'
-import { ChangesetDelta, GitHubPRLink, ThreadSettings } from '../../threads/settings'
+import { FileDiff } from '../../threadsOLD/detail/changes/computeDiff'
+import { ChangesetDelta, GitHubPRLink, ThreadSettings } from '../../threadsOLD/settings'
 
 export const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
 

@@ -6,7 +6,7 @@ import { ChatIcon } from '../../../../../../shared/src/components/icons'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ActionsIcon, DiffIcon, GitCommitIcon } from '../../../../util/octicons'
 import { ChecksIcon } from '../../../checks/icons'
-import { ThreadSettings } from '../../../threads/settings'
+import { ThreadSettings } from '../../../threadsOLD/settings'
 import {
     countChangesetCommits,
     countChangesetFilesChanged,

@@ -16,7 +16,7 @@ import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/Diagn
 import { fetchHighlightedFileLines } from '../../../../repo/backend'
 import { ActionsWithPreview } from '../../../actions/ActionsWithPreview'
 import { ChangesetPlanOperation } from '../../../changesets/plan/plan'
-import { DiagnosticInfo, getCodeActions } from '../../../threads/detail/backend'
+import { DiagnosticInfo, getCodeActions } from '../../../threadsOLD/detail/backend'
 
 const LOADING: 'loading' = 'loading'
 

@@ -4,7 +4,7 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { WithQueryParameter } from '../../../../components/withQueryParameter/WithQueryParameter'
-import { ThreadSettings } from '../../../threads/settings'
+import { ThreadSettings } from '../../../threadsOLD/settings'
 import { ChangesetFilesList } from './ChangesetFilesList'
 import { ChangesetReviewsList } from './ChangesetReviewsList'
 

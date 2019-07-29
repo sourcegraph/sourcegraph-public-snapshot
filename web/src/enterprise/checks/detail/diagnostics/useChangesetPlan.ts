@@ -4,7 +4,7 @@ import { DiagnosticWithType } from '../../../../../../shared/src/api/client/serv
 import { Action } from '../../../../../../shared/src/api/types/action'
 import { isDiagnosticQueryEqual } from '../../../../../../shared/src/api/types/diagnostic'
 import { ChangesetPlan, ChangesetPlanOperation } from '../../../changesets/plan/plan'
-import { diagnosticQueryForSingleDiagnostic } from '../../../threads/detail/backend'
+import { diagnosticQueryForSingleDiagnostic } from '../../../threadsOLD/detail/backend'
 
 export interface ChangesetPlanProps {
     changesetPlan: ChangesetPlan

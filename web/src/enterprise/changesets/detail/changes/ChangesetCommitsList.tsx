@@ -4,7 +4,7 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { GitCommitNode } from '../../../../repo/commits/GitCommitNode'
-import { ThreadSettings } from '../../../threads/settings'
+import { ThreadSettings } from '../../../threadsOLD/settings'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     thread: GQL.IDiscussionThread

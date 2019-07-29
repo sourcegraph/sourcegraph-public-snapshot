@@ -8,15 +8,17 @@ import { AddThreadToCampaignDropdownButton } from './AddThreadToCampaignDropdown
 import { CampaignThreadListItem } from './CampaignThreadListItem'
 import { useCampaignThreads } from './useCampaignThreads'
 
-interface Props extends Pick<CampaignAreaContext, 'campaign'>, ExtensionsControllerProps {}
+interface Props extends Pick<CampaignAreaContext, 'campaign'>, ExtensionsControllerProps {
+    className?: string
+}
 
 const LOADING = 'loading' as const
 
-export const CampaignThreadsListPage: React.FunctionComponent<Props> = ({ campaign, ...props }) => {
+export const CampaignThreadsListPage: React.FunctionComponent<Props> = ({ campaign, className = '', ...props }) => {
     const [threadsOrError, onThreadsUpdate] = useCampaignThreads(campaign)
 
     return (
-        <div className="campaign-threads-list-page container mt-4">
+        <div className={`campaign-threads-list-page ${className}`}>
             <AddThreadToCampaignDropdownButton
                 {...props}
                 campaign={campaign}
@@ -24,9 +26,9 @@ export const CampaignThreadsListPage: React.FunctionComponent<Props> = ({ campai
                 className="mb-3"
             />
             {threadsOrError === LOADING ? (
-                <LoadingSpinner className="icon-inline mt-3" />
+                <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(threadsOrError) ? (
-                <div className="alert alert-danger mt-3">{threadsOrError.message}</div>
+                <div className="alert alert-danger">{threadsOrError.message}</div>
             ) : (
                 <div className="card">
                     <div className="card-header">

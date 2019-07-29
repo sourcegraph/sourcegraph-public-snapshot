@@ -5,7 +5,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { RepositoryCompareDiffPage } from '../../../../repo/compare/RepositoryCompareDiffPage'
-import { ThreadSettings } from '../../../threads/settings'
+import { ThreadSettings } from '../../../threadsOLD/settings'
 
 interface Props extends QueryParameterProps, ExtensionsControllerProps, PlatformContextProps {
     thread: GQL.IDiscussionThread
@@ -36,13 +36,13 @@ export const ChangesetFilesList: React.FunctionComponent<Props> = ({
                     repoName: c.baseRepository.name,
                     repoID: c.baseRepository.id,
                     rev: c.range.baseRevSpec.expr,
-                    commitID: c.range.baseRevSpec.object!.oid,
+                    commitID: c.range.baseRevSpec.object.oid,
                 }}
                 head={{
                     repoName: c.headRepository.name,
                     repoID: c.headRepository.id,
                     rev: c.range.headRevSpec.expr,
-                    commitID: c.range.headRevSpec.object!.oid,
+                    commitID: c.range.headRevSpec.object.oid,
                 }}
                 showRepository={true}
             />

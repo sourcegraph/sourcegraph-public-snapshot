@@ -9,7 +9,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
 import { useEffectAsync } from '../../../util/useEffectAsync'
-import { getCodeActions, getDiagnosticInfos } from '../../threads/detail/backend'
+import { getCodeActions, getDiagnosticInfos } from '../../threadsOLD/detail/backend'
 import { TasksAreaContext } from '../global/TasksArea'
 import { Task } from '../task'
 import { TaskFilesPage } from './files/TaskFilesPage'

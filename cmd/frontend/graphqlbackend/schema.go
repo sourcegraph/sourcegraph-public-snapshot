@@ -1429,7 +1429,10 @@ type Repository implements Node & GenericSearchResultInterface {
         query: String
     ): GitRefConnection!
 
-    # A list of threads for this repository.
+    # The specified thread in this repository.
+    thread(idInRepository: String!): Thread
+
+    # A list of threads in this repository.
     threads(
         # Returns the first n threads from the list.
         first: Int
@@ -4124,10 +4127,9 @@ type Thread implements Node {
     # The unique ID for the thread.
     id: ID!
 
-    # The thread ID without its kind, which is globally unique among threads but not among all
-    # GraphQL nodes. For example, this is a string like "123" (and Thread#id is a string like
-    # "RGlzY3Vzc2l...").
-    idWithoutKind: String!
+    # The thread ID that is shorter but only unique within the thread's repository. For a globally
+    # unique identifier, use Thread.id.
+    idInRepository: String!
 
     # The repository that contains this thread.
     repository: Repository!

@@ -24,6 +24,14 @@ func ThreadByID(ctx context.Context, id graphql.ID) (Thread, error) {
 	return Threads.ThreadByID(ctx, id)
 }
 
+// ThreadInRepository returns a specific thread in the specified repository.
+func ThreadInRepository(ctx context.Context, repository graphql.ID, threadIDInRepository string) (Thread, error) {
+	if Threads == nil {
+		return nil, errThreadsNotImplemented
+	}
+	return Threads.ThreadInRepository(ctx, repository, threadIDInRepository)
+}
+
 // ThreadsForRepository returns an instance of the GraphQL ThreadConnection type with the list of
 // threads defined in a repository.
 func ThreadsForRepository(ctx context.Context, repository graphql.ID, arg *graphqlutil.ConnectionArgs) (ThreadConnection, error) {
@@ -73,6 +81,9 @@ type ThreadsResolver interface {
 
 	// ThreadByID is called by the ThreadByID func but is not in the GraphQL API.
 	ThreadByID(context.Context, graphql.ID) (Thread, error)
+
+	// ThreadInRepository is called by the ThreadInRepository func but is not in the GraphQL API.
+	ThreadInRepository(ctx context.Context, repository graphql.ID, threadIDInRepository string) (Thread, error)
 
 	// ThreadsForRepository is called by the ThreadsForRepository func but is not in the GraphQL
 	// API.
@@ -134,7 +145,7 @@ func IsValidThreadStatus(t string) bool {
 // Thread is the interface for the GraphQL type Thread.
 type Thread interface {
 	ID() graphql.ID
-	IDWithoutKind() string
+	IDInRepository() string
 	DBID() int64
 	Repository(context.Context) (*RepositoryResolver, error)
 	Title() string

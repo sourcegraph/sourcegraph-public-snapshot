@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
@@ -52,9 +53,32 @@ func unmarshalThreadID(id graphql.ID) (dbID int64, err error) {
 	return
 }
 
-func (v *gqlThread) IDWithoutKind() string {
-	return strconv.FormatInt(v.db.ID, 10)
+func (GraphQLResolver) ThreadInRepository(ctx context.Context, repositoryID graphql.ID, threadIDInRepository string) (graphqlbackend.Thread, error) {
+	threadID, err := strconv.ParseInt(threadIDInRepository, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	// TODO!(sqs): access checks
+	thread, err := threadByDBID(ctx, threadID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO!(sqs): check that the thread is indeed in the repo. When we make the thread number
+	// sequence per-repo, this will become necessary to even retrieve the thread. for now, the ID is
+	// global, so we need to perform this check.
+	assertedRepo, err := graphqlbackend.RepositoryByID(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+	if thread.db.RepositoryID != assertedRepo.DBID() {
+		return nil, errors.New("thread does not exist in repository")
+	}
+
+	return thread, nil
 }
+
+func (v *gqlThread) IDInRepository() string { return strconv.FormatInt(v.db.ID, 10) }
 
 func (v *gqlThread) DBID() int64 { return v.db.ID }
 
@@ -71,7 +95,7 @@ func (v *gqlThread) URL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return path.Join(repository.URL(), "threads", string(v.ID())), nil
+	return path.Join(repository.URL(), "-", "threads", v.IDInRepository()), nil
 }
 
 func (v *gqlThread) Settings() string {

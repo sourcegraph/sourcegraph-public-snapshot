@@ -5,7 +5,7 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
-import { DiagnosticInfo } from '../../threads/detail/backend'
+import { DiagnosticInfo } from '../../threadsOLD/detail/backend'
 import { TasksAreaContext } from '../global/TasksArea'
 import { DiagnosticsListItem } from './item/DiagnosticsListItem'
 

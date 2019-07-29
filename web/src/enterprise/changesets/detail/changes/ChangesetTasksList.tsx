@@ -9,7 +9,7 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { makeRepoURI } from '../../../../../../shared/src/util/url'
 import { useDiagnostics } from '../../../checks/detail/diagnostics/detail/useDiagnostics'
 import { DiagnosticsList } from '../../../tasks/list/DiagnosticsList'
-import { ThreadSettings } from '../../../threads/settings'
+import { ThreadSettings } from '../../../threadsOLD/settings'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     thread: GQL.IDiscussionThread

@@ -1,7 +1,7 @@
 import React from 'react'
 import * as sourcegraph from 'sourcegraph'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { WorkspaceEditPreview } from '../threads/detail/inbox/item/WorkspaceEditPreview'
+import { WorkspaceEditPreview } from '../threadsOLD/detail/inbox/item/WorkspaceEditPreview'
 
 interface Props extends ExtensionsControllerProps {
     /**

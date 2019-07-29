@@ -10,7 +10,7 @@ import { QueryParameterProps } from '../../../../components/withQueryParameter/W
 import { FileDiffHunks } from '../../../../repo/compare/FileDiffHunks'
 import { FileDiffNode } from '../../../../repo/compare/FileDiffNode'
 import { useEffectAsync } from '../../../../util/useEffectAsync'
-import { computeDiff, FileDiff } from '../../../threads/detail/changes/computeDiff'
+import { computeDiff, FileDiff } from '../../../threadsOLD/detail/changes/computeDiff'
 import { Task } from '../../task'
 
 interface Props extends QueryParameterProps, ExtensionsControllerProps, PlatformContextProps {

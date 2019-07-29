@@ -17,7 +17,7 @@ import {
     diagnosticQueryForSingleDiagnostic,
     diagnosticQueryKey,
     diagnosticQueryMatcher,
-} from '../../../threads/detail/backend'
+} from '../../../threadsOLD/detail/backend'
 import { CheckAreaContext } from '../CheckArea'
 import { useDiagnostics } from './detail/useDiagnostics'
 import { parseDiagnosticQuery } from './diagnosticQuery'

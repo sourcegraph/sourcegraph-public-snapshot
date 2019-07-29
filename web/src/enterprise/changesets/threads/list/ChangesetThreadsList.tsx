@@ -1,8 +1,8 @@
 import H from 'history'
 import React from 'react'
 import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
-import { ThreadsAreaContext } from '../../../threads/global/ThreadsArea'
-import { ThreadsList } from '../../../threads/list/ThreadsList'
+import { ThreadsAreaContext } from '../../../threadsOLD/global/ThreadsArea'
+import { ThreadsList } from '../../../threadsOLD/list/ThreadsList'
 import { ChangesetThreadsListHeader } from './ChangesetThreadsListHeader'
 
 interface Props extends QueryParameterProps, Pick<ThreadsAreaContext, 'type' | 'authenticatedUser'> {

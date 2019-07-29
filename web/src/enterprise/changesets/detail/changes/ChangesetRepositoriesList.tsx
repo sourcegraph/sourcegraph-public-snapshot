@@ -10,7 +10,7 @@ import { pluralize } from '../../../../../../shared/src/util/strings'
 import { GitCommitNode } from '../../../../repo/commits/GitCommitNode'
 import { DiffStat } from '../../../../repo/compare/DiffStat'
 import { GitCommitIcon } from '../../../../util/octicons'
-import { ThreadSettings } from '../../../threads/settings'
+import { ThreadSettings } from '../../../threadsOLD/settings'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     thread: GQL.IDiscussionThread
