@@ -209,18 +209,19 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "listing repos")
 	}
 
-	// BACKCOMPAT: Add a "URI" field because zoekt-sourcegraph-indexserver expects one to exist
-	// (with the repository name). This is a legacy of the rename from "repo URI" to "repo name".
+	// BACKCOMPAT: Add a Name field that serializes to `URI` because
+	// zoekt-sourcegraph-indexserver expects one to exist (with the
+	// repository name). This is a legacy of the rename from "repo URI" to
+	// "repo name".
 	type repoWithBackcompatURIField struct {
-		URI string
-		*types.Repo
+		Name string `json:URI`
+		// The Repo field has been removed because the only caller of this handler
+		// (zoekt-sourcegraph-indexserver) wasn't using it.
 	}
-	res2 := make([]*repoWithBackcompatURIField, len(res))
+	res2 := make([]repoWithBackcompatURIField, len(res))
 	for i, repo := range res {
-		res2[i] = &repoWithBackcompatURIField{
-			URI: string(repo.Name),
-			// The setting of the Repo field has been removed because the only caller of this handler
-			// wasn't using it: zoekt-sourcegraph-indexserver.
+		res2[i] = repoWithBackcompatURIField{
+			Name: string(repo.Name),
 		}
 	}
 
