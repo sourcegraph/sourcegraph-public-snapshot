@@ -14,13 +14,11 @@ const LOADING: 'loading' = 'loading'
  */
 export const useCampaignThreads = (
     campaign: Pick<GQL.ICampaign, 'id'>
-): [typeof LOADING | GQL.IDiscussionThreadConnection | ErrorLike, () => void] => {
+): [typeof LOADING | GQL.IThreadConnection | ErrorLike, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
 
-    const [threadsOrError, setThreadsOrError] = useState<typeof LOADING | GQL.IDiscussionThreadConnection | ErrorLike>(
-        LOADING
-    )
+    const [threadsOrError, setThreadsOrError] = useState<typeof LOADING | GQL.IThreadConnection | ErrorLike>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`

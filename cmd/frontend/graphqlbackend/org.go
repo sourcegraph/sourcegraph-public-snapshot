@@ -171,6 +171,8 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+func (o *OrgResolver) NamespaceName() string { return o.org.Name }
+
 func (o *OrgResolver) Projects(ctx context.Context, args *graphqlutil.ConnectionArgs) (ProjectConnection, error) {
 	return ProjectsInNamespace(ctx, o.ID(), args)
 }

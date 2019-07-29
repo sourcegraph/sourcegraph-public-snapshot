@@ -2,13 +2,13 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
-import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { HeroPage } from '../../../components/HeroPage'
-import { ThreadlikeArea } from '../../threadlike/ThreadlikeArea'
+import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsArea'
+import { CampaignOverview } from './CampaignOverview'
 import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
 import { useCampaignByID } from './useCampaignByID'
 
@@ -20,19 +20,32 @@ export interface CampaignAreaContext
     /** The campaign, queried from the GraphQL API. */
     campaign: GQL.ICampaign
 
+    /** Called to refresh the campaign. */
+    onCampaignUpdate: () => void
+
     location: H.Location
     history: H.History
 }
 
-interface Props extends Pick<CampaignAreaContext, Exclude<keyof CampaignAreaContext, 'campaign'>> {}
+interface Props
+    extends Pick<CampaignAreaContext, Exclude<keyof CampaignAreaContext, 'campaign' | 'onCampaignUpdate'>>,
+        RouteComponentProps<never> {
+    header: React.ReactFragment
+}
 
 const LOADING = 'loading' as const
 
 /**
  * The area for a single campaign.
  */
-export const CampaignArea: React.FunctionComponent<Props> = ({ campaignID, setBreadcrumbItem, ...props }) => {
-    const campaignOrError = useCampaignByID(campaignID)
+export const CampaignArea: React.FunctionComponent<Props> = ({
+    header,
+    campaignID,
+    setBreadcrumbItem,
+    match,
+    ...props
+}) => {
+    const [campaignOrError, onCampaignUpdate] = useCampaignByID(campaignID)
 
     useEffect(() => {
         if (setBreadcrumbItem) {
@@ -63,17 +76,21 @@ export const CampaignArea: React.FunctionComponent<Props> = ({ campaignID, setBr
         ...props,
         campaignID,
         campaign: campaignOrError,
+        onCampaignUpdate,
         setBreadcrumbItem,
     }
 
     return (
-        <div className="campaign-area flex-1">
-            <style>{`.user-area-header, .org-header { display: none; } /* TODO!(sqs): hack */`}</style>
-            <ThreadlikeArea
-                {...context}
+        <>
+            <style>{`.user-area-header, .org-header { display: none; } .org-area > .container, .user-area > .container { margin: unset; margin-top: unset !important; width: unset; padding: unset; } /* TODO!(sqs): hack */`}</style>
+            <OverviewPagesArea<CampaignAreaContext>
+                context={context}
+                header={header}
                 overviewComponent={CampaignOverview}
                 pages={[{ title: 'Threads', path: '', render: () => <CampaignThreadsListPage {...context} /> }]}
+                location={props.location}
+                match={match}
             />
-        </div>
+        </>
     )
 }

@@ -16,7 +16,7 @@ export const CampaignThreadsListPage: React.FunctionComponent<Props> = ({ campai
     const [threadsOrError, onThreadsUpdate] = useCampaignThreads(campaign)
 
     return (
-        <div className="campaign-threads-list-page">
+        <div className="campaign-threads-list-page container mt-4">
             <AddThreadToCampaignDropdownButton
                 {...props}
                 campaign={campaign}

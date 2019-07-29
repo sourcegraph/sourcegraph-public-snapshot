@@ -14,11 +14,9 @@ const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICampaign>
     mutateGraphQL(
         gql`
             mutation CreateCampaign($input: CreateCampaignInput!) {
-                campaigns {
-                    createCampaign(input: $input) {
-                        id
-                        url
-                    }
+                createCampaign(input: $input) {
+                    id
+                    url
                 }
             }
         `,
@@ -26,7 +24,7 @@ const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICampaign>
     )
         .pipe(
             map(dataOrThrowErrors),
-            map(data => data.campaigns.createCampaign)
+            map(data => data.createCampaign)
         )
         .toPromise()
 
@@ -39,8 +37,14 @@ const LOADING = 'loading' as const
  */
 export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, setBreadcrumbItem }) => {
     useEffect(() => {
-        setBreadcrumbItem({ text: 'New' })
-        return () => setBreadcrumbItem(undefined)
+        if (setBreadcrumbItem) {
+            setBreadcrumbItem({ text: 'New' })
+        }
+        return () => {
+            if (setBreadcrumbItem) {
+                setBreadcrumbItem(undefined)
+            }
+        }
     }, [setBreadcrumbItem])
 
     const [creationOrError, setCreationOrError] = useState<null | typeof LOADING | Pick<GQL.IRule, 'url'> | ErrorLike>(

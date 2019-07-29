@@ -10,14 +10,12 @@ import { mutateGraphQL } from '../../../../backend/graphql'
 import { ThreadStatusFields } from '../../../threads/components/threadStatus/threadStatus'
 import { ThreadStatusIcon } from '../../../threads/components/threadStatus/ThreadStatusIcon'
 
-const removeThreadsFromCampaign = (input: GQL.IRemoveThreadsFromCampaignOnCampaignsMutationArguments): Promise<void> =>
+const removeThreadsFromCampaign = (input: GQL.IRemoveThreadsFromCampaignOnMutationArguments): Promise<void> =>
     mutateGraphQL(
         gql`
             mutation RemoveThreadsFromCampaign($campaign: ID!, $threads: [ID!]!) {
-                campaigns {
-                    removeThreadsFromCampaign(campaign: $campaign, threads: $threads) {
-                        alwaysNil
-                    }
+                removeThreadsFromCampaign(campaign: $campaign, threads: $threads) {
+                    alwaysNil
                 }
             }
         `,

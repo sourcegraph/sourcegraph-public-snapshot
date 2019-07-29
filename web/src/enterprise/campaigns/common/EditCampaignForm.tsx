@@ -1,8 +1,7 @@
 import React, { useCallback, useState } from 'react'
-import { map } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
+import { map, mapTo } from 'rxjs/operators'
+import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../../backend/graphql'
 import { CampaignForm, CampaignFormData } from '../form/CampaignForm'
 
@@ -10,21 +9,16 @@ const updateCampaign = (input: GQL.IUpdateCampaignInput): Promise<void> =>
     mutateGraphQL(
         gql`
             mutation UpdateCampaign($input: UpdateCampaignInput!) {
-                campaigns {
-                    updateCampaign(input: $input) {
-                        id
-                    }
+                updateCampaign(input: $input) {
+                    id
                 }
             }
         `,
         { input }
     )
         .pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.campaigns || !data.campaigns.updateCampaign || (errors && errors.length > 0)) {
-                    throw createAggregateError(errors)
-                }
-            })
+            map(dataOrThrowErrors),
+            mapTo(void 0)
         )
         .toPromise()
 

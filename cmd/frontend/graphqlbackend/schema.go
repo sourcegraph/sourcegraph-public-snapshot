@@ -346,8 +346,14 @@ type Mutation {
     # Mutations related to labels.
     labels: LabelsMutation!
 
-    # Mutations related to threads.
-    threads: ThreadsMutation!
+    # Create a thread in a namespace. Returns the newly created thread.
+    createThread(input: CreateThreadInput!): Thread!
+
+    # Update a thread. Returns the updated thread.
+    updateThread(input: UpdateThreadInput!): Thread
+
+    # Delete a thread.
+    deleteThread(thread: ID!): EmptyResponse
 
     # Mutations related to repositories' Git data.
     git: GitMutation!
@@ -957,6 +963,15 @@ type Query {
 
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
+
+    # A list of namespaces affiliated with the viewer.
+    viewerNamespaces: [Namespace!]!
+
+    # A list of threads. TODO!(sqs)
+    threads(
+        # Returns the first n threads from the list.
+        first: Int
+    ): ThreadConnection!
 
     # A list of campaigns. TODO!(sqs)
     campaigns(
@@ -2292,6 +2307,10 @@ interface Namespace {
     # The globally unique ID of this namespace.
     id: ID!
 
+    # The name of this namespace's component. For a user, this is the username. For an organization,
+    # this is the organization name.
+    namespaceName: String!
+
     # The URL to this namespace.
     url: String!
 
@@ -2413,6 +2432,10 @@ type User implements Node & SettingsSubject & Namespace {
     #
     # FOR INTERNAL USE ONLY.
     databaseID: Int!
+
+    # The name of this user namespace's component. For users, this is the username.
+    namespaceName: String!
+
     # The projects owned by this user.
     projects(
         # Return the first n projects from the list.
@@ -2613,6 +2636,10 @@ type Org implements Node & SettingsSubject & Namespace {
     url: String!
     # The URL to the organization's settings.
     settingsURL: String
+
+    # The name of this user namespace's component. For organizations, this is the organization's name.
+    namespaceName: String!
+
     # The projects owned by this organization.
     projects(
         # Return the first n projects from the list.
@@ -4026,18 +4053,6 @@ type LabelConnection {
     pageInfo: PageInfo!
 }
 
-# Mutations related to threads.
-type ThreadsMutation {
-    # Create a thread in a namespace. Returns the newly created thread.
-    createThread(input: CreateThreadInput!): Thread!
-
-    # Update a thread. Returns the updated thread.
-    updateThread(input: UpdateThreadInput!): Thread
-
-    # Delete a thread.
-    deleteThread(thread: ID!): EmptyResponse
-}
-
 # The types of threads.
 enum ThreadType {
     # A thread with discussions and a set of locations.
@@ -4212,6 +4227,9 @@ type Campaign implements Node {
 
     # The (optional) description of the campaign.
     description: String
+
+    # Settings (in JSON) for the campaign.
+    settings: String!
 
     # The URL to this campaign.
     url: String!

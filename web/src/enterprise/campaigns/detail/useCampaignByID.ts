@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { map, startWith } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -12,7 +12,10 @@ const LOADING: 'loading' = 'loading'
  *
  * @param id The scope in which to observe the campaign.
  */
-export const useCampaignByID = (id: GQL.ID): typeof LOADING | GQL.ICampaign | null | ErrorLike => {
+export const useCampaignByID = (id: GQL.ID): [typeof LOADING | GQL.ICampaign | null | ErrorLike, () => void] => {
+    const [updateSequence, setUpdateSequence] = useState(0)
+    const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
+
     const [campaignOrError, setCampaignOrError] = useState<typeof LOADING | GQL.ICampaign | null | ErrorLike>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
@@ -24,6 +27,7 @@ export const useCampaignByID = (id: GQL.ID): typeof LOADING | GQL.ICampaign | nu
                             id
                             name
                             description
+                            settings
                             url
                         }
                     }
@@ -43,6 +47,6 @@ export const useCampaignByID = (id: GQL.ID): typeof LOADING | GQL.ICampaign | nu
             )
             .subscribe(setCampaignOrError, err => setCampaignOrError(asError(err)))
         return () => subscription.unsubscribe()
-    }, [id])
-    return campaignOrError
+    }, [id, updateSequence])
+    return [campaignOrError, incrementUpdateSequence]
 }

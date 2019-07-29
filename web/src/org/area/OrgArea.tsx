@@ -28,6 +28,7 @@ function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> 
                 organization(name: $name) {
                     __typename
                     id
+                    namespaceName
                     name
                     displayName
                     url
@@ -63,7 +64,10 @@ const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
-export interface OrgAreaRoute extends RouteDescriptor<OrgAreaPageProps> {}
+export interface OrgAreaRoute extends RouteDescriptor<OrgAreaPageProps> {
+    /** Do not wrap this route's fragment in a container. */
+    noContainer: boolean
+}
 
 interface Props
     extends RouteComponentProps<{ name: string }>,
@@ -182,14 +186,14 @@ export class OrgArea extends React.Component<Props> {
         }
 
         return (
-            <div className="org-area w-100">
+            <div className="org-area w-100 d-flex flex-column">
                 <OrgHeader
                     {...this.props}
                     {...context}
                     navItems={this.props.orgAreaHeaderNavItems}
-                    className="border-bottom mt-4"
+                    className="flex-0 border-bottom mt-4"
                 />
-                <div className="container mt-3">
+                <div className="container mt-3 flex-1 d-flex flex-column">
                     <ErrorBoundary location={this.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>

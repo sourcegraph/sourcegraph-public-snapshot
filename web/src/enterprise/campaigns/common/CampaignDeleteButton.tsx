@@ -1,33 +1,27 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { useCallback, useState } from 'react'
-import { map } from 'rxjs/operators'
+import { map, mapTo } from 'rxjs/operators'
 import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
 import { ExtensionsControllerNotificationProps } from '../../../../../shared/src/extensions/controller'
-import { gql } from '../../../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../../backend/graphql'
 
-const deleteCampaign = (args: GQL.IDeleteCampaignOnCampaignsMutationArguments): Promise<void> =>
+const deleteCampaign = (args: GQL.IDeleteCampaignOnMutationArguments): Promise<void> =>
     mutateGraphQL(
         gql`
             mutation DeleteCampaign($campaign: ID!) {
-                campaigns {
-                    deleteCampaign(campaign: $campaign) {
-                        alwaysNil
-                    }
+                deleteCampaign(campaign: $campaign) {
+                    alwaysNil
                 }
             }
         `,
         args
     )
         .pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.campaigns || (errors && errors.length > 0)) {
-                    throw createAggregateError(errors)
-                }
-            })
+            map(dataOrThrowErrors),
+            mapTo(void 0)
         )
         .toPromise()
 

@@ -8,6 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
+func (GraphQLResolver) Threads(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
+	return threadsByOptions(ctx, dbThreadsListOptions{}, arg)
+}
+
 func (GraphQLResolver) ThreadsForRepository(ctx context.Context, repositoryID graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
 	repo, err := graphqlbackend.RepositoryByID(ctx, repositoryID)
 	if err != nil {

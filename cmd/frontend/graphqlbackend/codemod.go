@@ -95,6 +95,13 @@ func (r *codemodResultResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
 }
 
+func (r *codemodResultResolver) Commit() *GitCommitResolver { return r.commit }
+
+func (r *codemodResultResolver) RawDiff() string {
+	// TODO!(sqs) HACK gitserver's CreateCommitFromPatch assumes `patch -p1` so we need to add `a/` and `b/` path prefixes
+	return "diff git\nindex\n" + strings.Replace(strings.Replace(r.diff, "+++ ", "+++ b/", 1), "--- ", "--- a/", 1) + "\n"
+}
+
 func validateQuery(q *query.Query) (*args, error) {
 	matchValues := q.Values(query.FieldDefault)
 	var matchTemplates []string

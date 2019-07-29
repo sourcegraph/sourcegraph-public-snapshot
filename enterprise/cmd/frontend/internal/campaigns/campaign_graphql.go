@@ -62,6 +62,8 @@ func (v *gqlCampaign) Name() string { return v.db.Name }
 
 func (v *gqlCampaign) Description() *string { return v.db.Description }
 
+func (v *gqlCampaign) Settings() string { return "{}" } // TODO!(sqs)
+
 func (v *gqlCampaign) URL(ctx context.Context) (string, error) {
 	namespace, err := v.Namespace(ctx)
 	if err != nil {

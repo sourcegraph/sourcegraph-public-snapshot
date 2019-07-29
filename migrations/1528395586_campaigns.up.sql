@@ -5,7 +5,8 @@ CREATE TABLE campaigns (
     namespace_user_id integer REFERENCES users(id) ON DELETE CASCADE,
     namespace_org_id integer REFERENCES orgs(id) ON DELETE CASCADE,
 	name text NOT NULL,
-	description text
+	description text,
+    settings text NOT NULL DEFAULT '{}'
 );
 ALTER TABLE campaigns ADD CONSTRAINT campaigns_has_1_namespace CHECK ((namespace_user_id IS NULL) != (namespace_org_id IS NULL));
 CREATE INDEX campaigns_namespace_user_id ON campaigns(namespace_user_id);

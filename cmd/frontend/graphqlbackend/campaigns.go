@@ -126,6 +126,7 @@ type Campaign interface {
 	Namespace(context.Context) (*NamespaceResolver, error)
 	Name() string
 	Description() *string
+	Settings() string
 	URL(context.Context) (string, error)
 	Threads(context.Context, *graphqlutil.ConnectionArgs) (ThreadConnection, error)
 	Repositories(context.Context) ([]*RepositoryResolver, error)

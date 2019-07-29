@@ -4,8 +4,8 @@ import UserIcon from 'mdi-react/UserIcon'
 import React from 'react'
 import { Toggle } from '../../../../../shared/src/components/Toggle'
 import { CollapsibleSidebar } from '../../../components/collapsibleSidebar/CollapsibleSidebar'
+import { ThreadlikeAreaContext } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { LabelIcon } from '../../../projects/icons'
-import { ThreadlikeAreaContext } from '../ThreadlikeArea'
 
 interface Props extends Pick<ThreadlikeAreaContext, 'thread'> {
     className?: string
@@ -14,7 +14,7 @@ interface Props extends Pick<ThreadlikeAreaContext, 'thread'> {
 /**
  * The sidebar for a single threadlike.
  */
-export const ThreadlikeAreaSidebar: React.FunctionComponent<Props> = ({ thread, className = '' }) => (
+export const ThreadlikeAreaSidebar: React.FunctionComponent<Props> = ({ threadlike, className = '' }) => (
     <CollapsibleSidebar
         localStorageKey="threadlike-area__sidebar"
         side="right"
@@ -42,7 +42,7 @@ export const ThreadlikeAreaSidebar: React.FunctionComponent<Props> = ({ thread, 
                             <>
                                 <h6 className="font-weight-normal mb-0">Labels</h6>
                                 <div>
-                                    {thread.title
+                                    {threadlike.title
                                         .toLowerCase()
                                         .split(' ')
                                         .filter(w => w.length >= 3)

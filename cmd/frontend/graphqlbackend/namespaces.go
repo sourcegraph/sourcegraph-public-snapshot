@@ -3,9 +3,11 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"sort"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
@@ -13,6 +15,7 @@ import (
 type Namespace interface {
 	ID() graphql.ID
 	URL() string
+	NamespaceName() string
 	Projects(context.Context, *graphqlutil.ConnectionArgs) (ProjectConnection, error)
 	Campaigns(context.Context, *graphqlutil.ConnectionArgs) (CampaignConnection, error)
 }
@@ -23,6 +26,31 @@ func (r *schemaResolver) Namespace(ctx context.Context, args *struct{ ID graphql
 		return nil, err
 	}
 	return &NamespaceResolver{n}, nil
+}
+
+func (r *schemaResolver) ViewerNamespaces(ctx context.Context) (namespaces []*NamespaceResolver, err error) {
+	user, err := CurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, nil
+	}
+	namespaces = append(namespaces, &NamespaceResolver{user})
+
+	orgs, err := db.Orgs.GetByUserID(ctx, user.user.ID)
+	if err != nil {
+		return nil, err
+	}
+	// Stable-sort the organizations.
+	sort.Slice(orgs, func(i, j int) bool {
+		return orgs[i].ID < orgs[j].ID
+	})
+	for _, org := range orgs {
+		namespaces = append(namespaces, &NamespaceResolver{&OrgResolver{org}})
+	}
+
+	return namespaces, nil
 }
 
 // NamespaceByID looks up a GraphQL value of type Namespace by ID.

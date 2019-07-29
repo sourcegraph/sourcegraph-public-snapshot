@@ -48,28 +48,35 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
     const breadcrumbItems: BreadcrumbItem[] = useMemo(
         () =>
             [
-                { text: props.namespace.__typename /* TODO!(sqs) */, to: props.namespace.url },
+                { text: props.namespace.namespaceName, to: props.namespace.url },
                 { text: 'Campaigns', to: context.campaignsURL },
                 breadcrumbItem,
             ].filter(isDefined),
-        [breadcrumbItem, context.campaignsURL, props.namespace.__typename, props.namespace.url]
+        [breadcrumbItem, context.campaignsURL, props.namespace.namespaceName, props.namespace.url]
     )
 
+    const breadcrumbs = <Breadcrumbs items={breadcrumbItems} className="my-4" />
+
     return (
-        <div className="namespace-campaigns-area">
-            <Breadcrumbs items={breadcrumbItems} className="my-4" />
+        <>
             <Switch>
                 <Route path={context.campaignsURL} exact={true}>
+                    breadcrumbs
                     <NamespaceCampaignsListPage {...context} newCampaignURL={newCampaignURL} />
                 </Route>
                 <Route path={newCampaignURL} exact={true}>
+                    breadcrumbs
                     <CampaignsNewPage {...context} />
                 </Route>
                 <Route
                     path={`${context.campaignsURL}/:campaignID`}
                     // tslint:disable-next-line:jsx-no-lambda
                     render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
-                        <CampaignArea {...context} campaignID={routeComponentProps.match.params.campaignID} />
+                        <CampaignArea
+                            {...context}
+                            campaignID={routeComponentProps.match.params.campaignID}
+                            header={breadcrumbs}
+                        />
                     )}
                 />
                 <Route>
@@ -80,6 +87,6 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
                     />
                 </Route>
             </Switch>
-        </div>
+        </>
     )
 }

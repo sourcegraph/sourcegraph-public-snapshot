@@ -278,6 +278,8 @@ func (r *UserResolver) URLForSiteAdminBilling(ctx context.Context) (*string, err
 	return UserURLForSiteAdminBilling(ctx, r.user.ID)
 }
 
+func (r *UserResolver) NamespaceName() string { return r.user.Username }
+
 func (r *UserResolver) Projects(ctx context.Context, args *graphqlutil.ConnectionArgs) (ProjectConnection, error) {
 	return ProjectsInNamespace(ctx, r.ID(), args)
 }
