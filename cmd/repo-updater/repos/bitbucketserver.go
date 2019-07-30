@@ -269,17 +269,16 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context) ([]*bitbuckets
 		go func(q string) {
 			defer wg.Done()
 
-			page := &bitbucketserver.PageToken{Limit: 1000}
-			for page.HasMore() {
-				var err error
-				var repos []*bitbucketserver.Repo
-
-				if repos, page, err = s.client.Repos(ctx, page, q); err != nil {
-					ch <- batch{err: errors.Wrapf(err, "bibucketserver.repositoryQuery: item=%q, page=%+v", q, page)}
+			next := &bitbucketserver.PageToken{Limit: 1000}
+			for next.HasMore() {
+				repos, page, err := s.client.Repos(ctx, next, q)
+				if err != nil {
+					ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repositoryQuery: query=%q, page=%+v", q, next)}
 					break
 				}
 
 				ch <- batch{repos: repos}
+				next = page
 			}
 		}(q)
 	}
