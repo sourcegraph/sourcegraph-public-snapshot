@@ -1,7 +1,6 @@
 import H from 'history'
 import React from 'react'
 import { ContributableMenu, SearchFilters } from '../../../../shared/src/api/protocol'
-import { RepositoryIcon } from '../../../../shared/src/components/icons'
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'

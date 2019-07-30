@@ -108,6 +108,8 @@ type CreateCampaignArgs struct {
 		Namespace   graphql.ID
 		Name        string
 		Description *string
+		Preview     *bool
+		Rules       *string
 	}
 }
 
@@ -116,6 +118,7 @@ type UpdateCampaignArgs struct {
 		ID          graphql.ID
 		Name        *string
 		Description *string
+		Rules       *string
 	}
 }
 
@@ -139,6 +142,7 @@ type Campaign interface {
 	Name() string
 	Description() *string
 	IsPreview() bool
+	Rules() string
 	URL(context.Context) (string, error)
 	ThreadOrIssueOrChangesets(context.Context, *graphqlutil.ConnectionArgs) (ThreadOrIssueOrChangesetConnection, error)
 	Repositories(context.Context) ([]*RepositoryResolver, error)

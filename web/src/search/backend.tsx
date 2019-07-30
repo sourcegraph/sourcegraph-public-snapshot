@@ -44,6 +44,7 @@ export function search(
             const codemodActive = USE_CODEMOD
                 ? `... on CodemodResult {
                 ${genericSearchResultInterfaceFields}
+                rawDiff
             }`
                 : ''
             return queryGraphQL(

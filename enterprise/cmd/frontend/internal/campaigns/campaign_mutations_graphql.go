@@ -12,6 +12,10 @@ func (GraphQLResolver) CreateCampaign(ctx context.Context, arg *graphqlbackend.C
 	v := &dbCampaign{
 		Name:        arg.Input.Name,
 		Description: arg.Input.Description,
+		IsPreview:   arg.Input.Preview != nil && *arg.Input.Preview,
+	}
+	if arg.Input.Rules != nil {
+		v.Rules = *arg.Input.Rules
 	}
 
 	var err error
@@ -35,6 +39,7 @@ func (GraphQLResolver) UpdateCampaign(ctx context.Context, arg *graphqlbackend.U
 	campaign, err := dbCampaigns{}.Update(ctx, l.db.ID, dbCampaignUpdate{
 		Name:        arg.Input.Name,
 		Description: arg.Input.Description,
+		Rules:       arg.Input.Rules,
 	})
 	if err != nil {
 		return nil, err

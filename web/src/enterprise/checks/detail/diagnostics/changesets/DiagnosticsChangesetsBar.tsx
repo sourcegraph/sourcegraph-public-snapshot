@@ -17,7 +17,7 @@ import { pluralize } from '../../../../../../../shared/src/util/strings'
 import { parseRepoURI } from '../../../../../../../shared/src/util/url'
 import { DiffStat } from '../../../../../repo/compare/DiffStat'
 import { DiffIcon, ZapIcon } from '../../../../../util/octicons'
-import { createChangesetFromDiffs } from '../../../../changesetsOLD/preview/backend'
+import { createCampaignFromDiffs } from '../../../../changesetsOLD/preview/backend'
 import { ChangesetTargetButtonDropdown } from '../../../../tasks/list/item/ChangesetTargetButtonDropdown'
 import { diagnosticQueryMatcher, getDiagnosticInfos } from '../../../../threadsOLD/detail/backend'
 import { computeDiff, computeDiffStat, FileDiff } from '../../../../threadsOLD/detail/changes/computeDiff'
@@ -95,7 +95,7 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
         fileDiffsOrError !== LOADING && !isErrorLike(fileDiffsOrError) ? computeDiffStat(fileDiffsOrError) : null
 
     const [createdThreadOrLoading, setCreatedThreadOrLoading] = useState<
-        null | typeof LOADING | Pick<GQL.IDiscussionThread, 'id' | 'url'>
+        null | typeof LOADING | Pick<GQL.ICampaign, 'id' | 'url'>
     >(null)
     const onCreateThreadClick = useCallback(() => {
         const do2 = async () => {
@@ -105,14 +105,14 @@ export const DiagnosticsChangesetsBar: React.FunctionComponent<Props> = ({
                     throw new Error('file diffs not available')
                 }
                 setCreatedThreadOrLoading(
-                    await createChangesetFromDiffs(fileDiffsOrError, {
-                        status: GQL.ThreadStatus.PREVIEW,
-                        plan: changesetPlan,
-                        title: `Fix eslint issues`, // TODO!(sqs): un-hardcode eslint
-                        contents: `Fixes eslint issues in ${fileDiffsOrError.length} ${pluralize(
+                    await createCampaignFromDiffs(fileDiffsOrError, {
+                        name: `Fix eslint issues`, // TODO!(sqs): un-hardcode eslint
+                        description: `Fixes eslint issues in ${fileDiffsOrError.length} ${pluralize(
                             'file',
                             fileDiffsOrError.length
                         )}`,
+                        preview: true,
+                        rules: JSON.stringify(changesetPlan.operations),
                     })
                 )
             } catch (err) {

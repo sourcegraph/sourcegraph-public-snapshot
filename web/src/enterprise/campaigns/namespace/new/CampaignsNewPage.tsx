@@ -10,7 +10,7 @@ import { PageTitle } from '../../../../components/PageTitle'
 import { CampaignForm, CampaignFormData } from '../../form/CampaignForm'
 import { NamespaceCampaignsAreaContext } from '../NamespaceCampaignsArea'
 
-const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICampaign> =>
+export const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICampaign> =>
     mutateGraphQL(
         gql`
             mutation CreateCampaign($input: CreateCampaignInput!) {

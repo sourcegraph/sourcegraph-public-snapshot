@@ -17,6 +17,7 @@ type dbCampaign struct {
 	Name            string // the name (case-preserving)
 	Description     *string
 	IsPreview       bool
+	Rules           string // the JSON rules TODO!(sqs)
 }
 
 // errCampaignNotFound occurs when a database operation expects a specific campaign to exist but it
@@ -25,7 +26,7 @@ var errCampaignNotFound = errors.New("campaign not found")
 
 type dbCampaigns struct{}
 
-const selectColumns = `id, namespace_user_id, namespace_org_id, name, description, is_preview`
+const selectColumns = `id, namespace_user_id, namespace_org_id, name, description, is_preview, rules`
 
 // Create creates a campaign. The campaign argument's (Campaign).ID field is ignored. The database
 // ID of the new campaign is returned.
@@ -43,12 +44,13 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign) (*dbCampaig
 
 	var id int64
 	if err := dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5) RETURNING id`,
+		`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6) RETURNING id`,
 		nilIfZero(campaign.NamespaceUserID),
 		nilIfZero(campaign.NamespaceOrgID),
 		campaign.Name,
 		campaign.Description,
 		campaign.IsPreview,
+		campaign.Rules,
 	).Scan(&id); err != nil {
 		return nil, err
 	}
@@ -61,6 +63,7 @@ type dbCampaignUpdate struct {
 	Name        *string
 	Description *string
 	IsPreview   *bool
+	Rules       *string
 }
 
 // Update updates a campaign given its ID.
@@ -84,6 +87,9 @@ func (s dbCampaigns) Update(ctx context.Context, id int64, update dbCampaignUpda
 	}
 	if update.IsPreview != nil {
 		setFields = append(setFields, sqlf.Sprintf("is_preview=%s", *update.IsPreview))
+	}
+	if update.Rules != nil {
+		setFields = append(setFields, sqlf.Sprintf("rules=%s", *update.Rules))
 	}
 
 	if len(setFields) == 0 {
@@ -182,6 +188,7 @@ func (dbCampaigns) query(ctx context.Context, query *sqlf.Query) ([]*dbCampaign,
 			&t.Name,
 			&t.Description,
 			&t.IsPreview,
+			&t.Rules,
 		); err != nil {
 			return nil, err
 		}

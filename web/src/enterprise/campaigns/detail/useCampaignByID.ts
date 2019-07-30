@@ -27,6 +27,8 @@ export const useCampaignByID = (campaign: GQL.ID): [typeof LOADING | GQL.ICampai
                             id
                             name
                             description
+                            isPreview
+                            rules
                             url
                         }
                     }

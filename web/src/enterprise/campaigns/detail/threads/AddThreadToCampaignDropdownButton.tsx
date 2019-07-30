@@ -9,7 +9,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { ThreadDropdownMenu } from './ThreadDropdownMenu'
 
-const addThreadsToCampaign = (input: GQL.IAddThreadsToCampaignOnMutationArguments): Promise<void> =>
+export const addThreadsToCampaign = (input: GQL.IAddThreadsToCampaignOnMutationArguments): Promise<void> =>
     mutateGraphQL(
         gql`
             mutation AddThreadsToCampaign($campaign: ID!, $threads: [ID!]!) {

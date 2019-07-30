@@ -7,13 +7,17 @@ const threadOrIssueOrChangesetFields: (keyof GQL.ThreadOrIssueOrChangeset)[] = [
     'number',
     'title',
     'url',
+    'externalURL',
     'status',
 ]
 const threadOrIssueOrChangesetTypeNames: GQL.ThreadOrIssueOrChangeset['__typename'][] = ['Thread', 'Changeset']
 
 export const threadOrIssueOrChangesetFieldsFragment = gql`
     ${threadOrIssueOrChangesetTypeNames.map(
-        typeName => `fragment ${typeName}Fields on ${typeName} { ${threadOrIssueOrChangesetFields.join('\n')} }`
+        typeName =>
+            `fragment ${typeName}Fields on ${typeName} { ${threadOrIssueOrChangesetFields.join(
+                '\n'
+            )} repository { name } }`
     )}
 `
 

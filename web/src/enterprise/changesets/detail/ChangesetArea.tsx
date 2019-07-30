@@ -8,9 +8,9 @@ import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { HeroPage } from '../../../components/HeroPage'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { RepositoryChangesetsAreaContext } from '../repository/RepositoryChangesetsArea'
-import { ChangesetFileDiffsList } from './fileDiffs/ChangesetFileDiffsList'
 import { ChangesetOverview } from './ChangesetOverview'
 import { ChangesetCommitsList } from './commits/ChangesetCommitsList'
+import { ChangesetFileDiffsList } from './fileDiffs/ChangesetFileDiffsList'
 import { useChangesetByNumberInRepository } from './useChangesetByNumberInRepository'
 
 export interface ChangesetAreaContext
@@ -99,7 +99,8 @@ export const ChangesetArea: React.FunctionComponent<Props> = ({
                     },
                     {
                         title: 'Changes',
-                        path: '/changes',
+                        path: '/',
+                        exact: true,
                         render: () => <ChangesetFileDiffsList {...context} className={PAGE_CLASS_NAME} />,
                     },
                 ]}

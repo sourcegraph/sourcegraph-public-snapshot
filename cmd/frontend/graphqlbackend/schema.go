@@ -4360,6 +4360,12 @@ input CreateCampaignInput {
 
     # The (optional) description of the campaign.
     description: String
+
+    # Whether the campaign is a preview.
+    preview: Boolean
+
+    # The JSON rules array for this campaign. TODO!(sqs)
+    rules: String
 }
 
 # Input arguments for updating a campaign.
@@ -4373,6 +4379,9 @@ input UpdateCampaignInput {
     # The new description of the campaign. If it is the non-null empty string, the description is
     # set to null.
     description: String
+
+    # The new JSON rules array for this campaign. TODO!(sqs)
+    rules: String
 }
 
 # A campaign is a set of related issues and changesets.
@@ -4391,6 +4400,9 @@ type Campaign implements Node {
 
     # Whether this campaign is a preview.
     isPreview: Boolean!
+
+    # TODO!(sqs) The JSON rules array for this campaign.
+    rules: String!
 
     # The URL to this campaign.
     url: String!

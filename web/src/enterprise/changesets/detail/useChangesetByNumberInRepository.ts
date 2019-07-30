@@ -33,6 +33,7 @@ export const useChangesetByNumberInRepository = (
                                 number
                                 title
                                 url
+                                externalURL
                                 repositoryComparison {
                                     range {
                                         baseRevSpec {

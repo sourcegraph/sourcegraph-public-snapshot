@@ -6,7 +6,7 @@ import React from 'react'
  */
 export const SearchButton: React.FunctionComponent = () => (
     <div className="search-button d-flex text-nowrap">
-        <button className="btn btn-primary search-button__btn" type="submit">
+        <button className="btn btn-primary py-3" type="submit">
             <SearchIcon className="icon-inline" />
         </button>
     </div>

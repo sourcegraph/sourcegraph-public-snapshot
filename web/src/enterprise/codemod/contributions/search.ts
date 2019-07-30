@@ -7,13 +7,11 @@ import { ContributableMenu } from '../../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
-import { parseRepoURI } from '../../../../../shared/src/util/url'
-import { createThread } from '../../../discussions/backend'
 import { parseSearchURLQuery } from '../../../search'
 import { search } from '../../../search/backend'
-import { createChangesetFromDiffs, FAKE_PROJECT_ID } from '../../changesetsOLD/preview/backend'
+import { ChangesetPlanOperation } from '../../changesetsOLD/plan/plan'
+import { createCampaignFromDiffs, FAKE_PROJECT_ID } from '../../changesetsOLD/preview/backend'
 import { FileDiff, npmDiffToFileDiffHunk } from '../../threadsOLD/detail/changes/computeDiff'
-import { ThreadSettings } from '../../threadsOLD/settings'
 import { queryWithReplacementText } from '../query'
 
 export const CODEMOD_PANEL_VIEW_ID = 'codemod'
@@ -98,15 +96,13 @@ export function registerCodemodSearchContributions({
                         patch: r.rawDiff,
                     }))
 
-                const thread = await createChangesetFromDiffs(diffs, {
-                    title: query,
-                    contents: `Created from search:\n\n${'```'}\n${query}\n${'```'}`,
-                    status: GQL.ThreadStatus.PREVIEW,
-                    changesetActionDescriptions: [
-                        { user: 'sqs', timestamp: Date.now(), title: 'Codemod', detail: query },
-                    ],
+                const campaign = await createCampaignFromDiffs(diffs, {
+                    name: query,
+                    description: `Created from search:\n\n${'```'}\n${query}\n${'```'}`,
+                    preview: true,
+                    rules: JSON.stringify([{ message: `Run query: ${query}` }] as ChangesetPlanOperation[]),
                 })
-                history.push(thread.url)
+                history.push(campaign.url)
             },
         })
     )

@@ -65,12 +65,25 @@ func (v *gqlCampaign) Description() *string { return v.db.Description }
 
 func (v *gqlCampaign) IsPreview() bool { return v.db.IsPreview }
 
+func (v *gqlCampaign) Rules() string {
+	if v.db.Rules != "" {
+		return v.db.Rules
+	}
+	return "[]"
+}
+
 func (v *gqlCampaign) URL(ctx context.Context) (string, error) {
 	namespace, err := v.Namespace(ctx)
 	if err != nil {
 		return "", err
 	}
-	return path.Join(namespace.URL(), "campaigns", string(v.ID())), nil
+
+	var preview string
+	if v.db.IsPreview {
+		preview = "preview"
+	}
+
+	return path.Join(namespace.URL(), "campaigns", preview, string(v.ID())), nil
 	//
 	// TODO!(sqs): use global url?
 	// return path.Join("/campaigns", string(v.ID())), nil

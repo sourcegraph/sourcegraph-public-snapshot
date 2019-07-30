@@ -25,12 +25,15 @@ const updateCampaign = (args: GQL.IUpdateCampaignOnMutationArguments): Promise<v
         )
         .toPromise()
 
-const publishPreviewCampaign = (args: GQL.IPublishPreviewCampaignOnMutationArguments): Promise<void> =>
+const publishPreviewCampaign = (
+    args: GQL.IPublishPreviewCampaignOnMutationArguments
+): Promise<Pick<GQL.ICampaign, 'url'>> =>
     mutateGraphQL(
         gql`
             mutation PublishPreviewCampaign($campaign: ID!) {
                 publishPreviewCampaign(campaign: $campaign) {
                     id
+                    url
                 }
             }
         `,
@@ -38,7 +41,7 @@ const publishPreviewCampaign = (args: GQL.IPublishPreviewCampaignOnMutationArgum
     )
         .pipe(
             map(dataOrThrowErrors),
-            mapTo(void 0)
+            map(data => data.publishPreviewCampaign)
         )
         .toPromise()
 
@@ -80,10 +83,10 @@ export const CreateCampaignFromPreviewForm: React.FunctionComponent<Props> = ({
                         },
                     })
                 }
-                await publishPreviewCampaign({ campaign: campaign.id })
+                const { url: nonPreviewUrl } = await publishPreviewCampaign({ campaign: campaign.id })
                 setIsLoading(false)
                 onCampaignUpdate()
-                history.push(campaign.url) // TODO!(sqs): use Redirect component
+                history.push(nonPreviewUrl) // TODO!(sqs): use Redirect component
             } catch (err) {
                 setIsLoading(false)
                 extensionsController.services.notifications.showMessages.next({
@@ -92,15 +95,7 @@ export const CreateCampaignFromPreviewForm: React.FunctionComponent<Props> = ({
                 })
             }
         },
-        [
-            uncommittedName,
-            campaign.name,
-            campaign.id,
-            campaign.url,
-            onCampaignUpdate,
-            history,
-            extensionsController.services.notifications.showMessages,
-        ]
+        [uncommittedName, campaign.name, campaign.id, onCampaignUpdate, history, extensionsController.services.notifications.showMessages]
     )
 
     return (

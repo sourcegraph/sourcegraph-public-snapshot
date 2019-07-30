@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -201,7 +202,8 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 	var results []searchResultResolver
 	for _, ur := range unflattened {
 		for _, resolver := range ur {
-			results = append(results, &resolver)
+			v := resolver
+			results = append(results, &v)
 		}
 	}
 
@@ -301,16 +303,18 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 			continue
 		}
 		if err := json.Unmarshal(b, &raw); err != nil {
+			log.Println("XXXXXXXX", err)
 			// skip on other decode errors (including e.g., empty
 			// responses if dependencies are not installed)
 			continue
 		}
+		log.Println(string(b))
 		fileURL := fileMatchURI(repoRevs.Repo.Name, repoRevs.Revs[0].RevSpec, raw.URI)
 		matches, err := toMatchResolver(fileURL, raw)
 		if err != nil {
 			return nil, err
 		}
-		result := codemodResultResolver{
+		results = append(results, codemodResultResolver{
 			commit: &GitCommitResolver{
 				repo:     &RepositoryResolver{repo: repoRevs.Repo},
 				inputRev: &repoRevs.Revs[0].RevSpec,
@@ -320,8 +324,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 			fileURL: fileURL,
 			diff:    raw.Diff,
 			matches: matches,
-		}
-		results = append(results, result)
+		})
 	}
 
 	return results, nil

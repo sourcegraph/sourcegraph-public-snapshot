@@ -10,7 +10,7 @@ import { PageTitle } from '../../../../components/PageTitle'
 import { ChangesetForm, ChangesetFormData } from '../../form/ChangesetForm'
 import { RepositoryChangesetsAreaContext } from '../RepositoryChangesetsArea'
 
-const createChangeset = (input: GQL.ICreateChangesetInput): Promise<GQL.IChangeset> =>
+export const createChangeset = (input: GQL.ICreateChangesetInput): Promise<GQL.IChangeset> =>
     mutateGraphQL(
         gql`
             mutation CreateChangeset($input: CreateChangesetInput!) {

@@ -70,6 +70,14 @@ export class NavLinks extends React.PureComponent<Props> {
                 {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
                     // TODO!(sqs): only show these on enterprise
                     <>
+                        <li className="nav-item">
+                            <LinkWithIconOnlyTooltip
+                                to="/checks"
+                                text="Checks"
+                                icon={ChecksIcon}
+                                className="nav-link btn btn-link px-3 text-decoration-none"
+                            />
+                        </li>
                         <li className="nav-item d-none">
                             <LinkWithIconOnlyTooltip
                                 to="/automation"

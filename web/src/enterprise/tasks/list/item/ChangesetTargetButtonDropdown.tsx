@@ -2,11 +2,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
+import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { CheckableDropdownItem } from '../../../../components/CheckableDropdownItem'
-import { fetchDiscussionThreads } from '../../../../discussions/backend'
-import { useEffectAsync } from '../../../../util/useEffectAsync'
-import { ChangesetIcon } from '../../../changesetsOLD/icons'
+import { CampaignsIcon } from '../../../campaigns/icons'
+import { useCampaigns } from '../../../campaigns/list/useCampaigns'
 
 export interface CreateOrPreviewChangesetButtonProps {
     onClick: () => void
@@ -32,24 +31,12 @@ export const ChangesetTargetButtonDropdown: React.FunctionComponent<CreateOrPrev
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
 
-    const [threadsOrError, setThreadsOrError] = useState<typeof LOADING | GQL.IDiscussionThreadConnection | ErrorLike>(
-        LOADING
-    )
-    useEffectAsync(async () => {
-        setThreadsOrError(LOADING)
-        try {
-            setThreadsOrError(await fetchDiscussionThreads({ query: 'is:changeset is:open', first: 5 }).toPromise())
-        } catch (err) {
-            setThreadsOrError(asError(err))
-        }
-    }, [])
+    const campaigns = useCampaigns() // TODO!(sqs): filter to only relevant (open, changeset) campaigns
 
-    const [appendToExistingChangeset, setAppendToExistingChangeset] = useState<
-        Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind'>
-    >()
-    const clearAppendToExistingChangeset = useCallback(() => setAppendToExistingChangeset(undefined), [])
+    const [appendToExistingCampaign, setAppendToExistingCampaign] = useState<Pick<GQL.ICampaign, 'id' | 'name'>>()
+    const clearAppendToExistingCampaign = useCallback(() => setAppendToExistingCampaign(undefined), [])
 
-    const Icon = loading ? LoadingSpinner : ChangesetIcon
+    const Icon = loading ? LoadingSpinner : CampaignsIcon
 
     return (
         <ButtonDropdown
@@ -65,9 +52,7 @@ export const ChangesetTargetButtonDropdown: React.FunctionComponent<CreateOrPrev
                 >
                     <Icon className="icon-inline mr-1" />
                 </div>
-                {appendToExistingChangeset === undefined
-                    ? 'New changeset'
-                    : `Add to changeset #${appendToExistingChangeset.idWithoutKind}`}
+                {appendToExistingCampaign === undefined ? 'New campaign' : 'Add to existing changeset'}
             </button>
             <DropdownToggle
                 color="success"
@@ -77,38 +62,41 @@ export const ChangesetTargetButtonDropdown: React.FunctionComponent<CreateOrPrev
             />
             <DropdownMenu>
                 <CheckableDropdownItem
-                    onClick={clearAppendToExistingChangeset}
-                    checked={appendToExistingChangeset === undefined}
+                    onClick={clearAppendToExistingCampaign}
+                    checked={appendToExistingCampaign === undefined}
                 >
                     <h5 className="mb-1">New changeset</h5>
                     <span className="text-muted">You can preview the changes before submitting</span>
                 </CheckableDropdownItem>
                 <DropdownItem divider={true} />
-                {threadsOrError === LOADING ? (
+                {campaigns === LOADING ? (
                     <DropdownItem header={true} className="py-1">
-                        Loading changesets...
+                        Loading campaigns...
                     </DropdownItem>
-                ) : isErrorLike(threadsOrError) ? (
+                ) : isErrorLike(campaigns) ? (
                     <DropdownItem header={true} className="py-1">
-                        Error loading changesets
+                        Error loading campaigns
                     </DropdownItem>
                 ) : (
                     <>
                         <DropdownItem header={true} className="py-1">
-                            Add to existing changeset...
+                            Add to existing campaign...
                         </DropdownItem>
-                        {threadsOrError.nodes.map(thread => (
-                            <CheckableDropdownItem
-                                key={thread.id}
-                                // tslint:disable-next-line: jsx-no-lambda
-                                onClick={() => setAppendToExistingChangeset(thread)}
-                                checked={Boolean(
-                                    appendToExistingChangeset && appendToExistingChangeset.id === thread.id
-                                )}
-                            >
-                                <span className="text-muted">#{thread.idWithoutKind}</span> {thread.title}
-                            </CheckableDropdownItem>
-                        ))}
+                        {campaigns.nodes
+                            .filter(c => !!c.name)
+                            .slice(/*TODO!(sqs)*/ 0, 7)
+                            .map(campaign => (
+                                <CheckableDropdownItem
+                                    key={campaign.id}
+                                    // tslint:disable-next-line: jsx-no-lambda
+                                    onClick={() => setAppendToExistingCampaign(campaign)}
+                                    checked={Boolean(
+                                        appendToExistingCampaign && appendToExistingCampaign.id === campaign.id
+                                    )}
+                                >
+                                    {campaign.name}
+                                </CheckableDropdownItem>
+                            ))}
                     </>
                 )}
             </DropdownMenu>

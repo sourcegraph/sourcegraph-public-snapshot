@@ -12,6 +12,7 @@ import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsAr
 import { CampaignOverview } from './CampaignOverview'
 import { CampaignFileDiffsList } from './fileDiffs/CampaignFileDiffsList'
 import { CampaignRepositoriesList } from './repositories/CampaignRepositoriesList'
+import { CampaignRulesList } from './rules/CampaignRulesList'
 import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
 import { useCampaignByID } from './useCampaignByID'
 
@@ -92,15 +93,22 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
             overviewComponent={CampaignOverview}
             pages={[
                 {
-                    title: 'Changesets',
-                    path: '',
+                    title: 'Rules',
+                    path: '/',
                     exact: true,
+                    render: () => <CampaignRulesList {...context} className={PAGE_CLASS_NAME} />,
+                },
+                {
+                    title: 'Changesets',
+                    path: '/changesetes',
                     render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
                 },
                 {
                     title: 'Commits',
                     path: '/commits',
-                    render: () => <CampaignRepositoriesList {...context} className={PAGE_CLASS_NAME} />,
+                    render: () => (
+                        <CampaignRepositoriesList {...context} showCommits={true} className={PAGE_CLASS_NAME} />
+                    ),
                 },
                 {
                     title: 'Changes',

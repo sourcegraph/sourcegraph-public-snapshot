@@ -6,11 +6,12 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { pluralize } from '../../../../../shared/src/util/strings'
 import { DiffIcon } from '../../../util/octicons'
+import { ChangesetOperationIcon } from '../../changesetsOLD/icons'
 import { useCampaignFileDiffs } from '../detail/fileDiffs/useCampaignFileDiffs'
 import { useCampaignRepositories } from '../detail/repositories/useCampaignRepositories'
 
 interface Props {
-    campaign: Pick<GQL.ICampaign, 'id'>
+    campaign: Pick<GQL.ICampaign, 'id' | 'rules'>
 
     className?: string
 }
@@ -19,13 +20,22 @@ interface SummaryItem {
     noun: string
     pluralNoun?: string
     icon: React.ComponentType<{ className?: string }>
-    count: number | ((campaign: Pick<GQL.ICampaign, 'repositoryComparisons' | 'repositories'>) => number) | null
+    count:
+        | number
+        | ((campaign: Pick<GQL.ICampaign, 'rules' | 'repositoryComparisons' | 'repositories'>) => number)
+        | null
 }
 
 export const countCampaignFilesChanged = (c: Pick<GQL.ICampaign, 'repositoryComparisons'>) =>
     c.repositoryComparisons.reduce((n, c) => n + (c.fileDiffs.totalCount || 0), 0)
 
 const ITEMS: SummaryItem[] = [
+    {
+        noun: 'rule applied',
+        pluralNoun: 'rules applied',
+        icon: ChangesetOperationIcon,
+        count: c => JSON.parse(c.rules || '[]').length,
+    },
     {
         noun: 'repository affected',
         pluralNoun: 'repositories affected',
@@ -62,6 +72,7 @@ export const CampaignSummaryBar: React.FunctionComponent<Props> = ({ campaign, c
 
     // TODO!(sqs)
     const campaignInfo = {
+        ...campaign,
         repositoryComparisons,
         repositories: uniqBy(repositoryComparisons.flatMap(c => c.headRepository), r => r.id),
     }

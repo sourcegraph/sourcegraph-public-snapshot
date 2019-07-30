@@ -10,6 +10,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import { GitPullRequestIcon } from '../../../util/octicons'
 import { CampaignFileDiffsList } from '../detail/fileDiffs/CampaignFileDiffsList'
 import { CampaignRepositoriesList } from '../detail/repositories/CampaignRepositoriesList'
+import { CampaignRulesList } from '../detail/rules/CampaignRulesList'
 import { useCampaignByID } from '../detail/useCampaignByID'
 import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsArea'
 import { CampaignSummaryBar } from './CampaignSummaryBar'
@@ -76,7 +77,8 @@ export const CampaignPreviewPage: React.FunctionComponent<Props> = props => {
             </div>
             <hr className="my-4" />
             <div className="container">
-                <CampaignRepositoriesList {...props} campaign={campaign} showCommits={true} />
+                <CampaignRulesList {...props} campaign={campaign} className="mb-4" />
+                <CampaignRepositoriesList {...props} campaign={campaign} />
                 <CampaignFileDiffsList {...props} campaign={campaign} platformContext={props.platformContext} />
             </div>
         </div>

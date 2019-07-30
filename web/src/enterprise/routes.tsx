@@ -32,5 +32,11 @@ export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
         path: '/threads',
         render: lazyComponent(() => import('./threadsOLD/global/ThreadsArea'), 'ThreadsArea'),
     },
+
+    {
+        path: '/checks',
+        render: lazyComponent(() => import('./checks/global/GlobalChecksArea'), 'GlobalChecksArea'),
+    },
+
     ...routes,
 ]
