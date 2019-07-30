@@ -87,7 +87,7 @@ func otherRepoCloneURL(base *url.URL, repo string) (*url.URL, error) {
 
 func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*Repo, error) {
 	repoURL := u.String()
-	repoSource := reposource.Other{s.conn}
+	repoSource := reposource.Other{OtherExternalServiceConnection: s.conn}
 	repoName, err := repoSource.CloneURLToRepoName(u.String())
 	if err != nil {
 		return nil, err
