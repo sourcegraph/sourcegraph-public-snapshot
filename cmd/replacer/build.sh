@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# This function installs the Comby dependency for replacer. It is called when
+# this script is called with 'installComby' in the first argument (e.g., by CI).  
+# If this script is called without arguments, it simply builds replacer.
 function installComby() {
     RELEASE_VERSION="0.7.0"
     RELEASE_TAG="0.7.0"
@@ -88,7 +91,7 @@ function installComby() {
 }
 
 command="$1"
-if [ $command = "installComby" ]; then
+if [ "$command" = "installComby" ]; then
     installComby
     exit 0
 fi
@@ -109,4 +112,11 @@ export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
 
+for pkg in github.com/sourcegraph/sourcegraph/cmd/replacer; do
+    go build -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
+done
 
+docker build -f cmd/replacer/Dockerfile -t $IMAGE $OUTPUT \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION
