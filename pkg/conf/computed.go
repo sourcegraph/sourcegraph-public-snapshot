@@ -276,7 +276,21 @@ func IsBuiltinSignupAllowed() bool {
 }
 
 func Branding() *schema.Branding {
-	return Get().Branding
+	branding := Get().Branding
+	if branding != nil && branding.BrandName == "" {
+		bcopy := *branding
+		bcopy.BrandName = "Sourcegraph"
+		branding = &bcopy
+	}
+	return branding
+}
+
+func BrandName() string {
+	branding := Branding()
+	if branding == nil || branding.BrandName == "" {
+		return "Sourcegraph"
+	}
+	return branding.BrandName
 }
 
 func ShowStatusIndicator() bool {
