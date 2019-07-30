@@ -26,7 +26,7 @@ export const enterpriseRoutes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/changesets',
-        render: lazyComponent(() => import('./changesets/global/ChangesetsArea'), 'ChangesetsArea'),
+        render: lazyComponent(() => import('./changesetsOLD/global/ChangesetsArea'), 'ChangesetsArea'),
     },
     {
         path: '/threads',

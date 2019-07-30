@@ -2,6 +2,7 @@ package threadlike
 
 import (
 	"context"
+	"errors"
 	"path"
 	"strconv"
 
@@ -35,5 +36,18 @@ func (v *GQLThreadlike) URL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return path.Join(repository.URL(), "-", "threads", v.Number()), nil
+
+	var typeComponent string
+	switch v.DB.Type {
+	case graphqlbackend.ThreadlikeTypeThread:
+		typeComponent = "threads"
+	case graphqlbackend.ThreadlikeTypeIssue:
+		typeComponent = "issues"
+	case graphqlbackend.ThreadlikeTypeChangeset:
+		typeComponent = "changesets"
+	default:
+		return "", errors.New("invalid thread type")
+	}
+
+	return path.Join(repository.URL(), "-", typeComponent, v.Number()), nil
 }

@@ -9,7 +9,7 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { withQueryParameter } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { ThemeProps } from '../../../../theme'
-import { ChangesetPlanOperation } from '../../../changesets/plan/plan'
+import { ChangesetPlanOperation } from '../../../changesetsOLD/plan/plan'
 import { DiagnosticsListItem } from '../../../tasks/list/item/DiagnosticsListItem'
 import {
     diagnosticID,

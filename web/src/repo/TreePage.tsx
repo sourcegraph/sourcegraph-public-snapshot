@@ -30,6 +30,7 @@ import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
+import { ThreadsIcon } from '../enterprise/threads/icons'
 import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
@@ -250,7 +251,11 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         </Link>
                                         <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/threads`}>
                                             {/* TODO(sqs): Inject via enterprise */}
-                                            <GitPullRequestIcon className="icon-inline" /> Pull requests
+                                            <ThreadsIcon className="icon-inline mr-1" /> Threads
+                                        </Link>
+                                        <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/changesets`}>
+                                            {/* TODO(sqs): Inject via enterprise */}
+                                            <GitPullRequestIcon className="icon-inline" /> Changesets
                                         </Link>
                                         <Link
                                             className="btn btn-secondary"

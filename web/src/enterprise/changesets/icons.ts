@@ -1,5 +1,3 @@
-import { GitPullRequestIcon, ZapIcon } from '../../util/octicons'
+import CommentTextMultipleIcon from 'mdi-react/CommentTextMultipleIcon'
 
-export const ChangesetIcon = GitPullRequestIcon
-
-export const ChangesetOperationIcon = ZapIcon
+export const ChangesetsIcon = CommentTextMultipleIcon

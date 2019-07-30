@@ -20,7 +20,7 @@ export const OverviewPagesAreaNavbar: React.FunctionComponent<Props> = ({ areaUr
                 {pages.map(({ title, icon: Icon, count, path }, i) => (
                     <li key={i} className="overview-pages-area-navbar__nav-item nav-item">
                         <NavLink
-                            to={path ? `${areaUrl}/${path}` : areaUrl}
+                            to={path ? `${areaUrl}${path}` : areaUrl}
                             className={NAV_LINK_CLASS_NAME}
                             activeClassName="overview-pages-area-navbar__nav-link--active"
                             aria-label={title}

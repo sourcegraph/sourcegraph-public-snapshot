@@ -8,31 +8,41 @@ import { queryGraphQL } from '../../../backend/graphql'
 const LOADING: 'loading' = 'loading'
 
 /**
- * A React hook that observes a thread queried from the GraphQL API by ID.
+ * A React hook that observes a changeset queried from the GraphQL API by ID.
  *
- * @param number The thread number in its repository (i.e., the `Thread.number` GraphQL
+ * @param number The changeset number in its repository (i.e., the `Changeset.number` GraphQL
  * API field).
  */
-export const useThreadByIDInRepository = (
+export const useChangesetByNumberInRepository = (
     repository: GQL.ID,
-    number: GQL.IThread['number']
-): [typeof LOADING | GQL.IThread | null | ErrorLike, () => void] => {
+    number: GQL.IChangeset['number']
+): [typeof LOADING | GQL.IChangeset | null | ErrorLike, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
 
-    const [result, setResult] = useState<typeof LOADING | GQL.IThread | null | ErrorLike>(LOADING)
+    const [result, setResult] = useState<typeof LOADING | GQL.IChangeset | null | ErrorLike>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
-                query ThreadByIDInRepository($repository: ID!, $number: String!) {
+                query ChangesetByNumberInRepository($repository: ID!, $number: String!) {
                     node(id: $repository) {
                         __typename
                         ... on Repository {
-                            thread(number: $number) {
+                            changeset(number: $number) {
                                 id
                                 number
                                 title
                                 url
+                                repositoryComparison {
+                                    range {
+                                        baseRevSpec {
+                                            expr
+                                        }
+                                        headRevSpec {
+                                            expr
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -46,7 +56,7 @@ export const useThreadByIDInRepository = (
                     if (!data.node || data.node.__typename !== 'Repository') {
                         return null
                     }
-                    return data.node.thread
+                    return data.node.changeset
                 }),
                 startWith(LOADING)
             )

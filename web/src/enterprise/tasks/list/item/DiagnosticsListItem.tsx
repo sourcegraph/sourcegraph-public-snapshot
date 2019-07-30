@@ -15,7 +15,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/ut
 import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/DiagnosticSeverityIcon'
 import { fetchHighlightedFileLines } from '../../../../repo/backend'
 import { ActionsWithPreview } from '../../../actions/ActionsWithPreview'
-import { ChangesetPlanOperation } from '../../../changesets/plan/plan'
+import { ChangesetPlanOperation } from '../../../changesetsOLD/plan/plan'
 import { DiagnosticInfo, getCodeActions } from '../../../threadsOLD/detail/backend'
 
 const LOADING: 'loading' = 'loading'

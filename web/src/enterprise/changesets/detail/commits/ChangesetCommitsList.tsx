@@ -6,7 +6,7 @@ import { GitCommitNode } from '../../../../repo/commits/GitCommitNode'
 import { useChangesetCommits } from './useChangesetCommits'
 
 interface Props {
-    thread: Pick<GQL.IThread, 'id'>
+    changeset: Pick<GQL.IChangeset, 'id'>
 
     showCommits?: boolean
 
@@ -18,8 +18,8 @@ const LOADING = 'loading' as const
 /**
  * A list of commits in a changeset.
  */
-export const ChangesetCommitsList: React.FunctionComponent<Props> = ({ thread, className = '' }) => {
-    const commits = useChangesetCommits(thread)
+export const ChangesetCommitsList: React.FunctionComponent<Props> = ({ changeset, className = '' }) => {
+    const commits = useChangesetCommits(changeset)
     return (
         <div className={`changeset-commits-list ${className}`}>
             <ul className="list-group mb-4">

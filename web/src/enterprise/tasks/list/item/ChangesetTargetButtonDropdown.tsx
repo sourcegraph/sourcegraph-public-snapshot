@@ -6,7 +6,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/ut
 import { CheckableDropdownItem } from '../../../../components/CheckableDropdownItem'
 import { fetchDiscussionThreads } from '../../../../discussions/backend'
 import { useEffectAsync } from '../../../../util/useEffectAsync'
-import { ChangesetIcon } from '../../../changesets/icons'
+import { ChangesetIcon } from '../../../changesetsOLD/icons'
 
 export interface CreateOrPreviewChangesetButtonProps {
     onClick: () => void

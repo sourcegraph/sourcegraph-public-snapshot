@@ -10,7 +10,7 @@ import { OverviewPagesArea } from '../../../components/overviewPagesArea/Overvie
 import { RepositoryThreadsAreaContext } from '../repository/RepositoryThreadsArea'
 import { ChangesetCommitsList } from './commits/ChangesetCommitsList'
 import { ThreadOverview } from './ThreadOverview'
-import { useThreadByIDInRepository } from './useThreadByID'
+import { useThreadByNumberInRepository } from './useThreadByNumberInRepository'
 
 export interface ThreadAreaContext
     extends Pick<RepositoryThreadsAreaContext, Exclude<keyof RepositoryThreadsAreaContext, 'repository'>> {
@@ -49,7 +49,7 @@ export const ThreadArea: React.FunctionComponent<Props> = ({
     match,
     ...props
 }) => {
-    const [thread, onThreadUpdate] = useThreadByIDInRepository(props.repo.id, threadNumber)
+    const [thread, onThreadUpdate] = useThreadByNumberInRepository(props.repo.id, threadNumber)
 
     useEffect(() => {
         if (setBreadcrumbItem) {
@@ -90,14 +90,7 @@ export const ThreadArea: React.FunctionComponent<Props> = ({
                 context={context}
                 header={header}
                 overviewComponent={ThreadOverview}
-                pages={[
-                    {
-                        title: 'Commits',
-                        path: '/commits',
-                        render: () => <ChangesetCommitsList {...context} className={PAGE_CLASS_NAME} />,
-                    },
-                    // { title: 'Changes', path: '/changes', render: () => <ThreadChangesListPage {...context} /> },
-                ]}
+                pages={[]}
                 location={props.location}
                 match={match}
             />

@@ -7,8 +7,8 @@ import { queryGraphQL } from '../../../backend/graphql'
 
 const LOADING: 'loading' = 'loading'
 
-const threadFields = gql`
-    fragment ThreadFields on Thread {
+const changesetFields = gql`
+    fragment ChangesetFields on Changeset {
         id
         number
         title
@@ -17,32 +17,32 @@ const threadFields = gql`
 `
 
 /**
- * A React hook that observes threads queried from the GraphQL API.
+ * A React hook that observes changesets queried from the GraphQL API.
  *
- * @param repository The (optional) repository in which to observe the threads.
+ * @param repository The (optional) repository in which to observe the changesets.
  */
-export const useThreads = (
+export const useChangesets = (
     repository?: Pick<GQL.IRepository, 'id'>
-): typeof LOADING | GQL.IThreadConnection | ErrorLike => {
-    const [threads, setThreads] = useState<typeof LOADING | GQL.IThreadConnection | ErrorLike>(LOADING)
+): typeof LOADING | GQL.IChangesetConnection | ErrorLike => {
+    const [changesets, setChangesets] = useState<typeof LOADING | GQL.IChangesetConnection | ErrorLike>(LOADING)
     useEffect(() => {
         const results = repository
             ? queryGraphQL(
                   gql`
-                      query RepositoryThreads($repository: ID!) {
+                      query RepositoryChangesets($repository: ID!) {
                           node(id: $repository) {
                               __typename
                               ... on Repository {
-                                  threads {
+                                  changesets {
                                       nodes {
-                                          ...ThreadFields
+                                          ...ChangesetFields
                                       }
                                       totalCount
                                   }
                               }
                           }
                       }
-                      ${threadFields}
+                      ${changesetFields}
                   `,
                   { repository: repository.id }
               ).pipe(
@@ -51,25 +51,27 @@ export const useThreads = (
                       if (!data.node || data.node.__typename !== 'Repository') {
                           throw new Error('invalid repository')
                       }
-                      return data.node.threads
+                      return data.node.changesets
                   })
               )
             : queryGraphQL(gql`
-                  query Threads {
-                      threads {
+                  query Changesets {
+                      changesets {
                           nodes {
-                              ...ThreadFields
+                              ...ChangesetFields
                           }
                           totalCount
                       }
                   }
-                  ${threadFields}
+                  ${changesetFields}
               `).pipe(
                   map(dataOrThrowErrors),
-                  map(data => data.threads)
+                  map(data => data.changesets)
               )
-        const subscription = results.pipe(startWith(LOADING)).subscribe(setThreads, err => setThreads(asError(err)))
+        const subscription = results
+            .pipe(startWith(LOADING))
+            .subscribe(setChangesets, err => setChangesets(asError(err)))
         return () => subscription.unsubscribe()
     }, [repository])
-    return threads
+    return changesets
 }

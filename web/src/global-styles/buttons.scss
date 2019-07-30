@@ -53,9 +53,9 @@ $btn-lg-factor: $lg-factor;
         &:hover:not(:disabled, .disabled) {
             color: var(--#{$name}-contrast);
         }
-        &:not(:disabled, .disabled) {
-            &:hover,
-            &.focus-visible {
+        &:hover,
+        &.focus-visible {
+            &:not(:disabled, .disabled) {
                 background-color: var(--#{$name}-hover);
             }
         }

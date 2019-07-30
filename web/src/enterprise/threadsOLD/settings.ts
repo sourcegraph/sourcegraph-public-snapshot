@@ -1,5 +1,5 @@
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { ChangesetPlan } from '../changesets/plan/plan'
+import { ChangesetPlan } from '../changesetsOLD/plan/plan'
 
 export type PullRequest = {
     repo: string

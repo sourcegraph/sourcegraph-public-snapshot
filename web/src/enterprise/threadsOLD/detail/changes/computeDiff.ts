@@ -8,7 +8,7 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { isDefined } from '../../../../../../shared/src/util/types'
 import { parseRepoURI } from '../../../../../../shared/src/util/url'
-import { ChangesetPlanOperation } from '../../../changesets/plan/plan'
+import { ChangesetPlanOperation } from '../../../changesetsOLD/plan/plan'
 
 export interface FileDiff extends Pick<GQL.IFileDiff, 'oldPath' | 'newPath'> {
     hunks: GQL.IFileDiffHunk[]

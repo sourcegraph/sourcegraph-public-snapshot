@@ -9,6 +9,13 @@ export const enterpriseRepoContainerRoutes: ReadonlyArray<RepoContainerRoute> = 
         path: '/-/threads',
         render: lazyComponent(() => import('../threads/repository/RepositoryThreadsArea'), 'RepositoryThreadsArea'),
     },
+    {
+        path: '/-/changesets',
+        render: lazyComponent(
+            () => import('../changesets/repository/RepositoryChangesetsArea'),
+            'RepositoryChangesetsArea'
+        ),
+    },
 ]
 
 export const enterpriseRepoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = repoRevContainerRoutes

@@ -40,7 +40,7 @@ interface Props<P extends object> {
     /**
      * The base URL of the area.
      */
-    match: { path: string }
+    match: { url: string }
 
     className?: string
     location: H.Location
@@ -71,14 +71,14 @@ export const OverviewPagesArea = <P extends object>({
                         <OverviewComponent {...context} className="pb-3" />
                     </div>
                     <div className="w-100 border-bottom" />
-                    <OverviewPagesAreaNavbar areaUrl={match.path} pages={pages} className="flex-0 sticky-top bg-body" />
+                    <OverviewPagesAreaNavbar areaUrl={match.url} pages={pages} className="flex-0 sticky-top bg-body" />
                 </ErrorBoundary>
                 <ErrorBoundary location={location}>
                     <Switch>
                         {pages.map((page, i) => (
                             <Route
                                 key={i}
-                                path={page.path}
+                                path={`${match.url}${page.path}`}
                                 exact={page.exact}
                                 // tslint:disable-next-line: jsx-no-lambda
                                 render={routeComponentProps => page.render({ ...routeComponentProps, ...context })}

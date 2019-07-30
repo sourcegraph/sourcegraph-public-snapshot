@@ -3,7 +3,7 @@ import * as sourcegraph from 'sourcegraph'
 import { DiagnosticWithType } from '../../../../../../shared/src/api/client/services/diagnosticService'
 import { Action } from '../../../../../../shared/src/api/types/action'
 import { isDiagnosticQueryEqual } from '../../../../../../shared/src/api/types/diagnostic'
-import { ChangesetPlan, ChangesetPlanOperation } from '../../../changesets/plan/plan'
+import { ChangesetPlan, ChangesetPlanOperation } from '../../../changesetsOLD/plan/plan'
 import { diagnosticQueryForSingleDiagnostic } from '../../../threadsOLD/detail/backend'
 
 export interface ChangesetPlanProps {
