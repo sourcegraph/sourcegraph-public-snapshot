@@ -1,0 +1,6 @@
+This file describes changes to the files with a Microsoft origin and copyright in the
+src directory.
+
+- on 20190730 by efritz - changed visibility modifier of getDocumentInfos, findFile, and
+  fileContent so that the MultiDatabase can reach them from outside the class inheritance
+  hierarchy.
