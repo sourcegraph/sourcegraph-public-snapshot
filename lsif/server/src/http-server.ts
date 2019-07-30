@@ -9,6 +9,7 @@ import { withFile } from 'tmp-promise'
 import { Database, noopTransformer } from './database'
 import { JsonDatabase } from './json'
 import { BlobStore } from './blobStore';
+import { MultiDatabase, NamedDatabase } from './multidb';
 
 /**
  * Reads an integer from an environment variable or defaults to the given value.
@@ -23,6 +24,23 @@ function readEnvInt({ key, defaultValue }: { key: string; defaultValue: number }
         return defaultValue
     }
     return n
+}
+
+/**
+ * Reads an boolean from an environment variable or defaults to the given value.
+ */
+function readEnvBoolean({ key, defaultValue }: { key: string; defaultValue: boolean }): boolean {
+    const value = process.env[key]
+
+    if (!value) {
+        return defaultValue
+    }
+
+    try {
+        return Boolean(JSON.parse(value))
+    } catch (e) {
+        return defaultValue
+    }
 }
 
 /**
@@ -62,9 +80,19 @@ const SOFT_MAX_STORAGE_IN_MEMORY = readEnvInt({
 const PORT = readEnvInt({ key: 'LSIF_HTTP_PORT', defaultValue: 3186 })
 
 /**
+ * Feature flag used to disable json-encoded dumps.
+ */
+const ENABLE_JSON_DUMPS = readEnvBoolean({ key: 'LSIF_ENABLE_JSON', defaultValue: true })
+
+/**
+ * Feature flag used to disable sqlite-encoded dumps.
+ */
+const ENABLE_BLOB_DUMPS = readEnvBoolean({ key: 'LSIF_ENABLE_BLOB', defaultValue: true })
+
+/**
  * The extension used for json-encoded LSIF dumps.
  */
-const LSIF_EXTENSION = '.lsif'
+const JSON_EXTENSION = '.lsif'
 
 /**
  * The file extension used for sqlite-encoded LSIF dumps.
@@ -74,7 +102,7 @@ const BLOB_EXTENSION = '.db'
 /**
  * A list of extensions supposed extensions for the on-disk LSIF dump.
  */
-const EXTENSIONS = [LSIF_EXTENSION, BLOB_EXTENSION]
+const EXTENSIONS = [JSON_EXTENSION, BLOB_EXTENSION]
 
 /**
  * The path of the binary used to convert json dumps to sqlite dumps.
@@ -150,24 +178,17 @@ function hashKey({ repository, commit }: RepositoryCommit): string {
  * Throws ENOENT when there is no LSIF data for the given repository@commit.
  */
 async function createDB(key: string): Promise<Database> {
-    const jsondb = new JsonDatabase()
-    const blobstore = new BlobStore()
-    const start = new Date().getTime()
-    const transformerFactory = (projectRootURI: string) => ({
+    const multidb = new MultiDatabase([
+        new NamedDatabase('json', ENABLE_JSON_DUMPS, JSON_EXTENSION, new JsonDatabase()),
+        new NamedDatabase('blob', ENABLE_BLOB_DUMPS, BLOB_EXTENSION, new BlobStore())
+    ])
+
+    await multidb.load(key, (projectRootURI: string) => ({
         toDatabase: (pathRelativeToProjectRoot: string) => projectRootURI + '/' + pathRelativeToProjectRoot,
         fromDatabase: (uri: string) => (uri.startsWith(projectRootURI) ? uri.slice(`${projectRootURI}/`.length) : uri),
-    })
+    }))
 
-    return Promise.race([
-        jsondb.load(key + LSIF_EXTENSION, transformerFactory).then(() => {
-            console.log('Loaded json database in %.2fms', new Date().getTime() - start);
-            return jsondb
-        }),
-        blobstore.load(key + BLOB_EXTENSION, transformerFactory).then(() => {
-            console.log('Loaded blob store in %.2fms', new Date().getTime() - start);
-            return blobstore
-        }),
-    ])
+    return multidb
 }
 
 /**
@@ -414,7 +435,6 @@ function main(): void {
                 // Load a `Database` from the file to check that it's valid.
                 await new JsonDatabase().load(tempFile.path, () => noopTransformer)
 
-                // Replace the old LSIF file with the new file.
                 try {
                     await fs.mkdir(STORAGE_ROOT)
                 } catch (e) {
@@ -424,10 +444,26 @@ function main(): void {
                 }
 
                 const key = hashKey({ repository, commit })
-                await moveFile(tempFile.path, key + LSIF_EXTENSION)
 
-                // Create a sibling sqlite-encoded dump of the json database file
-                await child_process.exec(`${SQLITE_CONVERTER_BINARY} '--in "${key + LSIF_EXTENSION} '--out "${key + BLOB_EXTENSION}"`)
+                if (ENABLE_BLOB_DUMPS) {
+                    console.log('Converting json dump into a sqlite db')
+
+                    // Create a sibling sqlite-encoded dump of the json database file
+                    await child_process.exec(`${SQLITE_CONVERTER_BINARY} '--in "${tempFile.path} '--out "${key + BLOB_EXTENSION}"`)
+                }
+
+                if (ENABLE_JSON_DUMPS) {
+                    console.log('Moving json-encoded dump to cache path')
+
+                    // Replace the old LSIF file with the new file
+                    await moveFile(tempFile.path, key + JSON_EXTENSION)
+                } else {
+                    console.log('Removing json-encoded dump')
+
+                    // We only needed the file for input to the sqlite converter
+                    // We can remove this now to save on space in the temp dir
+                    await fs.unlink(tempFile.path)
+                }
 
                 // Evict the old `Database` from the LRU cache to cause it to pick up the new LSIF data from disk.
                 dbLRU.del(key)
