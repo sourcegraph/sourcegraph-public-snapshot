@@ -47,7 +47,7 @@ export class MultiDatabase extends Database {
         // If we didn't load anything, raise an ENOENT to signal the server
         // and cache that we don't have any data to use for this guy.
         if (this.databases.length === 0) {
-          reject({ code: 'ENOENT' })
+          reject(Object.assign(new Error('No databases loaded'), { code: 'ENOENT' }))
           return
         }
 
