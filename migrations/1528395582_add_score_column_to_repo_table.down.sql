@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE repo DROP COLUMN score;
+COMMIT;

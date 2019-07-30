@@ -225,6 +225,8 @@
 // 1528395580_create_user_permissions_table.up.sql (331B)
 // 1528395581_allows_dots_in_usernames.down.sql (349B)
 // 1528395581_allows_dots_in_usernames.up.sql (355B)
+// 1528395582_add_score_column_to_repo_table.down.sql (51B)
+// 1528395582_add_score_column_to_repo_table.up.sql (94B)
 
 package migrations
 
@@ -4793,6 +4795,46 @@ func _1528395581_allows_dots_in_usernamesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395582_add_score_column_to_repo_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x4e\xce\x2f\x4a\xb5\xe6\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xe2\xf7\xe6\x74\x33\x00\x00\x00")
+
+func _1528395582_add_score_column_to_repo_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395582_add_score_column_to_repo_tableDownSql,
+		"1528395582_add_score_column_to_repo_table.down.sql",
+	)
+}
+
+func _1528395582_add_score_column_to_repo_tableDownSql() (*asset, error) {
+	bytes, err := _1528395582_add_score_column_to_repo_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395582_add_score_column_to_repo_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x1, 0x6f, 0x78, 0xc3, 0x7d, 0x35, 0x8f, 0xb8, 0xc0, 0x8e, 0x2e, 0x3d, 0xb8, 0x73, 0xf6, 0x72, 0xb3, 0x20, 0xb3, 0xba, 0xd, 0xb9, 0xc7, 0xaf, 0x62, 0x6c, 0x7e, 0xcc, 0x25, 0x6e, 0x2b, 0xe1}}
+	return a, nil
+}
+
+var __1528395582_add_score_column_to_repo_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x4a\x2d\xc8\x57\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x4e\xce\x2f\x4a\x55\xf0\xf4\x0b\xb1\xe6\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x00\xab\x8b\x87\x48\xfa\xfb\x81\x79\x1a\x60\x9e\xa6\x35\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\xe7\xd6\xc8\x35\x5e\x00\x00\x00")
+
+func _1528395582_add_score_column_to_repo_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395582_add_score_column_to_repo_tableUpSql,
+		"1528395582_add_score_column_to_repo_table.up.sql",
+	)
+}
+
+func _1528395582_add_score_column_to_repo_tableUpSql() (*asset, error) {
+	bytes, err := _1528395582_add_score_column_to_repo_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395582_add_score_column_to_repo_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x15, 0xfc, 0x10, 0x9f, 0xb0, 0x91, 0xce, 0xd, 0x8c, 0xf2, 0xc4, 0x8b, 0x1f, 0xed, 0xd7, 0x2a, 0x97, 0xd1, 0x79, 0xcb, 0x12, 0x76, 0x73, 0x23, 0xc6, 0xcb, 0x21, 0x8a, 0x23, 0x17, 0xe, 0x12}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5333,6 +5375,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395581_allows_dots_in_usernames.down.sql": _1528395581_allows_dots_in_usernamesDownSql,
 
 	"1528395581_allows_dots_in_usernames.up.sql": _1528395581_allows_dots_in_usernamesUpSql,
+
+	"1528395582_add_score_column_to_repo_table.down.sql": _1528395582_add_score_column_to_repo_tableDownSql,
+
+	"1528395582_add_score_column_to_repo_table.up.sql": _1528395582_add_score_column_to_repo_tableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5601,6 +5647,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395580_create_user_permissions_table.up.sql":             {_1528395580_create_user_permissions_tableUpSql, map[string]*bintree{}},
 	"1528395581_allows_dots_in_usernames.down.sql":                {_1528395581_allows_dots_in_usernamesDownSql, map[string]*bintree{}},
 	"1528395581_allows_dots_in_usernames.up.sql":                  {_1528395581_allows_dots_in_usernamesUpSql, map[string]*bintree{}},
+	"1528395582_add_score_column_to_repo_table.down.sql":          {_1528395582_add_score_column_to_repo_tableDownSql, map[string]*bintree{}},
+	"1528395582_add_score_column_to_repo_table.up.sql":            {_1528395582_add_score_column_to_repo_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
