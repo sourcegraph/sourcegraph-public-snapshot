@@ -9,7 +9,8 @@ import { withFile } from 'tmp-promise'
 import { Database, noopTransformer } from './database'
 import { JsonDatabase } from './json'
 import { BlobStore } from './blobStore';
-import { MultiDatabase, NamedDatabase } from './multidb';
+import { GraphStore } from './graphStore';
+import { MultiDatabase, NamedDatabase, instrumentPromise } from './multidb';
 
 /**
  * Reads an integer from an environment variable or defaults to the given value.
@@ -80,12 +81,17 @@ const SOFT_MAX_STORAGE_IN_MEMORY = readEnvInt({
 const PORT = readEnvInt({ key: 'LSIF_HTTP_PORT', defaultValue: 3186 })
 
 /**
- * Feature flag used to disable json-encoded dumps.
+ * Feature flag used to disable json-encoded file dumps.
  */
 const ENABLE_JSON_DUMPS = readEnvBoolean({ key: 'LSIF_ENABLE_JSON', defaultValue: true })
 
 /**
- * Feature flag used to disable sqlite-encoded dumps.
+ * Feature flag used to disable graph-encoded sqlite dumps.
+ */
+const ENABLE_GRAPH_DUMPS = readEnvBoolean({ key: 'LSIF_ENABLE_GRAPH', defaultValue: true })
+
+/**
+ * Feature flag used to disable blob-encoded sqlite dumps.
  */
 const ENABLE_BLOB_DUMPS = readEnvBoolean({ key: 'LSIF_ENABLE_BLOB', defaultValue: true })
 
@@ -95,14 +101,19 @@ const ENABLE_BLOB_DUMPS = readEnvBoolean({ key: 'LSIF_ENABLE_BLOB', defaultValue
 const JSON_EXTENSION = '.lsif'
 
 /**
- * The file extension used for sqlite-encoded LSIF dumps.
+ * The file extension used for graph-encoded sqlite dumps.
  */
-const BLOB_EXTENSION = '.db'
+const GRAPH_EXTENSION = '.graph.db'
+
+/**
+ * The file extension used for blob-encoded sqlite dumps.
+ */
+const BLOB_EXTENSION = '.blob.db'
 
 /**
  * A list of extensions supposed extensions for the on-disk LSIF dump.
  */
-const EXTENSIONS = [JSON_EXTENSION, BLOB_EXTENSION]
+const EXTENSIONS = [JSON_EXTENSION, GRAPH_EXTENSION, BLOB_EXTENSION]
 
 /**
  * The path of the binary used to convert json dumps to sqlite dumps.
@@ -180,6 +191,7 @@ function hashKey({ repository, commit }: RepositoryCommit): string {
 async function createDB(key: string): Promise<Database> {
     const multidb = new MultiDatabase([
         new NamedDatabase('json', ENABLE_JSON_DUMPS, JSON_EXTENSION, new JsonDatabase()),
+        new NamedDatabase('graph', ENABLE_GRAPH_DUMPS, GRAPH_EXTENSION, new GraphStore()),
         new NamedDatabase('blob', ENABLE_BLOB_DUMPS, BLOB_EXTENSION, new BlobStore())
     ])
 
@@ -432,6 +444,8 @@ function main(): void {
                     tempFileWriteStream.on('error', reject)
                 })
 
+                console.log(`Base file is ${contentLength} bytes`)
+
                 // Load a `Database` from the file to check that it's valid.
                 await new JsonDatabase().load(tempFile.path, () => noopTransformer)
 
@@ -445,20 +459,25 @@ function main(): void {
 
                 const key = hashKey({ repository, commit })
 
-                if (ENABLE_BLOB_DUMPS) {
-                    console.log('Converting json dump into a sqlite db')
+                if (ENABLE_GRAPH_DUMPS) {
+                    console.log('Creating graph-encoded sqlite database')
+                    const command = `${SQLITE_CONVERTER_BINARY} --in "${tempFile.path}" --out "${key + GRAPH_EXTENSION}"`
+                    await instrumentPromise('graph: convert', child_process.exec(command))
+                    const size = await getSize(key + GRAPH_EXTENSION)
+                    console.log(`Sqlite file is ${size} bytes`)
+                }
 
-                    // Create a sibling sqlite-encoded dump of the json database file
-                    const start = new Date().getTime()
-                    await child_process.exec(`${SQLITE_CONVERTER_BINARY} --in "${tempFile.path}" --out "${key + BLOB_EXTENSION}"`)
-                    const elapsed = new Date().getTime() - start
-                    console.log(`blob: convert completed in ${elapsed}ms`)
+                if (ENABLE_BLOB_DUMPS) {
+                    console.log('Creating blob-encoded sqlite database')
+                    // TODO - set version somehow
+                    const command = `${SQLITE_CONVERTER_BINARY} --in "${tempFile.path}" --out "${key + BLOB_EXTENSION}" --format blob --delete --projectVersion 0.1.0`
+                    await instrumentPromise('blob: convert', child_process.exec(command))
+                    const size = await getSize(key + BLOB_EXTENSION)
+                    console.log(`Sqlite file is ${size} bytes`)
                 }
 
                 if (ENABLE_JSON_DUMPS) {
                     console.log('Moving json-encoded dump to cache path')
-
-                    // Replace the old LSIF file with the new file
                     await moveFile(tempFile.path, key + JSON_EXTENSION)
                 } else {
                     console.log('Removing json-encoded dump')

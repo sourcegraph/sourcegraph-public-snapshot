@@ -66,21 +66,21 @@ export class MultiDatabase extends Database {
   // be instrumented so that we know what performs better than the others.
 
   public hover(uri: string, position: lsp.Position): lsp.Hover | undefined {
-    return compareResults(
+    return this.compareResults(
       'hover',
       this.databases.map(db => instrument(`${db.name}: hover`, () => db.db.hover(uri, position)))
     )
   }
 
   public definitions(uri: string, position: lsp.Position): lsp.Location | lsp.Location[] | undefined {
-    return compareResults(
+    return this.compareResults(
       'definitions',
       this.databases.map(db => instrument(`${db.name}: definitions`, () => db.db.definitions(uri, position)))
     )
   }
 
   public references(uri: string, position: lsp.Position, context: lsp.ReferenceContext): lsp.Location[] | undefined {
-    return compareResults(
+    return this.compareResults(
       'references',
       this.databases.map(db => instrument(`${db.name}: references`, () => db.db.references(uri, position, context)))
     )
@@ -88,7 +88,7 @@ export class MultiDatabase extends Database {
 
   // Define the remaining methods, although they are not called *directly* in
   // the http server path. These methods are called indirectly from the child
-  // class in inheritance hierarcy.
+  // class in inheritance hierarchy.
 
   public getProjectRoot(): URI {
     return this.databases.map(db => db.db.getProjectRoot())[0]
@@ -119,21 +119,22 @@ export class MultiDatabase extends Database {
   public fileContent(id: Id): string | undefined {
     return this.databases.map(db => db.db.fileContent(id))[0]
   }
+
+  private compareResults<T>(name: string, results: Array<T>): T {
+    for (let i = 1; i < results.length; i++) {
+      if (results[i] !== results[0]) {
+        console.warn(`Unexpected differing result for ${name} between: ${this.databases[0].name} and ${this.databases[i].name}`, results[0], 'and', results[i])
+      }
+    }
+
+    return results[0]
+  }
 }
 
 //
 // Helpers
 
-function instrumentPromise<T>(name: string, p: Promise<T>): Promise<T> {
-  const start = new Date().getTime()
-  return p.then(res => {
-    const elapsed = new Date().getTime() - start
-    console.log(`${name} completed in ${elapsed}ms`)
-    return res;
-  });
-}
-
-function instrument<T>(name: string, f: () => T): T {
+export function instrument<T>(name: string, f: () => T): T {
   const start = new Date().getTime()
   const res = f();
   const elapsed = new Date().getTime() - start
@@ -141,12 +142,11 @@ function instrument<T>(name: string, f: () => T): T {
   return res;
 }
 
-function compareResults<T>(name: string, results: Array<T>): T {
-  for (let i = 1; i < results.length; i++) {
-    if (results[i] !== results[0]) {
-      throw `Unexpected differing result from ${name}: ${results[0]} and ${results[i]}`
-    }
-  }
-
-  return results[0]
+export function instrumentPromise<T>(name: string, p: Promise<T>): Promise<T> {
+  const start = new Date().getTime()
+  return p.then(res => {
+    const elapsed = new Date().getTime() - start
+    console.log(`${name} completed in ${elapsed}ms`)
+    return res;
+  });
 }
