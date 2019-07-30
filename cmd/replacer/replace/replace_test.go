@@ -47,7 +47,7 @@ func main() {
 			RewriteTemplate: "derp",
 			FileExtension:   ".go",
 		}, `
-{"uri":"main.go","rewritten_source":"package main\n\nimport \"fmt\"\n\nderp main() {\n\tfmt.Println(\"Hello foo\")\n}\n","in_place_substitutions":[{"range":{"start":{"offset":28,"line":-1,"column":-1},"end":{"offset":32,"line":-1,"column":-1}},"replacement_content":"derp","environment":[]}],"diff":"--- main.go\n+++ main.go\n@@ -2,6 +2,6 @@\n \n import \"fmt\"\n \n-func main() {\n+derp main() {\n \tfmt.Println(\"Hello foo\")\n }"}
+{"uri":"main.go","diff":"--- main.go\n+++ main.go\n@@ -2,6 +2,6 @@\n \n import \"fmt\"\n \n-func main() {\n+derp main() {\n \tfmt.Println(\"Hello foo\")\n }"}
 `},
 	}
 
