@@ -10,28 +10,25 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/routevar"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"github.com/sourcegraph/sourcegraph/pkg/routevar"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type InjectedHTML struct {
@@ -107,7 +104,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		AssetURL: assetsutil.URL("").String(),
 		Title:    title,
 		Metadata: &Metadata{
-			Title:       "Sourcegraph",
+			Title:       conf.BrandName(),
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
 			ShowPreview: r.URL.Path == "/sign-in" && r.URL.RawQuery == "returnTo=%2F",
 		},
@@ -196,6 +193,12 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 
 type handlerFunc func(w http.ResponseWriter, r *http.Request) error
 
+func serveBrandedPageString(titles ...string) handlerFunc {
+	return serveBasicPage(func(c *Common, r *http.Request) string {
+		return brandNameSubtitle(titles...)
+	})
+}
+
 func serveBasicPageString(title string) handlerFunc {
 	return serveBasicPage(func(c *Common, r *http.Request) string {
 		return title
@@ -217,7 +220,7 @@ func serveBasicPage(title func(c *Common, r *http.Request) string) handlerFunc {
 }
 
 func serveHome(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, "Sourcegraph", serveError)
+	common, err := newCommon(w, r, conf.BrandName(), serveError)
 	if err != nil {
 		return err
 	}
@@ -245,7 +248,7 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) error {
 	if common == nil {
 		return nil // request was handled
 	}
-	common.Title = "Sign in - Sourcegraph"
+	common.Title = brandNameSubtitle("Sign in")
 
 	// If we are being redirected to another page after sign in, it means the
 	// user attempted to access something without authorization. Reflect this

@@ -182,6 +182,11 @@ const SiteSchemaJSON = `{
           "description": "Prevents the icon in the top-left corner of the screen from spinning on hover.",
           "type": "boolean",
           "default": false
+        },
+        "brandName": {
+          "description": "String to display everywhere the brand name should be displayed. Defaults to \"Sourcegraph\"",
+          "type": "string",
+          "default": "Sourcegraph"
         }
       },
       "examples": [
