@@ -3,11 +3,12 @@ import bodyParser from 'body-parser'
 import express from 'express'
 import LRU from 'lru-cache'
 import moveFile from 'move-file'
-import { fs } from 'mz'
+import { fs, child_process } from 'mz'
 import * as path from 'path'
 import { withFile } from 'tmp-promise'
 import { Database, noopTransformer } from './database'
 import { JsonDatabase } from './json'
+import { BlobStore } from './blobStore';
 
 /**
  * Reads an integer from an environment variable or defaults to the given value.
@@ -59,6 +60,27 @@ const SOFT_MAX_STORAGE_IN_MEMORY = readEnvInt({
  * Which port to run the LSIF server on. Defaults to 3186.
  */
 const PORT = readEnvInt({ key: 'LSIF_HTTP_PORT', defaultValue: 3186 })
+
+/**
+ * The extension used for json-encoded LSIF dumps.
+ */
+const LSIF_EXTENSION = '.lsif'
+
+/**
+ * The file extension used for sqlite-encoded LSIF dumps.
+ */
+const BLOB_EXTENSION = '.db'
+
+/**
+ * A list of extensions supposed extensions for the on-disk LSIF dump.
+ */
+const EXTENSIONS = [LSIF_EXTENSION, BLOB_EXTENSION]
+
+/**
+ * The path of the binary used to convert json dumps to sqlite dumps.
+ * See https://github.com/microsoft/lsif-node/tree/master/sqlite.
+ */
+const SQLITE_CONVERTER_BINARY = './node_modules/lsif-sqlite/bin/lsif-sqlite'
 
 /**
  * An opaque repository ID.
@@ -113,24 +135,39 @@ async function enforceMaxDiskUsage({
 }
 
 /**
- * Computes the filename that contains LSIF data for the given repository@commit.
+ * Computes the bare filename (without extension) that contains LSIF data
+ * encoded as either a json database or a sqlite blob store for the given
+ * repository@commit. This is used everywhere as a hash key, as well as a
+ * few places as an actual filename (when FS interaction is necessary).
  */
-function diskKey({ repository, commit }: RepositoryCommit): string {
+function hashKey({ repository, commit }: RepositoryCommit): string {
     const urlEncodedRepository = encodeURIComponent(repository)
-    return path.join(STORAGE_ROOT, `${urlEncodedRepository}@${commit}.lsif`)
+    return path.join(STORAGE_ROOT, `${urlEncodedRepository}@${commit}`)
 }
 
 /**
  * Loads LSIF data from disk and returns a promise to the resulting `Database`.
  * Throws ENOENT when there is no LSIF data for the given repository@commit.
  */
-async function createDB(repositoryCommit: RepositoryCommit): Promise<Database> {
-    const db = new JsonDatabase()
-    await db.load(diskKey(repositoryCommit), projectRootURI => ({
-        toDatabase: pathRelativeToProjectRoot => projectRootURI + '/' + pathRelativeToProjectRoot,
-        fromDatabase: uri => (uri.startsWith(projectRootURI) ? uri.slice(`${projectRootURI}/`.length) : uri),
-    }))
-    return db
+async function createDB(key: string): Promise<Database> {
+    const jsondb = new JsonDatabase()
+    const blobstore = new BlobStore()
+    const start = new Date().getTime()
+    const transformerFactory = (projectRootURI: string) => ({
+        toDatabase: (pathRelativeToProjectRoot: string) => projectRootURI + '/' + pathRelativeToProjectRoot,
+        fromDatabase: (uri: string) => (uri.startsWith(projectRootURI) ? uri.slice(`${projectRootURI}/`.length) : uri),
+    })
+
+    return Promise.race([
+        jsondb.load(key + LSIF_EXTENSION, transformerFactory).then(() => {
+            console.log('Loaded json database in %.2fms', new Date().getTime() - start);
+            return jsondb
+        }),
+        blobstore.load(key + BLOB_EXTENSION, transformerFactory).then(() => {
+            console.log('Loaded blob store in %.2fms', new Date().getTime() - start);
+            return blobstore
+        }),
+    ])
 }
 
 /**
@@ -196,18 +233,34 @@ const dbLRU = new LRU<string, LRUDBEntry>({
 })
 
 /**
+ * Get the size of the given filename if stat succeeds. If stat fails,
+ * return zero as the file is likely just not on disk.
+ */
+async function getSize(filename: string): Promise<number> {
+    try {
+        return (await fs.stat(filename)).size
+    } catch {
+        return 0
+    }
+}
+
+/**
  * Runs the given `action` with the `Database` associated with the given
  * repository@commit. Internally, it either gets the `Database` from the LRU
  * cache or loads it from storage.
  */
 async function withDB(repositoryCommit: RepositoryCommit, action: (db: Database) => Promise<void>): Promise<void> {
-    const entry = dbLRU.get(diskKey(repositoryCommit))
+    const key = hashKey(repositoryCommit)
+    const entry = dbLRU.get(key)
     if (entry) {
         await action(await entry.dbPromise)
     } else {
-        const length = (await fs.stat(diskKey(repositoryCommit))).size
-        const dbPromise = createDB(repositoryCommit)
-        dbLRU.set(diskKey(repositoryCommit), {
+        // Get the combined length of all files on disk related to this key.
+        const lengths = (await Promise.all(EXTENSIONS.map(ext => getSize(key + ext))))
+        const length = lengths.reduce((a, b) => a + b, 0)
+
+        const dbPromise = createDB(key)
+        dbLRU.set(key, {
             dbPromise,
             length,
             dispose: () => dbPromise.then(db => db.close()),
@@ -285,14 +338,16 @@ function main(): void {
 
             checkRepository(repository)
             checkCommit(commit)
+            const key = hashKey({ repository, commit })
 
-            if (!(await fs.exists(diskKey({ repository, commit })))) {
+            // The database does not exist if there is no file to create the database
+            if (!(await Promise.all(EXTENSIONS.map(ext => fs.exists(key + ext)))).some(v => v)) {
                 res.send(false)
                 return
             }
 
             if (!file) {
-                res.send(await fs.exists(diskKey({ repository, commit })))
+                res.send(true)
                 return
             }
 
@@ -301,7 +356,7 @@ function main(): void {
             }
 
             try {
-                res.send(Boolean((await createDB({ repository, commit })).stat(file)))
+                res.send(Boolean((await createDB(key)).stat(file)))
             } catch (e) {
                 if ('code' in e && e.code === 'ENOENT') {
                     res.send(false)
@@ -367,10 +422,15 @@ function main(): void {
                         throw e
                     }
                 }
-                await moveFile(tempFile.path, diskKey({ repository, commit }))
+
+                const key = hashKey({ repository, commit })
+                await moveFile(tempFile.path, key + LSIF_EXTENSION)
+
+                // Create a sibling sqlite-encoded dump of the json database file
+                await child_process.exec(`${SQLITE_CONVERTER_BINARY} '--in "${key + LSIF_EXTENSION} '--out "${key + BLOB_EXTENSION}"`)
 
                 // Evict the old `Database` from the LRU cache to cause it to pick up the new LSIF data from disk.
-                dbLRU.del(diskKey({ repository, commit }))
+                dbLRU.del(key)
 
                 res.send('Upload successful.')
             })
