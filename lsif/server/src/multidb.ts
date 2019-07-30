@@ -53,6 +53,8 @@ export class MultiDatabase extends Database {
 
         resolve()
       })
+    }).then(_ => {
+      this.initialize(transformerFactory)
     })
   }
 
