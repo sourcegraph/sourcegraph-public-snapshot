@@ -4,39 +4,39 @@ import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/gra
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../../backend/graphql'
+import {
+    threadOrIssueOrChangesetFieldsFragment,
+    threadOrIssueOrChangesetFieldsQuery,
+} from '../../../threadlike/util/graphql'
 
 const LOADING: 'loading' = 'loading'
 
 /**
  * A React hook that observes all threads (queried from the GraphQL API).
  */
-export const useThreads = (): typeof LOADING | GQL.IThreadConnection | ErrorLike => {
-    const [threadsOrError, setThreadsOrError] = useState<typeof LOADING | GQL.IThreadConnection | ErrorLike>(LOADING)
+export const useThreads = (): typeof LOADING | GQL.IThreadOrIssueOrChangesetConnection | ErrorLike => {
+    const [result, setResult] = useState<typeof LOADING | GQL.IThreadOrIssueOrChangesetConnection | ErrorLike>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
                 query Threads {
-                    threads {
+                    threadOrIssueOrChangesets {
                         nodes {
-                            id
-                            idWithoutKind
-                            title
-                            url
-                            status
-                            type
+                            ${threadOrIssueOrChangesetFieldsQuery}
                         }
                         totalCount
                     }
                 }
+                ${threadOrIssueOrChangesetFieldsFragment}
             `
         )
             .pipe(
                 map(dataOrThrowErrors),
-                map(data => data.threads),
+                map(data => data.threadOrIssueOrChangesets),
                 startWith(LOADING)
             )
-            .subscribe(setThreadsOrError, err => setThreadsOrError(asError(err)))
+            .subscribe(setResult, err => setResult(asError(err)))
         return () => subscription.unsubscribe()
     }, [])
-    return threadsOrError
+    return result
 }

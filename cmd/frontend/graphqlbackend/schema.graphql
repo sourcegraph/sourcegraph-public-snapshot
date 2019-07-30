@@ -997,6 +997,12 @@ type Query {
         first: Int
     ): ThreadConnection!
 
+    # A list of threads, issues, and changesets. TODO!(sqs)
+    threadOrIssueOrChangesets(
+        # Returns the first n results from the list.
+        first: Int
+    ): ThreadOrIssueOrChangesetConnection!
+
     # A list of campaigns. TODO!(sqs)
     campaigns(
         # Returns the first n campaigns from the list.
@@ -1459,7 +1465,7 @@ type Repository implements Node & GenericSearchResultInterface {
     ): ThreadConnection!
 
     # The specified changeset in this repository.
-    changeset(number: String!): Thread
+    changeset(number: String!): Changeset
 
     # A list of changesets in this repository.
     changesets(

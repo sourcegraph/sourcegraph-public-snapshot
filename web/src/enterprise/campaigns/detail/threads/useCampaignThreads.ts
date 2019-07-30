@@ -4,6 +4,10 @@ import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/gra
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../../backend/graphql'
+import {
+    threadOrIssueOrChangesetFieldsFragment,
+    threadOrIssueOrChangesetFieldsQuery,
+} from '../../../threadlike/util/graphql'
 
 const LOADING: 'loading' = 'loading'
 
@@ -14,31 +18,28 @@ const LOADING: 'loading' = 'loading'
  */
 export const useCampaignThreads = (
     campaign: Pick<GQL.ICampaign, 'id'>
-): [typeof LOADING | GQL.IThreadConnection | ErrorLike, () => void] => {
+): [typeof LOADING | GQL.IThreadOrIssueOrChangesetConnection | ErrorLike, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
 
-    const [threadsOrError, setThreadsOrError] = useState<typeof LOADING | GQL.IThreadConnection | ErrorLike>(LOADING)
+    const [result, setResult] = useState<typeof LOADING | GQL.IThreadOrIssueOrChangesetConnection | ErrorLike>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
-                query CampaignThreads($campaign: ID!) {
+                query CampaignThreadlikes($campaign: ID!) {
                     node(id: $campaign) {
                         __typename
                         ... on Campaign {
-                            threads {
+                            threadOrIssueOrChangesets {
                                 nodes {
-                                    id
-                                    title
-                                    url
-                                    status
-                                    type
+                                    ${threadOrIssueOrChangesetFieldsQuery}
                                 }
                                 totalCount
                             }
                         }
                     }
                 }
+                ${threadOrIssueOrChangesetFieldsFragment}
             `,
             { campaign: campaign.id }
         )
@@ -48,12 +49,12 @@ export const useCampaignThreads = (
                     if (!data.node || data.node.__typename !== 'Campaign') {
                         throw new Error('not a campaign')
                     }
-                    return data.node.threads
+                    return data.node.threadOrIssueOrChangesets
                 }),
                 startWith(LOADING)
             )
-            .subscribe(setThreadsOrError, err => setThreadsOrError(asError(err)))
+            .subscribe(setResult, err => setResult(asError(err)))
         return () => subscription.unsubscribe()
     }, [campaign, updateSequence])
-    return [threadsOrError, incrementUpdateSequence]
+    return [result, incrementUpdateSequence]
 }

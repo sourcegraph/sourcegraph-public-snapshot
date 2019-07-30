@@ -6,7 +6,7 @@ import { useThreads } from './useThreads'
 
 interface Props {
     /** Called when the user clicks on a thread in the menu. */
-    onThreadClick: (thread: Pick<GQL.IDiscussionThread, 'id'>) => void
+    onThreadClick: (thread: Pick<GQL.ThreadOrIssueOrChangeset, 'id'>) => void
 }
 
 const LOADING = 'loading' as const
@@ -30,7 +30,7 @@ export const ThreadDropdownMenu: React.FunctionComponent<Props> = ({ onThreadCli
                 threads.nodes.map(thread => (
                     // tslint:disable-next-line: jsx-no-lambda
                     <DropdownItem key={thread.id} onClick={() => onThreadClick(thread)}>
-                        <small className="text-muted">#{thread.idWithoutKind}</small> {thread.title}
+                        <small className="text-muted">#{thread.number}</small> {thread.title}
                     </DropdownItem>
                 ))
             )}

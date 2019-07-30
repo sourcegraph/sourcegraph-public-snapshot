@@ -31,6 +31,7 @@ export const gitCommitFragment = gql`
         parents {
             oid
             abbreviatedOID
+            url
         }
         url
         canonicalURL

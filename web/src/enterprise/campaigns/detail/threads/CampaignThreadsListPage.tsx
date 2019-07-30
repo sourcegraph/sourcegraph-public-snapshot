@@ -15,7 +15,7 @@ interface Props extends Pick<CampaignAreaContext, 'campaign'>, ExtensionsControl
 const LOADING = 'loading' as const
 
 export const CampaignThreadsListPage: React.FunctionComponent<Props> = ({ campaign, className = '', ...props }) => {
-    const [threadsOrError, onThreadsUpdate] = useCampaignThreads(campaign)
+    const [threads, onThreadsUpdate] = useCampaignThreads(campaign)
 
     return (
         <div className={`campaign-threads-list-page ${className}`}>
@@ -25,20 +25,20 @@ export const CampaignThreadsListPage: React.FunctionComponent<Props> = ({ campai
                 onAdd={onThreadsUpdate}
                 className="mb-3"
             />
-            {threadsOrError === LOADING ? (
+            {threads === LOADING ? (
                 <LoadingSpinner className="icon-inline" />
-            ) : isErrorLike(threadsOrError) ? (
-                <div className="alert alert-danger">{threadsOrError.message}</div>
+            ) : isErrorLike(threads) ? (
+                <div className="alert alert-danger">{threads.message}</div>
             ) : (
                 <div className="card">
                     <div className="card-header">
                         <span className="text-muted">
-                            {threadsOrError.totalCount} {pluralize('thread', threadsOrError.totalCount)}
+                            {threads.totalCount} {pluralize('thread', threads.totalCount)}
                         </span>
                     </div>
-                    {threadsOrError.nodes.length > 0 ? (
+                    {threads.nodes.length > 0 ? (
                         <ul className="list-group list-group-flush">
-                            {threadsOrError.nodes.map(thread => (
+                            {threads.nodes.map(thread => (
                                 <li key={thread.id} className="list-group-item">
                                     <CampaignThreadListItem
                                         {...props}

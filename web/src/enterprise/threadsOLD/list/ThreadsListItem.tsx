@@ -7,7 +7,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../../shared/src/util/strings'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { PersonLink } from '../../../user/PersonLink'
-import { ThreadStatusIcon } from '../components/threadStatus/ThreadStatusIcon'
+import { ThreadStatusIcon } from '../../threadlike/threadStatus/ThreadStatusIcon'
 import { ThreadsListContext } from './ThreadsList'
 
 interface Props extends ThreadsListContext {

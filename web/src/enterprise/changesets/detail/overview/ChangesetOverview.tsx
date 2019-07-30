@@ -16,8 +16,8 @@ import { ThreadDescription } from '../../../threadsOLD/detail/overview/ThreadDes
 import { ThreadStatusButton } from '../../../threadsOLD/form/ThreadStatusButton'
 import { ThreadSettings } from '../../../threadsOLD/settings'
 import { countChangesetFilesChanged } from '../../preview/ChangesetSummaryBar'
-import { ChangesetReviewLink } from '../changes/ChangesetReviewLink'
-import { ChangesetReviewsList } from '../changes/ChangesetReviewsList'
+import { ChangesetReviewLink } from '../fileDiffs/ChangesetReviewLink'
+import { ChangesetReviewsList } from '../fileDiffs/ChangesetReviewsList'
 
 interface Props extends ExtensionsControllerProps {
     thread: GQL.IDiscussionThread

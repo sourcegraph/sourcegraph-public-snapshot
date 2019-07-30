@@ -30,7 +30,7 @@ export const ChangesetCommitsList: React.FunctionComponent<Props> = ({ changeset
                 ) : (
                     commits.map((commit, i) => (
                         <li key={i} className="list-group-item p-0">
-                            <GitCommitNode repoName={commit.repository.name} node={commit} compact={true} />
+                            <GitCommitNode node={commit} compact={true} />
                         </li>
                     ))
                 )}
