@@ -26,5 +26,6 @@ module.exports = {
         'Use the Select component in src/components/Select.tsx instead of the native HTML select element for proper cross-browser styling',
       ],
     ],
+    'variable-name': false,
   },
 }

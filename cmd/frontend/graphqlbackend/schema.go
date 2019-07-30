@@ -4107,7 +4107,7 @@ interface RepositoryAndNumberAddressable {
 # A comment.
 interface Comment {
     # The comment body.
-    body: String!
+    body: String
 }
 
 # The statuses of threads.

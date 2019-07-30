@@ -10,12 +10,12 @@ const LOADING: 'loading' = 'loading'
 /**
  * A React hook that observes a thread queried from the GraphQL API by ID.
  *
- * @param idInRepository The thread ID in its repository (i.e., the `Thread.idInRepository` GraphQL
+ * @param number The thread number in its repository (i.e., the `Thread.number` GraphQL
  * API field).
  */
 export const useThreadByIDInRepository = (
     repository: GQL.ID,
-    threadIDInRepository: GQL.IThread['idInRepository']
+    number: GQL.IThread['number']
 ): [typeof LOADING | GQL.IThread | null | ErrorLike, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
@@ -24,13 +24,13 @@ export const useThreadByIDInRepository = (
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
-                query ThreadByIDInRepository($repository: ID!, $threadIDInRepository: String!) {
+                query ThreadByIDInRepository($repository: ID!, $number: String!) {
                     node(id: $repository) {
                         __typename
                         ... on Repository {
-                            thread(idInRepository: $threadIDInRepository) {
+                            thread(number: $number) {
                                 id
-                                idInRepository
+                                number
                                 title
                                 url
                             }
@@ -38,7 +38,7 @@ export const useThreadByIDInRepository = (
                     }
                 }
             `,
-            { repository, threadIDInRepository }
+            { repository, number }
         )
             .pipe(
                 map(dataOrThrowErrors),
@@ -52,6 +52,6 @@ export const useThreadByIDInRepository = (
             )
             .subscribe(setResult, err => setResult(asError(err)))
         return () => subscription.unsubscribe()
-    }, [repository, threadIDInRepository, updateSequence])
+    }, [repository, number, updateSequence])
     return [result, incrementUpdateSequence]
 }
