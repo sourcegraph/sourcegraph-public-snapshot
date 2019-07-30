@@ -416,6 +416,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		OnlyForks:    op.onlyForks,
 		NoArchived:   op.noArchived,
 		OnlyArchived: op.onlyArchived,
+		OrderBy:      db.RepoListOrderBy{{Field: "score", Descending: true}},
 	})
 	tr.LazyPrintf("Repos.List - done")
 	if err != nil {
