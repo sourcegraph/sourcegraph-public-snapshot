@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/generalprotocol"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
@@ -830,6 +831,8 @@ func scanRepo(r *Repo, s scanner) error {
 		r.Metadata = new(awscodecommit.Repository)
 	case "gitolite":
 		r.Metadata = new(gitolite.Repo)
+	case "generalprotocol":
+		r.Metadata = new(generalprotocol.Repo)
 	default:
 		return nil
 	}

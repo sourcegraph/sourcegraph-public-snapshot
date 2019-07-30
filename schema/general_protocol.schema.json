@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "general_protocol.schema.json#",
+  "title": "GeneralProtocolConnection",
+  "description": "Configuration for a connection to code host that supports general protocol.",
+  "allowComments": true,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["url", "endpoint", "username"],
+  "properties": {
+    "url": {
+      "description": "URL of the code host, such as https://git.codehost.com.",
+      "type": "string",
+      "not": {
+        "type": "string",
+        "pattern": "example\\.com"
+      },
+      "pattern": "^https?://",
+      "format": "uri",
+      "examples": ["https://git.codehost.com"]
+    },
+    "endpoint": {
+      "description": "Endpoint of the code host that accepts general protocol requests, such as https://git.codehost.com/srcgraph.",
+      "type": "string",
+      "not": {
+        "type": "string",
+        "pattern": "example\\.com"
+      },
+      "pattern": "^https?://",
+      "format": "uri",
+      "examples": ["https://git.codehost.com/srcgraph"]
+    },
+    "username": {
+      "description": "The username to use when authenticating to the code host. Also set the corresponding \"password\" field.",
+      "type": "string"
+    },
+    "password": {
+      "description": "The password to use when authenticating to the code host. Also set the corresponding \"username\" field.",
+      "type": "string"
+    },
+    "token": {
+      "description": "A personal access token with Read scope. Also set the corresponding \"username\" field.\n\nFor code hosts that don't support personal access tokens, specify user-password credentials in the \"username\" and \"password\" fields.",
+      "type": "string",
+      "minLength": 1
+    },
+    "gitURLType": {
+      "description": "The type of Git URLs to use for cloning and fetching Git repositories on this code host.\n\nIf \"http\", Sourcegraph will access code host repositories using Git URLs of the form https://git.codehost.com/myteam/myproject.git.\n\nIf \"ssh\", Sourcegraph will access code host repositories using Git URLs of the form git@git.codehost.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
+      "type": "string",
+      "enum": ["http", "ssh"],
+      "default": "http",
+      "examples": ["ssh"]
+    },
+    "repositoryPathPattern": {
+      "description": "The pattern used to generate the corresponding Sourcegraph repository name for a code host repository.\n\n - \"{host}\" is replaced with the code host URL's host (such as git.codehost.com),  and \"{nameWithOwner}\" is replaced with the code host repository's \"owner/path\" (such as \"myorg/myrepo\").\n\nFor example, if your code host is https://git.codehost.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of \"{host}/{nameWithOwner}\" would mean that a code host repository at https://git.codehost.com/alice/my-repo is available on Sourcegraph at https://src.example.com/git.codehost.com/alice/my-repo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
+      "type": "string",
+      "default": "{host}/{nameWithOwner}"
+    },
+    "orgs": {
+      "description": "An array of team names identifying code host organizations whose repositories should be mirrored on Sourcegraph.",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^\\w+$" },
+      "examples": [["name"], ["kubernetes", "golang", "facebook"]]
+    }
+  }
+}

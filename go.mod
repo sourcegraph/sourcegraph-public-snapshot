@@ -134,6 +134,7 @@ require (
 	github.com/stripe/stripe-go v0.0.0-20181128170521-1436b6008c5e
 	github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203 // indirect
 	github.com/temoto/robotstxt-go v0.0.0-20180810133444-97ee4a9ee6ea
+	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 	github.com/uber-go/atomic v1.3.2 // indirect
 	github.com/uber/gonduit v0.3.2
 	github.com/uber/jaeger-client-go v2.14.0+incompatible

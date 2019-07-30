@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom'
 import awsCodeCommitSchemaJSON from '../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../schema/bitbucket_server.schema.json'
+import generalProtocolSchemaJSON from '../../../schema/general_protocol.schema.json'
 import githubSchemaJSON from '../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../schema/gitolite.schema.json'
@@ -712,6 +713,71 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
                     return { edits, selectText: '<Phabricator repository callsign>' }
                 },
             },
+        ],
+    },
+    [GQL.ExternalServiceKind.GENERALPROTOCOL]: {
+        title: 'General protocol repositories',
+        icon: GitIcon,
+        shortDescription: 'Add repositories from code host that implements general protocol.',
+        jsonSchema: generalProtocolSchemaJSON,
+        defaultDisplayName: 'General Protocol',
+        defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+// General protocol external service docs: https://docs.sourcegraph.com/admin/external_service/general#configuration
+{
+  "url": "https://git.codehost.com",
+
+  // Endpoint of the code host that accepts general protocol requests.
+  "endpoint": "https://git.codehost.com/srcgraph",
+
+  // The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding "token" or "password" field.
+  "username": "<username>",
+
+  // The password to use when authenticating to the code host. Also set the corresponding "username" field.
+  "password": "<password>",
+
+  // A personal access token with Read scope. Also set the corresponding \"username\" field.
+  //
+  // For code hosts that don't support personal access tokens, specify user-password credentials in the \"username\" and \"password\" fields.
+  "token": null,
+
+  // An array of organization names identifying organizations whose repositories should be mirrored on Sourcegraph.
+  // "orgs": null,
+  // Other example values:
+  // - ["name"]
+  // - [
+  //     "kubernetes",
+  //     "golang",
+  //     "facebook"
+  //   ]
+}`,
+        editorActions: [
+            {
+                id: 'setURL',
+                label: 'Set code host URL',
+                run: config => {
+                    const value = 'https://git.codehost.com'
+                    const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'setEndpoint',
+                label: 'Set general protocol endpoint',
+                run: config => {
+                    const value = 'https://git.codehost.com/srcgraph'
+                    const edits = setProperty(config, ['endpoint'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            },
+            {
+                id: 'setAccessToken',
+                label: 'Set access token',
+                run: config => {
+                    const value = '<access token>'
+                    const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                    return { edits, selectText: value }
+                },
+            }
         ],
     },
     [GQL.ExternalServiceKind.OTHER]: {

@@ -38,6 +38,7 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	"AWSCODECOMMIT":   {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
 	"BITBUCKETCLOUD":  {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
 	"BITBUCKETSERVER": {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
+	"GENERALPROTOCOL": {CodeHost: true, JSONSchema: schema.GeneralProtocolSchemaJSON},
 	"GITHUB":          {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
 	"GITLAB":          {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
 	"GITOLITE":        {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
@@ -404,6 +405,17 @@ func (c *ExternalServicesStore) ListBitbucketCloudConnections(ctx context.Contex
 func (c *ExternalServicesStore) ListBitbucketServerConnections(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
 	var connections []*schema.BitbucketServerConnection
 	if err := c.listConfigs(ctx, "BITBUCKETSERVER", &connections); err != nil {
+		return nil, err
+	}
+	return connections, nil
+}
+
+// ListGeneralProtocolConnections returns a list of GeneralProtocolConnection configs.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+func (c *ExternalServicesStore) ListGeneralProtocolConnections(ctx context.Context) ([]*schema.GeneralProtocolConnection, error) {
+	var connections []*schema.GeneralProtocolConnection
+	if err := c.listConfigs(ctx, "GENERALPROTOCOL", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil

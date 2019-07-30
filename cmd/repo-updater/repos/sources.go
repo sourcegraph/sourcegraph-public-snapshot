@@ -67,6 +67,8 @@ func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
 		return NewPhabricatorSource(svc, cf)
 	case "awscodecommit":
 		return NewAWSCodeCommitSource(svc, cf)
+	case "generalprotocol":
+		return NewGeneralProtocolSource(svc, cf)
 	case "other":
 		return NewOtherSource(svc)
 	default:

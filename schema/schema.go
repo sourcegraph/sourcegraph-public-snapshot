@@ -252,6 +252,18 @@ type ExternalIdentity struct {
 	Type             string `json:"type"`
 }
 
+// GeneralProtocolConnection description: Configuration for a connection to code host that supports general protocol.
+type GeneralProtocolConnection struct {
+	Endpoint              string   `json:"endpoint"`
+	GitURLType            string   `json:"gitURLType,omitempty"`
+	Orgs                  []string `json:"orgs,omitempty"`
+	Password              string   `json:"password,omitempty"`
+	RepositoryPathPattern string   `json:"repositoryPathPattern,omitempty"`
+	Token                 string   `json:"token,omitempty"`
+	Url                   string   `json:"url"`
+	Username              string   `json:"username"`
+}
+
 // GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
 type GitHubAuthProvider struct {
 	AllowSignup  bool   `json:"allowSignup,omitempty"`
