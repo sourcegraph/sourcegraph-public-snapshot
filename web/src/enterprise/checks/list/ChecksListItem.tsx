@@ -35,7 +35,7 @@ export const ChecksListItem: React.FunctionComponent<Props> = ({
         )}
         <h3 className="mb-0 font-weight-normal font-size-base d-flex align-items-center">
             <Link to={urlToCheck(checksURL, checkInfoOrError)} className="stretched-link">
-                {checkInfoOrError.type} {checkInfoOrError.id}
+                {checkInfoOrError.type}
             </Link>
         </h3>
         {checkInfoOrError.error && (

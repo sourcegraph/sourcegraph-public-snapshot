@@ -1,3 +1,5 @@
+import CheckIcon from 'mdi-react/CheckIcon'
+import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../../../../shared/src/graphql/schema'

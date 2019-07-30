@@ -1,5 +1,7 @@
 import { NotificationType } from '@sourcegraph/extension-api-classes'
+import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
+import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import React, { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { map, mapTo } from 'rxjs/operators'
@@ -10,7 +12,6 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { ThreadStatusFields } from '../../../threadlike/threadStatus/threadStatus'
 import { ThreadStatusIcon } from '../../../threadlike/threadStatus/ThreadStatusIcon'
-import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 
 const removeThreadsFromCampaign = (input: GQL.IRemoveThreadsFromCampaignOnMutationArguments): Promise<void> =>
     mutateGraphQL(
@@ -59,11 +60,28 @@ export const CampaignThreadListItem: React.FunctionComponent<Props> = ({
 
     return (
         <div className="d-flex align-items-center">
-            <Link to={thread.url} className="text-decoration-none flex-1">
+            <Link to={thread.url} className="text-decoration-none">
                 <ThreadStatusIcon thread={thread} className="mr-2" />
                 <span className="text-muted mr-2">{displayRepoName(thread.repository.name)}:</span>
                 {thread.title}
             </Link>
+            {thread.repository.name.length % 5 === 0 /* TODO!(sqs) */ ? (
+                <>
+                    <CheckIcon className="ml-2 mr-1 icon-inline text-success" />
+                    All checks pass
+                </>
+            ) : (
+                <>
+                    <CloseIcon className="ml-2 mr-1 icon-inline text-danger" />1 failing check
+                </>
+            )}
+
+            <div className="flex-1" />
+            {thread.repository.name.length % 3 === 0 /* TODO!(sqs) */ ? (
+                <span className="badge badge-primary mr-2">Changes requested</span>
+            ) : (
+                <span className="badge badge-success mr-2">Approved</span>
+            )}
             {thread.externalURL && (
                 <a href={thread.externalURL}>
                     <GithubCircleIcon className="icon-inline mr-1" />

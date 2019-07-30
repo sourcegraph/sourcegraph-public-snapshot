@@ -56,9 +56,7 @@ export const CampaignHeaderEditableName: React.FunctionComponent<Props> = ({
 
     return state === 'viewing' ? (
         <div className={`d-flex align-items-start justify-content-between ${className}`}>
-            <h1 className="font-weight-normal mb-0 h2 mr-2">
-                {campaign.name} <span className="text-muted font-weight-normal">#{campaign.idWithoutKind}</span>
-            </h1>
+            <h1 className="font-weight-normal mb-0 h2 mr-2">{campaign.name}</h1>
             <button type="button" className="btn btn-secondary btn-sm mt-1" onClick={onEditClick}>
                 Edit
             </button>
