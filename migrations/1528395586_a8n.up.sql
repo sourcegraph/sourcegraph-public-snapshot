@@ -1,5 +1,23 @@
 BEGIN;
 
+CREATE TYPE thread_type AS enum ('THREAD', 'ISSUE', 'CHANGESET');
+CREATE TABLE threads (
+	id bigserial PRIMARY KEY,
+	type thread_type NOT NULL,
+	repository_id integer NOT NULL REFERENCES repo(id) ON DELETE CASCADE,
+	title text NOT NULL,
+	external_url text,
+	status text NOT NULL,
+
+	-- type == CHANGESET
+	is_preview boolean,
+	base_ref text,
+	head_ref text
+);
+CREATE INDEX threads_repository_id ON threads(repository_id);
+
+-----------------
+
 CREATE TABLE campaigns (
 	id bigserial PRIMARY KEY,
     namespace_user_id integer REFERENCES users(id) ON DELETE CASCADE,
@@ -19,5 +37,16 @@ CREATE TABLE campaigns_threads (
 CREATE INDEX campaigns_threads_campaign_id ON campaigns_threads(campaign_id);
 CREATE INDEX campaigns_threads_thread_id ON campaigns_threads(thread_id) WHERE thread_id IS NOT NULL;
 CREATE UNIQUE INDEX campaigns_threads_uniq ON campaigns_threads(campaign_id, thread_id);
+
+-----------------
+
+CREATE TABLE rules (
+	id bigserial PRIMARY KEY,
+	project_id bigint NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+	name text NOT NULL,
+	description text,
+	settings text NOT NULL
+);
+CREATE INDEX rules_project_id ON rules(project_id);
 
 COMMIT;

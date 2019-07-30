@@ -33,7 +33,7 @@ var errThreadNotFound = errors.New("thread not found")
 
 type DBThreads struct{}
 
-const selectColumns = "id, type, repository_id, title, external_url, status, is_preview, base_ref, head_reef"
+const selectColumns = "id, type, repository_id, title, external_url, status, is_preview, base_ref, head_ref"
 
 // Create creates a thread. The thread argument's (Thread).ID field is ignored. The database ID of
 // the new thread is returned.
