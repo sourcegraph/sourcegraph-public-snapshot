@@ -7,6 +7,7 @@ const threadOrIssueOrChangesetFields: (keyof GQL.ThreadOrIssueOrChangeset)[] = [
     'number',
     'title',
     'url',
+    'status',
 ]
 const threadOrIssueOrChangesetTypeNames: GQL.ThreadOrIssueOrChangeset['__typename'][] = ['Thread', 'Changeset']
 

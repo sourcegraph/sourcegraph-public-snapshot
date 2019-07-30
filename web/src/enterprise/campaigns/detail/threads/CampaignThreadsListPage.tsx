@@ -33,7 +33,7 @@ export const CampaignThreadsListPage: React.FunctionComponent<Props> = ({ campai
                 <div className="card">
                     <div className="card-header">
                         <span className="text-muted">
-                            {threads.totalCount} {pluralize('thread', threads.totalCount)}
+                            {threads.totalCount} {pluralize('changeset', threads.totalCount)}
                         </span>
                     </div>
                     {threads.nodes.length > 0 ? (
@@ -50,7 +50,7 @@ export const CampaignThreadsListPage: React.FunctionComponent<Props> = ({ campai
                             ))}
                         </ul>
                     ) : (
-                        <div className="p-2 text-muted">No threads.</div>
+                        <div className="p-2 text-muted">No changesets.</div>
                     )}
                 </div>
             )}

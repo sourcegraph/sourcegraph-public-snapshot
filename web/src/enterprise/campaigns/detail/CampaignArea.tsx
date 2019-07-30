@@ -92,7 +92,7 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
             overviewComponent={CampaignOverview}
             pages={[
                 {
-                    title: 'Threads',
+                    title: 'Changesets',
                     path: '',
                     exact: true,
                     render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,

@@ -52,7 +52,7 @@ export const AddThreadToCampaignDropdownButton: React.FunctionComponent<Props> =
                 onAdd()
             } catch (err) {
                 extensionsController.services.notifications.showMessages.next({
-                    message: `Error adding thread to campaign: ${err.message}`,
+                    message: `Error adding to campaign: ${err.message}`,
                     type: NotificationType.Error,
                 })
             }
@@ -63,7 +63,7 @@ export const AddThreadToCampaignDropdownButton: React.FunctionComponent<Props> =
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className={className}>
             <DropdownToggle color="" className="btn btn-primary">
-                <PlusBoxIcon className="icon-inline mr-2" /> Add thread
+                <PlusBoxIcon className="icon-inline mr-2" /> Add changeset
             </DropdownToggle>
             <ThreadDropdownMenu onThreadClick={onThreadAdd} />
         </ButtonDropdown>
