@@ -14,25 +14,25 @@ import { gitRevisionRangeFieldsFragment } from '../../../../repo/compare/Reposit
 
 const LOADING: 'loading' = 'loading'
 
-export function useChangesetFileDiffs(
-    changeset: Pick<GQL.IChangeset, 'id'>
-): typeof LOADING | GQL.IRepositoryComparison | ErrorLike {
-    const [result, setResult] = useState<typeof LOADING | GQL.IRepositoryComparison | ErrorLike>(LOADING)
+export function useCampaignFileDiffs(
+    campaign: Pick<GQL.ICampaign, 'id'>
+): typeof LOADING | GQL.IRepositoryComparison[] | ErrorLike {
+    const [result, setResult] = useState<typeof LOADING | GQL.IRepositoryComparison[] | ErrorLike>(LOADING)
     useEffect(() => {
-        const subscription = queryChangesetFileDiffs(changeset).subscribe(setResult, err => setResult(asError(err)))
+        const subscription = queryCampaignFileDiffs(campaign).subscribe(setResult, err => setResult(asError(err)))
         return () => subscription.unsubscribe()
-    }, [changeset])
+    }, [campaign])
     return result
 }
 
-function queryChangesetFileDiffs(changeset: Pick<GQL.IChangeset, 'id'>): Observable<GQL.IRepositoryComparison> {
+function queryCampaignFileDiffs(campaign: Pick<GQL.ICampaign, 'id'>): Observable<GQL.IRepositoryComparison[]> {
     return queryGraphQL(
         gql`
-            query ChangesetFileDiffs($changeset: ID!) {
-                node(id: $changeset) {
+            query CampaignFileDiffs($campaign: ID!) {
+                node(id: $campaign) {
                     __typename
-                    ... on Changeset {
-                        repositoryComparison {
+                    ... on Campaign {
+                        repositoryComparisons {
                             baseRepository {
                                 id
                                 name
@@ -71,14 +71,14 @@ function queryChangesetFileDiffs(changeset: Pick<GQL.IChangeset, 'id'>): Observa
             ${fileDiffHunkRangeFieldsFragment}
             ${diffStatFieldsFragment}
         `,
-        { changeset: changeset.id }
+        { campaign: campaign.id }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            if (!data || !data.node || data.node.__typename !== 'Changeset') {
-                throw new Error('changeset not found')
+            if (!data || !data.node || data.node.__typename !== 'Campaign') {
+                throw new Error('campaign not found')
             }
-            return data.node.repositoryComparison
+            return data.node.repositoryComparisons
         })
     )
 }

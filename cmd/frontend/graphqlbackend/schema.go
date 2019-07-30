@@ -4272,6 +4272,12 @@ type Changeset implements Node & RepositoryNode & RepositoryAndNumberAddressable
     # The status of this changeset.
     status: ChangesetStatus!
 
+    # The base ref of the changeset.
+    baseRef: String!
+
+    # The head ref of the changeset.
+    headRef: String!
+
     # Whether this changeset is a preview.
     isPreview: Boolean!
 

@@ -136,6 +136,8 @@ const (
 type Changeset interface {
 	Threadlike
 	Status() ChangesetStatus
+	BaseRef() string
+	HeadRef() string
 	IsPreview() bool
 	RepositoryComparison(context.Context) (*RepositoryComparisonResolver, error)
 }

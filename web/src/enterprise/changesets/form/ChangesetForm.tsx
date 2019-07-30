@@ -1,9 +1,10 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 
-export interface ChangesetFormData extends Pick<GQL.IChangeset, 'title'> {}
+export interface ChangesetFormData extends Pick<GQL.IChangeset, 'title' | 'baseRef' | 'headRef'> {}
 
 interface Props {
     initialValue?: ChangesetFormData
@@ -24,7 +25,7 @@ interface Props {
  * A form to create or edit a changeset.
  */
 export const ChangesetForm: React.FunctionComponent<Props> = ({
-    initialValue = { title: '' },
+    initialValue = { title: '', baseRef: 'master' /*TODO!(sqs):un-hardcode*/, headRef: '' },
     onDismiss,
     onSubmit: onSubmitChangeset,
     buttonText,
@@ -32,38 +33,76 @@ export const ChangesetForm: React.FunctionComponent<Props> = ({
     className = '',
 }) => {
     const [title, setTitle] = useState(initialValue.title)
-    const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+    const onTitleChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         e => setTitle(e.currentTarget.value),
         []
     )
     useEffect(() => setTitle(initialValue.title), [initialValue.title])
 
+    const [baseRef, setBaseRef] = useState(initialValue.baseRef)
+    const onBaseRefChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        e => setBaseRef(e.currentTarget.value),
+        []
+    )
+    useEffect(() => setBaseRef(initialValue.baseRef), [initialValue.baseRef])
+
+    const [headRef, setHeadRef] = useState(initialValue.headRef)
+    const onHeadRefChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        e => setHeadRef(e.currentTarget.value),
+        []
+    )
+    useEffect(() => setHeadRef(initialValue.headRef), [initialValue.headRef])
+
     const onSubmit = useCallback<React.FormEventHandler>(
         async e => {
             e.preventDefault()
-            onSubmitChangeset({ title })
+            onSubmitChangeset({ title, baseRef, headRef })
         },
-        [title, onSubmitChangeset]
+        [onSubmitChangeset, title, baseRef, headRef]
     )
 
     return (
         <Form className={`form ${className}`} onSubmit={onSubmit}>
             <div className="form-row align-items-end">
-                <div className="form-group mb-md-0 col-md-3">
-                    <label htmlFor="changeset-form__name">Name</label>
+                <div className="form-group">
+                    <label htmlFor="changeset-form__title">Title</label>
                     <input
                         type="text"
-                        id="changeset-form__name"
+                        id="changeset-form__title"
                         className="form-control"
                         required={true}
                         minLength={1}
                         placeholder="Changeset title"
                         value={title}
-                        onChange={onNameChange}
+                        onChange={onTitleChange}
                         autoFocus={true}
                     />
                 </div>
-                <div className="form-group mb-md-0 col-md-3 text-right">
+                <div className="form-group">
+                    <label htmlFor="changeset-form__baseRef">Range</label>
+                    <div className="input-group align-items-center">
+                        <input
+                            type="text"
+                            id="changeset-form__baseRef"
+                            className="form-control"
+                            required={true}
+                            placeholder="Base ref"
+                            value={baseRef}
+                            onChange={onBaseRefChange}
+                        />
+                        <DotsHorizontalIcon className="icon-inline mx-2" />
+                        <input
+                            type="text"
+                            id="changeset-form__headRef"
+                            className="form-control"
+                            required={true}
+                            placeholder="Head ref"
+                            value={headRef}
+                            onChange={onHeadRefChange}
+                        />
+                    </div>
+                </div>
+                <div className="form-group text-right">
                     {onDismiss && (
                         <button type="reset" className="btn btn-secondary mr-2" onClick={onDismiss}>
                             Cancel

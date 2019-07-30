@@ -4,7 +4,7 @@ import { OverviewPagesAreaPage } from '../OverviewPagesArea'
 
 interface Props {
     areaUrl: string
-    pages: Pick<OverviewPagesAreaPage<never>, 'title' | 'icon' | 'count' | 'path'>[]
+    pages: Pick<OverviewPagesAreaPage<never>, 'title' | 'icon' | 'count' | 'path' | 'exact'>[]
     className?: string
 }
 
@@ -17,10 +17,11 @@ export const OverviewPagesAreaNavbar: React.FunctionComponent<Props> = ({ areaUr
     <nav className={`overview-pages-area-navbar border-bottom ${className}`}>
         <div className="container">
             <ul className="nav flex-nowrap">
-                {pages.map(({ title, icon: Icon, count, path }, i) => (
+                {pages.map(({ title, icon: Icon, count, path, exact }, i) => (
                     <li key={i} className="overview-pages-area-navbar__nav-item nav-item">
                         <NavLink
                             to={path ? `${areaUrl}${path}` : areaUrl}
+                            exact={exact}
                             className={NAV_LINK_CLASS_NAME}
                             activeClassName="overview-pages-area-navbar__nav-link--active"
                             aria-label={title}

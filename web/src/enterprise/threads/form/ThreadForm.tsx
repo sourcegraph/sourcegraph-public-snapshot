@@ -32,7 +32,7 @@ export const ThreadForm: React.FunctionComponent<Props> = ({
     className = '',
 }) => {
     const [title, setTitle] = useState(initialValue.title)
-    const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+    const onTitleChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         e => setTitle(e.currentTarget.value),
         []
     )
@@ -50,16 +50,16 @@ export const ThreadForm: React.FunctionComponent<Props> = ({
         <Form className={`form ${className}`} onSubmit={onSubmit}>
             <div className="form-row align-items-end">
                 <div className="form-group mb-md-0 col-md-3">
-                    <label htmlFor="thread-form__name">Name</label>
+                    <label htmlFor="thread-form__title">Title</label>
                     <input
                         type="text"
-                        id="thread-form__name"
+                        id="thread-form__title"
                         className="form-control"
                         required={true}
                         minLength={1}
                         placeholder="Thread title"
                         value={title}
-                        onChange={onNameChange}
+                        onChange={onTitleChange}
                         autoFocus={true}
                     />
                 </div>

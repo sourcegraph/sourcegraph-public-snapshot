@@ -12,6 +12,7 @@ import { CampaignOverview } from './CampaignOverview'
 import { CampaignRepositoriesList } from './repositories/CampaignRepositoriesList'
 import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
 import { useCampaignByID } from './useCampaignByID'
+import { CampaignFileDiffsList } from './fileDiffs/CampaignFileDiffsList'
 
 export interface CampaignAreaContext
     extends Pick<NamespaceCampaignsAreaContext, Exclude<keyof NamespaceCampaignsAreaContext, 'namespace'>> {
@@ -93,6 +94,7 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                     {
                         title: 'Threads',
                         path: '',
+                        exact: true,
                         render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
                     },
                     {
@@ -100,7 +102,11 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                         path: '/commits',
                         render: () => <CampaignRepositoriesList {...context} className={PAGE_CLASS_NAME} />,
                     },
-                    // { title: 'Changes', path: '/changes', render: () => <CampaignChangesListPage {...context} /> },
+                    {
+                        title: 'Changes',
+                        path: '/changes',
+                        render: () => <CampaignFileDiffsList {...context} className={PAGE_CLASS_NAME} />,
+                    },
                 ]}
                 location={props.location}
                 match={match}

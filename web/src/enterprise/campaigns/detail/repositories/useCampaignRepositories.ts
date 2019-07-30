@@ -6,7 +6,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../../backend/graphql'
 import { gitCommitFragment } from '../../../../repo/commits/RepositoryCommitsPage'
-import { fileDiffFieldsFragment } from '../../../../repo/compare/RepositoryCompareDiffPage'
+import { diffStatFieldsFragment } from '../../../../repo/compare/RepositoryCompareDiffPage'
 import { gitRevisionRangeFieldsFragment } from '../../../../repo/compare/RepositoryCompareOverviewPage'
 
 const LOADING: 'loading' = 'loading'
@@ -51,15 +51,20 @@ function queryCampaignRepositories(campaign: Pick<GQL.ICampaign, 'id'>): Observa
                                     hasNextPage
                                 }
                             }
+                            fileDiffs {
+                                diffStat {
+                                    ...DiffStatFields
+                                }
+                            }
                         }
                     }
                 }
             }
             ${gitRevisionRangeFieldsFragment}
             ${gitCommitFragment}
-            ${fileDiffFieldsFragment}
+            ${diffStatFieldsFragment}
         `,
-        { campaign }
+        { campaign: campaign.id }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {

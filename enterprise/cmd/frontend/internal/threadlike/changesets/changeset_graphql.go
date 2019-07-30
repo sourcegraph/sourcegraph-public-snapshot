@@ -93,9 +93,11 @@ func (v *gqlChangeset) Status() graphqlbackend.ChangesetStatus {
 	return graphqlbackend.ChangesetStatus(v.db.Status)
 }
 
-func (v *gqlChangeset) IsPreview() bool {
-	return v.db.IsPreview
-}
+func (v *gqlChangeset) BaseRef() string { return v.db.BaseRef }
+
+func (v *gqlChangeset) HeadRef() string { return v.db.HeadRef }
+
+func (v *gqlChangeset) IsPreview() bool { return v.db.IsPreview }
 
 func (v *gqlChangeset) RepositoryComparison(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
 	repo, err := v.Repository(ctx)

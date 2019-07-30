@@ -65,12 +65,7 @@ export const CampaignRepositoriesList: React.FunctionComponent<Props> = ({ campa
                                             className="list-group-item border-0 d-flex align-items-start pb-0 px-0 border-left ml-4 pl-4"
                                         >
                                             <GitCommitIcon className="icon-inline mr-3 text-muted" />
-                                            <GitCommitNode
-                                                repoName={c.baseRepository.name}
-                                                node={commit}
-                                                compact={true}
-                                                className="p-0 flex-1"
-                                            />
+                                            <GitCommitNode node={commit} compact={true} className="p-0 flex-1" />
                                         </li>
                                     ))}
                                 </ul>
