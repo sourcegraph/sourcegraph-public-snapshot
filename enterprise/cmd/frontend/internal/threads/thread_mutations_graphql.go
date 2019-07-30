@@ -3,7 +3,6 @@ package threads
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
@@ -13,28 +12,14 @@ func (GraphQLResolver) CreateThread(ctx context.Context, arg *graphqlbackend.Cre
 		return nil, err
 	}
 
-	db := &dbThread{
-		RepositoryID: repo.DBID(),
-		Title:        arg.Input.Title,
-		ExternalURL:  arg.Input.ExternalURL,
-		Type:         arg.Input.Type,
-	}
-	// Apply default status.
-	if arg.Input.Status != nil {
-		db.Status = *arg.Input.Status
-	} else {
-		db.Status = graphqlbackend.ThreadStatusOpen
-	}
-
-	// Validate.
-	if !graphqlbackend.IsValidThreadStatus(string(db.Status)) {
-		return nil, errors.New("invalid thread status")
-	}
-	if !graphqlbackend.IsValidThreadType(string(db.Type)) {
-		return nil, errors.New("invalid thread type")
-	}
-
-	thread, err := dbThreads{}.Create(ctx, db)
+	thread, err := dbThreads{}.Create(ctx, &dbThread{
+		DBThreadCommon: DBThreadCommon{
+			RepositoryID: repo.DBID(),
+			Title:        arg.Input.Title,
+			ExternalURL:  arg.Input.ExternalURL,
+		},
+		Status: graphqlbackend.ThreadStatusOpen,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -42,20 +27,15 @@ func (GraphQLResolver) CreateThread(ctx context.Context, arg *graphqlbackend.Cre
 }
 
 func (GraphQLResolver) UpdateThread(ctx context.Context, arg *graphqlbackend.UpdateThreadArgs) (graphqlbackend.Thread, error) {
-	update := dbThreadUpdate{
-		Title:       arg.Input.Title,
-		ExternalURL: arg.Input.ExternalURL,
-		Status:      arg.Input.Status,
-	}
-	if update.Status != nil && !graphqlbackend.IsValidThreadStatus(string(*update.Status)) {
-		return nil, errors.New("invalid thread status")
-	}
-
 	l, err := threadByID(ctx, arg.Input.ID)
 	if err != nil {
 		return nil, err
 	}
-	thread, err := dbThreads{}.Update(ctx, l.db.ID, update)
+	thread, err := dbThreads{}.Update(ctx, l.db.ID, dbThreadUpdate{
+		Title: arg.Input.Title,
+		// TODO!(sqs): handle body update
+		ExternalURL: arg.Input.ExternalURL,
+	})
 	if err != nil {
 		return nil, err
 	}

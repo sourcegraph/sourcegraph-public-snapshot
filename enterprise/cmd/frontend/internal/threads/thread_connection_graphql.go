@@ -18,13 +18,13 @@ func (GraphQLResolver) ThreadsForRepository(ctx context.Context, repositoryID gr
 		return nil, err
 	}
 	return threadsByOptions(ctx, dbThreadsListOptions{
-		RepositoryID: repo.DBID(),
+		common: DBThreadsListOptionsCommon{RepositoryID: repo.DBID()},
 	}, arg)
 }
 
 func ThreadsByIDs(ctx context.Context, threadIDs []int64, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
 	return threadsByOptions(ctx, dbThreadsListOptions{
-		ThreadIDs: threadIDs,
+		common: DBThreadsListOptionsCommon{ThreadIDs: threadIDs},
 	}, arg)
 }
 

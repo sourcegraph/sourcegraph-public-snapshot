@@ -130,7 +130,7 @@ type threadCommon interface {
 	Repository(context.Context) (*RepositoryResolver, error)
 	Number() string
 	Title() string
-	Body() string
+	Body() *string
 	ExternalURL() *string
 	URL(context.Context) (string, error)
 }

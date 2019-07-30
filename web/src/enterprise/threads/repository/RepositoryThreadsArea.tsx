@@ -91,7 +91,7 @@ export const RepositoryThreadsArea: React.FunctionComponent<Props> = ({
                         <ThreadArea
                             {...context}
                             {...routeComponentProps}
-                            threadIDInRepository={routeComponentProps.match.params.threadIDInRepository}
+                            threadNumber={routeComponentProps.match.params.threadIDInRepository}
                             header={breadcrumbs}
                         />
                     )}

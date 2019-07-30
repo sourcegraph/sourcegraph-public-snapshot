@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
 func (GraphQLResolver) CreateChangeset(ctx context.Context, arg *graphqlbackend.CreateChangesetArgs) (graphqlbackend.Changeset, error) {
@@ -14,24 +15,15 @@ func (GraphQLResolver) CreateChangeset(ctx context.Context, arg *graphqlbackend.
 	}
 
 	db := &dbChangeset{
-		RepositoryID: repo.DBID(),
-		Title:        arg.Input.Title,
-		ExternalURL:  arg.Input.ExternalURL,
-		Type:         arg.Input.Type,
-	}
-	// Apply default status.
-	if arg.Input.Status != nil {
-		db.Status = *arg.Input.Status
-	} else {
-		db.Status = graphqlbackend.ChangesetStatusOpen
-	}
-
-	// Validate.
-	if !graphqlbackend.IsValidChangesetStatus(string(db.Status)) {
-		return nil, errors.New("invalid changeset status")
-	}
-	if !graphqlbackend.IsValidChangesetType(string(db.Type)) {
-		return nil, errors.New("invalid changeset type")
+		DBThreadCommon: threads.DBThreadCommon{
+			RepositoryID: repo.DBID(),
+			Title:        arg.Input.Title,
+			ExternalURL:  arg.Input.ExternalURL,
+		},
+		Status:    graphqlbackend.ChangesetStatusOpen,
+		IsPreview: arg.Input.Preview == nil || *arg.Input.Preview,
+		BaseRef:   arg.Input.BaseRef,
+		HeadRef:   arg.Input.HeadRef,
 	}
 
 	changeset, err := dbChangesets{}.Create(ctx, db)

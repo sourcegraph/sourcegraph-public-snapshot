@@ -20,11 +20,12 @@ func TestGraphQL_CreateThread(t *testing.T) {
 		return &types.Repo{ID: wantRepositoryID}, nil
 	}
 	wantThread := &dbThread{
-		RepositoryID: wantRepositoryID,
-		Title:        "t",
-		ExternalURL:  strptr("u"),
-		Status:       graphqlbackend.ThreadStatusOpen,
-		Type:         graphqlbackend.ThreadTypeThread,
+		DBThreadCommon: DBThreadCommon{
+			RepositoryID: wantRepositoryID,
+			Title:        "t",
+			ExternalURL:  strptr("u"),
+		},
+		Status: graphqlbackend.ThreadStatusOpen,
 	}
 	mocks.threads.Create = func(thread *dbThread) (*dbThread, error) {
 		if !reflect.DeepEqual(thread, wantThread) {
@@ -42,7 +43,7 @@ func TestGraphQL_CreateThread(t *testing.T) {
 			Query: `
 				mutation {
 					threads {
-						createThread(input: { repository: "T3JnOjE=", title: "t", externalURL: "u", type: THREAD }) {
+						createThread(input: { repository: "T3JnOjE=", title: "t", externalURL: "u" }) {
 							id
 							title
 						}
@@ -70,17 +71,19 @@ func TestGraphQL_UpdateThread(t *testing.T) {
 		if id != wantID {
 			t.Errorf("got ID %d, want %d", id, wantID)
 		}
-		return &dbThread{ID: wantID}, nil
+		return &dbThread{DBThreadCommon: DBThreadCommon{ID: wantID}}, nil
 	}
 	mocks.threads.Update = func(id int64, update dbThreadUpdate) (*dbThread, error) {
 		if want := (dbThreadUpdate{Title: strptr("t1"), ExternalURL: strptr("u1")}); !reflect.DeepEqual(update, want) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
 		return &dbThread{
-			ID:           2,
-			RepositoryID: 1,
-			Title:        "t1",
-			ExternalURL:  strptr("u1"),
+			DBThreadCommon: DBThreadCommon{
+				ID:           2,
+				RepositoryID: 1,
+				Title:        "t1",
+				ExternalURL:  strptr("u1"),
+			},
 		}, nil
 	}
 
@@ -121,7 +124,7 @@ func TestGraphQL_DeleteThread(t *testing.T) {
 		if id != wantID {
 			t.Errorf("got ID %d, want %d", id, wantID)
 		}
-		return &dbThread{ID: wantID}, nil
+		return &dbThread{DBThreadCommon: DBThreadCommon{ID: wantID}}, nil
 	}
 	mocks.threads.DeleteByID = func(id int64) error {
 		if id != wantID {

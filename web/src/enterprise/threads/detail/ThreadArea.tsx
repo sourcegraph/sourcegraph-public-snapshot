@@ -28,9 +28,9 @@ interface Props
     extends Pick<ThreadAreaContext, Exclude<keyof ThreadAreaContext, 'thread' | 'onThreadUpdate'>>,
         RouteComponentProps<{}> {
     /**
-     * The thread ID in its repository (i.e., the `Thread.idInRepository` GraphQL API field).
+     * The thread ID in its repository (i.e., the `Thread.number` GraphQL API field).
      */
-    threadIDInRepository: GQL.IThread['idInRepository']
+    threadNumber: GQL.IThread['number']
 
     header: React.ReactFragment
 }
@@ -44,18 +44,18 @@ const PAGE_CLASS_NAME = 'container mt-4'
  */
 export const ThreadArea: React.FunctionComponent<Props> = ({
     header,
-    threadIDInRepository,
+    threadNumber,
     setBreadcrumbItem,
     match,
     ...props
 }) => {
-    const [thread, onThreadUpdate] = useThreadByIDInRepository(props.repo.id, threadIDInRepository)
+    const [thread, onThreadUpdate] = useThreadByIDInRepository(props.repo.id, threadNumber)
 
     useEffect(() => {
         if (setBreadcrumbItem) {
             setBreadcrumbItem(
                 thread !== LOADING && thread !== null && !isErrorLike(thread)
-                    ? { text: `#${thread.idInRepository}`, to: thread.url }
+                    ? { text: `#${thread.number}`, to: thread.url }
                     : undefined
             )
         }

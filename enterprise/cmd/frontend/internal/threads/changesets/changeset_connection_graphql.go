@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
 func (GraphQLResolver) Changesets(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ChangesetConnection, error) {
@@ -18,13 +19,7 @@ func (GraphQLResolver) ChangesetsForRepository(ctx context.Context, repositoryID
 		return nil, err
 	}
 	return changesetsByOptions(ctx, dbChangesetsListOptions{
-		RepositoryID: repo.DBID(),
-	}, arg)
-}
-
-func ChangesetsByIDs(ctx context.Context, changesetIDs []int64, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ChangesetConnection, error) {
-	return changesetsByOptions(ctx, dbChangesetsListOptions{
-		ChangesetIDs: changesetIDs,
+		common: threads.DBThreadsListOptionsCommon{RepositoryID: repo.DBID()},
 	}, arg)
 }
 
@@ -41,7 +36,7 @@ func changesetsByOptions(ctx context.Context, options dbChangesetsListOptions, a
 }
 
 type changesetConnection struct {
-	arg     *graphqlutil.ConnectionArgs
+	arg        *graphqlutil.ConnectionArgs
 	changesets []*gqlChangeset
 }
 

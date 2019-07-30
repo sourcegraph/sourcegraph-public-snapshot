@@ -24,15 +24,17 @@ func TestDB_Threads(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantThread0 := &dbThread{RepositoryID: repo0.ID, Title: "t0", ExternalURL: strptr("u0")}
+	wantThread0 := &dbThread{DBThreadCommon: DBThreadCommon{RepositoryID: repo0.ID, Title: "t0", ExternalURL: strptr("u0")}}
 	thread0, err := dbThreads{}.Create(ctx, wantThread0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	thread1, err := dbThreads{}.Create(ctx, &dbThread{
-		RepositoryID: repo0.ID,
-		Title:        "t1",
-		ExternalURL:  strptr("u1"),
+		DBThreadCommon: DBThreadCommon{
+			RepositoryID: repo0.ID,
+			Title:        "t1",
+			ExternalURL:  strptr("u1"),
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -87,7 +89,7 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// List repo0's threads.
-		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{RepositoryID: repo0.ID})
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{common: DBThreadsListOptionsCommon{RepositoryID: repo0.ID}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -99,7 +101,7 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// Query threads.
-		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{Query: "t1"})
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{common: DBThreadsListOptionsCommon{Query: "t1"}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -110,7 +112,7 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// List threads by IDs.
-		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{ThreadIDs: []int64{thread0.ID}})
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{common: DBThreadsListOptionsCommon{ThreadIDs: []int64{thread0.ID}}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -121,7 +123,7 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// List threads by empty list of IDs.
-		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{ThreadIDs: []int64{}})
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{common: DBThreadsListOptionsCommon{ThreadIDs: []int64{}}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -135,7 +137,7 @@ func TestDB_Threads(t *testing.T) {
 		if err := (dbThreads{}).DeleteByID(ctx, thread0.ID); err != nil {
 			t.Fatal(err)
 		}
-		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{RepositoryID: repo0.ID})
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{common: DBThreadsListOptionsCommon{RepositoryID: repo0.ID}})
 		if err != nil {
 			t.Fatal(err)
 		}

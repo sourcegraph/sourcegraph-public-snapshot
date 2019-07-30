@@ -4,23 +4,21 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
 // dbChangeset describes a changeset.
 type dbChangeset struct {
-	ID           int64
-	RepositoryID api.RepoID // the repository associated with this changeset
-	Title        string
-	ExternalURL  *string
-	Settings     *string
-	Status       graphqlbackend.ChangesetStatus
-	Type         graphqlbackend.ChangesetType
+	threads.DBThreadCommon
+	Status    graphqlbackend.ChangesetStatus
+	IsPreview bool
+	BaseRef   string
+	HeadRef   string
 }
 
 // errChangesetNotFound occurs when a database operation expects a specific changeset to exist but it does
@@ -29,7 +27,7 @@ var errChangesetNotFound = errors.New("changeset not found")
 
 type dbChangesets struct{}
 
-const selectColumns = "id, repository_id, title, external_url, settings, status, type"
+const selectColumns = "is_preview, base_ref, head_ref"
 
 // Create creates a changeset. The changeset argument's (Changeset).ID field is ignored. The database ID of
 // the new changeset is returned.
@@ -44,9 +42,7 @@ func (dbChangesets) Create(ctx context.Context, changeset *dbChangeset) (*dbChan
 		changeset.RepositoryID,
 		changeset.Title,
 		changeset.ExternalURL,
-		changeset.Settings,
 		changeset.Status,
-		changeset.Type,
 	).Scan(&id); err != nil {
 		return nil, err
 	}
@@ -58,7 +54,6 @@ func (dbChangesets) Create(ctx context.Context, changeset *dbChangeset) (*dbChan
 type dbChangesetUpdate struct {
 	Title       *string
 	ExternalURL *string
-	Settings    *string
 	Status      *graphqlbackend.ChangesetStatus
 }
 
@@ -80,9 +75,6 @@ func (s dbChangesets) Update(ctx context.Context, id int64, update dbChangesetUp
 			value = update.ExternalURL
 		}
 		setFields = append(setFields, sqlf.Sprintf("external_url=%s", value))
-	}
-	if update.Settings != nil {
-		setFields = append(setFields, sqlf.Sprintf("settings=%s", *update.Settings))
 	}
 	if update.Status != nil {
 		setFields = append(setFields, sqlf.Sprintf("status=%s", *update.Status))
@@ -122,34 +114,14 @@ func (s dbChangesets) GetByID(ctx context.Context, id int64) (*dbChangeset, erro
 
 // dbChangesetsListOptions contains options for listing changesets.
 type dbChangesetsListOptions struct {
-	Query        string     // only list changesets matching this query (case-insensitively)
-	RepositoryID api.RepoID // only list changesets in this repository
-	ChangesetIDs    []int64
-	Status       graphqlbackend.ChangesetStatus
-	Type         graphqlbackend.ChangesetType
-	*db.LimitOffset
+	common threads.DBThreadsListOptionsCommon
+	Status graphqlbackend.ChangesetStatus
 }
 
 func (o dbChangesetsListOptions) sqlConditions() []*sqlf.Query {
-	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	if o.Query != "" {
-		conds = append(conds, sqlf.Sprintf("title LIKE %s", "%"+o.Query+"%"))
-	}
-	if o.RepositoryID != 0 {
-		conds = append(conds, sqlf.Sprintf("repository_id=%d", o.RepositoryID))
-	}
-	if o.ChangesetIDs != nil {
-		if len(o.ChangesetIDs) > 0 {
-			conds = append(conds, sqlf.Sprintf("id=ANY(%v)", pq.Array(o.ChangesetIDs)))
-		} else {
-			conds = append(conds, sqlf.Sprintf("FALSE"))
-		}
-	}
+	conds := o.common.SQLConditions()
 	if o.Status != "" {
 		conds = append(conds, sqlf.Sprintf("status=%s", o.Status))
-	}
-	if o.Type != "" {
-		conds = append(conds, sqlf.Sprintf("type=%s", o.Type))
 	}
 	return conds
 }

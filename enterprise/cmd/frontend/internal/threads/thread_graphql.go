@@ -2,7 +2,6 @@ package threads
 
 import (
 	"context"
-	"path"
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
@@ -14,7 +13,10 @@ import (
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
 
 // gqlThread implements the GraphQL type Thread.
-type gqlThread struct{ db *dbThread }
+type gqlThread struct {
+	GQLThreadCommon
+	db *dbThread
+}
 
 // threadByID looks up and returns the Thread with the given GraphQL ID. If no such Thread exists, it
 // returns a non-nil error.
@@ -37,7 +39,10 @@ func threadByDBID(ctx context.Context, dbID int64) (*gqlThread, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &gqlThread{db: v}, nil
+	return &gqlThread{
+		GQLThreadCommon: GQLThreadCommon{db: &v.DBThreadCommon},
+		db:              v,
+	}, nil
 }
 
 func (v *gqlThread) ID() graphql.ID {
@@ -78,52 +83,6 @@ func (GraphQLResolver) ThreadInRepository(ctx context.Context, repositoryID grap
 	return thread, nil
 }
 
-func (v *gqlThread) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	return graphqlbackend.RepositoryByDBID(ctx, v.db.RepositoryID)
-}
-
-func (v *gqlThread) Number() string { return strconv.FormatInt(v.db.ID, 10) }
-
-func (v *gqlThread) DBID() int64 { return v.db.ID }
-
-func (v *gqlThread) Title() string { return v.db.Title }
-
-func (v *gqlThread) ExternalURL() *string { return v.db.ExternalURL }
-
-func (v *gqlThread) URL(ctx context.Context) (string, error) {
-	repository, err := v.Repository(ctx)
-	if err != nil {
-		return "", err
-	}
-	return path.Join(repository.URL(), "-", "threads", v.Number()), nil
-}
-
-func (v *gqlThread) Settings() string {
-	if settings := v.db.Settings; settings != nil {
-		return *settings
-	}
-	return "{}"
-}
-
 func (v *gqlThread) Status() graphqlbackend.ThreadStatus {
 	return v.db.Status
-}
-
-func (v *gqlThread) RepositoryComparison(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
-	settings, err := GetSettings(v)
-	if err != nil {
-		return nil, err
-	}
-	if settings.Delta == nil {
-		return nil, nil
-	}
-
-	repo, err := v.Repository(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
-		Base: &settings.Delta.Base,
-		Head: &settings.Delta.Head,
-	})
 }

@@ -103,12 +103,16 @@ type CreateChangesetArgs struct {
 	Input struct {
 		createThreadCommonInput
 		Preview *bool
+		BaseRef string
+		HeadRef string
 	}
 }
 
 type UpdateChangesetArgs struct {
 	Input struct {
 		updateThreadCommonInput
+		BaseRef *string
+		HeadRef *string
 	}
 }
 
@@ -132,6 +136,7 @@ const (
 type Changeset interface {
 	threadCommon
 	Status() ChangesetStatus
+	IsPreview() bool
 	RepositoryComparison(context.Context) (*RepositoryComparisonResolver, error)
 }
 

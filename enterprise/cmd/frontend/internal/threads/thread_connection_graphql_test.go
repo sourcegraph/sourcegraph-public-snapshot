@@ -22,7 +22,7 @@ func TestGraphQL_Repository_ThreadConnection(t *testing.T) {
 		return &types.Repo{ID: wantRepositoryID, Name: "r"}, nil
 	}
 	mocks.threads.List = func(dbThreadsListOptions) ([]*dbThread, error) {
-		return []*dbThread{{ID: wantThreadID, RepositoryID: wantRepositoryID, Title: "t"}}, nil
+		return []*dbThread{{DBThreadCommon: DBThreadCommon{ID: wantThreadID, RepositoryID: wantRepositoryID, Title: "t"}}}, nil
 	}
 
 	gqltesting.RunTests(t, []*gqltesting.Test{

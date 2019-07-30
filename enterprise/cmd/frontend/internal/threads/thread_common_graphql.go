@@ -11,7 +11,7 @@ import (
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
 
 // GQLThreadCommon implements the GraphQL type Thread.
-type GQLThreadCommon struct{ db *dbThread }
+type GQLThreadCommon struct{ db *DBThreadCommon }
 
 func (v *GQLThreadCommon) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	return graphqlbackend.RepositoryByDBID(ctx, v.db.RepositoryID)
@@ -22,6 +22,8 @@ func (v *GQLThreadCommon) Number() string { return strconv.FormatInt(v.db.ID, 10
 func (v *GQLThreadCommon) DBID() int64 { return v.db.ID }
 
 func (v *GQLThreadCommon) Title() string { return v.db.Title }
+
+func (v *GQLThreadCommon) Body() *string { return nil /* TODO!(sqs) */ }
 
 func (v *GQLThreadCommon) ExternalURL() *string { return v.db.ExternalURL }
 

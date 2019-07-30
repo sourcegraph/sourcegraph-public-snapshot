@@ -363,7 +363,7 @@ type Mutation {
 
     # Publish a changeset that was created as a preview. This will result in the head branch and changeset
     # being created on the associated upstream repository. The updated changeset is returned.
-    publishPreviewChangeset(campaign: ID!): Changeset!
+    publishPreviewChangeset(changeset: ID!): Changeset!
 
     # Delete a changeset.
     deleteChangeset(changeset: ID!): EmptyResponse
@@ -4197,6 +4197,12 @@ input CreateChangesetInput {
 
     # Whether the changeset is a preview.
     preview: Boolean
+
+    # The base ref of the changeset.
+    baseRef: String!
+
+    # The head ref of the changeset.
+    headRef: String!
 }
 
 # Input arguments for updating a changeset.
@@ -4213,6 +4219,12 @@ input UpdateChangesetInput {
     # The new external URL of the changeset. If it is the non-null empty string, the external URL is
     # set to null.
     externalURL: String
+
+    # The new base ref of the changeset.
+    baseRef: String
+
+    # The new head ref of the changeset.
+    headRef: String
 }
 
 # A changeset is an issue or changeset.
