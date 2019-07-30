@@ -748,6 +748,21 @@ func TestDiff(t *testing.T) {
 			},
 		},
 		{
+			name: "conflict on case insensitive name no external",
+			store: repos.Repos{
+				{Name: "fOO"},
+			},
+			source: repos.Repos{
+				{Name: "fOO", ExternalRepo: eid("fOO")},
+				{Name: "Foo", ExternalRepo: eid("Foo")},
+			},
+			diff: repos.Diff{
+				Modified: repos.Repos{
+					{Name: "Foo", ExternalRepo: eid("Foo")},
+				},
+			},
+		},
+		{
 			name: "conflict on case insensitive name exists 1",
 			store: repos.Repos{
 				{Name: "foo", ExternalRepo: eid("1")},
