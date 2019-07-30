@@ -11,10 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"gopkg.in/inconshreveable/log15.v2"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var MockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error)
+var mockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error)
 
 // authzFilter is the enforcement mechanism for repository permissions. It is the root
 // repository-permission-enforcing function (i.e., all other code that wants to check/enforce
@@ -63,8 +63,8 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		tr.Finish()
 	}()
 
-	if MockAuthzFilter != nil {
-		return MockAuthzFilter(ctx, repos, p)
+	if mockAuthzFilter != nil {
+		return mockAuthzFilter(ctx, repos, p)
 	}
 
 	if len(repos) == 0 {

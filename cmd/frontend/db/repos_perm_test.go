@@ -152,7 +152,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	defer func() { MockAuthzFilter = nil }()
+	defer func() { mockAuthzFilter = nil }()
 
 	ctx := dbtesting.TestContext(t)
 
@@ -177,7 +177,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 	)
 	{
 		calledFilter := false
-		MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+		mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 			calledFilter = true
 			return repos, nil
 		}
@@ -195,7 +195,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 	}
 	{
 		calledFilter := false
-		MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+		mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 			calledFilter = true
 			return nil, nil
 		}
@@ -214,7 +214,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 	{
 		calledFilter := false
 		filteredRepos := allRepos[0:1]
-		MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+		mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 			calledFilter = true
 			return filteredRepos, nil
 		}

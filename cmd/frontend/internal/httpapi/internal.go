@@ -1,13 +1,10 @@
 package httpapi
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
-	"os"
-	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -21,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
@@ -193,20 +189,14 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveReposList(w http.ResponseWriter, r *http.Request) error {
-	var err error
-	var res []*types.Repo
-	switch envvar.SourcegraphDotComMode() {
-	case true:
-		res, err = listReposForSgDotCom(r.Context())
-	case false:
-		var opt db.ReposListOptions
-		if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
-			return err
-		}
-		res, err = backend.Repos.List(r.Context(), opt)
-	}
+	var opt db.ReposListOptions
+	err := json.NewDecoder(r.Body).Decode(&opt)
 	if err != nil {
-		return errors.Wrap(err, "listing repos")
+		return err
+	}
+	res, err := backend.Repos.List(r.Context(), opt)
+	if err != nil {
+		return err
 	}
 
 	// BACKCOMPAT: Add a "URI" field because zoekt-sourcegraph-indexserver expects one to exist
@@ -218,9 +208,8 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	res2 := make([]*repoWithBackcompatURIField, len(res))
 	for i, repo := range res {
 		res2[i] = &repoWithBackcompatURIField{
-			URI: string(repo.Name),
-			// The setting of the Repo field has been removed because the only caller of this handler
-			// wasn't using it: zoekt-sourcegraph-indexserver.
+			URI:  string(repo.Name),
+			Repo: repo,
 		}
 	}
 
@@ -231,29 +220,6 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 	return nil
-}
-
-func listReposForSgDotCom(ctx context.Context) (res []*types.Repo, err error) {
-	limEnv := os.Getenv("SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
-	// Default to 10k longest lived repos if the env var isn't set.
-	lim := 10000
-	if limEnv != "" {
-		le, err := strconv.Atoi(limEnv)
-		if err != nil {
-			return nil, errors.Wrap(err, "parsing $SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
-		}
-		lim = le
-	}
-	// Grab a bunch of repos that are likely to be fairly popular,
-	// to demo Sourcegraph search.
-	URIs, err := backend.Repos.ListWithLongestInterval(ctx, lim)
-	if err != nil {
-		return nil, errors.Wrap(err, "listing repos with longest interval")
-	}
-	for _, u := range URIs {
-		res = append(res, &types.Repo{Name: api.RepoName(u)})
-	}
-	return res, nil
 }
 
 func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
