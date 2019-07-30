@@ -272,7 +272,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	for _, old := range stored {
 		src := byID[old.ExternalRepo]
 		if src == nil && old.ExternalRepo.ID == "" && !seenName[old.Name] {
-			src = byName[old.Name]
+			src = byName[strings.ToLower(old.Name)]
 		}
 
 		if src == nil {

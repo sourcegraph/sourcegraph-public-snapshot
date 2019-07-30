@@ -13,6 +13,13 @@ type urlToRepoName struct {
 	repoName string
 }
 
+// urlToRepoNameErr is similar to urlToRepoName, but with an expected error value
+type urlToRepoNameErr struct {
+	cloneURL string
+	repoName string
+	err      error
+}
+
 func TestParseCloneURL(t *testing.T) {
 	tests := []struct {
 		input  string

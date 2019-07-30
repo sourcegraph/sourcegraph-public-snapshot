@@ -21,14 +21,22 @@ export class PageTitle extends React.Component<Props, {}> {
 
     public componentWillUnmount(): void {
         titleSet = false
-        document.title = 'Sourcegraph'
+        document.title = this.brandName()
     }
 
     public render(): JSX.Element | null {
         return null
     }
 
+    private brandName(): string {
+        if (!window.context) {
+            return 'Sourcegraph'
+        }
+        const { branding } = window.context
+        return branding ? branding.brandName : 'Sourcegraph'
+    }
+
     private updateTitle(title?: string): void {
-        document.title = title ? `${title} - Sourcegraph` : 'Sourcegraph'
+        document.title = title ? `${title} - ${this.brandName()}` : this.brandName()
     }
 }
