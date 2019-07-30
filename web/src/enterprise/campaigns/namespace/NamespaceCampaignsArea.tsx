@@ -80,7 +80,7 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
                     // tslint:disable-next-line:jsx-no-lambda
                     render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
                         <>
-                            {breadcrumbs}
+                            <div className="container">{breadcrumbs}</div>
                             {removeHeader}
                             <CampaignPreviewPage
                                 {...context}

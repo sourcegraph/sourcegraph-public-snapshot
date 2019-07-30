@@ -97,8 +97,8 @@ export function registerCodemodSearchContributions({
                     }))
 
                 const campaign = await createCampaignFromDiffs(diffs, {
-                    name: query,
-                    description: `Created from search:\n\n${'```'}\n${query}\n${'```'}`,
+                    name: 'search-replace-0',
+                    description: `Created from search-replace.`,
                     preview: true,
                     rules: JSON.stringify([{ message: `Run query: ${query}` }] as ChangesetPlanOperation[]),
                 })

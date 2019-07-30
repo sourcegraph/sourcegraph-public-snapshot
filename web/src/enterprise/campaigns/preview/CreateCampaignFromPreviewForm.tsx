@@ -8,7 +8,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../backend/graphql'
 import { Form } from '../../../components/Form'
 
-const updateCampaign = (args: GQL.IUpdateCampaignOnMutationArguments): Promise<void> =>
+export const updateCampaign = (args: GQL.IUpdateCampaignOnMutationArguments): Promise<void> =>
     mutateGraphQL(
         gql`
             mutation UpdateCampaign($input: UpdateCampaignInput!) {
@@ -95,7 +95,14 @@ export const CreateCampaignFromPreviewForm: React.FunctionComponent<Props> = ({
                 })
             }
         },
-        [uncommittedName, campaign.name, campaign.id, onCampaignUpdate, history, extensionsController.services.notifications.showMessages]
+        [
+            uncommittedName,
+            campaign.name,
+            campaign.id,
+            onCampaignUpdate,
+            history,
+            extensionsController.services.notifications.showMessages,
+        ]
     )
 
     return (

@@ -5,7 +5,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../backend/graphql'
 import { ChangesetForm, ChangesetFormData } from '../form/ChangesetForm'
 
-const updateChangeset = (input: GQL.IUpdateChangesetInput): Promise<void> =>
+export const updateChangeset = (input: GQL.IUpdateChangesetInput): Promise<void> =>
     mutateGraphQL(
         gql`
             mutation UpdateChangeset($input: UpdateChangesetInput!) {
@@ -45,10 +45,10 @@ export const EditChangesetForm: React.FunctionComponent<Props> = ({
 }) => {
     const [isLoading, setIsLoading] = useState(false)
     const onSubmit = useCallback(
-        async ({ name }: ChangesetFormData) => {
+        async ({ title }: ChangesetFormData) => {
             setIsLoading(true)
             try {
-                await updateChangeset({ id: changeset.id, name })
+                await updateChangeset({ id: changeset.id, title })
                 setIsLoading(false)
                 onDismiss()
                 onChangesetUpdate()
