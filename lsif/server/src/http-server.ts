@@ -449,7 +449,10 @@ function main(): void {
                     console.log('Converting json dump into a sqlite db')
 
                     // Create a sibling sqlite-encoded dump of the json database file
-                    await child_process.exec(`${SQLITE_CONVERTER_BINARY} '--in "${tempFile.path} '--out "${key + BLOB_EXTENSION}"`)
+                    const start = new Date().getTime()
+                    await child_process.exec(`${SQLITE_CONVERTER_BINARY} --in "${tempFile.path}" --out "${key + BLOB_EXTENSION}"`)
+                    const elapsed = new Date().getTime() - start
+                    console.log(`blob: convert completed in ${elapsed}ms`)
                 }
 
                 if (ENABLE_JSON_DUMPS) {
