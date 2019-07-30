@@ -106,8 +106,6 @@ export class MultiDatabase extends Database {
     return this.databases.map(db => db.db.declarations(uri, position))[0]
   }
 
-  // NOTE: Originally these
-
   public getDocumentInfos(): DocumentInfo[] {
     return this.databases.map(db => db.db.getDocumentInfos())[0]
   }
