@@ -45,7 +45,6 @@ import (
 // should start here.
 
 func maxReposToSearch() int {
-	return 2
 	switch max := conf.Get().MaxReposToSearch; {
 	case max <= 0:
 		// Default to a very large number that will not overflow if incremented.
