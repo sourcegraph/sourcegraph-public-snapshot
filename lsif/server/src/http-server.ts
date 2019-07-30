@@ -288,7 +288,9 @@ async function withDB(repositoryCommit: RepositoryCommit, action: (db: Database)
     if (entry) {
         await action(await entry.dbPromise)
     } else {
-        // Get the combined length of all files on disk related to this key.
+        // Get the combined length of all files on disk related to this key. They will
+        // all be loaded into memory at the same time while the database is in the LRU
+        // cache.
         const lengths = (await Promise.all(EXTENSIONS.map(ext => getSize(key + ext))))
         const length = lengths.reduce((a, b) => a + b, 0)
 
@@ -373,7 +375,9 @@ function main(): void {
             checkCommit(commit)
             const key = hashKey({ repository, commit })
 
-            // The database does not exist if there is no file to create the database
+            // The database does not exist if there is no file from which to create the database,
+            // If any of these files exist, then we need to load it into memory and see if the
+            // provided file is inside the dump.
             if (!(await Promise.all(EXTENSIONS.map(ext => fs.exists(key + ext)))).some(v => v)) {
                 res.send(false)
                 return
@@ -469,8 +473,9 @@ function main(): void {
 
                 if (ENABLE_BLOB_DUMPS) {
                     console.log('Creating blob-encoded sqlite database')
-                    // TODO - set version somehow
-                    const command = `${SQLITE_CONVERTER_BINARY} --in "${tempFile.path}" --out "${key + BLOB_EXTENSION}" --format blob --delete --projectVersion 0.1.0`
+                    const projectVersion = "0" // TODO(efritz) - provide real version instead of a dummy value
+                    const blobArguments = `--format blob --delete --projectVersion ${projectVersion}`
+                    const command = `${SQLITE_CONVERTER_BINARY} --in "${tempFile.path}" --out "${key + BLOB_EXTENSION}" ${blobArguments}`
                     await instrumentPromise('blob: convert', child_process.exec(command))
                     const size = await getSize(key + BLOB_EXTENSION)
                     console.log(`Sqlite file is ${size} bytes`)
