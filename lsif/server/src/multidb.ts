@@ -127,8 +127,8 @@ export class MultiDatabase extends Database {
 function instrumentPromise<T>(name: string, p: Promise<T>): Promise<T> {
   const start = new Date().getTime()
   return p.then(res => {
-    const elapsed = new Date().getTime() - start;
-    console.log('%s completed in %.2fms', name, elapsed)
+    const elapsed = new Date().getTime() - start
+    console.log(`${name} completed in ${elapsed}ms`)
     return res;
   });
 }
@@ -136,8 +136,8 @@ function instrumentPromise<T>(name: string, p: Promise<T>): Promise<T> {
 function instrument<T>(name: string, f: () => T): T {
   const start = new Date().getTime()
   const res = f();
-  const elapsed = new Date().getTime() - start;
-  console.log('%s completed in %.2fms', name, elapsed)
+  const elapsed = new Date().getTime() - start
+  console.log(`${name} completed in ${elapsed}ms`)
   return res;
 }
 
