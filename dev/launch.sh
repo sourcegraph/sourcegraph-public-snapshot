@@ -17,8 +17,6 @@ fi
 export GO111MODULE=on
 go run ./pkg/version/minversion
 
-export GOMOD_ROOT="${GOMOD_ROOT:-$PWD}"
-
 # Verify postgresql config.
 hash psql 2>/dev/null || {
     # "brew install postgresql@9.6" does not put psql on the $PATH by default;
@@ -114,5 +112,5 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 }
 
 printf >&2 "\nStarting all binaries...\n\n"
-export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE:-dev/Procfile}"
+export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
 exec $GOREMAN start
