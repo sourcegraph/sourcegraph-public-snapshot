@@ -36,7 +36,7 @@ export abstract class Database {
 
     public abstract getProjectRoot(): URI
 
-    protected abstract getDocumentInfos(): DocumentInfo[]
+    public abstract getDocumentInfos(): DocumentInfo[]
 
     public stat(uri: string): FileStat | null {
         let transformed = this.uriTransformer.toDatabase(uri)
@@ -71,9 +71,9 @@ export abstract class Database {
         return result
     }
 
-    protected abstract findFile(uri: string): Id | undefined
+    public abstract findFile(uri: string): Id | undefined
 
-    protected abstract fileContent(id: Id): string | undefined
+    public abstract fileContent(id: Id): string | undefined
 
     public abstract foldingRanges(uri: string): lsp.FoldingRange[] | undefined
 

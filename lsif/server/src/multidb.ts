@@ -84,8 +84,9 @@ export class MultiDatabase extends Database {
     )
   }
 
-  // These methods need to be defined, but are not actually called anywhere
-  // in the http-server path. We don't need to do as through of a job on these.
+  // Define the remaining methods, although they are not called *directly* in
+  // the http server path. These methods are called indirectly from the child
+  // class in inheritance hierarcy.
 
   public getProjectRoot(): URI {
     return this.databases.map(db => db.db.getProjectRoot())[0]
@@ -103,20 +104,18 @@ export class MultiDatabase extends Database {
     return this.databases.map(db => db.db.declarations(uri, position))[0]
   }
 
-  // The following methods are abstract and need to be defined
-  // but are also protected so we can just return some junk to
-  // appease the compiler.
+  // NOTE: Originally these
 
-  protected getDocumentInfos(): DocumentInfo[] {
-    return []
+  public getDocumentInfos(): DocumentInfo[] {
+    return this.databases.map(db => db.db.getDocumentInfos())[0]
   }
 
-  protected findFile(uri: string): Id | undefined {
-    return undefined
+  public findFile(uri: string): Id | undefined {
+    return this.databases.map(db => db.db.findFile(uri))[0]
   }
 
-  protected fileContent(id: Id): string | undefined {
-    return undefined
+  public fileContent(id: Id): string | undefined {
+    return this.databases.map(db => db.db.fileContent(id))[0]
   }
 }
 

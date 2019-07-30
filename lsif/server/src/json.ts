@@ -301,7 +301,7 @@ export class JsonDatabase extends Database {
         return result
     }
 
-    protected findFile(uri: string): Id | undefined {
+    public findFile(uri: string): Id | undefined {
         let result = this.indices.documents.get(uri)
         if (result == undefined) {
             return undefined
@@ -309,7 +309,7 @@ export class JsonDatabase extends Database {
         return result.id
     }
 
-    protected fileContent(id: Id): string | undefined {
+    public fileContent(id: Id): string | undefined {
         let document = this.vertices.documents.get(id)
         if (document === undefined) {
             return undefined

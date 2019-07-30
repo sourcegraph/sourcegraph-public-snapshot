@@ -201,7 +201,7 @@ export class BlobStore extends Database {
     this.db.close();
   }
 
-  protected getDocumentInfos(): DocumentInfo[] {
+  public getDocumentInfos(): DocumentInfo[] {
     let result: DocumentsResult[] = this.allDocumentsStmt.all(this.version);
     if (result === undefined) {
       return [];
@@ -219,12 +219,12 @@ export class BlobStore extends Database {
     return result;
   }
 
-  protected findFile(uri: string): Id | undefined {
+  public findFile(uri: string): Id | undefined {
     let result: DocumentResult = this.findDocumentStmt.get({ version: this.version, uri: uri });
     return result !== undefined ? result.documentHash : undefined;
   }
 
-  protected fileContent(documentId: Id): string {
+  public fileContent(documentId: Id): string {
     const blob = this.getBlob(documentId);
     return Buffer.from(blob.contents).toString('base64');
   }
