@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -889,5 +890,113 @@ func TestSearchResultsHydration(t *testing.T) {
 		case *repositoryResolver:
 			assertRepoResolverHydrated(ctx, t, r, hydratedRepo)
 		}
+	}
+}
+
+func Test_dedupSort(t *testing.T) {
+	repos := make(types.Repos, 512)
+	for i := range repos {
+		repos[i] = &types.Repo{ID: api.RepoID(i % 256)}
+	}
+
+	rand.Shuffle(len(repos), func(i, j int) {
+		repos[i], repos[j] = repos[j], repos[i]
+	})
+
+	dedupSort(&repos)
+
+	if have, want := len(repos), 256; have != want {
+		t.Fatalf("have %d unique repos, want: %d", have, want)
+	}
+
+	for i, r := range repos {
+		if have, want := api.RepoID(i), r.ID; have != want {
+			t.Errorf("%dth repo id = %d, want %d", i, have, want)
+		}
+	}
+}
+
+func Test_searchResultsResolver_ApproximateResultCount(t *testing.T) {
+	type fields struct {
+		results             []searchResultResolver
+		searchResultsCommon searchResultsCommon
+		alert               *searchAlert
+		start               time.Time
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name:   "empty",
+			fields: fields{},
+			want:   "0",
+		},
+
+		{
+			name: "file matches",
+			fields: fields{
+				results: []searchResultResolver{&fileMatchResolver{}},
+			},
+			want: "1",
+		},
+
+		{
+			name: "file matches limit hit",
+			fields: fields{
+				results:             []searchResultResolver{&fileMatchResolver{}},
+				searchResultsCommon: searchResultsCommon{limitHit: true},
+			},
+			want: "1+",
+		},
+
+		{
+			name: "symbol matches",
+			fields: fields{
+				results: []searchResultResolver{
+					&fileMatchResolver{
+						symbols: []*searchSymbolResult{
+							// 1
+							{},
+							// 2
+							{},
+						},
+					},
+				},
+			},
+			want: "2",
+		},
+
+		{
+			name: "symbol matches limit hit",
+			fields: fields{
+				results: []searchResultResolver{
+					&fileMatchResolver{
+						symbols: []*searchSymbolResult{
+							// 1
+							{},
+							// 2
+							{},
+						},
+					},
+				},
+				searchResultsCommon: searchResultsCommon{limitHit: true},
+			},
+			want: "2+",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sr := &searchResultsResolver{
+				results:             tt.fields.results,
+				searchResultsCommon: tt.fields.searchResultsCommon,
+				alert:               tt.fields.alert,
+				start:               tt.fields.start,
+			}
+			if got := sr.ApproximateResultCount(); got != tt.want {
+				t.Errorf("searchResultsResolver.ApproximateResultCount() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

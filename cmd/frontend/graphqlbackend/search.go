@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -424,9 +425,14 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
 	tr.LazyPrintf("Associate/validate revs - start")
 	for _, repo := range repos {
+		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
 		repoRev := &search.RepositoryRevisions{Repo: repo}
 
-		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
+		// We do in place filtering to reduce allocations. Common path is no
+		// filtering of revs.
+		if len(revs) > 0 {
+			repoRev.Revs = revs[:0]
+		}
 
 		// if multiple specified revisions clash, report this usefully:
 		if len(revs) == 0 && clashingRevs != nil {
@@ -452,7 +458,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 				// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
 				// taking a long time because they all ask gitserver to try to fetch from the remote
 				// repo.
-				if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), nil, rev.RevSpec, &git.ResolveRevisionOptions{NoEnsureRevision: true}); git.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
+				if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), nil, rev.RevSpec, &git.ResolveRevisionOptions{NoEnsureRevision: true}); gitserver.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
 					// The revspec does not exist, so don't include it, and report that it's missing.
 					if rev.RevSpec == "" {
 						// Report as HEAD not "" (empty string) to avoid user confusion.
@@ -753,7 +759,7 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev search.Reposito
 		} else {
 			common.missing = append(common.missing, repoRev.Repo)
 		}
-	} else if git.IsRevisionNotFound(searchErr) {
+	} else if gitserver.IsRevisionNotFound(searchErr) {
 		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
 			// If we didn't specify an input revision, then the repo is empty and can be ignored.
 		} else {

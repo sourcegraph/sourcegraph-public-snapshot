@@ -305,7 +305,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			Kind:        req.ExternalService.Kind,
 			DisplayName: req.ExternalService.DisplayName,
 			Config:      req.ExternalService.Config,
-		}, nil)
+		}, repos.NewHTTPClientFactory())
 		if err != nil {
 			errch <- err
 			return
@@ -468,9 +468,10 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 		return 0, err
 	}
 
-	clonedRepos := make(map[api.RepoName]bool, len(names))
+	clonedRepos := make(map[string]bool, len(names))
 	for _, n := range names {
-		clonedRepos[n] = false
+		lower := strings.ToLower(string(n))
+		clonedRepos[lower] = false
 	}
 
 	cloned, err := s.GitserverClient.ListCloned(ctx)
@@ -479,8 +480,9 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 	}
 
 	for _, c := range cloned {
-		if _, ok := clonedRepos[api.RepoName(c)]; ok {
-			clonedRepos[api.RepoName(c)] = true
+		lower := strings.ToLower(c)
+		if _, ok := clonedRepos[lower]; ok {
+			clonedRepos[lower] = true
 		}
 	}
 

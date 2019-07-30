@@ -118,14 +118,18 @@ func (fm *fileMatchResolver) ToFileMatch() (*fileMatchResolver, bool)   { return
 func (fm *fileMatchResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
 }
+func (r *fileMatchResolver) ToCodemodResult() (*codemodResultResolver, bool) {
+	return nil, false
+}
 
 func (fm *fileMatchResolver) searchResultURIs() (string, string) {
 	return string(fm.repo.Name), fm.JPath
 }
 
 func (fm *fileMatchResolver) resultCount() int32 {
-	if l := len(fm.LineMatches()); l > 0 {
-		return int32(l)
+	rc := len(fm.symbols) + len(fm.LineMatches())
+	if rc > 0 {
+		return int32(rc)
 	}
 	return 1 // 1 to count "empty" results like type:path results
 }

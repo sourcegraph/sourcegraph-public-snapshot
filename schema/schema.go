@@ -91,6 +91,16 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
+// BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
+type BitbucketCloudConnection struct {
+	AppPassword           string   `json:"appPassword"`
+	GitURLType            string   `json:"gitURLType,omitempty"`
+	RepositoryPathPattern string   `json:"repositoryPathPattern,omitempty"`
+	Teams                 []string `json:"teams,omitempty"`
+	Url                   string   `json:"url"`
+	Username              string   `json:"username"`
+}
+
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
 type BitbucketServerAuthorization struct {
 	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
@@ -393,8 +403,9 @@ type OpenIDConnectAuthProvider struct {
 
 // OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
 type OtherExternalServiceConnection struct {
-	Repos []string `json:"repos"`
-	Url   string   `json:"url,omitempty"`
+	Repos                 []string `json:"repos"`
+	RepositoryPathPattern string   `json:"repositoryPathPattern,omitempty"`
+	Url                   string   `json:"url,omitempty"`
 }
 
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
@@ -504,6 +515,8 @@ type SiteConfiguration struct {
 	GitMaxConcurrentClones            int                         `json:"gitMaxConcurrentClones,omitempty"`
 	GithubClientID                    string                      `json:"githubClientID,omitempty"`
 	GithubClientSecret                string                      `json:"githubClientSecret,omitempty"`
+	LsifUploadSecret                  string                      `json:"lsifUploadSecret,omitempty"`
+	LsifVerificationGithubToken       string                      `json:"lsifVerificationGithubToken,omitempty"`
 	MaxReposToSearch                  int                         `json:"maxReposToSearch,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
 	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`

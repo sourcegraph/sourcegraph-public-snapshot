@@ -41,7 +41,6 @@ for pkg in $server_pkg \
     github.com/google/zoekt/cmd/zoekt-webserver $additional_images; do
 
     go build \
-      -a \
       -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION"  \
       -buildmode exe \
       -installsuffix netgo \
@@ -51,6 +50,11 @@ done
 
 echo "--- build sqlite for symbols"
 env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$bindir/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
+
+echo "--- build lsif-server"
+yarn --cwd lsif/server
+yarn --cwd lsif/server run build
+cp lsif/server/out/http-server.bundle.js "$OUTPUT/lsif-server.js"
 
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \

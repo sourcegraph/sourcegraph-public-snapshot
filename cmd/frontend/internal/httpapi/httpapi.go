@@ -3,6 +3,8 @@ package httpapi
 import (
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"reflect"
 	"strconv"
 	"time"
@@ -19,6 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+var lsifServerURLFromEnv = env.Get("LSIF_SERVER_URL", "http://lsif-server:3186", "URL at which the lsif-server service can be reached")
 
 // NewHandler returns a new API handler that uses the provided API
 // router, which must have been created by httpapi/router.New, or
@@ -44,6 +48,17 @@ func NewHandler(m *mux.Router) http.Handler {
 	}
 
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
+
+	lsifServerURL, err := url.Parse(lsifServerURLFromEnv)
+	if err != nil {
+		log15.Error("skipping initialization of the LSIF HTTP API because the environment variable LSIF_SERVER_URL is not a valid URL", "parse_error", err, "value", lsifServerURLFromEnv)
+	} else {
+		proxy := httputil.NewSingleHostReverseProxy(lsifServerURL)
+		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(lsifUploadProxyHandler(proxy))))
+		m.Get(apirouter.LSIFChallenge).Handler(trace.TraceRoute(http.HandlerFunc(lsifChallengeHandler)))
+		m.Get(apirouter.LSIFVerify).Handler(trace.TraceRoute(http.HandlerFunc(lsifVerifyHandler)))
+		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(lsifProxyHandler(proxy))))
+	}
 
 	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(registry.HandleRegistry)))
 

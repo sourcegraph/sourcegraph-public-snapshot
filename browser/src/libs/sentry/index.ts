@@ -4,7 +4,6 @@ import { observeStorageKey } from '../../browser/storage'
 import { featureFlagDefaults } from '../../browser/types'
 import { isInPage } from '../../context'
 import { DEFAULT_SOURCEGRAPH_URL, getExtensionVersion } from '../../shared/util/context'
-import { determineCodeHost } from '../code_intelligence'
 
 const isExtensionStackTrace = (stacktrace: Sentry.Stacktrace, extensionID: string): boolean =>
     !!(stacktrace.frames && stacktrace.frames.some(({ filename }) => !!(filename && filename.includes(extensionID))))
@@ -29,7 +28,7 @@ const callSentryInit = once((extensionID: string) => {
 })
 
 /** Initialize Sentry for error reporting. */
-export function initSentry(script: 'content' | 'options' | 'background'): void {
+export function initSentry(script: 'content' | 'options' | 'background', codeHost?: string): void {
     if (process.env.NODE_ENV !== 'production') {
         return
     }
@@ -51,9 +50,8 @@ export function initSentry(script: 'content' | 'options' | 'background'): void {
         Sentry.configureScope(async scope => {
             scope.setTag('script', script)
             scope.setTag('extension_version', getExtensionVersion())
-            const codeHost = determineCodeHost()
             if (codeHost) {
-                scope.setTag('code_host', codeHost.type)
+                scope.setTag('code_host', codeHost)
             }
         })
     })

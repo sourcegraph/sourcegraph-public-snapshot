@@ -22,6 +22,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"strings"
 	"time"
 
 	"golang.org/x/net/trace"
@@ -56,7 +57,23 @@ func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath stri
 		if err != nil {
 			return nil, errors.New("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 		}
-		return exec.Command(t.BinaryPath, spec.MatchTemplate, spec.RewriteTemplate, spec.FileExtension, "-zip", zipPath, "-json-lines"), nil
+
+		var args []string
+		args = append(args, spec.MatchTemplate, spec.RewriteTemplate)
+
+		if spec.FileExtension != "" {
+			args = append(args, spec.FileExtension)
+		}
+
+		args = append(args, "-zip", zipPath, "-json-lines", "-json-only-diff")
+
+		if spec.DirectoryExclude != "" {
+			args = append(args, "-exclude-dir", spec.DirectoryExclude)
+		}
+
+		log15.Info(fmt.Sprintf("running command: comby %q", strings.Join(args[:], " ")))
+		return exec.Command(t.BinaryPath, args...), nil
+
 	default:
 		return nil, errors.Errorf("Unknown external replace tool %q.", t.Name)
 	}
@@ -216,15 +233,17 @@ func (s *Service) replace(ctx context.Context, p *protocol.Request, w http.Respo
 
 	if err := cmd.Start(); err != nil {
 		log15.Info("Error starting command: " + err.Error())
+		return false, errors.New(err.Error())
 	}
 
 	_, err = io.Copy(w, stdout)
 	if err != nil {
 		log15.Info("Error copying external command output to HTTP writer: " + err.Error())
+		return
 	}
 
 	if err := cmd.Wait(); err != nil {
-		log15.Info("Error after executing command: " + err.Error())
+		log15.Info("Error after executing command: " + string(err.(*exec.ExitError).Stderr))
 	}
 
 	return false, nil

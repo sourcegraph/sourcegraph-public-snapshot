@@ -27,6 +27,7 @@ const config: webpack.Configuration = {
         filename: '[name].bundle.js',
         chunkFilename: '[id].chunk.js',
     },
+    devtool: 'inline-cheap-module-source-map',
 
     plugins: [
         new MiniCssExtractPlugin({ filename: '../css/[name].bundle.css' }),

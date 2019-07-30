@@ -28,6 +28,8 @@ var defaultEnv = map[string]string{
 	"QUERY_RUNNER_URL":      "http://127.0.0.1:3183",
 	"SRC_SYNTECT_SERVER":    "http://127.0.0.1:9238",
 	"SYMBOLS_URL":           "http://127.0.0.1:3184",
+	"REPLACER_URL":          "http://127.0.0.1:3185",
+	"LSIF_SERVER_URL":       "http://127.0.0.1:3186",
 	"SRC_HTTP_ADDR":         ":8080",
 	"SRC_HTTPS_ADDR":        ":8443",
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
@@ -37,6 +39,7 @@ var defaultEnv = map[string]string{
 	// searcher/symbols to ensure this value isn't larger than the volume for
 	// CACHE_DIR.
 	"SEARCHER_CACHE_SIZE_MB": "50000",
+	"REPLACER_CACHE_SIZE_MB": "50000",
 	"SYMBOLS_CACHE_SIZE_MB":  "50000",
 
 	// Used to differentiate between deployments on dev, Docker, and Kubernetes.
@@ -96,6 +99,7 @@ func Main() {
 	// Next persistence
 	{
 		SetDefaultEnv("SRC_REPOS_DIR", filepath.Join(DataDir, "repos"))
+		SetDefaultEnv("LSIF_STORAGE_ROOT", filepath.Join(DataDir, "lsif-storage"))
 		SetDefaultEnv("CACHE_DIR", filepath.Join(DataDir, "cache"))
 	}
 
@@ -140,11 +144,12 @@ func Main() {
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
+		`lsif-server: node /lsif-server.js | grep -v 'Listening for HTTP requests'`,
 		`management-console: management-console`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
 		`repo-updater: repo-updater`,
-		`syntect_server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
+		`syntect_server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
 	}
 	procfile = append(procfile, ProcfileAdditions...)
 	if line, err := maybeRedisProcFile(); err != nil {

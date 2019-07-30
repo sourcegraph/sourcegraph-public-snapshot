@@ -835,6 +835,9 @@ type Query {
     dotcom: DotcomQuery!
     # Lists all status messages
     statusMessages: [StatusMessage!]!
+
+    # Look up a namespace by ID.
+    namespace(id: ID!): Namespace
 }
 
 # A query and an associated number of times it occurred.
@@ -873,7 +876,7 @@ type Search {
 }
 
 # A search result.
-union SearchResult = FileMatch | CommitSearchResult | Repository
+union SearchResult = FileMatch | CommitSearchResult | Repository | CodemodResult
 
 # An object representing a markdown string.
 type Markdown {
@@ -1067,6 +1070,20 @@ type CommitSearchResult implements GenericSearchResultInterface {
     diffPreview: HighlightedString
 }
 
+# The result of a code modification query.
+type CodemodResult implements GenericSearchResultInterface {
+    # URL to an icon that is displayed with every search result.
+    icon: String!
+    # A markdown string that is rendered prominently.
+    label: Markdown!
+    # The URL of the result.
+    url: String!
+    # A markdown string that is rendered less prominently.
+    detail: Markdown!
+    # A list of matches in this search result.
+    matches: [SearchResultMatch!]!
+}
+
 # A search result that is a diff between two diffable Git objects.
 type DiffSearchResult {
     # The diff that matched the search query.
@@ -1108,6 +1125,7 @@ type ExternalServiceConnection {
 # A specific kind of external service.
 enum ExternalServiceKind {
     AWSCODECOMMIT
+    BITBUCKETCLOUD
     BITBUCKETSERVER
     GITHUB
     GITLAB
@@ -2113,6 +2131,15 @@ type Hunk {
     commit: GitCommit!
 }
 
+# A namespace is a container for certain types of data and settings, such as a user or organization.
+interface Namespace {
+    # The globally unique ID of this namespace.
+    id: ID!
+
+    # The URL to this namespace.
+    url: String!
+}
+
 # A list of users.
 type UserConnection {
     # A list of users.
@@ -2125,7 +2152,7 @@ type UserConnection {
 }
 
 # A user.
-type User implements Node & SettingsSubject {
+type User implements Node & SettingsSubject & Namespace {
     # The unique ID for the user.
     id: ID!
     # The user's username.
@@ -2371,7 +2398,7 @@ type OrgConnection {
 }
 
 # An organization, which is a group of users.
-type Org implements Node & SettingsSubject {
+type Org implements Node & SettingsSubject & Namespace {
     # The unique ID for the organization.
     id: ID!
     # The organization's name. This is unique among all organizations on this Sourcegraph site.

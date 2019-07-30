@@ -200,9 +200,9 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                                 }
                                 aria-describedby="user-settings-profile-page__form-username-help"
                             />
-                            <small id="user-settings-profile-page__form-username-help" className="form-text text-muted">
-                                A username consists of letters, numbers, hyphens (-) and may not begin or end with a
-                                hyphen
+                            <small className="form-text text-muted">
+                                A username consists of letters, numbers, hyphens (-), dots (.) and may not begin or end
+                                with a hyphen nor a dot.
                             </small>
                         </div>
                         <div className="form-group">

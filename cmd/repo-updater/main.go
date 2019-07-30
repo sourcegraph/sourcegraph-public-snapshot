@@ -97,23 +97,6 @@ func main() {
 		src = repos.NewSourcer(cf, repos.ObservedSource(log15.Root(), m))
 	}
 
-	migrations := []repos.Migration{
-		repos.GitLabSetDefaultProjectQueryMigration(clock),
-		repos.BitbucketServerUsernameMigration(clock), // Needs to run before EnabledStateDeprecationMigration
-		repos.AWSCodeCommitSetBogusGitCredentialsMigration(clock),
-	}
-
-	if !envvar.SourcegraphDotComMode() {
-		migrations = append(migrations, repos.EnabledStateDeprecationMigration(src, clock))
-	}
-
-	for _, m := range migrations {
-		if err := m.Run(ctx, store); err != nil {
-			log.Fatalf("failed to run migration: %s", err)
-		}
-	}
-	log15.Debug("ran migrations")
-
 	scheduler := repos.NewUpdateScheduler()
 	server := repoupdater.Server{
 		Store:           store,

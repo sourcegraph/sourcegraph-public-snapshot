@@ -1,8 +1,7 @@
 // The Sourcegraph site configuration for development servers.
 {
   "experimentalFeatures": {
-    "discussions": "enabled",
-    "statusIndicator": "enabled"
+    "discussions": "enabled"
   },
   "disablePublicRepoRedirects": true,
   "repoListUpdateInterval": 1

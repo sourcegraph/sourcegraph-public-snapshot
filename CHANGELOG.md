@@ -9,25 +9,59 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
-## 3.6.0 (unreleased)
+## 3.7.0 (unreleased)
+
+### Added
+
+- Repos with greatest `updated_at - created_at` are prioritized for indexing, to support `repo:`-free queries on sourcegraph.com. [#4958](https://github.com/sourcegraph/sourcegraph/issues/4958).
+
+### Changed
+
+- Out-of-the-box TypeScript code intelligence is much better with an updated ctags version with a built-in TypeScript parser.
+
+### Fixed
+
+### Removed
+
+## 3.6.0
 
 ### Added
 
 - The `github.exclude` setting in [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) additionally allows you to specify regular expressions with `{"pattern": "regex"}`.
 - A new [`quicklinks` setting](https://docs.sourcegraph.com/user/quick_links) allows adding links to be displayed on the homepage and search page for all users (or users in an organization).
+- Compatibility with the [Sourcegraph for Bitbucket Server](https://github.com/sourcegraph/bitbucket-server-plugin) plugin.
+- Support for [Bitbucket Cloud](https://bitbucket.org) as an external service.
 
 ### Changed
 
 - Updating or creating an external service will no longer block until the service is synced.
 - The GraphQL fields `Repository.createdAt` and `Repository.updatedAt` are deprecated and will be removed in 3.8. Now `createdAt` is always the current time and updatedAt is always null.
 - In the [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) and [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#permissions) `repositoryQuery` is now only required if `repos` is not set.
-- Usernames can now contain the `.` character (#4690).
+- Log messages from query-runner when saved searches fail now include the raw query as part of the message.
+- The status indicator in the navigation bar is now enabled by default
+- Usernames and org names can now contain the `.` character. [#4674](https://github.com/sourcegraph/sourcegraph/issues/4674)
 
 ### Fixed
 
 - Commit searches now correctly highlight unicode characters, for example 加. [#4512](https://github.com/sourcegraph/sourcegraph/issues/4512)
+- Symbol searches now show the number of symbol matches rather than the number of file matches found. [#4578](https://github.com/sourcegraph/sourcegraph/issues/4578)
+- Symbol searches with truncated results now show a `+` on the results page to signal that some results have been omitted. [#4579](https://github.com/sourcegraph/sourcegraph/issues/4579)
 
-### Removed
+## 3.5.2
+
+### Changed
+
+- Usernames and org names can now contain the `.` character. [#4674](https://github.com/sourcegraph/sourcegraph/issues/4674)
+
+### Added
+
+- Syntax highlighting requests that fail are now logged and traced. A new Prometheus metric `src_syntax_highlighting_requests` allows monitoring and alerting. [#4877](https://github.com/sourcegraph/sourcegraph/issues/4877).
+- Sourcegraph's SAML authentication now supports RSA PKCS#1 v1.5. [#4869](https://github.com/sourcegraph/sourcegraph/pull/4869)
+
+### Fixed
+
+- Increased nginx proxy buffer size to fix issue where login failed when SAML AuthnRequest was too large. [#4849](https://github.com/sourcegraph/sourcegraph/pull/4849)
+- A regression in 3.3.8 where `"corsOrigin": "*"` was improperly forbidden. [#4424](https://github.com/sourcegraph/sourcegraph/issues/4424)
 
 ## 3.5.1
 
@@ -62,8 +96,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed repository search patterns which contain `.*`. Previously our optimizer would ignore `.*`, which in some cases would lead to our repository search excluding some repositories from the results.
 - Fixed an issue where the Phabricator native integration would be broken on recent Phabricator versions. This fix depends on v1.2 of the [Phabricator extension](https://github.com/sourcegraph/phabricator-extension).
 - Fixed an issue where the "Empty repository" banner would be shown on a repository page when starting to clone a repository.
-- Prevent data inconsistency on cached archives due to restarts. (#4366)
-- On the /extensions page, the UI is now less ambiguous when an extension has not been activated. (#4446)
+- Prevent data inconsistency on cached archives due to restarts. [#4366](https://github.com/sourcegraph/sourcegraph/pull/4366)
+- On the /extensions page, the UI is now less ambiguous when an extension has not been activated. [#4446](https://github.com/sourcegraph/sourcegraph/issues/4446)
 
 ## 3.4.5
 
@@ -77,7 +111,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixed an out of bounds error in the GraphQL repository query. (#4426)
+- Fixed an out of bounds error in the GraphQL repository query. [#4426](https://github.com/sourcegraph/sourcegraph/issues/4426)
 
 ## 3.4.3
 
@@ -150,6 +184,12 @@ All notable changes to Sourcegraph are documented in this file.
 - Fully resolved the search performance regression in v3.2.0, restoring performance of search back to the same levels it was before changes made in v3.2.0.
 - Fix a bug where using a repo search filter with the prefix `github.com` only searched for repos whose name starts with `github.com`, even though no `^` was specified in the search filter. (#4103)
 - Fixed an issue where files that fail syntax highlighting would incorrectly render an error instead of gracefully falling back to their plaintext form.
+
+## 3.3.9
+
+### Added
+
+- Syntax highlighting requests that fail are now logged and traced. A new Prometheus metric `src_syntax_highlighting_requests` allows monitoring and alerting. [#4877](https://github.com/sourcegraph/sourcegraph/issues/4877).
 
 ## 3.3.8
 

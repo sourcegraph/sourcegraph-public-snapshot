@@ -5,7 +5,7 @@ RUN apk --no-cache add --virtual build-deps curl jansson-dev \
     libseccomp-dev linux-headers autoconf pkgconfig make automake \
     gcc g++ binutils
 
-ENV CTAGS_VERSION=5b4865cc2d4831db9d638a647ff2f5a0dced2133
+ENV CTAGS_VERSION=1a94658c2cb47304d0e9811d49e0a5f48bdb3a0a
 
 # hadolint ignore=DL3003
 RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctags/tar.gz/$CTAGS_VERSION" && \
@@ -44,7 +44,7 @@ RUN apk update && apk add --no-cache \
     # https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/postgresql.md#version-requirements
     'bash=4.4.19-r1' 'postgresql-contrib=11.4-r0' 'postgresql=11.4-r0' \
     'redis=3.2.12-r0' bind-tools ca-certificates git@edge \
-    mailcap nginx openssh-client pcre su-exec tini
+    mailcap nginx openssh-client pcre su-exec tini nodejs=10.14.2-r0
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)

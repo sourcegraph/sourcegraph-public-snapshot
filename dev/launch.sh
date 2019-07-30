@@ -43,14 +43,17 @@ export SRC_LOG_LEVEL=${SRC_LOG_LEVEL:-info}
 export SRC_LOG_FORMAT=${SRC_LOG_FORMAT:-condensed}
 export GITHUB_BASE_URL=${GITHUB_BASE_URL:-http://127.0.0.1:3180}
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos
+export LSIF_STORAGE_ROOT=$HOME/.sourcegraph/lsif-storage
 export INSECURE_DEV=1
 export SRC_GIT_SERVERS=127.0.0.1:3178
 export GOLANGSERVER_SRC_GIT_SERVERS=host.docker.internal:3178
 export SEARCHER_URL=http://127.0.0.1:3181
+export REPLACER_URL=http://127.0.0.1:3185
 export REPO_UPDATER_URL=http://127.0.0.1:3182
 export REDIS_ENDPOINT=127.0.0.1:6379
 export QUERY_RUNNER_URL=http://localhost:3183
 export SYMBOLS_URL=http://localhost:3184
+export LSIF_SERVER_URL=http://localhost:3186
 export SRC_SYNTECT_SERVER=http://localhost:9238
 export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
@@ -102,7 +105,12 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 
 # Management console webapp
 [ -n "${OFFLINE-}" ] || {
-    pushd ./cmd/management-console/web && yarn  --no-progress && popd
+    pushd ./cmd/management-console/web && yarn --no-progress && popd
+}
+
+# LSIF server
+[ -n "${OFFLINE-}" ] || {
+    pushd ./lsif/server && yarn --no-progress && popd
 }
 
 printf >&2 "\nStarting all binaries...\n\n"

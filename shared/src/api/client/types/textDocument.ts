@@ -126,7 +126,7 @@ function score1(selector: DocumentSelector[0], candidateUri: string, candidateLa
     if (pattern) {
         if (pattern === candidateUri || candidateUri.endsWith(pattern) || minimatch(candidateUri, pattern)) {
             ret = 10
-        } else if (minimatch(candidateUri, '**/' + pattern)) {
+        } else if (minimatch(candidateUri, '**/' + pattern, { dot: true })) {
             ret = 5
         } else {
             return 0

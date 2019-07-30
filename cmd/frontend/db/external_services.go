@@ -36,6 +36,7 @@ type ExternalServicesStore struct {
 // external services.
 var ExternalServiceKinds = map[string]ExternalServiceKind{
 	"AWSCODECOMMIT":   {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
+	"BITBUCKETCLOUD":  {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
 	"BITBUCKETSERVER": {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
 	"GITHUB":          {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
 	"GITLAB":          {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
@@ -381,6 +382,17 @@ func (c *ExternalServicesStore) listConfigs(ctx context.Context, kind string, re
 func (c *ExternalServicesStore) ListAWSCodeCommitConnections(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
 	var connections []*schema.AWSCodeCommitConnection
 	if err := c.listConfigs(ctx, "AWSCODECOMMIT", &connections); err != nil {
+		return nil, err
+	}
+	return connections, nil
+}
+
+// ListBitbucketCloudConnections returns a list of BitbucketCloud configs.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+func (c *ExternalServicesStore) ListBitbucketCloudConnections(ctx context.Context) ([]*schema.BitbucketCloudConnection, error) {
+	var connections []*schema.BitbucketCloudConnection
+	if err := c.listConfigs(ctx, "BITBUCKETCLOUD", &connections); err != nil {
 		return nil, err
 	}
 	return connections, nil

@@ -1,7 +1,34 @@
+import { readFile } from 'mz/fs'
 import { getFixtureBody } from '../code_intelligence/code_intelligence_test_utils'
-import { getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView } from './scrape'
+import {
+    getFileInfoFromSingleFileSourceCodeView,
+    getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView,
+    isCommitsView,
+    isPullRequestView,
+} from './scrape'
 
 describe('Bitbucket scrape.ts', () => {
+    describe('getFileInfoFromSingleFileSourceCodeView()', () => {
+        afterEach(() => {
+            document.body.innerHTML = ''
+        })
+        it('should get the FileInfo for a single file code view', async () => {
+            jsdom.reconfigure({
+                url: 'https://bitbucket.test/projects/SOUR/repos/mux/browse/context.go',
+            })
+            document.body.innerHTML = await readFile(`${__dirname}/__fixtures__/single-file.html`, 'utf-8')
+            const codeView = document.querySelector<HTMLElement>('.file-content')
+            const fileInfo = getFileInfoFromSingleFileSourceCodeView(codeView!)
+            expect(fileInfo).toStrictEqual({
+                commitID: '212aa90d7cec051ab29930d5c56f758f6f69a789',
+                filePath: 'context.go',
+                project: 'SOUR',
+                rawRepoName: 'bitbucket.test/SOUR/mux',
+                repoSlug: 'mux',
+                rev: 'master',
+            })
+        })
+    })
     describe('getDiffFileInfoFromMultiFileDiffCodeView()', () => {
         it('should get the FileInfo for an added file', async () => {
             jsdom.reconfigure({
@@ -110,6 +137,46 @@ describe('Bitbucket scrape.ts', () => {
                 repoSlug: 'mux',
                 rawRepoName: 'bitbucket.test/SOURCEGRAPH/mux',
             })
+        })
+    })
+
+    describe('isCommitView()', () => {
+        it('detects a commit view when there is no context path', () => {
+            expect(
+                isCommitsView(
+                    new URL(
+                        'https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/commits/e827e02858e8d5d581bac4d57b31fbd275da39c5'
+                    )
+                )
+            ).toBe(true)
+        })
+
+        it('detects a commit view when there is a context path', () => {
+            expect(
+                isCommitsView(
+                    new URL(
+                        'https://atlassian.company.org/bitbucket/projects/SOUR/repos/mux/commits/8eaa9f13091105874ef3e20c65922e382cef3c64'
+                    )
+                )
+            ).toBe(true)
+        })
+    })
+
+    describe('isPullRequestView()', () => {
+        it('detects a pull request view when there is no context path', () => {
+            expect(
+                isPullRequestView(
+                    new URL('https://bitbucket.sgdev.org/projects/SOUR/repos/mux/pull-requests/1/overview')
+                )
+            ).toBe(true)
+        })
+
+        it('detects a pull request view when there is a context path', () => {
+            expect(
+                isPullRequestView(
+                    new URL('https://atlassian.company.org/bitbucket/projects/SOUR/repos/mux/pull-requests/1/overview')
+                )
+            ).toBe(true)
         })
     })
 })

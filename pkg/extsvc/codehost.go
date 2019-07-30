@@ -21,7 +21,7 @@ func NewCodeHost(baseURL *url.URL, serviceType string) *CodeHost {
 	}
 }
 
-func IsHostOf(c *CodeHost, repo api.ExternalRepoSpec) bool {
+func IsHostOf(c *CodeHost, repo *api.ExternalRepoSpec) bool {
 	return c.ServiceID == repo.ServiceID && c.ServiceType == repo.ServiceType
 }
 

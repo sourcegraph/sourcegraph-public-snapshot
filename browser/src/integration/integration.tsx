@@ -2,34 +2,11 @@ import '../config/polyfill'
 
 import * as H from 'history'
 import React from 'react'
-import { Observable } from 'rxjs'
-import { startWith } from 'rxjs/operators'
 import { setLinkComponent } from '../../../shared/src/components/Link'
-import { determineCodeHost, injectCodeIntelligenceToCodeHost } from '../libs/code_intelligence'
-import { MutationRecordLike, observeMutations } from '../shared/util/dom'
+import { injectCodeIntelligence } from '../libs/code_intelligence/inject'
+import { EXTENSION_MARKER_ID, injectExtensionMarker, NATIVE_INTEGRATION_ACTIVATED } from '../libs/sourcegraph/inject'
 
 const IS_EXTENSION = false
-
-// NOT idempotent.
-async function injectModules(): Promise<void> {
-    // This is added so that the browser extension doesn't
-    // interfere with the native integration.
-    // TODO this is racy because the script is loaded async
-    const extensionMarker = document.createElement('div')
-    extensionMarker.id = 'sourcegraph-app-background'
-    extensionMarker.style.display = 'none'
-    document.body.appendChild(extensionMarker)
-
-    // TODO handle subscription
-    const codeHost = await determineCodeHost()
-    if (codeHost) {
-        const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {
-            childList: true,
-            subtree: true,
-        }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
-        await injectCodeIntelligenceToCodeHost(mutations, codeHost, IS_EXTENSION)
-    }
-}
 
 setLinkComponent(({ to, children, ...props }) => (
     <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
@@ -37,29 +14,29 @@ setLinkComponent(({ to, children, ...props }) => (
     </a>
 ))
 
-async function fetchCSS(sourcegraphURL: string): Promise<string> {
-    const resp = await fetch(sourcegraphURL + `/.assets/extension/css/style.bundle.css`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: new Headers({ Accept: 'text/html' }),
-    })
-    return resp.text()
-}
-
 async function init(): Promise<void> {
+    console.log('Sourcegraph native integration is running')
     const sourcegraphURL = window.SOURCEGRAPH_URL
     if (!sourcegraphURL) {
         throw new Error('window.SOURCEGRAPH_URL is undefined')
     }
-    const css = await fetchCSS(sourcegraphURL)
-    const style = document.createElement('style')
-    style.setAttribute('type', 'text/css')
-    style.id = 'sourcegraph-styles'
-    style.textContent = css
-    document.getElementsByTagName('head')[0].appendChild(style)
+    if (document.getElementById(EXTENSION_MARKER_ID) !== null) {
+        // If the extension marker already exists, it means the browser extension is currently executing.
+        // Dispatch a custom event to signal that browser extension resources should be cleaned up.
+        document.dispatchEvent(new CustomEvent<{}>(NATIVE_INTEGRATION_ACTIVATED))
+    } else {
+        injectExtensionMarker()
+    }
+    const link = document.createElement('link')
+    link.setAttribute('rel', 'stylesheet')
+    link.setAttribute('type', 'text/css')
+    link.setAttribute('href', sourcegraphURL + `/.assets/extension/css/style.bundle.css`)
+    link.id = 'sourcegraph-styles'
+    document.getElementsByTagName('head')[0].appendChild(link)
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     window.SOURCEGRAPH_URL = sourcegraphURL
-    await injectModules()
+    // TODO handle subscription
+    await injectCodeIntelligence(IS_EXTENSION)
 }
 
 init().catch(err => {

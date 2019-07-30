@@ -60,7 +60,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/search/searches',
         render: lazyComponent(
-            () => import('./search/saved-searches/RedirectToUserSavedSearches'),
+            () => import('./savedSearches/RedirectToUserSavedSearches'),
             'RedirectToUserSavedSearches'
         ),
         exact: true,
