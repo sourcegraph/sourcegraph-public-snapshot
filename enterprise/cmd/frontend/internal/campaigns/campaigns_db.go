@@ -16,6 +16,7 @@ type dbCampaign struct {
 	NamespaceOrgID  int32  // the org namespace where this campaign is defined
 	Name            string // the name (case-preserving)
 	Description     *string
+	IsPreview       bool
 }
 
 // errCampaignNotFound occurs when a database operation expects a specific campaign to exist but it
@@ -23,6 +24,8 @@ type dbCampaign struct {
 var errCampaignNotFound = errors.New("campaign not found")
 
 type dbCampaigns struct{}
+
+const selectColumns = `id, namespace_user_id, namespace_org_id, name, description, is_preview`
 
 // Create creates a campaign. The campaign argument's (Campaign).ID field is ignored. The database
 // ID of the new campaign is returned.
@@ -40,8 +43,12 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign) (*dbCampaig
 
 	var id int64
 	if err := dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO campaigns(namespace_user_id, namespace_org_id, name, description) VALUES($1, $2, $3, $4) RETURNING id`,
-		nilIfZero(campaign.NamespaceUserID), nilIfZero(campaign.NamespaceOrgID), campaign.Name, campaign.Description,
+		`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5) RETURNING id`,
+		nilIfZero(campaign.NamespaceUserID),
+		nilIfZero(campaign.NamespaceOrgID),
+		campaign.Name,
+		campaign.Description,
+		campaign.IsPreview,
 	).Scan(&id); err != nil {
 		return nil, err
 	}
@@ -53,6 +60,7 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign) (*dbCampaig
 type dbCampaignUpdate struct {
 	Name        *string
 	Description *string
+	IsPreview   *bool
 }
 
 // Update updates a campaign given its ID.
@@ -74,12 +82,15 @@ func (s dbCampaigns) Update(ctx context.Context, id int64, update dbCampaignUpda
 		}
 		setFields = append(setFields, sqlf.Sprintf("description=%s", value))
 	}
+	if update.IsPreview != nil {
+		setFields = append(setFields, sqlf.Sprintf("is_preview=%s", *update.IsPreview))
+	}
 
 	if len(setFields) == 0 {
 		return nil, nil
 	}
 
-	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE campaigns SET %v WHERE id=%s RETURNING id, namespace_user_id, namespace_org_id, name, description`, sqlf.Join(setFields, ", "), id))
+	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE campaigns SET %v WHERE id=%s RETURNING `+selectColumns, sqlf.Join(setFields, ", "), id))
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +154,7 @@ func (s dbCampaigns) List(ctx context.Context, opt dbCampaignsListOptions) ([]*d
 
 func (s dbCampaigns) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbCampaign, error) {
 	q := sqlf.Sprintf(`
-SELECT id, namespace_user_id, namespace_org_id, name, description FROM campaigns
+SELECT `+selectColumns+` FROM campaigns
 WHERE (%s)
 ORDER BY name ASC
 %s`,
@@ -164,9 +175,17 @@ func (dbCampaigns) query(ctx context.Context, query *sqlf.Query) ([]*dbCampaign,
 	for rows.Next() {
 		var t dbCampaign
 		var namespaceUserID, namespaceOrgID *int32
-		if err := rows.Scan(&t.ID, &namespaceUserID, &namespaceOrgID, &t.Name, &t.Description); err != nil {
+		if err := rows.Scan(
+			&t.ID,
+			&namespaceUserID,
+			&namespaceOrgID,
+			&t.Name,
+			&t.Description,
+			&t.IsPreview,
+		); err != nil {
 			return nil, err
 		}
+		// TODO!(sqs): why cant we just scan directly into t.Namespace{User,Org}ID?
 		if namespaceUserID != nil {
 			t.NamespaceUserID = *namespaceUserID
 		}

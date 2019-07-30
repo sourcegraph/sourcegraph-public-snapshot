@@ -4,12 +4,14 @@ import React, { useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { BreadcrumbItem, Breadcrumbs } from '../../../components/breadcrumbs/Breadcrumbs'
 import { HeroPage } from '../../../components/HeroPage'
 import { NamespaceAreaContext } from '../../../namespaces/NamespaceArea'
 import { ThemeProps } from '../../../theme'
 import { CampaignArea } from '../detail/CampaignArea'
+import { CampaignPreviewPage } from '../preview/CampaignPreviewPage'
 import { NamespaceCampaignsListPage } from './list/NamespaceCampaignsListPage'
 import { CampaignsNewPage } from './new/CampaignsNewPage'
 
@@ -28,9 +30,10 @@ export interface NamespaceCampaignsAreaContext
 
 interface Props
     extends Pick<
-        NamespaceCampaignsAreaContext,
-        Exclude<keyof NamespaceCampaignsAreaContext, 'campaignsURL' | 'setBreadcrumbItem'>
-    > {}
+            NamespaceCampaignsAreaContext,
+            Exclude<keyof NamespaceCampaignsAreaContext, 'campaignsURL' | 'setBreadcrumbItem'>
+        >,
+        PlatformContextProps {}
 
 /**
  * The campaigns area for a namespace.
@@ -57,6 +60,10 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
 
     const breadcrumbs = <Breadcrumbs items={breadcrumbItems} className="my-4" />
 
+    const removeHeader = (
+        <style>{`.user-area-header, .org-header { display: none; } .org-area > .container, .user-area > .container { margin: unset; margin-top: unset !important; width: unset; padding: unset; } /* TODO!(sqs): hack */`}</style>
+    )
+
     return (
         <>
             <Switch>
@@ -69,15 +76,34 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
                     <CampaignsNewPage {...context} />
                 </Route>
                 <Route
+                    path={`${context.campaignsURL}/preview/:campaignID`}
+                    // tslint:disable-next-line:jsx-no-lambda
+                    render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
+                        <>
+                            {breadcrumbs}
+                            {removeHeader}
+                            <CampaignPreviewPage
+                                {...context}
+                                {...routeComponentProps}
+                                platformContext={props.platformContext}
+                            />
+                        </>
+                    )}
+                />
+                <Route
                     path={`${context.campaignsURL}/:campaignID`}
                     // tslint:disable-next-line:jsx-no-lambda
                     render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
-                        <CampaignArea
-                            {...context}
-                            {...routeComponentProps}
-                            campaignID={routeComponentProps.match.params.campaignID}
-                            header={breadcrumbs}
-                        />
+                        <>
+                            {removeHeader}
+                            <CampaignArea
+                                {...context}
+                                {...routeComponentProps}
+                                campaignID={routeComponentProps.match.params.campaignID}
+                                header={breadcrumbs}
+                                platformContext={props.platformContext}
+                            />
+                        </>
                     )}
                 />
                 <Route>

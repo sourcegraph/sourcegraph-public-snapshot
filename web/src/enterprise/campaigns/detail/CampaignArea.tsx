@@ -4,15 +4,16 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { HeroPage } from '../../../components/HeroPage'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsArea'
 import { CampaignOverview } from './CampaignOverview'
+import { CampaignFileDiffsList } from './fileDiffs/CampaignFileDiffsList'
 import { CampaignRepositoriesList } from './repositories/CampaignRepositoriesList'
 import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
 import { useCampaignByID } from './useCampaignByID'
-import { CampaignFileDiffsList } from './fileDiffs/CampaignFileDiffsList'
 
 export interface CampaignAreaContext
     extends Pick<NamespaceCampaignsAreaContext, Exclude<keyof NamespaceCampaignsAreaContext, 'namespace'>> {
@@ -28,7 +29,8 @@ export interface CampaignAreaContext
 
 interface Props
     extends Pick<CampaignAreaContext, Exclude<keyof CampaignAreaContext, 'campaign' | 'onCampaignUpdate'>>,
-        RouteComponentProps<{}> {
+        RouteComponentProps<{}>,
+        PlatformContextProps {
     /** The campaign ID. */
     campaignID: GQL.ID
 
@@ -84,33 +86,36 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <>
-            <style>{`.user-area-header, .org-header { display: none; } .org-area > .container, .user-area > .container { margin: unset; margin-top: unset !important; width: unset; padding: unset; } /* TODO!(sqs): hack */`}</style>
-            <OverviewPagesArea<CampaignAreaContext>
-                context={context}
-                header={header}
-                overviewComponent={CampaignOverview}
-                pages={[
-                    {
-                        title: 'Threads',
-                        path: '',
-                        exact: true,
-                        render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
-                    },
-                    {
-                        title: 'Commits',
-                        path: '/commits',
-                        render: () => <CampaignRepositoriesList {...context} className={PAGE_CLASS_NAME} />,
-                    },
-                    {
-                        title: 'Changes',
-                        path: '/changes',
-                        render: () => <CampaignFileDiffsList {...context} className={PAGE_CLASS_NAME} />,
-                    },
-                ]}
-                location={props.location}
-                match={match}
-            />
-        </>
+        <OverviewPagesArea<CampaignAreaContext>
+            context={context}
+            header={header}
+            overviewComponent={CampaignOverview}
+            pages={[
+                {
+                    title: 'Threads',
+                    path: '',
+                    exact: true,
+                    render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
+                },
+                {
+                    title: 'Commits',
+                    path: '/commits',
+                    render: () => <CampaignRepositoriesList {...context} className={PAGE_CLASS_NAME} />,
+                },
+                {
+                    title: 'Changes',
+                    path: '/changes',
+                    render: () => (
+                        <CampaignFileDiffsList
+                            {...context}
+                            platformContext={props.platformContext}
+                            className={PAGE_CLASS_NAME}
+                        />
+                    ),
+                },
+            ]}
+            location={props.location}
+            match={match}
+        />
     )
 }

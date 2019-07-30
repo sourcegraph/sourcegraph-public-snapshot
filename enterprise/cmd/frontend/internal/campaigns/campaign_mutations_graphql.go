@@ -43,12 +43,25 @@ func (GraphQLResolver) UpdateCampaign(ctx context.Context, arg *graphqlbackend.U
 }
 
 func (GraphQLResolver) PublishPreviewCampaign(ctx context.Context, arg *graphqlbackend.PublishPreviewCampaignArgs) (graphqlbackend.Campaign, error) {
-	gqlCampaign, err := campaignByID(ctx, arg.Campaign)
+	l, err := campaignByID(ctx, arg.Campaign)
 	if err != nil {
 		return nil, err
 	}
-	panic("TODO!(sqs)")
-	return gqlCampaign, nil
+
+	// TODO!(sqs): uncomment after demo
+	//
+	// if !l.IsPreview() {
+	// 	return nil, errors.New("campaign has already been published (and is not in preview)")
+	// }
+
+	v := false
+	campaign, err := dbCampaigns{}.Update(ctx, l.db.ID, dbCampaignUpdate{
+		IsPreview: &v,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &gqlCampaign{db: campaign}, nil
 }
 
 func (GraphQLResolver) DeleteCampaign(ctx context.Context, arg *graphqlbackend.DeleteCampaignArgs) (*graphqlbackend.EmptyResponse, error) {
