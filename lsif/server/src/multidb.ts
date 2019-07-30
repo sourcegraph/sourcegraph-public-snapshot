@@ -121,10 +121,15 @@ export class MultiDatabase extends Database {
   }
 
   private compareResults<T>(name: string, results: Array<T>): T {
-    for (let i = 1; i < results.length; i++) {
-      if (results[i] !== results[0]) {
-        console.warn(`Unexpected differing result for ${name} between: ${this.databases[0].name} and ${this.databases[i].name}`, results[0], 'and', results[i])
+    let undefNames = new Array<string>();
+    for (let i = 0; i < results.length; i++) {
+      if (results[i] === undefined) {
+        undefNames.push(this.databases[i].name);
       }
+    }
+
+    if (undefNames.length !== results.length) {
+      console.warn(`Unexpected undefined results for ${name}: ${undefNames.join(', ')}`)
     }
 
     return results[0]
