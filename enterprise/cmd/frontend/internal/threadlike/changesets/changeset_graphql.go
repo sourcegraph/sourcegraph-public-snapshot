@@ -8,15 +8,23 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 )
 
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
 
 // gqlChangeset implements the GraphQL type Changeset.
 type gqlChangeset struct {
-	threads.GQLThreadCommon
-	db *dbChangeset
+	threadlike.GQLThreadlike
+	db *internal.DBThread
+}
+
+func newGQLChangeset(db *internal.DBThread) *gqlChangeset {
+	return &gqlChangeset{
+		GQLThreadlike: threadlike.GQLThreadlike{DB: db},
+		db:            db,
+	}
 }
 
 // changesetByID looks up and returns the Changeset with the given GraphQL ID. If no such Changeset exists, it
@@ -36,11 +44,11 @@ func (GraphQLResolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphq
 // changesetByDBID looks up and returns the Changeset with the given database ID. If no such Changeset exists,
 // it returns a non-nil error.
 func changesetByDBID(ctx context.Context, dbID int64) (*gqlChangeset, error) {
-	v, err := dbChangesets{}.GetByID(ctx, dbID)
+	v, err := internal.DBThreads{}.GetByID(ctx, dbID)
 	if err != nil {
 		return nil, err
 	}
-	return &gqlChangeset{db: v}, nil
+	return newGQLChangeset(v), nil
 }
 
 func (v *gqlChangeset) ID() graphql.ID {
@@ -82,7 +90,7 @@ func (GraphQLResolver) ChangesetInRepository(ctx context.Context, repositoryID g
 }
 
 func (v *gqlChangeset) Status() graphqlbackend.ChangesetStatus {
-	return v.db.Status
+	return graphqlbackend.ChangesetStatus(v.db.Status)
 }
 
 func (v *gqlChangeset) IsPreview() bool {
@@ -90,20 +98,12 @@ func (v *gqlChangeset) IsPreview() bool {
 }
 
 func (v *gqlChangeset) RepositoryComparison(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
-	settings, err := GetSettings(v)
-	if err != nil {
-		return nil, err
-	}
-	if settings.Delta == nil {
-		return nil, nil
-	}
-
 	repo, err := v.Repository(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
-		Base: &settings.Delta.Base,
-		Head: &settings.Delta.Head,
+		Base: &v.db.BaseRef,
+		Head: &v.db.HeadRef,
 	})
 }

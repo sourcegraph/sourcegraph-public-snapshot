@@ -1,4 +1,4 @@
-package changesets
+package threads
 
 import (
 	"context"
@@ -9,20 +9,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func TestGraphQL_Repository_ChangesetConnection(t *testing.T) {
-	resetMocks()
+func TestGraphQL_Repository_ThreadConnection(t *testing.T) {
+	internal.ResetMocks()
 	const (
 		wantRepositoryID = 3
-		wantChangesetID     = 2
+		wantThreadID     = 2
 	)
 	db.Mocks.Repos.Get = func(context.Context, api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: wantRepositoryID, Name: "r"}, nil
 	}
-	mocks.changesets.List = func(dbChangesetsListOptions) ([]*dbChangeset, error) {
-		return []*dbChangeset{{ID: wantChangesetID, RepositoryID: wantRepositoryID, Title: "t"}}, nil
+	internal.Mocks.Threads.List = func(internal.DBThreadsListOptions) ([]*internal.DBThread, error) {
+		return []*internal.DBThread{{ID: wantThreadID, RepositoryID: wantRepositoryID, Title: "t"}}, nil
 	}
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
@@ -33,7 +34,7 @@ func TestGraphQL_Repository_ChangesetConnection(t *testing.T) {
 				{
 					node(id: "UmVwb3NpdG9yeToz") {
 						... on Repository {
-							changesets {
+							threads {
 								nodes {
 									title
 								}
@@ -49,7 +50,7 @@ func TestGraphQL_Repository_ChangesetConnection(t *testing.T) {
 			ExpectedResult: `
 				{
 					"node": {
-						"changesets": {
+						"threads": {
 							"nodes": [
 								{
 									"title": "t"

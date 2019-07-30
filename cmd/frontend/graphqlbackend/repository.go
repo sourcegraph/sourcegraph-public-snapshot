@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
@@ -405,12 +404,4 @@ func makePhabClientForOrigin(ctx context.Context, origin string) (*phabricator.C
 	}
 
 	return nil, errors.Errorf("no phabricator was configured for: %s", origin)
-}
-
-func (r *RepositoryResolver) Thread(ctx context.Context, arg struct{ Number string }) (Thread, error) {
-	return ThreadInRepository(ctx, r.ID(), arg.Number)
-}
-
-func (r *RepositoryResolver) Threads(ctx context.Context, arg *graphqlutil.ConnectionArgs) (ThreadConnection, error) {
-	return ThreadsForRepository(ctx, r.ID(), arg)
 }

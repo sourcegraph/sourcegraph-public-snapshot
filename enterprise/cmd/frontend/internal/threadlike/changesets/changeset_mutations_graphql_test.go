@@ -10,23 +10,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func TestGraphQL_CreateChangeset(t *testing.T) {
-	resetMocks()
+	internal.ResetMocks()
 	const wantRepositoryID = 1
 	db.Mocks.Repos.Get = func(context.Context, api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: wantRepositoryID}, nil
 	}
-	wantChangeset := &dbChangeset{
+	wantChangeset := &internal.DBThread{
+		Type:         graphqlbackend.ThreadlikeTypeChangeset,
 		RepositoryID: wantRepositoryID,
 		Title:        "t",
 		ExternalURL:  strptr("u"),
-		Status:       graphqlbackend.ChangesetStatusOpen,
-		Type:         graphqlbackend.ChangesetTypeChangeset,
+		Status:       string(graphqlbackend.ChangesetStatusOpen),
+		BaseRef:      "b",
+		HeadRef:      "h",
 	}
-	mocks.changesets.Create = func(changeset *dbChangeset) (*dbChangeset, error) {
+	internal.Mocks.Threads.Create = func(changeset *internal.DBThread) (*internal.DBThread, error) {
 		if !reflect.DeepEqual(changeset, wantChangeset) {
 			t.Errorf("got changeset %+v, want %+v", changeset, wantChangeset)
 		}
@@ -41,21 +44,17 @@ func TestGraphQL_CreateChangeset(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					changesets {
-						createChangeset(input: { repository: "T3JnOjE=", title: "t", externalURL: "u", type: THREAD }) {
-							id
-							title
-						}
+					createChangeset(input: { repository: "T3JnOjE=", title: "t", externalURL: "u", baseRef: "b", headRef: "h" }) {
+						id
+						title
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"changesets": {
-						"createChangeset": {
-							"id": "VGhyZWFkOjI=",
-							"title": "t"
-						}
+					"createChangeset": {
+						"id": "Q2hhbmdlc2V0OjI=",
+						"title": "t"
 					}
 				}
 			`,
@@ -64,19 +63,19 @@ func TestGraphQL_CreateChangeset(t *testing.T) {
 }
 
 func TestGraphQL_UpdateChangeset(t *testing.T) {
-	resetMocks()
+	internal.ResetMocks()
 	const wantID = 2
-	mocks.changesets.GetByID = func(id int64) (*dbChangeset, error) {
+	internal.Mocks.Threads.GetByID = func(id int64) (*internal.DBThread, error) {
 		if id != wantID {
 			t.Errorf("got ID %d, want %d", id, wantID)
 		}
-		return &dbChangeset{ID: wantID}, nil
+		return &internal.DBThread{ID: wantID}, nil
 	}
-	mocks.changesets.Update = func(id int64, update dbChangesetUpdate) (*dbChangeset, error) {
-		if want := (dbChangesetUpdate{Title: strptr("t1"), ExternalURL: strptr("u1")}); !reflect.DeepEqual(update, want) {
+	internal.Mocks.Threads.Update = func(id int64, update internal.DBThreadUpdate) (*internal.DBThread, error) {
+		if want := (internal.DBThreadUpdate{Title: strptr("t1"), ExternalURL: strptr("u1")}); !reflect.DeepEqual(update, want) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
-		return &dbChangeset{
+		return &internal.DBThread{
 			ID:           2,
 			RepositoryID: 1,
 			Title:        "t1",
@@ -90,23 +89,19 @@ func TestGraphQL_UpdateChangeset(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					changesets {
-						updateChangeset(input: { id: "VGhyZWFkOjI=", title: "t1", externalURL: "u1" }) {
-							id
-							title
-							externalURL
-						}
+					updateChangeset(input: { id: "Q2hhbmdlc2V0OjI=", title: "t1", externalURL: "u1" }) {
+						id
+						title
+						externalURL
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"changesets": {
-						"updateChangeset": {
-							"id": "VGhyZWFkOjI=",
-							"title": "t1",
-							"externalURL": "u1"
-						}
+					"updateChangeset": {
+						"id": "Q2hhbmdlc2V0OjI=",
+						"title": "t1",
+						"externalURL": "u1"
 					}
 				}
 			`,
@@ -115,15 +110,15 @@ func TestGraphQL_UpdateChangeset(t *testing.T) {
 }
 
 func TestGraphQL_DeleteChangeset(t *testing.T) {
-	resetMocks()
+	internal.ResetMocks()
 	const wantID = 2
-	mocks.changesets.GetByID = func(id int64) (*dbChangeset, error) {
+	internal.Mocks.Threads.GetByID = func(id int64) (*internal.DBThread, error) {
 		if id != wantID {
 			t.Errorf("got ID %d, want %d", id, wantID)
 		}
-		return &dbChangeset{ID: wantID}, nil
+		return &internal.DBThread{ID: wantID}, nil
 	}
-	mocks.changesets.DeleteByID = func(id int64) error {
+	internal.Mocks.Threads.DeleteByID = func(id int64) error {
 		if id != wantID {
 			t.Errorf("got ID %d, want %d", id, wantID)
 		}
@@ -136,20 +131,18 @@ func TestGraphQL_DeleteChangeset(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					changesets {
-						deleteChangeset(changeset: "VGhyZWFkOjI=") {
-							alwaysNil
-						}
+					deleteChangeset(changeset: "Q2hhbmdlc2V0OjI=") {
+						alwaysNil
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"changesets": {
-						"deleteChangeset": null
-					}
+					"deleteChangeset": null
 				}
 			`,
 		},
 	})
 }
+
+func strptr(s string) *string { return &s }

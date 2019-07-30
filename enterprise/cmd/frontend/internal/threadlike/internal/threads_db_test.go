@@ -1,4 +1,4 @@
-package threads
+package internal
 
 import (
 	"reflect"
@@ -13,7 +13,7 @@ func TestDB_Threads(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	resetMocks()
+	ResetMocks()
 	ctx := dbtesting.TestContext(t)
 
 	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{Name: "r", Enabled: true}); err != nil {
@@ -24,17 +24,15 @@ func TestDB_Threads(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantThread0 := &dbThread{DBThreadCommon: DBThreadCommon{RepositoryID: repo0.ID, Title: "t0", ExternalURL: strptr("u0")}}
-	thread0, err := dbThreads{}.Create(ctx, wantThread0)
+	wantThread0 := &DBThread{RepositoryID: repo0.ID, Title: "t0", ExternalURL: strptr("u0")}
+	thread0, err := DBThreads{}.Create(ctx, wantThread0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	thread1, err := dbThreads{}.Create(ctx, &dbThread{
-		DBThreadCommon: DBThreadCommon{
-			RepositoryID: repo0.ID,
-			Title:        "t1",
-			ExternalURL:  strptr("u1"),
-		},
+	thread1, err := DBThreads{}.Create(ctx, &DBThread{
+		RepositoryID: repo0.ID,
+		Title:        "t1",
+		ExternalURL:  strptr("u1"),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -55,7 +53,7 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// Get a thread.
-		thread, err := dbThreads{}.GetByID(ctx, thread0.ID)
+		thread, err := DBThreads{}.GetByID(ctx, thread0.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,7 +68,7 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// List all threads.
-		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{})
+		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -78,7 +76,7 @@ func TestDB_Threads(t *testing.T) {
 		if len(ts) != want {
 			t.Errorf("got %d threads, want %d", len(ts), want)
 		}
-		count, err := dbThreads{}.Count(ctx, dbThreadsListOptions{})
+		count, err := DBThreads{}.Count(ctx, DBThreadsListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -89,7 +87,7 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// List repo0's threads.
-		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{common: DBThreadsListOptionsCommon{RepositoryID: repo0.ID}})
+		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{RepositoryID: repo0.ID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -101,29 +99,29 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// Query threads.
-		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{common: DBThreadsListOptionsCommon{Query: "t1"}})
+		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{Query: "t1"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if want := []*dbThread{thread1}; !reflect.DeepEqual(ts, want) {
+		if want := []*DBThread{thread1}; !reflect.DeepEqual(ts, want) {
 			t.Errorf("got %+v, want %+v", ts, want)
 		}
 	}
 
 	{
 		// List threads by IDs.
-		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{common: DBThreadsListOptionsCommon{ThreadIDs: []int64{thread0.ID}}})
+		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{ThreadIDs: []int64{thread0.ID}})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if want := []*dbThread{thread0}; !reflect.DeepEqual(ts, want) {
+		if want := []*DBThread{thread0}; !reflect.DeepEqual(ts, want) {
 			t.Errorf("got %+v, want %+v", ts, want)
 		}
 	}
 
 	{
 		// List threads by empty list of IDs.
-		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{common: DBThreadsListOptionsCommon{ThreadIDs: []int64{}}})
+		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{ThreadIDs: []int64{}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -134,10 +132,10 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// Delete a thread.
-		if err := (dbThreads{}).DeleteByID(ctx, thread0.ID); err != nil {
+		if err := (DBThreads{}).DeleteByID(ctx, thread0.ID); err != nil {
 			t.Fatal(err)
 		}
-		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{common: DBThreadsListOptionsCommon{RepositoryID: repo0.ID}})
+		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{RepositoryID: repo0.ID})
 		if err != nil {
 			t.Fatal(err)
 		}

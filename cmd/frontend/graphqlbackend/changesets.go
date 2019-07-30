@@ -101,7 +101,7 @@ type ChangesetsResolver interface {
 
 type CreateChangesetArgs struct {
 	Input struct {
-		createThreadCommonInput
+		createThreadlikeInput
 		Preview *bool
 		BaseRef string
 		HeadRef string
@@ -110,7 +110,7 @@ type CreateChangesetArgs struct {
 
 type UpdateChangesetArgs struct {
 	Input struct {
-		updateThreadCommonInput
+		updateThreadlikeInput
 		BaseRef *string
 		HeadRef *string
 	}
@@ -134,7 +134,7 @@ const (
 
 // Changeset is the interface for the GraphQL type Changeset.
 type Changeset interface {
-	threadCommon
+	Threadlike
 	Status() ChangesetStatus
 	IsPreview() bool
 	RepositoryComparison(context.Context) (*RepositoryComparisonResolver, error)

@@ -1451,6 +1451,24 @@ type Repository implements Node & GenericSearchResultInterface {
         first: Int
     ): ThreadConnection!
 
+    # The specified changeset in this repository.
+    changeset(number: String!): Thread
+
+    # A list of changesets in this repository.
+    changesets(
+        # Returns the first n changesets from the list.
+        first: Int
+    ): ChangesetConnection!
+
+    # The specified thread, issue, or changeset in this repository.
+    threadOrIssueOrChangeset(number: String!): ThreadOrIssueOrChangeset
+
+    # A list of threads, issues, and changesets in this repository.
+    threadOrIssueOrChangesets(
+        # Returns the first n results from the list.
+        first: Int
+    ): ThreadOrIssueOrChangesetConnection!
+
     # A Git comparison in this repository between a base and head commit.
     comparison(
         # The base of the diff ("old" or "left-hand side"), or "HEAD" if not specified.
@@ -4273,6 +4291,23 @@ type ChangesetConnection {
     pageInfo: PageInfo!
 }
 
+# A thread, issue, or changeset.
+#
+# TODO!(sqs): add Issue
+union ThreadOrIssueOrChangeset = Thread | Changeset
+
+# A list of threads, issues, and changesets.
+type ThreadOrIssueOrChangesetConnection {
+    # A list of results.
+    nodes: [ThreadOrIssueOrChangeset!]!
+
+    # The total number of results in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
 # Mutations related to repositories' Git data.
 type GitMutation {
     # Create a new Git ref in a repository by applying a patch to an existing commit.
@@ -4348,11 +4383,11 @@ type Campaign implements Node {
     # The URL to this campaign.
     url: String!
 
-    # A list of threads in this campaign.
-    threads(
-        # Return the first n threads from the list.
+    # A list of threads, issues, and changesets in this campaign.
+    threadOrIssueOrChangesets(
+        # Returns the first n results from the list.
         first: Int
-    ): ThreadConnection!
+    ): ThreadOrIssueOrChangesetConnection!
 
     # The list of repositories affected by this campaign's changesets.
     repositories: [Repository!]!

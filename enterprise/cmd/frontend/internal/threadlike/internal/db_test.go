@@ -1,7 +1,7 @@
-package changesets
+package internal
 
 import "github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 
 func init() {
-	dbtesting.DBNameSuffix = "changesets"
+	dbtesting.DBNameSuffix = "threadlike"
 }

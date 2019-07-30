@@ -6,11 +6,11 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 )
 
 func (GraphQLResolver) Changesets(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ChangesetConnection, error) {
-	return changesetsByOptions(ctx, dbChangesetsListOptions{}, arg)
+	return changesetsByOptions(ctx, internal.DBThreadsListOptions{}, arg)
 }
 
 func (GraphQLResolver) ChangesetsForRepository(ctx context.Context, repositoryID graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ChangesetConnection, error) {
@@ -18,19 +18,19 @@ func (GraphQLResolver) ChangesetsForRepository(ctx context.Context, repositoryID
 	if err != nil {
 		return nil, err
 	}
-	return changesetsByOptions(ctx, dbChangesetsListOptions{
-		common: threads.DBThreadsListOptionsCommon{RepositoryID: repo.DBID()},
+	return changesetsByOptions(ctx, internal.DBThreadsListOptions{
+		RepositoryID: repo.DBID(),
 	}, arg)
 }
 
-func changesetsByOptions(ctx context.Context, options dbChangesetsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ChangesetConnection, error) {
-	list, err := dbChangesets{}.List(ctx, options)
+func changesetsByOptions(ctx context.Context, options internal.DBThreadsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ChangesetConnection, error) {
+	list, err := internal.DBThreads{}.List(ctx, options)
 	if err != nil {
 		return nil, err
 	}
 	changesets := make([]*gqlChangeset, len(list))
 	for i, a := range list {
-		changesets[i] = &gqlChangeset{db: a}
+		changesets[i] = newGQLChangeset(a)
 	}
 	return &changesetConnection{arg: arg, changesets: changesets}, nil
 }

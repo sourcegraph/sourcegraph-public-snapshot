@@ -6,10 +6,11 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 )
 
 func (GraphQLResolver) Threads(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
-	return threadsByOptions(ctx, dbThreadsListOptions{}, arg)
+	return threadsByOptions(ctx, internal.DBThreadsListOptions{}, arg)
 }
 
 func (GraphQLResolver) ThreadsForRepository(ctx context.Context, repositoryID graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
@@ -17,25 +18,25 @@ func (GraphQLResolver) ThreadsForRepository(ctx context.Context, repositoryID gr
 	if err != nil {
 		return nil, err
 	}
-	return threadsByOptions(ctx, dbThreadsListOptions{
-		common: DBThreadsListOptionsCommon{RepositoryID: repo.DBID()},
+	return threadsByOptions(ctx, internal.DBThreadsListOptions{
+		RepositoryID: repo.DBID(),
 	}, arg)
 }
 
 func ThreadsByIDs(ctx context.Context, threadIDs []int64, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
-	return threadsByOptions(ctx, dbThreadsListOptions{
-		common: DBThreadsListOptionsCommon{ThreadIDs: threadIDs},
+	return threadsByOptions(ctx, internal.DBThreadsListOptions{
+		ThreadIDs: threadIDs,
 	}, arg)
 }
 
-func threadsByOptions(ctx context.Context, options dbThreadsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
-	list, err := dbThreads{}.List(ctx, options)
+func threadsByOptions(ctx context.Context, options internal.DBThreadsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
+	list, err := internal.DBThreads{}.List(ctx, options)
 	if err != nil {
 		return nil, err
 	}
 	threads := make([]*gqlThread, len(list))
 	for i, a := range list {
-		threads[i] = &gqlThread{db: a}
+		threads[i] = newGQLThread(a)
 	}
 	return &threadConnection{arg: arg, threads: threads}, nil
 }

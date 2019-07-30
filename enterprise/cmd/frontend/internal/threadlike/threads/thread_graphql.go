@@ -8,14 +8,23 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 )
 
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
 
 // gqlThread implements the GraphQL type Thread.
 type gqlThread struct {
-	GQLThreadCommon
-	db *dbThread
+	threadlike.GQLThreadlike
+	db *internal.DBThread
+}
+
+func newGQLThread(db *internal.DBThread) *gqlThread {
+	return &gqlThread{
+		GQLThreadlike: threadlike.GQLThreadlike{DB: db},
+		db:            db,
+	}
 }
 
 // threadByID looks up and returns the Thread with the given GraphQL ID. If no such Thread exists, it
@@ -35,14 +44,11 @@ func (GraphQLResolver) ThreadByID(ctx context.Context, id graphql.ID) (graphqlba
 // threadByDBID looks up and returns the Thread with the given database ID. If no such Thread exists,
 // it returns a non-nil error.
 func threadByDBID(ctx context.Context, dbID int64) (*gqlThread, error) {
-	v, err := dbThreads{}.GetByID(ctx, dbID)
+	v, err := internal.DBThreads{}.GetByID(ctx, dbID)
 	if err != nil {
 		return nil, err
 	}
-	return &gqlThread{
-		GQLThreadCommon: GQLThreadCommon{db: &v.DBThreadCommon},
-		db:              v,
-	}, nil
+	return newGQLThread(v), nil
 }
 
 func (v *gqlThread) ID() graphql.ID {
@@ -84,5 +90,5 @@ func (GraphQLResolver) ThreadInRepository(ctx context.Context, repositoryID grap
 }
 
 func (v *gqlThread) Status() graphqlbackend.ThreadStatus {
-	return v.db.Status
+	return graphqlbackend.ThreadStatus(v.db.Status)
 }

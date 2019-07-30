@@ -90,26 +90,12 @@ type ThreadsResolver interface {
 	ThreadsForRepository(ctx context.Context, repository graphql.ID, arg *graphqlutil.ConnectionArgs) (ThreadConnection, error)
 }
 
-type createThreadCommonInput struct {
-	Repository  graphql.ID
-	Title       string
-	Body        *string
-	ExternalURL *string
-}
-
 type CreateThreadArgs struct {
-	Input createThreadCommonInput
-}
-
-type updateThreadCommonInput struct {
-	ID          graphql.ID
-	Title       *string
-	Body        *string
-	ExternalURL *string
+	Input createThreadlikeInput
 }
 
 type UpdateThreadArgs struct {
-	Input updateThreadCommonInput
+	Input updateThreadlikeInput
 }
 
 type DeleteThreadArgs struct {
@@ -123,21 +109,9 @@ const (
 	ThreadStatusClosed              = "CLOSED"
 )
 
-// threadCommon is the shared interface among threads, issues, and changesets.
-type threadCommon interface {
-	ID() graphql.ID
-	DBID() int64
-	Repository(context.Context) (*RepositoryResolver, error)
-	Number() string
-	Title() string
-	Body() *string
-	ExternalURL() *string
-	URL(context.Context) (string, error)
-}
-
 // Thread is the interface for the GraphQL type Thread.
 type Thread interface {
-	threadCommon
+	Threadlike
 	Status() ThreadStatus
 }
 

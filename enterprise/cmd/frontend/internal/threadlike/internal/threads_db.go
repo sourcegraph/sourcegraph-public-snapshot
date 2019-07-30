@@ -1,4 +1,4 @@
-package threads
+package internal
 
 import (
 	"context"
@@ -12,42 +12,47 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
-// DBThreadCommon contains the fields common to all thread types.
-type DBThreadCommon struct {
+// DBThread describes a thread.
+type DBThread struct {
 	ID           int64
+	Type         graphqlbackend.ThreadlikeType
 	RepositoryID api.RepoID // the repository associated with this thread
 	Title        string
 	ExternalURL  *string
-}
+	Status       string
 
-// dbThread describes a thread.
-type dbThread struct {
-	DBThreadCommon
-	Status graphqlbackend.ThreadStatus
+	// Changeset
+	IsPreview bool
+	BaseRef   string
+	HeadRef   string
 }
 
 // errThreadNotFound occurs when a database operation expects a specific thread to exist but it does
 // not exist.
 var errThreadNotFound = errors.New("thread not found")
 
-type dbThreads struct{}
+type DBThreads struct{}
 
-const selectColumns = "id, repository_id, title, external_url, status"
+const selectColumns = "id, type, repository_id, title, external_url, status, is_preview, base_ref, head_reef"
 
 // Create creates a thread. The thread argument's (Thread).ID field is ignored. The database ID of
 // the new thread is returned.
-func (dbThreads) Create(ctx context.Context, thread *dbThread) (*dbThread, error) {
-	if mocks.threads.Create != nil {
-		return mocks.threads.Create(thread)
+func (DBThreads) Create(ctx context.Context, thread *DBThread) (*DBThread, error) {
+	if Mocks.Threads.Create != nil {
+		return Mocks.Threads.Create(thread)
 	}
 
 	var id int64
 	if err := dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO threads(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4) RETURNING id`,
+		`INSERT INTO threads(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+		thread.Type,
 		thread.RepositoryID,
 		thread.Title,
 		thread.ExternalURL,
 		thread.Status,
+		thread.IsPreview,
+		thread.BaseRef,
+		thread.HeadRef,
 	).Scan(&id); err != nil {
 		return nil, err
 	}
@@ -56,20 +61,19 @@ func (dbThreads) Create(ctx context.Context, thread *dbThread) (*dbThread, error
 	return &created, nil
 }
 
-type DBThreadUpdateCommon struct {
+type DBThreadUpdate struct {
 	Title       *string
 	ExternalURL *string
-}
-
-type dbThreadUpdate struct {
-	common DBThreadUpdateCommon
-	Status *graphqlbackend.ThreadStatus
+	Status      *string
+	IsPreview   *bool
+	BaseRef     *string
+	HeadRef     *string
 }
 
 // Update updates a thread given its ID.
-func (s dbThreads) Update(ctx context.Context, id int64, update dbThreadUpdate) (*dbThread, error) {
-	if mocks.threads.Update != nil {
-		return mocks.threads.Update(id, update)
+func (s DBThreads) Update(ctx context.Context, id int64, update DBThreadUpdate) (*DBThread, error) {
+	if Mocks.Threads.Update != nil {
+		return Mocks.Threads.Update(id, update)
 	}
 
 	// Treat empty string as meaning "set to null". Otherwise there is no way to express that
@@ -94,6 +98,15 @@ func (s dbThreads) Update(ctx context.Context, id int64, update dbThreadUpdate) 
 	if update.Status != nil {
 		setFields = append(setFields, sqlf.Sprintf("status=%s", *update.Status))
 	}
+	if update.IsPreview != nil {
+		setFields = append(setFields, sqlf.Sprintf("is_preview=%s", *update.IsPreview))
+	}
+	if update.BaseRef != nil {
+		setFields = append(setFields, sqlf.Sprintf("base_ref=%s", *update.BaseRef))
+	}
+	if update.HeadRef != nil {
+		setFields = append(setFields, sqlf.Sprintf("head_ref=%s", *update.HeadRef))
+	}
 
 	if len(setFields) == 0 {
 		return nil, nil
@@ -112,9 +125,9 @@ func (s dbThreads) Update(ctx context.Context, id int64, update dbThreadUpdate) 
 // GetByID retrieves the thread (if any) given its ID.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to view this thread.
-func (s dbThreads) GetByID(ctx context.Context, id int64) (*dbThread, error) {
-	if mocks.threads.GetByID != nil {
-		return mocks.threads.GetByID(id)
+func (s DBThreads) GetByID(ctx context.Context, id int64) (*DBThread, error) {
+	if Mocks.Threads.GetByID != nil {
+		return Mocks.Threads.GetByID(id)
 	}
 
 	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("id=%d", id)}, nil)
@@ -127,15 +140,16 @@ func (s dbThreads) GetByID(ctx context.Context, id int64) (*dbThread, error) {
 	return results[0], nil
 }
 
-// DBThreadsListOptionsCommon contains options for listing threads.
-type DBThreadsListOptionsCommon struct {
+// DBThreadsListOptions contains options for listing threads.
+type DBThreadsListOptions struct {
 	Query        string     // only list threads matching this query (case-insensitively)
 	RepositoryID api.RepoID // only list threads in this repository
 	ThreadIDs    []int64
+	Status       string
 	*db.LimitOffset
 }
 
-func (o DBThreadsListOptionsCommon) SQLConditions() []*sqlf.Query {
+func (o DBThreadsListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.Query != "" {
 		conds = append(conds, sqlf.Sprintf("title LIKE %s", "%"+o.Query+"%"))
@@ -150,16 +164,6 @@ func (o DBThreadsListOptionsCommon) SQLConditions() []*sqlf.Query {
 			conds = append(conds, sqlf.Sprintf("FALSE"))
 		}
 	}
-	return conds
-}
-
-type dbThreadsListOptions struct {
-	common DBThreadsListOptionsCommon
-	Status graphqlbackend.ThreadStatus
-}
-
-func (o dbThreadsListOptions) sqlConditions() []*sqlf.Query {
-	conds := o.common.SQLConditions()
 	if o.Status != "" {
 		conds = append(conds, sqlf.Sprintf("status=%s", o.Status))
 	}
@@ -170,15 +174,15 @@ func (o dbThreadsListOptions) sqlConditions() []*sqlf.Query {
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to list with the specified
 // options.
-func (s dbThreads) List(ctx context.Context, opt dbThreadsListOptions) ([]*dbThread, error) {
-	if mocks.threads.List != nil {
-		return mocks.threads.List(opt)
+func (s DBThreads) List(ctx context.Context, opt DBThreadsListOptions) ([]*DBThread, error) {
+	if Mocks.Threads.List != nil {
+		return Mocks.Threads.List(opt)
 	}
 
-	return s.list(ctx, opt.sqlConditions(), opt.common.LimitOffset)
+	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (s dbThreads) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbThread, error) {
+func (s DBThreads) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*DBThread, error) {
 	q := sqlf.Sprintf(`
 SELECT `+selectColumns+` FROM threads
 WHERE (%s)
@@ -190,22 +194,26 @@ ORDER BY title ASC
 	return s.query(ctx, q)
 }
 
-func (dbThreads) query(ctx context.Context, query *sqlf.Query) ([]*dbThread, error) {
+func (DBThreads) query(ctx context.Context, query *sqlf.Query) ([]*DBThread, error) {
 	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var results []*dbThread
+	var results []*DBThread
 	for rows.Next() {
-		var t dbThread
+		var t DBThread
 		if err := rows.Scan(
 			&t.ID,
+			&t.Type,
 			&t.RepositoryID,
 			&t.Title,
 			&t.ExternalURL,
 			&t.Status,
+			&t.IsPreview,
+			&t.BaseRef,
+			&t.HeadRef,
 		); err != nil {
 			return nil, err
 		}
@@ -217,9 +225,9 @@ func (dbThreads) query(ctx context.Context, query *sqlf.Query) ([]*dbThread, err
 // Count counts all threads that satisfy the options (ignoring limit and offset).
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to count the threads.
-func (dbThreads) Count(ctx context.Context, opt dbThreadsListOptions) (int, error) {
-	if mocks.threads.Count != nil {
-		return mocks.threads.Count(opt)
+func (DBThreads) Count(ctx context.Context, opt DBThreadsListOptions) (int, error) {
+	if Mocks.Threads.Count != nil {
+		return Mocks.Threads.Count(opt)
 	}
 
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM threads WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
@@ -230,17 +238,17 @@ func (dbThreads) Count(ctx context.Context, opt dbThreadsListOptions) (int, erro
 	return count, nil
 }
 
-// Delete deletes a thread given its ID.
+// DeleteByID deletes a thread given its ID.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the thread.
-func (s dbThreads) DeleteByID(ctx context.Context, id int64) error {
-	if mocks.threads.DeleteByID != nil {
-		return mocks.threads.DeleteByID(id)
+func (s DBThreads) DeleteByID(ctx context.Context, id int64) error {
+	if Mocks.Threads.DeleteByID != nil {
+		return Mocks.Threads.DeleteByID(id)
 	}
 	return s.delete(ctx, sqlf.Sprintf("id=%d", id))
 }
 
-func (dbThreads) delete(ctx context.Context, cond *sqlf.Query) error {
+func (DBThreads) delete(ctx context.Context, cond *sqlf.Query) error {
 	conds := []*sqlf.Query{cond, sqlf.Sprintf("TRUE")}
 	q := sqlf.Sprintf("DELETE FROM threads WHERE (%s)", sqlf.Join(conds, ") AND ("))
 
@@ -260,24 +268,10 @@ func (dbThreads) delete(ctx context.Context, cond *sqlf.Query) error {
 
 // mockThreads mocks the threads-related DB operations.
 type mockThreads struct {
-	Create     func(*dbThread) (*dbThread, error)
-	Update     func(int64, dbThreadUpdate) (*dbThread, error)
-	GetByID    func(int64) (*dbThread, error)
-	List       func(dbThreadsListOptions) ([]*dbThread, error)
-	Count      func(dbThreadsListOptions) (int, error)
+	Create     func(*DBThread) (*DBThread, error)
+	Update     func(int64, DBThreadUpdate) (*DBThread, error)
+	GetByID    func(int64) (*DBThread, error)
+	List       func(DBThreadsListOptions) ([]*DBThread, error)
+	Count      func(DBThreadsListOptions) (int, error)
 	DeleteByID func(int64) error
-}
-
-// TestCreateThread creates a thread in the DB, for use in tests only.
-func TestCreateThread(ctx context.Context, title string, repositoryID api.RepoID) (id int64, err error) {
-	thread, err := dbThreads{}.Create(ctx, &dbThread{
-		DBThreadCommon: DBThreadCommon{
-			RepositoryID: repositoryID,
-			Title:        title,
-		},
-	})
-	if err != nil {
-		return 0, err
-	}
-	return thread.ID, nil
 }

@@ -140,7 +140,7 @@ type Campaign interface {
 	Description() *string
 	IsPreview() bool
 	URL(context.Context) (string, error)
-	Threads(context.Context, *graphqlutil.ConnectionArgs) (ThreadConnection, error)
+	ThreadOrIssueOrChangesets(context.Context, *graphqlutil.ConnectionArgs) (ThreadOrIssueOrChangesetConnection, error)
 	Repositories(context.Context) ([]*RepositoryResolver, error)
 	Commits(context.Context) ([]*GitCommitResolver, error)
 	RepositoryComparisons(context.Context) ([]*RepositoryComparisonResolver, error)
