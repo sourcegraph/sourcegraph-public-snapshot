@@ -10,7 +10,7 @@ graph LR
     repo-updater-- HTTP -->github-proxy
     github-proxy-- HTTP -->github[github.com]
 
-    repo-updater-- HTTP -->codehosts[Code hosts: GitHub Enterprise, BitBucket, etc.]
+    repo-updater-- HTTP -->codehosts[Code hosts: GitHub Enterprise, Bitbucket, etc.]
     repo-updater-->redis-cache
 
     Frontend-- HTTP -->query-runner

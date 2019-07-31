@@ -15,7 +15,7 @@ Incidents can be reported by anyone (e.g. customers, Sourcegraph teammates) by a
 
 1. If the incident was reported by someone outside of Sourcegraph, acknowledge that the incident is being handled.
 2. Start an internal communication thread about this incident in the #incidents channel in Slack.
-    - All subseqent communication about this issue should happen in that Slack _thread_ (not in the top level #incidents channel).
+    - All subsequent communication about this issue should happen in that Slack _thread_ (not in the top level #incidents channel).
 3. Identify an engineer to triage the incident.
     - If you are an engineer and available for 30 minutes, then you should [triage the incident](#triage).
     - If you are not an engineer or are not available to triage the incident, then ask the on-call engineer to triage the incident.

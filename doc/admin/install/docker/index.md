@@ -62,4 +62,4 @@ To keep this up to date, run `docker pull sourcegraph/server:insiders` to pull i
 - [Configuring Sourcegraph](../../config/index.md)
 - [Upgrading Sourcegraph](../../updates.md)
 - [Management console](../../management_console.md)
-- [Site adminstration documentation](../../index.md)
+- [Site administration documentation](../../index.md)
