@@ -29,7 +29,8 @@ CREATE TABLE comments (
 CREATE UNIQUE INDEX comments_thread_id ON comments(thread_id);
 CREATE INDEX comments_author_user_id ON comments(author_user_id);
 
--- Ensure every thread has a "top comment".
+-- Ensure every thread has a primary comment (the "top comment" whose body is the description of the
+-- thread).
 ALTER TABLE threads ADD COLUMN primary_comment_id bigint NOT NULL REFERENCES comments(id) ON DELETE RESTRICT;
 
 -----------------

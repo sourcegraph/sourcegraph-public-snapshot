@@ -23,7 +23,7 @@ func commentLookupInfoFromGQLID(id graphql.ID) (threadID int64, err error) {
 	return
 }
 
-func commentByGQLID(ctx context.Context, id graphql.ID) (*dbComment, error) {
+func commentByGQLID(ctx context.Context, id graphql.ID) (*DBComment, error) {
 	if mocks.commentByGQLID != nil {
 		return mocks.commentByGQLID(id)
 	}
@@ -48,14 +48,14 @@ func commentByGQLID(ctx context.Context, id graphql.ID) (*dbComment, error) {
 	return comments[0], nil
 }
 
-func newGQLToComment(ctx context.Context, dbComment *dbComment) (graphqlbackend.Comment, error) {
+func newGQLToComment(ctx context.Context, DBComment *DBComment) (graphqlbackend.Comment, error) {
 	if mocks.newGQLToComment != nil {
-		return mocks.newGQLToComment(dbComment)
+		return mocks.newGQLToComment(DBComment)
 	}
 
 	switch {
-	case dbComment.ThreadID != 0:
-		v, err := threadlike.ThreadOrIssueOrChangesetByDBID(ctx, dbComment.ThreadID)
+	case DBComment.ThreadID != 0:
+		v, err := threadlike.ThreadOrIssueOrChangesetByDBID(ctx, DBComment.ThreadID)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +71,7 @@ func newGQLToComment(ctx context.Context, dbComment *dbComment) (graphqlbackend.
 }
 
 // GQLIComment implements the GraphQL interface Comment.
-type GQLIComment struct{ db *dbComment }
+type GQLIComment struct{ db *DBComment }
 
 func (v *GQLIComment) Author(ctx context.Context) (*graphqlbackend.Actor, error) {
 	user, err := graphqlbackend.UserByIDInt32(ctx, v.db.AuthorUserID)

@@ -33,7 +33,7 @@ func commentsByOptions(ctx context.Context, opt dbCommentsListOptions, arg *grap
 
 type commentConnection struct {
 	arg      *graphqlutil.ConnectionArgs
-	comments []*dbComment
+	comments []*DBComment
 }
 
 func (r *commentConnection) Nodes(ctx context.Context) ([]graphqlbackend.Comment, error) {

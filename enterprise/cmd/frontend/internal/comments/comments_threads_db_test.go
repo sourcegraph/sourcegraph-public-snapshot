@@ -22,7 +22,7 @@ func TestDB_CommentsThreads(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	comment0, err := dbComments{}.Create(ctx, &dbComment{AuthorUserID: org1.ID, Body: "b0"})
+	comment0, err := dbComments{}.Create(ctx, &DBComment{AuthorUserID: org1.ID, Body: "b0"})
 	if err != nil {
 		t.Fatal(err)
 	}

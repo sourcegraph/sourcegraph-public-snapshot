@@ -17,7 +17,7 @@ func (GraphQLResolver) CreateComment(ctx context.Context, arg *graphqlbackend.Cr
 		return nil, errors.New("authenticated required to create comment")
 	}
 
-	v := &dbComment{
+	v := &DBComment{
 		AuthorUserID: actor.DatabaseID(),
 		Body:         arg.Input.Body,
 	}

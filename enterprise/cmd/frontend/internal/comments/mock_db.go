@@ -9,8 +9,8 @@ type dbMocks struct {
 	comments        mockComments
 	commentsThreads mockCommentsThreads
 
-	commentByGQLID  func(graphql.ID) (*dbComment, error)
-	newGQLToComment func(*dbComment) (graphqlbackend.Comment, error)
+	commentByGQLID  func(graphql.ID) (*DBComment, error)
+	newGQLToComment func(*DBComment) (graphqlbackend.Comment, error)
 }
 
 var mocks dbMocks
