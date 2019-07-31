@@ -29,6 +29,9 @@ CREATE TABLE comments (
 CREATE UNIQUE INDEX comments_thread_id ON comments(thread_id);
 CREATE INDEX comments_author_user_id ON comments(author_user_id);
 
+-- Ensure every thread has a "top comment".
+ALTER TABLE threads ADD COLUMN primary_comment_id bigint NOT NULL REFERENCES comments(id) ON DELETE RESTRICT;
+
 -----------------
 
 CREATE TABLE campaigns (
