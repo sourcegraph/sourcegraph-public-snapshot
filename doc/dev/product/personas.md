@@ -8,7 +8,7 @@ Source: "[Personas for Product Management](https://svpg.com/personas-for-product
 
 ### Questions:
 
-- What are these personas designed to define? Decision makers? Evangelists that bring the product to their teams? The "purcahsers" or decision makers?
+- What are these personas designed to define? Decision makers? Evangelists that bring the product to their teams? The "purchasers" or decision makers?
 - Do we want personas to define HOW the users are interacting with the product? Which features they use, what they care about?
 - Should we name them - it is common to give them personalities? E.g. Dave the DevOps Engineer
 - Other things to consider:
