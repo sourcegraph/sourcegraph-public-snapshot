@@ -2,6 +2,7 @@ package campaigns
 
 import (
 	"context"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
@@ -18,6 +19,8 @@ type dbCampaign struct {
 	Description     *string
 	IsPreview       bool
 	Rules           string // the JSON rules TODO!(sqs)
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // errCampaignNotFound occurs when a database operation expects a specific campaign to exist but it
@@ -26,7 +29,7 @@ var errCampaignNotFound = errors.New("campaign not found")
 
 type dbCampaigns struct{}
 
-const selectColumns = `id, namespace_user_id, namespace_org_id, name, description, is_preview, rules`
+const selectColumns = `id, namespace_user_id, namespace_org_id, name, description, is_preview, rules, created_at, updated_at`
 
 // Create creates a campaign. The campaign argument's (Campaign).ID field is ignored. The database
 // ID of the new campaign is returned.
@@ -42,21 +45,15 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign) (*dbCampaig
 		return &v
 	}
 
-	var id int64
-	if err := dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6) RETURNING id`,
+	return dbCampaigns{}.scanRow(dbconn.Global.QueryRowContext(ctx,
+		`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT) RETURNING `+selectColumns,
 		nilIfZero(campaign.NamespaceUserID),
 		nilIfZero(campaign.NamespaceOrgID),
 		campaign.Name,
 		campaign.Description,
 		campaign.IsPreview,
 		campaign.Rules,
-	).Scan(&id); err != nil {
-		return nil, err
-	}
-	created := *campaign
-	created.ID = id
-	return &created, nil
+	))
 }
 
 type dbCampaignUpdate struct {
@@ -95,6 +92,7 @@ func (s dbCampaigns) Update(ctx context.Context, id int64, update dbCampaignUpda
 	if len(setFields) == 0 {
 		return nil, nil
 	}
+	setFields = append(setFields, sqlf.Sprintf("updated_at=now()"))
 
 	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE campaigns SET %v WHERE id=%s RETURNING `+selectColumns, sqlf.Join(setFields, ", "), id))
 	if err != nil {
@@ -179,29 +177,40 @@ func (dbCampaigns) query(ctx context.Context, query *sqlf.Query) ([]*dbCampaign,
 
 	var results []*dbCampaign
 	for rows.Next() {
-		var t dbCampaign
-		var namespaceUserID, namespaceOrgID *int32
-		if err := rows.Scan(
-			&t.ID,
-			&namespaceUserID,
-			&namespaceOrgID,
-			&t.Name,
-			&t.Description,
-			&t.IsPreview,
-			&t.Rules,
-		); err != nil {
+		t, err := dbCampaigns{}.scanRow(rows)
+		if err != nil {
 			return nil, err
 		}
-		// TODO!(sqs): why cant we just scan directly into t.Namespace{User,Org}ID?
-		if namespaceUserID != nil {
-			t.NamespaceUserID = *namespaceUserID
-		}
-		if namespaceOrgID != nil {
-			t.NamespaceOrgID = *namespaceOrgID
-		}
-		results = append(results, &t)
+		results = append(results, t)
 	}
 	return results, nil
+}
+
+func (dbCampaigns) scanRow(row interface {
+	Scan(dest ...interface{}) error
+}) (*dbCampaign, error) {
+	var t dbCampaign
+	var namespaceUserID, namespaceOrgID *int32
+	if err := row.Scan(
+		&t.ID,
+		&namespaceUserID,
+		&namespaceOrgID,
+		&t.Name,
+		&t.Description,
+		&t.IsPreview,
+		&t.Rules,
+		&t.CreatedAt,
+		&t.UpdatedAt,
+	); err != nil {
+		return nil, err
+	}
+	if namespaceUserID != nil {
+		t.NamespaceUserID = *namespaceUserID
+	}
+	if namespaceOrgID != nil {
+		t.NamespaceOrgID = *namespaceOrgID
+	}
+	return &t, nil
 }
 
 // Count counts all campaigns that satisfy the options (ignoring limit and offset).

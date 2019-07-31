@@ -3,6 +3,7 @@ import { NotificationType } from '../../../../../../shared/src/api/client/servic
 import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { Form } from '../../../../components/Form'
+import { CampaignsIcon } from '../../icons'
 import { updateCampaign } from '../../preview/CreateCampaignFromPreviewForm'
 
 interface Props extends ExtensionsControllerNotificationProps {

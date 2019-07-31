@@ -9,12 +9,28 @@ CREATE TABLE threads (
 	external_url text,
 	status text NOT NULL,
 
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    updated_at timestamp with time zone NOT NULL DEFAULT now(),
+
 	-- type == CHANGESET
 	is_preview boolean,
 	base_ref text,
 	head_ref text
 );
 CREATE INDEX threads_repository_id ON threads(repository_id);
+
+-----------------
+
+CREATE TABLE comments (
+    id bigserial PRIMARY KEY,
+    thread_id bigint REFERENCES threads(id) ON DELETE CASCADE,
+    author_user_id integer REFERENCES users(id) ON DELETE SET NULL,
+    body text NOT NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    updated_at timestamp with time zone NOT NULL DEFAULT now()
+);
+CREATE INDEX comments_thread_id ON comments(thread_id);
+CREATE INDEX comments_author_user_id ON comments(author_user_id);
 
 -----------------
 
@@ -25,7 +41,10 @@ CREATE TABLE campaigns (
 	name text NOT NULL,
 	description text,
     is_preview boolean NOT NULL DEFAULT false,
-    rules text NOT NULL DEFAULT '[]'
+    rules text NOT NULL DEFAULT '[]',
+
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    updated_at timestamp with time zone NOT NULL DEFAULT now()
 );
 ALTER TABLE campaigns ADD CONSTRAINT campaigns_has_1_namespace CHECK ((namespace_user_id IS NULL) != (namespace_org_id IS NULL));
 CREATE INDEX campaigns_namespace_user_id ON campaigns(namespace_user_id);

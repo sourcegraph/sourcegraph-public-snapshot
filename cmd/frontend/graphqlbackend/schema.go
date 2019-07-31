@@ -346,6 +346,15 @@ type Mutation {
     # Mutations related to labels.
     labels: LabelsMutation!
 
+    # Create a comment on an object. The newly created comment is returned.
+    createComment(input: CreateCommentInput!): Comment!
+
+    # Edit a comment. The edited comment is returned.
+    editComment(input: EditCommentInput!): Comment!
+
+    # Delete a comment.
+    deleteComment(comment: ID!): EmptyResponse
+
     # Create a thread in a repository. Returns the newly created thread.
     createThread(input: CreateThreadInput!): Thread!
 
@@ -4097,6 +4106,60 @@ type LabelConnection {
     pageInfo: PageInfo!
 }
 
+# An object that can perform actions.
+union Actor = User | Org
+
+# An RFC 3339-encoded UTC date string.
+scalar DateTime
+
+# A comment is a comment on an object, or an object that itself resembles a comment.
+interface Comment {
+    # The node ID of the object.
+    id: ID!
+
+    # The actor who authored the comment.
+    author: Actor
+
+    # The Markdown body of the comment.
+    body: String!
+
+    # The date and time when the object was created.
+    createdAt: DateTime!
+
+    # The date and time when the object was updated.
+    updatedAt: DateTime!
+}
+
+# Input arguments for creating a comment.
+input CreateCommentInput {
+    # The object on which to create the comment.
+    node: ID!
+
+    # The Markdown body of the comment.
+    body: String!
+}
+
+# Input arguments for editing a comment.
+input UpdateCommentInput {
+    # The ID of the comment to edit.
+    id: ID!
+
+    # The new body of the comment (if non-null).
+    body: String!
+}
+
+# A list of comments.
+type CommentConnection {
+    # A list of comments.
+    nodes: [Comment!]!
+
+    # The total number of comments in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
 # A node that is associated with a repository.
 interface RepositoryNode {
     # The repository associated with this node.
@@ -4108,12 +4171,6 @@ interface RepositoryAndNumberAddressable {
     # An ID for the node that is only unique within the node's repository. For a globally unique
     # identifier, use Node.id.
     number: String!
-}
-
-# A comment.
-interface Comment {
-    # The comment body.
-    body: String
 }
 
 # The statuses of threads.
@@ -4170,8 +4227,8 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
     # The title of the thread.
     title: String!
 
-    # The body of the thread.
-    body: String
+    # The Markdown body of the thread.
+    body: String!
 
     # The status of this thread.
     status: ThreadStatus!
@@ -4181,6 +4238,15 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
 
     # The URL to this thread on Sourcegraph.
     url: String!
+
+    # The actor who authored the thread.
+    author: Actor
+
+    # The date and time when the thread was created.
+    createdAt: DateTime!
+
+    # The date and time when the thread was updated.
+    updatedAt: DateTime!
 }
 
 # A list of threads.
@@ -4266,8 +4332,8 @@ type Changeset implements Node & RepositoryNode & RepositoryAndNumberAddressable
     # The title of the changeset.
     title: String!
 
-    # The body of the changeset.
-    body: String
+    # The Markdown body of the changeset.
+    body: String!
 
     # The status of this changeset.
     status: ChangesetStatus!
@@ -4286,6 +4352,15 @@ type Changeset implements Node & RepositoryNode & RepositoryAndNumberAddressable
 
     # The URL to this changeset on Sourcegraph.
     url: String!
+
+    # The actor who authored the changeset.
+    author: Actor
+
+    # The date and time when the changeset was created.
+    createdAt: DateTime!
+
+    # The date and time when the changeset was updated.
+    updatedAt: DateTime!
 
     # The comparison between this changeset's base and head.
     repositoryComparison: RepositoryComparison!

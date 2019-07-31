@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -20,6 +21,8 @@ type DBThread struct {
 	Title        string
 	ExternalURL  *string
 	Status       string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 
 	// Changeset
 	IsPreview bool
@@ -33,7 +36,7 @@ var errThreadNotFound = errors.New("thread not found")
 
 type DBThreads struct{}
 
-const selectColumns = "id, type, repository_id, title, external_url, status, is_preview, base_ref, head_ref"
+const selectColumns = "id, type, repository_id, title, external_url, status, created_at, updated_at, is_preview, base_ref, head_ref"
 
 // Create creates a thread. The thread argument's (Thread).ID field is ignored. The database ID of
 // the new thread is returned.
@@ -42,9 +45,8 @@ func (DBThreads) Create(ctx context.Context, thread *DBThread) (*DBThread, error
 		return Mocks.Threads.Create(thread)
 	}
 
-	var id int64
-	if err := dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO threads(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+	return DBThreads{}.scanRow(dbconn.Global.QueryRowContext(ctx,
+		`INSERT INTO threads(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, DEFAULT, DEFAULT, $6, $7, $8) RETURNING `+selectColumns,
 		thread.Type,
 		thread.RepositoryID,
 		thread.Title,
@@ -53,12 +55,7 @@ func (DBThreads) Create(ctx context.Context, thread *DBThread) (*DBThread, error
 		thread.IsPreview,
 		thread.BaseRef,
 		thread.HeadRef,
-	).Scan(&id); err != nil {
-		return nil, err
-	}
-	created := *thread
-	created.ID = id
-	return &created, nil
+	))
 }
 
 type DBThreadUpdate struct {
@@ -111,6 +108,7 @@ func (s DBThreads) Update(ctx context.Context, id int64, update DBThreadUpdate) 
 	if len(setFields) == 0 {
 		return nil, nil
 	}
+	setFields = append(setFields, sqlf.Sprintf("updated_at=now()"))
 
 	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE threads SET %v WHERE id=%s RETURNING `+selectColumns, sqlf.Join(setFields, ", "), id))
 	if err != nil {
@@ -203,23 +201,35 @@ func (DBThreads) query(ctx context.Context, query *sqlf.Query) ([]*DBThread, err
 
 	var results []*DBThread
 	for rows.Next() {
-		var t DBThread
-		if err := rows.Scan(
-			&t.ID,
-			&t.Type,
-			&t.RepositoryID,
-			&t.Title,
-			&t.ExternalURL,
-			&t.Status,
-			&t.IsPreview,
-			&t.BaseRef,
-			&t.HeadRef,
-		); err != nil {
+		t, err := DBThreads{}.scanRow(rows)
+		if err != nil {
 			return nil, err
 		}
-		results = append(results, &t)
+		results = append(results, t)
 	}
 	return results, nil
+}
+
+func (DBThreads) scanRow(row interface {
+	Scan(dest ...interface{}) error
+}) (*DBThread, error) {
+	var t DBThread
+	if err := row.Scan(
+		&t.ID,
+		&t.Type,
+		&t.RepositoryID,
+		&t.Title,
+		&t.ExternalURL,
+		&t.Status,
+		&t.CreatedAt,
+		&t.UpdatedAt,
+		&t.IsPreview,
+		&t.BaseRef,
+		&t.HeadRef,
+	); err != nil {
+		return nil, err
+	}
+	return &t, nil
 }
 
 // Count counts all threads that satisfy the options (ignoring limit and offset).
