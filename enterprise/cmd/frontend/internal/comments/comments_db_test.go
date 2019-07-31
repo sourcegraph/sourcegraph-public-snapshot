@@ -38,12 +38,20 @@ func TestDB_Comments(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantComment0 := &DBComment{ThreadID: thread0, AuthorUserID: user.ID, Body: "b0"}
+	wantComment0 := &dbComment{
+		Object:       dbCommentObject{ThreadID: thread0},
+		AuthorUserID: user.ID,
+		Body:         "b0",
+	}
 	comment0, err := dbComments{}.Create(ctx, wantComment0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	comment1, err := dbComments{}.Create(ctx, &DBComment{ThreadID: thread1, AuthorUserID: user.ID, Body: "b1"})
+	comment1, err := dbComments{}.Create(ctx, &dbComment{
+		Object:       dbCommentObject{ThreadID: thread1},
+		AuthorUserID: user.ID,
+		Body:         "b1",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +104,7 @@ func TestDB_Comments(t *testing.T) {
 
 	{
 		// List thread0's comments.
-		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{ThreadID: thread0})
+		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{Object: dbCommentObject{ThreadID: thread0}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -108,7 +116,7 @@ func TestDB_Comments(t *testing.T) {
 
 	{
 		// List thread1's comments.
-		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{ThreadID: thread1})
+		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{Object: dbCommentObject{ThreadID: thread1}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -124,7 +132,7 @@ func TestDB_Comments(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if want := []*DBComment{comment1}; !reflect.DeepEqual(ts, want) {
+		if want := []*dbComment{comment1}; !reflect.DeepEqual(ts, want) {
 			t.Errorf("got %+v, want %+v", ts, want)
 		}
 	}

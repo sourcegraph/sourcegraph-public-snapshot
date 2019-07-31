@@ -126,7 +126,7 @@ export const CreateCampaignFromPreviewForm: React.FunctionComponent<Props> = ({
                         // TODO!(sqs)
                         alert('not implemented')
                     }}
-                    placeholder="Description"
+                    placeholder="Body"
                     style={{ resize: 'vertical', minHeight: '150px' }}
                     disabled={isLoading}
                 />

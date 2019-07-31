@@ -3,6 +3,7 @@ package comments
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -13,24 +14,29 @@ import (
 
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
 
-func commentLookupInfoFromGQLID(id graphql.ID) (threadID int64, err error) {
+func commentObjectFromGQLID(id graphql.ID) (dbCommentObject, error) {
 	switch relay.UnmarshalKind(id) {
 	case string(threadlike.GQLTypeThread), string(threadlike.GQLTypeIssue), string(threadlike.GQLTypeChangeset):
-		_, threadID, err = threadlike.UnmarshalID(id)
+		_, threadID, err := threadlike.UnmarshalID(id)
+		return dbCommentObject{ThreadID: threadID}, err
+	case "Campaign":
+		// TODO!(sqs): reduce duplication of logic and constants?
+		var dbID int64
+		err := relay.UnmarshalSpec(id, &dbID)
+		return dbCommentObject{CampaignID: dbID}, err
 	default:
-		err = fmt.Errorf("invalid comment type %q", relay.UnmarshalKind(id))
+		return dbCommentObject{}, fmt.Errorf("invalid comment type %q", relay.UnmarshalKind(id))
 	}
-	return
 }
 
-func commentByGQLID(ctx context.Context, id graphql.ID) (*DBComment, error) {
+func commentByGQLID(ctx context.Context, id graphql.ID) (*dbComment, error) {
 	if mocks.commentByGQLID != nil {
 		return mocks.commentByGQLID(id)
 	}
 
 	var opt dbCommentsListOptions
 	var err error
-	opt.ThreadID, err = commentLookupInfoFromGQLID(id)
+	opt.Object, err = commentObjectFromGQLID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -48,14 +54,14 @@ func commentByGQLID(ctx context.Context, id graphql.ID) (*DBComment, error) {
 	return comments[0], nil
 }
 
-func newGQLToComment(ctx context.Context, DBComment *DBComment) (graphqlbackend.Comment, error) {
+func newGQLToComment(ctx context.Context, dbComment *dbComment) (graphqlbackend.Comment, error) {
 	if mocks.newGQLToComment != nil {
-		return mocks.newGQLToComment(DBComment)
+		return mocks.newGQLToComment(dbComment)
 	}
 
 	switch {
-	case DBComment.ThreadID != 0:
-		v, err := threadlike.ThreadOrIssueOrChangesetByDBID(ctx, DBComment.ThreadID)
+	case dbComment.Object.ThreadID != 0:
+		v, err := threadlike.ThreadOrIssueOrChangesetByDBID(ctx, dbComment.Object.ThreadID)
 		if err != nil {
 			return nil, err
 		}
@@ -66,26 +72,74 @@ func newGQLToComment(ctx context.Context, DBComment *DBComment) (graphqlbackend.
 		case v.Changeset != nil:
 			return &graphqlbackend.ToComment{Changeset: v.Changeset}, nil
 		}
+	case dbComment.Object.CampaignID != 0:
+		v, err := graphqlbackend.CampaignByDBID(ctx, dbComment.Object.CampaignID)
+		if err != nil {
+			return nil, err
+		}
+		return &graphqlbackend.ToComment{Campaign: v}, nil
 	}
 	return nil, errors.New("invalid comment")
 }
 
-// GQLIComment implements the GraphQL interface Comment.
-type GQLIComment struct{ db *DBComment }
+func (GraphQLResolver) LazyCommentByID(object graphql.ID) graphqlbackend.PartialComment {
+	return &gqlComment{id: object}
+}
 
-func (v *GQLIComment) Author(ctx context.Context) (*graphqlbackend.Actor, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, v.db.AuthorUserID)
+// gqlComment implements the GraphQL interface Comment.
+type gqlComment struct {
+	id graphql.ID
+
+	once      sync.Once
+	dbComment *dbComment
+	err       error
+}
+
+// TODO!(sqs) remove
+// func (gqlComment) ID() graphql.ID {
+// 	panic("The (gqlComment).ID method should not be called. If gqlComment is embedded in another struct type, the struct type must define its own ID method that shadows (gqlComment).ID. This is because gqlComment is lazy and the ID is not guaranteed to be valid when gqlComment being instantiated, so the embedding type may report incorrect IDs to GraphQL API consumers.")
+// }
+
+func (v *gqlComment) getComment(ctx context.Context) (*dbComment, error) {
+	v.once.Do(func() {
+		v.dbComment, v.err = commentByGQLID(ctx, v.id)
+	})
+	return v.dbComment, v.err
+}
+
+func (v *gqlComment) Author(ctx context.Context) (*graphqlbackend.Actor, error) {
+	c, err := v.getComment(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := graphqlbackend.UserByIDInt32(ctx, c.AuthorUserID)
 	if err != nil {
 		return nil, err
 	}
 	return &graphqlbackend.Actor{User: user}, nil
 }
 
-func (v *GQLIComment) Body() string { return v.db.Body }
-
-func (v *GQLIComment) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{v.db.CreatedAt}
+func (v *gqlComment) Body(ctx context.Context) (string, error) {
+	c, err := v.getComment(ctx)
+	if err != nil {
+		return "", err
+	}
+	return c.Body, nil
 }
-func (v *GQLIComment) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{v.db.UpdatedAt}
+
+func (v *gqlComment) CreatedAt(ctx context.Context) (graphqlbackend.DateTime, error) {
+	c, err := v.getComment(ctx)
+	if err != nil {
+		return graphqlbackend.DateTime{}, err
+	}
+	return graphqlbackend.DateTime{c.CreatedAt}, nil
+}
+
+func (v *gqlComment) UpdatedAt(ctx context.Context) (graphqlbackend.DateTime, error) {
+	c, err := v.getComment(ctx)
+	if err != nil {
+		return graphqlbackend.DateTime{}, err
+	}
+	return graphqlbackend.DateTime{c.UpdatedAt}, nil
 }

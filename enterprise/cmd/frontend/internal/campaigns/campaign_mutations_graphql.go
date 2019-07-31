@@ -11,9 +11,9 @@ import (
 
 func (GraphQLResolver) CreateCampaign(ctx context.Context, arg *graphqlbackend.CreateCampaignArgs) (graphqlbackend.Campaign, error) {
 	v := &dbCampaign{
-		Name:        arg.Input.Name,
-		Description: arg.Input.Description,
-		IsPreview:   arg.Input.Preview != nil && *arg.Input.Preview,
+		Name: arg.Input.Name,
+		// TODO!(sqs): description, renamed to body but allow it to be updated here
+		IsPreview: arg.Input.Preview != nil && *arg.Input.Preview,
 	}
 	if arg.Input.Rules != nil {
 		v.Rules = *arg.Input.Rules
@@ -29,7 +29,7 @@ func (GraphQLResolver) CreateCampaign(ctx context.Context, arg *graphqlbackend.C
 	if err != nil {
 		return nil, err
 	}
-	return &gqlCampaign{db: campaign}, nil
+	return newGQLCampaign(campaign), nil
 }
 
 func (GraphQLResolver) UpdateCampaign(ctx context.Context, arg *graphqlbackend.UpdateCampaignArgs) (graphqlbackend.Campaign, error) {
@@ -38,14 +38,14 @@ func (GraphQLResolver) UpdateCampaign(ctx context.Context, arg *graphqlbackend.U
 		return nil, err
 	}
 	campaign, err := dbCampaigns{}.Update(ctx, l.db.ID, dbCampaignUpdate{
-		Name:        arg.Input.Name,
-		Description: arg.Input.Description,
-		Rules:       arg.Input.Rules,
+		Name: arg.Input.Name,
+		// TODO!(sqs): description, renamed to body but allow it to be updated here
+		Rules: arg.Input.Rules,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &gqlCampaign{db: campaign}, nil
+	return newGQLCampaign(campaign), nil
 }
 
 func (GraphQLResolver) PublishPreviewCampaign(ctx context.Context, arg *graphqlbackend.PublishPreviewCampaignArgs) (graphqlbackend.Campaign, error) {
@@ -65,7 +65,7 @@ func (GraphQLResolver) PublishPreviewCampaign(ctx context.Context, arg *graphqlb
 	if err != nil {
 		return nil, err
 	}
-	return &gqlCampaign{db: campaign}, nil
+	return newGQLCampaign(campaign), nil
 }
 
 func (GraphQLResolver) DeleteCampaign(ctx context.Context, arg *graphqlbackend.DeleteCampaignArgs) (*graphqlbackend.EmptyResponse, error) {

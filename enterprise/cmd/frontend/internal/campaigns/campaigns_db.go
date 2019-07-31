@@ -16,7 +16,6 @@ type dbCampaign struct {
 	NamespaceUserID int32  // the user namespace where this campaign is defined
 	NamespaceOrgID  int32  // the org namespace where this campaign is defined
 	Name            string // the name (case-preserving)
-	Description     *string
 	IsPreview       bool
 	Rules           string // the JSON rules TODO!(sqs)
 	CreatedAt       time.Time
@@ -29,7 +28,7 @@ var errCampaignNotFound = errors.New("campaign not found")
 
 type dbCampaigns struct{}
 
-const selectColumns = `id, namespace_user_id, namespace_org_id, name, description, is_preview, rules, created_at, updated_at`
+const selectColumns = `id, namespace_user_id, namespace_org_id, name, is_preview, rules, created_at, updated_at`
 
 // Create creates a campaign. The campaign argument's (Campaign).ID field is ignored. The new
 // campaign is returned.
@@ -46,21 +45,19 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign) (*dbCampaig
 	}
 
 	return dbCampaigns{}.scanRow(dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT) RETURNING `+selectColumns,
+		`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, DEFAULT, DEFAULT) RETURNING `+selectColumns,
 		nilIfZero(campaign.NamespaceUserID),
 		nilIfZero(campaign.NamespaceOrgID),
 		campaign.Name,
-		campaign.Description,
 		campaign.IsPreview,
 		campaign.Rules,
 	))
 }
 
 type dbCampaignUpdate struct {
-	Name        *string
-	Description *string
-	IsPreview   *bool
-	Rules       *string
+	Name      *string
+	IsPreview *bool
+	Rules     *string
 }
 
 // Update updates a campaign given its ID.
@@ -72,15 +69,6 @@ func (s dbCampaigns) Update(ctx context.Context, id int64, update dbCampaignUpda
 	var setFields []*sqlf.Query
 	if update.Name != nil {
 		setFields = append(setFields, sqlf.Sprintf("name=%s", *update.Name))
-	}
-	if update.Description != nil {
-		// Treat empty string as meaning "set to null". Otherwise there is no way to express that
-		// intent.
-		var value *string
-		if *update.Description != "" {
-			value = update.Description
-		}
-		setFields = append(setFields, sqlf.Sprintf("description=%s", value))
 	}
 	if update.IsPreview != nil {
 		setFields = append(setFields, sqlf.Sprintf("is_preview=%s", *update.IsPreview))
@@ -196,7 +184,6 @@ func (dbCampaigns) scanRow(row interface {
 		&namespaceUserID,
 		&namespaceOrgID,
 		&t.Name,
-		&t.Description,
 		&t.IsPreview,
 		&t.Rules,
 		&t.CreatedAt,

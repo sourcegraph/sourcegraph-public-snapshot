@@ -14,8 +14,8 @@ import (
 
 // GQLThreadlike implements common fields for the GraphQL thread, issue, and changeset types.
 type GQLThreadlike struct {
-	graphqlbackend.Comment
 	DB *internal.DBThread
+	graphqlbackend.PartialComment
 }
 
 func (v *GQLThreadlike) Type() graphqlbackend.ThreadlikeType { return v.DB.Type }

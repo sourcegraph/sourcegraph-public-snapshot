@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -16,7 +17,10 @@ import (
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
 
 // gqlCampaign implements the GraphQL type Campaign.
-type gqlCampaign struct{ db *dbCampaign }
+type gqlCampaign struct {
+	db *dbCampaign
+	graphqlbackend.PartialComment
+}
 
 // campaignByID looks up and returns the Campaign with the given GraphQL ID. If no such Campaign exists, it
 // returns a non-nil error.
@@ -39,7 +43,18 @@ func campaignByDBID(ctx context.Context, dbID int64) (*gqlCampaign, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &gqlCampaign{db: v}, nil
+	return newGQLCampaign(v), nil
+}
+
+func (GraphQLResolver) CampaignByDBID(ctx context.Context, id int64) (graphqlbackend.Campaign, error) {
+	return campaignByDBID(ctx, id)
+}
+
+func newGQLCampaign(v *dbCampaign) *gqlCampaign {
+	return &gqlCampaign{
+		db:             v,
+		PartialComment: comments.GraphQLResolver{}.LazyCommentByID(threadlike.MarshalID(threadlike.GQLTypeThread, v.ID)),
+	}
 }
 
 func (v *gqlCampaign) ID() graphql.ID {
@@ -60,8 +75,6 @@ func (v *gqlCampaign) Namespace(ctx context.Context) (*graphqlbackend.NamespaceR
 }
 
 func (v *gqlCampaign) Name() string { return v.db.Name }
-
-func (v *gqlCampaign) Description() *string { return v.db.Description }
 
 func (v *gqlCampaign) IsPreview() bool { return v.db.IsPreview }
 

@@ -1,10 +1,14 @@
 package comments
 
-import "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+import (
+	"context"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+)
 
 type mockComment struct {
 	graphqlbackend.Comment
 	body string
 }
 
-func (v mockComment) Body() string { return v.body }
+func (v mockComment) Body(context.Context) (string, error) { return v.body, nil }

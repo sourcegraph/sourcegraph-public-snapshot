@@ -10,14 +10,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
-// DBComment describes a comment.
-type DBComment struct {
+// dbComment describes a comment.
+type dbComment struct {
 	ID           int64
-	ThreadID     int64
+	Object       dbCommentObject
 	AuthorUserID int32
 	Body         string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+}
+
+// dbCommentObject stores the object that the comment is associated with. Exactly 1 field is
+// nonzero.
+type dbCommentObject struct {
+	ThreadID   int64
+	CampaignID int64
 }
 
 // errCommentNotFound occurs when a database operation expects a specific comment to exist but it
@@ -26,11 +33,11 @@ var errCommentNotFound = errors.New("comment not found")
 
 type dbComments struct{}
 
-const selectColumns = `id, thread_id, author_user_id, body, created_at, updated_at`
+const selectColumns = `id, author_user_id, body, created_at, updated_at, thread_id, campaign_id`
 
 // Create creates a comment. The comment argument's (Comment).ID field is ignored. The new comment
 // is returned.
-func (dbComments) Create(ctx context.Context, comment *DBComment) (*DBComment, error) {
+func (dbComments) Create(ctx context.Context, comment *dbComment) (*dbComment, error) {
 	if mocks.comments.Create != nil {
 		return mocks.comments.Create(comment)
 	}
@@ -44,9 +51,10 @@ func (dbComments) Create(ctx context.Context, comment *DBComment) (*DBComment, e
 
 	return dbComments{}.scanRow(dbconn.Global.QueryRowContext(ctx,
 		`INSERT INTO comments(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, DEFAULT, DEFAULT) RETURNING `+selectColumns,
-		nilIfZero(comment.ThreadID),
 		comment.AuthorUserID,
 		comment.Body,
+		nilIfZero(comment.Object.ThreadID),
+		nilIfZero(comment.Object.CampaignID),
 	))
 }
 
@@ -55,7 +63,7 @@ type dbCommentUpdate struct {
 }
 
 // Update updates a comment given its ID.
-func (s dbComments) Update(ctx context.Context, id int64, update dbCommentUpdate) (*DBComment, error) {
+func (s dbComments) Update(ctx context.Context, id int64, update dbCommentUpdate) (*dbComment, error) {
 	if mocks.comments.Update != nil {
 		return mocks.comments.Update(id, update)
 	}
@@ -83,7 +91,7 @@ func (s dbComments) Update(ctx context.Context, id int64, update dbCommentUpdate
 // GetByID retrieves the comment (if any) given its ID.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to view this comment.
-func (s dbComments) GetByID(ctx context.Context, id int64) (*DBComment, error) {
+func (s dbComments) GetByID(ctx context.Context, id int64) (*dbComment, error) {
 	if mocks.comments.GetByID != nil {
 		return mocks.comments.GetByID(id)
 	}
@@ -100,8 +108,8 @@ func (s dbComments) GetByID(ctx context.Context, id int64) (*DBComment, error) {
 
 // dbCommentsListOptions contains options for listing comments.
 type dbCommentsListOptions struct {
-	Query    string // only list comments matching this query (case-insensitively)
-	ThreadID int64
+	Query  string // only list comments matching this query (case-insensitively)
+	Object dbCommentObject
 	*db.LimitOffset
 }
 
@@ -110,8 +118,11 @@ func (o dbCommentsListOptions) sqlConditions() []*sqlf.Query {
 	if o.Query != "" {
 		conds = append(conds, sqlf.Sprintf("body ILIKE %s", "%"+o.Query+"%"))
 	}
-	if o.ThreadID != 0 {
-		conds = append(conds, sqlf.Sprintf("thread_id=%d", o.ThreadID))
+	if o.Object.ThreadID != 0 {
+		conds = append(conds, sqlf.Sprintf("thread_id=%d", o.Object.ThreadID))
+	}
+	if o.Object.CampaignID != 0 {
+		conds = append(conds, sqlf.Sprintf("campaign_id=%d", o.Object.CampaignID))
 	}
 	return conds
 }
@@ -120,7 +131,7 @@ func (o dbCommentsListOptions) sqlConditions() []*sqlf.Query {
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to list with the specified
 // options.
-func (s dbComments) List(ctx context.Context, opt dbCommentsListOptions) ([]*DBComment, error) {
+func (s dbComments) List(ctx context.Context, opt dbCommentsListOptions) ([]*dbComment, error) {
 	if mocks.comments.List != nil {
 		return mocks.comments.List(opt)
 	}
@@ -128,7 +139,7 @@ func (s dbComments) List(ctx context.Context, opt dbCommentsListOptions) ([]*DBC
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (s dbComments) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*DBComment, error) {
+func (s dbComments) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbComment, error) {
 	q := sqlf.Sprintf(`
 SELECT `+selectColumns+` FROM comments
 WHERE (%s)
@@ -140,14 +151,14 @@ ORDER BY id ASC
 	return s.query(ctx, q)
 }
 
-func (dbComments) query(ctx context.Context, query *sqlf.Query) ([]*DBComment, error) {
+func (dbComments) query(ctx context.Context, query *sqlf.Query) ([]*dbComment, error) {
 	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var results []*DBComment
+	var results []*dbComment
 	for rows.Next() {
 		t, err := dbComments{}.scanRow(rows)
 		if err != nil {
@@ -160,21 +171,25 @@ func (dbComments) query(ctx context.Context, query *sqlf.Query) ([]*DBComment, e
 
 func (dbComments) scanRow(row interface {
 	Scan(dest ...interface{}) error
-}) (*DBComment, error) {
-	var t DBComment
-	var threadID *int64
+}) (*dbComment, error) {
+	var t dbComment
+	var threadID, campaignID *int64
 	if err := row.Scan(
 		&t.ID,
-		&threadID,
 		&t.AuthorUserID,
 		&t.Body,
 		&t.CreatedAt,
 		&t.UpdatedAt,
+		&threadID,
+		&campaignID,
 	); err != nil {
 		return nil, err
 	}
 	if threadID != nil {
-		t.ThreadID = *threadID
+		t.Object.ThreadID = *threadID
+	}
+	if campaignID != nil {
+		t.Object.CampaignID = *campaignID
 	}
 	return &t, nil
 }
@@ -225,10 +240,10 @@ func (dbComments) delete(ctx context.Context, cond *sqlf.Query) error {
 
 // mockComments mocks the comments-related DB operations.
 type mockComments struct {
-	Create     func(*DBComment) (*DBComment, error)
-	Update     func(int64, dbCommentUpdate) (*DBComment, error)
-	GetByID    func(int64) (*DBComment, error)
-	List       func(dbCommentsListOptions) ([]*DBComment, error)
+	Create     func(*dbComment) (*dbComment, error)
+	Update     func(int64, dbCommentUpdate) (*dbComment, error)
+	GetByID    func(int64) (*dbComment, error)
+	List       func(dbCommentsListOptions) ([]*dbComment, error)
 	Count      func(dbCommentsListOptions) (int, error)
 	DeleteByID func(int64) error
 }

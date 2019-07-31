@@ -24,12 +24,12 @@ func TestDB_Campaigns(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantCampaign0 := &dbCampaign{NamespaceUserID: user1.ID, Name: "n0", Description: strptr("d0")}
+	wantCampaign0 := &dbCampaign{NamespaceUserID: user1.ID, Name: "n0"}
 	campaign0, err := dbCampaigns{}.Create(ctx, wantCampaign0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	campaign1, err := dbCampaigns{}.Create(ctx, &dbCampaign{NamespaceUserID: user1.ID, Name: "n1", Description: strptr("d1")})
+	campaign1, err := dbCampaigns{}.Create(ctx, &dbCampaign{NamespaceUserID: user1.ID, Name: "n1"})
 	if err != nil {
 		t.Fatal(err)
 	}

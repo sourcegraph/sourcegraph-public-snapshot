@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 )
@@ -21,8 +22,11 @@ type gqlChangeset struct {
 
 func newGQLChangeset(db *internal.DBThread) *gqlChangeset {
 	return &gqlChangeset{
-		GQLThreadlike: threadlike.GQLThreadlike{DB: db},
-		db:            db,
+		GQLThreadlike: threadlike.GQLThreadlike{
+			DB:             db,
+			PartialComment: comments.GraphQLResolver{}.LazyCommentByID(threadlike.MarshalID(threadlike.GQLTypeChangeset, db.ID)),
+		},
+		db: db,
 	}
 }
 

@@ -26,7 +26,7 @@ export const useCampaigns = (
                                   nodes {
                                       id
                                       name
-                                      description
+                                      body
                                       url
                                   }
                                   totalCount
@@ -50,7 +50,7 @@ export const useCampaigns = (
                           nodes {
                               id
                               name
-                              description
+                              body
                               url
                           }
                           totalCount

@@ -17,11 +17,11 @@ func (GraphQLResolver) CreateComment(ctx context.Context, arg *graphqlbackend.Cr
 		return nil, errors.New("authenticated required to create comment")
 	}
 
-	v := &DBComment{
+	v := &dbComment{
 		AuthorUserID: actor.DatabaseID(),
 		Body:         arg.Input.Body,
 	}
-	v.ThreadID, err = commentLookupInfoFromGQLID(arg.Input.Node)
+	v.Object, err = commentObjectFromGQLID(arg.Input.Node)
 	if err != nil {
 		return nil, err
 	}

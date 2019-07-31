@@ -4473,7 +4473,7 @@ input UpdateCampaignInput {
 }
 
 # A campaign is a set of related issues and changesets.
-type Campaign implements Node {
+type Campaign implements Node & Comment {
     # The unique ID for the campaign.
     id: ID!
 
@@ -4483,14 +4483,23 @@ type Campaign implements Node {
     # The name of the campaign.
     name: String!
 
-    # The (optional) description of the campaign.
-    description: String
+    # The Markdown description of the campaign.
+    body: String!
 
     # Whether this campaign is a preview.
     isPreview: Boolean!
 
     # TODO!(sqs) The JSON rules array for this campaign.
     rules: String!
+
+    # The actor who authored the comment.
+    author: Actor
+
+    # The date and time when the object was created.
+    createdAt: DateTime!
+
+    # The date and time when the object was updated.
+    updatedAt: DateTime!
 
     # The URL to this campaign.
     url: String!

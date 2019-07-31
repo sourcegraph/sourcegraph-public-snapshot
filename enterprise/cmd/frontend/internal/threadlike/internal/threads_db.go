@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
@@ -24,8 +23,6 @@ type DBThread struct {
 	Status       string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
-
-	Comment *comments.DBComment // Primary comment
 
 	// Changeset
 	IsPreview bool

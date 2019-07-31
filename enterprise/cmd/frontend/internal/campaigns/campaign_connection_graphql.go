@@ -29,7 +29,7 @@ func campaignsByOptions(ctx context.Context, opt dbCampaignsListOptions, arg *gr
 	}
 	campaigns := make([]*gqlCampaign, len(list))
 	for i, a := range list {
-		campaigns[i] = &gqlCampaign{db: a}
+		campaigns[i] = newGQLCampaign(a)
 	}
 	return &campaignConnection{arg: arg, campaigns: campaigns}, nil
 }

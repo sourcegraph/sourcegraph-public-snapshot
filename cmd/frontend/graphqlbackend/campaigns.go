@@ -24,6 +24,14 @@ func CampaignByID(ctx context.Context, id graphql.ID) (Campaign, error) {
 	return Campaigns.CampaignByID(ctx, id)
 }
 
+// CampaignByDBID is called to look up a Campaign given its DB ID.
+func CampaignByDBID(ctx context.Context, id int64) (Campaign, error) {
+	if Campaigns == nil {
+		return nil, errCampaignsNotImplemented
+	}
+	return Campaigns.CampaignByDBID(ctx, id)
+}
+
 // CampaignsInNamespace returns an instance of the GraphQL CampaignConnection type with the list of
 // campaigns defined in a namespace.
 func CampaignsInNamespace(ctx context.Context, namespace graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error) {
@@ -98,6 +106,9 @@ type CampaignsResolver interface {
 	// CampaignByID is called by the CampaignByID func but is not in the GraphQL API.
 	CampaignByID(context.Context, graphql.ID) (Campaign, error)
 
+	// CampaignByDBID is called by the CampaignByDBID func but is not in the GraphQL API.
+	CampaignByDBID(context.Context, int64) (Campaign, error)
+
 	// CampaignsInNamespace is called by the CampaignsInNamespace func but is not in the GraphQL
 	// API.
 	CampaignsInNamespace(ctx context.Context, namespace graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error)
@@ -107,7 +118,7 @@ type CreateCampaignArgs struct {
 	Input struct {
 		Namespace   graphql.ID
 		Name        string
-		Description *string
+		Description *string // TODO!(sqs): unimplemented, was renamed to body
 		Preview     *bool
 		Rules       *string
 	}
@@ -117,7 +128,7 @@ type UpdateCampaignArgs struct {
 	Input struct {
 		ID          graphql.ID
 		Name        *string
-		Description *string
+		Description *string // TODO!(sqs): unimplemented, was renamed to body
 		Rules       *string
 	}
 }
@@ -137,10 +148,10 @@ type AddRemoveThreadsToFromCampaignArgs struct {
 
 // Campaign is the interface for the GraphQL type Campaign.
 type Campaign interface {
+	PartialComment
 	ID() graphql.ID
 	Namespace(context.Context) (*NamespaceResolver, error)
 	Name() string
-	Description() *string
 	IsPreview() bool
 	Rules() string
 	URL(context.Context) (string, error)

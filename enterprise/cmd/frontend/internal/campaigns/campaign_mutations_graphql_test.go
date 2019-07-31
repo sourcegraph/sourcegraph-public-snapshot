@@ -22,7 +22,6 @@ func TestGraphQL_CreateCampaign(t *testing.T) {
 	wantCampaign := &dbCampaign{
 		NamespaceOrgID: wantOrgID,
 		Name:           "n",
-		Description:    strptr("d"),
 	}
 	mocks.campaigns.Create = func(campaign *dbCampaign) (*dbCampaign, error) {
 		if !reflect.DeepEqual(campaign, wantCampaign) {
@@ -39,7 +38,7 @@ func TestGraphQL_CreateCampaign(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					createCampaign(input: { namespace: "T3JnOjE=", name: "n", description: "d" }) {
+					createCampaign(input: { namespace: "T3JnOjE=", name: "n" }) {
 						id
 						name
 					}
@@ -67,14 +66,13 @@ func TestGraphQL_UpdateCampaign(t *testing.T) {
 		return &dbCampaign{ID: wantID}, nil
 	}
 	mocks.campaigns.Update = func(id int64, update dbCampaignUpdate) (*dbCampaign, error) {
-		if want := (dbCampaignUpdate{Name: strptr("n1"), Description: strptr("d1")}); !reflect.DeepEqual(update, want) {
+		if want := (dbCampaignUpdate{Name: strptr("n1")}); !reflect.DeepEqual(update, want) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
 		return &dbCampaign{
 			ID:             2,
 			NamespaceOrgID: 1,
 			Name:           "n1",
-			Description:    strptr("d1"),
 		}, nil
 	}
 
@@ -84,10 +82,9 @@ func TestGraphQL_UpdateCampaign(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					updateCampaign(input: { id: "Q2FtcGFpZ246Mg==", name: "n1", description: "d1" }) {
+					updateCampaign(input: { id: "Q2FtcGFpZ246Mg==", name: "n1" }) {
 						id
 						name
-						description
 					}
 				}
 			`,
@@ -95,8 +92,7 @@ func TestGraphQL_UpdateCampaign(t *testing.T) {
 				{
 					"updateCampaign": {
 						"id": "Q2FtcGFpZ246Mg==",
-						"name": "n1",
-						"description": "d1"
+						"name": "n1"
 					}
 				}
 			`,

@@ -4,7 +4,7 @@ import TextareaAutosize from 'react-textarea-autosize'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 
-export interface CampaignFormData extends Pick<GQL.ICampaign, 'name' | 'description'> {}
+export interface CampaignFormData extends Pick<GQL.ICampaign, 'name' | 'body'> {}
 
 interface Props {
     initialValue?: CampaignFormData
@@ -25,7 +25,7 @@ interface Props {
  * A form to create or edit a campaign.
  */
 export const CampaignForm: React.FunctionComponent<Props> = ({
-    initialValue = { name: '', description: null },
+    initialValue = { name: '', body: null },
     onDismiss,
     onSubmit: onSubmitCampaign,
     buttonText,
@@ -39,19 +39,19 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
     )
     useEffect(() => setName(initialValue.name), [initialValue.name])
 
-    const [description, setDescription] = useState(initialValue.description)
-    const onDescriptionChange = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(
-        e => setDescription(e.currentTarget.value),
+    const [body, setBody] = useState(initialValue.body)
+    const onBodyChange = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(
+        e => setBody(e.currentTarget.value),
         []
     )
-    useEffect(() => setDescription(initialValue.description), [initialValue.description])
+    useEffect(() => setBody(initialValue.body), [initialValue.body])
 
     const onSubmit = useCallback<React.FormEventHandler>(
         async e => {
             e.preventDefault()
-            onSubmitCampaign({ name, description })
+            onSubmitCampaign({ name, body })
         },
-        [description, name, onSubmitCampaign]
+        [body, name, onSubmitCampaign]
     )
 
     return (
@@ -72,15 +72,15 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
                     />
                 </div>
                 <div className="form-group mb-md-0 col-md-3">
-                    <label htmlFor="campaign-form__description">Description</label>
+                    <label htmlFor="campaign-form__body">Body</label>
                     <TextareaAutosize
                         type="text"
-                        id="campaign-form__description"
+                        id="campaign-form__body"
                         className="form-control"
-                        placeholder="Description"
-                        value={description || ''}
+                        placeholder="Body"
+                        value={body || ''}
                         minRows={3}
-                        onChange={onDescriptionChange}
+                        onChange={onBodyChange}
                     />
                 </div>
                 <div className="form-group mb-md-0 col-md-3 text-right">

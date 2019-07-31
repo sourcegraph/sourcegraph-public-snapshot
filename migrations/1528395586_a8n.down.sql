@@ -5,5 +5,6 @@ DROP TABLE IF EXISTS campaigns_threads;
 DROP TABLE IF EXISTS campaigns;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS threads;
+DROP TYPE IF EXISTS thread_type;
 
 COMMIT;

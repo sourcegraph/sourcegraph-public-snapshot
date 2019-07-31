@@ -18,29 +18,11 @@ CREATE INDEX threads_repository_id ON threads(repository_id);
 
 -----------------
 
-CREATE TABLE comments (
-    id bigserial PRIMARY KEY,
-    thread_id bigint REFERENCES threads(id) ON DELETE CASCADE,
-    author_user_id integer REFERENCES users(id) ON DELETE SET NULL,
-    body text NOT NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    updated_at timestamp with time zone NOT NULL DEFAULT now()
-);
-CREATE UNIQUE INDEX comments_thread_id ON comments(thread_id);
-CREATE INDEX comments_author_user_id ON comments(author_user_id);
-
--- Ensure every thread has a primary comment (the "top comment" whose body is the description of the
--- thread).
-ALTER TABLE threads ADD COLUMN primary_comment_id bigint NOT NULL REFERENCES comments(id) ON DELETE RESTRICT;
-
------------------
-
 CREATE TABLE campaigns (
 	id bigserial PRIMARY KEY,
     namespace_user_id integer REFERENCES users(id) ON DELETE CASCADE,
     namespace_org_id integer REFERENCES orgs(id) ON DELETE CASCADE,
 	name text NOT NULL,
-	description text,
     is_preview boolean NOT NULL DEFAULT false,
     rules text NOT NULL DEFAULT '[]',
 
@@ -58,6 +40,27 @@ CREATE TABLE campaigns_threads (
 CREATE INDEX campaigns_threads_campaign_id ON campaigns_threads(campaign_id);
 CREATE INDEX campaigns_threads_thread_id ON campaigns_threads(thread_id) WHERE thread_id IS NOT NULL;
 CREATE UNIQUE INDEX campaigns_threads_uniq ON campaigns_threads(campaign_id, thread_id);
+
+-----------------
+
+CREATE TABLE comments (
+    id bigserial PRIMARY KEY,
+    author_user_id integer REFERENCES users(id) ON DELETE SET NULL,
+    body text NOT NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    updated_at timestamp with time zone NOT NULL DEFAULT now(),
+
+    thread_id bigint REFERENCES threads(id) ON DELETE CASCADE,
+    campaign_id bigint REFERENCES campaigns(id) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX comments_thread_id ON comments(thread_id);
+CREATE UNIQUE INDEX comments_campaign_id ON comments(campaign_id);
+CREATE INDEX comments_author_user_id ON comments(author_user_id);
+
+-- Ensure every thread and campaign has a primary comment (the "top comment" whose body is the
+-- description the object).
+ALTER TABLE threads ADD COLUMN primary_comment_id bigint NOT NULL REFERENCES comments(id) ON DELETE RESTRICT;
+ALTER TABLE campaigns ADD COLUMN primary_comment_id bigint NOT NULL REFERENCES comments(id) ON DELETE RESTRICT;
 
 -----------------
 

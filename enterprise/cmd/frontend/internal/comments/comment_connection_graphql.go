@@ -15,7 +15,7 @@ func (GraphQLResolver) Comments(ctx context.Context, arg *graphqlutil.Connection
 func (GraphQLResolver) CommentsForObject(ctx context.Context, object graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CommentConnection, error) {
 	var opt dbCommentsListOptions
 	var err error
-	opt.ThreadID, err = commentLookupInfoFromGQLID(object)
+	opt.Object, err = commentObjectFromGQLID(object)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func commentsByOptions(ctx context.Context, opt dbCommentsListOptions, arg *grap
 
 type commentConnection struct {
 	arg      *graphqlutil.ConnectionArgs
-	comments []*DBComment
+	comments []*dbComment
 }
 
 func (r *commentConnection) Nodes(ctx context.Context) ([]graphqlbackend.Comment, error) {
