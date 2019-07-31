@@ -167,6 +167,7 @@ type BrandAssets struct {
 //
 // Only available in Sourcegraph Enterprise.
 type Branding struct {
+	BrandName         string       `json:"brandName,omitempty"`
 	Dark              *BrandAssets `json:"dark,omitempty"`
 	DisableSymbolSpin bool         `json:"disableSymbolSpin,omitempty"`
 	Favicon           string       `json:"favicon,omitempty"`
