@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 )
@@ -23,8 +22,7 @@ type gqlThread struct {
 func newGQLThread(db *internal.DBThread) *gqlThread {
 	return &gqlThread{
 		GQLThreadlike: threadlike.GQLThreadlike{
-			Comment: &comments.GQLIComment{},
-			DB:      db,
+			DB: db,
 		},
 		db: db,
 	}

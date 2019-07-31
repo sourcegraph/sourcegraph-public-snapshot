@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
-func (GraphQLResolver) CreateComment(ctx context.Context, arg *graphqlbackend.CreateCommentArgs) (*graphqlbackend.ToComment, error) {
+func (GraphQLResolver) CreateComment(ctx context.Context, arg *graphqlbackend.CreateCommentArgs) (graphqlbackend.Comment, error) {
 	// TODO!(sqs): add auth checks
 	actor, err := graphqlbackend.CurrentUser(ctx)
 	if err != nil {
@@ -33,7 +33,7 @@ func (GraphQLResolver) CreateComment(ctx context.Context, arg *graphqlbackend.Cr
 	return newGQLToComment(ctx, comment)
 }
 
-func (GraphQLResolver) EditComment(ctx context.Context, arg *graphqlbackend.EditCommentArgs) (*graphqlbackend.ToComment, error) {
+func (GraphQLResolver) EditComment(ctx context.Context, arg *graphqlbackend.EditCommentArgs) (graphqlbackend.Comment, error) {
 	v, err := commentByGQLID(ctx, arg.Input.ID)
 	if err != nil {
 		return nil, err

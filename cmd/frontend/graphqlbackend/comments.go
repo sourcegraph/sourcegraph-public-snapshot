@@ -32,14 +32,14 @@ func (schemaResolver) Comments(ctx context.Context, arg *graphqlutil.ConnectionA
 	return Comments.Comments(ctx, arg)
 }
 
-func (r schemaResolver) CreateComment(ctx context.Context, arg *CreateCommentArgs) (*ToComment, error) {
+func (r schemaResolver) CreateComment(ctx context.Context, arg *CreateCommentArgs) (Comment, error) {
 	if Comments == nil {
 		return nil, errCommentsNotImplemented
 	}
 	return Comments.CreateComment(ctx, arg)
 }
 
-func (r schemaResolver) EditComment(ctx context.Context, arg *EditCommentArgs) (*ToComment, error) {
+func (r schemaResolver) EditComment(ctx context.Context, arg *EditCommentArgs) (Comment, error) {
 	if Comments == nil {
 		return nil, errCommentsNotImplemented
 	}
@@ -59,8 +59,8 @@ type CommentsResolver interface {
 	Comments(context.Context, *graphqlutil.ConnectionArgs) (CommentConnection, error)
 
 	// Mutations
-	CreateComment(context.Context, *CreateCommentArgs) (*ToComment, error)
-	EditComment(context.Context, *EditCommentArgs) (*ToComment, error)
+	CreateComment(context.Context, *CreateCommentArgs) (Comment, error)
+	EditComment(context.Context, *EditCommentArgs) (Comment, error)
 	DeleteComment(context.Context, *DeleteCommentArgs) (*EmptyResponse, error)
 
 	// CommentsForObject is called by the CommentsForObject func but is not in the GraphQL
@@ -90,11 +90,18 @@ type DeleteCommentArgs struct {
 //
 // The ID field is required in the GraphQL interface but omitted in the Go interface to avoid Go
 // compiler errors that are not helpful.
-type Comment interface {
+type comment interface {
 	Author(context.Context) (*Actor, error)
 	Body() string
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
+}
+
+type Comment interface {
+	ID() graphql.ID
+	comment
+	ToThread() (Thread, bool)
+	ToChangeset() (Changeset, bool)
 }
 
 type ToComment struct {
@@ -102,14 +109,9 @@ type ToComment struct {
 	Changeset Changeset
 }
 
-var (
-	_ Comment = Thread(nil)
-	_ Comment = Changeset(nil)
-)
-
 func (v ToComment) comment() interface {
 	ID() graphql.ID
-	Comment
+	comment
 } {
 	switch {
 	case v.Thread != nil:
@@ -127,13 +129,12 @@ func (v ToComment) Author(ctx context.Context) (*Actor, error) { return v.commen
 func (v ToComment) Body() string                               { return v.comment().Body() }
 func (v ToComment) CreatedAt() DateTime                        { return v.comment().CreatedAt() }
 func (v ToComment) UpdatedAt() DateTime                        { return v.comment().UpdatedAt() }
-
-func (v ToComment) ToThread() (Thread, bool)       { return v.Thread, v.Thread != nil }
-func (v ToComment) ToChangeset() (Changeset, bool) { return v.Changeset, v.Changeset != nil }
+func (v ToComment) ToThread() (Thread, bool)                   { return v.Thread, v.Thread != nil }
+func (v ToComment) ToChangeset() (Changeset, bool)             { return v.Changeset, v.Changeset != nil }
 
 // CommentConnection is the interface for the GraphQL type CommentConnection.
 type CommentConnection interface {
-	Nodes(context.Context) ([]ToComment, error)
+	Nodes(context.Context) ([]Comment, error)
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 }

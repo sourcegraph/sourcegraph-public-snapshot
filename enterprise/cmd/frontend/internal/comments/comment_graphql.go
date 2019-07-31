@@ -24,6 +24,10 @@ func commentLookupInfoFromGQLID(id graphql.ID) (threadID int64, err error) {
 }
 
 func commentByGQLID(ctx context.Context, id graphql.ID) (*dbComment, error) {
+	if mocks.commentByGQLID != nil {
+		return mocks.commentByGQLID(id)
+	}
+
 	var opt dbCommentsListOptions
 	var err error
 	opt.ThreadID, err = commentLookupInfoFromGQLID(id)
@@ -44,7 +48,11 @@ func commentByGQLID(ctx context.Context, id graphql.ID) (*dbComment, error) {
 	return comments[0], nil
 }
 
-func newGQLToComment(ctx context.Context, dbComment *dbComment) (*graphqlbackend.ToComment, error) {
+func newGQLToComment(ctx context.Context, dbComment *dbComment) (graphqlbackend.Comment, error) {
+	if mocks.newGQLToComment != nil {
+		return mocks.newGQLToComment(dbComment)
+	}
+
 	switch {
 	case dbComment.ThreadID != 0:
 		v, err := threadlike.ThreadOrIssueOrChangesetByDBID(ctx, dbComment.ThreadID)

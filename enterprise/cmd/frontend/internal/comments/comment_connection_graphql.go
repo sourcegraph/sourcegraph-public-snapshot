@@ -36,19 +36,19 @@ type commentConnection struct {
 	comments []*dbComment
 }
 
-func (r *commentConnection) Nodes(ctx context.Context) ([]graphqlbackend.ToComment, error) {
+func (r *commentConnection) Nodes(ctx context.Context) ([]graphqlbackend.Comment, error) {
 	comments := r.comments
 	if first := r.arg.First; first != nil && len(comments) > int(*first) {
 		comments = comments[:int(*first)]
 	}
 
-	comments2 := make([]graphqlbackend.ToComment, len(comments))
+	comments2 := make([]graphqlbackend.Comment, len(comments))
 	for i, c := range comments {
 		c, err := newGQLToComment(ctx, c)
 		if err != nil {
 			return nil, err
 		}
-		comments2[i] = *c
+		comments2[i] = c
 	}
 	return comments2, nil
 }
