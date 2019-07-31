@@ -993,6 +993,12 @@ type Query {
     # A list of namespaces affiliated with the viewer.
     viewerNamespaces: [Namespace!]!
 
+    # A list of comments.
+    comments(
+        # Returns the first n comments from the list.
+        first: Int
+    ): CommentConnection!
+
     # A list of threads. TODO!(sqs)
     threads(
         # Returns the first n threads from the list.
@@ -4140,7 +4146,7 @@ input CreateCommentInput {
 }
 
 # Input arguments for editing a comment.
-input UpdateCommentInput {
+input EditCommentInput {
     # The ID of the comment to edit.
     id: ID!
 

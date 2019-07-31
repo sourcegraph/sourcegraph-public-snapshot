@@ -13,7 +13,10 @@ import (
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
 
 // GQLThreadlike implements common fields for the GraphQL thread, issue, and changeset types.
-type GQLThreadlike struct{ DB *internal.DBThread }
+type GQLThreadlike struct {
+	graphqlbackend.Comment
+	DB *internal.DBThread
+}
 
 func (v *GQLThreadlike) Type() graphqlbackend.ThreadlikeType { return v.DB.Type }
 
@@ -26,8 +29,6 @@ func (v *GQLThreadlike) Number() string { return strconv.FormatInt(v.DB.ID, 10) 
 func (v *GQLThreadlike) DBID() int64 { return v.DB.ID }
 
 func (v *GQLThreadlike) Title() string { return v.DB.Title }
-
-func (v *GQLThreadlike) Body() *string { return nil /* TODO!(sqs) */ }
 
 func (v *GQLThreadlike) ExternalURL() *string { return v.DB.ExternalURL }
 

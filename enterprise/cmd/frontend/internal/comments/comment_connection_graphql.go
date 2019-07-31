@@ -12,42 +12,43 @@ func (GraphQLResolver) Comments(ctx context.Context, arg *graphqlutil.Connection
 	return commentsByOptions(ctx, dbCommentsListOptions{}, arg)
 }
 
-func (GraphQLResolver) CommentsInNamespace(ctx context.Context, namespace graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CommentConnection, error) {
+func (GraphQLResolver) CommentsForObject(ctx context.Context, object graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CommentConnection, error) {
 	var opt dbCommentsListOptions
 	var err error
-	opt.NamespaceUserID, opt.NamespaceOrgID, err = graphqlbackend.NamespaceDBIDByID(ctx, namespace)
+	opt.ThreadID, err = commentLookupInfoFromGQLID(object)
 	if err != nil {
 		return nil, err
 	}
+
 	return commentsByOptions(ctx, opt, arg)
 }
 
 func commentsByOptions(ctx context.Context, opt dbCommentsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CommentConnection, error) {
-	list, err := dbComments{}.List(ctx, opt)
+	comments, err := dbComments{}.List(ctx, opt)
 	if err != nil {
 		return nil, err
-	}
-	comments := make([]*gqlComment, len(list))
-	for i, a := range list {
-		comments[i] = &gqlComment{db: a}
 	}
 	return &commentConnection{arg: arg, comments: comments}, nil
 }
 
 type commentConnection struct {
-	arg       *graphqlutil.ConnectionArgs
-	comments []*gqlComment
+	arg      *graphqlutil.ConnectionArgs
+	comments []*dbComment
 }
 
-func (r *commentConnection) Nodes(ctx context.Context) ([]graphqlbackend.Comment, error) {
+func (r *commentConnection) Nodes(ctx context.Context) ([]graphqlbackend.ToComment, error) {
 	comments := r.comments
 	if first := r.arg.First; first != nil && len(comments) > int(*first) {
 		comments = comments[:int(*first)]
 	}
 
-	comments2 := make([]graphqlbackend.Comment, len(comments))
-	for i, l := range comments {
-		comments2[i] = l
+	comments2 := make([]graphqlbackend.ToComment, len(comments))
+	for i, c := range comments {
+		c, err := newGQLToComment(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+		comments2[i] = *c
 	}
 	return comments2, nil
 }

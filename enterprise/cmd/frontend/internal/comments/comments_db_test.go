@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/testutil"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
@@ -15,21 +17,33 @@ func TestDB_Comments(t *testing.T) {
 	resetMocks()
 	ctx := dbtesting.TestContext(t)
 
-	user1, err := db.Users.Create(ctx, db.NewUser{Username: "user1"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	org1, err := db.Orgs.Create(ctx, "org1", nil)
+	user, err := db.Users.Create(ctx, db.NewUser{Username: "user"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	wantComment0 := &dbComment{NamespaceUserID: user1.ID, Name: "n0", Description: strptr("d0")}
+	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{Name: "r", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	repo, err := db.Repos.GetByName(ctx, "r")
+	if err != nil {
+		t.Fatal(err)
+	}
+	thread0, err := testutil.CreateThread(ctx, "t0", repo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	thread1, err := testutil.CreateThread(ctx, "t1", repo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantComment0 := &dbComment{ThreadID: thread0, AuthorUserID: user.ID, Body: "b0"}
 	comment0, err := dbComments{}.Create(ctx, wantComment0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	comment1, err := dbComments{}.Create(ctx, &dbComment{NamespaceUserID: user1.ID, Name: "n1", Description: strptr("d1")})
+	comment1, err := dbComments{}.Create(ctx, &dbComment{ThreadID: thread1, AuthorUserID: user.ID, Body: "b1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,8 +95,8 @@ func TestDB_Comments(t *testing.T) {
 	}
 
 	{
-		// List user1's comments.
-		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{NamespaceUserID: user1.ID})
+		// List thread0's comments.
+		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{ThreadID: thread0})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -93,8 +107,8 @@ func TestDB_Comments(t *testing.T) {
 	}
 
 	{
-		// List proj2's comments.
-		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{NamespaceOrgID: org1.ID})
+		// List thread1's comments.
+		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{ThreadID: thread1})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -106,7 +120,7 @@ func TestDB_Comments(t *testing.T) {
 
 	{
 		// Query comments.
-		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{Query: "n1"})
+		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{Query: "b1"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -120,7 +134,7 @@ func TestDB_Comments(t *testing.T) {
 		if err := (dbComments{}).DeleteByID(ctx, comment0.ID); err != nil {
 			t.Fatal(err)
 		}
-		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{NamespaceUserID: user1.ID})
+		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}

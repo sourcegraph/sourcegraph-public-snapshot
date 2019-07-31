@@ -12,15 +12,12 @@ import (
 
 // dbComment describes a comment.
 type dbComment struct {
-	ID              int64
-	NamespaceUserID int32  // the user namespace where this comment is defined
-	NamespaceOrgID  int32  // the org namespace where this comment is defined
-	Name            string // the name (case-preserving)
-	Description     *string
-	IsPreview       bool
-	Rules           string // the JSON rules TODO!(sqs)
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID           int64
+	ThreadID     int64
+	AuthorUserID int32
+	Body         string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 // errCommentNotFound occurs when a database operation expects a specific comment to exist but it
@@ -29,16 +26,16 @@ var errCommentNotFound = errors.New("comment not found")
 
 type dbComments struct{}
 
-const selectColumns = `id, namespace_user_id, namespace_org_id, name, description, is_preview, rules, created_at, updated_at`
+const selectColumns = `id, thread_id, author_user_id, body, created_at, updated_at`
 
-// Create creates a comment. The comment argument's (Comment).ID field is ignored. The database
-// ID of the new comment is returned.
+// Create creates a comment. The comment argument's (Comment).ID field is ignored. The new comment
+// is returned.
 func (dbComments) Create(ctx context.Context, comment *dbComment) (*dbComment, error) {
 	if mocks.comments.Create != nil {
 		return mocks.comments.Create(comment)
 	}
 
-	nilIfZero := func(v int32) *int32 {
+	nilIfZero := func(v int64) *int64 {
 		if v == 0 {
 			return nil
 		}
@@ -46,21 +43,15 @@ func (dbComments) Create(ctx context.Context, comment *dbComment) (*dbComment, e
 	}
 
 	return dbComments{}.scanRow(dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO comments(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT) RETURNING `+selectColumns,
-		nilIfZero(comment.NamespaceUserID),
-		nilIfZero(comment.NamespaceOrgID),
-		comment.Name,
-		comment.Description,
-		comment.IsPreview,
-		comment.Rules,
+		`INSERT INTO comments(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, DEFAULT, DEFAULT) RETURNING `+selectColumns,
+		nilIfZero(comment.ThreadID),
+		comment.AuthorUserID,
+		comment.Body,
 	))
 }
 
 type dbCommentUpdate struct {
-	Name        *string
-	Description *string
-	IsPreview   *bool
-	Rules       *string
+	Body *string
 }
 
 // Update updates a comment given its ID.
@@ -70,23 +61,8 @@ func (s dbComments) Update(ctx context.Context, id int64, update dbCommentUpdate
 	}
 
 	var setFields []*sqlf.Query
-	if update.Name != nil {
-		setFields = append(setFields, sqlf.Sprintf("name=%s", *update.Name))
-	}
-	if update.Description != nil {
-		// Treat empty string as meaning "set to null". Otherwise there is no way to express that
-		// intent.
-		var value *string
-		if *update.Description != "" {
-			value = update.Description
-		}
-		setFields = append(setFields, sqlf.Sprintf("description=%s", value))
-	}
-	if update.IsPreview != nil {
-		setFields = append(setFields, sqlf.Sprintf("is_preview=%s", *update.IsPreview))
-	}
-	if update.Rules != nil {
-		setFields = append(setFields, sqlf.Sprintf("rules=%s", *update.Rules))
+	if update.Body != nil {
+		setFields = append(setFields, sqlf.Sprintf("body=%s", *update.Body))
 	}
 
 	if len(setFields) == 0 {
@@ -124,22 +100,18 @@ func (s dbComments) GetByID(ctx context.Context, id int64) (*dbComment, error) {
 
 // dbCommentsListOptions contains options for listing comments.
 type dbCommentsListOptions struct {
-	Query           string // only list comments matching this query (case-insensitively)
-	NamespaceUserID int32  // only list comments in this user's namespace
-	NamespaceOrgID  int32  // only list comments in this org's namespace
+	Query    string // only list comments matching this query (case-insensitively)
+	ThreadID int64
 	*db.LimitOffset
 }
 
 func (o dbCommentsListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.Query != "" {
-		conds = append(conds, sqlf.Sprintf("name LIKE %s", "%"+o.Query+"%"))
+		conds = append(conds, sqlf.Sprintf("body ILIKE %s", "%"+o.Query+"%"))
 	}
-	if o.NamespaceUserID != 0 {
-		conds = append(conds, sqlf.Sprintf("namespace_user_id=%d", o.NamespaceUserID))
-	}
-	if o.NamespaceOrgID != 0 {
-		conds = append(conds, sqlf.Sprintf("namespace_org_id=%d", o.NamespaceOrgID))
+	if o.ThreadID != 0 {
+		conds = append(conds, sqlf.Sprintf("thread_id=%d", o.ThreadID))
 	}
 	return conds
 }
@@ -160,7 +132,7 @@ func (s dbComments) list(ctx context.Context, conds []*sqlf.Query, limitOffset *
 	q := sqlf.Sprintf(`
 SELECT `+selectColumns+` FROM comments
 WHERE (%s)
-ORDER BY name ASC
+ORDER BY id ASC
 %s`,
 		sqlf.Join(conds, ") AND ("),
 		limitOffset.SQL(),
@@ -190,25 +162,19 @@ func (dbComments) scanRow(row interface {
 	Scan(dest ...interface{}) error
 }) (*dbComment, error) {
 	var t dbComment
-	var namespaceUserID, namespaceOrgID *int32
+	var threadID *int64
 	if err := row.Scan(
 		&t.ID,
-		&namespaceUserID,
-		&namespaceOrgID,
-		&t.Name,
-		&t.Description,
-		&t.IsPreview,
-		&t.Rules,
+		&threadID,
+		&t.AuthorUserID,
+		&t.Body,
 		&t.CreatedAt,
 		&t.UpdatedAt,
 	); err != nil {
 		return nil, err
 	}
-	if namespaceUserID != nil {
-		t.NamespaceUserID = *namespaceUserID
-	}
-	if namespaceOrgID != nil {
-		t.NamespaceOrgID = *namespaceOrgID
+	if threadID != nil {
+		t.ThreadID = *threadID
 	}
 	return &t, nil
 }

@@ -31,8 +31,8 @@ type dbCampaigns struct{}
 
 const selectColumns = `id, namespace_user_id, namespace_org_id, name, description, is_preview, rules, created_at, updated_at`
 
-// Create creates a campaign. The campaign argument's (Campaign).ID field is ignored. The database
-// ID of the new campaign is returned.
+// Create creates a campaign. The campaign argument's (Campaign).ID field is ignored. The new
+// campaign is returned.
 func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign) (*dbCampaign, error) {
 	if mocks.campaigns.Create != nil {
 		return mocks.campaigns.Create(campaign)
@@ -133,7 +133,7 @@ type dbCampaignsListOptions struct {
 func (o dbCampaignsListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.Query != "" {
-		conds = append(conds, sqlf.Sprintf("name LIKE %s", "%"+o.Query+"%"))
+		conds = append(conds, sqlf.Sprintf("name ILIKE %s", "%"+o.Query+"%"))
 	}
 	if o.NamespaceUserID != 0 {
 		conds = append(conds, sqlf.Sprintf("namespace_user_id=%d", o.NamespaceUserID))

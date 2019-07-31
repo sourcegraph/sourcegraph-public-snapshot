@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/testutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
@@ -22,7 +22,7 @@ func TestDB_CommentsThreads(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	comment0, err := dbComments{}.Create(ctx, &dbComment{NamespaceOrgID: org1.ID, Name: "n0"})
+	comment0, err := dbComments{}.Create(ctx, &dbComment{AuthorUserID: org1.ID, Body: "b0"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,11 +40,11 @@ func TestDB_CommentsThreads(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	thread0, err := threadlike.TestCreateThread(ctx, "t0", repo.ID)
+	thread0, err := testutil.CreateThread(ctx, "t0", repo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	thread1, err := threadlike.TestCreateThread(ctx, "t1", repo.ID)
+	thread1, err := testutil.CreateThread(ctx, "t1", repo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

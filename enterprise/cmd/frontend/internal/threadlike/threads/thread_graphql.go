@@ -5,9 +5,9 @@ import (
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 )
@@ -22,15 +22,18 @@ type gqlThread struct {
 
 func newGQLThread(db *internal.DBThread) *gqlThread {
 	return &gqlThread{
-		GQLThreadlike: threadlike.GQLThreadlike{DB: db},
-		db:            db,
+		GQLThreadlike: threadlike.GQLThreadlike{
+			Comment: &comments.GQLIComment{},
+			DB:      db,
+		},
+		db: db,
 	}
 }
 
 // threadByID looks up and returns the Thread with the given GraphQL ID. If no such Thread exists, it
 // returns a non-nil error.
 func threadByID(ctx context.Context, id graphql.ID) (*gqlThread, error) {
-	dbID, err := unmarshalThreadID(id)
+	dbID, err := threadlike.UnmarshalIDOfType(threadlike.GQLTypeThread, id)
 	if err != nil {
 		return nil, err
 	}
@@ -52,16 +55,7 @@ func threadByDBID(ctx context.Context, dbID int64) (*gqlThread, error) {
 }
 
 func (v *gqlThread) ID() graphql.ID {
-	return marshalThreadID(v.db.ID)
-}
-
-func marshalThreadID(id int64) graphql.ID {
-	return relay.MarshalID("Thread", id)
-}
-
-func unmarshalThreadID(id graphql.ID) (dbID int64, err error) {
-	err = relay.UnmarshalSpec(id, &dbID)
-	return
+	return threadlike.MarshalID(threadlike.GQLTypeThread, v.db.ID)
 }
 
 func (GraphQLResolver) ThreadInRepository(ctx context.Context, repositoryID graphql.ID, number string) (graphqlbackend.Thread, error) {

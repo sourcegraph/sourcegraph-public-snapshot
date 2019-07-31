@@ -8,13 +8,13 @@ import (
 
 // Threadlike is the shared interface among threads, issues, and changesets.
 type Threadlike interface {
+	Comment
 	ID() graphql.ID
 	DBID() int64
 	Type() ThreadlikeType
 	Repository(context.Context) (*RepositoryResolver, error)
 	Number() string
 	Title() string
-	Body() *string
 	ExternalURL() *string
 	URL(context.Context) (string, error)
 }

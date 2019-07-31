@@ -36,17 +36,17 @@ var errThreadNotFound = errors.New("thread not found")
 
 type DBThreads struct{}
 
-const selectColumns = "id, type, repository_id, title, external_url, status, created_at, updated_at, is_preview, base_ref, head_ref"
+const selectColumns = "id, type, repository_id, title, external_url, status, is_preview, base_ref, head_ref"
 
-// Create creates a thread. The thread argument's (Thread).ID field is ignored. The database ID of
-// the new thread is returned.
+// Create creates a thread. The thread argument's (Thread).ID field is ignored. The new thread is
+// returned.
 func (DBThreads) Create(ctx context.Context, thread *DBThread) (*DBThread, error) {
 	if Mocks.Threads.Create != nil {
 		return Mocks.Threads.Create(thread)
 	}
 
 	return DBThreads{}.scanRow(dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO threads(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, DEFAULT, DEFAULT, $6, $7, $8) RETURNING `+selectColumns,
+		`INSERT INTO threads(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING `+selectColumns,
 		thread.Type,
 		thread.RepositoryID,
 		thread.Title,
@@ -108,7 +108,8 @@ func (s DBThreads) Update(ctx context.Context, id int64, update DBThreadUpdate) 
 	if len(setFields) == 0 {
 		return nil, nil
 	}
-	setFields = append(setFields, sqlf.Sprintf("updated_at=now()"))
+	// TODO!(sqs): need to reset updated_at of the thread's corresponding comment
+	// setFields = append(setFields, sqlf.Sprintf("updated_at=now()"))
 
 	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE threads SET %v WHERE id=%s RETURNING `+selectColumns, sqlf.Join(setFields, ", "), id))
 	if err != nil {
@@ -150,7 +151,7 @@ type DBThreadsListOptions struct {
 func (o DBThreadsListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.Query != "" {
-		conds = append(conds, sqlf.Sprintf("title LIKE %s", "%"+o.Query+"%"))
+		conds = append(conds, sqlf.Sprintf("title ILIKE %s", "%"+o.Query+"%"))
 	}
 	if o.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("repository_id=%d", o.RepositoryID))
@@ -221,8 +222,6 @@ func (DBThreads) scanRow(row interface {
 		&t.Title,
 		&t.ExternalURL,
 		&t.Status,
-		&t.CreatedAt,
-		&t.UpdatedAt,
 		&t.IsPreview,
 		&t.BaseRef,
 		&t.HeadRef,

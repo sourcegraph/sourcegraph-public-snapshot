@@ -9,9 +9,6 @@ CREATE TABLE threads (
 	external_url text,
 	status text NOT NULL,
 
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    updated_at timestamp with time zone NOT NULL DEFAULT now(),
-
 	-- type == CHANGESET
 	is_preview boolean,
 	base_ref text,
@@ -29,7 +26,7 @@ CREATE TABLE comments (
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now()
 );
-CREATE INDEX comments_thread_id ON comments(thread_id);
+CREATE UNIQUE INDEX comments_thread_id ON comments(thread_id);
 CREATE INDEX comments_author_user_id ON comments(author_user_id);
 
 -----------------

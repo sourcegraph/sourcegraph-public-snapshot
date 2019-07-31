@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
@@ -30,7 +29,7 @@ func newGQLChangeset(db *internal.DBThread) *gqlChangeset {
 // changesetByID looks up and returns the Changeset with the given GraphQL ID. If no such Changeset exists, it
 // returns a non-nil error.
 func changesetByID(ctx context.Context, id graphql.ID) (*gqlChangeset, error) {
-	dbID, err := unmarshalChangesetID(id)
+	dbID, err := threadlike.UnmarshalIDOfType(threadlike.GQLTypeChangeset, id)
 	if err != nil {
 		return nil, err
 	}
@@ -52,16 +51,7 @@ func changesetByDBID(ctx context.Context, dbID int64) (*gqlChangeset, error) {
 }
 
 func (v *gqlChangeset) ID() graphql.ID {
-	return marshalChangesetID(v.db.ID)
-}
-
-func marshalChangesetID(id int64) graphql.ID {
-	return relay.MarshalID("Changeset", id)
-}
-
-func unmarshalChangesetID(id graphql.ID) (dbID int64, err error) {
-	err = relay.UnmarshalSpec(id, &dbID)
-	return
+	return threadlike.MarshalID(threadlike.GQLTypeChangeset, v.db.ID)
 }
 
 func (GraphQLResolver) ChangesetInRepository(ctx context.Context, repositoryID graphql.ID, number string) (graphqlbackend.Changeset, error) {
