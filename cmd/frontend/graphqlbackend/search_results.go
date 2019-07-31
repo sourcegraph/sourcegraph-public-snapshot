@@ -755,20 +755,13 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	defer cancel()
 
-	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
+	repos, missingRepoRevs, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
 	if len(repos) == 0 {
 		alert, err := r.alertForNoResolvedRepos(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return &searchResultsResolver{alert: alert, start: start}, nil
-	}
-	if overLimit {
-		alert, err := r.alertForOverRepoLimit(ctx)
 		if err != nil {
 			return nil, err
 		}
