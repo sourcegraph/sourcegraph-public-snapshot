@@ -3,6 +3,7 @@ package changesets
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 )
@@ -53,11 +54,9 @@ func (GraphQLResolver) PublishPreviewChangeset(ctx context.Context, arg *graphql
 		return nil, err
 	}
 
-	// TODO!(sqs): uncomment after demo
-	//
-	// if !l.IsPreview() {
-	// 	return nil, errors.New("changeset has already been published (and is not in preview)")
-	// }
+	if !l.IsPreview() {
+		return nil, errors.New("changeset has already been published (and is not in preview)")
+	}
 
 	v := false
 	changeset, err := internal.DBThreads{}.Update(ctx, l.db.ID, internal.DBThreadUpdate{

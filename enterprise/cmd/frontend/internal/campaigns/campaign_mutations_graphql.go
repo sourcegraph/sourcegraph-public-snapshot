@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/threads"
 )
@@ -53,11 +54,9 @@ func (GraphQLResolver) PublishPreviewCampaign(ctx context.Context, arg *graphqlb
 		return nil, err
 	}
 
-	// TODO!(sqs): uncomment after demo
-	//
-	// if !l.IsPreview() {
-	// 	return nil, errors.New("campaign has already been published (and is not in preview)")
-	// }
+	if !l.IsPreview() {
+		return nil, errors.New("campaign has already been published (and is not in preview)")
+	}
 
 	v := false
 	campaign, err := dbCampaigns{}.Update(ctx, l.db.ID, dbCampaignUpdate{
