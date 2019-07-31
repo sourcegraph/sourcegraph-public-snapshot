@@ -15,7 +15,6 @@ var allDockerImages = []string{
 	"gitserver",
 	"management-console",
 	"query-runner",
-	"replacer",
 	"repo-updater",
 	"searcher",
 	"server",
