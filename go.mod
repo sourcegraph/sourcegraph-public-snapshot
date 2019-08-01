@@ -91,7 +91,7 @@ require (
 	github.com/mattn/go-colorable v0.1.0 // indirect
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/mattn/goreman v0.2.1
-	github.com/mcuadros/go-version v0.0.0-20180611085657-6d5863ca60fa
+	github.com/mcuadros/go-version v0.0.0-20190801071642-92cdf37c5b75
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
