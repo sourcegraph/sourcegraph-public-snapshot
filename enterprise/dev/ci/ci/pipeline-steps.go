@@ -129,6 +129,8 @@ func addGoBenchmarks(c Config) func(*bk.Pipeline) {
 		after := c.commit
 		before := gitRevParse("origin/" + c.branch + "^")
 		pipeline.AddStep("benchdiff :go: :100: :clock5:",
+			bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
+			bk.Cmd("./cmd/replacer/build.sh installComby"),       // for replacer tests
 			bk.Cmd("./dev/benchdiff.sh "+before+" "+after),
 			bk.ArtifactPaths("*.bench.txt"),
 		)
