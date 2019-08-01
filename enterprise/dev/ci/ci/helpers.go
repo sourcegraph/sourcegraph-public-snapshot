@@ -16,6 +16,7 @@ import (
 type Config struct {
 	now               time.Time
 	pipeline          string
+	message           string
 	branch            string
 	version           string
 	commit            string
@@ -33,6 +34,7 @@ func ComputeConfig() Config {
 	branch := os.Getenv("BUILDKITE_BRANCH")
 	version := os.Getenv("BUILDKITE_TAG")
 	commit := os.Getenv("BUILDKITE_COMMIT")
+	message := os.Getenv("BUILDKITE_MESSAGE")
 	if commit == "" {
 		commit = "1234567890123456789012345678901234567890" // for testing
 	}
@@ -62,6 +64,7 @@ func ComputeConfig() Config {
 	return Config{
 		now:               now,
 		pipeline:          pipeline,
+		message:           message,
 		branch:            branch,
 		version:           version,
 		commit:            commit,
