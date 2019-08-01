@@ -53,7 +53,7 @@ func (GraphQLResolver) CampaignByDBID(ctx context.Context, id int64) (graphqlbac
 func newGQLCampaign(v *dbCampaign) *gqlCampaign {
 	return &gqlCampaign{
 		db:             v,
-		PartialComment: comments.GraphQLResolver{}.LazyCommentByID(threadlike.MarshalID(threadlike.GQLTypeThread, v.ID)),
+		PartialComment: comments.GraphQLResolver{}.LazyCommentByID(marshalCampaignID(v.ID)),
 	}
 }
 

@@ -31,17 +31,8 @@ export const CampaignOverview: React.FunctionComponent<Props> = ({
             onCampaignUpdate={onCampaignUpdate}
             className="mb-3"
         />
-        <div className="d-flex align-items-center py-3">
-            <div>
-                <small>
-                    Opened <Timestamp date={campaign.createdAt} /> by{' '}
-                    <strong>
-                        <PersonLink user={campaign.author as GQL.IUser /* TODO!(sqs) */} />
-                    </strong>
-                </small>
-            </div>
-        </div>
-        <hr className="my-0" />
-        <Comment comment={campaign} />
+        <div className="d-flex align-items-center py-3"></div>
+        <hr className="my-3" />
+        <Comment comment={campaign} createdVerb="created campaign" />
     </div>
 )

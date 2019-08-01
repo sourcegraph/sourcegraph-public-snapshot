@@ -27,6 +27,16 @@ export const useCampaignByID = (campaign: GQL.ID): [typeof LOADING | GQL.ICampai
                             id
                             name
                             body
+                            bodyHTML
+                            author {
+                                ... on User {
+                                    displayName
+                                    username
+                                    url
+                                }
+                            }
+                            createdAt
+                            updatedAt
                             isPreview
                             rules
                             url
