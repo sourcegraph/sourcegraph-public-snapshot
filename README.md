@@ -3,7 +3,7 @@
 [![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)
 [![apache license](https://img.shields.io/badge/license-Apache-blue.svg)](LICENSE)
 
-[Sourcegraph](https://about.sourcegraph.com/) is a fast, open-source, fully-featured code search and navigation engine.
+[Sourcegraph](https://about.sourcegraph.com/) OSS edition is a fast, open-source, fully-featured code search and navigation engine. [Enterprise editions](https://about.sourcegraph.com/pricing) are available.
 
 ![Screenshot](https://user-images.githubusercontent.com/1646931/46309383-09ba9800-c571-11e8-8ee4-1a2ec32072f2.png)
 
@@ -40,7 +40,9 @@ instructions](doc/dev/local_development.md#step-2-install-dependencies).
 
 ### Installation
 
-> Prebuilt Docker images are the fastest way to use Sourcegraph. See the [quickstart installation guide](https://docs.sourcegraph.com/#quickstart).
+> Prebuilt Docker images are the fastest way to use Sourcegraph Enterprise. See the [quickstart installation guide](https://docs.sourcegraph.com/#quickstart).
+
+To use Sourcegraph OSS:
 
 1.  [Ensure Docker is running](doc/dev/local_development.md#step-5-start-docker)
 1.  [Initialize the PostgreSQL database](doc/dev/local_development.md#step-4-initialize-your-database)
