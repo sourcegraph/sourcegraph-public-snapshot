@@ -76,6 +76,8 @@ export class Driver {
     }
 
     public async enterText(method: EnterTextMethod = 'type', text: string): Promise<void> {
+        // Pasting does not work on macOS. See:  https://github.com/GoogleChrome/puppeteer/issues/1313
+        method = os.platform() === 'darwin' ? 'type' : method
         switch (method) {
             case 'type':
                 await this.page.keyboard.type(text)
