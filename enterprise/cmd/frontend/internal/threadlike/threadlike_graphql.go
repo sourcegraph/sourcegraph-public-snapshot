@@ -32,6 +32,11 @@ func (v *GQLThreadlike) Title() string { return v.DB.Title }
 
 func (v *GQLThreadlike) ExternalURL() *string { return v.DB.ExternalURL }
 
+func (v *GQLThreadlike) ViewerCanUpdate(ctx context.Context) (bool, error) {
+	// TODO!(sqs)
+	return true, nil
+}
+
 func (v *GQLThreadlike) URL(ctx context.Context) (string, error) {
 	repository, err := v.Repository(ctx)
 	if err != nil {

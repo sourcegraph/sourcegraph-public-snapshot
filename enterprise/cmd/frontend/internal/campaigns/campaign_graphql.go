@@ -85,6 +85,11 @@ func (v *gqlCampaign) Rules() string {
 	return "[]"
 }
 
+func (v *gqlCampaign) ViewerCanUpdate(ctx context.Context) (bool, error) {
+	// TODO!(sqs)
+	return true, nil
+}
+
 func (v *gqlCampaign) URL(ctx context.Context) (string, error) {
 	namespace, err := v.Namespace(ctx)
 	if err != nil {

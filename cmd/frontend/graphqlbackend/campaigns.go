@@ -154,6 +154,7 @@ type Campaign interface {
 	Name() string
 	IsPreview() bool
 	Rules() string
+	updatable
 	URL(context.Context) (string, error)
 	ThreadOrIssueOrChangesets(context.Context, *graphqlutil.ConnectionArgs) (ThreadOrIssueOrChangesetConnection, error)
 	Repositories(context.Context) ([]*RepositoryResolver, error)

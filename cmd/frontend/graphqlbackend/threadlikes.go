@@ -16,6 +16,7 @@ type Threadlike interface {
 	Number() string
 	Title() string
 	ExternalURL() *string
+	updatable
 	URL(context.Context) (string, error)
 }
 

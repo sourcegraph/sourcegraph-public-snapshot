@@ -128,6 +128,14 @@ func (v *gqlComment) Body(ctx context.Context) (string, error) {
 	return c.Body, nil
 }
 
+func (v *gqlComment) BodyHTML(ctx context.Context) (string, error) {
+	c, err := v.getComment(ctx)
+	if err != nil {
+		return "", err
+	}
+	return markdown.Render(c.Body, nil), nil
+}
+
 func (v *gqlComment) CreatedAt(ctx context.Context) (graphqlbackend.DateTime, error) {
 	c, err := v.getComment(ctx)
 	if err != nil {

@@ -4118,6 +4118,12 @@ union Actor = User | Org
 # An RFC 3339-encoded UTC date string.
 scalar DateTime
 
+# Objects that can be updated.
+interface Updatable {
+    # Whether the viewer can update this object.
+    viewerCanUpdate: Boolean!
+}
+
 # A comment is a comment on an object, or an object that itself resembles a comment.
 interface Comment {
     # The node ID of the object.
@@ -4126,8 +4132,11 @@ interface Comment {
     # The actor who authored the comment.
     author: Actor
 
-    # The Markdown body of the comment.
+    # The body as Markdown.
     body: String!
+
+    # The body as HTML.
+    bodyHTML: String!
 
     # The date and time when the object was created.
     createdAt: DateTime!
@@ -4219,7 +4228,7 @@ input UpdateThreadInput {
 }
 
 # A thread is an issue or changeset.
-type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Comment {
+type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment {
     # The unique ID for the thread.
     id: ID!
 
@@ -4233,8 +4242,11 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
     # The title of the thread.
     title: String!
 
-    # The Markdown body of the thread.
+    # The body as Markdown.
     body: String!
+
+    # The body as HTML.
+    bodyHTML: String!
 
     # The status of this thread.
     status: ThreadStatus!
@@ -4253,6 +4265,9 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
 
     # The date and time when the thread was updated.
     updatedAt: DateTime!
+
+    # Whether the viewer can update this thread.
+    viewerCanUpdate: Boolean!
 }
 
 # A list of threads.
@@ -4338,8 +4353,11 @@ type Changeset implements Node & RepositoryNode & RepositoryAndNumberAddressable
     # The title of the changeset.
     title: String!
 
-    # The Markdown body of the changeset.
+    # The body as Markdown.
     body: String!
+
+    # The body as HTML.
+    bodyHTML: String!
 
     # The status of this changeset.
     status: ChangesetStatus!
@@ -4367,6 +4385,9 @@ type Changeset implements Node & RepositoryNode & RepositoryAndNumberAddressable
 
     # The date and time when the changeset was updated.
     updatedAt: DateTime!
+
+    # Whether the viewer can update this changeset.
+    viewerCanUpdate: Boolean!
 
     # The comparison between this changeset's base and head.
     repositoryComparison: RepositoryComparison!
@@ -4476,8 +4497,11 @@ type Campaign implements Node & Comment {
     # The name of the campaign.
     name: String!
 
-    # The Markdown description of the campaign.
+    # The body as Markdown.
     body: String!
+
+    # The body as HTML.
+    bodyHTML: String!
 
     # Whether this campaign is a preview.
     isPreview: Boolean!
@@ -4488,14 +4512,17 @@ type Campaign implements Node & Comment {
     # The actor who authored the comment.
     author: Actor
 
+    # The URL to this campaign.
+    url: String!
+
     # The date and time when the object was created.
     createdAt: DateTime!
 
     # The date and time when the object was updated.
     updatedAt: DateTime!
 
-    # The URL to this campaign.
-    url: String!
+    # Whether the viewer can update this thread.
+    viewerCanUpdate: Boolean!
 
     # A list of threads, issues, and changesets in this campaign.
     threadOrIssueOrChangesets(
