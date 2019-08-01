@@ -110,11 +110,10 @@ func addGoBuild(pipeline *bk.Pipeline) {
 func addTriggerGoBenchmarks(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		if c.branch == "master" || strings.HasPrefix(c.branch, "bench/") {
-			pipeline.AddTrigger(":go: :100: :clock5:",
+			pipeline.AddTrigger("",
 				bk.Trigger("sourcegraph-bench"),
 				bk.Async(true),
 				bk.Build(bk.BuildOptions{
-					Message:  "sourcegraph-bench",
 					Commit:   c.commit,
 					Branch:   c.branch,
 					MetaData: map[string]interface{}{"version": c.version},
