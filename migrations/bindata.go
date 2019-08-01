@@ -225,6 +225,8 @@
 // 1528395580_create_user_permissions_table.up.sql (331B)
 // 1528395581_allows_dots_in_usernames.down.sql (349B)
 // 1528395581_allows_dots_in_usernames.up.sql (355B)
+// 1528395582_add_default_repos.down.sql (51B)
+// 1528395582_add_default_repos.up.sql (80B)
 
 package migrations
 
@@ -4793,6 +4795,46 @@ func _1528395581_allows_dots_in_usernamesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395582_add_default_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x49\x4d\x4b\x2c\xcd\x29\x89\x2f\x4a\x2d\xc8\x2f\xb6\xe6\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x99\xbc\x45\x7e\x33\x00\x00\x00")
+
+func _1528395582_add_default_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395582_add_default_reposDownSql,
+		"1528395582_add_default_repos.down.sql",
+	)
+}
+
+func _1528395582_add_default_reposDownSql() (*asset, error) {
+	bytes, err := _1528395582_add_default_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395582_add_default_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x0, 0x2a, 0xe7, 0xbf, 0xd7, 0x54, 0xaa, 0xf0, 0x5c, 0xf6, 0x8, 0x8d, 0xc, 0x10, 0x2e, 0x31, 0x7f, 0x4, 0xda, 0x30, 0x21, 0x10, 0x84, 0x28, 0x97, 0x60, 0x79, 0x73, 0xb1, 0xcd, 0x35, 0xb3}}
+	return a, nil
+}
+
+var __1528395582_add_default_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\x0e\x72\x75\x0c\x71\x55\x08\x71\x74\xf2\x71\x55\x48\x49\x4d\x4b\x2c\xcd\x29\x89\x2f\x4a\x2d\xc8\x2f\x56\xd0\xe0\xe2\x04\x31\xe2\x33\x53\x14\x3c\xfd\x42\x14\x82\x5c\xdd\x5c\x83\x5c\xfd\x9c\x5d\x83\x15\x40\xc2\x1a\x99\x29\x9a\x5c\x9a\xd6\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x90\x26\xb2\x00\x50\x00\x00\x00")
+
+func _1528395582_add_default_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395582_add_default_reposUpSql,
+		"1528395582_add_default_repos.up.sql",
+	)
+}
+
+func _1528395582_add_default_reposUpSql() (*asset, error) {
+	bytes, err := _1528395582_add_default_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395582_add_default_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x63, 0xa, 0xbb, 0xe8, 0x7f, 0xdc, 0x5, 0xd5, 0x5a, 0xa2, 0x84, 0xcf, 0x29, 0xe4, 0x3, 0xbf, 0x83, 0xb3, 0x57, 0x5f, 0x81, 0x21, 0xd3, 0xc6, 0x40, 0x13, 0x31, 0xea, 0x63, 0xc7, 0x7c, 0x42}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5333,6 +5375,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395581_allows_dots_in_usernames.down.sql": _1528395581_allows_dots_in_usernamesDownSql,
 
 	"1528395581_allows_dots_in_usernames.up.sql": _1528395581_allows_dots_in_usernamesUpSql,
+
+	"1528395582_add_default_repos.down.sql": _1528395582_add_default_reposDownSql,
+
+	"1528395582_add_default_repos.up.sql": _1528395582_add_default_reposUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5601,6 +5647,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395580_create_user_permissions_table.up.sql":             {_1528395580_create_user_permissions_tableUpSql, map[string]*bintree{}},
 	"1528395581_allows_dots_in_usernames.down.sql":                {_1528395581_allows_dots_in_usernamesDownSql, map[string]*bintree{}},
 	"1528395581_allows_dots_in_usernames.up.sql":                  {_1528395581_allows_dots_in_usernamesUpSql, map[string]*bintree{}},
+	"1528395582_add_default_repos.down.sql":                       {_1528395582_add_default_reposDownSql, map[string]*bintree{}},
+	"1528395582_add_default_repos.up.sql":                         {_1528395582_add_default_reposUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
