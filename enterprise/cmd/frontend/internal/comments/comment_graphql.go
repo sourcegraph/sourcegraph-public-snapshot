@@ -9,45 +9,49 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
 	"github.com/sourcegraph/sourcegraph/pkg/markdown"
 )
 
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
 
-func commentObjectFromGQLID(id graphql.ID) (CommentObject, error) {
+func commentObjectFromGQLID(id graphql.ID) (types.CommentObject, error) {
 	switch relay.UnmarshalKind(id) {
 	case string(threadlike.GQLTypeThread), string(threadlike.GQLTypeIssue), string(threadlike.GQLTypeChangeset):
 		_, threadID, err := threadlike.UnmarshalID(id)
-		return CommentObject{ThreadID: threadID}, err
+		return types.CommentObject{ThreadID: threadID}, err
 	case "Campaign":
 		// TODO!(sqs): reduce duplication of logic and constants?
 		var dbID int64
 		err := relay.UnmarshalSpec(id, &dbID)
-		return CommentObject{CampaignID: dbID}, err
+		return types.CommentObject{CampaignID: dbID}, err
 	default:
-		return CommentObject{}, fmt.Errorf("invalid comment type %q", relay.UnmarshalKind(id))
+		return types.CommentObject{}, fmt.Errorf("invalid comment type %q", relay.UnmarshalKind(id))
 	}
 }
 
-func commentByGQLID(ctx context.Context, id graphql.ID) (*dbComment, error) {
-	if mocks.commentByGQLID != nil {
-		return mocks.commentByGQLID(id)
+var mockCommentByGQLID func(graphql.ID) (*internal.DBComment, error)
+
+func commentByGQLID(ctx context.Context, id graphql.ID) (*internal.DBComment, error) {
+	if mockCommentByGQLID != nil {
+		return mockCommentByGQLID(id)
 	}
 
-	var opt dbCommentsListOptions
+	var opt internal.DBCommentsListOptions
 	var err error
 	opt.Object, err = commentObjectFromGQLID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	comments, err := dbComments{}.List(ctx, opt)
+	comments, err := internal.DBComments{}.List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
 	if len(comments) == 0 {
-		return nil, errCommentNotFound
+		return nil, internal.ErrCommentNotFound
 	}
 	if len(comments) >= 2 {
 		return nil, fmt.Errorf("got %d comments for GraphQL ID %q, expected 0 or 1", len(comments), id)
@@ -55,9 +59,11 @@ func commentByGQLID(ctx context.Context, id graphql.ID) (*dbComment, error) {
 	return comments[0], nil
 }
 
-func newGQLToComment(ctx context.Context, dbComment *dbComment) (graphqlbackend.Comment, error) {
-	if mocks.newGQLToComment != nil {
-		return mocks.newGQLToComment(dbComment)
+var mockNewGQLToComment func(*internal.DBComment) (graphqlbackend.Comment, error)
+
+func newGQLToComment(ctx context.Context, dbComment *internal.DBComment) (graphqlbackend.Comment, error) {
+	if mockNewGQLToComment != nil {
+		return mockNewGQLToComment(dbComment)
 	}
 
 	switch {
@@ -92,16 +98,11 @@ type gqlComment struct {
 	id graphql.ID
 
 	once      sync.Once
-	dbComment *dbComment
+	dbComment *internal.DBComment
 	err       error
 }
 
-// TODO!(sqs) remove
-// func (gqlComment) ID() graphql.ID {
-// 	panic("The (gqlComment).ID method should not be called. If gqlComment is embedded in another struct type, the struct type must define its own ID method that shadows (gqlComment).ID. This is because gqlComment is lazy and the ID is not guaranteed to be valid when gqlComment being instantiated, so the embedding type may report incorrect IDs to GraphQL API consumers.")
-// }
-
-func (v *gqlComment) getComment(ctx context.Context) (*dbComment, error) {
+func (v *gqlComment) getComment(ctx context.Context) (*internal.DBComment, error) {
 	v.once.Do(func() {
 		v.dbComment, v.err = commentByGQLID(ctx, v.id)
 	})
@@ -152,3 +153,5 @@ func (v *gqlComment) UpdatedAt(ctx context.Context) (graphqlbackend.DateTime, er
 	}
 	return graphqlbackend.DateTime{c.UpdatedAt}, nil
 }
+
+var DBGetByID = (internal.DBComments{}).GetByID

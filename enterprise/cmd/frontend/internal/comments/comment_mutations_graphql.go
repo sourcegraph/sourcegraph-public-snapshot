@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
 )
 
 func CommentActorFromContext(ctx context.Context) (authorUserID int32, err error) {
@@ -25,7 +26,7 @@ func (GraphQLResolver) CreateComment(ctx context.Context, arg *graphqlbackend.Cr
 		return nil, err
 	}
 
-	v := &dbComment{
+	v := &internal.DBComment{
 		AuthorUserID: authorUserID,
 		Body:         arg.Input.Body,
 	}
@@ -34,7 +35,7 @@ func (GraphQLResolver) CreateComment(ctx context.Context, arg *graphqlbackend.Cr
 		return nil, err
 	}
 
-	comment, err := dbComments{}.Create(ctx, v)
+	comment, err := internal.DBComments{}.Create(ctx, nil, v)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +47,7 @@ func (GraphQLResolver) EditComment(ctx context.Context, arg *graphqlbackend.Edit
 	if err != nil {
 		return nil, err
 	}
-	comment, err := dbComments{}.Update(ctx, v.ID, dbCommentUpdate{
+	comment, err := internal.DBComments{}.Update(ctx, v.ID, internal.DBCommentUpdate{
 		Body: &arg.Input.Body,
 	})
 	if err != nil {
@@ -60,5 +61,5 @@ func (GraphQLResolver) DeleteComment(ctx context.Context, arg *graphqlbackend.De
 	if err != nil {
 		return nil, err
 	}
-	return nil, dbComments{}.DeleteByID(ctx, v.ID)
+	return nil, internal.DBComments{}.DeleteByID(ctx, v.ID)
 }

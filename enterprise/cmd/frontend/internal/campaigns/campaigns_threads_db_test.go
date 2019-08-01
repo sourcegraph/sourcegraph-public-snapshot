@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/testutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
@@ -29,18 +29,13 @@ func TestDB_CampaignsThreads(t *testing.T) {
 	}
 	campaign0, err := dbCampaigns{}.Create(ctx,
 		&dbCampaign{NamespaceOrgID: org1.ID, Name: "n0"},
-		comments.DBObjectCommentFields{AuthorUserID: user1.ID, Body: "b0"},
+		commentobjectdb.DBObjectCommentFields{AuthorUserID: user1.ID, Body: "b0"},
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Create threads.
-	user, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = user // TODO!(sqs)
 	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{Name: "r", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
@@ -48,11 +43,11 @@ func TestDB_CampaignsThreads(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	thread0, err := testutil.CreateThread(ctx, "t0", repo.ID)
+	thread0, err := testutil.CreateThread(ctx, "t0", repo.ID, user1.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	thread1, err := testutil.CreateThread(ctx, "t1", repo.ID)
+	thread1, err := testutil.CreateThread(ctx, "t1", repo.ID, user1.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

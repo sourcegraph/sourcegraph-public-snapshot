@@ -10,23 +10,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
+	comments_types "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
 )
 
 func TestGraphQL_CreateComment(t *testing.T) {
-	resetMocks()
+	internal.ResetMocks()
 	const wantUserID = 1
 	wantThreadGQLID := threadlike.MarshalID(threadlike.GQLTypeThread, 1)
 	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{ID: wantUserID}, nil
 	}
-	mocks.newGQLToComment = func(v *dbComment) (graphqlbackend.Comment, error) { return &mockComment{body: v.Body}, nil }
-	wantComment := &dbComment{
-		Object:       CommentObject{ThreadID: 1},
+	mockNewGQLToComment = func(v *internal.DBComment) (graphqlbackend.Comment, error) { return &mockComment{body: v.Body}, nil }
+	defer func() { mockNewGQLToComment = nil }()
+	wantComment := &internal.DBComment{
+		Object:       comments_types.CommentObject{ThreadID: 1},
 		AuthorUserID: wantUserID,
 		Body:         "b",
 	}
-	mocks.comments.Create = func(comment *dbComment) (*dbComment, error) {
+	internal.Mocks.Comments.Create = func(comment *internal.DBComment) (*internal.DBComment, error) {
 		if !reflect.DeepEqual(comment, wantComment) {
 			t.Errorf("got comment %+v, want %+v", comment, wantComment)
 		}
@@ -57,7 +60,7 @@ func TestGraphQL_CreateComment(t *testing.T) {
 }
 
 func TestGraphQL_EditComment(t *testing.T) {
-	resetMocks()
+	internal.ResetMocks()
 	const (
 		wantID       = 2
 		wantThreadID = 1
@@ -66,20 +69,23 @@ func TestGraphQL_EditComment(t *testing.T) {
 	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{ID: 1}, nil
 	}
-	mocks.commentByGQLID = func(id graphql.ID) (*dbComment, error) {
+	mockCommentByGQLID = func(id graphql.ID) (*internal.DBComment, error) {
 		if id != wantThreadGQLID {
 			t.Errorf("got thread ID %q, want %q", id, wantThreadGQLID)
 		}
-		return &dbComment{ID: wantID}, nil
+		return &internal.DBComment{ID: wantID}, nil
 	}
-	mocks.newGQLToComment = func(v *dbComment) (graphqlbackend.Comment, error) { return &mockComment{body: v.Body}, nil }
-	mocks.comments.Update = func(id int64, update dbCommentUpdate) (*dbComment, error) {
-		if want := (dbCommentUpdate{Body: strptr("b1")}); !reflect.DeepEqual(update, want) {
+	defer func() { mockCommentByGQLID = nil }()
+
+	mockNewGQLToComment = func(v *internal.DBComment) (graphqlbackend.Comment, error) { return &mockComment{body: v.Body}, nil }
+	defer func() { mockNewGQLToComment = nil }()
+	internal.Mocks.Comments.Update = func(id int64, update internal.DBCommentUpdate) (*internal.DBComment, error) {
+		if want := (internal.DBCommentUpdate{Body: strptr("b1")}); !reflect.DeepEqual(update, want) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
-		return &dbComment{
+		return &internal.DBComment{
 			ID:           2,
-			Object:       CommentObject{ThreadID: 1},
+			Object:       comments_types.CommentObject{ThreadID: 1},
 			AuthorUserID: 1,
 			Body:         "b1",
 		}, nil
@@ -107,19 +113,20 @@ func TestGraphQL_EditComment(t *testing.T) {
 }
 
 func TestGraphQL_DeleteComment(t *testing.T) {
-	resetMocks()
+	internal.ResetMocks()
 	const wantID = 2
 	wantThreadGQLID := threadlike.MarshalID(threadlike.GQLTypeThread, 1)
 	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{ID: 1}, nil
 	}
-	mocks.commentByGQLID = func(id graphql.ID) (*dbComment, error) {
+	mockCommentByGQLID = func(id graphql.ID) (*internal.DBComment, error) {
 		if id != wantThreadGQLID {
 			t.Errorf("got thread ID %q, want %q", id, wantThreadGQLID)
 		}
-		return &dbComment{ID: wantID}, nil
+		return &internal.DBComment{ID: wantID}, nil
 	}
-	mocks.comments.DeleteByID = func(id int64) error {
+	defer func() { mockCommentByGQLID = nil }()
+	internal.Mocks.Comments.DeleteByID = func(id int64) error {
 		if id != wantID {
 			t.Errorf("got ID %d, want %d", id, wantID)
 		}
@@ -144,3 +151,5 @@ func TestGraphQL_DeleteComment(t *testing.T) {
 		},
 	})
 }
+
+func strptr(s string) *string { return &s }

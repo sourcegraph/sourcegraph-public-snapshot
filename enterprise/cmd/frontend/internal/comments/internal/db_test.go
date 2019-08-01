@@ -1,4 +1,4 @@
-package comments
+package internal_test
 
 import "github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 

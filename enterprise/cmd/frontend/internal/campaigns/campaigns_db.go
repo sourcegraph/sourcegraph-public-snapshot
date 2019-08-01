@@ -2,12 +2,14 @@ package campaigns
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
@@ -35,7 +37,7 @@ const selectColumns = `id, namespace_user_id, namespace_org_id, name, is_preview
 
 // Create creates a campaign. The campaign argument's (Campaign).ID field is ignored. The new
 // campaign is returned.
-func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign, comment comments.DBObjectCommentFields) (*dbCampaign, error) {
+func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign, comment commentobjectdb.DBObjectCommentFields) (*dbCampaign, error) {
 	if mocks.campaigns.Create != nil {
 		return mocks.campaigns.Create(campaign)
 	}
@@ -51,7 +53,7 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign, comment com
 		return &v
 	}
 
-	return campaign, comments.CreateWithObject(ctx, comment, func(ctx context.Context, tx comments.QueryRowContexter, commentID int64) (*comments.CommentObject, error) {
+	return campaign, commentobjectdb.CreateCommentWithObject(ctx, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
 		var err error
 		campaign, err = dbCampaigns{}.scanRow(tx.QueryRowContext(ctx,
 			`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT) RETURNING `+selectColumns,
@@ -65,7 +67,7 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign, comment com
 		if err != nil {
 			return nil, err
 		}
-		return &comments.CommentObject{CampaignID: campaign.ID}, nil
+		return &types.CommentObject{CampaignID: campaign.ID}, nil
 	})
 }
 

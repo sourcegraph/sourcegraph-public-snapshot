@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 )
 
@@ -13,13 +15,22 @@ func (GraphQLResolver) CreateThread(ctx context.Context, arg *graphqlbackend.Cre
 		return nil, err
 	}
 
+	authorUserID, err := comments.CommentActorFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	comment := commentobjectdb.DBObjectCommentFields{AuthorUserID: authorUserID}
+	if arg.Input.Body != nil {
+		comment.Body = *arg.Input.Body
+	}
+
 	thread, err := internal.DBThreads{}.Create(ctx, &internal.DBThread{
 		Type:         graphqlbackend.ThreadlikeTypeThread,
 		RepositoryID: repo.DBID(),
 		Title:        arg.Input.Title,
 		ExternalURL:  arg.Input.ExternalURL,
 		Status:       string(graphqlbackend.ThreadStatusOpen),
-	})
+	}, comment)
 	if err != nil {
 		return nil, err
 	}

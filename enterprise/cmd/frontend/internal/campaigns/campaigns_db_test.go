@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
@@ -16,15 +17,6 @@ func TestDB_Campaigns(t *testing.T) {
 	}
 	resetMocks()
 	ctx := dbtesting.TestContext(t)
-
-	user1, err := db.Users.Create(ctx, db.NewUser{Username: "user1"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	org1, err := db.Orgs.Create(ctx, "org1", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	// for testing equality of all other fields
 	norm := func(vs ...*dbCampaign) {
@@ -36,10 +28,19 @@ func TestDB_Campaigns(t *testing.T) {
 		}
 	}
 
+	user1, err := db.Users.Create(ctx, db.NewUser{Username: "user1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	org1, err := db.Orgs.Create(ctx, "org1", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	wantCampaign0 := &dbCampaign{NamespaceUserID: user1.ID, Name: "n0"}
 	campaign0, err := dbCampaigns{}.Create(ctx,
 		wantCampaign0,
-		comments.DBObjectCommentFields{AuthorUserID: user1.ID, Body: "b0"},
+		commentobjectdb.DBObjectCommentFields{AuthorUserID: user1.ID, Body: "b0"},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -47,7 +48,7 @@ func TestDB_Campaigns(t *testing.T) {
 	campaign0PrimaryCommentID := campaign0.PrimaryCommentID // needed below but is zeroed out by norm
 	campaign1, err := dbCampaigns{}.Create(ctx,
 		&dbCampaign{NamespaceUserID: user1.ID, Name: "n1"},
-		comments.DBObjectCommentFields{AuthorUserID: user1.ID, Body: "b0"},
+		commentobjectdb.DBObjectCommentFields{AuthorUserID: user1.ID, Body: "b0"},
 	)
 	if err != nil {
 		t.Fatal(err)

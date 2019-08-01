@@ -5,17 +5,20 @@ import (
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
 )
 
 func TestGraphQL_CommentConnection(t *testing.T) {
-	resetMocks()
+	internal.ResetMocks()
 	const (
 		wantCommentID = 2
 		wantThreadID  = 3
 	)
-	mocks.newGQLToComment = func(v *dbComment) (graphqlbackend.Comment, error) { return &mockComment{body: v.Body}, nil }
-	mocks.comments.List = func(dbCommentsListOptions) ([]*dbComment, error) {
-		return []*dbComment{{ID: wantCommentID, Object: CommentObject{ThreadID: wantThreadID}, Body: "b"}}, nil
+	mockNewGQLToComment = func(v *internal.DBComment) (graphqlbackend.Comment, error) { return &mockComment{body: v.Body}, nil }
+	defer func() { mockNewGQLToComment = nil }()
+	internal.Mocks.Comments.List = func(internal.DBCommentsListOptions) ([]*internal.DBComment, error) {
+		return []*internal.DBComment{{ID: wantCommentID, Object: types.CommentObject{ThreadID: wantThreadID}, Body: "b"}}, nil
 	}
 
 	gqltesting.RunTests(t, []*gqltesting.Test{

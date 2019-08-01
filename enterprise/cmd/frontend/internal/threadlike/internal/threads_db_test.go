@@ -3,9 +3,11 @@ package internal
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	commentobjectdb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
@@ -17,6 +19,20 @@ func TestDB_Threads(t *testing.T) {
 	ResetMocks()
 	ctx := dbtesting.TestContext(t)
 
+	// for testing equality of all other fields
+	norm := func(vs ...*DBThread) {
+		for _, v := range vs {
+			v.ID = 0
+			v.PrimaryCommentID = 0
+			v.CreatedAt = time.Time{}
+			v.UpdatedAt = time.Time{}
+		}
+	}
+
+	user, err := db.Users.Create(ctx, db.NewUser{Username: "user"})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{Name: "r", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
@@ -26,42 +42,42 @@ func TestDB_Threads(t *testing.T) {
 	}
 
 	wantThread0 := &DBThread{Type: graphqlbackend.ThreadlikeTypeThread, RepositoryID: repo0.ID, Title: "t0", ExternalURL: strptr("u0")}
-	thread0, err := DBThreads{}.Create(ctx, wantThread0)
+	thread0, err := DBThreads{}.Create(ctx, wantThread0, commentobjectdb.DBObjectCommentFields{AuthorUserID: user.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
+	thread0ID := thread0.ID // needed later
 	thread1, err := DBThreads{}.Create(ctx, &DBThread{
+		Type:         "THREAD",
 		RepositoryID: repo0.ID,
 		Title:        "t1",
 		ExternalURL:  strptr("u1"),
-	})
+	}, commentobjectdb.DBObjectCommentFields{AuthorUserID: user.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
+	norm(thread0, thread1)
 
 	{
 		// Check Create result.
-		if thread0.ID == 0 {
+		if thread0ID == 0 {
 			t.Error("got ID == 0, want non-zero")
 		}
-		tmp := thread0.ID
-		thread0.ID = 0 // for testing equality of all other fields
 		if !reflect.DeepEqual(thread0, wantThread0) {
 			t.Errorf("got %+v, want %+v", thread0, wantThread0)
 		}
-		thread0.ID = tmp
 	}
 
 	{
 		// Get a thread.
-		thread, err := DBThreads{}.GetByID(ctx, thread0.ID)
+		thread, err := DBThreads{}.GetByID(ctx, thread0ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if thread.ID == 0 {
 			t.Error("got ID == 0, want non-zero")
 		}
-		thread.ID = 0 // for testing equality of all other fields
+		norm(thread)
 		if !reflect.DeepEqual(thread, wantThread0) {
 			t.Errorf("got %+v, want %+v", thread, wantThread0)
 		}
@@ -104,6 +120,7 @@ func TestDB_Threads(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		norm(ts...)
 		if want := []*DBThread{thread1}; !reflect.DeepEqual(ts, want) {
 			t.Errorf("got %+v, want %+v", ts, want)
 		}
@@ -111,10 +128,11 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// List threads by IDs.
-		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{ThreadIDs: []int64{thread0.ID}})
+		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{ThreadIDs: []int64{thread0ID}})
 		if err != nil {
 			t.Fatal(err)
 		}
+		norm(ts...)
 		if want := []*DBThread{thread0}; !reflect.DeepEqual(ts, want) {
 			t.Errorf("got %+v, want %+v", ts, want)
 		}
@@ -133,7 +151,7 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// Delete a thread.
-		if err := (DBThreads{}).DeleteByID(ctx, thread0.ID); err != nil {
+		if err := (DBThreads{}).DeleteByID(ctx, thread0ID); err != nil {
 			t.Fatal(err)
 		}
 		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{RepositoryID: repo0.ID})

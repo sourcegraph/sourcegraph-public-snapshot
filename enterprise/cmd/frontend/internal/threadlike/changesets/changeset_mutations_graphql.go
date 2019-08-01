@@ -5,6 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 )
 
@@ -12,6 +14,15 @@ func (GraphQLResolver) CreateChangeset(ctx context.Context, arg *graphqlbackend.
 	repo, err := graphqlbackend.RepositoryByID(ctx, arg.Input.Repository)
 	if err != nil {
 		return nil, err
+	}
+
+	authorUserID, err := comments.CommentActorFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	comment := commentobjectdb.DBObjectCommentFields{AuthorUserID: authorUserID}
+	if arg.Input.Body != nil {
+		comment.Body = *arg.Input.Body
 	}
 
 	changeset, err := internal.DBThreads{}.Create(ctx, &internal.DBThread{
@@ -23,7 +34,7 @@ func (GraphQLResolver) CreateChangeset(ctx context.Context, arg *graphqlbackend.
 		IsPreview:    arg.Input.Preview != nil && *arg.Input.Preview,
 		BaseRef:      arg.Input.BaseRef,
 		HeadRef:      arg.Input.HeadRef,
-	})
+	}, comment)
 	if err != nil {
 		return nil, err
 	}

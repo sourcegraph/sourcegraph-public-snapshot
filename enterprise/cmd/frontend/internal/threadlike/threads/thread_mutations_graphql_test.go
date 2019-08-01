@@ -17,6 +17,9 @@ import (
 func TestGraphQL_CreateThread(t *testing.T) {
 	internal.ResetMocks()
 	const wantRepositoryID = 1
+	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		return &types.User{ID: 1}, nil
+	}
 	db.Mocks.Repos.Get = func(context.Context, api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: wantRepositoryID}, nil
 	}

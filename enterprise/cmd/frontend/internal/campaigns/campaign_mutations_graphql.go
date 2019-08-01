@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/threads"
 )
 
@@ -30,7 +31,7 @@ func (GraphQLResolver) CreateCampaign(ctx context.Context, arg *graphqlbackend.C
 	if err != nil {
 		return nil, err
 	}
-	comment := comments.DBObjectCommentFields{AuthorUserID: authorUserID}
+	comment := commentobjectdb.DBObjectCommentFields{AuthorUserID: authorUserID}
 	if arg.Input.Body != nil {
 		comment.Body = *arg.Input.Body
 	}

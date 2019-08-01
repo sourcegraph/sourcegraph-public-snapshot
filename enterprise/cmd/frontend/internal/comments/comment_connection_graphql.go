@@ -6,14 +6,15 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
 )
 
 func (GraphQLResolver) Comments(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CommentConnection, error) {
-	return commentsByOptions(ctx, dbCommentsListOptions{}, arg)
+	return commentsByOptions(ctx, internal.DBCommentsListOptions{}, arg)
 }
 
 func (GraphQLResolver) CommentsForObject(ctx context.Context, object graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CommentConnection, error) {
-	var opt dbCommentsListOptions
+	var opt internal.DBCommentsListOptions
 	var err error
 	opt.Object, err = commentObjectFromGQLID(object)
 	if err != nil {
@@ -23,8 +24,8 @@ func (GraphQLResolver) CommentsForObject(ctx context.Context, object graphql.ID,
 	return commentsByOptions(ctx, opt, arg)
 }
 
-func commentsByOptions(ctx context.Context, opt dbCommentsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CommentConnection, error) {
-	comments, err := dbComments{}.List(ctx, opt)
+func commentsByOptions(ctx context.Context, opt internal.DBCommentsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CommentConnection, error) {
+	comments, err := internal.DBComments{}.List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +34,7 @@ func commentsByOptions(ctx context.Context, opt dbCommentsListOptions, arg *grap
 
 type commentConnection struct {
 	arg      *graphqlutil.ConnectionArgs
-	comments []*dbComment
+	comments []*internal.DBComment
 }
 
 func (r *commentConnection) Nodes(ctx context.Context) ([]graphqlbackend.Comment, error) {

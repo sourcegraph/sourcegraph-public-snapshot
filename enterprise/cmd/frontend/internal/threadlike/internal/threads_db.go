@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -9,7 +10,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
+	commentobjectdb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
@@ -43,16 +45,16 @@ const selectColumns = "id, type, repository_id, title, external_url, status, pri
 
 // Create creates a thread. The thread argument's (Thread).ID field is ignored. The new thread is
 // returned.
-func (DBThreads) Create(ctx context.Context, thread *DBThread, comment comments.DBObjectCommentFields) (*DBThread, error) {
+func (DBThreads) Create(ctx context.Context, thread *DBThread, comment commentobjectdb.DBObjectCommentFields) (*DBThread, error) {
 	if Mocks.Threads.Create != nil {
 		return Mocks.Threads.Create(thread)
 	}
 
 	if thread.PrimaryCommentID != 0 {
-		panic("campaign.PrimaryCommentID must not be set")
+		panic("thread.PrimaryCommentID must not be set")
 	}
 
-	return thread, comments.CreateWithObject(ctx, comment, func(ctx context.Context, tx comments.QueryRowContexter, commentID int64) (*comments.CommentObject, error) {
+	return thread, commentobjectdb.CreateCommentWithObject(ctx, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
 		var err error
 		thread, err = DBThreads{}.scanRow(tx.QueryRowContext(ctx,
 			`INSERT INTO threads(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT, $7, $8, $9) RETURNING `+selectColumns,
@@ -69,7 +71,7 @@ func (DBThreads) Create(ctx context.Context, thread *DBThread, comment comments.
 		if err != nil {
 			return nil, err
 		}
-		return &comments.CommentObject{ThreadID: thread.ID}, nil
+		return &types.CommentObject{ThreadID: thread.ID}, nil
 	})
 }
 
@@ -237,6 +239,9 @@ func (DBThreads) scanRow(row interface {
 		&t.Title,
 		&t.ExternalURL,
 		&t.Status,
+		&t.PrimaryCommentID,
+		&t.CreatedAt,
+		&t.UpdatedAt,
 		&t.IsPreview,
 		&t.BaseRef,
 		&t.HeadRef,
