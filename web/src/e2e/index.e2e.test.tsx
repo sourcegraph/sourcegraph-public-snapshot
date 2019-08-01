@@ -118,6 +118,40 @@ describe('e2e test suite', function(this: any): void {
                 () => !document.querySelector('[data-e2e-external-service-name="e2e-github-test-2"]')
             )
         })
+
+        test('External service repositoryPathPattern', async () => {
+            const repo = 'sourcegraph/go-blame' // Tiny repo, fast to clone
+            const repositoryPathPattern = 'foobar/{host}/{nameWithOwner}'
+            const slug = `github.com/${repo}`
+            const pathPatternSlug = `foobar/github.com/${repo}`
+
+            const config = {
+                kind: 'github',
+                displayName: 'e2e-test-github-repoPathPattern',
+                config: JSON.stringify({
+                    url: 'https://github.com',
+                    token: gitHubToken,
+                    repos: [repo],
+                    repositoryPathPattern,
+                }),
+            }
+            await driver.ensureHasExternalService(config)
+
+            await driver.page.goto(baseURL + '/site-admin/external-services')
+            await (await driver.page.waitForSelector(
+                `[data-e2e-external-service-name="${config.displayName}"] .e2e-edit-external-service-button`
+            )).click()
+
+            // Make sure repository is named according to path pattern
+            await driver.page.goto(baseURL + `/site-admin/repositories?query=${encodeURIComponent(pathPatternSlug)}`)
+            await driver.page.waitForSelector(`.repository-node[data-e2e-repository='${pathPatternSlug}']`, {
+                visible: true,
+            })
+
+            // Make sure repository slug without path pattern redirects to path pattern
+            await driver.page.goto(baseURL + '/' + slug)
+            await driver.assertWindowLocationPrefix('/' + pathPatternSlug)
+        })
     })
 
     describe('Visual tests', () => {
