@@ -11,8 +11,10 @@ type defaultRepos struct{}
 
 func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err error) {
 	q := `
-SELECT repo_id
+SELECT default_repos.repo_id, repo.name
 FROM default_repos
+JOIN repo
+ON default_repos.repo_id = repo.id
 `
 	rows, err := dbconn.Global.QueryContext(ctx, q)
 	if err != nil {
@@ -21,11 +23,11 @@ FROM default_repos
 	defer rows.Close()
 	var repos []*types.Repo
 	for rows.Next() {
-		var repo types.Repo
-		if err := scanRepo(rows, &repo); err != nil {
+		var r types.Repo
+		if err := rows.Scan(&r.ID, &r.Name); err != nil {
 			return nil, err
 		}
-		repos = append(repos, &repo)
+		repos = append(repos, &r)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
