@@ -1,6 +1,7 @@
 package ci
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -14,6 +15,7 @@ import (
 // parameters are extracted from the build environment (branch name, commit hash, timestamp, etc.)
 type Config struct {
 	now               time.Time
+	pipeline          string
 	branch            string
 	version           string
 	commit            string
@@ -52,8 +54,14 @@ func ComputeConfig() Config {
 		version = version + "_patch"
 	}
 
+	pipeline := os.Getenv("BUILDKITE_PIPELINE")
+	if pipeline == "" {
+		pipeline = "sourcegraph"
+	}
+
 	return Config{
 		now:               now,
+		pipeline:          pipeline,
 		branch:            branch,
 		version:           version,
 		commit:            commit,
@@ -100,4 +108,12 @@ func isDocsOnly() bool {
 		}
 	}
 	return true
+}
+
+func gitRevParse(rev string) string {
+	commit, err := exec.Command("git", "rev-parse", rev).CombinedOutput()
+	if err != nil {
+		panic(err.Error() + " " + string(commit))
+	}
+	return string(bytes.TrimSpace(commit))
 }

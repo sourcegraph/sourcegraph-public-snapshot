@@ -19,6 +19,7 @@ type Pipeline struct {
 type BuildOptions struct {
 	Message  string                 `json:"message,omitempty"`
 	Commit   string                 `json:"commit,omitempty"`
+	Branch   string                 `json:"branch,omitempty"`
 	MetaData map[string]interface{} `json:"meta_data,omitempty"`
 	Env      map[string]string      `json:"env,omitempty"`
 }
@@ -120,7 +121,9 @@ func Concurrency(limit int) StepOpt {
 
 func Env(name, value string) StepOpt {
 	return func(step *Step) {
-		step.Env[name] = value
+		if step.Env != nil {
+			step.Env[name] = value
+		}
 	}
 }
 

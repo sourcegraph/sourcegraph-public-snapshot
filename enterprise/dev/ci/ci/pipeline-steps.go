@@ -107,6 +107,51 @@ func addGoBuild(pipeline *bk.Pipeline) {
 	)
 }
 
+func addTriggerGoBenchmarks(c Config) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		if c.branch == "master" || strings.HasPrefix(c.branch, "bench/") {
+			pipeline.AddTrigger(":go: :100: :clock5:",
+				bk.Trigger("sourcegraph-bench"),
+				bk.Async(true),
+				bk.Build(bk.BuildOptions{
+					Message:  "sourcegraph-bench",
+					Commit:   c.commit,
+					Branch:   c.branch,
+					MetaData: map[string]interface{}{"version": c.version},
+				}),
+			)
+		}
+	}
+}
+
+func addGoBenchmarks(c Config) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		after := c.commit
+		afterout := fmt.Sprintf("%s.after.bench.txt", c.commit)
+
+		pipeline.AddStep("benchmark after :go: :100: :clock5:",
+			bk.Cmd("go test -run=XXXNOTESTS -timeout=30m -bench=. -benchmem -count=5 ./... | tee "+afterout),
+			bk.ArtifactPaths(afterout),
+		)
+
+		before := gitRevParse("origin/" + c.branch + "^")
+		beforeout := fmt.Sprintf("%s.before.bench.txt", before)
+
+		pipeline.AddStep("benchmark before :go: :100: :clock5:",
+			bk.Cmd("git checkout "+before),
+			bk.Cmd("go test -run=XXXNOTESTS -timeout=30m -bench=. -benchmem -count=5 ./... | tee "+beforeout),
+			bk.ArtifactPaths(beforeout),
+		)
+
+		benchsaveout := fmt.Sprintf("%s-%s.benchsave.txt", before, after)
+		pipeline.AddStep("benchsave to https://perf.golang.org",
+			bk.Cmd("go get -u golang.org/x/perf/cmd/benchsave"),
+			bk.Cmd("benchsave "+beforeout+" "+afterout+" | tee "+benchsaveout),
+			bk.ArtifactPaths(benchsaveout),
+		)
+	}
+}
+
 // Lints the Dockerfiles.
 func addDockerfileLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":docker:",
