@@ -25,4 +25,7 @@ else
 fi
 
 regressions=$(echo "$deltas" | grep -c '^+')
-exit "$regressions"
+if [ "$regressions" -ne 0 ]; then
+  echo "WARNING: Performance regressions detected. Please investigate."
+  exit 1
+fi
