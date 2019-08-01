@@ -152,11 +152,18 @@ func Main() {
 		`syntect_server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
 	}
 	procfile = append(procfile, ProcfileAdditions...)
-	if line, err := maybeRedisProcFile(); err != nil {
+
+	if line, err := maybeRedisStoreProcFile(); err != nil {
 		log.Fatal(err)
 	} else if line != "" {
 		procfile = append(procfile, line)
 	}
+	if line, err := maybeRedisCacheProcFile(); err != nil {
+		log.Fatal(err)
+	} else if line != "" {
+		procfile = append(procfile, line)
+	}
+
 	if line, err := maybePostgresProcFile(); err != nil {
 		log.Fatal(err)
 	} else if line != "" {
