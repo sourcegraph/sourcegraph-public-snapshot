@@ -127,27 +127,10 @@ func addTriggerGoBenchmarks(c Config) func(*bk.Pipeline) {
 func addGoBenchmarks(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		after := c.commit
-		afterout := fmt.Sprintf("%s.after.bench.txt", c.commit)
-
-		pipeline.AddStep("benchmark after :go: :100: :clock5:",
-			bk.Cmd("go test -run=XXXNOTESTS -timeout=30m -bench=. -benchmem -count=5 ./... | tee "+afterout),
-			bk.ArtifactPaths(afterout),
-		)
-
 		before := gitRevParse("origin/" + c.branch + "^")
-		beforeout := fmt.Sprintf("%s.before.bench.txt", before)
-
-		pipeline.AddStep("benchmark before :go: :100: :clock5:",
-			bk.Cmd("git checkout "+before),
-			bk.Cmd("go test -run=XXXNOTESTS -timeout=30m -bench=. -benchmem -count=5 ./... | tee "+beforeout),
-			bk.ArtifactPaths(beforeout),
-		)
-
-		benchsaveout := fmt.Sprintf("%s-%s.benchsave.txt", before, after)
-		pipeline.AddStep("benchsave to https://perf.golang.org",
-			bk.Cmd("go get -u golang.org/x/perf/cmd/benchsave"),
-			bk.Cmd("benchsave "+beforeout+" "+afterout+" | tee "+benchsaveout),
-			bk.ArtifactPaths(benchsaveout),
+		pipeline.AddStep("benchdiff :go: :100: :clock5:",
+			bk.Cmd("./dev/benchdiff.sh "+before+" "+after),
+			bk.ArtifactPaths("*.bench.txt"),
 		)
 	}
 }
