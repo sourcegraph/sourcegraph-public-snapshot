@@ -10,22 +10,23 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
+	"github.com/sourcegraph/sourcegraph/pkg/markdown"
 )
 
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
 
-func commentObjectFromGQLID(id graphql.ID) (dbCommentObject, error) {
+func commentObjectFromGQLID(id graphql.ID) (CommentObject, error) {
 	switch relay.UnmarshalKind(id) {
 	case string(threadlike.GQLTypeThread), string(threadlike.GQLTypeIssue), string(threadlike.GQLTypeChangeset):
 		_, threadID, err := threadlike.UnmarshalID(id)
-		return dbCommentObject{ThreadID: threadID}, err
+		return CommentObject{ThreadID: threadID}, err
 	case "Campaign":
 		// TODO!(sqs): reduce duplication of logic and constants?
 		var dbID int64
 		err := relay.UnmarshalSpec(id, &dbID)
-		return dbCommentObject{CampaignID: dbID}, err
+		return CommentObject{CampaignID: dbID}, err
 	default:
-		return dbCommentObject{}, fmt.Errorf("invalid comment type %q", relay.UnmarshalKind(id))
+		return CommentObject{}, fmt.Errorf("invalid comment type %q", relay.UnmarshalKind(id))
 	}
 }
 

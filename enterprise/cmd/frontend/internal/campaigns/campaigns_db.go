@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
@@ -18,8 +19,10 @@ type dbCampaign struct {
 	Name            string // the name (case-preserving)
 	IsPreview       bool
 	Rules           string // the JSON rules TODO!(sqs)
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+
+	PrimaryCommentID int64
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }
 
 // errCampaignNotFound occurs when a database operation expects a specific campaign to exist but it
@@ -28,13 +31,17 @@ var errCampaignNotFound = errors.New("campaign not found")
 
 type dbCampaigns struct{}
 
-const selectColumns = `id, namespace_user_id, namespace_org_id, name, is_preview, rules, created_at, updated_at`
+const selectColumns = `id, namespace_user_id, namespace_org_id, name, is_preview, rules, primary_comment_id, created_at, updated_at`
 
 // Create creates a campaign. The campaign argument's (Campaign).ID field is ignored. The new
 // campaign is returned.
-func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign) (*dbCampaign, error) {
+func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign, comment comments.DBObjectCommentFields) (*dbCampaign, error) {
 	if mocks.campaigns.Create != nil {
 		return mocks.campaigns.Create(campaign)
+	}
+
+	if campaign.PrimaryCommentID != 0 {
+		panic("campaign.PrimaryCommentID must not be set")
 	}
 
 	nilIfZero := func(v int32) *int32 {
@@ -44,14 +51,22 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign) (*dbCampaig
 		return &v
 	}
 
-	return dbCampaigns{}.scanRow(dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, DEFAULT, DEFAULT) RETURNING `+selectColumns,
-		nilIfZero(campaign.NamespaceUserID),
-		nilIfZero(campaign.NamespaceOrgID),
-		campaign.Name,
-		campaign.IsPreview,
-		campaign.Rules,
-	))
+	return campaign, comments.CreateWithObject(ctx, comment, func(ctx context.Context, tx comments.QueryRowContexter, commentID int64) (*comments.CommentObject, error) {
+		var err error
+		campaign, err = dbCampaigns{}.scanRow(tx.QueryRowContext(ctx,
+			`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT) RETURNING `+selectColumns,
+			nilIfZero(campaign.NamespaceUserID),
+			nilIfZero(campaign.NamespaceOrgID),
+			campaign.Name,
+			campaign.IsPreview,
+			campaign.Rules,
+			commentID,
+		))
+		if err != nil {
+			return nil, err
+		}
+		return &comments.CommentObject{CampaignID: campaign.ID}, nil
+	})
 }
 
 type dbCampaignUpdate struct {
@@ -186,6 +201,7 @@ func (dbCampaigns) scanRow(row interface {
 		&t.Name,
 		&t.IsPreview,
 		&t.Rules,
+		&t.PrimaryCommentID,
 		&t.CreatedAt,
 		&t.UpdatedAt,
 	); err != nil {

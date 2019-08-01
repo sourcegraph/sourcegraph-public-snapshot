@@ -7,18 +7,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
+func CommentActorFromContext(ctx context.Context) (authorUserID int32, err error) {
+	actor, err := graphqlbackend.CurrentUser(ctx)
+	if err != nil {
+		return 0, err
+	}
+	if actor == nil {
+		return 0, errors.New("authenticated required to create comment")
+	}
+	return actor.DatabaseID(), nil
+}
+
 func (GraphQLResolver) CreateComment(ctx context.Context, arg *graphqlbackend.CreateCommentArgs) (graphqlbackend.Comment, error) {
 	// TODO!(sqs): add auth checks
-	actor, err := graphqlbackend.CurrentUser(ctx)
+	authorUserID, err := CommentActorFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if actor == nil {
-		return nil, errors.New("authenticated required to create comment")
-	}
 
 	v := &dbComment{
-		AuthorUserID: actor.DatabaseID(),
+		AuthorUserID: authorUserID,
 		Body:         arg.Input.Body,
 	}
 	v.Object, err = commentObjectFromGQLID(arg.Input.Node)

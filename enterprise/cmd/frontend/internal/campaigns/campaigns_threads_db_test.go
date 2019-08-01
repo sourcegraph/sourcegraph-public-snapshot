@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/testutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
@@ -18,11 +19,18 @@ func TestDB_CampaignsThreads(t *testing.T) {
 	ctx := dbtesting.TestContext(t)
 
 	// Create campaign.
+	user1, err := db.Users.Create(ctx, db.NewUser{Username: "user1"})
+	if err != nil {
+		t.Fatal(err)
+	}
 	org1, err := db.Orgs.Create(ctx, "org1", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	campaign0, err := dbCampaigns{}.Create(ctx, &dbCampaign{NamespaceOrgID: org1.ID, Name: "n0"})
+	campaign0, err := dbCampaigns{}.Create(ctx,
+		&dbCampaign{NamespaceOrgID: org1.ID, Name: "n0"},
+		comments.DBObjectCommentFields{AuthorUserID: user1.ID, Body: "b0"},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

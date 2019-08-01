@@ -16,6 +16,9 @@ import (
 func TestGraphQL_CreateCampaign(t *testing.T) {
 	resetMocks()
 	const wantOrgID = 1
+	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		return &types.User{ID: 1}, nil
+	}
 	db.Mocks.Orgs.GetByID = func(context.Context, int32) (*types.Org, error) {
 		return &types.Org{ID: wantOrgID}, nil
 	}

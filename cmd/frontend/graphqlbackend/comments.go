@@ -132,6 +132,7 @@ func (v ToComment) comment() interface {
 func (v ToComment) ID() graphql.ID                                  { return v.comment().ID() }
 func (v ToComment) Author(ctx context.Context) (*Actor, error)      { return v.comment().Author(ctx) }
 func (v ToComment) Body(ctx context.Context) (string, error)        { return v.comment().Body(ctx) }
+func (v ToComment) BodyHTML(ctx context.Context) (string, error)    { return v.comment().BodyHTML(ctx) }
 func (v ToComment) UpdatedAt(ctx context.Context) (DateTime, error) { return v.comment().UpdatedAt(ctx) }
 func (v ToComment) CreatedAt(ctx context.Context) (DateTime, error) { return v.comment().CreatedAt(ctx) }
 func (v ToComment) ToThread() (Thread, bool)                        { return v.Thread, v.Thread != nil }

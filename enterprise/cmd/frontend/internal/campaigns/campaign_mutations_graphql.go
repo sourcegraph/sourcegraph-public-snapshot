@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/threads"
 )
 
@@ -25,7 +26,16 @@ func (GraphQLResolver) CreateCampaign(ctx context.Context, arg *graphqlbackend.C
 		return nil, err
 	}
 
-	campaign, err := dbCampaigns{}.Create(ctx, v)
+	authorUserID, err := comments.CommentActorFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	comment := comments.DBObjectCommentFields{AuthorUserID: authorUserID}
+	if arg.Input.Body != nil {
+		comment.Body = *arg.Input.Body
+	}
+
+	campaign, err := dbCampaigns{}.Create(ctx, v, comment)
 	if err != nil {
 		return nil, err
 	}

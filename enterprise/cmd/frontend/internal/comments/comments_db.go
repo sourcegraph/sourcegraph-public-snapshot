@@ -2,8 +2,10 @@ package comments
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -13,16 +15,15 @@ import (
 // dbComment describes a comment.
 type dbComment struct {
 	ID           int64
-	Object       dbCommentObject
+	Object       CommentObject
 	AuthorUserID int32
 	Body         string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
 
-// dbCommentObject stores the object that the comment is associated with. Exactly 1 field is
-// nonzero.
-type dbCommentObject struct {
+// CommentObject stores the object that the comment is associated with. Exactly 1 field is nonzero.
+type CommentObject struct {
 	ThreadID   int64
 	CampaignID int64
 }
@@ -42,20 +43,77 @@ func (dbComments) Create(ctx context.Context, comment *dbComment) (*dbComment, e
 		return mocks.comments.Create(comment)
 	}
 
-	nilIfZero := func(v int64) *int64 {
-		if v == 0 {
-			return nil
-		}
-		return &v
-	}
+	return dbComments{}.create(ctx, dbconn.Global, comment)
+}
 
-	return dbComments{}.scanRow(dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO comments(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, DEFAULT, DEFAULT) RETURNING `+selectColumns,
+type QueryRowContexter interface {
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+}
+
+func nilIfZero(v int64) *int64 {
+	if v == 0 {
+		return nil
+	}
+	return &v
+}
+
+func (dbComments) create(ctx context.Context, dbh QueryRowContexter, comment *dbComment) (*dbComment, error) {
+	return dbComments{}.scanRow(dbh.QueryRowContext(ctx,
+		`INSERT INTO comments(`+selectColumns+`) VALUES(DEFAULT, $1, $2, DEFAULT, DEFAULT, $3, $4) RETURNING `+selectColumns,
 		comment.AuthorUserID,
 		comment.Body,
 		nilIfZero(comment.Object.ThreadID),
 		nilIfZero(comment.Object.CampaignID),
 	))
+}
+
+type insertRelatedObjectFunc func(ctx context.Context, tx QueryRowContexter, commentID int64) (*CommentObject, error)
+
+// DBObjectCommentFields contains the subset of fields required when creating a comment that is
+// related to another object.
+type DBObjectCommentFields struct {
+	AuthorUserID int32
+	Body         string
+}
+
+// CreateWithObject creates a comment and its related object (such as a thread or campaign) in a
+// transaction.
+//
+// The insertRelatedObject func is called with the comment ID, in case the related object needs to
+// store the comment ID. After the related object is inserted, the comment row is updated to refer
+// to the object by ID (e.g., the thread ID or campaign ID).
+func CreateWithObject(ctx context.Context, comment DBObjectCommentFields, insertRelatedObject insertRelatedObjectFunc) (err error) {
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	insertedComment, err := dbComments{}.create(ctx, tx, &dbComment{AuthorUserID: comment.AuthorUserID, Body: comment.Body})
+	if err != nil {
+		return err
+	}
+
+	object, err := insertRelatedObject(ctx, tx, insertedComment.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, `UPDATE comments SET thread_id=$1, campaign_id=$2 WHERE id=$3`,
+		nilIfZero(object.ThreadID),
+		nilIfZero(object.CampaignID),
+		insertedComment.ID,
+	)
+	return err
 }
 
 type dbCommentUpdate struct {
@@ -88,15 +146,17 @@ func (s dbComments) Update(ctx context.Context, id int64, update dbCommentUpdate
 	return results[0], nil
 }
 
+var DBGetByID = (dbComments{}).GetByID
+
 // GetByID retrieves the comment (if any) given its ID.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to view this comment.
-func (s dbComments) GetByID(ctx context.Context, id int64) (*dbComment, error) {
+func (dbComments) GetByID(ctx context.Context, id int64) (*dbComment, error) {
 	if mocks.comments.GetByID != nil {
 		return mocks.comments.GetByID(id)
 	}
 
-	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("id=%d", id)}, nil)
+	results, err := dbComments{}.list(ctx, []*sqlf.Query{sqlf.Sprintf("id=%d", id)}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +169,7 @@ func (s dbComments) GetByID(ctx context.Context, id int64) (*dbComment, error) {
 // dbCommentsListOptions contains options for listing comments.
 type dbCommentsListOptions struct {
 	Query  string // only list comments matching this query (case-insensitively)
-	Object dbCommentObject
+	Object CommentObject
 	*db.LimitOffset
 }
 

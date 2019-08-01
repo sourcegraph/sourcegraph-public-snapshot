@@ -116,20 +116,20 @@ type CampaignsResolver interface {
 
 type CreateCampaignArgs struct {
 	Input struct {
-		Namespace   graphql.ID
-		Name        string
-		Description *string // TODO!(sqs): unimplemented, was renamed to body
-		Preview     *bool
-		Rules       *string
+		Namespace graphql.ID
+		Name      string
+		Body      *string
+		Preview   *bool
+		Rules     *string
 	}
 }
 
 type UpdateCampaignArgs struct {
 	Input struct {
-		ID          graphql.ID
-		Name        *string
-		Description *string // TODO!(sqs): unimplemented, was renamed to body
-		Rules       *string
+		ID    graphql.ID
+		Name  *string
+		Body  *string
+		Rules *string
 	}
 }
 

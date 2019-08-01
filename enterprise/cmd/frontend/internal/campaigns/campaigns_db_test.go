@@ -3,8 +3,10 @@ package campaigns
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
@@ -24,12 +26,29 @@ func TestDB_Campaigns(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// for testing equality of all other fields
+	norm := func(vs ...*dbCampaign) {
+		for _, v := range vs {
+			v.ID = 0
+			v.PrimaryCommentID = 0
+			v.CreatedAt = time.Time{}
+			v.UpdatedAt = time.Time{}
+		}
+	}
+
 	wantCampaign0 := &dbCampaign{NamespaceUserID: user1.ID, Name: "n0"}
-	campaign0, err := dbCampaigns{}.Create(ctx, wantCampaign0)
+	campaign0, err := dbCampaigns{}.Create(ctx,
+		wantCampaign0,
+		comments.DBObjectCommentFields{AuthorUserID: user1.ID, Body: "b0"},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	campaign1, err := dbCampaigns{}.Create(ctx, &dbCampaign{NamespaceUserID: user1.ID, Name: "n1"})
+	campaign0PrimaryCommentID := campaign0.PrimaryCommentID // needed below but is zeroed out by norm
+	campaign1, err := dbCampaigns{}.Create(ctx,
+		&dbCampaign{NamespaceUserID: user1.ID, Name: "n1"},
+		comments.DBObjectCommentFields{AuthorUserID: user1.ID, Body: "b0"},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +58,7 @@ func TestDB_Campaigns(t *testing.T) {
 			t.Error("got ID == 0, want non-zero")
 		}
 		tmp := campaign0.ID
-		campaign0.ID = 0 // for testing equality of all other fields
+		norm(campaign0)
 		if !reflect.DeepEqual(campaign0, wantCampaign0) {
 			t.Errorf("got %+v, want %+v", campaign0, wantCampaign0)
 		}
@@ -55,9 +74,23 @@ func TestDB_Campaigns(t *testing.T) {
 		if campaign.ID == 0 {
 			t.Error("got ID == 0, want non-zero")
 		}
-		campaign.ID = 0 // for testing equality of all other fields
+		norm(campaign)
 		if !reflect.DeepEqual(campaign, wantCampaign0) {
 			t.Errorf("got %+v, want %+v", campaign, wantCampaign0)
+		}
+	}
+
+	{
+		// Get the campaign primary comment.
+		comment, err := comments.DBGetByID(ctx, campaign0PrimaryCommentID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if comment.Object.CampaignID != campaign0.ID {
+			t.Errorf("got %d, want %d", comment.Object.CampaignID, campaign0.ID)
+		}
+		if want := "b0"; comment.Body != want {
+			t.Errorf("got %q, want %q", comment.Body, want)
 		}
 	}
 
@@ -110,6 +143,8 @@ func TestDB_Campaigns(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		norm(ts...)
+		norm(campaign1)
 		if want := []*dbCampaign{campaign1}; !reflect.DeepEqual(ts, want) {
 			t.Errorf("got %+v, want %+v", ts, want)
 		}

@@ -9,7 +9,7 @@ import (
 )
 
 // CreateThread creates a thread in the DB, for use in tests only.
-func CreateThread(ctx context.Context, title string, repositoryID api.RepoID) (id int64, err error) {
+func CreateThread(ctx context.Context, title string, repositoryID api.RepoID, authorUserID int32) (id int64, err error) {
 	thread, err := internal.DBThreads{}.Create(ctx, &internal.DBThread{
 		Type:         graphqlbackend.ThreadlikeTypeThread,
 		RepositoryID: repositoryID,

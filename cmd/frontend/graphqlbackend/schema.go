@@ -4460,8 +4460,8 @@ input CreateCampaignInput {
     # The name of the campaign.
     name: String!
 
-    # The (optional) description of the campaign.
-    description: String
+    # The description of the campaign as Markdown.
+    body: String
 
     # Whether the campaign is a preview.
     preview: Boolean
@@ -4478,9 +4478,9 @@ input UpdateCampaignInput {
     # The new name of the campaign (if non-null).
     name: String
 
-    # The new description of the campaign. If it is the non-null empty string, the description is
+    # The new description of the campaign as Markdown. If it is the non-null empty string, the description is
     # set to null.
-    description: String
+    body: String
 
     # The new JSON rules array for this campaign. TODO!(sqs)
     rules: String

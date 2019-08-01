@@ -22,7 +22,7 @@ func TestGraphQL_CreateComment(t *testing.T) {
 	}
 	mocks.newGQLToComment = func(v *dbComment) (graphqlbackend.Comment, error) { return &mockComment{body: v.Body}, nil }
 	wantComment := &dbComment{
-		Object:       dbCommentObject{ThreadID: 1},
+		Object:       CommentObject{ThreadID: 1},
 		AuthorUserID: wantUserID,
 		Body:         "b",
 	}
@@ -79,7 +79,7 @@ func TestGraphQL_EditComment(t *testing.T) {
 		}
 		return &dbComment{
 			ID:           2,
-			Object:       dbCommentObject{ThreadID: 1},
+			Object:       CommentObject{ThreadID: 1},
 			AuthorUserID: 1,
 			Body:         "b1",
 		}, nil

@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
@@ -21,8 +22,10 @@ type DBThread struct {
 	Title        string
 	ExternalURL  *string
 	Status       string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+
+	PrimaryCommentID int64
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 
 	// Changeset
 	IsPreview bool
@@ -36,26 +39,38 @@ var errThreadNotFound = errors.New("thread not found")
 
 type DBThreads struct{}
 
-const selectColumns = "id, type, repository_id, title, external_url, status, is_preview, base_ref, head_ref"
+const selectColumns = "id, type, repository_id, title, external_url, status, primary_comment_id, created_at, updated_at, is_preview, base_ref, head_ref"
 
 // Create creates a thread. The thread argument's (Thread).ID field is ignored. The new thread is
 // returned.
-func (DBThreads) Create(ctx context.Context, thread *DBThread) (*DBThread, error) {
+func (DBThreads) Create(ctx context.Context, thread *DBThread, comment comments.DBObjectCommentFields) (*DBThread, error) {
 	if Mocks.Threads.Create != nil {
 		return Mocks.Threads.Create(thread)
 	}
 
-	return DBThreads{}.scanRow(dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO threads(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING `+selectColumns,
-		thread.Type,
-		thread.RepositoryID,
-		thread.Title,
-		thread.ExternalURL,
-		thread.Status,
-		thread.IsPreview,
-		thread.BaseRef,
-		thread.HeadRef,
-	))
+	if thread.PrimaryCommentID != 0 {
+		panic("campaign.PrimaryCommentID must not be set")
+	}
+
+	return thread, comments.CreateWithObject(ctx, comment, func(ctx context.Context, tx comments.QueryRowContexter, commentID int64) (*comments.CommentObject, error) {
+		var err error
+		thread, err = DBThreads{}.scanRow(tx.QueryRowContext(ctx,
+			`INSERT INTO threads(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT, $7, $8, $9) RETURNING `+selectColumns,
+			thread.Type,
+			thread.RepositoryID,
+			thread.Title,
+			thread.ExternalURL,
+			thread.Status,
+			commentID,
+			thread.IsPreview,
+			thread.BaseRef,
+			thread.HeadRef,
+		))
+		if err != nil {
+			return nil, err
+		}
+		return &comments.CommentObject{ThreadID: thread.ID}, nil
+	})
 }
 
 type DBThreadUpdate struct {

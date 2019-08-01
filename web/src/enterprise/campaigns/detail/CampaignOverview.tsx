@@ -5,6 +5,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { PersonLink } from '../../../user/PersonLink'
+import { Comment } from '../../comments/Comment'
 import { CampaignAreaContext } from './CampaignArea'
 import { CampaignHeaderEditableName } from './header/CampaignHeaderEditableName'
 
@@ -41,8 +42,6 @@ export const CampaignOverview: React.FunctionComponent<Props> = ({
             </div>
         </div>
         <hr className="my-0" />
-        {campaign.body && (
-            <Markdown dangerousInnerHTML={renderMarkdown(campaign.body)} className="mb-4" />
-        )}
+        <Comment comment={campaign} />
     </div>
 )

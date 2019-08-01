@@ -39,7 +39,7 @@ func TestDB_Comments(t *testing.T) {
 	}
 
 	wantComment0 := &dbComment{
-		Object:       dbCommentObject{ThreadID: thread0},
+		Object:       CommentObject{ThreadID: thread0},
 		AuthorUserID: user.ID,
 		Body:         "b0",
 	}
@@ -48,7 +48,7 @@ func TestDB_Comments(t *testing.T) {
 		t.Fatal(err)
 	}
 	comment1, err := dbComments{}.Create(ctx, &dbComment{
-		Object:       dbCommentObject{ThreadID: thread1},
+		Object:       CommentObject{ThreadID: thread1},
 		AuthorUserID: user.ID,
 		Body:         "b1",
 	})
@@ -104,7 +104,7 @@ func TestDB_Comments(t *testing.T) {
 
 	{
 		// List thread0's comments.
-		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{Object: dbCommentObject{ThreadID: thread0}})
+		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{Object: CommentObject{ThreadID: thread0}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -116,7 +116,7 @@ func TestDB_Comments(t *testing.T) {
 
 	{
 		// List thread1's comments.
-		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{Object: dbCommentObject{ThreadID: thread1}})
+		ts, err := dbComments{}.List(ctx, dbCommentsListOptions{Object: CommentObject{ThreadID: thread1}})
 		if err != nil {
 			t.Fatal(err)
 		}

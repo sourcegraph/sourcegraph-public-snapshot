@@ -15,7 +15,7 @@ func TestGraphQL_CommentConnection(t *testing.T) {
 	)
 	mocks.newGQLToComment = func(v *dbComment) (graphqlbackend.Comment, error) { return &mockComment{body: v.Body}, nil }
 	mocks.comments.List = func(dbCommentsListOptions) ([]*dbComment, error) {
-		return []*dbComment{{ID: wantCommentID, Object: dbCommentObject{ThreadID: wantThreadID}, Body: "b"}}, nil
+		return []*dbComment{{ID: wantCommentID, Object: CommentObject{ThreadID: wantThreadID}, Body: "b"}}, nil
 	}
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
