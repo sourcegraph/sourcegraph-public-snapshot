@@ -125,14 +125,26 @@ func addTriggerGoBenchmarks(c Config) func(*bk.Pipeline) {
 }
 
 func addGoBenchmarks(c Config) func(*bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		after := c.commit
-		before := gitRevParse("origin/" + c.branch + "^")
-		pipeline.AddStep("benchdiff :go: :100: :clock5:",
+	benchstat := func(label, commit string, pipeline *bk.Pipeline) (benchfile string) {
+		benchfile = commit + "." + label + ".bench.txt"
+		pipeline.AddStep("benchstat "+label+" "+commit,
 			bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
 			bk.Cmd("./cmd/replacer/build.sh installComby"),       // for replacer tests
-			bk.Cmd("./dev/benchdiff.sh "+before+" "+after),
-			bk.ArtifactPaths("*.bench.txt"),
+			bk.Cmd("./dev/benchstat.sh "+commit+" | tee "+benchfile),
+			bk.ArtifactPaths(benchfile),
+		)
+		return benchfile
+	}
+
+	return func(pipeline *bk.Pipeline) {
+		prev := gitRevParse("origin/" + c.branch + "^")
+		old := benchstat("old", prev, pipeline)
+		new := benchstat("new", c.commit, pipeline)
+		wait(pipeline)
+		pipeline.AddStep("benchdiff",
+			bk.Cmd("buildkite-agent artifact download '*.bench.txt' ."),
+			bk.Cmd("./dev/benchdiff.sh "+old+" "+new+" | tee diff-"+prev+"-"+c.commit+".bench.txt"),
+			bk.ArtifactPaths("diff*.bench.txt"),
 		)
 	}
 }
