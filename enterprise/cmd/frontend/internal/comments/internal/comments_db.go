@@ -122,10 +122,11 @@ func (o DBCommentsListOptions) sqlConditions() []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("body ILIKE %s", "%"+o.Query+"%"))
 	}
 	if o.Object.ThreadID != 0 {
-		conds = append(conds, sqlf.Sprintf("thread_id=%d", o.Object.ThreadID))
+		// TODO!(sqs): add recursion
+		conds = append(conds, sqlf.Sprintf("thread_id=%d OR parent_comment_id=(SELECT primary_comment_id FROM threads WHERE id=%d)", o.Object.ThreadID, o.Object.ThreadID))
 	}
 	if o.Object.CampaignID != 0 {
-		conds = append(conds, sqlf.Sprintf("campaign_id=%d", o.Object.CampaignID))
+		conds = append(conds, sqlf.Sprintf("campaign_id=%d OR parent_comment_id=(SELECT primary_comment_id FROM campaigns WHERE id=%d)", o.Object.CampaignID, o.Object.CampaignID))
 	}
 	return conds
 }

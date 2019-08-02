@@ -22,7 +22,7 @@ export interface CampaignAreaContext
     campaign: GQL.ICampaign
 
     /** Called to refresh the campaign. */
-    onCampaignUpdate: () => void
+    onCampaignUpdate: (update: Partial<GQL.ICampaign>) => void
 
     location: H.Location
     history: H.History
@@ -93,14 +93,19 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
             overviewComponent={CampaignOverview}
             pages={[
                 {
-                    title: 'Rules',
+                    title: 'Activity',
                     path: '/',
                     exact: true,
+                    render: () => <CampaignActvity {...context} className={PAGE_CLASS_NAME} />,
+                },
+                {
+                    title: 'Rules',
+                    path: '/rules',
                     render: () => <CampaignRulesList {...context} className={PAGE_CLASS_NAME} />,
                 },
                 {
                     title: 'Changesets',
-                    path: '/changesetes',
+                    path: '/changesets',
                     render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
                 },
                 {

@@ -125,7 +125,7 @@ func (v ToComment) comment() interface {
 	case v.Campaign != nil:
 		return v.Campaign
 	default:
-		panic("invalid ToComment")
+		panic("invalid Comment")
 	}
 }
 

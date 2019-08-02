@@ -1000,6 +1000,9 @@ type Query {
     # A list of namespaces affiliated with the viewer.
     viewerNamespaces: [Namespace!]!
 
+    # A commentable by ID.
+    commentable(id: ID!): Commentable
+
     # A list of comments.
     comments(
         # Returns the first n comments from the list.
@@ -4152,6 +4155,18 @@ interface Comment {
     updatedAt: DateTime!
 }
 
+# A commentable is an object that can be commented on.
+interface Commentable {
+    # Whether the viewer can comment on this object.
+    viewerCanComment: Boolean!
+
+    # A list of comments on the object.
+    comments(
+        # Return the first n comments in the list.
+        first: Int
+    ): CommentConnection!
+}
+
 # Input arguments for creating a comment.
 input CreateCommentInput {
     # The object on which to create the comment.
@@ -4494,7 +4509,7 @@ input UpdateCampaignInput {
 }
 
 # A campaign is a set of related issues and changesets.
-type Campaign implements Node & Comment {
+type Campaign implements Node & Comment & Commentable {
     # The unique ID for the campaign.
     id: ID!
 
@@ -4530,6 +4545,15 @@ type Campaign implements Node & Comment {
 
     # Whether the viewer can update this thread.
     viewerCanUpdate: Boolean!
+
+    # Whether the viewer can comment on this campaign.
+    viewerCanComment: Boolean!
+
+    # A list of comments on the campaign.
+    comments(
+        # Return the first n comments in the list.
+        first: Int
+    ): CommentConnection!
 
     # A list of threads, issues, and changesets in this campaign.
     threadOrIssueOrChangesets(

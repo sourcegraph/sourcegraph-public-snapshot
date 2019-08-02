@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { map, startWith } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../backend/graphql'
 
 const LOADING: 'loading' = 'loading'
@@ -12,9 +12,10 @@ const LOADING: 'loading' = 'loading'
  *
  * @param campaign The campaign ID.
  */
-export const useCampaignByID = (campaign: GQL.ID): [typeof LOADING | GQL.ICampaign | null | ErrorLike, () => void] => {
+export const useCampaignByID = (
+    campaign: GQL.ID
+): [typeof LOADING | GQL.ICampaign | null | ErrorLike, (update?: Partial<GQL.ICampaign>) => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
-    const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
 
     const [result, setResult] = useState<typeof LOADING | GQL.ICampaign | null | ErrorLike>(LOADING)
     useEffect(() => {
@@ -59,5 +60,19 @@ export const useCampaignByID = (campaign: GQL.ID): [typeof LOADING | GQL.ICampai
             .subscribe(setResult, err => setResult(asError(err)))
         return () => subscription.unsubscribe()
     }, [campaign, updateSequence])
-    return [result, incrementUpdateSequence]
+
+    const onUpdate = useCallback(
+        (update?: Partial<GQL.ICampaign>) => {
+            if (update && result && result !== LOADING && !isErrorLike(result)) {
+                // Apply immediate partial update.
+                setResult({ ...result, ...update })
+            } else {
+                // Fetch from server.
+                setUpdateSequence(updateSequence + 1)
+            }
+        },
+        [result, updateSequence]
+    )
+
+    return [result, onUpdate]
 }

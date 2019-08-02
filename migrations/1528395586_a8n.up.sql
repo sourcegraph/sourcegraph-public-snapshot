@@ -53,6 +53,7 @@ CREATE TABLE comments (
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
 
+	parent_comment_id bigint REFERENCES comments(id) ON DELETE CASCADE,
     thread_id bigint REFERENCES threads(id) ON DELETE CASCADE,
     campaign_id bigint REFERENCES campaigns(id) ON DELETE CASCADE
 );

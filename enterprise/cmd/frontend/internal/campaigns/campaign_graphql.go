@@ -90,6 +90,15 @@ func (v *gqlCampaign) ViewerCanUpdate(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+func (v *gqlCampaign) ViewerCanComment(context.Context) (bool, error) {
+	// TODO!(sqs)
+	return true, nil
+}
+
+func (v *gqlCampaign) Comments(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CommentConnection, error) {
+	return graphqlbackend.CommentsForObject(ctx, v.ID(), arg)
+}
+
 func (v *gqlCampaign) URL(ctx context.Context) (string, error) {
 	namespace, err := v.Namespace(ctx)
 	if err != nil {

@@ -1,18 +1,14 @@
+import H from 'history'
 import React from 'react'
-import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { ExtensionsControllerNotificationProps } from '../../../../../shared/src/extensions/controller'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { renderMarkdown } from '../../../../../shared/src/util/markdown'
-import { Timestamp } from '../../../components/time/Timestamp'
-import { PersonLink } from '../../../user/PersonLink'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { Comment } from '../../comments/Comment'
 import { CampaignAreaContext } from './CampaignArea'
 import { CampaignHeaderEditableName } from './header/CampaignHeaderEditableName'
 
-interface Props
-    extends Pick<CampaignAreaContext, 'campaign' | 'onCampaignUpdate'>,
-        ExtensionsControllerNotificationProps {
+interface Props extends Pick<CampaignAreaContext, 'campaign' | 'onCampaignUpdate'>, ExtensionsControllerProps {
     className?: string
+
+    history: H.History
 }
 
 /**
@@ -31,8 +27,6 @@ export const CampaignOverview: React.FunctionComponent<Props> = ({
             onCampaignUpdate={onCampaignUpdate}
             className="mb-3"
         />
-        <div className="d-flex align-items-center py-3"></div>
-        <hr className="my-3" />
-        <Comment comment={campaign} createdVerb="created campaign" />
+        <Comment {...props} comment={campaign} onCommentUpdate={onCampaignUpdate} createdVerb="created campaign" />
     </div>
 )
