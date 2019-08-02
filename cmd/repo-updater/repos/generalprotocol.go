@@ -147,7 +147,7 @@ func (s *GeneralProtocolSource) authenticatedRemoteURL(repo *generalprotocol.Rep
 		return fallbackURL
 	}
 
-	if s.info.TokenAsUsername && s.config.Token != "" {
+	if s.config.Token != "" {
 		u.User = url.User(s.config.Token)
 		return u.String()
 	}
@@ -205,7 +205,7 @@ func (s *GeneralProtocolSource) listAllRepos(ctx context.Context) ([]*generalpro
 			var repos []*generalprotocol.Repo
 			for !page.IsLastPage {
 				if repos, page, err = s.client.UserRepos(ctx, page, o); err != nil {
-					ch <- batch{err: errors.Wrapf(err, "bibucketcloud.teams: item=%q, page=%+v", o, page)}
+					ch <- batch{err: errors.Wrapf(err, "generalprotocol.orgs: item=%q, page=%+v", o, page)}
 					break
 				}
 

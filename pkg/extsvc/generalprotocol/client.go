@@ -67,13 +67,12 @@ func NewClient(endpoint *url.URL, httpClient httpcli.Doer) *Client {
 }
 
 type Info struct {
-	Version         int  `json:"version"`
-	MaxPageLen      int  `json:"maxPageLen"`
-	TokenAsUsername bool `json:"tokenAsUsername"`
+	Version    int `json:"version"`
+	MaxPageLen int `json:"maxPageLen"`
 }
 
 func (c *Client) Info(ctx context.Context) (*Info, error) {
-	req, err := http.NewRequest("GET", c.URL.Path+"/info", nil)
+	req, err := http.NewRequest("GET", c.URL.Path+"info", nil)
 	if err != nil {
 		return nil, err
 	}

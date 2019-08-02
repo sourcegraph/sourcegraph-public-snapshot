@@ -63,7 +63,7 @@ const GeneralProtocolSchemaJSON = `{
     "orgs": {
       "description": "An array of team names identifying code host organizations whose repositories should be mirrored on Sourcegraph.",
       "type": "array",
-      "items": { "type": "string", "pattern": "^\\w+$" },
+      "items": { "type": "string", "pattern": "^[\\w-]+$" },
       "examples": [["name"], ["kubernetes", "golang", "facebook"]]
     }
   }
