@@ -45,7 +45,7 @@ describe('e2e test suite', function(this: any): void {
                 repos: repoSlugs,
                 repositoryQuery: ['none'],
             }),
-            ensureRepos: repoSlugs,
+            ensureRepos: repoSlugs.map(slug => `github.com/${slug}`),
         })
     }
 
@@ -117,6 +117,31 @@ describe('e2e test suite', function(this: any): void {
             await driver.page.waitFor(
                 () => !document.querySelector('[data-e2e-external-service-name="e2e-github-test-2"]')
             )
+        })
+
+        test('External service repositoryPathPattern', async () => {
+            const repo = 'sourcegraph/go-blame' // Tiny repo, fast to clone
+            const repositoryPathPattern = 'foobar/{host}/{nameWithOwner}'
+            const slug = `github.com/${repo}`
+            const pathPatternSlug = `foobar/github.com/${repo}`
+
+            const config = {
+                kind: 'github',
+                displayName: 'e2e-test-github-repoPathPattern',
+                config: JSON.stringify({
+                    url: 'https://github.com',
+                    token: gitHubToken,
+                    repos: [repo],
+                    repositoryPathPattern,
+                }),
+                // Make sure repository is named according to path pattern
+                ensureRepos: [pathPatternSlug],
+            }
+            await driver.ensureHasExternalService(config)
+
+            // Make sure repository slug without path pattern redirects to path pattern
+            await driver.page.goto(baseURL + '/' + slug)
+            await driver.assertWindowLocationPrefix('/' + pathPatternSlug)
         })
     })
 
