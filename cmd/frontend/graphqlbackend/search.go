@@ -370,6 +370,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		// Copy to avoid race condition.
 		includePatterns = append([]string{}, includePatterns...)
 	}
+
 	excludePatterns := op.minusRepoFilters
 
 	maxRepoListSize := maxReposToSearch()
@@ -403,22 +404,41 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		return nil, nil, false, err
 	}
 
-	tr.LazyPrintf("Repos.List - start")
-	repos, err := db.Repos.List(ctx, db.ReposListOptions{
-		OnlyRepoIDs:     true,
-		IncludePatterns: includePatterns,
-		ExcludePattern:  unionRegExps(excludePatterns),
-		Enabled:         true,
-		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-		LimitOffset:  &db.LimitOffset{Limit: maxRepoListSize + 1},
-		NoForks:      op.noForks,
-		OnlyForks:    op.onlyForks,
-		NoArchived:   op.noArchived,
-		OnlyArchived: op.onlyArchived,
-	})
-	tr.LazyPrintf("Repos.List - done")
-	if err != nil {
-		return nil, nil, false, err
+	var defaultRepos []*types.Repo
+	// TODO(ijt): make sure filters like file: don't prevent default repos from being used.
+	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
+		// TODO(ijt): check config like search.defaultRepos.enabled so installations not
+		// using default_repos won't have to pay the ~0.5 msec cost of this query.
+		defaultRepos, err = db.DefaultRepos.List(ctx)
+		if err != nil {
+			return nil, nil, false, err
+		}
+	}
+
+	var repos []*types.Repo
+	if len(defaultRepos) > 0 {
+		repos = defaultRepos
+		if len(repos) > maxRepoListSize {
+			repos = repos[:maxRepoListSize]
+		}
+	} else {
+		tr.LazyPrintf("Repos.List - start")
+		repos, err = db.Repos.List(ctx, db.ReposListOptions{
+			OnlyRepoIDs:     true,
+			IncludePatterns: includePatterns,
+			ExcludePattern:  unionRegExps(excludePatterns),
+			Enabled:         true,
+			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
+			LimitOffset:  &db.LimitOffset{Limit: maxRepoListSize + 1},
+			NoForks:      op.noForks,
+			OnlyForks:    op.onlyForks,
+			NoArchived:   op.noArchived,
+			OnlyArchived: op.onlyArchived,
+		})
+		tr.LazyPrintf("Repos.List - done")
+		if err != nil {
+			return nil, nil, false, err
+		}
 	}
 	overLimit = len(repos) >= maxRepoListSize
 
