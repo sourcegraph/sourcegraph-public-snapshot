@@ -131,12 +131,12 @@ func addGoBenchmarks(c Config) func(*bk.Pipeline) {
 		newout := c.commit + ".new.bench.txt"
 
 		pipeline.AddStep("benchdiff.sh "+old+" "+new,
+			bk.Cmd("set -euo pipefail"),
 			bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
 			bk.Cmd("./cmd/replacer/build.sh installComby"),       // for replacer tests
-			bk.Cmd("./dev/ci/bench.sh "+old+" > "+oldout),
-			bk.Cmd("./dev/ci/bench.sh "+new+" > "+newout),
-			bk.Cmd("./dev/ci/benchdiff.sh "+oldout+" "+newout+" > diff-"+old+"-"+new+".bench.txt"),
-			bk.Cmd("cat diff*.bench.txt"),
+			bk.Cmd("./dev/ci/bench.sh "+old+" | tee "+oldout),
+			bk.Cmd("./dev/ci/bench.sh "+new+" | tee "+newout),
+			bk.Cmd("./dev/ci/benchdiff.sh "+oldout+" "+newout+" | tee diff-"+old+"-"+new+".bench.txt"),
 			bk.ArtifactPaths("*.bench.txt"),
 		)
 	}
