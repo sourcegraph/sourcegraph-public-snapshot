@@ -32,7 +32,4 @@ ON default_repos.repo_id = repo.id
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-
-	// 🚨 SECURITY: This enforces repository permissions
-	return authzFilter(ctx, repos, authz.Read)
 }
