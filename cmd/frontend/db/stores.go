@@ -3,7 +3,7 @@ package db
 var (
 	AccessTokens              = &accessTokens{}
 	ExternalServices          = &ExternalServicesStore{}
-	DefaultRepos			  = &defaultRepos{}
+	DefaultRepos              = &defaultRepos{}
 	DiscussionThreads         = &discussionThreads{}
 	DiscussionComments        = &discussionComments{}
 	DiscussionMailReplyTokens = &discussionMailReplyTokens{}
