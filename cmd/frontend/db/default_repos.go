@@ -10,7 +10,7 @@ import (
 type defaultRepos struct{}
 
 func (s *defaultRepos) List(ctx context.Context) (results []*types.Repo, err error) {
-	q := `
+	const q = `
 SELECT default_repos.repo_id, repo.name
 FROM default_repos
 JOIN repo
