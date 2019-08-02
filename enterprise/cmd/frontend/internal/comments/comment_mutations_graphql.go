@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
 )
 
 func CommentActorFromContext(ctx context.Context) (authorUserID int32, err error) {
@@ -19,9 +20,14 @@ func CommentActorFromContext(ctx context.Context) (authorUserID int32, err error
 	return actor.DatabaseID(), nil
 }
 
-func (GraphQLResolver) CreateComment(ctx context.Context, arg *graphqlbackend.CreateCommentArgs) (graphqlbackend.Comment, error) {
+func (GraphQLResolver) AddReplyComment(ctx context.Context, arg *graphqlbackend.AddReplyCommentArgs) (graphqlbackend.Comment, error) {
 	// TODO!(sqs): add auth checks
 	authorUserID, err := CommentActorFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	parentComment, err := commentByGQLID(ctx, arg.Input.ParentComment)
 	if err != nil {
 		return nil, err
 	}
@@ -29,12 +35,8 @@ func (GraphQLResolver) CreateComment(ctx context.Context, arg *graphqlbackend.Cr
 	v := &internal.DBComment{
 		AuthorUserID: authorUserID,
 		Body:         arg.Input.Body,
+		Object:       types.CommentObject{ParentCommentID: parentComment.ID},
 	}
-	v.Object, err = commentObjectFromGQLID(arg.Input.Node)
-	if err != nil {
-		return nil, err
-	}
-
 	comment, err := internal.DBComments{}.Create(ctx, nil, v)
 	if err != nil {
 		return nil, err

@@ -15,17 +15,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
 )
 
-func TestGraphQL_CreateComment(t *testing.T) {
+func TestGraphQL_AddReplyComment(t *testing.T) {
 	internal.ResetMocks()
-	const wantUserID = 1
-	wantThreadGQLID := threadlike.MarshalID(threadlike.GQLTypeThread, 1)
+	const (
+		wantUserID          = 1
+		wantThreadID        = 1
+		wantThreadCommentID = 3
+	)
+	wantThreadGQLID := threadlike.MarshalID(threadlike.GQLTypeThread, wantThreadID)
 	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{ID: wantUserID}, nil
 	}
+	mockCommentByGQLID = func(id graphql.ID) (*internal.DBComment, error) {
+		if id != wantThreadGQLID {
+			t.Errorf("got thread ID %q, want %q", id, wantThreadGQLID)
+		}
+		return &internal.DBComment{ID: wantThreadCommentID}, nil
+	}
+	defer func() { mockCommentByGQLID = nil }()
 	mockNewGQLToComment = func(v *internal.DBComment) (graphqlbackend.Comment, error) { return &mockComment{body: v.Body}, nil }
 	defer func() { mockNewGQLToComment = nil }()
 	wantComment := &internal.DBComment{
-		Object:       comments_types.CommentObject{ThreadID: 1},
+		Object:       comments_types.CommentObject{ParentCommentID: wantThreadCommentID},
 		AuthorUserID: wantUserID,
 		Body:         "b",
 	}
@@ -43,14 +54,14 @@ func TestGraphQL_CreateComment(t *testing.T) {
 			Schema: graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					createComment(input: { node: "` + string(wantThreadGQLID) + `", body: "b" }) {
+					addReplyComment(input: { parentComment: "` + string(wantThreadGQLID) + `", body: "b" }) {
 						body
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"createComment": {
+					"addReplyComment": {
 						"body": "b"
 					}
 				}
