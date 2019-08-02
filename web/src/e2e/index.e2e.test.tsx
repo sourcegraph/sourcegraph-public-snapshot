@@ -460,6 +460,26 @@ describe('e2e test suite', function(this: any): void {
                     expect(symbolTypes).toEqual(test.symbolTypes)
                 }
             })
+
+            test('navigates to file on symbol click', async () => {
+                const repoBaseURL =
+                    baseURL + '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-'
+                const symbolPath = '/blob/cmd/go-diff/go-diff.go#L19:2-19:10'
+
+                await driver.page.goto(repoBaseURL + '/tree/cmd')
+
+                await (await driver.page.waitForSelector('.tab-bar__tab[data-e2e-tab="symbols"]')).click()
+
+                await driver.page.waitForSelector('.repo-rev-sidebar-symbols-node__name', { visible: true })
+
+                await (await driver.page.waitForSelector(
+                    `.repo-rev-sidebar-symbols-node__link[href*="${symbolPath}"]`,
+                    {
+                        visible: true,
+                    }
+                )).click()
+                await driver.assertWindowLocation(repoBaseURL + symbolPath, true)
+            })
         })
 
         describe('directory page', () => {
