@@ -128,7 +128,8 @@ export const Comment: React.FunctionComponent<Props> = ({
                     <strong>
                         <PersonLink user={comment.author as GQL.IUser /* TODO!(sqs) */} />
                     </strong>{' '}
-                    {createdVerb} {comment.updatedAt !== comment.createdAt && <> &bull; edited</>}
+                    {createdVerb} <Timestamp date={comment.createdAt} />{' '}
+                    {comment.updatedAt !== comment.createdAt && <> &bull; edited</>}
                 </span>
                 {comment.viewerCanUpdate && (
                     <span>

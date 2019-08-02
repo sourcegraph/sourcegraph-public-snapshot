@@ -3,7 +3,7 @@
         color: var(--#{$name});
     }
     .bg-#{$name} {
-        background-color: var(--#{$name});
+        background-color: var(--#{$name}) !important;
     }
 }
 @each $name, $color in $theme-colors {
