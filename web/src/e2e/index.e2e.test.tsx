@@ -45,7 +45,7 @@ describe('e2e test suite', function(this: any): void {
                 repos: repoSlugs,
                 repositoryQuery: ['none'],
             }),
-            ensureRepos: repoSlugs,
+            ensureRepos: repoSlugs.map(slug => `github.com/${slug}`),
         })
     }
 
@@ -134,19 +134,10 @@ describe('e2e test suite', function(this: any): void {
                     repos: [repo],
                     repositoryPathPattern,
                 }),
+                // Make sure repository is named according to path pattern
+                ensureRepos: [pathPatternSlug],
             }
             await driver.ensureHasExternalService(config)
-
-            await driver.page.goto(baseURL + '/site-admin/external-services')
-            await (await driver.page.waitForSelector(
-                `[data-e2e-external-service-name="${config.displayName}"] .e2e-edit-external-service-button`
-            )).click()
-
-            // Make sure repository is named according to path pattern
-            await driver.page.goto(baseURL + `/site-admin/repositories?query=${encodeURIComponent(pathPatternSlug)}`)
-            await driver.page.waitForSelector(`.repository-node[data-e2e-repository='${pathPatternSlug}']`, {
-                visible: true,
-            })
 
             // Make sure repository slug without path pattern redirects to path pattern
             await driver.page.goto(baseURL + '/' + slug)

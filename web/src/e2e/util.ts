@@ -162,7 +162,7 @@ export class Driver {
             // Clone the repositories
             for (const slug of ensureRepos) {
                 await this.page.goto(baseURL + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
-                await this.page.waitForSelector(`.repository-node[data-e2e-repository='github.com/${slug}']`, {
+                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, {
                     visible: true,
                 })
             }
