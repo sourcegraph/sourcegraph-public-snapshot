@@ -1,4 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { truncate } from 'lodash'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
@@ -93,48 +94,102 @@ export const StatsPage: React.FunctionComponent<Props> = ({ location, history })
                 <div className="alert alert-danger">{stats.message}</div>
             ) : (
                 <>
-                    {stats.languages.length > 0 ? (
-                        <div className="d-flex border align-items-stretch">
-                            <div className="flex-1 border-right" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
-                                <table className="table mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Language</th>
-                                            <th>Lines</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {stats.languages.map(({ name, totalBytes }) => (
-                                            <tr key={name}>
-                                                <td>
-                                                    <Link to={urlToSearchWithExtraQuery(`lang:${name.toLowerCase()}`)}>
-                                                        {name}
-                                                    </Link>
-                                                </td>
-                                                <td>{numberWithCommas(totalBytes)}</td>
+                    <div className="mb-3">
+                        {stats.languages.length > 0 ? (
+                            <div className="d-flex border align-items-stretch">
+                                <div className="flex-1 border-right" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+                                    <table className="table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Language</th>
+                                                <th>Lines</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {stats.languages.map(({ name, totalBytes }) => (
+                                                <tr key={name}>
+                                                    <td>
+                                                        <Link
+                                                            to={urlToSearchWithExtraQuery(`lang:${name.toLowerCase()}`)}
+                                                        >
+                                                            {name}
+                                                        </Link>
+                                                    </td>
+                                                    <td>{numberWithCommas(totalBytes)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <PieChart
+                                    data={stats.languages.slice(0, COLORS.length).map(({ name, totalBytes }, i) => ({
+                                        title: name,
+                                        value: totalBytes,
+                                        color: COLORS[i % COLORS.length],
+                                    }))}
+                                    labelStyle={{ fillColor: 'white', fill: 'white', fontSize: '0.25rem' }}
+                                    label={props => props.data[props.dataIndex].title}
+                                    // label={(props: LabelProps) => (
+                                    //     <span className="text-white">{props.data[props.dataIndex].title}</span>
+                                    // )}
+                                    className="flex-1 m-6 p-3"
+                                    style={{ maxHeight: '22rem' }}
+                                />
                             </div>
-                            <PieChart
-                                data={stats.languages.slice(0, COLORS.length).map(({ name, totalBytes }, i) => ({
-                                    title: name,
-                                    value: totalBytes,
-                                    color: COLORS[i % COLORS.length],
-                                }))}
-                                labelStyle={{ fillColor: 'white', fill: 'white', fontSize: '0.25rem' }}
-                                label={props => props.data[props.dataIndex].title}
-                                // label={(props: LabelProps) => (
-                                //     <span className="text-white">{props.data[props.dataIndex].title}</span>
-                                // )}
-                                className="flex-1 m-6 p-3"
-                                style={{ maxHeight: '22rem' }}
-                            />
-                        </div>
-                    ) : (
-                        <div className="text-muted p-2">No language statistics available</div>
-                    )}
+                        ) : (
+                            <div className="text-muted p-2">No language statistics available</div>
+                        )}
+                    </div>
+                    <div className="mb-3">
+                        {stats.owners.length > 0 ? (
+                            <div className="d-flex border align-items-stretch">
+                                <div className="flex-1 border-right" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+                                    <table className="table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Owner</th>
+                                                <th>Lines</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {stats.owners.map(({ owner, totalBytes }) => (
+                                                <tr key={name}>
+                                                    <td>
+                                                        <Link
+                                                            to={urlToSearchWithExtraQuery(
+                                                                `${
+                                                                    query.includes('type:diff') ? '' : 'type:diff '
+                                                                }author:${owner}`
+                                                            )}
+                                                        >
+                                                            {owner}
+                                                        </Link>
+                                                    </td>
+                                                    <td>{numberWithCommas(totalBytes)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <PieChart
+                                    data={stats.owners.slice(0, COLORS.length).map(({ owner, totalBytes }, i) => ({
+                                        title: truncate(owner, 12),
+                                        value: totalBytes,
+                                        color: COLORS[i % COLORS.length],
+                                    }))}
+                                    labelStyle={{ fillColor: 'white', fill: 'white', fontSize: '0.25rem' }}
+                                    label={props => props.data[props.dataIndex].title}
+                                    // label={(props: LabelProps) => (
+                                    //     <span className="text-white">{props.data[props.dataIndex].title}</span>
+                                    // )}
+                                    className="flex-1 m-6 p-3"
+                                    style={{ maxHeight: '22rem' }}
+                                />
+                            </div>
+                        ) : (
+                            <div className="text-muted p-2">No language statistics available</div>
+                        )}
+                    </div>
                 </>
             )}
         </div>

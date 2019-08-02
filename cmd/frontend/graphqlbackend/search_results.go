@@ -543,6 +543,10 @@ type searchResultsStats struct {
 	JSparkline              []int32
 
 	sr *searchResolver
+
+	once   sync.Once
+	srs    *searchResultsResolver
+	srsErr error
 }
 
 func (srs *searchResultsStats) ApproximateResultCount() string { return srs.JApproximateResultCount }

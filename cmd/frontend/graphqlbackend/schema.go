@@ -1165,6 +1165,11 @@ type LanguageStatistics {
     type: String!
 }
 
+type CodeOwnerStatistics {
+    owner: String!
+    totalBytes: Int!
+}
+
 # Statistics about search results.
 type SearchResultsStats {
     # The approximate number of results returned.
@@ -1173,6 +1178,8 @@ type SearchResultsStats {
     sparkline: [Int!]!
 
     languages: [LanguageStatistics!]!
+
+    owners: [CodeOwnerStatistics!]!
 }
 
 # A search filter.

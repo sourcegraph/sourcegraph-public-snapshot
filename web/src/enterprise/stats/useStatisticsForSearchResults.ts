@@ -24,6 +24,10 @@ const queryStatisticsForSearchResults = (query: string): Observable<Result> =>
                             totalBytes
                             type
                         }
+                        owners {
+                            owner
+                            totalBytes
+                        }
                     }
                 }
             }
