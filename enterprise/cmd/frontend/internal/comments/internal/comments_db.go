@@ -112,8 +112,9 @@ func (DBComments) GetByID(ctx context.Context, id int64) (*DBComment, error) {
 
 // DBCommentsListOptions contains options for listing comments.
 type DBCommentsListOptions struct {
-	Query  string // only list comments matching this query (case-insensitively)
-	Object types.CommentObject
+	Query                string // only list comments matching this query (case-insensitively)
+	Object               types.CommentObject
+	ObjectPrimaryComment bool // only return the object's primary comment
 	*db.LimitOffset
 }
 
@@ -125,12 +126,19 @@ func (o DBCommentsListOptions) sqlConditions() []*sqlf.Query {
 	if o.Object.ParentCommentID != 0 {
 		conds = append(conds, sqlf.Sprintf("parent_comment_id=%d", o.Object.ParentCommentID))
 	}
-	if o.Object.ThreadID != 0 {
-		conds = append(conds, sqlf.Sprintf("thread_id=%d OR parent_comment_id=(SELECT primary_comment_id FROM threads WHERE id=%d)", o.Object.ThreadID, o.Object.ThreadID))
+
+	addObjectCondition := func(id int64, column, otherTable string) {
+		if id != 0 {
+			objectConds := []*sqlf.Query{sqlf.Sprintf(column+"=%d", id)}
+			if !o.ObjectPrimaryComment {
+				objectConds = append(objectConds, sqlf.Sprintf("parent_comment_id=(SELECT primary_comment_id FROM "+otherTable+" WHERE id=%d)", id))
+			}
+			conds = append(conds, sqlf.Join(objectConds, " OR "))
+		}
 	}
-	if o.Object.CampaignID != 0 {
-		conds = append(conds, sqlf.Sprintf("campaign_id=%d OR parent_comment_id=(SELECT primary_comment_id FROM campaigns WHERE id=%d)", o.Object.CampaignID, o.Object.CampaignID))
-	}
+	addObjectCondition(o.Object.ThreadID, "thread_id", "threads")
+	addObjectCondition(o.Object.CampaignID, "campaign_id", "campaigns")
+
 	return conds
 }
 

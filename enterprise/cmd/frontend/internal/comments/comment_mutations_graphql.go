@@ -20,7 +20,7 @@ func CommentActorFromContext(ctx context.Context) (authorUserID int32, err error
 	return actor.DatabaseID(), nil
 }
 
-func (GraphQLResolver) AddReplyComment(ctx context.Context, arg *graphqlbackend.AddReplyCommentArgs) (graphqlbackend.Comment, error) {
+func (GraphQLResolver) AddCommentReply(ctx context.Context, arg *graphqlbackend.AddCommentReplyArgs) (graphqlbackend.Comment, error) {
 	// TODO!(sqs): add auth checks
 	authorUserID, err := CommentActorFromContext(ctx)
 	if err != nil {

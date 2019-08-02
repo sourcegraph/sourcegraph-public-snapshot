@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
 )
 
-func TestGraphQL_AddReplyComment(t *testing.T) {
+func TestGraphQL_AddCommentReply(t *testing.T) {
 	internal.ResetMocks()
 	const (
 		wantUserID          = 1
@@ -54,14 +54,14 @@ func TestGraphQL_AddReplyComment(t *testing.T) {
 			Schema: graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					addReplyComment(input: { parentComment: "` + string(wantThreadGQLID) + `", body: "b" }) {
+					addCommentReply(input: { parentComment: "` + string(wantThreadGQLID) + `", body: "b" }) {
 						body
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"addReplyComment": {
+					"addCommentReply": {
 						"body": "b"
 					}
 				}

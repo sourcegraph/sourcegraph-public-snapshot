@@ -8,11 +8,11 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../backend/graphql'
 import { CommentForm } from './CommentForm'
 
-const createComment = (args: GQL.ICreateCommentOnMutationArguments): Promise<void> =>
+const addCommentReply = (args: GQL.IAddCommentReplyOnMutationArguments): Promise<void> =>
     mutateGraphQL(
         gql`
-            mutation CreateComment($input: CreateCommentInput!) {
-                createComment(input: $input) {
+            mutation AddCommentReply($input: AddCommentReplyInput!) {
+                addCommentReply(input: $input) {
                     id
                 }
             }
@@ -49,10 +49,9 @@ export const NewCommentReplyForm: React.FunctionComponent<Props> = ({
             ;(async () => {
                 setIsLoading(true)
                 try {
-                    await createComment({ input: { node: commentable.id, body } })
+                    await addCommentReply({ input: { parentComment: commentable.id, body } })
+                    setIsLoading(false)
                     onCommentableUpdate()
-                    setIsLoading(false)
-                    setIsLoading(false)
                 } catch (err) {
                     setIsLoading(false)
                     props.extensionsController.services.notifications.showMessages.next({

@@ -57,3 +57,5 @@ func (v *gqlCommentReply) ViewerCannotCommentReasons(ctx context.Context) ([]gra
 func (v *gqlCommentReply) Comments(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CommentConnection, error) {
 	return graphqlbackend.CommentsForObject(ctx, v.ID(), arg)
 }
+
+func (gqlCommentReply) IsCommentReply() {}

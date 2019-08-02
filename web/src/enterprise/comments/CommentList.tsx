@@ -31,16 +31,19 @@ export const CommentList: React.FunctionComponent<Props> = ({ commentable: comme
                 <div className="alert alert-danger">{commentable.message}</div>
             ) : (
                 <>
-                    <ol className="list-unstyled">
-                        {commentable.comments.nodes.map(comment => (
-                            <Comment
-                                {...props}
-                                key={comment.id}
-                                comment={comment}
-                                onCommentUpdate={onCommentUpdate}
-                                tag="li"
-                            />
-                        ))}
+                    <ol className="list-unstyled mb-0">
+                        {commentable.comments.nodes
+                            .filter(comment => comment.__typename === 'CommentReply')
+                            .map(comment => (
+                                <Comment
+                                    {...props}
+                                    key={comment.id}
+                                    comment={comment}
+                                    onCommentUpdate={onCommentUpdate}
+                                    tag="li"
+                                    className="mb-4"
+                                />
+                            ))}
                     </ol>
                     {/* TODO!(sqs): be consistent about what a comment object is called - a "commentable" or a "comment object"? in the graphql api, and go/ts var names */}
                     {commentable.viewerCanComment ? (
@@ -48,7 +51,6 @@ export const CommentList: React.FunctionComponent<Props> = ({ commentable: comme
                             {...props}
                             commentable={commentableId}
                             onCommentableUpdate={onCommentableUpdate}
-                            className="mt-3"
                         />
                     ) : (
                         <div className="alert alert-info mt-3">

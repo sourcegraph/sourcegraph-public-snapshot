@@ -20,4 +20,10 @@ type CommentReply interface {
 	ID() graphql.ID
 	PartialComment
 	updatable
+
+	// IsCommentReply is a tag to distinguish this interface from other interfaces that are
+	// otherwise a superset of it, such as Campaign. If Campaign implements CommentReply, the
+	// (*NodeResolver).ToXyz methods get confused and report a Campaign's __typename as
+	// CommentReply.
+	IsCommentReply()
 }

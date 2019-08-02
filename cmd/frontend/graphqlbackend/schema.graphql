@@ -354,7 +354,7 @@ type Mutation {
     labels: LabelsMutation!
 
     # Create a comment on an object. The newly created comment is returned.
-    addReplyComment(input: AddReplyCommentInput!): Comment!
+    addCommentReply(input: AddCommentReplyInput!): Comment!
 
     # Edit a comment. The edited comment is returned.
     editComment(input: EditCommentInput!): Comment!
@@ -4176,7 +4176,7 @@ interface Commentable {
 }
 
 # A comment that is a reply to another comment.
-type CommentReply implements Node & Updatable {
+type CommentReply implements Node & Comment & Updatable {
     # The node ID of the comment.
     id: ID!
 
@@ -4200,7 +4200,7 @@ type CommentReply implements Node & Updatable {
 }
 
 # Input arguments for adding a reply to a comment.
-input AddReplyCommentInput {
+input AddCommentReplyInput {
     # The comment to reply to.
     parentComment: ID!
 

@@ -23,11 +23,11 @@ func (schemaResolver) Comments(ctx context.Context, arg *graphqlutil.ConnectionA
 	return Comments.Comments(ctx, arg)
 }
 
-func (r schemaResolver) AddReplyComment(ctx context.Context, arg *AddReplyCommentArgs) (Comment, error) {
+func (r schemaResolver) AddCommentReply(ctx context.Context, arg *AddCommentReplyArgs) (Comment, error) {
 	if Comments == nil {
 		return nil, errCommentsNotImplemented
 	}
-	return Comments.AddReplyComment(ctx, arg)
+	return Comments.AddCommentReply(ctx, arg)
 }
 
 func (r schemaResolver) EditComment(ctx context.Context, arg *EditCommentArgs) (Comment, error) {
@@ -59,7 +59,7 @@ type CommentsResolver interface {
 	Comments(context.Context, *graphqlutil.ConnectionArgs) (CommentConnection, error)
 
 	// Mutations
-	AddReplyComment(context.Context, *AddReplyCommentArgs) (Comment, error)
+	AddCommentReply(context.Context, *AddCommentReplyArgs) (Comment, error)
 	EditComment(context.Context, *EditCommentArgs) (Comment, error)
 	DeleteComment(context.Context, *DeleteCommentArgs) (*EmptyResponse, error)
 
@@ -71,7 +71,7 @@ type CommentsResolver interface {
 	CommentsForObject(ctx context.Context, object graphql.ID, arg *graphqlutil.ConnectionArgs) (CommentConnection, error)
 }
 
-type AddReplyCommentArgs struct {
+type AddCommentReplyArgs struct {
 	Input struct {
 		ParentComment graphql.ID
 		Body          string

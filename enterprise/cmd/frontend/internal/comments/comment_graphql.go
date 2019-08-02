@@ -50,7 +50,7 @@ func commentByGQLID(ctx context.Context, id graphql.ID) (*internal.DBComment, er
 		return internal.DBComments{}.GetByID(ctx, dbID)
 	}
 
-	var opt internal.DBCommentsListOptions
+	opt := internal.DBCommentsListOptions{ObjectPrimaryComment: true}
 	var err error
 	opt.Object, err = commentObjectFromGQLID(id)
 	if err != nil {

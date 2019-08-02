@@ -5,8 +5,9 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 
-const commentFieldsFragment = gql`
-    fragment CommentFields on Comment {
+const replyCommentFieldsFragment = gql`
+    fragment CommentReplyFields on CommentReply {
+        __typename
         id
         body
         bodyHTML
@@ -19,6 +20,7 @@ const commentFieldsFragment = gql`
         }
         createdAt
         updatedAt
+        viewerCanUpdate
     }
 `
 
@@ -46,7 +48,10 @@ export const useCommentable = (commentable: Pick<GQL.Commentable, 'id'>): [Resul
                     commentable(id: $commentable) {
                         comments {
                             nodes {
-                                ...CommentFields
+                                __typename
+                                ... on CommentReply {
+                                    ...CommentReplyFields
+                                }
                             }
                             totalCount
                         }
@@ -54,7 +59,7 @@ export const useCommentable = (commentable: Pick<GQL.Commentable, 'id'>): [Resul
                         viewerCannotCommentReasons
                     }
                 }
-                ${commentFieldsFragment}
+                ${replyCommentFieldsFragment}
             `,
             { commentable: commentable.id }
         )
