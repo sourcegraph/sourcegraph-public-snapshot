@@ -215,6 +215,7 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
         <button
             type="button"
             className={className}
+            data-e2e-tab={tab.id}
             // tslint:disable-next-line:jsx-no-lambda
             onClick={() => this.onSelectTab(tab.id)}
         >

@@ -34,6 +34,8 @@ describe('e2e test suite', function(this: any): void {
             'sourcegraph/go-diff',
             'sourcegraph/vcsstore',
             'sourcegraph/go-vcs',
+            'sourcegraph/appdash',
+            'sourcegraph/sourcegraph-typescript',
         ]
         await driver.ensureLoggedIn()
         await driver.ensureHasExternalService({
@@ -362,6 +364,101 @@ describe('e2e test suite', function(this: any): void {
                     visible: true,
                 }) // `diff/testdata` still selected
                 await assertNumRowsExpanded(1) // only `diff` directory expanded
+            })
+        })
+        describe('symbol sidebar', () => {
+            test('lists symbols in current file', async () => {
+                const tests = [
+                    {
+                        filePath:
+                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/cmd/go-diff/go-diff.go',
+                        symbolNames: ['main', 'stdin', 'diffPath', 'fileIdx', 'main'],
+                        symbolTypes: ['package', 'constant', 'variable', 'variable', 'function'],
+                    },
+                    {
+                        filePath:
+                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.go',
+                        symbolNames: [
+                            'diff',
+                            'Stat',
+                            'Stat',
+                            'hunkPrefix',
+                            'hunkHeader',
+                            'diffTimeParseLayout',
+                            'diffTimeFormatLayout',
+                            'add',
+                        ],
+                        symbolTypes: [
+                            'package',
+                            'function',
+                            'function',
+                            'variable',
+                            'constant',
+                            'constant',
+                            'constant',
+                            'function',
+                        ],
+                    },
+                    {
+                        filePath:
+                            '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87/-/blob/python/appdash/sockcollector.py',
+                        symbolNames: [
+                            'RemoteCollector',
+                            'sock',
+                            '_debug',
+                            '__init__',
+                            '_log',
+                            'connect',
+                            'collect',
+                            'close',
+                        ],
+                        symbolTypes: ['class', 'variable', 'variable', 'field', 'field', 'field', 'field', 'field'],
+                    },
+                    {
+                        filePath:
+                            '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
+                        symbolNames: [
+                            'createAbortError',
+                            'Object',
+                            'isAbortError',
+                            'throwIfCancelled',
+                            'tryCancel',
+                            'toAxiosCancelToken',
+                            'source',
+                        ],
+                        symbolTypes: [
+                            'constant',
+                            'constant',
+                            'constant',
+                            'function',
+                            'function',
+                            'function',
+                            'constant',
+                        ],
+                    },
+                ]
+
+                for (const test of tests) {
+                    await driver.page.goto(baseURL + test.filePath)
+
+                    await (await driver.page.waitForSelector('.tab-bar__tab[data-e2e-tab="symbols"]')).click()
+
+                    await driver.page.waitForSelector('.repo-rev-sidebar-symbols-node__name', { visible: true })
+
+                    const symbolNames = await driver.page.evaluate(() =>
+                        Array.from(document.querySelectorAll('.repo-rev-sidebar-symbols-node__name')).map(
+                            t => t.textContent || ''
+                        )
+                    )
+                    const symbolTypes = await driver.page.evaluate(() =>
+                        Array.from(document.querySelectorAll('.repo-rev-sidebar-symbols-node__link .symbol-icon')).map(
+                            t => t.getAttribute('data-tooltip') || ''
+                        )
+                    )
+
+                    expect(symbolNames).toEqual(test.symbolNames)
+                    expect(symbolTypes).toEqual(test.symbolTypes)
+                }
             })
         })
 
