@@ -13,11 +13,13 @@ import (
 
 	"github.com/google/zoekt"
 	zoektrpc "github.com/google/zoekt/rpc"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 )
@@ -212,18 +214,37 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 		DisableCache: true,
 	}
 
+	rows := make([]*sqlf.Query, 0, len(repos))
 	for _, r := range repos {
-		err := db.Repos.Upsert(ctx, api.InsertRepoOp{
-			Name:         r.Name,
-			Description:  r.Description,
-			Fork:         r.Fork,
-			Archived:     false,
-			Enabled:      true,
-			ExternalRepo: r.ExternalRepo,
-		})
-		if err != nil {
-			b.Fatal(err)
-		}
+		rows = append(rows, sqlf.Sprintf(
+			"(%s, %s, %s, %s, %s, %s, %s)",
+			r.Name,
+			r.Description,
+			r.Fork,
+			true,
+			r.ExternalRepo.ServiceType,
+			r.ExternalRepo.ServiceID,
+			r.ExternalRepo.ID,
+		))
+	}
+
+	q := sqlf.Sprintf(`
+		INSERT INTO repo (
+			name,
+			description,
+			fork,
+			enabled,
+			external_service_type,
+			external_service_id,
+			external_id
+		)
+		VALUES %s`,
+		sqlf.Join(rows, ","),
+	)
+
+	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		b.Fatal(err)
 	}
 
 	b.ResetTimer()

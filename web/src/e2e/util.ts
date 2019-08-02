@@ -76,6 +76,8 @@ export class Driver {
     }
 
     public async enterText(method: EnterTextMethod = 'type', text: string): Promise<void> {
+        // Pasting does not work on macOS. See:  https://github.com/GoogleChrome/puppeteer/issues/1313
+        method = os.platform() === 'darwin' ? 'type' : method
         switch (method) {
             case 'type':
                 await this.page.keyboard.type(text)
@@ -160,7 +162,7 @@ export class Driver {
             // Clone the repositories
             for (const slug of ensureRepos) {
                 await this.page.goto(baseURL + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
-                await this.page.waitForSelector(`.repository-node[data-e2e-repository='github.com/${slug}']`, {
+                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, {
                     visible: true,
                 })
             }
