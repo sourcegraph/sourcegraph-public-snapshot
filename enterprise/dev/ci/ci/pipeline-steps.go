@@ -126,10 +126,10 @@ func addTriggerGoBenchmarks(c Config) func(*bk.Pipeline) {
 func addGoBenchmarks(c Config) func(*bk.Pipeline) {
 	benchstat := func(label, commit string, pipeline *bk.Pipeline) (benchfile string) {
 		benchfile = commit + "." + label + ".bench.txt"
-		pipeline.AddStep("benchstat "+label+" "+commit,
+		pipeline.AddStep("bench "+label+" "+commit,
 			bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
 			bk.Cmd("./cmd/replacer/build.sh installComby"),       // for replacer tests
-			bk.Cmd("./dev/ci/benchstat.sh "+commit+" | tee "+benchfile),
+			bk.Cmd("./dev/ci/bench.sh "+commit+" | tee "+benchfile),
 			bk.ArtifactPaths(benchfile),
 		)
 		return benchfile
