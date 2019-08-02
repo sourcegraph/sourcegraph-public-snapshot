@@ -446,17 +446,15 @@ describe('e2e test suite', function(this: any): void {
                 test(symbolTest.name, async () => {
                     await driver.page.goto(baseURL + symbolTest.filePath)
 
-                    await (await driver.page.waitForSelector('.tab-bar__tab[data-e2e-tab="symbols"]')).click()
+                    await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
 
-                    await driver.page.waitForSelector('.repo-rev-sidebar-symbols-node__name', { visible: true })
+                    await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
 
                     const symbolNames = await driver.page.evaluate(() =>
-                        Array.from(document.querySelectorAll('.repo-rev-sidebar-symbols-node__name')).map(
-                            t => t.textContent || ''
-                        )
+                        Array.from(document.querySelectorAll('.e2e-symbol-name')).map(t => t.textContent || '')
                     )
                     const symbolTypes = await driver.page.evaluate(() =>
-                        Array.from(document.querySelectorAll('.repo-rev-sidebar-symbols-node__link .symbol-icon')).map(
+                        Array.from(document.querySelectorAll('.e2e-symbol-icon')).map(
                             t => t.getAttribute('data-tooltip') || ''
                         )
                     )
@@ -473,16 +471,13 @@ describe('e2e test suite', function(this: any): void {
 
                 await driver.page.goto(repoBaseURL + '/tree/cmd')
 
-                await (await driver.page.waitForSelector('.tab-bar__tab[data-e2e-tab="symbols"]')).click()
+                await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
 
-                await driver.page.waitForSelector('.repo-rev-sidebar-symbols-node__name', { visible: true })
+                await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
 
-                await (await driver.page.waitForSelector(
-                    `.repo-rev-sidebar-symbols-node__link[href*="${symbolPath}"]`,
-                    {
-                        visible: true,
-                    }
-                )).click()
+                await (await driver.page.waitForSelector(`.e2e-symbol-link[href*="${symbolPath}"]`, {
+                    visible: true,
+                })).click()
                 await driver.assertWindowLocation(repoBaseURL + symbolPath, true)
             })
         })
