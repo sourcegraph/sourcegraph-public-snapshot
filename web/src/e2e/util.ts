@@ -250,6 +250,9 @@ export async function createDriverForTest(): Promise<Driver> {
         if (message.text().indexOf('Download the React DevTools') !== -1) {
             return
         }
+        if (message.text().indexOf('[HMR]') !== -1 || message.text().indexOf('[WDS]') !== -1) {
+            return
+        }
         console.log(
             'Browser console message:',
             util.inspect(message, { colors: true, depth: 2, breakLength: Infinity })
