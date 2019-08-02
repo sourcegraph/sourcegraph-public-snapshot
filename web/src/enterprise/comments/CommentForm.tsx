@@ -53,7 +53,7 @@ export const CommentForm: React.FunctionComponent<Props> = ({
     )
 
     useEffect(() => {
-        const isDirty = uncommittedBody !== initialBody
+        const isDirty = uncommittedBody !== (initialBody || '')
         if (isDirty) {
             return history.block('Discard unsaved comment?')
         }
