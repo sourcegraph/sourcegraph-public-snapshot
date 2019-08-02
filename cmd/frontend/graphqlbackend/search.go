@@ -405,7 +405,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 
 	var defaultRepos []*types.Repo
-	if len(includePatterns) == 0 {
+	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
 		// TODO(ijt): check config like search.defaultRepos.enabled so installations not
 		// using default_repos won't have to pay the ~0.5 msec cost of this query.
 		defaultRepos, err = db.DefaultRepos.List(ctx)
