@@ -132,6 +132,7 @@ func addGoBenchmarks(c Config) func(*bk.Pipeline) {
 
 		pipeline.AddStep("benchdiff.sh "+old+" "+new,
 			bk.Cmd("set -euo pipefail"),
+			bk.Env("CTAGS_COMMAND", "cmd/symbols/universal-ctags-dev"),
 			bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
 			bk.Cmd("./cmd/replacer/build.sh installComby"),       // for replacer tests
 			bk.Cmd("./dev/ci/bench.sh "+old+" | tee "+oldout),
