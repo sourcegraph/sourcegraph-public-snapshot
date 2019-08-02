@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
@@ -32,4 +32,5 @@ ON default_repos.repo_id = repo.id
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
+	return repos, nil
 }
