@@ -69,7 +69,7 @@ func NewParser(ctagsCommand string) (Parser, error) {
 
 	cmd := exec.Command(ctagsCommand, "--_interactive="+opt, "--fields=*",
 		"--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,Elixir,elm,Erlang,Go,haskell,Java,JavaScript,kotlin,Lisp,Lua,MatLab,ObjectiveC,OCaml,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,scala,Scheme,Sh,swift,Tcl,typescript,Verilog,Vim",
-		"--map-CSS=+.scss", "--map-CSS=+.less", "--map-CSS=+.sass",
+		"--map-CSS=+.scss", "--map-CSS=+.less", "--map-CSS=+.sass", "--map-typescript=+.tsx",
 	)
 	in, err := cmd.StdinPipe()
 	if err != nil {
