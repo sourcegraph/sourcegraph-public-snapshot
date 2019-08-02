@@ -406,6 +406,8 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 
 	var defaultRepos []*types.Repo
 	if len(includePatterns) == 0 {
+		// TODO(ijt): check config like search.defaultRepos.enabled so installations not
+		// using it won't have to pay the ~0.5 msec cost of this query.
 		defaultRepos, err = db.DefaultRepos.List(ctx)
 		if err != nil {
 			return nil, nil, false, err
@@ -413,7 +415,15 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 
 	var repos []*types.Repo
-	if len(defaultRepos) == 0 {
+	if len(defaultRepos) > 0 {
+		repos = defaultRepos
+		repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
+		for _, r := range repos {
+			// Add a repo rev for the default branch of r.
+			rr := &search.RepositoryRevisions{ Repo: r, Revs: []search.RevisionSpecifier{{}} }
+			repoRevisions = append(repoRevisions, rr)
+		}
+	} else {
 		tr.LazyPrintf("Repos.List - start")
 		repos, err = db.Repos.List(ctx, db.ReposListOptions{
 			OnlyRepoIDs:     true,
@@ -488,14 +498,6 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			}
 
 			repoRevisions = append(repoRevisions, repoRev)
-		}
-	} else {
-		repos = defaultRepos
-		repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
-		for _, r := range repos {
-			// Add a repo rev for the default branch of r.
-			rr := &search.RepositoryRevisions{ Repo: r, Revs: []search.RevisionSpecifier{{}} }
-			repoRevisions = append(repoRevisions, rr)
 		}
 	}
 
