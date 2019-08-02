@@ -4,6 +4,7 @@ import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import SlackIcon from 'mdi-react/SlackIcon'
 import React, { useCallback, useState } from 'react'
+import PieChart, { LabelProps } from 'react-minimal-pie-chart'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, UncontrolledButtonDropdown } from 'reactstrap'
@@ -16,6 +17,8 @@ import { useStatisticsForSearchResults } from './useStatisticsForSearchResults'
 interface Props extends RouteComponentProps<{}> {}
 
 const LOADING = 'loading' as const
+
+const COLORS = ['#278389', '#f16321', '#ff7700', '#651fff', '#0091ea', '#00c853', '#ffab00', '#ff3d00']
 
 export const StatsPage: React.FunctionComponent<Props> = ({ location, history }) => {
     const query = new URLSearchParams(location.search).get('q') || ''
@@ -90,32 +93,48 @@ export const StatsPage: React.FunctionComponent<Props> = ({ location, history })
                 <div className="alert alert-danger">{stats.message}</div>
             ) : (
                 <>
-                    <div className="border" style={{ maxWidth: '20rem', maxHeight: '50vh', overflowY: 'auto' }}>
-                        {stats.languages.length > 0 ? (
-                            <table className="table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Language</th>
-                                        <th>Lines</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {stats.languages.map(({ name, totalBytes }) => (
-                                        <tr key={name}>
-                                            <td>
-                                                <Link to={urlToSearchWithExtraQuery(`lang:${name.toLowerCase()}`)}>
-                                                    {name}
-                                                </Link>
-                                            </td>
-                                            <td>{numberWithCommas(totalBytes)}</td>
+                    {stats.languages.length > 0 ? (
+                        <div className="d-flex border align-items-stretch">
+                            <div className="flex-1 border-right" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+                                <table className="table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Language</th>
+                                            <th>Lines</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <div className="text-muted p-2">No language statistics available</div>
-                        )}
-                    </div>
+                                    </thead>
+                                    <tbody>
+                                        {stats.languages.map(({ name, totalBytes }) => (
+                                            <tr key={name}>
+                                                <td>
+                                                    <Link to={urlToSearchWithExtraQuery(`lang:${name.toLowerCase()}`)}>
+                                                        {name}
+                                                    </Link>
+                                                </td>
+                                                <td>{numberWithCommas(totalBytes)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <PieChart
+                                data={stats.languages.slice(0, COLORS.length).map(({ name, totalBytes }, i) => ({
+                                    title: name,
+                                    value: totalBytes,
+                                    color: COLORS[i % COLORS.length],
+                                }))}
+                                labelStyle={{ fillColor: 'white', fill: 'white', fontSize: '0.25rem' }}
+                                label={props => props.data[props.dataIndex].title}
+                                // label={(props: LabelProps) => (
+                                //     <span className="text-white">{props.data[props.dataIndex].title}</span>
+                                // )}
+                                className="flex-1 m-6 p-3"
+                                style={{ maxHeight: '22rem' }}
+                            />
+                        </div>
+                    ) : (
+                        <div className="text-muted p-2">No language statistics available</div>
+                    )}
                 </>
             )}
         </div>
