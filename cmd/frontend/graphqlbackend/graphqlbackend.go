@@ -89,6 +89,11 @@ func (r *NodeResolver) ToChangeset() (Changeset, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToCommentReply() (CommentReply, bool) {
+	n, ok := r.Node.(CommentReply)
+	return n, ok
+}
+
 func (r *NodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
 	n, ok := r.Node.(*discussionCommentResolver)
 	return n, ok
@@ -226,6 +231,8 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 		return CampaignByID(ctx, id)
 	case "Changeset":
 		return ChangesetByID(ctx, id)
+	case "CommentReply":
+		return CommentReplyByID(ctx, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":

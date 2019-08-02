@@ -4155,16 +4155,48 @@ interface Comment {
     updatedAt: DateTime!
 }
 
+# The possible reasons that prevent an actor from commenting.
+enum CannotCommentReason {
+    AUTHENTICATION_REQUIRED
+}
+
 # A commentable is an object that can be commented on.
 interface Commentable {
     # Whether the viewer can comment on this object.
     viewerCanComment: Boolean!
+
+    # Reasons why the viewer cannot comment on this commentable.
+    viewerCannotCommentReasons: [CannotCommentReason!]!
 
     # A list of comments on the object.
     comments(
         # Return the first n comments in the list.
         first: Int
     ): CommentConnection!
+}
+
+# A comment that is a reply to another comment.
+type CommentReply implements Node & Updatable {
+    # The node ID of the comment.
+    id: ID!
+
+    # The actor who authored the comment.
+    author: Actor
+
+    # The body as Markdown.
+    body: String!
+
+    # The body as HTML.
+    bodyHTML: String!
+
+    # The date and time when the comment was created.
+    createdAt: DateTime!
+
+    # The date and time when the comment was updated.
+    updatedAt: DateTime!
+
+    # Whether the viewer can update this comment.
+    viewerCanUpdate: Boolean!
 }
 
 # Input arguments for creating a comment.
@@ -4548,6 +4580,9 @@ type Campaign implements Node & Comment & Commentable {
 
     # Whether the viewer can comment on this campaign.
     viewerCanComment: Boolean!
+
+    # Reasons why the viewer cannot comment on this campaign.
+    viewerCannotCommentReasons: [CannotCommentReason!]!
 
     # A list of comments on the campaign.
     comments(

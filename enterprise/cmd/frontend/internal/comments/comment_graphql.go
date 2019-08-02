@@ -19,6 +19,8 @@ import (
 
 func commentObjectFromGQLID(id graphql.ID) (types.CommentObject, error) {
 	switch relay.UnmarshalKind(id) {
+	case gqlTypeCommentReply:
+		panic("CommentReply is its own comment object") // TODO!(sqs): clean up
 	case string(threadlike.GQLTypeThread), string(threadlike.GQLTypeIssue), string(threadlike.GQLTypeChangeset):
 		_, threadID, err := threadlike.UnmarshalID(id)
 		return types.CommentObject{ThreadID: threadID}, err
@@ -39,13 +41,21 @@ func commentByGQLID(ctx context.Context, id graphql.ID) (*internal.DBComment, er
 		return mockCommentByGQLID(id)
 	}
 
+	// Look up a CommentReply directly because its ID directly refers to its comment.
+	if relay.UnmarshalKind(id) == gqlTypeCommentReply {
+		dbID, err := unmarshalCommentReplyID(id)
+		if err != nil {
+			return nil, err
+		}
+		return internal.DBComments{}.GetByID(ctx, dbID)
+	}
+
 	var opt internal.DBCommentsListOptions
 	var err error
 	opt.Object, err = commentObjectFromGQLID(id)
 	if err != nil {
 		return nil, err
 	}
-
 	comments, err := internal.DBComments{}.List(ctx, opt)
 	if err != nil {
 		return nil, err
@@ -67,6 +77,12 @@ func newGQLToComment(ctx context.Context, dbComment *internal.DBComment) (graphq
 	}
 
 	switch {
+	case dbComment.Object.ParentCommentID != 0:
+		return &graphqlbackend.ToComment{
+			CommentReply: &gqlCommentReply{
+				gqlComment: &gqlComment{dbComment: dbComment},
+			},
+		}, nil
 	case dbComment.Object.ThreadID != 0:
 		v, err := threadlike.ThreadOrIssueOrChangesetByDBID(ctx, dbComment.Object.ThreadID)
 		if err != nil {
@@ -104,6 +120,11 @@ type gqlComment struct {
 
 func (v *gqlComment) getComment(ctx context.Context) (*internal.DBComment, error) {
 	v.once.Do(func() {
+		if v.dbComment != nil {
+			// The dbComment was already present when the struct was instantiated; no need to query
+			// the DB.
+			return
+		}
 		v.dbComment, v.err = commentByGQLID(ctx, v.id)
 	})
 	return v.dbComment, v.err

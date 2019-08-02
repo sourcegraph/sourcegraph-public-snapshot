@@ -11,32 +11,34 @@ const commentFieldsFragment = gql`
         body
         bodyHTML
         author {
-            username
-            displayName
-            url
+            ... on User {
+                username
+                displayName
+                url
+            }
         }
         createdAt
         updatedAt
-        viewerCanUpdate
     }
 `
 
 const LOADING: 'loading' = 'loading'
+
+type Result =
+    | typeof LOADING
+    | Pick<GQL.Commentable, 'viewerCanComment' | 'viewerCannotCommentReasons' | 'comments'>
+    | ErrorLike
 
 /**
  * A React hook that observes all comments on a commentable object (queried from the GraphQL API).
  *
  * @param commentable The commentable object whose comments to observe.
  */
-export const useComments = (
-    commentable: Pick<GQL.Commentable, 'id'>
-): [typeof LOADING | Pick<GQL.Commentable, 'viewerCanComment' | 'comments'> | ErrorLike, () => void] => {
+export const useCommentable = (commentable: Pick<GQL.Commentable, 'id'>): [Result, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
 
-    const [result, setResult] = useState<
-        typeof LOADING | Pick<GQL.Commentable, 'viewerCanComment' | 'comments'> | ErrorLike
-    >(LOADING)
+    const [result, setResult] = useState<Result>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
@@ -44,11 +46,12 @@ export const useComments = (
                     commentable(id: $commentable) {
                         comments {
                             nodes {
-                                ...CommentsFields
+                                ...CommentFields
                             }
                             totalCount
                         }
                         viewerCanComment
+                        viewerCannotCommentReasons
                     }
                 }
                 ${commentFieldsFragment}

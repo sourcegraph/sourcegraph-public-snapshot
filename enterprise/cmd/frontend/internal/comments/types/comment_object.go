@@ -5,6 +5,7 @@ package types
 // TODO!(sqs): it is spaghetti-code that this is in a separate package, but necessary as-is to avoid
 // import cycles
 type CommentObject struct {
-	ThreadID   int64
-	CampaignID int64
+	ParentCommentID int64
+	ThreadID        int64
+	CampaignID      int64
 }

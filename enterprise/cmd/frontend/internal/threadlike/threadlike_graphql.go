@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 )
 
@@ -33,8 +34,17 @@ func (v *GQLThreadlike) Title() string { return v.DB.Title }
 func (v *GQLThreadlike) ExternalURL() *string { return v.DB.ExternalURL }
 
 func (v *GQLThreadlike) ViewerCanUpdate(ctx context.Context) (bool, error) {
-	// TODO!(sqs)
+	// TODO!(sqs): commented out below due to package import cycle etc
 	return true, nil
+	// return commentobjectdb.ViewerCanUpdate(ctx, v.ID())
+}
+
+func (v *GQLThreadlike) ViewerCanComment(ctx context.Context) (bool, error) {
+	return commentobjectdb.ViewerCanComment(ctx)
+}
+
+func (v *GQLThreadlike) ViewerCannotCommentReasons(ctx context.Context) ([]graphqlbackend.CannotCommentReason, error) {
+	return commentobjectdb.ViewerCannotCommentReasons(ctx)
 }
 
 func (v *GQLThreadlike) URL(ctx context.Context) (string, error) {

@@ -51,7 +51,8 @@ func CreateCommentWithObject(ctx context.Context, comment DBObjectCommentFields,
 		return err
 	}
 
-	_, err = tx.ExecContext(ctx, `UPDATE comments SET thread_id=$1, campaign_id=$2 WHERE id=$3`,
+	_, err = tx.ExecContext(ctx, `UPDATE comments SET parent_comment_id=$1, thread_id=$2, campaign_id=$3 WHERE id=$4`,
+		nilIfZero(object.ParentCommentID),
 		nilIfZero(object.ThreadID),
 		nilIfZero(object.CampaignID),
 		insertedComment.ID,

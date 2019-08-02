@@ -2,7 +2,7 @@ import { NotificationType } from '@sourcegraph/extension-api-classes'
 import H from 'history'
 import PencilIcon from 'mdi-react/PencilIcon'
 import React, { useCallback, useState } from 'react'
-import { map, mapTo } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import { Markdown } from '../../../../shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
@@ -38,6 +38,7 @@ interface Props extends ExtensionsControllerProps {
     onCommentUpdate: (update: Partial<GQL.Comment>) => void
     createdVerb?: string
 
+    tag?: keyof JSX.IntrinsicElements // TODO!(sqs): might cause infinite loop per https://github.com/Microsoft/TypeScript/issues/28892#issuecomment-477927604
     className?: string
     history: H.History
 }
@@ -49,6 +50,7 @@ export const Comment: React.FunctionComponent<Props> = ({
     comment,
     onCommentUpdate,
     createdVerb = 'commented',
+    tag: Tag = 'div',
     className = '',
     ...props
 }) => {
@@ -79,7 +81,7 @@ export const Comment: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className={`comment card ${className}`}>
+        <Tag className={`comment card ${className}`}>
             <div className="card-header d-flex align-items-center justify-content-between">
                 <span className="py-1">
                     <strong>
@@ -115,6 +117,6 @@ export const Comment: React.FunctionComponent<Props> = ({
                     />
                 </div>
             )}
-        </div>
+        </Tag>
     )
 }

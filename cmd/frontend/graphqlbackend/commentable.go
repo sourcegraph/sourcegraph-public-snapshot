@@ -23,6 +23,7 @@ func (schemaResolver) Commentable(ctx context.Context, arg *struct{ ID graphql.I
 
 	var toCommentable ToCommentable
 	switch relay.UnmarshalKind(arg.ID) {
+	// TODO!(sqs): support nested comments? comments on comments?
 	case "Campaign":
 		toCommentable.Campaign = node.(Campaign)
 	default:
@@ -31,9 +32,16 @@ func (schemaResolver) Commentable(ctx context.Context, arg *struct{ ID graphql.I
 	return &toCommentable, nil
 }
 
+type CannotCommentReason string
+
+const (
+	CannotCommentReasonAuthenticationRequired = "AUTHENTICATION_REQUIRED"
+)
+
 // commentable is the interface for the GraphQL interface Commentable.
 type commentable interface {
 	ViewerCanComment(context.Context) (bool, error)
+	ViewerCannotCommentReasons(context.Context) ([]CannotCommentReason, error)
 	Comments(context.Context, *graphqlutil.ConnectionArgs) (CommentConnection, error)
 }
 
@@ -53,7 +61,13 @@ func (v ToCommentable) commentable() commentable {
 func (v ToCommentable) ViewerCanComment(ctx context.Context) (bool, error) {
 	return v.commentable().ViewerCanComment(ctx)
 }
+
+func (v ToCommentable) ViewerCannotCommentReasons(ctx context.Context) ([]CannotCommentReason, error) {
+	return v.commentable().ViewerCannotCommentReasons(ctx)
+}
+
 func (v ToCommentable) Comments(ctx context.Context, arg *graphqlutil.ConnectionArgs) (CommentConnection, error) {
 	return v.commentable().Comments(ctx, arg)
 }
+
 func (v ToCommentable) ToCampaign() (Campaign, bool) { return v.Campaign, v.Campaign != nil }

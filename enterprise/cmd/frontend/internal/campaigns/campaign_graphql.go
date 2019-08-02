@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -86,13 +87,15 @@ func (v *gqlCampaign) Rules() string {
 }
 
 func (v *gqlCampaign) ViewerCanUpdate(ctx context.Context) (bool, error) {
-	// TODO!(sqs)
-	return true, nil
+	return commentobjectdb.ViewerCanUpdate(ctx, v.ID())
 }
 
-func (v *gqlCampaign) ViewerCanComment(context.Context) (bool, error) {
-	// TODO!(sqs)
-	return true, nil
+func (v *gqlCampaign) ViewerCanComment(ctx context.Context) (bool, error) {
+	return commentobjectdb.ViewerCanComment(ctx)
+}
+
+func (v *gqlCampaign) ViewerCannotCommentReasons(ctx context.Context) ([]graphqlbackend.CannotCommentReason, error) {
+	return commentobjectdb.ViewerCannotCommentReasons(ctx)
 }
 
 func (v *gqlCampaign) Comments(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CommentConnection, error) {

@@ -38,6 +38,7 @@ export const useCampaignByID = (
                             }
                             createdAt
                             updatedAt
+                            viewerCanUpdate
                             isPreview
                             rules
                             url

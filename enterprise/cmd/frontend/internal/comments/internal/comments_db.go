@@ -28,7 +28,7 @@ var ErrCommentNotFound = errors.New("comment not found")
 
 type DBComments struct{}
 
-const selectColumns = `id, author_user_id, body, created_at, updated_at, thread_id, campaign_id`
+const selectColumns = `id, author_user_id, body, created_at, updated_at, parent_comment_id, thread_id, campaign_id`
 
 // Create creates a comment. The comment argument's (Comment).ID field is ignored. The new comment
 // is returned.
@@ -46,9 +46,10 @@ func (DBComments) Create(ctx context.Context, tx *sql.Tx, comment *DBComment) (*
 		dbh = dbconn.Global
 	}
 	return DBComments{}.scanRow(dbh.QueryRowContext(ctx,
-		`INSERT INTO comments(`+selectColumns+`) VALUES(DEFAULT, $1, $2, DEFAULT, DEFAULT, $3, $4) RETURNING `+selectColumns,
+		`INSERT INTO comments(`+selectColumns+`) VALUES(DEFAULT, $1, $2, DEFAULT, DEFAULT, $3, $4, $5) RETURNING `+selectColumns,
 		comment.AuthorUserID,
 		comment.Body,
+		nilIfZero(comment.Object.ParentCommentID),
 		nilIfZero(comment.Object.ThreadID),
 		nilIfZero(comment.Object.CampaignID),
 	))
@@ -121,8 +122,10 @@ func (o DBCommentsListOptions) sqlConditions() []*sqlf.Query {
 	if o.Query != "" {
 		conds = append(conds, sqlf.Sprintf("body ILIKE %s", "%"+o.Query+"%"))
 	}
+	if o.Object.ParentCommentID != 0 {
+		conds = append(conds, sqlf.Sprintf("parent_comment_id=%d", o.Object.ParentCommentID))
+	}
 	if o.Object.ThreadID != 0 {
-		// TODO!(sqs): add recursion
 		conds = append(conds, sqlf.Sprintf("thread_id=%d OR parent_comment_id=(SELECT primary_comment_id FROM threads WHERE id=%d)", o.Object.ThreadID, o.Object.ThreadID))
 	}
 	if o.Object.CampaignID != 0 {
@@ -177,17 +180,21 @@ func (DBComments) scanRow(row interface {
 	Scan(dest ...interface{}) error
 }) (*DBComment, error) {
 	var t DBComment
-	var threadID, campaignID *int64
+	var parentCommentID, threadID, campaignID *int64
 	if err := row.Scan(
 		&t.ID,
 		&t.AuthorUserID,
 		&t.Body,
 		&t.CreatedAt,
 		&t.UpdatedAt,
+		&parentCommentID,
 		&threadID,
 		&campaignID,
 	); err != nil {
 		return nil, err
+	}
+	if parentCommentID != nil {
+		t.Object.ParentCommentID = *parentCommentID
 	}
 	if threadID != nil {
 		t.Object.ThreadID = *threadID

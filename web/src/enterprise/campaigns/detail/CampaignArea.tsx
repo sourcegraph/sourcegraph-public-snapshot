@@ -15,6 +15,7 @@ import { CampaignRepositoriesList } from './repositories/CampaignRepositoriesLis
 import { CampaignRulesList } from './rules/CampaignRulesList'
 import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
 import { useCampaignByID } from './useCampaignByID'
+import { CampaignActivity } from './activity/CampaignActivity'
 
 export interface CampaignAreaContext
     extends Pick<NamespaceCampaignsAreaContext, Exclude<keyof NamespaceCampaignsAreaContext, 'namespace'>> {
@@ -22,7 +23,7 @@ export interface CampaignAreaContext
     campaign: GQL.ICampaign
 
     /** Called to refresh the campaign. */
-    onCampaignUpdate: (update: Partial<GQL.ICampaign>) => void
+    onCampaignUpdate: (update?: Partial<GQL.ICampaign>) => void
 
     location: H.Location
     history: H.History
@@ -96,7 +97,7 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                     title: 'Activity',
                     path: '/',
                     exact: true,
-                    render: () => <CampaignActvity {...context} className={PAGE_CLASS_NAME} />,
+                    render: () => <CampaignActivity {...context} className={PAGE_CLASS_NAME} />,
                 },
                 {
                     title: 'Rules',

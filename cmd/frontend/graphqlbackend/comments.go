@@ -63,6 +63,9 @@ type CommentsResolver interface {
 	EditComment(context.Context, *EditCommentArgs) (Comment, error)
 	DeleteComment(context.Context, *DeleteCommentArgs) (*EmptyResponse, error)
 
+	// CommentReplyByID is called by the CommentReplyByID func but is not in the GraphQL API.
+	CommentReplyByID(context.Context, graphql.ID) (CommentReply, error)
+
 	// CommentsForObject is called by the CommentsForObject func but is not in the GraphQL
 	// API.
 	CommentsForObject(ctx context.Context, object graphql.ID, arg *graphqlutil.ConnectionArgs) (CommentConnection, error)
@@ -101,15 +104,17 @@ type PartialComment interface {
 type Comment interface {
 	ID() graphql.ID
 	PartialComment
+	ToCommentReply() (CommentReply, bool)
 	ToThread() (Thread, bool)
 	ToChangeset() (Changeset, bool)
 	ToCampaign() (Campaign, bool)
 }
 
 type ToComment struct {
-	Thread    Thread
-	Changeset Changeset
-	Campaign  Campaign
+	CommentReply CommentReply
+	Thread       Thread
+	Changeset    Changeset
+	Campaign     Campaign
 }
 
 func (v ToComment) comment() interface {
@@ -117,6 +122,8 @@ func (v ToComment) comment() interface {
 	PartialComment
 } {
 	switch {
+	case v.CommentReply != nil:
+		return v.CommentReply
 	case v.Thread != nil:
 		return v.Thread
 		// TODO!(sqs): add Issue
@@ -135,6 +142,7 @@ func (v ToComment) Body(ctx context.Context) (string, error)        { return v.c
 func (v ToComment) BodyHTML(ctx context.Context) (string, error)    { return v.comment().BodyHTML(ctx) }
 func (v ToComment) UpdatedAt(ctx context.Context) (DateTime, error) { return v.comment().UpdatedAt(ctx) }
 func (v ToComment) CreatedAt(ctx context.Context) (DateTime, error) { return v.comment().CreatedAt(ctx) }
+func (v ToComment) ToCommentReply() (CommentReply, bool)            { return v.CommentReply, v.CommentReply != nil }
 func (v ToComment) ToThread() (Thread, bool)                        { return v.Thread, v.Thread != nil }
 func (v ToComment) ToChangeset() (Changeset, bool)                  { return v.Changeset, v.Changeset != nil }
 func (v ToComment) ToCampaign() (Campaign, bool)                    { return v.Campaign, v.Campaign != nil }
