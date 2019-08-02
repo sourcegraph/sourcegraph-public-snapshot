@@ -77,6 +77,15 @@ describe('e2e test suite', function(this: any): void {
         () => driver.page
     )
 
+    // Clear local storage to reset sidebar selection (files or tabs) for each test
+    beforeEach(async () => {
+        if (driver) {
+            await driver.page.evaluate(() => {
+                localStorage.setItem('repo-rev-sidebar-last-tab', 'files')
+            })
+        }
+    })
+
     describe('External services', () => {
         test('External service add, edit, delete', async () => {
             const displayName = 'e2e-github-test-2'
