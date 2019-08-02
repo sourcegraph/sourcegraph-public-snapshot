@@ -68,6 +68,6 @@ func OtherRepoName(repositoryPathPattern, base, relativeRepoPath string) string 
 	}
 	return strings.NewReplacer(
 		"{base}", otherRepoNameReplacer.Replace(strings.TrimSuffix(base, "/")),
-		"{repo}", otherRepoNameReplacer.Replace(strings.TrimSuffix(strings.TrimPrefix(relativeRepoPath, "/"), ".git")),
+		"{repo}", otherRepoNameReplacer.Replace(strings.TrimSuffix(strings.TrimSuffix(strings.TrimPrefix(relativeRepoPath, "/"), ".git"), "/")),
 	).Replace(repositoryPathPattern)
 }
