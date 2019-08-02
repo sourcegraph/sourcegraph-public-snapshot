@@ -1159,12 +1159,20 @@ type SearchResults {
     dynamicFilters: [SearchFilter!]!
 }
 
+type LanguageStatistics {
+    name: String!
+    totalBytes: Int!
+    type: String!
+}
+
 # Statistics about search results.
 type SearchResultsStats {
     # The approximate number of results returned.
     approximateResultCount: String!
     # The sparkline.
     sparkline: [Int!]!
+
+    languages: [LanguageStatistics!]!
 }
 
 # A search filter.

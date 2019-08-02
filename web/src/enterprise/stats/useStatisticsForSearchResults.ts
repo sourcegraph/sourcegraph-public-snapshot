@@ -15,8 +15,15 @@ const queryStatisticsForSearchResults = (query: string): Observable<Result> =>
         gql`
             query StatisticsForSearchResults($query: String!) {
                 search(query: $query) {
+                    results {
+                        elapsedMilliseconds
+                    }
                     stats {
-                        approximateResultCount
+                        languages {
+                            name
+                            totalBytes
+                            type
+                        }
                     }
                 }
             }
