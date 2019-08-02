@@ -53,7 +53,7 @@ The release captain should create a tracking issue using the [release issue temp
 
 - [Release issue template](release_issue_template.md)
 - [Patch release issue template](patch_release_issue_template.md)
-- [DevRel release issue template](devrel_release_template.md)
+- [DevRel release issue template](devrel_release_issue_template.md)
 
 ### Schedule
 
