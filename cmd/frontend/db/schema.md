@@ -392,7 +392,7 @@ Foreign-key constraints:
  deleted_at        | timestamp with time zone | 
 Indexes:
     "registry_extensions_pkey" PRIMARY KEY, btree (id)
-    "registry_extensions_publisher_name" UNIQUE, btree (COALESCE(publisher_user_id, 0), COALESCE(publisher_org_id, 0), name) WHERE deleted_at IS NULL
+    "registry_extensions_publisher_name" UNIQUE, btree ((COALESCE(publisher_user_id, 0)), (COALESCE(publisher_org_id, 0)), name) WHERE deleted_at IS NULL
     "registry_extensions_uuid" UNIQUE, btree (uuid)
 Check constraints:
     "registry_extensions_name_length" CHECK (char_length(name::text) > 0 AND char_length(name::text) <= 128)
