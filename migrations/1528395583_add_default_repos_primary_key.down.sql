@@ -1,0 +1,4 @@
+BEGIN;
+ALTER TABLE default_repos MODIFY `repo_id` INT;
+ALTER TABLE default_repos DROP PRIMARY KEY;
+COMMIT;
