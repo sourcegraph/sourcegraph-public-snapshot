@@ -15,7 +15,7 @@ if [ ! -f "$old" ] || [ ! -f "$new" ]; then
   exit 1
 fi
 
-deltas=$(benchstat -csv "$old" "$new" | xsv select 6 | grep -v 'delta|~')
+deltas=$(benchstat -csv -split "" "$old" "$new" | xsv select 6 | grep -v 'delta|~')
 changes=$(echo "$deltas" | wc -l)
 
 if [ "$save" -ne 0 ] && [ "$changes" -ne 0 ]; then
