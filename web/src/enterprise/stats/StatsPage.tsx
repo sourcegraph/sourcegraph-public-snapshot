@@ -1,9 +1,12 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
+import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
+import SlackIcon from 'mdi-react/SlackIcon'
 import React, { useCallback, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
+import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, UncontrolledButtonDropdown } from 'reactstrap'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { numberWithCommas } from '../../../../shared/src/util/strings'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
@@ -37,10 +40,23 @@ export const StatsPage: React.FunctionComponent<Props> = ({ location, history })
 
     return (
         <div className="stats-page container mt-4">
-            <header>
-                <h2 className="d-flex align-items-center">
+            <header className="d-flex align-items-center justify-content-between mb-3">
+                <h2 className="d-flex align-items-center mb-0">
                     <ChartLineIcon className="icon-inline mr-2" /> Statistics
                 </h2>
+                <UncontrolledButtonDropdown>
+                    <DropdownToggle caret={true} color="" className="btn-primary">
+                        Publish
+                    </DropdownToggle>
+                    <DropdownMenu>
+                        <DropdownItem>
+                            <SlackIcon className="icon-inline" /> Slack channel...
+                        </DropdownItem>
+                        <DropdownItem>
+                            <EmailOpenOutlineIcon className="icon-inline" /> Email...
+                        </DropdownItem>
+                    </DropdownMenu>
+                </UncontrolledButtonDropdown>
             </header>
             <Form onSubmit={onSubmit} className="form">
                 <div className="form-group d-flex align-items-stretch">
@@ -73,26 +89,34 @@ export const StatsPage: React.FunctionComponent<Props> = ({ location, history })
             ) : isErrorLike(stats) ? (
                 <div className="alert alert-danger">{stats.message}</div>
             ) : (
-                <div className="border" style={{ maxWidth: '20rem', maxHeight: '50vh', overflowY: 'auto' }}>
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th>Language</th>
-                                <th>Lines</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {stats.languages.map(({ name, totalBytes }) => (
-                                <tr key={name}>
-                                    <td>
-                                        <Link to={urlToSearchWithExtraQuery(`lang:${name.toLowerCase()}`)}>{name}</Link>
-                                    </td>
-                                    <td>{numberWithCommas(Math.ceil(totalBytes / 31))}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <>
+                    <div className="border" style={{ maxWidth: '20rem', maxHeight: '50vh', overflowY: 'auto' }}>
+                        {stats.languages.length > 0 ? (
+                            <table className="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Language</th>
+                                        <th>Lines</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {stats.languages.map(({ name, totalBytes }) => (
+                                        <tr key={name}>
+                                            <td>
+                                                <Link to={urlToSearchWithExtraQuery(`lang:${name.toLowerCase()}`)}>
+                                                    {name}
+                                                </Link>
+                                            </td>
+                                            <td>{numberWithCommas(totalBytes)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <div className="text-muted p-2">No language statistics available</div>
+                        )}
+                    </div>
+                </>
             )}
         </div>
     )
