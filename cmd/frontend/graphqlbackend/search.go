@@ -407,7 +407,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	var defaultRepos []*types.Repo
 	if len(includePatterns) == 0 {
 		// TODO(ijt): check config like search.defaultRepos.enabled so installations not
-		// using it won't have to pay the ~0.5 msec cost of this query.
+		// using default_repos won't have to pay the ~0.5 msec cost of this query.
 		defaultRepos, err = db.DefaultRepos.List(ctx)
 		if err != nil {
 			return nil, nil, false, err
@@ -417,11 +417,8 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	var repos []*types.Repo
 	if len(defaultRepos) > 0 {
 		repos = defaultRepos
-		repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
-		for _, r := range repos {
-			// Add a repo rev for the default branch of r.
-			rr := &search.RepositoryRevisions{ Repo: r, Revs: []search.RevisionSpecifier{{}} }
-			repoRevisions = append(repoRevisions, rr)
+		if len(repos) > maxRepoListSize {
+			repos = repos[:maxRepoListSize]
 		}
 	} else {
 		tr.LazyPrintf("Repos.List - start")
@@ -441,64 +438,65 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		if err != nil {
 			return nil, nil, false, err
 		}
+	}
+	overLimit = len(repos) >= maxRepoListSize
 
-		repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
-		tr.LazyPrintf("Associate/validate revs - start")
-		for _, repo := range repos {
-			revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
-			repoRev := &search.RepositoryRevisions{Repo: repo}
+	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
+	tr.LazyPrintf("Associate/validate revs - start")
+	for _, repo := range repos {
+		revs, clashingRevs := getRevsForMatchedRepo(repo.Name, includePatternRevs)
+		repoRev := &search.RepositoryRevisions{Repo: repo}
 
-			// We do in place filtering to reduce allocations. Common path is no
-			// filtering of revs.
-			if len(revs) > 0 {
-				repoRev.Revs = revs[:0]
-			}
-
-			// if multiple specified revisions clash, report this usefully:
-			if len(revs) == 0 && clashingRevs != nil {
-				missingRepoRevisions = append(missingRepoRevisions, &search.RepositoryRevisions{
-					Repo: repo,
-					Revs: clashingRevs,
-				})
-			}
-			// Check if the repository actually has the revisions that the user specified.
-			for _, rev := range revs {
-				if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
-					// Do not validate ref patterns. A ref pattern matching 0 refs is not necessarily
-					// invalid, so it's not clear what validation would even mean.
-				} else if isDefaultBranch := rev.RevSpec == ""; !isDefaultBranch { // skip default branch resolution to save time
-					// Validate the revspec.
-
-					// Do not trigger a repo-updater lookup (e.g.,
-					// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
-					// down by a lot (if we're looping over many repos). This means that it'll fail if a
-					// repo is not on gitserver.
-					//
-					// TODO(sqs): make this NOT send gitserver this revspec in EnsureRevision, to avoid
-					// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
-					// taking a long time because they all ask gitserver to try to fetch from the remote
-					// repo.
-					if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), nil, rev.RevSpec, &git.ResolveRevisionOptions{NoEnsureRevision: true}); gitserver.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
-						// The revspec does not exist, so don't include it, and report that it's missing.
-						if rev.RevSpec == "" {
-							// Report as HEAD not "" (empty string) to avoid user confusion.
-							rev.RevSpec = "HEAD"
-						}
-						missingRepoRevisions = append(missingRepoRevisions, &search.RepositoryRevisions{
-							Repo: repo,
-							Revs: []search.RevisionSpecifier{{RevSpec: rev.RevSpec}},
-						})
-						continue
-					}
-					// If err != nil and is not one of the err values checked for above, cloning and other errors will be handled later, so just ignore an error
-					// if there is one.
-				}
-
-				repoRev.Revs = append(repoRev.Revs, rev)
-			}
-
-			repoRevisions = append(repoRevisions, repoRev)
+		// We do in place filtering to reduce allocations. Common path is no
+		// filtering of revs.
+		if len(revs) > 0 {
+			repoRev.Revs = revs[:0]
 		}
+
+		// if multiple specified revisions clash, report this usefully:
+		if len(revs) == 0 && clashingRevs != nil {
+			missingRepoRevisions = append(missingRepoRevisions, &search.RepositoryRevisions{
+				Repo: repo,
+				Revs: clashingRevs,
+			})
+		}
+		// Check if the repository actually has the revisions that the user specified.
+		for _, rev := range revs {
+			if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
+				// Do not validate ref patterns. A ref pattern matching 0 refs is not necessarily
+				// invalid, so it's not clear what validation would even mean.
+			} else if isDefaultBranch := rev.RevSpec == ""; !isDefaultBranch { // skip default branch resolution to save time
+				// Validate the revspec.
+
+				// Do not trigger a repo-updater lookup (e.g.,
+				// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
+				// down by a lot (if we're looping over many repos). This means that it'll fail if a
+				// repo is not on gitserver.
+				//
+				// TODO(sqs): make this NOT send gitserver this revspec in EnsureRevision, to avoid
+				// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
+				// taking a long time because they all ask gitserver to try to fetch from the remote
+				// repo.
+				if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), nil, rev.RevSpec, &git.ResolveRevisionOptions{NoEnsureRevision: true}); gitserver.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
+					// The revspec does not exist, so don't include it, and report that it's missing.
+					if rev.RevSpec == "" {
+						// Report as HEAD not "" (empty string) to avoid user confusion.
+						rev.RevSpec = "HEAD"
+					}
+					missingRepoRevisions = append(missingRepoRevisions, &search.RepositoryRevisions{
+						Repo: repo,
+						Revs: []search.RevisionSpecifier{{RevSpec: rev.RevSpec}},
+					})
+					continue
+				}
+				// If err != nil and is not one of the err values checked for above, cloning and other errors will be handled later, so just ignore an error
+				// if there is one.
+			}
+
+			repoRev.Revs = append(repoRev.Revs, rev)
+		}
+
+		repoRevisions = append(repoRevisions, repoRev)
 	}
 
 	tr.LazyPrintf("Associate/validate revs - done")
