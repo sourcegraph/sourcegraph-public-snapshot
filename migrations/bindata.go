@@ -227,6 +227,8 @@
 // 1528395581_allows_dots_in_usernames.up.sql (355B)
 // 1528395582_add_default_repos.down.sql (51B)
 // 1528395582_add_default_repos.up.sql (80B)
+// 1528395583_add_default_repos_primary_key.down.sql (107B)
+// 1528395583_add_default_repos_primary_key.up.sql (67B)
 
 package migrations
 
@@ -4835,6 +4837,46 @@ func _1528395582_add_default_reposUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395583_add_default_repos_primary_keyDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x49\x4d\x4b\x2c\xcd\x29\x89\x2f\x4a\x2d\xc8\x2f\x56\xf0\xf5\x77\xf1\x74\x8b\x54\x48\x00\xf1\xe2\x33\x53\x12\x14\x3c\xfd\x42\xf0\xa9\x77\x09\xf2\x0f\x50\x08\x08\xf2\xf4\x75\x0c\x8a\x54\xf0\x76\x8d\xb4\xe6\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xf3\xb9\xc3\x4f\x6b\x00\x00\x00")
+
+func _1528395583_add_default_repos_primary_keyDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395583_add_default_repos_primary_keyDownSql,
+		"1528395583_add_default_repos_primary_key.down.sql",
+	)
+}
+
+func _1528395583_add_default_repos_primary_keyDownSql() (*asset, error) {
+	bytes, err := _1528395583_add_default_repos_primary_keyDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395583_add_default_repos_primary_key.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x84, 0xa, 0x1a, 0xf0, 0xd5, 0xde, 0x5e, 0x52, 0x16, 0x1c, 0xbd, 0x9d, 0x69, 0x49, 0x24, 0x84, 0x2f, 0x92, 0x3c, 0xb5, 0x78, 0xdd, 0x3a, 0xab, 0x67, 0x84, 0x2e, 0x40, 0x9f, 0x37, 0x64, 0x27}}
+	return a, nil
+}
+
+var __1528395583_add_default_repos_primary_keyUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x49\x4d\x4b\x2c\xcd\x29\x89\x2f\x4a\x2d\xc8\x2f\x56\x70\x74\x71\x51\x08\x08\xf2\xf4\x75\x0c\x8a\x54\xf0\x76\x8d\xd4\x00\x89\xc6\x67\xa6\x68\x5a\x73\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x6c\x18\x41\x90\x43\x00\x00\x00")
+
+func _1528395583_add_default_repos_primary_keyUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395583_add_default_repos_primary_keyUpSql,
+		"1528395583_add_default_repos_primary_key.up.sql",
+	)
+}
+
+func _1528395583_add_default_repos_primary_keyUpSql() (*asset, error) {
+	bytes, err := _1528395583_add_default_repos_primary_keyUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395583_add_default_repos_primary_key.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x2d, 0x3b, 0xcb, 0xfb, 0x2b, 0x81, 0xe3, 0x6f, 0x5f, 0x98, 0xca, 0x62, 0x50, 0x9b, 0x68, 0x76, 0x63, 0x8e, 0x59, 0x31, 0xff, 0x17, 0x75, 0x94, 0x23, 0x40, 0x9e, 0xc4, 0x19, 0x9e, 0x23, 0xa2}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5379,6 +5421,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395582_add_default_repos.down.sql": _1528395582_add_default_reposDownSql,
 
 	"1528395582_add_default_repos.up.sql": _1528395582_add_default_reposUpSql,
+
+	"1528395583_add_default_repos_primary_key.down.sql": _1528395583_add_default_repos_primary_keyDownSql,
+
+	"1528395583_add_default_repos_primary_key.up.sql": _1528395583_add_default_repos_primary_keyUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5649,6 +5695,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395581_allows_dots_in_usernames.up.sql":                  {_1528395581_allows_dots_in_usernamesUpSql, map[string]*bintree{}},
 	"1528395582_add_default_repos.down.sql":                       {_1528395582_add_default_reposDownSql, map[string]*bintree{}},
 	"1528395582_add_default_repos.up.sql":                         {_1528395582_add_default_reposUpSql, map[string]*bintree{}},
+	"1528395583_add_default_repos_primary_key.down.sql":           {_1528395583_add_default_repos_primary_keyDownSql, map[string]*bintree{}},
+	"1528395583_add_default_repos_primary_key.up.sql":             {_1528395583_add_default_repos_primary_keyUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

@@ -36,6 +36,16 @@ Indexes:
 
 ```
 
+# Table "public.default_repos"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ repo_id | integer | 
+Foreign-key constraints:
+    "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
+
+```
+
 # Table "public.discussion_comments"
 ```
      Column     |           Type           |                            Modifiers                             
@@ -380,7 +390,7 @@ Foreign-key constraints:
  deleted_at        | timestamp with time zone | 
 Indexes:
     "registry_extensions_pkey" PRIMARY KEY, btree (id)
-    "registry_extensions_publisher_name" UNIQUE, btree ((COALESCE(publisher_user_id, 0)), (COALESCE(publisher_org_id, 0)), name) WHERE deleted_at IS NULL
+    "registry_extensions_publisher_name" UNIQUE, btree (COALESCE(publisher_user_id, 0), COALESCE(publisher_org_id, 0), name) WHERE deleted_at IS NULL
     "registry_extensions_uuid" UNIQUE, btree (uuid)
 Check constraints:
     "registry_extensions_name_length" CHECK (char_length(name::text) > 0 AND char_length(name::text) <= 128)
@@ -428,6 +438,7 @@ Check constraints:
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
+    TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
