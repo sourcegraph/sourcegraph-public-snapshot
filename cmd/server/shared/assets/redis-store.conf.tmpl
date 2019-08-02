@@ -4,7 +4,7 @@ port {{ .Port }}
 protected-mode no
 
 # limit memory usage, return error when hitting limit
-maxmemory 200mb
+maxmemory 1gb
 maxmemory-policy noeviction
 
 # live commit log to disk, additionally snapshots every 10 minutes
