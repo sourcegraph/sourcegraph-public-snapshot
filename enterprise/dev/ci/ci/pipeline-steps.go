@@ -135,6 +135,7 @@ func addGoBenchmarks(c Config) func(*bk.Pipeline) {
 			bk.Cmd("export CTAGS_COMMAND=$(pwd)/cmd/symbols/universal-ctags-dev"),
 			bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
 			bk.Cmd("./cmd/replacer/build.sh installComby"),       // for replacer tests
+			bk.Env("GOGC", "400"),
 			bk.Cmd("./dev/ci/bench.sh "+old+" | tee "+oldout),
 			bk.Cmd("./dev/ci/bench.sh "+new+" | tee "+newout),
 			bk.Cmd("./dev/ci/benchdiff.sh "+oldout+" "+newout+" | tee diff-"+old+"-"+new+".bench.txt"),
