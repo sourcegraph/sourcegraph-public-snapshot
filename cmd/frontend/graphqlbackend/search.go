@@ -494,7 +494,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
 		for _, r := range repos {
 			// Add a repo rev for the default branch of r.
-			rr := &search.RepositoryRevisions{ Repo: r }
+			rr := &search.RepositoryRevisions{ Repo: r, Revs: []search.RevisionSpecifier{{}} }
 			repoRevisions = append(repoRevisions, rr)
 		}
 	}
