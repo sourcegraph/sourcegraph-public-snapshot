@@ -106,8 +106,8 @@ export const StatsPage: React.FunctionComponent<Props> = ({ location, history })
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {stats.languages.map(({ name, totalBytes }) => (
-                                                <tr key={name}>
+                                            {stats.languages.map(({ name, totalBytes }, i) => (
+                                                <tr key={name || i}>
                                                     <td>
                                                         <Link
                                                             to={urlToSearchWithExtraQuery(`lang:${name.toLowerCase()}`)}
@@ -153,7 +153,7 @@ export const StatsPage: React.FunctionComponent<Props> = ({ location, history })
                                         </thead>
                                         <tbody>
                                             {stats.owners.map(({ owner, totalBytes }) => (
-                                                <tr key={name}>
+                                                <tr key={owner}>
                                                     <td>
                                                         <Link
                                                             to={urlToSearchWithExtraQuery(

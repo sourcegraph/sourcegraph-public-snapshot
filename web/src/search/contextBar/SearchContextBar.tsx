@@ -1,11 +1,14 @@
 import H from 'history'
+import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { ContributableMenu, SearchFilters } from '../../../../shared/src/api/protocol'
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { FilterChip } from '../FilterChip'
 import { SearchScopeWithOptionalName } from '../results/SearchResultsFilterBars'
@@ -89,6 +92,9 @@ export const SearchContextBar: React.FunctionComponent<Props> = ({
                     </ul>
                 </section>
                 <section className="border-top mt-3 pt-1">
+                    <Link to={`/stats?${buildSearchURLQuery(navbarSearchQuery)}`} className="nav-link px-2">
+                        <ChartLineIcon className="icon-inline mr-2" /> Statistics
+                    </Link>
                     <ActionsNavItems
                         {...props}
                         menu={ContributableMenu.SearchResultsToolbar}
