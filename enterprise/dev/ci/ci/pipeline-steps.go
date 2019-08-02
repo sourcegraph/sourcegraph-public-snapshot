@@ -129,7 +129,8 @@ func addGoBenchmarks(c Config) func(*bk.Pipeline) {
 		pipeline.AddStep("bench "+label+" "+commit,
 			bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
 			bk.Cmd("./cmd/replacer/build.sh installComby"),       // for replacer tests
-			bk.Cmd("./dev/ci/bench.sh "+commit+" | tee "+benchfile),
+			bk.Cmd("./dev/ci/bench.sh "+commit+" > "+benchfile),
+			bk.Cmd("cat "+benchfile),
 			bk.ArtifactPaths(benchfile),
 		)
 		return benchfile
@@ -142,7 +143,8 @@ func addGoBenchmarks(c Config) func(*bk.Pipeline) {
 		wait(pipeline)
 		pipeline.AddStep("benchdiff",
 			bk.Cmd("buildkite-agent artifact download '*.bench.txt' ."),
-			bk.Cmd("./dev/ci/benchdiff.sh "+old+" "+new+" | tee diff-"+prev+"-"+c.commit+".bench.txt"),
+			bk.Cmd("./dev/ci/benchdiff.sh "+old+" "+new+" > diff-"+prev+"-"+c.commit+".bench.txt"),
+			bk.Cmd("cat diff*.bench.txt"),
 			bk.ArtifactPaths("diff*.bench.txt"),
 		)
 	}
