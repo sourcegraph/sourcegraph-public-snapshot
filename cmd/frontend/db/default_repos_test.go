@@ -44,3 +44,20 @@ func Test_defaultRepos_List(t *testing.T) {
 		})
 	}
 }
+
+//
+func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
+	ctx := dbtesting.TestContext(b)
+	select {
+	case <-ctx.Done():
+		b.Fatal("context already canceled")
+	default:
+	}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_, err := DefaultRepos.List(ctx)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
