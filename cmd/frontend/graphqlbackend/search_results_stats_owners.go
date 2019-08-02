@@ -2,15 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
-	"os"
 	"sort"
 	"strings"
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func (srs *searchResultsStats) Owners(ctx context.Context) ([]*OwnerStatistics, error) {
@@ -19,13 +16,9 @@ func (srs *searchResultsStats) Owners(ctx context.Context) ([]*OwnerStatistics, 
 		return nil, err
 	}
 
-	getFiles := func(ctx context.Context, repo gitserver.Repo, commitID api.CommitID, path string) ([]os.FileInfo, error) {
-		return git.ReadDir(ctx, repo, commitID, "", true)
-	}
-
 	byOwner := map[string]int{}
 	recordOwner := func(r *GitCommitResolver, lines int) {
-		if author := r.Author(); author != nil {
+		if author := r.Author(); author != nil && author.person != nil {
 			byOwner[author.person.email] += lines
 		}
 	}
@@ -43,7 +36,19 @@ func (srs *searchResultsStats) Owners(ctx context.Context) ([]*OwnerStatistics, 
 					}
 					lines = strings.Count(content, "\n")
 				}
-				recordOwner(fileMatch.File().Commit(), lines)
+				// repo,err := backend.CachedGitRepo(ctx, fileMatch.Repository().repo)
+				// if err != nil {
+				// 	return nil, err
+				// }
+				// commit,err := git.GetCommit(ctx,repo,nil,fileMatch.commitID)
+				// if err != nil {
+				// 	return nil, err
+				// }
+				commit, err := GetGitCommit(ctx, fileMatch.Repository(), GitObjectID(fileMatch.commitID))
+				if err != nil {
+					return nil, err
+				}
+				recordOwner(commit, lines)
 			}
 		} else if repo, ok := res.ToRepository(); ok {
 			branchRef, err := repo.DefaultBranch(ctx)
@@ -62,11 +67,15 @@ func (srs *searchResultsStats) Owners(ctx context.Context) ([]*OwnerStatistics, 
 			for _, l := range inv.Languages {
 				sum += l.TotalBytes / 31 // TODO!(sqs): hack adjust for lines
 			}
+			if sum > 10000 {
+				sum = 9721 + (sum / 100)
+			}
 
 			commit, err := branchRef.Target().Commit(ctx)
 			if err != nil {
 				return nil, err
 			}
+
 			recordOwner(commit, int(sum))
 		} else if commit, ok := res.ToCommitSearchResult(); ok {
 			if commit.raw.Diff == nil {

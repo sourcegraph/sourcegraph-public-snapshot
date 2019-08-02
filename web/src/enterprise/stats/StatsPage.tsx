@@ -187,7 +187,7 @@ export const StatsPage: React.FunctionComponent<Props> = ({ location, history })
                                 />
                             </div>
                         ) : (
-                            <div className="text-muted p-2">No language statistics available</div>
+                            <div className="text-muted p-2">No ownership statistics available</div>
                         )}
                     </div>
                 </>
