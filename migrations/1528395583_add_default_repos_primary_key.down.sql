@@ -1,4 +1,3 @@
 BEGIN;
-ALTER TABLE default_repos MODIFY `repo_id` INT;
-ALTER TABLE default_repos DROP PRIMARY KEY;
+ALTER TABLE default_repos DROP CONSTRAINT default_repos_pkey;
 COMMIT;
