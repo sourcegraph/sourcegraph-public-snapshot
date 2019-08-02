@@ -227,7 +227,7 @@
 // 1528395581_allows_dots_in_usernames.up.sql (355B)
 // 1528395582_add_default_repos.down.sql (51B)
 // 1528395582_add_default_repos.up.sql (80B)
-// 1528395583_add_default_repos_primary_key.down.sql (107B)
+// 1528395583_add_default_repos_primary_key.down.sql (77B)
 // 1528395583_add_default_repos_primary_key.up.sql (67B)
 
 package migrations
@@ -4837,7 +4837,7 @@ func _1528395582_add_default_reposUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395583_add_default_repos_primary_keyDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x49\x4d\x4b\x2c\xcd\x29\x89\x2f\x4a\x2d\xc8\x2f\x56\xf0\xf5\x77\xf1\x74\x8b\x54\x48\x00\xf1\xe2\x33\x53\x12\x14\x3c\xfd\x42\xf0\xa9\x77\x09\xf2\x0f\x50\x08\x08\xf2\xf4\x75\x0c\x8a\x54\xf0\x76\x8d\xb4\xe6\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xf3\xb9\xc3\x4f\x6b\x00\x00\x00")
+var __1528395583_add_default_repos_primary_keyDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x49\x4d\x4b\x2c\xcd\x29\x89\x2f\x4a\x2d\xc8\x2f\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x41\x95\x8d\x2f\xc8\x4e\xad\xb4\xe6\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x12\x40\xa9\x9c\x4d\x00\x00\x00")
 
 func _1528395583_add_default_repos_primary_keyDownSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -4853,7 +4853,7 @@ func _1528395583_add_default_repos_primary_keyDownSql() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "1528395583_add_default_repos_primary_key.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x84, 0xa, 0x1a, 0xf0, 0xd5, 0xde, 0x5e, 0x52, 0x16, 0x1c, 0xbd, 0x9d, 0x69, 0x49, 0x24, 0x84, 0x2f, 0x92, 0x3c, 0xb5, 0x78, 0xdd, 0x3a, 0xab, 0x67, 0x84, 0x2e, 0x40, 0x9f, 0x37, 0x64, 0x27}}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x9e, 0xa5, 0xbd, 0x7d, 0x25, 0xe7, 0xa7, 0x4c, 0x10, 0xb0, 0x47, 0x87, 0xd, 0xe2, 0x7d, 0x2f, 0xe5, 0xa8, 0x1f, 0xd0, 0x95, 0xf0, 0xab, 0x1f, 0xc4, 0x46, 0xf1, 0xeb, 0xef, 0x49, 0x7a, 0x78}}
 	return a, nil
 }
 

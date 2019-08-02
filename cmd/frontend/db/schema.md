@@ -40,7 +40,9 @@ Indexes:
 ```
  Column  |  Type   | Modifiers 
 ---------+---------+-----------
- repo_id | integer | 
+ repo_id | integer | not null
+Indexes:
+    "default_repos_pkey" PRIMARY KEY, btree (repo_id)
 Foreign-key constraints:
     "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
 
