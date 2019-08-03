@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"log"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -18,7 +17,6 @@ func (GraphQLResolver) Campaigns(ctx context.Context, arg *graphqlbackend.Campai
 			return nil, err
 		}
 		opt.ObjectThreadID = threadID
-		log.Println("THREADID = ", opt.ObjectThreadID)
 	}
 	return campaignsByOptions(ctx, opt, &arg.ConnectionArgs)
 }

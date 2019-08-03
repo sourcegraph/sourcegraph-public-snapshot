@@ -191,3 +191,9 @@ type CampaignConnection interface {
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 }
+
+type AddRemoveThreadToFromCampaignEvent struct {
+	EventCommon
+	Campaign Campaign
+	Thread   ThreadOrIssueOrChangeset
+}

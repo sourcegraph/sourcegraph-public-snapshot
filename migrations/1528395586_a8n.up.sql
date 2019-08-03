@@ -1,17 +1,8 @@
 BEGIN;
 
-CREATE TABLE events (
-	id bigserial PRIMARY KEY,
-    type text NOT NULL,
-	at timestamp with time zone NOT NULL,
-);
-
------------------
-
-CREATE TYPE thread_type AS enum ('THREAD', 'ISSUE', 'CHANGESET');
 CREATE TABLE threads (
 	id bigserial PRIMARY KEY,
-	type thread_type NOT NULL,
+	type text NOT NULL,
 	repository_id integer NOT NULL REFERENCES repo(id) ON DELETE CASCADE,
 	title text NOT NULL,
 	external_url text,
@@ -84,5 +75,26 @@ CREATE TABLE rules (
 	settings text NOT NULL
 );
 CREATE INDEX rules_project_id ON rules(project_id);
+
+-----------------
+
+CREATE TABLE events (
+	id bigserial PRIMARY KEY,
+	type text NOT NULL,
+	actor_user_id integer REFERENCES users(id) ON DELETE CASCADE,
+    created_at timestamp with time zone NOT NULL,
+
+	-- The various event types give their own meanings to these columns.
+	thread_id bigint REFERENCES threads(id) ON DELETE CASCADE,
+	campaign_id bigint REFERENCES campaigns(id) ON DELETE CASCADE,
+	comment_id bigint REFERENCES comments(id) ON DELETE CASCADE,
+	rule_id bigint REFERENCES rules(id) ON DELETE CASCADE,
+    repository_id integer REFERENCES repo(id) ON DELETE CASCADE,
+    user_id integer REFERENCES users(id) ON DELETE CASCADE,
+    org_id integer REFERENCES orgs(id) ON DELETE CASCADE,
+    registry_extension_id integer REFERENCES registry_extensions(id) ON DELETE CASCADE,
+    data jsonb
+);
+
 
 COMMIT;
