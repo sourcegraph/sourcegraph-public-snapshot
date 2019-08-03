@@ -28,6 +28,7 @@ This is the main entry point for all styles. It should import all component styl
 @import './repo/GitRefTag';
 @import './repo/RepoContainer';
 @import './repo/settings/RepoSettingsArea';
+@import './components/infoSidebar/index';
 @import './components/overviewPagesArea/index';
 @import './components/completion/CompletionWidgetDropdown';
 @import './components/CopyableText';

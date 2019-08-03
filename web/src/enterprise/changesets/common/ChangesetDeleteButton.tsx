@@ -27,7 +27,7 @@ const deleteChangeset = (args: GQL.IDeleteChangesetOnMutationArguments): Promise
 
 interface Props extends ExtensionsControllerNotificationProps {
     changeset: Pick<GQL.IChangeset, 'id'>
-    onDelete: () => void
+    onDelete?: () => void
     className?: string
     buttonClassName?: string
 }
@@ -53,7 +53,9 @@ export const ChangesetDeleteButton: React.FunctionComponent<Props> = ({
             try {
                 await deleteChangeset({ changeset: changeset.id })
                 setIsLoading(false)
-                onDelete()
+                if (onDelete) {
+                    onDelete()
+                }
             } catch (err) {
                 setIsLoading(false)
                 extensionsController.services.notifications.showMessages.next({
@@ -67,6 +69,7 @@ export const ChangesetDeleteButton: React.FunctionComponent<Props> = ({
     return (
         <button type="button" disabled={isLoading} className={`btn ${buttonClassName} ${className}`} onClick={onClick}>
             {isLoading ? <LoadingSpinner className="icon-inline" /> : <DeleteIcon className="icon-inline" />} Delete
+            changeset
         </button>
     )
 }

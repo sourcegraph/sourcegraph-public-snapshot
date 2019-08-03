@@ -1,21 +1,23 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { HeroPage } from '../../../components/HeroPage'
+import { InfoSidebar, InfoSidebarSection } from '../../../components/infoSidebar/InfoSidebar'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
+import { WithSidebar } from '../../../components/withSidebar/WithSidebar'
 import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsArea'
+import { CampaignActivity } from './activity/CampaignActivity'
 import { CampaignOverview } from './CampaignOverview'
 import { CampaignFileDiffsList } from './fileDiffs/CampaignFileDiffsList'
 import { CampaignRepositoriesList } from './repositories/CampaignRepositoriesList'
 import { CampaignRulesList } from './rules/CampaignRulesList'
 import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
 import { useCampaignByID } from './useCampaignByID'
-import { CampaignActivity } from './activity/CampaignActivity'
 
 export interface CampaignAreaContext
     extends Pick<NamespaceCampaignsAreaContext, Exclude<keyof NamespaceCampaignsAreaContext, 'namespace'>> {
@@ -70,6 +72,11 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
         }
     }, [campaign, setBreadcrumbItem])
 
+    const sidebarSections = useMemo<InfoSidebarSection[]>(() => {
+        const a = 1
+        return []
+    }, [])
+
     if (campaign === LOADING) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
     }
@@ -88,48 +95,50 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <OverviewPagesArea<CampaignAreaContext>
-            context={context}
-            header={header}
-            overviewComponent={CampaignOverview}
-            pages={[
-                {
-                    title: 'Activity',
-                    path: '/',
-                    exact: true,
-                    render: () => <CampaignActivity {...context} className={PAGE_CLASS_NAME} />,
-                },
-                {
-                    title: 'Rules',
-                    path: '/rules',
-                    render: () => <CampaignRulesList {...context} className={PAGE_CLASS_NAME} />,
-                },
-                {
-                    title: 'Changesets',
-                    path: '/changesets',
-                    render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
-                },
-                {
-                    title: 'Commits',
-                    path: '/commits',
-                    render: () => (
-                        <CampaignRepositoriesList {...context} showCommits={true} className={PAGE_CLASS_NAME} />
-                    ),
-                },
-                {
-                    title: 'Changes',
-                    path: '/changes',
-                    render: () => (
-                        <CampaignFileDiffsList
-                            {...context}
-                            platformContext={props.platformContext}
-                            className={PAGE_CLASS_NAME}
-                        />
-                    ),
-                },
-            ]}
-            location={props.location}
-            match={match}
-        />
+        <WithSidebar sidebarPosition="right" sidebar={<InfoSidebar sections={sidebarSections} />} className="flex-1">
+            <OverviewPagesArea<CampaignAreaContext>
+                context={context}
+                header={header}
+                overviewComponent={CampaignOverview}
+                pages={[
+                    {
+                        title: 'Activity',
+                        path: '/',
+                        exact: true,
+                        render: () => <CampaignActivity {...context} className={PAGE_CLASS_NAME} />,
+                    },
+                    {
+                        title: 'Rules',
+                        path: '/rules',
+                        render: () => <CampaignRulesList {...context} className={PAGE_CLASS_NAME} />,
+                    },
+                    {
+                        title: 'Changesets',
+                        path: '/changesets',
+                        render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
+                    },
+                    {
+                        title: 'Commits',
+                        path: '/commits',
+                        render: () => (
+                            <CampaignRepositoriesList {...context} showCommits={true} className={PAGE_CLASS_NAME} />
+                        ),
+                    },
+                    {
+                        title: 'Changes',
+                        path: '/changes',
+                        render: () => (
+                            <CampaignFileDiffsList
+                                {...context}
+                                platformContext={props.platformContext}
+                                className={PAGE_CLASS_NAME}
+                            />
+                        ),
+                    },
+                ]}
+                location={props.location}
+                match={match}
+            />
+        </WithSidebar>
     )
 }

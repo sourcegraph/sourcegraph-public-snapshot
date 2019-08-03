@@ -6,7 +6,9 @@ import { RouteComponentProps } from 'react-router'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { HeroPage } from '../../../components/HeroPage'
+import { InfoSidebar } from '../../../components/infoSidebar/InfoSidebar'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
+import { WithSidebar } from '../../../components/withSidebar/WithSidebar'
 import { RepositoryThreadsAreaContext } from '../repository/RepositoryThreadsArea'
 import { ChangesetCommitsList } from './commits/ChangesetCommitsList'
 import { ThreadOverview } from './ThreadOverview'
@@ -86,14 +88,20 @@ export const ThreadArea: React.FunctionComponent<Props> = ({
     return (
         <>
             <style>{`.user-area-header, .org-header { display: none; } .org-area > .container, .user-area > .container { margin: unset; margin-top: unset !important; width: unset; padding: unset; } /* TODO!(sqs): hack */`}</style>
-            <OverviewPagesArea<ThreadAreaContext>
-                context={context}
-                header={header}
-                overviewComponent={ThreadOverview}
-                pages={[]}
-                location={props.location}
-                match={match}
-            />
+            <WithSidebar
+                sidebarPosition="right"
+                sidebar={<InfoSidebar threadlike={{ title: 'Hello' }} />}
+                className="flex-1"
+            >
+                <OverviewPagesArea<ThreadAreaContext>
+                    context={context}
+                    header={header}
+                    overviewComponent={ThreadOverview}
+                    pages={[]}
+                    location={props.location}
+                    match={match}
+                />
+            </WithSidebar>
         </>
     )
 }

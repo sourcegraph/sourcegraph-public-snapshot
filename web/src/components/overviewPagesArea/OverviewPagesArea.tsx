@@ -64,39 +64,37 @@ export const OverviewPagesArea = <P extends object>({
             !page.condition || page.condition(context)
     )
     return (
-        <div className={`overview-pages-area flex-1 d-flex overflow-hidden ${className}`}>
-            <div className="d-flex flex-column flex-1 overflow-auto">
-                <ErrorBoundary location={location}>
-                    <div className="container">
-                        {header}
-                        <OverviewComponent {...context} className="pb-3" />
-                    </div>
-                    <div className="w-100 border-bottom" />
-                    <OverviewPagesAreaNavbar areaUrl={match.url} pages={pages} className="flex-0 sticky-top bg-body" />
-                </ErrorBoundary>
-                <ErrorBoundary location={location}>
-                    <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
-                        <Switch>
-                            {pages.map((page, i) => (
-                                <Route
-                                    key={i}
-                                    path={`${match.url}${page.path}`}
-                                    exact={page.exact}
-                                    // tslint:disable-next-line: jsx-no-lambda
-                                    render={routeComponentProps => page.render({ ...routeComponentProps, ...context })}
-                                />
-                            ))}
-                            <Route>
-                                <HeroPage
-                                    icon={MapSearchIcon}
-                                    title="404: Not Found"
-                                    subtitle="Sorry, the requested page was not found."
-                                />
-                            </Route>
-                        </Switch>
-                    </React.Suspense>
-                </ErrorBoundary>
-            </div>
+        <div className={`overview-pages-area d-flex flex-column ${className}`}>
+            <ErrorBoundary location={location}>
+                <div className="container">
+                    {header}
+                    <OverviewComponent {...context} className="pb-3" />
+                </div>
+                <div className="w-100 border-bottom" />
+                <OverviewPagesAreaNavbar areaUrl={match.url} pages={pages} className="flex-0 sticky-top bg-body" />
+            </ErrorBoundary>
+            <ErrorBoundary location={location}>
+                <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                    <Switch>
+                        {pages.map((page, i) => (
+                            <Route
+                                key={i}
+                                path={`${match.url}${page.path}`}
+                                exact={page.exact}
+                                // tslint:disable-next-line: jsx-no-lambda
+                                render={routeComponentProps => page.render({ ...routeComponentProps, ...context })}
+                            />
+                        ))}
+                        <Route>
+                            <HeroPage
+                                icon={MapSearchIcon}
+                                title="404: Not Found"
+                                subtitle="Sorry, the requested page was not found."
+                            />
+                        </Route>
+                    </Switch>
+                </React.Suspense>
+            </ErrorBoundary>
         </div>
     )
 }
