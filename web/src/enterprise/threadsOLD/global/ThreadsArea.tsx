@@ -47,7 +47,7 @@ export const ThreadsArea: React.FunctionComponent<ThreadsAreaProps> = ({ match, 
 
     const context: ThreadsAreaContext = {
         ...props,
-        type: props.type || GQL.ThreadType.THREAD,
+        type: props.type || 'TODO',
     }
 
     return (

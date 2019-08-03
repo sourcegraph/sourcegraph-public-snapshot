@@ -8,12 +8,12 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { HeroPage } from '../../../components/HeroPage'
 import { GitPullRequestIcon } from '../../../util/octicons'
+import { CampaignImpactSummaryBar } from '../common/CampaignImpactSummaryBar'
 import { CampaignFileDiffsList } from '../detail/fileDiffs/CampaignFileDiffsList'
 import { CampaignRepositoriesList } from '../detail/repositories/CampaignRepositoriesList'
 import { CampaignRulesList } from '../detail/rules/CampaignRulesList'
 import { useCampaignByID } from '../detail/useCampaignByID'
 import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsArea'
-import { CampaignSummaryBar } from './CampaignSummaryBar'
 import { CreateCampaignFromPreviewForm } from './CreateCampaignFromPreviewForm'
 
 interface Props
@@ -73,7 +73,7 @@ export const CampaignPreviewPage: React.FunctionComponent<Props> = props => {
                         </span>
                     </div>
                 )}
-                <CampaignSummaryBar {...props} campaign={campaign} />
+                <CampaignImpactSummaryBar {...props} campaign={campaign} />
             </div>
             <hr className="my-4" />
             <div className="container">

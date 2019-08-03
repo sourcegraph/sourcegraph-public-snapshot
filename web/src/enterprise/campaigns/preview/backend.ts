@@ -1,42 +1,44 @@
 import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
+import { first, map } from 'rxjs/operators'
+import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { parseRepoURI } from '../../../../../shared/src/util/url'
-import { mutateGraphQL } from '../../../backend/graphql'
-import { createThread } from '../../../discussions/backend'
+import { authenticatedUser } from '../../../auth'
+import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { fetchRepository } from '../../../repo/settings/backend'
+import { createChangeset } from '../../changesets/repository/new/ChangesetsNewPage'
 import { FileDiff } from '../../threadsOLD/detail/changes/computeDiff'
-import { ChangesetDelta, GitHubPRLink, ThreadSettings } from '../../threadsOLD/settings'
+import { GitHubPRLink } from '../../threadsOLD/settings'
+import { addThreadsToCampaign } from '../detail/threads/AddThreadToCampaignDropdownButton'
+import { createCampaign } from '../namespace/new/CampaignsNewPage'
 
 export const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
 
-/**
- * The initial status for a changeset thread when creating it. {@link GQL.ThreadStatus.OPEN}
- * is for "Create changeset" and {@link GQL.ThreadStatus.PREVIEW} is for "Preview changeset".
- */
-export type ChangesetCreationStatus = GQL.ThreadStatus.OPEN | GQL.ThreadStatus.PREVIEW
-
-interface ChangesetCreationInfo
-    extends Required<Pick<GQL.ICreateThreadOnDiscussionsMutationArguments['input'], 'title' | 'contents'>>,
-        Pick<ThreadSettings, 'plan'> {
-    status: ChangesetCreationStatus
-}
+interface CampaignCreationInfo extends Pick<GQL.ICreateCampaignInput, 'name' | 'description' | 'preview' | 'rules'> {}
 
 /**
- * Create a changeset by applying the diffs.
+ * Create a campaign by applying the diffs.
  */
-export async function createChangesetFromDiffs(
+export async function createCampaignFromDiffs(
     fileDiffs: FileDiff[],
-    info: ChangesetCreationInfo
-): Promise<Pick<GQL.IDiscussionThread, 'id' | 'idWithoutKind' | 'url' | 'status'>> {
+    info: CampaignCreationInfo
+): Promise<Pick<GQL.ICampaign, 'id' | 'url'>> {
     const githubToken = localStorage.getItem('githubToken')
     if (githubToken === null) {
         throw new Error(
             "You must set a GitHub access token (`localStorage.githubToken='...'` in your browser's JavaScript console) then try again."
         )
     }
+
+    const authedUser = await authenticatedUser.pipe(first()).toPromise()
+    if (!authedUser) {
+        throw new Error('not signed in')
+    }
+    const campaign = await createCampaign({
+        ...info,
+        namespace: authedUser.id,
+    })
 
     const fileDiffsByRepo = new Map<string, FileDiff[]>()
     for (const fileDiff of fileDiffs) {
@@ -46,57 +48,71 @@ export async function createChangesetFromDiffs(
         fileDiffsByRepo.set(repo, repoFileDiffs)
     }
 
-    const deltas: Promise<ChangesetDelta>[] = []
-    const relatedPRs: Promise<GitHubPRLink>[] = []
+    const changesets: Promise<GQL.IChangeset>[] = []
     for (const [repoName, fileDiffs] of fileDiffsByRepo) {
-        const repo = await fetchRepository(repoName).toPromise()
-        const branchName = info.title!.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() // TODO!(sqs)
-        const delta: ChangesetDelta = {
-            repository: repo.id,
-            base: 'refs/heads/master' /* TODO!(sqs) */,
-            head: `refs/heads/${branchName}` /* TODO!(sqs) */,
-        }
+        const repo = (await queryGraphQL(
+            gql`
+                query RepositoryForChangeset($name: String!) {
+                    repository(name: $name) {
+                        id
+                        commit(rev: "HEAD") {
+                            oid
+                        }
+                    }
+                }
+            `,
+            { name: repoName }
+        )
+            .pipe(
+                map(dataOrThrowErrors),
+                map(data => data.repository)
+            )
+            .toPromise())!
 
-        const baseCommit = parseRepoURI(fileDiffs[0].newPath!).commitID!
-        deltas.push(
+        const baseRef = 'refs/heads/master' /* TODO!(sqs) */
+        const branchName = info.name.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() // TODO!(sqs)
+        const headRef = `refs/heads/${branchName}` /* TODO!(sqs) */
+
+        const baseCommit = repo.commit!.oid
+
+        // TODO!(sqs) hack create github PRs
+        const title = info.name || 'Sourcegraph changeset'
+        changesets.push(
             gitCreateRefFromPatch({
                 input: {
-                    repository: delta.repository,
-                    name: delta.head,
+                    repository: repo.id,
+                    name: headRef,
                     baseCommit,
                     patch: fileDiffs.map(({ patch }) => patch).join('\n'),
-                    commitMessage:
-                        info.plan && info.plan.operations.length > 0
-                            ? info.plan.operations.map(c => c.message).join(', ')
-                            : 'Changeset commit',
+                    commitMessage: info.name,
                 },
             })
                 .toPromise()
-                .then(() => delta)
-        )
-
-        // TODO!(sqs) hack create github PRs
-        relatedPRs.push(
-            createGitHubPR(githubToken, {
-                repositoryName: repoName,
-                baseRefName: delta.base,
-                headRefName: delta.head,
-                title: info.title || 'Sourcegraph changeset',
-            })
+                .then(() =>
+                    createGitHubPR(githubToken, {
+                        repositoryName: repoName,
+                        baseRefName: baseRef,
+                        headRefName: headRef,
+                        title,
+                    })
+                )
+                .then(prLink =>
+                    createChangeset({
+                        repository: repo.id,
+                        title,
+                        preview: info.preview,
+                        baseRef,
+                        headRef,
+                        externalURL: prLink.url,
+                    })
+                )
         )
     }
 
-    const settings: ThreadSettings = {
-        deltas: await Promise.all(deltas),
-        plan: info.plan,
-        relatedPRs: await Promise.all(await relatedPRs),
-    }
-    return createThread({
-        ...info,
-        type: GQL.ThreadType.CHANGESET,
-        project: FAKE_PROJECT_ID,
-        settings: JSON.stringify(settings, null, 2),
-    }).toPromise()
+    await Promise.all(changesets).then(changesets =>
+        addThreadsToCampaign({ campaign: campaign.id, threads: changesets.map(({ id }) => id) })
+    )
+    return campaign
 }
 
 function gitCreateRefFromPatch(

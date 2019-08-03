@@ -32,7 +32,6 @@ interface ChangesetsAreaProps
 export const ChangesetsArea: React.FunctionComponent<ChangesetsAreaProps> = ({ match, ...props }) => {
     const context: ChangesetsAreaContext = {
         ...props,
-        type: GQL.ThreadType.CHANGESET,
     }
 
     return (

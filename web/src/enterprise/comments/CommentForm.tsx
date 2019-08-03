@@ -123,6 +123,7 @@ export const CommentForm: React.FunctionComponent<Props> = ({
                 rows={5} // TODO!(sqs): use autosizing textarea and make this minRows={5}
                 disabled={disabled}
                 extensionsController={extensionsController}
+                style={{ resize: 'vertical' }}
             />
             <div className="d-flex align-items-center justify-content-end">
                 {onCancel && (

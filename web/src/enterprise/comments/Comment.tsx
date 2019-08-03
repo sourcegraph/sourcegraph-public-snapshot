@@ -53,7 +53,7 @@ const deleteComment = (args: GQL.IDeleteCommentOnMutationArguments): Promise<voi
 
 interface Props extends ExtensionsControllerProps {
     comment: GQL.Comment
-    onCommentUpdate: (update?: Partial<GQL.Comment>) => void
+    onCommentUpdate: (update?: Partial<Pick<GQL.IComment, Exclude<keyof GQL.IComment, '__typename'>>>) => void
     createdVerb?: string
     emptyBody?: string
 

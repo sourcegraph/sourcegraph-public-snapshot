@@ -2,6 +2,7 @@ import H from 'history'
 import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { Comment } from '../../comments/Comment'
+import { CampaignImpactSummaryBar } from '../common/CampaignImpactSummaryBar'
 import { CampaignAreaContext } from './CampaignArea'
 import { CampaignHeaderEditableName } from './header/CampaignHeaderEditableName'
 
@@ -31,9 +32,10 @@ export const CampaignOverview: React.FunctionComponent<Props> = ({
             {...props}
             comment={campaign}
             onCommentUpdate={onCampaignUpdate}
-            createdVerb="created campaign"
+            createdVerb="started campaign"
             emptyBody="No description provided."
             className="mb-3"
         />
+        <CampaignImpactSummaryBar campaign={campaign} />
     </div>
 )

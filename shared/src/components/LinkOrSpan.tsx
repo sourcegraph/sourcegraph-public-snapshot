@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Link } from './Link'
+import { LocationDescriptor } from 'history'
 
 /**
  * The LinkOrSpan component renders a <Link> if the "to" property is a non-empty string; otherwise it renders the
@@ -7,7 +8,7 @@ import { Link } from './Link'
  */
 export const LinkOrSpan: React.FunctionComponent<
     {
-        to: string | undefined | null
+        to: LocationDescriptor | undefined | null
         children?: React.ReactNode
     } & React.AnchorHTMLAttributes<HTMLAnchorElement>
 > = ({ to, className = '', children, ...otherProps }) => {

@@ -12,9 +12,9 @@ import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { RulesArea } from '../../enterprise/a8n/rules/scope/ScopeRulesArea'
-import { ChangesetsArea } from '../../enterprise/changesetsOLD/global/ChangesetsArea'
+// import { ChangesetsArea } from '../../enterprise/changesetsOLD/global/ChangesetsArea'
 import { ChecksArea } from '../../enterprise/checks/scope/ScopeChecksArea'
-import { ThreadsArea } from '../../enterprise/threadsOLD/global/ThreadsArea'
+// import { ThreadsArea } from '../../enterprise/threadsOLD/global/ThreadsArea'
 import { ProjectLabelsPage } from './labels/ProjectLabelsPage'
 import { ProjectSettingsPage } from './settings/ProjectSettingsPage'
 import { ProjectAreaSidebar } from './sidebar/ProjectAreaSidebar'
@@ -127,12 +127,12 @@ export const ProjectArea: React.FunctionComponent<Props> = props => {
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => <ChecksArea {...context} {...routeComponentProps} />}
                         />
-                        <Route
+                        {/*<Route
                             path={`${props.match.url}/threads`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => <ThreadsArea {...context} {...routeComponentProps} />}
-                        />
+                        />*/}
                         <Route
                             path={`${props.match.url}/labels`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490

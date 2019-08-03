@@ -135,6 +135,11 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                             />
                         ),
                     },
+                    {
+                        title: 'Impact',
+                        path: '/impact',
+                        render: () => 'TODO!(sqs)',
+                    },
                 ]}
                 location={props.location}
                 match={match}

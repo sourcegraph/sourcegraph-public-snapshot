@@ -9,7 +9,6 @@ import { ThreadStatusButton } from '../../form/ThreadStatusButton'
 import { ThreadSettings } from '../../settings'
 import { ThreadStatusItemsProgressBar } from '../actions/ThreadStatusItemsProgressBar'
 import { ThreadHeaderEditableTitle } from '../header/ThreadHeaderEditableTitle'
-import { ThreadBreadcrumbs } from './ThreadBreadcrumbs'
 import { ThreadDescription } from './ThreadDescription'
 
 interface Props extends ExtensionsControllerProps {
@@ -40,7 +39,6 @@ export const ThreadOverview: React.FunctionComponent<Props> = ({
     ...props
 }) => (
     <div className={`thread-overview ${className || ''}`}>
-        <ThreadBreadcrumbs thread={thread} project={project} areaURL={areaURL} className="py-3" />
         <hr className="my-0" />
         <div className="d-flex align-items-center py-3">
             <ThreadStatusBadge thread={thread} className="mr-3" />
@@ -51,9 +49,12 @@ export const ThreadOverview: React.FunctionComponent<Props> = ({
                         <PersonLink user={thread.author} />
                     </strong>
                 </small>
-                {thread.type === GQL.ThreadType.ISSUE && (
-                    <ThreadStatusItemsProgressBar className="mt-1 mb-3" height="0.3rem" />
-                )}
+                {
+                    /*thread.type === GQL.ThreadType.ISSUE &&*/ <ThreadStatusItemsProgressBar
+                        className="mt-1 mb-3"
+                        height="0.3rem"
+                    />
+                }
             </div>
             <ThreadStatusButton
                 {...props}

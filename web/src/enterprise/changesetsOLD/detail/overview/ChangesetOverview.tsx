@@ -11,7 +11,6 @@ import { ActionsIcon, GitPullRequestIcon } from '../../../../util/octicons'
 import { ChecksIcon } from '../../../checks/icons'
 import { ThreadStatusBadge } from '../../../threadlike/threadStatus/ThreadStatusBadge'
 import { ThreadHeaderEditableTitle } from '../../../threadsOLD/detail/header/ThreadHeaderEditableTitle'
-import { ThreadBreadcrumbs } from '../../../threadsOLD/detail/overview/ThreadBreadcrumbs'
 import { ThreadDescription } from '../../../threadsOLD/detail/overview/ThreadDescription'
 import { ThreadStatusButton } from '../../../threadsOLD/form/ThreadStatusButton'
 import { ThreadSettings } from '../../../threadsOLD/settings'
@@ -46,7 +45,6 @@ export const ChangesetOverview: React.FunctionComponent<Props> = ({
 }) => (
     // TODO!(sqs): uses style from other component
     <div className={`thread-overview ${className || ''}`}>
-        <ThreadBreadcrumbs thread={thread} project={null /* TODO!(sqs) */} areaURL={areaURL} className="py-3" />
         <hr className="my-0" />
         <div className="d-flex align-items-center py-3">
             <ThreadStatusBadge thread={thread} className="mr-3" />
