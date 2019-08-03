@@ -90,6 +90,10 @@ a {
     font-weight: bold !important;
 }
 
+.font-style-italic {
+    font-style: italic;
+}
+
 .stretched-link {
     &::after {
         position: absolute;

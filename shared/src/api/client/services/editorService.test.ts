@@ -1,7 +1,7 @@
 import { Selection } from '@sourcegraph/extension-api-types'
 import { noop } from 'lodash'
 import { from, NEVER, of, Subscribable } from 'rxjs'
-import { first, map } from 'rxjs/operators'
+import { first, map, tap } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import {
@@ -141,17 +141,43 @@ describe('EditorService', () => {
             })
         })
 
-        test('emits error if editor does not exist', () => {
+        test('completes if editor does not exist', () => {
             scheduler().run(({ expectObservable }) => {
                 const editorService = createEditorService({
                     models: of<TextModel[]>([]),
                     removeModel: jest.fn(),
                 })
-                expectObservable(from(editorService.observeEditorAndModel({ editorId: 'x' }))).toBe(
-                    '#',
-                    {},
-                    new Error('editor not found: x')
-                )
+                expectObservable(from(editorService.observeEditorAndModel({ editorId: 'x' }))).toBe('|', {})
+            })
+        })
+
+        test('completes if editor is removed', () => {
+            scheduler().run(({ cold, expectObservable }) => {
+                const editorService = createEditorService({
+                    models: cold<TextModel[]>('a', {
+                        a: [{ uri: 'u', text: 't', languageId: 'l' }],
+                    }),
+                    removeModel: jest.fn(),
+                })
+                const editor = editorService.addEditor({
+                    type: 'CodeEditor',
+                    resource: 'u',
+                    selections: [],
+                    isActive: true,
+                })
+                cold('-b')
+                    .pipe(tap(() => editorService.removeEditor(editor)))
+                    .subscribe()
+                expectObservable(from(editorService.observeEditorAndModel(editor))).toBe('a|', {
+                    a: {
+                        ...editor,
+                        type: 'CodeEditor',
+                        resource: 'u',
+                        selections: [],
+                        isActive: true,
+                        model: { uri: 'u', text: 't', languageId: 'l' },
+                    },
+                })
             })
         })
     })

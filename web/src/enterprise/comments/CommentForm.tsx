@@ -31,7 +31,9 @@ interface Props extends ExtensionsControllerProps {
     history: H.History
 }
 
-// TODO!(sqs): make this support text field completion in extension api
+/**
+ * A form to create or edit a comment.
+ */
 export const CommentForm: React.FunctionComponent<Props> = ({
     initialBody,
     submitLabel,
@@ -77,10 +79,12 @@ export const CommentForm: React.FunctionComponent<Props> = ({
             selections: [],
             isActive: true,
         })
+        console.log('addEditor', editor.editorId)
         return { editorId: editor.editorId, modelUri: model.uri }
     }, [extensionsController.services.editor, extensionsController.services.model, initialBody])
     useEffect(
         () => () => {
+            console.log('removeEditor', editorId)
             extensionsController.services.editor.removeEditor({ editorId })
             extensionsController.services.model.removeModel(modelUri)
         },

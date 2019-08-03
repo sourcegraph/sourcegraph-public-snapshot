@@ -55,6 +55,7 @@ interface Props extends ExtensionsControllerProps {
     comment: GQL.Comment
     onCommentUpdate: (update?: Partial<GQL.Comment>) => void
     createdVerb?: string
+    emptyBody?: string
 
     tag?: keyof JSX.IntrinsicElements // TODO!(sqs): might cause infinite loop per https://github.com/Microsoft/TypeScript/issues/28892#issuecomment-477927604
     className?: string
@@ -68,6 +69,7 @@ export const Comment: React.FunctionComponent<Props> = ({
     comment,
     onCommentUpdate,
     createdVerb = 'commented',
+    emptyBody,
     tag: Tag = 'div',
     className = '',
     ...props
@@ -138,6 +140,7 @@ export const Comment: React.FunctionComponent<Props> = ({
                                 className="btn btn-sm btn-link text-muted p-1"
                                 onClick={onEdit}
                                 aria-label="Edit comment"
+                                disabled={isDeleteLoading}
                             >
                                 <PencilIcon className="icon-inline" />
                             </button>
@@ -147,6 +150,7 @@ export const Comment: React.FunctionComponent<Props> = ({
                                 className="btn btn-sm btn-link text-muted p-1"
                                 onClick={onDelete}
                                 aria-label="Delete comment"
+                                disabled={isDeleteLoading}
                                 // TODO!(sqs): dont show on primary comment for campaigns/threads, add
                                 // new viewerCanDeleteComment to graphql or something?
                             >
@@ -161,7 +165,7 @@ export const Comment: React.FunctionComponent<Props> = ({
                     {comment.bodyHTML ? (
                         <Markdown dangerousInnerHTML={comment.bodyHTML} />
                     ) : (
-                        <span className="text-muted">(empty)</span>
+                        <span className="text-muted font-style-italic">{emptyBody}</span>
                     )}
                 </div>
             ) : (

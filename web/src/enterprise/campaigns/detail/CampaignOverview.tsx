@@ -27,6 +27,13 @@ export const CampaignOverview: React.FunctionComponent<Props> = ({
             onCampaignUpdate={onCampaignUpdate}
             className="mb-3"
         />
-        <Comment {...props} comment={campaign} onCommentUpdate={onCampaignUpdate} createdVerb="created campaign" />
+        <Comment
+            {...props}
+            comment={campaign}
+            onCommentUpdate={onCampaignUpdate}
+            createdVerb="created campaign"
+            emptyBody="No description provided."
+            className="mb-3"
+        />
     </div>
 )
