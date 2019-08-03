@@ -114,7 +114,7 @@ describe('OptionsContainer', () => {
             render(
                 <OptionsContainer
                     {...stubs}
-                    sourcegraphURL={'https://test.com'}
+                    sourcegraphURL="https://test.com"
                     ensureValidSite={ensureValidSite}
                     setSourcegraphURL={() => Promise.resolve()}
                 />

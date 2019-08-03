@@ -83,7 +83,7 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                                         Add search scopes for quick filtering
                                     </span>
                                 ) : (
-                                    `Edit`
+                                    'Edit'
                                 )}
                             </small>
                         </NavLink>

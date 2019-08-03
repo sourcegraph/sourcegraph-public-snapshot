@@ -75,10 +75,10 @@ interface UserAreaProps
         SettingsCascadeProps,
         ThemeProps,
         ActivationProps {
-    userAreaRoutes: ReadonlyArray<UserAreaRoute>
-    userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
+    userAreaRoutes: readonly UserAreaRoute[]
+    userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
-    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
+    userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 
     /**
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
@@ -124,7 +124,7 @@ export interface UserAreaRouteContext
      */
     authenticatedUser: GQL.IUser | null
     userSettingsSideBarItems: UserSettingsSidebarItems
-    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
+    userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 }
 
 /**

@@ -29,7 +29,7 @@ import { subscribeToResult } from 'rxjs/internal/util/subscribeToResult'
  * @param observables The source Observables.
  * @param defaultValue The value to emit for a source Observable if it has not yet emitted a value by the time
  * another Observable has emitted a value.
- * @return {Observable} An Observable of an array of the most recent values from each input Observable (or
+ * @returns An Observable of an array of the most recent values from each input Observable (or
  * {@link defaultValue}).
  */
 export function combineLatestOrDefault<T>(observables: ObservableInput<T>[], defaultValue?: T): Observable<T[]> {

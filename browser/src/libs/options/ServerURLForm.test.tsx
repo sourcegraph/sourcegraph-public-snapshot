@@ -16,8 +16,8 @@ describe('ServerURLForm', () => {
 
         const { container } = render(
             <ServerURLForm
-                value={'https://sourcegraph.com'}
-                status={'connected'}
+                value="https://sourcegraph.com"
+                status="connected"
                 onChange={onChange}
                 onSubmit={onSubmit}
                 urlHasPermissions={false}
@@ -49,7 +49,7 @@ describe('ServerURLForm', () => {
 
         const urlInput = container.querySelector('input')!
 
-        rerender(<ServerURLForm {...props} value={'https://different.com'} />)
+        rerender(<ServerURLForm {...props} value="https://different.com" />)
 
         const newValue = urlInput.value
 
@@ -61,8 +61,8 @@ describe('ServerURLForm', () => {
 
         const { container } = render(
             <ServerURLForm
-                value={'https://sourcegraph.com'}
-                status={'connected'}
+                value="https://sourcegraph.com"
+                status="connected"
                 onChange={noop}
                 onSubmit={onSubmit}
                 urlHasPermissions={false}
@@ -86,8 +86,8 @@ describe('ServerURLForm', () => {
 
             const { container } = render(
                 <ServerURLForm
-                    value={'https://sourcegraph.com'}
-                    status={'connected'}
+                    value="https://sourcegraph.com"
+                    status="connected"
                     onChange={noop}
                     onSubmit={nextSubmit}
                     urlHasPermissions={false}

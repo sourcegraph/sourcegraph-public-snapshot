@@ -85,11 +85,11 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
             }
         } else {
             // Last-ditch: look for inline comment form input which has base/head on it.
-            const baseInput = document.querySelector(`input[name="comparison_start_oid"]`)
+            const baseInput = document.querySelector('input[name="comparison_start_oid"]')
             if (baseInput) {
                 baseCommitID = (baseInput as HTMLInputElement).value
             }
-            const headInput = document.querySelector(`input[name="comparison_end_oid"]`)
+            const headInput = document.querySelector('input[name="comparison_end_oid"]')
             if (headInput) {
                 headCommitID = (headInput as HTMLInputElement).value
             }
@@ -201,7 +201,7 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
 export function getFilePath(): string {
     const permalink = document.querySelector<HTMLAnchorElement>('a.js-permalink-shortcut')
     if (!permalink) {
-        throw new Error(`Unable to determine the file path because no a.js-permalink-shortcut element was found.`)
+        throw new Error('Unable to determine the file path because no a.js-permalink-shortcut element was found.')
     }
     const url = new URL(permalink.href)
     // <empty>/<user>/<repo>/blob/<commitID>/<path/to/file>

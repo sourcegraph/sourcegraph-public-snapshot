@@ -102,7 +102,7 @@ function initializeExtensionHost(
         ;(global as any).require = () => {
             // Prevent callers from attempting to access the extension API after it was
             // unsubscribed.
-            throw new Error(`require: Sourcegraph extension API was unsubscribed`)
+            throw new Error('require: Sourcegraph extension API was unsubscribed')
         }
     })
 
@@ -185,7 +185,7 @@ function createExtensionAPI(
             },
             onDidOpenTextDocument: documents.openedTextDocuments,
             openedTextDocuments: documents.openedTextDocuments,
-            get roots(): ReadonlyArray<sourcegraph.WorkspaceRoot> {
+            get roots(): readonly sourcegraph.WorkspaceRoot[] {
                 return roots.getAll()
             },
             onDidChangeRoots: roots.changes,

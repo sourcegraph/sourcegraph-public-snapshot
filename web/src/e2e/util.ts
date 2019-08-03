@@ -247,10 +247,10 @@ export async function createDriverForTest(): Promise<Driver> {
     const browser = await puppeteer.launch(launchOpt)
     const page = await browser.newPage()
     page.on('console', message => {
-        if (message.text().indexOf('Download the React DevTools') !== -1) {
+        if (message.text().includes('Download the React DevTools')) {
             return
         }
-        if (message.text().indexOf('[HMR]') !== -1 || message.text().indexOf('[WDS]') !== -1) {
+        if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
             return
         }
         console.log(

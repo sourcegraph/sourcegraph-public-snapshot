@@ -6,7 +6,7 @@ import { UserAreaRoute } from './UserArea'
 
 const UserSettingsArea = lazyComponent(() => import('../settings/UserSettingsArea'), 'UserSettingsArea')
 
-export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
+export const userAreaRoutes: readonly UserAreaRoute[] = [
     {
         path: '',
         exact: true,

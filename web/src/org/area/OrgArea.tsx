@@ -71,8 +71,8 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         ExtensionsControllerProps {
-    orgAreaRoutes: ReadonlyArray<OrgAreaRoute>
-    orgAreaHeaderNavItems: ReadonlyArray<OrgAreaHeaderNavItem>
+    orgAreaRoutes: readonly OrgAreaRoute[]
+    orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
     /**
      * The currently authenticated user.

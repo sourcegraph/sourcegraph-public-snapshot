@@ -1,5 +1,5 @@
 import { PlatformContext } from '../../../../shared/src/platform/context'
-import { ChangeState, DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '../phabricator'
+import { ChangeState, DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
 import { getRepoDetailsFromCallsign, getRepoDetailsFromDifferentialID } from './backend'
 
 const TAG_PATTERN = /r([0-9A-z]+)([0-9a-f]{40})/
@@ -90,12 +90,12 @@ const DIFF_PATTERN = /Diff ([0-9]+)/
 function getDiffIdFromDifferentialPage(): string | null {
     const diffsContainer = document.getElementById('differential-review-stage')
     if (!diffsContainer) {
-        console.error(`no element with id differential-review-stage found on page.`)
+        console.error('no element with id differential-review-stage found on page.')
         return null
     }
     const wrappingDiffBox = diffsContainer.parentElement
     if (!wrappingDiffBox) {
-        console.error(`parent container of diff container not found.`)
+        console.error('parent container of diff container not found.')
         return null
     }
     const diffTitle = wrappingDiffBox.children[0].getElementsByClassName('phui-header-header').item(0)
@@ -191,7 +191,7 @@ export async function getPhabricatorState(
 
         const { callsign } = await getRepoDetailsFromDifferentialID(differentialID, requestGraphQL)
         if (!callsign) {
-            console.error(`callsign not found`)
+            console.error('callsign not found')
             return null
         }
         if (!diffID) {
@@ -201,7 +201,7 @@ export async function getPhabricatorState(
             }
         }
         if (!diffID) {
-            console.error(`differential id not found on page.`)
+            console.error('differential id not found on page.')
             return null
         }
         const { rawRepoName } = await getRepoDetailsFromCallsign(callsign, requestGraphQL)
@@ -267,7 +267,7 @@ export async function getPhabricatorState(
         const headCommitID = match.rev
         const baseCommitID = getBaseCommitIDFromRevisionPage()
         if (!baseCommitID) {
-            console.error(`did not successfully determine parent revision.`)
+            console.error('did not successfully determine parent revision.')
             return null
         }
         return {
@@ -335,7 +335,7 @@ export async function getPhabricatorState(
 
         const { callsign } = await getRepoDetailsFromDifferentialID(differentialID, requestGraphQL)
         if (!callsign) {
-            console.error(`callsign not found`)
+            console.error('callsign not found')
             return null
         }
 

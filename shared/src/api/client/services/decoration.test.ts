@@ -1,7 +1,7 @@
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { TextDocumentIdentifier } from '../../client/types/textDocument'
+import { TextDocumentIdentifier } from '../types/textDocument'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,

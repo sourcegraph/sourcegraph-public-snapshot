@@ -28,7 +28,7 @@ export function registerPanelToolbarContributions({
                 'panel/toolbar': [
                     {
                         action: 'panel.locations.groupByFile',
-                        when: `panel.locations.hasResults && panel.activeView.hasLocations`,
+                        when: 'panel.locations.hasResults && panel.activeView.hasLocations',
                     },
                 ],
             },

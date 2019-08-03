@@ -21,7 +21,7 @@ export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaR
 export interface UserSettingsAreaProps extends UserAreaRouteContext, RouteComponentProps<{}>, ThemeProps {
     authenticatedUser: GQL.IUser
     sideBarItems: UserSettingsSidebarItems
-    routes: ReadonlyArray<UserSettingsAreaRoute>
+    routes: readonly UserSettingsAreaRoute[]
 }
 
 export interface UserSettingsAreaRouteContext extends UserSettingsAreaProps {

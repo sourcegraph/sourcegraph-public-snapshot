@@ -154,7 +154,7 @@ describe('getHoverActionsContext', () => {
                                     workspace: testWorkspaceService(),
                                     textDocumentDefinition: {
                                         getLocations: () =>
-                                            cold<Observable<Location[]>>(`-b`, { b: of([FIXTURE_LOCATION]) }),
+                                            cold<Observable<Location[]>>('-b', { b: of([FIXTURE_LOCATION]) }),
                                     },
                                     textDocumentReferences: {
                                         providersForDocument: () =>
@@ -171,7 +171,7 @@ describe('getHoverActionsContext', () => {
                     )
                 )
                 // tslint:disable-next-line:no-object-literal-type-assertion
-            ).toBe(`a(bc)`, {
+            ).toBe('a(bc)', {
                 a: {
                     'goToDefinition.showLoading': false,
                     'goToDefinition.url': null,

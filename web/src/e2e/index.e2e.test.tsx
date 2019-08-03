@@ -20,7 +20,7 @@ process.on('rejectionHandled', error => {
     console.error('Caught rejectionHandled:', error)
 })
 
-describe('e2e test suite', function(this: any): void {
+describe('e2e test suite', () => {
     let driver: Driver
 
     async function init(): Promise<void> {
@@ -121,7 +121,7 @@ describe('e2e test suite', function(this: any): void {
             }
             driver.page.on('dialog', accept)
             await (await driver.page.waitForSelector(
-                `[data-e2e-external-service-name="e2e-github-test-2"] .e2e-delete-external-service-button`,
+                '[data-e2e-external-service-name="e2e-github-test-2"] .e2e-delete-external-service-button',
                 { visible: true }
             )).click()
 
@@ -224,7 +224,7 @@ describe('e2e test suite', function(this: any): void {
         // expectedCount defaults to one because of we haven't specified, we just want to ensure it exists at all
         const getHoverContents = async (expectedCount = 1): Promise<string[]> => {
             const selector =
-                expectedCount > 1 ? `.e2e-tooltip-content:nth-child(${expectedCount})` : `.e2e-tooltip-content`
+                expectedCount > 1 ? `.e2e-tooltip-content:nth-child(${expectedCount})` : '.e2e-tooltip-content'
             await driver.page.waitForSelector(selector, { visible: true })
             return await driver.page.evaluate(() =>
                 // You can't reference hoverContentSelector in puppeteer's driver.page.evaluate
@@ -251,7 +251,7 @@ describe('e2e test suite', function(this: any): void {
                 await driver.page.goto(
                     baseURL + '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c'
                 )
-                await (await driver.page.waitForSelector(`[data-tree-path="godockerize.go"]`, {
+                await (await driver.page.waitForSelector('[data-tree-path="godockerize.go"]', {
                     visible: true,
                 })).click()
                 await driver.assertWindowLocation(
@@ -591,7 +591,7 @@ describe('e2e test suite', function(this: any): void {
         })
 
         describe('hovers', () => {
-            describe(`Blob`, () => {
+            describe('Blob', () => {
                 test('gets displayed and updates URL when clicking on a token', async () => {
                     await driver.page.goto(
                         baseURL + '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go'
@@ -611,7 +611,7 @@ describe('e2e test suite', function(this: any): void {
                             '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go#L151:23'
                     )
                     await assertHoverContentContains(
-                        `ErrMethodMismatch is returned when the method in the request does not match`
+                        'ErrMethodMismatch is returned when the method in the request does not match'
                     )
                 })
 

@@ -260,7 +260,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                             <HistoryIcon className="icon-inline" /> Compare
                                         </Link>
                                         <Link
-                                            className={`btn btn-secondary`}
+                                            className="btn btn-secondary"
                                             to={`/${this.props.repoName}/-/stats/contributors`}
                                         >
                                             <UserIcon className="icon-inline" /> Contributors

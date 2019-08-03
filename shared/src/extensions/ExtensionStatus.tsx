@@ -6,7 +6,7 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ExecutableExtension } from '../api/client/services/extensionsService'
 import { Link } from '../components/Link'
-import { ExtensionsControllerProps } from '../extensions/controller'
+import { ExtensionsControllerProps } from './controller'
 import { PlatformContextProps } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 

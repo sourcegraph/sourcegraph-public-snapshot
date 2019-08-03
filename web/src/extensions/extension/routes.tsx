@@ -8,7 +8,7 @@ const RegistryExtensionOverviewPage = lazyComponent(
     'RegistryExtensionOverviewPage'
 )
 
-export const extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute> = [
+export const extensionAreaRoutes: readonly ExtensionAreaRoute[] = [
     {
         path: '',
         exact: true,
@@ -16,12 +16,12 @@ export const extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute> = [
         render: props => <RegistryExtensionOverviewPage eventLogger={eventLogger} {...props} />,
     },
     {
-        path: `/-/manifest`,
+        path: '/-/manifest',
         exact: true,
         render: lazyComponent(() => import('./RegistryExtensionManifestPage'), 'RegistryExtensionManifestPage'),
     },
     {
-        path: `/-/contributions`,
+        path: '/-/contributions',
         exact: true,
         render: lazyComponent(
             () => import('./RegistryExtensionContributionsPage'),

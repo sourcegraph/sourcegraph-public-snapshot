@@ -25,8 +25,8 @@ export interface ExtensionsAreaRouteContext extends SettingsCascadeProps, Platfo
 
     /** The subject whose extensions and configuration to display. */
     subject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
-    extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
-    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
+    extensionAreaRoutes: readonly ExtensionAreaRoute[]
+    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
 }
 
 interface ExtensionsAreaProps
@@ -34,7 +34,7 @@ interface ExtensionsAreaProps
         SettingsCascadeProps,
         PlatformContextProps,
         ThemeProps {
-    routes: ReadonlyArray<ExtensionsAreaRoute>
+    routes: readonly ExtensionsAreaRoute[]
 
     /**
      * The currently authenticated user.
@@ -42,9 +42,9 @@ interface ExtensionsAreaProps
     authenticatedUser: GQL.IUser | null
 
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
-    extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
-    extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
-    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
+    extensionAreaRoutes: readonly ExtensionAreaRoute[]
+    extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
+    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
 }
 
 const LOADING: 'loading' = 'loading'

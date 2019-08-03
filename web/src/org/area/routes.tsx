@@ -6,7 +6,7 @@ import { OrgAreaRoute } from './OrgArea'
 
 const OrgSettingsArea = lazyComponent(() => import('../settings/OrgSettingsArea'), 'OrgSettingsArea')
 
-export const orgAreaRoutes: ReadonlyArray<OrgAreaRoute> = [
+export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     {
         path: '',
         exact: true,

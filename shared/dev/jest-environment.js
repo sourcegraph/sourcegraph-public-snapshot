@@ -70,7 +70,7 @@ class JSDOMEnvironment {
     }
     this.fakeTimers = new JestFakeTimers({
       config,
-      global: global,
+      global,
       moduleMocker: this.moduleMocker,
       timerConfig,
     })

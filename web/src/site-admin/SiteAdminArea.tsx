@@ -29,7 +29,7 @@ export interface SiteAdminAreaRouteContext extends PlatformContextProps, Setting
     isLightTheme: boolean
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
-    overviewComponents: ReadonlyArray<React.ComponentType>
+    overviewComponents: readonly React.ComponentType[]
 }
 
 export interface SiteAdminAreaRoute extends RouteDescriptor<SiteAdminAreaRouteContext> {}
@@ -39,9 +39,9 @@ interface SiteAdminAreaProps
         PlatformContextProps,
         SettingsCascadeProps,
         ActivationProps {
-    routes: ReadonlyArray<SiteAdminAreaRoute>
+    routes: readonly SiteAdminAreaRoute[]
     sideBarGroups: SiteAdminSideBarGroups
-    overviewComponents: ReadonlyArray<React.ComponentType>
+    overviewComponents: readonly React.ComponentType[]
     authenticatedUser: GQL.IUser
     isLightTheme: boolean
 }

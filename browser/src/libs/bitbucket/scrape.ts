@@ -270,7 +270,7 @@ export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
     // Get project and repo from the URL
     const pathMatch = location.pathname.match(/\/projects\/(.*?)\/repos\/(.*?)\//)
     if (!pathMatch) {
-        throw new Error(`Location did not match regexp`)
+        throw new Error('Location did not match regexp')
     }
     const [, project, repoSlug] = pathMatch
     const rawRepoName = bitbucketToSourcegraphRepoName({ project, repoSlug })

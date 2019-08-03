@@ -29,7 +29,7 @@ export interface ExploreAreaSectionContext extends ExtensionsControllerProps, Th
 export interface ExploreSectionDescriptor extends ComponentDescriptor<ExploreAreaSectionContext> {}
 
 interface ExploreAreaProps extends ExploreAreaSectionContext {
-    exploreSections: ReadonlyArray<ExploreSectionDescriptor>
+    exploreSections: readonly ExploreSectionDescriptor[]
 }
 
 const LOADING: 'loading' = 'loading'

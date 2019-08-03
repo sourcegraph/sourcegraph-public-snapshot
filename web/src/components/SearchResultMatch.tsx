@@ -175,7 +175,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             ) : (
                                 <Markdown
                                     refFn={this.setTableContainerElement}
-                                    className={`search-result-match__markdown`}
+                                    className="search-result-match__markdown"
                                     dangerousInnerHTML={this.state.HTML}
                                 />
                             )}

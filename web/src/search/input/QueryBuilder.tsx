@@ -136,7 +136,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
             <>
                 <div className="query-builder__toggle">
                     <a href="" onClick={this.toggleShowQueryBuilder} data-testid="test-query-builder-toggle">
-                        {!!this.state.showQueryBuilder ? 'Hide' : 'Use'} search query builder
+                        {this.state.showQueryBuilder ? 'Hide' : 'Use'} search query builder
                     </a>
                 </div>
 
@@ -334,7 +334,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                 title="File paths"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 shortName="file"
-                                description={`Only include results from matching file paths. Supports regexp. To exclude files, use the \`-file:\` keyword in the main search bar.`}
+                                description="Only include results from matching file paths. Supports regexp. To exclude files, use the `-file:` keyword in the main search bar."
                                 examples={[
                                     {
                                         description: 'Search in files whose full path contains `internal`',

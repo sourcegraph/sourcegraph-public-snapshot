@@ -86,7 +86,7 @@ export class SearchPage extends React.Component<Props, State> {
                             {...this.props}
                             value={this.state.userQuery}
                             onChange={this.onUserQueryChange}
-                            autoFocus={'cursor-at-end'}
+                            autoFocus="cursor-at-end"
                             hasGlobalQueryBehavior={true}
                         />
                         <SearchButton />

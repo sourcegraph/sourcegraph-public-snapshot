@@ -777,7 +777,7 @@ declare module 'sourcegraph' {
          * @todo Currently only a single root is supported.
          * @readonly
          */
-        export const roots: ReadonlyArray<WorkspaceRoot>
+        export const roots: readonly WorkspaceRoot[]
 
         /**
          * An event that is fired when a workspace root is added or removed from the workspace.

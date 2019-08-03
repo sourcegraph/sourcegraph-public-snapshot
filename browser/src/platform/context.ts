@@ -107,7 +107,7 @@ export function createPlatformContext(
             try {
                 await updateSettings(context, subject, edit, mutateSettings)
             } catch (error) {
-                if ('message' in error && /version mismatch/.test(error.message)) {
+                if ('message' in error && error.message.includes('version mismatch')) {
                     // The user probably edited the settings in another tab, so
                     // try once more.
                     updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())

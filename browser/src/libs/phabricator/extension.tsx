@@ -55,4 +55,4 @@ async function init(): Promise<void> {
     await injectCodeIntelligence(IS_EXTENSION)
 }
 
-init().catch(err => console.error(`Error initializing Phabricator integration`, err))
+init().catch(err => console.error('Error initializing Phabricator integration', err))

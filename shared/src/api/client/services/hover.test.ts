@@ -2,7 +2,7 @@ import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { Hover } from 'sourcegraph'
-import { HoverMerged } from '../../client/types/hover'
+import { HoverMerged } from '../types/hover'
 import { getHover, ProvideTextDocumentHoverSignature } from './hover'
 import { FIXTURE } from './registry.test'
 

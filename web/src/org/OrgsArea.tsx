@@ -25,8 +25,8 @@ interface Props
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps {
-    orgAreaRoutes: ReadonlyArray<OrgAreaRoute>
-    orgAreaHeaderNavItems: ReadonlyArray<OrgAreaHeaderNavItem>
+    orgAreaRoutes: readonly OrgAreaRoute[]
+    orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
     authenticatedUser: GQL.IUser | null
 }

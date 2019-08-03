@@ -163,7 +163,7 @@ export function testDOMFunctions(
             }
 
             describe('getLineElementFromLineNumber()', () => {
-                it(`should return the right line element given the line number`, async () => {
+                it('should return the right line element given the line number', async () => {
                     const codeElement = domFunctions.getLineElementFromLineNumber(codeViewElement, lineNumber, diffPart)
                     expect(codeElement).toBeDefined()
                     expect(codeElement).not.toBeNull()
@@ -176,7 +176,7 @@ export function testDOMFunctions(
             })
 
             describe('getCodeElementFromLineNumber()', () => {
-                it(`should return the right code element given the line number`, async () => {
+                it('should return the right code element given the line number', async () => {
                     const codeElement = domFunctions.getCodeElementFromLineNumber(codeViewElement, lineNumber, diffPart)
                     expect(codeElement).toBeDefined()
                     expect(codeElement).not.toBeNull()
@@ -198,7 +198,7 @@ export function testDOMFunctions(
             // These tests depend on getCodeElementFromLineNumber() working as expected
             describe('getLineNumberFromCodeElement()', () => {
                 beforeEach(setCodeElement)
-                it(`should return the right line number given the code element`, () => {
+                it('should return the right line number given the code element', () => {
                     const returnedLineNumber = domFunctions.getLineNumberFromCodeElement(codeElement)
                     expect(returnedLineNumber).toBe(lineNumber)
                 })

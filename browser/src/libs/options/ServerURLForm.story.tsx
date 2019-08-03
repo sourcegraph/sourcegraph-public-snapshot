@@ -74,7 +74,7 @@ class CyclingStatus extends React.Component<{}, { step: number }> {
         return (
             <div style={{ maxWidth: 400 }}>
                 <ServerURLForm
-                    value={'https://sourcegraph.com'}
+                    value="https://sourcegraph.com"
                     status={status}
                     connectionError={error}
                     onChange={this.onChange}
@@ -94,8 +94,8 @@ storiesOf('Options - ServerURLForm', module)
     .add('Error Status', () => (
         <div style={{ maxWidth: 400, padding: '1rem' }}>
             <ServerURLForm
-                value={'https://sourcegraph.com'}
-                status={'error'}
+                value="https://sourcegraph.com"
+                status="error"
                 connectionError={ConnectionErrors.AuthError}
                 onChange={action('Change')}
                 onSubmit={action('Submit')}

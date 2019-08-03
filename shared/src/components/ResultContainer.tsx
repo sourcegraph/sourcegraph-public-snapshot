@@ -101,7 +101,7 @@ export class ResultContainer extends React.PureComponent<Props, State> {
                     }
                     onClick={this.toggle}
                 >
-                    {!!stringIcon ? (
+                    {stringIcon ? (
                         <img src={stringIcon} className="icon-inline icon-inline__filtered" />
                     ) : (
                         <Icon className="icon-inline" />

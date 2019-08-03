@@ -11,7 +11,7 @@ function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointP
         // the client endpoints.
         const frame: HTMLIFrameElement = document.createElement('iframe')
         frame.setAttribute('src', `${sourcegraphURL}/.assets/extension/extensionHostFrame.html`)
-        frame.setAttribute('style', `display: none;`)
+        frame.setAttribute('style', 'display: none;')
         document.body.append(frame)
         const clientAPIChannel = new MessageChannel()
         const extensionHostAPIChannel = new MessageChannel()

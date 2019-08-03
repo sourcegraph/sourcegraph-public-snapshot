@@ -11,7 +11,7 @@ import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 import { ThemeProps } from '../theme'
-import { ExternalServiceCard } from './../components/ExternalServiceCard'
+import { ExternalServiceCard } from '../components/ExternalServiceCard'
 import { ExternalServiceVariant, getExternalService } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 
@@ -86,7 +86,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                         // reflect the latest configuration.
                         refreshSiteFlags().subscribe({ error: err => console.error(err) })
                         this.setState({ loading: false })
-                        this.props.history.push(`/site-admin/external-services`)
+                        this.props.history.push('/site-admin/external-services')
                     }
                 })
         )

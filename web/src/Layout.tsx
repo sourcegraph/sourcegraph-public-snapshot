@@ -51,24 +51,24 @@ export interface LayoutProps
         EventLoggerProps,
         ThemePreferenceProps,
         ActivationProps {
-    exploreSections: ReadonlyArray<ExploreSectionDescriptor>
-    extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
-    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
-    extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>
-    extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
-    siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
+    exploreSections: readonly ExploreSectionDescriptor[]
+    extensionAreaRoutes: readonly ExtensionAreaRoute[]
+    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
+    extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
+    extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
+    siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
-    siteAdminOverviewComponents: ReadonlyArray<React.ComponentType>
-    userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
-    userAreaRoutes: ReadonlyArray<UserAreaRoute>
+    siteAdminOverviewComponents: readonly React.ComponentType[]
+    userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
+    userAreaRoutes: readonly UserAreaRoute[]
     userSettingsSideBarItems: UserSettingsSidebarItems
-    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
-    orgAreaHeaderNavItems: ReadonlyArray<OrgAreaHeaderNavItem>
-    orgAreaRoutes: ReadonlyArray<OrgAreaRoute>
-    repoContainerRoutes: ReadonlyArray<RepoContainerRoute>
-    repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
-    repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
-    routes: ReadonlyArray<LayoutRouteProps>
+    userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
+    orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
+    orgAreaRoutes: readonly OrgAreaRoute[]
+    repoContainerRoutes: readonly RepoContainerRoute[]
+    repoRevContainerRoutes: readonly RepoRevContainerRoute[]
+    repoHeaderActionButtons: readonly RepoHeaderActionButton[]
+    routes: readonly LayoutRouteProps[]
 
     authenticatedUser: GQL.IUser | null
 

@@ -102,7 +102,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                 {this.props.notification.progress && this.state.progress && (
                     <div className="progress">
                         <div
-                            className={`sourcegraph-notification-item__progressbar progress-bar`}
+                            className="sourcegraph-notification-item__progressbar progress-bar"
                             // tslint:disable-next-line:jsx-ban-props
                             style={{ width: this.state.progress.percentage + '%' }}
                         />

@@ -234,7 +234,7 @@ async function main(): Promise<void> {
         }
         const perms = await browser.permissions.getAll()
         const origins = perms.origins || []
-        if (managedUrls.every(val => origins.indexOf(`${val}/*`) >= 0)) {
+        if (managedUrls.every(val => origins.includes(`${val}/*`))) {
             setDefaultBrowserAction()
             return
         }

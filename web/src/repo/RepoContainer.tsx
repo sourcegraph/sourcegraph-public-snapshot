@@ -64,9 +64,9 @@ interface RepoContainerProps
         ExtensionsControllerProps,
         ActivationProps,
         ThemeProps {
-    repoContainerRoutes: ReadonlyArray<RepoContainerRoute>
-    repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
-    repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
+    repoContainerRoutes: readonly RepoContainerRoute[]
+    repoRevContainerRoutes: readonly RepoRevContainerRoute[]
+    repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     authenticatedUser: GQL.IUser | null
 }
 

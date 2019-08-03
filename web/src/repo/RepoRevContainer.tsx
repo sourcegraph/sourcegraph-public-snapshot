@@ -63,7 +63,7 @@ interface RepoRevContainerProps
         ExtensionsControllerProps,
         ThemeProps,
         ActivationProps {
-    routes: ReadonlyArray<RepoRevContainerRoute>
+    routes: readonly RepoRevContainerRoute[]
     repo: GQL.IRepository
     rev: string
     authenticatedUser: GQL.IUser | null
