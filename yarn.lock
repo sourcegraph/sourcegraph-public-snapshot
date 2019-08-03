@@ -1577,10 +1577,10 @@
   resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
   integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
 
-"@sourcegraph/eslint-config@^0.0.1":
-  version "0.0.1"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.0.1.tgz#23958f00e95f5aa3d00146fcf4f56225a305f026"
-  integrity sha512-piVKgNyvvqTUBQyEgGZFcAjImQ9vr/Ca3aJKJK6lnHezoqS6cPhxTkLDhGk6nBU89RVeuekxM1kGtP7q6bxEAg==
+"@sourcegraph/eslint-config@^0.0.2":
+  version "0.0.2"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.0.2.tgz#9c3d4fa8ed9cad3553887985457e7ee9d043620e"
+  integrity sha512-wHjnocD1xy73LFRRGqEbT5u24kjIUqcLid0SlRpeFRDZIsvxJkE7tPjqExr38V1bFJuyTACvgBrCZuylUb44rg==
   dependencies:
     "@sourcegraph/tslint-config" "^13.4.0"
     "@typescript-eslint/eslint-plugin" "^1.13.0"
@@ -1588,7 +1588,7 @@
     eslint-config-prettier "^6.0.0"
     eslint-plugin-ban "^1.2.0"
     eslint-plugin-import "^2.18.2"
-    eslint-plugin-jsdoc "^15.7.2"
+    eslint-plugin-jsdoc "^15.8.0"
     eslint-plugin-react "^7.14.3"
     eslint-plugin-react-hooks "^1.6.1"
 
@@ -6983,10 +6983,10 @@ eslint-plugin-import@^2.18.2:
     read-pkg-up "^2.0.0"
     resolve "^1.11.0"
 
-eslint-plugin-jsdoc@^15.7.2:
-  version "15.7.2"
-  resolved "https://registry.npmjs.org/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-15.7.2.tgz#2def358e61b8376de60927c63546af49d99c232f"
-  integrity sha512-xQFqyc/pWxpY1dlEeYpO3kpd/zwX9TVnMn0krvVuCe7l0MpqXxBVm/+wRpgI6E6jpE5l3yA0gQshipYyxbVLIg==
+eslint-plugin-jsdoc@^15.8.0:
+  version "15.8.0"
+  resolved "https://registry.npmjs.org/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-15.8.0.tgz#74cf0f35dec8524a6bd011f0cf199d24e09517f2"
+  integrity sha512-J6ozWkaAgBh1eLdQE+C2wcXhoEgDmGJOSB6zMF5ktEtMBnU62xT3wfHcUacuTnv6rt+ollC0uZThaEpGA+sTNg==
   dependencies:
     comment-parser "^0.6.1"
     debug "^4.1.1"
