@@ -2,7 +2,10 @@ import { format } from 'date-fns'
 import H from 'history'
 import React from 'react'
 import {
+    Area,
+    AreaChart,
     CartesianGrid,
+    ComposedChart,
     LabelFormatter,
     Legend,
     Line,
@@ -28,11 +31,31 @@ interface Props extends ExtensionsControllerProps {
 
 const openThreads = [1071, 1218, 1231, 1121, 1018, 980, 979, 930, 715, 331, 371, 102, 81, 81, 81, 31, 23, 7, 7, 3]
 
+const approvedThreads = openThreads.map((n, i) => Math.floor((i / openThreads.length) * n))
+
+const ciFailingThreads = approvedThreads.map((n, i) => Math.floor((openThreads[i] - n) * 0.87))
+
+const errorThreads = approvedThreads.map((n, i) => Math.floor((openThreads[i] - n) * 0.13))
+
+const closedThreads = openThreads.map((n, i) =>
+    Math.floor(Math.max(...openThreads.slice(0, i + 1)) - n + Math.pow(2, 1 + i / 3))
+)
+
 const startDate = Date.now() - openThreads.length * 24 * 60 * 60 * 1000
 
-const data: { date: number; openThreads: number }[] = openThreads.map((openThreads, i) => ({
+const data: {
+    date: number
+    openThreads: number
+    approvedThreads: number
+    ciFailingThreads: number
+    errorThreads: number
+}[] = openThreads.map((openThreads, i) => ({
     date: startDate + i * 24 * 60 * 60 * 1000,
     openThreads,
+    approvedThreads: approvedThreads[i],
+    ciFailingThreads: ciFailingThreads[i],
+    errorThreads: errorThreads[i],
+    closedThreads: closedThreads[i],
 }))
 
 const dateTickFormatter: TickFormatterFunction = date => format(date, 'MMM d')
@@ -53,9 +76,8 @@ const STYLE: React.CSSProperties = {
  */
 export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign, className = '', ...props }) => (
     <div className={`campaign-burndown-chart ${className}`}>
-        <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={data}>
-                {/* <CartesianGrid strokeDasharray="3 3" stroke="var(--text-muted)" /> */}
+        <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={data}>
                 <XAxis
                     dataKey="date"
                     // domain={['auto', 'auto']}
@@ -67,17 +89,57 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign
                 />
                 <YAxis tickFormatter={numberWithCommas} stroke="var(--text-muted)" type="number" />
                 <Tooltip
-                    formatter={tooltipFormatter}
+                    // formatter={tooltipFormatter}
                     labelFormatter={tooltipLabelFormatter}
                     isAnimationActive={false}
                     wrapperStyle={STYLE}
                     itemStyle={STYLE}
                     labelStyle={STYLE}
                 />
-                <Legend />
+                <Area
+                    stackId="openThreads"
+                    type="step"
+                    dataKey="approvedThreads"
+                    name="Approved"
+                    fill="var(--success)"
+                    strokeWidth={0}
+                />
+                <Area
+                    stackId="openThreads"
+                    type="step"
+                    dataKey="ciFailingThreads"
+                    name="Failing CI"
+                    fill="var(--danger)"
+                    strokeWidth={0}
+                />
+                <Area
+                    stackId="openThreads"
+                    type="step"
+                    dataKey="errorThreads"
+                    name="Error"
+                    fill="var(--warning)"
+                    strokeWidth={0}
+                />
+                <Area
+                    stackId="openThreads"
+                    type="step"
+                    dataKey="closedThreads"
+                    name="Closed"
+                    fill="var(--text-muted)"
+                    strokeWidth={0}
+                />
+                <Line
+                    type="step"
+                    dataKey="openThreads"
+                    name="Open changesets"
+                    stroke="var(--body-color)"
+                    strokeWidth={4}
+                    strokeOpacity={1}
+                    activeDot={{ r: 5 }}
+                    isAnimationActive={false}
+                />
                 <ReferenceLine
                     y={openThreads[0]}
-                    label="Start"
                     strokeWidth={2}
                     strokeOpacity={0.7}
                     fontWeight="bold"
@@ -86,16 +148,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign
                     stroke="var(--info)"
                     strokeDasharray="10 2"
                 />
-                <Line
-                    type="step"
-                    dataKey="openThreads"
-                    name="Open changesets"
-                    stroke="var(--body-color)"
-                    strokeWidth={2}
-                    activeDot={{ r: 9, strokeWidth: 2, stroke: 'var(--body-color)', fill: 'var(--primary)' }}
-                    isAnimationActive={false}
-                />
-            </LineChart>
+            </ComposedChart>
         </ResponsiveContainer>
     </div>
 )
