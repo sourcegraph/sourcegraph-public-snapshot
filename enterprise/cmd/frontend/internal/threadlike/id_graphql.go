@@ -34,7 +34,9 @@ func UnmarshalIDOfType(typ gqlType, id graphql.ID) (dbID int64, err error) {
 		return 0, err
 	}
 	if gotType != typ {
-		return 0, fmt.Errorf("got threadlike ID of type %q, expected %q", gotType, typ)
+		// TODO!(sqs): uncomment, for demo
+		//
+		// return 0, fmt.Errorf("got threadlike ID of type %q, expected %q", gotType, typ)
 	}
 	return dbID, nil
 }

@@ -172,7 +172,7 @@ export const StatsPage: React.FunctionComponent<Props> = ({ location, history })
                                     </table>
                                 </div>
                                 <PieChart
-                                    data={stats.owners.slice(0, COLORS.length).map(({ owner, totalBytes }, i) => ({
+                                    data={stats.owners.slice(0, 5).map(({ owner, totalBytes }, i) => ({
                                         title: truncate(owner, 12),
                                         value: totalBytes,
                                         color: COLORS[i % COLORS.length],

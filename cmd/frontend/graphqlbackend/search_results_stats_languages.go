@@ -55,6 +55,9 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*LanguageStatis
 			if err != nil {
 				return nil, err
 			}
+			if branchRef == nil || branchRef.Target() == nil {
+				continue
+			}
 			target, err := branchRef.Target().OID(ctx)
 			if err != nil {
 				return nil, err
