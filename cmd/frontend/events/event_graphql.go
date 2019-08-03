@@ -12,22 +12,22 @@ import (
 
 // EventByID looks up and returns the Event with the given GraphQL ID. If no such Event exists, it
 // returns a non-nil error.
-func EventByID(ctx context.Context, id graphql.ID) (*gqlEvent, error) {
+func EventByID(ctx context.Context, id graphql.ID) (graphqlbackend.ToEvent, error) {
 	dbID, err := unmarshalEventID(id)
 	if err != nil {
-		return nil, err
+		return graphqlbackend.ToEvent{}, err
 	}
-	return eventByDBID(ctx, dbID)
+	return EventByDBID(ctx, dbID)
 }
 
 // EventByDBID looks up and returns the Event with the given database ID. If no such Event exists,
 // it returns a non-nil error.
-func EventByDBID(ctx context.Context, dbID int64) (*gqlEvent, error) {
+func EventByDBID(ctx context.Context, dbID int64) (graphqlbackend.ToEvent, error) {
 	v, err := dbEvents{}.GetByID(ctx, dbID)
 	if err != nil {
-		return nil, err
+		return graphqlbackend.ToEvent{}, err
 	}
-	return newGQLEvent(v), nil
+	return toRegisteredEventType(ctx, v)
 }
 
 func marshalEventID(id int64) graphql.ID {
@@ -37,12 +37,4 @@ func marshalEventID(id int64) graphql.ID {
 func unmarshalEventID(id graphql.ID) (dbID int64, err error) {
 	err = relay.UnmarshalSpec(id, &dbID)
 	return
-}
-
-func toEventCommon(v *dbEvent) graphqlbackend.EventCommon {
-	return &graphqlbackend.EventCommon{
-		ID:        marshalEventID(v.ID),
-		Actor:     graphqlbackend.Actor{}, // TODO!(sqs)
-		CreatedAt: graphqlbackend.DateTime{v.CreatedAt},
-	}
 }

@@ -85,16 +85,16 @@ CREATE TABLE events (
     created_at timestamp with time zone NOT NULL,
 
 	-- The various event types give their own meanings to these columns.
+    data jsonb,
 	thread_id bigint REFERENCES threads(id) ON DELETE CASCADE,
 	campaign_id bigint REFERENCES campaigns(id) ON DELETE CASCADE,
 	comment_id bigint REFERENCES comments(id) ON DELETE CASCADE,
 	rule_id bigint REFERENCES rules(id) ON DELETE CASCADE,
     repository_id integer REFERENCES repo(id) ON DELETE CASCADE,
     user_id integer REFERENCES users(id) ON DELETE CASCADE,
-    org_id integer REFERENCES orgs(id) ON DELETE CASCADE,
-    registry_extension_id integer REFERENCES registry_extensions(id) ON DELETE CASCADE,
-    data jsonb
+    organization_id integer REFERENCES orgs(id) ON DELETE CASCADE,
+    registry_extension_id integer REFERENCES registry_extensions(id) ON DELETE CASCADE
 );
-
+CREATE INDEX events_created_at ON events(created_at);
 
 COMMIT;

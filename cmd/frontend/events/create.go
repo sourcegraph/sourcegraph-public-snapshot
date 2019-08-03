@@ -35,9 +35,10 @@ type CreationData struct {
 // CreateEvent creates an event in the database.
 func CreateEvent(ctx context.Context, event CreationData) error {
 	v := &dbEvent{
-		Type:      event.Type,
-		Objects:   event.Objects,
-		CreatedAt: event.CreatedAt,
+		Type:        event.Type,
+		ActorUserID: event.ActorUserID,
+		Objects:     event.Objects,
+		CreatedAt:   event.CreatedAt,
 	}
 	if event.Data != nil {
 		var err error
@@ -52,7 +53,7 @@ func CreateEvent(ctx context.Context, event CreationData) error {
 			return err
 		}
 		if actor == nil {
-			return 0, errors.New("actor required to create event")
+			return errors.New("actor required to create event")
 		}
 		v.ActorUserID = actor.DatabaseID()
 	}

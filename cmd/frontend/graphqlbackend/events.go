@@ -20,7 +20,7 @@ type event interface {
 }
 
 type EventCommon struct {
-	ID_       graphql.ID
+	ID        graphql.ID
 	Actor     Actor
 	CreatedAt DateTime
 }
