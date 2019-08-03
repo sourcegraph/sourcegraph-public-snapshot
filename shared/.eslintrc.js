@@ -4,6 +4,7 @@ module.exports = {
       'error',
       {
         paths: [
+          ...require('../.eslintrc').rules['no-restricted-imports'][1].paths,
           {
             name: 'react-router-dom',
             importNames: ['Link'],

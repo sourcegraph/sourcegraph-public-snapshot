@@ -20,7 +20,8 @@
   "sideEffects": false,
   "scripts": {
     "tslint": "../../../node_modules/.bin/tslint -t stylish -c tslint.json -p tsconfig.json './src/**/*.{ts,js}'",
-    "prepublishOnly": "yarn run tslint"
+    "eslint": "../../../node_modules/.bin/eslint '**/*.[jt]s?(x)'",
+    "prepublishOnly": "yarn run tslint && yarn run eslint"
   },
   "peerDependencies": {
     "sourcegraph": "*"
