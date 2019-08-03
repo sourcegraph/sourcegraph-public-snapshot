@@ -2,14 +2,25 @@ package campaigns
 
 import (
 	"context"
+	"log"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
 )
 
-func (GraphQLResolver) Campaigns(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
-	return campaignsByOptions(ctx, dbCampaignsListOptions{}, arg)
+func (GraphQLResolver) Campaigns(ctx context.Context, arg *graphqlbackend.CampaignsArgs) (graphqlbackend.CampaignConnection, error) {
+	var opt dbCampaignsListOptions
+	if arg.Object != nil {
+		_, threadID, err := threadlike.UnmarshalID(*arg.Object)
+		if err != nil {
+			return nil, err
+		}
+		opt.ObjectThreadID = threadID
+		log.Println("THREADID = ", opt.ObjectThreadID)
+	}
+	return campaignsByOptions(ctx, opt, &arg.ConnectionArgs)
 }
 
 func (GraphQLResolver) CampaignsInNamespace(ctx context.Context, namespace graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
@@ -20,6 +31,10 @@ func (GraphQLResolver) CampaignsInNamespace(ctx context.Context, namespace graph
 		return nil, err
 	}
 	return campaignsByOptions(ctx, opt, arg)
+}
+
+func (GraphQLResolver) CampaignsWithObject(ctx context.Context, object graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
+	return GraphQLResolver{}.Campaigns(ctx, &graphqlbackend.CampaignsArgs{Object: &object, ConnectionArgs: *arg})
 }
 
 func campaignsByOptions(ctx context.Context, opt dbCampaignsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {

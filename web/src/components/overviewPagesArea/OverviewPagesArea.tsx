@@ -6,6 +6,7 @@ import { RouteDescriptor } from '../../util/contributions'
 import { ErrorBoundary } from '../ErrorBoundary'
 import { HeroPage } from '../HeroPage'
 import { OverviewPagesAreaNavbar } from './navbar/OverviewPagesAreaNavbar'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 /**
  * @template P The props passed to the subcomponents of the {@link OverviewPagesArea}.
@@ -74,24 +75,26 @@ export const OverviewPagesArea = <P extends object>({
                     <OverviewPagesAreaNavbar areaUrl={match.url} pages={pages} className="flex-0 sticky-top bg-body" />
                 </ErrorBoundary>
                 <ErrorBoundary location={location}>
-                    <Switch>
-                        {pages.map((page, i) => (
-                            <Route
-                                key={i}
-                                path={`${match.url}${page.path}`}
-                                exact={page.exact}
-                                // tslint:disable-next-line: jsx-no-lambda
-                                render={routeComponentProps => page.render({ ...routeComponentProps, ...context })}
-                            />
-                        ))}
-                        <Route>
-                            <HeroPage
-                                icon={MapSearchIcon}
-                                title="404: Not Found"
-                                subtitle="Sorry, the requested page was not found."
-                            />
-                        </Route>
-                    </Switch>
+                    <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                        <Switch>
+                            {pages.map((page, i) => (
+                                <Route
+                                    key={i}
+                                    path={`${match.url}${page.path}`}
+                                    exact={page.exact}
+                                    // tslint:disable-next-line: jsx-no-lambda
+                                    render={routeComponentProps => page.render({ ...routeComponentProps, ...context })}
+                                />
+                            ))}
+                            <Route>
+                                <HeroPage
+                                    icon={MapSearchIcon}
+                                    title="404: Not Found"
+                                    subtitle="Sorry, the requested page was not found."
+                                />
+                            </Route>
+                        </Switch>
+                    </React.Suspense>
                 </ErrorBoundary>
             </div>
         </div>

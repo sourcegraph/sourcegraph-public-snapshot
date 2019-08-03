@@ -132,6 +132,7 @@ type dbCampaignsListOptions struct {
 	Query           string // only list campaigns matching this query (case-insensitively)
 	NamespaceUserID int32  // only list campaigns in this user's namespace
 	NamespaceOrgID  int32  // only list campaigns in this org's namespace
+	ObjectThreadID  int64
 	*db.LimitOffset
 }
 
@@ -145,6 +146,9 @@ func (o dbCampaignsListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.NamespaceOrgID != 0 {
 		conds = append(conds, sqlf.Sprintf("namespace_org_id=%d", o.NamespaceOrgID))
+	}
+	if o.ObjectThreadID != 0 {
+		conds = append(conds, sqlf.Sprintf("id IN (SELECT DISTINCT campaign_id FROM campaigns_threads WHERE thread_id=%d)", o.ObjectThreadID))
 	}
 	return conds
 }

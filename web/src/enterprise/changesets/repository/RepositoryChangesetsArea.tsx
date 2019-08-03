@@ -5,6 +5,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { displayRepoName } from '../../../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { BreadcrumbItem, Breadcrumbs } from '../../../components/breadcrumbs/Breadcrumbs'
 import { HeroPage } from '../../../components/HeroPage'
@@ -19,6 +20,7 @@ import { ChangesetsNewPage } from './new/ChangesetsNewPage'
 export interface RepositoryChangesetsAreaContext
     extends Pick<RepoContainerContext, 'repo' | 'repoHeaderContributionsLifecycleProps'>,
         ExtensionsControllerProps,
+        PlatformContextProps,
         ThemeProps {
     /** The URL to the repository changesets area. */
     changesetsURL: string

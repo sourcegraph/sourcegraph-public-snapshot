@@ -1,6 +1,7 @@
 import H from 'history'
 import { uniqueId } from 'lodash'
 import React, { createRef, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { Key } from 'ts-key-enum'
 import { TextModel } from '../../../../shared/src/api/client/services/modelService'
 import { COMMENT_URI_SCHEME } from '../../../../shared/src/api/client/types/textDocument'
 import { EditorTextField } from '../../../../shared/src/components/editorTextField/EditorTextField'
@@ -55,6 +56,7 @@ export const CommentForm: React.FunctionComponent<Props> = ({
         [onSubmit, uncommittedBody]
     )
 
+    // Warn when navigating away from page when that would result in loss of user input.
     useEffect(() => {
         const isDirty = uncommittedBody !== (initialBody || '')
         if (isDirty) {
@@ -63,6 +65,7 @@ export const CommentForm: React.FunctionComponent<Props> = ({
         return undefined
     }, [history, initialBody, uncommittedBody])
 
+    // Text field completion.
     const [textArea, setTextArea] = useState<HTMLTextAreaElement | null>(null)
     const textAreaRef = createRef<HTMLTextAreaElement>()
     useLayoutEffect(() => setTextArea(textAreaRef.current), [textAreaRef])
@@ -79,16 +82,24 @@ export const CommentForm: React.FunctionComponent<Props> = ({
             selections: [],
             isActive: true,
         })
-        console.log('addEditor', editor.editorId)
         return { editorId: editor.editorId, modelUri: model.uri }
     }, [extensionsController.services.editor, extensionsController.services.model, initialBody])
     useEffect(
         () => () => {
-            console.log('removeEditor', editorId)
             extensionsController.services.editor.removeEditor({ editorId })
             extensionsController.services.model.removeModel(modelUri)
         },
         [editorId, extensionsController.services.editor, extensionsController.services.model, modelUri]
+    )
+
+    // Ctrl/Meta+Enter to submit.
+    const onKeyDown = useCallback<React.KeyboardEventHandler<HTMLTextAreaElement>>(
+        e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === Key.Enter) {
+                onSubmit(uncommittedBody)
+            }
+        },
+        [onSubmit, uncommittedBody]
     )
 
     return (
@@ -106,13 +117,13 @@ export const CommentForm: React.FunctionComponent<Props> = ({
                 editorId={editorId}
                 modelUri={modelUri}
                 onValueChange={setUncommittedBody}
+                onKeyDown={onKeyDown}
                 textAreaRef={textAreaRef}
                 autoFocus={true}
                 rows={5} // TODO!(sqs): use autosizing textarea and make this minRows={5}
                 disabled={disabled}
                 extensionsController={extensionsController}
             />
-
             <div className="d-flex align-items-center justify-content-end">
                 {onCancel && (
                     <button type="reset" className="btn btn-link" disabled={disabled} onClick={onCancel}>

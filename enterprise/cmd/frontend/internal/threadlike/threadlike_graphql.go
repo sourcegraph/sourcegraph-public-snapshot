@@ -6,7 +6,9 @@ import (
 	"path"
 	"strconv"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 )
@@ -17,6 +19,21 @@ import (
 type GQLThreadlike struct {
 	DB *internal.DBThread
 	graphqlbackend.PartialComment
+}
+
+func (v *GQLThreadlike) ID() graphql.ID {
+	var gqlType gqlType
+	switch v.DB.Type {
+	case graphqlbackend.ThreadlikeTypeThread:
+		gqlType = GQLTypeThread
+	case graphqlbackend.ThreadlikeTypeIssue:
+		gqlType = GQLTypeIssue
+	case graphqlbackend.ThreadlikeTypeChangeset:
+		gqlType = GQLTypeChangeset
+	default:
+		panic("invalid thread type: " + v.DB.Type)
+	}
+	return MarshalID(gqlType, v.DB.ID)
 }
 
 func (v *GQLThreadlike) Type() graphqlbackend.ThreadlikeType { return v.DB.Type }
@@ -66,4 +83,8 @@ func (v *GQLThreadlike) URL(ctx context.Context) (string, error) {
 	}
 
 	return path.Join(repository.URL(), "-", typeComponent, v.Number()), nil
+}
+
+func (v *GQLThreadlike) Campaigns(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
+	return graphqlbackend.CampaignsWithObject(ctx, v.ID(), arg)
 }

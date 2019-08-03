@@ -54,10 +54,6 @@ func changesetByDBID(ctx context.Context, dbID int64) (*gqlChangeset, error) {
 	return newGQLChangeset(v), nil
 }
 
-func (v *gqlChangeset) ID() graphql.ID {
-	return threadlike.MarshalID(threadlike.GQLTypeChangeset, v.db.ID)
-}
-
 func (GraphQLResolver) ChangesetInRepository(ctx context.Context, repositoryID graphql.ID, number string) (graphqlbackend.Changeset, error) {
 	changesetDBID, err := strconv.ParseInt(number, 10, 64)
 	if err != nil {

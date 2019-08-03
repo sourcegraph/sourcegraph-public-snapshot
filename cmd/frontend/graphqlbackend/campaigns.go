@@ -41,7 +41,16 @@ func CampaignsInNamespace(ctx context.Context, namespace graphql.ID, arg *graphq
 	return Campaigns.CampaignsInNamespace(ctx, namespace, arg)
 }
 
-func (schemaResolver) Campaigns(ctx context.Context, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error) {
+// CampaignsWithObject returns an instance of the GraphQL CampaignConnection type with the list of
+// campaigns that contain the object.
+func CampaignsWithObject(ctx context.Context, object graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error) {
+	if Campaigns == nil {
+		return nil, errCampaignsNotImplemented
+	}
+	return Campaigns.CampaignsWithObject(ctx, object, arg)
+}
+
+func (schemaResolver) Campaigns(ctx context.Context, arg *CampaignsArgs) (CampaignConnection, error) {
 	if Campaigns == nil {
 		return nil, errCampaignsNotImplemented
 	}
@@ -93,7 +102,7 @@ func (r schemaResolver) RemoveThreadsFromCampaign(ctx context.Context, arg *AddR
 // CampaignsResolver is the interface for the GraphQL campaigns queries and mutations.
 type CampaignsResolver interface {
 	// Queries
-	Campaigns(context.Context, *graphqlutil.ConnectionArgs) (CampaignConnection, error)
+	Campaigns(context.Context, *CampaignsArgs) (CampaignConnection, error)
 
 	// Mutations
 	CreateCampaign(context.Context, *CreateCampaignArgs) (Campaign, error)
@@ -112,6 +121,14 @@ type CampaignsResolver interface {
 	// CampaignsInNamespace is called by the CampaignsInNamespace func but is not in the GraphQL
 	// API.
 	CampaignsInNamespace(ctx context.Context, namespace graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error)
+
+	// CampaignsWithObject is called by the CampaignsWithObject func but is not in the GraphQL API.
+	CampaignsWithObject(ctx context.Context, object graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error)
+}
+
+type CampaignsArgs struct {
+	graphqlutil.ConnectionArgs
+	Object *graphql.ID
 }
 
 type CreateCampaignArgs struct {
@@ -161,6 +178,11 @@ type Campaign interface {
 	Repositories(context.Context) ([]*RepositoryResolver, error)
 	Commits(context.Context) ([]*GitCommitResolver, error)
 	RepositoryComparisons(context.Context) ([]*RepositoryComparisonResolver, error)
+}
+
+// CampaignNode is the interface for the GraphQL interface CampaignNode.
+type CampaignNode interface {
+	Campaigns(context.Context, *graphqlutil.ConnectionArgs) (CampaignConnection, error)
 }
 
 // CampaignConnection is the interface for the GraphQL type CampaignConnection.

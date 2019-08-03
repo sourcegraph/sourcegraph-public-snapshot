@@ -54,10 +54,6 @@ func threadByDBID(ctx context.Context, dbID int64) (*gqlThread, error) {
 	return newGQLThread(v), nil
 }
 
-func (v *gqlThread) ID() graphql.ID {
-	return threadlike.MarshalID(threadlike.GQLTypeThread, v.db.ID)
-}
-
 func (GraphQLResolver) ThreadInRepository(ctx context.Context, repositoryID graphql.ID, number string) (graphqlbackend.Thread, error) {
 	threadDBID, err := strconv.ParseInt(number, 10, 64)
 	if err != nil {

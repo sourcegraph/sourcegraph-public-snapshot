@@ -18,6 +18,7 @@ type Threadlike interface {
 	ExternalURL() *string
 	updatable
 	URL(context.Context) (string, error)
+	CampaignNode
 }
 
 type ThreadlikeType string

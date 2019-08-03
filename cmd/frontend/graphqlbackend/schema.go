@@ -1018,6 +1018,8 @@ type Query {
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
+        # Returns campaigns that contain this object (such as thread or changeset).
+        object: ID
     ): CampaignConnection!
 
     # Look up a project.
@@ -4250,6 +4252,15 @@ interface RepositoryAndNumberAddressable {
     number: String!
 }
 
+# An object that can be a member of a campaign.
+interface CampaignNode {
+    # A list of campaigns that contain this object.
+    campaigns(
+        # Return the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
+}
+
 # The statuses of threads.
 enum ThreadStatus {
     # Open.
@@ -4290,7 +4301,7 @@ input UpdateThreadInput {
 }
 
 # A thread is an issue or changeset.
-type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment {
+type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & CampaignNode {
     # The unique ID for the thread.
     id: ID!
 
@@ -4330,6 +4341,12 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
 
     # Whether the viewer can update this thread.
     viewerCanUpdate: Boolean!
+
+    # A list of campaigns that contain this thread.
+    campaigns(
+        # Return the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
 }
 
 # A list of threads.
@@ -4401,7 +4418,7 @@ input UpdateChangesetInput {
 }
 
 # A changeset is an issue or changeset.
-type Changeset implements Node & RepositoryNode & RepositoryAndNumberAddressable & Comment {
+type Changeset implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & CampaignNode {
     # The unique ID for the changeset.
     id: ID!
 
@@ -4453,6 +4470,12 @@ type Changeset implements Node & RepositoryNode & RepositoryAndNumberAddressable
 
     # The comparison between this changeset's base and head.
     repositoryComparison: RepositoryComparison!
+
+    # A list of campaigns that contain this changeset.
+    campaigns(
+        # Return the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
 }
 
 # A list of changesets.

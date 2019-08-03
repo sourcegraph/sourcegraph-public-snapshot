@@ -79,6 +79,7 @@ func TestGraphQL_UpdateChangeset(t *testing.T) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
 		return &internal.DBThread{
+			Type:         graphqlbackend.ThreadlikeTypeChangeset,
 			ID:           2,
 			RepositoryID: 1,
 			Title:        "t1",
