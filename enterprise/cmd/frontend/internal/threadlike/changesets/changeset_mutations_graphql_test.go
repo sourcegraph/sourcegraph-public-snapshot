@@ -24,7 +24,7 @@ func TestGraphQL_CreateChangeset(t *testing.T) {
 		return &types.Repo{ID: wantRepositoryID}, nil
 	}
 	wantChangeset := &internal.DBThread{
-		Type:         graphqlbackend.ThreadlikeTypeChangeset,
+		Type:         internal.DBThreadTypeChangeset,
 		RepositoryID: wantRepositoryID,
 		Title:        "t",
 		ExternalURL:  strptr("u"),
@@ -79,7 +79,7 @@ func TestGraphQL_UpdateChangeset(t *testing.T) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
 		return &internal.DBThread{
-			Type:         graphqlbackend.ThreadlikeTypeChangeset,
+			Type:         internal.DBThreadTypeChangeset,
 			ID:           2,
 			RepositoryID: 1,
 			Title:        "t1",

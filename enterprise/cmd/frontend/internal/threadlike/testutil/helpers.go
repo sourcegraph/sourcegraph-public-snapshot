@@ -3,7 +3,6 @@ package testutil
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -13,7 +12,7 @@ import (
 func CreateThread(ctx context.Context, title string, repositoryID api.RepoID, authorUserID int32) (id int64, err error) {
 	thread, err := internal.DBThreads{}.Create(ctx,
 		&internal.DBThread{
-			Type:         graphqlbackend.ThreadlikeTypeThread,
+			Type:         internal.DBThreadTypeThread,
 			RepositoryID: repositoryID,
 			Title:        title,
 		},

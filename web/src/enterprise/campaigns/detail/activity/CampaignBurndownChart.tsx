@@ -3,13 +3,9 @@ import H from 'history'
 import React from 'react'
 import {
     Area,
-    AreaChart,
-    CartesianGrid,
     ComposedChart,
     LabelFormatter,
-    Legend,
     Line,
-    LineChart,
     ReferenceLine,
     ResponsiveContainer,
     TickFormatterFunction,
@@ -29,7 +25,7 @@ interface Props extends ExtensionsControllerProps {
     history: H.History
 }
 
-const openThreads = [1071, 1218, 1231, 1121, 1018, 980, 979, 930, 715, 331, 371, 102, 81, 81, 81, 31, 23, 7, 7, 3]
+const openThreads = [2071, 1918, 1231, 1121, 1018, 1003, 980, 979, 930, 945, 715, 331]
 
 const approvedThreads = openThreads.map((n, i) => Math.floor((i / openThreads.length) * n))
 
@@ -62,19 +58,17 @@ const dateTickFormatter: TickFormatterFunction = date => format(date, 'MMM d')
 
 const tooltipLabelFormatter: LabelFormatter = (date: number) => format(date, 'PP')
 
-const tooltipFormatter: TooltipFormatter = (value: number) => [
-    `${numberWithCommas(value)} open ${pluralize('changeset', value)}`,
-]
-
 const STYLE: React.CSSProperties = {
     color: 'var(--body-color)',
     backgroundColor: 'var(--body-bg)',
 }
 
+const SHOW_CLOSED = false
+
 /**
  * A burndown chart showing progress toward closing a campaign's threads.
  */
-export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign, className = '', ...props }) => (
+export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign, className = '' }) => (
     <div className={`campaign-burndown-chart ${className}`}>
         <ResponsiveContainer width="100%" height={300}>
             <ComposedChart data={data}>
@@ -103,6 +97,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign
                     name="Approved"
                     fill="var(--success)"
                     strokeWidth={0}
+                    isAnimationActive={false}
                 />
                 <Area
                     stackId="openThreads"
@@ -111,6 +106,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign
                     name="Failing CI"
                     fill="var(--danger)"
                     strokeWidth={0}
+                    isAnimationActive={false}
                 />
                 <Area
                     stackId="openThreads"
@@ -119,15 +115,19 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign
                     name="Error"
                     fill="var(--warning)"
                     strokeWidth={0}
+                    isAnimationActive={false}
                 />
-                <Area
-                    stackId="openThreads"
-                    type="step"
-                    dataKey="closedThreads"
-                    name="Closed"
-                    fill="var(--text-muted)"
-                    strokeWidth={0}
-                />
+                {SHOW_CLOSED && (
+                    <Area
+                        stackId="openThreads"
+                        type="step"
+                        dataKey="closedThreads"
+                        name="Closed"
+                        fill="var(--text-muted)"
+                        strokeWidth={0}
+                        isAnimationActive={false}
+                    />
+                )}
                 <Line
                     type="step"
                     dataKey="openThreads"

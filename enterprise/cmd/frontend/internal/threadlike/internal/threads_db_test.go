@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	commentobjectdb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
@@ -41,7 +40,7 @@ func TestDB_Threads(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantThread0 := &DBThread{Type: graphqlbackend.ThreadlikeTypeThread, RepositoryID: repo0.ID, Title: "t0", ExternalURL: strptr("u0")}
+	wantThread0 := &DBThread{Type: DBThreadTypeThread, RepositoryID: repo0.ID, Title: "t0", ExternalURL: strptr("u0")}
 	thread0, err := DBThreads{}.Create(ctx, wantThread0, commentobjectdb.DBObjectCommentFields{AuthorUserID: user.ID})
 	if err != nil {
 		t.Fatal(err)

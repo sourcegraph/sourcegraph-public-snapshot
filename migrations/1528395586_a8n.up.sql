@@ -1,5 +1,13 @@
 BEGIN;
 
+CREATE TABLE events (
+	id bigserial PRIMARY KEY,
+    type text NOT NULL,
+	at timestamp with time zone NOT NULL,
+);
+
+-----------------
+
 CREATE TYPE thread_type AS enum ('THREAD', 'ISSUE', 'CHANGESET');
 CREATE TABLE threads (
 	id bigserial PRIMARY KEY,

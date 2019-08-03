@@ -9,17 +9,24 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	commentobjectdb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
+type DBThreadType string
+
+const (
+	DBThreadTypeThread    DBThreadType = "THREAD"
+	DBThreadTypeIssue                  = "ISSUE"
+	DBThreadTypeChangeset              = "CHANGESET"
+)
+
 // DBThread describes a thread.
 type DBThread struct {
 	ID           int64
-	Type         graphqlbackend.ThreadlikeType
+	Type         DBThreadType
 	RepositoryID api.RepoID // the repository associated with this thread
 	Title        string
 	ExternalURL  *string

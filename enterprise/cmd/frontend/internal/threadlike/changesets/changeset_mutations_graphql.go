@@ -26,7 +26,7 @@ func (GraphQLResolver) CreateChangeset(ctx context.Context, arg *graphqlbackend.
 	}
 
 	changeset, err := internal.DBThreads{}.Create(ctx, &internal.DBThread{
-		Type:         graphqlbackend.ThreadlikeTypeChangeset,
+		Type:         internal.DBThreadTypeChangeset,
 		RepositoryID: repo.DBID(),
 		Title:        arg.Input.Title,
 		ExternalURL:  arg.Input.ExternalURL,

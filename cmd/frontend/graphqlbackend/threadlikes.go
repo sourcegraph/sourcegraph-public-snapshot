@@ -11,7 +11,6 @@ type Threadlike interface {
 	PartialComment
 	ID() graphql.ID
 	DBID() int64
-	Type() ThreadlikeType
 	Repository(context.Context) (*RepositoryResolver, error)
 	Number() string
 	Title() string
@@ -20,14 +19,6 @@ type Threadlike interface {
 	URL(context.Context) (string, error)
 	CampaignNode
 }
-
-type ThreadlikeType string
-
-const (
-	ThreadlikeTypeThread    ThreadlikeType = "THREAD"
-	ThreadlikeTypeIssue                    = "ISSUE"
-	ThreadlikeTypeChangeset                = "CHANGESET"
-)
 
 type updateThreadlikeInput struct {
 	ID          graphql.ID

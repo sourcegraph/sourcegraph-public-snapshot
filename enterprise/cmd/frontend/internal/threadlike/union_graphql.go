@@ -13,11 +13,11 @@ import (
 
 func newGQLThreadOrIssueOrChangeset(v *internal.DBThread) graphqlbackend.ThreadOrIssueOrChangeset {
 	switch v.Type {
-	case graphqlbackend.ThreadlikeTypeThread:
+	case internal.DBThreadTypeThread:
 		return graphqlbackend.ThreadOrIssueOrChangeset{Thread: internal.ToGQLThread(v)}
-	case graphqlbackend.ThreadlikeTypeIssue:
+	case internal.DBThreadTypeIssue:
 		panic("TODO!(sqs): not implemented")
-	case graphqlbackend.ThreadlikeTypeChangeset:
+	case internal.DBThreadTypeChangeset:
 		return graphqlbackend.ThreadOrIssueOrChangeset{Changeset: internal.ToGQLChangeset(v)}
 	}
 	panic("unrecognized thread type: " + v.Type)

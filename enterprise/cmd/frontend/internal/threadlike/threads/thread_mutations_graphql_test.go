@@ -24,7 +24,7 @@ func TestGraphQL_CreateThread(t *testing.T) {
 		return &types.Repo{ID: wantRepositoryID}, nil
 	}
 	wantThread := &internal.DBThread{
-		Type:         graphqlbackend.ThreadlikeTypeThread,
+		Type:         internal.DBThreadTypeThread,
 		RepositoryID: wantRepositoryID,
 		Title:        "t",
 		ExternalURL:  strptr("u"),
@@ -77,7 +77,7 @@ func TestGraphQL_UpdateThread(t *testing.T) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
 		return &internal.DBThread{
-			Type:         graphqlbackend.ThreadlikeTypeThread,
+			Type:         internal.DBThreadTypeThread,
 			ID:           2,
 			RepositoryID: 1,
 			Title:        "t1",

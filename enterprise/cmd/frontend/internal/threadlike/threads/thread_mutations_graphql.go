@@ -25,7 +25,7 @@ func (GraphQLResolver) CreateThread(ctx context.Context, arg *graphqlbackend.Cre
 	}
 
 	thread, err := internal.DBThreads{}.Create(ctx, &internal.DBThread{
-		Type:         graphqlbackend.ThreadlikeTypeThread,
+		Type:         internal.DBThreadTypeThread,
 		RepositoryID: repo.DBID(),
 		Title:        arg.Input.Title,
 		ExternalURL:  arg.Input.ExternalURL,

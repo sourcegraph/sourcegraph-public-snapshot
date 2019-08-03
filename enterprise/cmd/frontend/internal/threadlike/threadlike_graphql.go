@@ -24,11 +24,11 @@ type GQLThreadlike struct {
 func (v *GQLThreadlike) ID() graphql.ID {
 	var gqlType gqlType
 	switch v.DB.Type {
-	case graphqlbackend.ThreadlikeTypeThread:
+	case internal.DBThreadTypeThread:
 		gqlType = GQLTypeThread
-	case graphqlbackend.ThreadlikeTypeIssue:
+	case internal.DBThreadTypeIssue:
 		gqlType = GQLTypeIssue
-	case graphqlbackend.ThreadlikeTypeChangeset:
+	case internal.DBThreadTypeChangeset:
 		gqlType = GQLTypeChangeset
 	default:
 		panic("invalid thread type: " + v.DB.Type)
@@ -36,7 +36,7 @@ func (v *GQLThreadlike) ID() graphql.ID {
 	return MarshalID(gqlType, v.DB.ID)
 }
 
-func (v *GQLThreadlike) Type() graphqlbackend.ThreadlikeType { return v.DB.Type }
+func (v *GQLThreadlike) Type() internal.DBThreadType { return v.DB.Type }
 
 func (v *GQLThreadlike) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	return graphqlbackend.RepositoryByDBID(ctx, v.DB.RepositoryID)
@@ -72,11 +72,11 @@ func (v *GQLThreadlike) URL(ctx context.Context) (string, error) {
 
 	var typeComponent string
 	switch v.DB.Type {
-	case graphqlbackend.ThreadlikeTypeThread:
+	case internal.DBThreadTypeThread:
 		typeComponent = "threads"
-	case graphqlbackend.ThreadlikeTypeIssue:
+	case internal.DBThreadTypeIssue:
 		typeComponent = "issues"
-	case graphqlbackend.ThreadlikeTypeChangeset:
+	case internal.DBThreadTypeChangeset:
 		typeComponent = "changesets"
 	default:
 		return "", errors.New("invalid thread type")
