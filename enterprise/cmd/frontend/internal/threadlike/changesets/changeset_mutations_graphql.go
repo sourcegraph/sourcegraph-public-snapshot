@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal/extsvc"
 )
 
 func (GraphQLResolver) CreateChangeset(ctx context.Context, arg *graphqlbackend.CreateChangesetArgs) (graphqlbackend.Changeset, error) {
@@ -37,6 +38,11 @@ func (GraphQLResolver) CreateChangeset(ctx context.Context, arg *graphqlbackend.
 	}, comment)
 	if err != nil {
 		return nil, err
+	}
+	if externalURL := arg.Input.ExternalURL; externalURL != nil {
+		if err := extsvc.ImportGitHubThreadEvents(ctx, changeset.ID, repo.DBID(), repo.DBExternalRepo(), *externalURL); err != nil {
+			return nil, err
+		}
 	}
 	return newGQLChangeset(changeset), nil
 }

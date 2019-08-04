@@ -114,6 +114,8 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	}, nil
 }
 
+func (s GithubSource) Client() *github.Client { return s.client }
+
 // ListRepos returns all Github repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s GithubSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {

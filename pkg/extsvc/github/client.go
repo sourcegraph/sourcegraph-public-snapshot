@@ -244,7 +244,7 @@ func (c *Client) requestGet(ctx context.Context, token, requestURI string, resul
 	return c.do(ctx, token, req, result)
 }
 
-func (c *Client) requestGraphQL(ctx context.Context, token, query string, vars map[string]interface{}, result interface{}) (err error) {
+func (c *Client) RequestGraphQL(ctx context.Context, token, query string, vars map[string]interface{}, result interface{}) (err error) {
 	reqBody, err := json.Marshal(struct {
 		Query     string                 `json:"query"`
 		Variables map[string]interface{} `json:"variables"`
@@ -364,7 +364,7 @@ func IsRateLimitExceeded(err error) bool {
 }
 
 // graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by
-// requestGraphQL. See https://facebook.github.io/graphql/#sec-Errors.
+// RequestGraphQL. See https://facebook.github.io/graphql/#sec-Errors.
 type graphqlErrors []struct {
 	Message   string        `json:"message"`
 	Type      string        `json:"type"`

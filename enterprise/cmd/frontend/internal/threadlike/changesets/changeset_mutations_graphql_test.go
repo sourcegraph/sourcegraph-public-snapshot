@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -40,6 +41,8 @@ func TestGraphQL_CreateChangeset(t *testing.T) {
 		tmp.ID = 2
 		return &tmp, nil
 	}
+	extsvc.MockImportGitHubThreadEvents = func() error { return nil }
+	defer func() { extsvc.MockImportGitHubThreadEvents = nil }()
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{

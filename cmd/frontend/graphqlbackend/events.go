@@ -32,8 +32,14 @@ type EventCommon struct {
 // func (v *EventCommon) CreatedAt() DateTime { return v.CreatedAt_ }
 
 type ToEvent struct {
+	// TODO!(sqs): can simplify with UseStructFields?
+	CreateThreadEvent             *CreateThreadEvent
 	AddThreadToCampaignEvent      *AddRemoveThreadToFromCampaignEvent
 	RemoveThreadFromCampaignEvent *AddRemoveThreadToFromCampaignEvent
+}
+
+func (v ToEvent) ToCreateThreadEvent() (*CreateThreadEvent, bool) {
+	return v.CreateThreadEvent, v.CreateThreadEvent != nil
 }
 
 func (v ToEvent) ToAddThreadToCampaignEvent() (*AddRemoveThreadToFromCampaignEvent, bool) {
