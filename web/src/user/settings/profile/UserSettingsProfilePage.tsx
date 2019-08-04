@@ -94,7 +94,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
 
         // Fetch the user with all of the fields we need (Props.user might not have them all).
         this.subscriptions.add(
-            combineLatest(userChanges, this.refreshRequests.pipe(startWith<void>(undefined)))
+            combineLatest([userChanges, this.refreshRequests.pipe(startWith<void>(undefined))])
                 .pipe(
                     switchMap(([user]) =>
                         queryUser(user.id).pipe(

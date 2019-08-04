@@ -146,7 +146,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
 
         // Fetch user.
         this.subscriptions.add(
-            combineLatest(usernameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true)))
+            combineLatest([usernameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true))])
                 .pipe(
                     switchMap(([username, forceRefresh]) => {
                         type PartialStateUpdate = Pick<UserAreaState, 'userOrError'>

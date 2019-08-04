@@ -97,7 +97,7 @@ export class ContributionRegistry {
         extraContext?: Context<T>,
         logWarning = (...args: any[]) => console.log(...args)
     ): Observable<Evaluated<Contributions>> {
-        return combineLatest(
+        return combineLatest([
             entries.pipe(
                 switchMap(entries =>
                     combineLatestOrDefault(
@@ -112,8 +112,8 @@ export class ContributionRegistry {
             ),
             this.editorService.editorsAndModels,
             this.settingsService.data,
-            this.context
-        ).pipe(
+            this.context,
+        ]).pipe(
             map(([multiContributions, editors, settings, context]) => {
                 // Merge in extra context.
                 if (extraContext) {

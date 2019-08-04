@@ -120,14 +120,14 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
 
         // Fetch extension.
         this.subscriptions.add(
-            combineLatest(
+            combineLatest([
                 extensionIDChanges,
                 merge(
                     this.refreshRequests.pipe(mapTo(false)),
                     globalExtensionsSettingsChanges.pipe(mapTo(false)),
                     of(false)
-                )
-            )
+                ),
+            ])
                 .pipe(
                     switchMap(([extensionID, forceRefresh]) => {
                         type PartialStateUpdate = Pick<ExtensionAreaState, 'extensionOrError'>

@@ -135,7 +135,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
 
         // Fetch repository revision.
         this.subscriptions.add(
-            combineLatest(
+            combineLatest([
                 this.propsUpdates.pipe(
                     map(props => pick(props, 'repoName', 'commitID', 'filePath', 'isLightTheme')),
                     distinctUntilChanged((a, b) => isEqual(a, b))
@@ -143,8 +143,8 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 this.extendHighlightingTimeoutClicks.pipe(
                     mapTo(true),
                     startWith(false)
-                )
-            )
+                ),
+            ])
                 .pipe(
                     tap(() => this.setState({ blobOrError: undefined })),
                     switchMap(([{ repoName, commitID, filePath, isLightTheme }, extendHighlightingTimeout]) =>

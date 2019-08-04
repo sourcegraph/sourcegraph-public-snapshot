@@ -83,10 +83,10 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
             distinctUntilChanged()
         )
 
-        const productSubscriptionChanges = combineLatest(
+        const productSubscriptionChanges = combineLatest([
             subscriptionUUIDChanges,
-            this.updates.pipe(startWith(undefined))
-        ).pipe(
+            this.updates.pipe(startWith(undefined)),
+        ]).pipe(
             switchMap(([subscriptionUUID]) =>
                 this.queryProductSubscription(subscriptionUUID).pipe(
                     catchError(err => [asError(err)]),

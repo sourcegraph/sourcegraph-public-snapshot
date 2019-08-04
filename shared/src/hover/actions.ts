@@ -106,8 +106,7 @@ export function getHoverActionsContext(
         share()
     )
 
-    return combineLatest(
-        // To reduce UI jitter, don't show "Go to definition" until (1) the result or an error was received or (2)
+    return combineLatest([
         // the fairly long LOADER_DELAY has elapsed.
         merge(
             [undefined], // don't block on the first emission
@@ -137,8 +136,8 @@ export function getHoverActionsContext(
                 filter(v => !!v),
                 map(v => !!v)
             )
-        ).pipe(startWith(false))
-    ).pipe(
+        ).pipe(startWith(false)),
+    ]).pipe(
         map(
             ([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => ({
                 'goToDefinition.showLoading': definitionURLOrError === LOADING,

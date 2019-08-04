@@ -75,11 +75,11 @@ export class ExtensionsService {
      * Most callers should use {@link ExtensionsService#activeExtensions}.
      */
     private get enabledExtensions(): Subscribable<ConfiguredExtension[]> {
-        return combineLatest(
+        return combineLatest([
             from(this.settingsService.data),
             from(this.configuredExtensions),
-            this.sideloadedExtension
-        ).pipe(
+            this.sideloadedExtension,
+        ]).pipe(
             map(([settings, configuredExtensions, sideloadedExtension]) => {
                 const enabled = [...configuredExtensions.filter(x => isExtensionEnabled(settings.final, x.id))]
                 if (sideloadedExtension) {

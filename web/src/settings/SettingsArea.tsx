@@ -74,13 +74,13 @@ export class SettingsArea extends React.Component<Props, State> {
         eventLogger.logViewEvent(`Settings${this.props.subject.__typename}`)
         // Load settings.
         this.subscriptions.add(
-            combineLatest(
+            combineLatest([
                 this.componentUpdates.pipe(
                     map(props => props.subject),
                     distinctUntilChanged()
                 ),
-                this.refreshRequests.pipe(startWith<void>(undefined))
-            )
+                this.refreshRequests.pipe(startWith<void>(undefined)),
+            ])
                 .pipe(
                     switchMap(([{ id }]) =>
                         fetchSettingsCascade(id).pipe(

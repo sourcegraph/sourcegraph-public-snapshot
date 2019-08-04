@@ -203,10 +203,10 @@ export const withActivation = <P extends ActivationProps>(Component: React.Compo
                 map(props => props.authenticatedUser),
                 distinctUntilChanged()
             )
-            const serverCompletionStatus: Observable<ActivationCompletionStatus> = combineLatest(
+            const serverCompletionStatus: Observable<ActivationCompletionStatus> = combineLatest([
                 authenticatedUser,
-                this.refetches.pipe(startWith(undefined))
-            ).pipe(
+                this.refetches.pipe(startWith(undefined)),
+            ]).pipe(
                 switchMap(([authenticatedUser]) =>
                     authenticatedUser ? fetchActivationStatus(authenticatedUser.siteAdmin) : []
                 )
@@ -222,7 +222,7 @@ export const withActivation = <P extends ActivationProps>(Component: React.Compo
                 )
             )
             this.subscriptions.add(
-                combineLatest(serverCompletionStatus, localCompletionStatus)
+                combineLatest([serverCompletionStatus, localCompletionStatus])
                     .pipe(
                         map(([serverCompletionStatus, localCompletionStatus]) => ({
                             ...serverCompletionStatus,

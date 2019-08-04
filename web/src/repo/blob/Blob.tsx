@@ -319,7 +319,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         // Update the Sourcegraph extensions model to reflect the current file.
         this.subscriptions.add(
-            combineLatest(modelChanges, locationPositions).subscribe(([model, pos]) => {
+            combineLatest([modelChanges, locationPositions]).subscribe(([model, pos]) => {
                 const uri = `git://${model.repoName}?${model.commitID}#${model.filePath}`
                 if (!this.props.extensionsController.services.model.hasModel(uri)) {
                     this.props.extensionsController.services.model.addModel({
@@ -340,8 +340,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         /** Decorations */
         let lastModel: (AbsoluteRepoFile & ModeSpec) | undefined
-        const decorations: Observable<TextDocumentDecoration[] | null> = combineLatest(modelChanges).pipe(
-            switchMap(([model]) => {
+        const decorations: Observable<TextDocumentDecoration[] | null> = modelChanges.pipe(
+            switchMap(model => {
                 const modelChanged = !isEqual(model, lastModel)
                 lastModel = model // record so we can compute modelChanged
 
@@ -365,7 +365,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         /** Render decorations. */
         let decoratedElements: HTMLElement[] = []
         this.subscriptions.add(
-            combineLatest(
+            combineLatest([
                 decorations.pipe(
                     map(decorations => decorations || []),
                     catchError(error => {
@@ -375,8 +375,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         return [[] as TextDocumentDecoration[]]
                     })
                 ),
-                this.codeViewElements
-            ).subscribe(([decorations, codeView]) => {
+                this.codeViewElements,
+            ]).subscribe(([decorations, codeView]) => {
                 if (codeView) {
                     if (decoratedElements) {
                         // Clear previous decorations.

@@ -125,7 +125,7 @@ export class OrgArea extends React.Component<Props> {
 
         // Fetch organization.
         this.subscriptions.add(
-            combineLatest(nameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true)))
+            combineLatest([nameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true))])
                 .pipe(
                     switchMap(([name, forceRefresh]) => {
                         type PartialStateUpdate = Pick<State, 'orgOrError'>
