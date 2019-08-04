@@ -76,16 +76,17 @@ export class ExtensionsArea extends React.Component<ExtensionsAreaProps, Extensi
                 />
                 <Switch>
                     {this.props.routes.map(
+                        /* eslint-disable react/jsx-no-bind */
                         ({ path, exact, condition = () => true, render }) =>
                             condition(context) && (
                                 <Route
                                     key="hardcoded-key"
                                     path={this.props.match.url + path}
                                     exact={exact}
-                                    // tslint:disable-next-line:jsx-no-lambda
                                     render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                                 />
                             )
+                        /* eslint-enable react/jsx-no-bind */
                     )}
                     <Route key="hardcoded-key" component={NotFoundPage} />
                 </Switch>

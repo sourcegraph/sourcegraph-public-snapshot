@@ -26,7 +26,7 @@ export const PaymentTokenFormControl: React.FunctionComponent<
                     props.disabled ? 'disabled' : ''
                 }`}
                 disabled={props.disabled}
-                // tslint:disable-next-line:jsx-ban-props
+                // eslint-disable-next-line react/forbid-dom-props
                 style={{
                     base: {
                         fontFamily:

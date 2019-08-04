@@ -103,7 +103,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                     <div className="progress">
                         <div
                             className="sourcegraph-notification-item__progressbar progress-bar"
-                            // tslint:disable-next-line:jsx-ban-props
+                            // eslint-disable-next-line react/forbid-dom-props
                             style={{ width: this.state.progress.percentage + '%' }}
                         />
                     </div>

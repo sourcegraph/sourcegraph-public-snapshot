@@ -171,14 +171,14 @@ export class BlobPage extends React.PureComponent<Props, State> {
         this.propsUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.propsUpdates.next(newProps)
+    public componentDidUpdate(prevProps: Props): void {
+        this.propsUpdates.next(this.props)
         if (
-            newProps.repoName !== this.props.repoName ||
-            newProps.commitID !== this.props.commitID ||
-            newProps.filePath !== this.props.filePath ||
-            ToggleRenderedFileMode.getModeFromURL(newProps.location) !==
-                ToggleRenderedFileMode.getModeFromURL(this.props.location)
+            this.props.repoName !== prevProps.repoName ||
+            this.props.commitID !== prevProps.commitID ||
+            this.props.filePath !== prevProps.filePath ||
+            ToggleRenderedFileMode.getModeFromURL(this.props.location) !==
+                ToggleRenderedFileMode.getModeFromURL(prevProps.location)
         ) {
             this.logViewEvent()
         }

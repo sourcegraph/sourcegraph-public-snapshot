@@ -21,7 +21,7 @@ export class Form extends React.PureComponent<FormProps, FormState> {
 
     public render(): React.ReactNode {
         return (
-            // tslint:disable-next-line:jsx-ban-elements
+            // eslint-disable-next-line react/forbid-elements
             <form
                 {...this.props}
                 className={`${this.props.className || ''} ${this.state.wasValidated ? 'was-validated' : ''}`}

@@ -366,7 +366,7 @@ describe('filterContributions()', () => {
     })
 })
 
-// tslint:disable:no-invalid-template-strings
+/* eslint-disable no-template-curly-in-string */
 describe('evaluateContributions()', () => {
     test('handles empty contributions', () => {
         const expected: Evaluated<Contributions> = {}
@@ -505,4 +505,4 @@ describe('parseContributionExpressions()', () => {
         ).toEqual(expected)
     })
 })
-// tslint:enable:no-invalid-template-strings
+/* eslint-enable no-template-curly-in-string */

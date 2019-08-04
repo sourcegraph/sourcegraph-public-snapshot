@@ -70,17 +70,19 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         this.state = { saving: false }
 
         // Reset state upon navigation to a different subject.
-        this.componentUpdates
-            .pipe(
-                startWith(props),
-                map(({ settings }) => settings),
-                distinctUntilChanged()
-            )
-            .subscribe(() => {
-                if (this.state.contents !== undefined) {
-                    this.setState({ contents: undefined })
-                }
-            })
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    startWith(props),
+                    map(({ settings }) => settings),
+                    distinctUntilChanged()
+                )
+                .subscribe(() => {
+                    if (this.state.contents !== undefined) {
+                        this.setState({ contents: undefined })
+                    }
+                })
+        )
 
         // Saving ended (in failure) if we get a commitError.
         this.subscriptions.add(
@@ -140,8 +142,8 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         )
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -168,7 +170,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                                     type="button"
                                     key={id}
                                     className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                    // tslint:disable-next-line:jsx-no-lambda
                                     onClick={() => this.runAction(id)}
                                 >
                                     {label}

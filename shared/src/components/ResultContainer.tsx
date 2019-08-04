@@ -79,13 +79,15 @@ export class ResultContainer extends React.PureComponent<Props, State> {
         this.state = { expanded: this.props.allExpanded || this.props.defaultExpanded }
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        if (this.state.expanded === this.props.allExpanded && this.props.allExpanded !== nextProps.allExpanded) {
-            this.setState({ expanded: nextProps.allExpanded })
+    public componentDidUpdate(prevProps: Props): void {
+        if (this.state.expanded === prevProps.allExpanded && prevProps.allExpanded !== this.props.allExpanded) {
+            // eslint-disable-next-line react/no-did-update-set-state
+            this.setState({ expanded: this.props.allExpanded })
         }
 
-        if (this.state.expanded !== this.props.allExpanded && this.props.allExpanded !== nextProps.allExpanded) {
-            this.setState({ expanded: nextProps.allExpanded })
+        if (this.state.expanded !== prevProps.allExpanded && prevProps.allExpanded !== this.props.allExpanded) {
+            // eslint-disable-next-line react/no-did-update-set-state
+            this.setState({ expanded: this.props.allExpanded })
         }
     }
 

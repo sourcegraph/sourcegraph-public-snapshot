@@ -18,7 +18,6 @@ export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     },
     {
         path: '/settings',
-        // tslint:disable-next-line:jsx-no-lambda
         render: props => <OrgSettingsArea {...props} isLightTheme={props.isLightTheme} />,
     },
     ...namespaceAreaRoutes,

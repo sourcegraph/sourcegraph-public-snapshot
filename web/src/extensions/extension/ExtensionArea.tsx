@@ -147,8 +147,8 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: ExtensionAreaProps): void {
-        this.componentUpdates.next(props)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -195,18 +195,19 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
                                 {this.props.routes.map(
+                                    /* eslint-disable react/jsx-no-bind */
                                     ({ path, render, exact, condition = () => true }) =>
                                         condition(context) && (
                                             <Route
                                                 path={url + path}
                                                 exact={exact}
                                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                // tslint:disable-next-line:jsx-no-lambda
                                                 render={routeComponentProps =>
                                                     render({ ...context, ...routeComponentProps })
                                                 }
                                             />
                                         )
+                                    /* eslint-enable react/jsx-no-bind */
                                 )}
                                 <Route key="hardcoded-key" component={NotFoundPage} />
                             </Switch>

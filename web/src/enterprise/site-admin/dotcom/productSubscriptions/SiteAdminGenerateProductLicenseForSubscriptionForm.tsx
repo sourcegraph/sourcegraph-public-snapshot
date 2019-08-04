@@ -198,7 +198,6 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                                             href="#"
                                             key={days}
                                             className="mr-2"
-                                            // tslint:disable-next-line:jsx-no-lambda
                                             onClick={e => {
                                                 e.preventDefault()
                                                 this.setValidDays(days)

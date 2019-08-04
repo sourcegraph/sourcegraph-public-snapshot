@@ -604,8 +604,8 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         return q.toString()
     }
 
-    public componentWillReceiveProps(nextProps: FilteredConnectionProps<C, N, NP>): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

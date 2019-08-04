@@ -232,7 +232,11 @@ describe('getDefinitionURL', () => {
 
     describe('if there is exactly 1 location result', () => {
         test('resolves the raw repo name and passes it to urlToFile()', async () => {
-            const requestGraphQL = <R extends IQuery | IMutation>({ variables }: { [key: string]: any }): Observable<SuccessGraphQLResult<R>> =>
+            const requestGraphQL = <R extends IQuery | IMutation>({
+                variables,
+            }: {
+                [key: string]: any
+            }): Observable<SuccessGraphQLResult<R>> =>
                 // tslint:disable-next-line no-object-literal-type-assertion
                 of({
                     data: {
@@ -277,7 +281,8 @@ describe('getDefinitionURL', () => {
         })
 
         test('fails gracefully when resolveRawRepoName() fails with a PrivateRepoPublicSourcegraph error', async () => {
-            const requestGraphQL = () => throwError(new PrivateRepoPublicSourcegraphComError('ResolveRawRepoName'))
+            const requestGraphQL = (): Observable<never> =>
+                throwError(new PrivateRepoPublicSourcegraphComError('ResolveRawRepoName'))
             const urlToFile = sinon.spy()
             await getDefinitionURL(
                 { urlToFile, requestGraphQL },

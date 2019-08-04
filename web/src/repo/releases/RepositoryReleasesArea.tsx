@@ -70,16 +70,17 @@ export class RepositoryReleasesArea extends React.Component<Props> {
                 <div className="container">
                     <div className="container-inner">
                         <Switch>
+                            {/* eslint-disable react/jsx-no-bind */}
                             <Route
                                 path={`${this.props.routePrefix}/-/tags`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
-                                // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
                                     <RepositoryReleasesTagsPage {...routeComponentProps} {...transferProps} />
                                 )}
                             />
                             <Route key="hardcoded-key" component={NotFoundPage} />
+                            {/* eslint-enable react/jsx-no-bind */}
                         </Switch>
                     </div>
                 </div>

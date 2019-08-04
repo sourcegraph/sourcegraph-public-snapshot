@@ -250,6 +250,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 <Switch>
+                    {/* eslint-disable react/jsx-no-bind */}
                     {this.props.routes.map(
                         ({ path, render, exact, condition = () => true }) =>
                             condition(context) && (
@@ -257,11 +258,11 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                     path={this.props.routePrefix + path}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                     exact={exact}
-                                    // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
                                     render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                                 />
                             )
                     )}
+                    {/* eslint-enable react/jsx-no-bind */}
                 </Switch>
                 <RepoHeaderContributionPortal
                     position="left"

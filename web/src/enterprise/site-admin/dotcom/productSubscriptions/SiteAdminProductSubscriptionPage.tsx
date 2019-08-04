@@ -233,11 +233,19 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                             <div className="card-header d-flex align-items-center justify-content-between">
                                 Licenses
                                 {this.state.showGenerate ? (
-                                    <button type="button" className="btn btn-secondary" onClick={this.toggleShowGenerate}>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={this.toggleShowGenerate}
+                                    >
                                         Dismiss new license form
                                     </button>
                                 ) : (
-                                    <button type="button" className="btn btn-primary btn-sm" onClick={this.toggleShowGenerate}>
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary btn-sm"
+                                        onClick={this.toggleShowGenerate}
+                                    >
                                         <AddIcon className="icon-inline" /> Generate new license manually
                                     </button>
                                 )}

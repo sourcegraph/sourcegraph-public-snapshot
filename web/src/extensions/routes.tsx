@@ -12,12 +12,10 @@ export const extensionsAreaRoutes: readonly ExtensionsAreaRoute[] = [
     },
     {
         path: '/:extensionID(.*)/-/',
-        // tslint:disable-next-line:jsx-no-lambda
         render: props => <ExtensionArea {...props} routes={props.extensionAreaRoutes} />,
     },
     {
         path: '/:extensionID(.*)',
-        // tslint:disable-next-line:jsx-no-lambda
         render: props => <ExtensionArea {...props} routes={props.extensionAreaRoutes} />,
     },
 ]

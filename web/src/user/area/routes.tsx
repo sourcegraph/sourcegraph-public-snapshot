@@ -14,7 +14,6 @@ export const userAreaRoutes: readonly UserAreaRoute[] = [
     },
     {
         path: '/settings',
-        // tslint:disable-next-line:jsx-no-lambda
         render: props => (
             <UserSettingsArea
                 {...props}

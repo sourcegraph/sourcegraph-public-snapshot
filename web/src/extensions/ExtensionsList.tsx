@@ -171,8 +171,8 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
         this.queryChanges.next({ query: this.state.query, immediate: true })
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

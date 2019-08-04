@@ -81,8 +81,8 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         this.propsChanges.next(this.props)
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.propsChanges.next(nextProps)
+    public componentDidUpdate(): void {
+        this.propsChanges.next(this.props)
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {

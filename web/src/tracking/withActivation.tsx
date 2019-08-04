@@ -179,6 +179,7 @@ interface WithActivationState {
  * Modifies the input component to return a component that includes the activation status in the
  * `activation` field of its props.
  */
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const withActivation = <P extends ActivationProps>(Component: React.ComponentType<P>) =>
     class WithActivation extends React.Component<
         WithActivationProps & Subtract<P, ActivationProps>,

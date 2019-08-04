@@ -24,17 +24,18 @@ export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
                     .map((_, i) => {
                         const pressed = i === this.props.score
                         return (
+                            /* eslint-disable react/jsx-no-bind */
                             <Link
                                 key={i}
                                 className={`btn btn-primary toast__rating-btn ${pressed ? 'active' : ''}`}
                                 aria-pressed={pressed || undefined}
-                                // tslint:disable-next-line:jsx-no-lambda
                                 onClick={() => this.onClick(i)}
                                 to={`/survey/${i}`}
                                 target={this.props.openSurveyInNewTab ? '_blank' : undefined}
                             >
                                 {i}
                             </Link>
+                            /* eslint-enable react/jsx-no-bind */
                         )
                     })}
             </div>

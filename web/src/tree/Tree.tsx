@@ -71,7 +71,7 @@ const nextChild = (node: TreeNode, index: number): TreeNode => {
  *  In order to get the previous item in the tree, we need the absolute last
  *  available descendent of a the previous sibling node.
  */
-const getDeepestDescendant = (node: TreeNode) => {
+const getDeepestDescendant = (node: TreeNode): TreeNode => {
     while (node && node.childNodes.length > 0) {
         node = node.childNodes[node.childNodes.length - 1]
     }
@@ -277,7 +277,7 @@ export class Tree extends React.PureComponent<Props, State> {
         )
     }
 
-    public componentDidUpdate(nextProps: Props): void {
+    public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
 

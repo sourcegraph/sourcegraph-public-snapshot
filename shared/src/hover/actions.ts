@@ -302,9 +302,9 @@ export function registerHoverContributions({
                         title: parseTemplate('Go to definition'),
                         command: 'goToDefinition',
                         commandArguments: [
-                            // tslint:disable:no-invalid-template-strings
+                            /* eslint-disable no-template-curly-in-string */
                             parseTemplate('${json(hoverPosition)}'),
-                            // tslint:enable:no-invalid-template-strings
+                            /* eslint-enable no-template-curly-in-string */
                         ],
                     },
                     {
@@ -313,7 +313,7 @@ export function registerHoverContributions({
                         id: 'goToDefinition.preloaded',
                         title: parseTemplate('Go to definition'),
                         command: 'open',
-                        // tslint:disable-next-line:no-invalid-template-strings
+                        // eslint-disable-next-line no-template-curly-in-string
                         commandArguments: [parseTemplate('${goToDefinition.url}')],
                     },
                 ],
@@ -379,7 +379,7 @@ export function registerHoverContributions({
                         id: 'findReferences',
                         title: parseTemplate('Find references'),
                         command: 'open',
-                        // tslint:disable-next-line:no-invalid-template-strings
+                        // eslint-disable-next-line no-template-curly-in-string
                         commandArguments: [parseTemplate('${findReferences.url}')],
                     },
                 ],

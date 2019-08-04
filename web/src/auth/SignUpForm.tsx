@@ -119,8 +119,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         <a href="https://about.sourcegraph.com/terms" target="_blank">
                             Terms of Service
                         </a>{' '}
-                        and{' '}
-                        {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                        and {/* eslint-disable-next-line react/jsx-no-target-blank */}
                         <a href="https://about.sourcegraph.com/privacy" target="_blank">
                             Privacy Policy
                         </a>

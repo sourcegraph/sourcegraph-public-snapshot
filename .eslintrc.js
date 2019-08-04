@@ -59,6 +59,12 @@ const config = {
         'no-restricted-imports': 'off',
       },
     },
+    {
+      files: '*.story.tsx',
+      rules: {
+        'react/forbid-dom-props': 'off',
+      },
+    },
   ],
 }
 

@@ -25,7 +25,7 @@ describe('Lexer', () => {
             { type: TokenType.String, value: 'a\nb"c\'d', start: 0, end: 11 },
         ] as Token[]))
 
-    // tslint:disable:no-invalid-template-strings
+    /* eslint-disable no-template-curly-in-string */
     describe('templates', () => {
         test('scans no-substitution template', () =>
             expect(scanAll(l, '`a`')).toEqual([
@@ -105,7 +105,7 @@ describe('Lexer', () => {
 
         test('throws on unclosed expression', () => expect(() => scanAll(l, 'x${')).toThrow())
     })
-    // tslint:enable:no-invalid-template-strings
+    /* eslint-enable no-template-curly-in-string */
 
     test('throws on unclosed string', () => {
         l.reset('"a')
@@ -179,7 +179,7 @@ describe('TemplateLexer', () => {
     const l = new TemplateLexer()
 
     test('scans template with middle', () =>
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         expect(scanAll(l, 'a${x}b${y}c')).toEqual([
             { type: TokenType.TemplateHead, value: 'a', start: 0, end: 3 },
             { type: TokenType.Identifier, value: 'x', start: 3, end: 4 },

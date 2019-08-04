@@ -83,7 +83,7 @@ interface State {
 /**
  * Displays a form for a product subscription.
  */
-// tslint:disable-next-line:class-name
+// eslint-disable-next-line @typescript-eslint/class-name-casing
 class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElements.InjectedStripeProps, State> {
     constructor(props: Props) {
         super(props)

@@ -16,6 +16,7 @@ class TelligentWrapper {
         }
 
         if (window && window.telligent) {
+            // eslint-disable-next-line @typescript-eslint/unbound-method
             this.telligent = window.telligent
         } else {
             return

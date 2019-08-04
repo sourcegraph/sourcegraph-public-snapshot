@@ -29,7 +29,6 @@ describe('UserNavItem', () => {
                     <MemoryRouter>
                         <UserNavItem
                             isLightTheme={true}
-                            // tslint:disable-next-line:jsx-no-lambda
                             onThemePreferenceChange={() => undefined}
                             themePreference={ThemePreference.Light}
                             location={history.location}

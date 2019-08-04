@@ -110,10 +110,10 @@ export class SearchButton extends React.Component<Props, State> {
                                 </ul>
                                 <DropdownItem divider={true} />
                                 <a
-                                    href={`${docsURLPrefix}/user/search/queries`}
-                                    className="dropdown-item d-flex align-items-center"
                                     // eslint-disable-next-line react/jsx-no-target-blank
                                     target="_blank"
+                                    href={`${docsURLPrefix}/user/search/queries`}
+                                    className="dropdown-item d-flex align-items-center"
                                     onClick={this.toggleIsOpen}
                                 >
                                     <ExternalLinkIcon className="icon-inline small mr-1 mb-1" /> All search keywords

@@ -1,6 +1,7 @@
 import { highlight, highlightAuto } from 'highlight.js/lib/highlight'
 import { without } from 'lodash'
-// tslint:disable-next-line:import-blacklist this is the only file allowed to import this module, all other modules must use renderMarkdown() exported from here
+// This is the only file allowed to import this module, all other modules must use renderMarkdown() exported from here
+// eslint-disable-next-line no-restricted-imports
 import marked from 'marked'
 import sanitize from 'sanitize-html'
 

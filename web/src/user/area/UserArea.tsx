@@ -133,14 +133,14 @@ export interface UserAreaRouteContext
 export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
     public state: UserAreaState = {}
 
-    private routeMatchChanges = new Subject<{ username: string }>()
+    private componentUpdates = new Subject<UserAreaProps>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         // Changes to the route-matched username.
-        const usernameChanges = this.routeMatchChanges.pipe(
-            map(({ username }) => username),
+        const usernameChanges = this.componentUpdates.pipe(
+            map(props => props.match.params.username),
             distinctUntilChanged()
         )
 
@@ -163,13 +163,11 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
 
-        this.routeMatchChanges.next(this.props.match.params)
+        this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: UserAreaProps): void {
-        if (props.match.params !== this.props.match.params) {
-            this.routeMatchChanges.next(props.match.params)
-        }
+    public componentDidUpdate(props: UserAreaProps): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -205,6 +203,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                     <ErrorBoundary location={this.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
+                                {/* eslint-disable react/jsx-no-bind */}
                                 {this.props.userAreaRoutes.map(
                                     ({ path, exact, render, condition = () => true }) =>
                                         condition(context) && (
@@ -212,13 +211,13 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                                                 path={this.props.match.url + path}
                                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                                 exact={exact}
-                                                // tslint:disable-next-line:jsx-no-lambda
                                                 render={routeComponentProps =>
                                                     render({ ...context, ...routeComponentProps })
                                                 }
                                             />
                                         )
                                 )}
+                                {/* eslint-disable react/jsx-no-bind */}
                                 <Route key="hardcoded-key" component={NotFoundPage} />
                             </Switch>
                         </React.Suspense>

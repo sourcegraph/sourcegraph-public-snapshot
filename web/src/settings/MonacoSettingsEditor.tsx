@@ -95,8 +95,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         )
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

@@ -231,8 +231,8 @@ export class InviteForm extends React.PureComponent<Props, State> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -331,15 +331,16 @@ export class InviteForm extends React.PureComponent<Props, State> {
                     )}
                 {this.state.invited &&
                     this.state.invited.map(({ username, sentInvitationEmail, invitationURL }, i) => (
+                        /* eslint-disable react/jsx-no-bind */
                         <InvitedNotification
                             key={i}
                             className="alert alert-success invite-form__alert"
                             username={username}
                             sentInvitationEmail={sentInvitationEmail}
                             invitationURL={invitationURL}
-                            // tslint:disable-next-line:jsx-no-lambda
                             onDismiss={() => this.dismissNotification(i)}
                         />
+                        /* eslint-enable react/jsx-no-bind */
                     ))}
                 {this.state.error && (
                     <div className="invite-form__alert alert alert-danger">

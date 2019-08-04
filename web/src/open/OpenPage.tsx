@@ -61,7 +61,7 @@ export class OpenPage extends React.Component<Props, State> {
                                 {i === 0 ? '' : ', '}
                                 <a
                                     href=""
-                                    // tslint:disable-next-line:jsx-no-lambda
+                                    // eslint-disable-next-line react/jsx-no-bind
                                     onClick={e => this.onClickLink(e, scheme)}
                                 >
                                     {name}

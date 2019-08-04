@@ -115,9 +115,8 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
         }
         return (
             <div
-                className={`hover-overlay card ${className}`}
-                ref={hoverRef}
-                // tslint:disable-next-line:jsx-ban-props needed for dynamic styling
+                // needed for dynamic styling
+                // eslint-disable-next-line react/forbid-dom-props
                 style={
                     overlayPosition
                         ? {
@@ -131,6 +130,8 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                               visibility: 'hidden',
                           }
                 }
+                className={`hover-overlay card ${className}`}
+                ref={hoverRef}
             >
                 {showCloseButton && (
                     <button

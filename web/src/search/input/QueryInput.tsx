@@ -238,15 +238,12 @@ export class QueryInput extends React.Component<Props, State> {
         }
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
-    }
-
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
+        this.componentUpdates.next(this.props)
         // Check if selected suggestion is out of view
         scrollIntoView(this.suggestionListElement, this.selectedSuggestionElement)
     }
@@ -278,15 +275,14 @@ export class QueryInput extends React.Component<Props, State> {
                 {showSuggestions && (
                     <ul className="query-input2__suggestions" ref={this.setSuggestionListElement}>
                         {this.state.suggestions.map((suggestion, i) => {
+                            /* eslint-disable react/jsx-no-bind */
                             const isSelected = this.state.selectedSuggestion === i
                             return (
                                 <SuggestionItem
                                     key={i}
                                     suggestion={suggestion}
                                     isSelected={isSelected}
-                                    // eslint-disable-next-line react/jsx-no-bind
                                     onClick={() => this.selectSuggestion(suggestion)}
-                                    // eslint-disable-next-line react/jsx-no-bind
                                     liRef={(ref: HTMLLIElement | null) => {
                                         if (isSelected) {
                                             this.selectedSuggestionElement = ref || undefined
@@ -294,6 +290,7 @@ export class QueryInput extends React.Component<Props, State> {
                                     }}
                                 />
                             )
+                            /* eslint-enable react/jsx-no-bind */
                         })}
                     </ul>
                 )}

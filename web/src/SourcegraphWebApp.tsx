@@ -245,9 +245,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             <ErrorBoundary location={null}>
                 <ShortcutProvider>
                     <BrowserRouter key={0}>
+                        {/* eslint-disable react/jsx-no-bind */}
                         <Route
                             path="/"
-                            // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
                             render={routeComponentProps => (
                                 <LayoutWithActivation
                                     {...props}
@@ -272,6 +272,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                 />
                             )}
                         />
+                        {/* eslint-enable react/jsx-no-bind */}
                     </BrowserRouter>
                     <Tooltip key={1} />
                     <Notifications key={2} extensionsController={this.extensionsController} />

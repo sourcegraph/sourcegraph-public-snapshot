@@ -35,13 +35,14 @@ interface Props
  * Renders a layout of a sidebar and a content area to display organization-related pages.
  */
 export const OrgsArea: React.FunctionComponent<Props> = props => (
+    /* eslint-disable react/jsx-no-bind */
     <Switch>
         <Route path={`${props.match.url}/new`} component={NewOrganizationPage} exact={true} />
         <Route
             path={`${props.match.url}/:name`}
-            // tslint:disable-next-line: jsx-no-lambda
             render={routeComponentProps => <OrgArea {...props} {...routeComponentProps} />}
         />
         <Route component={NotFoundPage} />
     </Switch>
+    /* eslint-enable react/jsx-no-bind */
 )

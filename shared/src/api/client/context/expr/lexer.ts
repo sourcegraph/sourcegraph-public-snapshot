@@ -331,7 +331,7 @@ export class Lexer {
 
     private scanTemplate(): Token | undefined {
         const ch = this.peekNextChar()
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         if (!(ch === '`' || (ch === '}' && this.curlyStack > 0))) {
             return undefined
         }
@@ -364,7 +364,7 @@ export class Lexer {
                 if (ch === '$') {
                     const ch2 = this.peekNextChar()
                     if (ch2 === '{') {
-                        // tslint:disable-next-line:no-invalid-template-strings
+                        // eslint-disable-next-line no-template-curly-in-string
                         this.curlyStack++
                         this.getNextChar()
                         terminated = true

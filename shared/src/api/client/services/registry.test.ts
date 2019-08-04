@@ -51,8 +51,8 @@ describe('FeatureProviderRegistry', () => {
     test('registers and unregisters providers', () => {
         const subscriptions = new Subscription()
         const registry = new FeatureProviderRegistry()
-        const provider1 = () => ({})
-        const provider2 = () => ({})
+        const provider1 = (): object => ({})
+        const provider2 = (): object => ({})
 
         const unregister1 = subscriptions.add(
             registry.registerProvider(FIXTURE.PartialEntry.registrationOptions, provider1)

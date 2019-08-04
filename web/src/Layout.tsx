@@ -119,6 +119,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             <ErrorBoundary location={props.location}>
                 <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                     <Switch>
+                        {/* eslint-disable react/jsx-no-bind */}
                         {props.routes.map(({ render, ...route }) => {
                             const isFullWidth = !route.forceNarrowWidth
                             return (
@@ -126,7 +127,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                     {...route}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                     component={undefined}
-                                    // tslint:disable-next-line:jsx-no-lambda
                                     render={routeComponentProps => (
                                         <div
                                             className={[
@@ -142,6 +142,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                 />
                             )
                         })}
+                        {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </Suspense>
             </ErrorBoundary>

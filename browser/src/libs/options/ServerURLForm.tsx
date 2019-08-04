@@ -93,7 +93,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
 
     public render(): React.ReactNode {
         return (
-            // tslint:disable-next-line:jsx-ban-elements
+            // eslint-disable-next-line react/forbid-elements
             <form className={`server-url-form ${this.props.className || ''}`} onSubmit={this.handleSubmit}>
                 <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
                 <div className="input-group">

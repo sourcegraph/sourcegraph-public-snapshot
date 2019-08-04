@@ -182,6 +182,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
         const prevSpec = this.getDerivedProps(prevProps.location)
         if (!isEqual(spec, prevSpec)) {
             eventLogger.log('RepositoryStatsContributorsPropsUpdated')
+            // eslint-disable-next-line react/no-did-update-set-state
             this.setState(spec)
             this.specChanges.next()
         }
@@ -240,7 +241,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                                 className={`btn btn-secondary ${
                                                     this.state.after === '7 days ago' ? 'active' : ''
                                                 } repository-stats-page__btn-no-left-rounded-corners`}
-                                                // tslint:disable-next-line:jsx-no-lambda
                                                 onClick={() => this.setStateAfterAndSubmit('7 days ago')}
                                             >
                                                 Last 7 days
@@ -250,7 +250,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                                 className={`btn btn-secondary ${
                                                     this.state.after === '30 days ago' ? 'active' : ''
                                                 }`}
-                                                // tslint:disable-next-line:jsx-no-lambda
                                                 onClick={() => this.setStateAfterAndSubmit('30 days ago')}
                                             >
                                                 Last 30 days
@@ -260,7 +259,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                                 className={`btn btn-secondary ${
                                                     this.state.after === '1 year ago' ? 'active' : ''
                                                 }`}
-                                                // tslint:disable-next-line:jsx-no-lambda
                                                 onClick={() => this.setStateAfterAndSubmit('1 year ago')}
                                             >
                                                 Last year
@@ -268,7 +266,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                             <button
                                                 type="button"
                                                 className={`btn btn-secondary ${!this.state.after ? 'active' : ''}`}
-                                                // tslint:disable-next-line:jsx-no-lambda
                                                 onClick={() => this.setStateAfterAndSubmit(null)}
                                             >
                                                 All time

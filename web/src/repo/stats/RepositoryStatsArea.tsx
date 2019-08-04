@@ -58,16 +58,17 @@ export class RepositoryStatsArea extends React.Component<Props> {
                 />
                 {showNavbar && <RepositoryStatsNavbar className="mb-3" repo={this.props.repo.name} />}
                 <Switch>
+                    {/* eslint-disable react/jsx-no-bind */}
                     <Route
                         path={`${this.props.match.url}/contributors`}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        // tslint:disable-next-line:jsx-no-lambda
                         render={routeComponentProps => (
                             <RepositoryStatsContributorsPage {...routeComponentProps} {...transferProps} />
                         )}
                     />
                     <Route key="hardcoded-key" component={NotFoundPage} />
+                    {/* eslint-enable react/jsx-no-bind */}
                 </Switch>
             </div>
         )

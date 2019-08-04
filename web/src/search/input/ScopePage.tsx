@@ -19,7 +19,7 @@ import { submitSearch } from '../helpers'
 import { QueryInput, queryUpdates } from './QueryInput'
 import { SearchButton } from './SearchButton'
 
-const ScopeNotFound = () => (
+const ScopeNotFound: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -123,8 +123,8 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
         this.propUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(newProps: ScopePageProps): void {
-        this.propUpdates.next(newProps)
+    public componentDidUpdate(): void {
+        this.propUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

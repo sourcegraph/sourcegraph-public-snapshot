@@ -69,6 +69,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
                 <ErrorBoundary location={props.location}>
                     <Switch>
                         {props.routes.map(
+                            /* eslint-disable react/jsx-no-bind */
                             ({ render, path, exact, condition = () => true }) =>
                                 condition(context) && (
                                     <Route
@@ -76,10 +77,10 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
                                         key="hardcoded-key"
                                         path={props.match.url + path}
                                         exact={exact}
-                                        // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
                                         render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                                     />
                                 )
+                            /* eslint-enable react/jsx-no-bind */
                         )}
                         <Route component={NotFoundPage} />
                     </Switch>

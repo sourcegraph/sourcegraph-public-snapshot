@@ -36,8 +36,8 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
         )
     }
 
-    public componentWillReceiveProps(props: UpdateMirrorRepositoryActionContainerProps): void {
-        this.componentUpdates.next(props)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

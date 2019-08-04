@@ -349,5 +349,5 @@ async function main(): Promise<void> {
 }
 
 // Browsers log this unhandled Promise automatically (and with a better stack trace through console.error)
-// tslint:disable-next-line: no-floating-promises
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 main()

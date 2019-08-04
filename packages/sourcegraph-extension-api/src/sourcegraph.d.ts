@@ -1352,6 +1352,7 @@ declare module 'sourcegraph' {
         /** @deprecated Use an observer instead of an error callback */
         subscribe(next: null | undefined, error: (error: any) => void, complete?: (() => void) | null): Unsubscribable
         /** @deprecated Use an observer instead of a complete callback */
+        // eslint-disable-next-line @typescript-eslint/unified-signatures
         subscribe(next: (value: T) => void, error: null | undefined, complete: () => void): Unsubscribable
         subscribe(
             next?: ((value: T) => void) | null,
