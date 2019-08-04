@@ -74,7 +74,6 @@ const LOADING = 'loading' as const
  */
 export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign, className = '' }) => {
     const [burndownChart] = useCampaignBurndownChart(campaign)
-    console.log(burndownChart)
     return (
         <div className={`campaign-burndown-chart ${className}`}>
             <ResponsiveContainer width="100%" height={300}>
