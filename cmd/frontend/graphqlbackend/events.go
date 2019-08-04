@@ -19,20 +19,18 @@ type event interface {
 	CreatedAt() DateTime
 }
 
+// EventCommon is the interface for the GraphQL interface EventCommon.
 type EventCommon struct {
-	ID        graphql.ID
-	Actor     Actor
-	CreatedAt DateTime
+	ID_        graphql.ID
+	Actor_     Actor
+	CreatedAt_ DateTime
 }
 
-// TODO!(sqs): notneeded because UseStructFields
-//
-// func (v *EventCommon) ID() graphql.ID      { return v.ID_ }
-// func (v *EventCommon) Actor() Actor        { return v.Actor_ }
-// func (v *EventCommon) CreatedAt() DateTime { return v.CreatedAt_ }
+func (v *EventCommon) ID() graphql.ID      { return v.ID_ }
+func (v *EventCommon) Actor() Actor        { return v.Actor_ }
+func (v *EventCommon) CreatedAt() DateTime { return v.CreatedAt_ }
 
 type ToEvent struct {
-	// TODO!(sqs): can simplify with UseStructFields?
 	CreateThreadEvent             *CreateThreadEvent
 	AddThreadToCampaignEvent      *AddRemoveThreadToFromCampaignEvent
 	RemoveThreadFromCampaignEvent *AddRemoveThreadToFromCampaignEvent

@@ -45,7 +45,7 @@ func ImportGitHubThreadEvents(ctx context.Context, threadID int64, repoID api.Re
 		return MockImportGitHubThreadEvents()
 	}
 
-	_, _, _, number, err := parseExternalURL(externalThreadURL)
+	number, err := parseIssueOrPullRequestNumberFromExternalURL(externalThreadURL)
 	if err != nil {
 		return err
 	}
@@ -61,17 +61,17 @@ func ImportGitHubThreadEvents(ctx context.Context, threadID int64, repoID api.Re
 				CreatedAt     time.Time
 				TimelineItems struct {
 					Nodes []struct {
-						Typename  string `json:"__typename"`
-						ID        graphql.ID
-						Actor     *struct{ Login string }
-						CreatedAt time.Time
+						Typename      string `json:"__typename"`
+						ID            graphql.ID
+						Actor, Author *struct{ Login string }
+						CreatedAt     time.Time
 					}
 				}
 			}
 		}
 	}
 	if err := gh.RequestGraphQL(ctx, "", `
-query ImportGitHubThreadEvents(repository: ID!, pullRequestNumber: Int!) {
+query ImportGitHubThreadEvents($repository: ID!, $pullRequestNumber: Int!) {
 	node(id: $repository) {
 		... on Repository {
 			pullRequest(number: $pullRequestNumber) {
@@ -96,7 +96,7 @@ createdAt
 						}
 						... on PullRequestReview {
 							id
-							actor { login }
+							author { login }
 							createdAt
 							bodyText
 						}
@@ -176,17 +176,10 @@ func getClientForRepo(ctx context.Context, repoID api.RepoID) (*github.Client, e
 	return src.Client(), nil
 }
 
-func parseExternalURL(externalURL string) (apiURL *url.URL, owner, repo string, number int, err error) {
+func parseIssueOrPullRequestNumberFromExternalURL(externalURL string) (number int, err error) {
 	u, err := url.Parse(externalURL)
 	if err != nil {
-		return nil, "", "", 0, err
-	}
-
-	apiURL = u.ResolveReference(&url.URL{Path: "/"})
-
-	owner, repo, err = github.SplitRepositoryNameWithOwner(strings.TrimPrefix(u.Path, "/"))
-	if err != nil {
-		return
+		return 0, err
 	}
 
 	i := strings.LastIndex(u.Path, "/")
@@ -194,6 +187,5 @@ func parseExternalURL(externalURL string) (apiURL *url.URL, owner, repo string, 
 		err = errors.New("github url has no number")
 		return
 	}
-	number, err = strconv.Atoi(u.Path[i+1:])
-	return
+	return strconv.Atoi(u.Path[i+1:])
 }

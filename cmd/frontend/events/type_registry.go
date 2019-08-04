@@ -49,9 +49,9 @@ func toRegisteredEventType(ctx context.Context, v *dbEvent) (graphqlbackend.ToEv
 	var toEvent graphqlbackend.ToEvent
 	err = converter(ctx,
 		graphqlbackend.EventCommon{
-			ID:        marshalEventID(v.ID),
-			Actor:     graphqlbackend.Actor{User: actorUser},
-			CreatedAt: graphqlbackend.DateTime{v.CreatedAt},
+			ID_:        marshalEventID(v.ID),
+			Actor_:     graphqlbackend.Actor{User: actorUser},
+			CreatedAt_: graphqlbackend.DateTime{v.CreatedAt},
 		},
 		EventData{Objects: v.Objects, Data: v.Data},
 		&toEvent,

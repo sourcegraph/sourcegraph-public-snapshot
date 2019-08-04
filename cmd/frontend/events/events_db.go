@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -52,8 +53,7 @@ func (dbEvents) Create(ctx context.Context, event *dbEvent) (*dbEvent, error) {
 		return &v
 	}
 
-	query := sqlf.Sprintf(
-		`INSERT INTO events(`+selectColumns+`) VALUES(DEFAULT, %v, %v, %v, %v, %v, %v, DEFAULT, DEFAULT) RETURNING `+selectColumns,
+	args := []interface{}{
 		event.Type,
 		event.ActorUserID,
 		event.CreatedAt,
@@ -66,6 +66,10 @@ func (dbEvents) Create(ctx context.Context, event *dbEvent) (*dbEvent, error) {
 		nilIfZero32(event.Objects.User),
 		nilIfZero32(event.Objects.Organization),
 		nilIfZero32(event.Objects.RegistryExtension),
+	}
+	query := sqlf.Sprintf(
+		`INSERT INTO events(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+selectColumns, //x
+		args...,
 	)
 	return dbEvents{}.scanRow(dbconn.Global.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
 }

@@ -4725,4 +4725,70 @@ type RuleConnection {
     # Pagination information.
     pageInfo: PageInfo!
 }
+
+## EVENTS TODO!(sqs): is it helpful to have a single union? or just have ThreadEvent, CampaignEvent, etc.?
+union Event = CreateThreadEvent | AddThreadToCampaignEvent | RemoveThreadFromCampaignEvent
+
+# The common interface implemented by all events.
+interface EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+}
+
+# The creation of a thread.
+type CreateThreadEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread.
+    thread: Thread!
+}
+
+# The addition of a thread to a campaign.
+type AddThreadToCampaignEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was added.
+    thread: Thread!
+
+    # The campaign that the thread was added to.
+    campaign: Campaign!
+}
+
+# The removal of a thread to a campaign.
+type RemoveThreadFromCampaignEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was removed.
+    thread: Thread!
+
+    # The campaign that the thread was removed from.
+    campaign: Campaign!
+}
 `

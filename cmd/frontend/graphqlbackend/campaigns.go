@@ -178,6 +178,7 @@ type Campaign interface {
 	Repositories(context.Context) ([]*RepositoryResolver, error)
 	Commits(context.Context) ([]*GitCommitResolver, error)
 	RepositoryComparisons(context.Context) ([]*RepositoryComparisonResolver, error)
+	TimelineItems(context.Context, *graphqlutil.ConnectionArgs) (EventConnection, error)
 }
 
 // CampaignNode is the interface for the GraphQL interface CampaignNode.

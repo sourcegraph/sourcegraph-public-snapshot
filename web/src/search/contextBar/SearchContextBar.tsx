@@ -43,6 +43,7 @@ export const SearchContextBar: React.FunctionComponent<Props> = ({
                     <h5 className="card-header rounded-0">Repositories</h5>
                     <ul className="list-group list-group-flush mt-1">
                         {results &&
+                            results.dynamicFilters &&
                             results.dynamicFilters
                                 .filter(filter => filter.kind === 'repo' && filter.value !== '')
                                 .map((filter, i) => (
