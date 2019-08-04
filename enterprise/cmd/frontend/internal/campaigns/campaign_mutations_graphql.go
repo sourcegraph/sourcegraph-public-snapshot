@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/extsvc"
 )
 
 func (GraphQLResolver) CreateCampaign(ctx context.Context, arg *graphqlbackend.CreateCampaignArgs) (graphqlbackend.Campaign, error) {
@@ -75,6 +76,24 @@ func (GraphQLResolver) PublishPreviewCampaign(ctx context.Context, arg *graphqlb
 		return nil, err
 	}
 	return newGQLCampaign(campaign), nil
+}
+
+func (GraphQLResolver) ForceRefreshCampaign(ctx context.Context, arg *graphqlbackend.ForceRefreshCampaignArgs) (graphqlbackend.Campaign, error) {
+	campaign, err := campaignByID(ctx, arg.Campaign)
+	if err != nil {
+		return nil, err
+	}
+
+	threads, err := dbCampaignsThreads{}.List(ctx, dbCampaignsThreadsListOptions{CampaignID: campaign.db.ID})
+	if err != nil {
+		return nil, err
+	}
+	for _, thread := range threads {
+		if err := extsvc.Refresh(ctx, thread.Thread); err != nil {
+			return nil, err
+		}
+	}
+	return campaign, nil
 }
 
 func (GraphQLResolver) DeleteCampaign(ctx context.Context, arg *graphqlbackend.DeleteCampaignArgs) (*graphqlbackend.EmptyResponse, error) {

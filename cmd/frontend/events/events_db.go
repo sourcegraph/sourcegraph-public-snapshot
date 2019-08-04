@@ -258,7 +258,7 @@ func (s dbEvents) Delete(ctx context.Context, tx *sql.Tx, opt dbEventsListOption
 		return mocks.events.Delete(opt)
 	}
 
-	query := sqlf.Sprintf(`DELETE FROM events WHERE %s`, sqlf.Join(opt.sqlConditions(), ") AND ("))
+	query := sqlf.Sprintf(`DELETE FROM events WHERE (%s)`, sqlf.Join(opt.sqlConditions(), ") AND ("))
 	_, err := dbhOrGlobal(tx).ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	return err
 }

@@ -42,15 +42,16 @@ func CreateEvent(ctx context.Context, event CreationData) error {
 	if MockCreateEvent != nil {
 		return MockCreateEvent(event)
 	}
-	return createEvent(ctx, nil, event)
+	return createEvent(ctx, nil, event, 0)
 }
 
-func createEvent(ctx context.Context, tx *sql.Tx, event CreationData) error {
+func createEvent(ctx context.Context, tx *sql.Tx, event CreationData, importedFromExternalServiceID int64) error {
 	v := &dbEvent{
-		Type:        event.Type,
-		ActorUserID: event.ActorUserID,
-		Objects:     event.Objects,
-		CreatedAt:   event.CreatedAt,
+		Type:                          event.Type,
+		ActorUserID:                   event.ActorUserID,
+		Objects:                       event.Objects,
+		CreatedAt:                     event.CreatedAt,
+		ImportedFromExternalServiceID: importedFromExternalServiceID,
 	}
 	if event.Data != nil {
 		var err error
@@ -116,7 +117,7 @@ func ImportExternalEvents(ctx context.Context, externalServiceID int64, objects 
 
 	// Insert the new events.
 	for _, event := range toImport {
-		if err := createEvent(ctx, tx, event); err != nil {
+		if err := createEvent(ctx, tx, event, externalServiceID); err != nil {
 			return err
 		}
 	}

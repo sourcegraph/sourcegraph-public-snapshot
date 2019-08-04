@@ -78,6 +78,13 @@ func (r schemaResolver) PublishPreviewCampaign(ctx context.Context, arg *Publish
 	return Campaigns.PublishPreviewCampaign(ctx, arg)
 }
 
+func (r schemaResolver) ForceRefreshCampaign(ctx context.Context, arg *ForceRefreshCampaignArgs) (Campaign, error) {
+	if Campaigns == nil {
+		return nil, errCampaignsNotImplemented
+	}
+	return Campaigns.ForceRefreshCampaign(ctx, arg)
+}
+
 func (r schemaResolver) DeleteCampaign(ctx context.Context, arg *DeleteCampaignArgs) (*EmptyResponse, error) {
 	if Campaigns == nil {
 		return nil, errCampaignsNotImplemented
@@ -108,6 +115,7 @@ type CampaignsResolver interface {
 	CreateCampaign(context.Context, *CreateCampaignArgs) (Campaign, error)
 	UpdateCampaign(context.Context, *UpdateCampaignArgs) (Campaign, error)
 	PublishPreviewCampaign(context.Context, *PublishPreviewCampaignArgs) (Campaign, error)
+	ForceRefreshCampaign(context.Context, *ForceRefreshCampaignArgs) (Campaign, error)
 	DeleteCampaign(context.Context, *DeleteCampaignArgs) (*EmptyResponse, error)
 	AddThreadsToCampaign(context.Context, *AddRemoveThreadsToFromCampaignArgs) (*EmptyResponse, error)
 	RemoveThreadsFromCampaign(context.Context, *AddRemoveThreadsToFromCampaignArgs) (*EmptyResponse, error)
@@ -151,6 +159,10 @@ type UpdateCampaignArgs struct {
 }
 
 type PublishPreviewCampaignArgs struct {
+	Campaign graphql.ID
+}
+
+type ForceRefreshCampaignArgs struct {
 	Campaign graphql.ID
 }
 

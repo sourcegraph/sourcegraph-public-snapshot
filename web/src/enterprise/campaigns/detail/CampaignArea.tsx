@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
@@ -10,6 +10,8 @@ import { HeroPage } from '../../../components/HeroPage'
 import { InfoSidebar, InfoSidebarSection } from '../../../components/infoSidebar/InfoSidebar'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { WithSidebar } from '../../../components/withSidebar/WithSidebar'
+import { CampaignDeleteButton } from '../common/CampaignDeleteButton'
+import { CampaignForceRefreshButton } from '../common/CampaignForceRefreshButton'
 import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsArea'
 import { CampaignActivity } from './activity/CampaignActivity'
 import { CampaignOverview } from './CampaignOverview'
@@ -72,10 +74,41 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
         }
     }, [campaign, setBreadcrumbItem])
 
-    const sidebarSections = useMemo<InfoSidebarSection[]>(() => {
-        const a = 1
-        return []
-    }, [])
+    const onCampaignDelete = useCallback(() => {
+        if (campaign !== LOADING && campaign !== null && !isErrorLike(campaign)) {
+            props.history.push(props.campaignsURL)
+        }
+    }, [campaign, props.campaignsURL, props.history])
+
+    const sidebarSections = useMemo<InfoSidebarSection[]>(
+        () =>
+            campaign !== LOADING && campaign !== null && !isErrorLike(campaign)
+                ? [
+                      {
+                          expanded: (
+                              <CampaignForceRefreshButton
+                                  {...props}
+                                  campaign={campaign}
+                                  buttonClassName="btn-link"
+                                  className="btn-sm px-0 text-decoration-none"
+                              />
+                          ),
+                      },
+                      {
+                          expanded: (
+                              <CampaignDeleteButton
+                                  {...props}
+                                  campaign={campaign}
+                                  buttonClassName="btn-link"
+                                  className="btn-sm px-0 text-decoration-none"
+                                  onDelete={onCampaignDelete}
+                              />
+                          ),
+                      },
+                  ]
+                : [],
+        [campaign, onCampaignDelete, props]
+    )
 
     if (campaign === LOADING) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />

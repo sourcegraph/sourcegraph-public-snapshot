@@ -2,6 +2,7 @@ package extsvc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -21,7 +22,9 @@ import (
 )
 
 const (
-	eventTypeCreateThread = "CreateThread"
+	eventTypeCreateThread    events.Type = "CreateThread"
+	eventTypeReview                      = "Review"
+	eventTypeReviewRequested             = "ReviewRequested"
 )
 
 func init() {
@@ -31,6 +34,36 @@ func init() {
 			return err
 		}
 		toEvent.CreateThreadEvent = &graphqlbackend.CreateThreadEvent{
+			EventCommon: common,
+			Thread_:     thread,
+		}
+		return nil
+	})
+	events.Register(eventTypeReview, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
+		thread, err := threadlike.ThreadOrIssueOrChangesetByDBID(ctx, data.Thread)
+		if err != nil {
+			return err
+		}
+		// TODO!(sqs): validate state
+		var o struct {
+			State graphqlbackend.ReviewState `json:"state"`
+		}
+		if err := json.Unmarshal(data.Data, &o); err != nil {
+			return err
+		}
+		toEvent.ReviewEvent = &graphqlbackend.ReviewEvent{
+			EventCommon: common,
+			Thread_:     thread,
+			State_:      o.State,
+		}
+		return nil
+	})
+	events.Register(eventTypeReviewRequested, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
+		thread, err := threadlike.ThreadOrIssueOrChangesetByDBID(ctx, data.Thread)
+		if err != nil {
+			return err
+		}
+		toEvent.ReviewRequestedEvent = &graphqlbackend.ReviewRequestedEvent{
 			EventCommon: common,
 			Thread_:     thread,
 		}
@@ -63,17 +96,23 @@ func ImportGitHubThreadEvents(ctx context.Context, threadID int64, repoID api.Re
 	})
 
 	// GitHub timeline events.
-	for _, event := range pull.TimelineItems.Nodes {
-		// TODO!(sqs): map to sourcegraph event types
-		toImport = append(toImport, events.CreationData{
-			Type:      events.Type(event.Typename),
-			Objects:   objects,
-			Data:      event,
-			CreatedAt: event.CreatedAt,
-		})
+	for _, ghEvent := range pull.TimelineItems.Nodes {
+		if eventType, ok := githubEventTypes[ghEvent.Typename]; ok {
+			toImport = append(toImport, events.CreationData{
+				Type:      eventType,
+				Objects:   objects,
+				Data:      ghEvent,
+				CreatedAt: ghEvent.CreatedAt,
+			})
+		}
 	}
 
 	return events.ImportExternalEvents(ctx, externalServiceID, objects, toImport)
+}
+
+var githubEventTypes = map[string]events.Type{
+	"PullRequestReview":    eventTypeReview,
+	"ReviewRequestedEvent": eventTypeReviewRequested,
 }
 
 var (
@@ -180,7 +219,7 @@ createdAt
 							id
 							author { login }
 							createdAt
-							bodyText
+							state
 						}
 					}
 				}

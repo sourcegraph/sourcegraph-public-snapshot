@@ -35,6 +35,8 @@ type ToEvent struct {
 	CreateThreadEvent             *CreateThreadEvent
 	AddThreadToCampaignEvent      *AddRemoveThreadToFromCampaignEvent
 	RemoveThreadFromCampaignEvent *AddRemoveThreadToFromCampaignEvent
+	ReviewEvent                   *ReviewEvent
+	ReviewRequestedEvent          *ReviewRequestedEvent
 }
 
 func (v ToEvent) ToCreateThreadEvent() (*CreateThreadEvent, bool) {
@@ -47,6 +49,14 @@ func (v ToEvent) ToAddThreadToCampaignEvent() (*AddRemoveThreadToFromCampaignEve
 
 func (v ToEvent) ToRemoveThreadFromCampaignEvent() (*AddRemoveThreadToFromCampaignEvent, bool) {
 	return v.RemoveThreadFromCampaignEvent, v.RemoveThreadFromCampaignEvent != nil
+}
+
+func (v ToEvent) ToReviewEvent() (*ReviewEvent, bool) {
+	return v.ReviewEvent, v.ReviewEvent != nil
+}
+
+func (v ToEvent) ToReviewRequestedEvent() (*ReviewRequestedEvent, bool) {
+	return v.ReviewRequestedEvent, v.ReviewRequestedEvent != nil
 }
 
 // EventConnection is the interface for GraphQL connection types for event nodes.

@@ -390,6 +390,11 @@ type Mutation {
     # being created on all affected repositories. The updated campaign is returned.
     publishPreviewCampaign(campaign: ID!): Campaign!
 
+    # Force-refresh a campaign, including the external statuses of all of the campaign's threads.
+    # Campaigns are automatically refreshed on a regular basis, and this mutation should not usually
+    # be necessary.
+    forceRefreshCampaign(campaign: ID!): Campaign!
+
     # Delete a campaign. All threads that were associated with or created by this campaign remain
     # (and are not deleted when the campaign is deleted).
     deleteCampaign(campaign: ID!): EmptyResponse
@@ -4748,7 +4753,7 @@ type EventConnection {
     pageInfo: PageInfo!
 }
 
-union ThreadTimelineItem = CreateThreadEvent | AddThreadToCampaignEvent | RemoveThreadFromCampaignEvent
+union ThreadTimelineItem = CreateThreadEvent | AddThreadToCampaignEvent | RemoveThreadFromCampaignEvent | ReviewEvent
 
 # A list of thread timeline items.
 type ThreadTimelineItemConnection {
@@ -4762,7 +4767,7 @@ type ThreadTimelineItemConnection {
     pageInfo: PageInfo!
 }
 
-union CampaignTimelineItem = AddThreadToCampaignEvent | RemoveThreadFromCampaignEvent
+union CampaignTimelineItem = AddThreadToCampaignEvent | RemoveThreadFromCampaignEvent | ReviewEvent
 
 # A list of campaign timeline items.
 type CampaignTimelineItemConnection {
@@ -4837,5 +4842,47 @@ type RemoveThreadFromCampaignEvent implements EventCommon {
 
     # The campaign that the thread was removed from.
     campaign: Campaign!
+}
+
+# The possible states for a review.
+enum ReviewState {
+    COMMENTED
+    APPROVED
+    CHANGES_REQUESTED
+}
+
+# A review that was performed.
+type ReviewEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was reviewed.
+    thread: ThreadOrIssueOrChangeset!
+
+    # The state of the review.
+    state: ReviewState!
+}
+
+# A request to review that was sent.
+type ReviewRequestedEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread on which review was requested.
+    thread: ThreadOrIssueOrChangeset!
+
+    # TODO!(sqs): add reference to external user
 }
 `
