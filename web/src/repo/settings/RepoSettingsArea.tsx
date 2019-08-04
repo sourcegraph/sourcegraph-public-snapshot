@@ -16,7 +16,7 @@ import { RepoSettingsMirrorPage } from './RepoSettingsMirrorPage'
 import { RepoSettingsOptionsPage } from './RepoSettingsOptionsPage'
 import { RepoSettingsSidebar } from './RepoSettingsSidebar'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"

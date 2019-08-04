@@ -48,7 +48,7 @@ export const TrueUpStatusSummary: React.FunctionComponent<Props> = ({
             </div>
             <small>
                 Learn more about{' '}
-                <a href="https://about.sourcegraph.com/pricing" target="_blank">
+                <a href="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener noreferrer">
                     Sourcegraph's true-up pricing model
                 </a>
                 .

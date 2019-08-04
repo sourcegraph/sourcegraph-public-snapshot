@@ -22,7 +22,7 @@ storiesOf('Options - OptionsMenu', module)
                 featureFlags={[]}
                 isSettingsOpen={false}
                 toggleFeatureFlag={action('Feature flag toggled')}
-                requestPermissions={() => void 0}
+                requestPermissions={() => undefined}
                 urlHasPermissions={true}
             />
         </div>
@@ -38,7 +38,7 @@ storiesOf('Options - OptionsMenu', module)
                 onSettingsClick={action('Settings clicked')}
                 isSettingsOpen={true}
                 toggleFeatureFlag={action('Feature flag toggled')}
-                requestPermissions={() => void 0}
+                requestPermissions={() => undefined}
                 urlHasPermissions={true}
             />
         </div>

@@ -1,5 +1,4 @@
 import * as path from 'path'
-import puppeteer from 'puppeteer'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 import { retry } from '../util/e2e-test-utils'
 import { baseURL, createDriverForTest, Driver, gitHubToken, percySnapshot } from './util'
@@ -115,15 +114,13 @@ describe('e2e test suite', () => {
                 visible: true,
             })).click()
 
-            const accept = async (dialog: puppeteer.Dialog) => {
-                await dialog.accept()
-                driver.page.off('dialog', accept)
-            }
-            driver.page.on('dialog', accept)
-            await (await driver.page.waitForSelector(
-                '[data-e2e-external-service-name="e2e-github-test-2"] .e2e-delete-external-service-button',
-                { visible: true }
-            )).click()
+            await Promise.all([
+                driver.acceptNextDialog(),
+                (await driver.page.waitForSelector(
+                    '[data-e2e-external-service-name="e2e-github-test-2"] .e2e-delete-external-service-button',
+                    { visible: true }
+                )).click(),
+            ])
 
             await driver.page.waitFor(
                 () => !document.querySelector('[data-e2e-external-service-name="e2e-github-test-2"]')
@@ -231,7 +228,7 @@ describe('e2e test suite', () => {
                 Array.from(document.querySelectorAll('.e2e-tooltip-content')).map(t => t.textContent || '')
             )
         }
-        const assertHoverContentContains = async (val: string, count?: number) => {
+        const assertHoverContentContains = async (val: string, count?: number): Promise<void> => {
             expect(await getHoverContents(count)).toEqual(expect.arrayContaining([expect.stringContaining(val)]))
         }
 
@@ -313,7 +310,7 @@ describe('e2e test suite', () => {
             })
 
             test('responds to keyboard shortcuts', async () => {
-                const assertNumRowsExpanded = async (expectedCount: number) => {
+                const assertNumRowsExpanded = async (expectedCount: number): Promise<void> => {
                     expect(
                         await driver.page.evaluate(() => document.querySelectorAll('.tree__row--expanded').length)
                     ).toEqual(expectedCount)
@@ -853,7 +850,7 @@ describe('e2e test suite', () => {
                 const match = /(\d+) results?/.exec(label)
                 if (!match) {
                     throw new Error(
-                        `.e2e-search-results-stats textContent did not match regex '(\d+) results': '${label}'`
+                        `.e2e-search-results-stats textContent did not match regex '(\\d+) results': '${label}'`
                     )
                 }
                 const numberOfResults = parseInt(match[1], 10)

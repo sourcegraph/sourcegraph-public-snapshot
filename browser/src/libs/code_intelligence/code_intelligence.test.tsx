@@ -25,6 +25,7 @@ import {
 } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 
 const RENDER = jest.fn()
 
@@ -87,7 +88,7 @@ describe('code_intelligence', () => {
             subscriptions = new Subscription()
         })
 
-        const createTestElement = () => {
+        const createTestElement = (): HTMLElement => {
             const el = document.createElement('div')
             el.className = `test test-${uniqueId()}`
             document.body.appendChild(el)
@@ -302,7 +303,7 @@ describe('code_intelligence', () => {
                     )
                     .toPromise()
                 const decorationType = extensionAPI.app.createDecorationType()
-                const decorated = () =>
+                const decorated = (): Promise<TextDocumentDecoration[] | null> =>
                     services.textDocumentDecoration
                         .getDecorations({ uri: 'git://foo?1#/bar.ts' })
                         .pipe(
@@ -400,7 +401,7 @@ describe('code_intelligence', () => {
                     )
                     .toPromise()
                 const decorationType = extensionAPI.app.createDecorationType()
-                const decorated = (commit: string) =>
+                const decorated = (commit: string): Promise<TextDocumentDecoration[] | null> =>
                     services.textDocumentDecoration
                         .getDecorations({ uri: `git://foo?${commit}#/bar.ts` })
                         .pipe(

@@ -5,6 +5,7 @@ const config = {
   env: {
     browser: true,
     node: true,
+    es6: true,
   },
   parserOptions: {
     ecmaVersion: 2018,
@@ -51,6 +52,14 @@ const config = {
       },
     ],
   },
+  overrides: [
+    {
+      files: ['*.d.ts'],
+      rules: {
+        'no-restricted-imports': 'off',
+      },
+    },
+  ],
 }
 
 module.exports = config

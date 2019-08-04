@@ -11,7 +11,7 @@ import { RepositoryBranchesAllPage } from './RepositoryBranchesAllPage'
 import { RepositoryBranchesNavbar } from './RepositoryBranchesNavbar'
 import { RepositoryBranchesOverviewPage } from './RepositoryBranchesOverviewPage'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"

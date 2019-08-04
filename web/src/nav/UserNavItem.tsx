@@ -24,13 +24,14 @@ interface State {
  * authenticated viewers.
  */
 export class UserNavItem extends React.PureComponent<Props, State> {
-    private supportsSystemTheme =
-        !!window.matchMedia && window.matchMedia('not all and (prefers-color-scheme), (prefers-color-scheme)').matches
+    private supportsSystemTheme = window.matchMedia('not all and (prefers-color-scheme), (prefers-color-scheme)')
+        .matches
     public state: State = { isOpen: false }
 
     public componentDidUpdate(prevProps: Props): void {
         // Close dropdown after clicking on a dropdown item.
         if (this.state.isOpen && this.props.location !== prevProps.location) {
+            /* eslint react/no-did-update-set-state: warn */
             this.setState({ isOpen: false })
         }
     }
@@ -90,7 +91,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                                         href="https://caniuse.com/#feat=prefers-color-scheme"
                                         className="text-warning"
                                         target="_blank"
-                                        rel="noopener"
+                                        rel="noopener noreferrer"
                                     >
                                         Your browser does not support the system theme.
                                     </a>
@@ -120,6 +121,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                         </Link>
                     )}
                     {this.props.showDotComMarketing ? (
+                        // eslint-disable-next-line react/jsx-no-target-blank
                         <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
                             Help
                         </a>
@@ -136,6 +138,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     {this.props.showDotComMarketing && (
                         <>
                             <DropdownItem divider={true} />
+                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
                             <a href="https://about.sourcegraph.com" target="_blank" className="dropdown-item">
                                 About Sourcegraph
                             </a>

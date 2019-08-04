@@ -37,6 +37,7 @@ export class StripeWrapper<P extends object> extends React.PureComponent<Props<P
 
     public componentDidUpdate(prevProps: Props<P>): void {
         if (prevProps.component !== this.props.component) {
+            /* eslint react/no-did-update-set-state: warn */
             this.setState({ injectedComponent: injectStripe<P>(this.props.component) })
         }
     }
@@ -45,10 +46,11 @@ export class StripeWrapper<P extends object> extends React.PureComponent<Props<P
         if (!this.state.stripe) {
             return null
         }
+        const InjectedComponent = this.state.injectedComponent
         return (
             <StripeProvider stripe={this.state.stripe}>
                 <Elements>
-                    <this.state.injectedComponent {...this.props} />
+                    <InjectedComponent {...this.props} />
                 </Elements>
             </StripeProvider>
         )

@@ -153,7 +153,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
         }
     }
 
-    private monacoRef = async (monacoValue: typeof _monaco | null) => {
+    private monacoRef = (monacoValue: typeof _monaco | null): void => {
         this.monaco = monacoValue
         if (this.monaco && MonacoSettingsEditor) {
             this.subscriptions.add(
@@ -188,7 +188,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
     private runAction(id: string, editor?: _monaco.editor.ICodeEditor): void {
         if (editor) {
             const action = editor.getAction(id)
-            action.run().then(() => void 0, (err: any) => console.error(err))
+            action.run().then(() => undefined, (err: any) => console.error(err))
         } else {
             alert('Wait for editor to load before running action.')
         }

@@ -22,7 +22,7 @@ const FIXTURE_RESULT: TextDocumentDecoration[] | null = [
     },
 ]
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('getDecorations', () => {
     describe('0 providers', () => {

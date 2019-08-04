@@ -27,7 +27,7 @@ interface Props<C extends React.ReactElement<any> = React.ReactElement<any>> {
     element: C
 }
 
-const isHorizontal = (handlePosition: Props['handlePosition']) =>
+const isHorizontal = (handlePosition: Props['handlePosition']): boolean =>
     handlePosition === 'right' || handlePosition === 'left'
 
 interface State {

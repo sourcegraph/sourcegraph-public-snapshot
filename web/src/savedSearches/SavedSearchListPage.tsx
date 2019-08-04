@@ -37,7 +37,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                 .pipe(
                     switchMap(search =>
                         deleteSavedSearch(search.id).pipe(
-                            mapTo(void 0),
+                            mapTo(undefined),
                             catchError(err => {
                                 console.error(err)
                                 return []
@@ -69,6 +69,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                         <SettingsIcon className="icon-inline" /> Settings
                     </Link>{' '}
                     <button
+                        type="button"
                         className="btn btn-sm btn-danger e2e-delete-external-service-button"
                         onClick={this.onDelete}
                         disabled={this.state.isDeleting}
@@ -109,7 +110,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
         this.subscriptions.add(
             this.refreshRequests
                 .pipe(
-                    startWith(void 0),
+                    startWith(undefined),
                     switchMap(() =>
                         fetchSavedSearches().pipe(
                             catchError(error => {

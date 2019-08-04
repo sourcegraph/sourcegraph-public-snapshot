@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs'
+import { Subject, Observable } from 'rxjs'
 import {
     debounceTime,
     distinctUntilChanged,
@@ -141,7 +141,11 @@ const symbolsFragment = gql`
     }
 `
 
-const fetchSuggestions = (query: string, first: number, requestGraphQL: PlatformContext['requestGraphQL']) =>
+const fetchSuggestions = (
+    query: string,
+    first: number,
+    requestGraphQL: PlatformContext['requestGraphQL']
+): Observable<GQL.SearchSuggestion> =>
     requestGraphQL<GQL.IQuery>({
         request: gql`
             query SearchSuggestions($query: String!, $first: Int!) {
@@ -190,7 +194,10 @@ interface SuggestionInput {
     handler: (suggestion: Suggestion[]) => void
 }
 
-export const createSuggestionFetcher = (first = 5, requestGraphQL: PlatformContext['requestGraphQL']) => {
+export const createSuggestionFetcher = (
+    first = 5,
+    requestGraphQL: PlatformContext['requestGraphQL']
+): ((input: SuggestionInput) => void) => {
     const fetcher = new Subject<SuggestionInput>()
 
     fetcher
@@ -217,5 +224,5 @@ export const createSuggestionFetcher = (first = 5, requestGraphQL: PlatformConte
         )
         .subscribe(({ suggestions, suggestHandler }) => suggestHandler(suggestions))
 
-    return (input: SuggestionInput) => fetcher.next(input)
+    return input => fetcher.next(input)
 }

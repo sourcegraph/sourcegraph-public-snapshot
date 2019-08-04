@@ -76,7 +76,7 @@ export class BlobPanel extends React.PureComponent<Props> {
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
-    public constructor(props: Props) {
+    constructor(props: Props) {
         super(props)
 
         const componentUpdates = this.componentUpdates.pipe(startWith(this.props))

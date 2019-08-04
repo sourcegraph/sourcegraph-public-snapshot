@@ -12,7 +12,7 @@ import { ExtensionAreaRoute } from './extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extension/ExtensionAreaHeader'
 import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './ExtensionsAreaHeader'
 
-const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 export interface ExtensionsAreaRoute extends RouteDescriptor<ExtensionsAreaRouteContext> {}
 
@@ -47,32 +47,13 @@ interface ExtensionsAreaProps
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
 }
 
-const LOADING: 'loading' = 'loading'
-
 interface ExtensionsAreaState {}
 
 /**
  * The extensions area.
  */
 export class ExtensionsArea extends React.Component<ExtensionsAreaProps, ExtensionsAreaState> {
-    public state: ExtensionsAreaState = {
-        subjectOrError: LOADING,
-    }
-
-    private componentUpdates = new Subject<ExtensionsAreaProps>()
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentWillReceiveProps(props: ExtensionsAreaProps): void {
-        this.componentUpdates.next(props)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
+    public state: ExtensionsAreaState = {}
 
     public render(): JSX.Element | null {
         const context: ExtensionsAreaRouteContext = {

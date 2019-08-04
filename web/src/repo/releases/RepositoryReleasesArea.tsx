@@ -11,7 +11,7 @@ import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"

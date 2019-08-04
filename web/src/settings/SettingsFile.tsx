@@ -165,6 +165,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         <div className="site-admin-configuration-page__actions">
                             {settingsActions.map(({ id, label }) => (
                                 <button
+                                    type="button"
                                     key={id}
                                     className="btn btn-secondary btn-sm site-admin-configuration-page__action"
                                     // tslint:disable-next-line:jsx-no-lambda
@@ -230,7 +231,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     private runAction(id: string): void {
         if (this.editor) {
             const action = this.editor.getAction(id)
-            action.run().then(() => void 0, (err: any) => console.error(err))
+            action.run().then(() => undefined, (err: any) => console.error(err))
         } else {
             alert('Wait for editor to load before running action.')
         }

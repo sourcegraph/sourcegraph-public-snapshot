@@ -24,7 +24,7 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
     scriptURL: string
 }
 
-const getConfiguredSideloadedExtension = (baseUrl: string) =>
+const getConfiguredSideloadedExtension = (baseUrl: string): Observable<ConfiguredExtension> =>
     ajax({
         url: `${baseUrl}/package.json`,
         responseType: 'json',
@@ -54,7 +54,7 @@ interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getSc
  * "extension registry" (where users can search for and enable extensions).
  */
 export class ExtensionsService {
-    public constructor(
+    constructor(
         private platformContext: PartialContext,
         private editorService: Pick<EditorService, 'editorsAndModels'>,
         private settingsService: Pick<SettingsService, 'data'>,

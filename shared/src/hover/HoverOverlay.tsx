@@ -134,6 +134,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
             >
                 {showCloseButton && (
                     <button
+                        type="button"
                         className={classNames('hover-overlay__close-button', this.props.closeButtonClassName)}
                         onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
                     >

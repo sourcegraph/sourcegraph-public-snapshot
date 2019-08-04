@@ -153,6 +153,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
         // change without the component being unmounted, but handle this case for completeness
         // anyway.
         if (!isEqual(prevProps.initialValue, this.props.initialValue)) {
+            /* eslint react/no-did-update-set-state: warn */
             this.setState(this.getStateForInitialValue(this.props))
         }
     }

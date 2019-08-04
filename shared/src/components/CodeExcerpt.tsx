@@ -54,7 +54,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
     private visibilitySensorOffset = { bottom: -500 }
 
-    public constructor(props: Props) {
+    constructor(props: Props) {
         super(props)
         this.subscriptions.add(
             combineLatest(this.propsChanges, this.visibilityChanges)

@@ -33,7 +33,7 @@ export class ContributionRegistry {
     /** All entries, including entries that are not enabled in the current context. */
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
-    public constructor(
+    constructor(
         private editorService: Pick<EditorService, 'editorsAndModels'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private context: Subscribable<Context<any>>

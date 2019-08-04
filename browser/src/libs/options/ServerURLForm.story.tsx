@@ -20,7 +20,7 @@ class Container extends React.Component<{}, { value: string; status: ServerURLFo
                     {...this.state}
                     onChange={this.onChange}
                     onSubmit={this.onSubmit}
-                    requestPermissions={() => void 0}
+                    requestPermissions={() => undefined}
                     urlHasPermissions={true}
                 />
             </div>
@@ -80,7 +80,7 @@ class CyclingStatus extends React.Component<{}, { step: number }> {
                     onChange={this.onChange}
                     onSubmit={this.onSubmit}
                     overrideUpdatingState={isUpdating}
-                    requestPermissions={() => void 0}
+                    requestPermissions={() => undefined}
                     urlHasPermissions={true}
                 />
             </div>
@@ -99,7 +99,7 @@ storiesOf('Options - ServerURLForm', module)
                 connectionError={ConnectionErrors.AuthError}
                 onChange={action('Change')}
                 onSubmit={action('Submit')}
-                requestPermissions={() => void 0}
+                requestPermissions={() => undefined}
                 urlHasPermissions={true}
             />
         </div>

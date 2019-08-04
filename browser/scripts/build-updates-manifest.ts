@@ -1,3 +1,4 @@
+/* eslint "no-sync": "warn" */
 import * as fs from 'fs'
 import * as path from 'path'
 

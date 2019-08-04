@@ -53,7 +53,7 @@ const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
 }: {
     request: string
     variables: {}
-}) =>
+}): Observable<GraphQLResult<T>> =>
     observeStorageKey('sync', 'sourcegraphURL').pipe(
         take(1),
         switchMap(baseUrl =>

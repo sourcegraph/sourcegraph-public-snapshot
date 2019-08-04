@@ -6,7 +6,7 @@ import * as React from 'react'
 import { render } from 'react-dom'
 import { from, noop, Observable, Subscription } from 'rxjs'
 import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
-import { IMutation, IQuery } from '../../../../shared/src/graphql/schema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { background } from '../../browser/runtime'
 import { observeStorageKey, storage } from '../../browser/storage'
 import { defaultStorageItems, featureFlagDefaults, FeatureFlags } from '../../browser/types'
@@ -29,7 +29,7 @@ type State = Pick<
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
     !!Object.keys(featureFlagDefaults).find(k => key === k)
 
-const toggleFeatureFlag = (key: string) => {
+const toggleFeatureFlag = (key: string): void => {
     if (keyIsFeatureFlag(key)) {
         featureFlags
             .toggle(key)
@@ -55,14 +55,14 @@ const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStat
 }
 
 // Make GraphQL requests from background page
-function requestGraphQL<T extends IQuery | IMutation>(options: {
+function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>(options: {
     request: string
     variables: {}
 }): Observable<GraphQLResult<T>> {
     return from(background.requestGraphQL<T>(options))
 }
 
-const ensureValidSite = () => fetchSite(requestGraphQL)
+const ensureValidSite = (): Observable<GQL.ISite> => fetchSite(requestGraphQL)
 
 class Options extends React.Component<{}, State> {
     public state: State = {
@@ -130,7 +130,7 @@ class Options extends React.Component<{}, State> {
     }
 }
 
-const inject = async () => {
+const inject = (): void => {
     const injectDOM = document.createElement('div')
     injectDOM.className = 'sourcegraph-options-menu options'
     document.body.appendChild(injectDOM)
@@ -138,6 +138,4 @@ const inject = async () => {
     render(<Options />, injectDOM)
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    await inject()
-})
+document.addEventListener('DOMContentLoaded', inject)

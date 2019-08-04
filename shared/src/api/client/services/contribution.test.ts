@@ -16,7 +16,7 @@ import {
 import { CodeEditorWithPartialModel } from './editorService'
 import { createTestEditorService } from './editorService.test'
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_CONTRIBUTIONS_1: Contributions = {
     actions: [
@@ -180,7 +180,7 @@ describe('ContributionRegistry', () => {
         test('emits when context changes and filters on context', () => {
             scheduler().run(({ cold, expectObservable }) => {
                 const registry = new (class extends ContributionRegistry {
-                    public constructor() {
+                    constructor() {
                         super(
                             {
                                 editorsAndModels: cold<readonly CodeEditorWithPartialModel[]>('-a-b-|', {
@@ -225,7 +225,7 @@ describe('ContributionRegistry', () => {
         test('continues after error thrown during evaluation', () => {
             scheduler().run(({ cold, expectObservable }) => {
                 const registry = new (class extends ContributionRegistry {
-                    public constructor() {
+                    constructor() {
                         super(
                             {
                                 editorsAndModels: cold<readonly CodeEditorWithPartialModel[]>('a', {

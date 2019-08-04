@@ -110,7 +110,7 @@ function getDiffIdFromDifferentialPage(): string | null {
 }
 
 // tslint:disable-next-line
-const PHAB_DIFFUSION_REGEX = /^\/?(source|diffusion)\/([A-Za-z0-9\-\_]+)\/browse\/([\w-]+\/)?([^;$]+)(;[0-9a-f]{40})?(?:\$[0-9]+)?/i
+const PHAB_DIFFUSION_REGEX = /^\/?(source|diffusion)\/([A-Za-z0-9\-_]+)\/browse\/([\w-]+\/)?([^;$]+)(;[0-9a-f]{40})?(?:\$[0-9]+)?/i
 const PHAB_DIFFERENTIAL_REGEX = /^\/?(D[0-9]+)(?:\?(?:(?:id=([0-9]+))|(vs=(?:[0-9]+|on)&id=[0-9]+)))?/i
 const PHAB_REVISION_REGEX = /^\/?r([0-9A-z]+)([0-9a-f]{40})/i
 // http://phabricator.aws.sgdev.org/source/nmux/change/master/mux.go
@@ -234,14 +234,14 @@ export async function getPhabricatorState(
                 headRev = maxDiff.revDescription
                 baseRev = headRev.concat('~1')
             }
-        } else {
-            // check if the diff we are viewing is the max diff. if so,
-            // right is the merged rev into master, and left is master~1
-            if (diffLanded && maxDiff && diffID === maxDiff.diffID) {
-                headRev = maxDiff.revDescription
-                baseRev = maxDiff.revDescription.concat('~1')
-            }
         }
+        // check if the diff we are viewing is the max diff. if so,
+        // right is the merged rev into master, and left is master~1
+        else if (diffLanded && maxDiff && diffID === maxDiff.diffID) {
+            headRev = maxDiff.revDescription
+            baseRev = maxDiff.revDescription.concat('~1')
+        }
+
         return {
             baseRawRepoName: rawRepoName,
             baseRev,

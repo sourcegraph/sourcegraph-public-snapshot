@@ -73,7 +73,7 @@ const requestGraphQL: PlatformContext['requestGraphQL'] = <R extends IQuery | IM
         },
     } as SuccessGraphQLResult<R>)
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('getHoverActionsContext', () => {
     beforeEach(() => resetAllMemoizationCaches())
@@ -202,7 +202,7 @@ describe('getHoverActionsContext', () => {
 
 describe('getDefinitionURL', () => {
     beforeEach(() => resetAllMemoizationCaches())
-    test('emits null if the locations result is null', async () =>
+    test('emits null if the locations result is null', () =>
         expect(
             getDefinitionURL(
                 { urlToFile, requestGraphQL },
@@ -216,7 +216,7 @@ describe('getDefinitionURL', () => {
                 .toPromise()
         ).resolves.toBe(null))
 
-    test('emits null if the locations result is empty', async () =>
+    test('emits null if the locations result is empty', () =>
         expect(
             getDefinitionURL(
                 { urlToFile, requestGraphQL },
@@ -232,7 +232,7 @@ describe('getDefinitionURL', () => {
 
     describe('if there is exactly 1 location result', () => {
         test('resolves the raw repo name and passes it to urlToFile()', async () => {
-            const requestGraphQL = <R extends IQuery | IMutation>({ variables }: { [key: string]: any }) =>
+            const requestGraphQL = <R extends IQuery | IMutation>({ variables }: { [key: string]: any }): Observable<SuccessGraphQLResult<R>> =>
                 // tslint:disable-next-line no-object-literal-type-assertion
                 of({
                     data: {
@@ -304,7 +304,7 @@ describe('getDefinitionURL', () => {
         })
 
         describe('when the result is inside the current root', () => {
-            test('emits the definition URL the user input revision (not commit SHA) of the root', async () =>
+            test('emits the definition URL the user input revision (not commit SHA) of the root', () =>
                 expect(
                     getDefinitionURL(
                         { urlToFile, requestGraphQL },
@@ -322,7 +322,7 @@ describe('getDefinitionURL', () => {
         })
 
         describe('when the result is not inside the current root (different repo and/or commit)', () => {
-            test('emits the definition URL with range', async () =>
+            test('emits the definition URL with range', () =>
                 expect(
                     getDefinitionURL(
                         { urlToFile, requestGraphQL },
@@ -338,7 +338,7 @@ describe('getDefinitionURL', () => {
                         .toPromise()
                 ).resolves.toEqual({ url: '/r2@c2/-/blob/f2#L3:3', multiple: false }))
 
-            test('emits the definition URL without range', async () =>
+            test('emits the definition URL without range', () =>
                 expect(
                     getDefinitionURL(
                         { urlToFile, requestGraphQL },
@@ -357,7 +357,7 @@ describe('getDefinitionURL', () => {
         })
     })
 
-    test('emits the definition panel URL if there is more than 1 location result', async () =>
+    test('emits the definition panel URL if there is more than 1 location result', () =>
         expect(
             getDefinitionURL(
                 { urlToFile, requestGraphQL },
@@ -401,7 +401,7 @@ describe('registerHoverContributions()', () => {
     })
     afterAll(() => subscription.unsubscribe())
 
-    const getHoverActions = (context: HoverActionsContext) =>
+    const getHoverActions = (context: HoverActionsContext): Promise<ActionItemAction[]> =>
         contribution
             .getContributions(undefined, context)
             .pipe(
@@ -443,7 +443,7 @@ describe('registerHoverContributions()', () => {
             altAction: undefined,
         }
 
-        it('shows goToDefinition (non-preloaded) when the definition is loading', async () =>
+        it('shows goToDefinition (non-preloaded) when the definition is loading', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': true,
@@ -455,7 +455,7 @@ describe('registerHoverContributions()', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION]))
 
-        it('shows goToDefinition (non-preloaded) when the definition had an error', async () =>
+        it('shows goToDefinition (non-preloaded) when the definition had an error', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -467,7 +467,7 @@ describe('registerHoverContributions()', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION]))
 
-        it('hides goToDefinition when the definition was not found', async () =>
+        it('hides goToDefinition when the definition was not found', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -479,7 +479,7 @@ describe('registerHoverContributions()', () => {
                 })
             ).resolves.toEqual([]))
 
-        it('shows goToDefinition.preloaded when goToDefinition.url is available', async () =>
+        it('shows goToDefinition.preloaded when goToDefinition.url is available', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -491,7 +491,7 @@ describe('registerHoverContributions()', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_PRELOADED_ACTION]))
 
-        it('shows findReferences when the definition exists', async () =>
+        it('shows findReferences when the definition exists', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -503,7 +503,7 @@ describe('registerHoverContributions()', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_PRELOADED_ACTION, FIND_REFERENCES_ACTION]))
 
-        it('hides findReferences when the definition might exist (and is still loading)', async () =>
+        it('hides findReferences when the definition might exist (and is still loading)', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': true,
@@ -515,7 +515,7 @@ describe('registerHoverContributions()', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION, FIND_REFERENCES_ACTION]))
 
-        it('shows findReferences when the definition had an error', async () =>
+        it('shows findReferences when the definition had an error', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -527,7 +527,7 @@ describe('registerHoverContributions()', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION, FIND_REFERENCES_ACTION]))
 
-        it('does not show findReferences when the definition was not found', async () =>
+        it('does not show findReferences when the definition was not found', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -543,7 +543,7 @@ describe('registerHoverContributions()', () => {
     describe('goToDefinition command', () => {
         test('reports no definition found', async () => {
             textDocumentDefinition.getLocations = () => of(of(null)) // mock
-            return expect(
+            await expect(
                 commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
             ).rejects.toMatchObject({ message: 'No definition found.' })
         })
@@ -552,7 +552,7 @@ describe('registerHoverContributions()', () => {
             textDocumentDefinition.getLocations = () =>
                 of(of([FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'git://r3?v3#f3' }])) // mock
             history.push('/r@c/-/blob/f#L2:2&tab=def')
-            return expect(
+            await expect(
                 commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
             ).rejects.toMatchObject({ message: 'Multiple definitions shown in panel below.' })
         })
@@ -560,7 +560,7 @@ describe('registerHoverContributions()', () => {
         test('reports already at the definition', async () => {
             textDocumentDefinition.getLocations = () => of(of([FIXTURE_LOCATION])) // mock
             history.push('/r2@c2/-/blob/f2#L3:3')
-            return expect(
+            await expect(
                 commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
             ).rejects.toMatchObject({ message: 'Already at the definition.' })
         })

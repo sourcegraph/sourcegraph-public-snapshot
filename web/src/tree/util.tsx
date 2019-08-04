@@ -17,6 +17,7 @@ export interface SingleChildGitTree extends TreeEntryInfo {
 }
 
 export function scrollIntoView(el: Element, scrollRoot: Element): void {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     if (!scrollRoot.getBoundingClientRect) {
         return el.scrollIntoView()
     }

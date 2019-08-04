@@ -23,7 +23,7 @@ import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from 
 
 const maxEntries = 2500
 
-const errorWidth = (width?: string) => ({
+const errorWidth = (width?: string): { width: string } => ({
     width: width ? `${width}px` : 'auto',
 })
 

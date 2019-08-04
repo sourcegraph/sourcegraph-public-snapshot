@@ -276,7 +276,11 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     <div className="blob-page__aborted">
                         <div className="alert alert-info">
                             Syntax-highlighting this file took too long. &nbsp;
-                            <button onClick={this.onExtendHighlightingTimeoutClick} className="btn btn-sm btn-primary">
+                            <button
+                                type="button"
+                                onClick={this.onExtendHighlightingTimeoutClick}
+                                className="btn btn-sm btn-primary"
+                            >
                                 Try again
                             </button>
                         </div>

@@ -175,7 +175,7 @@ const fetchHighlightedFile = memoizeObservable(
                 return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
             })
         ),
-    ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout} ` + `?isLightTheme=${ctx.isLightTheme}`
+    ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout}&sisLightTheme=${ctx.isLightTheme}`
 )
 
 /**

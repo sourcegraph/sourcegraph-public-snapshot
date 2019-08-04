@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import {
     asyncScheduler,
     MonoTypeOperatorFunction,
@@ -8,8 +9,6 @@ import {
     Subscription,
     TeardownLogic,
 } from 'rxjs'
-
-// tslint:disable no-use-before-declare
 
 /**
  * Emits `valuesPerWindow` values from the source Observable, then ignores subsequent source values

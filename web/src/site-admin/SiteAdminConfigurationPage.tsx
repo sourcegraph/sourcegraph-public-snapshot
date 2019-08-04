@@ -22,7 +22,6 @@ interface State {
     loading: boolean
     error?: Error
 
-    isDirty?: boolean
     saving?: boolean
     restartToApply: boolean
     reloadStartedAt?: number
@@ -155,7 +154,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     className="alert alert-warning site-admin-configuration-page__alert site-admin-configuration-page__alert-flex"
                 >
                     Server restart is required for the configuration to take effect.
-                    <button className="btn btn-primary btn-sm" onClick={this.reloadSite}>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={this.reloadSite}>
                         Restart server
                     </button>
                 </div>
@@ -253,7 +252,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         <DynamicallyImportedMonacoSettingsEditor
                             value={contents || ''}
                             jsonSchema={siteSchemaJSON}
-                            onDirtyChange={this.onDirtyChange}
                             canEdit={true}
                             saving={this.state.saving}
                             loading={isReloading || this.state.saving}
@@ -274,8 +272,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             </div>
         )
     }
-
-    private onDirtyChange = (isDirty: boolean) => this.setState({ isDirty })
 
     private onSave = (value: string) => {
         eventLogger.log('SiteConfigurationSaved')

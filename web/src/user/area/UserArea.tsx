@@ -62,7 +62,7 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
         })
     )
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user page was not found." />
 )
 

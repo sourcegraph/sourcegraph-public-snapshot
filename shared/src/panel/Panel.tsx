@@ -109,6 +109,7 @@ export class Panel extends React.PureComponent<Props, State> {
                             <>
                                 <Spacer />
                                 <button
+                                    type="button"
                                     onClick={this.onDismiss}
                                     className="btn btn-icon tab-bar__end-fragment-other-element"
                                     data-tooltip="Close"

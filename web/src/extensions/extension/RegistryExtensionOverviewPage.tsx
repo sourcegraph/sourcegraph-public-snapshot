@@ -176,8 +176,8 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                     this.props.extension.manifest.url && (
                                         <a
                                             href={this.props.extension.manifest.url}
-                                            rel="nofollow"
                                             target="_blank"
+                                            rel="nofollow noopener noreferrer"
                                             className="d-block"
                                         >
                                             Source code (JavaScript)

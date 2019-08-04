@@ -32,8 +32,6 @@ interface ExploreAreaProps extends ExploreAreaSectionContext {
     exploreSections: readonly ExploreSectionDescriptor[]
 }
 
-const LOADING: 'loading' = 'loading'
-
 interface ExploreAreaState {}
 
 /**
@@ -42,24 +40,10 @@ interface ExploreAreaState {}
  * on the space-constrained global nav).
  */
 export class ExploreArea extends React.Component<ExploreAreaProps, ExploreAreaState> {
-    public state: ExploreAreaState = {
-        subjectOrError: LOADING,
-    }
-
-    private componentUpdates = new Subject<ExploreAreaProps>()
-    private subscriptions = new Subscription()
+    public state: ExploreAreaState = {}
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('Explore')
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentWillReceiveProps(props: ExploreAreaProps): void {
-        this.componentUpdates.next(props)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {

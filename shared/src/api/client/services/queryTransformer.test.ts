@@ -2,7 +2,7 @@ import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { transformQuery, TransformQuerySignature } from './queryTransformer'
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_INPUT = 'foo'
 const FIXTURE_RESULT = 'bar'

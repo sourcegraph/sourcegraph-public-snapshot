@@ -10,7 +10,7 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryStatsContributorsPage } from './RepositoryStatsContributorsPage'
 import { RepositoryStatsNavbar } from './RepositoryStatsNavbar'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"

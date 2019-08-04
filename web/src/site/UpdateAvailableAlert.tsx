@@ -3,10 +3,10 @@ import * as React from 'react'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { eventLogger } from '../tracking/eventLogger'
 
-const onClickCTA = () => {
+const onClickCTA = (): void => {
     eventLogger.log('AlertUpdateAvailableCTAClicked')
 }
-const onClickChangelog = () => {
+const onClickChangelog = (): void => {
     eventLogger.log('AlertUpdateAvailableChangelogClicked')
 }
 
@@ -24,6 +24,7 @@ export const UpdateAvailableAlert: React.FunctionComponent<{
     >
         <CloudDownloadIcon className="icon-inline site-alert__link-icon mr-2" />
         An update is available:&nbsp;
+        {/* eslint-disable-next-line react/jsx-no-target-blank */}
         <a className="site-alert__link" href="https://about.sourcegraph.com" target="_blank" onClick={onClickCTA}>
             <span className="underline">Sourcegraph {updateVersionAvailable}</span>
         </a>
@@ -31,6 +32,7 @@ export const UpdateAvailableAlert: React.FunctionComponent<{
         <a
             className="site-alert__link"
             href="https://about.sourcegraph.com/changelog" // this is the old URL, but it redirects
+            // eslint-disable-next-line react/jsx-no-target-blank
             target="_blank"
             onClick={onClickChangelog}
         >

@@ -101,6 +101,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                     <div className="site-admin-detail-list__actions">
                         {this.props.authenticatedUser && this.props.org.viewerCanAdminister && (
                             <button
+                                type="button"
                                 className="btn btn-secondary btn-sm site-admin-detail-list__action"
                                 onClick={this.remove}
                                 disabled={loading}

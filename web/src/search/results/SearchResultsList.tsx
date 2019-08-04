@@ -374,6 +374,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     */}
                                     {results.limitHit && this.state.resultsShown >= results.results.length && (
                                         <button
+                                            type="button"
                                             className="btn btn-secondary btn-block"
                                             data-testid="search-show-more-button"
                                             onClick={this.props.onShowMoreResultsClick}

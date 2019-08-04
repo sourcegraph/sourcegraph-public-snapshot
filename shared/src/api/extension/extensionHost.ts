@@ -121,7 +121,7 @@ function createExtensionAPI(
     const proxy = comlink.proxy<ClientAPI>(endpoints.proxy)
 
     // For debugging/tests.
-    const sync = async () => {
+    const sync = async (): Promise<void> => {
         await proxy.ping()
     }
     const context = new ExtContext(proxy.context)
@@ -212,13 +212,13 @@ function createExtensionAPI(
                 console.warn(
                     'sourcegraph.languages.registerTypeDefinitionProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
                 )
-                return { unsubscribe: () => void 0 }
+                return { unsubscribe: () => undefined }
             },
             registerImplementationProvider: () => {
                 console.warn(
                     'sourcegraph.languages.registerImplementationProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
                 )
-                return { unsubscribe: () => void 0 }
+                return { unsubscribe: () => undefined }
             },
 
             registerReferenceProvider: (

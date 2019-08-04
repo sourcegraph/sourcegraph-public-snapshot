@@ -90,14 +90,13 @@ export class Tooltip extends React.PureComponent<Props, State> {
             (event as MouseEvent).pageX === 0 &&
             (event as MouseEvent).pageY === 0
         ) {
-            this.setState({ lastEventTarget: undefined, subject: undefined, content: undefined })
+            this.setState({ subject: undefined, content: undefined })
             return
         }
 
         const eventTarget = event.target as HTMLElement
         const subject = this.getSubject(eventTarget)
         this.setState(prevState => ({
-            lastEventTarget: eventTarget,
             subject,
             subjectSeq: prevState.subject === subject ? prevState.subjectSeq : prevState.subjectSeq + 1,
             content: subject ? this.getContent(subject) : undefined,

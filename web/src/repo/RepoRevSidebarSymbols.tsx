@@ -21,8 +21,8 @@ function symbolIsActive(symbolLocation: string, currentLocation: H.Location): bo
     )
 }
 
-const symbolIsActiveTrue = () => true
-const symbolIsActiveFalse = () => false
+const symbolIsActiveTrue = (): boolean => true
+const symbolIsActiveFalse = (): boolean => false
 
 interface SymbolNodeProps {
     node: GQL.ISymbol

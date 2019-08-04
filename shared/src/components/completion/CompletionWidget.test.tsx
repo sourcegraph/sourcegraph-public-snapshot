@@ -16,7 +16,7 @@ describe('CompletionWidgetDropdown', () => {
         renderer.render(
             <CompletionWidget
                 completionListOrError={{ items: [{ label: 'a' }, COMPLETION_ITEM_2] }}
-                onSelectItem={() => void 0}
+                onSelectItem={() => undefined}
                 textArea={textArea}
                 listClassName="list-class-name"
                 listItemClassName="list-item-class-name"

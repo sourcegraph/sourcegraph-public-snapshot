@@ -14,7 +14,7 @@ import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
 
-const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaRouteContext> {}
 

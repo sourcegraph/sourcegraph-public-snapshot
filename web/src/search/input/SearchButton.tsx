@@ -112,6 +112,7 @@ export class SearchButton extends React.Component<Props, State> {
                                 <a
                                     href={`${docsURLPrefix}/user/search/queries`}
                                     className="dropdown-item d-flex align-items-center"
+                                    // eslint-disable-next-line react/jsx-no-target-blank
                                     target="_blank"
                                     onClick={this.toggleIsOpen}
                                 >

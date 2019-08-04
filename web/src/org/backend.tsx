@@ -80,7 +80,7 @@ export function removeUserFromOrganization(args: {
             }
             eventLogger.log('OrgMemberRemoved', eventData)
             // Reload user data
-            return concat(refreshAuthenticatedUser(), [void 0])
+            return concat(refreshAuthenticatedUser(), [undefined])
         })
     )
 }

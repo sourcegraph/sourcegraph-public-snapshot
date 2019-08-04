@@ -35,7 +35,7 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"

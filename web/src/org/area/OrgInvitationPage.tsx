@@ -145,6 +145,7 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                 </div>
                                 <div>
                                     <button
+                                        type="button"
                                         className="btn btn-link btn-sm"
                                         disabled={this.state.submissionOrError === 'loading'}
                                         onClick={this.onDeclineInvitation}

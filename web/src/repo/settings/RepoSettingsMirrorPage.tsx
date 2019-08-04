@@ -185,6 +185,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                 description={<span>Diagnose problems cloning or updating from the remote repository.</span>}
                 action={
                     <button
+                        type="button"
                         className="btn btn-primary"
                         disabled={this.state.loading}
                         onClick={this.checkMirrorRepositoryConnection}

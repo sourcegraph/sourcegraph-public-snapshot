@@ -12,7 +12,7 @@ import { OrgAreaPageProps } from '../area/OrgArea'
 import { OrgSettingsSidebar } from './OrgSettingsSidebar'
 import { OrgSettingsProfilePage } from './profile/OrgSettingsProfilePage'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"

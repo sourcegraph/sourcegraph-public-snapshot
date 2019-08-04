@@ -199,6 +199,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                             </p>
                                             {this.state.first < this.state.repositories.length && (
                                                 <button
+                                                    type="button"
                                                     className="btn btn-secondary btn-sm scope-page__show-more"
                                                     onClick={this.onShowMore}
                                                 >

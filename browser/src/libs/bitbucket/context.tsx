@@ -2,7 +2,7 @@ import { RawRepoSpec, RevSpec } from '../../../../shared/src/util/url'
 import { CodeHostContext } from '../code_intelligence/code_intelligence'
 
 // example pathname: /projects/TEST/repos/some-repo/browse/src/extension.ts
-const PATH_REGEX = /\/projects\/([^\/]+)\/repos\/([^\/]+)\//
+const PATH_REGEX = /\/projects\/([^/]+)\/repos\/([^/]+)\//
 
 function getRawRepoSpecFromLocation(location: Pick<Location, 'hostname' | 'pathname'>): RawRepoSpec {
     const { hostname, pathname } = location

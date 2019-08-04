@@ -166,7 +166,7 @@ const phabSourceCodeViewResolver = toCodeViewResolver('.phabricator-source-code-
     resolveFileInfo: resolveDiffusionFileInfo,
 })
 
-export const checkIsPhabricator = () => !!document.querySelector('.phabricator-wordmark')
+export const checkIsPhabricator = (): boolean => !!document.querySelector('.phabricator-wordmark')
 
 export const phabricatorCodeHost: CodeHost = {
     codeViewResolvers: [

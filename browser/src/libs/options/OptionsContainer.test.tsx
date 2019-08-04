@@ -35,7 +35,7 @@ describe('OptionsContainer', () => {
                 switchMap(
                     url =>
                         new Observable<string>(observer => {
-                            const ensureValidSite = (url: string) => {
+                            const ensureValidSite = (url: string): Observable<void> => {
                                 observer.next(url)
 
                                 return of(undefined)
@@ -60,10 +60,10 @@ describe('OptionsContainer', () => {
     test('checks the connection status when it the url updates', () => {
         const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
-        const buildRenderer = () => {
+        const buildRenderer = (): ((ui: React.ReactElement<any>) => void) => {
             let rerender: RenderResult['rerender'] | undefined
 
-            return (ui: React.ReactElement<any>) => {
+            return ui => {
                 if (rerender) {
                     rerender(ui)
                 } else {
@@ -83,7 +83,7 @@ describe('OptionsContainer', () => {
                 switchMap(
                     url =>
                         new Observable<string>(observer => {
-                            const ensureValidSite = (url: string) => {
+                            const ensureValidSite = (url: string): Observable<void> => {
                                 observer.next(url)
 
                                 return of(undefined)
@@ -106,7 +106,7 @@ describe('OptionsContainer', () => {
     })
 
     test('handles when an error is thrown checking the site connection', () => {
-        const ensureValidSite = () => {
+        const ensureValidSite = (): never => {
             throw new Error('no site, woops')
         }
 

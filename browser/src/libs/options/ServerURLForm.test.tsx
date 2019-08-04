@@ -82,7 +82,7 @@ describe('ServerURLForm', () => {
 
         scheduler.run(({ cold, expectObservable }) => {
             const submits = new Subject<void>()
-            const nextSubmit = () => submits.next()
+            const nextSubmit = (): void => submits.next()
 
             const { container } = render(
                 <ServerURLForm
@@ -123,10 +123,10 @@ describe('ServerURLForm', () => {
 
         scheduler.run(({ cold, expectObservable }) => {
             const changes = new Subject<string>()
-            const nextChange = () => changes.next()
+            const nextChange = (): void => changes.next()
 
             const submits = new Subject<void>()
-            const nextSubmit = () => submits.next()
+            const nextSubmit = (): void => submits.next()
 
             const props: ServerURLFormProps = {
                 value: 'https://sourcegraph.com',

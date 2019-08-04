@@ -19,7 +19,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
 
-const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 /** Props shared by SettingsArea and its sub-pages. */
 interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps {
@@ -74,7 +74,7 @@ export class SettingsArea extends React.Component<Props, State> {
         eventLogger.logViewEvent(`Settings${this.props.subject.__typename}`)
         // Load settings.
         this.subscriptions.add(
-            combineLatest(this.subjectChanges, this.refreshRequests.pipe(startWith<void>(void 0)))
+            combineLatest(this.subjectChanges, this.refreshRequests.pipe(startWith<void>(undefined)))
                 .pipe(
                     distinctUntilChanged(),
                     switchMap(([{ id }]) =>

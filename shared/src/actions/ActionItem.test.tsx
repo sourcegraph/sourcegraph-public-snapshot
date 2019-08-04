@@ -7,8 +7,8 @@ import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionItem } from './ActionItem'
 
 describe('ActionItem', () => {
-    const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: async () => void 0 }
-    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => void 0 }
+    const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve(undefined) }
+    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined }
     const history = H.createMemoryHistory()
 
     test('non-actionItem variant', () => {
@@ -104,14 +104,14 @@ describe('ActionItem', () => {
                 variant="actionItem"
                 disabledDuringExecution={true}
                 location={history.location}
-                extensionsController={{ ...NOOP_EXTENSIONS_CONTROLLER, executeCommand: async () => wait }}
+                extensionsController={{ ...NOOP_EXTENSIONS_CONTROLLER, executeCommand: () => wait }}
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
 
         // Run command and wait for execution to finish.
         let tree = component.toJSON()
-        tree!.props.onClick({ preventDefault: () => void 0, currentTarget: { blur: () => void 0 } })
+        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
         tree = component.toJSON()
         expect(tree).toMatchSnapshot()
 
@@ -133,14 +133,14 @@ describe('ActionItem', () => {
                 variant="actionItem"
                 showLoadingSpinnerDuringExecution={true}
                 location={history.location}
-                extensionsController={{ ...NOOP_EXTENSIONS_CONTROLLER, executeCommand: async () => wait }}
+                extensionsController={{ ...NOOP_EXTENSIONS_CONTROLLER, executeCommand: () => wait }}
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
 
         // Run command and wait for execution to finish.
         let tree = component.toJSON()
-        tree!.props.onClick({ preventDefault: () => void 0, currentTarget: { blur: () => void 0 } })
+        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
         tree = component.toJSON()
         expect(tree).toMatchSnapshot()
 
@@ -162,7 +162,7 @@ describe('ActionItem', () => {
                 location={history.location}
                 extensionsController={{
                     ...NOOP_EXTENSIONS_CONTROLLER,
-                    executeCommand: async () => Promise.reject('x'),
+                    executeCommand: () => Promise.reject(new Error('x')),
                 }}
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
@@ -171,7 +171,7 @@ describe('ActionItem', () => {
         // Run command (which will reject with an error). (Use setTimeout to wait for the executeCommand resolution
         // to result in the setState call.)
         let tree = component.toJSON()
-        tree!.props.onClick({ preventDefault: () => void 0, currentTarget: { blur: () => void 0 } })
+        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
         await new Promise<void>(r => setTimeout(r))
         tree = component.toJSON()
         expect(tree).toMatchSnapshot()
@@ -187,7 +187,7 @@ describe('ActionItem', () => {
                 location={history.location}
                 extensionsController={{
                     ...NOOP_EXTENSIONS_CONTROLLER,
-                    executeCommand: async () => Promise.reject('x'),
+                    executeCommand: () => Promise.reject(new Error('x')),
                 }}
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
@@ -196,7 +196,7 @@ describe('ActionItem', () => {
         // Run command (which will reject with an error). (Use setTimeout to wait for the executeCommand resolution
         // to result in the setState call.)
         let tree = component.toJSON()
-        tree!.props.onClick({ preventDefault: () => void 0, currentTarget: { blur: () => void 0 } })
+        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
         await new Promise<void>(r => setTimeout(r))
         tree = component.toJSON()
         expect(tree).toMatchSnapshot()

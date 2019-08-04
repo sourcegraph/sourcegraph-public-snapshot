@@ -18,7 +18,7 @@ interface SurveyFormProps {
     authenticatedUser: GQL.IUser | null
     score?: number
     onScoreChange?: (score: number) => void
-    onSubmit: () => void
+    onSubmit?: () => void
 }
 
 interface SurveyFormState {
@@ -190,18 +190,11 @@ export class SurveyPage extends React.Component<SurveyPageProps> {
                 <PageTitle title="Almost there..." />
                 <HeroPage
                     title="Almost there..."
-                    cta={
-                        <SurveyForm
-                            score={this.intScore(this.props.match.params.score)}
-                            onSubmit={this.onSubmit}
-                            {...this.props}
-                        />
-                    }
+                    cta={<SurveyForm score={this.intScore(this.props.match.params.score)} {...this.props} />}
                 />
             </div>
         )
     }
 
     private intScore = (score?: string) => (score ? Math.max(0, Math.min(10, Math.round(+score))) : undefined)
-    private onSubmit = () => this.setState({ complete: true })
 }

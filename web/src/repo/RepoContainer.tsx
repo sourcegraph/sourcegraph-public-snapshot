@@ -72,7 +72,6 @@ interface RepoContainerProps
 
 interface RepoRevContainerState extends ParsedRepoRev {
     filePath?: string
-    rest?: string
 
     /**
      * The fetched repository or an error if occurred.
@@ -153,8 +152,8 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
 
         // Update header and other global state.
         this.subscriptions.add(
-            parsedRouteChanges.subscribe(({ repoName, rev, rawRev, rest }) => {
-                this.setState({ repoName, rev, rawRev, rest })
+            parsedRouteChanges.subscribe(({ repoName, rev, rawRev }) => {
+                this.setState({ repoName, rev, rawRev })
 
                 queryUpdates.next(searchQueryForRepoRev(repoName, rev))
             })

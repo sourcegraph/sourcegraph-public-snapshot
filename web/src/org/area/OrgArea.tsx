@@ -59,7 +59,7 @@ function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> 
     )
 }
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 

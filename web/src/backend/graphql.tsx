@@ -2,7 +2,7 @@ import { Observable } from 'rxjs'
 import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 
-const getHeaders = () => ({
+const getHeaders = (): { [header: string]: string } => ({
     ...window.context.xhrHeaders,
     Accept: 'application/json',
     'Content-Type': 'application/json',

@@ -11,7 +11,7 @@ import { OrgArea, OrgAreaRoute } from './area/OrgArea'
 import { OrgAreaHeaderNavItem } from './area/OrgHeader'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"

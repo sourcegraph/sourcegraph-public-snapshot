@@ -57,7 +57,7 @@ export const registryExtensionFragment = gql`
     }
 `
 
-const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 export interface ExtensionAreaRoute extends RouteDescriptor<ExtensionAreaRouteContext> {}
 

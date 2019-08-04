@@ -79,18 +79,14 @@ interface RepoRevContainerProps
     onResolvedRevOrError: (v: ResolvedRev | ErrorLike | undefined) => void
 }
 
-interface RepoRevContainerState {
-    showSidebar: boolean
-}
+interface RepoRevContainerState {}
 
 /**
  * A container for a repository page that incorporates revisioned Git data. (For example,
  * blob and tree pages are revisioned, but the repository settings page is not.)
  */
 export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps, RepoRevContainerState> {
-    public state: RepoRevContainerState = {
-        showSidebar: true,
-    }
+    public state: RepoRevContainerState = {}
 
     private propsUpdates = new Subject<RepoRevContainerProps>()
     private subscriptions = new Subscription()
@@ -149,7 +145,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
         this.propsUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: RepoRevContainerProps): void {
+    public componentDidUpdate(props: RepoRevContainerProps): void {
         this.propsUpdates.next(props)
     }
 

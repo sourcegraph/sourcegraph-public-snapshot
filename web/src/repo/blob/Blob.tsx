@@ -41,7 +41,7 @@ import { LineDecorationAttachment } from './LineDecorationAttachment'
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorationAttachment} portal containers.
  */
-const toPortalID = (line: number) => `line-decoration-attachment-${line}`
+const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
 interface BlobProps
     extends AbsoluteRepoFile,
@@ -178,12 +178,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         })
         this.subscriptions.add(hoverifier)
 
-        const resolveContext = () => ({
-            repoName: this.props.repoName,
-            rev: this.props.rev,
-            commitID: this.props.commitID,
-            filePath: this.props.filePath,
-        })
         this.subscriptions.add(
             hoverifier.hoverify({
                 positionEvents: this.codeViewElements.pipe(
@@ -200,11 +194,16 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         scrollElement: scrollElement!,
                     }))
                 ),
-                resolveContext,
+                resolveContext: () => ({
+                    repoName: this.props.repoName,
+                    rev: this.props.rev,
+                    commitID: this.props.commitID,
+                    filePath: this.props.filePath,
+                }),
                 dom: domFunctions,
             })
         )
-        const goToDefinition = (ev: MouseEvent) => {
+        const goToDefinition = (ev: MouseEvent): void => {
             const goToDefinitionAction =
                 Array.isArray(this.state.actionsOrError) &&
                 this.state.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')

@@ -47,7 +47,7 @@ export function initSentry(script: 'content' | 'options' | 'background', codeHos
 
         callSentryInit(browser.runtime.id)
 
-        Sentry.configureScope(async scope => {
+        Sentry.configureScope(scope => {
             scope.setTag('script', script)
             scope.setTag('extension_version', getExtensionVersion())
             if (codeHost) {

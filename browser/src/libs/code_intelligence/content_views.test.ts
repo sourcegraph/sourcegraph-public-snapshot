@@ -20,7 +20,7 @@ describe('content_views', () => {
             subscriptions = new Subscription()
         })
 
-        const createTestElement = () => {
+        const createTestElement = (): HTMLElement => {
             const el = document.createElement('div')
             el.className = `test test-${uniqueId()}`
             document.body.appendChild(el)

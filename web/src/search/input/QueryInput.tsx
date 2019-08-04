@@ -74,9 +74,6 @@ interface State {
 
     /** Index of the currently selected suggestion (-1 if none selected) */
     selectedSuggestion: number
-
-    /** Whether suggestions are currently being fetched */
-    loading: boolean
 }
 
 export class QueryInput extends React.Component<Props, State> {
@@ -117,7 +114,6 @@ export class QueryInput extends React.Component<Props, State> {
         this.state = {
             hideSuggestions: false,
             inputFocused: false,
-            loading: false,
             selectedSuggestion: -1,
             suggestions: [],
         }
@@ -131,38 +127,23 @@ export class QueryInput extends React.Component<Props, State> {
                     debounceTime(200),
                     switchMap(query => {
                         if (query.length < QueryInput.SUGGESTIONS_QUERY_MIN_LENGTH) {
-                            return [{ suggestions: [], selectedSuggestion: -1, loading: false }]
+                            return [{ suggestions: [], selectedSuggestion: -1 }]
                         }
                         const fullQuery = [this.props.prependQueryForSuggestions, this.props.value]
                             .filter(s => !!s)
                             .join(' ')
-                        const suggestionsFetch = fetchSuggestions(fullQuery).pipe(
+                        return fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
                             toArray(),
                             map((suggestions: Suggestion[]) => ({
                                 suggestions,
                                 selectedSuggestion: -1,
                                 hideSuggestions: false,
-                                loading: false,
                             })),
                             catchError((err: Error) => {
                                 console.error(err)
-                                this.setState({ loading: false })
-                                // HACK: if we catchError before 100ms, then the loader will display over us.
-                                // This is not a good fix.
-                                setTimeout(() => this.setState({ loading: false }), 120)
-                                return [{}]
-                            }),
-                            publishReplay(),
-                            refCount()
-                        )
-                        return merge(
-                            suggestionsFetch,
-                            // Show a loader if the fetch takes longer than 100ms
-                            of({ loading: true }).pipe(
-                                delay(100),
-                                takeUntil(suggestionsFetch)
-                            )
+                                return []
+                            })
                         )
                     }),
                     // Abort suggestion display on route change or suggestion hiding
@@ -175,7 +156,6 @@ export class QueryInput extends React.Component<Props, State> {
                         this.setState(state as State)
                     },
                     err => {
-                        this.setState({ loading: false })
                         console.error(err)
                     }
                 )
@@ -299,19 +279,19 @@ export class QueryInput extends React.Component<Props, State> {
                     <ul className="query-input2__suggestions" ref={this.setSuggestionListElement}>
                         {this.state.suggestions.map((suggestion, i) => {
                             const isSelected = this.state.selectedSuggestion === i
-                            const onRef = (ref: HTMLLIElement | null) => {
-                                if (isSelected) {
-                                    this.selectedSuggestionElement = ref || undefined
-                                }
-                            }
                             return (
                                 <SuggestionItem
                                     key={i}
                                     suggestion={suggestion}
                                     isSelected={isSelected}
-                                    // tslint:disable-next-line:jsx-no-lambda
+                                    // eslint-disable-next-line react/jsx-no-bind
                                     onClick={() => this.selectSuggestion(suggestion)}
-                                    liRef={onRef}
+                                    // eslint-disable-next-line react/jsx-no-bind
+                                    liRef={(ref: HTMLLIElement | null) => {
+                                        if (isSelected) {
+                                            this.selectedSuggestionElement = ref || undefined
+                                        }
+                                    }}
                                 />
                             )
                         })}
@@ -365,7 +345,7 @@ export class QueryInput extends React.Component<Props, State> {
 
     private onInputBlur: React.FocusEventHandler<HTMLInputElement> = event => {
         this.suggestionsHidden.next()
-        this.setState({ inputFocused: false, loading: false, hideSuggestions: true })
+        this.setState({ inputFocused: false, hideSuggestions: true })
     }
 
     private onInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = event => {
@@ -374,7 +354,7 @@ export class QueryInput extends React.Component<Props, State> {
         switch (event.key) {
             case Key.Escape: {
                 this.suggestionsHidden.next()
-                this.setState({ loading: false, hideSuggestions: true, selectedSuggestion: -1 })
+                this.setState({ hideSuggestions: true, selectedSuggestion: -1 })
                 break
             }
             case Key.ArrowDown: {
@@ -408,11 +388,8 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     private moveSelection(steps: number): void {
-        this.setState({
-            selectedSuggestion: Math.max(
-                Math.min(this.state.selectedSuggestion + steps, this.state.suggestions.length - 1),
-                -1
-            ),
-        })
+        this.setState(state => ({
+            selectedSuggestion: Math.max(Math.min(state.selectedSuggestion + steps, state.suggestions.length - 1), -1),
+        }))
     }
 }

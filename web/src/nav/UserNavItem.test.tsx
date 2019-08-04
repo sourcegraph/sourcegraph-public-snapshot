@@ -30,7 +30,7 @@ describe('UserNavItem', () => {
                         <UserNavItem
                             isLightTheme={true}
                             // tslint:disable-next-line:jsx-no-lambda
-                            onThemePreferenceChange={() => void 0}
+                            onThemePreferenceChange={() => undefined}
                             themePreference={ThemePreference.Light}
                             location={history.location}
                             authenticatedUser={USER}
