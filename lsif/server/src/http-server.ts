@@ -200,7 +200,7 @@ const dbLRU = new LRU<string, LRUDBEntry>({
  * repository@commit. Internally, it either gets the `Database` from the LRU
  * cache or loads it from storage.
  */
-async function withDB(repositoryCommit: RepositoryCommit, action: (db: Database) => Promise<void>): Promise<void> {
+async function withDB(repositoryCommit: RepositoryCommit, action: (db: Database) => Promise<void> | void): Promise<void> {
     const entry = dbLRU.get(diskKey(repositoryCommit))
     if (entry) {
         await action(await entry.dbPromise)
@@ -250,7 +250,7 @@ function main(): void {
             }
 
             try {
-                await withDB({ repository, commit }, async db => {
+                await withDB({ repository, commit }, db => {
                     let result: any
                     switch (method) {
                         case 'hover':

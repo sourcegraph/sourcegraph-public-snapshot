@@ -21,7 +21,8 @@
   "license": "MIT",
   "main": "dist/lsif.js",
   "scripts": {
-    "tslint": "tslint -p tsconfig.json './src/**/*.ts'",
+    "tslint": "../../node_modules/.bin/tslint -p tsconfig.json './src/**/*.ts'",
+    "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
     "typecheck": "tsc -p tsconfig.json",
     "build": "parcel build --out-file dist/lsif.js src/lsif.ts",
     "symlink-package": "mkdirp dist && lnfs ./package.json ./dist/package.json",

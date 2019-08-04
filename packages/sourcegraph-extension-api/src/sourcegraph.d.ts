@@ -45,7 +45,7 @@ declare module 'sourcegraph' {
          * Check if this position is before `other`.
          *
          * @param other A position.
-         * @return `true` if position is on a smaller line
+         * @returns `true` if position is on a smaller line
          * or on the same line on a smaller character.
          */
         isBefore(other: Position): boolean
@@ -54,7 +54,7 @@ declare module 'sourcegraph' {
          * Check if this position is before or equal to `other`.
          *
          * @param other A position.
-         * @return `true` if position is on a smaller line
+         * @returns `true` if position is on a smaller line
          * or on the same line on a smaller or equal character.
          */
         isBeforeOrEqual(other: Position): boolean
@@ -63,7 +63,7 @@ declare module 'sourcegraph' {
          * Check if this position is after `other`.
          *
          * @param other A position.
-         * @return `true` if position is on a greater line
+         * @returns `true` if position is on a greater line
          * or on the same line on a greater character.
          */
         isAfter(other: Position): boolean
@@ -72,7 +72,7 @@ declare module 'sourcegraph' {
          * Check if this position is after or equal to `other`.
          *
          * @param other A position.
-         * @return `true` if position is on a greater line
+         * @returns `true` if position is on a greater line
          * or on the same line on a greater or equal character.
          */
         isAfterOrEqual(other: Position): boolean
@@ -81,7 +81,7 @@ declare module 'sourcegraph' {
          * Check if this position is equal to `other`.
          *
          * @param other A position.
-         * @return `true` if the line and character of the given position are equal to
+         * @returns `true` if the line and character of the given position are equal to
          * the line and character of this position.
          */
         isEqual(other: Position): boolean
@@ -90,7 +90,7 @@ declare module 'sourcegraph' {
          * Compare this to `other`.
          *
          * @param other A position.
-         * @return A number smaller than zero if this position is before the given position,
+         * @returns A number smaller than zero if this position is before the given position,
          * a number greater than zero if this position is after the given position, or zero when
          * this and the given position are equal.
          */
@@ -101,7 +101,7 @@ declare module 'sourcegraph' {
          *
          * @param lineDelta Delta value for the line value, default is `0`.
          * @param characterDelta Delta value for the character value, default is `0`.
-         * @return A position which line and character is the sum of the current line and
+         * @returns A position which line and character is the sum of the current line and
          * character and the corresponding deltas.
          */
         translate(lineDelta?: number, characterDelta?: number): Position
@@ -110,7 +110,7 @@ declare module 'sourcegraph' {
          * Derived a new position relative to this position.
          *
          * @param change An object that describes a delta to this position.
-         * @return A position that reflects the given delta. Will return `this` position if the change
+         * @returns A position that reflects the given delta. Will return `this` position if the change
          * is not changing anything.
          */
         translate(change: { lineDelta?: number; characterDelta?: number }): Position
@@ -120,7 +120,7 @@ declare module 'sourcegraph' {
          *
          * @param line Value that should be used as line value, default is the [existing value](#Position.line)
          * @param character Value that should be used as character value, default is the [existing value](#Position.character)
-         * @return A position where line and character are replaced by the given values.
+         * @returns A position where line and character are replaced by the given values.
          */
         with(line?: number, character?: number): Position
 
@@ -128,7 +128,7 @@ declare module 'sourcegraph' {
          * Derived a new position from this position.
          *
          * @param change An object that describes a change to this position.
-         * @return A position that reflects the given change. Will return `this` position if the change
+         * @returns A position that reflects the given change. Will return `this` position if the change
          * is not changing anything.
          */
         with(change: { line?: number; character?: number }): Position
@@ -187,7 +187,7 @@ declare module 'sourcegraph' {
          * Check if a position or a range is contained in this range.
          *
          * @param positionOrRange A position or a range.
-         * @return `true` if the position or range is inside or equal
+         * @returns `true` if the position or range is inside or equal
          * to this range.
          */
         contains(positionOrRange: Position | Range): boolean
@@ -196,7 +196,7 @@ declare module 'sourcegraph' {
          * Check if `other` equals this range.
          *
          * @param other A range.
-         * @return `true` when start and end are [equal](#Position.isEqual) to
+         * @returns `true` when start and end are [equal](#Position.isEqual) to
          * start and end of this range.
          */
         isEqual(other: Range): boolean
@@ -206,7 +206,7 @@ declare module 'sourcegraph' {
          * if the ranges have no overlap.
          *
          * @param range A range.
-         * @return A range of the greater start and smaller end positions. Will
+         * @returns A range of the greater start and smaller end positions. Will
          * return undefined when there is no overlap.
          */
         intersection(range: Range): Range | undefined
@@ -215,7 +215,7 @@ declare module 'sourcegraph' {
          * Compute the union of `other` with this range.
          *
          * @param other A range.
-         * @return A range of smaller start position and the greater end position.
+         * @returns A range of smaller start position and the greater end position.
          */
         union(other: Range): Range
 
@@ -224,7 +224,7 @@ declare module 'sourcegraph' {
          *
          * @param start A position that should be used as start. The default value is the [current start](#Range.start).
          * @param end A position that should be used as end. The default value is the [current end](#Range.end).
-         * @return A range derived from this range with the given start and end position.
+         * @returns A range derived from this range with the given start and end position.
          * If start and end are not different `this` range will be returned.
          */
         with(start?: Position, end?: Position): Range
@@ -233,7 +233,7 @@ declare module 'sourcegraph' {
          * Derived a new range from this range.
          *
          * @param change An object that describes a change to this range.
-         * @return A range that reflects the given change. Will return `this` range if the change
+         * @returns A range that reflects the given change. Will return `this` range if the change
          * is not changing anything.
          */
         with(change: { start?: Position; end?: Position }): Range
@@ -333,7 +333,7 @@ declare module 'sourcegraph' {
          * The position will be adjusted using {@link TextDocument#validatePosition}.
          *
          * @param position A position.
-         * @return A valid zero-based offset.
+         * @returns A valid zero-based offset.
          * @throws if {@link TextDocument#text} is undefined.
          */
         offsetAt(position: Position): number
@@ -342,7 +342,7 @@ declare module 'sourcegraph' {
          * Convert a zero-based offset to a position.
          *
          * @param offset A zero-based offset.
-         * @return A valid {@link Position}.
+         * @returns A valid {@link Position}.
          * @throws if {@link TextDocument#text} is undefined.
          */
         positionAt(offset: number): Position
@@ -352,7 +352,7 @@ declare module 'sourcegraph' {
          * it is.
          *
          * @param position A position.
-         * @return The given position or a new, adjusted position.
+         * @returns The given position or a new, adjusted position.
          * @throws if {@link TextDocument#text} is undefined.
          */
         validatePosition(position: Position): Position
@@ -361,7 +361,7 @@ declare module 'sourcegraph' {
          * Ensure a range is completely contained in this document.
          *
          * @param range A range.
-         * @return The given range or a new, adjusted range.
+         * @returns The given range or a new, adjusted range.
          * @throws if {@link TextDocument#text} is undefined.
          */
         validateRange(range: Range): Range
@@ -372,7 +372,7 @@ declare module 'sourcegraph' {
          * The position will be adjusted using {@link TextDocument#validatePosition}.
          *
          * @param position A position.
-         * @return A range spanning a word, or `undefined`.
+         * @returns A range spanning a word, or `undefined`.
          */
         getWordRangeAtPosition(position: Position): Range | undefined
     }
@@ -384,8 +384,14 @@ declare module 'sourcegraph' {
      * A document filter matches if all the provided properties (those of `language`, `scheme` and `pattern` that are not `undefined`) match.
      * If all properties are `undefined`, the document filter matches all documents.
      *
-     * @sample A language filter that applies to typescript files on disk: `{ language: 'typescript', scheme: 'file' }`
-     * @sample A language filter that applies to all package.json paths: `{ language: 'json', pattern: '**package.json' }`
+     * Examples:
+     * ```ts
+     * // A language filter that applies to typescript files on disk
+     * { language: 'typescript', scheme: 'file' }
+     *
+     * // A language filter that applies to all package.json paths
+     * { language: 'json', pattern: '**package.json' }
+     * ```
      */
     export interface DocumentFilter {
         /** A language id, such as `typescript` or `*`. */
@@ -487,7 +493,7 @@ declare module 'sourcegraph' {
          * @param task A callback returning a promise. Progress state can be reported with
          * the provided [ProgressReporter](#ProgressReporter)-object.
          *
-         * @return The Promise the task-callback returned.
+         * @returns The Promise the task-callback returned.
          */
         withProgress<R>(options: ProgressOptions, task: (reporter: ProgressReporter) => Promise<R>): Promise<R>
 
@@ -495,7 +501,7 @@ declare module 'sourcegraph' {
          * Show progress in the window. The returned ProgressReporter can be used to update the
          * progress bar, complete it or turn the notification into an error notification in case the operation failed.
          *
-         * @return A ProgressReporter that allows updating the progress display.
+         * @returns A ProgressReporter that allows updating the progress display.
          */
         showProgress(options: ProgressOptions): Promise<ProgressReporter>
 
@@ -503,7 +509,7 @@ declare module 'sourcegraph' {
          * Show a modal message to the user that the user must dismiss before continuing.
          *
          * @param message The message to show.
-         * @return A promise that resolves when the user dismisses the message.
+         * @returns A promise that resolves when the user dismisses the message.
          */
         showMessage(message: string): Promise<void>
 
@@ -514,7 +520,7 @@ declare module 'sourcegraph' {
          * ESC key). Otherwise the returned value will be the string provided by the user.
          *
          * @param options Configures the behavior of the input box.
-         * @return The string provided by the user, or `undefined` if the input box was canceled.
+         * @returns The string provided by the user, or `undefined` if the input box was canceled.
          */
         showInputBox(options?: InputBoxOptions): Promise<string | undefined>
     }
@@ -804,7 +810,7 @@ declare module 'sourcegraph' {
          * @template C The configuration schema.
          * @template K Valid key on the configuration object.
          * @param key The name of the configuration property to get.
-         * @return The configuration value, or `undefined`.
+         * @returns The configuration value, or `undefined`.
          */
         get<K extends keyof C>(key: K): Readonly<C[K]> | undefined
 
@@ -816,7 +822,7 @@ declare module 'sourcegraph' {
          * @template K Valid key on the configuration object.
          * @param key The name of the configuration property to update.
          * @param value The new value, or undefined to remove it.
-         * @return A promise that resolves when the client acknowledges the update.
+         * @returns A promise that resolves when the client acknowledges the update.
          */
         update<K extends keyof C>(key: K, value: C[K] | undefined): Promise<void>
 
@@ -846,7 +852,7 @@ declare module 'sourcegraph' {
          * Returns the full configuration object.
          *
          * @template C The configuration schema.
-         * @return The full configuration object.
+         * @returns The full configuration object.
          */
         export function get<C extends object = { [key: string]: any }>(): Configuration<C>
 
@@ -856,7 +862,7 @@ declare module 'sourcegraph' {
          * configuration values.
          *
          * @template C The configuration schema.
-         * @return An unsubscribable to stop calling the callback for configuration changes.
+         * @returns An unsubscribable to stop calling the callback for configuration changes.
          */
         export function subscribe(next: () => void): Unsubscribable
     }
@@ -959,7 +965,7 @@ declare module 'sourcegraph' {
          *
          * @param document The document in which the command was invoked.
          * @param position The position at which the command was invoked.
-         * @return A definition location, or an array of definitions, or `null` if there is no definition.
+         * @returns A definition location, or an array of definitions, or `null` if there is no definition.
          */
         provideDefinition(document: TextDocument, position: Position): ProviderResult<Definition>
     }
@@ -983,7 +989,7 @@ declare module 'sourcegraph' {
          * @param document The document in which the command was invoked.
          * @param position The position at which the command was invoked.
          * @param context Additional information and parameters for the request.
-         * @return An array of reference locations.
+         * @returns An array of reference locations.
          */
         provideReferences(
             document: TextDocument,
@@ -1002,7 +1008,7 @@ declare module 'sourcegraph' {
          *
          * @param document The document in which the command was invoked.
          * @param position The position at which the command was invoked.
-         * @return Related locations, or `null` if there are none.
+         * @returns Related locations, or `null` if there are none.
          */
         provideLocations(document: TextDocument, position: Position): ProviderResult<Location[]>
     }
@@ -1057,7 +1063,7 @@ declare module 'sourcegraph' {
          * @param document The document in which the command was invoked.
          * @param position The position at which the command was invoked.
          *
-         * @return An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
+         * @returns An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
          * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
          */
         provideCompletionItems(document: TextDocument, position: Position): ProviderResult<CompletionList>
@@ -1074,7 +1080,7 @@ declare module 'sourcegraph' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A hover provider.
-         * @return An unsubscribable to unregister this provider.
+         * @returns An unsubscribable to unregister this provider.
          */
         export function registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Unsubscribable
 
@@ -1087,7 +1093,7 @@ declare module 'sourcegraph' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A definition provider.
-         * @return An unsubscribable to unregister this provider.
+         * @returns An unsubscribable to unregister this provider.
          */
         export function registerDefinitionProvider(
             selector: DocumentSelector,
@@ -1103,7 +1109,7 @@ declare module 'sourcegraph' {
          *
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A reference provider.
-         * @return An unsubscribable to unregister this provider.
+         * @returns An unsubscribable to unregister this provider.
          */
         export function registerReferenceProvider(
             selector: DocumentSelector,
@@ -1122,7 +1128,7 @@ declare module 'sourcegraph' {
          * @param id An identifier for this location provider that distinguishes it from other location providers.
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A location provider.
-         * @return An unsubscribable to unregister this provider.
+         * @returns An unsubscribable to unregister this provider.
          */
         export function registerLocationProvider(
             id: string,
@@ -1139,7 +1145,7 @@ declare module 'sourcegraph' {
          *
          * @param selector A selector that defines the documents this provider applies to.
          * @param provider A completion item provider.
-         * @return An unsubscribable to unregister this provider.
+         * @returns An unsubscribable to unregister this provider.
          */
         export function registerCompletionItemProvider(
             selector: DocumentSelector,
@@ -1192,7 +1198,7 @@ declare module 'sourcegraph' {
          * @param command A unique identifier for the command.
          * @param callback A command function. If it returns a {@link Promise}, execution waits until it is
          *                 resolved.
-         * @return Unsubscribable to unregister this command.
+         * @returns Unsubscribable to unregister this command.
          * @throws Registering a command with an existing command identifier throws an error.
          */
         export function registerCommand(command: string, callback: (...args: any[]) => any): Unsubscribable
@@ -1203,7 +1209,7 @@ declare module 'sourcegraph' {
          * @template T The result type of the command.
          * @param command Identifier of the command to execute.
          * @param rest Parameters passed to the command function.
-         * @return A {@link Promise} that resolves to the result of the given command.
+         * @returns A {@link Promise} that resolves to the result of the given command.
          * @throws If no command exists wih the given command identifier, an error is thrown.
          */
         export function executeCommand<T = any>(command: string, ...args: any[]): Promise<T>

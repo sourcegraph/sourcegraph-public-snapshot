@@ -64,7 +64,7 @@ const lsifDocs = new Map<string, Promise<boolean>>()
 
 async function hasLSIF(doc: sourcegraph.TextDocument): Promise<boolean> {
     if (lsifDocs.has(doc.uri)) {
-        return lsifDocs.get(doc.uri)!
+        return await lsifDocs.get(doc.uri)!
     }
 
     const url = new URL('.api/lsif/exists', sourcegraph.internal.sourcegraphURL)
@@ -85,7 +85,7 @@ async function hasLSIF(doc: sourcegraph.TextDocument): Promise<boolean> {
 
     lsifDocs.set(doc.uri, hasLSIFPromise)
 
-    return hasLSIFPromise
+    return await hasLSIFPromise
 }
 
 export function activate(ctx: sourcegraph.ExtensionContext): void {

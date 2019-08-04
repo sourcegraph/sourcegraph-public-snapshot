@@ -81,11 +81,8 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         this.propsChanges.next(this.props)
     }
 
-    public componentDidUpdate(): void {
-        this.propsChanges.next(this.props)
-    }
-
     public componentDidUpdate(prevProps: Props, prevState: State): void {
+        this.propsChanges.next(this.props)
         if (this.tableContainerElement) {
             const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
             for (const highlight of this.props.highlightRanges) {
