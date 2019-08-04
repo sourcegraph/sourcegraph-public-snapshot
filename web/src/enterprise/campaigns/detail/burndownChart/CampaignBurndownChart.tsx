@@ -65,8 +65,6 @@ const STYLE: React.CSSProperties = {
     backgroundColor: 'var(--body-bg)',
 }
 
-const SHOW_CLOSED = false
-
 const LOADING = 'loading' as const
 
 /**
