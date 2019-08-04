@@ -45,29 +45,111 @@ func ImportGitHubThreadEvents(ctx context.Context, threadID int64, repoID api.Re
 		return MockImportGitHubThreadEvents()
 	}
 
-	number, err := parseIssueOrPullRequestNumberFromExternalURL(externalThreadURL)
+	pull, externalServiceID, err := getGitHubPullRequest(ctx, repoID, extRepo, externalThreadURL)
 	if err != nil {
 		return err
 	}
 
-	gh, err := getClientForRepo(ctx, repoID)
+	objects := events.Objects{Thread: threadID}
+
+	toImport := make([]events.CreationData, 0, len(pull.TimelineItems.Nodes)+1)
+
+	// Creation event.
+	toImport = append(toImport, events.CreationData{
+		Type:        eventTypeCreateThread,
+		Objects:     objects,
+		ActorUserID: 0, // TODO!(sqs): determine this, map from github if needed
+		CreatedAt:   pull.CreatedAt,
+	})
+
+	// GitHub timeline events.
+	for _, event := range pull.TimelineItems.Nodes {
+		// TODO!(sqs): map to sourcegraph event types
+		toImport = append(toImport, events.CreationData{
+			Type:      events.Type(event.Typename),
+			Objects:   objects,
+			Data:      event,
+			CreatedAt: event.CreatedAt,
+		})
+	}
+
+	return events.ImportExternalEvents(ctx, externalServiceID, objects, toImport)
+}
+
+var (
+	cliFactory = repos.NewHTTPClientFactory()
+)
+
+func getClientForRepo(ctx context.Context, repoID api.RepoID) (client *github.Client, externalServiceID int64, err error) {
+	// 🚨 SECURITY: Only site admins may read external services (they have secrets). TODO!(sqs)
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, 0, err
+	}
+
+	svcs, err := repoupdater.DefaultClient.RepoExternalServices(ctx, uint32(repoID))
 	if err != nil {
-		return err
+		return nil, 0, err
+	}
+	// TODO!(sqs): how to choose if there are multiple
+	if len(svcs) == 0 {
+		return nil, 0, fmt.Errorf("no external services exist for repo %d", repoID)
+	}
+	src, err := repos.NewGithubSource(&repos.ExternalService{
+		ID:          svcs[0].ID,
+		Kind:        svcs[0].Kind,
+		DisplayName: svcs[0].DisplayName,
+		Config:      svcs[0].Config,
+		CreatedAt:   svcs[0].CreatedAt,
+		UpdatedAt:   svcs[0].UpdatedAt,
+	}, cliFactory)
+	if err != nil {
+		return nil, 0, err
+	}
+	return src.Client(), svcs[0].ID, nil
+}
+
+func parseIssueOrPullRequestNumberFromExternalURL(externalURL string) (number int, err error) {
+	u, err := url.Parse(externalURL)
+	if err != nil {
+		return 0, err
+	}
+
+	i := strings.LastIndex(u.Path, "/")
+	if i == -1 {
+		err = errors.New("github url has no number")
+		return
+	}
+	return strconv.Atoi(u.Path[i+1:])
+}
+
+type githubPullRequest struct {
+	CreatedAt     time.Time
+	TimelineItems struct {
+		Nodes []githubEvent
+	}
+}
+
+type githubEvent struct {
+	Typename      string `json:"__typename"`
+	ID            graphql.ID
+	Actor, Author *struct{ Login string }
+	CreatedAt     time.Time
+}
+
+func getGitHubPullRequest(ctx context.Context, repoID api.RepoID, extRepo api.ExternalRepoSpec, externalThreadURL string) (pull *githubPullRequest, externalServiceID int64, err error) {
+	number, err := parseIssueOrPullRequestNumberFromExternalURL(externalThreadURL)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	gh, externalServiceID, err := getClientForRepo(ctx, repoID)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	var data struct {
 		Node *struct {
-			PullRequest *struct {
-				CreatedAt     time.Time
-				TimelineItems struct {
-					Nodes []struct {
-						Typename      string `json:"__typename"`
-						ID            graphql.ID
-						Actor, Author *struct{ Login string }
-						CreatedAt     time.Time
-					}
-				}
-			}
+			PullRequest *githubPullRequest
 		}
 	}
 	if err := gh.RequestGraphQL(ctx, "", `
@@ -110,82 +192,13 @@ createdAt
 		"repository":        extRepo.ID,
 		"pullRequestNumber": number,
 	}, &data); err != nil {
-		return err
+		return nil, 0, err
 	}
 	if data.Node == nil {
-		return fmt.Errorf("github repository with ID %q not found", extRepo.ID)
+		return nil, 0, fmt.Errorf("github repository with ID %q not found", extRepo.ID)
 	}
 	if data.Node.PullRequest == nil {
-		return fmt.Errorf("github repository with ID %q has no pull request #%d", extRepo.ID, number)
+		return nil, 0, fmt.Errorf("github repository with ID %q has no pull request #%d", extRepo.ID, number)
 	}
-
-	// Add creation event.
-	if err := events.CreateEvent(ctx, events.CreationData{
-		Type:        eventTypeCreateThread,
-		Objects:     events.Objects{Thread: threadID},
-		ActorUserID: 0, // TODO!(sqs): determine this, map from github if needed
-		CreatedAt:   data.Node.PullRequest.CreatedAt,
-	}); err != nil {
-		return err
-	}
-
-	// Add GitHub timeline events.
-	for _, event := range data.Node.PullRequest.TimelineItems.Nodes {
-		// TODO!(sqs): map to sourcegraph event types
-		if err := events.CreateEvent(ctx, events.CreationData{
-			Type:      events.Type(event.Typename),
-			Objects:   events.Objects{Thread: threadID},
-			Data:      event,
-			CreatedAt: event.CreatedAt,
-		}); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-var (
-	cliFactory = repos.NewHTTPClientFactory()
-)
-
-func getClientForRepo(ctx context.Context, repoID api.RepoID) (*github.Client, error) {
-	// 🚨 SECURITY: Only site admins may read external services (they have secrets). TODO!(sqs)
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	svcs, err := repoupdater.DefaultClient.RepoExternalServices(ctx, uint32(repoID))
-	if err != nil {
-		return nil, err
-	}
-	// TODO!(sqs): how to choose if there are multiple
-	if len(svcs) == 0 {
-		return nil, fmt.Errorf("no external services exist for repo %d", repoID)
-	}
-	src, err := repos.NewGithubSource(&repos.ExternalService{
-		ID:          svcs[0].ID,
-		Kind:        svcs[0].Kind,
-		DisplayName: svcs[0].DisplayName,
-		Config:      svcs[0].Config,
-		CreatedAt:   svcs[0].CreatedAt,
-		UpdatedAt:   svcs[0].UpdatedAt,
-	}, cliFactory)
-	if err != nil {
-		return nil, err
-	}
-	return src.Client(), nil
-}
-
-func parseIssueOrPullRequestNumberFromExternalURL(externalURL string) (number int, err error) {
-	u, err := url.Parse(externalURL)
-	if err != nil {
-		return 0, err
-	}
-
-	i := strings.LastIndex(u.Path, "/")
-	if i == -1 {
-		err = errors.New("github url has no number")
-		return
-	}
-	return strconv.Atoi(u.Path[i+1:])
+	return data.Node.PullRequest, externalServiceID, nil
 }

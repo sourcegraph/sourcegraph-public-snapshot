@@ -2,11 +2,14 @@ package events
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
 // Objects refers to the foreign key relationships that an event may have, to refer to objects
@@ -39,7 +42,10 @@ func CreateEvent(ctx context.Context, event CreationData) error {
 	if MockCreateEvent != nil {
 		return MockCreateEvent(event)
 	}
+	return createEvent(ctx, nil, event)
+}
 
+func createEvent(ctx context.Context, tx *sql.Tx, event CreationData) error {
 	v := &dbEvent{
 		Type:        event.Type,
 		ActorUserID: event.ActorUserID,
@@ -63,10 +69,56 @@ func CreateEvent(ctx context.Context, event CreationData) error {
 		}
 		v.ActorUserID = actor.DatabaseID()
 	}
-	if event.CreatedAt.IsZero() {
-		event.CreatedAt = time.Now()
+	if v.CreatedAt.IsZero() {
+		v.CreatedAt = time.Now()
 	}
 
-	_, err := dbEvents{}.Create(ctx, v)
+	_, err := dbEvents{}.Create(ctx, tx, v)
 	return err
+}
+
+var MockImportExternalEvents func(externalServiceID int64, objects Objects, toImport []CreationData) error
+
+// ImportExternalEvents replaces all existing events for the objects from the given external service
+// with a new set of events.
+func ImportExternalEvents(ctx context.Context, externalServiceID int64, objects Objects, toImport []CreationData) error {
+	if MockImportExternalEvents != nil {
+		return MockImportExternalEvents(externalServiceID, objects, toImport)
+	}
+
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	if externalServiceID == 0 {
+		panic("externalServiceID must be nonzero")
+	}
+	opt := dbEventsListOptions{
+		Objects:                       objects,
+		ImportedFromExternalServiceID: externalServiceID,
+	}
+
+	// Delete all existing events for the objects from the given external service.
+	if err := (dbEvents{}).Delete(ctx, tx, opt); err != nil {
+		return err
+	}
+
+	// Insert the new events.
+	for _, event := range toImport {
+		if err := createEvent(ctx, tx, event); err != nil {
+			return err
+		}
+	}
+	return nil
 }

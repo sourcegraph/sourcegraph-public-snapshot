@@ -93,8 +93,12 @@ CREATE TABLE events (
     repository_id integer REFERENCES repo(id) ON DELETE CASCADE,
     user_id integer REFERENCES users(id) ON DELETE CASCADE,
     organization_id integer REFERENCES orgs(id) ON DELETE CASCADE,
-    registry_extension_id integer REFERENCES registry_extensions(id) ON DELETE CASCADE
+    registry_extension_id integer REFERENCES registry_extensions(id) ON DELETE CASCADE,
+
+    imported_from_external_service_id bigint REFERENCES external_services(id) ON DELETE CASCADE
 );
-CREATE INDEX events_created_at ON events(created_at);
+CREATE INDEX events_thread_id ON events(thread_id, created_at ASC) WHERE thread_id IS NOT NULL;
+CREATE INDEX events_campaign_id ON events(campaign_id, created_at ASC) WHERE thread_id IS NOT NULL;
+CREATE INDEX events_imported_from_external_service_id ON events(imported_from_external_service_id);
 
 COMMIT;

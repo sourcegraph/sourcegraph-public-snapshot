@@ -30,11 +30,11 @@ func TestDB_Events(t *testing.T) {
 	}
 
 	wantEvent0 := &dbEvent{Type: "t0", ActorUserID: user1.ID}
-	event0, err := dbEvents{}.Create(ctx, wantEvent0)
+	event0, err := dbEvents{}.Create(ctx, nil, wantEvent0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	event1, err := dbEvents{}.Create(ctx,
+	event1, err := dbEvents{}.Create(ctx, nil,
 		&dbEvent{Type: "t1", ActorUserID: user1.ID, Objects: Objects{User: user1.ID}},
 	)
 	if err != nil {
@@ -82,6 +82,20 @@ func TestDB_Events(t *testing.T) {
 		norm(event1)
 		if want := []*dbEvent{event1}; !reflect.DeepEqual(ts, want) {
 			t.Errorf("got %+v, want %+v", ts, want)
+		}
+	}
+
+	{
+		// Delete by object.
+		if err := (dbEvents{}).Delete(ctx, nil, dbEventsListOptions{Objects: Objects{User: user1.ID}}); err != nil {
+			t.Fatal(err)
+		}
+		n, err := dbEvents{}.Count(ctx, dbEventsListOptions{Objects: Objects{User: user1.ID}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if n != 0 {
+			t.Errorf("got %d events, want 0 after deleting", n)
 		}
 	}
 }

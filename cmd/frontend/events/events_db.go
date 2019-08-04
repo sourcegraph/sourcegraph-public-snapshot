@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"time"
 
@@ -18,7 +19,8 @@ type dbEvent struct {
 	ActorUserID int32
 	CreatedAt   time.Time
 	Objects
-	Data []byte
+	Data                          []byte
+	ImportedFromExternalServiceID int64
 }
 
 // errEventNotFound occurs when a database operation expects a specific event to exist but it
@@ -27,11 +29,11 @@ var errEventNotFound = errors.New("event not found")
 
 type dbEvents struct{}
 
-const selectColumns = `id, type, actor_user_id, created_at, data, thread_id, campaign_id, comment_id, rule_id, repository_id, user_id, organization_id, registry_extension_id`
+const selectColumns = `id, type, actor_user_id, created_at, data, thread_id, campaign_id, comment_id, rule_id, repository_id, user_id, organization_id, registry_extension_id, imported_from_external_service_id`
 
 // Create creates a event. The event argument's (Event).ID field is ignored. The new event is
 // returned.
-func (dbEvents) Create(ctx context.Context, event *dbEvent) (*dbEvent, error) {
+func (dbEvents) Create(ctx context.Context, tx *sql.Tx, event *dbEvent) (*dbEvent, error) {
 	if mocks.events.Create != nil {
 		return mocks.events.Create(event)
 	}
@@ -39,7 +41,6 @@ func (dbEvents) Create(ctx context.Context, event *dbEvent) (*dbEvent, error) {
 	if event.ID != 0 {
 		panic("event.ID must not be set")
 	}
-
 	nilIfZero32 := func(v int32) *int32 {
 		if v == 0 {
 			return nil
@@ -56,7 +57,6 @@ func (dbEvents) Create(ctx context.Context, event *dbEvent) (*dbEvent, error) {
 	if event.Data != nil {
 		data = &event.Data
 	}
-
 	args := []interface{}{
 		event.Type,
 		event.ActorUserID,
@@ -70,12 +70,24 @@ func (dbEvents) Create(ctx context.Context, event *dbEvent) (*dbEvent, error) {
 		nilIfZero32(event.Objects.User),
 		nilIfZero32(event.Objects.Organization),
 		nilIfZero32(event.Objects.RegistryExtension),
+		nilIfZero64(event.ImportedFromExternalServiceID),
 	}
 	query := sqlf.Sprintf(
 		`INSERT INTO events(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+selectColumns,
 		args...,
 	)
-	return dbEvents{}.scanRow(dbconn.Global.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
+
+	return dbEvents{}.scanRow(dbhOrGlobal(tx).QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
+}
+
+func dbhOrGlobal(tx *sql.Tx) interface {
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+} {
+	if tx == nil {
+		return dbconn.Global
+	}
+	return tx
 }
 
 // GetByID retrieves the event (if any) given its ID.
@@ -100,6 +112,7 @@ func (s dbEvents) GetByID(ctx context.Context, id int64) (*dbEvent, error) {
 type dbEventsListOptions struct {
 	Since time.Time
 	Objects
+	ImportedFromExternalServiceID int64
 	*db.LimitOffset
 }
 
@@ -108,19 +121,20 @@ func (o dbEventsListOptions) sqlConditions() []*sqlf.Query {
 	if !o.Since.IsZero() {
 		conds = append(conds, sqlf.Sprintf("created_at>=%v", o.Since))
 	}
-	addObjectCondition := func(id int64, column string) {
+	addCondition := func(id int64, column string) {
 		if id != 0 {
 			conds = append(conds, sqlf.Sprintf(column+"=%d", id))
 		}
 	}
-	addObjectCondition(o.Objects.Thread, "thread_id")
-	addObjectCondition(o.Objects.Campaign, "campaign_id")
-	addObjectCondition(o.Objects.Comment, "comment_id")
-	addObjectCondition(o.Objects.Rule, "rule_id")
-	addObjectCondition(int64(o.Objects.Repository), "repository_id")
-	addObjectCondition(int64(o.Objects.User), "user_id")
-	addObjectCondition(int64(o.Objects.Organization), "organization_id")
-	addObjectCondition(int64(o.Objects.RegistryExtension), "registry_extension_id")
+	addCondition(o.Objects.Thread, "thread_id")
+	addCondition(o.Objects.Campaign, "campaign_id")
+	addCondition(o.Objects.Comment, "comment_id")
+	addCondition(o.Objects.Rule, "rule_id")
+	addCondition(int64(o.Objects.Repository), "repository_id")
+	addCondition(int64(o.Objects.User), "user_id")
+	addCondition(int64(o.Objects.Organization), "organization_id")
+	addCondition(int64(o.Objects.RegistryExtension), "registry_extension_id")
+	addCondition(int64(o.ImportedFromExternalServiceID), "imported_from_external_service_id")
 	return conds
 }
 
@@ -170,7 +184,7 @@ func (dbEvents) scanRow(row interface {
 	Scan(dest ...interface{}) error
 }) (*dbEvent, error) {
 	var t dbEvent
-	var threadID, campaignID, commentID, ruleID *int64
+	var threadID, campaignID, commentID, ruleID, importedFromExternalServiceID *int64
 	var repositoryID, userID, organizationID, registryExtensionID *int32
 	if err := row.Scan(
 		&t.ID,
@@ -186,6 +200,7 @@ func (dbEvents) scanRow(row interface {
 		&userID,
 		&organizationID,
 		&registryExtensionID,
+		&importedFromExternalServiceID,
 	); err != nil {
 		return nil, err
 	}
@@ -213,6 +228,9 @@ func (dbEvents) scanRow(row interface {
 	if registryExtensionID != nil {
 		t.RegistryExtension = *registryExtensionID
 	}
+	if importedFromExternalServiceID != nil {
+		t.ImportedFromExternalServiceID = *importedFromExternalServiceID
+	}
 	return &t, nil
 }
 
@@ -232,12 +250,26 @@ func (dbEvents) Count(ctx context.Context, opt dbEventsListOptions) (int, error)
 	return count, nil
 }
 
+// Delete deletes all events matching the criteria (ignoring limit and offset).
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the events.
+func (s dbEvents) Delete(ctx context.Context, tx *sql.Tx, opt dbEventsListOptions) error {
+	if mocks.events.Delete != nil {
+		return mocks.events.Delete(opt)
+	}
+
+	query := sqlf.Sprintf(`DELETE FROM events WHERE %s`, sqlf.Join(opt.sqlConditions(), ") AND ("))
+	_, err := dbhOrGlobal(tx).ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	return err
+}
+
 // mockEvents mocks the events-related DB operations.
 type mockEvents struct {
 	Create  func(*dbEvent) (*dbEvent, error)
 	GetByID func(int64) (*dbEvent, error)
 	List    func(dbEventsListOptions) ([]*dbEvent, error)
 	Count   func(dbEventsListOptions) (int, error)
+	Delete  func(dbEventsListOptions) error
 }
 
 type dbMocks struct {
