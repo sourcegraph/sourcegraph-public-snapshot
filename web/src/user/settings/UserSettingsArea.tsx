@@ -103,7 +103,6 @@ export const UserSettingsArea = withAuthenticatedUser(
                         <ErrorBoundary location={this.props.location}>
                             <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                                 <Switch>
-                                    {/* eslint-disable react/jsx-no-bind */}
                                     {this.props.routes.map(
                                         ({ path, exact, render, condition = () => true }) =>
                                             condition(context) && (
@@ -117,7 +116,6 @@ export const UserSettingsArea = withAuthenticatedUser(
                                                 />
                                             )
                                     )}
-                                    {/* eslint-disable react/jsx-no-bind */}
                                     <Route component={NotFoundPage} key="hardcoded-key" />
                                 </Switch>
                             </React.Suspense>

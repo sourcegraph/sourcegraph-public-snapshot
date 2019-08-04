@@ -104,7 +104,7 @@ const settingsCascadeFragment = gql`
  * this function, to ensure that the result is propagated consistently throughout the app instead of only being
  * returned to the caller.
  *
- * @return Observable that emits the settings
+ * @returns Observable that emits the settings
  */
 function fetchViewerSettings(): Observable<GQL.ISettingsCascade> {
     return queryGraphQL(gql`

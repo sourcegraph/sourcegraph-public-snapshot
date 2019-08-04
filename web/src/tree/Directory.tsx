@@ -17,6 +17,7 @@ interface TreeChildProps extends TreeLayerProps {
 
 /**
  * JSX to render a tree directory
+ *
  * @param props
  */
 export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeChildProps): JSX.Element => (

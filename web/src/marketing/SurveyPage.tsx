@@ -12,6 +12,7 @@ import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { submitSurvey } from './backend'
 import { SurveyCTA } from './SurveyToast'
+import { Subscription } from 'rxjs'
 interface SurveyFormProps {
     location: H.Location
     history: H.History
@@ -37,6 +38,8 @@ export interface SurveyResponse {
 }
 
 class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
+    private subscriptions = new Subscription()
+
     constructor(props: SurveyFormProps) {
         super(props)
         this.state = {
@@ -141,22 +144,26 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
         eventLogger.log('SurveySubmitted')
         this.setState({ loading: true })
 
-        submitSurvey({
-            score: this.props.score,
-            email: this.state.email,
-            reason: this.state.reason,
-            better: this.state.betterProduct,
-        })
-            .pipe(
-                catchError(error => {
-                    this.setState({ error })
-                    return []
-                })
-            )
-            .subscribe(() => {
-                this.props.onSubmit()
-                this.props.history.push('/survey/thanks')
+        this.subscriptions.add(
+            submitSurvey({
+                score: this.props.score,
+                email: this.state.email,
+                reason: this.state.reason,
+                better: this.state.betterProduct,
             })
+                .pipe(
+                    catchError(error => {
+                        this.setState({ error })
+                        return []
+                    })
+                )
+                .subscribe(() => {
+                    if (this.props.onSubmit) {
+                        this.props.onSubmit()
+                    }
+                    this.props.history.push('/survey/thanks')
+                })
+        )
     }
 }
 

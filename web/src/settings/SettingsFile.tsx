@@ -9,7 +9,6 @@ import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
 import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
-import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 
 interface Props extends ThemeProps {
     history: H.History

@@ -67,7 +67,8 @@ export interface ResolvedRev {
 
 /**
  * When `rev` is undefined, the default branch is resolved.
- * @return Observable that emits the commit ID
+ *
+ * @returns Observable that emits the commit ID
  *         Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export const resolveRev = memoizeObservable(

@@ -1,15 +1,12 @@
 import * as H from 'history'
 import * as React from 'react'
-import { fromEvent, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { fromEvent, Observable, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     debounceTime,
-    delay,
     distinctUntilChanged,
     filter,
     map,
-    publishReplay,
-    refCount,
     repeat,
     startWith,
     switchMap,
@@ -335,12 +332,12 @@ export class QueryInput extends React.Component<Props, State> {
         this.inputValues.next(event.currentTarget.value)
     }
 
-    private onInputFocus: React.FocusEventHandler<HTMLInputElement> = event => {
+    private onInputFocus: React.FocusEventHandler<HTMLInputElement> = () => {
         this.inputFocuses.next()
         this.setState({ inputFocused: true })
     }
 
-    private onInputBlur: React.FocusEventHandler<HTMLInputElement> = event => {
+    private onInputBlur: React.FocusEventHandler<HTMLInputElement> = () => {
         this.suggestionsHidden.next()
         this.setState({ inputFocused: false, hideSuggestions: true })
     }

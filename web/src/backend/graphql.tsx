@@ -13,7 +13,7 @@ const getHeaders = (): { [header: string]: string } => ({
  *
  * @param request The GraphQL request (query or mutation)
  * @param variables A key/value object with variable values
- * @return Observable That emits the result or errors if the HTTP request failed
+ * @returns Observable That emits the result or errors if the HTTP request failed
  */
 export const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>(
     request: string,
@@ -30,7 +30,7 @@ export const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>(
  *
  * @param query The GraphQL query
  * @param variables A key/value object with variable values
- * @return Observable That emits the result or errors if the HTTP request failed
+ * @returns Observable That emits the result or errors if the HTTP request failed
  */
 export const queryGraphQL = (request: string, variables?: {}): Observable<GraphQLResult<GQL.IQuery>> =>
     requestGraphQLCommon({
@@ -44,7 +44,7 @@ export const queryGraphQL = (request: string, variables?: {}): Observable<GraphQ
  *
  * @param mutation The GraphQL mutation
  * @param variables A key/value object with variable values
- * @return Observable That emits the result or errors if the HTTP request failed
+ * @returns Observable That emits the result or errors if the HTTP request failed
  */
 export const mutateGraphQL = (request: string, variables?: {}): Observable<GraphQLResult<GQL.IMutation>> =>
     requestGraphQLCommon({

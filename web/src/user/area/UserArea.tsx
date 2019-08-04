@@ -203,7 +203,6 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                     <ErrorBoundary location={this.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
-                                {/* eslint-disable react/jsx-no-bind */}
                                 {this.props.userAreaRoutes.map(
                                     ({ path, exact, render, condition = () => true }) =>
                                         condition(context) && (
@@ -217,7 +216,6 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                                             />
                                         )
                                 )}
-                                {/* eslint-disable react/jsx-no-bind */}
                                 <Route key="hardcoded-key" component={NotFoundPage} />
                             </Switch>
                         </React.Suspense>

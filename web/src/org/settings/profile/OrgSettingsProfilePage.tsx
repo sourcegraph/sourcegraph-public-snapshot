@@ -3,19 +3,8 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, of, Subject, Subscription } from 'rxjs'
-import {
-    catchError,
-    delay,
-    distinctUntilChanged,
-    mergeMap,
-    startWith,
-    switchMap,
-    tap,
-    map,
-    distinctUntilKeyChanged,
-} from 'rxjs/operators'
+import { catchError, delay, mergeMap, startWith, switchMap, tap, map, distinctUntilKeyChanged } from 'rxjs/operators'
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'

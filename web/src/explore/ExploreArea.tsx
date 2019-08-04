@@ -1,6 +1,5 @@
 import H from 'history'
 import * as React from 'react'
-import { Subject, Subscription } from 'rxjs'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
