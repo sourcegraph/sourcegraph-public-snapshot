@@ -84,13 +84,20 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign
                             ? burndownChart.dates.map((date, i) => ({
                                   date: Date.parse(date),
                                   openThreads: burndownChart.openThreads[i],
+                                  mergedThreads: burndownChart.mergedThreads[i],
+                                  closedThreads: burndownChart.closedThreads[i],
+                                  openApprovedThreads: burndownChart.openApprovedThreads[i],
                               }))
                             : []
                     }
                 >
                     <XAxis
                         dataKey="date"
-                        domain={burndownChart !== LOADING && !isErrorLike(burndownChart) ? ['auto', 'auto'] : [0, 0]}
+                        domain={
+                            burndownChart !== LOADING && !isErrorLike(burndownChart) && burndownChart.dates.length > 0
+                                ? [burndownChart.dates[0], burndownChart.dates[burndownChart.dates.length - 1]]
+                                : [0, 0]
+                        }
                         // TODO!(sqs): delete? domain={[startDate, startDate + openThreads.length * 24 * 60 * 60 * 1000]}
                         name="Time"
                         tickFormatter={dateTickFormatter}
@@ -106,70 +113,43 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign
                         itemStyle={STYLE}
                         labelStyle={STYLE}
                     />
-                    {false /* TODO!(sqs) */ && (
-                        <>
-                            <Area
-                                stackId="openThreads"
-                                type="step"
-                                dataKey="approvedThreads"
-                                name="Approved"
-                                fill="var(--success)"
-                                strokeWidth={0}
-                                isAnimationActive={false}
-                            />
-                            <Area
-                                stackId="openThreads"
-                                type="step"
-                                dataKey="ciFailingThreads"
-                                name="Failing CI"
-                                fill="var(--danger)"
-                                strokeWidth={0}
-                                isAnimationActive={false}
-                            />
-                            <Area
-                                stackId="openThreads"
-                                type="step"
-                                dataKey="errorThreads"
-                                name="Error"
-                                fill="var(--warning)"
-                                strokeWidth={0}
-                                isAnimationActive={false}
-                            />
-                        </>
-                    )}
-                    {SHOW_CLOSED && (
-                        <Area
-                            stackId="openThreads"
-                            type="step"
-                            dataKey="closedThreads"
-                            name="Closed"
-                            fill="var(--text-muted)"
-                            strokeWidth={0}
-                            isAnimationActive={false}
-                        />
-                    )}
-                    <Line
+                    <Area
+                        type="step"
+                        dataKey="openApprovedThreads"
+                        name="Open & approved"
+                        fill="var(--info)"
+                        strokeWidth={0}
+                        isAnimationActive={false}
+                    />
+                    <Area
+                        stackId="threadStatus"
                         type="step"
                         dataKey="openThreads"
                         name="Open changesets"
                         stroke="var(--body-color)"
-                        strokeWidth={4}
-                        strokeOpacity={1}
+                        strokeWidth={3}
+                        fill="transparent"
                         activeDot={{ r: 5 }}
                         isAnimationActive={false}
                     />
-                    {false /* TODO!(sqs) */ && (
-                        <ReferenceLine
-                            y={openThreads[0]}
-                            strokeWidth={2}
-                            strokeOpacity={0.7}
-                            fontWeight="bold"
-                            style={STYLE}
-                            color="var(--info)"
-                            stroke="var(--info)"
-                            strokeDasharray="10 2"
-                        />
-                    )}
+                    <Area
+                        stackId="threadStatus"
+                        type="step"
+                        dataKey="mergedThreads"
+                        name="Merged"
+                        fill="var(--success)"
+                        strokeWidth={0}
+                        isAnimationActive={false}
+                    />
+                    <Area
+                        stackId="threadStatus"
+                        type="step"
+                        dataKey="closedThreads"
+                        name="Closed"
+                        fill="var(--text-muted)"
+                        strokeWidth={0}
+                        isAnimationActive={false}
+                    />
                 </ComposedChart>
             </ResponsiveContainer>
         </div>

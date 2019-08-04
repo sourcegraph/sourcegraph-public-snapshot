@@ -9,6 +9,17 @@ import (
 
 func (v *gqlCampaign) BurndownChart(ctx context.Context) (graphqlbackend.CampaignBurndownChart, error) {
 	openThreads := []int32{2071, 1918, 1231, 1121, 1018, 1003, 980, 979, 930, 945, 715, 331}
+	maxOpenBefore := func(i int) (max int32) {
+		if i == 0 && len(openThreads) > 0 {
+			return openThreads[0]
+		}
+		for _, v := range openThreads[:i] {
+			if v > max {
+				max = v
+			}
+		}
+		return max
+	}
 	mapOpenThreads := func(f func(v int32, i int) int32) []int32 {
 		vs := make([]int32, len(openThreads))
 		for i, v := range openThreads {
@@ -23,9 +34,9 @@ func (v *gqlCampaign) BurndownChart(ctx context.Context) (graphqlbackend.Campaig
 	return &gqlCampaignBurndownChart{
 		dates:               dates,
 		openThreads:         openThreads,
-		mergedThreads:       mapOpenThreads(func(v int32, i int) int32 { return v / int32(len(openThreads)-i+15) }),
-		closedThreads:       mapOpenThreads(func(v int32, i int) int32 { return v / int32(len(openThreads)-i+35) }),
-		openApprovedThreads: mapOpenThreads(func(v int32, i int) int32 { return v / int32(len(openThreads)-i+3) }),
+		mergedThreads:       mapOpenThreads(func(v int32, i int) int32 { return maxOpenBefore(i) - v + maxOpenBefore(i)/int32(len(openThreads)-i+4) }),
+		closedThreads:       mapOpenThreads(func(v int32, i int) int32 { return maxOpenBefore(i) / int32(len(openThreads)-i+5) }),
+		openApprovedThreads: mapOpenThreads(func(v int32, i int) int32 { return v / int32(len(openThreads)-i+2) }),
 	}, nil
 }
 

@@ -29,6 +29,9 @@ export const useCampaignBurndownChart = (campaign: Pick<GQL.ICampaign, 'id'>): [
                             burndownChart {
                                 dates
                                 openThreads
+                                mergedThreads
+                                closedThreads
+                                openApprovedThreads
                             }
                         }
                     }
