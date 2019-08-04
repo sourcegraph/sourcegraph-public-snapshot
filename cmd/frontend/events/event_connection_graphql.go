@@ -2,52 +2,72 @@ package events
 
 import (
 	"context"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-func GetEventConnection(ctx context.Context, arg *graphqlbackend.EventsArgs) (graphqlbackend.EventConnection, error) {
-	var opt dbEventsListOptions
+func GetEventConnection(ctx context.Context, arg *graphqlbackend.EventConnectionCommonArgs, objects Objects) (graphqlbackend.EventConnection, error) {
+	opt := dbEventsListOptions{Objects: objects}
 	if arg.Since != nil {
 		opt.Since = arg.Since.Time
 	}
-	return eventsByOptions(ctx, opt, &arg.ConnectionArgs)
+	arg.ConnectionArgs.Set(&opt.LimitOffset)
+	return &eventConnection{opt: opt}, nil
 }
 
-func eventsByOptions(ctx context.Context, opt dbEventsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.EventConnection, error) {
-	list, err := dbEvents{}.List(ctx, opt)
+type eventConnection struct {
+	opt dbEventsListOptions
+
+	once   sync.Once
+	events []*dbEvent
+	err    error
+}
+
+func (r *eventConnection) compute(ctx context.Context) ([]*dbEvent, error) {
+	r.once.Do(func() {
+		opt2 := r.opt
+		if opt2.LimitOffset != nil {
+			tmp := *opt2.LimitOffset
+			opt2.LimitOffset = &tmp
+			opt2.Limit++ // so we can detect if there is a next page
+		}
+
+		r.events, r.err = dbEvents{}.List(ctx, opt2)
+	})
+	return r.events, r.err
+}
+
+func (r *eventConnection) Nodes(ctx context.Context) ([]graphqlbackend.ToEvent, error) {
+	events, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	events := make([]graphqlbackend.ToEvent, len(list))
-	for i, a := range list {
+	if r.opt.LimitOffset != nil && len(events) > r.opt.LimitOffset.Limit {
+		events = events[:r.opt.LimitOffset.Limit]
+	}
+
+	toEvents := make([]graphqlbackend.ToEvent, len(events))
+	for i, e := range events {
 		var err error
-		events[i], err = toRegisteredEventType(ctx, a)
+		toEvents[i], err = toRegisteredEventType(ctx, e)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &eventConnection{arg: arg, events: events}, nil
-}
-
-type eventConnection struct {
-	arg    *graphqlutil.ConnectionArgs
-	events []graphqlbackend.ToEvent
-}
-
-func (r *eventConnection) Nodes(ctx context.Context) ([]graphqlbackend.ToEvent, error) {
-	events := r.events
-	if first := r.arg.First; first != nil && len(events) > int(*first) {
-		events = events[:int(*first)]
-	}
-	return events, nil
+	return toEvents, nil
 }
 
 func (r *eventConnection) TotalCount(ctx context.Context) (int32, error) {
-	return int32(len(r.events)), nil
+	count, err := dbEvents{}.Count(ctx, r.opt)
+	return int32(count), err
 }
 
 func (r *eventConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(r.arg.First != nil && int(*r.arg.First) < len(r.events)), nil
+	events, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(events) > r.opt.Limit), nil
 }

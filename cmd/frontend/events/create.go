@@ -24,7 +24,7 @@ type Objects struct {
 
 // CreationData is the data required to create an event (in CreateEvent).
 type CreationData struct {
-	Type string // event type
+	Type // event type
 	Objects
 	Data interface{} // JSON-marshaled
 
@@ -32,8 +32,14 @@ type CreationData struct {
 	CreatedAt   time.Time // zero value means time.Now() as of CreateEvent call
 }
 
+var MockCreateEvent func(CreationData) error
+
 // CreateEvent creates an event in the database.
 func CreateEvent(ctx context.Context, event CreationData) error {
+	if MockCreateEvent != nil {
+		return MockCreateEvent(event)
+	}
+
 	v := &dbEvent{
 		Type:        event.Type,
 		ActorUserID: event.ActorUserID,

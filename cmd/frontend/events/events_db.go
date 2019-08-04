@@ -13,8 +13,8 @@ import (
 
 // dbEvent describes a event.
 type dbEvent struct {
-	ID          int64
-	Type        string
+	ID int64
+	Type
 	ActorUserID int32
 	CreatedAt   time.Time
 	Objects

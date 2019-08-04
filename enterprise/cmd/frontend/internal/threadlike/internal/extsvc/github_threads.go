@@ -133,7 +133,7 @@ createdAt
 	for _, event := range data.Node.PullRequest.TimelineItems.Nodes {
 		// TODO!(sqs): map to sourcegraph event types
 		if err := events.CreateEvent(ctx, events.CreationData{
-			Type:      event.Typename,
+			Type:      events.Type(event.Typename),
 			Objects:   events.Objects{Thread: threadID},
 			Data:      event,
 			CreatedAt: event.CreatedAt,

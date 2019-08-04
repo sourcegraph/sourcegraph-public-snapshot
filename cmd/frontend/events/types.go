@@ -7,24 +7,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
+// Type is an event type.
+type Type string
+
 // ToGraphQLEventFunc is a func called to populate the ToEvent struct from the untyped event data
 // queried from the database.
 type ToGraphQLEventFunc func(context.Context, graphqlbackend.EventCommon, EventData, *graphqlbackend.ToEvent) error
 
 // Register an event type and its function to convert untyped event data to a GraphQL event type. It
 // must be called at init time.
-func Register(typeName string, converter ToGraphQLEventFunc) {
-	if _, exists := converters[typeName]; exists {
-		panic("event type is already registered: " + typeName)
+func Register(eventType Type, converter ToGraphQLEventFunc) {
+	if _, exists := converters[eventType]; exists {
+		panic("event type is already registered: " + eventType)
 	}
-	converters[typeName] = converter
+	converters[eventType] = converter
 }
 
-var converters = map[string]ToGraphQLEventFunc{}
+var converters = map[Type]ToGraphQLEventFunc{}
 
 // UnregisteredEventTypeError is an error that occurs when there is no registered converter (to a
 // GraphQL event) for an event in the database.
-type UnregisteredEventTypeError struct{ Type string }
+type UnregisteredEventTypeError struct{ Type }
 
 func (e *UnregisteredEventTypeError) Error() string {
 	return fmt.Sprintf("no converter is registered for event type %q", e.Type)

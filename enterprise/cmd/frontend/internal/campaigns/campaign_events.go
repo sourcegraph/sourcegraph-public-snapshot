@@ -5,13 +5,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
 )
 
 const (
-	eventTypeAddThreadToCampaign      = "AddThreadToCampaign"
-	eventTypeRemoveThreadFromCampaign = "RemoveThreadFromCampaign"
+	eventTypeAddThreadToCampaign      events.Type = "AddThreadToCampaign"
+	eventTypeRemoveThreadFromCampaign             = "RemoveThreadFromCampaign"
 )
 
 func init() {
@@ -33,7 +32,9 @@ func init() {
 	})
 }
 
-func (v *gqlCampaign) TimelineItems(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.EventConnection, error) {
-	// TODO!(sqs): filter by only events related to this campaign, and include events on its threads
-	return events.GetEventConnection(ctx, &graphqlbackend.EventsArgs{ConnectionArgs: *arg}) // TODO!(sqs): support Since arg field
+func (v *gqlCampaign) TimelineItems(ctx context.Context, arg *graphqlbackend.EventConnectionCommonArgs) (graphqlbackend.EventConnection, error) {
+	return events.GetEventConnection(ctx,
+		arg,
+		events.Objects{Campaign: v.db.ID},
+	)
 }

@@ -7,7 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-type EventsArgs struct {
+// EventConnectionCommonArgs contains the common set of arguments for connections of events.
+type EventConnectionCommonArgs struct {
 	graphqlutil.ConnectionArgs
 	Since *DateTime
 }

@@ -4641,7 +4641,7 @@ type Campaign implements Node & Comment & Commentable {
     timelineItems(
         # Returns the first n events from the list.
         first: Int
-    ): EventConnection!
+    ): CampaignTimelineItemConnection!
 }
 
 # A list of campaigns.
@@ -4736,11 +4736,40 @@ type RuleConnection {
 union Event = CreateThreadEvent | AddThreadToCampaignEvent | RemoveThreadFromCampaignEvent
 
 # A list of events.
+## TODO!(sqs): is it helpful to have a single union? or just have ThreadEvent, CampaignEvent, etc.?
 type EventConnection {
     # A list of events.
     nodes: [Event!]!
 
     # The total number of events in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+union ThreadTimelineItem = CreateThreadEvent | AddThreadToCampaignEvent | RemoveThreadFromCampaignEvent
+
+# A list of thread timeline items.
+type ThreadTimelineItemConnection {
+    # A list of timeline items.
+    nodes: [ThreadTimelineItem!]!
+
+    # The total number of items in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+union CampaignTimelineItem = AddThreadToCampaignEvent | RemoveThreadFromCampaignEvent
+
+# A list of campaign timeline items.
+type CampaignTimelineItemConnection {
+    # A list of timeline items.
+    nodes: [CampaignTimelineItem!]!
+
+    # The total number of items in the connection.
     totalCount: Int!
 
     # Pagination information.

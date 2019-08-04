@@ -16,15 +16,15 @@ const { fragment: threadFragment, query: threadQuery } = queryAndFragmentForThre
 ])
 
 const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
-    GQL.Event['__typename'],
-    keyof GQL.Event
+    GQL.CampaignTimelineItem['__typename'],
+    keyof GQL.CampaignTimelineItem
 >(
-    ['AddThreadToCampaignEvent', 'CreateThreadEvent', 'RemoveThreadFromCampaignEvent'],
+    ['AddThreadToCampaignEvent', 'RemoveThreadFromCampaignEvent'],
     ['id', 'createdAt'],
     ['actor { ... on User { id username displayName url } }', `thread { ${threadQuery} }`]
 )
 
-type Result = typeof LOADING | GQL.IEventConnection | ErrorLike
+type Result = typeof LOADING | GQL.ICampaignTimelineItemConnection | ErrorLike
 
 /**
  * A React hook that observes all timeline items for a campaign (queried from the GraphQL API).
