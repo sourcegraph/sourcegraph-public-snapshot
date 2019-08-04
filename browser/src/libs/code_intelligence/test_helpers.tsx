@@ -84,7 +84,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
 /**
  * @param responseMap a {@link GraphQLResponseMap} of request names (eg. `ResolveRev`) to response builders.
  *
- * @return a mock implementation of {@link PlatformContext#requestGraphQL}
+ * @returns a mock implementation of {@link PlatformContext#requestGraphQL}
  */
 export const mockRequestGraphQL = (
     responseMap: GraphQLResponseMap = DEFAULT_GRAPHQL_RESPONSES

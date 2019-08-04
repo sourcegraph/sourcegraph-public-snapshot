@@ -207,12 +207,13 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                                     ({ path, exact, render, condition = () => true }) =>
                                         condition(context) && (
                                             <Route
-                                                path={this.props.match.url + path}
-                                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                exact={exact}
+                                                // eslint-disable-next-line react/jsx-no-bind
                                                 render={routeComponentProps =>
                                                     render({ ...context, ...routeComponentProps })
                                                 }
+                                                path={this.props.match.url + path}
+                                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                                exact={exact}
                                             />
                                         )
                                 )}

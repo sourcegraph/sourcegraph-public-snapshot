@@ -21,7 +21,7 @@ const escapeHTML = (html: string): string => {
  *
  * @param code The code to highlight
  * @param language The language of the code, if known
- * @return Safe HTML
+ * @returns Safe HTML
  */
 export const highlightCodeSafe = (code: string, language?: string): string => {
     try {

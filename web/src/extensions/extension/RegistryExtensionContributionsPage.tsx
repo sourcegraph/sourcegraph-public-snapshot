@@ -109,7 +109,6 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
                 actionsGroup.rows.push([
                     // eslint-disable-next-line react/jsx-key
                     <code>{action.id}</code>,
-                    // eslint-disable-next-line no-template-curly-in-string
                     description.includes('${') ? (
                         <>
                             Evaluated at runtime: <small className="text-monospace">{description}</small>

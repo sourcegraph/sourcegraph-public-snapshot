@@ -15,7 +15,7 @@
     "prettier-check": "npm run prettier -- --write=false",
     "all:eslint": "dev/foreach-ts-project.sh yarn -s run eslint",
     "all:tslint": "dev/foreach-ts-project.sh yarn -s run tslint",
-    "all:stylelint": "yarn --cwd web run stylelint && yarn --cwd browser run stylelint",
+    "all:stylelint": "yarn --cwd web run stylelint && yarn --cwd shared run stylelint && yarn --cwd browser run stylelint",
     "all:typecheck": "gulp generate && dev/foreach-ts-project.sh ./node_modules/.bin/tsc -p tsconfig.json",
     "graphql": "gulp graphQLTypes",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",

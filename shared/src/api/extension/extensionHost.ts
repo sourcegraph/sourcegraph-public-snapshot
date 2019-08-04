@@ -39,7 +39,7 @@ export interface InitData {
  * first message.
  *
  * @param transports The message reader and writer to use for communication with the client.
- * @return An unsubscribable to terminate the extension host.
+ * @returns An unsubscribable to terminate the extension host.
  */
 export function startExtensionHost(
     endpoints: EndpointPair
@@ -78,7 +78,7 @@ export function startExtensionHost(
  *
  * @param connection The connection used to communicate with the client.
  * @param initData The information to initialize this extension host.
- * @return An unsubscribable to terminate the extension host.
+ * @returns An unsubscribable to terminate the extension host.
  */
 function initializeExtensionHost(
     endpoints: EndpointPair,

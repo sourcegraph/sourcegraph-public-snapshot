@@ -116,7 +116,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
 }
 
 /**
- * @return The Bootstrap class that corresponds to {@link type}.
+ * @returns The Bootstrap class that corresponds to {@link type}.
  */
 function getBootstrapClass(type: sourcegraph.NotificationType | undefined): string {
     switch (type) {

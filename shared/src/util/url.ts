@@ -238,7 +238,10 @@ export interface AbsoluteRepoFileRange
         Partial<RenderModeSpec> {}
 
 /**
- * @param ctx 1-indexed partial position or range spec
+ * Provide one.
+ *
+ * @param position either 1-indexed partial position
+ * @param range or 1-indexed partial range spec
  */
 export function toPositionOrRangeHash(ctx: {
     position?: { line: number; character?: number }

@@ -124,7 +124,7 @@ export const diffDomFunctions: DOMFunctions = {
     },
     getLineElementFromLineNumber: getDiffCodeCellFromLineNumber,
     getCodeElementFromLineNumber: (codeView, line, part) => {
-        const codeCell = getDiffCodeCellFromLineNumber(codeView, line, part!)
+        const codeCell = getDiffCodeCellFromLineNumber(codeView, line, part)
         return codeCell && getBlobCodeInner(codeCell)
     },
     getLineNumberFromCodeElement,

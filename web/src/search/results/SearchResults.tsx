@@ -129,7 +129,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             .subscribe(contributions => this.setState({ contributions }))
     }
 
-    public componentDidUpdate(prevProps: SearchResultsProps): void {
+    public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
 
