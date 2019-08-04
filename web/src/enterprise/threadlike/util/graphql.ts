@@ -1,7 +1,7 @@
-import { gql } from '../../../../../shared/src/graphql/graphql'
+import { queryAndFragmentForUnion } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 
-const threadOrIssueOrChangesetFields: (keyof GQL.ThreadOrIssueOrChangeset)[] = [
+const DEFAULT_FIELDS: (keyof GQL.ThreadOrIssueOrChangeset)[] = [
     '__typename',
     'id',
     'number',
@@ -9,19 +9,14 @@ const threadOrIssueOrChangesetFields: (keyof GQL.ThreadOrIssueOrChangeset)[] = [
     'url',
     'externalURL',
     'status',
+    'repository { name }',
 ]
-const threadOrIssueOrChangesetTypeNames: GQL.ThreadOrIssueOrChangeset['__typename'][] = ['Thread', 'Changeset']
 
-export const threadOrIssueOrChangesetFieldsFragment = gql`
-    ${threadOrIssueOrChangesetTypeNames.map(
-        typeName =>
-            `fragment ${typeName}Fields on ${typeName} { ${threadOrIssueOrChangesetFields.join(
-                '\n'
-            )} repository { name } }`
-    )}
-`
+const DEFAULT_NESTED_FIELDS = ['repository { name }']
 
-export const threadOrIssueOrChangesetFieldsQuery = gql`
-__typename
-${threadOrIssueOrChangesetTypeNames.map(typeName => `... on ${typeName} { ...${typeName}Fields }`).join('\n')}
-`
+const TYPE_NAMES: GQL.ThreadOrIssueOrChangeset['__typename'][] = ['Thread', 'Changeset']
+
+export const queryAndFragmentForThreadOrIssueOrChangeset = (
+    fields: (keyof GQL.ThreadOrIssueOrChangeset)[] = DEFAULT_FIELDS,
+    nestedFields: string[] = DEFAULT_NESTED_FIELDS
+) => queryAndFragmentForUnion(TYPE_NAMES, fields, nestedFields)

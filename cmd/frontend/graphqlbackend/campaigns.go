@@ -195,6 +195,9 @@ type CampaignConnection interface {
 
 type AddRemoveThreadToFromCampaignEvent struct {
 	EventCommon
-	Campaign Campaign
-	Thread   ThreadOrIssueOrChangeset
+	Campaign_ Campaign
+	Thread_   ThreadOrIssueOrChangeset
 }
+
+func (v AddRemoveThreadToFromCampaignEvent) Campaign() Campaign               { return v.Campaign_ }
+func (v AddRemoveThreadToFromCampaignEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }

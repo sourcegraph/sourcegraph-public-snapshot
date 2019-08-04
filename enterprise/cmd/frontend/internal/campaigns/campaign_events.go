@@ -26,8 +26,8 @@ func init() {
 		}
 		toEvent.AddThreadToCampaignEvent = &graphqlbackend.AddRemoveThreadToFromCampaignEvent{
 			EventCommon: common,
-			Campaign:    campaign,
-			Thread:      thread,
+			Campaign_:   campaign,
+			Thread_:     thread,
 		}
 		return nil
 	})

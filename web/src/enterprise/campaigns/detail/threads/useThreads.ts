@@ -4,12 +4,11 @@ import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/gra
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../../backend/graphql'
-import {
-    threadOrIssueOrChangesetFieldsFragment,
-    threadOrIssueOrChangesetFieldsQuery,
-} from '../../../threadlike/util/graphql'
+import { queryAndFragmentForThreadOrIssueOrChangeset } from '../../../threadlike/util/graphql'
 
 const LOADING: 'loading' = 'loading'
+
+const { fragment, query } = queryAndFragmentForThreadOrIssueOrChangeset()
 
 /**
  * A React hook that observes all threads (queried from the GraphQL API).
@@ -22,12 +21,12 @@ export const useThreads = (): typeof LOADING | GQL.IThreadOrIssueOrChangesetConn
                 query Threads {
                     threadOrIssueOrChangesets {
                         nodes {
-                            ${threadOrIssueOrChangesetFieldsQuery}
+                            ${query}
                         }
                         totalCount
                     }
                 }
-                ${threadOrIssueOrChangesetFieldsFragment}
+                ${fragment}
             `
         )
             .pipe(

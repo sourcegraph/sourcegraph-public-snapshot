@@ -148,8 +148,3 @@ type ChangesetConnection interface {
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 }
-
-type CreateThreadEvent struct {
-	EventCommon
-	Thread ThreadOrIssueOrChangeset
-}

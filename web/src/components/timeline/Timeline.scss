@@ -10,7 +10,7 @@
         position: absolute;
         top: 0;
         bottom: 0;
-        left: 2rem;
+        left: map-get($spacers, 6);
         // stylelint-disable-next-line declaration-property-unit-whitelist
         width: 1px;
         background-color: var(--border-color);

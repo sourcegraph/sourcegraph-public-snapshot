@@ -52,12 +52,16 @@ func (dbEvents) Create(ctx context.Context, event *dbEvent) (*dbEvent, error) {
 		}
 		return &v
 	}
+	var data *[]byte
+	if event.Data != nil {
+		data = &event.Data
+	}
 
 	args := []interface{}{
 		event.Type,
 		event.ActorUserID,
 		event.CreatedAt,
-		event.Data,
+		data,
 		nilIfZero64(event.Objects.Thread),
 		nilIfZero64(event.Objects.Campaign),
 		nilIfZero64(event.Objects.Comment),
@@ -68,7 +72,7 @@ func (dbEvents) Create(ctx context.Context, event *dbEvent) (*dbEvent, error) {
 		nilIfZero32(event.Objects.RegistryExtension),
 	}
 	query := sqlf.Sprintf(
-		`INSERT INTO events(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+selectColumns, //x
+		`INSERT INTO events(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+selectColumns,
 		args...,
 	)
 	return dbEvents{}.scanRow(dbconn.Global.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))

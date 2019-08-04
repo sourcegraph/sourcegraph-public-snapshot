@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { map, startWith } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql, queryAndFragmentForUnion } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../../backend/graphql'
@@ -8,37 +8,52 @@ import { queryAndFragmentForThreadOrIssueOrChangeset } from '../../../threadlike
 
 const LOADING: 'loading' = 'loading'
 
-const { fragment, query } = queryAndFragmentForThreadOrIssueOrChangeset()
+const { fragment: threadFragment, query: threadQuery } = queryAndFragmentForThreadOrIssueOrChangeset([
+    '__typename',
+    'id',
+    'title',
+    'url',
+])
+
+const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
+    GQL.Event['__typename'],
+    keyof GQL.Event
+>(
+    ['AddThreadToCampaignEvent', 'CreateThreadEvent', 'RemoveThreadFromCampaignEvent'],
+    ['id', 'createdAt'],
+    ['actor { ... on User { id username displayName url } }', `thread { ${threadQuery} }`]
+)
+
+type Result = typeof LOADING | GQL.IEventConnection | ErrorLike
 
 /**
- * A React hook that observes all threads in a campaign (queried from the GraphQL API).
+ * A React hook that observes all timeline items for a campaign (queried from the GraphQL API).
  *
- * @param campaign The campaign whose threads to observe.
+ * @param campaign The campaign whose timeline items to observe.
  */
-export const useCampaignThreads = (
-    campaign: Pick<GQL.ICampaign, 'id'>
-): [typeof LOADING | GQL.IThreadOrIssueOrChangesetConnection | ErrorLike, () => void] => {
+export const useCampaignTimelineItems = (campaign: Pick<GQL.ICampaign, 'id'>): [Result, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
 
-    const [result, setResult] = useState<typeof LOADING | GQL.IThreadOrIssueOrChangesetConnection | ErrorLike>(LOADING)
+    const [result, setResult] = useState<Result>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
-                query CampaignThreadlikes($campaign: ID!) {
+                query CampaignTimelineItems($campaign: ID!) {
                     node(id: $campaign) {
                         __typename
                         ... on Campaign {
-                            threadOrIssueOrChangesets {
+                            timelineItems {
                                 nodes {
-                                    ${query}
+                                    ${eventQuery}
                                 }
                                 totalCount
                             }
                         }
                     }
                 }
-                ${fragment}
+								${threadFragment}
+								${eventFragment}
             `,
             { campaign: campaign.id }
         )
@@ -48,7 +63,7 @@ export const useCampaignThreads = (
                     if (!data.node || data.node.__typename !== 'Campaign') {
                         throw new Error('not a campaign')
                     }
-                    return data.node.threadOrIssueOrChangesets
+                    return data.node.timelineItems
                 }),
                 startWith(LOADING)
             )

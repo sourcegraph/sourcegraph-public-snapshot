@@ -4643,6 +4643,12 @@ type Campaign implements Node & Comment & Commentable {
     # The comparisons of before and after this campaign's changesets are applied (on all affected
     # repositories).
     repositoryComparisons: [RepositoryComparison!]!
+
+    # A list of events related to the campaign.
+    timelineItems(
+        # Returns the first n events from the list.
+        first: Int
+    ): EventConnection!
 }
 
 # A list of campaigns.
@@ -4736,6 +4742,18 @@ type RuleConnection {
 ## EVENTS TODO!(sqs): is it helpful to have a single union? or just have ThreadEvent, CampaignEvent, etc.?
 union Event = CreateThreadEvent | AddThreadToCampaignEvent | RemoveThreadFromCampaignEvent
 
+# A list of events.
+type EventConnection {
+    # A list of events.
+    nodes: [Event!]!
+
+    # The total number of events in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
 # The common interface implemented by all events.
 interface EventCommon {
     # The unique ID of the event.
@@ -4760,7 +4778,7 @@ type CreateThreadEvent implements EventCommon {
     createdAt: DateTime!
 
     # The thread.
-    thread: Thread!
+    thread: ThreadOrIssueOrChangeset!
 }
 
 # The addition of a thread to a campaign.
@@ -4775,7 +4793,7 @@ type AddThreadToCampaignEvent implements EventCommon {
     createdAt: DateTime!
 
     # The thread that was added.
-    thread: Thread!
+    thread: ThreadOrIssueOrChangeset!
 
     # The campaign that the thread was added to.
     campaign: Campaign!
@@ -4793,7 +4811,7 @@ type RemoveThreadFromCampaignEvent implements EventCommon {
     createdAt: DateTime!
 
     # The thread that was removed.
-    thread: Thread!
+    thread: ThreadOrIssueOrChangeset!
 
     # The campaign that the thread was removed from.
     campaign: Campaign!

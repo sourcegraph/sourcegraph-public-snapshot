@@ -32,7 +32,7 @@ func init() {
 		}
 		toEvent.CreateThreadEvent = &graphqlbackend.CreateThreadEvent{
 			EventCommon: common,
-			Thread:      thread,
+			Thread_:     thread,
 		}
 		return nil
 	})
