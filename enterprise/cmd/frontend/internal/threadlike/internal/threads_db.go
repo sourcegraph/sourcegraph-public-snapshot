@@ -48,7 +48,7 @@ var errThreadNotFound = errors.New("thread not found")
 
 type DBThreads struct{}
 
-const selectColumns = "id, type, repository_id, title, external_url, status, primary_comment_id, created_at, updated_at, is_preview, base_ref, head_ref"
+const SelectColumns = "id, type, repository_id, title, external_url, status, primary_comment_id, created_at, updated_at, is_preview, base_ref, head_ref"
 
 // Create creates a thread. The thread argument's (Thread).ID field is ignored. The new thread is
 // returned.
@@ -64,7 +64,7 @@ func (DBThreads) Create(ctx context.Context, thread *DBThread, comment commentob
 	return thread, commentobjectdb.CreateCommentWithObject(ctx, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
 		var err error
 		thread, err = DBThreads{}.scanRow(tx.QueryRowContext(ctx,
-			`INSERT INTO threads(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT, $7, $8, $9) RETURNING `+selectColumns,
+			`INSERT INTO threads(`+SelectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT, $7, $8, $9) RETURNING `+SelectColumns,
 			thread.Type,
 			thread.RepositoryID,
 			thread.Title,
@@ -135,7 +135,7 @@ func (s DBThreads) Update(ctx context.Context, id int64, update DBThreadUpdate) 
 	// TODO!(sqs): need to reset updated_at of the thread's corresponding comment
 	// setFields = append(setFields, sqlf.Sprintf("updated_at=now()"))
 
-	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE threads SET %v WHERE id=%s RETURNING `+selectColumns, sqlf.Join(setFields, ", "), id))
+	results, err := s.Query(ctx, sqlf.Sprintf(`UPDATE threads SET %v WHERE id=%s RETURNING `+SelectColumns, sqlf.Join(setFields, ", "), id))
 	if err != nil {
 		return nil, err
 	}
@@ -207,17 +207,17 @@ func (s DBThreads) List(ctx context.Context, opt DBThreadsListOptions) ([]*DBThr
 
 func (s DBThreads) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*DBThread, error) {
 	q := sqlf.Sprintf(`
-SELECT `+selectColumns+` FROM threads
+SELECT `+SelectColumns+` FROM threads
 WHERE (%s)
 ORDER BY title ASC
 %s`,
 		sqlf.Join(conds, ") AND ("),
 		limitOffset.SQL(),
 	)
-	return s.query(ctx, q)
+	return s.Query(ctx, q)
 }
 
-func (DBThreads) query(ctx context.Context, query *sqlf.Query) ([]*DBThread, error) {
+func (DBThreads) Query(ctx context.Context, query *sqlf.Query) ([]*DBThread, error) {
 	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
 		return nil, err

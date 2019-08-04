@@ -7,8 +7,8 @@ import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { Timeline } from '../../../../components/timeline/Timeline'
 import { CreateThreadEventTimelineItem } from './events/CreateThreadEventTimelineItem'
+import { RequestReviewEventTimelineItem } from './events/RequestReviewEventTimelineItem'
 import { ReviewEventTimelineItem } from './events/ReviewEventTimelineItem'
-import { ReviewRequestedEventTimelineItem } from './events/ReviewRequestedEventTimelineItem'
 import { useCampaignTimelineItems } from './useCampaignTimelineItems'
 
 interface Props extends ExtensionsControllerProps {
@@ -59,8 +59,8 @@ function timelineItemComponentForEvent(
             return CreateThreadEventTimelineItem // TODO!(sqs)
         case 'ReviewEvent':
             return ReviewEventTimelineItem // TODO!(sqs)
-        case 'ReviewRequestedEvent':
-            return ReviewRequestedEventTimelineItem // TODO!(sqs)
+        case 'RequestReviewEvent':
+            return RequestReviewEventTimelineItem // TODO!(sqs)
         default:
             return null
     }

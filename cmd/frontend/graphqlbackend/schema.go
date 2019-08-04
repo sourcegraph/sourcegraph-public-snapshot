@@ -4649,6 +4649,10 @@ type Campaign implements Node & Comment & Commentable {
     timelineItems(
         # Returns the first n events from the list.
         first: Int
+        # Only include events after (or on) the specified date.
+        afterDate: DateTime
+        # Only include events before (or on) the specified date.
+        beforeDate: DateTime
         # Only include the specified event types. TODO!(sqs): make this an enum?
         types: [String!]
     ): CampaignTimelineItemConnection!
@@ -4769,7 +4773,8 @@ union Event =
     | AddThreadToCampaignEvent
     | RemoveThreadFromCampaignEvent
     | ReviewEvent
-    | ReviewRequestedEvent
+    | RequestReviewEvent
+    | CloseThreadEvent
 
 # A list of events.
 ## TODO!(sqs): is it helpful to have a single union? or just have ThreadEvent, CampaignEvent, etc.?
@@ -4789,7 +4794,8 @@ union ThreadTimelineItem =
     | AddThreadToCampaignEvent
     | RemoveThreadFromCampaignEvent
     | ReviewEvent
-    | ReviewRequestedEvent
+    | RequestReviewEvent
+    | CloseThreadEvent
 
 # A list of thread timeline items.
 type ThreadTimelineItemConnection {
@@ -4807,7 +4813,8 @@ union CampaignTimelineItem =
       AddThreadToCampaignEvent
     | RemoveThreadFromCampaignEvent
     | ReviewEvent
-    | ReviewRequestedEvent
+    | RequestReviewEvent
+    | CloseThreadEvent
 
 # A list of campaign timeline items.
 type CampaignTimelineItemConnection {
@@ -4910,7 +4917,7 @@ type ReviewEvent implements EventCommon {
 }
 
 # A request to review that was sent.
-type ReviewRequestedEvent implements EventCommon {
+type RequestReviewEvent implements EventCommon {
     # The unique ID of the event.
     id: ID!
 
@@ -4924,5 +4931,35 @@ type ReviewRequestedEvent implements EventCommon {
     thread: ThreadOrIssueOrChangeset!
 
     # TODO!(sqs): add reference to external user
+}
+
+# A thread was closed.
+type CloseThreadEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was closed.
+    thread: ThreadOrIssueOrChangeset!
+}
+
+# A changeset was merged.
+type MergeChangesetEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The changeset that was merged.
+    changeset: Changeset!
 }
 `

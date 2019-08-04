@@ -19,7 +19,7 @@ const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
     GQL.CampaignTimelineItem['__typename'],
     keyof GQL.CampaignTimelineItem
 >(
-    ['AddThreadToCampaignEvent', 'RemoveThreadFromCampaignEvent', 'ReviewEvent', 'ReviewRequestedEvent'],
+    ['AddThreadToCampaignEvent', 'RemoveThreadFromCampaignEvent', 'ReviewEvent', 'RequestReviewEvent'],
     ['id', 'createdAt'],
     ['actor { ... on User { id username displayName url } }', `thread { ${threadQuery} }`]
 )

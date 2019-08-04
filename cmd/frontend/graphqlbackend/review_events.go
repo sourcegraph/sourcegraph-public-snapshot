@@ -10,9 +10,9 @@ func (v ReviewEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }
 
 func (v ReviewEvent) State() ReviewState { return v.State_ }
 
-type ReviewRequestedEvent struct {
+type RequestReviewEvent struct {
 	EventCommon
 	Thread_ ThreadOrIssueOrChangeset
 }
 
-func (v ReviewRequestedEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }
+func (v RequestReviewEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }

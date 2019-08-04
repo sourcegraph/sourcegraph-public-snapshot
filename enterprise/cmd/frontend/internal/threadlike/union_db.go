@@ -14,3 +14,7 @@ func ThreadOrIssueOrChangesetByDBID(ctx context.Context, dbID int64) (graphqlbac
 	}
 	return newGQLThreadOrIssueOrChangeset(dbThread), nil
 }
+
+var DBQuery = internal.DBThreads{}.Query
+
+const DBSelectColumns = internal.SelectColumns

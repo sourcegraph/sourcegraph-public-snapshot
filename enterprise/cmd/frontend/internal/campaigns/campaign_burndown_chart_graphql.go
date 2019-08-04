@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
@@ -68,12 +69,65 @@ func (v *gqlCampaign) BurndownChart(ctx context.Context) (graphqlbackend.Campaig
 }
 
 func computeBurndownChartData(ctx context.Context, campaignID int64, date time.Time) (*burndownChartData, error) {
-	return &burndownChartData{
+	// A thread is considered to be part of the campaign when it was created, not when it was added
+	// to the campaign. This is so that you can use campaigns to track efforts that you started
+	// before you created the campaign.
+	// 	threads, err := threadlike.DBQuery(ctx, sqlf.Sprintf(`
+	// SELECT `+threadlike.DBSelectColumns+` FROM threads
+	// INNER JOIN campaigns_threads ct ON ct.thread_id=threads.id AND ct.campaign_id=%d
+	// LEFT JOIN events ON events.thread_id=threads.id AND type='CreateThread'
+	// WHERE events.created_at <= %v
+	// `,
+	// 		campaignID,
+	// 		date,
+	// 	))
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+
+	var data burndownChartData
+	/*{
 		openThreads:         123,
 		mergedThreads:       43,
 		closedThreads:       11,
 		openApprovedThreads: 111,
-	}, nil
+	}*/
+	//for _, thread := range threads {
+	ec, err := events.GetEventConnection(ctx,
+		&graphqlbackend.EventConnectionCommonArgs{
+			BeforeDate: &graphqlbackend.DateTime{date},
+			Types:      &[]string{"CreateThread", "MergeChangeset", "CloseThread", "Review"},
+		},
+		events.Objects{Campaign: campaignID},
+	)
+	if err != nil {
+		return nil, err
+	}
+	events, err := ec.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, event := range events {
+		switch {
+		case event.CreateThreadEvent != nil:
+			data.openThreads++
+		case event.MergeChangesetEvent != nil:
+			data.mergedThreads++
+		case event.CloseThreadEvent != nil:
+			data.closedThreads++
+		case event.ReviewEvent != nil:
+			// TODO!(sqs): check review state, only increment if APPROVED
+			//
+			// TODO!(sqs): check if this is sufficient or if other reviews are required, or maybe
+			// this reviewer went back and changed teir review to non-approved, etc.; also this
+			// counts 2 approvals on one PR as 2x
+			if event.ReviewEvent.State() == graphqlbackend.ReviewStateApproved {
+				data.openApprovedThreads++
+			}
+		}
+	}
+
+	return &data, nil
 }
 
 type gqlCampaignBurndownChart struct {

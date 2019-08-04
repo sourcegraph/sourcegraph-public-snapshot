@@ -10,8 +10,11 @@ import (
 
 func GetEventConnection(ctx context.Context, arg *graphqlbackend.EventConnectionCommonArgs, objects Objects) (graphqlbackend.EventConnection, error) {
 	opt := dbEventsListOptions{Objects: objects}
-	if arg.Since != nil {
-		opt.Since = arg.Since.Time
+	if arg.AfterDate != nil {
+		opt.AfterDate = arg.AfterDate.Time
+	}
+	if arg.BeforeDate != nil {
+		opt.BeforeDate = arg.BeforeDate.Time
 	}
 	arg.ConnectionArgs.Set(&opt.LimitOffset)
 	return &eventConnection{opt: opt}, nil

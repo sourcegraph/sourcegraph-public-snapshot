@@ -6,12 +6,12 @@ import { PersonLink } from '../../../../../user/PersonLink'
 import { CampaignTimelineItem } from '../CampaignTimelineItem'
 
 interface Props {
-    event: GQL.IReviewRequestedEvent
+    event: GQL.IRequestReviewEvent
 
     className?: string
 }
 
-export const ReviewRequestedEventTimelineItem: React.FunctionComponent<Props> = ({ event, className = '' }) => (
+export const RequestReviewEventTimelineItem: React.FunctionComponent<Props> = ({ event, className = '' }) => (
     <CampaignTimelineItem icon={PlusCircleIcon} className={className} event={event}>
         <PersonLink user={event.actor} /> requested a review on <Link to={event.thread.url}>{event.thread.title}</Link>
     </CampaignTimelineItem>

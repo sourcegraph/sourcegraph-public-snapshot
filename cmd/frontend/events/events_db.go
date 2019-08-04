@@ -110,8 +110,9 @@ func (s dbEvents) GetByID(ctx context.Context, id int64) (*dbEvent, error) {
 
 // dbEventsListOptions contains options for listing events.
 type dbEventsListOptions struct {
-	Since time.Time
-	Types []Type
+	AfterDate  time.Time
+	BeforeDate time.Time
+	Types      []Type
 	Objects
 	ImportedFromExternalServiceID int64
 	*db.LimitOffset
@@ -119,8 +120,11 @@ type dbEventsListOptions struct {
 
 func (o dbEventsListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	if !o.Since.IsZero() {
-		conds = append(conds, sqlf.Sprintf("created_at>=%v", o.Since))
+	if !o.AfterDate.IsZero() {
+		conds = append(conds, sqlf.Sprintf("created_at>=%v", o.AfterDate))
+	}
+	if !o.BeforeDate.IsZero() {
+		conds = append(conds, sqlf.Sprintf("created_at<=%v", o.BeforeDate))
 	}
 	if o.Types != nil {
 		conds = append(conds, sqlf.Sprintf("type = ANY(%v)", o.Types))

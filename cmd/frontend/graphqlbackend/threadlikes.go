@@ -33,10 +33,3 @@ type createThreadlikeInput struct {
 	Body        *string
 	ExternalURL *string
 }
-
-type CreateThreadEvent struct {
-	EventCommon
-	Thread_ ThreadOrIssueOrChangeset
-}
-
-func (v CreateThreadEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }

@@ -10,8 +10,9 @@ import (
 // EventConnectionCommonArgs contains the common set of arguments for connections of events.
 type EventConnectionCommonArgs struct {
 	graphqlutil.ConnectionArgs
-	Types *[]string
-	Since *DateTime
+	Types      *[]string
+	BeforeDate *DateTime
+	AfterDate  *DateTime
 }
 
 // event is the common interface for event GraphQL types.
@@ -37,7 +38,9 @@ type ToEvent struct {
 	AddThreadToCampaignEvent      *AddRemoveThreadToFromCampaignEvent
 	RemoveThreadFromCampaignEvent *AddRemoveThreadToFromCampaignEvent
 	ReviewEvent                   *ReviewEvent
-	ReviewRequestedEvent          *ReviewRequestedEvent
+	RequestReviewEvent            *RequestReviewEvent
+	MergeChangesetEvent           *MergeChangesetEvent
+	CloseThreadEvent              *CloseThreadEvent
 }
 
 func (v ToEvent) ToCreateThreadEvent() (*CreateThreadEvent, bool) {
@@ -56,8 +59,16 @@ func (v ToEvent) ToReviewEvent() (*ReviewEvent, bool) {
 	return v.ReviewEvent, v.ReviewEvent != nil
 }
 
-func (v ToEvent) ToReviewRequestedEvent() (*ReviewRequestedEvent, bool) {
-	return v.ReviewRequestedEvent, v.ReviewRequestedEvent != nil
+func (v ToEvent) ToRequestReviewEvent() (*RequestReviewEvent, bool) {
+	return v.RequestReviewEvent, v.RequestReviewEvent != nil
+}
+
+func (v ToEvent) ToMergeChangesetEvent() (*MergeChangesetEvent, bool) {
+	return v.MergeChangesetEvent, v.MergeChangesetEvent != nil
+}
+
+func (v ToEvent) ToCloseThreadEvent() (*CloseThreadEvent, bool) {
+	return v.CloseThreadEvent, v.CloseThreadEvent != nil
 }
 
 // EventConnection is the interface for GraphQL connection types for event nodes.

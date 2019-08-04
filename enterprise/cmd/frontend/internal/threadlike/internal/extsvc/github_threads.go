@@ -25,6 +25,8 @@ const (
 	eventTypeCreateThread    events.Type = "CreateThread"
 	eventTypeReview                      = "Review"
 	eventTypeReviewRequested             = "ReviewRequested"
+	eventTypeMergeChangeset              = "MergeChangeset"
+	eventTypeCloseThread                 = "CloseThread"
 )
 
 func init() {
@@ -63,7 +65,29 @@ func init() {
 		if err != nil {
 			return err
 		}
-		toEvent.ReviewRequestedEvent = &graphqlbackend.ReviewRequestedEvent{
+		toEvent.RequestReviewEvent = &graphqlbackend.RequestReviewEvent{
+			EventCommon: common,
+			Thread_:     thread,
+		}
+		return nil
+	})
+	events.Register(eventTypeMergeChangeset, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
+		thread, err := threadlike.ThreadOrIssueOrChangesetByDBID(ctx, data.Thread)
+		if err != nil {
+			return err
+		}
+		toEvent.MergeChangesetEvent = &graphqlbackend.MergeChangesetEvent{
+			EventCommon: common,
+			Changeset_:  thread.Changeset,
+		}
+		return nil
+	})
+	events.Register(eventTypeCloseThread, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
+		thread, err := threadlike.ThreadOrIssueOrChangesetByDBID(ctx, data.Thread)
+		if err != nil {
+			return err
+		}
+		toEvent.CloseThreadEvent = &graphqlbackend.CloseThreadEvent{
 			EventCommon: common,
 			Thread_:     thread,
 		}
@@ -113,6 +137,8 @@ func ImportGitHubThreadEvents(ctx context.Context, threadID int64, repoID api.Re
 var githubEventTypes = map[string]events.Type{
 	"PullRequestReview":    eventTypeReview,
 	"ReviewRequestedEvent": eventTypeReviewRequested,
+	"MergedEvent":          eventTypeMergeChangeset,
+	"ClosedEvent":          eventTypeCloseThread,
 }
 
 var (
@@ -203,10 +229,15 @@ query ImportGitHubThreadEvents($repository: ID!, $pullRequestNumber: Int!) {
 		... on Repository {
 			pullRequest(number: $pullRequestNumber) {
 createdAt
-				timelineItems(first: 10, itemTypes: [MERGED_EVENT, REOPENED_EVENT, REVIEW_REQUESTED_EVENT, PULL_REQUEST_REVIEW]) {
+				timelineItems(first: 10, itemTypes: [MERGED_EVENT, CLOSED_EVENT, REOPENED_EVENT, REVIEW_REQUESTED_EVENT, PULL_REQUEST_REVIEW]) {
 					nodes {
 						__typename
 						... on MergedEvent {
+							id
+							actor { login }
+							createdAt
+						}
+						... on ClosedEvent {
 							id
 							actor { login }
 							createdAt
