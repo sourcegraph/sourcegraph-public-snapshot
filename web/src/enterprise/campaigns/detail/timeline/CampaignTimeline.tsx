@@ -7,6 +7,8 @@ import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { Timeline } from '../../../../components/timeline/Timeline'
 import { CreateThreadEventTimelineItem } from './events/CreateThreadEventTimelineItem'
+import { ReviewEventTimelineItem } from './events/ReviewEventTimelineItem'
+import { ReviewRequestedEventTimelineItem } from './events/ReviewRequestedEventTimelineItem'
 import { useCampaignTimelineItems } from './useCampaignTimelineItems'
 
 interface Props extends ExtensionsControllerProps {
@@ -34,7 +36,7 @@ export const CampaignTimeline: React.FunctionComponent<Props> = ({ campaign, cla
                 <Timeline tag="ol">
                     {timelineItems.nodes.map(event => {
                         const C = timelineItemComponentForEvent(event.__typename)
-                        return <C key={event.id} event={event} className="campaign-timeline__item" />
+                        return C ? <C key={event.id} event={event} className="campaign-timeline__item" /> : null
                     })}
                 </Timeline>
             )}
@@ -47,7 +49,7 @@ function timelineItemComponentForEvent(
 ): React.ComponentType<{
     event: any // TODO!(sqs)
     className?: string
-}> {
+}> | null {
     switch (event) {
         case 'AddThreadToCampaignEvent':
             return CreateThreadEventTimelineItem
@@ -55,7 +57,11 @@ function timelineItemComponentForEvent(
             return CreateThreadEventTimelineItem // TODO!(sqs)
         case 'RemoveThreadFromCampaignEvent':
             return CreateThreadEventTimelineItem // TODO!(sqs)
+        case 'ReviewEvent':
+            return ReviewEventTimelineItem // TODO!(sqs)
+        case 'ReviewRequestedEvent':
+            return ReviewRequestedEventTimelineItem // TODO!(sqs)
         default:
-            throw new Error(`unrecognized event type ${event}`)
+            return null
     }
 }

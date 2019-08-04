@@ -3,7 +3,7 @@ import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { CommentList } from '../../../comments/CommentList'
-import { CampaignBurndownChart } from './CampaignBurndownChart'
+import { CampaignBurndownChart } from '../burndownChart/CampaignBurndownChart'
 import { CampaignTimeline } from '../timeline/CampaignTimeline'
 
 interface Props extends ExtensionsControllerProps {
@@ -19,7 +19,7 @@ interface Props extends ExtensionsControllerProps {
 export const CampaignActivity: React.FunctionComponent<Props> = ({ campaign, className = '', ...props }) => (
     <div className={`campaign-activity ${className}`}>
         <CampaignBurndownChart {...props} campaign={campaign} className="mb-4" />
-        <CampaignTimeline {...props} campaign={campaign} className="mb-4" />
+        <CampaignTimeline {...props} campaign={campaign} className="mb-6" />
         <CommentList {...props} commentable={campaign} />
     </div>
 )

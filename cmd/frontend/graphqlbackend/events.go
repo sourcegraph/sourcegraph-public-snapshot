@@ -10,6 +10,7 @@ import (
 // EventConnectionCommonArgs contains the common set of arguments for connections of events.
 type EventConnectionCommonArgs struct {
 	graphqlutil.ConnectionArgs
+	Types *[]string
 	Since *DateTime
 }
 

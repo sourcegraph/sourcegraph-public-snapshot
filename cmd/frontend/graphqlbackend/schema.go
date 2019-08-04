@@ -4642,11 +4642,37 @@ type Campaign implements Node & Comment & Commentable {
     # repositories).
     repositoryComparisons: [RepositoryComparison!]!
 
+    # A burndown chart of the statuses of the campaign's threads, issues, and changesets over time.
+    burndownChart: CampaignBurndownChart!
+
     # A list of events related to the campaign.
     timelineItems(
         # Returns the first n events from the list.
         first: Int
+        # Only include the specified event types. TODO!(sqs): make this an enum?
+        types: [String!]
     ): CampaignTimelineItemConnection!
+}
+
+# A burndown chart of the statuses of the campaign's threads, issues, and changesets over time.
+type CampaignBurndownChart {
+    # The dates that correspond to the same-index element of the data series.
+    dates: [DateTime!]!
+
+    # The count of open threads at each date.
+    openThreads: [Int!]!
+
+    # The count of merged threads at each date.
+    mergedThreads: [Int!]!
+
+    # The count of closed threads at each date.
+    closedThreads: [Int!]!
+
+    # The count of total threads (open + merged + closed) at each date.
+    totalThreads: [Int!]!
+
+    # The count of open approved threads at each date.
+    openApprovedThreads: [Int!]!
 }
 
 # A list of campaigns.
@@ -4738,7 +4764,12 @@ type RuleConnection {
 }
 
 ## EVENTS TODO!(sqs): is it helpful to have a single union? or just have ThreadEvent, CampaignEvent, etc.?
-union Event = CreateThreadEvent | AddThreadToCampaignEvent | RemoveThreadFromCampaignEvent
+union Event =
+      CreateThreadEvent
+    | AddThreadToCampaignEvent
+    | RemoveThreadFromCampaignEvent
+    | ReviewEvent
+    | ReviewRequestedEvent
 
 # A list of events.
 ## TODO!(sqs): is it helpful to have a single union? or just have ThreadEvent, CampaignEvent, etc.?
@@ -4753,7 +4784,12 @@ type EventConnection {
     pageInfo: PageInfo!
 }
 
-union ThreadTimelineItem = CreateThreadEvent | AddThreadToCampaignEvent | RemoveThreadFromCampaignEvent | ReviewEvent
+union ThreadTimelineItem =
+      CreateThreadEvent
+    | AddThreadToCampaignEvent
+    | RemoveThreadFromCampaignEvent
+    | ReviewEvent
+    | ReviewRequestedEvent
 
 # A list of thread timeline items.
 type ThreadTimelineItemConnection {
@@ -4767,7 +4803,11 @@ type ThreadTimelineItemConnection {
     pageInfo: PageInfo!
 }
 
-union CampaignTimelineItem = AddThreadToCampaignEvent | RemoveThreadFromCampaignEvent | ReviewEvent
+union CampaignTimelineItem =
+      AddThreadToCampaignEvent
+    | RemoveThreadFromCampaignEvent
+    | ReviewEvent
+    | ReviewRequestedEvent
 
 # A list of campaign timeline items.
 type CampaignTimelineItemConnection {

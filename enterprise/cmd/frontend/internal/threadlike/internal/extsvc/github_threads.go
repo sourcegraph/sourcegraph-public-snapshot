@@ -169,10 +169,16 @@ type githubPullRequest struct {
 }
 
 type githubEvent struct {
-	Typename      string `json:"__typename"`
-	ID            graphql.ID
-	Actor, Author *struct{ Login string }
-	CreatedAt     time.Time
+	Typename string     `json:"__typename"`
+	ID       graphql.ID `json:"id"`
+	Actor    *struct {
+		Login string `json:"login"`
+	} `json:"actor,omitempty"`
+	Author *struct {
+		Login string `json:"login"`
+	} `json:"author,omitempty"`
+	State     string    `json:"state,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 func getGitHubPullRequest(ctx context.Context, repoID api.RepoID, extRepo api.ExternalRepoSpec, externalThreadURL string) (pull *githubPullRequest, externalServiceID int64, err error) {

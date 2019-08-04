@@ -111,6 +111,7 @@ func (s dbEvents) GetByID(ctx context.Context, id int64) (*dbEvent, error) {
 // dbEventsListOptions contains options for listing events.
 type dbEventsListOptions struct {
 	Since time.Time
+	Types []Type
 	Objects
 	ImportedFromExternalServiceID int64
 	*db.LimitOffset
@@ -121,13 +122,18 @@ func (o dbEventsListOptions) sqlConditions() []*sqlf.Query {
 	if !o.Since.IsZero() {
 		conds = append(conds, sqlf.Sprintf("created_at>=%v", o.Since))
 	}
+	if o.Types != nil {
+		conds = append(conds, sqlf.Sprintf("type = ANY(%v)", o.Types))
+	}
 	addCondition := func(id int64, column string) {
 		if id != 0 {
 			conds = append(conds, sqlf.Sprintf(column+"=%d", id))
 		}
 	}
 	addCondition(o.Objects.Thread, "thread_id")
-	addCondition(o.Objects.Campaign, "campaign_id")
+	if o.Objects.Campaign != 0 {
+		conds = append(conds, sqlf.Sprintf("campaign_id=%d OR thread_id IN (SELECT thread_id FROM campaigns_threads WHERE campaign_id=%d)", o.Objects.Campaign, o.Objects.Campaign))
+	}
 	addCondition(o.Objects.Comment, "comment_id")
 	addCondition(o.Objects.Rule, "rule_id")
 	addCondition(int64(o.Objects.Repository), "repository_id")

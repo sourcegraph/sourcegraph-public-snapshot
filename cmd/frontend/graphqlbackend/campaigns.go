@@ -190,6 +190,7 @@ type Campaign interface {
 	Repositories(context.Context) ([]*RepositoryResolver, error)
 	Commits(context.Context) ([]*GitCommitResolver, error)
 	RepositoryComparisons(context.Context) ([]*RepositoryComparisonResolver, error)
+	BurndownChart(context.Context) (CampaignBurndownChart, error)
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)
 }
 
@@ -213,3 +214,13 @@ type AddRemoveThreadToFromCampaignEvent struct {
 
 func (v AddRemoveThreadToFromCampaignEvent) Campaign() Campaign               { return v.Campaign_ }
 func (v AddRemoveThreadToFromCampaignEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }
+
+// CampaignBurndownChart is the interface for the GraphQL type CampaignBurndownChart.
+type CampaignBurndownChart interface {
+	Dates() []DateTime
+	OpenThreads() []int32
+	ClosedThreads() []int32
+	MergedThreads() []int32
+	TotalThreads() []int32
+	OpenApprovedThreads() []int32
+}
