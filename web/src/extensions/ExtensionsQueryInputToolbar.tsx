@@ -35,14 +35,13 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
                 <ButtonDropdown isOpen={this.state.open === 'categories'} toggle={this.toggleCategories}>
                     <DropdownToggle caret={true}>Category</DropdownToggle>
                     <DropdownMenu right={true}>
-                        {EXTENSION_CATEGORIES.map((category, i) => (
-                            /* eslint-disable react/jsx-no-bind */
+                        {EXTENSION_CATEGORIES.map(category => (
                             <DropdownItem
-                                key={category}
+                                // eslint-disable-next-line react/jsx-no-bind
                                 onClick={() => this.props.onQueryChange(extensionsQuery({ category }))}
+                                key={category}
                                 disabled={this.props.query === extensionsQuery({ category })}
                             >
-                                {/* eslint-enable react/jsx-no-bind */}
                                 {category}
                             </DropdownItem>
                         ))}

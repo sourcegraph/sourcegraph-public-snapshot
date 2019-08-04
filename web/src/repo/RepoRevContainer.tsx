@@ -145,8 +145,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
         this.propsUpdates.next(this.props)
     }
 
-    public componentDidUpdate(props: RepoRevContainerProps): void {
-        this.propsUpdates.next(props)
+    public componentDidUpdate(): void {
+        this.propsUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

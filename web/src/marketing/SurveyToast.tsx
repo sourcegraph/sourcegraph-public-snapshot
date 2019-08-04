@@ -85,7 +85,7 @@ export class SurveyToast extends React.Component<Props, State> {
         )
     }
 
-    private onClickScore = (score: number): void => this.onDismiss()
+    private onClickScore = (): void => this.onDismiss()
 
     private onDismiss = (): void => {
         localStorage.setItem(HAS_DISMISSED_TOAST_KEY, 'true')

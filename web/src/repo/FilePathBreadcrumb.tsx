@@ -51,7 +51,6 @@ export const FilePathBreadcrumb: React.FunctionComponent<
     }
 > = ({ repoName, rev, filePath, isDir }) => {
     const parts = filePath.split('/')
-    // eslint-disable-next-line react/jsx-no-bind
     return (
         /* eslint-disable react/jsx-no-bind */
         <Breadcrumb
