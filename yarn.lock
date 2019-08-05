@@ -1577,10 +1577,10 @@
   resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
   integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
 
-"@sourcegraph/eslint-config@^0.0.4":
-  version "0.0.4"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.0.4.tgz#e9fc61457c9539e70da5aba4862f7f17a1348825"
-  integrity sha512-EzjhnfBizG59fltjGZR7KuRjf2beGZa6elEj36qREqoGw8BczNDphO9h+0X6sE6K1uJJZJ0PuVx0aHxbnbTd7Q==
+"@sourcegraph/eslint-config@^0.0.5":
+  version "0.0.5"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.0.5.tgz#af1418419930152393eb2f958a97cc2bc79a0b08"
+  integrity sha512-affq3OLlYjqZbulOuuQkF/KXVFSKWU0WRSTbV+a468hTZGFlk3o1LYl2M21lxjdmie5YFIKkV/gRRKD6k8Odjg==
   dependencies:
     "@sourcegraph/tslint-config" "^13.4.0"
     "@typescript-eslint/eslint-plugin" "^1.13.0"
@@ -1651,10 +1651,10 @@
     tslint-react "^4.0.0"
     tslint-react-hooks "^2.1.0"
 
-"@sourcegraph/tslint-config@^14.0.0":
-  version "14.0.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/tslint-config/-/tslint-config-14.0.0.tgz#9fbb9bad4e93c627a9e7f2764df4f4b65bc0168f"
-  integrity sha512-ty0fhMZa60xesQLYzk5CPsacExORAvahn5kn9kIUXUsJBxQyglN8ZW1BMgc6EICNuglrhxH4dnqyM3caHM/KWw==
+"@sourcegraph/tslint-config@^14.0.1":
+  version "14.0.1"
+  resolved "https://registry.npmjs.org/@sourcegraph/tslint-config/-/tslint-config-14.0.1.tgz#fa39264594811889e3be7db9fcac58dd9562325b"
+  integrity sha512-i6GpkBmv8aDhDo8wfMWEYODyBOp/zVEHaSPzbLdNlRJyN+pwwAL00Vk7O8dp5BfKfAPlYO2D/LFUmiHapAA6AQ==
   dependencies:
     rxjs-tslint-rules "^4.23.0"
 
