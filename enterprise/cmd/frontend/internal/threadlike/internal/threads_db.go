@@ -79,7 +79,7 @@ func (DBThreads) Create(ctx context.Context, tx *sql.Tx, thread *DBThread, comme
 	return thread, commentobjectdb.CreateCommentWithObject(ctx, tx, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
 		var err error
 		thread, err = DBThreads{}.scanRow(tx.QueryRowContext(ctx,
-			`INSERT INTO threads(`+SelectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, DEFAULT, DEFAULT, $6, $7, $8, $9, $10) RETURNING `+SelectColumns,
+			`INSERT INTO threads(`+SelectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT, $7, $8, $9, $10) RETURNING `+SelectColumns,
 			thread.Type,
 			thread.RepositoryID,
 			thread.Title,
