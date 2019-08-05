@@ -252,8 +252,7 @@ describe('code_intelligence', () => {
         })
 
         describe('Decorations', () => {
-            // eslint-disable-next-line ban/ban
-            it.only('decorates a code view', async () => {
+            it('decorates a code view', async () => {
                 const { extensionAPI, services } = await integrationTestContext(undefined, {
                     roots: [],
                     editors: [],
