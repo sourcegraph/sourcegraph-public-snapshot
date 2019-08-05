@@ -38,6 +38,7 @@ exports[`Notices shows notices for location 1`] = `
     <button
       className="btn btn-icon"
       onClick={[Function]}
+      type="button"
     >
       <svg
         className="mdi-icon icon-inline"

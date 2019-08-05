@@ -24,8 +24,10 @@ interface State {
  * authenticated viewers.
  */
 export class UserNavItem extends React.PureComponent<Props, State> {
-    private supportsSystemTheme = window.matchMedia('not all and (prefers-color-scheme), (prefers-color-scheme)')
-        .matches
+    private supportsSystemTheme = Boolean(
+        window.matchMedia && window.matchMedia('not all and (prefers-color-scheme), (prefers-color-scheme)').matches
+    )
+
     public state: State = { isOpen: false }
 
     public componentDidUpdate(prevProps: Props): void {

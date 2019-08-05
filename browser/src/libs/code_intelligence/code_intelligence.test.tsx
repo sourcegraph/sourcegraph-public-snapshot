@@ -1,9 +1,9 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
-import { uniqueId } from 'lodash'
+import { uniqueId, isEqual } from 'lodash'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
-import { filter, skip, switchMap, take } from 'rxjs/operators'
+import { filter, skip, switchMap, take, tap } from 'rxjs/operators'
 import * as sinon from 'sinon'
 import { Services } from '../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
@@ -252,7 +252,8 @@ describe('code_intelligence', () => {
         })
 
         describe('Decorations', () => {
-            it('decorates a code view', async () => {
+            // eslint-disable-next-line ban/ban
+            it.only('decorates a code view', async () => {
                 const { extensionAPI, services } = await integrationTestContext(undefined, {
                     roots: [],
                     editors: [],
@@ -335,7 +336,18 @@ describe('code_intelligence', () => {
                         },
                     },
                 ])
-                await decorated()
+                await services.textDocumentDecoration
+                    .getDecorations({ uri: 'git://foo?1#/bar.ts' })
+                    .pipe(
+                        filter(
+                            decorations =>
+                                !!decorations &&
+                                !!decorations[0].after &&
+                                decorations[0].after.contentText === 'test decoration 2'
+                        ),
+                        take(1)
+                    )
+                    .toPromise()
                 expect(line.querySelectorAll('.line-decoration-attachment').length).toBe(1)
                 expect(line.querySelector('.line-decoration-attachment')!.textContent).toEqual('test decoration 2')
             })

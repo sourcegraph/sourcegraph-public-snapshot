@@ -102,6 +102,7 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
       >
         <button
           className="btn btn-link text-left w-100 p-0"
+          type="button"
         >
           <div
             className="d-flex justify-content-between"
@@ -266,6 +267,7 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
       >
         <button
           className="btn btn-link text-left w-100 p-0"
+          type="button"
         >
           <div
             className="d-flex justify-content-between"
