@@ -759,6 +759,7 @@ export function handleCodeHost({
             const adjustPosition = getPositionAdjuster && getPositionAdjuster(platformContext.requestGraphQL)
             let hoverSubscription = new Subscription()
             codeViewEvent.subscriptions.add(
+                // tslint:disable-next-line: rxjs-no-nested-subscribe
                 nativeTooltipsEnabled.subscribe(useNativeTooltips => {
                     hoverSubscription.unsubscribe()
                     if (!useNativeTooltips) {

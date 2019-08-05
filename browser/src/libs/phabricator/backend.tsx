@@ -665,6 +665,8 @@ export function resolveDiffRev(
                             error => {
                                 getRawDiffFromConduit(propsWithInfo.diffID)
                                     .then(patch =>
+                                        // TODO refactor this
+                                        // tslint:disable-next-line: rxjs-no-nested-subscribe
                                         resolveStagingRev({ ...conduitProps, patch, requestGraphQL }).subscribe(
                                             commitID => {
                                                 if (commitID) {
