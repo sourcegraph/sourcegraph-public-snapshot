@@ -97,9 +97,9 @@ export function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
 export function queryAndFragmentForUnion<T extends string, F extends string>(
     typeNames: T[],
     fields: F[],
-    nestedFields: string[]
+    nestedFields?: string[]
 ): { query: string; fragment: string } {
-    const allFields = [...fields, ...nestedFields]
+    const allFields = nestedFields ? [...fields, ...nestedFields] : fields
     const fragment = typeNames
         .map(typeName => `fragment ${typeName}Fields on ${typeName} { ${allFields.join('\n')} }`)
         .join('\n')

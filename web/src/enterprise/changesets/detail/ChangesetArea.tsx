@@ -17,6 +17,7 @@ import { LabelIcon } from '../../../projects/icons'
 import { CampaignsIcon } from '../../campaigns/icons'
 import { ObjectCampaignsList } from '../../campaigns/object/ObjectCampaignsList'
 import { ThreadCampaignsDropdownButton } from '../../threadlike/ThreadCampaignsDropdownButton'
+import { ThreadStateBadge } from '../../threadlike/threadState/ThreadStateBadge'
 import { CopyThreadLinkButton } from '../../threadsOLD/detail/CopyThreadLinkButton'
 import { ChangesetDeleteButton } from '../common/ChangesetDeleteButton'
 import { RepositoryChangesetsAreaContext } from '../repository/RepositoryChangesetsArea'
@@ -89,6 +90,10 @@ export const ChangesetArea: React.FunctionComponent<Props> = ({
         () =>
             changeset !== LOADING && changeset !== null && !isErrorLike(changeset)
                 ? [
+                      {
+                          expanded: <ThreadStateBadge thread={changeset} />,
+                          collapsed: <ThreadStateBadge thread={changeset} />,
+                      },
                       {
                           expanded: {
                               title: (
@@ -219,7 +224,7 @@ export const ChangesetArea: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            <style>{`.user-area-header, .org-header { display: none; } .org-area > .container, .user-area > .container { margin: unset; margin-top: unset !important; width: unset; padding: unset; } /* TODO!(sqs): hack */`}</style>
+            <style>{`.user-area-header, .org-header { display: none; } .org-area > .container, .user-area > .container { margin: unset; margin-top: unset !important; width: 100%; max-width: unset !important; padding: unset; } /* TODO!(sqs): hack */`}</style>
             <WithSidebar
                 sidebarPosition="right"
                 sidebar={<InfoSidebar sections={sidebarSections} />}

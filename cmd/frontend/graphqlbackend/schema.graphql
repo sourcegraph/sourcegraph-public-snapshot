@@ -2700,6 +2700,8 @@ type Org implements Node & SettingsSubject & Namespace {
     id: ID!
     # The organization's name. This is unique among all organizations on this Sourcegraph site.
     name: String!
+    # Same as Org.name, for consistency with User.
+    username: String!
     # The organization's chosen display name.
     displayName: String
     # The date when the organization was created, in RFC 3339 format.
@@ -4149,7 +4151,14 @@ type LabelConnection {
 }
 
 # An object that can perform actions.
-union Actor = User | Org
+union Actor = User | Org | ExternalActor
+
+# An actor on an external service that was not mapped to a Sourcegraph actor.
+type ExternalActor {
+    username: String!
+    displayName: String
+    url: String!
+}
 
 # An RFC 3339-encoded UTC date string.
 scalar DateTime

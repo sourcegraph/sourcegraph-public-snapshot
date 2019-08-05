@@ -73,6 +73,8 @@ func (o *OrgResolver) Name() string {
 	return o.org.Name
 }
 
+func (o *OrgResolver) Username() string { return o.org.Name }
+
 func (o *OrgResolver) DisplayName() *string {
 	return o.org.DisplayName
 }

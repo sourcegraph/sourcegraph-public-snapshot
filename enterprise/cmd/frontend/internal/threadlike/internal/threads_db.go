@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -42,6 +43,7 @@ type DBThread struct {
 
 	ImportedFromExternalServiceID int64
 	ExternalID                    string
+	ExternalMetadata              []byte
 }
 
 // errThreadNotFound occurs when a database operation expects a specific thread to exist but it does
@@ -50,7 +52,7 @@ var errThreadNotFound = errors.New("thread not found")
 
 type DBThreads struct{}
 
-const SelectColumns = "id, type, repository_id, title, state, is_preview, primary_comment_id, created_at, updated_at, base_ref, head_ref, imported_from_external_service_id, external_id"
+const SelectColumns = "id, type, repository_id, title, state, is_preview, primary_comment_id, created_at, updated_at, base_ref, head_ref, imported_from_external_service_id, external_id, external_metadata"
 
 // Create creates a thread. The thread argument's (Thread).ID field is ignored. The new thread is
 // returned.
@@ -82,11 +84,13 @@ func (DBThreads) Create(ctx context.Context, tx *sql.Tx, thread *DBThread, comme
 		}
 		return t
 	}
+	var externalMetadata *[]byte
+	if thread.ExternalMetadata != nil {
+		externalMetadata = &thread.ExternalMetadata
+	}
 
 	return thread, commentobjectdb.CreateCommentWithObject(ctx, tx, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
-		var err error
-		thread, err = DBThreads{}.scanRow(tx.QueryRowContext(ctx,
-			`INSERT INTO threads(`+SelectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING `+SelectColumns,
+		args := []interface{}{
 			thread.Type,
 			thread.RepositoryID,
 			thread.Title,
@@ -99,7 +103,14 @@ func (DBThreads) Create(ctx context.Context, tx *sql.Tx, thread *DBThread, comme
 			nilIfEmpty(thread.HeadRef),
 			nilIfZero(thread.ImportedFromExternalServiceID),
 			nilIfEmpty(thread.ExternalID),
-		))
+			externalMetadata,
+		}
+		query := sqlf.Sprintf(
+			`INSERT INTO threads(`+SelectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+SelectColumns,
+			args...,
+		)
+		var err error
+		thread, err = DBThreads{}.scanRow(tx.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
 		if err != nil {
 			return nil, err
 		}
@@ -272,6 +283,7 @@ func (DBThreads) scanRow(row interface {
 		&headRef,
 		&importedFromExternalServiceID,
 		&externalID,
+		&t.ExternalMetadata,
 	); err != nil {
 		return nil, err
 	}

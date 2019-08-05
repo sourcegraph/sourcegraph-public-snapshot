@@ -19,11 +19,12 @@ CREATE TABLE threads (
 	-- cascade to the threads and events rows, which will prevent orphaned data - or else make their
 	-- queries omit results if the corresponding external_services row was soft-deleted.
     imported_from_external_service_id bigint REFERENCES external_services(id) ON DELETE CASCADE,
-    external_id text
+    external_id text,
+    external_metadata jsonb
 );
 CREATE INDEX threads_repository_id ON threads(repository_id);
 CREATE INDEX threads_imported_from_external_service_id ON threads(imported_from_external_service_id);
-ALTER TABLE threads ADD CONSTRAINT external_thread_has_id CHECK ((imported_from_external_service_id IS NULL) = (external_id IS NULL));
+ALTER TABLE threads ADD CONSTRAINT external_thread_has_id_and_data CHECK ((imported_from_external_service_id IS NULL) = ((external_id IS NULL) = (external_metadata IS NULL)));
 
 -----------------
 

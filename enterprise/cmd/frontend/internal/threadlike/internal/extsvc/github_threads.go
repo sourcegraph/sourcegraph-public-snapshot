@@ -2,7 +2,9 @@ package extsvc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -35,6 +37,10 @@ func ImportGitHubRepositoryThreads(ctx context.Context, repoID api.RepoID, extRe
 		if ghPull.IsCrossRepository {
 			continue
 		}
+		// HACK TODO!(sqs): omit renovate PRs
+		if strings.HasPrefix(ghPull.Title, "Update dependency ") {
+			continue
+		}
 
 		thread, comment := githubPullToThread(ghPull)
 		thread.RepositoryID = repoID
@@ -63,6 +69,11 @@ func githubPullToThread(ghPull *githubPullRequest) (*internal.DBThread, commento
 		BaseRef:    getRefName(ghPull.BaseRef, ghPull.BaseRefOid),
 		HeadRef:    getRefName(ghPull.HeadRef, ghPull.HeadRefOid),
 		ExternalID: string(ghPull.ID),
+	}
+	var err error
+	thread.ExternalMetadata, err = json.Marshal(ghPull)
+	if err != nil {
+		panic(err)
 	}
 
 	comment := commentobjectdb.DBObjectCommentFields{
@@ -103,7 +114,7 @@ func listGitHubPullRequestsForRepository(ctx context.Context, client *github.Cli
 query ImportGitHubThreads($repository: ID!) {
 	node(id: $repository) {
 		... on Repository {
-			pullRequests(first: 50, orderBy: { field: UPDATED_AT, direction: DESC }) {
+			pullRequests(first: 100, orderBy: { field: UPDATED_AT, direction: DESC }) {
 				nodes {
 					id
 					number

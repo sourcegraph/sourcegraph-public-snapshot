@@ -3,6 +3,7 @@ import { map, startWith } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
+import { actorFragment, actorQuery } from '../../../actor/graphql'
 import { queryGraphQL } from '../../../backend/graphql'
 
 const LOADING: 'loading' = 'loading'
@@ -29,17 +30,15 @@ export const useChangesetByNumberInRepository = (
                         __typename
                         ... on Repository {
                             changeset(number: $number) {
+                                __typename
                                 id
                                 number
                                 title
+                                state
                                 body
                                 bodyHTML
                                 author {
-                                    ... on User {
-                                        displayName
-                                        username
-                                        url
-                                    }
+                                    ${actorQuery}
                                 }
                                 createdAt
                                 updatedAt
@@ -62,6 +61,7 @@ export const useChangesetByNumberInRepository = (
                         }
                     }
                 }
+                ${actorFragment}
             `,
             { repository, number }
         )

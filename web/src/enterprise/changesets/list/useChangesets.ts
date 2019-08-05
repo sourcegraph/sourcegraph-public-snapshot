@@ -9,9 +9,11 @@ const LOADING: 'loading' = 'loading'
 
 const changesetFields = gql`
     fragment ChangesetFields on Changeset {
+        __typename
         id
         number
         title
+        state
         url
     }
 `

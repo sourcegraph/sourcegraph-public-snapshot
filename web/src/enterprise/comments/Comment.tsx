@@ -177,6 +177,7 @@ export const Comment: React.FunctionComponent<Props> = ({
                         placeholder=""
                         onSubmit={onSubmit}
                         onCancel={onCancel}
+                        autoFocus={true}
                         disabled={isEditLoading}
                     />
                 </div>

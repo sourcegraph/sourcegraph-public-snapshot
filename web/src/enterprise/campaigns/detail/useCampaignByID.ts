@@ -3,6 +3,7 @@ import { map, startWith } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { actorFragment, actorQuery } from '../../../actor/graphql'
 import { queryGraphQL } from '../../../backend/graphql'
 
 const LOADING: 'loading' = 'loading'
@@ -30,11 +31,7 @@ export const useCampaignByID = (
                             body
                             bodyHTML
                             author {
-                                ... on User {
-                                    displayName
-                                    username
-                                    url
-                                }
+                                ${actorQuery}
                             }
                             createdAt
                             updatedAt
@@ -45,6 +42,7 @@ export const useCampaignByID = (
                         }
                     }
                 }
+                ${actorFragment}
             `,
             { campaign }
         )

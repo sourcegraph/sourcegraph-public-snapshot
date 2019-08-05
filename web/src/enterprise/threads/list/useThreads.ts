@@ -9,9 +9,11 @@ const LOADING: 'loading' = 'loading'
 
 const threadFields = gql`
     fragment ThreadFields on Thread {
+        __typename
         id
         number
         title
+        state
         url
     }
 `

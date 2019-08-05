@@ -26,6 +26,7 @@ interface Props extends ExtensionsControllerProps {
      */
     onCancel?: () => void
 
+    autoFocus?: boolean
     disabled?: boolean
     className?: string
     // TODO!(sqs): confirm navigation away when field is dirty
@@ -41,6 +42,7 @@ export const CommentForm: React.FunctionComponent<Props> = ({
     placeholder,
     onSubmit,
     onCancel,
+    autoFocus,
     disabled,
     className = '',
     history,
@@ -119,7 +121,7 @@ export const CommentForm: React.FunctionComponent<Props> = ({
                 onValueChange={setUncommittedBody}
                 onKeyDown={onKeyDown}
                 textAreaRef={textAreaRef}
-                autoFocus={true}
+                autoFocus={autoFocus}
                 rows={5} // TODO!(sqs): use autosizing textarea and make this minRows={5}
                 disabled={disabled}
                 extensionsController={extensionsController}
