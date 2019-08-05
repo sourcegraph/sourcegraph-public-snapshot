@@ -216,7 +216,7 @@
     "he": "^1.2.0",
     "highlight.js": "^9.15.8",
     "lodash": "^4.17.15",
-    "marked": "^0.6.3",
+    "marked": "^0.7.0",
     "mdi-react": "^5.5.0",
     "minimatch": "^3.0.4",
     "monaco-editor": "^0.17.0",
