@@ -29,6 +29,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		bk.Env("ENTERPRISE", "1"),
 		bk.Env("COMMIT_SHA", c.commit),
 		bk.Env("DATE", c.now.Format(time.RFC3339)),
+		bk.Cmd("source /usr/local/nvm/nvm.sh"),
 		bk.Cmd("nvm use"), // reads the version in .nvmrc
 	)
 
