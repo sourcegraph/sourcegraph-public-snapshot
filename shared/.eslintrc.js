@@ -16,4 +16,5 @@ module.exports = {
       },
     ],
   },
+  overrides: require('../.eslintrc').overrides,
 }
