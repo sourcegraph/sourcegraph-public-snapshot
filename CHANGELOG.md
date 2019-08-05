@@ -13,8 +13,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- Repos with greatest `updated_at - created_at` are prioritized for indexing, to support `repo:`-free queries on sourcegraph.com. [#4958](https://github.com/sourcegraph/sourcegraph/issues/4958).
-
 ### Changed
 
 - Out-of-the-box TypeScript code intelligence is much better with an updated ctags version with a built-in TypeScript parser.
@@ -22,6 +20,13 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 ### Removed
+
+## 3.6.1 (unreleased)
+
+## Added
+
+- New site config option `branding.brandName` configures the brand name to display in the Sourcegraph \<title\> element.
+- `repositoryPathPattern` option added to the "Other" external service type for repository name customization.
 
 ## 3.6.0
 

@@ -96,7 +96,7 @@ Run a find replace on:
     VERSION='vMAJOR.MINOR.0' bash -c 'git tag -a "$VERSION" -m "$VERSION" && git push origin "$VERSION"'
     ```
 - [ ] Send a message to #dev-announce to announce the final release.
-- [ ] Verify that all changes that have been cherry picked onto the release branch have been moved to the approriate section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
+- [ ] Verify that all changes that have been cherry picked onto the release branch have been moved to the appropriate section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
 - [ ] Wait for the final Docker images to be available at https://hub.docker.com/r/sourcegraph/server/tags.
 - [ ] In [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph):
     - [ ] Wait for Renovate to open a PR to update the image tags and merge that PR ([example](https://github.com/sourcegraph/deploy-sourcegraph/pull/199)).

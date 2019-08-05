@@ -53,7 +53,7 @@ The release captain should create a tracking issue using the [release issue temp
 
 - [Release issue template](release_issue_template.md)
 - [Patch release issue template](patch_release_issue_template.md)
-- [DevRel release issue template](devrel_release_template.md)
+- [DevRel release issue template](devrel_release_issue_template.md)
 
 ### Schedule
 
@@ -96,7 +96,7 @@ Here is an example git commit history:
 
 1. The release captain creates the `3.0` release branch at commit `B`.
 1. The release captain tags the release candidate `v3.0.0-rc.1` at commit `B`.
-1. A feature is commited to `master` in commit `C`. It will not ship in `3.0`.
+1. A feature is committed to `master` in commit `C`. It will not ship in `3.0`.
 1. An issue is found in the release candidate and a fix is committed to `master` in commit `D`.
 1. The release captain cherry picks `D` from `master` into `3.0`.
 1. The release captain tags `v3.0.0` on the `3.0` release branch.
@@ -129,7 +129,7 @@ There are only three kinds of issues that are eligible to block a release:
 
 Only the release captain can label something as release blocking.
 
-The release captain has unlimited power to make changes to the release branch to resolve release blocking issues. As soon as a release blocking issue is identified, the release captain should decide the least risky way to relosve the issue as soon as possible. A good default action is to identify and revert offending commits from the release branch. In the worst case, this could involved recreating the release branch from an earlier commit on master. Project owners can work on master to fix the issue, and if the issue is resolved in time, revert the revert and cherry-pick the fix on the release branch.
+The release captain has unlimited power to make changes to the release branch to resolve release blocking issues. As soon as a release blocking issue is identified, the release captain should decide the least risky way to resolve the issue as soon as possible. A good default action is to identify and revert offending commits from the release branch. In the worst case, this could involved recreating the release branch from an earlier commit on master. Project owners can work on master to fix the issue, and if the issue is resolved in time, revert the revert and cherry-pick the fix on the release branch.
 
 #### Non-blocking
 

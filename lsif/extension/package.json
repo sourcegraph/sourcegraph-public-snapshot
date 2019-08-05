@@ -45,7 +45,7 @@
     "parcel-bundler": "^1.12.3",
     "sourcegraph": "^23.0.1",
     "tslint": "^5.18.0",
-    "typescript": "^3.5.2"
+    "typescript": "^3.5.3"
   },
   "dependencies": {
     "@sourcegraph/lsp-client": "^2.0.0-beta.2",

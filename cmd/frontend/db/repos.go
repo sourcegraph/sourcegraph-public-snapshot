@@ -322,7 +322,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 // experience for people trying out search.
 func (s *repos) ListWithLongestInterval(ctx context.Context, lim int) (URIs []string, err error) {
 	query := fmt.Sprintf(`
-		SELECT uri
+		SELECT name
 		FROM repo
 		WHERE deleted_at IS NULL
 		AND enabled = true

@@ -52,7 +52,7 @@ total := add([]Vector(a, b, c))...)
 
 The `c` `Vector` isn't used until the `add()` function call, so why not declare it immediately beforehand?
 
-By logically grouping components together, you make sure that the context around them isn’t lost by the time they come into play. More concretely:
+By logically grouping components together, you make sure that the context around them isn't lost by the time they come into play. More concretely:
 
 - You have to keep less in your mental buffer -- which is great if you use a screenreader
 - You have to navigate around the code base less to find definitions or declarations -- and that’s great if you have difficulties with fine motor control
@@ -106,7 +106,7 @@ Using meaningful names reduces the amount of work that a person has to do to und
 
 Whenever possible, prefer meaningful names over explanatory comments. Comments are an extra thing to navigate around, and they don't actually reduce the amount of jumping around the codebase that you'll need to do when the variables are used later on.
 
-## Use pronouncable names
+## Use pronounceable names
 
 Prefer
 
@@ -124,7 +124,7 @@ var addAllVecs(...)
 
 Pronounceable names:
 
-- Screenreaders can read actually read them
+- Screen readers can read actually read them
 - Takes less time than pronouncing a string of letters
 
 [You should watch this short YouTube video of @juliaferraioli navigating some Go code with a screenreader.](https://www.youtube.com/watch?v=xwjvufcJK-Q)

@@ -256,7 +256,7 @@ See the [`saml` auth provider documentation](../config/critical_config.md#saml) 
 
 ### SAML troubleshooting
 
-Setting the env var `INSECURE_SAML_LOG_TRACES=1` on the `sourcegraph/server` Docker conatiner (or the `sourcegraph-frontend` pod if Sourcegraph is deployed to a Kubernetes cluster) causes all SAML requests and responses to be logged.
+Setting the env var `INSECURE_SAML_LOG_TRACES=1` on the `sourcegraph/server` Docker container (or the `sourcegraph-frontend` pod if Sourcegraph is deployed to a Kubernetes cluster) causes all SAML requests and responses to be logged.
 
 ### Vendor-specific SAML instructions
 
