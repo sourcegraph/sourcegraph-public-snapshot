@@ -19,7 +19,7 @@
     "semver": "^6.0.0",
     "tmp-promise": "^2.0.2",
     "vscode-languageserver": "^5.2.1",
-    "vscode-uri": "^2.0.2"
+    "vscode-uri": "^2.0.3"
   },
   "devDependencies": {
     "@types/body-parser": "1.17.0",
