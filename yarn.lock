@@ -4275,10 +4275,10 @@ bluebird-retry@^0.11.0:
   resolved "https://registry.npmjs.org/bluebird-retry/-/bluebird-retry-0.11.0.tgz#1289ab22cbbc3a02587baad35595351dd0c1c047"
   integrity sha1-EomrIsu8OgJYe6rTVZU1HdDBwEc=
 
-bluebird@3.5.3, bluebird@^3.3.5, bluebird@^3.5.0, bluebird@^3.5.1, bluebird@^3.5.3:
-  version "3.5.3"
-  resolved "https://registry.npmjs.org/bluebird/-/bluebird-3.5.3.tgz#7d01c6f9616c9a51ab0f8c549a79dfe6ec33efa7"
-  integrity sha512-/qKPUQlaW1OyR51WeCPBvRnAlnZFUJkCSG5HzGnuIqhgyJtF+T94lFnn33eiazjRm2LAHVy2guNnaq48X9SJuw==
+bluebird@3.5.5, bluebird@^3.3.5, bluebird@^3.5.0, bluebird@^3.5.1, bluebird@^3.5.3:
+  version "3.5.5"
+  resolved "https://registry.npmjs.org/bluebird/-/bluebird-3.5.5.tgz#a8d0afd73251effbbd5fe384a77d73003c17a71f"
+  integrity sha512-5am6HnnfN+urzt4yfg7IgTbotDjIT/u8AJpEt0sIU9FtXfVeezXAPKswrG+xKUCOYAINpSdgZVDU6QFh+cuH3w==
 
 bluebird@~2.9.24:
   version "2.9.34"
@@ -4896,20 +4896,20 @@ cheerio@1.0.0-rc.2:
     lodash "^4.15.0"
     parse5 "^3.0.1"
 
-chokidar-cli@^1.2.2:
-  version "1.2.2"
-  resolved "https://registry.npmjs.org/chokidar-cli/-/chokidar-cli-1.2.2.tgz#fbfddcf1f9062c07744f0bbeb6f60a49de12c656"
-  integrity sha512-Yx0OYKcAkS7YMPP3/co6aN+1AOx2L6WmscqWvnqs7z+9AhDsn4zpezaErNoPACri1iUVjtxk8E77sMGntkBh3Q==
+chokidar-cli@^1.2.3:
+  version "1.2.3"
+  resolved "https://registry.npmjs.org/chokidar-cli/-/chokidar-cli-1.2.3.tgz#28fe28da1c3a12b444f52ddbe8a472358a32279f"
+  integrity sha512-HcHjqeQaT/u0Swy4eaqqg0NhPjsXq6ZN9YzP48EYc81FXBLQuvMXBsrEMDkgH+Puup1mBc0gD0qqECDy/WiMOA==
   dependencies:
-    bluebird "3.5.3"
-    chokidar "2.1.1"
-    lodash "4.17.11"
-    yargs "12.0.5"
+    bluebird "3.5.5"
+    chokidar "2.1.5"
+    lodash "4.17.15"
+    yargs "13.3.0"
 
-chokidar@2.1.1:
-  version "2.1.1"
-  resolved "https://registry.npmjs.org/chokidar/-/chokidar-2.1.1.tgz#adc39ad55a2adf26548bd2afa048f611091f9184"
-  integrity sha512-gfw3p2oQV2wEt+8VuMlNsPjCxDxvvgnm/kz+uATu805mWVF8IJN7uz9DN7iBz+RMJISmiVbCOBFs9qBGMjtPfQ==
+chokidar@2.1.5:
+  version "2.1.5"
+  resolved "https://registry.npmjs.org/chokidar/-/chokidar-2.1.5.tgz#0ae8434d962281a5f56c72869e79cb6d9d86ad4d"
+  integrity sha512-i0TprVWp+Kj4WRPtInjexJ8Q+BqTE909VpH8xVhXrJkoc5QC8VO9TryGOqTr+2hljzc1sC62t22h5tZePodM/A==
   dependencies:
     anymatch "^2.0.0"
     async-each "^1.0.1"
@@ -4921,7 +4921,7 @@ chokidar@2.1.1:
     normalize-path "^3.0.0"
     path-is-absolute "^1.0.0"
     readdirp "^2.2.1"
-    upath "^1.1.0"
+    upath "^1.1.1"
   optionalDependencies:
     fsevents "^1.2.7"
 
@@ -5146,6 +5146,15 @@ cliui@^4.0.0:
     string-width "^2.1.1"
     strip-ansi "^4.0.0"
     wrap-ansi "^2.0.0"
+
+cliui@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/cliui/-/cliui-5.0.0.tgz#deefcfdb2e800784aa34f46fa08e06851c7bbbc5"
+  integrity sha512-PYeGSEmmHM6zvoef2w8TPzlrnNpXIjTipYK780YswmIP9vjxmd6Y2a3CB2Ks6/AU8NHjZugXvo8w3oWM2qnwXA==
+  dependencies:
+    string-width "^3.1.0"
+    strip-ansi "^5.2.0"
+    wrap-ansi "^5.1.0"
 
 clone-buffer@^1.0.0:
   version "1.0.0"
@@ -10814,7 +10823,7 @@ lodash@4.17.11:
   resolved "https://registry.npmjs.org/lodash/-/lodash-4.17.11.tgz#b39ea6229ef607ecd89e2c8df12536891cac9b8d"
   integrity sha512-cQKh8igo5QUhZ7lg38DYWAxMvjSAKG0A8wGSVimP07SIUEK2UO+arSRKbRZWtelMtN5V0Hkwh5ryOto/SshYIg==
 
-lodash@^4.0.0, lodash@^4.0.1, lodash@^4.14.0, lodash@^4.15.0, lodash@^4.17.10, lodash@^4.17.11, lodash@^4.17.12, lodash@^4.17.13, lodash@^4.17.14, lodash@^4.17.15, lodash@^4.17.4, lodash@^4.17.5, lodash@^4.3.0, lodash@^4.8.0, lodash@~4.17.10, lodash@~4.17.2:
+lodash@4.17.15, lodash@^4.0.0, lodash@^4.0.1, lodash@^4.14.0, lodash@^4.15.0, lodash@^4.17.10, lodash@^4.17.11, lodash@^4.17.12, lodash@^4.17.13, lodash@^4.17.14, lodash@^4.17.15, lodash@^4.17.4, lodash@^4.17.5, lodash@^4.3.0, lodash@^4.8.0, lodash@~4.17.10, lodash@~4.17.2:
   version "4.17.15"
   resolved "https://registry.npmjs.org/lodash/-/lodash-4.17.15.tgz#b447f6670a0455bbfeedd11392eff330ea097548"
   integrity sha512-8xOcRHvCjnocdS5cpwXQXVzmmh5e5+saE2QGoeQmbKmRS6J3VQppPOIt0MnmE+4xlZoumy0GPG0D0MVIQbNA1A==
@@ -15582,7 +15591,7 @@ string-width@^1.0.1, string-width@^1.0.2:
     is-fullwidth-code-point "^2.0.0"
     strip-ansi "^4.0.0"
 
-string-width@^3.0.0:
+string-width@^3.0.0, string-width@^3.1.0:
   version "3.1.0"
   resolved "https://registry.npmjs.org/string-width/-/string-width-3.1.0.tgz#22767be21b62af1081574306f69ac51b62203961"
   integrity sha512-vafcv6KjVZKSgz06oM/H6GDBrAtz8vdhQakGjFIvNrHA6y3HCF1CInLy+QLq8dTJPQ1b+KDUqDFctkdRW44e1w==
@@ -16707,7 +16716,7 @@ unzip-response@^2.0.1:
   resolved "https://registry.npmjs.org/unzip-response/-/unzip-response-2.0.1.tgz#d2f0f737d16b0615e72a6935ed04214572d56f97"
   integrity sha1-0vD3N9FrBhXnKmk17QQhRXLVb5c=
 
-upath@1.1.2, upath@^1.1.0, upath@^1.1.1:
+upath@1.1.2, upath@^1.1.1:
   version "1.1.2"
   resolved "https://registry.npmjs.org/upath/-/upath-1.1.2.tgz#3db658600edaeeccbe6db5e684d67ee8c2acd068"
   integrity sha512-kXpym8nmDmlCBr7nKdIx8P2jNBa+pBpIUFRnKJ4dr8htyYGJFokkr2ZvERRtUN+9SY+JqXouNgUPtv6JQva/2Q==
@@ -17355,6 +17364,15 @@ wrap-ansi@^4.0.0:
     string-width "^2.1.1"
     strip-ansi "^4.0.0"
 
+wrap-ansi@^5.1.0:
+  version "5.1.0"
+  resolved "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-5.1.0.tgz#1fd1f67235d5b6d0fee781056001bfb694c03b09"
+  integrity sha512-QC1/iN/2/RPVJ5jYK8BGttj5z83LmSKmvbvrXPNCLZSEb32KKVDJDl/MOt2N01qU2H/FkzEa9PKto1BqDjtd7Q==
+  dependencies:
+    ansi-styles "^3.2.0"
+    string-width "^3.0.0"
+    strip-ansi "^5.0.0"
+
 wrappy@1:
   version "1.0.2"
   resolved "https://registry.npmjs.org/wrappy/-/wrappy-1.0.2.tgz#b5243d8f3ec1aa35f1364605bc0d1036e30ab69f"
@@ -17494,7 +17512,7 @@ yargs-parser@^11.1.1:
     camelcase "^5.0.0"
     decamelize "^1.2.0"
 
-yargs-parser@^13.0.0:
+yargs-parser@^13.0.0, yargs-parser@^13.1.1:
   version "13.1.1"
   resolved "https://registry.npmjs.org/yargs-parser/-/yargs-parser-13.1.1.tgz#d26058532aa06d365fe091f6a1fc06b2f7e5eca0"
   integrity sha512-oVAVsHz6uFrg3XQheFII8ESO2ssAf9luWuAd6Wexsu4F3OtIW0o8IribPXYrD4WC24LWtPrJlGy87y5udK+dxQ==
@@ -17543,6 +17561,22 @@ yargs@13.2.2, yargs@~13.2.0:
     which-module "^2.0.0"
     y18n "^4.0.0"
     yargs-parser "^13.0.0"
+
+yargs@13.3.0:
+  version "13.3.0"
+  resolved "https://registry.npmjs.org/yargs/-/yargs-13.3.0.tgz#4c657a55e07e5f2cf947f8a366567c04a0dedc83"
+  integrity sha512-2eehun/8ALW8TLoIl7MVaRUrg+yCnenu8B4kBlRxj3GJGDKU1Og7sMXPNm1BYyM1DOJmTZ4YeN/Nwxv+8XJsUA==
+  dependencies:
+    cliui "^5.0.0"
+    find-up "^3.0.0"
+    get-caller-file "^2.0.1"
+    require-directory "^2.1.1"
+    require-main-filename "^2.0.0"
+    set-blocking "^2.0.0"
+    string-width "^3.0.0"
+    which-module "^2.0.0"
+    y18n "^4.0.0"
+    yargs-parser "^13.1.1"
 
 yargs@^7.0.0, yargs@^7.1.0:
   version "7.1.0"
