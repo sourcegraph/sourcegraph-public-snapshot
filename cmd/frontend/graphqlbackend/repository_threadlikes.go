@@ -28,7 +28,7 @@ func (r *RepositoryResolver) ThreadOrIssueOrChangeset(ctx context.Context, arg s
 	return ThreadOrIssueOrChangesetInRepository(ctx, r.ID(), arg.Number)
 }
 
-func (r *RepositoryResolver) ThreadOrIssueOrChangesets(ctx context.Context, arg *graphqlutil.ConnectionArgs) (ThreadOrIssueOrChangesetConnection, error) {
+func (r *RepositoryResolver) ThreadOrIssueOrChangesets(ctx context.Context, arg *ThreadOrIssueOrChangesetConnectionArgs) (ThreadOrIssueOrChangesetConnection, error) {
 	return ThreadOrIssueOrChangesetsForRepository(ctx, r.ID(), arg)
 }
 

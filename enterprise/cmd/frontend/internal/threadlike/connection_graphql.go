@@ -9,11 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 )
 
-func (GraphQLResolver) ThreadOrIssueOrChangesets(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadOrIssueOrChangesetConnection, error) {
+func (GraphQLResolver) ThreadOrIssueOrChangesets(ctx context.Context, arg *graphqlbackend.ThreadOrIssueOrChangesetConnectionArgs) (graphqlbackend.ThreadOrIssueOrChangesetConnection, error) {
 	return threadlikesByOptions(ctx, internal.DBThreadsListOptions{}, arg)
 }
 
-func (GraphQLResolver) ThreadOrIssueOrChangesetsForRepository(ctx context.Context, repositoryID graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadOrIssueOrChangesetConnection, error) {
+func (GraphQLResolver) ThreadOrIssueOrChangesetsForRepository(ctx context.Context, repositoryID graphql.ID, arg *graphqlbackend.ThreadOrIssueOrChangesetConnectionArgs) (graphqlbackend.ThreadOrIssueOrChangesetConnection, error) {
 	repo, err := graphqlbackend.RepositoryByID(ctx, repositoryID)
 	if err != nil {
 		return nil, err
@@ -23,13 +23,22 @@ func (GraphQLResolver) ThreadOrIssueOrChangesetsForRepository(ctx context.Contex
 	}, arg)
 }
 
-func ThreadOrIssueOrChangesetsByIDs(ctx context.Context, ids []int64, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadOrIssueOrChangesetConnection, error) {
+func ThreadOrIssueOrChangesetsByIDs(ctx context.Context, ids []int64) (graphqlbackend.ThreadOrIssueOrChangesetConnection, error) {
 	return threadlikesByOptions(ctx, internal.DBThreadsListOptions{
 		ThreadIDs: ids,
-	}, arg)
+	}, nil)
 }
 
-func threadlikesByOptions(ctx context.Context, options internal.DBThreadsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadOrIssueOrChangesetConnection, error) {
+func threadlikesByOptions(ctx context.Context, options internal.DBThreadsListOptions, arg *graphqlbackend.ThreadOrIssueOrChangesetConnectionArgs) (graphqlbackend.ThreadOrIssueOrChangesetConnection, error) {
+	var connectionArgs *graphqlutil.ConnectionArgs
+	if arg != nil {
+		arg.Set(&options.LimitOffset)
+		if arg.Open != nil && *arg.Open {
+			options.State = string(graphqlbackend.ThreadStateOpen) // == ChangesetStateOpen
+		}
+		connectionArgs = &arg.ConnectionArgs
+	}
+
 	list, err := internal.DBThreads{}.List(ctx, options)
 	if err != nil {
 		return nil, err
@@ -38,7 +47,7 @@ func threadlikesByOptions(ctx context.Context, options internal.DBThreadsListOpt
 	for i, a := range list {
 		threadlikes[i] = newGQLThreadOrIssueOrChangeset(a)
 	}
-	return &threadOrIssueOrChangesetConnection{arg: arg, threadlikes: threadlikes}, nil
+	return &threadOrIssueOrChangesetConnection{arg: connectionArgs, threadlikes: threadlikes}, nil
 }
 
 type threadOrIssueOrChangesetConnection struct {

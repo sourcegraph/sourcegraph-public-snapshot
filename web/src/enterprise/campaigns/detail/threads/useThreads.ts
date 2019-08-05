@@ -13,13 +13,13 @@ const { fragment, query } = queryAndFragmentForThreadOrIssueOrChangeset()
 /**
  * A React hook that observes all threads (queried from the GraphQL API).
  */
-export const useThreads = (): typeof LOADING | GQL.IThreadOrIssueOrChangesetConnection | ErrorLike => {
+export const useThreads = (open = true): typeof LOADING | GQL.IThreadOrIssueOrChangesetConnection | ErrorLike => {
     const [result, setResult] = useState<typeof LOADING | GQL.IThreadOrIssueOrChangesetConnection | ErrorLike>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
-                query Threads {
-                    threadOrIssueOrChangesets {
+                query Threads($open: Boolean) {
+                    threadOrIssueOrChangesets(open: $open) {
                         nodes {
                             ${query}
                         }
@@ -27,7 +27,8 @@ export const useThreads = (): typeof LOADING | GQL.IThreadOrIssueOrChangesetConn
                     }
                 }
                 ${fragment}
-            `
+            `,
+            { open }
         )
             .pipe(
                 map(dataOrThrowErrors),
@@ -36,6 +37,6 @@ export const useThreads = (): typeof LOADING | GQL.IThreadOrIssueOrChangesetConn
             )
             .subscribe(setResult, err => setResult(asError(err)))
         return () => subscription.unsubscribe()
-    }, [])
+    }, [open])
     return result
 }

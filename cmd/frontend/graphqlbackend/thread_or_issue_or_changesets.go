@@ -38,14 +38,14 @@ func ThreadOrIssueOrChangesetInRepository(ctx context.Context, repository graphq
 // ThreadOrIssueOrChangesetsForRepository returns an instance of the GraphQL
 // ThreadOrIssueOrChangesetConnection type with the list of threads, issues, and changesets defined
 // in a repository.
-func ThreadOrIssueOrChangesetsForRepository(ctx context.Context, repository graphql.ID, arg *graphqlutil.ConnectionArgs) (ThreadOrIssueOrChangesetConnection, error) {
+func ThreadOrIssueOrChangesetsForRepository(ctx context.Context, repository graphql.ID, arg *ThreadOrIssueOrChangesetConnectionArgs) (ThreadOrIssueOrChangesetConnection, error) {
 	if ThreadOrIssueOrChangesets == nil {
 		return nil, errThreadOrIssueOrChangesetsNotImplemented
 	}
 	return ThreadOrIssueOrChangesets.ThreadOrIssueOrChangesetsForRepository(ctx, repository, arg)
 }
 
-func (schemaResolver) ThreadOrIssueOrChangesets(ctx context.Context, arg *graphqlutil.ConnectionArgs) (ThreadOrIssueOrChangesetConnection, error) {
+func (schemaResolver) ThreadOrIssueOrChangesets(ctx context.Context, arg *ThreadOrIssueOrChangesetConnectionArgs) (ThreadOrIssueOrChangesetConnection, error) {
 	if ThreadOrIssueOrChangesets == nil {
 		return nil, errThreadOrIssueOrChangesetsNotImplemented
 	}
@@ -56,7 +56,7 @@ func (schemaResolver) ThreadOrIssueOrChangesets(ctx context.Context, arg *graphq
 // mutations.
 type ThreadOrIssueOrChangesetsResolver interface {
 	// Queries
-	ThreadOrIssueOrChangesets(context.Context, *graphqlutil.ConnectionArgs) (ThreadOrIssueOrChangesetConnection, error)
+	ThreadOrIssueOrChangesets(context.Context, *ThreadOrIssueOrChangesetConnectionArgs) (ThreadOrIssueOrChangesetConnection, error)
 
 	// ThreadOrIssueOrChangesetByID is called by the ThreadOrIssueOrChangesetByID func but is not in
 	// the GraphQL API.
@@ -68,7 +68,12 @@ type ThreadOrIssueOrChangesetsResolver interface {
 
 	// ThreadOrIssueOrChangesetsForRepository is called by the
 	// ThreadOrIssueOrChangesetsForRepository func but is not in the GraphQL API.
-	ThreadOrIssueOrChangesetsForRepository(ctx context.Context, repository graphql.ID, arg *graphqlutil.ConnectionArgs) (ThreadOrIssueOrChangesetConnection, error)
+	ThreadOrIssueOrChangesetsForRepository(ctx context.Context, repository graphql.ID, arg *ThreadOrIssueOrChangesetConnectionArgs) (ThreadOrIssueOrChangesetConnection, error)
+}
+
+type ThreadOrIssueOrChangesetConnectionArgs struct {
+	graphqlutil.ConnectionArgs
+	Open *bool
 }
 
 // ThreadOrIssueOrChangeset implements the GraphQL union ThreadOrIssueOrChangeset. Exactly 1 of the
@@ -76,6 +81,17 @@ type ThreadOrIssueOrChangesetsResolver interface {
 type ThreadOrIssueOrChangeset struct {
 	Thread    Thread
 	Changeset Changeset
+}
+
+func (v ThreadOrIssueOrChangeset) ID() graphql.ID {
+	switch {
+	case v.Thread != nil:
+		return v.Thread.ID()
+	case v.Changeset != nil:
+		return v.Changeset.ID()
+	default:
+		panic("ThreadOrIssueOrChangeset has no value")
+	}
 }
 
 func (v ThreadOrIssueOrChangeset) ToThread() (Thread, bool) {

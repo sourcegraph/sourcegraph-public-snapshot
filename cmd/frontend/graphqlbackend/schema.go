@@ -1021,6 +1021,8 @@ type Query {
     threadOrIssueOrChangesets(
         # Returns the first n results from the list.
         first: Int
+        # Only include results that are open.
+        open: Boolean
     ): ThreadOrIssueOrChangesetConnection!
 
     # A list of campaigns. TODO!(sqs)
@@ -1517,6 +1519,8 @@ type Repository implements Node & GenericSearchResultInterface {
     threadOrIssueOrChangesets(
         # Returns the first n results from the list.
         first: Int
+        # Only include results that are open.
+        open: Boolean
     ): ThreadOrIssueOrChangesetConnection!
 
     # A Git comparison in this repository between a base and head commit.

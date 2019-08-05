@@ -15,7 +15,7 @@ const LOADING = 'loading' as const
  * A dropdown menu with a list of threads.
  */
 export const ThreadsDropdownMenu: React.FunctionComponent<Props> = ({ onSelect, ...props }) => {
-    const threads = useThreads()
+    const threads = useThreads(true)
     return (
         <DropdownMenu {...props}>
             {threads === LOADING ? (

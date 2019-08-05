@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
@@ -107,6 +108,7 @@ func computeBurndownChartData(ctx context.Context, campaignID int64, date time.T
 	if err != nil {
 		return nil, err
 	}
+	openApprovedThreads := map[graphql.ID]struct{}{}
 	for _, event := range events {
 		switch {
 		case event.CreateThreadEvent != nil:
@@ -122,10 +124,11 @@ func computeBurndownChartData(ctx context.Context, campaignID int64, date time.T
 			// this reviewer went back and changed teir review to non-approved, etc.; also this
 			// counts 2 approvals on one PR as 2x
 			if event.ReviewEvent.State() == graphqlbackend.ReviewStateApproved {
-				data.openApprovedThreads++
+				openApprovedThreads[event.ReviewEvent.Thread().ID()] = struct{}{}
 			}
 		}
 	}
+	data.openApprovedThreads = int32(len(openApprovedThreads))
 
 	return &data, nil
 }

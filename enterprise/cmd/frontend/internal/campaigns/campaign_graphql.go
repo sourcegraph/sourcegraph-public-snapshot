@@ -131,7 +131,7 @@ func (v *gqlCampaign) ThreadOrIssueOrChangesets(ctx context.Context, arg *graphq
 	for i, e := range l {
 		threadlikeIDs[i] = e.Thread
 	}
-	return threadlike.ThreadOrIssueOrChangesetsByIDs(ctx, threadlikeIDs, arg)
+	return threadlike.ThreadOrIssueOrChangesetsByIDs(ctx, threadlikeIDs)
 }
 
 func (v *gqlCampaign) getChangesets(ctx context.Context) ([]graphqlbackend.Changeset, error) {
