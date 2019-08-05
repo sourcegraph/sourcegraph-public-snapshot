@@ -5,9 +5,9 @@ import LRU from 'lru-cache'
 import { fs, child_process } from 'mz'
 import * as path from 'path'
 import { withFile } from 'tmp-promise'
-import { Database, noopTransformer } from './database'
-import { JsonDatabase } from './json'
-import { GraphStore } from './graphStore'
+import { Database, noopTransformer } from './ms/database'
+import { JsonDatabase } from './ms/json'
+import { GraphStore } from './ms/graphStore'
 
 /**
  * Reads an integer from an environment variable or defaults to the given value.
@@ -376,10 +376,11 @@ function main(): void {
 
                 const key = diskKey({ repository, commit })
 
-                console.log('Creating graph-encoded sqlite database')
-                const blobArguments = ''
                 // const blobArguments = `--format blob --delete --projectVersion ${projectVersion}`
-                const command = `${SQLITE_CONVERTER_BINARY} --in "${tempFile.path}" --out "${key}" ${blobArguments}`
+                const command = `${SQLITE_CONVERTER_BINARY} --in "${tempFile.path}" --out "${key}"`
+                console.log('A', !!fs.stat(tempFile.path))
+                console.log('B', !!fs.stat(SQLITE_CONVERTER_BINARY))
+                console.log('C', fs.readFileSync(SQLITE_CONVERTER_BINARY).toString())
                 await child_process.exec(command)
                 await fs.unlink(tempFile.path)
 
