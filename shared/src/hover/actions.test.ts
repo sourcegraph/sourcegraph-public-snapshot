@@ -3,7 +3,6 @@ import { Location } from '@sourcegraph/extension-api-types'
 import { createMemoryHistory } from 'history'
 import { BehaviorSubject, from, Observable, of, throwError } from 'rxjs'
 import { first, map } from 'rxjs/operators'
-// tslint:disable-next-line:no-submodule-imports
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import { ActionItemAction } from '../actions/ActionItem'
@@ -61,7 +60,7 @@ const requestGraphQL: PlatformContext['requestGraphQL'] = <R extends IQuery | IM
 }: {
     variables: { [key: string]: any }
 }) =>
-    // tslint:disable-next-line no-object-literal-type-assertion
+    // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
     of({
         data: {
             repository: {
@@ -106,7 +105,7 @@ describe('getHoverActionsContext', () => {
                         FIXTURE_HOVER_CONTEXT
                     )
                 )
-                // tslint:disable-next-line:no-object-literal-type-assertion
+                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
             ).toBe(`a ${LOADER_DELAY - 1}ms (bc)d`, {
                 a: {
                     'goToDefinition.showLoading': false,
@@ -170,7 +169,7 @@ describe('getHoverActionsContext', () => {
                         FIXTURE_HOVER_CONTEXT
                     )
                 )
-                // tslint:disable-next-line:no-object-literal-type-assertion
+                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
             ).toBe('a(bc)', {
                 a: {
                     'goToDefinition.showLoading': false,
@@ -237,7 +236,7 @@ describe('getDefinitionURL', () => {
             }: {
                 [key: string]: any
             }): Observable<SuccessGraphQLResult<R>> =>
-                // tslint:disable-next-line no-object-literal-type-assertion
+                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
                 of({
                     data: {
                         repository: {

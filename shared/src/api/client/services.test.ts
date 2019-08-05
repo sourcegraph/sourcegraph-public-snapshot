@@ -3,7 +3,6 @@ import { Services } from './services'
 
 describe('Services', () => {
     test('initializes empty services', () => {
-        // tslint:disable-next-line:no-unused-expression
         new Services({
             settings: NEVER,
             updateSettings: () => Promise.reject(new Error('not implemented')),

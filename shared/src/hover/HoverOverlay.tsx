@@ -155,7 +155,6 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                             {hoverOrError.message}
                         </div>
                     ) : (
-                        // tslint:disable-next-line deprecation We want to handle the deprecated MarkedString
                         hoverOrError &&
                         castArray<string | MarkupContent | { language: string; value: string }>(hoverOrError.contents)
                             .map(value => (typeof value === 'string' ? { kind: 'markdown', value } : value))

@@ -18,7 +18,7 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
     from(proxyPromise).pipe(
         mergeMap(
             proxySubscribable =>
-                // tslint:disable-next-line: no-object-literal-type-assertion
+                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
                 ({
                     // Needed for Rx type check
                     [observable](): Subscribable<T> {

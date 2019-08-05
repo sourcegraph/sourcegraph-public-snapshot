@@ -7,8 +7,6 @@ import '../../app.scss'
 
 import { OptionsMenu } from './OptionsMenu'
 
-// tslint:disable: jsx-no-lambda
-
 storiesOf('Options - OptionsMenu', module)
     .add('Default', () => (
         <div style={{ maxWidth: 400, marginLeft: 20, marginTop: 20, boxShadow: '0 0 12px 0 rgba(0, 0, 0, 0.15)' }}>

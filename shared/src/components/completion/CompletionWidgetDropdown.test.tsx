@@ -3,8 +3,6 @@ import renderer from 'react-test-renderer'
 import { CompletionItem } from 'sourcegraph'
 import { CompletionWidgetDropdown } from './CompletionWidgetDropdown'
 
-// tslint:disable: jsx-no-lambda
-
 const COMPLETION_ITEM_2: CompletionItem = { label: 'b' }
 
 describe('CompletionWidgetDropdown', () => {

@@ -1,4 +1,3 @@
-// tslint:disable:no-submodule-imports Avoid loading grammars for unused languages.
 import { registerLanguage } from 'highlight.js/lib/highlight'
 
 let registered = false

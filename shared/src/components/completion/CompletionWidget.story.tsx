@@ -15,8 +15,6 @@ const onSelectItem = action('onSelectItem')
 // propagating them to the CompletionWidget element.
 const { add } = storiesOf('CompletionWidget', module).addParameters({ options: { enableShortcuts: false } })
 
-// tslint:disable: jsx-no-lambda
-
 const completionWidgetListItemClassName = 'completion-widget-dropdown__item d-flex align-items-center p-2'
 const StyledCompletionWidget: React.FunctionComponent<CompletionWidgetProps> = props => (
     <CompletionWidget

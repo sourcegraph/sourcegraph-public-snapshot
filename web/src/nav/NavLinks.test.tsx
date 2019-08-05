@@ -48,7 +48,7 @@ describe('NavLinks', () => {
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined }
     const KEYBINDINGS: KeybindingsProps['keybindings'] = { commandPalette: [], switchTheme: [] }
     const SETTINGS_CASCADE: SettingsCascadeProps['settingsCascade'] = { final: null, subjects: null }
-    // tslint:disable-next-line:no-object-literal-type-assertion
+    // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
     const USER = { username: 'u' } as GQL.IUser
     const history = H.createMemoryHistory({ keyLength: 0 })
     const commonProps = {

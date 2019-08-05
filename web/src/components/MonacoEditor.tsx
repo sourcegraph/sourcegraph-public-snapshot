@@ -56,8 +56,9 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
             this.editor.dispose()
 
             // HACK: Clean up ARIA container that Monaco apparently forgets to remove.
-            // tslint:disable-next-line:ban
-            document.querySelectorAll('.monaco-aria-container').forEach(e => e.remove())
+            for (const element of document.querySelectorAll('.monaco-aria-container')) {
+                element.remove()
+            }
         }
     }
 

@@ -1,5 +1,3 @@
-// tslint:disable:jsx-no-lambda Okay in tests
-
 import * as React from 'react'
 import { render, RenderResult } from 'react-testing-library'
 import { noop, Observable, of } from 'rxjs'

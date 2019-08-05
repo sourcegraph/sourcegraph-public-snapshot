@@ -1,7 +1,3 @@
-// lsp-client currently doesn't export the conversion functions from the
-// top-level.
-//
-// tslint:disable-next-line: no-submodule-imports
 import { convertHover, convertLocations } from '@sourcegraph/lsp-client/dist/lsp-conversion'
 import * as sourcegraph from 'sourcegraph'
 import * as LSP from 'vscode-languageserver-types'

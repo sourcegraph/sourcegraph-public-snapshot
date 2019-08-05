@@ -11,8 +11,6 @@
  * Check out the [extension authoring documentation](https://docs.sourcegraph.com/extensions/authoring) to get started.
  */
 declare module 'sourcegraph' {
-    // tslint:disable member-access
-
     export interface Unsubscribable {
         unsubscribe(): void
     }

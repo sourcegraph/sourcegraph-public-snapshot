@@ -114,7 +114,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 // This disable directive is necessary because TypeScript is not yet smart
                                 // enough to know that (typeof params & typeof extraParams) is P.
                                 //
-                                // tslint:disable-next-line:no-object-literal-type-assertion
+                                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
                                 locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
                                     map(locationsObservable =>
                                         locationsObservable.pipe(

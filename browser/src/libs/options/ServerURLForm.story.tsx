@@ -8,8 +8,6 @@ import '../../app.scss'
 import { interval, Subscription } from 'rxjs'
 import { ConnectionErrors, ServerURLForm, ServerURLFormProps } from './ServerURLForm'
 
-// tslint:disable: jsx-no-lambda
-
 class Container extends React.Component<{}, { value: string; status: ServerURLFormProps['status'] }> {
     public state = { value: 'https://sourcegraph.com', status: 'connected' as ServerURLFormProps['status'] }
 

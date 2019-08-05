@@ -9,8 +9,6 @@ import { baseURL, createDriverForTest, Driver, gitHubToken, percySnapshot } from
 // location.
 jest.setTimeout(1 * 60 * 1000)
 
-// tslint:disable-next-line: no-empty
-
 process.on('unhandledRejection', error => {
     console.error('Caught unhandledRejection:', error)
 })

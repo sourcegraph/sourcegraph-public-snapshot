@@ -210,7 +210,7 @@ describe('Windows (integration)', () => {
         test('Window#showNotification', async () => {
             const { extensionAPI, services } = await integrationTestContext()
             const values = collectSubscribableValues(services.notifications.showMessages)
-            extensionAPI.app.activeWindow!.showNotification('a', NotificationType.Info) // tslint:disable-line deprecation
+            extensionAPI.app.activeWindow!.showNotification('a', NotificationType.Info)
             await extensionAPI.internal.sync()
             expect(values).toEqual([{ message: 'a', type: NotificationType.Info }] as typeof values)
         })

@@ -144,7 +144,7 @@ function isIdentifierPart(ch: string): boolean {
 }
 
 /** The token that indicates the beginning of a template string. */
-export const TEMPLATE_BEGIN = '${' // tslint:disable-line:no-invalid-template-strings
+export const TEMPLATE_BEGIN = '${'
 
 /** Scans an expression. */
 export class Lexer {
