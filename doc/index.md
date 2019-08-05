@@ -1,10 +1,10 @@
 # Sourcegraph documentation
 
-[Sourcegraph](https://sourcegraph.com) is a web-based, open-source, self-hosted code search and navigation tool for developers, used by Uber, Lyft, Yelp, and more.
+[Sourcegraph](https://about.sourcegraph.com) is a web-based, self-hosted code search and navigation tool for developers, used by Uber, Lyft, Yelp, and more.
 
 ## Quickstart guide
 
-It takes less than 5 minutes to run and install Sourcegraph using Docker:
+It takes less than 5 minutes to run and install [Sourcegraph Core](https://about.sourcegraph.com/pricing) for free using Docker:
 
 <!--
   DO NOT CHANGE THIS TO A CODEBLOCK.
@@ -28,6 +28,9 @@ TODO(ryan): Replace with updated screencast
 For next steps and further configuration options, visit the [site administration documentation](admin/index.md).
 
 > NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
+
+> NOTE: If you run Docker on an OS such as RHEL, Fedora, or CentOS with SELinux enabled, sVirt doesn't allow the Docker process
+to access `~/.sourcegraph/config` and `~/.sourcegraph/data`. In that case, you will see the following message: `Failed to setup nginx:failed to generate nginx configuration to /etc/sourcegraph: open /etc/sourcegraph/nginx.conf: permission denied`. To fix this, run: `mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data && chcon -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data`
 
 ## Upgrading Sourcegraph
 

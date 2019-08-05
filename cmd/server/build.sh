@@ -33,6 +33,7 @@ for pkg in $server_pkg \
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
     github.com/sourcegraph/sourcegraph/cmd/query-runner \
+    github.com/sourcegraph/sourcegraph/cmd/replacer \
     github.com/sourcegraph/sourcegraph/cmd/repo-updater \
     github.com/sourcegraph/sourcegraph/cmd/searcher \
     github.com/google/zoekt/cmd/zoekt-archive-index \
@@ -40,7 +41,6 @@ for pkg in $server_pkg \
     github.com/google/zoekt/cmd/zoekt-webserver $additional_images; do
 
     go build \
-      -a \
       -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION"  \
       -buildmode exe \
       -installsuffix netgo \

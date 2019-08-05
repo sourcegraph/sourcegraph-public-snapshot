@@ -64,6 +64,16 @@ const SiteSchemaJSON = `{
       "examples": ["https://my-phabricator.example.com https://my-bitbucket.example.com"],
       "group": "Security"
     },
+    "lsifVerificationGithubToken": {
+      "description": "The GitHub token that is used to verify that a user owns a repository.",
+      "type": "string",
+      "group": "Security"
+    },
+    "lsifUploadSecret": {
+      "description": "Used to generate LSIF upload tokens. Must be long (20+ bytes) to make offline brute-force attacks difficult.",
+      "type": "string",
+      "group": "Security"
+    },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",
@@ -182,6 +192,11 @@ const SiteSchemaJSON = `{
           "description": "Prevents the icon in the top-left corner of the screen from spinning on hover.",
           "type": "boolean",
           "default": false
+        },
+        "brandName": {
+          "description": "String to display everywhere the brand name should be displayed. Defaults to \"Sourcegraph\"",
+          "type": "string",
+          "default": "Sourcegraph"
         }
       },
       "examples": [

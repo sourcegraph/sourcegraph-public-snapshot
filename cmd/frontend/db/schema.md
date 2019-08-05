@@ -36,6 +36,18 @@ Indexes:
 
 ```
 
+# Table "public.default_repos"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ repo_id | integer | not null
+Indexes:
+    "default_repos_pkey" PRIMARY KEY, btree (repo_id)
+Foreign-key constraints:
+    "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
+
+```
+
 # Table "public.discussion_comments"
 ```
      Column     |           Type           |                            Modifiers                             
@@ -428,6 +440,7 @@ Check constraints:
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
+    TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```

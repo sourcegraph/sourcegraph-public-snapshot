@@ -1,5 +1,6 @@
 import React from 'react'
 import { Redirect } from 'react-router'
+import { namespaceAreaRoutes } from '../../namespaces/routes'
 import { lazyComponent } from '../../util/lazyComponent'
 import { UserAreaRoute } from './UserArea'
 
@@ -23,25 +24,7 @@ export const userAreaRoutes: ReadonlyArray<UserAreaRoute> = [
             />
         ),
     },
-    {
-        path: '/searches',
-        exact: true,
-        render: lazyComponent(() => import('../saved-searches/UserSavedSearchListPage'), 'UserSavedSearchListPage'),
-    },
-    {
-        path: '/searches/add',
-        render: lazyComponent(
-            () => import('../saved-searches/UserSavedSearchesCreateForm'),
-            'UserSavedSearchesCreateForm'
-        ),
-    },
-    {
-        path: '/searches/:id',
-        render: lazyComponent(
-            () => import('../saved-searches/UserSavedSearchesUpdateForm'),
-            'UserSavedSearchesUpdateForm'
-        ),
-    },
+    ...namespaceAreaRoutes,
 
     // Redirect from previous /users/:username/account -> /users/:username/settings/profile.
     {

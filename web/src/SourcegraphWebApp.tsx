@@ -30,6 +30,8 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { KeybindingsProps } from './keybindings'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
+import { OrgAreaRoute } from './org/area/OrgArea'
+import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { createPlatformContext } from './platform/context'
 import { fetchHighlightedFileLines } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
@@ -62,6 +64,8 @@ export interface SourcegraphWebAppProps extends KeybindingsProps {
     userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
+    orgAreaHeaderNavItems: ReadonlyArray<OrgAreaHeaderNavItem>
+    orgAreaRoutes: ReadonlyArray<OrgAreaRoute>
     repoContainerRoutes: ReadonlyArray<RepoContainerRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>

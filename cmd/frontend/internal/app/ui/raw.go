@@ -13,6 +13,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 
 	"github.com/golang/gddo/httputil"
@@ -67,7 +68,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		// - Gitserver content updating
 		// - Consistent error handling (permissions, revision not found, repo not found, etc).
 		//
-		common, err = newCommon(w, r, "Sourcegraph", serveError)
+		common, err = newCommon(w, r, conf.BrandName(), serveError)
 		if err != nil {
 			return err
 		}
