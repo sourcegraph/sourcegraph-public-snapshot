@@ -79,6 +79,6 @@ func (GraphQLResolver) ThreadInRepository(ctx context.Context, repositoryID grap
 	return thread, nil
 }
 
-func (v *gqlThread) Status() graphqlbackend.ThreadStatus {
-	return graphqlbackend.ThreadStatus(v.db.Status)
+func (v *gqlThread) State() graphqlbackend.ThreadState {
+	return graphqlbackend.ThreadState(v.db.State)
 }

@@ -25,21 +25,24 @@ type DBObjectCommentFields struct {
 // The insertRelatedObject func is called with the comment ID, in case the related object needs to
 // store the comment ID. After the related object is inserted, the comment row is updated to refer
 // to the object by ID (e.g., the thread ID or campaign ID).
-func CreateCommentWithObject(ctx context.Context, comment DBObjectCommentFields, insertRelatedObject insertRelatedObjectFunc) (err error) {
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer func() {
+func CreateCommentWithObject(ctx context.Context, tx *sql.Tx, comment DBObjectCommentFields, insertRelatedObject insertRelatedObjectFunc) (err error) {
+	if tx == nil {
+		var err error
+		tx, err = dbconn.Global.BeginTx(ctx, nil)
 		if err != nil {
-			rollErr := tx.Rollback()
-			if rollErr != nil {
-				err = multierror.Append(err, rollErr)
-			}
-			return
+			return err
 		}
-		err = tx.Commit()
-	}()
+		defer func() {
+			if err != nil {
+				rollErr := tx.Rollback()
+				if rollErr != nil {
+					err = multierror.Append(err, rollErr)
+				}
+				return
+			}
+			err = tx.Commit()
+		}()
+	}
 
 	insertedComment, err := internal.DBComments{}.Create(ctx, tx, &internal.DBComment{AuthorUserID: comment.AuthorUserID, Body: comment.Body})
 	if err != nil {

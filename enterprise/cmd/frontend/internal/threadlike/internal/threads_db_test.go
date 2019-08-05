@@ -40,17 +40,16 @@ func TestDB_Threads(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantThread0 := &DBThread{Type: DBThreadTypeThread, RepositoryID: repo0.ID, Title: "t0", ExternalURL: strptr("u0")}
-	thread0, err := DBThreads{}.Create(ctx, wantThread0, commentobjectdb.DBObjectCommentFields{AuthorUserID: user.ID})
+	wantThread0 := &DBThread{Type: DBThreadTypeThread, RepositoryID: repo0.ID, Title: "t0"}
+	thread0, err := DBThreads{}.Create(ctx, nil, wantThread0, commentobjectdb.DBObjectCommentFields{AuthorUserID: user.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
 	thread0ID := thread0.ID // needed later
-	thread1, err := DBThreads{}.Create(ctx, &DBThread{
+	thread1, err := DBThreads{}.Create(ctx, nil, &DBThread{
 		Type:         "THREAD",
 		RepositoryID: repo0.ID,
 		Title:        "t1",
-		ExternalURL:  strptr("u1"),
 	}, commentobjectdb.DBObjectCommentFields{AuthorUserID: user.ID})
 	if err != nil {
 		t.Fatal(err)

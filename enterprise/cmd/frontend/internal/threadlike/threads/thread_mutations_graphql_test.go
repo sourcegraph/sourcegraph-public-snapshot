@@ -27,8 +27,7 @@ func TestGraphQL_CreateThread(t *testing.T) {
 		Type:         internal.DBThreadTypeThread,
 		RepositoryID: wantRepositoryID,
 		Title:        "t",
-		ExternalURL:  strptr("u"),
-		Status:       string(graphqlbackend.ThreadStatusOpen),
+		State:        string(graphqlbackend.ThreadStateOpen),
 	}
 	internal.Mocks.Threads.Create = func(thread *internal.DBThread) (*internal.DBThread, error) {
 		if !reflect.DeepEqual(thread, wantThread) {
@@ -45,7 +44,7 @@ func TestGraphQL_CreateThread(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					createThread(input: { repository: "T3JnOjE=", title: "t", externalURL: "u" }) {
+					createThread(input: { repository: "T3JnOjE=", title: "t" }) {
 						id
 						title
 					}
@@ -73,7 +72,7 @@ func TestGraphQL_UpdateThread(t *testing.T) {
 		return &internal.DBThread{ID: wantID}, nil
 	}
 	internal.Mocks.Threads.Update = func(id int64, update internal.DBThreadUpdate) (*internal.DBThread, error) {
-		if want := (internal.DBThreadUpdate{Title: strptr("t1"), ExternalURL: strptr("u1")}); !reflect.DeepEqual(update, want) {
+		if want := (internal.DBThreadUpdate{Title: strptr("t1")}); !reflect.DeepEqual(update, want) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
 		return &internal.DBThread{
@@ -81,7 +80,6 @@ func TestGraphQL_UpdateThread(t *testing.T) {
 			ID:           2,
 			RepositoryID: 1,
 			Title:        "t1",
-			ExternalURL:  strptr("u1"),
 		}, nil
 	}
 
@@ -91,10 +89,9 @@ func TestGraphQL_UpdateThread(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					updateThread(input: { id: "VGhyZWFkOjI=", title: "t1", externalURL: "u1" }) {
+					updateThread(input: { id: "VGhyZWFkOjI=", title: "t1" }) {
 						id
 						title
-						externalURL
 					}
 				}
 			`,
@@ -102,8 +99,7 @@ func TestGraphQL_UpdateThread(t *testing.T) {
 				{
 					"updateThread": {
 						"id": "VGhyZWFkOjI=",
-						"title": "t1",
-						"externalURL": "u1"
+						"title": "t1"
 					}
 				}
 			`,

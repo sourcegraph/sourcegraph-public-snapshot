@@ -29,17 +29,19 @@ type DBThread struct {
 	Type         DBThreadType
 	RepositoryID api.RepoID // the repository associated with this thread
 	Title        string
-	ExternalURL  *string
-	Status       string
+	State        string
+	IsPreview    bool
 
 	PrimaryCommentID int64
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 
 	// Changeset
-	IsPreview bool
-	BaseRef   string
-	HeadRef   string
+	BaseRef string
+	HeadRef string
+
+	ImportedFromExternalServiceID int64
+	ExternalID                    string
 }
 
 // errThreadNotFound occurs when a database operation expects a specific thread to exist but it does
@@ -48,11 +50,11 @@ var errThreadNotFound = errors.New("thread not found")
 
 type DBThreads struct{}
 
-const SelectColumns = "id, type, repository_id, title, external_url, status, primary_comment_id, created_at, updated_at, is_preview, base_ref, head_ref"
+const SelectColumns = "id, type, repository_id, title, state, is_preview, primary_comment_id, created_at, updated_at, base_ref, head_ref, imported_from_external_service_id, external_id"
 
 // Create creates a thread. The thread argument's (Thread).ID field is ignored. The new thread is
 // returned.
-func (DBThreads) Create(ctx context.Context, thread *DBThread, comment commentobjectdb.DBObjectCommentFields) (*DBThread, error) {
+func (DBThreads) Create(ctx context.Context, tx *sql.Tx, thread *DBThread, comment commentobjectdb.DBObjectCommentFields) (*DBThread, error) {
 	if Mocks.Threads.Create != nil {
 		return Mocks.Threads.Create(thread)
 	}
@@ -61,19 +63,33 @@ func (DBThreads) Create(ctx context.Context, thread *DBThread, comment commentob
 		panic("thread.PrimaryCommentID must not be set")
 	}
 
-	return thread, commentobjectdb.CreateCommentWithObject(ctx, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
+	nilIfZero := func(v int64) *int64 {
+		if v == 0 {
+			return nil
+		}
+		return &v
+	}
+	nilIfEmpty := func(v string) *string {
+		if v == "" {
+			return nil
+		}
+		return &v
+	}
+
+	return thread, commentobjectdb.CreateCommentWithObject(ctx, tx, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
 		var err error
 		thread, err = DBThreads{}.scanRow(tx.QueryRowContext(ctx,
-			`INSERT INTO threads(`+SelectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT, $7, $8, $9) RETURNING `+SelectColumns,
+			`INSERT INTO threads(`+SelectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, DEFAULT, DEFAULT, $6, $7, $8, $9, $10) RETURNING `+SelectColumns,
 			thread.Type,
 			thread.RepositoryID,
 			thread.Title,
-			thread.ExternalURL,
-			thread.Status,
-			commentID,
+			thread.State,
 			thread.IsPreview,
-			thread.BaseRef,
-			thread.HeadRef,
+			commentID,
+			nilIfEmpty(thread.BaseRef),
+			nilIfEmpty(thread.HeadRef),
+			nilIfZero(thread.ImportedFromExternalServiceID),
+			nilIfEmpty(thread.ExternalID),
 		))
 		if err != nil {
 			return nil, err
@@ -83,12 +99,11 @@ func (DBThreads) Create(ctx context.Context, thread *DBThread, comment commentob
 }
 
 type DBThreadUpdate struct {
-	Title       *string
-	ExternalURL *string
-	Status      *string
-	IsPreview   *bool
-	BaseRef     *string
-	HeadRef     *string
+	Title     *string
+	State     *string
+	IsPreview *bool
+	BaseRef   *string
+	HeadRef   *string
 }
 
 // Update updates a thread given its ID.
@@ -97,27 +112,12 @@ func (s DBThreads) Update(ctx context.Context, id int64, update DBThreadUpdate) 
 		return Mocks.Threads.Update(id, update)
 	}
 
-	// Treat empty string as meaning "set to null". Otherwise there is no way to express that
-	// intent for some of the fields below.
-	emptyStringAsNil := func(s *string) (value *string, isSet bool) {
-		if s == nil {
-			return nil, false
-		}
-		if *s == "" {
-			return nil, true
-		}
-		return s, true
-	}
-
 	var setFields []*sqlf.Query
 	if update.Title != nil {
 		setFields = append(setFields, sqlf.Sprintf("title=%s", *update.Title))
 	}
-	if v, isSet := emptyStringAsNil(update.ExternalURL); isSet {
-		setFields = append(setFields, sqlf.Sprintf("external_url=%s", v))
-	}
-	if update.Status != nil {
-		setFields = append(setFields, sqlf.Sprintf("status=%s", *update.Status))
+	if update.State != nil {
+		setFields = append(setFields, sqlf.Sprintf("state=%s", *update.State))
 	}
 	if update.IsPreview != nil {
 		setFields = append(setFields, sqlf.Sprintf("is_preview=%s", *update.IsPreview))
@@ -165,10 +165,11 @@ func (s DBThreads) GetByID(ctx context.Context, id int64) (*DBThread, error) {
 
 // DBThreadsListOptions contains options for listing threads.
 type DBThreadsListOptions struct {
-	Query        string     // only list threads matching this query (case-insensitively)
-	RepositoryID api.RepoID // only list threads in this repository
-	ThreadIDs    []int64
-	Status       string
+	Query                         string     // only list threads matching this query (case-insensitively)
+	RepositoryID                  api.RepoID // only list threads in this repository
+	ThreadIDs                     []int64
+	State                         string
+	ImportedFromExternalServiceID int64
 	*db.LimitOffset
 }
 
@@ -187,8 +188,11 @@ func (o DBThreadsListOptions) sqlConditions() []*sqlf.Query {
 			conds = append(conds, sqlf.Sprintf("FALSE"))
 		}
 	}
-	if o.Status != "" {
-		conds = append(conds, sqlf.Sprintf("status=%s", o.Status))
+	if o.State != "" {
+		conds = append(conds, sqlf.Sprintf("state=%s", o.State))
+	}
+	if o.ImportedFromExternalServiceID != 0 {
+		conds = append(conds, sqlf.Sprintf("imported_from_external_service_id=%d", o.ImportedFromExternalServiceID))
 	}
 	return conds
 }
@@ -238,22 +242,41 @@ func (DBThreads) Query(ctx context.Context, query *sqlf.Query) ([]*DBThread, err
 func (DBThreads) scanRow(row interface {
 	Scan(dest ...interface{}) error
 }) (*DBThread, error) {
-	var t DBThread
+	var (
+		baseRef, headRef              *string
+		importedFromExternalServiceID *int64
+		externalID                    *string
+
+		t DBThread
+	)
 	if err := row.Scan(
 		&t.ID,
 		&t.Type,
 		&t.RepositoryID,
 		&t.Title,
-		&t.ExternalURL,
-		&t.Status,
+		&t.State,
+		&t.IsPreview,
 		&t.PrimaryCommentID,
 		&t.CreatedAt,
 		&t.UpdatedAt,
-		&t.IsPreview,
-		&t.BaseRef,
-		&t.HeadRef,
+		&baseRef,
+		&headRef,
+		&importedFromExternalServiceID,
+		&externalID,
 	); err != nil {
 		return nil, err
+	}
+	if baseRef != nil {
+		t.BaseRef = *baseRef
+	}
+	if headRef != nil {
+		t.HeadRef = *headRef
+	}
+	if importedFromExternalServiceID != nil {
+		t.ImportedFromExternalServiceID = *importedFromExternalServiceID
+	}
+	if externalID != nil {
+		t.ExternalID = *externalID
 	}
 	return &t, nil
 }
@@ -272,6 +295,19 @@ func (DBThreads) Count(ctx context.Context, opt DBThreadsListOptions) (int, erro
 		return 0, err
 	}
 	return count, nil
+}
+
+// Delete deletes all threads matching the criteria (ignoring limit and offset).
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the threads.
+func (DBThreads) Delete(ctx context.Context, tx *sql.Tx, opt DBThreadsListOptions) error {
+	if Mocks.Threads.Delete != nil {
+		return Mocks.Threads.Delete(opt)
+	}
+
+	query := sqlf.Sprintf(`DELETE FROM threads WHERE (%s)`, sqlf.Join(opt.sqlConditions(), ") AND ("))
+	_, err := dbconn.TxOrGlobal(tx).ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	return err
 }
 
 // DeleteByID deletes a thread given its ID.
@@ -309,5 +345,6 @@ type mockThreads struct {
 	GetByID    func(int64) (*DBThread, error)
 	List       func(DBThreadsListOptions) ([]*DBThread, error)
 	Count      func(DBThreadsListOptions) (int, error)
+	Delete     func(DBThreadsListOptions) error
 	DeleteByID func(int64) error
 }

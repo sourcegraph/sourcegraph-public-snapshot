@@ -48,8 +48,6 @@ func (v *GQLThreadlike) DBID() int64 { return v.DB.ID }
 
 func (v *GQLThreadlike) Title() string { return v.DB.Title }
 
-func (v *GQLThreadlike) ExternalURL() *string { return v.DB.ExternalURL }
-
 func (v *GQLThreadlike) ViewerCanUpdate(ctx context.Context) (bool, error) {
 	// TODO!(sqs): commented out below due to package import cycle etc
 	return true, nil

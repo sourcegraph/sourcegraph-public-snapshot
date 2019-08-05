@@ -3,7 +3,6 @@ package extsvc
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal/extsvc"
 )
@@ -14,13 +13,8 @@ func Refresh(ctx context.Context, dbID int64) error {
 	if err != nil {
 		return err
 	}
-	if dbThread.ExternalURL == nil {
+	if dbThread.ImportedFromExternalServiceID == 0 {
 		return nil // no associated external services
 	}
-
-	repo, err := graphqlbackend.RepositoryByDBID(ctx, dbThread.RepositoryID)
-	if err != nil {
-		return err
-	}
-	return extsvc.ImportGitHubThreadEvents(ctx, dbID, repo.DBID(), repo.DBExternalRepo(), *dbThread.ExternalURL)
+	return extsvc.ImportGitHubThreadEvents(ctx, dbID, dbThread.ImportedFromExternalServiceID, dbThread.ExternalID, dbThread.RepositoryID)
 }

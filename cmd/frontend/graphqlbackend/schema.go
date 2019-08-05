@@ -380,6 +380,10 @@ type Mutation {
     # Mutations related to repositories' Git data.
     git: GitMutation!
 
+    # Force-refresh a repository's threads from external services. Threads are automatically
+    # refreshed on a regular basis, and this mutation should not usually be necessary.
+    forceRefreshRepositoryThreads(repository: ID!): Repository!
+
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
 
@@ -390,7 +394,7 @@ type Mutation {
     # being created on all affected repositories. The updated campaign is returned.
     publishPreviewCampaign(campaign: ID!): Campaign!
 
-    # Force-refresh a campaign, including the external statuses of all of the campaign's threads.
+    # Force-refresh a campaign, including the external states of all of the campaign's threads.
     # Campaigns are automatically refreshed on a regular basis, and this mutation should not usually
     # be necessary.
     forceRefreshCampaign(campaign: ID!): Campaign!
@@ -4266,8 +4270,8 @@ interface CampaignNode {
     ): CampaignConnection!
 }
 
-# The statuses of threads.
-enum ThreadStatus {
+# The states of threads.
+enum ThreadState {
     # Open.
     OPEN
     # Closed.
@@ -4284,9 +4288,6 @@ input CreateThreadInput {
 
     # The body of the thread.
     body: String
-
-    # The (optional) external URL of the thread.
-    externalURL: String
 }
 
 # Input arguments for updating a thread.
@@ -4299,10 +4300,6 @@ input UpdateThreadInput {
 
     # The new body of the thread.
     body: String
-
-    # The new external URL of the thread. If it is the non-null empty string, the external URL is
-    # set to null.
-    externalURL: String
 }
 
 # A thread is an issue or changeset.
@@ -4326,11 +4323,8 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
     # The body as HTML.
     bodyHTML: String!
 
-    # The status of this thread.
-    status: ThreadStatus!
-
-    # The (optional) external URL of the thread.
-    externalURL: String
+    # The state of this thread.
+    state: ThreadState!
 
     # The URL to this thread on Sourcegraph.
     url: String!
@@ -4366,8 +4360,8 @@ type ThreadConnection {
     pageInfo: PageInfo!
 }
 
-# The statuses of changesets.
-enum ChangesetStatus {
+# The states of changesets.
+enum ChangesetState {
     # Open.
     OPEN
     # Merged.
@@ -4386,9 +4380,6 @@ input CreateChangesetInput {
 
     # The body of the changeset.
     body: String
-
-    # The (optional) external URL of the changeset.
-    externalURL: String
 
     # Whether the changeset is a preview.
     preview: Boolean
@@ -4410,10 +4401,6 @@ input UpdateChangesetInput {
 
     # The new body of the changeset.
     body: String
-
-    # The new external URL of the changeset. If it is the non-null empty string, the external URL is
-    # set to null.
-    externalURL: String
 
     # The new base ref of the changeset.
     baseRef: String
@@ -4443,8 +4430,8 @@ type Changeset implements Node & RepositoryNode & RepositoryAndNumberAddressable
     # The body as HTML.
     bodyHTML: String!
 
-    # The status of this changeset.
-    status: ChangesetStatus!
+    # The state of this changeset.
+    state: ChangesetState!
 
     # The base ref of the changeset.
     baseRef: String!
@@ -4454,9 +4441,6 @@ type Changeset implements Node & RepositoryNode & RepositoryAndNumberAddressable
 
     # Whether this changeset is a preview.
     isPreview: Boolean!
-
-    # The (optional) external URL of the changeset.
-    externalURL: String
 
     # The URL to this changeset on Sourcegraph.
     url: String!
@@ -4642,7 +4626,7 @@ type Campaign implements Node & Comment & Commentable {
     # repositories).
     repositoryComparisons: [RepositoryComparison!]!
 
-    # A burndown chart of the statuses of the campaign's threads, issues, and changesets over time.
+    # A burndown chart of the states of the campaign's threads, issues, and changesets over time.
     burndownChart: CampaignBurndownChart!
 
     # A list of events related to the campaign.
@@ -4658,7 +4642,7 @@ type Campaign implements Node & Comment & Commentable {
     ): CampaignTimelineItemConnection!
 }
 
-# A burndown chart of the statuses of the campaign's threads, issues, and changesets over time.
+# A burndown chart of the states of the campaign's threads, issues, and changesets over time.
 type CampaignBurndownChart {
     # The dates that correspond to the same-index element of the data series.
     dates: [DateTime!]!

@@ -124,18 +124,18 @@ type DeleteChangesetArgs struct {
 	Changeset graphql.ID
 }
 
-type ChangesetStatus string
+type ChangesetState string
 
 const (
-	ChangesetStatusOpen   ChangesetStatus = "OPEN"
-	ChangesetStatusMerged                 = "MERGED"
-	ChangesetStatusClosed                 = "CLOSED"
+	ChangesetStateOpen   ChangesetState = "OPEN"
+	ChangesetStateMerged                = "MERGED"
+	ChangesetStateClosed                = "CLOSED"
 )
 
 // Changeset is the interface for the GraphQL type Changeset.
 type Changeset interface {
 	Threadlike
-	Status() ChangesetStatus
+	State() ChangesetState
 	BaseRef() string
 	HeadRef() string
 	IsPreview() bool

@@ -28,8 +28,7 @@ func TestGraphQL_CreateChangeset(t *testing.T) {
 		Type:         internal.DBThreadTypeChangeset,
 		RepositoryID: wantRepositoryID,
 		Title:        "t",
-		ExternalURL:  strptr("u"),
-		Status:       string(graphqlbackend.ChangesetStatusOpen),
+		State:        string(graphqlbackend.ChangesetStateOpen),
 		BaseRef:      "b",
 		HeadRef:      "h",
 	}
@@ -50,7 +49,7 @@ func TestGraphQL_CreateChangeset(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					createChangeset(input: { repository: "T3JnOjE=", title: "t", externalURL: "u", baseRef: "b", headRef: "h" }) {
+					createChangeset(input: { repository: "T3JnOjE=", title: "t", baseRef: "b", headRef: "h" }) {
 						id
 						title
 					}
@@ -78,7 +77,7 @@ func TestGraphQL_UpdateChangeset(t *testing.T) {
 		return &internal.DBThread{ID: wantID}, nil
 	}
 	internal.Mocks.Threads.Update = func(id int64, update internal.DBThreadUpdate) (*internal.DBThread, error) {
-		if want := (internal.DBThreadUpdate{Title: strptr("t1"), ExternalURL: strptr("u1")}); !reflect.DeepEqual(update, want) {
+		if want := (internal.DBThreadUpdate{Title: strptr("t1")}); !reflect.DeepEqual(update, want) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
 		return &internal.DBThread{
@@ -86,7 +85,6 @@ func TestGraphQL_UpdateChangeset(t *testing.T) {
 			ID:           2,
 			RepositoryID: 1,
 			Title:        "t1",
-			ExternalURL:  strptr("u1"),
 		}, nil
 	}
 
@@ -96,10 +94,9 @@ func TestGraphQL_UpdateChangeset(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					updateChangeset(input: { id: "Q2hhbmdlc2V0OjI=", title: "t1", externalURL: "u1" }) {
+					updateChangeset(input: { id: "Q2hhbmdlc2V0OjI=", title: "t1" }) {
 						id
 						title
-						externalURL
 					}
 				}
 			`,
@@ -107,8 +104,7 @@ func TestGraphQL_UpdateChangeset(t *testing.T) {
 				{
 					"updateChangeset": {
 						"id": "Q2hhbmdlc2V0OjI=",
-						"title": "t1",
-						"externalURL": "u1"
+						"title": "t1"
 					}
 				}
 			`,

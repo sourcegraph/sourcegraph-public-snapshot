@@ -14,22 +14,19 @@ type Threadlike interface {
 	Repository(context.Context) (*RepositoryResolver, error)
 	Number() string
 	Title() string
-	ExternalURL() *string
 	updatable
 	URL(context.Context) (string, error)
 	CampaignNode
 }
 
 type updateThreadlikeInput struct {
-	ID          graphql.ID
-	Title       *string
-	Body        *string
-	ExternalURL *string
+	ID    graphql.ID
+	Title *string
+	Body  *string
 }
 
 type createThreadlikeInput struct {
-	Repository  graphql.ID
-	Title       string
-	Body        *string
-	ExternalURL *string
+	Repository graphql.ID
+	Title      string
+	Body       *string
 }

@@ -5,18 +5,25 @@ CREATE TABLE threads (
 	type text NOT NULL,
 	repository_id integer NOT NULL REFERENCES repo(id) ON DELETE CASCADE,
 	title text NOT NULL,
-	external_url text,
-	status text NOT NULL,
+	state text NOT NULL,
+    is_preview boolean NOT NULL,
 
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
 
 	-- type == CHANGESET
-	is_preview boolean,
 	base_ref text,
-	head_ref text
+	head_ref text,
+
+	-- TODO!(sqs): make external_services use hard-delete not soft-delete so that the deletions
+	-- cascade to the threads and events rows, which will prevent orphaned data - or else make their
+	-- queries omit results if the corresponding external_services row was soft-deleted.
+    imported_from_external_service_id bigint REFERENCES external_services(id) ON DELETE CASCADE,
+    external_id text
 );
 CREATE INDEX threads_repository_id ON threads(repository_id);
+CREATE INDEX threads_imported_from_external_service_id ON threads(imported_from_external_service_id);
+ALTER TABLE threads ADD CONSTRAINT external_thread_has_id CHECK ((imported_from_external_service_id IS NULL) = (external_id IS NULL));
 
 -----------------
 

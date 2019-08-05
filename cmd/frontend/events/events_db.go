@@ -77,17 +77,7 @@ func (dbEvents) Create(ctx context.Context, tx *sql.Tx, event *dbEvent) (*dbEven
 		args...,
 	)
 
-	return dbEvents{}.scanRow(dbhOrGlobal(tx).QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
-}
-
-func dbhOrGlobal(tx *sql.Tx) interface {
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-} {
-	if tx == nil {
-		return dbconn.Global
-	}
-	return tx
+	return dbEvents{}.scanRow(dbconn.TxOrGlobal(tx).QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
 }
 
 // GetByID retrieves the event (if any) given its ID.
@@ -263,13 +253,13 @@ func (dbEvents) Count(ctx context.Context, opt dbEventsListOptions) (int, error)
 // Delete deletes all events matching the criteria (ignoring limit and offset).
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the events.
-func (s dbEvents) Delete(ctx context.Context, tx *sql.Tx, opt dbEventsListOptions) error {
+func (dbEvents) Delete(ctx context.Context, tx *sql.Tx, opt dbEventsListOptions) error {
 	if mocks.events.Delete != nil {
 		return mocks.events.Delete(opt)
 	}
 
 	query := sqlf.Sprintf(`DELETE FROM events WHERE (%s)`, sqlf.Join(opt.sqlConditions(), ") AND ("))
-	_, err := dbhOrGlobal(tx).ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	_, err := dbconn.TxOrGlobal(tx).ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	return err
 }
 

@@ -102,17 +102,17 @@ type DeleteThreadArgs struct {
 	Thread graphql.ID
 }
 
-type ThreadStatus string
+type ThreadState string
 
 const (
-	ThreadStatusOpen   ThreadStatus = "OPEN"
-	ThreadStatusClosed              = "CLOSED"
+	ThreadStateOpen   ThreadState = "OPEN"
+	ThreadStateClosed             = "CLOSED"
 )
 
 // Thread is the interface for the GraphQL type Thread.
 type Thread interface {
 	Threadlike
-	Status() ThreadStatus
+	State() ThreadState
 }
 
 // ThreadConnection is the interface for the GraphQL type ThreadConnection.

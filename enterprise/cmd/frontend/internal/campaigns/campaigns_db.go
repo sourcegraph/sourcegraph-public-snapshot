@@ -53,7 +53,7 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign, comment com
 		return &v
 	}
 
-	return campaign, commentobjectdb.CreateCommentWithObject(ctx, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
+	return campaign, commentobjectdb.CreateCommentWithObject(ctx, nil, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
 		var err error
 		campaign, err = dbCampaigns{}.scanRow(tx.QueryRowContext(ctx,
 			`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT) RETURNING `+selectColumns,

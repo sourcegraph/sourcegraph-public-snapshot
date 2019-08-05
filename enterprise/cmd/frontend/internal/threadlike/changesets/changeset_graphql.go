@@ -79,8 +79,8 @@ func (GraphQLResolver) ChangesetInRepository(ctx context.Context, repositoryID g
 	return changeset, nil
 }
 
-func (v *gqlChangeset) Status() graphqlbackend.ChangesetStatus {
-	return graphqlbackend.ChangesetStatus(v.db.Status)
+func (v *gqlChangeset) State() graphqlbackend.ChangesetState {
+	return graphqlbackend.ChangesetState(v.db.State)
 }
 
 func (v *gqlChangeset) BaseRef() string { return v.db.BaseRef }

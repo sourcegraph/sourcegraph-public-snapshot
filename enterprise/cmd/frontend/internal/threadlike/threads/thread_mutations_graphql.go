@@ -24,12 +24,12 @@ func (GraphQLResolver) CreateThread(ctx context.Context, arg *graphqlbackend.Cre
 		comment.Body = *arg.Input.Body
 	}
 
-	thread, err := internal.DBThreads{}.Create(ctx, &internal.DBThread{
+	thread, err := internal.DBThreads{}.Create(ctx, nil, &internal.DBThread{
 		Type:         internal.DBThreadTypeThread,
 		RepositoryID: repo.DBID(),
 		Title:        arg.Input.Title,
-		ExternalURL:  arg.Input.ExternalURL,
-		Status:       string(graphqlbackend.ThreadStatusOpen),
+		////TODO!(sqs) ExternalURL:  arg.Input.ExternalURL,
+		State: string(graphqlbackend.ThreadStateOpen),
 	}, comment)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,6 @@ func (GraphQLResolver) UpdateThread(ctx context.Context, arg *graphqlbackend.Upd
 	thread, err := internal.DBThreads{}.Update(ctx, l.db.ID, internal.DBThreadUpdate{
 		Title: arg.Input.Title,
 		// TODO!(sqs): handle body update
-		ExternalURL: arg.Input.ExternalURL,
 	})
 	if err != nil {
 		return nil, err

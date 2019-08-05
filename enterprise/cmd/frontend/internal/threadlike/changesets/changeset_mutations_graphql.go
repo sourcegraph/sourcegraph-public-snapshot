@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal/extsvc"
 )
 
 func (GraphQLResolver) CreateChangeset(ctx context.Context, arg *graphqlbackend.CreateChangesetArgs) (graphqlbackend.Changeset, error) {
@@ -26,23 +25,17 @@ func (GraphQLResolver) CreateChangeset(ctx context.Context, arg *graphqlbackend.
 		comment.Body = *arg.Input.Body
 	}
 
-	changeset, err := internal.DBThreads{}.Create(ctx, &internal.DBThread{
+	changeset, err := internal.DBThreads{}.Create(ctx, nil, &internal.DBThread{
 		Type:         internal.DBThreadTypeChangeset,
 		RepositoryID: repo.DBID(),
 		Title:        arg.Input.Title,
-		ExternalURL:  arg.Input.ExternalURL,
-		Status:       string(graphqlbackend.ChangesetStatusOpen),
+		State:        string(graphqlbackend.ChangesetStateOpen),
 		IsPreview:    arg.Input.Preview != nil && *arg.Input.Preview,
 		BaseRef:      arg.Input.BaseRef,
 		HeadRef:      arg.Input.HeadRef,
 	}, comment)
 	if err != nil {
 		return nil, err
-	}
-	if externalURL := arg.Input.ExternalURL; externalURL != nil {
-		if err := extsvc.ImportGitHubThreadEvents(ctx, changeset.ID, repo.DBID(), repo.DBExternalRepo(), *externalURL); err != nil {
-			return nil, err
-		}
 	}
 	return newGQLChangeset(changeset), nil
 }
@@ -53,8 +46,7 @@ func (GraphQLResolver) UpdateChangeset(ctx context.Context, arg *graphqlbackend.
 		return nil, err
 	}
 	changeset, err := internal.DBThreads{}.Update(ctx, l.db.ID, internal.DBThreadUpdate{
-		Title:       arg.Input.Title,
-		ExternalURL: arg.Input.ExternalURL,
+		Title: arg.Input.Title,
 		// TODO!(sqs): handle body update
 		BaseRef: arg.Input.BaseRef,
 		HeadRef: arg.Input.HeadRef,
