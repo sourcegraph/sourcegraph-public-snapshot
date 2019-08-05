@@ -6,12 +6,16 @@ package shared
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/garyburd/redigo/redis"
 	"github.com/joho/godotenv"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
 )
@@ -153,15 +157,30 @@ func Main() {
 	}
 	procfile = append(procfile, ProcfileAdditions...)
 
-	if line, err := maybeRedisStoreProcFile(); err != nil {
+	redisStoreLine, err := maybeRedisStoreProcFile()
+	if err != nil {
 		log.Fatal(err)
-	} else if line != "" {
-		procfile = append(procfile, line)
 	}
-	if line, err := maybeRedisCacheProcFile(); err != nil {
+	if redisStoreLine != "" {
+		procfile = append(procfile, redisStoreLine)
+	}
+	redisCacheLine, err := maybeRedisCacheProcFile()
+	if err != nil {
 		log.Fatal(err)
-	} else if line != "" {
-		procfile = append(procfile, line)
+	}
+	if redisCacheLine != "" {
+		procfile = append(procfile, redisCacheLine)
+	}
+	if redisStoreLine != "" && redisCacheLine != "" {
+		// We boot up Redis (as opposed to connecting to an addr in a
+		// user-supplied ENV var), which means we can migrate it
+		go func() {
+			time.Sleep(30 * time.Second) // Give Redis time to start up
+			err := migrateRedisInstances()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}()
 	}
 
 	if line, err := maybePostgresProcFile(); err != nil {
@@ -181,4 +200,128 @@ func Main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func migrateRedisInstances() error {
+	// 1. Check whether redispool.Cache and redispool.Store are connected to
+	// different instances
+	storeAddr, ok := os.LookupEnv("REDIS_STORE_ENDPOINT")
+	if !ok {
+		return errors.New("could not connect to redis-store: REDIS_STORE_ENDPOINT not set")
+	}
+
+	storeConn, err := redis.Dial("tcp", storeAddr)
+	if err != nil {
+		return err
+	}
+
+	cacheAddr, ok := os.LookupEnv("REDIS_CACHE_ENDPOINT")
+	if !ok {
+		return errors.New("could not connect to redis-cache: REDIS_CACHE_ENDPOINT not set")
+	}
+
+	cacheConn, err := redis.Dial("tcp", cacheAddr)
+	if err != nil {
+		return err
+	}
+
+	storeRunID, err := getRunID(storeConn)
+	if err != nil {
+		return err
+	}
+	cacheRunID, err := getRunID(cacheConn)
+	if err != nil {
+		return err
+	}
+
+	if cacheRunID == storeRunID {
+		// Nothing to migrate
+		return nil
+	}
+
+	// 2. Delete the keys on both instances that are now outdated
+	const rcacheDataVersionToDelete = "v1"
+
+	err = deleteKeysWithPrefix(storeConn, rcacheDataVersionToDelete)
+	if err != nil {
+		return err
+	}
+
+	err = deleteKeysWithPrefix(cacheConn, rcacheDataVersionToDelete)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getRunID(c redis.Conn) (string, error) {
+	infos, err := redis.String(c.Do("INFO", "server"))
+	if err != nil {
+		return "", err
+	}
+
+	for _, l := range strings.Split(infos, "\n") {
+		if strings.HasPrefix(l, "run_id:") {
+			s := strings.Split(l, ":")
+			return s[1], nil
+		}
+	}
+	return "", errors.New("no run_id found")
+}
+
+func deleteKeysWithPrefix(c redis.Conn, prefix string) error {
+	pattern := prefix + ":*"
+
+	iter := 0
+	keys := make([]string, 0)
+	for {
+		arr, err := redis.Values(c.Do("SCAN", iter, "MATCH", pattern))
+		if err != nil {
+			return fmt.Errorf("error retrieving keys with pattern %q", pattern)
+		}
+
+		iter, err = redis.Int(arr[0], nil)
+		if err != nil {
+			return err
+		}
+
+		k, err := redis.Strings(arr[1], nil)
+		if err != nil {
+			return err
+		}
+		keys = append(keys, k...)
+		if iter == 0 {
+			break
+		}
+	}
+
+	if len(keys) == 0 {
+		return nil
+	}
+
+	const batchSize = 1000
+	var batch = make([]interface{}, batchSize, batchSize)
+
+	for i := 0; i < len(keys); i += batchSize {
+		j := i + batchSize
+		if j > len(keys) {
+			j = len(keys)
+		}
+		currentBatchSize := j - i
+
+		for bi, v := range keys[i:j] {
+			batch[bi] = v
+		}
+
+		// We ignore whether the number of deleted keys matches what we have in
+		// `batch`, because in the time since we constructed `keys` some of the
+		// keys might have expired
+		_, err := c.Do("DEL", batch[:currentBatchSize]...)
+		if err != nil {
+			return fmt.Errorf("failed to delete keys: %s", err)
+		}
+	}
+
+	return nil
 }
