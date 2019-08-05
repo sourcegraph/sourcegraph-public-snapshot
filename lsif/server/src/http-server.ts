@@ -378,9 +378,6 @@ function main(): void {
 
                 // const blobArguments = `--format blob --delete --projectVersion ${projectVersion}`
                 const command = `${SQLITE_CONVERTER_BINARY} --in "${tempFile.path}" --out "${key}"`
-                console.log('A', !!fs.stat(tempFile.path))
-                console.log('B', !!fs.stat(SQLITE_CONVERTER_BINARY))
-                console.log('C', fs.readFileSync(SQLITE_CONVERTER_BINARY).toString())
                 await child_process.exec(command)
                 await fs.unlink(tempFile.path)
 
