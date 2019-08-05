@@ -2,12 +2,12 @@ import { wrap } from 'async-middleware'
 import bodyParser from 'body-parser'
 import express from 'express'
 import LRU from 'lru-cache'
-import moveFile from 'move-file'
-import { fs } from 'mz'
+import { fs, child_process } from 'mz'
 import * as path from 'path'
 import { withFile } from 'tmp-promise'
 import { Database, noopTransformer } from './database'
 import { JsonDatabase } from './json'
+import { GraphStore } from './graphStore'
 
 /**
  * Reads an integer from an environment variable or defaults to the given value.
@@ -23,6 +23,12 @@ function readEnvInt({ key, defaultValue }: { key: string; defaultValue: number }
     }
     return n
 }
+
+/**
+ * The path of the binary used to convert json dumps to sqlite dumps.
+ * See https://github.com/microsoft/lsif-node/tree/master/sqlite.
+ */
+const SQLITE_CONVERTER_BINARY = './node_modules/lsif-sqlite/bin/lsif-sqlite'
 
 /**
  * Where on the file system to store LSIF files.
@@ -125,7 +131,7 @@ function diskKey({ repository, commit }: RepositoryCommit): string {
  * Throws ENOENT when there is no LSIF data for the given repository@commit.
  */
 async function createDB(repositoryCommit: RepositoryCommit): Promise<Database> {
-    const db = new JsonDatabase()
+    const db = new GraphStore() // new BlobStore()
     await db.load(diskKey(repositoryCommit), projectRootURI => ({
         toDatabase: pathRelativeToProjectRoot => projectRootURI + '/' + pathRelativeToProjectRoot,
         fromDatabase: uri => (uri.startsWith(projectRootURI) ? uri.slice(`${projectRootURI}/`.length) : uri),
@@ -367,10 +373,18 @@ function main(): void {
                         throw e
                     }
                 }
-                await moveFile(tempFile.path, diskKey({ repository, commit }))
+
+                const key = diskKey({ repository, commit })
+
+                console.log('Creating graph-encoded sqlite database')
+                const blobArguments = ''
+                // const blobArguments = `--format blob --delete --projectVersion ${projectVersion}`
+                const command = `${SQLITE_CONVERTER_BINARY} --in "${tempFile.path}" --out "${key}" ${blobArguments}`
+                await child_process.exec(command)
+                await fs.unlink(tempFile.path)
 
                 // Evict the old `Database` from the LRU cache to cause it to pick up the new LSIF data from disk.
-                dbLRU.del(diskKey({ repository, commit }))
+                dbLRU.del(key)
 
                 res.send('Upload successful.')
             })

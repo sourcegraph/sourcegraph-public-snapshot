@@ -8,7 +8,9 @@
     "node": ">=10.0.0"
   },
   "dependencies": {
+    "@types/better-sqlite3": "^5.4.0",
     "async-middleware": "^1.2.1",
+    "better-sqlite3": "^5.4.0",
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
     "express-async-handler": "^1.1.4",
