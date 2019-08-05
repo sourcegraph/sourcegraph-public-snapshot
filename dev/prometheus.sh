@@ -3,11 +3,6 @@ set -e
 
 # Description: Prometheus collects metrics and aggregates them into graphs.
 #
-# Disk: 200GB / persistent SSD
-# Network: 100mbps
-# Liveness probe: n/a
-# Ports exposed to other Sourcegraph services: none
-# Ports exposed to the public internet: none (HTTP 9090 should be exposed to admins only)
 #
 docker run --detach \
     --name=prometheus \
