@@ -10,8 +10,8 @@ import { ExtensionsControllerNotificationProps } from '../../../../../../shared/
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../../backend/graphql'
-import { ThreadStatusFields } from '../../../threadlike/threadStatus/threadStatus'
-import { ThreadStatusIcon } from '../../../threadlike/threadStatus/ThreadStatusIcon'
+import { ThreadStateFields } from '../../../threadlike/threadState/threadState'
+import { ThreadStateIcon } from '../../../threadlike/threadState/ThreadStateIcon'
 
 const removeThreadsFromCampaign = (input: GQL.IRemoveThreadsFromCampaignOnMutationArguments): Promise<void> =>
     mutateGraphQL(
@@ -33,7 +33,7 @@ const removeThreadsFromCampaign = (input: GQL.IRemoveThreadsFromCampaignOnMutati
 interface Props extends ExtensionsControllerNotificationProps {
     campaign: Pick<GQL.ICampaign, 'id'>
     thread: Pick<GQL.ThreadOrIssueOrChangeset, 'id' | 'repository' | 'title' | 'url' | 'externalURL'> &
-        ThreadStatusFields
+        ThreadStateFields
     onUpdate: () => void
 }
 
@@ -61,7 +61,7 @@ export const CampaignThreadListItem: React.FunctionComponent<Props> = ({
     return (
         <div className="d-flex align-items-center">
             <Link to={thread.url} className="text-decoration-none">
-                <ThreadStatusIcon thread={thread} className="mr-2" />
+                <ThreadStateIcon thread={thread} className="mr-2" />
                 <span className="text-muted mr-2">{displayRepoName(thread.repository.name)}:</span>
                 {thread.title}
             </Link>

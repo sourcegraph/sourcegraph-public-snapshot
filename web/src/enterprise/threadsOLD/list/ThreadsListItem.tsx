@@ -7,7 +7,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../../shared/src/util/strings'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { PersonLink } from '../../../user/PersonLink'
-import { ThreadStatusIcon } from '../../threadlike/threadStatus/ThreadStatusIcon'
+import { ThreadStateIcon } from '../../threadlike/threadState/ThreadStateIcon'
 import { ThreadsListContext } from './ThreadsList'
 
 interface Props extends ThreadsListContext {
@@ -30,7 +30,7 @@ export const ThreadsListItem: React.FunctionComponent<Props> = ({ thread, itemCh
                     <input className="form-check-input position-static" type="checkbox" aria-label="Select item" />
                 </div>
             )}
-            <ThreadStatusIcon thread={thread} className="small mr-2 mt-2" />
+            <ThreadStateIcon thread={thread} className="small mr-2 mt-2" />
             <div className="flex-1">
                 <div className="d-flex align-items-center flex-wrap">
                     <h3 className="d-flex align-items-center mb-0 mr-2">

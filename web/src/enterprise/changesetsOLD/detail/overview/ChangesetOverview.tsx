@@ -9,10 +9,10 @@ import { Timeline } from '../../../../components/timeline/Timeline'
 import { PersonLink } from '../../../../user/PersonLink'
 import { ActionsIcon, GitPullRequestIcon } from '../../../../util/octicons'
 import { ChecksIcon } from '../../../checks/icons'
-import { ThreadStatusBadge } from '../../../threadlike/threadStatus/ThreadStatusBadge'
+import { ThreadStateBadge } from '../../../threadlike/threadState/ThreadStateBadge'
 import { ThreadHeaderEditableTitle } from '../../../threadsOLD/detail/header/ThreadHeaderEditableTitle'
 import { ThreadDescription } from '../../../threadsOLD/detail/overview/ThreadDescription'
-import { ThreadStatusButton } from '../../../threadsOLD/form/ThreadStatusButton'
+import { ThreadStateButton } from '../../../threadsOLD/form/ThreadStateButton'
 import { ThreadSettings } from '../../../threadsOLD/settings'
 import { countChangesetFilesChanged } from '../../preview/ChangesetSummaryBar'
 import { ChangesetReviewLink } from '../changes/ChangesetReviewLink'
@@ -47,7 +47,7 @@ export const ChangesetOverview: React.FunctionComponent<Props> = ({
     <div className={`thread-overview ${className || ''}`}>
         <hr className="my-0" />
         <div className="d-flex align-items-center py-3">
-            <ThreadStatusBadge thread={thread} className="mr-3" />
+            <ThreadStateBadge thread={thread} className="mr-3" />
             <div>
                 <small>
                     Opened <Timestamp date={thread.createdAt} /> by{' '}
@@ -57,7 +57,7 @@ export const ChangesetOverview: React.FunctionComponent<Props> = ({
                 </small>
             </div>
             <div className="flex-1" />
-            <ThreadStatusButton
+            <ThreadStateButton
                 {...props}
                 thread={thread}
                 onThreadUpdate={onThreadUpdate}

@@ -30,7 +30,7 @@ export const ChangesetOperationsList: React.FunctionComponent<Props> = ({ thread
                     <div className="flex-1">
                         <h4 className="mb-0">Automatic updates enabled</h4>
                         <p className="mb-0">
-                            The operations {thread.status === GQL.ThreadStatus.PREVIEW ? 'will' : ''} run when any base
+                            The operations {thread.status === GQL.ThreadState.PREVIEW ? 'will' : ''} run when any base
                             branch changes or when a new repository matches.
                         </p>
                     </div>

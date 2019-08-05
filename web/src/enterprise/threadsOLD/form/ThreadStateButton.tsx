@@ -22,7 +22,7 @@ interface Props extends ExtensionsControllerNotificationProps {
  * TODO!(sqs): currently it only sets it archived ("closed")
  * TODO!(sqs): add tests like for ThreadHeaderEditableTitle
  */
-export const ThreadStatusButton: React.FunctionComponent<Props> = ({
+export const ThreadStateButton: React.FunctionComponent<Props> = ({
     includeNounInLabel,
     thread,
     onThreadUpdate,
@@ -30,7 +30,7 @@ export const ThreadStatusButton: React.FunctionComponent<Props> = ({
     buttonClassName = 'btn-secondary',
     extensionsController,
 }) => {
-    const isOpen = thread.status !== GQL.ThreadStatus.CLOSED
+    const isOpen = thread.status !== GQL.ThreadState.CLOSED
     const [isLoading, setIsLoading] = useState(false)
     const onClick = useCallback<React.FormEventHandler>(
         async e => {
@@ -41,7 +41,7 @@ export const ThreadStatusButton: React.FunctionComponent<Props> = ({
                 // of its actions (which is probably undesirable).
                 const updatedThread = await updateThread({
                     threadID: thread.id,
-                    status: thread.status === GQL.ThreadStatus.OPEN ? GQL.ThreadStatus.CLOSED : GQL.ThreadStatus.OPEN,
+                    status: thread.status === GQL.ThreadState.OPEN ? GQL.ThreadState.CLOSED : GQL.ThreadState.OPEN,
                 })
                 onThreadUpdate(updatedThread)
             } catch (err) {

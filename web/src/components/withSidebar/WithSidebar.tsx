@@ -17,7 +17,7 @@ interface Props {
  */
 export const WithSidebar: React.FunctionComponent<Props> = ({ sidebar, sidebarPosition, className = '', children }) => (
     <div className={`d-flex ${sidebarPosition === 'left' ? 'flex-row-reverse' : ''} overflow-hidden ${className}`}>
-        {React.cloneElement(children, { className: `${children.props.className || ''} flex-1` })}
-        {sidebar}
+        {React.cloneElement(children, { className: `${children.props.className || ''} flex-1 overflow-auto` })}
+        {React.cloneElement(sidebar, { className: `${sidebar.props.className || ''} flex-0` })}
     </div>
 )

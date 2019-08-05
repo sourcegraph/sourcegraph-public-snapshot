@@ -5,6 +5,18 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../backend/graphql'
 
+const campaignFieldsFragment = gql`
+    fragment CampaignFields on Campaign {
+        id
+        namespace {
+            namespaceName
+        }
+        name
+        body
+        url
+    }
+`
+
 const LOADING: 'loading' = 'loading'
 
 /**
@@ -24,15 +36,13 @@ export const useCampaigns = (
                           namespace(id: $namespace) {
                               campaigns {
                                   nodes {
-                                      id
-                                      name
-                                      body
-                                      url
+                                      ...CampaignFields
                                   }
                                   totalCount
                               }
                           }
                       }
+                      ${campaignFieldsFragment}
                   `,
                   { namespace: namespace.id }
               ).pipe(
@@ -48,14 +58,12 @@ export const useCampaigns = (
                   query Campaigns {
                       campaigns {
                           nodes {
-                              id
-                              name
-                              body
-                              url
+                              ...CampaignFields
                           }
                           totalCount
                       }
                   }
+                  ${campaignFieldsFragment}
               `).pipe(
                   map(dataOrThrowErrors),
                   map(data => data.campaigns)

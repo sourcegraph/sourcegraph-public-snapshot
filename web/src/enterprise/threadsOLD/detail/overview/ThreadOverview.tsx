@@ -4,10 +4,10 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { PersonLink } from '../../../../user/PersonLink'
-import { ThreadStatusBadge } from '../../../threadlike/threadStatus/ThreadStatusBadge'
-import { ThreadStatusButton } from '../../form/ThreadStatusButton'
+import { ThreadStateBadge } from '../../../threadlike/threadState/ThreadStateBadge'
+import { ThreadStateButton } from '../../form/ThreadStateButton'
 import { ThreadSettings } from '../../settings'
-import { ThreadStatusItemsProgressBar } from '../actions/ThreadStatusItemsProgressBar'
+import { ThreadStateItemsProgressBar } from '../actions/ThreadStateItemsProgressBar'
 import { ThreadHeaderEditableTitle } from '../header/ThreadHeaderEditableTitle'
 import { ThreadDescription } from './ThreadDescription'
 
@@ -41,7 +41,7 @@ export const ThreadOverview: React.FunctionComponent<Props> = ({
     <div className={`thread-overview ${className || ''}`}>
         <hr className="my-0" />
         <div className="d-flex align-items-center py-3">
-            <ThreadStatusBadge thread={thread} className="mr-3" />
+            <ThreadStateBadge thread={thread} className="mr-3" />
             <div>
                 <small>
                     Opened <Timestamp date={thread.createdAt} /> by{' '}
@@ -50,13 +50,13 @@ export const ThreadOverview: React.FunctionComponent<Props> = ({
                     </strong>
                 </small>
                 {
-                    /*thread.type === GQL.ThreadType.ISSUE &&*/ <ThreadStatusItemsProgressBar
+                    /*thread.type === GQL.ThreadType.ISSUE &&*/ <ThreadStateItemsProgressBar
                         className="mt-1 mb-3"
                         height="0.3rem"
                     />
                 }
             </div>
-            <ThreadStatusButton
+            <ThreadStateButton
                 {...props}
                 thread={thread}
                 onThreadUpdate={onThreadUpdate}

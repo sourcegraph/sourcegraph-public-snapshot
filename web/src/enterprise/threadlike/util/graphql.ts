@@ -1,16 +1,7 @@
 import { queryAndFragmentForUnion } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 
-const DEFAULT_FIELDS: (keyof GQL.ThreadOrIssueOrChangeset)[] = [
-    '__typename',
-    'id',
-    'number',
-    'title',
-    'url',
-    'externalURL',
-    'status',
-    'repository { name }',
-]
+const DEFAULT_FIELDS: (keyof GQL.ThreadOrIssueOrChangeset)[] = ['__typename', 'id', 'number', 'title', 'url', 'state']
 
 const DEFAULT_NESTED_FIELDS = ['repository { name }']
 

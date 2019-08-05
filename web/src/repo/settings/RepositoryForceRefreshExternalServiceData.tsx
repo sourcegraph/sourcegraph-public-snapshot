@@ -2,17 +2,17 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import SyncIcon from 'mdi-react/SyncIcon'
 import React, { useCallback, useState } from 'react'
 import { map, mapTo } from 'rxjs/operators'
-import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
-import { ExtensionsControllerNotificationProps } from '../../../../../shared/src/extensions/controller'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { mutateGraphQL } from '../../../backend/graphql'
+import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
+import { ExtensionsControllerNotificationProps } from '../../../../shared/src/extensions/controller'
+import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { mutateGraphQL } from '../../backend/graphql'
 
-const forceRefreshCampaign = (args: GQL.IForceRefreshCampaignOnMutationArguments): Promise<void> =>
+const forceRefreshRepositoryThreads = (args: GQL.IForceRefreshRepositoryThreadsOnMutationArguments): Promise<void> =>
     mutateGraphQL(
         gql`
-            mutation ForceRefreshCampaign($campaign: ID!) {
-                forceRefreshCampaign(campaign: $campaign) {
+            mutation ForceRefreshRepositoryThreads($repository: ID!) {
+                forceRefreshRepositoryThreads(repository: $repository) {
                     id
                 }
             }
@@ -26,18 +26,16 @@ const forceRefreshCampaign = (args: GQL.IForceRefreshCampaignOnMutationArguments
         .toPromise()
 
 interface Props extends ExtensionsControllerNotificationProps {
-    campaign: Pick<GQL.ICampaign, 'id'>
-    onComplete?: () => void
+    repository: Pick<GQL.IRepository, 'id'>
     className?: string
     buttonClassName?: string
 }
 
 /**
- * A button that force-refreshes a campaign.
+ * A button that force-refreshes a repository's data from its external services.
  */
-export const CampaignForceRefreshButton: React.FunctionComponent<Props> = ({
-    campaign,
-    onComplete,
+export const RepositoryForceRefreshExternalServiceDataButton: React.FunctionComponent<Props> = ({
+    repository,
     className = '',
     buttonClassName = 'btn-link text-decoration-none',
     extensionsController,
@@ -48,24 +46,22 @@ export const CampaignForceRefreshButton: React.FunctionComponent<Props> = ({
             e.preventDefault()
             setIsLoading(true)
             try {
-                await forceRefreshCampaign({ campaign: campaign.id })
+                await forceRefreshRepositoryThreads({ repository: repository.id })
                 setIsLoading(false)
-                if (onComplete) {
-                    onComplete()
-                }
             } catch (err) {
                 setIsLoading(false)
                 extensionsController.services.notifications.showMessages.next({
-                    message: `Error force-refreshing campaign: ${err.message}`,
+                    message: `Error force-refreshing repository: ${err.message}`,
                     type: NotificationType.Error,
                 })
             }
         },
-        [campaign.id, onComplete, extensionsController.services.notifications.showMessages]
+        [extensionsController.services.notifications.showMessages, repository.id]
     )
     return (
         <button type="button" disabled={isLoading} className={`btn ${buttonClassName} ${className}`} onClick={onClick}>
             {isLoading ? <LoadingSpinner className="icon-inline" /> : <SyncIcon className="icon-inline" />} Refresh
+            external service data
         </button>
     )
 }

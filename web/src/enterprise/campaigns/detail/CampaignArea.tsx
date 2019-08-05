@@ -89,6 +89,7 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                               <CampaignForceRefreshButton
                                   {...props}
                                   campaign={campaign}
+                                  onComplete={onCampaignUpdate}
                                   buttonClassName="btn-link"
                                   className="btn-sm px-0 text-decoration-none"
                               />
@@ -99,15 +100,15 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                               <CampaignDeleteButton
                                   {...props}
                                   campaign={campaign}
+                                  onDelete={onCampaignDelete}
                                   buttonClassName="btn-link"
                                   className="btn-sm px-0 text-decoration-none"
-                                  onDelete={onCampaignDelete}
                               />
                           ),
                       },
                   ]
                 : [],
-        [campaign, onCampaignDelete, props]
+        [campaign, onCampaignDelete, onCampaignUpdate, props]
     )
 
     if (campaign === LOADING) {

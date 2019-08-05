@@ -1,7 +1,7 @@
 import React from 'react'
 
 // tslint:disable: jsx-ban-props
-export const ThreadStatusItemsProgressBar: React.FunctionComponent<{
+export const ThreadStateItemsProgressBar: React.FunctionComponent<{
     label?: string
     height?: string
     className?: string

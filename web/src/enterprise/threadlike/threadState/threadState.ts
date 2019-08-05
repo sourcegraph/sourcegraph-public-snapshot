@@ -5,41 +5,41 @@ import { ThreadsIcon } from '../../threads/icons'
 /**
  * The subset of fields that is needed for displaying the thread's status icons.
  */
-export interface ThreadStatusFields extends Pick<GQL.ThreadOrIssueOrChangeset, '__typename' | 'status'> {}
+export interface ThreadStateFields extends Pick<GQL.ThreadOrIssueOrChangeset, '__typename' | 'status'> {}
 
-type ThreadStatusColor = 'success' | 'danger' | 'info' | 'secondary'
+type ThreadStateColor = 'success' | 'danger' | 'info' | 'secondary'
 
-const STATUS_COLOR: Record<GQL.ThreadOrIssueOrChangeset['status'], ThreadStatusColor> = {
+const STATUS_COLOR: Record<GQL.ThreadOrIssueOrChangeset['status'], ThreadStateColor> = {
     OPEN: 'success',
     CLOSED: 'danger',
     MERGED: 'info', // TODO!(sqs): make purple
 }
 
-const threadIcon = (thread: ThreadStatusFields): React.ComponentType<{ className?: string }> =>
+const threadIcon = (thread: ThreadStateFields): React.ComponentType<{ className?: string }> =>
     thread.__typename === 'Changeset' ? ChangesetsIcon : ThreadsIcon
 
-const statusText = (thread: ThreadStatusFields) => {
+const statusText = (thread: ThreadStateFields) => {
     switch (thread.status) {
-        case GQL.ThreadStatus.OPEN:
-        case GQL.ChangesetStatus.OPEN:
+        case GQL.ThreadState.OPEN:
+        case GQL.ChangesetState.OPEN:
             return 'Open'
-        case GQL.ThreadStatus.CLOSED:
-        case GQL.ChangesetStatus.CLOSED:
+        case GQL.ThreadState.CLOSED:
+        case GQL.ChangesetState.CLOSED:
             return 'Closed'
-        case GQL.ChangesetStatus.MERGED:
+        case GQL.ChangesetState.MERGED:
             return 'Merged'
     }
 }
 
-const threadTooltip = (thread: ThreadStatusFields): string => `${statusText(thread)} ${thread.__typename.toLowerCase()}`
+const threadTooltip = (thread: ThreadStateFields): string => `${statusText(thread)} ${thread.__typename.toLowerCase()}`
 
 /**
  * Returns information about how to display the thread's status.
  */
-export const threadStatusInfo = (
-    thread: ThreadStatusFields
+export const threadStateInfo = (
+    thread: ThreadStateFields
 ): {
-    color: ThreadStatusColor
+    color: ThreadStateColor
     icon: React.ComponentType<{ className?: string }>
     text: string
     tooltip: string

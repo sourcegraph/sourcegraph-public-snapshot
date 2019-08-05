@@ -16,6 +16,7 @@ import { WithSidebar } from '../../../components/withSidebar/WithSidebar'
 import { LabelIcon } from '../../../projects/icons'
 import { CampaignsIcon } from '../../campaigns/icons'
 import { ObjectCampaignsList } from '../../campaigns/object/ObjectCampaignsList'
+import { ThreadCampaignsDropdownButton } from '../../threadlike/ThreadCampaignsDropdownButton'
 import { CopyThreadLinkButton } from '../../threadsOLD/detail/CopyThreadLinkButton'
 import { ChangesetDeleteButton } from '../common/ChangesetDeleteButton'
 import { RepositoryChangesetsAreaContext } from '../repository/RepositoryChangesetsArea'
@@ -90,8 +91,15 @@ export const ChangesetArea: React.FunctionComponent<Props> = ({
                 ? [
                       {
                           expanded: {
-                              title: 'Campaign',
-                              children: <ObjectCampaignsList object={changeset} />,
+                              title: (
+                                  <ThreadCampaignsDropdownButton
+                                      {...props}
+                                      thread={changeset}
+                                      onChange={onChangesetUpdate}
+                                      buttonClassName="btn-link p-0"
+                                  />
+                              ),
+                              children: <ObjectCampaignsList object={changeset} icon={false} itemClassName="small" />,
                           },
                           collapsed: {
                               icon: CampaignsIcon,
@@ -189,7 +197,7 @@ export const ChangesetArea: React.FunctionComponent<Props> = ({
                       },
                   ]
                 : [],
-        [changeset, onChangesetDelete, props]
+        [changeset, onChangesetDelete, onChangesetUpdate, props]
     )
 
     if (changeset === LOADING) {

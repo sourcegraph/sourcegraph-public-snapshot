@@ -1,13 +1,13 @@
-import PlusBoxIcon from 'mdi-react/PlusBoxIcon'
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownToggle } from 'reactstrap'
 import { map, mapTo } from 'rxjs/operators'
-import { NotificationType } from '../../../../../../shared/src/api/client/services/notifications'
-import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
-import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { mutateGraphQL } from '../../../../backend/graphql'
-import { ThreadsDropdownMenu } from '../../../threadlike/ThreadsDropdownMenu'
+import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
+import { ExtensionsControllerNotificationProps } from '../../../../shared/src/extensions/controller'
+import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { mutateGraphQL } from '../../backend/graphql'
+import { CampaignsDropdownMenu } from '../campaigns/components/CampaignsDropdownMenu'
+import { CampaignsIcon } from '../campaigns/icons'
 
 export const addThreadsToCampaign = (input: GQL.IAddThreadsToCampaignOnMutationArguments): Promise<void> =>
     mutateGraphQL(
@@ -27,23 +27,28 @@ export const addThreadsToCampaign = (input: GQL.IAddThreadsToCampaignOnMutationA
         .toPromise()
 
 interface Props extends ExtensionsControllerNotificationProps {
-    campaign: Pick<GQL.ICampaign, 'id'>
+    thread: Pick<GQL.ThreadOrIssueOrChangeset, 'id'>
     onChange?: () => void
 
     className?: string
+    buttonClassName: string
 }
 
-export const AddThreadToCampaignDropdownButton: React.FunctionComponent<Props> = ({
-    campaign,
+/**
+ * A dropdown button with a menu to add the thread to a campaign.
+ */
+export const ThreadCampaignsDropdownButton: React.FunctionComponent<Props> = ({
+    thread,
     onChange,
     className = '',
+    buttonClassName,
     extensionsController,
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
 
     const onSelect = useCallback(
-        async (thread: Pick<GQL.ThreadOrIssueOrChangeset, 'id'>) => {
+        async (campaign: Pick<GQL.ICampaign, 'id'>) => {
             try {
                 await addThreadsToCampaign({
                     campaign: campaign.id,
@@ -59,15 +64,15 @@ export const AddThreadToCampaignDropdownButton: React.FunctionComponent<Props> =
                 })
             }
         },
-        [campaign.id, extensionsController.services.notifications.showMessages, onChange]
+        [extensionsController.services.notifications.showMessages, onChange, thread.id]
     )
 
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className={className}>
-            <DropdownToggle color="" className="btn btn-primary">
-                <PlusBoxIcon className="icon-inline mr-2" /> Add changeset
+            <DropdownToggle color="" className={buttonClassName}>
+                <CampaignsIcon className="icon-inline small mr-2" /> Campaigns
             </DropdownToggle>
-            <ThreadsDropdownMenu onSelect={onSelect} />
+            <CampaignsDropdownMenu onSelect={onSelect} />
         </ButtonDropdown>
     )
 }

@@ -41,7 +41,7 @@ export const CreateChangesetFromPreviewForm: React.FunctionComponent<Props> = ({
                 const updatedThread = await updateThread({
                     threadID: thread.id,
                     title: uncommittedTitle,
-                    status: GQL.ThreadStatus.OPEN,
+                    status: GQL.ThreadState.OPEN,
                 })
                 setIsLoading(false)
                 onThreadUpdate(updatedThread)

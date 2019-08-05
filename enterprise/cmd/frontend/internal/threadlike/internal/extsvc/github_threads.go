@@ -31,23 +31,44 @@ func ImportGitHubRepositoryThreads(ctx context.Context, repoID api.RepoID, extRe
 
 	toImport := make(map[*internal.DBThread]commentobjectdb.DBObjectCommentFields, len(pulls))
 	for _, ghPull := range pulls {
-		toImport[&internal.DBThread{
-			Type:                          internal.DBThreadTypeChangeset,
-			RepositoryID:                  repoID,
-			Title:                         ghPull.Title,
-			State:                         ghPull.State,
-			IsPreview:                     false,
-			CreatedAt:                     ghPull.CreatedAt,
-			BaseRef:                       ghPull.BaseRefName,
-			HeadRef:                       ghPull.HeadRefName,
-			ImportedFromExternalServiceID: externalServiceID,
-			ExternalID:                    string(ghPull.ID),
-		}] = commentobjectdb.DBObjectCommentFields{
-			AuthorUserID: actor.FromContext(ctx).UID, // TODO!(sqs): map to github user, and dont always just use current user
-			Body:         ghPull.Body,
+		// Skip cross-repository PRs because we don't handle those yet.
+		if ghPull.IsCrossRepository {
+			continue
 		}
+
+		thread, comment := githubPullToThread(ghPull)
+		thread.RepositoryID = repoID
+		thread.ImportedFromExternalServiceID = externalServiceID
+		comment.AuthorUserID = actor.FromContext(ctx).UID // TODO!(sqs): map to github user, and dont always just use current user
+		toImport[thread] = comment
 	}
 	return internal.ImportExternalThreads(ctx, repoID, externalServiceID, toImport)
+}
+
+func githubPullToThread(ghPull *githubPullRequest) (*internal.DBThread, commentobjectdb.DBObjectCommentFields) {
+	getRefName := func(ref *githubRef, oid string) string {
+		// If a base/head is deleted, point to its OID directly.
+		if ref == nil || ghPull.State == "MERGED" {
+			return oid
+		}
+		return ref.Prefix + ref.Name
+	}
+
+	thread := &internal.DBThread{
+		Type:       internal.DBThreadTypeChangeset,
+		Title:      ghPull.Title,
+		State:      ghPull.State,
+		IsPreview:  false,
+		CreatedAt:  ghPull.CreatedAt,
+		BaseRef:    getRefName(ghPull.BaseRef, ghPull.BaseRefOid),
+		HeadRef:    getRefName(ghPull.HeadRef, ghPull.HeadRefOid),
+		ExternalID: string(ghPull.ID),
+	}
+
+	comment := commentobjectdb.DBObjectCommentFields{
+		Body: ghPull.Body,
+	}
+	return thread, comment
 }
 
 type githubPullRequest struct {
@@ -56,34 +77,47 @@ type githubPullRequest struct {
 	Title             string     `json:"title"`
 	Body              string     `json:"body"`
 	CreatedAt         time.Time  `json:"createdAt"`
-	BaseRefName       string     `json:"baseRefName"`
-	HeadRefName       string     `json:"headRefName"`
+	BaseRef           *githubRef `json:"baseRef"`
+	BaseRefOid        string     `json:"baseRefOid"`
+	HeadRef           *githubRef `json:"headRef"`
+	HeadRefOid        string     `json:"headRefOid"`
 	IsCrossRepository bool       `json:"isCrossRepository"`
 	Permalink         string     `json:"permalink"`
 	State             string     `json:"state"`
 }
 
+type githubRef struct {
+	Name   string `json:"name"`
+	Prefix string `json:"prefix"`
+}
+
 func listGitHubPullRequestsForRepository(ctx context.Context, client *github.Client, githubRepositoryID graphql.ID) (pulls []*githubPullRequest, err error) {
 	var data struct {
 		Node *struct {
-			PullRequests []*githubPullRequest
+			PullRequests struct {
+				Nodes []*githubPullRequest
+			}
 		}
 	}
 	if err := client.RequestGraphQL(ctx, "", `
 query ImportGitHubThreads($repository: ID!) {
 	node(id: $repository) {
 		... on Repository {
-			pullRequests(first: 10) {
-				id
-				number
-				title
-				body
-				createdAt
-				baseRefName
-				headRefName
-				isCrossRepository
-				permalink
-				state
+			pullRequests(first: 50, orderBy: { field: UPDATED_AT, direction: DESC }) {
+				nodes {
+					id
+					number
+					title
+					body
+					createdAt
+					baseRef { name prefix }
+					baseRefOid
+					headRef { name prefix }
+					headRefOid
+					isCrossRepository
+					permalink
+					state
+				}
 			}
 		}
 	}
@@ -96,5 +130,5 @@ query ImportGitHubThreads($repository: ID!) {
 	if data.Node == nil {
 		return nil, fmt.Errorf("github repository with ID %q not found", githubRepositoryID)
 	}
-	return data.Node.PullRequests, nil
+	return data.Node.PullRequests.Nodes, nil
 }

@@ -32,8 +32,19 @@ export const useChangesetByNumberInRepository = (
                                 id
                                 number
                                 title
+                                body
+                                bodyHTML
+                                author {
+                                    ... on User {
+                                        displayName
+                                        username
+                                        url
+                                    }
+                                }
+                                createdAt
+                                updatedAt
+                                viewerCanUpdate
                                 url
-                                externalURL
                                 repository {
                                     url
                                 }

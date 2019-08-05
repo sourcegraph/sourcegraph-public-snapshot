@@ -1,16 +1,16 @@
 import React from 'react'
-import { ThreadStatusFields, threadStatusInfo } from './threadStatus'
+import { ThreadStateFields, threadStateInfo } from './threadState'
 
 interface Props {
-    thread: ThreadStatusFields
+    thread: ThreadStateFields
     className?: string
 }
 
 /**
- * A badge that displays the status of a thread.
+ * A badge that displays the state of a thread.
  */
-export const ThreadStatusBadge: React.FunctionComponent<Props> = ({ thread, className = '' }) => {
-    const { color, icon: Icon, text } = threadStatusInfo(thread)
+export const ThreadStateBadge: React.FunctionComponent<Props> = ({ thread, className = '' }) => {
+    const { color, icon: Icon, text } = threadStateInfo(thread)
     return (
         <span
             className={`badge badge-${color} ${className} d-inline-flex align-items-center py-2 px-4 h6 mb-0 font-weight-bold`}

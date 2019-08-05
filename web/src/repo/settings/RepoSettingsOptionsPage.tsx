@@ -4,6 +4,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { ExternalServiceCard } from '../../components/ExternalServiceCard'
 import { Form } from '../../components/Form'
@@ -11,8 +12,9 @@ import { PageTitle } from '../../components/PageTitle'
 import { getExternalService } from '../../site-admin/externalServices'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchRepository } from './backend'
+import { RepositoryForceRefreshExternalServiceDataButton } from './RepositoryForceRefreshExternalServiceData'
 
-interface Props extends RouteComponentProps<any> {
+interface Props extends RouteComponentProps<any>, ExtensionsControllerProps {
     repo: GQL.IRepository
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
 }
@@ -84,6 +86,11 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                                 remove this repository, the configuration must be updated on all external services.
                             </p>
                         )}
+                        <RepositoryForceRefreshExternalServiceDataButton
+                            repository={this.props.repo}
+                            buttonClassName="btn-secondary"
+                            extensionsController={this.props.extensionsController}
+                        />
                     </div>
                 )}
                 <Form>

@@ -14,7 +14,7 @@ import { QueryParameterProps } from '../../../../../components/withQueryParamete
 import { ListHeaderQueryLinksNav } from '../../../components/ListHeaderQueryLinks'
 import { PullRequest, ThreadSettings } from '../../../settings'
 import { Changeset, computeChangesets, getChangesetExternalStatus } from '../../backend'
-import { ThreadStatusItemsProgressBar } from '../ThreadStatusItemsProgressBar'
+import { ThreadStateItemsProgressBar } from '../ThreadStateItemsProgressBar'
 import { ThreadActionsPullRequestListHeaderFilterButtonDropdown } from './ThreadActionsPullRequestListHeaderFilterButtonDropdown'
 import { ThreadActionsPullRequestsListItem } from './ThreadActionsPullRequestsListItem'
 
@@ -164,7 +164,7 @@ export const ThreadActionsPullRequestsList: React.FunctionComponent<Props> = ({
                                 </div>*/}
                         {action}
                     </div>
-                    {/*{threadSettings.createPullRequests && <ThreadStatusItemsProgressBar />}*/}
+                    {/*{threadSettings.createPullRequests && <ThreadStateItemsProgressBar />}*/}
                     {filteredItemsOrError === LOADING ? (
                         <LoadingSpinner className="m-2" />
                     ) : filteredItemsOrError.filteredItems.length === 0 ? (

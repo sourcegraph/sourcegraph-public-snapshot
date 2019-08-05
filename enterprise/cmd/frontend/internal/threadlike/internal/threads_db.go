@@ -75,17 +75,26 @@ func (DBThreads) Create(ctx context.Context, tx *sql.Tx, thread *DBThread, comme
 		}
 		return &v
 	}
+	now := time.Now()
+	nowIfZeroTime := func(t time.Time) time.Time {
+		if t.IsZero() {
+			return now
+		}
+		return t
+	}
 
 	return thread, commentobjectdb.CreateCommentWithObject(ctx, tx, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
 		var err error
 		thread, err = DBThreads{}.scanRow(tx.QueryRowContext(ctx,
-			`INSERT INTO threads(`+SelectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT, $7, $8, $9, $10) RETURNING `+SelectColumns,
+			`INSERT INTO threads(`+SelectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING `+SelectColumns,
 			thread.Type,
 			thread.RepositoryID,
 			thread.Title,
 			thread.State,
 			thread.IsPreview,
 			commentID,
+			nowIfZeroTime(thread.CreatedAt),
+			nowIfZeroTime(thread.UpdatedAt),
 			nilIfEmpty(thread.BaseRef),
 			nilIfEmpty(thread.HeadRef),
 			nilIfZero(thread.ImportedFromExternalServiceID),

@@ -22,7 +22,7 @@ export const CampaignThreadsListPage: React.FunctionComponent<Props> = ({ campai
             <AddThreadToCampaignDropdownButton
                 {...props}
                 campaign={campaign}
-                onAdd={onThreadsUpdate}
+                onChange={onThreadsUpdate}
                 className="mb-3"
             />
             {threads === LOADING ? (

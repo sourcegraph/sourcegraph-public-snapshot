@@ -119,7 +119,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign
                         isAnimationActive={false}
                     />
                     <Area
-                        stackId="threadStatus"
+                        stackId="threadState"
                         type="step"
                         dataKey="openThreads"
                         name="Open changesets"
@@ -130,7 +130,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign
                         isAnimationActive={false}
                     />
                     <Area
-                        stackId="threadStatus"
+                        stackId="threadState"
                         type="step"
                         dataKey="mergedThreads"
                         name="Merged"
@@ -139,7 +139,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign
                         isAnimationActive={false}
                     />
                     <Area
-                        stackId="threadStatus"
+                        stackId="threadState"
                         type="step"
                         dataKey="closedThreads"
                         name="Closed"
