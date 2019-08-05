@@ -4827,7 +4827,7 @@ interface EventCommon {
     id: ID!
 
     # The actor whose action this event represents.
-    actor: Actor!
+    actor: Actor
 
     # The date and time that the event occurred.
     createdAt: DateTime!

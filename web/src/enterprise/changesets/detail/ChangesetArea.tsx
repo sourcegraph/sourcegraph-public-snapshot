@@ -142,11 +142,7 @@ export const ChangesetArea: React.FunctionComponent<Props> = ({
                       {
                           expanded: {
                               title: '3 participants',
-                              children: (
-                                  <div className="text-muted">
-                                      @sqs @jtal3sf @xyzhao @tsenart @beyang @christinaforney @kzh @miltonwoof
-                                  </div>
-                              ),
+                              children: <div className="text-muted">@sqs @jtal3sf @xyzhao</div>,
                           },
                           collapsed: {
                               icon: UserGroupIcon,

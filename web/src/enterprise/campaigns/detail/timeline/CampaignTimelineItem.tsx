@@ -8,6 +8,7 @@ interface Props {
 
     tag?: 'li' | 'div'
     className?: string
+    iconClassName?: string
 }
 
 export const CampaignTimelineItem: React.FunctionComponent<Props> = ({
@@ -15,10 +16,11 @@ export const CampaignTimelineItem: React.FunctionComponent<Props> = ({
     event,
     tag: Tag = 'li',
     className = '',
+    iconClassName = 'text-muted',
     children,
 }) => (
     <Tag className={`d-flex align-items-start ml-4 pl-1 ${className}`} id={`event-${event.id}`}>
-        <Icon className="icon-inline mr-3 text-muted" />
+        <Icon className={`icon-inline mr-3 ${iconClassName}`} />
         <div>
             {children}{' '}
             <span className="text-muted">

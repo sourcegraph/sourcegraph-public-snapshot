@@ -31,8 +31,12 @@ type CreationData struct {
 	Objects
 	Data interface{} // JSON-marshaled
 
-	ActorUserID int32     // zero value means ctx's actor
-	CreatedAt   time.Time // zero value means time.Now() as of CreateEvent call
+	// zero value for these fields means ctx's actor
+	ActorUserID           int32
+	ExternalActorUsername string
+	ExternalActorURL      string
+
+	CreatedAt time.Time // zero value means time.Now() as of CreateEvent call
 }
 
 var MockCreateEvent func(CreationData) error
@@ -49,6 +53,8 @@ func createEvent(ctx context.Context, tx *sql.Tx, event CreationData, importedFr
 	v := &dbEvent{
 		Type:                          event.Type,
 		ActorUserID:                   event.ActorUserID,
+		ExternalActorUsername:         sql.NullString{String: event.ExternalActorUsername, Valid: event.ExternalActorUsername != ""},
+		ExternalActorURL:              sql.NullString{String: event.ExternalActorURL, Valid: event.ExternalActorURL != ""},
 		Objects:                       event.Objects,
 		CreatedAt:                     event.CreatedAt,
 		ImportedFromExternalServiceID: importedFromExternalServiceID,
@@ -60,7 +66,7 @@ func createEvent(ctx context.Context, tx *sql.Tx, event CreationData, importedFr
 			return err
 		}
 	}
-	if v.ActorUserID == 0 {
+	if v.ActorUserID == 0 && !v.ExternalActorUsername.Valid && !v.ExternalActorURL.Valid {
 		actor, err := graphqlbackend.CurrentUser(ctx)
 		if err != nil {
 			return err

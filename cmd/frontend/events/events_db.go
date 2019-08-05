@@ -16,8 +16,10 @@ import (
 type dbEvent struct {
 	ID int64
 	Type
-	ActorUserID int32
-	CreatedAt   time.Time
+	ActorUserID           int32
+	ExternalActorUsername sql.NullString
+	ExternalActorURL      sql.NullString
+	CreatedAt             time.Time
 	Objects
 	Data                          []byte
 	ImportedFromExternalServiceID int64
@@ -29,7 +31,7 @@ var errEventNotFound = errors.New("event not found")
 
 type dbEvents struct{}
 
-const selectColumns = `id, type, actor_user_id, created_at, data, thread_id, campaign_id, comment_id, rule_id, repository_id, user_id, organization_id, registry_extension_id, imported_from_external_service_id`
+const selectColumns = `id, type, actor_user_id, external_actor_username, external_actor_url, created_at, data, thread_id, campaign_id, comment_id, rule_id, repository_id, user_id, organization_id, registry_extension_id, imported_from_external_service_id`
 
 // Create creates a event. The event argument's (Event).ID field is ignored. The new event is
 // returned.
@@ -59,7 +61,9 @@ func (dbEvents) Create(ctx context.Context, tx *sql.Tx, event *dbEvent) (*dbEven
 	}
 	args := []interface{}{
 		event.Type,
-		event.ActorUserID,
+		nilIfZero32(event.ActorUserID),
+		event.ExternalActorUsername,
+		event.ExternalActorURL,
 		event.CreatedAt,
 		data,
 		nilIfZero64(event.Objects.Thread),
@@ -184,12 +188,15 @@ func (dbEvents) scanRow(row interface {
 	Scan(dest ...interface{}) error
 }) (*dbEvent, error) {
 	var t dbEvent
+	var actorUserID *int32
 	var threadID, campaignID, commentID, ruleID, importedFromExternalServiceID *int64
 	var repositoryID, userID, organizationID, registryExtensionID *int32
 	if err := row.Scan(
 		&t.ID,
 		&t.Type,
-		&t.ActorUserID,
+		&actorUserID,
+		&t.ExternalActorUsername,
+		&t.ExternalActorURL,
 		&t.CreatedAt,
 		&t.Data,
 		&threadID,
@@ -203,6 +210,9 @@ func (dbEvents) scanRow(row interface {
 		&importedFromExternalServiceID,
 	); err != nil {
 		return nil, err
+	}
+	if actorUserID != nil {
+		t.ActorUserID = *actorUserID
 	}
 	if threadID != nil {
 		t.Thread = *threadID

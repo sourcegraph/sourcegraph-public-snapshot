@@ -8,6 +8,7 @@ import { Markdown } from '../../../../shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { ActorLink } from '../../actor/ActorLink'
 import { mutateGraphQL } from '../../backend/graphql'
 import { Timestamp } from '../../components/time/Timestamp'
 import { PersonLink } from '../../user/PersonLink'
@@ -128,7 +129,7 @@ export const Comment: React.FunctionComponent<Props> = ({
             <div className="card-header d-flex align-items-center justify-content-between">
                 <span className="py-1">
                     <strong>
-                        <PersonLink user={comment.author as GQL.IUser /* TODO!(sqs) */} />
+                        <ActorLink actor={comment.author} />
                     </strong>{' '}
                     {createdVerb} <Timestamp date={comment.createdAt} />{' '}
                     {comment.updatedAt !== comment.createdAt && <> &bull; edited</>}

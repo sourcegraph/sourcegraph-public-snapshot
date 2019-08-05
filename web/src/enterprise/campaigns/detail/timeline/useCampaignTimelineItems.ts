@@ -3,6 +3,7 @@ import { map, startWith } from 'rxjs/operators'
 import { dataOrThrowErrors, gql, queryAndFragmentForUnion } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
+import { actorFragment, actorQuery } from '../../../../actor/graphql'
 import { queryGraphQL } from '../../../../backend/graphql'
 import { queryAndFragmentForThreadOrIssueOrChangeset } from '../../../threadlike/util/graphql'
 
@@ -21,7 +22,8 @@ const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
 >(
     ['AddThreadToCampaignEvent', 'RemoveThreadFromCampaignEvent', 'ReviewEvent', 'RequestReviewEvent'],
     ['id', 'createdAt'],
-    ['actor { ... on User { id username displayName url } }', `thread { ${threadQuery} }`]
+    [`actor { ${actorQuery} }`, `thread { ${threadQuery} }`],
+    [actorFragment]
 )
 
 type Result = typeof LOADING | GQL.ICampaignTimelineItemConnection | ErrorLike

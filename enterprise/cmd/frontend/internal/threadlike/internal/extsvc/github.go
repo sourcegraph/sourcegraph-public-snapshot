@@ -42,3 +42,8 @@ func getClientForRepo(ctx context.Context, repoID api.RepoID) (client *github.Cl
 	}
 	return src.Client(), svcs[0].ID, nil
 }
+
+type githubActor struct {
+	Login string `json:"login"`
+	URL   string `json:"url"`
+}

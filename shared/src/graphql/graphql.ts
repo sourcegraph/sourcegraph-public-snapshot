@@ -97,12 +97,14 @@ export function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
 export function queryAndFragmentForUnion<T extends string, F extends string>(
     typeNames: T[],
     fields: F[],
-    nestedFields?: string[]
+    nestedFields?: string[],
+    extraFragments?: string[]
 ): { query: string; fragment: string } {
     const allFields = nestedFields ? [...fields, ...nestedFields] : fields
-    const fragment = typeNames
-        .map(typeName => `fragment ${typeName}Fields on ${typeName} { ${allFields.join('\n')} }`)
-        .join('\n')
+    const fragment = [
+        ...typeNames.map(typeName => `fragment ${typeName}Fields on ${typeName} { ${allFields.join('\n')} }`),
+        ...(extraFragments || []),
+    ].join('\n')
     const query = gql`
 __typename
 ${typeNames.map(typeName => `... on ${typeName} { ...${typeName}Fields }`).join('\n')}

@@ -24,7 +24,7 @@ CREATE TABLE threads (
 );
 CREATE INDEX threads_repository_id ON threads(repository_id);
 CREATE INDEX threads_imported_from_external_service_id ON threads(imported_from_external_service_id);
-ALTER TABLE threads ADD CONSTRAINT external_thread_has_id_and_data CHECK ((imported_from_external_service_id IS NULL) = ((external_id IS NULL) = (external_metadata IS NULL)));
+ALTER TABLE threads ADD CONSTRAINT external_thread_has_id_and_data CHECK ((imported_from_external_service_id IS NULL) = (external_id IS NULL) AND (external_id IS NULL) = (external_metadata IS NULL));
 
 -----------------
 
@@ -56,6 +56,8 @@ CREATE UNIQUE INDEX campaigns_threads_uniq ON campaigns_threads(campaign_id, thr
 CREATE TABLE comments (
     id bigserial PRIMARY KEY,
     author_user_id integer REFERENCES users(id) ON DELETE SET NULL,
+    author_external_actor_username text,
+    author_external_actor_url text,
     body text NOT NULL,
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
@@ -89,7 +91,9 @@ CREATE INDEX rules_project_id ON rules(project_id);
 CREATE TABLE events (
 	id bigserial PRIMARY KEY,
 	type text NOT NULL,
-	actor_user_id integer REFERENCES users(id) ON DELETE CASCADE,
+	actor_user_id integer REFERENCES users(id) ON DELETE SET NULL,
+    external_actor_username text,
+    external_actor_url text,
     created_at timestamp with time zone NOT NULL,
 
 	-- The various event types give their own meanings to these columns.

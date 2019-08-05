@@ -117,21 +117,36 @@ func ImportGitHubThreadEvents(ctx context.Context, threadID, threadExternalServi
 
 	// Creation event.
 	toImport = append(toImport, events.CreationData{
-		Type:        eventTypeCreateThread,
-		Objects:     objects,
-		ActorUserID: 0, // TODO!(sqs): determine this, map from github if needed
-		CreatedAt:   pull.CreatedAt,
+		Type:                  eventTypeCreateThread,
+		Objects:               objects,
+		ActorUserID:           0, // TODO!(sqs): determine this, map from github if needed
+		ExternalActorUsername: pull.Author.Login,
+		ExternalActorURL:      pull.Author.URL,
+		CreatedAt:             pull.CreatedAt,
 	})
 
 	// GitHub timeline events.
 	for _, ghEvent := range pull.TimelineItems.Nodes {
 		if eventType, ok := githubEventTypes[ghEvent.Typename]; ok {
-			toImport = append(toImport, events.CreationData{
+			data := events.CreationData{
 				Type:      eventType,
 				Objects:   objects,
 				Data:      ghEvent,
 				CreatedAt: ghEvent.CreatedAt,
-			})
+			}
+
+			var actor *githubActor
+			if ghEvent.Author != nil {
+				actor = ghEvent.Author
+			} else if ghEvent.Actor != nil {
+				actor = ghEvent.Actor
+			}
+			if actor != nil {
+				data.ExternalActorUsername = actor.Login
+				data.ExternalActorURL = actor.URL
+			}
+
+			toImport = append(toImport, data)
 		}
 	}
 
@@ -146,23 +161,20 @@ var githubEventTypes = map[string]events.Type{
 }
 
 type githubPullRequestTimelineData struct {
-	CreatedAt     time.Time
+	CreatedAt     time.Time    `json:"createdAt"`
+	Author        *githubActor `json:"author"`
 	TimelineItems struct {
 		Nodes []githubEvent
 	}
 }
 
 type githubEvent struct {
-	Typename string     `json:"__typename"`
-	ID       graphql.ID `json:"id"`
-	Actor    *struct {
-		Login string `json:"login"`
-	} `json:"actor,omitempty"`
-	Author *struct {
-		Login string `json:"login"`
-	} `json:"author,omitempty"`
-	State     string    `json:"state,omitempty"`
-	CreatedAt time.Time `json:"createdAt"`
+	Typename  string       `json:"__typename"`
+	ID        graphql.ID   `json:"id"`
+	Actor     *githubActor `json:"actor,omitempty"`
+	Author    *githubActor `json:"author,omitempty"`
+	State     string       `json:"state,omitempty"`
+	CreatedAt time.Time    `json:"createdAt"`
 }
 
 func getGitHubPullRequestTimelineItems(ctx context.Context, client *github.Client, githubPullRequestID graphql.ID) (pull *githubPullRequestTimelineData, err error) {
@@ -173,39 +185,47 @@ func getGitHubPullRequestTimelineItems(ctx context.Context, client *github.Clien
 query ImportGitHubThreadEvents($pullRequest: ID!) {
 	node(id: $pullRequest) {
 		... on PullRequest {
+			author { ...ActorFields }
 			createdAt
 			timelineItems(first: 10, itemTypes: [MERGED_EVENT, CLOSED_EVENT, REOPENED_EVENT, REVIEW_REQUESTED_EVENT, PULL_REQUEST_REVIEW]) {
 				nodes {
 					__typename
 					... on MergedEvent {
 						id
-						actor { login }
+						actor { ...ActorFields }
 						createdAt
 					}
 					... on ClosedEvent {
 						id
-						actor { login }
+						actor { ... ActorFields }
 						createdAt
 					}
 					... on ReopenedEvent {
 						id
-						actor { login }
+						actor { ... ActorFields }
 						createdAt
 					}
 					... on ReviewRequestedEvent {
 						id
-						actor { login }
+						actor { ... ActorFields }
 						createdAt
 					}
 					... on PullRequestReview {
 						id
-						author { login }
+						author { ... ActorFields }
 						createdAt
 						state
 					}
 				}
 			}
 		}
+	}
+}
+fragment ActorFields on Actor {
+	__typename
+	... on User {
+		login
+		url
 	}
 }
 `, map[string]interface{}{

@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/internal"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
@@ -45,7 +44,6 @@ func ImportGitHubRepositoryThreads(ctx context.Context, repoID api.RepoID, extRe
 		thread, comment := githubPullToThread(ghPull)
 		thread.RepositoryID = repoID
 		thread.ImportedFromExternalServiceID = externalServiceID
-		comment.AuthorUserID = actor.FromContext(ctx).UID // TODO!(sqs): map to github user, and dont always just use current user
 		toImport[thread] = comment
 	}
 	return internal.ImportExternalThreads(ctx, repoID, externalServiceID, toImport)
@@ -78,23 +76,30 @@ func githubPullToThread(ghPull *githubPullRequest) (*internal.DBThread, commento
 
 	comment := commentobjectdb.DBObjectCommentFields{
 		Body: ghPull.Body,
+		// TODO!(sqs): map to sourcegraph user if possible
+		AuthorExternalActorUsername: ghPull.Author.Login,
+		AuthorExternalActorURL:      ghPull.Author.URL,
+		CreatedAt:                   ghPull.CreatedAt,
+		UpdatedAt:                   ghPull.UpdatedAt,
 	}
 	return thread, comment
 }
 
 type githubPullRequest struct {
-	ID                graphql.ID `json:"id"`
-	Number            int        `json:"number"`
-	Title             string     `json:"title"`
-	Body              string     `json:"body"`
-	CreatedAt         time.Time  `json:"createdAt"`
-	BaseRef           *githubRef `json:"baseRef"`
-	BaseRefOid        string     `json:"baseRefOid"`
-	HeadRef           *githubRef `json:"headRef"`
-	HeadRefOid        string     `json:"headRefOid"`
-	IsCrossRepository bool       `json:"isCrossRepository"`
-	Permalink         string     `json:"permalink"`
-	State             string     `json:"state"`
+	ID                graphql.ID   `json:"id"`
+	Number            int          `json:"number"`
+	Title             string       `json:"title"`
+	Body              string       `json:"body"`
+	CreatedAt         time.Time    `json:"createdAt"`
+	UpdatedAt         time.Time    `json:"updatedAt"`
+	BaseRef           *githubRef   `json:"baseRef"`
+	BaseRefOid        string       `json:"baseRefOid"`
+	HeadRef           *githubRef   `json:"headRef"`
+	HeadRefOid        string       `json:"headRefOid"`
+	IsCrossRepository bool         `json:"isCrossRepository"`
+	Permalink         string       `json:"permalink"`
+	State             string       `json:"state"`
+	Author            *githubActor `json:"author"`
 }
 
 type githubRef struct {
@@ -121,6 +126,7 @@ query ImportGitHubThreads($repository: ID!) {
 					title
 					body
 					createdAt
+					updatedAt
 					baseRef { name prefix }
 					baseRefOid
 					headRef { name prefix }
@@ -128,6 +134,12 @@ query ImportGitHubThreads($repository: ID!) {
 					isCrossRepository
 					permalink
 					state
+					author {
+						... on User {
+							login
+							url
+						}
+					}
 				}
 			}
 		}

@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -14,12 +15,14 @@ import (
 
 // DBComment describes a comment.
 type DBComment struct {
-	ID           int64
-	Object       types.CommentObject
-	AuthorUserID int32
-	Body         string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID                          int64
+	Object                      types.CommentObject
+	AuthorUserID                int32
+	AuthorExternalActorUsername sql.NullString
+	AuthorExternalActorURL      sql.NullString
+	Body                        string
+	CreatedAt                   time.Time
+	UpdatedAt                   time.Time
 }
 
 // ErrCommentNotFound occurs when a database operation expects a specific comment to exist but it
@@ -28,7 +31,7 @@ var ErrCommentNotFound = errors.New("comment not found")
 
 type DBComments struct{}
 
-const selectColumns = `id, author_user_id, body, created_at, updated_at, parent_comment_id, thread_id, campaign_id`
+const selectColumns = `id, author_user_id, author_external_actor_username, author_external_actor_url, body, created_at, updated_at, parent_comment_id, thread_id, campaign_id`
 
 // Create creates a comment. The comment argument's (Comment).ID field is ignored. The new comment
 // is returned.
@@ -37,25 +40,39 @@ func (DBComments) Create(ctx context.Context, tx *sql.Tx, comment *DBComment) (*
 		return Mocks.Comments.Create(comment)
 	}
 
-	var dbh interface {
-		QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	now := time.Now()
+	nowIfZeroTime := func(t time.Time) time.Time {
+		if t.IsZero() {
+			return now
+		}
+		return t
 	}
-	if tx != nil {
-		dbh = tx
-	} else {
-		dbh = dbconn.Global
-	}
-	return DBComments{}.scanRow(dbh.QueryRowContext(ctx,
-		`INSERT INTO comments(`+selectColumns+`) VALUES(DEFAULT, $1, $2, DEFAULT, DEFAULT, $3, $4, $5) RETURNING `+selectColumns,
-		comment.AuthorUserID,
+	args := []interface{}{
+		nilIfZero32(comment.AuthorUserID),
+		comment.AuthorExternalActorUsername,
+		comment.AuthorExternalActorURL,
 		comment.Body,
+		nowIfZeroTime(comment.CreatedAt),
+		nowIfZeroTime(comment.UpdatedAt),
 		nilIfZero(comment.Object.ParentCommentID),
 		nilIfZero(comment.Object.ThreadID),
 		nilIfZero(comment.Object.CampaignID),
-	))
+	}
+	query := sqlf.Sprintf(
+		`INSERT INTO comments(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+selectColumns,
+		args...,
+	)
+	return DBComments{}.scanRow(dbconn.TxOrGlobal(tx).QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
 }
 
 func nilIfZero(v int64) *int64 {
+	if v == 0 {
+		return nil
+	}
+	return &v
+}
+
+func nilIfZero32(v int32) *int32 {
 	if v == 0 {
 		return nil
 	}
@@ -188,10 +205,13 @@ func (DBComments) scanRow(row interface {
 	Scan(dest ...interface{}) error
 }) (*DBComment, error) {
 	var t DBComment
+	var authorUserID *int32
 	var parentCommentID, threadID, campaignID *int64
 	if err := row.Scan(
 		&t.ID,
-		&t.AuthorUserID,
+		&authorUserID,
+		&t.AuthorExternalActorUsername,
+		&t.AuthorExternalActorURL,
 		&t.Body,
 		&t.CreatedAt,
 		&t.UpdatedAt,
@@ -200,6 +220,9 @@ func (DBComments) scanRow(row interface {
 		&campaignID,
 	); err != nil {
 		return nil, err
+	}
+	if authorUserID != nil {
+		t.AuthorUserID = *authorUserID
 	}
 	if parentCommentID != nil {
 		t.Object.ParentCommentID = *parentCommentID

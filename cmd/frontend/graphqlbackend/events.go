@@ -25,12 +25,12 @@ type event interface {
 // EventCommon is the interface for the GraphQL interface EventCommon.
 type EventCommon struct {
 	ID_        graphql.ID
-	Actor_     Actor
+	Actor_     *Actor
 	CreatedAt_ DateTime
 }
 
 func (v *EventCommon) ID() graphql.ID      { return v.ID_ }
-func (v *EventCommon) Actor() Actor        { return v.Actor_ }
+func (v *EventCommon) Actor() *Actor       { return v.Actor_ }
 func (v *EventCommon) CreatedAt() DateTime { return v.CreatedAt_ }
 
 type ToEvent struct {

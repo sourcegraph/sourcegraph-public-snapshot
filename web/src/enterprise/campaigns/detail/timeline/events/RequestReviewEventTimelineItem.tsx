@@ -1,8 +1,8 @@
-import PlusCircleIcon from 'mdi-react/PlusCircleIcon'
+import RecordIcon from 'mdi-react/RecordIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
-import { PersonLink } from '../../../../../user/PersonLink'
+import { ActorLink } from '../../../../../actor/ActorLink'
 import { CampaignTimelineItem } from '../CampaignTimelineItem'
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export const RequestReviewEventTimelineItem: React.FunctionComponent<Props> = ({ event, className = '' }) => (
-    <CampaignTimelineItem icon={PlusCircleIcon} className={className} event={event}>
-        <PersonLink user={event.actor} /> requested a review on <Link to={event.thread.url}>{event.thread.title}</Link>
+    <CampaignTimelineItem icon={RecordIcon} className={className} event={event}>
+        <ActorLink actor={event.actor} /> requested a review on <Link to={event.thread.url}>{event.thread.title}</Link>
     </CampaignTimelineItem>
 )
