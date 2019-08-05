@@ -37,6 +37,8 @@ func threadlikesByOptions(ctx context.Context, options internal.DBThreadsListOpt
 			options.State = string(graphqlbackend.ThreadStateOpen) // == ChangesetStateOpen
 		}
 		connectionArgs = &arg.ConnectionArgs
+	} else {
+		connectionArgs = &graphqlutil.ConnectionArgs{}
 	}
 
 	list, err := internal.DBThreads{}.List(ctx, options)
