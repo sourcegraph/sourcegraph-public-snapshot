@@ -8,6 +8,7 @@ import { readEnvInt } from './env'
 import { SQLiteGraphBackend } from './sqlite'
 import * as tmp from 'tmp-promise'
 import { wrap } from 'async-middleware'
+import { ERRNOLSIFDATA } from './backend';
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -108,12 +109,11 @@ function main(): void {
                     }
                 })
             } catch (e) {
-                if ('code' in e && e.code === 'ENOENT') {
-                    res.send(false)
-                    return
+                if ('code' in e && e.code === ERRNOLSIFDATA) {
+                    // no data, exists stays false
+                } else {
+                    throw e
                 }
-
-                throw e
             }
         })
     )
@@ -150,8 +150,7 @@ function main(): void {
                     res.json(result || null)
                 })
             } catch (e) {
-                // TODO replace ENOENT with a custom error
-                if ('code' in e && e.code === 'ENOENT') {
+                if ('code' in e && e.code === ERRNOLSIFDATA) {
                     throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
                         status: 404,
                     })

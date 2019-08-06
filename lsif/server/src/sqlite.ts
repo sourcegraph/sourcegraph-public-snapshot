@@ -1,6 +1,6 @@
 import * as lsp from 'vscode-languageserver'
 import * as path from 'path'
-import { Backend } from './backend'
+import { Backend, NoLSIFDataError } from './backend'
 import { BlobStore } from './ms/blobStore'
 import { child_process, fs } from 'mz'
 import { Database } from './ms/database'
@@ -46,12 +46,20 @@ export abstract class SQLiteBackend implements Backend {
      */
     public async loadDB(key: string): Promise<Database> {
         const file = path.join(STORAGE_ROOT, key + '.db')
-
         const db = this.createStore()
-        await db.load(file, projectRootURI => ({
-            toDatabase: pathRelativeToProjectRoot => projectRootURI + '/' + pathRelativeToProjectRoot,
-            fromDatabase: uri => (uri.startsWith(projectRootURI) ? uri.slice(`${projectRootURI}/`.length) : uri),
-        }))
+
+        try {
+            await db.load(file, projectRootURI => ({
+                toDatabase: pathRelativeToProjectRoot => projectRootURI + '/' + pathRelativeToProjectRoot,
+                fromDatabase: uri => (uri.startsWith(projectRootURI) ? uri.slice(`${projectRootURI}/`.length) : uri),
+            }))
+        } catch (e) {
+            if ('code' in e && e.code === 'ENOENT') {
+                throw new NoLSIFDataError(key)
+            }
+
+            throw e
+        }
 
         return db
     }

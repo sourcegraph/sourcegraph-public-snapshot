@@ -1,5 +1,19 @@
-import * as lsp from 'vscode-languageserver';
-import { Database } from './ms/database';
+import * as lsp from 'vscode-languageserver'
+import { Database } from './ms/database'
+
+export const ERRNOLSIFDATA = 'NoLSIFData'
+
+/**
+ * The exception thrown from `loadDB` when
+ */
+export class NoLSIFDataError extends Error {
+    public readonly name = ERRNOLSIFDATA
+    public readonly code = ERRNOLSIFDATA
+
+    constructor(key: string) {
+        super(`No LSIF data available for ${key}.`)
+    }
+}
 
 /**
  * Backend is the interface to the way an LSIF dump is encoded on disk,
