@@ -69,28 +69,8 @@ class TelligentWrapper {
         if (!this.telligent) {
             return
         }
-        const telligentUrl = 'sourcegraph-logging.telligentdata.com'
-        this.telligent('newTracker', 'sg', telligentUrl, {
-            appId: siteID,
-            platform: 'Web',
-            encodeBase64: false,
-            env,
-            configUseCookies: true,
-            useCookies: true,
-            trackUrls: true,
-            /**
-             * NOTE: do not use window.location.hostname (which includes subdomains) as the cookieDomain
-             * on sourcegraph.com subdomains (such as about.sourcegraph.com). Subdomains should be removed
-             * from the cookieDomain property to ensure analytics user profiles sync across all Sourcegraph sites.
-             */
-            cookieDomain: window.location.hostname,
-            metadata: {
-                gaCookies: true,
-                performanceTiming: true,
-                augurIdentityLite: true,
-                webPage: true,
-            },
-        })
+        // Logger initialization removed due to our event logging ETL pipeline sunsetting schedule.
+        // TODO(Dan): update with new logging URL.
     }
 
     private inspectTelligentCookie(): string[] | null {
