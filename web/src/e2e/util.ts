@@ -247,11 +247,7 @@ export class Driver {
     }
 
     private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit & Serializable }): Promise<T> {
-        const handle = await this.page.evaluateHandle(
-            (url, init) => fetch(url, init).then(r => r.json()),
-            url,
-            init
-        )
+        const handle = await this.page.evaluateHandle((url, init) => fetch(url, init).then(r => r.json()), url, init)
         return handle.jsonValue()
     }
 
