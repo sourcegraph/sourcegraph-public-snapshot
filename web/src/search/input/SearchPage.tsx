@@ -11,7 +11,7 @@ import { QuickLink, Settings } from '../../schema/settings.schema'
 import { ThemePreferenceProps, ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
-import { queryIndexOfScope, submitSearch } from '../helpers'
+import { submitSearch } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
@@ -36,19 +36,12 @@ interface State {
  * The search page
  */
 export class SearchPage extends React.Component<Props, State> {
-    private static HIDE_REPOGROUP_SAMPLE_STORAGE_KEY = 'SearchPage/hideRepogroupSample'
-
     constructor(props: Props) {
         super(props)
 
         const queryFromUrl = parseSearchURLQuery(props.location.search) || ''
         this.state = {
-            userQuery:
-                !queryFromUrl &&
-                window.context.sourcegraphDotComMode &&
-                !localStorage.getItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY)
-                    ? 'repogroup:sample'
-                    : queryFromUrl,
+            userQuery: queryFromUrl,
             builderQuery: '',
         }
     }
@@ -142,14 +135,6 @@ export class SearchPage extends React.Component<Props, State> {
 
     private onUserQueryChange = (userQuery: string) => {
         this.setState({ userQuery })
-
-        if (window.context.sourcegraphDotComMode) {
-            if (queryIndexOfScope(userQuery, 'repogroup:sample') !== -1) {
-                localStorage.removeItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY)
-            } else {
-                localStorage.setItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY, 'true')
-            }
-        }
     }
 
     private onBuilderQueryChange = (builderQuery: string) => {

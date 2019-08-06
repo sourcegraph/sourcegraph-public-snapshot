@@ -20,7 +20,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-var requestCounter = metrics.NewRequestCounter("bitbucket_cloud_requests_count", "Total number of requests sent to the Bitbucket Cloud API.")
+var requestCounter = metrics.NewRequestMeter("bitbucket_cloud_requests_count", "Total number of requests sent to the Bitbucket Cloud API.")
 
 // These fields define the self-imposed Bitbucket rate limit (since Bitbucket Cloud does
 // not have a concept of rate limiting in HTTP response headers).
