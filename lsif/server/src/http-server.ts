@@ -150,6 +150,7 @@ function main(): void {
                     res.json(result || null)
                 })
             } catch (e) {
+                // TODO replace ENOENT with a custom error
                 if ('code' in e && e.code === 'ENOENT') {
                     throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
                         status: 404,

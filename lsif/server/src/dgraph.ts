@@ -22,6 +22,7 @@ export class DgraphBackend implements Backend {
      */
     public loadDB(key: string): Promise<Database> {
         // TODO(chris) - implement
+        // MUST reject if `key` doesn't exist
         return Promise.reject()
     }
 
