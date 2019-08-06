@@ -222,7 +222,7 @@ func (s *Server) howManyBytesToFree() (int64, error) {
 	}
 	actualFreeBytes, err := s.DiskSizer.BytesFreeOnDisk(mountPoint)
 	if err != nil {
-		return 0, errors.Wrap(err, "cleanup: finding the amount of space free on disk")
+		return 0, errors.Wrap(err, "finding the amount of space free on disk")
 	}
 	// Free up space if necessary.
 	diskSizeBytes, err := s.DiskSizer.DiskSizeBytes(mountPoint)
