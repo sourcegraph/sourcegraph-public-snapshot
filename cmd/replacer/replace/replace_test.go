@@ -23,6 +23,8 @@ import (
 )
 
 func TestReplace(t *testing.T) {
+	t.Skip("external tooling is not integrated yet.")
+
 	files := map[string]string{
 
 		"README.md": `# Hello World
@@ -43,12 +45,10 @@ func main() {
 		want string
 	}{
 		{protocol.RewriteSpecification{
-			MatchTemplate:   "func",
-			RewriteTemplate: "derp",
+			MatchTemplate:   "foo",
+			RewriteTemplate: "bar",
 			FileExtension:   ".go",
-		}, `
-{"uri":"main.go","diff":"--- main.go\n+++ main.go\n@@ -2,6 +2,6 @@\n \n import \"fmt\"\n \n-func main() {\n+derp main() {\n \tfmt.Println(\"Hello foo\")\n }"}
-`},
+		}, "bar"},
 	}
 
 	store, cleanup, err := newStore(files)
