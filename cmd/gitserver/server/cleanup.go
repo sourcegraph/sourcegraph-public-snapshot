@@ -240,7 +240,7 @@ func (s *Server) howManyBytesToFree() (int64, error) {
 	return howManyBytesToFree, nil
 }
 
-type StatDiskSizer struct {}
+type StatDiskSizer struct{}
 
 func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
 	var fs syscall.Statfs_t

@@ -319,9 +319,9 @@ func Test_howManyBytesToFree(t *testing.T) {
 		DesiredPercentFree: 90,
 	}
 
-	t.Run("if there is already enough space, no space is freed", func (t *testing.T) {
+	t.Run("if there is already enough space, no space is freed", func(t *testing.T) {
 		s.DiskSizer = &fakeDiskSizer{
-			diskSize: 10 * G,
+			diskSize:  10 * G,
 			bytesFree: 9.5 * G,
 		}
 		btf, err := s.howManyBytesToFree()
@@ -333,9 +333,9 @@ func Test_howManyBytesToFree(t *testing.T) {
 		}
 	})
 
-	t.Run("if there is exactly enough space, no space is freed", func (t *testing.T) {
+	t.Run("if there is exactly enough space, no space is freed", func(t *testing.T) {
 		s.DiskSizer = &fakeDiskSizer{
-			diskSize: 10 * G,
+			diskSize:  10 * G,
 			bytesFree: 9 * G,
 		}
 		btf, err := s.howManyBytesToFree()
@@ -347,9 +347,9 @@ func Test_howManyBytesToFree(t *testing.T) {
 		}
 	})
 
-	t.Run("if there not enough space, some space is freed", func (t *testing.T) {
+	t.Run("if there not enough space, some space is freed", func(t *testing.T) {
 		s.DiskSizer = &fakeDiskSizer{
-			diskSize: 10 * G,
+			diskSize:  10 * G,
 			bytesFree: 8 * G,
 		}
 		btf, err := s.howManyBytesToFree()
@@ -365,7 +365,7 @@ func Test_howManyBytesToFree(t *testing.T) {
 
 type fakeDiskSizer struct {
 	bytesFree uint64
-	diskSize uint64
+	diskSize  uint64
 }
 
 func (f *fakeDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
