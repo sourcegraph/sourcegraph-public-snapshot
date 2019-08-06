@@ -251,6 +251,7 @@ export async function createDriverForTest(): Promise<Driver> {
     const launchOpt: LaunchOptions = {
         args: [...args, '--window-size=1280,1024'],
         headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
+        defaultViewport: null,
     }
     const browser = await puppeteer.launch(launchOpt)
     const page = await browser.newPage()
