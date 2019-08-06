@@ -12,6 +12,7 @@ import { ObjectCampaignsList } from '../../campaigns/object/ObjectCampaignsList'
 import { CopyThreadLinkButton } from '../../threadsOLD/detail/CopyThreadLinkButton'
 import { ThreadCampaignsDropdownButton } from '../ThreadCampaignsDropdownButton'
 import { ThreadStateBadge } from '../threadState/ThreadStateBadge'
+import { ThreadStateIcon } from '../threadState/ThreadStateIcon'
 
 interface Props extends ExtensionsControllerNotificationProps {
     thread: GQL.ThreadOrIssueOrChangeset
@@ -21,7 +22,7 @@ interface Props extends ExtensionsControllerNotificationProps {
 export const threadlikeSidebarSections = ({ thread, onThreadUpdate, ...props }: Props): InfoSidebarSection[] => [
     {
         expanded: <ThreadStateBadge thread={thread} />,
-        collapsed: <ThreadStateBadge thread={thread} />,
+        collapsed: <ThreadStateIcon thread={thread} />,
     },
     {
         expanded: {
@@ -56,7 +57,7 @@ export const threadlikeSidebarSections = ({ thread, onThreadUpdate, ...props }: 
             children: thread.title
                 .toLowerCase()
                 .split(' ')
-                .filter(w => w.length >= 3)
+                .filter(w => w.length >= 5)
                 .map((label, i) => (
                     <span key={i} className={`badge badge-secondary mr-1`}>
                         {label}
@@ -109,9 +110,7 @@ export const threadlikeSidebarSections = ({ thread, onThreadUpdate, ...props }: 
             <CopyThreadLinkButton
                 link={'aasdf TODO!(sqs)'}
                 className="btn btn-link btn-link-sm text-decoration-none px-0"
-            >
-                #{thread.number}
-            </CopyThreadLinkButton>
+            />
         ),
     },
 ]
