@@ -33,12 +33,18 @@ export interface FeatureFlags {
      * Support completion in text fields (such as on GitHub issues).
      */
     experimentalTextFieldCompletion: boolean
+
+    /**
+     * Support temporarily disable the browser extension features.
+     */
+    disableExtension: boolean
 }
 
 export const featureFlagDefaults: FeatureFlags = {
     allowErrorReporting: false,
     experimentalLinkPreviews: false,
     experimentalTextFieldCompletion: false,
+    disableExtension: false,
 }
 
 export interface StorageItems {

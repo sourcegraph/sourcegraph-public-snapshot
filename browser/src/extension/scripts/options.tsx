@@ -23,7 +23,7 @@ initSentry('options')
 
 type State = Pick<
     FeatureFlags,
-    'allowErrorReporting' | 'experimentalLinkPreviews' | 'experimentalTextFieldCompletion'
+    'allowErrorReporting' | 'experimentalLinkPreviews' | 'experimentalTextFieldCompletion' | 'disableExtension'
 > & { sourcegraphURL: string | null }
 
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
@@ -70,6 +70,7 @@ class Options extends React.Component<{}, State> {
         allowErrorReporting: false,
         experimentalLinkPreviews: false,
         experimentalTextFieldCompletion: false,
+        disableExtension: false,
     }
 
     private subscriptions = new Subscription()
@@ -77,11 +78,11 @@ class Options extends React.Component<{}, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             observeStorageKey('sync', 'featureFlags').subscribe(featureFlags => {
-                const { allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion } = {
+                const { allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion, disableExtension } = {
                     ...featureFlagDefaults,
                     ...featureFlags,
                 }
-                this.setState({ allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion })
+                this.setState({ allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion, disableExtension })
             })
         )
 
@@ -123,6 +124,7 @@ class Options extends React.Component<{}, State> {
                 { key: 'allowErrorReporting', value: this.state.allowErrorReporting },
                 { key: 'experimentalLinkPreviews', value: this.state.experimentalLinkPreviews },
                 { key: 'experimentalTextFieldCompletion', value: this.state.experimentalTextFieldCompletion },
+                { key: 'disableExtension', value: this.state.disableExtension},
             ],
         }
 
