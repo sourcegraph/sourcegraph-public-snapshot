@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/joho/godotenv"
 
@@ -167,29 +166,6 @@ func Main() {
 	}
 	if redisCacheLine != "" {
 		procfile = append(procfile, redisCacheLine)
-	}
-	if redisStoreLine != "" && redisCacheLine != "" {
-		// We boot up Redis (as opposed to connecting to an addr in a
-		// user-supplied ENV var), which means we can migrate it
-		go func() {
-			var (
-				retries    int
-				maxRetries int = 10
-				err        error
-			)
-
-			for retries < maxRetries {
-				err = migrateRedisInstances()
-				if err == nil {
-					return
-				}
-
-				retries += 1
-				time.Sleep(5 * time.Second)
-			}
-
-			log.Fatalf("Migrating Redis failed: %s", err)
-		}()
 	}
 
 	if line, err := maybePostgresProcFile(); err != nil {
