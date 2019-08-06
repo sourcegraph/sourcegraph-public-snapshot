@@ -58,8 +58,8 @@ func Test_serveReposList(t *testing.T) {
 	t.Run("all repos are returned for non-sourcegraph.com", func(t *testing.T) {
 		ctx := dbtesting.TestContext(t)
 		qs := []string{
-			`INSERT INTO repo(uri, name, created_at, updated_at, description, language) VALUES ('github.com/quickhack', 'github.com/quickhack', '2015-01-01', '2016-01-01', '', '')`,
-			`INSERT INTO repo(uri, name, created_at, updated_at, description, language) VALUES ('github.com/vim', 'github.com/vim', '2001-01-01', '2019-01-01', '', '')`,
+			`INSERT INTO repo(uri, name, created_at, updated_at, description, language) VALUES ('github.com/alice/rabbitmq', 'github.com/alice/rabbitmq', '2015-01-01', '2016-01-01', '', '')`,
+			`INSERT INTO repo(uri, name, created_at, updated_at, description, language) VALUES ('github.com/bob/jabberd', 'github.com/bob/jabberd', '2001-01-01', '2019-01-01', '', '')`,
 		}
 		for _, q := range qs {
 			if _, err := dbconn.Global.ExecContext(ctx, q); err != nil {
@@ -71,7 +71,7 @@ func Test_serveReposList(t *testing.T) {
 		}
 		defer func() { db.MockAuthzFilter = nil }()
 		URIs := getRepoURIsViaHTTP(t)
-		wantURIs := []string{"github.com/vim/vim", "github.com/torvalds/linux"}
+		wantURIs := []string{"github.com/alice/rabbitmq", "github.com/bob/jabberd"}
 		if !reflect.DeepEqual(URIs, wantURIs) {
 			t.Errorf("got %v, want %v", URIs, wantURIs)
 		}
