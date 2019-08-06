@@ -55,22 +55,17 @@ func Test_serveReposList(t *testing.T) {
 		return URIs
 	}
 
-	addTestDataToDb := func(ctx context.Context) {
+	t.Run("all repos are returned for non-sourcegraph.com", func(t *testing.T) {
+		ctx := dbtesting.TestContext(t)
 		qs := []string{
-			`INSERT INTO repo(id, name) VALUES (1, 'github.com/vim/vim')`,
-			`INSERT INTO repo(id, name) VALUES (2, 'github.com/torvalds/linux')`,
-			`INSERT INTO default_repos(repo_id) VALUES (2)`,
+			`INSERT INTO repo(uri, name, created_at, updated_at, description, language) VALUES ('github.com/quickhack', 'github.com/quickhack', '2015-01-01', '2016-01-01', '', '')`,
+			`INSERT INTO repo(uri, name, created_at, updated_at, description, language) VALUES ('github.com/vim', 'github.com/vim', '2001-01-01', '2019-01-01', '', '')`,
 		}
 		for _, q := range qs {
 			if _, err := dbconn.Global.ExecContext(ctx, q); err != nil {
 				t.Fatal(err)
 			}
 		}
-	}
-
-	t.Run("all repos are returned for non-sourcegraph.com", func(t *testing.T) {
-		ctx := dbtesting.TestContext(t)
-		addTestDataToDb(ctx)
 		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 			return repos, nil
 		}
@@ -84,7 +79,16 @@ func Test_serveReposList(t *testing.T) {
 
 	t.Run("only default repos are returned for sourcegraph.com", func(t *testing.T) {
 		ctx := dbtesting.TestContext(t)
-		addTestDataToDb(ctx)
+		qs := []string{
+			`INSERT INTO repo(id, name) VALUES (1, 'github.com/vim/vim')`,
+			`INSERT INTO repo(id, name) VALUES (2, 'github.com/torvalds/linux')`,
+			`INSERT INTO default_repos(repo_id) VALUES (2)`,
+		}
+		for _, q := range qs {
+			if _, err := dbconn.Global.ExecContext(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+		}
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(false)
 		withEnv("SOURCEGRAPH_REPOS_TO_INDEX_LIMIT", "1", func() {
