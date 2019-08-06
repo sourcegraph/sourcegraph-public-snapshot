@@ -2,7 +2,7 @@ import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as os from 'os'
-import puppeteer, { LaunchOptions, PageEventObj, Page } from 'puppeteer'
+import puppeteer, { LaunchOptions, PageEventObj, Page, Serializable } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import * as util from 'util'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../../../shared/src/graphql/graphql'
@@ -246,11 +246,11 @@ export class Driver {
         await this.page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item', { visible: true })
     }
 
-    private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit }): Promise<T> {
+    private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit & Serializable }): Promise<T> {
         const handle = await this.page.evaluateHandle(
             (url, init) => fetch(url, init).then(r => r.json()),
             url,
-            init as {}
+            init
         )
         return handle.jsonValue()
     }
