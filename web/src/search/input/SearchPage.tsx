@@ -36,9 +36,9 @@ interface State {
  */
 export class SearchPage extends React.Component<Props, State> {
     constructor(props: Props) {
-        super(props);
+        super(props)
 
-        const queryFromUrl = parseSearchURLQuery(props.location.search) || '';
+        const queryFromUrl = parseSearchURLQuery(props.location.search) || ''
         this.state = {
             userQuery: queryFromUrl,
             builderQuery: '',
@@ -53,8 +53,8 @@ export class SearchPage extends React.Component<Props, State> {
         let logoUrl =
             `${window.context.assetsRoot}/img/sourcegraph` +
             (this.props.isLightTheme ? '-light' : '') +
-            '-head-logo.svg';
-        const {branding} = window.context;
+            '-head-logo.svg'
+        const { branding } = window.context
         if (branding) {
             if (this.props.isLightTheme) {
                 if (branding.light && branding.light.logo) {
@@ -64,8 +64,8 @@ export class SearchPage extends React.Component<Props, State> {
                 logoUrl = branding.dark.logo
             }
         }
-        const hasScopes = this.getScopes().length > 0;
-        const quickLinks = this.getQuickLinks();
+        const hasScopes = this.getScopes().length > 0
+        const quickLinks = this.getQuickLinks()
         return (
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
@@ -134,20 +134,20 @@ export class SearchPage extends React.Component<Props, State> {
 
     private onUserQueryChange = (userQuery: string) => {
         this.setState({ userQuery })
-    };
+    }
 
     private onBuilderQueryChange = (builderQuery: string) => {
         this.setState({ builderQuery })
-    };
+    }
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
-        event.preventDefault();
-        const query = [this.state.builderQuery, this.state.userQuery].filter(s => !!s).join(' ');
+        event.preventDefault()
+        const query = [this.state.builderQuery, this.state.userQuery].filter(s => !!s).join(' ')
         submitSearch(this.props.history, query, 'home', this.props.activation)
-    };
+    }
 
     private getPageTitle(): string | undefined {
-        const query = parseSearchURLQuery(this.props.location.search);
+        const query = parseSearchURLQuery(this.props.location.search)
         if (query) {
             return `${limitString(this.state.userQuery, 25, true)}`
         }
