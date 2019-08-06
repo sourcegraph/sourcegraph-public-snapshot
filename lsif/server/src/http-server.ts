@@ -6,7 +6,7 @@ import { JsonDatabase } from './ms/json'
 import { noopTransformer } from './ms/database'
 import { readEnvInt } from './env'
 import { SQLiteGraphBackend } from './sqlite'
-import { withFile } from 'tmp-promise'
+import * as tmp from 'tmp-promise'
 import { wrap } from 'async-middleware'
 
 /**
@@ -70,7 +70,8 @@ function main(): void {
             checkCommit(commit)
             checkContentLength(req.header('Content-Length'))
 
-            await withFile(async tempFile => {
+            const tempFile = await tmp.file()
+            try {
                 // Ensure dump is valid, then convert the database according to
                 // the current backend. Clean the temp file to save space, then
                 // remove the old database from the cache so that the next LSIF
@@ -79,11 +80,12 @@ function main(): void {
                 const contentLength = await readContent(req, tempFile.path)
                 await new JsonDatabase().load(tempFile.path, () => noopTransformer)
                 await backend.createDB(tempFile.path, key, contentLength)
-                await fs.unlink(tempFile.path)
                 cache.delete(key)
 
                 res.send('Upload successful.')
-            })
+            } finally {
+                await fs.unlink(tempFile.path)
+            }
         })
     )
 
