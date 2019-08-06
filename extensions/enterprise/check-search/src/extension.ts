@@ -5,10 +5,13 @@ import * as sourcegraph from 'sourcegraph'
 // import { registerCodeOwnership } from './codeOwnership'
 // import { registerTravisGo } from './travisGo'
 // import { registerSampleStatusProviders } from './sampleStatus'
-import { registerESLintRules } from './eslint'
+// import { register as eslintRegister } from './eslint'
+import { register as codeDuplicationRegister } from './codeDuplication'
 
 export function activate(ctx: sourcegraph.ExtensionContext): void {
-    ctx.subscriptions.add(registerESLintRules())
+    console.log('Hello, world!')
+    // ctx.subscriptions.add(eslintRegister())
+    ctx.subscriptions.add(codeDuplicationRegister())
     // ctx.subscriptions.add(registerTravisGo())
     // ctx.subscriptions.add(registerImportStar())
     // ctx.subscriptions.add(registerNoInlineProps())

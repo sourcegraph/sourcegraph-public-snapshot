@@ -47,7 +47,7 @@ interface Plugin {
 const FIX_EDIT_COMMAND = 'eslint.fix'
 const DISABLE_RULE_ON_LINE_COMMAND = 'eslint.disableRuleOnLine'
 
-export function registerESLintRules(): Unsubscribable {
+export function register(): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(startDiagnostics())
     subscriptions.add(registerCheckProvider(diagnostics))
