@@ -248,87 +248,6 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 
 		matches = appendMatches(matches, fileBuf[lineStart:lineEnd], fileMatchBuf[lineStart:lineEnd], lineNumber, start-lineStart, end-lineStart)
 
-		/*
-			// matchBuf is the (full) lines that contain offset:length
-			matchBuf := fileMatchBuf[lineStart:lineEnd]
-			for i := 0; len(matchBuf) > 0 && i < maxLineMatches; i++ {
-				end := bytes.Index(matchBuf, []byte{'\n'})
-				if end < 0 {
-					end = len(matchBuf)
-				}
-				matches = append(matches, protocol.LineMatch{
-						// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
-						// which currently occurs before Preview has been serialized.
-						// TODO: consider moving the call to Close until after we are
-						// done with Preview, and stop making a copy here.
-						// Special care must be taken to call Close on all possible paths, including error paths.
-						Preview:          string(matchBuf[end]),
-						LineNumber:       lineNumber + i,
-						OffsetAndLengths: [][2]int{[2]int{offset, le}},
-						LimitHit:         lineLimitHit,
-					})
-
-				offsetStart := 0
-
-
-			if len(matchLines) > 1 {
-				offsetStart := 0
-				lineNum := lineNumber
-				for i, line := range matchLines {
-					le := length
-					if i == 0 {
-						offsetStart = offset
-					} else {
-						offsetStart = 0
-					}
-					if i == 0 {
-						// start until end of current line
-						n := lineStart + len(line) + 1
-						endOfCurrentLine := bytes.LastIndex(fileMatchBuf[:n], []byte{'\n'})
-						le = endOfCurrentLine - start
-					} else if i == len(matchLines)-1 {
-						startOfCurrentLine := bytes.LastIndex(fileMatchBuf[:end], []byte{'\n'}) + 1
-						le = end - startOfCurrentLine
-					} else {
-						le = len(line)
-					}
-					matches = append(matches, protocol.LineMatch{
-						// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
-						// which currently occurs before Preview has been serialized.
-						// TODO: consider moving the call to Close until after we are
-						// done with Preview, and stop making a copy here.
-						// Special care must be taken to call Close on all possible paths, including error paths.
-						Preview:          string(fileMatchBuf[lineStart:lineEnd]),
-						LineNumber:       lineNum,
-						OffsetAndLengths: [][2]int{[2]int{offsetStart, le}},
-						LimitHit:         lineLimitHit,
-					})
-					lineNum++
-				}
-				lastLineStartIndex = lineStart
-			} else {
-		*/
-
-		// TODO see if zoekt does any limits on number of line
-		// matches. Because if it doesn't, we can easily OOM.
-		// TODO should we respect maxLineMatches?
-		// TODO append LineMatches
-		/*
-			matches = append(matches, protocol.LineMatch{
-				// making a copy of lineBuf is intentional.
-				// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
-				// which currently occurs before Preview has been serialized.
-				// TODO: consider moving the call to Close until after we are
-				// done with Preview, and stop making a copy here.
-				// Special care must be taken to call Close on all possible paths, including error paths.
-				Preview:          string(fileMatchBuf[lineStart:lineEnd]),
-				LineNumber:       lineNumber,
-				OffsetAndLengths: [][2]int{[2]int{offset, length}},
-				LimitHit:         lineLimitHit,
-			})
-		*/
-		//}
-
 	}
 	limitHit = len(matches) == maxLineMatches
 	return matches, limitHit, nil
@@ -345,7 +264,6 @@ func hydrateLineNumbers(fileBuf []byte, lastLineNumber, lastMatchIndex, lineStar
 func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []byte, lineNumber, start, end int) []protocol.LineMatch {
 	// If any newlines appear between start and end, we need to append multiple LineMatch.
 	// We assume there are no newlines before start.
-
 	for len(matchLineBuf) > 0 {
 		var line []byte
 		if eol := bytes.Index(matchLineBuf[start:], []byte{'\n'}); eol < 0 {

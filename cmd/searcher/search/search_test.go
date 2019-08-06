@@ -36,7 +36,8 @@ func TestSearch(t *testing.T) {
 	files := map[string]string{
 		"README.md": `# Hello World
 
-Hello world example in go`,
+Hello world example in go
+`,
 		"main.go": `package main
 
 import "fmt"
@@ -45,7 +46,8 @@ func main() {
 	fmt.Println("Hello world")
 }
 `,
-		"abc.txt":    "w",
+		"abc.txt": `w
+		`,
 		"milton.png": string(miltonPNG),
 	}
 
