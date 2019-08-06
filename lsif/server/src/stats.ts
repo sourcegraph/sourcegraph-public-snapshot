@@ -1,22 +1,4 @@
 /**
- * Runtime statistics around the `createDB` backend method.
- */
-export interface EncodingStats {
-    // The time it took to perform the encoding.
-    elapsedMs: number
-    // The amount of space this dump occupies on disk.
-    diskKb: number
-}
-
-/**
- * Runtime statistics around the `loadDB` backend method.
- */
-export interface HandleStats {
-    // The time it took to create a handle to the target database.
-    elapsedMs: number
-}
-
-/**
  * Runtime statistics around the `withDB` cache method.
  */
 export interface CacheStats {
@@ -27,10 +9,29 @@ export interface CacheStats {
 }
 
 /**
- * Runtime statistics around backend query methods.
+ * Runtime statistics around the `insertDump` backend method.
+ */
+export interface InsertStats {
+    // The time it took to perform the encoding.
+    elapsedMs: number
+    // The amount of space this dump occupies on disk.
+    diskKb: number
+}
+
+/**
+ * Runtime statistics around the `getDatabaseHandle` backend method.
+ */
+export interface GetHandleStats {
+    // The time it took to create a handle to the target database.
+    elapsedMs: number
+}
+
+/**
+ * Runtime statistics around backend `query` method.
  */
 export interface QueryStats {
-    // TODO
+    // The time it took to perform the query.
+    elapsedMs: number
 }
 
 /**

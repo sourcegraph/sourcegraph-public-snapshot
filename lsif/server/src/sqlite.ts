@@ -1,17 +1,12 @@
-import * as lsp from 'vscode-languageserver';
-import * as path from 'path';
-import { Backend, NoLSIFDataError } from './backend';
-import { BlobStore } from './ms/blobStore';
-import { child_process, fs } from 'mz';
-import { Database } from './ms/database';
-import {
-    EncodingStats,
-    HandleStats,
-    QueryStats,
-    timeit
-    } from './stats';
-import { GraphStore } from './ms/graphStore';
-import { readEnvInt } from './env';
+import * as lsp from 'vscode-languageserver'
+import * as path from 'path'
+import { Backend, NoLSIFDataError } from './backend'
+import { BlobStore } from './ms/blobStore'
+import { child_process, fs } from 'mz'
+import { Database } from './ms/database'
+import { InsertStats, GetHandleStats, QueryStats, timeit } from './stats'
+import { GraphStore } from './ms/graphStore'
+import { readEnvInt } from './env'
 
 /**
  * Where on the file system to store LSIF files.
@@ -26,7 +21,7 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 const SOFT_MAX_STORAGE = readEnvInt({ key: 'LSIF_SOFT_MAX_STORAGE', defaultValue: 100 * 1024 * 1024 * 1024 })
 
 /**
- * The path of the binary used to convert json dumps to sqlite dumps.
+ * The path of the binary used to convert JSON dumps to SQLite dumps.
  * See https://github.com/microsoft/lsif-node/tree/master/sqlite.
  */
 const SQLITE_CONVERTER_BINARY = './node_modules/lsif-sqlite/bin/lsif-sqlite'
@@ -35,17 +30,19 @@ const SQLITE_CONVERTER_BINARY = './node_modules/lsif-sqlite/bin/lsif-sqlite'
  * The abstract SQLite backend base that supports graph and blob subclasses.
  */
 export abstract class SQLiteBackend implements Backend {
-    /**
-     * Re-encode the given file containing a JSON-encoded LSIF dump to the
-     * proper format loadable by `loadDB`.
+     /**
+     * Read the content of the temporary file containing a JSON-encoded LSIF
+     * dump. Insert these contents into some storage with an encoding that
+     * can be subsequently read by the `getDatabaseHandle` method.
      */
-    public async createDB(
+    public async insertDump(
         tempPath: string,
-        key: string,
+        repository: string,
+        commit: string,
         contentLength: number
-    ): Promise<{ encodingStats: EncodingStats }> {
+    ): Promise<{ insertStats: InsertStats }> {
         await this.createStorageRoot()
-        const outFile = path.join(STORAGE_ROOT, key + '.db')
+        const outFile = makeFilename(repository, commit)
 
         const { elapsed } = await timeit(async () => {
             await child_process.exec(this.buildCommand(tempPath, outFile))
@@ -55,7 +52,7 @@ export abstract class SQLiteBackend implements Backend {
         const fileStat = await fs.stat(outFile)
 
         return {
-            encodingStats: {
+            insertStats: {
                 elapsedMs: elapsed,
                 diskKb: fileStat.size / 1000,
             },
@@ -63,12 +60,12 @@ export abstract class SQLiteBackend implements Backend {
     }
 
     /**
-     * Create a database instance from the given key. This assumes that the
-     * database has been already created via a call to `createDB` (or this
-     * method will otherwise fail).
+     * Create a handle to the database relevant to the given repository and
+     * commit hash.  This assumes that data for this database has already been
+     * inserted via `insertDump` (otherwise this method is expected to throw).
      */
-    public async loadDB(key: string): Promise<{ database: Database; handleStats: HandleStats }> {
-        const file = path.join(STORAGE_ROOT, key + '.db')
+    public async getDatabaseHandle(repository: string, commit: string): Promise<{ database: Database; getHandleStats: GetHandleStats }> {
+        const file = makeFilename(repository, commit)
         const db = this.createStore()
 
         try {
@@ -81,13 +78,13 @@ export abstract class SQLiteBackend implements Backend {
 
             return {
                 database: db,
-                handleStats: {
+                getHandleStats: {
                     elapsedMs: elapsed,
                 },
             }
         } catch (e) {
             if ('code' in e && e.code === 'ENOENT') {
-                throw new NoLSIFDataError(key)
+                throw new NoLSIFDataError(repository, commit)
             }
 
             throw e
@@ -95,56 +92,25 @@ export abstract class SQLiteBackend implements Backend {
     }
 
     /**
-     * Return data for an LSIF hover query.
+     * Return data for an LSIF query.
      */
-    public async hover(
+    public async query(
         db: Database,
+        method: string,
         uri: string,
         position: lsp.Position
-    ): Promise<{ result: lsp.Hover | undefined; queryStats: QueryStats }> {
+    ): Promise<{ result: any; queryStats: QueryStats }> {
         const { result, elapsed } = await timeit(async () => {
-            return Promise.resolve(db.hover(uri, position))
-        })
-
-        return Promise.resolve({
-            result,
-            queryStats: {
-                elapsedMs: elapsed,
-            },
-        })
-    }
-
-    /**
-     * Return data for an LSIF definitions query.
-     */
-    public async definitions(
-        db: Database,
-        uri: string,
-        position: lsp.Position
-    ): Promise<{ result: lsp.Location | lsp.Location[] | undefined; queryStats: QueryStats }> {
-        const { result, elapsed } = await timeit(async () => {
-            return Promise.resolve(db.definitions(uri, position))
-        })
-
-        return Promise.resolve({
-            result,
-            queryStats: {
-                elapsedMs: elapsed,
-            },
-        })
-    }
-
-    /**
-     * Return data for an LSIF references query.
-     */
-    public async references(
-        db: Database,
-        uri: string,
-        position: lsp.Position,
-        context: lsp.ReferenceContext
-    ): Promise<{ result: lsp.Location[] | undefined; queryStats: QueryStats }> {
-        const { result, elapsed } = await timeit(async () => {
-            return Promise.resolve(db.references(uri, position, context))
+            switch (method) {
+                case 'hover':
+                    return Promise.resolve(db.hover(uri, position))
+                case 'definitions':
+                    return Promise.resolve(db.definitions(uri, position))
+                case 'references':
+                    return Promise.resolve(db.references(uri, position, { includeDeclaration: false }))
+                default:
+                    throw new Error(`Unimplemented method ${method}`)
+            }
         })
 
         return Promise.resolve({
@@ -265,4 +231,11 @@ export class SQLiteBlobBackend extends SQLiteBackend {
     protected createStore(): Database {
         return new BlobStore()
     }
+}
+
+/**
+ *.Computes the filename of the LSIF dump from the given repository and commit hash.
+ */
+function makeFilename(repository: string, commit: string): string {
+    return path.join(STORAGE_ROOT, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
 }

@@ -22,16 +22,6 @@ const PORT = readEnvInt({ key: 'LSIF_HTTP_PORT', defaultValue: 3186 })
 const MAX_FILE_SIZE = readEnvInt({ key: 'LSIF_MAX_FILE_SIZE', defaultValue: 100 * 1024 * 1024 })
 
 /**
- * An object that identifies a commit of a repository.
- */
-interface RepositoryCommit {
-    // An opaque repository ID.
-    repository: string
-    // A 40-character commit hash.
-    commit: string
-}
-
-/**
  * List of supported `Database` methods.
  */
 type SupportedMethods = 'hover' | 'definitions' | 'references'
@@ -62,8 +52,6 @@ function main(): void {
         '/upload',
         wrap(async (req, res) => {
             const { repository, commit } = req.query
-            const key = cacheKey({ repository, commit })
-
             checkRepository(repository)
             checkCommit(commit)
             checkContentLength(req.header('Content-Length'))
@@ -75,16 +63,16 @@ function main(): void {
                 // Read the content and ensure the body is a valid LSIF dump
                 const contentLength = await readContent(req, tempFile.path)
                 await new JsonDatabase().load(tempFile.path, () => noopTransformer)
-                const { encodingStats } = await backend.createDB(tempFile.path, key, contentLength)
+                const { insertStats } = await backend.insertDump(tempFile.path, repository, commit, contentLength)
 
                 // Bust the cache
-                cache.delete(key)
+                cache.delete(repository, commit)
 
                 // TODO(efritz) - add stats to prometheus reporter
                 res.send({
                     data: null,
                     stats: {
-                        encodingStats: encodingStats,
+                        insertStats: insertStats,
                     },
                 })
             } finally {
@@ -100,22 +88,25 @@ function main(): void {
         '/exists',
         wrap(async (req, res) => {
             const { repository, commit, file } = req.query
-            const key = cacheKey({ repository, commit })
-
             checkRepository(repository)
             checkCommit(commit)
 
             try {
-                const { result, cacheStats, handleStats } = await cache.withDB(backend, key, async db => {
-                    return !file || Boolean(db.stat(file))
-                })
+                const { result, cacheStats, getHandleStats } = await cache.withDB(
+                    backend,
+                    repository,
+                    commit,
+                    async db => {
+                        return !file || Boolean(db.stat(file))
+                    }
+                )
 
                 // TODO(efritz) - add stats to prometheus reporter
                 res.send({
                     data: result,
                     stats: {
                         cacheStats: cacheStats,
-                        handleStats: handleStats,
+                        getHandleStats: getHandleStats,
                     },
                 })
             } catch (e) {
@@ -135,8 +126,6 @@ function main(): void {
         wrap(async (req, res) => {
             const { repository, commit } = req.query
             const { path, position, method } = req.body
-            const key = cacheKey({ repository, commit })
-
             checkRepository(repository)
             checkCommit(commit)
             checkMethod(method)
@@ -145,17 +134,8 @@ function main(): void {
                 const {
                     result: { result, queryStats },
                     cacheStats,
-                } = await cache.withDB(backend, key, async db => {
-                    switch (method) {
-                        case 'hover':
-                            return backend.hover(db, path, position)
-                        case 'definitions':
-                            return backend.definitions(db, path, position)
-                        case 'references':
-                            return backend.references(db, path, position, { includeDeclaration: false })
-                        default:
-                            throw new Error(`Unknown method ${method}`)
-                    }
+                } = await cache.withDB(backend, repository, commit, async db => {
+                    return await backend.query(db, method, path, position)
                 })
 
                 // TODO(efritz) - add stats to prometheus reporter
@@ -168,9 +148,7 @@ function main(): void {
                 })
             } catch (e) {
                 if ('code' in e && e.code === ERRNOLSIFDATA) {
-                    throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
-                        status: 404,
-                    })
+                    throw Object.assign(e, { status: 404 })
                 }
 
                 throw e
@@ -197,14 +175,6 @@ function errorHandler(err: any, req: express.Request, res: express.Response, nex
 
     console.error(err)
     res.status(500).send({ message: 'Unknown error' })
-}
-
-/**
- * Computes the cache key that contains LSIF data for the given repository@commit.
- */
-function cacheKey({ repository, commit }: RepositoryCommit): string {
-    const urlEncodedRepository = encodeURIComponent(repository)
-    return `${urlEncodedRepository}@${commit}.lsif`
 }
 
 /**

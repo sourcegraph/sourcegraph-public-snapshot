@@ -1,65 +1,47 @@
-import * as lsp from 'vscode-languageserver'
-import { Backend } from './backend'
-import { Database } from './ms/database'
-import { EncodingStats, HandleStats, QueryStats } from './stats'
+import * as lsp from 'vscode-languageserver';
+import { Backend } from './backend';
+import { Database } from './ms/database';
+import { InsertStats, GetHandleStats, QueryStats } from './stats';
 
 /**
  * Backend for SQLite dumps stored in Dgraph.
  */
 export class DgraphBackend implements Backend {
     /**
-     * Re-encode the given file containing a JSON-encoded LSIF dump to the
-     * proper format loadable by `loadDB`.
+     * Read the content of the temporary file containing a JSON-encoded LSIF
+     * dump. Insert these contents into some storage with an encoding that
+     * can be subsequently read by the `getDatabaseHandle` method.
      */
-    public createDB(tempPath: string, key: string, contentLength: number): Promise<{ encodingStats: EncodingStats }> {
+    public insertDump(
+        tempPath: string,
+        repository: string,
+        commit: string,
+        contentLength: number
+    ): Promise<{ insertStats: InsertStats }> {
         // TODO(chris) - implement
         return Promise.reject()
     }
 
     /**
-     * Create a database instance from the given key. This assumes that the
-     * database has been already created via a call to `createDB` (or this
-     * method will otherwise fail).
+     * Create a handle to the database relevant to the given repository and
+     * commit hash.  This assumes that data for this database has already been
+     * inserted via `insertDump` (otherwise this method is expected to throw).
      */
-    public loadDB(key: string): Promise<{ database: Database; handleStats: HandleStats }> {
+    public getDatabaseHandle(repository: string, commit: string): Promise<{ database: Database; getHandleStats: GetHandleStats }> {
         // TODO(chris) - implement
         // MUST reject if `key` doesn't exist
         return Promise.reject()
     }
 
     /**
-     * Return data for an LSIF hover query.
+     * Return data for an LSIF query.
      */
-    public hover(
+    public query(
         db: Database,
+        method: string,
         uri: string,
         position: lsp.Position
-    ): Promise<{ result: lsp.Hover | undefined; queryStats: QueryStats }> {
-        // TODO(chris) - implement
-        return Promise.reject()
-    }
-
-    /**
-     * Return data for an LSIF definitions query.
-     */
-    public definitions(
-        db: Database,
-        uri: string,
-        position: lsp.Position
-    ): Promise<{ result: lsp.Location | lsp.Location[] | undefined; queryStats: QueryStats }> {
-        // TODO(chris) - implement
-        return Promise.reject()
-    }
-
-    /**
-     * Return data for an LSIF references query.
-     */
-    public references(
-        db: Database,
-        uri: string,
-        position: lsp.Position,
-        context: lsp.ReferenceContext
-    ): Promise<{ result: lsp.Location[] | undefined; queryStats: QueryStats }> {
+    ): Promise<{ result: any; queryStats: QueryStats }> {
         // TODO(chris) - implement
         return Promise.reject()
     }

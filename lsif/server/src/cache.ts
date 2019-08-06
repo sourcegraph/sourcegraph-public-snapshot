@@ -1,8 +1,8 @@
-import LRU from 'lru-cache'
-import { Backend } from './backend'
-import { CacheStats, HandleStats, timeit } from './stats'
-import { Database } from './ms/database'
-import { readEnvInt } from './env'
+import LRU from 'lru-cache';
+import { Backend } from './backend';
+import { CacheStats, GetHandleStats, timeit } from './stats';
+import { Database } from './ms/database';
+import { readEnvInt } from './env';
 
 /**
  * Soft limit on the total amount of storage occupied by LSIF data loaded in
@@ -19,11 +19,12 @@ const SOFT_MAX_STORAGE_IN_MEMORY = readEnvInt({
 })
 
 /**
- * A `Database`, the size of the LSIF file it was loaded from, and a callback to
- * dispose of it when evicted from the cache.
+ * The cache holds a promise that resolves to a database handle, some hint about
+ * how many resources keeping this handle 'hot' costs, and a callback to call
+ * when the entry is evicted from memory.
  */
 interface LRUDBEntry {
-    dbPromise: Promise<{ database: Database; handleStats: HandleStats }>
+    dbPromise: Promise<{ database: Database; getHandleStats: GetHandleStats }>
     length: number
     dispose: () => void
 }
@@ -37,27 +38,30 @@ export class Cache {
     constructor() {
         this.lru = new LRU<string, LRUDBEntry>({
             max: SOFT_MAX_STORAGE_IN_MEMORY,
-            length: (entry, key) => entry.length,
-            dispose: (key, entry) => entry.dispose(),
+            length: (entry, _) => entry.length,
+            dispose: (_, entry) => entry.dispose(),
         })
     }
 
     /**
      * Runs the given `action` with the `Database` associated with the given
-     * repository@commit. Internally, it either gets the `Database` from the LRU
-     * cache or loads it from storage.
+     * repository@commit. Internally, it either gets a handle to the database
+     * from the LRU cache or loads it from a secondary storage.
      */
     public async withDB<T>(
         backend: Backend,
-        key: string,
+        repository: string,
+        commit: string,
         action: (db: Database) => Promise<T>
-    ): Promise<{ result: T; cacheStats: CacheStats; handleStats?: HandleStats }> {
+    ): Promise<{ result: T; cacheStats: CacheStats; getHandleStats?: GetHandleStats }> {
+        const key = makeKey(repository, commit)
+
         let hit = true
         let entry = this.lru.get(key)
 
         if (!entry) {
             hit = false
-            const dbPromise = backend.loadDB(key)
+            const dbPromise = backend.getDatabaseHandle(repository, commit)
             const length = 1 // TODO(efritz) - get length from backend
             const dispose = () => dbPromise.then(({ database }) => database.close())
 
@@ -66,7 +70,7 @@ export class Cache {
         }
 
         const {
-            result: { database, handleStats },
+            result: { database, getHandleStats },
             elapsed,
         } = await timeit(async () => {
             return await (<LRUDBEntry>entry).dbPromise
@@ -82,15 +86,22 @@ export class Cache {
                 cacheHit: hit,
                 elapsedMs: elapsed,
             },
-            // Only return handleStats if it wasn't a cache hit
-            handleStats: (!hit || undefined) && handleStats,
+            // Only return getHandleStats if it wasn't a cache hit
+            getHandleStats: (!hit || undefined) && getHandleStats,
         }
     }
 
     /**
      * Remove the entry associated with the given key from the cache.
      */
-    public delete(key: string): void {
-        this.lru.del(key)
+    public delete(repository: string, commit: string): void {
+        this.lru.del(makeKey(repository, commit))
     }
+}
+
+/**
+ * Computes a cache key from the given repository and commit hash.
+ */
+function makeKey(repository: string, commit: string): string {
+    return `${repository}@${commit}`
 }

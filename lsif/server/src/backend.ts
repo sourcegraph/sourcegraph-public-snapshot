@@ -1,18 +1,18 @@
-import * as lsp from 'vscode-languageserver'
-import { Database } from './ms/database'
-import { EncodingStats, HandleStats, QueryStats } from './stats'
+import * as lsp from 'vscode-languageserver';
+import { Database } from './ms/database';
+import { InsertStats, GetHandleStats, QueryStats } from './stats';
 
 export const ERRNOLSIFDATA = 'NoLSIFData'
 
 /**
- * The exception thrown from `loadDB` when
+ * The exception thrown from `getDatabaseHandle` when
  */
 export class NoLSIFDataError extends Error {
     public readonly name = ERRNOLSIFDATA
     public readonly code = ERRNOLSIFDATA
 
-    constructor(key: string) {
-        super(`No LSIF data available for ${key}.`)
+    constructor(repository: string, commit: string) {
+        super(`No LSIF data available for ${repository}@${commit}.`)
     }
 }
 
@@ -24,43 +24,31 @@ export class NoLSIFDataError extends Error {
  */
 export interface Backend {
     /**
-     * Re-encode the given file containing a JSON-encoded LSIF dump to the
-     * proper format loadable by `loadDB`.
+     * Read the content of the temporary file containing a JSON-encoded LSIF
+     * dump. Insert these contents into some storage with an encoding that
+     * can be subsequently read by the `getDatabaseHandle` method.
      */
-    createDB(tempPath: string, key: string, contentLength: number): Promise<{ encodingStats: EncodingStats }>
+    insertDump(
+        tempPath: string,
+        repository: string,
+        commit: string,
+        contentLength: number
+    ): Promise<{ insertStats: InsertStats }>
 
     /**
-     * Create a database instance from the given key. This assumes that the
-     * database has been already created via a call to `createDB` (or this
-     * method will otherwise fail).
+     * Create a handle to the database relevant to the given repository and
+     * commit hash.  This assumes that data for this database has already been
+     * inserted via `insertDump` (otherwise this method is expected to throw).
      */
-    loadDB(key: string): Promise<{ database: Database; handleStats: HandleStats }>
+    getDatabaseHandle(repository: string, commit: string): Promise<{ database: Database; getHandleStats: GetHandleStats }>
 
     /**
-     * Return data for an LSIF hover query.
+     * Return data for an LSIF query.
      */
-    hover(
+    query(
         db: Database,
+        method: string,
         uri: string,
         position: lsp.Position
-    ): Promise<{ result: lsp.Hover | undefined; queryStats: QueryStats }>
-
-    /**
-     * Return data for an LSIF definitions query.
-     */
-    definitions(
-        db: Database,
-        uri: string,
-        position: lsp.Position
-    ): Promise<{ result: lsp.Location | lsp.Location[] | undefined; queryStats: QueryStats }>
-
-    /**
-     * Return data for an LSIF references query.
-     */
-    references(
-        db: Database,
-        uri: string,
-        position: lsp.Position,
-        context: lsp.ReferenceContext
-    ): Promise<{ result: lsp.Location[] | undefined; queryStats: QueryStats }>
+    ): Promise<{ result: any; queryStats: QueryStats }>
 }
