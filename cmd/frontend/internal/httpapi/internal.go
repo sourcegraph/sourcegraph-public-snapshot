@@ -2,8 +2,9 @@ package httpapi
 
 import (
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"net/http"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
