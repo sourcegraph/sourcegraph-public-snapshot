@@ -24,7 +24,7 @@ import (
 var (
 	reposDir          = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
 	runRepoCleanup, _ = strconv.ParseBool(env.Get("SRC_RUN_REPO_CLEANUP", "", "Periodically remove inactive repositories."))
-	wantPctFree       = env.Get("SRC_REPOS_DESIRED_PERCENT_FREE", "10", "What ")
+	wantPctFree       = env.Get("SRC_REPOS_DESIRED_PERCENT_FREE", "90", "Target percentage of free space on disk.")
 	janitorInterval   = env.Get("SRC_REPOS_JANITOR_INTERVAL", "1m", "Interval between cleanup runs")
 )
 
@@ -48,6 +48,7 @@ func main() {
 		ReposDir:                reposDir,
 		DeleteStaleRepositories: runRepoCleanup,
 		DesiredPercentFree:      wantPctFree2,
+		DiskSizer:               &server.StatDiskSizer{},
 	}
 	gitserver.RegisterMetrics()
 

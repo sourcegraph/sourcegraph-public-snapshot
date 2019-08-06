@@ -194,40 +194,55 @@ func (s *Server) cleanupRepos() {
 		log15.Error("cleanup: error iterating over repositories", "error", err)
 	}
 
-	// Check how much disk space is available.
-	mountPoint, err := findMountPoint(s.ReposDir)
+	btf, err := s.howManyBytesToFree()
 	if err != nil {
-		log15.Error("finding mount point for dir containing repos")
-		return
+		log15.Error("cleanup: ensuring free disk space", "error", err)
 	}
-	actualFreeBytes, err := bytesFreeOnDisk(mountPoint)
-	if err != nil {
-		log15.Error("cleanup: finding the amount of space free on disk", "error", err)
-		return
-	}
-
-	// Free up space if necessary.
-	dsb, err := diskSizeBytes(mountPoint)
-	if err != nil {
-		log15.Error("getting disk size", "error", err)
-	}
-	desiredFreeBytes := uint64(float64(s.DesiredPercentFree) / 100.0 * float64(dsb))
-	howManyBytesToFree := int64(desiredFreeBytes - actualFreeBytes)
-	if howManyBytesToFree < 0 {
-		howManyBytesToFree = 0
-	}
-	G := float64(1024 * 1024 * 1024)
-	log15.Debug("cleanup",
-		"desired percent free", s.DesiredPercentFree,
-		"actual percent free", float64(actualFreeBytes)/float64(dsb)*100.0,
-		"amount to free in GiB", float64(howManyBytesToFree)/G,
-		"mount point", mountPoint)
-	if err := s.freeUpSpace(howManyBytesToFree); err != nil {
+	if err := s.freeUpSpace(btf); err != nil {
 		log15.Error("cleanup: error freeing up space", "error", err)
 	}
 }
 
-func bytesFreeOnDisk(mountPoint string) (uint64, error) {
+// DiskSizer gets information about disk size and free space.
+type DiskSizer interface {
+	BytesFreeOnDisk(mountPoint string) (uint64, error)
+	DiskSizeBytes(mountPoint string) (uint64, error)
+}
+
+// howManyBytesToFree returns the number of bytes that should be freed to make sure
+// there is sufficient disk space free to satisfy s.DesiredPercentFree.
+func (s *Server) howManyBytesToFree() (int64, error) {
+	// Check how much disk space is available.
+	mountPoint, err := findMountPoint(s.ReposDir)
+	if err != nil {
+		return 0, errors.Wrap(err, "finding mount point for dir containing repos")
+	}
+	actualFreeBytes, err := s.DiskSizer.BytesFreeOnDisk(mountPoint)
+	if err != nil {
+		return 0, errors.Wrap(err, "cleanup: finding the amount of space free on disk")
+	}
+	// Free up space if necessary.
+	diskSizeBytes, err := s.DiskSizer.DiskSizeBytes(mountPoint)
+	if err != nil {
+		return 0, errors.Wrap(err, "getting disk size")
+	}
+	desiredFreeBytes := uint64(float64(s.DesiredPercentFree) / 100.0 * float64(diskSizeBytes))
+	howManyBytesToFree := int64(desiredFreeBytes - actualFreeBytes)
+	G := float64(1024 * 1024 * 1024)
+	log15.Debug("cleanup",
+		"desired percent free", s.DesiredPercentFree,
+		"actual percent free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0,
+		"amount to free in GiB", float64(howManyBytesToFree)/G,
+		"mount point", mountPoint)
+	if howManyBytesToFree < 0 {
+		howManyBytesToFree = 0
+	}
+	return howManyBytesToFree, nil
+}
+
+type StatDiskSizer struct {}
+
+func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
 	var fs syscall.Statfs_t
 	if err := syscall.Statfs(mountPoint, &fs); err != nil {
 		return 0, errors.Wrap(err, "finding out how much disk space is free")
@@ -236,7 +251,7 @@ func bytesFreeOnDisk(mountPoint string) (uint64, error) {
 	return free, nil
 }
 
-func diskSizeBytes(mountPoint string) (uint64, error) {
+func (s *StatDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
 	var fs syscall.Statfs_t
 	if err := syscall.Statfs(mountPoint, &fs); err != nil {
 		return 0, errors.Wrap(err, "statting")
@@ -339,7 +354,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 		spaceFreed += delta
 
 		// Report the new disk usage situation after removing this repo.
-		actualFreeBytes, err := bytesFreeOnDisk(mountPoint)
+		actualFreeBytes, err := s.DiskSizer.BytesFreeOnDisk(mountPoint)
 		if err != nil {
 			return errors.Wrap(err, "finding the amount of space free on disk")
 		}

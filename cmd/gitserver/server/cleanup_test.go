@@ -313,6 +313,69 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 	)
 }
 
+func Test_howManyBytesToFree(t *testing.T) {
+	const G = 1024 * 1024 * 1024
+	s := &Server{
+		DesiredPercentFree: 90,
+	}
+
+	t.Run("if there is already enough space, no space is freed", func (t *testing.T) {
+		s.DiskSizer = &fakeDiskSizer{
+			diskSize: 10 * G,
+			bytesFree: 9.5 * G,
+		}
+		btf, err := s.howManyBytesToFree()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if btf != 0 {
+			t.Errorf("s.howManyBytesToFree(...) is %v, want 0", btf)
+		}
+	})
+
+	t.Run("if there is exactly enough space, no space is freed", func (t *testing.T) {
+		s.DiskSizer = &fakeDiskSizer{
+			diskSize: 10 * G,
+			bytesFree: 9 * G,
+		}
+		btf, err := s.howManyBytesToFree()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if btf != 0 {
+			t.Errorf("s.howManyBytesToFree(...) is %v, want 0", btf)
+		}
+	})
+
+	t.Run("if there not enough space, some space is freed", func (t *testing.T) {
+		s.DiskSizer = &fakeDiskSizer{
+			diskSize: 10 * G,
+			bytesFree: 8 * G,
+		}
+		btf, err := s.howManyBytesToFree()
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := int64(1 * G)
+		if btf != want {
+			t.Errorf("s.howManyBytesToFree(...) is %v, want %v", btf, want)
+		}
+	})
+}
+
+type fakeDiskSizer struct {
+	bytesFree uint64
+	diskSize uint64
+}
+
+func (f *fakeDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
+	return f.bytesFree, nil
+}
+
+func (f *fakeDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
+	return f.diskSize, nil
+}
+
 func tmpDir(t *testing.T) (string, func()) {
 	t.Helper()
 	dir, err := ioutil.TempDir("", t.Name())

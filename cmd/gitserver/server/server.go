@@ -114,6 +114,9 @@ type Server struct {
 	// DesiredPercentFree is the desired percentage of disk space to keep free.
 	DesiredPercentFree int
 
+	// DiskSizer tells how much disk is free and how large the disk is.
+	DiskSizer DiskSizer
+
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
 
