@@ -2,6 +2,8 @@
 package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
+	"fmt"
+	"github.com/pkg/errors"
 	"log"
 	"net"
 	"net/http"
@@ -40,7 +42,7 @@ func main() {
 		log.Fatalf("failed to create SRC_REPOS_DIR: %s", err)
 	}
 
-	wantPctFree2, err := strconv.Atoi(wantPctFree)
+	wantPctFree2, err := parsePercent(wantPctFree)
 	if err != nil {
 		log.Fatalf("parsing $SRC_REPOS_DESIRED_PERCENT_FREE: %v", err)
 	}
@@ -107,4 +109,18 @@ func main() {
 	// The most important thing this does is kill all our clones. If we just
 	// shutdown they will be orphaned and continue running.
 	gitserver.Stop()
+}
+
+func parsePercent(s string) (int, error) {
+	p, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, errors.Wrap(err, "converting string to int")
+	}
+	if p < 0 {
+		return 0, fmt.Errorf("negative value given for percentage: %d", p)
+	}
+	if p > 100 {
+		return 0, fmt.Errorf("excessively high value given for percentage: %d", p)
+	}
+	return p, nil
 }
