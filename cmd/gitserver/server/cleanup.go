@@ -344,6 +344,10 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 	if err != nil {
 		return errors.Wrap(err, "finding mount point")
 	}
+	diskSizeBytes, err := s.DiskSizer.DiskSizeBytes(mountPoint)
+	if err != nil {
+		return errors.Wrap(err, "getting disk size")
+	}
 	for _, d := range gitDirs {
 		if spaceFreed >= howManyBytesToFree {
 			return nil
@@ -367,7 +371,8 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 			"repo", d,
 			"how old", time.Since(dirModTimes[d]),
 			"free space in GiB", float64(actualFreeBytes)/G,
-			"desired free space in GiB", float64(s.DesiredPercentFree)/G,
+			"actual percent of disk space free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0,
+			"desired percent of disk space free", float64(s.DesiredPercentFree),
 			"space freed in GiB", float64(spaceFreed)/G,
 			"how much space to free in GiB", float64(howManyBytesToFree)/G)
 	}
