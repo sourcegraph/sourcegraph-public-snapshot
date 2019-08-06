@@ -124,7 +124,7 @@ class Options extends React.Component<{}, State> {
                 { key: 'allowErrorReporting', value: this.state.allowErrorReporting },
                 { key: 'experimentalLinkPreviews', value: this.state.experimentalLinkPreviews },
                 { key: 'experimentalTextFieldCompletion', value: this.state.experimentalTextFieldCompletion },
-                { key: 'disableExtension', value: this.state.disableExtension},
+                { key: 'disableExtension', value: this.state.disableExtension },
             ],
         }
 
