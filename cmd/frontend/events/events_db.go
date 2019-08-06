@@ -180,7 +180,7 @@ func (dbEvents) scanRow(row interface {
 	if err := row.Scan(
 		&t.ID,
 		&t.Type,
-		(*nnz.Int32)(&t.ActorUserID),
+		nnz.ToInt32(&t.ActorUserID),
 		(*nnz.String)(&t.ExternalActorUsername),
 		(*nnz.String)(&t.ExternalActorURL),
 		&t.CreatedAt,
@@ -189,10 +189,10 @@ func (dbEvents) scanRow(row interface {
 		(*nnz.Int64)(&t.Objects.Campaign),
 		(*nnz.Int64)(&t.Objects.Comment),
 		(*nnz.Int64)(&t.Objects.Rule),
-		(*nnz.Int32)(&t.Objects.Repository),
-		(*nnz.Int32)(&t.Objects.User),
-		(*nnz.Int32)(&t.Objects.Organization),
-		(*nnz.Int32)(&t.Objects.RegistryExtension),
+		nnz.ToInt32(&t.Objects.Repository),
+		nnz.ToInt32(&t.Objects.User),
+		nnz.ToInt32(&t.Objects.Organization),
+		nnz.ToInt32(&t.Objects.RegistryExtension),
 		(*nnz.Int64)(&t.ImportedFromExternalServiceID),
 	); err != nil {
 		return nil, err
