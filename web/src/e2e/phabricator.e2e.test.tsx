@@ -11,6 +11,9 @@ const PHABRICATOR_BASE_URL = 'http://127.0.0.1'
 // location.
 jest.setTimeout(1000 * 60 * 1000)
 
+/**
+ * Logs into Phabricator as admin/sourcegraph.
+ */
 async function phabricatorLogin({ page }: Driver): Promise<void> {
     await page.goto(PHABRICATOR_BASE_URL)
     await page.waitForSelector('.phabricator-wordmark')
@@ -22,6 +25,9 @@ async function phabricatorLogin({ page }: Driver): Promise<void> {
     await page.waitForSelector('.phabricator-core-user-menu')
 }
 
+/**
+ * Waits for the jrpc repository to finish cloning.
+ */
 async function repositoryCloned(driver: Driver): Promise<void> {
     await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/status/')
     try {
@@ -32,6 +38,9 @@ async function repositoryCloned(driver: Driver): Promise<void> {
     }
 }
 
+/**
+ * Adds sourcegraph/jsonrpc2 to this Phabricator instance.
+ */
 async function addPhabricatorRepo(driver: Driver): Promise<void> {
     // Add new repo to Diffusion
     await driver.page.goto(PHABRICATOR_BASE_URL + '/diffusion/edit/?vcs=git')
@@ -83,6 +92,9 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
     await driver.page.waitForNavigation()
 }
 
+/**
+ * Runs initial setup for the Phabricator instance.
+ */
 async function init(driver: Driver): Promise<void> {
     await driver.ensureLoggedIn()
     await driver.ensureHasExternalService({
