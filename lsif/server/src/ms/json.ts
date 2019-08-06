@@ -2,13 +2,15 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
+
 import * as fs from 'fs'
-import * as readline from 'readline'
-
-import { URI } from 'vscode-uri'
-import * as SemVer from 'semver'
-
 import * as lsp from 'vscode-languageserver'
+import * as readline from 'readline'
+import * as SemVer from 'semver'
+import { Database, UriTransformer } from './database'
+import { DocumentInfo } from './files'
+import { URI } from 'vscode-uri'
+
 import {
     Id,
     Vertex,
@@ -33,9 +35,6 @@ import {
     EdgeLabels,
     ItemEdgeProperties,
 } from 'lsif-protocol'
-
-import { DocumentInfo } from './files'
-import { Database, UriTransformer } from './database'
 
 interface Vertices {
     all: Map<Id, Vertex>
