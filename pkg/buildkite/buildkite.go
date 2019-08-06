@@ -32,6 +32,7 @@ type Step struct {
 	Build            *BuildOptions          `json:"build,omitempty"`
 	Env              map[string]string      `json:"env,omitempty"`
 	Plugins          map[string]interface{} `json:"plugins,omitempty"`
+	Agents           map[string]string      `json:"agents,omitempty"`
 	ArtifactPaths    string                 `json:"artifact_paths,omitempty"`
 	ConcurrencyGroup string                 `json:"concurrency_group,omitempty"`
 	Concurrency      int                    `json:"concurrency,omitempty"`
@@ -98,6 +99,15 @@ func Trigger(pipeline string) StepOpt {
 func Async(async bool) StepOpt {
 	return func(step *Step) {
 		step.Async = async
+	}
+}
+
+func Agent(key, value string) StepOpt {
+	return func(step *Step) {
+		if step.Agents == nil {
+			step.Agents = map[string]string{}
+		}
+		step.Agents[key] = value
 	}
 }
 

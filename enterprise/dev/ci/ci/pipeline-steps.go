@@ -112,14 +112,12 @@ func addTriggerGoBenchmarks(c Config) func(*bk.Pipeline) {
 		if c.branch == "master" || strings.HasPrefix(c.branch, "bench/") {
 			pipeline.AddTrigger(c.message,
 				bk.Trigger("sourcegraph-bench"),
+				bk.Agent("queue", "bench"),
 				bk.Async(true),
 				bk.Build(bk.BuildOptions{
-					Commit: c.commit,
-					Branch: c.branch,
-					MetaData: map[string]interface{}{
-						"version": c.version,
-						"queue":   "bench",
-					},
+					Commit:   c.commit,
+					Branch:   c.branch,
+					MetaData: map[string]interface{}{"version": c.version},
 				}),
 			)
 		}
@@ -134,14 +132,7 @@ func addGoBenchmarks(c Config) func(*bk.Pipeline) {
 		newout := c.commit + ".new.bench.txt"
 
 		pipeline.AddStep("benchdiff.sh "+old+" "+new,
-			bk.Build(bk.BuildOptions{
-				Commit: c.commit,
-				Branch: c.branch,
-				MetaData: map[string]interface{}{
-					"version": c.version,
-					"queue":   "bench",
-				},
-			}),
+			bk.Agent("queue", "bench"),
 			bk.Cmd("set -euo pipefail"),
 			bk.Cmd("export CTAGS_COMMAND=$(pwd)/cmd/symbols/universal-ctags-dev"),
 			bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
