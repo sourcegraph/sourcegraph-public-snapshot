@@ -6,9 +6,7 @@ package shared
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
-	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -177,27 +175,20 @@ func Main() {
 			var (
 				retries    int
 				maxRetries int = 10
+				err        error
 			)
 
 			for retries < maxRetries {
 				err = migrateRedisInstances()
 				if err == nil {
-					fmt.Printf("DEBUG: migration went without problems\n")
 					return
 				}
 
-				opError, ok := err.(*net.OpError)
-				if ok && opError.Op == "dial" {
-					fmt.Printf("DEBUG: backing off for 5 seconds. retries=%d\n", retries)
-					retries += 1
-					time.Sleep(5 * time.Second) // Give Redis time to start up
-					continue
-				}
-
-				log.Fatalf("Migrating Redis failed: %s", err)
+				retries += 1
+				time.Sleep(5 * time.Second)
 			}
 
-			log.Fatalf("Connecting to Redis failed after %d attempts", maxRetries)
+			log.Fatalf("Migrating Redis failed: %s", err)
 		}()
 	}
 
