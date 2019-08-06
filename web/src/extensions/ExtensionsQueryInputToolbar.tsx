@@ -24,44 +24,45 @@ interface State {
 export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, State> {
     public state: State = {}
 
+    private toggleCategories = (): void => this.toggleIsOpen('categories')
+    private toggleOptions = (): void => this.toggleIsOpen('options')
+    private toggleIsOpen = (menu: DropdownMenuID): void =>
+        this.setState(prevState => ({ open: prevState.open === menu ? undefined : menu }))
+
     public render(): JSX.Element | null {
         return (
             <>
-                <ButtonDropdown
-                    isOpen={this.state.open === 'categories'}
-                    // tslint:disable-next-line:jsx-no-lambda
-                    toggle={() => this.toggleIsOpen('categories')}
-                >
+                <ButtonDropdown isOpen={this.state.open === 'categories'} toggle={this.toggleCategories}>
                     <DropdownToggle caret={true}>Category</DropdownToggle>
                     <DropdownMenu right={true}>
-                        {EXTENSION_CATEGORIES.map((c, i) => (
+                        {EXTENSION_CATEGORIES.map(category => (
                             <DropdownItem
-                                key={i}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                onClick={() => this.props.onQueryChange(extensionsQuery({ category: c }))}
-                                disabled={this.props.query === extensionsQuery({ category: c })}
+                                // eslint-disable-next-line react/jsx-no-bind
+                                onClick={() => this.props.onQueryChange(extensionsQuery({ category }))}
+                                key={category}
+                                disabled={this.props.query === extensionsQuery({ category })}
                             >
-                                {c}
+                                {category}
                             </DropdownItem>
                         ))}
                     </DropdownMenu>
                 </ButtonDropdown>{' '}
                 <ButtonDropdown
                     isOpen={this.state.open === 'options'}
-                    // tslint:disable-next-line:jsx-no-lambda
-                    toggle={() => this.toggleIsOpen('options')}
+                    // eslint-disable-next-line react/jsx-no-bind
+                    toggle={this.toggleOptions}
                 >
                     <DropdownToggle caret={true}>Options</DropdownToggle>
                     <DropdownMenu right={true}>
                         <DropdownItem
-                            // tslint:disable-next-line:jsx-no-lambda
+                            // eslint-disable-next-line react/jsx-no-bind
                             onClick={() => this.props.onQueryChange(extensionsQuery({ enabled: true }))}
                             disabled={this.props.query.includes(extensionsQuery({ enabled: true }))}
                         >
                             Show enabled extensions
                         </DropdownItem>
                         <DropdownItem
-                            // tslint:disable-next-line:jsx-no-lambda
+                            // eslint-disable-next-line react/jsx-no-bind
                             onClick={() => this.props.onQueryChange(extensionsQuery({ disabled: true }))}
                             disabled={this.props.query.includes(extensionsQuery({ disabled: true }))}
                         >
@@ -72,7 +73,4 @@ export class ExtensionsQueryInputToolbar extends React.PureComponent<Props, Stat
             </>
         )
     }
-
-    private toggleIsOpen = (menu: DropdownMenuID) =>
-        this.setState(prevState => ({ open: prevState.open === menu ? undefined : menu }))
 }

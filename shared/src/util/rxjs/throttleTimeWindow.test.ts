@@ -3,7 +3,7 @@ import { mergeMap } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import { throttleTimeWindow } from './throttleTimeWindow'
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('throttleTimeWindow', () => {
     test('emit the first value (immediately) and last value (at the end) in each time window', () => {

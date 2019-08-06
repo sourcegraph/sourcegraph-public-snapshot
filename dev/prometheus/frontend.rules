@@ -1,0 +1,28 @@
+# Frontend service rules
+
+# Duration (5m)
+task:src_http_request_duration_seconds_bucket:rate5m = rate(src_http_request_duration_seconds_bucket{instance=~"sourcegraph-.*"}[5m])
+route:src_http_request_duration_seconds_bucket:rate5m = sum by (route, ns, le)(task:src_http_request_duration_seconds_bucket:rate5m)
+job:src_http_request_duration_seconds_bucket:rate5m = sum by (ns, le)(task:src_http_request_duration_seconds_bucket:rate5m)
+prod:src_http_request_duration_seconds_bucket:rate5m = sum by (le)(task:src_http_request_duration_seconds_bucket:rate5m)
+
+# Counts (5m)
+task:src_http_request_count:rate5m = rate(src_http_request_duration_seconds_count{instance=~"sourcegraph-.*"}[5m])
+route:src_http_request_count:rate5m = sum by (route, code, ns)(task:src_http_request_count:rate5m)
+job:src_http_request_count:rate5m = sum by (code, ns)(task:src_http_request_count:rate5m)
+prod:src_http_request_count:rate5m = sum by (code)(task:src_http_request_count:rate5m)
+
+# Duration (30m)
+task:src_http_request_duration_seconds_bucket:rate30m = rate(src_http_request_duration_seconds_bucket{instance=~"sourcegraph-.*"}[30m])
+route:src_http_request_duration_seconds_bucket:rate30m = sum by (route, ns, le)(task:src_http_request_duration_seconds_bucket:rate30m)
+job:src_http_request_duration_seconds_bucket:rate30m = sum by (ns, le)(task:src_http_request_duration_seconds_bucket:rate30m)
+prod:src_http_request_duration_seconds_bucket:rate30m = sum by (le)(task:src_http_request_duration_seconds_bucket:rate30m)
+
+# Counts (30m)
+task:src_http_request_count:rate30m = rate(src_http_request_duration_seconds_count{instance=~"sourcegraph-.*"}[30m])
+route:src_http_request_count:rate30m = sum by (route, code, ns)(task:src_http_request_count:rate30m)
+job:src_http_request_count:rate30m = sum by (code, ns)(task:src_http_request_count:rate30m)
+prod:src_http_request_count:rate30m = sum by (code)(task:src_http_request_count:rate30m)
+
+# Perf targets are over a day
+prod:src_http_request_duration_seconds_bucket:rate1d = sum by (route, le)(rate(src_http_request_duration_seconds_bucket{instance=~"sourcegraph-.*"}[1d]))

@@ -58,7 +58,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             </span>
                             {/* Instantly accessible "show more button" */}
                             {props.results.limitHit && (
-                                <button className="btn btn-link btn-sm p-0" onClick={props.onShowMoreResultsClick}>
+                                <button
+                                    type="button"
+                                    className="btn btn-link btn-sm p-0"
+                                    onClick={props.onShowMoreResultsClick}
+                                >
                                     (show more)
                                 </button>
                             )}
@@ -107,6 +111,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     {/* Expand all feature */}
                     {props.results.results.length > 0 && (
                         <button
+                            type="button"
                             onClick={props.onExpandAllResultsToggle}
                             className="btn btn-link"
                             data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
@@ -124,7 +129,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     )}
                     {/* Saved Queries */}
                     {props.authenticatedUser && (
-                        <button onClick={props.onSaveQueryClick} className="btn btn-link" disabled={props.didSave}>
+                        <button
+                            type="button"
+                            onClick={props.onSaveQueryClick}
+                            className="btn btn-link"
+                            disabled={props.didSave}
+                        >
                             {props.didSave ? (
                                 <>
                                     <CheckIcon className="icon-inline" /> Query saved

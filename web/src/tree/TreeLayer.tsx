@@ -274,7 +274,8 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                             {isErrorLike(treeOrError) ? (
                                                 <div
                                                     className="tree__row-alert alert alert-danger"
-                                                    // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                                                    // needed because of dynamic styling
+                                                    // eslint-disable-next-line react/forbid-dom-props
                                                     style={treePadding(this.props.depth, true)}
                                                 >
                                                     Error loading file tree: {treeOrError.message}

@@ -292,7 +292,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         const parsedQuery = parseSearchURLQuery(this.props.location.search)
 
         return (
-            <React.Fragment>
+            <>
                 {this.state.didScrollToItem && (
                     <div className="search-results-list__jump-to-top">
                         Scrolled to result {this.getCheckpoint()} based on URL.&nbsp;
@@ -374,6 +374,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     */}
                                     {results.limitHit && this.state.resultsShown >= results.results.length && (
                                         <button
+                                            type="button"
                                             className="btn btn-secondary btn-block"
                                             data-testid="search-show-more-button"
                                             onClick={this.props.onShowMoreResultsClick}
@@ -463,7 +464,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         </Link>
                     )}
                 </div>
-            </React.Fragment>
+            </>
         )
     }
 

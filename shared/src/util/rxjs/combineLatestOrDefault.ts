@@ -1,10 +1,9 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import { Observable, ObservableInput, of, Operator, PartialObserver, Subscriber, TeardownLogic, zip } from 'rxjs'
 import { fromArray } from 'rxjs/internal/observable/fromArray'
 import { OuterSubscriber } from 'rxjs/internal/OuterSubscriber'
 import { asap } from 'rxjs/internal/scheduler/asap'
 import { subscribeToResult } from 'rxjs/internal/util/subscribeToResult'
-
-// tslint:disable no-use-before-declare
 
 /**
  * Like {@link combineLatest}, except that it does not wait for all Observables to emit before emitting an initial
@@ -29,7 +28,7 @@ import { subscribeToResult } from 'rxjs/internal/util/subscribeToResult'
  * @param observables The source Observables.
  * @param defaultValue The value to emit for a source Observable if it has not yet emitted a value by the time
  * another Observable has emitted a value.
- * @return {Observable} An Observable of an array of the most recent values from each input Observable (or
+ * @returns An Observable of an array of the most recent values from each input Observable (or
  * {@link defaultValue}).
  */
 export function combineLatestOrDefault<T>(observables: ObservableInput<T>[], defaultValue?: T): Observable<T[]> {
@@ -46,7 +45,7 @@ export function combineLatestOrDefault<T>(observables: ObservableInput<T>[], def
 }
 
 class CombineLatestOperator<T> implements Operator<T, T[]> {
-    public constructor(private defaultValue?: T) {}
+    constructor(private defaultValue?: T) {}
 
     public call(subscriber: Subscriber<T[]>, source: any): TeardownLogic {
         return source.subscribe(new CombineLatestSubscriber(subscriber, this.defaultValue))

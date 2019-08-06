@@ -27,7 +27,7 @@ interface Props<C extends React.ReactElement<any> = React.ReactElement<any>> {
     element: C
 }
 
-const isHorizontal = (handlePosition: Props['handlePosition']) =>
+const isHorizontal = (handlePosition: Props['handlePosition']): boolean =>
     handlePosition === 'right' || handlePosition === 'left'
 
 interface State {
@@ -88,10 +88,10 @@ export class Resizable<C extends React.ReactElement<any>> extends React.PureComp
     public render(): React.ReactNode {
         return (
             <div
+                // eslint-disable-next-line react/forbid-dom-props
+                style={{ [isHorizontal(this.props.handlePosition) ? 'width' : 'height']: `${this.state.size}px` }}
                 className={`resizable resizable--${this.props.handlePosition} ${this.props.className || ''}`}
                 ref={this.setContainerRef}
-                // tslint:disable-next-line jsx-ban-props
-                style={{ [isHorizontal(this.props.handlePosition) ? 'width' : 'height']: `${this.state.size}px` }}
             >
                 <div
                     className={`resizable__ghost ${this.state.resizing ? 'resizable__ghost--resizing' : ''}`}

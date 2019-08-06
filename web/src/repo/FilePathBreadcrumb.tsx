@@ -13,33 +13,31 @@ interface Props {
  * A breadcrumb where each path component is a separate link. Use this sparingly. Usually having the entire path be
  * a single link target is more usable; in that case, use RepoFileLink.
  */
-class Breadcrumb extends React.Component<Props, {}> {
-    public render(): JSX.Element | null {
-        const parts = this.props.path.split('/')
-        const spans: JSX.Element[] = []
-        for (const [i, part] of parts.entries()) {
-            const link = this.props.partToUrl(i)
-            const className = `part ${this.props.partToClassName ? this.props.partToClassName(i) : ''} ${
-                i === parts.length - 1 ? 'part-last' : ''
-            }`
-            spans.push(
-                <LinkOrSpan key={i} className={className} to={link}>
-                    {part}
-                </LinkOrSpan>
-            )
-            if (i < parts.length - 1) {
-                spans.push(
-                    <span key={'sep' + i} className="breadcrumb__separator">
-                        /
-                    </span>
-                )
-            }
-        }
-        return (
-            // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
-            <span className="breadcrumb">{spans}</span>
+const Breadcrumb: React.FunctionComponent<Props> = props => {
+    const parts = props.path.split('/')
+    const spans: JSX.Element[] = []
+    for (const [i, part] of parts.entries()) {
+        const link = props.partToUrl(i)
+        const className = `part ${props.partToClassName ? props.partToClassName(i) : ''} ${
+            i === parts.length - 1 ? 'part-last' : ''
+        }`
+        spans.push(
+            <LinkOrSpan key={i} className={className} to={link}>
+                {part}
+            </LinkOrSpan>
         )
+        if (i < parts.length - 1) {
+            spans.push(
+                <span key={'sep' + i} className="breadcrumb__separator">
+                    /
+                </span>
+            )
+        }
     }
+    return (
+        // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
+        <span className="breadcrumb">{spans}</span>
+    )
 }
 
 /**
@@ -53,11 +51,10 @@ export const FilePathBreadcrumb: React.FunctionComponent<
     }
 > = ({ repoName, rev, filePath, isDir }) => {
     const parts = filePath.split('/')
-    // tslint:disable-next-line:jsx-no-lambda
     return (
+        /* eslint-disable react/jsx-no-bind */
         <Breadcrumb
             path={filePath}
-            // tslint:disable-next-line:jsx-no-lambda
             partToUrl={i => {
                 const partPath = parts.slice(0, i + 1).join('/')
                 if (isDir || i < parts.length - 1) {
@@ -65,8 +62,8 @@ export const FilePathBreadcrumb: React.FunctionComponent<
                 }
                 return toPrettyBlobURL({ repoName, rev, filePath: partPath })
             }}
-            // tslint:disable-next-line:jsx-no-lambda
             partToClassName={i => (i === parts.length - 1 ? 'part-last' : 'part-directory')}
         />
+        /* eslint-enable react/jsx-no-bind */
     )
 }

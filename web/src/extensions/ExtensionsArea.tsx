@@ -1,7 +1,6 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Subject, Subscription } from 'rxjs'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
@@ -12,7 +11,7 @@ import { ExtensionAreaRoute } from './extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extension/ExtensionAreaHeader'
 import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './ExtensionsAreaHeader'
 
-const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 export interface ExtensionsAreaRoute extends RouteDescriptor<ExtensionsAreaRouteContext> {}
 
@@ -25,8 +24,8 @@ export interface ExtensionsAreaRouteContext extends SettingsCascadeProps, Platfo
 
     /** The subject whose extensions and configuration to display. */
     subject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
-    extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
-    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
+    extensionAreaRoutes: readonly ExtensionAreaRoute[]
+    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
 }
 
 interface ExtensionsAreaProps
@@ -34,7 +33,7 @@ interface ExtensionsAreaProps
         SettingsCascadeProps,
         PlatformContextProps,
         ThemeProps {
-    routes: ReadonlyArray<ExtensionsAreaRoute>
+    routes: readonly ExtensionsAreaRoute[]
 
     /**
      * The currently authenticated user.
@@ -42,12 +41,10 @@ interface ExtensionsAreaProps
     authenticatedUser: GQL.IUser | null
 
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
-    extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
-    extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
-    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
+    extensionAreaRoutes: readonly ExtensionAreaRoute[]
+    extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
+    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
 }
-
-const LOADING: 'loading' = 'loading'
 
 interface ExtensionsAreaState {}
 
@@ -55,24 +52,7 @@ interface ExtensionsAreaState {}
  * The extensions area.
  */
 export class ExtensionsArea extends React.Component<ExtensionsAreaProps, ExtensionsAreaState> {
-    public state: ExtensionsAreaState = {
-        subjectOrError: LOADING,
-    }
-
-    private componentUpdates = new Subject<ExtensionsAreaProps>()
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentWillReceiveProps(props: ExtensionsAreaProps): void {
-        this.componentUpdates.next(props)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
+    public state: ExtensionsAreaState = {}
 
     public render(): JSX.Element | null {
         const context: ExtensionsAreaRouteContext = {
@@ -95,16 +75,17 @@ export class ExtensionsArea extends React.Component<ExtensionsAreaProps, Extensi
                 />
                 <Switch>
                     {this.props.routes.map(
+                        /* eslint-disable react/jsx-no-bind */
                         ({ path, exact, condition = () => true, render }) =>
                             condition(context) && (
                                 <Route
                                     key="hardcoded-key"
                                     path={this.props.match.url + path}
                                     exact={exact}
-                                    // tslint:disable-next-line:jsx-no-lambda
                                     render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                                 />
                             )
+                        /* eslint-enable react/jsx-no-bind */
                     )}
                     <Route key="hardcoded-key" component={NotFoundPage} />
                 </Switch>

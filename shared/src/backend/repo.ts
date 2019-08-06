@@ -8,7 +8,7 @@ import { RepoSpec } from '../util/url'
 import { CloneInProgressError, RepoNotFoundError } from './errors'
 
 /**
- * @return Observable that emits the `rawRepoName`.
+ * @returns Observable that emits the `rawRepoName`.
  *         Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export const resolveRawRepoName = memoizeObservable(

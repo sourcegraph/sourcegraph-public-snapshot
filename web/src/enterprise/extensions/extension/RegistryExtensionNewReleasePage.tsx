@@ -9,7 +9,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser(() => (
         <h2>Publish new release</h2>
         <p>
             Use the{' '}
-            <a href="https://github.com/sourcegraph/src-cli" target="_blank">
+            <a href="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
                 <code>src</code> CLI tool
             </a>{' '}
             to publish a new release:

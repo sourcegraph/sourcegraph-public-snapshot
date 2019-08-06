@@ -25,17 +25,17 @@ export const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscr
             // access Symbol properties that cannot be proxied
             subscribable.subscribe({
                 next: val => {
-                    // tslint:disable-next-line: no-floating-promises
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     observer.next(val as UnproxyOrClone<T>)
                 },
                 error: err => {
                     // Only pass a few well-known Error properties
                     // TODO should pass all properties serialized recursively, best handled on comlink level
-                    // tslint:disable-next-line: no-floating-promises
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     observer.error(err && { message: err.message, name: err.name, code: err.code, stack: err.stack })
                 },
                 complete: () => {
-                    // tslint:disable-next-line: no-floating-promises
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     observer.complete()
                 },
             })

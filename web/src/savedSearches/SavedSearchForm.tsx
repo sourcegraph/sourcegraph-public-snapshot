@@ -59,7 +59,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
             const { value, checked, type } = event.currentTarget
             this.setState(state => ({
                 values: {
-                    ...this.state.values,
+                    ...state.values,
                     [key]: type === 'checkbox' ? checked : value,
                 },
             }))

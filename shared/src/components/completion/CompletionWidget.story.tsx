@@ -15,15 +15,13 @@ const onSelectItem = action('onSelectItem')
 // propagating them to the CompletionWidget element.
 const { add } = storiesOf('CompletionWidget', module).addParameters({ options: { enableShortcuts: false } })
 
-// tslint:disable: jsx-no-lambda
-
 const completionWidgetListItemClassName = 'completion-widget-dropdown__item d-flex align-items-center p-2'
 const StyledCompletionWidget: React.FunctionComponent<CompletionWidgetProps> = props => (
     <CompletionWidget
         {...props}
-        listClassName={'completion-widget-dropdown d-block list-unstyled rounded border p-0 m-0 mt-3'}
+        listClassName="completion-widget-dropdown d-block list-unstyled rounded border p-0 m-0 mt-3"
         listItemClassName={completionWidgetListItemClassName}
-        selectedListItemClassName={'completion-widget-dropdown__item--selected bg-primary'}
+        selectedListItemClassName="completion-widget-dropdown__item--selected bg-primary"
         loadingClassName={completionWidgetListItemClassName}
         noResultsClassName={completionWidgetListItemClassName}
     />

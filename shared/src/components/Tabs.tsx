@@ -212,13 +212,7 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
     }
 
     private renderTab = ({ tab, className }: { tab: T; className: string }): JSX.Element => (
-        <button
-            type="button"
-            className={className}
-            data-e2e-tab={tab.id}
-            // tslint:disable-next-line:jsx-no-lambda
-            onClick={() => this.onSelectTab(tab.id)}
-        >
+        <button type="button" className={className} data-e2e-tab={tab.id} onClick={() => this.onSelectTab(tab.id)}>
             {tab.label}
         </button>
     )
@@ -288,10 +282,11 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
         return tabs[0].id // default
     }
 
-    public componentWillReceiveProps(nextProps: TabsWithURLViewStatePersistenceProps<ID, T>): void {
-        if (nextProps.location !== this.props.location || nextProps.tabs !== this.props.tabs) {
+    public componentDidUpdate(prevProps: TabsWithURLViewStatePersistenceProps<ID, T>): void {
+        if (prevProps.location !== this.props.location || prevProps.tabs !== this.props.tabs) {
+            // eslint-disable-next-line react/no-did-update-set-state
             this.setState({
-                activeTab: TabsWithURLViewStatePersistence.readFromURL(nextProps.location, nextProps.tabs),
+                activeTab: TabsWithURLViewStatePersistence.readFromURL(this.props.location, this.props.tabs),
             })
         }
     }
@@ -301,10 +296,10 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
     }
 
     private renderTab = ({ tab, className }: { tab: T; className: string }): JSX.Element => (
+        /* eslint-disable react/jsx-no-bind */
         <Link
             className={className}
             to={TabsWithURLViewStatePersistence.urlForTabID(this.props.location, tab.id)}
-            // tslint:disable-next-line:jsx-no-lambda
             onClick={() => {
                 if (this.props.onSelectTab) {
                     this.props.onSelectTab(tab.id)
@@ -313,5 +308,6 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
         >
             {tab.label}
         </Link>
+        /* eslint:enable react/jsx-no-bind */
     )
 }

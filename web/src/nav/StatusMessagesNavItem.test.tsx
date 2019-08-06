@@ -1,6 +1,6 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { of, queueScheduler } from 'rxjs'
+import { of, queueScheduler, Observable } from 'rxjs'
 import { setLinkComponent } from '../../../shared/src/components/Link'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
@@ -10,7 +10,7 @@ describe('StatusMessagesNavItem', () => {
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 
     test('no messages', () => {
-        const fetchMessages = () => of([])
+        const fetchMessages = (): Observable<GQL.IStatusMessage[]> => of([])
         expect(
             renderer.create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />).toJSON()
         ).toMatchSnapshot()
@@ -23,7 +23,7 @@ describe('StatusMessagesNavItem', () => {
             message: 'Currently cloning repositories...',
         }
 
-        const fetchMessages = () => of([message])
+        const fetchMessages = (): Observable<GQL.IStatusMessage[]> => of([message])
         test('as non-site admin', () => {
             expect(
                 renderer

@@ -83,13 +83,13 @@ export function registerNativeTooltipContributions(extensionsController: {
                     category: parseTemplate('Code host'),
                     commandArguments: [
                         parseTemplate('codeHost.useNativeTooltips'),
-                        // tslint:disable-next-line no-invalid-template-strings
+                        /* eslint-disable-next-line no-template-curly-in-string */
                         parseTemplate('${!config.codeHost.useNativeTooltips}'),
                         null,
                         parseTemplate('json'),
                     ],
                     title: parseTemplate(
-                        // tslint:disable-next-line no-invalid-template-strings
+                        /* eslint-disable-next-line no-template-curly-in-string */
                         'Prefer ${config.codeHost.useNativeTooltips && "Sourcegraph" || "non-Sourcegraph"} hover tooltips'
                     ),
                 },

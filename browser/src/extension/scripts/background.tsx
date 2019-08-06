@@ -53,7 +53,7 @@ const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
 }: {
     request: string
     variables: {}
-}) =>
+}): Observable<GraphQLResult<T>> =>
     observeStorageKey('sync', 'sourcegraphURL').pipe(
         take(1),
         switchMap(baseUrl =>
@@ -234,7 +234,7 @@ async function main(): Promise<void> {
         }
         const perms = await browser.permissions.getAll()
         const origins = perms.origins || []
-        if (managedUrls.every(val => origins.indexOf(`${val}/*`) >= 0)) {
+        if (managedUrls.every(val => origins.includes(`${val}/*`))) {
             setDefaultBrowserAction()
             return
         }
@@ -349,5 +349,5 @@ async function main(): Promise<void> {
 }
 
 // Browsers log this unhandled Promise automatically (and with a better stack trace through console.error)
-// tslint:disable-next-line: no-floating-promises
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 main()

@@ -7,8 +7,7 @@ import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
 describe('ExtensionsQueryInputToolbar', () => {
     test('renders', () => {
         expect(
-            // tslint:disable-next-line:jsx-no-lambda
-            renderer.create(<ExtensionsQueryInputToolbar query="q" onQueryChange={() => void 0} />).toJSON()
+            renderer.create(<ExtensionsQueryInputToolbar query="q" onQueryChange={() => undefined} />).toJSON()
         ).toMatchSnapshot()
     })
 
@@ -18,8 +17,7 @@ describe('ExtensionsQueryInputToolbar', () => {
                 .create(
                     <ExtensionsQueryInputToolbar
                         query={extensionsQuery({ category: EXTENSION_CATEGORIES[0] })}
-                        // tslint:disable-next-line:jsx-no-lambda
-                        onQueryChange={() => void 0}
+                        onQueryChange={() => undefined}
                     />
                 )
                 .toJSON()

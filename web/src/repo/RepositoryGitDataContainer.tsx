@@ -96,8 +96,8 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
         this.propsUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: Props): void {
-        this.propsUpdates.next(props)
+    public componentDidUpdate(): void {
+        this.propsUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

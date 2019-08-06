@@ -34,7 +34,10 @@
     "typescript": "^3.5.3"
   },
   "scripts": {
+    "typecheck": "tsc -p .",
     "serve": "tsc-watch --onSuccess \"node out/http-server.js\" --noClear",
-    "build": "parcel build --out-dir out --out-file http-server.bundle.js --target node --bundle-node-modules src/http-server.ts"
+    "build": "parcel build --out-dir out --out-file http-server.bundle.js --target node --bundle-node-modules src/http-server.ts",
+    "tslint": "../../node_modules/.bin/tslint -p tsconfig.json",
+    "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts?(x)'"
   }
 }

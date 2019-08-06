@@ -62,7 +62,7 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
         })
     )
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user page was not found." />
 )
 
@@ -75,10 +75,10 @@ interface UserAreaProps
         SettingsCascadeProps,
         ThemeProps,
         ActivationProps {
-    userAreaRoutes: ReadonlyArray<UserAreaRoute>
-    userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
+    userAreaRoutes: readonly UserAreaRoute[]
+    userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
-    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
+    userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 
     /**
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
@@ -124,7 +124,7 @@ export interface UserAreaRouteContext
      */
     authenticatedUser: GQL.IUser | null
     userSettingsSideBarItems: UserSettingsSidebarItems
-    userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute>
+    userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 }
 
 /**
@@ -133,20 +133,20 @@ export interface UserAreaRouteContext
 export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
     public state: UserAreaState = {}
 
-    private routeMatchChanges = new Subject<{ username: string }>()
+    private componentUpdates = new Subject<UserAreaProps>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         // Changes to the route-matched username.
-        const usernameChanges = this.routeMatchChanges.pipe(
-            map(({ username }) => username),
+        const usernameChanges = this.componentUpdates.pipe(
+            map(props => props.match.params.username),
             distinctUntilChanged()
         )
 
         // Fetch user.
         this.subscriptions.add(
-            combineLatest(usernameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true)))
+            combineLatest([usernameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true))])
                 .pipe(
                     switchMap(([username, forceRefresh]) => {
                         type PartialStateUpdate = Pick<UserAreaState, 'userOrError'>
@@ -163,13 +163,11 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
 
-        this.routeMatchChanges.next(this.props.match.params)
+        this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: UserAreaProps): void {
-        if (props.match.params !== this.props.match.params) {
-            this.routeMatchChanges.next(props.match.params)
-        }
+    public componentDidUpdate(props: UserAreaProps): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -209,13 +207,13 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                                     ({ path, exact, render, condition = () => true }) =>
                                         condition(context) && (
                                             <Route
-                                                path={this.props.match.url + path}
-                                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                exact={exact}
-                                                // tslint:disable-next-line:jsx-no-lambda
+                                                // eslint-disable-next-line react/jsx-no-bind
                                                 render={routeComponentProps =>
                                                     render({ ...context, ...routeComponentProps })
                                                 }
+                                                path={this.props.match.url + path}
+                                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                                exact={exact}
                                             />
                                         )
                                 )}

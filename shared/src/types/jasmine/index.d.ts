@@ -2,11 +2,11 @@
 
 declare var jasmine: {
     getEnv(): {
-        addReporter(reporter: { specDone(result: JasmineResult): Promise<void> })
+        addReporter(reporter: { specDone?(result: CustomReporterResult): void })
     }
 }
 
-interface JasmineResult {
+interface CustomReporterResult {
     status: 'passed' | 'failed' | 'disabled' | 'pending'
     fullName: string
 }

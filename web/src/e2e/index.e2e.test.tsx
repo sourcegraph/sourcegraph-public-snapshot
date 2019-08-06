@@ -1,5 +1,4 @@
 import * as path from 'path'
-import puppeteer from 'puppeteer'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 import { retry } from '../util/e2e-test-utils'
 import { baseURL, createDriverForTest, Driver, gitHubToken, percySnapshot } from './util'
@@ -10,8 +9,6 @@ import { baseURL, createDriverForTest, Driver, gitHubToken, percySnapshot } from
 // location.
 jest.setTimeout(1 * 60 * 1000)
 
-// tslint:disable-next-line: no-empty
-
 process.on('unhandledRejection', error => {
     console.error('Caught unhandledRejection:', error)
 })
@@ -20,7 +17,7 @@ process.on('rejectionHandled', error => {
     console.error('Caught rejectionHandled:', error)
 })
 
-describe('e2e test suite', function(this: any): void {
+describe('e2e test suite', () => {
     let driver: Driver
 
     async function init(): Promise<void> {
@@ -115,15 +112,13 @@ describe('e2e test suite', function(this: any): void {
                 visible: true,
             })).click()
 
-            const accept = async (dialog: puppeteer.Dialog) => {
-                await dialog.accept()
-                driver.page.off('dialog', accept)
-            }
-            driver.page.on('dialog', accept)
-            await (await driver.page.waitForSelector(
-                `[data-e2e-external-service-name="e2e-github-test-2"] .e2e-delete-external-service-button`,
-                { visible: true }
-            )).click()
+            await Promise.all([
+                driver.acceptNextDialog(),
+                (await driver.page.waitForSelector(
+                    '[data-e2e-external-service-name="e2e-github-test-2"] .e2e-delete-external-service-button',
+                    { visible: true }
+                )).click(),
+            ])
 
             await driver.page.waitFor(
                 () => !document.querySelector('[data-e2e-external-service-name="e2e-github-test-2"]')
@@ -224,14 +219,14 @@ describe('e2e test suite', function(this: any): void {
         // expectedCount defaults to one because of we haven't specified, we just want to ensure it exists at all
         const getHoverContents = async (expectedCount = 1): Promise<string[]> => {
             const selector =
-                expectedCount > 1 ? `.e2e-tooltip-content:nth-child(${expectedCount})` : `.e2e-tooltip-content`
+                expectedCount > 1 ? `.e2e-tooltip-content:nth-child(${expectedCount})` : '.e2e-tooltip-content'
             await driver.page.waitForSelector(selector, { visible: true })
             return await driver.page.evaluate(() =>
                 // You can't reference hoverContentSelector in puppeteer's driver.page.evaluate
                 Array.from(document.querySelectorAll('.e2e-tooltip-content')).map(t => t.textContent || '')
             )
         }
-        const assertHoverContentContains = async (val: string, count?: number) => {
+        const assertHoverContentContains = async (val: string, count?: number): Promise<void> => {
             expect(await getHoverContents(count)).toEqual(expect.arrayContaining([expect.stringContaining(val)]))
         }
 
@@ -251,7 +246,7 @@ describe('e2e test suite', function(this: any): void {
                 await driver.page.goto(
                     baseURL + '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c'
                 )
-                await (await driver.page.waitForSelector(`[data-tree-path="godockerize.go"]`, {
+                await (await driver.page.waitForSelector('[data-tree-path="godockerize.go"]', {
                     visible: true,
                 })).click()
                 await driver.assertWindowLocation(
@@ -313,7 +308,7 @@ describe('e2e test suite', function(this: any): void {
             })
 
             test('responds to keyboard shortcuts', async () => {
-                const assertNumRowsExpanded = async (expectedCount: number) => {
+                const assertNumRowsExpanded = async (expectedCount: number): Promise<void> => {
                     expect(
                         await driver.page.evaluate(() => document.querySelectorAll('.tree__row--expanded').length)
                     ).toEqual(expectedCount)
@@ -591,7 +586,7 @@ describe('e2e test suite', function(this: any): void {
         })
 
         describe('hovers', () => {
-            describe(`Blob`, () => {
+            describe('Blob', () => {
                 test('gets displayed and updates URL when clicking on a token', async () => {
                     await driver.page.goto(
                         baseURL + '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go'
@@ -611,7 +606,7 @@ describe('e2e test suite', function(this: any): void {
                             '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go#L151:23'
                     )
                     await assertHoverContentContains(
-                        `ErrMethodMismatch is returned when the method in the request does not match`
+                        'ErrMethodMismatch is returned when the method in the request does not match'
                     )
                 })
 
@@ -853,7 +848,7 @@ describe('e2e test suite', function(this: any): void {
                 const match = /(\d+) results?/.exec(label)
                 if (!match) {
                     throw new Error(
-                        `.e2e-search-results-stats textContent did not match regex '(\d+) results': '${label}'`
+                        `.e2e-search-results-stats textContent did not match regex '(\\d+) results': '${label}'`
                     )
                 }
                 const numberOfResults = parseInt(match[1], 10)

@@ -41,7 +41,12 @@ async function init(): Promise<void> {
         return
     }
 
-    const sourcegraphURL = await getSourcegraphURLFromConduit()
+    const sourcegraphURL =
+        window.localStorage.getItem('SOURCEGRAPH_URL') ||
+        window.SOURCEGRAPH_URL ||
+        (await getSourcegraphURLFromConduit())
+    // eslint-disable-next-line require-atomic-updates
+    window.SOURCEGRAPH_URL = sourcegraphURL
     const css = await getPhabricatorCSS(sourcegraphURL)
     const style = document.createElement('style')
     style.setAttribute('type', 'text/css')
@@ -49,10 +54,9 @@ async function init(): Promise<void> {
     style.textContent = css
     document.head.appendChild(style)
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
-    window.SOURCEGRAPH_URL = sourcegraphURL
     metaClickOverride()
     injectExtensionMarker()
     await injectCodeIntelligence(IS_EXTENSION)
 }
 
-init().catch(err => console.error(`Error initializing Phabricator integration`, err))
+init().catch(err => console.error('Error initializing Phabricator integration', err))

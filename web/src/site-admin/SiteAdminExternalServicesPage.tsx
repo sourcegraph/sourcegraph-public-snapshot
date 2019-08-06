@@ -48,6 +48,7 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
                             <SettingsIcon className="icon-inline" /> Settings
                         </Link>{' '}
                         <button
+                            type="button"
                             className="btn btn-sm btn-danger e2e-delete-external-service-button"
                             onClick={this.deleteExternalService}
                             disabled={this.state.loading}

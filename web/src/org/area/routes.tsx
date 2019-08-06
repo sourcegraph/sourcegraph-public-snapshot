@@ -6,7 +6,7 @@ import { OrgAreaRoute } from './OrgArea'
 
 const OrgSettingsArea = lazyComponent(() => import('../settings/OrgSettingsArea'), 'OrgSettingsArea')
 
-export const orgAreaRoutes: ReadonlyArray<OrgAreaRoute> = [
+export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     {
         path: '',
         exact: true,
@@ -18,7 +18,6 @@ export const orgAreaRoutes: ReadonlyArray<OrgAreaRoute> = [
     },
     {
         path: '/settings',
-        // tslint:disable-next-line:jsx-no-lambda
         render: props => <OrgSettingsArea {...props} isLightTheme={props.isLightTheme} />,
     },
     ...namespaceAreaRoutes,

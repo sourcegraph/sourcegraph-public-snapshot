@@ -120,7 +120,12 @@ interface SuggestionProps {
     liRef?: (ref: HTMLLIElement | null) => void
 }
 
-export const SuggestionItem = ({ suggestion, isSelected, onClick, liRef }: SuggestionProps) => (
+export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
+    suggestion,
+    isSelected,
+    onClick,
+    liRef,
+}) => (
     <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} onMouseDown={onClick} ref={liRef}>
         <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
         <div className="suggestion__title">{suggestion.title}</div>

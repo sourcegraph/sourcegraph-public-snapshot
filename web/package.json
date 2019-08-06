@@ -16,6 +16,7 @@
     "lint": "yarn run tslint && gulp unusedExports && yarn run stylelint",
     "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json -e 'src/schema/**' 'src/**/*.ts?(x)' 'types/**/*.ts?(x)' './*.ts?(x)'",
     "eslint": "eslint '**/*.[jt]s?(x)'",
+    "typecheck": "tsc -p .",
     "stylelint": "stylelint 'src/**/*.scss'",
     "bundlesize": "cross-env GITHUB_TOKEN= bundlesize",
     "browserslist": "browserslist"

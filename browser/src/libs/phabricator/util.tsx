@@ -1,5 +1,5 @@
 import { PlatformContext } from '../../../../shared/src/platform/context'
-import { ChangeState, DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '../phabricator'
+import { ChangeState, DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
 import { getRepoDetailsFromCallsign, getRepoDetailsFromDifferentialID } from './backend'
 
 const TAG_PATTERN = /r([0-9A-z]+)([0-9a-f]{40})/
@@ -90,12 +90,12 @@ const DIFF_PATTERN = /Diff ([0-9]+)/
 function getDiffIdFromDifferentialPage(): string | null {
     const diffsContainer = document.getElementById('differential-review-stage')
     if (!diffsContainer) {
-        console.error(`no element with id differential-review-stage found on page.`)
+        console.error('no element with id differential-review-stage found on page.')
         return null
     }
     const wrappingDiffBox = diffsContainer.parentElement
     if (!wrappingDiffBox) {
-        console.error(`parent container of diff container not found.`)
+        console.error('parent container of diff container not found.')
         return null
     }
     const diffTitle = wrappingDiffBox.children[0].getElementsByClassName('phui-header-header').item(0)
@@ -109,8 +109,7 @@ function getDiffIdFromDifferentialPage(): string | null {
     return matches[1]
 }
 
-// tslint:disable-next-line
-const PHAB_DIFFUSION_REGEX = /^\/?(source|diffusion)\/([A-Za-z0-9\-\_]+)\/browse\/([\w-]+\/)?([^;$]+)(;[0-9a-f]{40})?(?:\$[0-9]+)?/i
+const PHAB_DIFFUSION_REGEX = /^\/?(source|diffusion)\/([A-Za-z0-9\-_]+)\/browse\/([\w-]+\/)?([^;$]+)(;[0-9a-f]{40})?(?:\$[0-9]+)?/i
 const PHAB_DIFFERENTIAL_REGEX = /^\/?(D[0-9]+)(?:\?(?:(?:id=([0-9]+))|(vs=(?:[0-9]+|on)&id=[0-9]+)))?/i
 const PHAB_REVISION_REGEX = /^\/?r([0-9A-z]+)([0-9a-f]{40})/i
 // http://phabricator.aws.sgdev.org/source/nmux/change/master/mux.go
@@ -191,7 +190,7 @@ export async function getPhabricatorState(
 
         const { callsign } = await getRepoDetailsFromDifferentialID(differentialID, requestGraphQL)
         if (!callsign) {
-            console.error(`callsign not found`)
+            console.error('callsign not found')
             return null
         }
         if (!diffID) {
@@ -201,7 +200,7 @@ export async function getPhabricatorState(
             }
         }
         if (!diffID) {
-            console.error(`differential id not found on page.`)
+            console.error('differential id not found on page.')
             return null
         }
         const { rawRepoName } = await getRepoDetailsFromCallsign(callsign, requestGraphQL)
@@ -234,14 +233,14 @@ export async function getPhabricatorState(
                 headRev = maxDiff.revDescription
                 baseRev = headRev.concat('~1')
             }
-        } else {
-            // check if the diff we are viewing is the max diff. if so,
-            // right is the merged rev into master, and left is master~1
-            if (diffLanded && maxDiff && diffID === maxDiff.diffID) {
-                headRev = maxDiff.revDescription
-                baseRev = maxDiff.revDescription.concat('~1')
-            }
         }
+        // check if the diff we are viewing is the max diff. if so,
+        // right is the merged rev into master, and left is master~1
+        else if (diffLanded && maxDiff && diffID === maxDiff.diffID) {
+            headRev = maxDiff.revDescription
+            baseRev = maxDiff.revDescription.concat('~1')
+        }
+
         return {
             baseRawRepoName: rawRepoName,
             baseRev,
@@ -267,7 +266,7 @@ export async function getPhabricatorState(
         const headCommitID = match.rev
         const baseCommitID = getBaseCommitIDFromRevisionPage()
         if (!baseCommitID) {
-            console.error(`did not successfully determine parent revision.`)
+            console.error('did not successfully determine parent revision.')
             return null
         }
         return {
@@ -335,7 +334,7 @@ export async function getPhabricatorState(
 
         const { callsign } = await getRepoDetailsFromDifferentialID(differentialID, requestGraphQL)
         if (!callsign) {
-            console.error(`callsign not found`)
+            console.error('callsign not found')
             return null
         }
 

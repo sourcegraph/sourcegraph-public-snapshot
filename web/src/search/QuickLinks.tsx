@@ -12,8 +12,8 @@ export class QuickLinks extends React.PureComponent<Props> {
         return this.props.quickLinks.length > 0 ? (
             <>
                 {this.props.quickLinks.map((quickLink, i) => (
-                    <small className="quicklink text-nowrap mr-2">
-                        <Link to={quickLink.url} data-tooltip={quickLink.description} key={i}>
+                    <small className="quicklink text-nowrap mr-2" key={i}>
+                        <Link to={quickLink.url} data-tooltip={quickLink.description}>
                             <LinkIcon className="icon-inline pr-1" />
                             {quickLink.name}
                         </Link>

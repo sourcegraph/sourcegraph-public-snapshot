@@ -73,6 +73,7 @@ export const CompletionWidgetDropdown: React.FunctionComponent<CompletionWidgetD
                         <li className={noResultsClassName}>No results.</li>
                     ) : (
                         completionListOrError.items.map((item, index) => (
+                            // eslint-disable-next-line react/jsx-key
                             <li
                                 {...getItemProps({
                                     key: index,

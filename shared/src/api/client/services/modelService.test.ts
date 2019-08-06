@@ -58,7 +58,7 @@ describe('ModelService', () => {
             ).toEqual([{ uri: 'u', text: 't2', languageId: 'l' }])
         })
 
-        test('nonexistent model', async () => {
+        test('nonexistent model', () => {
             const modelService = createModelService()
             expect(() => modelService.updateModel('x', 't2')).toThrowError('model does not exist with URI x')
         })

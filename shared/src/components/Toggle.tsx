@@ -22,20 +22,20 @@ interface Props {
 
 /** A toggle switch input component. */
 export class Toggle extends React.PureComponent<Props> {
-    public render(): JSX.Element | null {
-        const onClick = () => {
-            if (this.props.onToggle && !this.props.disabled) {
-                this.props.onToggle(!this.props.value)
-            }
+    private onClick = (): void => {
+        if (this.props.onToggle && !this.props.disabled) {
+            this.props.onToggle(!this.props.value)
         }
-
+    }
+    public render(): JSX.Element | null {
         return (
             <button
+                type="button"
                 className={`toggle ${this.props.disabled ? 'toggle__disabled' : ''} ${this.props.className || ''}`}
                 id={this.props.id}
                 title={this.props.title}
                 value={this.props.value ? 1 : 0}
-                onClick={onClick}
+                onClick={this.onClick}
                 tabIndex={this.props.tabIndex}
             >
                 <span

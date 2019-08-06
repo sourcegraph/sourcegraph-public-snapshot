@@ -1,6 +1,9 @@
 import { of } from 'rxjs'
-import { CodeEditorWithModel } from '../../api/client/services/editorService'
+import { CodeEditorWithModel, EditorId } from '../../api/client/services/editorService'
 import { EditorTextFieldUtils } from './EditorTextField'
+import { Selection } from '@sourcegraph/extension-api-types'
+import * as sinon from 'sinon'
+import { noop } from 'lodash'
 
 describe('EditorTextFieldUtils', () => {
     describe('getEditorDataFromElement', () => {
@@ -61,11 +64,11 @@ describe('EditorTextFieldUtils', () => {
         const e = document.createElement('textarea')
         e.value = 'abc'
         e.setSelectionRange(2, 3, 'backward')
-        const setSelections = jest.fn()
+        const setSelections = sinon.spy<(editor: EditorId, selections: Selection[]) => void>(noop)
         EditorTextFieldUtils.updateEditorSelectionFromElement({ setSelections }, { editorId: 'e' }, e)
-        expect(setSelections.mock.calls.length).toBe(1)
-        expect(setSelections.mock.calls[0][0]).toEqual({ editorId: 'e' })
-        expect(setSelections.mock.calls[0][1]).toEqual([
+        sinon.assert.calledOnce(setSelections)
+        expect(setSelections.args[0][0]).toEqual({ editorId: 'e' })
+        expect(setSelections.args[0][1]).toEqual([
             {
                 anchor: { line: 0, character: 3 },
                 active: { line: 0, character: 2 },
@@ -80,18 +83,18 @@ describe('EditorTextFieldUtils', () => {
         const e = document.createElement('textarea')
         e.value = 'abc'
         e.setSelectionRange(2, 3, 'backward')
-        const updateModel = jest.fn()
+        const updateModel = sinon.spy<(uri: string, text: string) => void>(noop)
         EditorTextFieldUtils.updateModelFromElement({ updateModel }, 'u', e)
-        expect(updateModel.mock.calls.length).toBe(1)
-        expect(updateModel.mock.calls[0][0]).toEqual('u')
-        expect(updateModel.mock.calls[0][1]).toEqual('abc')
+        sinon.assert.calledOnce(updateModel)
+        expect(updateModel.args[0][0]).toEqual('u')
+        expect(updateModel.args[0][1]).toEqual('abc')
     })
 
     describe('updateElementOnEditorOrModelChanges', () => {
         test('forward selection', () => {
             const e = document.createElement('textarea')
             e.value = 'abc'
-            const setValue = jest.fn()
+            const setValue = sinon.spy<(value: string) => void>(noop)
             const subscription = EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
                 {
                     observeEditorAndModel: () =>
@@ -116,8 +119,8 @@ describe('EditorTextFieldUtils', () => {
                 setValue,
                 { current: e }
             )
-            expect(setValue.mock.calls.length).toBe(1)
-            expect(setValue.mock.calls[0][0]).toEqual('xyz')
+            sinon.assert.calledOnce(setValue)
+            expect(setValue.args[0][0]).toEqual('xyz')
             expect(e.selectionStart).toBe(2)
             expect(e.selectionEnd).toBe(3)
             expect(e.selectionDirection).toBe('forward')
@@ -126,7 +129,7 @@ describe('EditorTextFieldUtils', () => {
         test('backward selection', () => {
             const e = document.createElement('textarea')
             e.value = 'abc'
-            const setValue = jest.fn()
+            const setValue = sinon.spy<(value: string) => void>(noop)
             const subscription = EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
                 {
                     observeEditorAndModel: () =>
