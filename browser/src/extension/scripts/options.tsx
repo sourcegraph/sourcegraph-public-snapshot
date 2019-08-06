@@ -78,11 +78,21 @@ class Options extends React.Component<{}, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             observeStorageKey('sync', 'featureFlags').subscribe(featureFlags => {
-                const { allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion, disableExtension } = {
+                const {
+                    allowErrorReporting,
+                    experimentalLinkPreviews,
+                    experimentalTextFieldCompletion,
+                    disableExtension,
+                } = {
                     ...featureFlagDefaults,
                     ...featureFlags,
                 }
-                this.setState({ allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion, disableExtension })
+                this.setState({
+                    allowErrorReporting,
+                    experimentalLinkPreviews,
+                    experimentalTextFieldCompletion,
+                    disableExtension,
+                })
             })
         )
 

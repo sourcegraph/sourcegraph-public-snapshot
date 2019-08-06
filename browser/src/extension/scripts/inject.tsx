@@ -67,7 +67,7 @@ async function main(): Promise<void> {
 
     const items = await storage.sync.get()
     if (items.featureFlags && items.featureFlags.disableExtension) {
-        console.log("Browser extension is temporarily disabled")
+        console.log('Browser extension is temporarily disabled')
         return
     }
 
