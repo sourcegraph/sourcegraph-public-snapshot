@@ -26,7 +26,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var requestCounter = metrics.NewRequestCounter("bitbucket", "Total number of requests sent to the Bitbucket API.")
+var requestCounter = metrics.NewRequestMeter("bitbucket", "Total number of requests sent to the Bitbucket API.")
 
 // These fields define the self-imposed Bitbucket rate limit (since Bitbucket Server does
 // not have a concept of rate limiting in HTTP response headers).

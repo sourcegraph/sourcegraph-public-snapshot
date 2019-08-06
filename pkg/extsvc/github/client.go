@@ -36,7 +36,7 @@ var (
 		return url
 	}()
 
-	requestCounter = metrics.NewRequestCounter("github", "Total number of requests sent to the GitHub API.")
+	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
 )
 
 // Client is a caching GitHub API client.
