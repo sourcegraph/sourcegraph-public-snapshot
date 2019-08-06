@@ -249,7 +249,7 @@ type StatDiskSizer struct{}
 func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
 	var fs syscall.Statfs_t
 	if err := syscall.Statfs(mountPoint, &fs); err != nil {
-		return 0, errors.Wrap(err, "finding out how much disk space is free")
+		return 0, errors.Wrap(err, "statting")
 	}
 	free := fs.Bavail * uint64(fs.Bsize)
 	return free, nil
