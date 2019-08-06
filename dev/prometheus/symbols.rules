@@ -1,0 +1,4 @@
+# Searcher service rules
+symbols_requests:rate10m = sum by (instance)(rate(symbols_service_request_total[10m]))
+symbols_errors:rate10m   = sum by (instance)(rate(symbols_service_request_total{code!="200",code!="canceled"}[10m]))
+symbols_errors:ratio10m  = sum(symbols_errors:rate10m) / sum(symbols_requests:rate10m)

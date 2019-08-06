@@ -58,7 +58,7 @@ const NOOP_MOCKS: Mocks = {
     sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
 }
 
-/**requestGraphQL
+/**
  * Set up a new client-extension integration test.
  *
  * @internal

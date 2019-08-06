@@ -65,7 +65,7 @@ abstract class BrowserExtensionToast extends React.Component<Props, State> {
                 cta={
                     <a
                         target="_blank"
-                        rel="noopener"
+                        rel="noopener noreferrer"
                         className="btn btn-primary"
                         href={this.props.link}
                         onClick={this.onClickInstall}

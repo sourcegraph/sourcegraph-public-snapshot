@@ -31,10 +31,13 @@
     "parcel-bundler": "^1.12.3",
     "tsc-watch": "^2.2.1",
     "tslint": "^5.18.0",
-    "typescript": "^3.5.2"
+    "typescript": "^3.5.3"
   },
   "scripts": {
+    "typecheck": "tsc -p .",
     "serve": "tsc-watch --onSuccess \"node out/http-server.js\" --noClear",
-    "build": "parcel build --out-dir out --out-file http-server.bundle.js --target node --bundle-node-modules src/http-server.ts"
+    "build": "parcel build --out-dir out --out-file http-server.bundle.js --target node --bundle-node-modules src/http-server.ts",
+    "tslint": "../../node_modules/.bin/tslint -p tsconfig.json",
+    "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts?(x)'"
   }
 }

@@ -38,28 +38,34 @@ export const CommitSearchResult: React.FunctionComponent<Props> = (props: Props)
     const telemetryData: { [key: string]: any } = {
         preview_type: props.result.diffPreview ? 'diff' : 'message',
     }
-    const logClickOnPerson = () =>
+    const logClickOnPerson = (): void => {
         eventLogger.log('CommitSearchResultClicked', { commit_search_result: { ...telemetryData, target: 'person' } })
-    const logClickOnMessage = () =>
+    }
+    const logClickOnMessage = (): void => {
         eventLogger.log('CommitSearchResultClicked', {
             commit_search_result: { ...telemetryData, target: 'message' },
         })
-    const logClickOnTag = () =>
+    }
+    const logClickOnTag = (): void => {
         eventLogger.log('CommitSearchResultClicked', {
             commit_search_result: { ...telemetryData, target: 'tag' },
         })
-    const logClickOnCommitID = () =>
+    }
+    const logClickOnCommitID = (): void => {
         eventLogger.log('CommitSearchResultClicked', {
             commit_search_result: { ...telemetryData, target: 'commit-id' },
         })
-    const logClickOnTimestamp = () =>
+    }
+    const logClickOnTimestamp = (): void => {
         eventLogger.log('CommitSearchResultClicked', {
             commit_search_result: { ...telemetryData, target: 'timestamp' },
         })
-    const logClickOnText = () =>
+    }
+    const logClickOnText = (): void => {
         eventLogger.log('CommitSearchResultClicked', {
             commit_search_result: { ...telemetryData, target: 'text' },
         })
+    }
 
     const title: React.ReactChild = (
         <div className="commit-search-result__title">

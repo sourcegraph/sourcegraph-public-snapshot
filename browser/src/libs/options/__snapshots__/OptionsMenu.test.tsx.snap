@@ -21,6 +21,7 @@ exports[`ServerURLForm doesn't render the permissions alert on about://addons 1`
       <button
         className="options-header__settings btn btn-icon"
         onClick={[Function]}
+        type="button"
       >
         <svg
           className="mdi-icon icon-inline"
@@ -101,6 +102,7 @@ exports[`ServerURLForm doesn't render the permissions alert on chrome://extensio
       <button
         className="options-header__settings btn btn-icon"
         onClick={[Function]}
+        type="button"
       >
         <svg
           className="mdi-icon icon-inline"
@@ -181,6 +183,7 @@ exports[`ServerURLForm doesn't render the permissions alert on chrome://newtab 1
       <button
         className="options-header__settings btn btn-icon"
         onClick={[Function]}
+        type="button"
       >
         <svg
           className="mdi-icon icon-inline"
@@ -261,6 +264,7 @@ exports[`ServerURLForm renders a default state 1`] = `
       <button
         className="options-header__settings btn btn-icon"
         onClick={[Function]}
+        type="button"
       >
         <svg
           className="mdi-icon icon-inline"
@@ -341,6 +345,7 @@ exports[`ServerURLForm renders the current tab permissions alert 1`] = `
       <button
         className="options-header__settings btn btn-icon"
         onClick={[Function]}
+        type="button"
       >
         <svg
           className="mdi-icon icon-inline"
@@ -444,6 +449,7 @@ exports[`ServerURLForm renders the feature flags 1`] = `
       <button
         className="options-header__settings btn btn-icon"
         onClick={[Function]}
+        type="button"
       >
         <svg
           className="mdi-icon icon-inline"

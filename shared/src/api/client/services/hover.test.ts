@@ -2,11 +2,11 @@ import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { Hover } from 'sourcegraph'
-import { HoverMerged } from '../../client/types/hover'
+import { HoverMerged } from '../types/hover'
 import { getHover, ProvideTextDocumentHoverSignature } from './hover'
 import { FIXTURE } from './registry.test'
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_RESULT: Hover | null = { contents: { value: 'c', kind: MarkupKind.PlainText } }
 const FIXTURE_RESULT_MERGED: HoverMerged | null = { contents: [{ value: 'c', kind: MarkupKind.PlainText }] }

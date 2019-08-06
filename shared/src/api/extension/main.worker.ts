@@ -22,7 +22,7 @@ export interface InitMessage {
 
 const isInitMessage = (value: any): value is InitMessage => value.endpoints && isEndpointPair(value.endpoints)
 
-const wrapMessagePort = (port: MessagePort) =>
+const wrapMessagePort = (port: MessagePort): MessagePort =>
     MessageChannelAdapter.wrap({
         send: data => port.postMessage(data),
         addEventListener: (event, listener) => port.addEventListener(event, listener),
@@ -60,5 +60,5 @@ async function extensionHostMain(): Promise<void> {
     }
 }
 
-// tslint:disable-next-line: no-floating-promises
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 extensionHostMain()

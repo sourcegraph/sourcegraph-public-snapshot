@@ -47,9 +47,7 @@ class JSDOMEnvironment {
     global.addEventListener('error', this.errorEventListener)
     // However, don't report them as uncaught if the user listens to 'error' event.
     // In that case, we assume the might have custom error handling logic.
-    // tslint:disable-next-line: no-unbound-method
     const originalAddListener = global.addEventListener
-    // tslint:disable-next-line: no-unbound-method
     const originalRemoveListener = global.removeEventListener
     global.addEventListener = function(...args) {
       if (args[0] === 'error') {
@@ -70,7 +68,7 @@ class JSDOMEnvironment {
     }
     this.fakeTimers = new JestFakeTimers({
       config,
-      global: global,
+      global,
       moduleMocker: this.moduleMocker,
       timerConfig,
     })

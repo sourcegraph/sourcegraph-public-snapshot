@@ -11,7 +11,7 @@ import { RepositoryBranchesAllPage } from './RepositoryBranchesAllPage'
 import { RepositoryBranchesNavbar } from './RepositoryBranchesNavbar'
 import { RepositoryBranchesOverviewPage } from './RepositoryBranchesOverviewPage'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -57,11 +57,11 @@ export class RepositoryBranchesArea extends React.Component<Props> {
                 />
                 <RepositoryBranchesNavbar className="my-3" repo={this.props.repo.name} />
                 <Switch>
+                    {/* eslint-disable react/jsx-no-bind */}
                     <Route
                         path={`${this.props.match.url}`}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        // tslint:disable-next-line:jsx-no-lambda
                         render={routeComponentProps => (
                             <RepositoryBranchesOverviewPage {...routeComponentProps} {...transferProps} />
                         )}
@@ -70,12 +70,12 @@ export class RepositoryBranchesArea extends React.Component<Props> {
                         path={`${this.props.match.url}/all`}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        // tslint:disable-next-line:jsx-no-lambda
                         render={routeComponentProps => (
                             <RepositoryBranchesAllPage {...routeComponentProps} {...transferProps} />
                         )}
                     />
                     <Route key="hardcoded-key" component={NotFoundPage} />
+                    {/* eslint-enable react/jsx-no-bind */}
                 </Switch>
             </div>
         )

@@ -11,7 +11,7 @@ import { determineCodeHost, injectCodeIntelligenceToCodeHost } from './code_inte
  */
 export async function injectCodeIntelligence(isExtension: boolean): Promise<Subscription> {
     const subscriptions = new Subscription()
-    const codeHost = await determineCodeHost()
+    const codeHost = determineCodeHost()
     if (codeHost) {
         console.log('Detected code host:', codeHost.type)
         const mutations: Observable<MutationRecordLike[]> = observeMutations(document.body, {

@@ -11,7 +11,7 @@ import {
 import { Entry } from './registry'
 import { FIXTURE } from './registry.test'
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_LOCATION: Location = {
     uri: 'file:///f',

@@ -4,7 +4,7 @@ import UserIcon from 'mdi-react/UserIcon'
 import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
 import { OrgAreaHeaderNavItem } from './OrgHeader'
 
-export const orgAreaHeaderNavItems: ReadonlyArray<OrgAreaHeaderNavItem> = [
+export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
     {
         to: '',
         exact: true,

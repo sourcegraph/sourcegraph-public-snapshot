@@ -8,8 +8,6 @@ import '../../app.scss'
 import { interval, Subscription } from 'rxjs'
 import { ConnectionErrors, ServerURLForm, ServerURLFormProps } from './ServerURLForm'
 
-// tslint:disable: jsx-no-lambda
-
 class Container extends React.Component<{}, { value: string; status: ServerURLFormProps['status'] }> {
     public state = { value: 'https://sourcegraph.com', status: 'connected' as ServerURLFormProps['status'] }
 
@@ -20,7 +18,7 @@ class Container extends React.Component<{}, { value: string; status: ServerURLFo
                     {...this.state}
                     onChange={this.onChange}
                     onSubmit={this.onSubmit}
-                    requestPermissions={() => void 0}
+                    requestPermissions={() => undefined}
                     urlHasPermissions={true}
                 />
             </div>
@@ -74,13 +72,13 @@ class CyclingStatus extends React.Component<{}, { step: number }> {
         return (
             <div style={{ maxWidth: 400 }}>
                 <ServerURLForm
-                    value={'https://sourcegraph.com'}
+                    value="https://sourcegraph.com"
                     status={status}
                     connectionError={error}
                     onChange={this.onChange}
                     onSubmit={this.onSubmit}
                     overrideUpdatingState={isUpdating}
-                    requestPermissions={() => void 0}
+                    requestPermissions={() => undefined}
                     urlHasPermissions={true}
                 />
             </div>
@@ -94,12 +92,12 @@ storiesOf('Options - ServerURLForm', module)
     .add('Error Status', () => (
         <div style={{ maxWidth: 400, padding: '1rem' }}>
             <ServerURLForm
-                value={'https://sourcegraph.com'}
-                status={'error'}
+                value="https://sourcegraph.com"
+                status="error"
                 connectionError={ConnectionErrors.AuthError}
                 onChange={action('Change')}
                 onSubmit={action('Submit')}
-                requestPermissions={() => void 0}
+                requestPermissions={() => undefined}
                 urlHasPermissions={true}
             />
         </div>

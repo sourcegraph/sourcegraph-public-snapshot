@@ -17,8 +17,8 @@ const renderShallow = (element: React.ReactElement<HoverOverlayProps<string>>): 
 }
 
 describe('HoverOverlay', () => {
-    const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: async () => void 0 }
-    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => void 0 }
+    const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
+    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined }
     const history = H.createMemoryHistory({ keyLength: 0 })
     const commonProps = {
         location: history.location,
@@ -214,7 +214,7 @@ describe('HoverOverlay', () => {
     })
 
     describe('hover content rendering', () => {
-        const renderMarkdownHover = (hover: HoverAttachment & HoverMerged) => {
+        const renderMarkdownHover = (hover: HoverAttachment & HoverMerged): string | null => {
             // TODO this test depends on internals of the HoverOverlay.
             // If we want to test this rendering, it would be better to
             // extract the markdown rendering into another small component
@@ -244,7 +244,7 @@ describe('HoverOverlay', () => {
                 .trim()
         }
 
-        const renderPlainTextHover = (hover: HoverAttachment & HoverMerged) =>
+        const renderPlainTextHover = (hover: HoverAttachment & HoverMerged): React.ReactChild[] =>
             renderer
                 .create(<HoverOverlay {...commonProps} hoverOrError={hover} />)
                 .root.find(c => c.props && c.props.className && c.props.className.includes('hover-overlay__content'))

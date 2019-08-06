@@ -1,3 +1,4 @@
+/* eslint no-sync: warn */
 import fs from 'fs'
 import { omit } from 'lodash'
 import path from 'path'

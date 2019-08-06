@@ -1,6 +1,6 @@
 import { ExtensionAreaHeaderNavItem } from './ExtensionAreaHeader'
 
-export const extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem> = [
+export const extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[] = [
     {
         to: '',
         exact: true,

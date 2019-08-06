@@ -238,7 +238,10 @@ export interface AbsoluteRepoFileRange
         Partial<RenderModeSpec> {}
 
 /**
- * @param ctx 1-indexed partial position or range spec
+ * Provide one.
+ *
+ * @param position either 1-indexed partial position
+ * @param range or 1-indexed partial range spec
  */
 export function toPositionOrRangeHash(ctx: {
     position?: { line: number; character?: number }
@@ -299,7 +302,7 @@ export function lprToSelectionsZeroIndexed(lpr: LineOrPositionOrRange): Selectio
         return []
     }
     // `lprToRange` sets character to 0 if it's undefined. Only - 1 the character if it's not 0.
-    const characterZeroIndexed = (character: number) => (character === 0 ? character : character - 1)
+    const characterZeroIndexed = (character: number): number => (character === 0 ? character : character - 1)
     const start: Position = { line: range.start.line - 1, character: characterZeroIndexed(range.start.character) }
     const end: Position = { line: range.end.line - 1, character: characterZeroIndexed(range.end.character) }
     return [
@@ -485,7 +488,7 @@ export function toViewStateHashComponent(viewState: string | undefined): string 
     return viewState ? `&tab=${viewState}` : ''
 }
 
-const positionStr = (pos: Position) => pos.line + '' + (pos.character ? ',' + pos.character : '')
+const positionStr = (pos: Position): string => pos.line + '' + (pos.character ? ',' + pos.character : '')
 
 /**
  * The inverse of parseRepoURI, this generates a string from parsed values.
@@ -501,7 +504,7 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     return uri
 }
 
-export const toRootURI = (ctx: RepoSpec & ResolvedRevSpec) => `git://${ctx.repoName}?${ctx.commitID}`
+export const toRootURI = (ctx: RepoSpec & ResolvedRevSpec): string => `git://${ctx.repoName}?${ctx.commitID}`
 export function toURIWithPath(ctx: RepoSpec & ResolvedRevSpec & FileSpec): string {
     return `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}`
 }

@@ -33,6 +33,7 @@ export const SaveToolbar: React.FunctionComponent<Props> = ({ dirty, disabled, s
             )}
             <div className="save-toolbar__actions">
                 <button
+                    type="button"
                     disabled={saveDiscardDisabled}
                     title={saveDiscardTitle || 'Save changes'}
                     className="btn btn-sm btn-success save-toolbar__item save-toolbar__btn save-toolbar__btn-first"
@@ -41,6 +42,7 @@ export const SaveToolbar: React.FunctionComponent<Props> = ({ dirty, disabled, s
                     <CheckIcon className="icon-inline" /> Save changes
                 </button>
                 <button
+                    type="button"
                     disabled={saveDiscardDisabled}
                     title={saveDiscardTitle || 'Discard changes'}
                     className="btn btn-sm btn-secondary save-toolbar__item save-toolbar__btn save-toolbar__btn-last"

@@ -14,14 +14,12 @@ interface AppContext {
     scriptEnv: ScriptEnv
 }
 
-const options = /options\.html/
-
 function getContext(): AppContext {
     const appEnv = window.SG_ENV === 'EXTENSION' ? AppEnv.Extension : AppEnv.Page
 
     let scriptEnv: ScriptEnv = ScriptEnv.Content
     if (appEnv === AppEnv.Extension) {
-        if (options.test(window.location.pathname)) {
+        if (window.location.pathname.includes('options.html')) {
             scriptEnv = ScriptEnv.Options
         } else if (globalThis.browser && browser.runtime.getBackgroundPage) {
             scriptEnv = ScriptEnv.Background

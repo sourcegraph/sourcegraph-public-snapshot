@@ -38,7 +38,9 @@ export class ActivationChecklistItem extends React.PureComponent<ActivationCheck
                 {this.props.link ? (
                     <Link {...this.props.link}>{checkboxElem}</Link>
                 ) : (
-                    <button className="btn btn-link text-left w-100 p-0">{checkboxElem}</button>
+                    <button type="button" className="btn btn-link text-left w-100 p-0">
+                        {checkboxElem}
+                    </button>
                 )}
             </div>
         )

@@ -44,11 +44,11 @@ describe('NavLinks', () => {
     afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
     const NOOP_EXTENSIONS_CONTROLLER: ExtensionsControllerProps<
         'executeCommand' | 'services'
-    >['extensionsController'] = { executeCommand: async () => void 0, services: {} as any }
-    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => void 0 }
+    >['extensionsController'] = { executeCommand: () => Promise.resolve(), services: {} as any }
+    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined }
     const KEYBINDINGS: KeybindingsProps['keybindings'] = { commandPalette: [], switchTheme: [] }
     const SETTINGS_CASCADE: SettingsCascadeProps['settingsCascade'] = { final: null, subjects: null }
-    // tslint:disable-next-line:no-object-literal-type-assertion
+    // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
     const USER = { username: 'u' } as GQL.IUser
     const history = H.createMemoryHistory({ keyLength: 0 })
     const commonProps = {

@@ -54,29 +54,15 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
     const isCommentedSnippet = codeView.classList.contains('js-comment-container')
     if (pageType === 'pull') {
         if (fetchContainers && fetchContainers.length === 1) {
-            // tslint:disable-next-line
-            for (let i = 0; i < fetchContainers.length; ++i) {
+            for (const el of fetchContainers) {
                 // for conversation view of pull request
-                const el = fetchContainers[i] as HTMLElement
                 const url = el.getAttribute('data-url')
                 if (!url) {
                     continue
                 }
-
-                const urlSplit = url.split('?')
-                const query = urlSplit[1]
-                const querySplit = query.split('&')
-                for (const kv of querySplit) {
-                    const kvSplit = kv.split('=')
-                    const k = kvSplit[0]
-                    const v = kvSplit[1]
-                    if (k === 'base_commit_oid') {
-                        baseCommitID = v
-                    }
-                    if (k === 'end_commit_oid') {
-                        headCommitID = v
-                    }
-                }
+                const parsed = new URL(url, window.location.href)
+                baseCommitID = parsed.searchParams.get('base_commit_oid') || ''
+                headCommitID = parsed.searchParams.get('end_commit_oid') || ''
             }
         } else if (isCommentedSnippet) {
             const resolvedDiffSpec = getResolvedDiffFromCommentedSnippet(codeView)
@@ -85,11 +71,11 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
             }
         } else {
             // Last-ditch: look for inline comment form input which has base/head on it.
-            const baseInput = document.querySelector(`input[name="comparison_start_oid"]`)
+            const baseInput = document.querySelector('input[name="comparison_start_oid"]')
             if (baseInput) {
                 baseCommitID = (baseInput as HTMLInputElement).value
             }
-            const headInput = document.querySelector(`input[name="comparison_end_oid"]`)
+            const headInput = document.querySelector('input[name="comparison_end_oid"]')
             if (headInput) {
                 headCommitID = (headInput as HTMLInputElement).value
             }
@@ -201,7 +187,7 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
 export function getFilePath(): string {
     const permalink = document.querySelector<HTMLAnchorElement>('a.js-permalink-shortcut')
     if (!permalink) {
-        throw new Error(`Unable to determine the file path because no a.js-permalink-shortcut element was found.`)
+        throw new Error('Unable to determine the file path because no a.js-permalink-shortcut element was found.')
     }
     const url = new URL(permalink.href)
     // <empty>/<user>/<repo>/blob/<commitID>/<path/to/file>

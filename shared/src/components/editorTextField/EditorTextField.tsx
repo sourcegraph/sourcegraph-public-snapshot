@@ -147,7 +147,6 @@ export const EditorTextField: React.FunctionComponent<Props> = ({
 }: Props) => {
     // The new, preferred React hooks API requires use of lambdas.
     //
-    // tslint:disable: jsx-no-lambda
 
     const textAreaRef = _textAreaRef || createRef<HTMLTextAreaElement>()
 

@@ -79,13 +79,15 @@ export class ResultContainer extends React.PureComponent<Props, State> {
         this.state = { expanded: this.props.allExpanded || this.props.defaultExpanded }
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        if (this.state.expanded === this.props.allExpanded && this.props.allExpanded !== nextProps.allExpanded) {
-            this.setState({ expanded: nextProps.allExpanded })
-        }
-
-        if (this.state.expanded !== this.props.allExpanded && this.props.allExpanded !== nextProps.allExpanded) {
-            this.setState({ expanded: nextProps.allExpanded })
+    public componentDidUpdate(prevProps: Props): void {
+        if (prevProps.allExpanded !== this.props.allExpanded) {
+            if (this.state.expanded === prevProps.allExpanded) {
+                // eslint-disable-next-line react/no-did-update-set-state
+                this.setState({ expanded: this.props.allExpanded })
+            } else {
+                // eslint-disable-next-line react/no-did-update-set-state
+                this.setState({ expanded: this.props.allExpanded })
+            }
         }
     }
 
@@ -101,7 +103,7 @@ export class ResultContainer extends React.PureComponent<Props, State> {
                     }
                     onClick={this.toggle}
                 >
-                    {!!stringIcon ? (
+                    {stringIcon ? (
                         <img src={stringIcon} className="icon-inline icon-inline__filtered" />
                     ) : (
                         <Icon className="icon-inline" />

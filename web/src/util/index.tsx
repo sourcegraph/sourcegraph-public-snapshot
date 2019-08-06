@@ -1,6 +1,7 @@
 /**
  * limitString limits the given string to N characters, optionally adding an
  * ellipsis (…) at the end.
+ *
  * @param s the string to limit
  * @param n the number of characters to limit the string to
  * @param ellipsis whether or not to add an ellipsis (…) when string is cut off.
@@ -18,6 +19,7 @@ export function limitString(s: string, n: number, ellipsis: boolean): string {
 /**
  * scrollIntoView checks if the selected element is not in view of the list
  * element, adjusting the scroll of the list element as needed.
+ *
  * @param listElement the list element.
  * @param selectedElement the selected element.
  */

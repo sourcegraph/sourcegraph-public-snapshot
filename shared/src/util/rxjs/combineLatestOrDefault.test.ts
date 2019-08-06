@@ -2,7 +2,7 @@ import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { combineLatestOrDefault } from './combineLatestOrDefault'
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('combineLatestOrDefault', () => {
     describe('with 0 source observables', () => {

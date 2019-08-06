@@ -31,7 +31,7 @@ class RepoHeaderContributionStore {
 
     private onRepoHeaderContributionAdd(item: RepoHeaderContribution): void {
         if (!item.element) {
-            throw new Error(`RepoHeaderContribution has no element`)
+            throw new Error('RepoHeaderContribution has no element')
         }
         if (typeof item.element.key !== 'string') {
             throw new Error(`RepoHeaderContribution (${item.element.type.toString()}) element must have a string key`)
@@ -127,7 +127,7 @@ interface Props extends PlatformContextProps, ExtensionsControllerProps, EventLo
      * An array of render functions for action buttons that can be configured *in addition* to action buttons
      * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
      */
-    actionButtons: ReadonlyArray<RepoHeaderActionButton>
+    actionButtons: readonly RepoHeaderActionButton[]
 
     /**
      * The repository that this header is for.
@@ -172,7 +172,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
         repoHeaderContributions: [],
     }
 
-    public constructor(props: Props) {
+    constructor(props: Props) {
         super(props)
         props.onLifecyclePropsChange(this.repoHeaderContributionStore.props)
     }

@@ -5,7 +5,7 @@ import { OrgAvatar } from '../OrgAvatar'
 import { OrgAreaPageProps } from './OrgArea'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
-    navItems: ReadonlyArray<OrgAreaHeaderNavItem>
+    navItems: readonly OrgAreaHeaderNavItem[]
     className?: string
 }
 
