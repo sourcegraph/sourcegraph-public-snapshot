@@ -319,48 +319,47 @@ func Test_howManyBytesToFree(t *testing.T) {
 		DesiredPercentFree: 10,
 	}
 
-	t.Run("if there is already enough space, no space is freed", func(t *testing.T) {
-		s.DiskSizer = &fakeDiskSizer{
+	tcs := []struct {
+		name      string
+		diskSize  uint64
+		bytesFree uint64
+		want      int64
+	}{
+		{
+			name:      "if there is already enough space, no space is freed",
 			diskSize:  10 * G,
 			bytesFree: 1.5 * G,
-		}
-		btf, err := s.howManyBytesToFree()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if btf != 0 {
-			t.Errorf("s.howManyBytesToFree(...) is %v, want 0", btf)
-		}
-	})
-
-	t.Run("if there is exactly enough space, no space is freed", func(t *testing.T) {
-		s.DiskSizer = &fakeDiskSizer{
+			want:      0,
+		},
+		{
+			name:      "if there is exactly enough space, no space is freed",
 			diskSize:  10 * G,
 			bytesFree: 1 * G,
-		}
-		btf, err := s.howManyBytesToFree()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if btf != 0 {
-			t.Errorf("s.howManyBytesToFree(...) is %v, want 0", btf)
-		}
-	})
-
-	t.Run("if there not enough space, some space is freed", func(t *testing.T) {
-		s.DiskSizer = &fakeDiskSizer{
+			want:      0,
+		},
+		{
+			name:      "if there not enough space, some space is freed",
 			diskSize:  10 * G,
 			bytesFree: 0.5 * G,
-		}
-		btf, err := s.howManyBytesToFree()
-		if err != nil {
-			t.Fatal(err)
-		}
-		want := int64(0.5 * G)
-		if btf != want {
-			t.Errorf("s.howManyBytesToFree(...) is %v, want %v", btf, want)
-		}
-	})
+			want:      int64(0.5 * G),
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			s.DiskSizer = &fakeDiskSizer{
+				diskSize:  tc.diskSize,
+				bytesFree: tc.bytesFree,
+			}
+			b, err := s.howManyBytesToFree()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if b != tc.want {
+				t.Errorf("s.howManyBytesToFree(...) is %v, want 0", b)
+			}
+		})
+	}
 }
 
 type fakeDiskSizer struct {
