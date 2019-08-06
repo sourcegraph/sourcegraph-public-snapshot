@@ -29,6 +29,10 @@ func NewRequestMeter(subsystem, help string) *RequestMeter {
 	}, []string{"category", "code"})
 	prometheus.MustRegister(requestCounter)
 
+	// TODO(uwedeportivo):
+	// A prometheus histogram has a request counter built in.
+	// It will have the suffix _count (ie src_subsystem_request_duration_count).
+	// See if we can get rid of requestCounter (if it hasn't been used by a customer yet) and use this counter instead.
 	requestDuration := prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "src",
 		Subsystem: subsystem,
