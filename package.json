@@ -212,7 +212,7 @@
     "downshift": "^3.2.10",
     "graphiql": "^0.13.2",
     "he": "^1.2.0",
-    "highlight.js": "^9.15.8",
+    "highlight.js": "^9.15.9",
     "lodash": "^4.17.15",
     "marked": "^0.6.3",
     "mdi-react": "^5.5.0",
