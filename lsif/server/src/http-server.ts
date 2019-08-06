@@ -257,5 +257,4 @@ function checkContentLength(rawContentLength: string | undefined): void {
     }
 }
 
-// Entrypoint
 main()
