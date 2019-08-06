@@ -55,6 +55,7 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
     await driver.page.waitForSelector('form[action="/source/jrpc/edit/activate/"]')
     if ((await driver.page.$x('//button[text()="Activate Repository"]')).length > 0) {
         await (await driver.page.$x('//button[text()="Activate Repository"]'))[0].click()
+        await driver.page.waitForNavigation()
         await repositoryCloned(driver)
     }
 
@@ -79,6 +80,7 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
     })
     const setCallsignMappings = await getTokenWithSelector(driver.page, 'Save Config Entry', 'button')
     await setCallsignMappings.click()
+    await driver.page.waitForNavigation()
 }
 
 async function init(driver: Driver): Promise<void> {
