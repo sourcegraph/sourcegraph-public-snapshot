@@ -212,7 +212,7 @@ func (s *Server) cleanupRepos() {
 		log15.Error("getting disk size", "error", err)
 	}
 	desiredFreeBytes := uint64(float64(s.DesiredPercentFree) / 100.0 * float64(dsb))
-	howManyBytesToFree := uint64(desiredFreeBytes - actualFreeBytes)
+	howManyBytesToFree := int64(desiredFreeBytes - actualFreeBytes)
 	if howManyBytesToFree < 0 {
 		howManyBytesToFree = 0
 	}
@@ -299,11 +299,7 @@ func device(f string) (int64, error) {
 
 // freeUpSpace removes git directories under ReposDir, in order from least
 // recently to most recently used, until it has freed howManyBytesToFree.
-func (s *Server) freeUpSpace(howManyBytesToFree uint64) error {
-	if howManyBytesToFree <= 0 {
-		return nil
-	}
-
+func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 	// Get the git directories and their mod times.
 	gitDirs, err := s.findGitDirs(s.ReposDir)
 	if err != nil {
@@ -324,7 +320,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree uint64) error {
 	})
 
 	// Remove repos until howManyBytesToFree is met or exceeded.
-	var spaceFreed uint64
+	var spaceFreed int64
 	mountPoint, err := findMountPoint(s.ReposDir)
 	if err != nil {
 		return errors.Wrap(err, "finding mount point")
@@ -337,7 +333,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree uint64) error {
 		if err := s.removeRepoDirectory(d); err != nil {
 			return errors.Wrap(err, "removing repo directory")
 		}
-		spaceFreed += uint64(delta)
+		spaceFreed += delta
 
 		// Report the new disk usage situation after removing this repo.
 		actualFreeBytes, err := bytesFreeOnDisk(mountPoint)
