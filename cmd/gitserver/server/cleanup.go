@@ -197,11 +197,11 @@ func (s *Server) cleanupRepos() {
 	if s.DiskSizer == nil {
 		s.DiskSizer = &StatDiskSizer{}
 	}
-	btf, err := s.howManyBytesToFree()
+	b, err := s.howManyBytesToFree()
 	if err != nil {
 		log15.Error("cleanup: ensuring free disk space", "error", err)
 	}
-	if err := s.freeUpSpace(btf); err != nil {
+	if err := s.freeUpSpace(b); err != nil {
 		log15.Error("cleanup: error freeing up space", "error", err)
 	}
 }
