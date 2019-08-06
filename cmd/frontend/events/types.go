@@ -47,16 +47,16 @@ func toRegisteredEventType(ctx context.Context, v *dbEvent) (graphqlbackend.ToEv
 	var actor *graphqlbackend.Actor
 	switch {
 	case v.ActorUserID != 0:
-		user, err := graphqlbackend.UserByIDInt32(ctx, v.ActorUserID)
+		user, err := graphqlbackend.UserByIDInt32(ctx, int32(v.ActorUserID))
 		if err != nil {
 			return graphqlbackend.ToEvent{}, err
 		}
 		actor = &graphqlbackend.Actor{User: user}
-	case v.ExternalActorUsername.Valid || v.ExternalActorURL.Valid:
+	case v.ExternalActorUsername != "" || v.ExternalActorURL != "":
 		actor = &graphqlbackend.Actor{
 			ExternalActor: &graphqlbackend.ExternalActor{
-				Username_: v.ExternalActorUsername.String,
-				URL_:      v.ExternalActorURL.String,
+				Username_: string(v.ExternalActorUsername),
+				URL_:      string(v.ExternalActorURL),
 			},
 		}
 	}

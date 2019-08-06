@@ -10,19 +10,20 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/nnz"
 )
 
 // dbEvent describes a event.
 type dbEvent struct {
 	ID int64
 	Type
-	ActorUserID           int32
-	ExternalActorUsername sql.NullString
-	ExternalActorURL      sql.NullString
+	ActorUserID           nnz.Int32
+	ExternalActorUsername nnz.String
+	ExternalActorURL      nnz.String
 	CreatedAt             time.Time
 	Objects
 	Data                          []byte
-	ImportedFromExternalServiceID int64
+	ImportedFromExternalServiceID nnz.Int64
 }
 
 // errEventNotFound occurs when a database operation expects a specific event to exist but it
@@ -43,38 +44,26 @@ func (dbEvents) Create(ctx context.Context, tx *sql.Tx, event *dbEvent) (*dbEven
 	if event.ID != 0 {
 		panic("event.ID must not be set")
 	}
-	nilIfZero32 := func(v int32) *int32 {
-		if v == 0 {
-			return nil
-		}
-		return &v
-	}
-	nilIfZero64 := func(v int64) *int64 {
-		if v == 0 {
-			return nil
-		}
-		return &v
-	}
 	var data *[]byte
 	if event.Data != nil {
 		data = &event.Data
 	}
 	args := []interface{}{
 		event.Type,
-		nilIfZero32(event.ActorUserID),
+		event.ActorUserID,
 		event.ExternalActorUsername,
 		event.ExternalActorURL,
 		event.CreatedAt,
 		data,
-		nilIfZero64(event.Objects.Thread),
-		nilIfZero64(event.Objects.Campaign),
-		nilIfZero64(event.Objects.Comment),
-		nilIfZero64(event.Objects.Rule),
-		nilIfZero32(event.Objects.Repository),
-		nilIfZero32(event.Objects.User),
-		nilIfZero32(event.Objects.Organization),
-		nilIfZero32(event.Objects.RegistryExtension),
-		nilIfZero64(event.ImportedFromExternalServiceID),
+		event.Objects.Thread,
+		event.Objects.Campaign,
+		event.Objects.Comment,
+		event.Objects.Rule,
+		event.Objects.Repository,
+		event.Objects.User,
+		event.Objects.Organization,
+		event.Objects.RegistryExtension,
+		event.ImportedFromExternalServiceID,
 	}
 	query := sqlf.Sprintf(
 		`INSERT INTO events(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+selectColumns,
@@ -123,8 +112,8 @@ func (o dbEventsListOptions) sqlConditions() []*sqlf.Query {
 	if o.Types != nil {
 		conds = append(conds, sqlf.Sprintf("type = ANY(%v)", o.Types))
 	}
-	addCondition := func(id int64, column string) {
-		if id != 0 {
+	addCondition := func(id nnz.Value, column string) {
+		if !id.IsZero() {
 			conds = append(conds, sqlf.Sprintf(column+"=%d", id))
 		}
 	}
@@ -134,11 +123,11 @@ func (o dbEventsListOptions) sqlConditions() []*sqlf.Query {
 	}
 	addCondition(o.Objects.Comment, "comment_id")
 	addCondition(o.Objects.Rule, "rule_id")
-	addCondition(int64(o.Objects.Repository), "repository_id")
-	addCondition(int64(o.Objects.User), "user_id")
-	addCondition(int64(o.Objects.Organization), "organization_id")
-	addCondition(int64(o.Objects.RegistryExtension), "registry_extension_id")
-	addCondition(int64(o.ImportedFromExternalServiceID), "imported_from_external_service_id")
+	addCondition(o.Objects.Repository, "repository_id")
+	addCondition(o.Objects.User, "user_id")
+	addCondition(o.Objects.Organization, "organization_id")
+	addCondition(o.Objects.RegistryExtension, "registry_extension_id")
+	addCondition(nnz.Int64(o.ImportedFromExternalServiceID), "imported_from_external_service_id")
 	return conds
 }
 
@@ -188,58 +177,25 @@ func (dbEvents) scanRow(row interface {
 	Scan(dest ...interface{}) error
 }) (*dbEvent, error) {
 	var t dbEvent
-	var actorUserID *int32
-	var threadID, campaignID, commentID, ruleID, importedFromExternalServiceID *int64
-	var repositoryID, userID, organizationID, registryExtensionID *int32
 	if err := row.Scan(
 		&t.ID,
 		&t.Type,
-		&actorUserID,
+		&t.ActorUserID,
 		&t.ExternalActorUsername,
 		&t.ExternalActorURL,
 		&t.CreatedAt,
 		&t.Data,
-		&threadID,
-		&campaignID,
-		&commentID,
-		&ruleID,
-		&repositoryID,
-		&userID,
-		&organizationID,
-		&registryExtensionID,
-		&importedFromExternalServiceID,
+		&t.Objects.Thread,
+		&t.Objects.Campaign,
+		&t.Objects.Comment,
+		&t.Objects.Rule,
+		&t.Objects.Repository,
+		&t.Objects.User,
+		&t.Objects.Organization,
+		&t.Objects.RegistryExtension,
+		&t.ImportedFromExternalServiceID,
 	); err != nil {
 		return nil, err
-	}
-	if actorUserID != nil {
-		t.ActorUserID = *actorUserID
-	}
-	if threadID != nil {
-		t.Thread = *threadID
-	}
-	if campaignID != nil {
-		t.Campaign = *campaignID
-	}
-	if commentID != nil {
-		t.Comment = *commentID
-	}
-	if ruleID != nil {
-		t.Rule = *ruleID
-	}
-	if repositoryID != nil {
-		t.Repository = *repositoryID
-	}
-	if userID != nil {
-		t.User = *userID
-	}
-	if organizationID != nil {
-		t.Organization = *organizationID
-	}
-	if registryExtensionID != nil {
-		t.RegistryExtension = *registryExtensionID
-	}
-	if importedFromExternalServiceID != nil {
-		t.ImportedFromExternalServiceID = *importedFromExternalServiceID
 	}
 	return &t, nil
 }

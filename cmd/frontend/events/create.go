@@ -10,19 +10,20 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/nnz"
 )
 
 // Objects refers to the foreign key relationships that an event may have, to refer to objects
 // related to the event.
 type Objects struct {
-	Campaign          int64
-	Thread            int64
-	Comment           int64
-	Rule              int64
-	Repository        int32
-	User              int32
-	Organization      int32
-	RegistryExtension int32
+	Campaign          nnz.Int64
+	Thread            nnz.Int64
+	Comment           nnz.Int64
+	Rule              nnz.Int64
+	Repository        nnz.Int32
+	User              nnz.Int32
+	Organization      nnz.Int32
+	RegistryExtension nnz.Int32
 }
 
 // CreationData is the data required to create an event (in CreateEvent).
@@ -52,12 +53,12 @@ func CreateEvent(ctx context.Context, event CreationData) error {
 func createEvent(ctx context.Context, tx *sql.Tx, event CreationData, importedFromExternalServiceID int64) error {
 	v := &dbEvent{
 		Type:                          event.Type,
-		ActorUserID:                   event.ActorUserID,
-		ExternalActorUsername:         sql.NullString{String: event.ExternalActorUsername, Valid: event.ExternalActorUsername != ""},
-		ExternalActorURL:              sql.NullString{String: event.ExternalActorURL, Valid: event.ExternalActorURL != ""},
+		ActorUserID:                   nnz.Int32(event.ActorUserID),
+		ExternalActorUsername:         nnz.String(event.ExternalActorUsername),
+		ExternalActorURL:              nnz.String(event.ExternalActorURL),
 		Objects:                       event.Objects,
 		CreatedAt:                     event.CreatedAt,
-		ImportedFromExternalServiceID: importedFromExternalServiceID,
+		ImportedFromExternalServiceID: nnz.Int64(importedFromExternalServiceID),
 	}
 	if event.Data != nil {
 		var err error
@@ -66,7 +67,7 @@ func createEvent(ctx context.Context, tx *sql.Tx, event CreationData, importedFr
 			return err
 		}
 	}
-	if v.ActorUserID == 0 && !v.ExternalActorUsername.Valid && !v.ExternalActorURL.Valid {
+	if v.ActorUserID == 0 && v.ExternalActorUsername == "" && v.ExternalActorURL == "" {
 		actor, err := graphqlbackend.CurrentUser(ctx)
 		if err != nil {
 			return err
@@ -74,7 +75,7 @@ func createEvent(ctx context.Context, tx *sql.Tx, event CreationData, importedFr
 		if actor == nil {
 			return errors.New("actor required to create event")
 		}
-		v.ActorUserID = actor.DatabaseID()
+		v.ActorUserID = nnz.Int32(actor.DatabaseID())
 	}
 	if v.CreatedAt.IsZero() {
 		v.CreatedAt = time.Now()
