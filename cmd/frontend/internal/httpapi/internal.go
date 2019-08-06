@@ -249,7 +249,7 @@ func listReposForSgDotCom(ctx context.Context) (res []*types.Repo, err error) {
 	// to demo Sourcegraph search.
 	res, err = backend.Repos.ListDefault(ctx, lim)
 	if err != nil {
-		return nil, errors.Wrap(err, "listing repos with longest interval")
+		return nil, errors.Wrap(err, "listing default repos for sourcegraph.com")
 	}
 	return res, nil
 }
