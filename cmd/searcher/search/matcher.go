@@ -246,7 +246,7 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 		lastMatchIndex = matchIndex
 		lastLineNumber = lineNumber
 
-		matches = appendMatches(matches, fileMatchBuf[lineStart:lineEnd], lineNumber, start-lineStart, end-lineStart)
+		matches = appendMatches(matches, fileBuf[lineStart:lineEnd], fileMatchBuf[lineStart:lineEnd], lineNumber, start-lineStart, end-lineStart)
 
 		/*
 			// matchBuf is the (full) lines that contain offset:length
@@ -342,9 +342,10 @@ func hydrateLineNumbers(fileBuf []byte, lastLineNumber, lastMatchIndex, lineStar
 // TODO document invariants
 // TODO test corner cases, ie start / end containing new lines / being on buf boundaries / etc.
 // matchLineBuf is a byte slice that contains the full line(s) that the match appears on.
-func appendMatches(matches []protocol.LineMatch, matchLineBuf []byte, lineNumber, start, end int) []protocol.LineMatch {
+func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []byte, lineNumber, start, end int) []protocol.LineMatch {
 	// If any newlines appear between start and end, we need to append multiple LineMatch.
 	// We assume there are no newlines before start.
+
 	for len(matchLineBuf) > 0 {
 		var line []byte
 		if eol := bytes.Index(matchLineBuf[start:], []byte{'\n'}); eol < 0 {
@@ -371,7 +372,7 @@ func appendMatches(matches []protocol.LineMatch, matchLineBuf []byte, lineNumber
 			// TODO: consider moving the call to Close until after we are
 			// done with Preview, and stop making a copy here.
 			// Special care must be taken to call Close on all possible paths, including error paths.
-			Preview:          string(line),
+			Preview:          string(fileBuf[:len(line)]),
 			LineNumber:       lineNumber,
 			OffsetAndLengths: [][2]int{{offset, length}},
 			LimitHit:         false, // TODO
