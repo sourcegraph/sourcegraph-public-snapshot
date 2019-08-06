@@ -1,5 +1,5 @@
 /**
- * TODO
+ * Runtime statistics around the `createDB` backend method.
  */
 export interface EncodingStats {
     // The time it took to perform the encoding.
@@ -9,7 +9,7 @@ export interface EncodingStats {
 }
 
 /**
- * TODO
+ * Runtime statistics around the `loadDB` backend method.
  */
 export interface HandleStats {
     // The time it took to create a handle to the target database.
@@ -17,7 +17,7 @@ export interface HandleStats {
 }
 
 /**
- * TODO
+ * Runtime statistics around the `withDB` cache method.
  */
 export interface CacheStats {
     // The time it took to get a reference to the target database.
@@ -27,7 +27,7 @@ export interface CacheStats {
 }
 
 /**
- * TODO
+ * Runtime statistics around backend query methods.
  */
 export interface QueryStats {
     // TODO
