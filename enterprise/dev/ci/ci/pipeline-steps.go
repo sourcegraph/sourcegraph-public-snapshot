@@ -112,7 +112,6 @@ func addTriggerGoBenchmarks(c Config) func(*bk.Pipeline) {
 		if c.branch == "master" || strings.HasPrefix(c.branch, "bench/") {
 			pipeline.AddTrigger(c.message,
 				bk.Trigger("sourcegraph-bench"),
-				bk.Agent("queue", "bench"),
 				bk.Async(true),
 				bk.Build(bk.BuildOptions{
 					Commit:   c.commit,
