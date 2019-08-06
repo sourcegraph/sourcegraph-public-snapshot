@@ -3,6 +3,7 @@ import * as tmp from 'tmp-promise'
 import bodyParser from 'body-parser'
 import express from 'express'
 import { Cache } from './cache'
+import { createPrometheusReporters, emit } from './prometheus'
 import { ERRNOLSIFDATA } from './backend'
 import { fs } from 'mz'
 import { JsonDatabase } from './ms/json'
@@ -22,20 +23,20 @@ const PORT = readEnvInt({ key: 'LSIF_HTTP_PORT', defaultValue: 3186 })
 const MAX_FILE_SIZE = readEnvInt({ key: 'LSIF_MAX_FILE_SIZE', defaultValue: 100 * 1024 * 1024 })
 
 /**
- * List of supported `Database` methods.
+ * List of supported LSIF methods that can be passed to query runners.
  */
 type SupportedMethods = 'hover' | 'definitions' | 'references'
 
 const SUPPORTED_METHODS: Set<SupportedMethods> = new Set(['hover', 'definitions', 'references'])
 
 /**
- * Runs the HTTP server which accepts LSIF file uploads and responds to
- * hover/defs/refs requests.
+ * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
 function main(): void {
     const app = express()
     const backend = new SQLiteGraphBackend()
     const cache = new Cache()
+    const prometheusReporters = createPrometheusReporters()
 
     app.use(errorHandler)
 
@@ -68,13 +69,15 @@ function main(): void {
                 // Bust the cache
                 cache.delete(repository, commit)
 
-                // TODO(efritz) - add stats to prometheus reporter
                 res.send({
                     data: null,
                     stats: {
                         insertStats: insertStats,
                     },
                 })
+
+                // Emit metrics
+                emit(prometheusReporters, insertStats)
             } finally {
                 // Temp files are cleaned up on process exit, but we want to do it
                 // proactively and in the event of exceptions so we do not fill up
@@ -101,7 +104,6 @@ function main(): void {
                     }
                 )
 
-                // TODO(efritz) - add stats to prometheus reporter
                 res.send({
                     data: result,
                     stats: {
@@ -109,9 +111,16 @@ function main(): void {
                         createRunnerStats: createRunnerStats,
                     },
                 })
+
+                // Emit metrics
+                emit(prometheusReporters, cacheStats)
+
+                if (createRunnerStats) {
+                    emit(prometheusReporters, createRunnerStats)
+                }
             } catch (e) {
                 if ('code' in e && e.code === ERRNOLSIFDATA) {
-                    // TODO(efritz) - add stats to prometheus reporter
+                    // TODO(efritz) - emit stats
                     res.send({ data: false, stats: {} })
                 } else {
                     throw e
@@ -138,7 +147,6 @@ function main(): void {
                     return await queryRunner.query(method, path, position)
                 })
 
-                // TODO(efritz) - add stats to prometheus reporter
                 res.json({
                     data: result || null,
                     stats: {
@@ -146,6 +154,10 @@ function main(): void {
                         queryStats: queryStats,
                     },
                 })
+
+                // Emit metrics
+                emit(prometheusReporters, cacheStats)
+                emit(prometheusReporters, queryStats)
             } catch (e) {
                 if ('code' in e && e.code === ERRNOLSIFDATA) {
                     throw Object.assign(e, { status: 404 })
