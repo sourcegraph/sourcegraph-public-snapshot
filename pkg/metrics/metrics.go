@@ -8,7 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // RequestMeter wraps a Prometheus request meter (counter + duration histogram) updated by requests made by derived
@@ -32,9 +32,9 @@ func NewRequestMeter(subsystem, help string) *RequestMeter {
 	requestDuration := prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "src",
 		Subsystem: subsystem,
-		Name:    "request_duration",
-		Help:    "Time (in seconds) spent on request.",
-		Buckets: prometheus.DefBuckets,
+		Name:      "request_duration",
+		Help:      "Time (in seconds) spent on request.",
+		Buckets:   prometheus.DefBuckets,
 	}, []string{"category", "code"})
 	prometheus.MustRegister(requestDuration)
 
