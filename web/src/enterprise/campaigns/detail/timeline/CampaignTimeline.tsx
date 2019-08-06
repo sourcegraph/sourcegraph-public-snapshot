@@ -3,10 +3,7 @@ import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
-import { Timeline } from '../../../../components/timeline/Timeline'
-import { CreateThreadEventTimelineItem } from './events/CreateThreadEventTimelineItem'
-import { RequestReviewEventTimelineItem } from './events/RequestReviewEventTimelineItem'
-import { ReviewEventTimelineItem } from './events/ReviewEventTimelineItem'
+import { TimelineItems } from '../../../timeline/TimelineItems'
 import { useCampaignTimelineItems } from './useCampaignTimelineItems'
 
 interface Props extends ExtensionsControllerProps {
@@ -31,35 +28,8 @@ export const CampaignTimeline: React.FunctionComponent<Props> = ({ campaign, cla
             ) : timelineItems.totalCount === 0 ? (
                 <span className="text-muted">No events.</span>
             ) : (
-                <Timeline tag="ol">
-                    {timelineItems.nodes.map(event => {
-                        const C = timelineItemComponentForEvent(event.__typename)
-                        return C ? <C key={event.id} event={event} className="campaign-timeline__item" /> : null
-                    })}
-                </Timeline>
+                <TimelineItems events={timelineItems} />
             )}
         </div>
     )
-}
-
-function timelineItemComponentForEvent(
-    event: GQL.Event['__typename']
-): React.ComponentType<{
-    event: any // TODO!(sqs)
-    className?: string
-}> | null {
-    switch (event) {
-        case 'AddThreadToCampaignEvent':
-            return CreateThreadEventTimelineItem
-        case 'CreateThreadEvent':
-            return CreateThreadEventTimelineItem // TODO!(sqs)
-        case 'RemoveThreadFromCampaignEvent':
-            return CreateThreadEventTimelineItem // TODO!(sqs)
-        case 'ReviewEvent':
-            return ReviewEventTimelineItem // TODO!(sqs)
-        case 'RequestReviewEvent':
-            return RequestReviewEventTimelineItem // TODO!(sqs)
-        default:
-            return null
-    }
 }

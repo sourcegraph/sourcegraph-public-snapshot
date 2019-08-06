@@ -28,7 +28,7 @@ func (GraphQLResolver) CreateIssue(ctx context.Context, arg *graphqlbackend.Crea
 		Type:         internal.DBThreadTypeIssue,
 		RepositoryID: repo.DBID(),
 		Title:        arg.Input.Title,
-		State:        string(graphqlbackend.ThreadStateOpen),
+		State:        string(graphqlbackend.IssueStateOpen),
 		// TODO!(sqs): set diagnostics data
 	}, comment)
 	if err != nil {

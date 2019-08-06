@@ -20,3 +20,18 @@ type CloseThreadEvent struct {
 }
 
 func (v CloseThreadEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }
+
+type ReopenThreadEvent struct {
+	EventCommon
+	Thread_ ThreadOrIssueOrChangeset
+}
+
+func (v ReopenThreadEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }
+
+type CommentOnThreadEvent struct {
+	EventCommon
+	Thread_ ThreadOrIssueOrChangeset
+	// TODO!(sqs): add comment
+}
+
+func (v CommentOnThreadEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }

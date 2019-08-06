@@ -108,10 +108,17 @@ type DeleteIssueArgs struct {
 	Issue graphql.ID
 }
 
+type IssueState string
+
+const (
+	IssueStateOpen   IssueState = "OPEN"
+	IssueStateClosed            = "CLOSED"
+)
+
 // Issue is the interface for the GraphQL type Issue.
 type Issue interface {
 	Threadlike
-	State() ThreadState
+	State() IssueState
 	DiagnosticsData() string // TODO!(sqs)
 }
 

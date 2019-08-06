@@ -28,7 +28,7 @@ func TestGraphQL_CreateIssue(t *testing.T) {
 		Type:         internal.DBThreadTypeIssue,
 		RepositoryID: wantRepositoryID,
 		Title:        "t",
-		State:        string(graphqlbackend.ThreadStateOpen),
+		State:        string(graphqlbackend.IssueStateOpen),
 	}
 	internal.Mocks.Threads.Create = func(issue *internal.DBThread) (*internal.DBThread, error) {
 		if !reflect.DeepEqual(issue, wantIssue) {

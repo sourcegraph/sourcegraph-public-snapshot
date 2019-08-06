@@ -30,6 +30,7 @@ func ThreadsByIDs(ctx context.Context, threadIDs []int64, arg *graphqlutil.Conne
 }
 
 func threadsByOptions(ctx context.Context, options internal.DBThreadsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
+	options.Type = internal.DBThreadTypeThread
 	list, err := internal.DBThreads{}.List(ctx, options)
 	if err != nil {
 		return nil, err

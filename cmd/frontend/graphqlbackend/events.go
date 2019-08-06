@@ -41,6 +41,8 @@ type ToEvent struct {
 	RequestReviewEvent            *RequestReviewEvent
 	MergeChangesetEvent           *MergeChangesetEvent
 	CloseThreadEvent              *CloseThreadEvent
+	ReopenThreadEvent             *ReopenThreadEvent
+	CommentOnThreadEvent          *CommentOnThreadEvent
 }
 
 func (v ToEvent) ToCreateThreadEvent() (*CreateThreadEvent, bool) {
@@ -69,6 +71,14 @@ func (v ToEvent) ToMergeChangesetEvent() (*MergeChangesetEvent, bool) {
 
 func (v ToEvent) ToCloseThreadEvent() (*CloseThreadEvent, bool) {
 	return v.CloseThreadEvent, v.CloseThreadEvent != nil
+}
+
+func (v ToEvent) ToReopenThreadEvent() (*ReopenThreadEvent, bool) {
+	return v.ReopenThreadEvent, v.ReopenThreadEvent != nil
+}
+
+func (v ToEvent) ToCommentOnThreadEvent() (*CommentOnThreadEvent, bool) {
+	return v.CommentOnThreadEvent, v.CommentOnThreadEvent != nil
 }
 
 // EventConnection is the interface for GraphQL connection types for event nodes.

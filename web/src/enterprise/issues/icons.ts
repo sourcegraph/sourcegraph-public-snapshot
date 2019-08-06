@@ -1,3 +1,3 @@
-import { GitPullRequestIcon } from '../../util/octicons'
+import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 
-export const ChangesetsIcon = GitPullRequestIcon
+export const IssuesIcon = AlertCircleOutlineIcon

@@ -79,8 +79,8 @@ func (GraphQLResolver) IssueInRepository(ctx context.Context, repositoryID graph
 	return issue, nil
 }
 
-func (v *gqlIssue) State() graphqlbackend.ThreadState {
-	return graphqlbackend.ThreadState(v.db.State)
+func (v *gqlIssue) State() graphqlbackend.IssueState {
+	return graphqlbackend.IssueState(v.db.State)
 }
 
 func (v *gqlIssue) DiagnosticsData() string {

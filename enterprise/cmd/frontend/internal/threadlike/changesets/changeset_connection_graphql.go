@@ -24,6 +24,7 @@ func (GraphQLResolver) ChangesetsForRepository(ctx context.Context, repositoryID
 }
 
 func changesetsByOptions(ctx context.Context, options internal.DBThreadsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ChangesetConnection, error) {
+	options.Type = internal.DBThreadTypeChangeset
 	list, err := internal.DBThreads{}.List(ctx, options)
 	if err != nil {
 		return nil, err

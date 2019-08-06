@@ -20,7 +20,15 @@ const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
     GQL.CampaignTimelineItem['__typename'],
     keyof GQL.CampaignTimelineItem
 >(
-    ['AddThreadToCampaignEvent', 'RemoveThreadFromCampaignEvent', 'ReviewEvent', 'RequestReviewEvent'],
+    [
+        'AddThreadToCampaignEvent',
+        'RemoveThreadFromCampaignEvent',
+        'ReviewEvent',
+        'RequestReviewEvent',
+        'CloseThreadEvent',
+        'ReopenThreadEvent',
+        'CommentOnThreadEvent',
+    ],
     ['id', 'createdAt'],
     [`actor { ${actorQuery} }`, `thread { ${threadQuery} }`],
     [actorFragment]
@@ -50,6 +58,12 @@ export const useCampaignTimelineItems = (campaign: Pick<GQL.ICampaign, 'id'>): [
                                     ${eventQuery}
                                     ... on ReviewEvent {
                                         state
+                                    }
+                                    ... on AddThreadToCampaignEvent {
+                                        campaign { name url }
+                                    }
+                                    ... on RemoveThreadFromCampaignEvent {
+                                        campaign { name url }
                                     }
                                 }
                                 totalCount

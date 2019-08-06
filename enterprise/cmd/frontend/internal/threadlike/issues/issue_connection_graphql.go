@@ -24,6 +24,7 @@ func (GraphQLResolver) IssuesForRepository(ctx context.Context, repositoryID gra
 }
 
 func issuesByOptions(ctx context.Context, options internal.DBThreadsListOptions, arg *graphqlutil.ConnectionArgs) (graphqlbackend.IssueConnection, error) {
+	options.Type = internal.DBThreadTypeIssue
 	list, err := internal.DBThreads{}.List(ctx, options)
 	if err != nil {
 		return nil, err
@@ -36,7 +37,7 @@ func issuesByOptions(ctx context.Context, options internal.DBThreadsListOptions,
 }
 
 type issueConnection struct {
-	arg        *graphqlutil.ConnectionArgs
+	arg    *graphqlutil.ConnectionArgs
 	issues []*gqlIssue
 }
 

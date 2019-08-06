@@ -17,6 +17,7 @@ type Threadlike interface {
 	updatable
 	URL(context.Context) (string, error)
 	CampaignNode
+	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)
 }
 
 type updateThreadlikeInput struct {

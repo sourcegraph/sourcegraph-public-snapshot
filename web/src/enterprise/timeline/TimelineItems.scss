@@ -1,0 +1,8 @@
+.timeline-items {
+    &__item {
+        margin-bottom: map-get($spacers, 6);
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}

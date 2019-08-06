@@ -1,5 +1,6 @@
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ChangesetsIcon } from '../../changesets/icons'
+import { IssuesIcon } from '../../issues/icons'
 import { ThreadsIcon } from '../../threads/icons'
 
 /**
@@ -15,8 +16,11 @@ const COLOR: Record<GQL.ThreadOrIssueOrChangeset['state'], ThreadStateColor> = {
     MERGED: 'purple', // TODO!(sqs): make purple
 }
 
-const icon = (thread: ThreadStateFields): React.ComponentType<{ className?: string }> =>
-    thread.__typename === 'Changeset' ? ChangesetsIcon : ThreadsIcon
+const ICON: Record<GQL.ThreadOrIssueOrChangeset['__typename'], React.ComponentType<{ className?: string }>> = {
+    Thread: ThreadsIcon,
+    Issue: IssuesIcon,
+    Changeset: ChangesetsIcon,
+}
 
 const text = (thread: ThreadStateFields) => {
     switch (thread.state) {
@@ -45,7 +49,7 @@ export const threadStateInfo = (
     tooltip: string
 } => ({
     color: COLOR[thread.state],
-    icon: icon(thread),
+    icon: ICON[thread.__typename],
     text: text(thread),
     tooltip: tooltip(thread),
 })

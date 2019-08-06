@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
@@ -85,4 +86,11 @@ func (v *GQLThreadlike) URL(ctx context.Context) (string, error) {
 
 func (v *GQLThreadlike) Campaigns(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
 	return graphqlbackend.CampaignsWithObject(ctx, v.ID(), arg)
+}
+
+func (v *GQLThreadlike) TimelineItems(ctx context.Context, arg *graphqlbackend.EventConnectionCommonArgs) (graphqlbackend.EventConnection, error) {
+	return events.GetEventConnection(ctx,
+		arg,
+		events.Objects{Thread: v.DB.ID},
+	)
 }

@@ -181,6 +181,7 @@ func (s DBThreads) GetByID(ctx context.Context, id int64) (*DBThread, error) {
 
 // DBThreadsListOptions contains options for listing threads.
 type DBThreadsListOptions struct {
+	Type                          DBThreadType
 	Query                         string     // only list threads matching this query (case-insensitively)
 	RepositoryID                  api.RepoID // only list threads in this repository
 	ThreadIDs                     []int64
@@ -191,6 +192,9 @@ type DBThreadsListOptions struct {
 
 func (o DBThreadsListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if o.Type != "" {
+		conds = append(conds, sqlf.Sprintf("type=%s", o.Type))
+	}
 	if o.Query != "" {
 		conds = append(conds, sqlf.Sprintf("title ILIKE %s", "%"+o.Query+"%"))
 	}

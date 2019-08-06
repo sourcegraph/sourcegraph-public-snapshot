@@ -16,6 +16,10 @@ func (GraphQLResolver) CommentReplyByID(ctx context.Context, id graphql.ID) (gra
 	if err != nil {
 		return nil, err
 	}
+	return CommentReplyByDBID(ctx, dbID)
+}
+
+func CommentReplyByDBID(ctx context.Context, dbID int64) (graphqlbackend.CommentReply, error) {
 	v, err := internal.DBComments{}.GetByID(ctx, dbID)
 	if err != nil {
 		return nil, err

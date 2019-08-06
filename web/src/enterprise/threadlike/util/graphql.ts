@@ -5,7 +5,7 @@ const DEFAULT_FIELDS: (keyof GQL.ThreadOrIssueOrChangeset)[] = ['__typename', 'i
 
 const DEFAULT_NESTED_FIELDS = ['repository { name }']
 
-const TYPE_NAMES: GQL.ThreadOrIssueOrChangeset['__typename'][] = ['Thread', 'Changeset']
+const TYPE_NAMES: GQL.ThreadOrIssueOrChangeset['__typename'][] = ['Thread', 'Issue', 'Changeset']
 
 export const queryAndFragmentForThreadOrIssueOrChangeset = (
     fields: (keyof GQL.ThreadOrIssueOrChangeset)[] = DEFAULT_FIELDS,

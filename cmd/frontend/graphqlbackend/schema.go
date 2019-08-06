@@ -4377,6 +4377,18 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
         # Return the first n campaigns from the list.
         first: Int
     ): CampaignConnection!
+
+    # A list of events related to the thread.
+    timelineItems(
+        # Returns the first n events from the list.
+        first: Int
+        # Only include events after (or on) the specified date.
+        afterDate: DateTime
+        # Only include events before (or on) the specified date.
+        beforeDate: DateTime
+        # Only include the specified event types. TODO!(sqs): make this an enum?
+        types: [String!]
+    ): ThreadTimelineItemConnection!
 }
 
 # A list of threads.
@@ -4389,6 +4401,14 @@ type ThreadConnection {
 
     # Pagination information.
     pageInfo: PageInfo!
+}
+
+# The states of issues.
+enum IssueState {
+    # Open.
+    OPEN
+    # Closed.
+    CLOSED
 }
 
 # Input arguments for creating a issue.
@@ -4437,7 +4457,10 @@ type Issue implements Node & RepositoryNode & RepositoryAndNumberAddressable & U
     bodyHTML: String!
 
     # The state of this issue.
-    state: ThreadState!
+    state: IssueState!
+
+    # The raw data for this issue's diagnostics.
+    diagnosticsData: String!
 
     # The URL to this issue on Sourcegraph.
     url: String!
@@ -4459,6 +4482,18 @@ type Issue implements Node & RepositoryNode & RepositoryAndNumberAddressable & U
         # Return the first n campaigns from the list.
         first: Int
     ): CampaignConnection!
+
+    # A list of events related to the issue.
+    timelineItems(
+        # Returns the first n events from the list.
+        first: Int
+        # Only include events after (or on) the specified date.
+        afterDate: DateTime
+        # Only include events before (or on) the specified date.
+        beforeDate: DateTime
+        # Only include the specified event types. TODO!(sqs): make this an enum?
+        types: [String!]
+    ): ThreadTimelineItemConnection!
 }
 
 # A list of issues.
@@ -4578,6 +4613,18 @@ type Changeset implements Node & RepositoryNode & RepositoryAndNumberAddressable
         # Return the first n campaigns from the list.
         first: Int
     ): CampaignConnection!
+
+    # A list of events related to the changeset.
+    timelineItems(
+        # Returns the first n events from the list.
+        first: Int
+        # Only include events after (or on) the specified date.
+        afterDate: DateTime
+        # Only include events before (or on) the specified date.
+        beforeDate: DateTime
+        # Only include the specified event types. TODO!(sqs): make this an enum?
+        types: [String!]
+    ): ThreadTimelineItemConnection!
 }
 
 # A list of changesets.
@@ -4595,7 +4642,7 @@ type ChangesetConnection {
 # A thread, issue, or changeset.
 #
 # TODO!(sqs): add Issue
-union ThreadOrIssueOrChangeset = Thread | Changeset
+union ThreadOrIssueOrChangeset = Thread | Issue | Changeset
 
 # A list of threads, issues, and changesets.
 type ThreadOrIssueOrChangesetConnection {
@@ -4871,7 +4918,10 @@ union Event =
     | RemoveThreadFromCampaignEvent
     | ReviewEvent
     | RequestReviewEvent
+    | MergeChangesetEvent
     | CloseThreadEvent
+    | ReopenThreadEvent
+    | CommentOnThreadEvent
 
 # A list of events.
 ## TODO!(sqs): is it helpful to have a single union? or just have ThreadEvent, CampaignEvent, etc.?
@@ -4892,7 +4942,10 @@ union ThreadTimelineItem =
     | RemoveThreadFromCampaignEvent
     | ReviewEvent
     | RequestReviewEvent
+    | MergeChangesetEvent
     | CloseThreadEvent
+    | ReopenThreadEvent
+    | CommentOnThreadEvent
 
 # A list of thread timeline items.
 type ThreadTimelineItemConnection {
@@ -4911,7 +4964,10 @@ union CampaignTimelineItem =
     | RemoveThreadFromCampaignEvent
     | ReviewEvent
     | RequestReviewEvent
+    | MergeChangesetEvent
     | CloseThreadEvent
+    | ReopenThreadEvent
+    | CommentOnThreadEvent
 
 # A list of campaign timeline items.
 type CampaignTimelineItemConnection {
@@ -5045,6 +5101,21 @@ type CloseThreadEvent implements EventCommon {
     thread: ThreadOrIssueOrChangeset!
 }
 
+# A thread was reopened.
+type ReopenThreadEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was reopened.
+    thread: ThreadOrIssueOrChangeset!
+}
+
 # A changeset was merged.
 type MergeChangesetEvent implements EventCommon {
     # The unique ID of the event.
@@ -5058,5 +5129,25 @@ type MergeChangesetEvent implements EventCommon {
 
     # The changeset that was merged.
     changeset: Changeset!
+}
+
+# A thread was commented on.
+type CommentOnThreadEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was commented on.
+    thread: ThreadOrIssueOrChangeset!
+
+    # TODO!(sqs): add back
+    #
+    ## The comment that was posted.
+    #comment: CommentReply!
 }
 `

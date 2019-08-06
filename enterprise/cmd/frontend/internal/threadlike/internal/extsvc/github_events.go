@@ -20,6 +20,8 @@ const (
 	eventTypeReviewRequested             = "ReviewRequested"
 	eventTypeMergeChangeset              = "MergeChangeset"
 	eventTypeCloseThread                 = "CloseThread"
+	eventTypeReopenThread                = "ReopenThread"
+	eventTypeCommentOnThread             = "CommentOnThread"
 )
 
 func init() {
@@ -86,6 +88,17 @@ func init() {
 		}
 		return nil
 	})
+	events.Register(eventTypeCommentOnThread, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
+		thread, err := threadlike.ThreadOrIssueOrChangesetByDBID(ctx, data.Thread)
+		if err != nil {
+			return err
+		}
+		toEvent.CommentOnThreadEvent = &graphqlbackend.CommentOnThreadEvent{
+			EventCommon: common,
+			Thread_:     thread,
+		}
+		return nil
+	})
 }
 
 var MockImportGitHubThreadEvents func() error // TODO!(sqs)
@@ -106,27 +119,27 @@ func ImportGitHubThreadEvents(ctx context.Context, threadID, threadExternalServi
 		return fmt.Errorf("thread %d: external service %d in DB does not match repository external service %d", threadID, threadExternalServiceID, externalServiceID)
 	}
 
-	pull, err := getGitHubPullRequestTimelineItems(ctx, client, graphql.ID(threadExternalID))
+	result, err := getGitHubIssueOrPullRequestTimelineItems(ctx, client, graphql.ID(threadExternalID))
 	if err != nil {
 		return err
 	}
 
 	objects := events.Objects{Thread: threadID}
 
-	toImport := make([]events.CreationData, 0, len(pull.TimelineItems.Nodes)+1)
+	toImport := make([]events.CreationData, 0, len(result.TimelineItems.Nodes)+1)
 
 	// Creation event.
 	toImport = append(toImport, events.CreationData{
 		Type:                  eventTypeCreateThread,
 		Objects:               objects,
 		ActorUserID:           0, // TODO!(sqs): determine this, map from github if needed
-		ExternalActorUsername: pull.Author.Login,
-		ExternalActorURL:      pull.Author.URL,
-		CreatedAt:             pull.CreatedAt,
+		ExternalActorUsername: result.Author.Login,
+		ExternalActorURL:      result.Author.URL,
+		CreatedAt:             result.CreatedAt,
 	})
 
 	// GitHub timeline events.
-	for _, ghEvent := range pull.TimelineItems.Nodes {
+	for _, ghEvent := range result.TimelineItems.Nodes {
 		if eventType, ok := githubEventTypes[ghEvent.Typename]; ok {
 			data := events.CreationData{
 				Type:      eventType,
@@ -158,9 +171,11 @@ var githubEventTypes = map[string]events.Type{
 	"ReviewRequestedEvent": eventTypeReviewRequested,
 	"MergedEvent":          eventTypeMergeChangeset,
 	"ClosedEvent":          eventTypeCloseThread,
+	"ReopenedEvent":        eventTypeReopenThread,
+	"IssueComment":         eventTypeCommentOnThread,
 }
 
-type githubPullRequestTimelineData struct {
+type githubPullRequestOrIssueTimelineData struct {
 	CreatedAt     time.Time    `json:"createdAt"`
 	Author        *githubActor `json:"author"`
 	TimelineItems struct {
@@ -177,32 +192,57 @@ type githubEvent struct {
 	CreatedAt time.Time    `json:"createdAt"`
 }
 
-func getGitHubPullRequestTimelineItems(ctx context.Context, client *github.Client, githubPullRequestID graphql.ID) (pull *githubPullRequestTimelineData, err error) {
-	var data struct {
-		Node *githubPullRequestTimelineData
-	}
-	if err := client.RequestGraphQL(ctx, "", `
-query ImportGitHubThreadEvents($pullRequest: ID!) {
-	node(id: $pullRequest) {
-		... on PullRequest {
+const (
+	githubIssueOrPullRequestTimelineItemsCommonQuery = `
 			author { ...ActorFields }
 			createdAt
-			timelineItems(first: 10, itemTypes: [MERGED_EVENT, CLOSED_EVENT, REOPENED_EVENT, REVIEW_REQUESTED_EVENT, PULL_REQUEST_REVIEW]) {
+`
+	githubIssueOrPullRequestEventCommonTimelineItemTypes = `CLOSED_EVENT, REOPENED_EVENT, ISSUE_COMMENT`
+	githubIssueOrPullRequestEventCommonQuery             = `
+... on ClosedEvent {
+	id
+	actor { ... ActorFields }
+	createdAt
+}
+... on ReopenedEvent {
+	id
+	actor { ... ActorFields }
+	createdAt
+}
+... on IssueComment {
+	id
+	author { ... ActorFields  }
+	url
+	createdAt
+}
+`
+)
+
+func getGitHubIssueOrPullRequestTimelineItems(ctx context.Context, client *github.Client, githubIssueOrPullRequestID graphql.ID) (pull *githubPullRequestOrIssueTimelineData, err error) {
+	var data struct {
+		Node *githubPullRequestOrIssueTimelineData
+	}
+	if err := client.RequestGraphQL(ctx, "", `
+query ImportGitHubThreadEvents($issueOrPullRequest: ID!) {
+	node(id: $issueOrPullRequest) {
+		... on Issue {
+		`+githubIssueOrPullRequestTimelineItemsCommonQuery+`
+					timelineItems(first: 10, itemTypes: [`+githubIssueOrPullRequestEventCommonTimelineItemTypes+`]) {
+						nodes {
+							__typename
+		`+githubIssueOrPullRequestEventCommonQuery+`
+						}
+					}
+				}
+		... on PullRequest {
+`+githubIssueOrPullRequestTimelineItemsCommonQuery+`
+			timelineItems(first: 10, itemTypes: [MERGED_EVENT, REVIEW_REQUESTED_EVENT, PULL_REQUEST_REVIEW, `+githubIssueOrPullRequestEventCommonTimelineItemTypes+`]) {
 				nodes {
 					__typename
+`+githubIssueOrPullRequestEventCommonQuery+`
 					... on MergedEvent {
 						id
 						actor { ...ActorFields }
-						createdAt
-					}
-					... on ClosedEvent {
-						id
-						actor { ... ActorFields }
-						createdAt
-					}
-					... on ReopenedEvent {
-						id
-						actor { ... ActorFields }
 						createdAt
 					}
 					... on ReviewRequestedEvent {
@@ -221,6 +261,7 @@ query ImportGitHubThreadEvents($pullRequest: ID!) {
 		}
 	}
 }
+
 fragment ActorFields on Actor {
 	__typename
 	... on User {
@@ -229,12 +270,12 @@ fragment ActorFields on Actor {
 	}
 }
 `, map[string]interface{}{
-		"pullRequest": githubPullRequestID,
+		"issueOrPullRequest": githubIssueOrPullRequestID,
 	}, &data); err != nil {
 		return nil, err
 	}
 	if data.Node == nil {
-		return nil, fmt.Errorf("github pull request with ID %q not found", githubPullRequestID)
+		return nil, fmt.Errorf("github issue or pull request with ID %q not found", githubIssueOrPullRequestID)
 	}
 	return data.Node, nil
 }

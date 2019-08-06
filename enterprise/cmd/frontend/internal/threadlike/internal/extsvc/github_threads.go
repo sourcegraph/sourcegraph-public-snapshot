@@ -25,23 +25,23 @@ func ImportGitHubRepositoryThreads(ctx context.Context, repoID api.RepoID, extRe
 		return err
 	}
 
-	pulls, err := listGitHubPullRequestsForRepository(ctx, client, graphql.ID(extRepo.ID))
+	results, err := listGitHubRepositoryIssuesAndPullRequests(ctx, client, graphql.ID(extRepo.ID))
 	if err != nil {
 		return err
 	}
 
-	toImport := make(map[*internal.DBThread]commentobjectdb.DBObjectCommentFields, len(pulls))
-	for _, ghPull := range pulls {
+	toImport := make(map[*internal.DBThread]commentobjectdb.DBObjectCommentFields, len(results))
+	for _, result := range results {
 		// Skip cross-repository PRs because we don't handle those yet.
-		if ghPull.IsCrossRepository {
+		if result.IsCrossRepository {
 			continue
 		}
 		// HACK TODO!(sqs): omit renovate PRs
-		if strings.HasPrefix(ghPull.Title, "Update dependency ") {
+		if strings.HasPrefix(result.Title, "Update dependency ") {
 			continue
 		}
 
-		thread, comment := githubPullToThread(ghPull)
+		thread, comment := githubIssueOrPullRequestToThread(result)
 		thread.RepositoryID = repoID
 		thread.ImportedFromExternalServiceID = externalServiceID
 		toImport[thread] = comment
@@ -49,43 +49,52 @@ func ImportGitHubRepositoryThreads(ctx context.Context, repoID api.RepoID, extRe
 	return internal.ImportExternalThreads(ctx, repoID, externalServiceID, toImport)
 }
 
-func githubPullToThread(ghPull *githubPullRequest) (*internal.DBThread, commentobjectdb.DBObjectCommentFields) {
+func githubIssueOrPullRequestToThread(v *githubIssueOrPullRequest) (*internal.DBThread, commentobjectdb.DBObjectCommentFields) {
 	getRefName := func(ref *githubRef, oid string) string {
 		// If a base/head is deleted, point to its OID directly.
-		if ref == nil || ghPull.State == "MERGED" {
+		if ref == nil || v.State == "MERGED" {
 			return oid
 		}
 		return ref.Prefix + ref.Name
 	}
 
 	thread := &internal.DBThread{
-		Type:       internal.DBThreadTypeChangeset,
-		Title:      ghPull.Title,
-		State:      ghPull.State,
+		Title:      v.Title,
+		State:      v.State,
 		IsPreview:  false,
-		CreatedAt:  ghPull.CreatedAt,
-		BaseRef:    getRefName(ghPull.BaseRef, ghPull.BaseRefOid),
-		HeadRef:    getRefName(ghPull.HeadRef, ghPull.HeadRefOid),
-		ExternalID: string(ghPull.ID),
+		CreatedAt:  v.CreatedAt,
+		UpdatedAt:  v.UpdatedAt,
+		BaseRef:    getRefName(v.BaseRef, v.BaseRefOid),
+		HeadRef:    getRefName(v.HeadRef, v.HeadRefOid),
+		ExternalID: string(v.ID),
+	}
+	switch v.Typename {
+	case "Issue":
+		thread.Type = internal.DBThreadTypeIssue
+	case "PullRequest":
+		thread.Type = internal.DBThreadTypeChangeset
+	default:
+		panic("unknown github issue or pull request object: " + v.Typename)
 	}
 	var err error
-	thread.ExternalMetadata, err = json.Marshal(ghPull)
+	thread.ExternalMetadata, err = json.Marshal(v)
 	if err != nil {
 		panic(err)
 	}
 
 	comment := commentobjectdb.DBObjectCommentFields{
-		Body: ghPull.Body,
+		Body: v.Body,
 		// TODO!(sqs): map to sourcegraph user if possible
-		AuthorExternalActorUsername: ghPull.Author.Login,
-		AuthorExternalActorURL:      ghPull.Author.URL,
-		CreatedAt:                   ghPull.CreatedAt,
-		UpdatedAt:                   ghPull.UpdatedAt,
+		AuthorExternalActorUsername: v.Author.Login,
+		AuthorExternalActorURL:      v.Author.URL,
+		CreatedAt:                   v.CreatedAt,
+		UpdatedAt:                   v.UpdatedAt,
 	}
 	return thread, comment
 }
 
-type githubPullRequest struct {
+type githubIssueOrPullRequest struct {
+	Typename          string       `json:"__typename"`
 	ID                graphql.ID   `json:"id"`
 	Number            int          `json:"number"`
 	Title             string       `json:"title"`
@@ -97,7 +106,7 @@ type githubPullRequest struct {
 	HeadRef           *githubRef   `json:"headRef"`
 	HeadRefOid        string       `json:"headRefOid"`
 	IsCrossRepository bool         `json:"isCrossRepository"`
-	Permalink         string       `json:"permalink"`
+	URL               string       `json:"url"`
 	State             string       `json:"state"`
 	Author            *githubActor `json:"author"`
 }
@@ -107,39 +116,51 @@ type githubRef struct {
 	Prefix string `json:"prefix"`
 }
 
-func listGitHubPullRequestsForRepository(ctx context.Context, client *github.Client, githubRepositoryID graphql.ID) (pulls []*githubPullRequest, err error) {
+const (
+	githubIssueOrPullRequestCommonQuery = `
+__typename
+id
+number
+title
+body
+createdAt
+updatedAt
+url
+state
+author {
+	... on User {
+		login
+		url
+	}
+}
+`
+)
+
+func listGitHubRepositoryIssuesAndPullRequests(ctx context.Context, client *github.Client, githubRepositoryID graphql.ID) (results []*githubIssueOrPullRequest, err error) {
 	var data struct {
 		Node *struct {
-			PullRequests struct {
-				Nodes []*githubPullRequest
+			PullRequests, Issues struct {
+				Nodes []*githubIssueOrPullRequest
 			}
 		}
 	}
 	if err := client.RequestGraphQL(ctx, "", `
-query ImportGitHubThreads($repository: ID!) {
+query ImportGitHubRepositoryIssuesAndPullRequests($repository: ID!) {
 	node(id: $repository) {
 		... on Repository {
+			issues(first: 100, orderBy: { field: UPDATED_AT, direction: DESC }) {
+				nodes {
+`+githubIssueOrPullRequestCommonQuery+`
+				}
+			}
 			pullRequests(first: 100, orderBy: { field: UPDATED_AT, direction: DESC }) {
 				nodes {
-					id
-					number
-					title
-					body
-					createdAt
-					updatedAt
+`+githubIssueOrPullRequestCommonQuery+`
 					baseRef { name prefix }
 					baseRefOid
 					headRef { name prefix }
 					headRefOid
 					isCrossRepository
-					permalink
-					state
-					author {
-						... on User {
-							login
-							url
-						}
-					}
 				}
 			}
 		}
@@ -153,5 +174,5 @@ query ImportGitHubThreads($repository: ID!) {
 	if data.Node == nil {
 		return nil, fmt.Errorf("github repository with ID %q not found", githubRepositoryID)
 	}
-	return data.Node.PullRequests.Nodes, nil
+	return append(data.Node.Issues.Nodes, data.Node.PullRequests.Nodes...), nil
 }

@@ -43,6 +43,7 @@ import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { LSIFVerification } from './LSIFVerification'
+import { IssuesIcon } from '../enterprise/issues/icons'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -252,6 +253,10 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/threads`}>
                                             {/* TODO(sqs): Inject via enterprise */}
                                             <ThreadsIcon className="icon-inline mr-1" /> Threads
+                                        </Link>
+                                        <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/issues`}>
+                                            {/* TODO(sqs): Inject via enterprise */}
+                                            <IssuesIcon className="icon-inline mr-1" /> Issues
                                         </Link>
                                         <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/changesets`}>
                                             {/* TODO(sqs): Inject via enterprise */}
