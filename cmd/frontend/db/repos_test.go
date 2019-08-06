@@ -1,12 +1,10 @@
 package db
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
@@ -216,99 +214,4 @@ func TestRepos_Upsert(t *testing.T) {
 	if !reflect.DeepEqual(rp.ExternalRepo, ext) {
 		t.Fatalf("rp.ExternalRepo: %s != %s", rp.ExternalRepo, ext)
 	}
-}
-
-func TestRepos_ListWithLongestInterval(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Run("empty table gives no repos", func(t *testing.T) {
-		ctx := dbtesting.TestContext(t)
-		URIs, err := Repos.ListWithLongestInterval(ctx, 1)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(URIs) != 0 {
-			t.Errorf("got %d repo URIs (%v), want none", len(URIs), URIs)
-		}
-	})
-
-	t.Run("long-lived repos are preferred", func(t *testing.T) {
-		ctx := dbtesting.TestContext(t)
-		repos := []struct {
-			URI       string
-			createdAt string
-			updatedAt string
-		}{
-			{"short1", "2015-01-01", "2015-01-01"},
-			{"long1", "2015-01-01", "2019-01-01"},
-			{"short2", "2015-01-01", "2016-01-02"},
-			{"long2", "2001-01-01", "2015-01-01"},
-		}
-		for _, r := range repos {
-			q := fmt.Sprintf(`INSERT INTO repo(uri, name, created_at, updated_at) VALUES ('%s', '%s', '%s', '%s')`, r.URI, r.URI, r.createdAt, r.updatedAt)
-			if _, err := dbconn.Global.ExecContext(ctx, q); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		URIs, err := Repos.ListWithLongestInterval(ctx, 2)
-		if err != nil {
-			t.Fatal(err)
-		}
-		wantURIs := []string{"long2", "long1"}
-		if !reflect.DeepEqual(URIs, wantURIs) {
-			t.Errorf("got %v, want %v", URIs, wantURIs)
-		}
-	})
-
-	t.Run("nonsensical created_at time is handled", func(t *testing.T) {
-		ctx := dbtesting.TestContext(t)
-		repos := []struct {
-			URI       string
-			createdAt string
-			updatedAt string
-		}{
-			{"dontwant", "0001-01-01 00:00:00+00", "2015-01-01"},
-			{"want", "2015-01-01", "2019-01-01"},
-		}
-		for _, r := range repos {
-			q := fmt.Sprintf(`INSERT INTO repo(uri, name, created_at, updated_at) VALUES ('%s', '%s', '%s', '%s')`, r.URI, r.URI, r.createdAt, r.updatedAt)
-			if _, err := dbconn.Global.ExecContext(ctx, q); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		URIs, err := Repos.ListWithLongestInterval(ctx, 1)
-		if err != nil {
-			t.Fatal(err)
-		}
-		wantURIs := []string{"want"}
-		if !reflect.DeepEqual(URIs, wantURIs) {
-			t.Errorf("got %v, want %v", URIs, wantURIs)
-		}
-	})
-
-	t.Run("null updated_at is handled", func(t *testing.T) {
-		ctx := dbtesting.TestContext(t)
-		qs := []string{
-			`INSERT INTO repo(uri, name, created_at, updated_at) VALUES ('dontwant', 'dontwant', '2015-01-01', NULL)`,
-			`INSERT INTO repo(uri, name, created_at, updated_at) VALUES ('want', 'want', '2015-01-01', '2019-01-01')`,
-		}
-		for _, q := range qs {
-			if _, err := dbconn.Global.ExecContext(ctx, q); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		URIs, err := Repos.ListWithLongestInterval(ctx, 1)
-		if err != nil {
-			t.Fatal(err)
-		}
-		wantURIs := []string{"want"}
-		if !reflect.DeepEqual(URIs, wantURIs) {
-			t.Errorf("got %v, want %v", URIs, wantURIs)
-		}
-	})
 }
