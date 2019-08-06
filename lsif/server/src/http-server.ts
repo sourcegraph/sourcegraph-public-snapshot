@@ -1,15 +1,15 @@
-import * as Prometheus from 'prom-client';
-import * as tmp from 'tmp-promise';
-import bodyParser from 'body-parser';
-import express from 'express';
-import { Cache } from './cache';
-import { ERRNOLSIFDATA } from './backend';
-import { fs } from 'mz';
-import { JsonDatabase } from './ms/json';
-import { noopTransformer } from './ms/database';
-import { readEnvInt } from './env';
-import { SQLiteGraphBackend } from './sqlite';
-import { wrap } from 'async-middleware';
+import * as Prometheus from 'prom-client'
+import * as tmp from 'tmp-promise'
+import bodyParser from 'body-parser'
+import express from 'express'
+import { Cache } from './cache'
+import { ERRNOLSIFDATA } from './backend'
+import { fs } from 'mz'
+import { JsonDatabase } from './ms/json'
+import { noopTransformer } from './ms/database'
+import { readEnvInt } from './env'
+import { SQLiteGraphBackend } from './sqlite'
+import { wrap } from 'async-middleware'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.

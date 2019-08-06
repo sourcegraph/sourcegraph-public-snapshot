@@ -4,7 +4,7 @@ import { Backend, NoLSIFDataError } from './backend'
 import { BlobStore } from './ms/blobStore'
 import { child_process, fs } from 'mz'
 import { Database } from './ms/database'
-import { InsertStats, GetHandleStats, QueryStats, timeit } from './stats'
+import { GetHandleStats, InsertStats, QueryStats, timeit } from './stats'
 import { GraphStore } from './ms/graphStore'
 import { readEnvInt } from './env'
 
@@ -30,7 +30,7 @@ const SQLITE_CONVERTER_BINARY = './node_modules/lsif-sqlite/bin/lsif-sqlite'
  * The abstract SQLite backend base that supports graph and blob subclasses.
  */
 export abstract class SQLiteBackend implements Backend {
-     /**
+    /**
      * Read the content of the temporary file containing a JSON-encoded LSIF
      * dump. Insert these contents into some storage with an encoding that
      * can be subsequently read by the `getDatabaseHandle` method.
@@ -64,7 +64,10 @@ export abstract class SQLiteBackend implements Backend {
      * commit hash.  This assumes that data for this database has already been
      * inserted via `insertDump` (otherwise this method is expected to throw).
      */
-    public async getDatabaseHandle(repository: string, commit: string): Promise<{ database: Database; getHandleStats: GetHandleStats }> {
+    public async getDatabaseHandle(
+        repository: string,
+        commit: string
+    ): Promise<{ database: Database; getHandleStats: GetHandleStats }> {
         const file = makeFilename(repository, commit)
         const db = this.createStore()
 

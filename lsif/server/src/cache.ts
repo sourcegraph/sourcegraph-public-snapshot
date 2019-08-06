@@ -1,8 +1,8 @@
-import LRU from 'lru-cache';
-import { Backend } from './backend';
-import { CacheStats, GetHandleStats, timeit } from './stats';
-import { Database } from './ms/database';
-import { readEnvInt } from './env';
+import LRU from 'lru-cache'
+import { Backend } from './backend'
+import { CacheStats, GetHandleStats, timeit } from './stats'
+import { Database } from './ms/database'
+import { readEnvInt } from './env'
 
 /**
  * Soft limit on the total amount of storage occupied by LSIF data loaded in

@@ -1,6 +1,6 @@
-import * as lsp from 'vscode-languageserver';
-import { Database } from './ms/database';
-import { InsertStats, GetHandleStats, QueryStats } from './stats';
+import * as lsp from 'vscode-languageserver'
+import { Database } from './ms/database'
+import { GetHandleStats, InsertStats, QueryStats } from './stats'
 
 export const ERRNOLSIFDATA = 'NoLSIFData'
 
@@ -40,7 +40,10 @@ export interface Backend {
      * commit hash.  This assumes that data for this database has already been
      * inserted via `insertDump` (otherwise this method is expected to throw).
      */
-    getDatabaseHandle(repository: string, commit: string): Promise<{ database: Database; getHandleStats: GetHandleStats }>
+    getDatabaseHandle(
+        repository: string,
+        commit: string
+    ): Promise<{ database: Database; getHandleStats: GetHandleStats }>
 
     /**
      * Return data for an LSIF query.

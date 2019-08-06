@@ -1,7 +1,7 @@
-import * as lsp from 'vscode-languageserver';
-import { Backend } from './backend';
-import { Database } from './ms/database';
-import { InsertStats, GetHandleStats, QueryStats } from './stats';
+import * as lsp from 'vscode-languageserver'
+import { Backend } from './backend'
+import { Database } from './ms/database'
+import { GetHandleStats, InsertStats, QueryStats } from './stats'
 
 /**
  * Backend for SQLite dumps stored in Dgraph.
@@ -27,7 +27,10 @@ export class DgraphBackend implements Backend {
      * commit hash.  This assumes that data for this database has already been
      * inserted via `insertDump` (otherwise this method is expected to throw).
      */
-    public getDatabaseHandle(repository: string, commit: string): Promise<{ database: Database; getHandleStats: GetHandleStats }> {
+    public getDatabaseHandle(
+        repository: string,
+        commit: string
+    ): Promise<{ database: Database; getHandleStats: GetHandleStats }> {
         // TODO(chris) - implement
         // MUST reject if `key` doesn't exist
         return Promise.reject()
