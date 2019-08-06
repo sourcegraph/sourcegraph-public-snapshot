@@ -202,7 +202,7 @@
     "@sqs/jsonc-parser": "^1.0.3",
     "bootstrap": "^4.3.1",
     "classnames": "^2.2.6",
-    "copy-to-clipboard": "^3.1.0",
+    "copy-to-clipboard": "^3.2.0",
     "core-js": "^3.1.4",
     "d3-axis": "^1.0.12",
     "d3-scale": "^3.0.1",
