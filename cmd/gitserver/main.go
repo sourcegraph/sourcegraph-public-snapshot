@@ -3,7 +3,6 @@ package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"log"
 	"net"
 	"net/http"
@@ -12,6 +11,8 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
