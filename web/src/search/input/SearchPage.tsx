@@ -50,13 +50,6 @@ export class SearchPage extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('Home')
-        if (
-            window.context.sourcegraphDotComMode &&
-            !localStorage.getItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY) &&
-            !this.state.userQuery
-        ) {
-            this.setState({ userQuery: 'repogroup:sample' })
-        }
     }
 
     public render(): JSX.Element | null {
