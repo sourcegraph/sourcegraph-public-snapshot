@@ -316,13 +316,13 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 func Test_howManyBytesToFree(t *testing.T) {
 	const G = 1024 * 1024 * 1024
 	s := &Server{
-		DesiredPercentFree: 90,
+		DesiredPercentFree: 10,
 	}
 
 	t.Run("if there is already enough space, no space is freed", func(t *testing.T) {
 		s.DiskSizer = &fakeDiskSizer{
 			diskSize:  10 * G,
-			bytesFree: 9.5 * G,
+			bytesFree: 1.5 * G,
 		}
 		btf, err := s.howManyBytesToFree()
 		if err != nil {
@@ -336,7 +336,7 @@ func Test_howManyBytesToFree(t *testing.T) {
 	t.Run("if there is exactly enough space, no space is freed", func(t *testing.T) {
 		s.DiskSizer = &fakeDiskSizer{
 			diskSize:  10 * G,
-			bytesFree: 9 * G,
+			bytesFree: 1 * G,
 		}
 		btf, err := s.howManyBytesToFree()
 		if err != nil {
@@ -350,13 +350,13 @@ func Test_howManyBytesToFree(t *testing.T) {
 	t.Run("if there not enough space, some space is freed", func(t *testing.T) {
 		s.DiskSizer = &fakeDiskSizer{
 			diskSize:  10 * G,
-			bytesFree: 8 * G,
+			bytesFree: 0.5 * G,
 		}
 		btf, err := s.howManyBytesToFree()
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := int64(1 * G)
+		want := int64(0.5 * G)
 		if btf != want {
 			t.Errorf("s.howManyBytesToFree(...) is %v, want %v", btf, want)
 		}
