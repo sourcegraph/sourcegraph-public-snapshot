@@ -195,40 +195,53 @@ func (s *Server) cleanupRepos() {
 	}
 
 	// Check how much disk space is available.
-	actualFreeBytes, err := s.bytesFreeOnDisk()
+	mountPoint, err := findMountPoint(s.ReposDir)
+	if err != nil {
+		log15.Error("finding mount point for dir containing repos")
+		return
+	}
+	actualFreeBytes, err := bytesFreeOnDisk(mountPoint)
 	if err != nil {
 		log15.Error("cleanup: finding the amount of space free on disk", "error", err)
 		return
 	}
-	G := float64(1024 * 1024 * 1024)
-	mount, err := findMountPoint(s.ReposDir)
-	if err != nil {
-		log15.Error("finding mount point for dir containing repos", "error", err)
-		mount = "<not found>"
-	}
-	log15.Debug("cleanup",
-		"free space in GiB", float64(actualFreeBytes)/G,
-		"desired free space in GiB", float64(s.DesiredFreeDiskSpace)/G,
-		"mount point", mount)
 
 	// Free up space if necessary.
-	howManyBytesToFree := int64(s.DesiredFreeDiskSpace) - int64(actualFreeBytes)
+	dsb, err := diskSizeBytes(mountPoint)
+	if err != nil {
+		log15.Error("getting disk size", "error", err)
+	}
+	desiredFreeBytes := uint64(float64(s.DesiredPercentFree) / 100.0 * float64(dsb))
+	howManyBytesToFree := uint64(desiredFreeBytes - actualFreeBytes)
+	if howManyBytesToFree < 0 {
+		howManyBytesToFree = 0
+	}
+	G := float64(1024 * 1024 * 1024)
+	log15.Debug("cleanup",
+		"desired percent free", s.DesiredPercentFree,
+		"actual percent free", float64(actualFreeBytes)/float64(dsb)*100.0,
+		"amount to free in GiB", float64(howManyBytesToFree)/G,
+		"mount point", mountPoint)
 	if err := s.freeUpSpace(howManyBytesToFree); err != nil {
 		log15.Error("cleanup: error freeing up space", "error", err)
 	}
 }
 
-// bytesFreeOnDisk tells how much space is available on the disk containing s.ReposDir.
-func (s *Server) bytesFreeOnDisk() (uint64, error) {
+func bytesFreeOnDisk(mountPoint string) (uint64, error) {
 	var fs syscall.Statfs_t
-	mount, err := findMountPoint(s.ReposDir)
-	if err != nil {
-		return 0, errors.Wrap(err, "finding mount point for dir containing repos")
-	}
-	if err := syscall.Statfs(mount, &fs); err != nil {
+	if err := syscall.Statfs(mountPoint, &fs); err != nil {
 		return 0, errors.Wrap(err, "finding out how much disk space is free")
 	}
 	free := fs.Bavail * uint64(fs.Bsize)
+	return free, nil
+}
+
+func diskSizeBytes(mountPoint string) (uint64, error) {
+	var fs syscall.Statfs_t
+	if err := syscall.Statfs(mountPoint, &fs); err != nil {
+		return 0, errors.Wrap(err, "statting")
+	}
+	free := fs.Blocks * uint64(fs.Bsize)
 	return free, nil
 }
 
@@ -286,7 +299,7 @@ func device(f string) (int64, error) {
 
 // freeUpSpace removes git directories under ReposDir, in order from least
 // recently to most recently used, until it has freed howManyBytesToFree.
-func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
+func (s *Server) freeUpSpace(howManyBytesToFree uint64) error {
 	if howManyBytesToFree <= 0 {
 		return nil
 	}
@@ -311,7 +324,11 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 	})
 
 	// Remove repos until howManyBytesToFree is met or exceeded.
-	var spaceFreed int64
+	var spaceFreed uint64
+	mountPoint, err := findMountPoint(s.ReposDir)
+	if err != nil {
+		return errors.Wrap(err, "finding mount point")
+	}
 	for _, d := range gitDirs {
 		delta, err := dirSize(d)
 		if err != nil {
@@ -320,10 +337,10 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 		if err := s.removeRepoDirectory(d); err != nil {
 			return errors.Wrap(err, "removing repo directory")
 		}
-		spaceFreed += delta
+		spaceFreed += uint64(delta)
 
 		// Report the new disk usage situation after removing this repo.
-		actualFreeBytes, err := s.bytesFreeOnDisk()
+		actualFreeBytes, err := bytesFreeOnDisk(mountPoint)
 		if err != nil {
 			return errors.Wrap(err, "finding the amount of space free on disk")
 		}
@@ -332,7 +349,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 			"repo", d,
 			"how old", time.Since(dirModTimes[d]),
 			"free space in GiB", float64(actualFreeBytes)/G,
-			"desired free space in GiB", float64(s.DesiredFreeDiskSpace)/G,
+			"desired free space in GiB", float64(s.DesiredPercentFree)/G,
 			"space freed in GiB", float64(spaceFreed)/G,
 			"how much space to free in GiB", float64(howManyBytesToFree)/G)
 
