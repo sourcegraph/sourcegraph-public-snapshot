@@ -134,8 +134,10 @@ func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExter
 	set := make(map[*ExternalService]bool, len(s.svcByID))
 	svcs := make(ExternalServices, 0, len(s.svcByID))
 	for _, svc := range s.svcByID {
+		k := strings.ToLower(svc.Kind)
+
 		if !set[svc] &&
-			(len(kinds) == 0 || kinds[strings.ToLower(svc.Kind)]) &&
+			((len(kinds) == 0 && k != "phabricator") || kinds[k]) &&
 			(len(ids) == 0 || ids[svc.ID]) &&
 			!svc.IsDeleted() {
 
