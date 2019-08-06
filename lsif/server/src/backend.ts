@@ -1,11 +1,10 @@
 import * as lsp from 'vscode-languageserver'
-import { Database } from './ms/database'
-import { GetHandleStats, InsertStats, QueryStats } from './stats'
+import { CreateRunnerStats, InsertStats, QueryStats } from './stats'
 
 export const ERRNOLSIFDATA = 'NoLSIFData'
 
 /**
- * The exception thrown from `getDatabaseHandle` when
+ * The exception thrown from `createRunner` when
  */
 export class NoLSIFDataError extends Error {
     public readonly name = ERRNOLSIFDATA
@@ -22,11 +21,11 @@ export class NoLSIFDataError extends Error {
  * out several different experiments on how we encode and query data without
  * having to mess with all of the http-server plumbing.
  */
-export interface Backend {
+export interface Backend<T extends QueryRunner> {
     /**
      * Read the content of the temporary file containing a JSON-encoded LSIF
      * dump. Insert these contents into some storage with an encoding that
-     * can be subsequently read by the `getDatabaseHandle` method.
+     * can be subsequently read by the `createRunner` method.
      */
     insertDump(
         tempPath: string,
@@ -36,22 +35,29 @@ export interface Backend {
     ): Promise<{ insertStats: InsertStats }>
 
     /**
-     * Create a handle to the database relevant to the given repository and
-     * commit hash.  This assumes that data for this database has already been
-     * inserted via `insertDump` (otherwise this method is expected to throw).
+     * Create a query runner relevant to the given repository and commit hash. This
+     * assumes that data for this subset of data has already been inserted via
+     * `insertDump` (otherwise this method is expected to throw).
      */
-    getDatabaseHandle(
-        repository: string,
-        commit: string
-    ): Promise<{ database: Database; getHandleStats: GetHandleStats }>
+    createRunner(repository: string, commit: string): Promise<{ queryRunner: T; createRunnerStats: CreateRunnerStats }>
+}
+
+/**
+ * A query runner is created by a `Backend` and can answer LSIF queries.
+ */
+export interface QueryRunner {
+    /**
+     * Determines whether or not data exists for the given file.
+     */
+    exists(file: string): Promise<boolean>
 
     /**
      * Return data for an LSIF query.
      */
-    query(
-        db: Database,
-        method: string,
-        uri: string,
-        position: lsp.Position
-    ): Promise<{ result: any; queryStats: QueryStats }>
+    query(method: string, uri: string, position: lsp.Position): Promise<{ result: any; queryStats: QueryStats }>
+
+    /**
+     * Free any resources used by this object.
+     */
+    close(): Promise<void>
 }

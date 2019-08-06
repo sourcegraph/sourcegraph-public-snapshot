@@ -19,15 +19,15 @@ export interface InsertStats {
 }
 
 /**
- * Runtime statistics around the `getDatabaseHandle` backend method.
+ * Runtime statistics around the `createRunner` backend method.
  */
-export interface GetHandleStats {
+export interface CreateRunnerStats {
     // The time it took to create a handle to the target database.
     elapsedMs: number
 }
 
 /**
- * Runtime statistics around backend `query` method.
+ * Runtime statistics around `query` query runner method.
  */
 export interface QueryStats {
     // The time it took to perform the query.

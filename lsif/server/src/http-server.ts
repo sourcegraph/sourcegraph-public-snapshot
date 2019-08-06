@@ -92,12 +92,12 @@ function main(): void {
             checkCommit(commit)
 
             try {
-                const { result, cacheStats, getHandleStats } = await cache.withDB(
+                const { result, cacheStats, createRunnerStats } = await cache.withDB(
                     backend,
                     repository,
                     commit,
-                    async db => {
-                        return !file || Boolean(db.stat(file))
+                    async queryRunner => {
+                        return !file || queryRunner.exists(file)
                     }
                 )
 
@@ -106,7 +106,7 @@ function main(): void {
                     data: result,
                     stats: {
                         cacheStats: cacheStats,
-                        getHandleStats: getHandleStats,
+                        createRunnerStats: createRunnerStats,
                     },
                 })
             } catch (e) {
@@ -134,8 +134,8 @@ function main(): void {
                 const {
                     result: { result, queryStats },
                     cacheStats,
-                } = await cache.withDB(backend, repository, commit, async db => {
-                    return await backend.query(db, method, path, position)
+                } = await cache.withDB(backend, repository, commit, async queryRunner => {
+                    return await queryRunner.query(method, path, position)
                 })
 
                 // TODO(efritz) - add stats to prometheus reporter

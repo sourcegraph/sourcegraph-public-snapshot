@@ -1,10 +1,10 @@
 import * as lsp from 'vscode-languageserver'
 import * as path from 'path'
-import { Backend, NoLSIFDataError } from './backend'
+import { Backend, NoLSIFDataError, QueryRunner } from './backend'
 import { BlobStore } from './ms/blobStore'
 import { child_process, fs } from 'mz'
 import { Database } from './ms/database'
-import { GetHandleStats, InsertStats, QueryStats, timeit } from './stats'
+import { InsertStats, QueryStats, timeit, CreateRunnerStats } from './stats'
 import { GraphStore } from './ms/graphStore'
 import { readEnvInt } from './env'
 
@@ -29,11 +29,11 @@ const SQLITE_CONVERTER_BINARY = './node_modules/lsif-sqlite/bin/lsif-sqlite'
 /**
  * The abstract SQLite backend base that supports graph and blob subclasses.
  */
-export abstract class SQLiteBackend implements Backend {
+export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
     /**
      * Read the content of the temporary file containing a JSON-encoded LSIF
      * dump. Insert these contents into some storage with an encoding that
-     * can be subsequently read by the `getDatabaseHandle` method.
+     * can be subsequently read by the `createRunner` method.
      */
     public async insertDump(
         tempPath: string,
@@ -60,14 +60,14 @@ export abstract class SQLiteBackend implements Backend {
     }
 
     /**
-     * Create a handle to the database relevant to the given repository and
-     * commit hash.  This assumes that data for this database has already been
-     * inserted via `insertDump` (otherwise this method is expected to throw).
+     * Create a query runner relevant to the given repository and commit hash. This
+     * assumes that data for this subset of data has already been inserted via
+     * `insertDump` (otherwise this method is expected to throw).
      */
-    public async getDatabaseHandle(
+    public async createRunner(
         repository: string,
         commit: string
-    ): Promise<{ database: Database; getHandleStats: GetHandleStats }> {
+    ): Promise<{ queryRunner: SQLiteQueryRunner; createRunnerStats: CreateRunnerStats }> {
         const file = makeFilename(repository, commit)
         const db = this.createStore()
 
@@ -80,8 +80,8 @@ export abstract class SQLiteBackend implements Backend {
             })
 
             return {
-                database: db,
-                getHandleStats: {
+                queryRunner: new SQLiteQueryRunner(db),
+                createRunnerStats: {
                     elapsedMs: elapsed,
                 },
             }
@@ -92,36 +92,6 @@ export abstract class SQLiteBackend implements Backend {
 
             throw e
         }
-    }
-
-    /**
-     * Return data for an LSIF query.
-     */
-    public async query(
-        db: Database,
-        method: string,
-        uri: string,
-        position: lsp.Position
-    ): Promise<{ result: any; queryStats: QueryStats }> {
-        const { result, elapsed } = await timeit(async () => {
-            switch (method) {
-                case 'hover':
-                    return Promise.resolve(db.hover(uri, position))
-                case 'definitions':
-                    return Promise.resolve(db.definitions(uri, position))
-                case 'references':
-                    return Promise.resolve(db.references(uri, position, { includeDeclaration: false }))
-                default:
-                    throw new Error(`Unimplemented method ${method}`)
-            }
-        })
-
-        return Promise.resolve({
-            result,
-            queryStats: {
-                elapsedMs: elapsed,
-            },
-        })
     }
 
     /**
@@ -180,6 +150,54 @@ export abstract class SQLiteBackend implements Backend {
      * created by `buildCommand`.
      */
     protected abstract createStore(): Database
+}
+
+export class SQLiteQueryRunner implements QueryRunner {
+    constructor(private db: Database) {}
+
+    /**
+     * Determines whether or not data exists for the given file.
+     */
+    public exists(file: string): Promise<boolean> {
+        return Promise.resolve(Boolean(this.db.stat(file)))
+    }
+
+    /**
+     * Return data for an LSIF query.
+     */
+    public async query(
+        method: string,
+        uri: string,
+        position: lsp.Position
+    ): Promise<{ result: any; queryStats: QueryStats }> {
+        const { result, elapsed } = await timeit(async () => {
+            switch (method) {
+                case 'hover':
+                    return Promise.resolve(this.db.hover(uri, position))
+                case 'definitions':
+                    return Promise.resolve(this.db.definitions(uri, position))
+                case 'references':
+                    return Promise.resolve(this.db.references(uri, position, { includeDeclaration: false }))
+                default:
+                    throw new Error(`Unimplemented method ${method}`)
+            }
+        })
+
+        return Promise.resolve({
+            result,
+            queryStats: {
+                elapsedMs: elapsed,
+            },
+        })
+    }
+
+    /**
+     * Free any resources used by this object.
+     */
+    public close(): Promise<void> {
+        this.db.close()
+        return Promise.resolve()
+    }
 }
 
 /**

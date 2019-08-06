@@ -1,7 +1,6 @@
 import LRU from 'lru-cache'
-import { Backend } from './backend'
-import { CacheStats, GetHandleStats, timeit } from './stats'
-import { Database } from './ms/database'
+import { Backend, QueryRunner } from './backend'
+import { CacheStats, CreateRunnerStats, timeit } from './stats'
 import { readEnvInt } from './env'
 
 /**
@@ -19,12 +18,12 @@ const SOFT_MAX_STORAGE_IN_MEMORY = readEnvInt({
 })
 
 /**
- * The cache holds a promise that resolves to a database handle, some hint about
- * how many resources keeping this handle 'hot' costs, and a callback to call
+ * The cache holds a promise that resolves to a query runner, some hint about
+ * how many resources keeping this runner 'hot' costs, and a callback invoked
  * when the entry is evicted from memory.
  */
 interface LRUDBEntry {
-    dbPromise: Promise<{ database: Database; getHandleStats: GetHandleStats }>
+    promise: Promise<{ queryRunner: QueryRunner; createRunnerStats: CreateRunnerStats }>
     length: number
     dispose: () => void
 }
@@ -48,37 +47,40 @@ export class Cache {
      * repository@commit. Internally, it either gets a handle to the database
      * from the LRU cache or loads it from a secondary storage.
      */
-    public async withDB<T>(
-        backend: Backend,
+    public async withDB<T, R extends QueryRunner>(
+        backend: Backend<R>,
         repository: string,
         commit: string,
-        action: (db: Database) => Promise<T>
-    ): Promise<{ result: T; cacheStats: CacheStats; getHandleStats?: GetHandleStats }> {
+        action: (db: QueryRunner) => Promise<T>
+    ): Promise<{ result: T; cacheStats: CacheStats; createRunnerStats?: CreateRunnerStats }> {
         const key = makeKey(repository, commit)
 
         let hit = true
         let entry = this.lru.get(key)
 
         if (!entry) {
-            hit = false
-            const dbPromise = backend.getDatabaseHandle(repository, commit)
-            const length = 1 // TODO(efritz) - get length from backend
-            const dispose = () => dbPromise.then(({ database }) => database.close())
+            const promise = backend.createRunner(repository, commit)
 
-            entry = { dbPromise, length, dispose }
+            entry = {
+                promise,
+                length: 1, // TODO(efritz) - get length from backend
+                dispose: () => promise.then(({ queryRunner }) => queryRunner.close()),
+            }
+
+            hit = false
             this.lru.set(key, entry)
         }
 
         const {
-            result: { database, getHandleStats },
+            result: { queryRunner, createRunnerStats },
             elapsed,
         } = await timeit(async () => {
-            return await (<LRUDBEntry>entry).dbPromise
+            return await (<LRUDBEntry>entry).promise
         })
 
         // Wait for entry promise to resolve - will already
         // be resolved if this lookup was a cache hit.
-        const result = await action(database)
+        const result = await action(queryRunner)
 
         return {
             result,
@@ -86,8 +88,8 @@ export class Cache {
                 cacheHit: hit,
                 elapsedMs: elapsed,
             },
-            // Only return getHandleStats if it wasn't a cache hit
-            getHandleStats: (!hit || undefined) && getHandleStats,
+            // Only return createRunnerStats if it wasn't a cache hit
+            createRunnerStats: (!hit || undefined) && createRunnerStats,
         }
     }
 
