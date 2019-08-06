@@ -554,6 +554,7 @@ func (r *productSubscriptionConnection) compute(ctx context.Context) ([]*subscri
 			}
 			var li *graphqlbackend.ProductLicenseInfo
 			pl := &productLicense{v: &dbLicense{LicenseKey: *s.ActiveLicenseKey}} // Dummy license, only needs to contain the key.
+			fmt.Println("Checking license for ", *s.ActiveLicenseKey)
 			li, r.err = pl.Info()
 			if r.err != nil {
 				return

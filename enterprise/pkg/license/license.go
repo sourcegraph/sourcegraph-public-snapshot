@@ -147,5 +147,6 @@ func ParseSignedKey(text string, publicKey ssh.PublicKey) (info *Info, signature
 	if err := json.Unmarshal(signedKey.EncodedInfo, &info); err != nil {
 		return nil, "", err
 	}
+	fmt.Println("verifying, " + string(signedKey.EncodedInfo))
 	return info, string(signedKey.Signature.Blob), publicKey.Verify(signedKey.EncodedInfo, signedKey.Signature)
 }

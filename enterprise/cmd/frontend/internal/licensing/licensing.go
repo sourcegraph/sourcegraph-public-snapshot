@@ -45,7 +45,9 @@ func ParseProductLicenseKey(licenseKey string) (*license.Info, string, error) {
 // aren't considered valid when verified using the builtin public key).
 func ParseProductLicenseKeyWithBuiltinOrGenerationKey(licenseKey string) (*license.Info, string, error) {
 	var k ssh.PublicKey
-	if licenseGenerationPrivateKey != nil {
+	if Mocks.PublicKey != nil {
+		k = Mocks.PublicKey
+	} else if licenseGenerationPrivateKey != nil {
 		k = licenseGenerationPrivateKey.PublicKey()
 	} else {
 		k = publicKey
@@ -155,3 +157,5 @@ func GenerateProductLicenseKey(info license.Info) (string, error) {
 	}
 	return licenseKey, nil
 }
+
+type mockPublicKey = ssh.PublicKey
