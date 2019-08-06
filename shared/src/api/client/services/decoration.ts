@@ -7,7 +7,7 @@ import {
     ThemableDecorationStyle,
 } from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
-import { TextDocumentIdentifier } from '../../client/types/textDocument'
+import { TextDocumentIdentifier } from '../types/textDocument'
 import { FeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 

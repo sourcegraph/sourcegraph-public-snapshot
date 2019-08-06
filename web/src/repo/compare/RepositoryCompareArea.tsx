@@ -35,7 +35,7 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -187,11 +187,11 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                     <div className="alert alert-danger">Invalid comparison specifier</div>
                 ) : (
                     <Switch>
+                        {/* eslint-disable react/jsx-no-bind */}
                         <Route
                             path={`${this.props.match.url}`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
                                 <RepositoryCompareOverviewPage
                                     {...routeComponentProps}
@@ -203,6 +203,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                             )}
                         />
                         <Route key="hardcoded-key" component={NotFoundPage} />
+                        {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 )}
                 {this.state.hoverOverlayProps && (

@@ -3,7 +3,7 @@ import React from 'react'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PageTitle } from '../components/PageTitle'
 import { ThemeProps } from '../theme'
-import { ExternalServiceCard } from './../components/ExternalServiceCard'
+import { ExternalServiceCard } from '../components/ExternalServiceCard'
 import {
     AddExternalServiceMetadata,
     ALL_EXTERNAL_SERVICE_ADD_VARIANTS,

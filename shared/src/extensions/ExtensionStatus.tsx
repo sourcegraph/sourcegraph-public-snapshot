@@ -6,7 +6,7 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ExecutableExtension } from '../api/client/services/extensionsService'
 import { Link } from '../components/Link'
-import { ExtensionsControllerProps } from '../extensions/controller'
+import { ExtensionsControllerProps } from './controller'
 import { PlatformContextProps } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 
@@ -49,8 +49,8 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
 
         this.subscriptions.add(
             platformContext
-                .pipe(switchMap(({ sideloadedExtensionURL: sideloadedExtensionURL }) => sideloadedExtensionURL))
-                .subscribe(sideloadedExtensionURL => this.setState({ ...this.state, sideloadedExtensionURL }))
+                .pipe(switchMap(({ sideloadedExtensionURL }) => sideloadedExtensionURL))
+                .subscribe(sideloadedExtensionURL => this.setState({ sideloadedExtensionURL }))
         )
 
         this.componentUpdates.next(this.props)
@@ -100,12 +100,17 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                             </p>
                             <div>
                                 <button
+                                    type="button"
                                     className="btn btn-sm btn-primary mr-1"
                                     onClick={this.setSideloadedExtensionURL}
                                 >
                                     Change
                                 </button>
-                                <button className="btn btn-sm btn-danger" onClick={this.clearSideloadedExtensionURL}>
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-danger"
+                                    onClick={this.clearSideloadedExtensionURL}
+                                >
                                     Clear
                                 </button>
                             </div>
@@ -116,7 +121,11 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                                 <span>No sideloaded extension</span>
                             </p>
                             <div>
-                                <button className="btn btn-sm btn-primary" onClick={this.setSideloadedExtensionURL}>
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-primary"
+                                    onClick={this.setSideloadedExtensionURL}
+                                >
                                     Load extension
                                 </button>
                             </div>

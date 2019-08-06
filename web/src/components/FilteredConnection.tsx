@@ -237,6 +237,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                 {!this.props.connectionQuery && summary}
                 {!this.props.loading && !this.props.noShowMore && this.props.connection && hasNextPage && (
                     <button
+                        type="button"
                         className={`btn btn-secondary btn-sm filtered-connection__show-more ${this.props
                             .showMoreClassName || ''}`}
                         onClick={this.onClickShowMore}
@@ -434,7 +435,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
     private filterRef: HTMLInputElement | null = null
 
-    public constructor(props: FilteredConnectionProps<C, N, NP>) {
+    constructor(props: FilteredConnectionProps<C, N, NP>) {
         super(props)
 
         const q = new URLSearchParams(this.props.location.search)
@@ -603,8 +604,8 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         return q.toString()
     }
 
-    public componentWillReceiveProps(nextProps: FilteredConnectionProps<C, N, NP>): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

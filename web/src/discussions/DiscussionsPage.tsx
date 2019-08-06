@@ -6,7 +6,7 @@ import { isDiscussionsEnabled } from '.'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorNotSupportedPage } from '../components/ErrorNotSupportedPage'
 import { PageTitle } from '../components/PageTitle'
-import { DiscussionsList } from '../discussions/DiscussionsList'
+import { DiscussionsList } from './DiscussionsList'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props extends SettingsCascadeProps, RouteComponentProps<any> {
@@ -45,7 +45,7 @@ export class DiscussionsPage extends React.PureComponent<Props, State> {
                     withRepo={true}
                     repoID={undefined}
                     rev={undefined}
-                    filePath={'/**'}
+                    filePath="/**"
                     history={this.props.history}
                     location={this.props.location}
                     noun="discussion"

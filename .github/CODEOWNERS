@@ -77,6 +77,10 @@
 /packages @beyang
 /cmd/frontend @beyang
 /dev @beyang
+/dev/grafana.sh  @sourcegraph/distribution
+/dev/grafana  @sourcegraph/distribution
+/dev/prometheus.sh  @sourcegraph/distribution
+/dev/prometheus  @sourcegraph/distribution
 /.buildkite @beyang
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag

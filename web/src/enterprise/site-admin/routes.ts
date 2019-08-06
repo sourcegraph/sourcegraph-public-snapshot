@@ -2,7 +2,7 @@ import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { lazyComponent } from '../../util/lazyComponent'
 
-export const enterpriseSiteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
+export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     ...siteAdminAreaRoutes,
     {
         path: '/license',

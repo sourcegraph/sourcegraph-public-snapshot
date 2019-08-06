@@ -196,8 +196,8 @@ export class TreePage extends React.PureComponent<Props, State> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -260,7 +260,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                             <HistoryIcon className="icon-inline" /> Compare
                                         </Link>
                                         <Link
-                                            className={`btn btn-secondary`}
+                                            className="btn btn-secondary"
                                             to={`/${this.props.repoName}/-/stats/contributors`}
                                         >
                                             <UserIcon className="icon-inline" /> Contributors
@@ -309,10 +309,10 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     />
                                 </div>
                             )}
+                            {/* eslint-disable react/jsx-no-bind */}
                             <ActionsContainer
                                 {...this.props}
                                 menu={ContributableMenu.DirectoryPage}
-                                // tslint:disable-next-line:jsx-no-lambda
                                 render={items => (
                                     <section className="tree-page__section">
                                         <h3 className="tree-page__section-header">Actions</h3>
@@ -328,6 +328,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 )}
                                 empty={null}
                             />
+                            {/* eslint-enable react/jsx-no-bind */}
                             <div className="tree-page__section">
                                 <h3 className="tree-page__section-header">Changes</h3>
                                 <FilteredConnection<

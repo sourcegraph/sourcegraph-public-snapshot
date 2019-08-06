@@ -21,7 +21,7 @@ describe('Toggle', () => {
         expect(tree).toMatchSnapshot()
 
         // Clicking while disabled is a noop.
-        tree!.props.onClick({ preventDefault: () => void 0, currentTarget: { blur: () => void 0 } })
+        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
         tree = component.toJSON()
         expect(tree).toMatchSnapshot()
     })

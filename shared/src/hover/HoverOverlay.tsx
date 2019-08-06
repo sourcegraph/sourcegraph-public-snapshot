@@ -115,9 +115,8 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
         }
         return (
             <div
-                className={`hover-overlay card ${className}`}
-                ref={hoverRef}
-                // tslint:disable-next-line:jsx-ban-props needed for dynamic styling
+                // needed for dynamic styling
+                // eslint-disable-next-line react/forbid-dom-props
                 style={
                     overlayPosition
                         ? {
@@ -131,9 +130,12 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                               visibility: 'hidden',
                           }
                 }
+                className={`hover-overlay card ${className}`}
+                ref={hoverRef}
             >
                 {showCloseButton && (
                     <button
+                        type="button"
                         className={classNames('hover-overlay__close-button', this.props.closeButtonClassName)}
                         onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
                     >
@@ -153,7 +155,6 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                             {hoverOrError.message}
                         </div>
                     ) : (
-                        // tslint:disable-next-line deprecation We want to handle the deprecated MarkedString
                         hoverOrError &&
                         castArray<string | MarkupContent | { language: string; value: string }>(hoverOrError.contents)
                             .map(value => (typeof value === 'string' ? { kind: 'markdown', value } : value))

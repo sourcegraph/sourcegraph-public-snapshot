@@ -6,7 +6,7 @@ const onClickInstall = (): void => {
     eventLogger.log('InstallSourcegraphServerCTAClicked', { location_on_page: 'banner' })
 }
 
-export const ServerBanner = () => (
+export const ServerBanner: React.FunctionComponent = () => (
     <DismissibleAlert partialStorageKey="set-up-self-hosted" className="alert alert-info">
         <span>
             Search your private and internal code.{' '}

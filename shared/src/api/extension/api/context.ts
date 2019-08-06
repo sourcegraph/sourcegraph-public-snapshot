@@ -7,7 +7,7 @@ export class ExtContext {
     constructor(private proxy: ProxyResult<ClientContextAPI>) {}
 
     public updateContext(updates: ContextValues): void {
-        // tslint:disable-next-line: no-floating-promises
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this.proxy.$acceptContextUpdates(updates)
     }
 }

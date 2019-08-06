@@ -30,7 +30,7 @@ async function init(): Promise<void> {
     const link = document.createElement('link')
     link.setAttribute('rel', 'stylesheet')
     link.setAttribute('type', 'text/css')
-    link.setAttribute('href', sourcegraphURL + `/.assets/extension/css/style.bundle.css`)
+    link.setAttribute('href', sourcegraphURL + '/.assets/extension/css/style.bundle.css')
     link.id = 'sourcegraph-styles'
     document.getElementsByTagName('head')[0].appendChild(link)
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)

@@ -65,6 +65,7 @@ export class EventLogger implements TelemetryService {
 
     /**
      * Set user ID in Telligent tracker script.
+     *
      * @param uniqueUserDatabaseId Unique Sourcegraph user database ID (corresponds to databaseID from GraphQL)
      * @param username Human-readable user identifier, not guaranteed to always stay the same
      */

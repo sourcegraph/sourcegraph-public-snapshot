@@ -3,9 +3,8 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, of, Subject, Subscription } from 'rxjs'
-import { catchError, delay, distinctUntilChanged, mergeMap, startWith, switchMap, tap } from 'rxjs/operators'
+import { catchError, delay, mergeMap, startWith, switchMap, tap, map, distinctUntilKeyChanged } from 'rxjs/operators'
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -25,7 +24,7 @@ interface State {
  * The organization profile settings page.
  */
 export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
-    private orgChanges = new Subject<GQL.IOrg>()
+    private componentUpdates = new Subject<Props>()
     private submits = new Subject<void>()
     private subscriptions = new Subscription()
 
@@ -41,14 +40,15 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.orgChanges
+            this.componentUpdates
                 .pipe(
-                    distinctUntilChanged(),
-                    tap(org => eventLogger.logViewEvent('OrgSettingsProfile', { organization: { org_name: org.name } }))
+                    map(props => props.org),
+                    distinctUntilKeyChanged('id')
                 )
-                .subscribe()
+                .subscribe(org => {
+                    eventLogger.logViewEvent('OrgSettingsProfile', { organization: { org_name: org.name } })
+                })
         )
-        this.orgChanges.next(this.props.org)
 
         this.subscriptions.add(
             this.submits
@@ -73,12 +73,12 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                 .subscribe(state => this.setState(state as State))
         )
         // TODO(sqs): handle errors
+
+        this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: Props): void {
-        if (props.org !== this.props.org) {
-            this.orgChanges.next(props.org)
-        }
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

@@ -15,8 +15,8 @@ export class PageTitle extends React.Component<Props, {}> {
         this.updateTitle(this.props.title)
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.updateTitle(nextProps.title)
+    public componentDidUpdate(): void {
+        this.updateTitle(this.props.title)
     }
 
     public componentWillUnmount(): void {

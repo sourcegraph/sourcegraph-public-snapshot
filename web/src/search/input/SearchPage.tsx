@@ -41,22 +41,20 @@ export class SearchPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        const query = parseSearchURLQuery(props.location.search)
+        const queryFromUrl = parseSearchURLQuery(props.location.search) || ''
         this.state = {
-            userQuery: query || '',
+            userQuery:
+                !queryFromUrl &&
+                window.context.sourcegraphDotComMode &&
+                !localStorage.getItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY)
+                    ? 'repogroup:sample'
+                    : queryFromUrl,
             builderQuery: '',
         }
     }
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('Home')
-        if (
-            window.context.sourcegraphDotComMode &&
-            !localStorage.getItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY) &&
-            !this.state.userQuery
-        ) {
-            this.setState({ userQuery: 'repogroup:sample' })
-        }
     }
 
     public render(): JSX.Element | null {
@@ -86,7 +84,7 @@ export class SearchPage extends React.Component<Props, State> {
                             {...this.props}
                             value={this.state.userQuery}
                             onChange={this.onUserQueryChange}
-                            autoFocus={'cursor-at-end'}
+                            autoFocus="cursor-at-end"
                             hasGlobalQueryBehavior={true}
                         />
                         <SearchButton />

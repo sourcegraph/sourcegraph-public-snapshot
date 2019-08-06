@@ -59,7 +59,7 @@ function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> 
     )
 }
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
@@ -71,8 +71,8 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         ExtensionsControllerProps {
-    orgAreaRoutes: ReadonlyArray<OrgAreaRoute>
-    orgAreaHeaderNavItems: ReadonlyArray<OrgAreaHeaderNavItem>
+    orgAreaRoutes: readonly OrgAreaRoute[]
+    orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
     /**
      * The currently authenticated user.
@@ -112,20 +112,20 @@ export interface OrgAreaPageProps
 export class OrgArea extends React.Component<Props> {
     public state: State = {}
 
-    private routeMatchChanges = new Subject<{ name: string }>()
+    private componentUpdates = new Subject<Props>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         // Changes to the route-matched org name.
-        const nameChanges = this.routeMatchChanges.pipe(
-            map(({ name }) => name),
+        const nameChanges = this.componentUpdates.pipe(
+            map(props => props.match.params.name),
             distinctUntilChanged()
         )
 
         // Fetch organization.
         this.subscriptions.add(
-            combineLatest(nameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true)))
+            combineLatest([nameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true))])
                 .pipe(
                     switchMap(([name, forceRefresh]) => {
                         type PartialStateUpdate = Pick<State, 'orgOrError'>
@@ -142,13 +142,11 @@ export class OrgArea extends React.Component<Props> {
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
 
-        this.routeMatchChanges.next(this.props.match.params)
+        this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: Props): void {
-        if (props.match.params !== this.props.match.params) {
-            this.routeMatchChanges.next(props.match.params)
-        }
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -194,18 +192,19 @@ export class OrgArea extends React.Component<Props> {
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
                                 {this.props.orgAreaRoutes.map(
+                                    /* eslint-disable react/jsx-no-bind */
                                     ({ path, exact, render, condition = () => true }) =>
                                         condition(context) && (
                                             <Route
                                                 path={this.props.match.url + path}
                                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                                 exact={exact}
-                                                // tslint:disable-next-line:jsx-no-lambda
                                                 render={routeComponentProps =>
                                                     render({ ...context, ...routeComponentProps })
                                                 }
                                             />
                                         )
+                                    /* eslint-enable react/jsx-no-bind */
                                 )}
                                 <Route key="hardcoded-key" component={NotFoundPage} />
                             </Switch>

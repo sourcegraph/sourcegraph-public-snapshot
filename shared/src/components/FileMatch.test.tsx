@@ -11,7 +11,7 @@ import { setLinkComponent } from './Link'
 
 jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
     <>
-        <MockVisibilitySensor onChange={onChange} children={children} />
+        <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
     </>
 ))
 

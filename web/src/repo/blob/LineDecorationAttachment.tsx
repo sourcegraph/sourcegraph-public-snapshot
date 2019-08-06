@@ -16,20 +16,20 @@ interface LineDecorationAttachmentProps extends AbsoluteRepoFile, ThemeProps {
 export class LineDecorationAttachment extends React.PureComponent<LineDecorationAttachmentProps> {
     private portal: Element | null = null
 
-    public componentWillMount(): void {
+    public componentDidMount(): void {
         this.portal = document.getElementById(this.props.portalID)
     }
 
-    public componentWillReceiveProps(nextProps: Readonly<LineDecorationAttachmentProps>): void {
+    public componentDidUpdate(prevProps: Readonly<LineDecorationAttachmentProps>): void {
         if (
-            nextProps.repoName !== this.props.repoName ||
-            nextProps.rev !== this.props.rev ||
-            nextProps.filePath !== this.props.filePath ||
-            nextProps.line !== this.props.line ||
-            nextProps.portalID !== this.props.portalID ||
-            nextProps.attachment !== this.props.attachment
+            this.props.repoName !== prevProps.repoName ||
+            this.props.rev !== prevProps.rev ||
+            this.props.filePath !== prevProps.filePath ||
+            this.props.line !== prevProps.line ||
+            this.props.portalID !== prevProps.portalID ||
+            this.props.attachment !== prevProps.attachment
         ) {
-            this.portal = document.getElementById(nextProps.portalID)
+            this.portal = document.getElementById(this.props.portalID)
         }
     }
 
@@ -57,7 +57,7 @@ export class LineDecorationAttachment extends React.PureComponent<LineDecoration
             >
                 <span
                     className="line-decoration-attachment__contents"
-                    // tslint:disable-next-line:jsx-ban-props
+                    // eslint-disable-next-line react/forbid-dom-props
                     style={{
                         color: style.color,
                         backgroundColor: style.backgroundColor,

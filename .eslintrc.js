@@ -1,26 +1,71 @@
 // @ts-check
 
 const config = {
-  parser: '@typescript-eslint/parser',
+  extends: '@sourcegraph/eslint-config',
+  env: {
+    browser: true,
+    node: true,
+    es6: true,
+  },
   parserOptions: {
     ecmaVersion: 2018,
     sourceType: 'module',
     ecmaFeatures: {
       jsx: true,
     },
-  },
-  plugins: ['react', 'react-hooks'],
-  rules: {
-    // For now, because we use both tslint and eslint side-by-side, only use rules that tslint
-    // *doesn't* support.
-    'react-hooks/rules-of-hooks': 'error',
-    'react-hooks/exhaustive-deps': 'error',
+    project: 'tsconfig.json',
   },
   settings: {
     react: {
       version: 'detect',
     },
+    linkComponents: [
+      {
+        name: 'LinkOrSpan',
+        linkAttribute: 'to',
+      },
+      {
+        name: 'Link',
+        linkAttribute: 'to',
+      },
+    ],
   },
+  rules: {
+    // Rules that are specific to this repo
+    // All other rules should go into https://github.com/sourcegraph/eslint-config
+    'no-restricted-imports': ['error', { paths: ['highlight.js', 'marked'] }],
+    'react/forbid-elements': [
+      'error',
+      {
+        forbid: [
+          {
+            element: 'form',
+            message:
+              'Use the Form component in src/components/Form.tsx instead of the native HTML form element to get proper form validation feedback',
+          },
+          {
+            element: 'select',
+            message:
+              'Use the Select component in src/components/Select.tsx instead of the native HTML select element for proper cross-browser styling',
+          },
+        ],
+      },
+    ],
+  },
+  overrides: [
+    {
+      files: ['*.d.ts'],
+      rules: {
+        'no-restricted-imports': 'off',
+      },
+    },
+    {
+      files: '*.story.tsx',
+      rules: {
+        'react/forbid-dom-props': 'off',
+      },
+    },
+  ],
 }
 
 module.exports = config

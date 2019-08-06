@@ -102,8 +102,8 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                 {this.props.notification.progress && this.state.progress && (
                     <div className="progress">
                         <div
-                            className={`sourcegraph-notification-item__progressbar progress-bar`}
-                            // tslint:disable-next-line:jsx-ban-props
+                            className="sourcegraph-notification-item__progressbar progress-bar"
+                            // eslint-disable-next-line react/forbid-dom-props
                             style={{ width: this.state.progress.percentage + '%' }}
                         />
                     </div>
@@ -116,7 +116,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
 }
 
 /**
- * @return The Bootstrap class that corresponds to {@link type}.
+ * @returns The Bootstrap class that corresponds to {@link type}.
  */
 function getBootstrapClass(type: sourcegraph.NotificationType | undefined): string {
     switch (type) {

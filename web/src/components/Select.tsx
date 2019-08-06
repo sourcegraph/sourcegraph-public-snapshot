@@ -8,7 +8,8 @@ export const Select: React.FunctionComponent<
     React.DetailedHTMLProps<React.SelectHTMLAttributes<HTMLSelectElement>, HTMLSelectElement>
 > = ({ className = '', ...props }) => (
     <div className="select">
-        {/* tslint:disable-next-line:jsx-ban-elements this is the ONLY allowed instance of <select> */}
+        {/* this is the ONLY allowed instance of <select> */}
+        {/* eslint-disable-next-line react/forbid-elements */}
         <select {...props} className={`select__picker form-control ${className}`}>
             {props.children}
         </select>

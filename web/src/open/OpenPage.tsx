@@ -48,7 +48,7 @@ export class OpenPage extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="open-page">
-                <PageTitle title={'Open in Sourcegraph - Sourcegraph'} />
+                <PageTitle title="Open in Sourcegraph - Sourcegraph" />
                 <h1>Opening in {validSchemes[this.state.scheme]}</h1>
                 <p>
                     Your should be redirected in a few seconds.
@@ -61,7 +61,7 @@ export class OpenPage extends React.Component<Props, State> {
                                 {i === 0 ? '' : ', '}
                                 <a
                                     href=""
-                                    // tslint:disable-next-line:jsx-no-lambda
+                                    // eslint-disable-next-line react/jsx-no-bind
                                     onClick={e => this.onClickLink(e, scheme)}
                                 >
                                     {name}

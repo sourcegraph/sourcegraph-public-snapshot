@@ -230,9 +230,9 @@ export class CompletionWidget extends React.Component<CompletionWidgetProps, Sta
         return (
             <div className={`completion-widget ${this.props.widgetClassName || ''}`}>
                 <div
-                    className={`completion-widget__container ${this.props.widgetContainerClassName || ''}`}
-                    // tslint:disable-next-line: jsx-ban-props
+                    // eslint-disable-next-line react/forbid-dom-props
                     style={{ left: caretCoordinates.left, top: caretCoordinates.top }}
+                    className={`completion-widget__container ${this.props.widgetContainerClassName || ''}`}
                 >
                     <CompletionWidgetDropdown
                         {...this.props}
