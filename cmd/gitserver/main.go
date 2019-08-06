@@ -48,7 +48,6 @@ func main() {
 		ReposDir:                reposDir,
 		DeleteStaleRepositories: runRepoCleanup,
 		DesiredPercentFree:      wantPctFree2,
-		DiskSizer:               &server.StatDiskSizer{},
 	}
 	gitserver.RegisterMetrics()
 

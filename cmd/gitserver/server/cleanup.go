@@ -194,6 +194,9 @@ func (s *Server) cleanupRepos() {
 		log15.Error("cleanup: error iterating over repositories", "error", err)
 	}
 
+	if s.DiskSizer == nil {
+		s.DiskSizer = &StatDiskSizer{}
+	}
 	btf, err := s.howManyBytesToFree()
 	if err != nil {
 		log15.Error("cleanup: ensuring free disk space", "error", err)

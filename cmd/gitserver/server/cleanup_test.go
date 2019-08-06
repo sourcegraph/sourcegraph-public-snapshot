@@ -503,6 +503,7 @@ func TestFreeUpSpace(t *testing.T) {
 		// Run.
 		s := Server{
 			ReposDir: rd,
+			DiskSizer: &fakeDiskSizer{},
 		}
 		if err := s.freeUpSpace(1000); err != nil {
 			t.Fatal(err)
