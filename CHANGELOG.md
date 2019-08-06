@@ -21,7 +21,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-## 3.6.1 (unreleased)
+## 3.6.2
+
+### Fixed
+
+- Fixed Phabricator external services so they won't stop the syncing process for repositories when Phabricator doesn't return clone URLs. [#5101](https://github.com/sourcegraph/sourcegraph/pull/5101)
+
+## 3.6.1
 
 ## Added
 
@@ -51,6 +57,12 @@ All notable changes to Sourcegraph are documented in this file.
 - Commit searches now correctly highlight unicode characters, for example 加. [#4512](https://github.com/sourcegraph/sourcegraph/issues/4512)
 - Symbol searches now show the number of symbol matches rather than the number of file matches found. [#4578](https://github.com/sourcegraph/sourcegraph/issues/4578)
 - Symbol searches with truncated results now show a `+` on the results page to signal that some results have been omitted. [#4579](https://github.com/sourcegraph/sourcegraph/issues/4579)
+
+## 3.5.4
+
+### Fixed
+
+- Fixed Phabricator external services so they won't stop the syncing process for repositories when Phabricator doesn't return clone URLs. [#5101](https://github.com/sourcegraph/sourcegraph/pull/5101)
 
 ## 3.5.2
 
