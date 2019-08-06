@@ -27,7 +27,7 @@ func Test_serveReposList(t *testing.T) {
 		t.Helper()
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if err := serveReposList(w, r); err != nil {
-				t.Fatalf("calling serveReposList: %v", err)
+				t.Errorf("calling serveReposList: %v", err)
 			}
 		}))
 		defer ts.Close()
