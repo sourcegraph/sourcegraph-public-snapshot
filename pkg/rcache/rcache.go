@@ -203,71 +203,22 @@ func SetupForTest(t TB) {
 		}
 	}
 
-	_, err := c.Do("EVAL", `local keys = redis.call('keys', ARGV[1])
-if #keys > 0 then
-	return redis.call('del', unpack(keys))
-else
-	return ''
-end`, 0, globalPrefix+":*")
+	err := deleteKeysWithPrefix(c, globalPrefix)
 	if err != nil {
 		log15.Error("Could not clear test prefix", "name", t.Name(), "globalPrefix", globalPrefix, "error", err)
 	}
 }
 
 func deleteKeysWithPrefix(c redis.Conn, prefix string) error {
-	pattern := prefix + ":*"
+	const script = `local keys = redis.call('keys', ARGV[1])
+if #keys > 0 then
+	return redis.call('del', unpack(keys))
+else
+	return ''
+end`
 
-	iter := 0
-	keys := make([]string, 0)
-	for {
-		arr, err := redis.Values(c.Do("SCAN", iter, "MATCH", pattern))
-		if err != nil {
-			return fmt.Errorf("error retrieving keys with pattern %q", pattern)
-		}
-
-		iter, err = redis.Int(arr[0], nil)
-		if err != nil {
-			return err
-		}
-
-		k, err := redis.Strings(arr[1], nil)
-		if err != nil {
-			return err
-		}
-		keys = append(keys, k...)
-		if iter == 0 {
-			break
-		}
-	}
-
-	if len(keys) == 0 {
-		return nil
-	}
-
-	const batchSize = 1000
-	var batch = make([]interface{}, batchSize, batchSize)
-
-	for i := 0; i < len(keys); i += batchSize {
-		j := i + batchSize
-		if j > len(keys) {
-			j = len(keys)
-		}
-		currentBatchSize := j - i
-
-		for bi, v := range keys[i:j] {
-			batch[bi] = v
-		}
-
-		// We ignore whether the number of deleted keys matches what we have in
-		// `batch`, because in the time since we constructed `keys` some of the
-		// keys might have expired
-		_, err := c.Do("DEL", batch[:currentBatchSize]...)
-		if err != nil {
-			return fmt.Errorf("failed to delete keys: %s", err)
-		}
-	}
-
-	return nil
+	_, err := c.Do("EVAL", script, 0, prefix+":*")
+	return err
 }
 
 var (
