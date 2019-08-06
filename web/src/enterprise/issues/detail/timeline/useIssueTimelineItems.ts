@@ -21,6 +21,7 @@ const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
     keyof GQL.ThreadTimelineItem
 >(
     [
+        'CreateThreadEvent',
         'AddThreadToCampaignEvent',
         'RemoveThreadFromCampaignEvent',
         'ReviewEvent',

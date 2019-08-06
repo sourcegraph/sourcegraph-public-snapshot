@@ -16,7 +16,8 @@ export const RemoveThreadFromCampaignEventTimelineItem: React.FunctionComponent<
     className = '',
 }) => (
     <TimelineItem icon={PlusCircleIcon} className={className} event={event}>
-        <ActorLink actor={event.actor} /> removed the thread <Link to={event.thread.url}>{event.thread.title}</Link>{' '}
-        from the campaign <Link to={event.campaign.url}>{event.campaign.name}</Link>
+        <ActorLink actor={event.actor} /> removed the {event.thread.__typename.toLowerCase()}{' '}
+        <Link to={event.thread.url}>{event.thread.title}</Link> from the campaign{' '}
+        <Link to={event.campaign.url}>{event.campaign.name}</Link>
     </TimelineItem>
 )

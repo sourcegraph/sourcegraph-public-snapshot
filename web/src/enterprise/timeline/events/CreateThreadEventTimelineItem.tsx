@@ -13,6 +13,7 @@ interface Props {
 
 export const CreateThreadEventTimelineItem: React.FunctionComponent<Props> = ({ event, className = '' }) => (
     <TimelineItem icon={PlusCircleIcon} className={className} event={event}>
-        <ActorLink actor={event.actor} /> added the thread <Link to={event.thread.url}>{event.thread.title}</Link>
+        <ActorLink actor={event.actor} /> created the {event.thread.__typename.toLowerCase()}{' '}
+        <Link to={event.thread.url}>{event.thread.title}</Link>
     </TimelineItem>
 )

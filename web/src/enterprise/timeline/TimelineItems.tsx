@@ -3,6 +3,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { Timeline } from '../../components/timeline/Timeline'
 import { AddThreadToCampaignEventTimelineItem } from './events/AddThreadToCampaignEventTimelineItem'
 import { CloseThreadEventTimelineItem } from './events/CloseThreadEventTimelineItem'
+import { CommentOnThreadEventTimelineItem } from './events/CommentOnThreadEventTimelineItem'
 import { CreateThreadEventTimelineItem } from './events/CreateThreadEventTimelineItem'
 import { MergeChangesetEventTimelineItem } from './events/MergeChangesetEventTimelineItem'
 import { RemoveThreadFromCampaignEventTimelineItem } from './events/RemoveThreadFromCampaignEventTimelineItem'
@@ -22,6 +23,9 @@ interface Props {
 export const TimelineItems: React.FunctionComponent<Props> = ({ events, className }) => (
     <Timeline tag="ol" className={className}>
         {events.nodes.map((event, i) => {
+            if (!event.__typename) {
+                return null // occurs for event types with no `... on XyzEvent` in GraphQL query
+            }
             if (!event.id) {
                 return (
                     <li key={i} className="border border-danger p-2">
