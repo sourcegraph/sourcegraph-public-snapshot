@@ -20,6 +20,24 @@ const PORT = readEnvInt({ key: 'LSIF_HTTP_PORT', defaultValue: 3186 })
 const MAX_FILE_SIZE = readEnvInt({ key: 'LSIF_MAX_FILE_SIZE', defaultValue: 100 * 1024 * 1024 })
 
 /**
+ * An object that identifies a commit of a repository.
+ */
+interface RepositoryCommit {
+    // An opaque repository ID.
+    repository: string
+
+    // A 40-character commit hash.
+    commit: string
+}
+
+/**
+ * List of supported `Database` methods.
+ */
+type SupportedMethods = 'hover' | 'definitions' | 'references'
+
+const SUPPORTED_METHODS: Set<SupportedMethods> = new Set(['hover', 'definitions', 'references'])
+
+/**
  * Runs the HTTP server which accepts LSIF file uploads and responds to
  * hover/defs/refs requests.
  */
@@ -147,7 +165,7 @@ function main(): void {
 /**
  * Computes the cache key that contains LSIF data for the given repository@commit.
  */
-export function cacheKey({ repository, commit }: RepositoryCommit): string {
+function cacheKey({ repository, commit }: RepositoryCommit): string {
     const urlEncodedRepository = encodeURIComponent(repository)
     return `${urlEncodedRepository}@${commit}.lsif`
 }
@@ -182,36 +200,7 @@ async function readContent(req: express.Request, tempPath: string): Promise<numb
 }
 
 //
-// Models
-
-/**
- * An opaque repository ID.
- */
-interface Repository {
-    repository: string
-}
-
-/**
- * A 40-character commit hash.
- */
-interface Commit {
-    commit: string
-}
-
-/**
- * Combines `Repository` and `Commit`.
- */
-interface RepositoryCommit extends Repository, Commit {}
-
-//
 // Validation
-
-/**
- * List of supported `Database` methods.
- */
-type SupportedMethods = 'hover' | 'definitions' | 'references'
-
-const SUPPORTED_METHODS: Set<SupportedMethods> = new Set(['hover', 'definitions', 'references'])
 
 /**
  * Type guard for SupportedMethods.
