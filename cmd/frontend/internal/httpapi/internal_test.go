@@ -91,13 +91,11 @@ func Test_serveReposList(t *testing.T) {
 		}
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(false)
-		withEnv("SOURCEGRAPH_REPOS_TO_INDEX_LIMIT", "1", func() {
-			URIs := getRepoURIsViaHTTP(t)
-			wantURIs := []string{"github.com/torvalds/linux"}
-			if !reflect.DeepEqual(URIs, wantURIs) {
-				t.Errorf("got %v, want %v", URIs, wantURIs)
-			}
-		})
+		URIs := getRepoURIsViaHTTP(t)
+		wantURIs := []string{"github.com/torvalds/linux"}
+		if !reflect.DeepEqual(URIs, wantURIs) {
+			t.Errorf("got %v, want %v", URIs, wantURIs)
+		}
 	})
 }
 
