@@ -17,23 +17,22 @@ interface Props {
     onSelect: () => void
 }
 
-const logClickOnText = () => eventLogger.log('RepositorySearchResultClicked')
-
 export const RepositorySearchResult: React.FunctionComponent<Props> = (props: Props) => (
     <ResultContainer
         titleClassName="repository-search-result__title"
         icon={RepositoryIcon}
         title={
             <>
+                {/* eslint-disable react/jsx-no-bind */}
                 <RepoLink
                     repoName={props.result.name}
                     to={props.result.url}
-                    // tslint:disable-next-line:jsx-no-lambda
                     onClick={() => {
-                        logClickOnText()
+                        eventLogger.log('RepositorySearchResultClicked')
                         props.onSelect()
                     }}
                 />
+                {/* eslint-enable react/jsx-no-bind */}
                 <span className="repository-search-result__spacer" />
                 <small>Repository name match</small>
             </>

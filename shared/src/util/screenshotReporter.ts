@@ -26,7 +26,7 @@ export function saveScreenshotsUponFailuresAndClosePage(
      * and page instance at the same time.
      */
     jasmine.getEnv().addReporter({
-        specDone: async result => {
+        specDone: result => {
             if (result.status === 'failed') {
                 promise = promise
                     .catch()

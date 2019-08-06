@@ -1,3 +1,3 @@
 import { ExtensionsAreaHeaderActionButton } from './ExtensionsAreaHeader'
 
-export const extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton> = []
+export const extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[] = []

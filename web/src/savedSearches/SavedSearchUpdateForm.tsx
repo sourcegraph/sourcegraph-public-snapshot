@@ -96,6 +96,7 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
             <div>
                 {this.state.savedSearchOrError === LOADING && <LoadingSpinner className="icon-inline" />}
                 {this.props.authenticatedUser && savedSearch && (
+                    /* eslint-disable react/jsx-no-bind */
                     <SavedSearchForm
                         {...this.props}
                         submitLabel="Update saved search"
@@ -109,12 +110,12 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                             slackWebhookURL: savedSearch.slackWebhookURL,
                         }}
                         loading={this.state.updatedOrError === LOADING}
-                        // tslint:disable-next-line:jsx-no-lambda
                         onSubmit={(fields: Pick<SavedQueryFields, Exclude<keyof SavedQueryFields, 'id'>>): void =>
                             this.onSubmit({ id: savedSearch.id, ...fields })
                         }
                         error={isErrorLike(this.state.updatedOrError) ? this.state.updatedOrError : undefined}
                     />
+                    /* eslint-enable react/jsx-no-bind */
                 )}
                 {this.state.updatedOrError === true && (
                     <p className="alert alert-success user-settings-profile-page__alert">Updated!</p>

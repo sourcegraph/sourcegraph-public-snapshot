@@ -111,6 +111,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         </Link>{' '}
                         {window.context.resetPasswordEnabled && (
                             <button
+                                type="button"
                                 className="btn btn-sm btn-secondary"
                                 onClick={this.randomizePassword}
                                 disabled={this.state.loading || !!this.state.resetPasswordURL}
@@ -121,6 +122,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         {this.props.node.id !== this.props.authenticatedUser.id &&
                             (this.props.node.siteAdmin ? (
                                 <button
+                                    type="button"
                                     className="btn btn-sm btn-secondary"
                                     onClick={this.demoteFromSiteAdmin}
                                     disabled={this.state.loading}
@@ -129,6 +131,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 </button>
                             ) : (
                                 <button
+                                    type="button"
                                     key="promote"
                                     className="btn btn-sm btn-secondary"
                                     onClick={this.promoteToSiteAdmin}
@@ -139,6 +142,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             ))}{' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
                             <button
+                                type="button"
                                 className="btn btn-sm btn-danger"
                                 onClick={this.deleteUser}
                                 disabled={this.state.loading}
@@ -149,6 +153,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         )}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
                             <button
+                                type="button"
                                 className="ml-1 btn btn-sm btn-danger"
                                 onClick={this.nukeUser}
                                 disabled={this.state.loading}

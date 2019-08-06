@@ -4,7 +4,7 @@ import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute } from '../../user/area/UserArea'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 
-export const enterpriseUserAreaRoutes: ReadonlyArray<UserAreaRoute> = [
+export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     ...userAreaRoutes,
     ...enterpriseNamespaceAreaRoutes,
 

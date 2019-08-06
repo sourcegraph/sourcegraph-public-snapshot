@@ -32,7 +32,7 @@ describe('text_fields', () => {
             subscriptions = new Subscription()
         })
 
-        const createTestElement = () => {
+        const createTestElement = (): HTMLTextAreaElement => {
             const el = document.createElement('textarea')
             el.className = `test test-${uniqueId()}`
             document.body.appendChild(el)

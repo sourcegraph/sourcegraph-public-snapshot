@@ -13,7 +13,7 @@ import { ExtensionConfigurationState } from './ExtensionConfigurationState'
 import { WorkInProgressBadge } from './WorkInProgressBadge'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
-    navItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
+    navItems: readonly ExtensionAreaHeaderNavItem[]
     className: string
 }
 

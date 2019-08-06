@@ -36,7 +36,7 @@ export const repoRevRoute: LayoutRouteProps = {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: ReadonlyArray<LayoutRouteProps> = [
+export const routes: readonly LayoutRouteProps[] = [
     {
         path: '/',
         render: (props: any) =>

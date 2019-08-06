@@ -144,7 +144,7 @@ function isIdentifierPart(ch: string): boolean {
 }
 
 /** The token that indicates the beginning of a template string. */
-export const TEMPLATE_BEGIN = '${' // tslint:disable-line:no-invalid-template-strings
+export const TEMPLATE_BEGIN = '${'
 
 /** Scans an expression. */
 export class Lexer {
@@ -331,7 +331,6 @@ export class Lexer {
 
     private scanTemplate(): Token | undefined {
         const ch = this.peekNextChar()
-        // tslint:disable-next-line:no-invalid-template-strings
         if (!(ch === '`' || (ch === '}' && this.curlyStack > 0))) {
             return undefined
         }
@@ -364,7 +363,6 @@ export class Lexer {
                 if (ch === '$') {
                     const ch2 = this.peekNextChar()
                     if (ch2 === '{') {
-                        // tslint:disable-next-line:no-invalid-template-strings
                         this.curlyStack++
                         this.getNextChar()
                         terminated = true

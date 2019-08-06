@@ -115,7 +115,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
             })
         )
         const editorInstantiations = editorResets.pipe(
-            startWith(void 0),
+            startWith(undefined),
             switchMap(
                 () =>
                     new Observable<EditorId & { modelUri: CodeEditor['resource'] }>(sub => {

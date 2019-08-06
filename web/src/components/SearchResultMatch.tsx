@@ -45,7 +45,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
         return this.props.item.body.text.startsWith('```') && this.props.item.body.text.endsWith('```')
     }
 
-    public constructor(props: SearchResultMatchProps) {
+    constructor(props: SearchResultMatchProps) {
         super(props)
         // Render the match body as markdown, and syntax highlight the response if it's a code block.
         // This is a lot of network requests right now, but once extensions can run on the backend we can
@@ -175,7 +175,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             ) : (
                                 <Markdown
                                     refFn={this.setTableContainerElement}
-                                    className={`search-result-match__markdown`}
+                                    className="search-result-match__markdown"
                                     dangerousInnerHTML={this.state.HTML}
                                 />
                             )}

@@ -12,7 +12,7 @@ interface GraphQLResponseMap {
 
 export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
     SiteProductVersion: () =>
-        // tslint:disable-next-line: no-object-literal-type-assertion
+        // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
         of({
             data: {
                 site: {
@@ -24,7 +24,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
             errors: undefined,
         } as SuccessGraphQLResult<IQuery>),
     CurrentUSer: () =>
-        // tslint:disable-next-line: no-object-literal-type-assertion
+        // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
         of({
             data: {
                 currentUser: {
@@ -41,7 +41,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
         } as SuccessGraphQLResult<IQuery>),
 
     ResolveRev: () =>
-        // tslint:disable-next-line: no-object-literal-type-assertion
+        // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
         of({
             data: {
                 repository: {
@@ -56,7 +56,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
             errors: undefined,
         } as SuccessGraphQLResult<IQuery>),
     BlobContent: () =>
-        // tslint:disable-next-line: no-object-literal-type-assertion
+        // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
         of({
             data: {
                 repository: {
@@ -70,7 +70,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
             errors: undefined,
         } as SuccessGraphQLResult<IQuery>),
     ResolveRepo: variables =>
-        // tslint:disable-next-line: no-object-literal-type-assertion
+        // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
         of({
             data: {
                 repository: {
@@ -84,7 +84,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
 /**
  * @param responseMap a {@link GraphQLResponseMap} of request names (eg. `ResolveRev`) to response builders.
  *
- * @return a mock implementation of {@link PlatformContext#requestGraphQL}
+ * @returns a mock implementation of {@link PlatformContext#requestGraphQL}
  */
 export const mockRequestGraphQL = (
     responseMap: GraphQLResponseMap = DEFAULT_GRAPHQL_RESPONSES

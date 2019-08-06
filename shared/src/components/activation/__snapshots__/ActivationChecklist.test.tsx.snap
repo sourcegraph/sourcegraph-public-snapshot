@@ -13,6 +13,7 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
     >
       <button
         className="btn btn-link text-left w-100 p-0"
+        type="button"
       >
         <div
           className="d-flex justify-content-between"
@@ -53,6 +54,7 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
     >
       <button
         className="btn btn-link text-left w-100 p-0"
+        type="button"
       >
         <div
           className="d-flex justify-content-between"
@@ -93,6 +95,7 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
     >
       <button
         className="btn btn-link text-left w-100 p-0"
+        type="button"
       >
         <div
           className="d-flex justify-content-between"

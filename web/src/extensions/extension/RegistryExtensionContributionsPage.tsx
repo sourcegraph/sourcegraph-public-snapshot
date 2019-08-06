@@ -69,6 +69,7 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
         if (manifest.contributes.configuration && manifest.contributes.configuration.properties) {
             for (const [name, schema] of Object.entries<any>(manifest.contributes.configuration.properties)) {
                 settingsGroup.rows.push([
+                    // eslint-disable-next-line react/jsx-key
                     <code>{name}</code>,
                     typeof schema.description === 'string' ? schema.description : null,
                 ])
@@ -106,8 +107,8 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
                     action.title && action.description ? ': ' : ''
                 }${action.description || ''}`
                 actionsGroup.rows.push([
+                    // eslint-disable-next-line react/jsx-key
                     <code>{action.id}</code>,
-                    // tslint:disable-next-line:no-invalid-template-strings
                     description.includes('${') ? (
                         <>
                             Evaluated at runtime: <small className="text-monospace">{description}</small>

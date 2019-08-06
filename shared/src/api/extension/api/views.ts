@@ -48,12 +48,12 @@ class ExtPanelView implements sourcegraph.PanelView {
     }
 
     private sendData(): void {
-        // tslint:disable-next-line: no-floating-promises
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this.proxyPromise.then(proxy => proxy.update(this.data))
     }
 
     public unsubscribe(): void {
-        // tslint:disable-next-line: no-floating-promises
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this.proxyPromise.then(proxy => proxy.unsubscribe())
     }
 }

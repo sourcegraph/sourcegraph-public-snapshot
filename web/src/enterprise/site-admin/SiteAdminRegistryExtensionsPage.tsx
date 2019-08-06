@@ -106,6 +106,7 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                         )}
                         {this.props.node.viewerCanAdminister && (
                             <button
+                                type="button"
                                 className="btn btn-danger btn-sm ml-1"
                                 onClick={this.deleteExtension}
                                 disabled={loading}

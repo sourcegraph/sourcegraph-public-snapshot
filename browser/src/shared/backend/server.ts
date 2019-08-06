@@ -5,7 +5,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 
 /**
- * @return Observable that emits the client configuration details.
+ * @returns Observable that emits the client configuration details.
  *         Errors
  */
 export const resolveClientConfiguration = (

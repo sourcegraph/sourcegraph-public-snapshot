@@ -15,7 +15,7 @@ import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable
 import { FileSpec, makeRepoURI, RawRepoSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 
 /**
- * @return Observable that emits if the repo exists on the instance.
+ * @returns Observable that emits if the repo exists on the instance.
  *         Emits the repo name on the Sourcegraph instance as affected by `repositoryPathPattern`.
  *         Errors with a `RepoNotFoundError` if the repo is not found
  */
@@ -45,7 +45,7 @@ export const resolveRepo = memoizeObservable(
 )
 
 /**
- * @return Observable that emits the commit ID
+ * @returns Observable that emits the commit ID
  *         Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export const resolveRev = memoizeObservable(
@@ -143,7 +143,7 @@ export const fetchBlobContentLines = memoizeObservable(
                     if (errors.length === 1) {
                         const err = errors[0]
                         const isFileContent = err.path.join('.') === 'repository.commit.file.content'
-                        const isDNE = /does not exist/.test(err.message)
+                        const isDNE = err.message.includes('does not exist')
 
                         // The error is the file DNE. Just ignore it and pass an empty array
                         // to represent this.

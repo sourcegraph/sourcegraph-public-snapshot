@@ -20,7 +20,7 @@ const isEmptyObjectDeep = (value: any): boolean =>
         ? Object.values(value).every(isEmptyObjectDeep)
         : !value
 
-const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextDocumentDecoration) =>
+const isDecorationEmpty = ({ range, isWholeLine, ...contents }: clientType.TextDocumentDecoration): boolean =>
     isEmptyObjectDeep(contents)
 
 /** @internal */
@@ -60,7 +60,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
         // Backcompat: extensions developed against an older version of the API
         // may not supply a decorationType
         decorationType = decorationType || DEFAULT_DECORATION_TYPE
-        // tslint:disable-next-line: no-floating-promises
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this.proxy.$setDecorations(
             this.resource,
             decorationType.key,

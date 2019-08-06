@@ -316,36 +316,29 @@ export function getRepoDetailsFromCallsign(
 }
 
 /**
- *  getSourcegraphURLFromConduit returns the current Sourcegraph URL on the window object or will query the
- *  sourcegraph.configuration conduit API endpoint. The Phabricator extension updates the window object automatically, but in the case it fails
- *  we query the conduit API.
+ * Queries the sourcegraph.configuration conduit API endpoint.
+ *
+ * The Phabricator extension updates the window object automatically, but in the
+ * case it fails we query the conduit API.
  */
-export function getSourcegraphURLFromConduit(): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const url = window.localStorage.getItem('SOURCEGRAPH_URL') || window.SOURCEGRAPH_URL
-        if (url) {
-            return resolve(url)
-        }
-        const form = createConduitRequestForm()
-        fetch(window.location.origin + '/api/sourcegraph.configuration', {
+export async function getSourcegraphURLFromConduit(): Promise<string> {
+    const form = createConduitRequestForm()
+    const res: SourcegraphConduitConfiguration = await fetch(
+        window.location.origin + '/api/sourcegraph.configuration',
+        {
             method: 'POST',
             body: form,
             credentials: 'include',
             headers: new Headers({ Accept: 'application/json' }),
-        })
-            .then(resp => resp.json())
-            .then((res: SourcegraphConduitConfiguration) => {
-                if (res.error_code) {
-                    throw new Error(`error ${res.error_code}: ${res.error_info}`)
-                }
-
-                if (!res || !res.result) {
-                    throw new Error(`error ${res}. could not fetch sourcegraph configuration.`)
-                }
-                resolve(res.result.url)
-            })
-            .catch(reject)
-    })
+        }
+    ).then(resp => resp.json())
+    if (res.error_code) {
+        throw new Error(`error ${res.error_code}: ${res.error_info}`)
+    }
+    if (!res || !res.result) {
+        throw new Error(`error ${res}. could not fetch sourcegraph configuration.`)
+    }
+    return res.result.url
 }
 
 function getRepoDetailsFromRepoPHID(
@@ -665,6 +658,8 @@ export function resolveDiffRev(
                             error => {
                                 getRawDiffFromConduit(propsWithInfo.diffID)
                                     .then(patch =>
+                                        // TODO refactor this
+                                        // tslint:disable-next-line: rxjs-no-nested-subscribe
                                         resolveStagingRev({ ...conduitProps, patch, requestGraphQL }).subscribe(
                                             commitID => {
                                                 if (commitID) {

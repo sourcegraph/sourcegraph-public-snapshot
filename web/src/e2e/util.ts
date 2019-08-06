@@ -1,13 +1,19 @@
 import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as os from 'os'
-import puppeteer, { LaunchOptions } from 'puppeteer'
+import puppeteer, { LaunchOptions, PageEventObj, Page } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import * as util from 'util'
 import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
 
+/**
+ * Returns a Promise for the next emission of the given event on the given Puppeteer page.
+ */
+export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventName: E): Promise<PageEventObj[E]> =>
+    new Promise(resolve => page.once(eventName, resolve))
+
 export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue: false })
     ? realPercySnapshot
-    : async () => undefined
+    : () => Promise.resolve()
 
 /**
  * Used in the external service configuration.
@@ -42,7 +48,7 @@ export class Driver {
             localStorage.setItem('has-dismissed-integrations-toast', 'true')
             localStorage.setItem('has-dismissed-survey-toast', 'true')
         })
-        const url = new URL(await this.page.url())
+        const url = new URL(this.page.url())
         if (url.pathname === '/site-admin/init') {
             await this.page.type('input[name=email]', 'test@test.com')
             await this.page.type('input[name=username]', 'test')
@@ -63,15 +69,17 @@ export class Driver {
 
     public async selectAll(method: SelectTextMethod = 'selectall'): Promise<void> {
         switch (method) {
-            case 'selectall':
+            case 'selectall': {
                 await this.page.evaluate(() => document.execCommand('selectall', false))
                 break
-            case 'keyboard':
+            }
+            case 'keyboard': {
                 const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
                 await this.page.keyboard.down(modifier)
                 await this.page.keyboard.press('a')
                 await this.page.keyboard.up(modifier)
                 break
+            }
         }
     }
 
@@ -110,6 +118,11 @@ export class Driver {
         await this.enterText(enterTextMethod, newText)
     }
 
+    public async acceptNextDialog(): Promise<void> {
+        const dialog = await oncePageEvent(this.page, 'dialog')
+        await dialog.accept()
+    }
+
     public async ensureHasExternalService({
         kind,
         displayName,
@@ -128,12 +141,7 @@ export class Driver {
         // Matches buttons for deleting external services named ${displayName}.
         const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
         if (await this.page.$(deleteButtonSelector)) {
-            const accept = async (dialog: puppeteer.Dialog) => {
-                await dialog.accept()
-                this.page.off('dialog', accept)
-            }
-            this.page.on('dialog', accept)
-            await this.page.click(deleteButtonSelector)
+            await Promise.all([this.acceptNextDialog(), this.page.click(deleteButtonSelector)])
         }
 
         await (await this.page.waitForSelector('.e2e-goto-add-external-service-page', { visible: true })).click()
@@ -247,10 +255,10 @@ export async function createDriverForTest(): Promise<Driver> {
     const browser = await puppeteer.launch(launchOpt)
     const page = await browser.newPage()
     page.on('console', message => {
-        if (message.text().indexOf('Download the React DevTools') !== -1) {
+        if (message.text().includes('Download the React DevTools')) {
             return
         }
-        if (message.text().indexOf('[HMR]') !== -1 || message.text().indexOf('[WDS]') !== -1) {
+        if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
             return
         }
         console.log(

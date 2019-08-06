@@ -73,8 +73,8 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
         )
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

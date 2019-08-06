@@ -5,7 +5,7 @@ import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 
 export interface ExtensionsAreaHeaderProps extends ExtensionsAreaRouteContext, RouteComponentProps<{}> {
     isPrimaryHeader: boolean
-    actionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
+    actionButtons: readonly ExtensionsAreaHeaderActionButton[]
 }
 
 export interface ExtensionAreaHeaderContext {

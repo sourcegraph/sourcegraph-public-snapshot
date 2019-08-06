@@ -441,7 +441,8 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
                         },
                         ttl: '3h',
                     }
-                    const comment = `// Follow setup instructions in https://docs.sourcegraph.com/admin/repo/permissions#bitbucket_server`
+                    const comment =
+                        '// Follow setup instructions in https://docs.sourcegraph.com/admin/repo/permissions#bitbucket_server'
                     const edit = editWithComment(config, ['authorization'], value, comment)
                     return { edits: [edit], selectText: comment }
                 },

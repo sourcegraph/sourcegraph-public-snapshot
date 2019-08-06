@@ -93,7 +93,11 @@ export class SiteAdminManagementConsolePassword extends React.Component<Props, S
                             <a href="/help/admin/management_console" className="mr-2">
                                 Learn more
                             </a>
-                            <button className="btn btn-primary btn-sm" onClick={this.nextDismissForeverClick}>
+                            <button
+                                type="button"
+                                className="btn btn-primary btn-sm"
+                                onClick={this.nextDismissForeverClick}
+                            >
                                 Dismiss forever
                             </button>
                         </div>

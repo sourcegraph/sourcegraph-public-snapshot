@@ -20,7 +20,7 @@ describe('content_views', () => {
             subscriptions = new Subscription()
         })
 
-        const createTestElement = () => {
+        const createTestElement = (): HTMLElement => {
             const el = document.createElement('div')
             el.className = `test test-${uniqueId()}`
             document.body.appendChild(el)
@@ -137,7 +137,7 @@ describe('content_views', () => {
                 content: [
                     {
                         kind: MarkupKind.Markdown,
-                        value: `**foo**`,
+                        value: '**foo**',
                     },
                 ],
                 hover: [
@@ -155,7 +155,7 @@ describe('content_views', () => {
                 content: [
                     {
                         kind: MarkupKind.Markdown,
-                        value: `**foo2**`,
+                        value: '**foo2**',
                     },
                 ],
                 hover: [

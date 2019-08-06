@@ -25,7 +25,7 @@ export interface UserSettingsSidebarItemConditionContext {
 
 export type UserSettingsSidebarItems = Record<
     'account',
-    ReadonlyArray<NavItemDescriptor<UserSettingsSidebarItemConditionContext>>
+    readonly NavItemDescriptor<UserSettingsSidebarItemConditionContext>[]
 >
 
 export interface UserSettingsSidebarProps extends UserAreaRouteContext, RouteComponentProps<{}> {

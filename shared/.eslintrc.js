@@ -1,9 +1,11 @@
 module.exports = {
+  extends: '../.eslintrc.js',
   rules: {
     'no-restricted-imports': [
       'error',
       {
         paths: [
+          ...require('../.eslintrc').rules['no-restricted-imports'][1].paths,
           {
             name: 'react-router-dom',
             importNames: ['Link'],
@@ -14,4 +16,5 @@ module.exports = {
       },
     ],
   },
+  overrides: require('../.eslintrc').overrides,
 }

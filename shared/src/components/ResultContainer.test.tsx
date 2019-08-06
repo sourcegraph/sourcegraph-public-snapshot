@@ -79,8 +79,8 @@ describe('ResultContainer', () => {
         ),
         expandedChildren: <FileMatchChildren {...fileMatchChildrenProps} />,
         collapsedChildren: <FileMatchChildren {...fileMatchChildrenProps} allMatches={false} />,
-        collapseLabel: `Hide matches`,
-        expandLabel: `Show matches`,
+        collapseLabel: 'Hide matches',
+        expandLabel: 'Show matches',
         allExpanded: false,
     }
 

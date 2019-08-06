@@ -54,7 +54,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
             // By process of elimination (that TypeScript is unfortunately unable to infer, except
             // by reorganizing this code in a way that's much more complex to humans), node.oldPath
             // is non-null.
-            path = <span title={node.oldPath!}>{node.oldPath!}</span>
+            path = <span title={node.oldPath!}>{node.oldPath}</span>
         }
 
         const anchor = `diff-${node.internalID}`

@@ -1,8 +1,10 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import CheckIcon from 'mdi-react/CheckIcon'
 import * as React from 'react'
-import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
 import { CopyableText } from '../components/CopyableText'
+import { Subscription, from } from 'rxjs'
+import { catchError } from 'rxjs/operators'
 
 interface Props {
     repoName: string
@@ -40,21 +42,27 @@ async function fetchChallenge(): Promise<string> {
 }
 
 export class LSIFVerification extends React.PureComponent<Props, State> {
+    private subscriptions = new Subscription()
+
     constructor(props: Props) {
         super(props)
 
         this.state = {}
     }
 
-    public async componentDidMount(): Promise<void> {
-        this.setState({
-            challengeOrError: await fetchChallenge().catch(error => error),
-        })
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            from(fetchChallenge())
+                .pipe(catchError(error => [asError(error)]))
+                .subscribe(challengeOrError => {
+                    this.setState({ challengeOrError })
+                })
+        )
     }
 
     public render(): JSX.Element | null {
         if (isErrorLike(this.state.challengeOrError)) {
-            return <div className="alert alert-danger">{this.state.challengeOrError.toString()}</div>
+            return <div className="alert alert-danger">{this.state.challengeOrError.message}</div>
         }
 
         return (
@@ -77,6 +85,7 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
                             <>
                                 <CopyableText text={this.state.challengeOrError} size={16} />
                                 <button
+                                    type="button"
                                     className="btn btn-primary"
                                     disabled={this.state.verifying}
                                     onClick={this.verify}

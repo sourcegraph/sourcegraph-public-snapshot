@@ -12,7 +12,7 @@ import { OrgAreaPageProps } from '../area/OrgArea'
 import { OrgSettingsSidebar } from './OrgSettingsSidebar'
 import { OrgSettingsProfilePage } from './profile/OrgSettingsProfilePage'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -39,11 +39,11 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                 <ErrorBoundary location={props.location}>
                     <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                         <Switch>
+                            {/* eslint-disable react/jsx-no-bind */}
                             <Route
                                 path={props.match.path}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
-                                // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
                                     <SettingsArea
                                         {...routeComponentProps}
@@ -72,12 +72,12 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                 path={`${props.match.path}/profile`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
-                                // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
                                     <OrgSettingsProfilePage {...routeComponentProps} {...props} />
                                 )}
                             />
                             <Route component={NotFoundPage} />
+                            {/* eslint-enable react/jsx-no-bind */}
                         </Switch>
                     </React.Suspense>
                 </ErrorBoundary>

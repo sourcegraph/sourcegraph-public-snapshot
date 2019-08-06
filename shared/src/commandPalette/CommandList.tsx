@@ -157,7 +157,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
         return (
             <div className="command-list">
                 <header>
-                    {/* tslint:disable-next-line:jsx-ban-elements */}
+                    {/* eslint-disable-next-line react/forbid-elements */}
                     <form className={this.props.formClassName} onSubmit={this.onSubmit}>
                         <label className="sr-only" htmlFor="command-list-input">
                             Command

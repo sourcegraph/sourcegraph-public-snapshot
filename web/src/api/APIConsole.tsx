@@ -156,7 +156,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
                     onEditOperationName={this.onEditOperationName}
                     fetcher={fetcher}
                     defaultQuery={defaultQuery}
-                    editorTheme={'sourcegraph'}
+                    editorTheme="sourcegraph"
                     ref={this.setGraphiQLRef}
                 >
                     <GraphiQL.Logo>GraphQL API console</GraphiQL.Logo>

@@ -47,7 +47,7 @@ export function createOrganization(args: {
 /**
  * Sends a GraphQL mutation to remove a user from an organization.
  *
- * @return An Observable that emits `undefined` when done, then completes
+ * @returns An Observable that emits `undefined` when done, then completes
  */
 export function removeUserFromOrganization(args: {
     /** The ID of the user to remove. */
@@ -80,7 +80,7 @@ export function removeUserFromOrganization(args: {
             }
             eventLogger.log('OrgMemberRemoved', eventData)
             // Reload user data
-            return concat(refreshAuthenticatedUser(), [void 0])
+            return concat(refreshAuthenticatedUser(), [undefined])
         })
     )
 }
@@ -90,7 +90,7 @@ export function removeUserFromOrganization(args: {
  *
  * @param id The ID of the organization.
  * @param displayName The display name of the organization.
- * @return Observable that emits `undefined`, then completes
+ * @returns Observable that emits `undefined`, then completes
  */
 export function updateOrganization(id: GQL.ID, displayName: string): Observable<void> {
     return mutateGraphQL(

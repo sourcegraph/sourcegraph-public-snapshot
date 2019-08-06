@@ -18,7 +18,7 @@ const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = 
 }
 
 const PLATFORM_CONTEXT: ActionItemComponentProps['platformContext'] = {
-    forceUpdateTooltip: () => void 0,
+    forceUpdateTooltip: () => undefined,
 }
 
 const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undefined }

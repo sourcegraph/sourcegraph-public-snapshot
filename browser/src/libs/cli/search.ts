@@ -15,7 +15,7 @@ export class SearchCommand {
 
     constructor(private requestGraphQL: PlatformContext['requestGraphQL']) {}
 
-    public getSuggestions = async (query: string): Promise<browser.omnibox.SuggestResult[]> =>
+    public getSuggestions = (query: string): Promise<browser.omnibox.SuggestResult[]> =>
         new Promise(resolve => {
             if (this.prev.query === query) {
                 resolve(this.prev.suggestions)

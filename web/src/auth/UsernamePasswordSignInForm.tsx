@@ -48,7 +48,7 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                 )}
                 <div className="form-group">
                     <input
-                        className={`form-control signin-signup-form__input`}
+                        className="form-control signin-signup-form__input"
                         type="text"
                         placeholder="Username or email"
                         onChange={this.onEmailFieldChange}

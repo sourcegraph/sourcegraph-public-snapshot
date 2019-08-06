@@ -65,7 +65,9 @@ export class SavedSearchModal extends React.Component<Props, State> {
                                         Select an organization
                                     </option>
                                     {this.props.authenticatedUser.organizations.nodes.map(org => (
-                                        <option value={org.name}>{org.displayName ? org.displayName : org.name}</option>
+                                        <option value={org.name} key={org.name}>
+                                            {org.displayName ? org.displayName : org.name}
+                                        </option>
                                     ))}
                                 </Select>
                             )}
