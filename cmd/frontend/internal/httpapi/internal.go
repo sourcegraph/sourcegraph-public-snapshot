@@ -247,12 +247,9 @@ func listReposForSgDotCom(ctx context.Context) (res []*types.Repo, err error) {
 	}
 	// Grab a bunch of repos that are likely to be fairly popular,
 	// to demo Sourcegraph search.
-	URIs, err := backend.Repos.ListWithLongestInterval(ctx, lim)
+	res, err = backend.Repos.ListDefault(ctx, lim)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing repos with longest interval")
-	}
-	for _, u := range URIs {
-		res = append(res, &types.Repo{Name: api.RepoName(u)})
 	}
 	return res, nil
 }
