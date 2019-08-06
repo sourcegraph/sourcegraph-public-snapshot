@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/nnz"
 )
 
 // dbCampaign describes a campaign.
@@ -46,19 +47,12 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign, comment com
 		panic("campaign.PrimaryCommentID must not be set")
 	}
 
-	nilIfZero := func(v int32) *int32 {
-		if v == 0 {
-			return nil
-		}
-		return &v
-	}
-
 	return campaign, commentobjectdb.CreateCommentWithObject(ctx, nil, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
 		var err error
 		campaign, err = dbCampaigns{}.scanRow(tx.QueryRowContext(ctx,
 			`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT) RETURNING `+selectColumns,
-			nilIfZero(campaign.NamespaceUserID),
-			nilIfZero(campaign.NamespaceOrgID),
+			nnz.Int32(campaign.NamespaceUserID),
+			nnz.Int32(campaign.NamespaceOrgID),
 			campaign.Name,
 			campaign.IsPreview,
 			campaign.Rules,
@@ -199,11 +193,10 @@ func (dbCampaigns) scanRow(row interface {
 	Scan(dest ...interface{}) error
 }) (*dbCampaign, error) {
 	var t dbCampaign
-	var namespaceUserID, namespaceOrgID *int32
 	if err := row.Scan(
 		&t.ID,
-		&namespaceUserID,
-		&namespaceOrgID,
+		nnz.ToInt32(&t.NamespaceUserID),
+		nnz.ToInt32(&t.NamespaceOrgID),
 		&t.Name,
 		&t.IsPreview,
 		&t.Rules,
@@ -212,12 +205,6 @@ func (dbCampaigns) scanRow(row interface {
 		&t.UpdatedAt,
 	); err != nil {
 		return nil, err
-	}
-	if namespaceUserID != nil {
-		t.NamespaceUserID = *namespaceUserID
-	}
-	if namespaceOrgID != nil {
-		t.NamespaceOrgID = *namespaceOrgID
 	}
 	return &t, nil
 }

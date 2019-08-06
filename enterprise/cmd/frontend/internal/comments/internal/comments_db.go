@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/nnz"
 )
 
 // DBComment describes a comment.
@@ -48,15 +49,15 @@ func (DBComments) Create(ctx context.Context, tx *sql.Tx, comment *DBComment) (*
 		return t
 	}
 	args := []interface{}{
-		nilIfZero32(comment.AuthorUserID),
+		nnz.Int32(comment.AuthorUserID),
 		comment.AuthorExternalActorUsername,
 		comment.AuthorExternalActorURL,
 		comment.Body,
 		nowIfZeroTime(comment.CreatedAt),
 		nowIfZeroTime(comment.UpdatedAt),
-		nilIfZero(comment.Object.ParentCommentID),
-		nilIfZero(comment.Object.ThreadID),
-		nilIfZero(comment.Object.CampaignID),
+		nnz.Int64(comment.Object.ParentCommentID),
+		nnz.Int64(comment.Object.ThreadID),
+		nnz.Int64(comment.Object.CampaignID),
 	}
 	query := sqlf.Sprintf(
 		`INSERT INTO comments(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+selectColumns,
@@ -205,33 +206,19 @@ func (DBComments) scanRow(row interface {
 	Scan(dest ...interface{}) error
 }) (*DBComment, error) {
 	var t DBComment
-	var authorUserID *int32
-	var parentCommentID, threadID, campaignID *int64
 	if err := row.Scan(
 		&t.ID,
-		&authorUserID,
+		nnz.ToInt32(&t.AuthorUserID),
 		&t.AuthorExternalActorUsername,
 		&t.AuthorExternalActorURL,
 		&t.Body,
 		&t.CreatedAt,
 		&t.UpdatedAt,
-		&parentCommentID,
-		&threadID,
-		&campaignID,
+		(*nnz.Int64)(&t.Object.ParentCommentID),
+		(*nnz.Int64)(&t.Object.ThreadID),
+		(*nnz.Int64)(&t.Object.CampaignID),
 	); err != nil {
 		return nil, err
-	}
-	if authorUserID != nil {
-		t.AuthorUserID = *authorUserID
-	}
-	if parentCommentID != nil {
-		t.Object.ParentCommentID = *parentCommentID
-	}
-	if threadID != nil {
-		t.Object.ThreadID = *threadID
-	}
-	if campaignID != nil {
-		t.Object.CampaignID = *campaignID
 	}
 	return &t, nil
 }

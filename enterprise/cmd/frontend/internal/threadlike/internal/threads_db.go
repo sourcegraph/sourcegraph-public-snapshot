@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/nnz"
 )
 
 type DBThreadType string
@@ -65,18 +66,6 @@ func (DBThreads) Create(ctx context.Context, tx *sql.Tx, thread *DBThread, comme
 		panic("thread.PrimaryCommentID must not be set")
 	}
 
-	nilIfZero := func(v int64) *int64 {
-		if v == 0 {
-			return nil
-		}
-		return &v
-	}
-	nilIfEmpty := func(v string) *string {
-		if v == "" {
-			return nil
-		}
-		return &v
-	}
 	now := time.Now()
 	nowIfZeroTime := func(t time.Time) time.Time {
 		if t.IsZero() {
@@ -99,10 +88,10 @@ func (DBThreads) Create(ctx context.Context, tx *sql.Tx, thread *DBThread, comme
 			commentID,
 			nowIfZeroTime(thread.CreatedAt),
 			nowIfZeroTime(thread.UpdatedAt),
-			nilIfEmpty(thread.BaseRef),
-			nilIfEmpty(thread.HeadRef),
-			nilIfZero(thread.ImportedFromExternalServiceID),
-			nilIfEmpty(thread.ExternalID),
+			nnz.String(thread.BaseRef),
+			nnz.String(thread.HeadRef),
+			nnz.Int64(thread.ImportedFromExternalServiceID),
+			nnz.String(thread.ExternalID),
 			externalMetadata,
 		}
 		query := sqlf.Sprintf(
@@ -262,13 +251,7 @@ func (DBThreads) Query(ctx context.Context, query *sqlf.Query) ([]*DBThread, err
 func (DBThreads) scanRow(row interface {
 	Scan(dest ...interface{}) error
 }) (*DBThread, error) {
-	var (
-		baseRef, headRef              *string
-		importedFromExternalServiceID *int64
-		externalID                    *string
-
-		t DBThread
-	)
+	var t DBThread
 	if err := row.Scan(
 		&t.ID,
 		&t.Type,
@@ -279,25 +262,13 @@ func (DBThreads) scanRow(row interface {
 		&t.PrimaryCommentID,
 		&t.CreatedAt,
 		&t.UpdatedAt,
-		&baseRef,
-		&headRef,
-		&importedFromExternalServiceID,
-		&externalID,
+		(*nnz.String)(&t.BaseRef),
+		(*nnz.String)(&t.HeadRef),
+		(*nnz.Int64)(&t.ImportedFromExternalServiceID),
+		(*nnz.String)(&t.ExternalID),
 		&t.ExternalMetadata,
 	); err != nil {
 		return nil, err
-	}
-	if baseRef != nil {
-		t.BaseRef = *baseRef
-	}
-	if headRef != nil {
-		t.HeadRef = *headRef
-	}
-	if importedFromExternalServiceID != nil {
-		t.ImportedFromExternalServiceID = *importedFromExternalServiceID
-	}
-	if externalID != nil {
-		t.ExternalID = *externalID
 	}
 	return &t, nil
 }
