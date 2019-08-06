@@ -52,7 +52,7 @@ export class Cache {
      * repository@commit. Internally, it either gets the `Database` from the LRU
      * cache or loads it from storage.
      */
-    public async withDB(backend: Backend, key: string, action: (db: Database) => Promise<void>): Promise<void> {
+    public async withDB<T>(backend: Backend, key: string, action: (db: Database) => Promise<T>): Promise<T> {
         let entry = this.lru.get(key)
         if (!entry) {
             const dbPromise = backend.loadDB(key)
@@ -63,7 +63,7 @@ export class Cache {
             this.lru.set(key, entry)
         }
 
-        await action(await entry.dbPromise)
+        return await action(await entry.dbPromise)
     }
 
     /**

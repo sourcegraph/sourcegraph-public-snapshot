@@ -83,7 +83,12 @@ function main(): void {
                 await backend.createDB(tempFile.path, key, contentLength)
                 cache.delete(key)
 
-                res.send('Upload successful.')
+                res.send({
+                    data: 'Upload successful.',
+                    stats: {
+                        // TODO - add stats
+                    },
+                })
             } finally {
                 await fs.unlink(tempFile.path)
             }
@@ -99,14 +104,10 @@ function main(): void {
             checkRepository(repository)
             checkCommit(commit)
 
+            let exists = false
             try {
-                await cache.withDB(backend, key, async db => {
-                    if (!file) {
-                        res.send(true)
-                    } else {
-                        const exists = Boolean(db.stat(file))
-                        res.send(exists)
-                    }
+                exists = await cache.withDB(backend, key, async db => {
+                    return !file || Boolean(db.stat(file))
                 })
             } catch (e) {
                 if ('code' in e && e.code === ERRNOLSIFDATA) {
@@ -115,6 +116,13 @@ function main(): void {
                     throw e
                 }
             }
+
+            res.send({
+                data: exists,
+                stats: {
+                    // TODO - add stats
+                },
+            })
         })
     )
 
@@ -131,23 +139,24 @@ function main(): void {
             checkMethod(method)
 
             try {
-                await cache.withDB(backend, key, async db => {
-                    let result: any
+                const result = await cache.withDB(backend, key, async db => {
                     switch (method) {
                         case 'hover':
-                            result = backend.hover(db, path, position)
-                            break
+                            return backend.hover(db, path, position)
                         case 'definitions':
-                            result = backend.definitions(db, path, position)
-                            break
+                            return backend.definitions(db, path, position)
                         case 'references':
-                            result = backend.references(db, path, position, { includeDeclaration: false })
-                            break
+                            return backend.references(db, path, position, { includeDeclaration: false })
                         default:
                             throw new Error(`Unknown method ${method}`)
                     }
+                })
 
-                    res.json(result || null)
+                res.json({
+                    data: result || null,
+                    stats: {
+                        // TODO - add stats
+                    },
                 })
             } catch (e) {
                 if ('code' in e && e.code === ERRNOLSIFDATA) {
