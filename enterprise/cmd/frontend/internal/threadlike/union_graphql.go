@@ -16,7 +16,7 @@ func newGQLThreadOrIssueOrChangeset(v *internal.DBThread) graphqlbackend.ThreadO
 	case internal.DBThreadTypeThread:
 		return graphqlbackend.ThreadOrIssueOrChangeset{Thread: internal.ToGQLThread(v)}
 	case internal.DBThreadTypeIssue:
-		panic("TODO!(sqs): not implemented")
+		return graphqlbackend.ThreadOrIssueOrChangeset{Issue: internal.ToGQLIssue(v)}
 	case internal.DBThreadTypeChangeset:
 		return graphqlbackend.ThreadOrIssueOrChangeset{Changeset: internal.ToGQLChangeset(v)}
 	}
@@ -34,7 +34,11 @@ func threadOrIssueOrChangesetByID(ctx context.Context, id graphql.ID) (*graphqlb
 		}
 		return &graphqlbackend.ThreadOrIssueOrChangeset{Thread: thread}, nil
 	case "Issue":
-		panic("TODO!(sqs): not implemented")
+		issue, err := graphqlbackend.IssueByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return &graphqlbackend.ThreadOrIssueOrChangeset{Issue: issue}, nil
 	case "Changeset":
 		changeset, err := graphqlbackend.ChangesetByID(ctx, id)
 		if err != nil {

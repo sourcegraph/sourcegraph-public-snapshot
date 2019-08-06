@@ -80,6 +80,7 @@ type ThreadOrIssueOrChangesetConnectionArgs struct {
 // fields must be non-nil.
 type ThreadOrIssueOrChangeset struct {
 	Thread    Thread
+	Issue     Issue
 	Changeset Changeset
 }
 
@@ -96,6 +97,10 @@ func (v ThreadOrIssueOrChangeset) ID() graphql.ID {
 
 func (v ThreadOrIssueOrChangeset) ToThread() (Thread, bool) {
 	return v.Thread, v.Thread != nil
+}
+
+func (v ThreadOrIssueOrChangeset) ToIssue() (Issue, bool) {
+	return v.Issue, v.Issue != nil
 }
 
 func (v ThreadOrIssueOrChangeset) ToChangeset() (Changeset, bool) {

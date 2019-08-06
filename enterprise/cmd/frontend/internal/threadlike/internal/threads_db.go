@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -38,13 +39,19 @@ type DBThread struct {
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 
+	// Issue
+	DiagnosticsData json.RawMessage
+
 	// Changeset
-	BaseRef string
-	HeadRef string
+	BaseRef          string
+	BaseRefOID       string
+	HeadRepositoryID int32
+	HeadRef          string
+	HeadRefOID       string
 
 	ImportedFromExternalServiceID int64
 	ExternalID                    string
-	ExternalMetadata              []byte
+	ExternalMetadata              json.RawMessage
 }
 
 // errThreadNotFound occurs when a database operation expects a specific thread to exist but it does
@@ -53,7 +60,7 @@ var errThreadNotFound = errors.New("thread not found")
 
 type DBThreads struct{}
 
-const SelectColumns = "id, type, repository_id, title, state, is_preview, primary_comment_id, created_at, updated_at, base_ref, head_ref, imported_from_external_service_id, external_id, external_metadata"
+const SelectColumns = "id, type, repository_id, title, state, is_preview, primary_comment_id, created_at, updated_at, diagnostics_data, base_ref, base_ref_oid, head_repository_id, head_ref, head_ref_oid, imported_from_external_service_id, external_id, external_metadata"
 
 // Create creates a thread. The thread argument's (Thread).ID field is ignored. The new thread is
 // returned.
@@ -73,10 +80,6 @@ func (DBThreads) Create(ctx context.Context, tx *sql.Tx, thread *DBThread, comme
 		}
 		return t
 	}
-	var externalMetadata *[]byte
-	if thread.ExternalMetadata != nil {
-		externalMetadata = &thread.ExternalMetadata
-	}
 
 	return thread, commentobjectdb.CreateCommentWithObject(ctx, tx, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
 		args := []interface{}{
@@ -88,11 +91,15 @@ func (DBThreads) Create(ctx context.Context, tx *sql.Tx, thread *DBThread, comme
 			commentID,
 			nowIfZeroTime(thread.CreatedAt),
 			nowIfZeroTime(thread.UpdatedAt),
+			nnz.JSON(thread.DiagnosticsData),
 			nnz.String(thread.BaseRef),
+			nnz.String(thread.BaseRefOID),
+			nnz.Int32(thread.HeadRepositoryID),
 			nnz.String(thread.HeadRef),
+			nnz.String(thread.HeadRefOID),
 			nnz.Int64(thread.ImportedFromExternalServiceID),
 			nnz.String(thread.ExternalID),
-			externalMetadata,
+			nnz.JSON(thread.ExternalMetadata),
 		}
 		query := sqlf.Sprintf(
 			`INSERT INTO threads(`+SelectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+SelectColumns,
@@ -262,11 +269,15 @@ func (DBThreads) scanRow(row interface {
 		&t.PrimaryCommentID,
 		&t.CreatedAt,
 		&t.UpdatedAt,
+		nnz.ToJSON(&t.DiagnosticsData),
 		(*nnz.String)(&t.BaseRef),
+		(*nnz.String)(&t.BaseRefOID),
+		nnz.ToInt32(&t.HeadRepositoryID),
 		(*nnz.String)(&t.HeadRef),
+		(*nnz.String)(&t.HeadRefOID),
 		(*nnz.Int64)(&t.ImportedFromExternalServiceID),
 		(*nnz.String)(&t.ExternalID),
-		&t.ExternalMetadata,
+		nnz.ToJSON(&t.ExternalMetadata),
 	); err != nil {
 		return nil, err
 	}

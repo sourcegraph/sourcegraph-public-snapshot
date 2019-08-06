@@ -364,6 +364,15 @@ type Mutation {
     # Delete a thread.
     deleteThread(thread: ID!): EmptyResponse
 
+    # Create an issue in a repository. Returns the newly created issue.
+    createIssue(input: CreateIssueInput!): Issue!
+
+    # Update an issue. Returns the updated issue.
+    updateIssue(input: UpdateIssueInput!): Issue!
+
+    # Delete an issue.
+    deleteIssue(issue: ID!): EmptyResponse
+
     # Create a changeset in a repository. Returns the newly created changeset.
     createChangeset(input: CreateChangesetInput!): Changeset!
 
@@ -1502,6 +1511,15 @@ type Repository implements Node & GenericSearchResultInterface {
         # Returns the first n threads from the list.
         first: Int
     ): ThreadConnection!
+
+    # The specified issue in this repository.
+    issue(number: String!): Issue
+
+    # A list of issues in this repository.
+    issues(
+        # Returns the first n issues from the list.
+        first: Int
+    ): IssueConnection!
 
     # The specified changeset in this repository.
     changeset(number: String!): Changeset
@@ -4367,6 +4385,88 @@ type ThreadConnection {
     nodes: [Thread!]!
 
     # The total number of threads in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# Input arguments for creating a issue.
+input CreateIssueInput {
+    # The ID of this issue's repository.
+    repository: ID!
+
+    # The title of the issue.
+    title: String!
+
+    # The body of the issue.
+    body: String
+}
+
+# Input arguments for updating a issue.
+input UpdateIssueInput {
+    # The ID of the issue to update.
+    id: ID!
+
+    # The new title of the issue.
+    title: String
+
+    # The new body of the issue.
+    body: String
+}
+
+# A issue is an issue or issue.
+type Issue implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & CampaignNode {
+    # The unique ID for the issue.
+    id: ID!
+
+    # The repository that contains this issue.
+    repository: Repository!
+
+    # The issue ID that is only unique within the issue's repository. For a
+    # globally unique identifier, use Issue.id.
+    number: String!
+
+    # The title of the issue.
+    title: String!
+
+    # The body as Markdown.
+    body: String!
+
+    # The body as HTML.
+    bodyHTML: String!
+
+    # The state of this issue.
+    state: ThreadState!
+
+    # The URL to this issue on Sourcegraph.
+    url: String!
+
+    # The actor who authored the issue.
+    author: Actor
+
+    # The date and time when the issue was created.
+    createdAt: DateTime!
+
+    # The date and time when the issue was updated.
+    updatedAt: DateTime!
+
+    # Whether the viewer can update this issue.
+    viewerCanUpdate: Boolean!
+
+    # A list of campaigns that contain this issue.
+    campaigns(
+        # Return the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
+}
+
+# A list of issues.
+type IssueConnection {
+    # A list of issues.
+    nodes: [Issue!]!
+
+    # The total number of issues in the connection.
     totalCount: Int!
 
     # Pagination information.

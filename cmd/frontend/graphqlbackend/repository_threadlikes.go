@@ -16,6 +16,14 @@ func (r *RepositoryResolver) Threads(ctx context.Context, arg *graphqlutil.Conne
 	return ThreadsForRepository(ctx, r.ID(), arg)
 }
 
+func (r *RepositoryResolver) Issue(ctx context.Context, arg struct{ Number string }) (Issue, error) {
+	return IssueInRepository(ctx, r.ID(), arg.Number)
+}
+
+func (r *RepositoryResolver) Issues(ctx context.Context, arg *graphqlutil.ConnectionArgs) (IssueConnection, error) {
+	return IssuesForRepository(ctx, r.ID(), arg)
+}
+
 func (r *RepositoryResolver) Changeset(ctx context.Context, arg struct{ Number string }) (Changeset, error) {
 	return ChangesetInRepository(ctx, r.ID(), arg.Number)
 }

@@ -11,6 +11,9 @@ CREATE TABLE threads (
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
 
+	-- type == ISSUE
+    diagnostics_data jsonb,
+
 	-- type == CHANGESET
 	base_ref text,
     base_ref_oid text,

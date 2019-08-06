@@ -104,6 +104,11 @@ func (r *NodeResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToIssue() (Issue, bool) {
+	n, ok := r.Node.(Issue)
+	return n, ok
+}
+
 func (r *NodeResolver) ToProductLicense() (ProductLicense, bool) {
 	n, ok := r.Node.(ProductLicense)
 	return n, ok
@@ -237,6 +242,8 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":
 		return DiscussionThreadByID(ctx, id)
+	case "Issue":
+		return IssueByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)

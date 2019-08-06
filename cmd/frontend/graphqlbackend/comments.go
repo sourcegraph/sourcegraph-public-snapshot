@@ -106,6 +106,7 @@ type Comment interface {
 	PartialComment
 	ToCommentReply() (CommentReply, bool)
 	ToThread() (Thread, bool)
+	ToIssue() (Issue, bool)
 	ToChangeset() (Changeset, bool)
 	ToCampaign() (Campaign, bool)
 }
@@ -113,6 +114,7 @@ type Comment interface {
 type ToComment struct {
 	CommentReply CommentReply
 	Thread       Thread
+	Issue        Issue
 	Changeset    Changeset
 	Campaign     Campaign
 }
@@ -126,7 +128,8 @@ func (v ToComment) comment() interface {
 		return v.CommentReply
 	case v.Thread != nil:
 		return v.Thread
-		// TODO!(sqs): add Issue
+	case v.Issue != nil:
+		return v.Issue
 	case v.Changeset != nil:
 		return v.Changeset
 	case v.Campaign != nil:
@@ -144,6 +147,7 @@ func (v ToComment) UpdatedAt(ctx context.Context) (DateTime, error) { return v.c
 func (v ToComment) CreatedAt(ctx context.Context) (DateTime, error) { return v.comment().CreatedAt(ctx) }
 func (v ToComment) ToCommentReply() (CommentReply, bool)            { return v.CommentReply, v.CommentReply != nil }
 func (v ToComment) ToThread() (Thread, bool)                        { return v.Thread, v.Thread != nil }
+func (v ToComment) ToIssue() (Issue, bool)                          { return v.Issue, v.Issue != nil }
 func (v ToComment) ToChangeset() (Changeset, bool)                  { return v.Changeset, v.Changeset != nil }
 func (v ToComment) ToCampaign() (Campaign, bool)                    { return v.Campaign, v.Campaign != nil }
 

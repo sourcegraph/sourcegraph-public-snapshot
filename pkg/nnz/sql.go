@@ -16,35 +16,40 @@ func (v *String) Scan(value interface{}) error {
 		*v = ""
 		return nil
 	}
+	str, err := scanString(value)
+	if err != nil {
+		return err
+	}
+	*v = String(str)
+	return nil
+}
+
+func scanString(value interface{}) (string, error) {
 	switch value := value.(type) {
 	case string:
-		*v = String(value)
+		return value, nil
 	case *string:
 		if value != nil {
-			*v = String(*value)
-		} else {
-			*v = ""
+			return *value, nil
 		}
+		return "", nil
 	case []byte:
-		*v = String(value)
+		return string(value), nil
 	case *[]byte:
 		if value != nil {
-			*v = String(*value)
-		} else {
-			*v = ""
+			return string(*value), nil
 		}
+		return "", nil
 	case json.RawMessage:
-		*v = String(value)
+		return string(value), nil
 	case *json.RawMessage:
 		if value != nil {
-			*v = String(*value)
-		} else {
-			*v = ""
+			return string(*value), nil
 		}
+		return "", nil
 	default:
-		return fmt.Errorf("invalid type %T for nnz.String", value)
+		return "", fmt.Errorf("invalid type %T for nnz.String", value)
 	}
-	return nil
 }
 
 // Value implements the database/sql/driver.Valuer interface.
@@ -134,5 +139,35 @@ func (v *int32Scanner) Scan(value interface{}) error {
 		return err
 	}
 	*v = int32Scanner(i64)
+	return nil
+}
+
+// JSON returns a driver Value that maps json.RawMessage(nil) to SQL null.
+func JSON(v json.RawMessage) driver.Value {
+	if v == nil {
+		return nil
+	}
+	return []byte(v)
+}
+
+// ToJSON returns a value that implements database/sql.Scanner so that SQL null maps to
+// json.RawMessage(nil).
+func ToJSON(v *json.RawMessage) sql.Scanner {
+	return (*jsonScanner)(v)
+}
+
+type jsonScanner json.RawMessage
+
+// Scan implements the database/sql.Scanner interface.
+func (v *jsonScanner) Scan(value interface{}) error {
+	if value == nil {
+		*v = nil
+		return nil
+	}
+	str, err := scanString(value)
+	if err != nil {
+		return err
+	}
+	*v = jsonScanner(str)
 	return nil
 }
