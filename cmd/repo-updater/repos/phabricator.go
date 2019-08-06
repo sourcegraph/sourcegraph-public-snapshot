@@ -120,11 +120,11 @@ func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*Repo, error) {
 	}
 
 	if cloneURL == "" {
-		return nil, errors.Errorf("no clone URL available for repo with id=%v", repo.ID)
+		log15.Warn("unable to construct clone URL for repo", "name", name, "phabricator_id", repo.PHID)
 	}
 
 	if name == "" {
-		return nil, errors.Errorf("no canonical name available for repo with id=%v", repo.ID)
+		return nil, errors.Errorf("no canonical name available for repo with id=%v", repo.PHID)
 	}
 
 	serviceID, err := urlx.NormalizeString(s.conn.Url)
