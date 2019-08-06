@@ -61,30 +61,6 @@ function main(): void {
     })
 
     app.post(
-        '/exists',
-        wrap(async (req, res) => {
-            const { repository, commit, file } = req.query
-            const key = cacheKey({ repository, commit })
-
-            checkRepository(repository)
-            checkCommit(commit)
-
-            try {
-                const db = await backend.loadDB(key)
-                const exists = Boolean(db.stat(file))
-                res.send(exists)
-            } catch (e) {
-                if ('code' in e && e.code === 'ENOENT') {
-                    res.send(false)
-                    return
-                }
-
-                throw e
-            }
-        })
-    )
-
-    app.post(
         '/upload',
         wrap(async (req, res) => {
             const { repository, commit } = req.query
@@ -108,6 +84,35 @@ function main(): void {
 
                 res.send('Upload successful.')
             })
+        })
+    )
+
+    app.post(
+        '/exists',
+        wrap(async (req, res) => {
+            const { repository, commit, file } = req.query
+            const key = cacheKey({ repository, commit })
+
+            checkRepository(repository)
+            checkCommit(commit)
+
+            try {
+                await cache.withDB(backend, key, async db => {
+                    if (!file) {
+                        res.send(true)
+                    } else {
+                        const exists = Boolean(db.stat(file))
+                        res.send(exists)
+                    }
+                })
+            } catch (e) {
+                if ('code' in e && e.code === 'ENOENT') {
+                    res.send(false)
+                    return
+                }
+
+                throw e
+            }
         })
     )
 
