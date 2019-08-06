@@ -373,7 +373,7 @@ func appendMatches(matches []protocol.LineMatch, matchLineBuf []byte, lineNumber
 			// Special care must be taken to call Close on all possible paths, including error paths.
 			Preview:          string(line),
 			LineNumber:       lineNumber,
-			OffsetAndLengths: [][2]int{[2]int{offset, length}},
+			OffsetAndLengths: [][2]int{{offset, length}},
 			LimitHit:         false, // TODO
 		})
 
