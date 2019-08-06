@@ -14095,10 +14095,10 @@ reactcss@^1.2.0:
   dependencies:
     lodash "^4.0.1"
 
-reactstrap@^8.0.0:
-  version "8.0.0"
-  resolved "https://registry.npmjs.org/reactstrap/-/reactstrap-8.0.0.tgz#db24d0127e58db89baa743dc660b65f611fe9b84"
-  integrity sha512-Rd7MyaFnZZXe1lbeBlgkxzyv+u7Z/ots0yYoO6ijT7/0uGsNwB1ch2h2t7Tf6u05jpbTFlLD+lyBEER0eibcQw==
+reactstrap@^8.0.1:
+  version "8.0.1"
+  resolved "https://registry.npmjs.org/reactstrap/-/reactstrap-8.0.1.tgz#0b663c8195f540bc1d6d5dbcbcf73cab56fe7c79"
+  integrity sha512-GvUWEL+a2+3npK1OxTXcNBMHXX4x6uc1KQRzK7yAOl+8sAHTRWqjunvMUfny3oDh8yKVzgqpqQlWWvs1B2HR9A==
   dependencies:
     "@babel/runtime" "^7.2.0"
     classnames "^2.2.3"
