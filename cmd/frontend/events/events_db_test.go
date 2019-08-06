@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/nnz"
 )
 
 func TestDB_Events(t *testing.T) {
@@ -30,13 +29,13 @@ func TestDB_Events(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantEvent0 := &dbEvent{Type: "t0", ActorUserID: nnz.Int32(user1.ID)}
+	wantEvent0 := &dbEvent{Type: "t0", ActorUserID: user1.ID}
 	event0, err := dbEvents{}.Create(ctx, nil, wantEvent0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	event1, err := dbEvents{}.Create(ctx, nil,
-		&dbEvent{Type: "t1", ActorUserID: nnz.Int32(user1.ID), Objects: Objects{User: nnz.Int32(user1.ID)}},
+		&dbEvent{Type: "t1", ActorUserID: user1.ID, Objects: Objects{User: user1.ID}},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -75,7 +74,7 @@ func TestDB_Events(t *testing.T) {
 
 	{
 		// Query by object.
-		ts, err := dbEvents{}.List(ctx, dbEventsListOptions{Objects: Objects{User: nnz.Int32(user1.ID)}})
+		ts, err := dbEvents{}.List(ctx, dbEventsListOptions{Objects: Objects{User: user1.ID}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -88,10 +87,10 @@ func TestDB_Events(t *testing.T) {
 
 	{
 		// Delete by object.
-		if err := (dbEvents{}).Delete(ctx, nil, dbEventsListOptions{Objects: Objects{User: nnz.Int32(user1.ID)}}); err != nil {
+		if err := (dbEvents{}).Delete(ctx, nil, dbEventsListOptions{Objects: Objects{User: user1.ID}}); err != nil {
 			t.Fatal(err)
 		}
-		n, err := dbEvents{}.Count(ctx, dbEventsListOptions{Objects: Objects{User: nnz.Int32(user1.ID)}})
+		n, err := dbEvents{}.Count(ctx, dbEventsListOptions{Objects: Objects{User: user1.ID}})
 		if err != nil {
 			t.Fatal(err)
 		}

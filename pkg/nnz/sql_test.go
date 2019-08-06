@@ -41,27 +41,41 @@ func TestString(t *testing.T) {
 }
 
 func TestInt32(t *testing.T) {
-	nnzTestRun(t, testSpec{
-		nnzValue: func() sql.Scanner { var v Int32; return &v },
-		scanTests: []scanTest{
-			{nil, Int32(0)},
-			{int(0), Int32(0)},
-			{int(1), Int32(1)},
-			{(*int)(nil), Int32(0)},
-			{intPtr(0), Int32(0)},
-			{intPtr(1), Int32(1)},
-			{int32(0), Int32(0)},
-			{int32(1), Int32(1)},
-			{(*int32)(nil), Int32(0)},
-			{int32Ptr(0), Int32(0)},
-			{int32Ptr(1), Int32(1)},
-		},
-		scanErrorTests: []driver.Value{"", uint(0), uint32(0), uint64(0)},
-		valueTests: map[driver.Valuer]interface{}{
-			Int32(0): nil,
-			Int32(1): int32(1),
-		},
-	})
+	tests := map[int32]driver.Value{
+		0: nil,
+		1: int64(1),
+	}
+	for i32, want := range tests {
+		got := Int32(i32)
+		if got != want {
+			t.Errorf("%#v: want %#v, got %#v", i32, got, want)
+		}
+	}
+}
+
+func TestToInt32(t *testing.T) {
+	tests := []struct {
+		value interface{}
+		want  int32
+		err   bool
+	}{
+		{value: nil, want: 0},
+		{value: 0, want: 0},
+		{value: 1, want: 1},
+		{value: "a", err: true},
+	}
+	for _, test := range tests {
+		var i32 int32
+		dest := ToInt32(&i32)
+		if err := dest.Scan(test.value); !test.err && err != nil {
+			t.Error(err)
+		} else if test.err && err == nil {
+			t.Fatal("want error")
+		}
+		if i32 != test.want {
+			t.Errorf("%#v: got %d, want %d", test.value, i32, test.want)
+		}
+	}
 }
 
 func TestInt64(t *testing.T) {

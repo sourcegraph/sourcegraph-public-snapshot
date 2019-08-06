@@ -55,8 +55,8 @@ func toRegisteredEventType(ctx context.Context, v *dbEvent) (graphqlbackend.ToEv
 	case v.ExternalActorUsername != "" || v.ExternalActorURL != "":
 		actor = &graphqlbackend.Actor{
 			ExternalActor: &graphqlbackend.ExternalActor{
-				Username_: string(v.ExternalActorUsername),
-				URL_:      string(v.ExternalActorURL),
+				Username_: v.ExternalActorUsername,
+				URL_:      v.ExternalActorURL,
 			},
 		}
 	}

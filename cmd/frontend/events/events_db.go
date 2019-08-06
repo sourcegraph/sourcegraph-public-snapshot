@@ -17,13 +17,13 @@ import (
 type dbEvent struct {
 	ID int64
 	Type
-	ActorUserID           nnz.Int32
-	ExternalActorUsername nnz.String
-	ExternalActorURL      nnz.String
+	ActorUserID           int32
+	ExternalActorUsername string
+	ExternalActorURL      string
 	CreatedAt             time.Time
 	Objects
 	Data                          []byte
-	ImportedFromExternalServiceID nnz.Int64
+	ImportedFromExternalServiceID int64
 }
 
 // errEventNotFound occurs when a database operation expects a specific event to exist but it
@@ -50,20 +50,20 @@ func (dbEvents) Create(ctx context.Context, tx *sql.Tx, event *dbEvent) (*dbEven
 	}
 	args := []interface{}{
 		event.Type,
-		event.ActorUserID,
-		event.ExternalActorUsername,
-		event.ExternalActorURL,
+		nnz.Int32(event.ActorUserID),
+		nnz.String(event.ExternalActorUsername),
+		nnz.String(event.ExternalActorURL),
 		event.CreatedAt,
 		data,
-		event.Objects.Thread,
-		event.Objects.Campaign,
-		event.Objects.Comment,
-		event.Objects.Rule,
-		event.Objects.Repository,
-		event.Objects.User,
-		event.Objects.Organization,
-		event.Objects.RegistryExtension,
-		event.ImportedFromExternalServiceID,
+		nnz.Int64(event.Objects.Thread),
+		nnz.Int64(event.Objects.Campaign),
+		nnz.Int64(event.Objects.Comment),
+		nnz.Int64(event.Objects.Rule),
+		nnz.Int32(event.Objects.Repository),
+		nnz.Int32(event.Objects.User),
+		nnz.Int32(event.Objects.Organization),
+		nnz.Int32(event.Objects.RegistryExtension),
+		nnz.Int64(event.ImportedFromExternalServiceID),
 	}
 	query := sqlf.Sprintf(
 		`INSERT INTO events(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+selectColumns,
@@ -112,8 +112,8 @@ func (o dbEventsListOptions) sqlConditions() []*sqlf.Query {
 	if o.Types != nil {
 		conds = append(conds, sqlf.Sprintf("type = ANY(%v)", o.Types))
 	}
-	addCondition := func(id nnz.Value, column string) {
-		if !id.IsZero() {
+	addCondition := func(id int64, column string) {
+		if id != 0 {
 			conds = append(conds, sqlf.Sprintf(column+"=%d", id))
 		}
 	}
@@ -123,11 +123,11 @@ func (o dbEventsListOptions) sqlConditions() []*sqlf.Query {
 	}
 	addCondition(o.Objects.Comment, "comment_id")
 	addCondition(o.Objects.Rule, "rule_id")
-	addCondition(o.Objects.Repository, "repository_id")
-	addCondition(o.Objects.User, "user_id")
-	addCondition(o.Objects.Organization, "organization_id")
-	addCondition(o.Objects.RegistryExtension, "registry_extension_id")
-	addCondition(nnz.Int64(o.ImportedFromExternalServiceID), "imported_from_external_service_id")
+	addCondition(int64(o.Objects.Repository), "repository_id")
+	addCondition(int64(o.Objects.User), "user_id")
+	addCondition(int64(o.Objects.Organization), "organization_id")
+	addCondition(int64(o.Objects.RegistryExtension), "registry_extension_id")
+	addCondition(o.ImportedFromExternalServiceID, "imported_from_external_service_id")
 	return conds
 }
 
@@ -180,20 +180,20 @@ func (dbEvents) scanRow(row interface {
 	if err := row.Scan(
 		&t.ID,
 		&t.Type,
-		&t.ActorUserID,
-		&t.ExternalActorUsername,
-		&t.ExternalActorURL,
+		(*nnz.Int32)(&t.ActorUserID),
+		(*nnz.String)(&t.ExternalActorUsername),
+		(*nnz.String)(&t.ExternalActorURL),
 		&t.CreatedAt,
 		&t.Data,
-		&t.Objects.Thread,
-		&t.Objects.Campaign,
-		&t.Objects.Comment,
-		&t.Objects.Rule,
-		&t.Objects.Repository,
-		&t.Objects.User,
-		&t.Objects.Organization,
-		&t.Objects.RegistryExtension,
-		&t.ImportedFromExternalServiceID,
+		(*nnz.Int64)(&t.Objects.Thread),
+		(*nnz.Int64)(&t.Objects.Campaign),
+		(*nnz.Int64)(&t.Objects.Comment),
+		(*nnz.Int64)(&t.Objects.Rule),
+		(*nnz.Int32)(&t.Objects.Repository),
+		(*nnz.Int32)(&t.Objects.User),
+		(*nnz.Int32)(&t.Objects.Organization),
+		(*nnz.Int32)(&t.Objects.RegistryExtension),
+		(*nnz.Int64)(&t.ImportedFromExternalServiceID),
 	); err != nil {
 		return nil, err
 	}

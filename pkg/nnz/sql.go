@@ -1,22 +1,14 @@
 package nnz
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 )
 
-// Value is a convenience interface implemented by this package's types.
-type Value interface {
-	// IsZero reports whether the value is the zero value for its type.
-	IsZero() bool
-}
-
 // String represents a Go string whose zero value maps to SQL null (when used with database/sql).
 type String string
-
-// IsZero reports whether v == "".
-func (v String) IsZero() bool { return v == "" }
 
 // Scan implements the database/sql.Scanner interface.
 func (v *String) Scan(value interface{}) error {
@@ -63,62 +55,8 @@ func (v String) Value() (driver.Value, error) {
 	return string(v), nil
 }
 
-// Int32 represents a Go int32 whose zero value maps to SQL null (when used with database/sql).
-type Int32 int32
-
-// IsZero reports whether v == 0.
-func (v Int32) IsZero() bool { return v == 0 }
-
-// Scan implements the database/sql.Scanner interface.
-func (v *Int32) Scan(value interface{}) error {
-	if value == nil {
-		*v = 0
-		return nil
-	}
-	switch value := value.(type) {
-	case int:
-		*v = Int32(value)
-	case int32:
-		*v = Int32(value)
-	case int64:
-		*v = Int32(value)
-	case *int:
-		if value != nil {
-			*v = Int32(*value)
-		} else {
-			*v = 0
-		}
-	case *int32:
-		if value != nil {
-			*v = Int32(*value)
-		} else {
-			*v = 0
-		}
-	case *int64:
-		if value != nil {
-			*v = Int32(*value)
-		} else {
-			*v = 0
-		}
-	default:
-		return fmt.Errorf("invalid type %T for nnz.Int32", value)
-	}
-	return nil
-}
-
-// Value implements the database/sql/driver.Valuer interface.
-func (v Int32) Value() (driver.Value, error) {
-	if v == 0 {
-		return nil, nil
-	}
-	return int64(v), nil
-}
-
 // Int64 represents a Go int64 whose zero value maps to SQL null (when used with database/sql).
 type Int64 int64
-
-// IsZero reports whether v == 0.
-func (v Int64) IsZero() bool { return v == 0 }
 
 // Scan implements the database/sql.Scanner interface.
 func (v *Int64) Scan(value interface{}) error {
@@ -126,35 +64,40 @@ func (v *Int64) Scan(value interface{}) error {
 		*v = 0
 		return nil
 	}
+	i64, err := scanInt64(value)
+	if err != nil {
+		return err
+	}
+	*v = Int64(i64)
+	return nil
+}
+
+func scanInt64(value interface{}) (int64, error) {
 	switch value := value.(type) {
 	case int:
-		*v = Int64(value)
+		return int64(value), nil
 	case int32:
-		*v = Int64(value)
+		return int64(value), nil
 	case int64:
-		*v = Int64(value)
+		return value, nil
 	case *int:
 		if value != nil {
-			*v = Int64(*value)
-		} else {
-			*v = 0
+			return int64(*value), nil
 		}
+		return 0, nil
 	case *int32:
 		if value != nil {
-			*v = Int64(*value)
-		} else {
-			*v = 0
+			return int64(*value), nil
 		}
+		return 0, nil
 	case *int64:
 		if value != nil {
-			*v = Int64(*value)
-		} else {
-			*v = 0
+			return *value, nil
 		}
+		return 0, nil
 	default:
-		return fmt.Errorf("invalid type %T for nnz.Int64", value)
+		return 0, fmt.Errorf("invalid type %T for nnz.int64", value)
 	}
-	return nil
 }
 
 // Value implements the database/sql/driver.Valuer interface.
@@ -163,4 +106,33 @@ func (v Int64) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return int64(v), nil
+}
+
+// Int32 returns a driver Value that maps int32(0) to SQL null.
+func Int32(v int32) driver.Value {
+	if v == 0 {
+		return nil
+	}
+	return int64(v)
+}
+
+// ToInt32 returns a value that implements database/sql.Scanner so that SQL null maps to int32(0).
+func ToInt32(v *int32) sql.Scanner {
+	return (*int32Scanner)(v)
+}
+
+type int32Scanner int32
+
+// Scan implements the database/sql.Scanner interface.
+func (v *int32Scanner) Scan(value interface{}) error {
+	if value == nil {
+		*v = 0
+		return nil
+	}
+	i64, err := scanInt64(value)
+	if err != nil {
+		return err
+	}
+	*v = int32Scanner(i64)
+	return nil
 }
