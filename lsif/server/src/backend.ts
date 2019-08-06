@@ -1,5 +1,6 @@
 import * as lsp from 'vscode-languageserver'
 import { Database } from './ms/database'
+import { EncodingStats, HandleStats, QueryStats } from './stats'
 
 export const ERRNOLSIFDATA = 'NoLSIFData'
 
@@ -26,24 +27,32 @@ export interface Backend {
      * Re-encode the given file containing a JSON-encoded LSIF dump to the
      * proper format loadable by `loadDB`.
      */
-    createDB(tempPath: string, key: string, contentLength: number): Promise<void>
+    createDB(tempPath: string, key: string, contentLength: number): Promise<{ encodingStats: EncodingStats }>
 
     /**
      * Create a database instance from the given key. This assumes that the
      * database has been already created via a call to `createDB` (or this
      * method will otherwise fail).
      */
-    loadDB(key: string): Promise<Database>
+    loadDB(key: string): Promise<{ database: Database; handleStats: HandleStats }>
 
     /**
      * Return data for an LSIF hover query.
      */
-    hover(db: Database, uri: string, position: lsp.Position): lsp.Hover | undefined
+    hover(
+        db: Database,
+        uri: string,
+        position: lsp.Position
+    ): Promise<{ result: lsp.Hover | undefined; queryStats: QueryStats }>
 
     /**
      * Return data for an LSIF definitions query.
      */
-    definitions(db: Database, uri: string, position: lsp.Position): lsp.Location | lsp.Location[] | undefined
+    definitions(
+        db: Database,
+        uri: string,
+        position: lsp.Position
+    ): Promise<{ result: lsp.Location | lsp.Location[] | undefined; queryStats: QueryStats }>
 
     /**
      * Return data for an LSIF references query.
@@ -53,5 +62,5 @@ export interface Backend {
         uri: string,
         position: lsp.Position,
         context: lsp.ReferenceContext
-    ): lsp.Location[] | undefined
+    ): Promise<{ result: lsp.Location[] | undefined; queryStats: QueryStats }>
 }

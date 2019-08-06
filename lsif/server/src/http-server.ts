@@ -1,14 +1,15 @@
-import bodyParser from 'body-parser'
-import express from 'express'
-import { Cache } from './cache'
-import { fs } from 'mz'
-import { JsonDatabase } from './ms/json'
-import { noopTransformer } from './ms/database'
-import { readEnvInt } from './env'
-import { SQLiteGraphBackend } from './sqlite'
-import * as tmp from 'tmp-promise'
-import { wrap } from 'async-middleware'
+import * as Prometheus from 'prom-client';
+import * as tmp from 'tmp-promise';
+import bodyParser from 'body-parser';
+import express from 'express';
+import { Cache } from './cache';
 import { ERRNOLSIFDATA } from './backend';
+import { fs } from 'mz';
+import { JsonDatabase } from './ms/json';
+import { noopTransformer } from './ms/database';
+import { readEnvInt } from './env';
+import { SQLiteGraphBackend } from './sqlite';
+import { wrap } from 'async-middleware';
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -26,7 +27,6 @@ const MAX_FILE_SIZE = readEnvInt({ key: 'LSIF_MAX_FILE_SIZE', defaultValue: 100 
 interface RepositoryCommit {
     // An opaque repository ID.
     repository: string
-
     // A 40-character commit hash.
     commit: string
 }
@@ -47,18 +47,15 @@ function main(): void {
     const backend = new SQLiteGraphBackend()
     const cache = new Cache()
 
-    app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-        if (err && err.status) {
-            res.status(err.status).send({ message: err.message })
-            return
-        }
-
-        res.status(500).send({ message: 'Unknown error' })
-        console.error(err)
-    })
+    app.use(errorHandler)
 
     app.get('/ping', (req, res) => {
         res.send({ pong: 'pong' })
+    })
+
+    app.get('/metrics', (req, res) => {
+        res.set('Content-Type', Prometheus.register.contentType)
+        res.end(Prometheus.register.metrics())
     })
 
     app.post(
@@ -71,25 +68,29 @@ function main(): void {
             checkCommit(commit)
             checkContentLength(req.header('Content-Length'))
 
+            // Create temp file to receive the request body
             const tempFile = await tmp.file()
-            try {
-                // Ensure dump is valid, then convert the database according to
-                // the current backend. Clean the temp file to save space, then
-                // remove the old database from the cache so that the next LSIF
-                // request does not get stale results.
 
+            try {
+                // Read the content and ensure the body is a valid LSIF dump
                 const contentLength = await readContent(req, tempFile.path)
                 await new JsonDatabase().load(tempFile.path, () => noopTransformer)
-                await backend.createDB(tempFile.path, key, contentLength)
+                const { encodingStats } = await backend.createDB(tempFile.path, key, contentLength)
+
+                // Bust the cache
                 cache.delete(key)
 
+                // TODO(efritz) - add stats to prometheus reporter
                 res.send({
-                    data: 'Upload successful.',
+                    data: null,
                     stats: {
-                        // TODO - add stats
+                        encodingStats: encodingStats,
                     },
                 })
             } finally {
+                // Temp files are cleaned up on process exit, but we want to do it
+                // proactively and in the event of exceptions so we do not fill up
+                // the temporary directory on the machine.
                 await fs.unlink(tempFile.path)
             }
         })
@@ -104,25 +105,27 @@ function main(): void {
             checkRepository(repository)
             checkCommit(commit)
 
-            let exists = false
             try {
-                exists = await cache.withDB(backend, key, async db => {
+                const { result, cacheStats, handleStats } = await cache.withDB(backend, key, async db => {
                     return !file || Boolean(db.stat(file))
+                })
+
+                // TODO(efritz) - add stats to prometheus reporter
+                res.send({
+                    data: result,
+                    stats: {
+                        cacheStats: cacheStats,
+                        handleStats: handleStats,
+                    },
                 })
             } catch (e) {
                 if ('code' in e && e.code === ERRNOLSIFDATA) {
-                    // no data, exists stays false
+                    // TODO(efritz) - add stats to prometheus reporter
+                    res.send({ data: false, stats: {} })
                 } else {
                     throw e
                 }
             }
-
-            res.send({
-                data: exists,
-                stats: {
-                    // TODO - add stats
-                },
-            })
         })
     )
 
@@ -139,7 +142,10 @@ function main(): void {
             checkMethod(method)
 
             try {
-                const result = await cache.withDB(backend, key, async db => {
+                const {
+                    result: { result, queryStats },
+                    cacheStats,
+                } = await cache.withDB(backend, key, async db => {
                     switch (method) {
                         case 'hover':
                             return backend.hover(db, path, position)
@@ -152,10 +158,12 @@ function main(): void {
                     }
                 })
 
+                // TODO(efritz) - add stats to prometheus reporter
                 res.json({
                     data: result || null,
                     stats: {
-                        // TODO - add stats
+                        cacheStats: cacheStats,
+                        queryStats: queryStats,
                     },
                 })
             } catch (e) {
@@ -177,6 +185,19 @@ function main(): void {
 
 //
 // Helpers
+
+/**
+ * Middleware functino used to convert uncaught exceptions into 500 responses.
+ */
+function errorHandler(err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
+    if (err && err.status) {
+        res.status(err.status).send({ message: err.message })
+        return
+    }
+
+    console.error(err)
+    res.status(500).send({ message: 'Unknown error' })
+}
 
 /**
  * Computes the cache key that contains LSIF data for the given repository@commit.
@@ -230,7 +251,9 @@ function isSupportedMethod(method: string): method is SupportedMethods {
  */
 function checkMethod(method: string): void {
     if (!isSupportedMethod(method)) {
-        throw Object.assign(new Error('Method must be one of ' + SUPPORTED_METHODS), { status: 422 })
+        throw Object.assign(new Error(`Method must be one of ${Array.from(SUPPORTED_METHODS.keys()).join(', ')}`), {
+            status: 422,
+        })
     }
 }
 

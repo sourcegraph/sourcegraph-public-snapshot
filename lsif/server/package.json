@@ -20,6 +20,7 @@
     "lsif-sqlite": "^0.4.5",
     "move-file": "^1.2.0",
     "mz": "^2.7.0",
+    "prom-client": "^11.5.3",
     "semver": "^6.0.0",
     "tmp-promise": "^2.0.2",
     "vscode-languageserver": "^5.2.1",

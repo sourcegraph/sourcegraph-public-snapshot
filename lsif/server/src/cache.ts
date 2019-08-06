@@ -1,5 +1,6 @@
 import LRU from 'lru-cache'
 import { Backend } from './backend'
+import { CacheStats, HandleStats, timeit } from './stats'
 import { Database } from './ms/database'
 import { readEnvInt } from './env'
 
@@ -22,13 +23,7 @@ const SOFT_MAX_STORAGE_IN_MEMORY = readEnvInt({
  * dispose of it when evicted from the cache.
  */
 interface LRUDBEntry {
-    dbPromise: Promise<Database>
-    /**
-     * The size of the underlying LSIF file. This directly contributes to the
-     * size of the cache. Ideally, this would be set to the amount of memory
-     * that the `Database` uses, but calculating the memory usage is difficult
-     * so this uses the file size as a rough heuristic.
-     */
+    dbPromise: Promise<{ database: Database; handleStats: HandleStats }>
     length: number
     dispose: () => void
 }
@@ -52,18 +47,44 @@ export class Cache {
      * repository@commit. Internally, it either gets the `Database` from the LRU
      * cache or loads it from storage.
      */
-    public async withDB<T>(backend: Backend, key: string, action: (db: Database) => Promise<T>): Promise<T> {
+    public async withDB<T>(
+        backend: Backend,
+        key: string,
+        action: (db: Database) => Promise<T>
+    ): Promise<{ result: T; cacheStats: CacheStats; handleStats?: HandleStats }> {
+        let hit = true
         let entry = this.lru.get(key)
+
         if (!entry) {
+            hit = false
             const dbPromise = backend.loadDB(key)
             const length = 1 // TODO(efritz) - get length from backend
-            const dispose = () => dbPromise.then(db => db.close())
+            const dispose = () => dbPromise.then(({ database }) => database.close())
 
             entry = { dbPromise, length, dispose }
             this.lru.set(key, entry)
         }
 
-        return await action(await entry.dbPromise)
+        const {
+            result: { database, handleStats },
+            elapsed,
+        } = await timeit(async () => {
+            return await (<LRUDBEntry>entry).dbPromise
+        })
+
+        // Wait for entry promise to resolve - will already
+        // be resolved if this lookup was a cache hit.
+        const result = await action(database)
+
+        return {
+            result,
+            cacheStats: {
+                cacheHit: hit,
+                elapsedMs: elapsed,
+            },
+            // Only return handleStats if it wasn't a cache hit
+            handleStats: (!hit || undefined) && handleStats,
+        }
     }
 
     /**

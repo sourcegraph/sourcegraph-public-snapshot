@@ -1,11 +1,17 @@
-import * as lsp from 'vscode-languageserver'
-import * as path from 'path'
-import { Backend, NoLSIFDataError } from './backend'
-import { BlobStore } from './ms/blobStore'
-import { child_process, fs } from 'mz'
-import { Database } from './ms/database'
-import { GraphStore } from './ms/graphStore'
-import { readEnvInt } from './env'
+import * as lsp from 'vscode-languageserver';
+import * as path from 'path';
+import { Backend, NoLSIFDataError } from './backend';
+import { BlobStore } from './ms/blobStore';
+import { child_process, fs } from 'mz';
+import { Database } from './ms/database';
+import {
+    EncodingStats,
+    HandleStats,
+    QueryStats,
+    timeit
+    } from './stats';
+import { GraphStore } from './ms/graphStore';
+import { readEnvInt } from './env';
 
 /**
  * Where on the file system to store LSIF files.
@@ -33,10 +39,27 @@ export abstract class SQLiteBackend implements Backend {
      * Re-encode the given file containing a JSON-encoded LSIF dump to the
      * proper format loadable by `loadDB`.
      */
-    public async createDB(tempPath: string, key: string, contentLength: number): Promise<void> {
+    public async createDB(
+        tempPath: string,
+        key: string,
+        contentLength: number
+    ): Promise<{ encodingStats: EncodingStats }> {
         await this.createStorageRoot()
-        await child_process.exec(this.buildCommand(tempPath, key))
+        const outFile = path.join(STORAGE_ROOT, key + '.db')
+
+        const { elapsed } = await timeit(async () => {
+            await child_process.exec(this.buildCommand(tempPath, outFile))
+        })
+
         this.cleanStorageRoot(Math.max(0, SOFT_MAX_STORAGE - contentLength))
+        const fileStat = await fs.stat(outFile)
+
+        return {
+            encodingStats: {
+                elapsedMs: elapsed,
+                diskKb: fileStat.size / 1000,
+            },
+        }
     }
 
     /**
@@ -44,15 +67,24 @@ export abstract class SQLiteBackend implements Backend {
      * database has been already created via a call to `createDB` (or this
      * method will otherwise fail).
      */
-    public async loadDB(key: string): Promise<Database> {
+    public async loadDB(key: string): Promise<{ database: Database; handleStats: HandleStats }> {
         const file = path.join(STORAGE_ROOT, key + '.db')
         const db = this.createStore()
 
         try {
-            await db.load(file, projectRootURI => ({
-                toDatabase: pathRelativeToProjectRoot => projectRootURI + '/' + pathRelativeToProjectRoot,
-                fromDatabase: uri => (uri.startsWith(projectRootURI) ? uri.slice(`${projectRootURI}/`.length) : uri),
-            }))
+            const { elapsed } = await timeit(async () => {
+                return await db.load(file, root => ({
+                    toDatabase: path => `${root}/${path}`,
+                    fromDatabase: uri => (uri.startsWith(root) ? uri.slice(`${root}/`.length) : uri),
+                }))
+            })
+
+            return {
+                database: db,
+                handleStats: {
+                    elapsedMs: elapsed,
+                },
+            }
         } catch (e) {
             if ('code' in e && e.code === 'ENOENT') {
                 throw new NoLSIFDataError(key)
@@ -60,36 +92,67 @@ export abstract class SQLiteBackend implements Backend {
 
             throw e
         }
-
-        return db
     }
 
     /**
      * Return data for an LSIF hover query.
      */
-    public hover(db: Database, uri: string, position: lsp.Position): lsp.Hover | undefined {
-        return db.hover(uri, position)
+    public async hover(
+        db: Database,
+        uri: string,
+        position: lsp.Position
+    ): Promise<{ result: lsp.Hover | undefined; queryStats: QueryStats }> {
+        const { result, elapsed } = await timeit(async () => {
+            return Promise.resolve(db.hover(uri, position))
+        })
+
+        return Promise.resolve({
+            result,
+            queryStats: {
+                elapsedMs: elapsed,
+            },
+        })
     }
 
     /**
      * Return data for an LSIF definitions query.
      */
-    public definitions(db: Database, uri: string, position: lsp.Position): lsp.Location | lsp.Location[] | undefined {
-        // TODO(efritz) - add multi-repo intel here
-        return db.definitions(uri, position)
+    public async definitions(
+        db: Database,
+        uri: string,
+        position: lsp.Position
+    ): Promise<{ result: lsp.Location | lsp.Location[] | undefined; queryStats: QueryStats }> {
+        const { result, elapsed } = await timeit(async () => {
+            return Promise.resolve(db.definitions(uri, position))
+        })
+
+        return Promise.resolve({
+            result,
+            queryStats: {
+                elapsedMs: elapsed,
+            },
+        })
     }
 
     /**
      * Return data for an LSIF references query.
      */
-    public references(
+    public async references(
         db: Database,
         uri: string,
         position: lsp.Position,
         context: lsp.ReferenceContext
-    ): lsp.Location[] | undefined {
-        // TODO(efritz) - add multi-repo intel here
-        return db.references(uri, position, context)
+    ): Promise<{ result: lsp.Location[] | undefined; queryStats: QueryStats }> {
+        const { result, elapsed } = await timeit(async () => {
+            return Promise.resolve(db.references(uri, position, context))
+        })
+
+        return Promise.resolve({
+            result,
+            queryStats: {
+                elapsedMs: elapsed,
+            },
+        })
     }
 
     /**
@@ -112,6 +175,8 @@ export abstract class SQLiteBackend implements Backend {
      * the given `max`.
      */
     private async cleanStorageRoot(max: number): Promise<void> {
+        // TODO(efritz) - early-out
+
         const entries = await fs.readdir(STORAGE_ROOT)
         const files = await Promise.all(
             entries.map(async f => {
@@ -139,7 +204,7 @@ export abstract class SQLiteBackend implements Backend {
     /**
      * Build the command used to generate the SQLite dump from a temporary file.
      */
-    protected abstract buildCommand(tempPath: string, key: string): string
+    protected abstract buildCommand(inFile: string, outFile: string): string
 
     /**
      * Create a new, empty Database. This object should be able to load the file
@@ -155,9 +220,8 @@ export class SQLiteGraphBackend extends SQLiteBackend {
     /**
      * Build the command used to generate the SQLite dump from a temporary file.
      */
-    protected buildCommand(tempPath: string, key: string): string {
-        const outFile = path.join(STORAGE_ROOT, key + '.db')
-        return [SQLITE_CONVERTER_BINARY, '--in', tempPath, '--out', outFile].join(' ')
+    protected buildCommand(inFile: string, outFile: string): string {
+        return [SQLITE_CONVERTER_BINARY, '--in', inFile, '--out', outFile].join(' ')
     }
 
     /**
@@ -176,15 +240,14 @@ export class SQLiteBlobBackend extends SQLiteBackend {
     /**
      * Build the command used to generate the SQLite dump from a temporary file.
      */
-    protected buildCommand(tempPath: string, key: string): string {
+    protected buildCommand(inFile: string, outFile: string): string {
         // TODO(efritz) - give this a meaningful value
         const projectVersion = '0'
-        const outFile = path.join(STORAGE_ROOT, key + '.db')
 
         return [
             SQLITE_CONVERTER_BINARY,
             '--in',
-            tempPath,
+            inFile,
             '--out',
             outFile,
             '--format',
