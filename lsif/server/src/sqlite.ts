@@ -45,7 +45,7 @@ export abstract class SQLiteBackend implements Backend {
      * method will otherwise fail).
      */
     public async loadDB(key: string): Promise<Database> {
-        const file = path.join(STORAGE_ROOT, key)
+        const file = path.join(STORAGE_ROOT, key + '.db')
 
         const db = this.createStore()
         await db.load(file, projectRootURI => ({
@@ -148,7 +148,8 @@ export class SQLiteGraphBackend extends SQLiteBackend {
      * Build the command used to generate the SQLite dump from a temporary file.
      */
     protected buildCommand(tempPath: string, key: string): string {
-        return [SQLITE_CONVERTER_BINARY, '--in', tempPath, '--out', path.join(STORAGE_ROOT, key)].join(' ')
+        const outFile = path.join(STORAGE_ROOT, key + '.db')
+        return [SQLITE_CONVERTER_BINARY, '--in', tempPath, '--out', outFile].join(' ')
     }
 
     /**
@@ -170,13 +171,14 @@ export class SQLiteBlobBackend extends SQLiteBackend {
     protected buildCommand(tempPath: string, key: string): string {
         // TODO(efritz) - give this a meaningful value
         const projectVersion = '0'
+        const outFile = path.join(STORAGE_ROOT, key + '.db')
 
         return [
             SQLITE_CONVERTER_BINARY,
             '--in',
             tempPath,
             '--out',
-            path.join(STORAGE_ROOT, key),
+            outFile,
             '--format',
             'blob',
             '--delete',
