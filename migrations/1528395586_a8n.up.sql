@@ -13,7 +13,10 @@ CREATE TABLE threads (
 
 	-- type == CHANGESET
 	base_ref text,
+    base_ref_oid text,
+    head_repository_id integer REFERENCES repo(id) ON DELETE SET NULL,
 	head_ref text,
+    head_ref_oid text,
 
 	-- TODO!(sqs): make external_services use hard-delete not soft-delete so that the deletions
 	-- cascade to the threads and events rows, which will prevent orphaned data - or else make their
