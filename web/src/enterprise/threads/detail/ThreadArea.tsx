@@ -147,7 +147,7 @@ export const ThreadArea: React.FunctionComponent<Props> = ({
                         },
                         {
                             title: 'Activity',
-                            path: '/',
+                            path: '/activity',
                             exact: true,
                             render: () => <ThreadActivity {...context} className={PAGE_CLASS_NAME} />,
                         },

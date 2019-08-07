@@ -7,14 +7,14 @@ interface Props
     extends RouteComponentProps<{}>,
         Pick<
             RepositoryThreadsAreaContext,
-            Exclude<keyof RepositoryThreadsAreaContext, 'threadsURL' | 'repository' | 'setBreadcrumbItem'>
+            Exclude<keyof RepositoryThreadsAreaContext, 'threadsURL' | 'repo' | 'setBreadcrumbItem'>
         > {}
 
 /**
  * The global threads area.
  */
 export const GlobalThreadsArea: React.FunctionComponent<Props> = ({ match, ...props }) => {
-    const context: Pick<RepositoryThreadsAreaContext, Exclude<keyof RepositoryThreadsAreaContext, 'repository'>> = {
+    const context: Pick<RepositoryThreadsAreaContext, Exclude<keyof RepositoryThreadsAreaContext, 'repo'>> = {
         ...props,
         threadsURL: match.url,
     }

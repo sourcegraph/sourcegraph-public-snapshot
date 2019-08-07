@@ -1,5 +1,7 @@
+import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
+import CommentTextMultipleIcon from 'mdi-react/CommentTextMultipleIcon'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { ChangesetsIcon, IssuesIcon, ThreadsIcon } from '../../icons'
+import { GitPullRequestIcon } from '../../../../util/octicons'
 
 /**
  * The subset of fields that is needed for displaying the thread's state icons.
@@ -15,9 +17,9 @@ const COLOR: Record<GQL.IThread['state'], ThreadStateColor> = {
 }
 
 const ICON: Record<GQL.ThreadKind, React.ComponentType<{ className?: string }>> = {
-    [GQL.ThreadKind.DISCUSSION]: ThreadsIcon,
-    [GQL.ThreadKind.ISSUE]: IssuesIcon,
-    [GQL.ThreadKind.CHANGESET]: ChangesetsIcon,
+    [GQL.ThreadKind.DISCUSSION]: CommentTextMultipleIcon,
+    [GQL.ThreadKind.ISSUE]: AlertCircleOutlineIcon,
+    [GQL.ThreadKind.CHANGESET]: GitPullRequestIcon,
 }
 
 const text = (thread: ThreadStateFields) => {
