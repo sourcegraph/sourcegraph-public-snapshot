@@ -23,8 +23,10 @@ func (GraphQLResolver) ThreadsForRepository(ctx context.Context, repositoryID gr
 	return &threadConnection{opt: opt}, nil
 }
 
-func ThreadsByIDs(threadIDs []int64) graphqlbackend.ThreadConnection {
-	return &threadConnection{opt: dbThreadsListOptions{ThreadIDs: threadIDs}}
+func ThreadsByIDs(threadIDs []int64, arg *graphqlbackend.ThreadConnectionArgs) graphqlbackend.ThreadConnection {
+	opt := threadConnectionArgsToListOptions(arg)
+	opt.ThreadIDs = threadIDs
+	return &threadConnection{opt: opt}
 }
 
 func threadConnectionArgsToListOptions(arg *graphqlbackend.ThreadConnectionArgs) dbThreadsListOptions {

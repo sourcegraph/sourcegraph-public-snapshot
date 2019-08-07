@@ -7,7 +7,7 @@ import { ExtensionsControllerNotificationProps } from '../../../../../../shared/
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../../backend/graphql'
-import { ThreadsDropdownMenu } from '../../../threadlike/ThreadsDropdownMenu'
+import { ThreadsDropdownMenu } from '../../../threads/detail/sidebar/ThreadsDropdownMenu'
 
 export const addThreadsToCampaign = (input: GQL.IAddThreadsToCampaignOnMutationArguments): Promise<void> =>
     mutateGraphQL(
@@ -43,7 +43,7 @@ export const AddThreadToCampaignDropdownButton: React.FunctionComponent<Props> =
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
 
     const onSelect = useCallback(
-        async (thread: Pick<GQL.Thread, 'id'>) => {
+        async (thread: Pick<GQL.IThread, 'id'>) => {
             try {
                 await addThreadsToCampaign({
                     campaign: campaign.id,
@@ -65,7 +65,7 @@ export const AddThreadToCampaignDropdownButton: React.FunctionComponent<Props> =
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className={className}>
             <DropdownToggle color="" className="btn btn-primary">
-                <PlusBoxIcon className="icon-inline mr-2" /> Add changeset
+                <PlusBoxIcon className="icon-inline mr-2" /> Add thread
             </DropdownToggle>
             <ThreadsDropdownMenu onSelect={onSelect} />
         </ButtonDropdown>

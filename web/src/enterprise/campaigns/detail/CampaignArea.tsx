@@ -147,8 +147,8 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                         render: () => <CampaignRulesList {...context} className={PAGE_CLASS_NAME} />,
                     },
                     {
-                        title: 'Changesets',
-                        path: '/changesets',
+                        title: 'Threads',
+                        path: '/threads',
                         render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
                     },
                     {

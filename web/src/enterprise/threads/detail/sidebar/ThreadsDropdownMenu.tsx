@@ -1,13 +1,13 @@
 import React from 'react'
 import { DropdownItem, DropdownMenu } from 'reactstrap'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { isErrorLike } from '../../../../shared/src/util/errors'
-import { useThreads } from '../campaigns/detail/threads/useThreads'
-import { ThreadStateIcon } from './threadState/ThreadStateIcon'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { isErrorLike } from '../../../../../../shared/src/util/errors'
+import { useThreads } from '../../../campaigns/detail/threads/useThreads'
+import { ThreadStateIcon } from '../../common/threadState/ThreadStateIcon'
 
 interface Props {
     /** Called when the user selects a thread in the menu. */
-    onSelect: (thread: Pick<GQL.Thread, 'id'>) => void
+    onSelect: (thread: Pick<GQL.IThread, 'id'>) => void
 }
 
 const LOADING = 'loading' as const

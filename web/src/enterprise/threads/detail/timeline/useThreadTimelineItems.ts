@@ -5,16 +5,9 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
 import { actorFragment, actorQuery } from '../../../../actor/graphql'
 import { queryGraphQL } from '../../../../backend/graphql'
-import { queryAndFragmentForThread } from '../../../threadlike/util/graphql'
+import { ThreadFragment } from '../../util/graphql'
 
 const LOADING: 'loading' = 'loading'
-
-const { fragment: threadFragment, query: threadQuery } = queryAndFragmentForThread([
-    '__typename',
-    'id',
-    'title',
-    'url',
-])
 
 const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
     GQL.ThreadTimelineItem['__typename'],
@@ -31,18 +24,18 @@ const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
         'CommentOnThreadEvent',
     ],
     ['id', 'createdAt'],
-    [`actor { ${actorQuery} }`, `thread { ${threadQuery} }`],
-    [actorFragment]
+    [`actor { ${actorQuery} }`, `thread { ...ThreadFragment }`],
+    [actorFragment, ThreadFragment]
 )
 
 type Result = typeof LOADING | GQL.IThreadTimelineItemConnection | ErrorLike
 
 /**
- * A React hook that observes all timeline items for a issue (queried from the GraphQL API).
+ * A React hook that observes all timeline items for a thread (queried from the GraphQL API).
  *
- * @param issue The issue whose timeline items to observe.
+ * @param thread The thread whose timeline items to observe.
  */
-export const useIssueTimelineItems = (issue: Pick<GQL.IThread, 'id'>): [Result, () => void] => {
+export const useThreadTimelineItems = (thread: Pick<GQL.IThread, 'id'>): [Result, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
 
@@ -50,14 +43,14 @@ export const useIssueTimelineItems = (issue: Pick<GQL.IThread, 'id'>): [Result, 
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
-                query IssueTimelineItems($issue: ID!) {
-                    node(id: $issue) {
+                query ThreadTimelineItems($thread: ID!) {
+                    node(id: $thread) {
                         __typename
-                        ... on Issue {
+                        ... on Thread {
                             timelineItems {
                                 nodes {
                                     ${eventQuery}
-																		... on AddThreadToCampaignEvent {
+									... on AddThreadToCampaignEvent {
                                         campaign { name url }
                                     }
                                     ... on RemoveThreadFromCampaignEvent {
@@ -69,16 +62,15 @@ export const useIssueTimelineItems = (issue: Pick<GQL.IThread, 'id'>): [Result, 
                         }
                     }
                 }
-								${threadFragment}
-								${eventFragment}
+				${eventFragment}
             `,
-            { issue: issue.id }
+            { thread: thread.id }
         )
             .pipe(
                 map(dataOrThrowErrors),
                 map(data => {
-                    if (!data.node || data.node.__typename !== 'Issue') {
-                        throw new Error('not an issue')
+                    if (!data.node || data.node.__typename !== 'Thread') {
+                        throw new Error('not an thread')
                     }
                     return data.node.timelineItems
                 }),
@@ -86,6 +78,6 @@ export const useIssueTimelineItems = (issue: Pick<GQL.IThread, 'id'>): [Result, 
             )
             .subscribe(setResult, err => setResult(asError(err)))
         return () => subscription.unsubscribe()
-    }, [issue, updateSequence])
+    }, [thread, updateSequence])
     return [result, incrementUpdateSequence]
 }

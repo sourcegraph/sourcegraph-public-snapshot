@@ -18,6 +18,7 @@ import { CampaignsIcon } from '../enterprise/campaigns/icons'
 import { ChangesIcon } from '../enterprise/changes/icons'
 import { ChangesetsNavItem } from '../enterprise/changesetsOLD/global/nav/ChangesetsNavItem'
 import { ChecksIcon } from '../enterprise/checks/icons'
+import { ThreadsIcon } from '../enterprise/threads/icons'
 import { ThreadsNavItem } from '../enterprise/threadsOLD/global/nav/ThreadsNavItem'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
@@ -95,8 +96,16 @@ export class NavLinks extends React.PureComponent<Props> {
                             />
                         </li>
                         <li className="nav-item">
-                            <ChangesetsNavItem className="px-3" />
+                            <LinkWithIconOnlyTooltip
+                                to="/threads"
+                                text="Threads"
+                                icon={ThreadsIcon}
+                                className="nav-link btn btn-link px-3 text-decoration-none"
+                            />
                         </li>
+                        {/* <li className="nav-item">
+                            <ChangesetsNavItem className="px-3" />
+                        </li> */}
                         {/*<li className="nav-item mr-1">
                             <ThreadsNavItem className="px-3" />
                 </li>*/}

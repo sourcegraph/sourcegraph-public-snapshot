@@ -4,11 +4,9 @@ import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/gra
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../../backend/graphql'
-import { queryAndFragmentForThread } from '../../../threadlike/util/graphql'
+import { ThreadFragment } from '../../../threads/util/graphql'
 
 const LOADING: 'loading' = 'loading'
-
-const { fragment, query } = queryAndFragmentForThread()
 
 /**
  * A React hook that observes all threads in a campaign (queried from the GraphQL API).
@@ -25,20 +23,20 @@ export const useCampaignThreads = (
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
-                query CampaignThreadlikes($campaign: ID!) {
+                query CampaignThreads($campaign: ID!) {
                     node(id: $campaign) {
                         __typename
                         ... on Campaign {
                             threads {
                                 nodes {
-                                    ${query}
+                                    ...ThreadFragment
                                 }
                                 totalCount
                             }
                         }
                     }
                 }
-                ${fragment}
+                ${ThreadFragment}
             `,
             { campaign: campaign.id }
         )

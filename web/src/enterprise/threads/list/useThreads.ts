@@ -4,19 +4,9 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../backend/graphql'
+import { ThreadFragment } from '../util/graphql'
 
 const LOADING: 'loading' = 'loading'
-
-const threadFields = gql`
-    fragment ThreadFields on Thread {
-        __typename
-        id
-        number
-        title
-        state
-        url
-    }
-`
 
 /**
  * A React hook that observes threads queried from the GraphQL API.
@@ -37,14 +27,14 @@ export const useThreads = (
                               ... on Repository {
                                   threads {
                                       nodes {
-                                          ...ThreadFields
+                                          ...ThreadFragment
                                       }
                                       totalCount
                                   }
                               }
                           }
                       }
-                      ${threadFields}
+                      ${ThreadFragment}
                   `,
                   { repository: repository.id }
               ).pipe(
@@ -60,19 +50,17 @@ export const useThreads = (
                   query Threads {
                       threads {
                           nodes {
-                              ...ThreadFields
+                              ...ThreadFragment
                           }
                           totalCount
                       }
                   }
-                  ${threadFields}
+                  ${ThreadFragment}
               `).pipe(
                   map(dataOrThrowErrors),
                   map(data => data.threads)
               )
-        const subscription = results
-            .pipe(startWith(LOADING))
-            .subscribe(setThreads, err => setThreads(asError(err)))
+        const subscription = results.pipe(startWith(LOADING)).subscribe(setThreads, err => setThreads(asError(err)))
         return () => subscription.unsubscribe()
     }, [repository])
     return threads

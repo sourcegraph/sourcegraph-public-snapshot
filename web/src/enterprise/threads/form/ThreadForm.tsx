@@ -3,7 +3,7 @@ import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
-import { ThreadlikeFormTitleField } from '../../threadlike/form/ThreadlikeFormTitleField'
+import { ThreadFormTitleField } from './ThreadFormTitleField'
 
 export interface ThreadFormData extends Pick<GQL.IThread, 'title' | 'baseRef' | 'headRef'> {}
 
@@ -62,7 +62,7 @@ export const ThreadForm: React.FunctionComponent<Props> = ({
     return (
         <Form className={`form ${className}`} onSubmit={onSubmit}>
             <div className="form-row align-items-end">
-                <ThreadlikeFormTitleField value={title} onChange={onTitleChange} autoFocus={true} />
+                <ThreadFormTitleField value={title} onChange={onTitleChange} autoFocus={true} />
                 <div className="form-group">
                     <label htmlFor="thread-form__baseRef">Range</label>
                     <div className="input-group align-items-center">

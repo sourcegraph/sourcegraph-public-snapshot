@@ -156,6 +156,14 @@ const (
 	ThreadStateClosed             = "CLOSED"
 )
 
+type ThreadKind string
+
+const (
+	ThreadKindDiscussion ThreadKind = "DISCUSSION"
+	ThreadKindIssue                 = "ISSUE"
+	ThreadKindChangeset             = "CHANGESET"
+)
+
 // Thread is the interface for the GraphQL type Thread.
 type Thread interface {
 	PartialComment
@@ -169,6 +177,7 @@ type Thread interface {
 	HeadRef() *string
 	IsPreview() bool
 	updatable
+	Kind() ThreadKind
 	URL(context.Context) (string, error)
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)
 	RepositoryComparison(context.Context) (*RepositoryComparisonResolver, error)

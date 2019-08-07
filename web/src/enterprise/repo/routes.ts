@@ -6,15 +6,8 @@ import { lazyComponent } from '../../util/lazyComponent'
 export const enterpriseRepoContainerRoutes: ReadonlyArray<RepoContainerRoute> = [
     ...repoContainerRoutes,
     {
-        path: '/-/issues',
-        render: lazyComponent(() => import('../issues/repository/RepositoryIssuesArea'), 'RepositoryIssuesArea'),
-    },
-    {
-        path: '/-/changesets',
-        render: lazyComponent(
-            () => import('../threads/repository/RepositoryChangesetsArea'),
-            'RepositoryChangesetsArea'
-        ),
+        path: '/-/threads',
+        render: lazyComponent(() => import('../threads/repository/RepositoryThreadsArea'), 'RepositoryThreadsArea'),
     },
 ]
 

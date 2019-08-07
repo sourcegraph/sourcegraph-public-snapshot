@@ -5,16 +5,9 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
 import { actorFragment, actorQuery } from '../../../../actor/graphql'
 import { queryGraphQL } from '../../../../backend/graphql'
-import { queryAndFragmentForThread } from '../../../threadlike/util/graphql'
+import { ThreadFragment } from '../../../threads/util/graphql'
 
 const LOADING: 'loading' = 'loading'
-
-const { fragment: threadFragment, query: threadQuery } = queryAndFragmentForThread([
-    '__typename',
-    'id',
-    'title',
-    'url',
-])
 
 const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
     GQL.CampaignTimelineItem['__typename'],
@@ -30,8 +23,8 @@ const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
         'CommentOnThreadEvent',
     ],
     ['id', 'createdAt'],
-    [`actor { ${actorQuery} }`, `thread { ${threadQuery} }`],
-    [actorFragment]
+    [`actor { ${actorQuery} }`, `thread { ...ThreadFragment }`],
+    [actorFragment, ThreadFragment]
 )
 
 type Result = typeof LOADING | GQL.ICampaignTimelineItemConnection | ErrorLike
@@ -71,8 +64,7 @@ export const useCampaignTimelineItems = (campaign: Pick<GQL.ICampaign, 'id'>): [
                         }
                     }
                 }
-								${threadFragment}
-								${eventFragment}
+				${eventFragment}
             `,
             { campaign: campaign.id }
         )

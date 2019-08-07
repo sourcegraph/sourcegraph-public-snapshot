@@ -10,8 +10,8 @@ import { ExtensionsControllerNotificationProps } from '../../../../../../shared/
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../../backend/graphql'
-import { ThreadStateFields } from '../../../threadlike/threadState/threadState'
-import { ThreadStateIcon } from '../../../threadlike/threadState/ThreadStateIcon'
+import { ThreadStateFields } from '../../../threads/common/threadState/threadState'
+import { ThreadStateIcon } from '../../../threads/common/threadState/ThreadStateIcon'
 
 const removeThreadsFromCampaign = (input: GQL.IRemoveThreadsFromCampaignOnMutationArguments): Promise<void> =>
     mutateGraphQL(
@@ -32,8 +32,7 @@ const removeThreadsFromCampaign = (input: GQL.IRemoveThreadsFromCampaignOnMutati
 
 interface Props extends ExtensionsControllerNotificationProps {
     campaign: Pick<GQL.ICampaign, 'id'>
-    thread: Pick<GQL.Thread, 'id' | 'repository' | 'title' | 'url' | 'externalURL'> &
-        ThreadStateFields
+    thread: Pick<GQL.IThread, 'id' | 'repository' | 'title' | 'url'> & ThreadStateFields
     onUpdate: () => void
 }
 

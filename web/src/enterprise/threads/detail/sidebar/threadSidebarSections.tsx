@@ -2,24 +2,24 @@ import BellIcon from 'mdi-react/BellIcon'
 import UserGroupIcon from 'mdi-react/UserGroupIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import React from 'react'
-import { Toggle } from '../../../../../shared/src/components/Toggle'
-import { ExtensionsControllerNotificationProps } from '../../../../../shared/src/extensions/controller'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { InfoSidebarSection } from '../../../components/infoSidebar/InfoSidebar'
-import { LabelIcon } from '../../../projects/icons'
-import { CampaignsIcon } from '../../campaigns/icons'
-import { ObjectCampaignsList } from '../../campaigns/object/ObjectCampaignsList'
-import { CopyThreadLinkButton } from '../../threadsOLD/detail/CopyThreadLinkButton'
-import { ThreadCampaignsDropdownButton } from '../ThreadCampaignsDropdownButton'
-import { ThreadStateBadge } from '../threadState/ThreadStateBadge'
-import { ThreadStateIcon } from '../threadState/ThreadStateIcon'
+import { Toggle } from '../../../../../../shared/src/components/Toggle'
+import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { InfoSidebarSection } from '../../../../components/infoSidebar/InfoSidebar'
+import { LabelIcon } from '../../../../projects/icons'
+import { CampaignsIcon } from '../../../campaigns/icons'
+import { ObjectCampaignsList } from '../../../campaigns/object/ObjectCampaignsList'
+import { CopyThreadLinkButton } from '../../../threadsOLD/detail/CopyThreadLinkButton'
+import { ThreadStateBadge } from '../../common/threadState/ThreadStateBadge'
+import { ThreadStateIcon } from '../../common/threadState/ThreadStateIcon'
+import { ThreadCampaignsDropdownButton } from './ThreadCampaignsDropdownButton'
 
 interface Props extends ExtensionsControllerNotificationProps {
-    thread: GQL.Thread
+    thread: GQL.IThread
     onThreadUpdate: () => void
 }
 
-export const threadlikeSidebarSections = ({ thread, onThreadUpdate, ...props }: Props): InfoSidebarSection[] => [
+export const threadSidebarSections = ({ thread, onThreadUpdate, ...props }: Props): InfoSidebarSection[] => [
     {
         expanded: <ThreadStateBadge thread={thread} />,
         collapsed: <ThreadStateIcon thread={thread} />,

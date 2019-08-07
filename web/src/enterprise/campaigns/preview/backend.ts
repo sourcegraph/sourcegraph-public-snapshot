@@ -7,11 +7,11 @@ import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { authenticatedUser } from '../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { fetchRepository } from '../../../repo/settings/backend'
-import { createChangeset } from '../../threads/repository/new/ChangesetsNewPage'
 import { FileDiff } from '../../threadsOLD/detail/changes/computeDiff'
 import { GitHubPRLink } from '../../threadsOLD/settings'
 import { addThreadsToCampaign } from '../detail/threads/AddThreadToCampaignDropdownButton'
 import { createCampaign } from '../namespace/new/CampaignsNewPage'
+import { createThread } from '../../threads/repository/new/ThreadsNewPage'
 
 export const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
 
@@ -48,7 +48,7 @@ export async function createCampaignFromDiffs(
         fileDiffsByRepo.set(repo, repoFileDiffs)
     }
 
-    const changesets: Promise<GQL.IChangeset>[] = []
+    const changesets: Promise<GQL.IThread>[] = []
     for (const [repoName, fileDiffs] of fileDiffsByRepo) {
         const repo = (await queryGraphQL(
             gql`
@@ -97,13 +97,13 @@ export async function createCampaignFromDiffs(
                     })
                 )
                 .then(prLink =>
-                    createChangeset({
+                    createThread({
                         repository: repo.id,
                         title,
                         preview: info.preview,
                         baseRef,
                         headRef,
-                        externalURL: prLink.url,
+                        externalURL: prLink.url, // TODO!(sqs)
                     })
                 )
         )

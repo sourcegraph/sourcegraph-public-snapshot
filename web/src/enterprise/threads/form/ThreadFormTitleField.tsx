@@ -7,19 +7,19 @@ interface Props {
 }
 
 /**
- * The title field for a threadlike in a form.
+ * The title field for a thread in a form.
  */
-export const ThreadlikeFormTitleField: React.FunctionComponent<Props> = ({ value, onChange, autoFocus }) => {
+export const ThreadFormTitleField: React.FunctionComponent<Props> = ({ value, onChange, autoFocus }) => {
     const onTitleChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         e => onChange(e.currentTarget.value),
         [onChange]
     )
     return (
         <div className="form-group">
-            <label htmlFor="threadlike-form__title">Title</label>
+            <label htmlFor="thread-form__title">Title</label>
             <input
                 type="text"
-                id="threadlike-form__title"
+                id="thread-form__title"
                 className="form-control"
                 required={true}
                 minLength={1}

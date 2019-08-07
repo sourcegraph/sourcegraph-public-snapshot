@@ -4,7 +4,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 
 interface Props {
-    issue: Pick<GQL.IThread, 'id'>
+    thread: Pick<GQL.IThread, 'id'>
 
     className?: string
 }
@@ -12,12 +12,12 @@ interface Props {
 const LOADING = 'loading' as const
 
 /**
- * A list of diagnostics in an issue.
+ * A list of diagnostics in an thread.
  */
-export const IssueDiagnosticsList: React.FunctionComponent<Props> = ({ issue, className = '' }) => {
-    const diagnostics = useIssueDiagnostics(issue)
+export const ThreadDiagnosticsList: React.FunctionComponent<Props> = ({ thread, className = '' }) => {
+    const diagnostics = useThreadDiagnostics(thread)
     return (
-        <div className={`issue-diagnostics-list ${className}`}>
+        <div className={`thread-diagnostics-list ${className}`}>
             <ul className="list-group mb-4">
                 {diagnostics === LOADING ? (
                     <LoadingSpinner className="icon-inline mt-3" />

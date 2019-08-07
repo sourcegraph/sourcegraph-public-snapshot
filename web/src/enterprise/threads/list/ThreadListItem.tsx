@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { ThreadStateIcon } from '../../threadlike/threadState/ThreadStateIcon'
+import { ThreadStateIcon } from '../common/threadState/ThreadStateIcon'
 
 interface Props {
     thread: Pick<GQL.IThread, '__typename' | 'number' | 'title' | 'state' | 'url'>

@@ -42,6 +42,7 @@ export const useThreadByNumberInRepository = (
                                 }
                                 createdAt
                                 updatedAt
+                                kind
                                 viewerCanUpdate
                                 url
                                 repository {

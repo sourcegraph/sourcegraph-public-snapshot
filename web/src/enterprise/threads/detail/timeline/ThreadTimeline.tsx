@@ -4,10 +4,10 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { TimelineItems } from '../../../timeline/TimelineItems'
-import { useIssueTimelineItems } from './useIssueTimelineItems'
+import { useThreadTimelineItems } from './useThreadTimelineItems'
 
 interface Props extends ExtensionsControllerProps {
-    issue: Pick<GQL.IThread, 'id'>
+    thread: Pick<GQL.IThread, 'id'>
 
     className?: string
 }
@@ -15,12 +15,12 @@ interface Props extends ExtensionsControllerProps {
 const LOADING = 'loading' as const
 
 /**
- * A timeline of events related to the issue.
+ * A timeline of events related to the thread.
  */
-export const IssueTimeline: React.FunctionComponent<Props> = ({ issue, className = '' }) => {
-    const [timelineItems] = useIssueTimelineItems(issue)
+export const ThreadTimeline: React.FunctionComponent<Props> = ({ thread, className = '' }) => {
+    const [timelineItems] = useThreadTimelineItems(thread)
     return (
-        <div className={`issue-timeline ${className}`}>
+        <div className={`thread-timeline ${className}`}>
             {timelineItems === LOADING ? (
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(timelineItems) ? (

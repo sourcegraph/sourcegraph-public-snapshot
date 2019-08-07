@@ -1008,6 +1008,9 @@ type Query {
     threads(
         # Returns the first n threads from the list.
         first: Int
+
+        # Only include threads that are open.
+        open: Boolean
     ): ThreadConnection!
 
     ##TODO!(sqs)# A list of diagnostics contained in threads.
@@ -1492,6 +1495,9 @@ type Repository implements Node & GenericSearchResultInterface {
     threads(
         # Returns the first n threads from the list.
         first: Int
+
+        # Only include threads that are open.
+        open: Boolean
     ): ThreadConnection!
 
     # A Git comparison in this repository between a base and head commit.
@@ -4303,6 +4309,18 @@ input UpdateThreadInput {
     headRef: String
 }
 
+# The possible kinds of threads.
+enum ThreadKind {
+    # A thread with discussion only (no diagnostics or changes).
+    DISCUSSION
+
+    # A thread with diagnostics (but no changes).
+    ISSUE
+
+    # A thread with changes.
+    CHANGESET
+}
+
 # A thread is collection of comments, diagnostics, and changes.
 type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & CampaignNode {
     # The unique ID for the thread.
@@ -4347,6 +4365,9 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
 
     # The date and time when the thread was updated.
     updatedAt: DateTime!
+
+    # The kind of this thread, determined based on the thread's contents.
+    kind: ThreadKind!
 
     # Whether the viewer can update this thread.
     viewerCanUpdate: Boolean!
@@ -4503,6 +4524,9 @@ type Campaign implements Node & Comment & Commentable {
     threads(
         # Returns the first n results from the list.
         first: Int
+
+        # Only include threads that are open.
+        open: Boolean
     ): ThreadConnection!
 
     # The list of repositories affected by this campaign's threads.

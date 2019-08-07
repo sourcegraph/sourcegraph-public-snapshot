@@ -9,13 +9,13 @@ import { HeroPage } from '../../../components/HeroPage'
 import { InfoSidebar, InfoSidebarSection } from '../../../components/infoSidebar/InfoSidebar'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { WithSidebar } from '../../../components/withSidebar/WithSidebar'
-import { threadlikeSidebarSections } from '../../threadlike/sidebar/ThreadlikeSidebar'
 import { ThreadDeleteButton } from '../common/ThreadDeleteButton'
 import { RepositoryThreadsAreaContext } from '../repository/RepositoryThreadsArea'
-import { IssueActivity } from './activity/IssueActivity'
+import { ThreadActivity } from './activity/ThreadActivity'
 import { ThreadCommitsList } from './commits/ThreadCommitsList'
-import { IssueDiagnosticsList } from './diagnostics/IssueDiagnosticsList'
+import { ThreadDiagnosticsList } from './diagnostics/ThreadDiagnosticsList'
 import { ThreadFileDiffsList } from './fileDiffs/ThreadFileDiffsList'
+import { threadSidebarSections } from './sidebar/threadSidebarSections'
 import { ThreadOverview } from './ThreadOverview'
 import { useThreadByNumberInRepository } from './useThreadByNumberInRepository'
 
@@ -83,7 +83,7 @@ export const ThreadArea: React.FunctionComponent<Props> = ({
         () =>
             thread !== LOADING && thread !== null && !isErrorLike(thread)
                 ? [
-                      ...threadlikeSidebarSections({
+                      ...threadSidebarSections({
                           thread,
                           onThreadUpdate,
                           extensionsController: props.extensionsController,
@@ -149,12 +149,12 @@ export const ThreadArea: React.FunctionComponent<Props> = ({
                             title: 'Activity',
                             path: '/',
                             exact: true,
-                            render: () => <IssueActivity {...context} className={PAGE_CLASS_NAME} />,
+                            render: () => <ThreadActivity {...context} className={PAGE_CLASS_NAME} />,
                         },
                         {
                             title: 'Diagnostics',
                             path: '/diagnostics',
-                            render: () => <IssueDiagnosticsList {...context} className={PAGE_CLASS_NAME} />,
+                            render: () => <ThreadDiagnosticsList {...context} className={PAGE_CLASS_NAME} />,
                         },
                     ]}
                     location={props.location}

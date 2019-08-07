@@ -119,7 +119,7 @@ func (v *gqlCampaign) URL(ctx context.Context) (string, error) {
 	// return path.Join("/campaigns", string(v.ID())), nil
 }
 
-func (v *gqlCampaign) Threads(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
+func (v *gqlCampaign) Threads(ctx context.Context, arg *graphqlbackend.ThreadConnectionArgs) (graphqlbackend.ThreadConnection, error) {
 	opt := dbCampaignsThreadsListOptions{CampaignID: v.db.ID}
 	arg.Set(&opt.LimitOffset)
 	l, err := dbCampaignsThreads{}.List(ctx, opt)
@@ -131,11 +131,11 @@ func (v *gqlCampaign) Threads(ctx context.Context, arg *graphqlutil.ConnectionAr
 	for i, e := range l {
 		threadIDs[i] = e.Thread
 	}
-	return threads.ThreadsByIDs(threadIDs), nil
+	return threads.ThreadsByIDs(threadIDs, arg), nil
 }
 
 func (v *gqlCampaign) getThreads(ctx context.Context) ([]graphqlbackend.Thread, error) {
-	connection, err := v.Threads(ctx, &graphqlutil.ConnectionArgs{})
+	connection, err := v.Threads(ctx, &graphqlbackend.ThreadConnectionArgs{})
 	if err != nil {
 		return nil, err
 	}

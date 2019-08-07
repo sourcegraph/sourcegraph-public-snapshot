@@ -112,6 +112,16 @@ func (v *gqlThread) HeadRef() *string {
 	return &v.db.HeadRef
 }
 
+func (v *gqlThread) Kind() graphqlbackend.ThreadKind {
+	switch {
+	case v.db.BaseRef != "" || v.db.HeadRef != "":
+		return graphqlbackend.ThreadKindChangeset
+		// TODO!(sqs): how to determine if issue? check to see whether there are diagnostics
+	default:
+		return graphqlbackend.ThreadKindDiscussion
+	}
+}
+
 func (v *gqlThread) ViewerCanUpdate(ctx context.Context) (bool, error) {
 	// TODO!(sqs): commented out below due to package import cycle etc
 	return true, nil

@@ -1,41 +1,37 @@
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { IssuesIcon } from '../../issues/icons'
-import { ChangesetsIcon } from '../../threads/icons'
-import { ThreadsIcon } from '../../threads/icons'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { ChangesetsIcon, IssuesIcon, ThreadsIcon } from '../../icons'
 
 /**
  * The subset of fields that is needed for displaying the thread's state icons.
  */
-export interface ThreadStateFields extends Pick<GQL.Thread, '__typename' | 'state'> {}
+export interface ThreadStateFields extends Pick<GQL.IThread, 'state' | 'kind'> {}
 
 type ThreadStateColor = 'success' | 'danger' | 'info' | 'secondary' | 'purple'
 
-const COLOR: Record<GQL.Thread['state'], ThreadStateColor> = {
+const COLOR: Record<GQL.IThread['state'], ThreadStateColor> = {
     OPEN: 'success',
     CLOSED: 'danger',
     MERGED: 'purple', // TODO!(sqs): make purple
 }
 
-const ICON: Record<GQL.Thread['__typename'], React.ComponentType<{ className?: string }>> = {
-    Thread: ThreadsIcon,
-    Issue: IssuesIcon,
-    Changeset: ChangesetsIcon,
+const ICON: Record<GQL.ThreadKind, React.ComponentType<{ className?: string }>> = {
+    [GQL.ThreadKind.DISCUSSION]: ThreadsIcon,
+    [GQL.ThreadKind.ISSUE]: IssuesIcon,
+    [GQL.ThreadKind.CHANGESET]: ChangesetsIcon,
 }
 
 const text = (thread: ThreadStateFields) => {
     switch (thread.state) {
         case GQL.ThreadState.OPEN:
-        case GQL.ChangesetState.OPEN:
             return 'Open'
-        case GQL.ThreadState.CLOSED:
-        case GQL.ChangesetState.CLOSED:
-            return 'Closed'
-        case GQL.ChangesetState.MERGED:
+        case GQL.ThreadState.MERGED:
             return 'Merged'
+        case GQL.ThreadState.CLOSED:
+            return 'Closed'
     }
 }
 
-const tooltip = (thread: ThreadStateFields): string => `${text(thread)} ${thread.__typename.toLowerCase()}`
+const tooltip = (thread: ThreadStateFields): string => `${text(thread)} ${thread.kind.toLowerCase()}`
 
 /**
  * Returns information about how to display the thread's state.
@@ -49,7 +45,7 @@ export const threadStateInfo = (
     tooltip: string
 } => ({
     color: COLOR[thread.state],
-    icon: ICON[thread.__typename],
+    icon: ICON[thread.kind],
     text: text(thread),
     tooltip: tooltip(thread),
 })
