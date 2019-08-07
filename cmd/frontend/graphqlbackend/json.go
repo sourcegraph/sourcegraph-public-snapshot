@@ -2,19 +2,19 @@ package graphqlbackend
 
 import "encoding/json"
 
-// jsonValue implements the JSONValue scalar type. In GraphQL queries, it is represented the JSON
+// JSONValue implements the JSONValue scalar type. In GraphQL queries, it is represented the JSON
 // representation of its Go value.
-type jsonValue struct{ value interface{} }
+type JSONValue struct{ value interface{} }
 
-func (jsonValue) ImplementsGraphQLType(name string) bool {
+func (JSONValue) ImplementsGraphQLType(name string) bool {
 	return name == "JSONValue"
 }
 
-func (v *jsonValue) UnmarshalGraphQL(input interface{}) error {
-	*v = jsonValue{value: input}
+func (v *JSONValue) UnmarshalGraphQL(input interface{}) error {
+	*v = JSONValue{value: input}
 	return nil
 }
 
-func (v jsonValue) MarshalJSON() ([]byte, error) {
+func (v JSONValue) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
