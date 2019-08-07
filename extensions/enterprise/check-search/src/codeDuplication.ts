@@ -50,10 +50,11 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                             type: 'regexp',
                         },
                         files: {
-                            includes: ['\\.(go|[jt]sx)?$'], // TODO!(sqs): typescript only
+                            includes: ['\\.(go|[jt]sx?)$'], // TODO!(sqs): typescript only
+                            excludes: ['\\.pb\\.go$'], // exclude protobuf-generated files
                             type: 'regexp',
                         },
-                        maxResults: 175, //MAX_RESULTS,
+                        maxResults: 75, //MAX_RESULTS,
                     }
                 )
             )
