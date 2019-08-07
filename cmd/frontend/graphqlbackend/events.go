@@ -39,7 +39,7 @@ type ToEvent struct {
 	RemoveThreadFromCampaignEvent *AddRemoveThreadToFromCampaignEvent
 	ReviewEvent                   *ReviewEvent
 	RequestReviewEvent            *RequestReviewEvent
-	MergeChangesetEvent           *MergeChangesetEvent
+	MergeThreadEvent           *MergeThreadEvent
 	CloseThreadEvent              *CloseThreadEvent
 	ReopenThreadEvent             *ReopenThreadEvent
 	CommentOnThreadEvent          *CommentOnThreadEvent
@@ -65,8 +65,8 @@ func (v ToEvent) ToRequestReviewEvent() (*RequestReviewEvent, bool) {
 	return v.RequestReviewEvent, v.RequestReviewEvent != nil
 }
 
-func (v ToEvent) ToMergeChangesetEvent() (*MergeChangesetEvent, bool) {
-	return v.MergeChangesetEvent, v.MergeChangesetEvent != nil
+func (v ToEvent) ToMergeThreadEvent() (*MergeThreadEvent, bool) {
+	return v.MergeThreadEvent, v.MergeThreadEvent != nil
 }
 
 func (v ToEvent) ToCloseThreadEvent() (*CloseThreadEvent, bool) {

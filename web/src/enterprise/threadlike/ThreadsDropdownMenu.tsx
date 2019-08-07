@@ -7,7 +7,7 @@ import { ThreadStateIcon } from './threadState/ThreadStateIcon'
 
 interface Props {
     /** Called when the user selects a thread in the menu. */
-    onSelect: (thread: Pick<GQL.ThreadOrIssueOrChangeset, 'id'>) => void
+    onSelect: (thread: Pick<GQL.Thread, 'id'>) => void
 }
 
 const LOADING = 'loading' as const

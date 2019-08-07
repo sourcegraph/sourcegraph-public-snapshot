@@ -15,7 +15,7 @@ import { ThreadStateBadge } from '../threadState/ThreadStateBadge'
 import { ThreadStateIcon } from '../threadState/ThreadStateIcon'
 
 interface Props extends ExtensionsControllerNotificationProps {
-    thread: GQL.ThreadOrIssueOrChangeset
+    thread: GQL.Thread
     onThreadUpdate: () => void
 }
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
 const (
@@ -19,7 +19,7 @@ func init() {
 		if err != nil {
 			return err
 		}
-		thread, err := threadlike.ThreadOrIssueOrChangesetByDBID(ctx, data.Thread)
+		thread, err := threads.ThreadByDBID(ctx, data.Thread)
 		if err != nil {
 			return err
 		}

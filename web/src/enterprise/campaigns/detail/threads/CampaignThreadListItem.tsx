@@ -32,7 +32,7 @@ const removeThreadsFromCampaign = (input: GQL.IRemoveThreadsFromCampaignOnMutati
 
 interface Props extends ExtensionsControllerNotificationProps {
     campaign: Pick<GQL.ICampaign, 'id'>
-    thread: Pick<GQL.ThreadOrIssueOrChangeset, 'id' | 'repository' | 'title' | 'url' | 'externalURL'> &
+    thread: Pick<GQL.Thread, 'id' | 'repository' | 'title' | 'url' | 'externalURL'> &
         ThreadStateFields
     onUpdate: () => void
 }

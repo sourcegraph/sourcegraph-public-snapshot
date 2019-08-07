@@ -43,7 +43,7 @@ export const AddThreadToCampaignDropdownButton: React.FunctionComponent<Props> =
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
 
     const onSelect = useCallback(
-        async (thread: Pick<GQL.ThreadOrIssueOrChangeset, 'id'>) => {
+        async (thread: Pick<GQL.Thread, 'id'>) => {
             try {
                 await addThreadsToCampaign({
                     campaign: campaign.id,

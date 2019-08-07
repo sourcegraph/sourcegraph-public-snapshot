@@ -2,16 +2,10 @@ package graphqlbackend
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/changesets"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/issues"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike/threads"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
 func init() {
-	// Contribute the GraphQL types for threads, issues, and changesets.
-	graphqlbackend.ThreadOrIssueOrChangesets = threadlike.GraphQLResolver{}
+	// Contribute the GraphQL types for threads.
 	graphqlbackend.Threads = threads.GraphQLResolver{}
-	graphqlbackend.Issues = issues.GraphQLResolver{}
-	graphqlbackend.Changesets = changesets.GraphQLResolver{}
 }

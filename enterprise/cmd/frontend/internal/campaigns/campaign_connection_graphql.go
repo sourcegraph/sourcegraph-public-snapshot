@@ -6,13 +6,13 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
 func (GraphQLResolver) Campaigns(ctx context.Context, arg *graphqlbackend.CampaignsArgs) (graphqlbackend.CampaignConnection, error) {
 	var opt dbCampaignsListOptions
 	if arg.Object != nil {
-		_, threadID, err := threadlike.UnmarshalID(*arg.Object)
+		_, threadID, err := threads.UnmarshalID(*arg.Object)
 		if err != nil {
 			return nil, err
 		}

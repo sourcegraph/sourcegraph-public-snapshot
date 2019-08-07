@@ -27,7 +27,7 @@ export const addThreadsToCampaign = (input: GQL.IAddThreadsToCampaignOnMutationA
         .toPromise()
 
 interface Props extends ExtensionsControllerNotificationProps {
-    thread: Pick<GQL.ThreadOrIssueOrChangeset, 'id'>
+    thread: Pick<GQL.Thread, 'id'>
     onChange?: () => void
 
     className?: string

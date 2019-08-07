@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threadlike"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -119,7 +119,7 @@ func (v *gqlCampaign) URL(ctx context.Context) (string, error) {
 	// return path.Join("/campaigns", string(v.ID())), nil
 }
 
-func (v *gqlCampaign) ThreadOrIssueOrChangesets(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadOrIssueOrChangesetConnection, error) {
+func (v *gqlCampaign) Threads(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
 	opt := dbCampaignsThreadsListOptions{CampaignID: v.db.ID}
 	arg.Set(&opt.LimitOffset)
 	l, err := dbCampaignsThreads{}.List(ctx, opt)
@@ -131,11 +131,11 @@ func (v *gqlCampaign) ThreadOrIssueOrChangesets(ctx context.Context, arg *graphq
 	for i, e := range l {
 		threadlikeIDs[i] = e.Thread
 	}
-	return threadlike.ThreadOrIssueOrChangesetsByIDs(ctx, threadlikeIDs)
+	return threads.ThreadsByIDs(ctx, threadlikeIDs)
 }
 
-func (v *gqlCampaign) getChangesets(ctx context.Context) ([]graphqlbackend.Changeset, error) {
-	connection, err := v.ThreadOrIssueOrChangesets(ctx, &graphqlutil.ConnectionArgs{})
+func (v *gqlCampaign) getThreads(ctx context.Context) ([]graphqlbackend.Thread, error) {
+	connection, err := v.Threads(ctx, &graphqlutil.ConnectionArgs{})
 	if err != nil {
 		return nil, err
 	}
@@ -144,18 +144,18 @@ func (v *gqlCampaign) getChangesets(ctx context.Context) ([]graphqlbackend.Chang
 		return nil, err
 	}
 
-	// TODO!(sqs): easier way to filter down to only changesets
-	changesets := make([]graphqlbackend.Changeset, 0, len(nodes))
+	// TODO!(sqs): easier way to filter down to only threads
+	threads := make([]graphqlbackend.Thread, 0, len(nodes))
 	for _, node := range nodes {
-		if changeset, ok := node.ToChangeset(); ok {
-			changesets = append(changesets, changeset)
+		if thread, ok := node.ToThread(); ok {
+			threads = append(threads, thread)
 		}
 	}
-	return changesets, nil
+	return threads, nil
 }
 
 func (v *gqlCampaign) Repositories(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
-	threadNodes, err := v.getChangesets(ctx)
+	threadNodes, err := v.getThreads(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -201,14 +201,14 @@ func (v *gqlCampaign) Commits(ctx context.Context) ([]*graphqlbackend.GitCommitR
 }
 
 func (v *gqlCampaign) RepositoryComparisons(ctx context.Context) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
-	changesets, err := v.getChangesets(ctx)
+	threads, err := v.getThreads(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	rcs := make([]*graphqlbackend.RepositoryComparisonResolver, len(changesets))
-	for i, changeset := range changesets {
-		rc, err := changeset.RepositoryComparison(ctx)
+	rcs := make([]*graphqlbackend.RepositoryComparisonResolver, len(threads))
+	for i, thread := range threads {
+		rc, err := thread.RepositoryComparison(ctx)
 		if err != nil {
 			return nil, err
 		}

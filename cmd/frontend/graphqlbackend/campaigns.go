@@ -186,7 +186,7 @@ type Campaign interface {
 	updatable
 	commentable
 	URL(context.Context) (string, error)
-	ThreadOrIssueOrChangesets(context.Context, *graphqlutil.ConnectionArgs) (ThreadOrIssueOrChangesetConnection, error)
+	Threads(context.Context, *graphqlutil.ConnectionArgs) (ThreadConnection, error)
 	Repositories(context.Context) ([]*RepositoryResolver, error)
 	Commits(context.Context) ([]*GitCommitResolver, error)
 	RepositoryComparisons(context.Context) ([]*RepositoryComparisonResolver, error)
@@ -209,11 +209,11 @@ type CampaignConnection interface {
 type AddRemoveThreadToFromCampaignEvent struct {
 	EventCommon
 	Campaign_ Campaign
-	Thread_   ThreadOrIssueOrChangeset
+	Thread_   Thread
 }
 
 func (v AddRemoveThreadToFromCampaignEvent) Campaign() Campaign               { return v.Campaign_ }
-func (v AddRemoveThreadToFromCampaignEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }
+func (v AddRemoveThreadToFromCampaignEvent) Thread() Thread { return v.Thread_ }
 
 // CampaignBurndownChart is the interface for the GraphQL type CampaignBurndownChart.
 type CampaignBurndownChart interface {

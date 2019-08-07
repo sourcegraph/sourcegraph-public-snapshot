@@ -41,7 +41,7 @@ func ThreadsForRepository(ctx context.Context, repository graphql.ID, arg *graph
 	return Threads.ThreadsForRepository(ctx, repository, arg)
 }
 
-func (schemaResolver) Threads(ctx context.Context, arg *graphqlutil.ConnectionArgs) (ThreadConnection, error) {
+func (schemaResolver) Threads(ctx context.Context, arg *ThreadConnectionArgs) (ThreadConnection, error) {
 	if Threads == nil {
 		return nil, errThreadsNotImplemented
 	}
@@ -62,6 +62,13 @@ func (r schemaResolver) UpdateThread(ctx context.Context, arg *UpdateThreadArgs)
 	return Threads.UpdateThread(ctx, arg)
 }
 
+func (r schemaResolver) PublishPreviewThread(ctx context.Context, arg *PublishPreviewThreadArgs) (Thread, error) {
+	if Threads == nil {
+		return nil, errThreadsNotImplemented
+	}
+	return Threads.PublishPreviewThread(ctx, arg)
+}
+
 func (r schemaResolver) DeleteThread(ctx context.Context, arg *DeleteThreadArgs) (*EmptyResponse, error) {
 	if Threads == nil {
 		return nil, errThreadsNotImplemented
@@ -77,6 +84,7 @@ type ThreadsResolver interface {
 	// Mutations
 	CreateThread(context.Context, *CreateThreadArgs) (Thread, error)
 	UpdateThread(context.Context, *UpdateThreadArgs) (Thread, error)
+	PublishPreviewThread(context.Context, *PublishPreviewThreadArgs) (Thread, error)
 	DeleteThread(context.Context, *DeleteThreadArgs) (*EmptyResponse, error)
 
 	// ThreadByID is called by the ThreadByID func but is not in the GraphQL API.
@@ -90,12 +98,34 @@ type ThreadsResolver interface {
 	ThreadsForRepository(ctx context.Context, repository graphql.ID, arg *graphqlutil.ConnectionArgs) (ThreadConnection, error)
 }
 
+type ThreadConnectionArgs struct {
+	graphqlutil.ConnectionArgs
+	Open *bool
+}
+
 type CreateThreadArgs struct {
-	Input createThreadlikeInput
+	Input struct {
+		Repository graphql.ID
+		Title      string
+		Body       *string
+		Preview    *bool
+		BaseRef    string
+		HeadRef    string
+	}
 }
 
 type UpdateThreadArgs struct {
-	Input updateThreadlikeInput
+	Input struct {
+		ID      graphql.ID
+		Title   *string
+		Body    *string
+		BaseRef *string
+		HeadRef *string
+	}
+}
+
+type PublishPreviewThreadArgs struct {
+	Thread graphql.ID
 }
 
 type DeleteThreadArgs struct {
@@ -106,13 +136,27 @@ type ThreadState string
 
 const (
 	ThreadStateOpen   ThreadState = "OPEN"
+	ThreadStateMerged             = "MERGED"
 	ThreadStateClosed             = "CLOSED"
 )
 
 // Thread is the interface for the GraphQL type Thread.
 type Thread interface {
-	Threadlike
+	PartialComment
+	ID() graphql.ID
+	DBID() int64
+	Repository(context.Context) (*RepositoryResolver, error)
+	Number() string
+	Title() string
 	State() ThreadState
+	BaseRef() string
+	HeadRef() string
+	IsPreview() bool
+	updatable
+	URL(context.Context) (string, error)
+	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)
+	RepositoryComparison(context.Context) (*RepositoryComparisonResolver, error)
+	CampaignNode
 }
 
 // ThreadConnection is the interface for the GraphQL type ThreadConnection.

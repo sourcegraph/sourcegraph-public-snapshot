@@ -2,7 +2,6 @@ BEGIN;
 
 CREATE TABLE threads (
 	id bigserial PRIMARY KEY,
-	type text NOT NULL,
 	repository_id integer NOT NULL REFERENCES repo(id) ON DELETE CASCADE,
 	title text NOT NULL,
 	state text NOT NULL,

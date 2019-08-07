@@ -4,11 +4,11 @@ import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/gra
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../../backend/graphql'
-import { queryAndFragmentForThreadOrIssueOrChangeset } from '../../../threadlike/util/graphql'
+import { queryAndFragmentForThread } from '../../../threadlike/util/graphql'
 
 const LOADING: 'loading' = 'loading'
 
-const { fragment, query } = queryAndFragmentForThreadOrIssueOrChangeset()
+const { fragment, query } = queryAndFragmentForThread()
 
 /**
  * A React hook that observes all threads in a campaign (queried from the GraphQL API).
@@ -17,11 +17,11 @@ const { fragment, query } = queryAndFragmentForThreadOrIssueOrChangeset()
  */
 export const useCampaignThreads = (
     campaign: Pick<GQL.ICampaign, 'id'>
-): [typeof LOADING | GQL.IThreadOrIssueOrChangesetConnection | ErrorLike, () => void] => {
+): [typeof LOADING | GQL.IThreadConnection | ErrorLike, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
 
-    const [result, setResult] = useState<typeof LOADING | GQL.IThreadOrIssueOrChangesetConnection | ErrorLike>(LOADING)
+    const [result, setResult] = useState<typeof LOADING | GQL.IThreadConnection | ErrorLike>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
@@ -29,7 +29,7 @@ export const useCampaignThreads = (
                     node(id: $campaign) {
                         __typename
                         ... on Campaign {
-                            threadOrIssueOrChangesets {
+                            threads {
                                 nodes {
                                     ${query}
                                 }
@@ -48,7 +48,7 @@ export const useCampaignThreads = (
                     if (!data.node || data.node.__typename !== 'Campaign') {
                         throw new Error('not a campaign')
                     }
-                    return data.node.threadOrIssueOrChangesets
+                    return data.node.threads
                 }),
                 startWith(LOADING)
             )

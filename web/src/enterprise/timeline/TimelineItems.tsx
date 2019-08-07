@@ -5,7 +5,7 @@ import { AddThreadToCampaignEventTimelineItem } from './events/AddThreadToCampai
 import { CloseThreadEventTimelineItem } from './events/CloseThreadEventTimelineItem'
 import { CommentOnThreadEventTimelineItem } from './events/CommentOnThreadEventTimelineItem'
 import { CreateThreadEventTimelineItem } from './events/CreateThreadEventTimelineItem'
-import { MergeChangesetEventTimelineItem } from './events/MergeChangesetEventTimelineItem'
+import { MergeThreadEventTimelineItem } from './events/MergeThreadEventTimelineItem'
 import { RemoveThreadFromCampaignEventTimelineItem } from './events/RemoveThreadFromCampaignEventTimelineItem'
 import { ReopenThreadEventTimelineItem } from './events/ReopenThreadEventTimelineItem'
 import { RequestReviewEventTimelineItem } from './events/RequestReviewEventTimelineItem'
@@ -56,8 +56,8 @@ function timelineItemComponentForEvent(
             return ReviewEventTimelineItem // TODO!(sqs)
         case 'RequestReviewEvent':
             return RequestReviewEventTimelineItem // TODO!(sqs)
-        case 'MergeChangesetEvent':
-            return MergeChangesetEventTimelineItem
+        case 'MergeThreadEvent':
+            return MergeThreadEventTimelineItem
         case 'CloseThreadEvent':
             return CloseThreadEventTimelineItem
         case 'ReopenThreadEvent':

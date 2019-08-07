@@ -73,8 +73,8 @@ func computeBurndownChartData(ctx context.Context, campaignID int64, date time.T
 	// A thread is considered to be part of the campaign when it was created, not when it was added
 	// to the campaign. This is so that you can use campaigns to track efforts that you started
 	// before you created the campaign.
-	// 	threads, err := threadlike.DBQuery(ctx, sqlf.Sprintf(`
-	// SELECT `+threadlike.DBSelectColumns+` FROM threads
+	// 	threads, err := threads.DBQuery(ctx, sqlf.Sprintf(`
+	// SELECT `+threads.DBSelectColumns+` FROM threads
 	// INNER JOIN campaigns_threads ct ON ct.thread_id=threads.id AND ct.campaign_id=%d
 	// LEFT JOIN events ON events.thread_id=threads.id AND type='CreateThread'
 	// WHERE events.created_at <= %v
@@ -97,7 +97,7 @@ func computeBurndownChartData(ctx context.Context, campaignID int64, date time.T
 	ec, err := events.GetEventConnection(ctx,
 		&graphqlbackend.EventConnectionCommonArgs{
 			BeforeDate: &graphqlbackend.DateTime{date},
-			Types:      &[]string{"CreateThread", "MergeChangeset", "CloseThread", "Review"},
+			Types:      &[]string{"CreateThread", "MergeThread", "CloseThread", "Review"},
 		},
 		events.Objects{Campaign: campaignID},
 	)
@@ -113,7 +113,7 @@ func computeBurndownChartData(ctx context.Context, campaignID int64, date time.T
 		switch {
 		case event.CreateThreadEvent != nil:
 			data.openThreads++
-		case event.MergeChangesetEvent != nil:
+		case event.MergeThreadEvent != nil:
 			data.mergedThreads++
 		case event.CloseThreadEvent != nil:
 			data.closedThreads++

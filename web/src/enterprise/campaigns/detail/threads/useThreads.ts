@@ -4,22 +4,22 @@ import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/gra
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../../backend/graphql'
-import { queryAndFragmentForThreadOrIssueOrChangeset } from '../../../threadlike/util/graphql'
+import { queryAndFragmentForThread } from '../../../threadlike/util/graphql'
 
 const LOADING: 'loading' = 'loading'
 
-const { fragment, query } = queryAndFragmentForThreadOrIssueOrChangeset()
+const { fragment, query } = queryAndFragmentForThread()
 
 /**
  * A React hook that observes all threads (queried from the GraphQL API).
  */
-export const useThreads = (open = true): typeof LOADING | GQL.IThreadOrIssueOrChangesetConnection | ErrorLike => {
-    const [result, setResult] = useState<typeof LOADING | GQL.IThreadOrIssueOrChangesetConnection | ErrorLike>(LOADING)
+export const useThreads = (open = true): typeof LOADING | GQL.IThreadConnection | ErrorLike => {
+    const [result, setResult] = useState<typeof LOADING | GQL.IThreadConnection | ErrorLike>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
                 query Threads($open: Boolean) {
-                    threadOrIssueOrChangesets(open: $open) {
+                    threads(open: $open) {
                         nodes {
                             ${query}
                         }
@@ -32,7 +32,7 @@ export const useThreads = (open = true): typeof LOADING | GQL.IThreadOrIssueOrCh
         )
             .pipe(
                 map(dataOrThrowErrors),
-                map(data => data.threadOrIssueOrChangesets),
+                map(data => data.threads),
                 startWith(LOADING)
             )
             .subscribe(setResult, err => setResult(asError(err)))

@@ -11,7 +11,7 @@ interface Props {
     className?: string
 }
 
-export const MergeChangesetEventTimelineItem: React.FunctionComponent<Props> = ({ event, className = '' }) => (
+export const MergeThreadEventTimelineItem: React.FunctionComponent<Props> = ({ event, className = '' }) => (
     <TimelineItem icon={CheckCircleIcon} className={className} event={event}>
         <ActorLink actor={event.actor} /> merged <Link to={event.thread.url}>{event.thread.title}</Link>
     </TimelineItem>

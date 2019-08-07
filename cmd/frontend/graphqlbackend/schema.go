@@ -361,30 +361,14 @@ type Mutation {
     # Update a thread. Returns the updated thread.
     updateThread(input: UpdateThreadInput!): Thread!
 
+    # Publish a thread that was created as a preview. If the thread contains code changes, this will
+    # result in the head branch and changeset being created on the associated upstream repository.
+    # If the thread contains diagnostics, this will result in an issue being created on the upstream
+    # repository. The updated thread is returned.
+    publishPreviewThread(thread: ID!): Thread!
+
     # Delete a thread.
     deleteThread(thread: ID!): EmptyResponse
-
-    # Create an issue in a repository. Returns the newly created issue.
-    createIssue(input: CreateIssueInput!): Issue!
-
-    # Update an issue. Returns the updated issue.
-    updateIssue(input: UpdateIssueInput!): Issue!
-
-    # Delete an issue.
-    deleteIssue(issue: ID!): EmptyResponse
-
-    # Create a changeset in a repository. Returns the newly created changeset.
-    createChangeset(input: CreateChangesetInput!): Changeset!
-
-    # Update a changeset. Returns the updated changeset.
-    updateChangeset(input: UpdateChangesetInput!): Changeset!
-
-    # Publish a changeset that was created as a preview. This will result in the head branch and changeset
-    # being created on the associated upstream repository. The updated changeset is returned.
-    publishPreviewChangeset(changeset: ID!): Changeset!
-
-    # Delete a changeset.
-    deleteChangeset(changeset: ID!): EmptyResponse
 
     # Mutations related to repositories' Git data.
     git: GitMutation!
@@ -1026,25 +1010,17 @@ type Query {
         first: Int
     ): ThreadConnection!
 
-    # A list of threads, issues, and changesets. TODO!(sqs)
-    threadOrIssueOrChangesets(
-        # Returns the first n results from the list.
-        first: Int
-        # Only include results that are open.
-        open: Boolean
-    ): ThreadOrIssueOrChangesetConnection!
-
-    # A list of diagnostics contained in threads.
-    threadDiagnostics(
-        # Return the first n results.
-        first: Int
-    ): ThreadDiagnosticConnection!
+    ##TODO!(sqs)# A list of diagnostics contained in threads.
+    ##TODO!(sqs)threadDiagnostics(
+    ##TODO!(sqs)    # Return the first n results.
+    ##TODO!(sqs)    first: Int
+    ##TODO!(sqs)): ThreadDiagnosticConnection!
 
     # A list of campaigns. TODO!(sqs)
     campaigns(
         # Returns the first n campaigns from the list.
         first: Int
-        # Returns campaigns that contain this object (such as thread or changeset).
+        # Returns campaigns that contain this object (such as a thread).
         object: ID
     ): CampaignConnection!
 
@@ -1517,35 +1493,6 @@ type Repository implements Node & GenericSearchResultInterface {
         # Returns the first n threads from the list.
         first: Int
     ): ThreadConnection!
-
-    # The specified issue in this repository.
-    issue(number: String!): Issue
-
-    # A list of issues in this repository.
-    issues(
-        # Returns the first n issues from the list.
-        first: Int
-    ): IssueConnection!
-
-    # The specified changeset in this repository.
-    changeset(number: String!): Changeset
-
-    # A list of changesets in this repository.
-    changesets(
-        # Returns the first n changesets from the list.
-        first: Int
-    ): ChangesetConnection!
-
-    # The specified thread, issue, or changeset in this repository.
-    threadOrIssueOrChangeset(number: String!): ThreadOrIssueOrChangeset
-
-    # A list of threads, issues, and changesets in this repository.
-    threadOrIssueOrChangesets(
-        # Returns the first n results from the list.
-        first: Int
-        # Only include results that are open.
-        open: Boolean
-    ): ThreadOrIssueOrChangesetConnection!
 
     # A Git comparison in this repository between a base and head commit.
     comparison(
@@ -4311,6 +4258,8 @@ interface CampaignNode {
 enum ThreadState {
     # Open.
     OPEN
+    # Merged.
+    MERGED
     # Closed.
     CLOSED
 }
@@ -4325,6 +4274,15 @@ input CreateThreadInput {
 
     # The body of the thread.
     body: String
+
+    # Whether the thread is a preview.
+    preview: Boolean
+
+    # The base ref of the thread.
+    baseRef: String!
+
+    # The head ref of the thread.
+    headRef: String!
 }
 
 # Input arguments for updating a thread.
@@ -4337,9 +4295,15 @@ input UpdateThreadInput {
 
     # The new body of the thread.
     body: String
+
+    # The new base ref of the thread.
+    baseRef: String
+
+    # The new head ref of the thread.
+    headRef: String
 }
 
-# A thread is an issue or changeset.
+# A thread is collection of comments, diagnostics, and changes.
 type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & CampaignNode {
     # The unique ID for the thread.
     id: ID!
@@ -4363,6 +4327,15 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
     # The state of this thread.
     state: ThreadState!
 
+    # The base ref of the thread.
+    baseRef: String!
+
+    # The head ref of the thread.
+    headRef: String!
+
+    # Whether this thread is a preview.
+    isPreview: Boolean!
+
     # The URL to this thread on Sourcegraph.
     url: String!
 
@@ -4377,6 +4350,9 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
 
     # Whether the viewer can update this thread.
     viewerCanUpdate: Boolean!
+
+    # The comparison between this thread's base and head.
+    repositoryComparison: RepositoryComparison!
 
     # A list of campaigns that contain this thread.
     campaigns(
@@ -4403,259 +4379,6 @@ type ThreadConnection {
     nodes: [Thread!]!
 
     # The total number of threads in the connection.
-    totalCount: Int!
-
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
-# The states of issues.
-enum IssueState {
-    # Open.
-    OPEN
-    # Closed.
-    CLOSED
-}
-
-# Input arguments for creating a issue.
-input CreateIssueInput {
-    # The ID of this issue's repository.
-    repository: ID!
-
-    # The title of the issue.
-    title: String!
-
-    # The body of the issue.
-    body: String
-}
-
-# Input arguments for updating a issue.
-input UpdateIssueInput {
-    # The ID of the issue to update.
-    id: ID!
-
-    # The new title of the issue.
-    title: String
-
-    # The new body of the issue.
-    body: String
-}
-
-# A issue is an issue or issue.
-type Issue implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & CampaignNode {
-    # The unique ID for the issue.
-    id: ID!
-
-    # The repository that contains this issue.
-    repository: Repository!
-
-    # The issue ID that is only unique within the issue's repository. For a
-    # globally unique identifier, use Issue.id.
-    number: String!
-
-    # The title of the issue.
-    title: String!
-
-    # The body as Markdown.
-    body: String!
-
-    # The body as HTML.
-    bodyHTML: String!
-
-    # The state of this issue.
-    state: IssueState!
-
-    # The raw data for this issue's diagnostics.
-    diagnosticsData: String!
-
-    # The URL to this issue on Sourcegraph.
-    url: String!
-
-    # The actor who authored the issue.
-    author: Actor
-
-    # The date and time when the issue was created.
-    createdAt: DateTime!
-
-    # The date and time when the issue was updated.
-    updatedAt: DateTime!
-
-    # Whether the viewer can update this issue.
-    viewerCanUpdate: Boolean!
-
-    # A list of campaigns that contain this issue.
-    campaigns(
-        # Return the first n campaigns from the list.
-        first: Int
-    ): CampaignConnection!
-
-    # A list of events related to the issue.
-    timelineItems(
-        # Returns the first n events from the list.
-        first: Int
-        # Only include events after (or on) the specified date.
-        afterDate: DateTime
-        # Only include events before (or on) the specified date.
-        beforeDate: DateTime
-        # Only include the specified event types. TODO!(sqs): make this an enum?
-        types: [String!]
-    ): ThreadTimelineItemConnection!
-}
-
-# A list of issues.
-type IssueConnection {
-    # A list of issues.
-    nodes: [Issue!]!
-
-    # The total number of issues in the connection.
-    totalCount: Int!
-
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
-# The states of changesets.
-enum ChangesetState {
-    # Open.
-    OPEN
-    # Merged.
-    MERGED
-    # Closed.
-    CLOSED
-}
-
-# Input arguments for creating a changeset.
-input CreateChangesetInput {
-    # The ID of this changeset's repository.
-    repository: ID!
-
-    # The title of the changeset.
-    title: String!
-
-    # The body of the changeset.
-    body: String
-
-    # Whether the changeset is a preview.
-    preview: Boolean
-
-    # The base ref of the changeset.
-    baseRef: String!
-
-    # The head ref of the changeset.
-    headRef: String!
-}
-
-# Input arguments for updating a changeset.
-input UpdateChangesetInput {
-    # The ID of the changeset to update.
-    id: ID!
-
-    # The new title of the changeset.
-    title: String
-
-    # The new body of the changeset.
-    body: String
-
-    # The new base ref of the changeset.
-    baseRef: String
-
-    # The new head ref of the changeset.
-    headRef: String
-}
-
-# A changeset is an issue or changeset.
-type Changeset implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & CampaignNode {
-    # The unique ID for the changeset.
-    id: ID!
-
-    # The repository that contains this changeset.
-    repository: Repository!
-
-    # The changeset ID that is only unique within the changeset's repository. For a
-    # globally unique identifier, use Changeset.id.
-    number: String!
-
-    # The title of the changeset.
-    title: String!
-
-    # The body as Markdown.
-    body: String!
-
-    # The body as HTML.
-    bodyHTML: String!
-
-    # The state of this changeset.
-    state: ChangesetState!
-
-    # The base ref of the changeset.
-    baseRef: String!
-
-    # The head ref of the changeset.
-    headRef: String!
-
-    # Whether this changeset is a preview.
-    isPreview: Boolean!
-
-    # The URL to this changeset on Sourcegraph.
-    url: String!
-
-    # The actor who authored the changeset.
-    author: Actor
-
-    # The date and time when the changeset was created.
-    createdAt: DateTime!
-
-    # The date and time when the changeset was updated.
-    updatedAt: DateTime!
-
-    # Whether the viewer can update this changeset.
-    viewerCanUpdate: Boolean!
-
-    # The comparison between this changeset's base and head.
-    repositoryComparison: RepositoryComparison!
-
-    # A list of campaigns that contain this changeset.
-    campaigns(
-        # Return the first n campaigns from the list.
-        first: Int
-    ): CampaignConnection!
-
-    # A list of events related to the changeset.
-    timelineItems(
-        # Returns the first n events from the list.
-        first: Int
-        # Only include events after (or on) the specified date.
-        afterDate: DateTime
-        # Only include events before (or on) the specified date.
-        beforeDate: DateTime
-        # Only include the specified event types. TODO!(sqs): make this an enum?
-        types: [String!]
-    ): ThreadTimelineItemConnection!
-}
-
-# A list of changesets.
-type ChangesetConnection {
-    # A list of changesets.
-    nodes: [Changeset!]!
-
-    # The total number of changesets in the connection.
-    totalCount: Int!
-
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
-# A thread, issue, or changeset.
-#
-# TODO!(sqs): add Issue
-union ThreadOrIssueOrChangeset = Thread | Issue | Changeset
-
-# A list of threads, issues, and changesets.
-type ThreadOrIssueOrChangesetConnection {
-    # A list of results.
-    nodes: [ThreadOrIssueOrChangeset!]!
-
-    # The total number of results in the connection.
     totalCount: Int!
 
     # Pagination information.
@@ -4726,7 +4449,7 @@ input UpdateCampaignInput {
     rules: String
 }
 
-# A campaign is a set of related issues and changesets.
+# A campaign is a collection of threads.
 type Campaign implements Node & Comment & Commentable {
     # The unique ID for the campaign.
     id: ID!
@@ -4776,23 +4499,23 @@ type Campaign implements Node & Comment & Commentable {
         first: Int
     ): CommentConnection!
 
-    # A list of threads, issues, and changesets in this campaign.
-    threadOrIssueOrChangesets(
+    # A list of threads in this campaign.
+    threads(
         # Returns the first n results from the list.
         first: Int
-    ): ThreadOrIssueOrChangesetConnection!
+    ): ThreadConnection!
 
-    # The list of repositories affected by this campaign's changesets.
+    # The list of repositories affected by this campaign's threads.
     repositories: [Repository!]!
 
-    # The list of commits (from one or more repositories) in this campaign's changesets.
+    # The list of commits (from one or more repositories) in this campaign's threads.
     commits: [GitCommit!]!
 
-    # The comparisons of before and after this campaign's changesets are applied (on all affected
-    # repositories).
+    # The comparisons of before and after this campaign's thread's changes are applied (on all
+    # affected repositories).
     repositoryComparisons: [RepositoryComparison!]!
 
-    # A burndown chart of the states of the campaign's threads, issues, and changesets over time.
+    # A burndown chart of the states of the campaign's threads over time.
     burndownChart: CampaignBurndownChart!
 
     # A list of events related to the campaign.
@@ -4808,7 +4531,7 @@ type Campaign implements Node & Comment & Commentable {
     ): CampaignTimelineItemConnection!
 }
 
-# A burndown chart of the states of the campaign's threads, issues, and changesets over time.
+# A burndown chart of the states of the campaign's threads  over time.
 type CampaignBurndownChart {
     # The dates that correspond to the same-index element of the data series.
     dates: [DateTime!]!
@@ -4924,7 +4647,7 @@ union Event =
     | RemoveThreadFromCampaignEvent
     | ReviewEvent
     | RequestReviewEvent
-    | MergeChangesetEvent
+    | MergeThreadEvent
     | CloseThreadEvent
     | ReopenThreadEvent
     | CommentOnThreadEvent
@@ -4948,7 +4671,7 @@ union ThreadTimelineItem =
     | RemoveThreadFromCampaignEvent
     | ReviewEvent
     | RequestReviewEvent
-    | MergeChangesetEvent
+    | MergeThreadEvent
     | CloseThreadEvent
     | ReopenThreadEvent
     | CommentOnThreadEvent
@@ -4970,7 +4693,7 @@ union CampaignTimelineItem =
     | RemoveThreadFromCampaignEvent
     | ReviewEvent
     | RequestReviewEvent
-    | MergeChangesetEvent
+    | MergeThreadEvent
     | CloseThreadEvent
     | ReopenThreadEvent
     | CommentOnThreadEvent
@@ -5011,7 +4734,7 @@ type CreateThreadEvent implements EventCommon {
     createdAt: DateTime!
 
     # The thread.
-    thread: ThreadOrIssueOrChangeset!
+    thread: Thread!
 }
 
 # The addition of a thread to a campaign.
@@ -5026,7 +4749,7 @@ type AddThreadToCampaignEvent implements EventCommon {
     createdAt: DateTime!
 
     # The thread that was added.
-    thread: ThreadOrIssueOrChangeset!
+    thread: Thread!
 
     # The campaign that the thread was added to.
     campaign: Campaign!
@@ -5044,7 +4767,7 @@ type RemoveThreadFromCampaignEvent implements EventCommon {
     createdAt: DateTime!
 
     # The thread that was removed.
-    thread: ThreadOrIssueOrChangeset!
+    thread: Thread!
 
     # The campaign that the thread was removed from.
     campaign: Campaign!
@@ -5069,7 +4792,7 @@ type ReviewEvent implements EventCommon {
     createdAt: DateTime!
 
     # The thread that was reviewed.
-    thread: ThreadOrIssueOrChangeset!
+    thread: Thread!
 
     # The state of the review.
     state: ReviewState!
@@ -5087,7 +4810,7 @@ type RequestReviewEvent implements EventCommon {
     createdAt: DateTime!
 
     # The thread on which review was requested.
-    thread: ThreadOrIssueOrChangeset!
+    thread: Thread!
 
     # TODO!(sqs): add reference to external user
 }
@@ -5104,7 +4827,7 @@ type CloseThreadEvent implements EventCommon {
     createdAt: DateTime!
 
     # The thread that was closed.
-    thread: ThreadOrIssueOrChangeset!
+    thread: Thread!
 }
 
 # A thread was reopened.
@@ -5119,11 +4842,11 @@ type ReopenThreadEvent implements EventCommon {
     createdAt: DateTime!
 
     # The thread that was reopened.
-    thread: ThreadOrIssueOrChangeset!
+    thread: Thread!
 }
 
-# A changeset was merged.
-type MergeChangesetEvent implements EventCommon {
+# A thread was merged.
+type MergeThreadEvent implements EventCommon {
     # The unique ID of the event.
     id: ID!
 
@@ -5133,8 +4856,8 @@ type MergeChangesetEvent implements EventCommon {
     # The date and time that the event occurred.
     createdAt: DateTime!
 
-    # The changeset that was merged.
-    changeset: Changeset!
+    # The thread that was merged.
+    thread: Thread!
 }
 
 # A thread was commented on.
@@ -5149,7 +4872,7 @@ type CommentOnThreadEvent implements EventCommon {
     createdAt: DateTime!
 
     # The thread that was commented on.
-    thread: ThreadOrIssueOrChangeset!
+    thread: Thread!
 
     # TODO!(sqs): add back
     #

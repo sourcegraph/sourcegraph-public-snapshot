@@ -6,17 +6,17 @@ import { ThreadsIcon } from '../../threads/icons'
 /**
  * The subset of fields that is needed for displaying the thread's state icons.
  */
-export interface ThreadStateFields extends Pick<GQL.ThreadOrIssueOrChangeset, '__typename' | 'state'> {}
+export interface ThreadStateFields extends Pick<GQL.Thread, '__typename' | 'state'> {}
 
 type ThreadStateColor = 'success' | 'danger' | 'info' | 'secondary' | 'purple'
 
-const COLOR: Record<GQL.ThreadOrIssueOrChangeset['state'], ThreadStateColor> = {
+const COLOR: Record<GQL.Thread['state'], ThreadStateColor> = {
     OPEN: 'success',
     CLOSED: 'danger',
     MERGED: 'purple', // TODO!(sqs): make purple
 }
 
-const ICON: Record<GQL.ThreadOrIssueOrChangeset['__typename'], React.ComponentType<{ className?: string }>> = {
+const ICON: Record<GQL.Thread['__typename'], React.ComponentType<{ className?: string }>> = {
     Thread: ThreadsIcon,
     Issue: IssuesIcon,
     Changeset: ChangesetsIcon,

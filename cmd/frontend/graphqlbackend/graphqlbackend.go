@@ -84,11 +84,6 @@ func (r *NodeResolver) ToCampaign() (Campaign, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToChangeset() (Changeset, bool) {
-	n, ok := r.Node.(Changeset)
-	return n, ok
-}
-
 func (r *NodeResolver) ToCommentReply() (CommentReply, bool) {
 	n, ok := r.Node.(CommentReply)
 	return n, ok
@@ -101,11 +96,6 @@ func (r *NodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) 
 
 func (r *NodeResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
 	n, ok := r.Node.(*discussionThreadResolver)
-	return n, ok
-}
-
-func (r *NodeResolver) ToIssue() (Issue, bool) {
-	n, ok := r.Node.(Issue)
 	return n, ok
 }
 
@@ -234,16 +224,12 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 		return accessTokenByID(ctx, id)
 	case "Campaign":
 		return CampaignByID(ctx, id)
-	case "Changeset":
-		return ChangesetByID(ctx, id)
 	case "CommentReply":
 		return CommentReplyByID(ctx, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":
 		return DiscussionThreadByID(ctx, id)
-	case "Issue":
-		return IssueByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)

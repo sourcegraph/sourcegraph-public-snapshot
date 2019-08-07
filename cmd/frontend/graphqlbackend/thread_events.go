@@ -2,36 +2,36 @@ package graphqlbackend
 
 type CreateThreadEvent struct {
 	EventCommon
-	Thread_ ThreadOrIssueOrChangeset
+	Thread_ Thread
 }
 
-func (v CreateThreadEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }
+func (v CreateThreadEvent) Thread() Thread { return v.Thread_ }
 
-type MergeChangesetEvent struct {
+type MergeThreadEvent struct {
 	EventCommon
-	Changeset_ Changeset
+	Thread_ Thread
 }
 
-func (v MergeChangesetEvent) Changeset() Changeset { return v.Changeset_ }
+func (v MergeThreadEvent) Thread() Thread { return v.Thread_ }
 
 type CloseThreadEvent struct {
 	EventCommon
-	Thread_ ThreadOrIssueOrChangeset
+	Thread_ Thread
 }
 
-func (v CloseThreadEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }
+func (v CloseThreadEvent) Thread() Thread { return v.Thread_ }
 
 type ReopenThreadEvent struct {
 	EventCommon
-	Thread_ ThreadOrIssueOrChangeset
+	Thread_ Thread
 }
 
-func (v ReopenThreadEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }
+func (v ReopenThreadEvent) Thread() Thread { return v.Thread_ }
 
 type CommentOnThreadEvent struct {
 	EventCommon
-	Thread_ ThreadOrIssueOrChangeset
+	Thread_ Thread
 	// TODO!(sqs): add comment
 }
 
-func (v CommentOnThreadEvent) Thread() ThreadOrIssueOrChangeset { return v.Thread_ }
+func (v CommentOnThreadEvent) Thread() Thread { return v.Thread_ }

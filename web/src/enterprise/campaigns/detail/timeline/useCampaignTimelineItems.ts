@@ -5,11 +5,11 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
 import { actorFragment, actorQuery } from '../../../../actor/graphql'
 import { queryGraphQL } from '../../../../backend/graphql'
-import { queryAndFragmentForThreadOrIssueOrChangeset } from '../../../threadlike/util/graphql'
+import { queryAndFragmentForThread } from '../../../threadlike/util/graphql'
 
 const LOADING: 'loading' = 'loading'
 
-const { fragment: threadFragment, query: threadQuery } = queryAndFragmentForThreadOrIssueOrChangeset([
+const { fragment: threadFragment, query: threadQuery } = queryAndFragmentForThread([
     '__typename',
     'id',
     'title',
