@@ -4279,10 +4279,10 @@ input CreateThreadInput {
     preview: Boolean
 
     # The base ref of the thread.
-    baseRef: String!
+    baseRef: String
 
     # The head ref of the thread.
-    headRef: String!
+    headRef: String
 }
 
 # Input arguments for updating a thread.
@@ -4327,14 +4327,14 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
     # The state of this thread.
     state: ThreadState!
 
-    # The base ref of the thread.
-    baseRef: String!
-
-    # The head ref of the thread.
-    headRef: String!
-
     # Whether this thread is a preview.
     isPreview: Boolean!
+
+    # The base ref of the thread.
+    baseRef: String
+
+    # The head ref of the thread.
+    headRef: String
 
     # The URL to this thread on Sourcegraph.
     url: String!

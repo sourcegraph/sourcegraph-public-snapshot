@@ -3,8 +3,10 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
@@ -13,6 +15,20 @@ import (
 //
 // This is contributed by enterprise.
 var Threads ThreadsResolver
+
+const GQLTypeThread = "Thread"
+
+func MarshalThreadID(id int64) graphql.ID {
+	return relay.MarshalID(GQLTypeThread, id)
+}
+
+func UnmarshalThreadID(id graphql.ID) (dbID int64, err error) {
+	if typ := relay.UnmarshalKind(id); typ != GQLTypeThread {
+		return 0, fmt.Errorf("thread ID has unexpected type type %q", typ)
+	}
+	err = relay.UnmarshalSpec(id, &dbID)
+	return
+}
 
 var errThreadsNotImplemented = errors.New("threads is not implemented")
 
@@ -34,7 +50,7 @@ func ThreadInRepository(ctx context.Context, repository graphql.ID, number strin
 
 // ThreadsForRepository returns an instance of the GraphQL ThreadConnection type with the list of
 // threads defined in a repository.
-func ThreadsForRepository(ctx context.Context, repository graphql.ID, arg *graphqlutil.ConnectionArgs) (ThreadConnection, error) {
+func ThreadsForRepository(ctx context.Context, repository graphql.ID, arg *ThreadConnectionArgs) (ThreadConnection, error) {
 	if Threads == nil {
 		return nil, errThreadsNotImplemented
 	}
@@ -79,7 +95,7 @@ func (r schemaResolver) DeleteThread(ctx context.Context, arg *DeleteThreadArgs)
 // ThreadsResolver is the interface for the GraphQL threads queries and mutations.
 type ThreadsResolver interface {
 	// Queries
-	Threads(context.Context, *graphqlutil.ConnectionArgs) (ThreadConnection, error)
+	Threads(context.Context, *ThreadConnectionArgs) (ThreadConnection, error)
 
 	// Mutations
 	CreateThread(context.Context, *CreateThreadArgs) (Thread, error)
@@ -95,7 +111,7 @@ type ThreadsResolver interface {
 
 	// ThreadsForRepository is called by the ThreadsForRepository func but is not in the GraphQL
 	// API.
-	ThreadsForRepository(ctx context.Context, repository graphql.ID, arg *graphqlutil.ConnectionArgs) (ThreadConnection, error)
+	ThreadsForRepository(ctx context.Context, repository graphql.ID, arg *ThreadConnectionArgs) (ThreadConnection, error)
 }
 
 type ThreadConnectionArgs struct {
@@ -109,8 +125,8 @@ type CreateThreadArgs struct {
 		Title      string
 		Body       *string
 		Preview    *bool
-		BaseRef    string
-		HeadRef    string
+		BaseRef    *string
+		HeadRef    *string
 	}
 }
 
@@ -149,8 +165,8 @@ type Thread interface {
 	Number() string
 	Title() string
 	State() ThreadState
-	BaseRef() string
-	HeadRef() string
+	BaseRef() *string
+	HeadRef() *string
 	IsPreview() bool
 	updatable
 	URL(context.Context) (string, error)

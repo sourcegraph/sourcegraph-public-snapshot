@@ -1,4 +1,4 @@
-package extsvc
+package threads
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
@@ -18,7 +17,7 @@ const (
 	eventTypeCreateThread    events.Type = "CreateThread"
 	eventTypeReview                      = "Review"
 	eventTypeReviewRequested             = "ReviewRequested"
-	eventTypeMergeThread              = "MergeThread"
+	eventTypeMergeThread                 = "MergeThread"
 	eventTypeCloseThread                 = "CloseThread"
 	eventTypeReopenThread                = "ReopenThread"
 	eventTypeCommentOnThread             = "CommentOnThread"
@@ -26,7 +25,7 @@ const (
 
 func init() {
 	events.Register(eventTypeCreateThread, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
-		thread, err := threads.ThreadByDBID(ctx, data.Thread)
+		thread, err := threadByDBID(ctx, data.Thread)
 		if err != nil {
 			return err
 		}
@@ -37,7 +36,7 @@ func init() {
 		return nil
 	})
 	events.Register(eventTypeReview, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
-		thread, err := threads.ThreadByDBID(ctx, data.Thread)
+		thread, err := threadByDBID(ctx, data.Thread)
 		if err != nil {
 			return err
 		}
@@ -56,7 +55,7 @@ func init() {
 		return nil
 	})
 	events.Register(eventTypeReviewRequested, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
-		thread, err := threads.ThreadByDBID(ctx, data.Thread)
+		thread, err := threadByDBID(ctx, data.Thread)
 		if err != nil {
 			return err
 		}
@@ -67,18 +66,18 @@ func init() {
 		return nil
 	})
 	events.Register(eventTypeMergeThread, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
-		thread, err := threads.ThreadByDBID(ctx, data.Thread)
+		thread, err := threadByDBID(ctx, data.Thread)
 		if err != nil {
 			return err
 		}
 		toEvent.MergeThreadEvent = &graphqlbackend.MergeThreadEvent{
 			EventCommon: common,
-			Changeset_:  thread.Changeset,
+			Thread_:     thread,
 		}
 		return nil
 	})
 	events.Register(eventTypeCloseThread, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
-		thread, err := threads.ThreadByDBID(ctx, data.Thread)
+		thread, err := threadByDBID(ctx, data.Thread)
 		if err != nil {
 			return err
 		}
@@ -89,7 +88,7 @@ func init() {
 		return nil
 	})
 	events.Register(eventTypeCommentOnThread, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
-		thread, err := threads.ThreadByDBID(ctx, data.Thread)
+		thread, err := threadByDBID(ctx, data.Thread)
 		if err != nil {
 			return err
 		}

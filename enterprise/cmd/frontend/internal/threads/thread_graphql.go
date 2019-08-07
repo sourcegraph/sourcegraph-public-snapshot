@@ -2,37 +2,37 @@ package threads
 
 import (
 	"context"
+	"path"
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
+	commentobjectdb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 )
 
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
 
 // gqlThread implements the GraphQL type Thread.
 type gqlThread struct {
-	threads.GQLThreadlike
 	db *dbThread
+	graphqlbackend.PartialComment
 }
 
 func newGQLThread(db *dbThread) *gqlThread {
 	return &gqlThread{
-		GQLThreadlike: threads.GQLThreadlike{
-			DB:             db,
-			PartialComment: comments.GraphQLResolver{}.LazyCommentByID(threads.MarshalID(threads.GQLTypeThread, db.ID)),
-		},
-		db: db,
+		db:             db,
+		PartialComment: comments.GraphQLResolver{}.LazyCommentByID(graphqlbackend.MarshalThreadID(db.ID)),
 	}
 }
 
 // threadByID looks up and returns the Thread with the given GraphQL ID. If no such Thread exists, it
 // returns a non-nil error.
 func threadByID(ctx context.Context, id graphql.ID) (*gqlThread, error) {
-	dbID, err := threads.UnmarshalIDOfType(threads.GQLTypeThread, id)
+	dbID, err := graphqlbackend.UnmarshalThreadID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -78,15 +78,72 @@ func (GraphQLResolver) ThreadInRepository(ctx context.Context, repositoryID grap
 	return thread, nil
 }
 
+func (v *gqlThread) ID() graphql.ID {
+	return graphqlbackend.MarshalThreadID(v.db.ID)
+}
+
+func (v *gqlThread) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	return graphqlbackend.RepositoryByDBID(ctx, v.db.RepositoryID)
+}
+
+func (v *gqlThread) Number() string { return strconv.FormatInt(v.db.ID, 10) }
+
+func (v *gqlThread) DBID() int64 { return v.db.ID }
+
+func (v *gqlThread) Title() string { return v.db.Title }
+
 func (v *gqlThread) State() graphqlbackend.ThreadState {
 	return graphqlbackend.ThreadState(v.db.State)
 }
 
-func (v *gqlThread) BaseRef() string { return v.db.BaseRef }
-
-func (v *gqlThread) HeadRef() string { return v.db.HeadRef }
-
 func (v *gqlThread) IsPreview() bool { return v.db.IsPreview }
+
+func (v *gqlThread) BaseRef() *string {
+	if v.db.BaseRef == "" {
+		return nil
+	}
+	return &v.db.BaseRef
+}
+
+func (v *gqlThread) HeadRef() *string {
+	if v.db.HeadRef == "" {
+		return nil
+	}
+	return &v.db.HeadRef
+}
+
+func (v *gqlThread) ViewerCanUpdate(ctx context.Context) (bool, error) {
+	// TODO!(sqs): commented out below due to package import cycle etc
+	return true, nil
+	// return commentobjectdb.ViewerCanUpdate(ctx, v.ID())
+}
+
+func (v *gqlThread) ViewerCanComment(ctx context.Context) (bool, error) {
+	return commentobjectdb.ViewerCanComment(ctx)
+}
+
+func (v *gqlThread) ViewerCannotCommentReasons(ctx context.Context) ([]graphqlbackend.CannotCommentReason, error) {
+	return commentobjectdb.ViewerCannotCommentReasons(ctx)
+}
+
+func (v *gqlThread) URL(ctx context.Context) (string, error) {
+	repository, err := v.Repository(ctx)
+	if err != nil {
+		return "", err
+	}
+	return path.Join(repository.URL(), "-", "threads", v.Number()), nil
+}
+
+func (v *gqlThread) Campaigns(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
+	return graphqlbackend.CampaignsWithObject(ctx, v.ID(), arg)
+}
+
+func (v *gqlThread) TimelineItems(ctx context.Context, arg *graphqlbackend.EventConnectionCommonArgs) (graphqlbackend.EventConnection, error) {
+	return events.GetEventConnection(ctx,
+		arg,
+		events.Objects{Thread: v.db.ID},
+	)
+}
 
 func (v *gqlThread) RepositoryComparison(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
 	repo, err := v.Repository(ctx)

@@ -131,7 +131,7 @@ func (v *gqlCampaign) Threads(ctx context.Context, arg *graphqlutil.ConnectionAr
 	for i, e := range l {
 		threadlikeIDs[i] = e.Thread
 	}
-	return threads.ThreadsByIDs(ctx, threadlikeIDs)
+	return threads.ThreadsByIDs(threadlikeIDs), nil
 }
 
 func (v *gqlCampaign) getThreads(ctx context.Context) ([]graphqlbackend.Thread, error) {

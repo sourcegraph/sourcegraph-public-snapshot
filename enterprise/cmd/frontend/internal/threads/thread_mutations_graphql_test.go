@@ -23,7 +23,6 @@ func TestGraphQL_CreateThread(t *testing.T) {
 		return &types.Repo{ID: wantRepositoryID}, nil
 	}
 	wantThread := &dbThread{
-		Type:         dbThreadTypeThread,
 		RepositoryID: wantRepositoryID,
 		Title:        "t",
 		State:        string(graphqlbackend.ThreadStateOpen),
@@ -75,7 +74,6 @@ func TestGraphQL_UpdateThread(t *testing.T) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
 		return &dbThread{
-			Type:         dbThreadTypeThread,
 			ID:           2,
 			RepositoryID: 1,
 			Title:        "t1",

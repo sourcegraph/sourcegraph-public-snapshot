@@ -37,7 +37,6 @@ func TestGraphQL_Repository_ThreadConnection(t *testing.T) {
 								nodes {
 									title
 								}
-								totalCount
 								pageInfo {
 									hasNextPage
 								}
@@ -55,7 +54,6 @@ func TestGraphQL_Repository_ThreadConnection(t *testing.T) {
 									"title": "t"
 								}
 							],
-							"totalCount": 1,
 							"pageInfo": {
 								"hasNextPage": false
 							}

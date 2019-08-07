@@ -9,11 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
-var MockImportExternalThreads func(repo api.RepoID, externalServiceID int64, toImport map[*DBThread]commentobjectdb.DBObjectCommentFields) error
+var MockImportExternalThreads func(repo api.RepoID, externalServiceID int64, toImport map[*dbThread]commentobjectdb.DBObjectCommentFields) error
 
 // ImportExternalThreads replaces all existing threads for the objects from the given external service
 // with a new set of threads.
-func ImportExternalThreads(ctx context.Context, repo api.RepoID, externalServiceID int64, toImport map[*DBThread]commentobjectdb.DBObjectCommentFields) error {
+func ImportExternalThreads(ctx context.Context, repo api.RepoID, externalServiceID int64, toImport map[*dbThread]commentobjectdb.DBObjectCommentFields) error {
 	if MockImportExternalThreads != nil {
 		return MockImportExternalThreads(repo, externalServiceID, toImport)
 	}
@@ -36,13 +36,13 @@ func ImportExternalThreads(ctx context.Context, repo api.RepoID, externalService
 	if externalServiceID == 0 {
 		panic("externalServiceID must be nonzero")
 	}
-	opt := DBThreadsListOptions{
+	opt := dbThreadsListOptions{
 		RepositoryID:                  repo,
 		ImportedFromExternalServiceID: externalServiceID,
 	}
 
 	// Delete all existing threads for the repository from the given external service.
-	if err := (DBThreads{}).Delete(ctx, tx, opt); err != nil {
+	if err := (dbThreads{}).Delete(ctx, tx, opt); err != nil {
 		return err
 	}
 
@@ -54,7 +54,7 @@ func ImportExternalThreads(ctx context.Context, repo api.RepoID, externalService
 		if thread.ExternalID == "" {
 			panic("thread has no external ID")
 		}
-		if _, err := (DBThreads{}).Create(ctx, tx, thread, comment); err != nil {
+		if _, err := (dbThreads{}).Create(ctx, tx, thread, comment); err != nil {
 			return err
 		}
 	}

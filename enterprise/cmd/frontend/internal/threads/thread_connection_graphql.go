@@ -2,77 +2,89 @@ package threads
 
 import (
 	"context"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-func (GraphQLResolver) Threads(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
-	return threadsByOptions(ctx, dbThreadsListOptions{}, arg)
+func (GraphQLResolver) Threads(ctx context.Context, arg *graphqlbackend.ThreadConnectionArgs) (graphqlbackend.ThreadConnection, error) {
+	return &threadConnection{opt: threadConnectionArgsToListOptions(arg)}, nil
 }
 
-func (GraphQLResolver) ThreadsForRepository(ctx context.Context, repositoryID graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
+func (GraphQLResolver) ThreadsForRepository(ctx context.Context, repositoryID graphql.ID, arg *graphqlbackend.ThreadConnectionArgs) (graphqlbackend.ThreadConnection, error) {
 	repo, err := graphqlbackend.RepositoryByID(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
-	return threadsByOptions(ctx, dbThreadsListOptions{
-		RepositoryID: repo.DBID(),
-	}, arg)
+	opt := threadConnectionArgsToListOptions(arg)
+	opt.RepositoryID = repo.DBID()
+	return &threadConnection{opt: opt}, nil
 }
 
-func ThreadsByIDs(ctx context.Context, threadIDs []int64, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ThreadConnection, error) {
-	return threadsByOptions(ctx, dbThreadsListOptions{
-		ThreadIDs: threadIDs,
-	}, arg)
+func ThreadsByIDs(threadIDs []int64, arg *graphqlbackend.ThreadConnectionArgs) graphqlbackend.ThreadConnection {
+	opt := threadConnectionArgsToListOptions(arg)
+	opt.ThreadIDs = threadIDs
+	return &threadConnection{opt: opt}
 }
 
-func threadsByOptions(ctx context.Context, options dbThreadsListOptions, arg *graphqlbackend.ThreadConnectionArgs) (graphqlbackend.ThreadConnection, error) {
-	var connectionArgs *graphqlutil.ConnectionArgs
-	if arg != nil {
-		arg.Set(&options.LimitOffset)
-		if arg.Open != nil && *arg.Open {
-			options.State = string(graphqlbackend.ThreadStateOpen)
-		}
-		connectionArgs = &arg.ConnectionArgs
-	} else {
-		connectionArgs = &graphqlutil.ConnectionArgs{}
+func threadConnectionArgsToListOptions(arg *graphqlbackend.ThreadConnectionArgs) dbThreadsListOptions {
+	var opt dbThreadsListOptions
+	arg.Set(&opt.LimitOffset)
+	if arg.Open != nil && *arg.Open {
+		opt.State = string(graphqlbackend.ThreadStateOpen)
 	}
-
-	list, err := dbThreads{}.List(ctx, options)
-	if err != nil {
-		return nil, err
-	}
-	threads := make([]*gqlThread, len(list))
-	for i, a := range list {
-		threads[i] = newGQLThread(a)
-	}
-	return &threadConnection{arg: arg, threads: threads}, nil
+	return opt
 }
 
 type threadConnection struct {
-	arg     *graphqlutil.ConnectionArgs
-	threads []*gqlThread
+	opt dbThreadsListOptions
+
+	once    sync.Once
+	threads []*dbThread
+	err     error
+}
+
+func (r *threadConnection) compute(ctx context.Context) ([]*dbThread, error) {
+	r.once.Do(func() {
+		opt2 := r.opt
+		if opt2.LimitOffset != nil {
+			tmp := *opt2.LimitOffset
+			opt2.LimitOffset = &tmp
+			opt2.Limit++ // so we can detect if there is a next page
+		}
+
+		r.threads, r.err = dbThreads{}.List(ctx, opt2)
+	})
+	return r.threads, r.err
 }
 
 func (r *threadConnection) Nodes(ctx context.Context) ([]graphqlbackend.Thread, error) {
-	threads := r.threads
-	if first := r.arg.First; first != nil && len(threads) > int(*first) {
-		threads = threads[:int(*first)]
+	dbThreads, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if r.opt.LimitOffset != nil && len(dbThreads) > r.opt.LimitOffset.Limit {
+		dbThreads = dbThreads[:r.opt.LimitOffset.Limit]
 	}
 
-	threads2 := make([]graphqlbackend.Thread, len(threads))
-	for i, l := range threads {
-		threads2[i] = l
+	threads := make([]graphqlbackend.Thread, len(dbThreads))
+	for i, dbThread := range dbThreads {
+		threads[i] = newGQLThread(dbThread)
 	}
-	return threads2, nil
+	return threads, nil
 }
 
 func (r *threadConnection) TotalCount(ctx context.Context) (int32, error) {
-	return int32(len(r.threads)), nil
+	count, err := dbThreads{}.Count(ctx, r.opt)
+	return int32(count), err
 }
 
 func (r *threadConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(r.arg.First != nil && int(*r.arg.First) < len(r.threads)), nil
+	threads, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(threads) > r.opt.Limit), nil
 }

@@ -24,16 +24,20 @@ func (GraphQLResolver) CreateThread(ctx context.Context, arg *graphqlbackend.Cre
 		comment.Body = *arg.Input.Body
 	}
 
-	thread, err := dbThreads{}.Create(ctx, nil, &dbThread{
-		Type:         dbThreadTypeThread,
+	data := &dbThread{
 		RepositoryID: repo.DBID(),
 		Title:        arg.Input.Title,
 		////TODO!(sqs) ExternalURL:  arg.Input.ExternalURL,
 		State:     string(graphqlbackend.ThreadStateOpen),
 		IsPreview: arg.Input.Preview != nil && *arg.Input.Preview,
-		BaseRef:   arg.Input.BaseRef,
-		HeadRef:   arg.Input.HeadRef,
-	}, comment)
+	}
+	if arg.Input.BaseRef != nil {
+		data.BaseRef = *arg.Input.BaseRef
+	}
+	if arg.Input.HeadRef != nil {
+		data.HeadRef = *arg.Input.HeadRef
+	}
+	thread, err := dbThreads{}.Create(ctx, nil, data, comment)
 	if err != nil {
 		return nil, err
 	}

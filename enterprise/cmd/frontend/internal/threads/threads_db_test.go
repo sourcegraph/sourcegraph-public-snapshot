@@ -15,11 +15,11 @@ func TestDB_Threads(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ResetMocks()
+	resetMocks()
 	ctx := dbtesting.TestContext(t)
 
 	// for testing equality of all other fields
-	norm := func(vs ...*DBThread) {
+	norm := func(vs ...*dbThread) {
 		for _, v := range vs {
 			v.ID = 0
 			v.PrimaryCommentID = 0
@@ -40,14 +40,13 @@ func TestDB_Threads(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantThread0 := &DBThread{Type: DBThreadTypeThread, RepositoryID: repo0.ID, Title: "t0"}
-	thread0, err := DBThreads{}.Create(ctx, nil, wantThread0, commentobjectdb.DBObjectCommentFields{AuthorUserID: user.ID})
+	wantThread0 := &dbThread{RepositoryID: repo0.ID, Title: "t0"}
+	thread0, err := dbThreads{}.Create(ctx, nil, wantThread0, commentobjectdb.DBObjectCommentFields{AuthorUserID: user.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
 	thread0ID := thread0.ID // needed later
-	thread1, err := DBThreads{}.Create(ctx, nil, &DBThread{
-		Type:         "THREAD",
+	thread1, err := dbThreads{}.Create(ctx, nil, &dbThread{
 		RepositoryID: repo0.ID,
 		Title:        "t1",
 	}, commentobjectdb.DBObjectCommentFields{AuthorUserID: user.ID})
@@ -68,7 +67,7 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// Get a thread.
-		thread, err := DBThreads{}.GetByID(ctx, thread0ID)
+		thread, err := dbThreads{}.GetByID(ctx, thread0ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -83,7 +82,7 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// List all threads.
-		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{})
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -91,7 +90,7 @@ func TestDB_Threads(t *testing.T) {
 		if len(ts) != want {
 			t.Errorf("got %d threads, want %d", len(ts), want)
 		}
-		count, err := DBThreads{}.Count(ctx, DBThreadsListOptions{})
+		count, err := dbThreads{}.Count(ctx, dbThreadsListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -102,7 +101,7 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// List repo0's threads.
-		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{RepositoryID: repo0.ID})
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{RepositoryID: repo0.ID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -114,31 +113,31 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// Query threads.
-		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{Query: "t1"})
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{Query: "t1"})
 		if err != nil {
 			t.Fatal(err)
 		}
 		norm(ts...)
-		if want := []*DBThread{thread1}; !reflect.DeepEqual(ts, want) {
+		if want := []*dbThread{thread1}; !reflect.DeepEqual(ts, want) {
 			t.Errorf("got %+v, want %+v", ts, want)
 		}
 	}
 
 	{
 		// List threads by IDs.
-		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{ThreadIDs: []int64{thread0ID}})
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{ThreadIDs: []int64{thread0ID}})
 		if err != nil {
 			t.Fatal(err)
 		}
 		norm(ts...)
-		if want := []*DBThread{thread0}; !reflect.DeepEqual(ts, want) {
+		if want := []*dbThread{thread0}; !reflect.DeepEqual(ts, want) {
 			t.Errorf("got %+v, want %+v", ts, want)
 		}
 	}
 
 	{
 		// List threads by empty list of IDs.
-		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{ThreadIDs: []int64{}})
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{ThreadIDs: []int64{}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -149,10 +148,10 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// Delete a thread.
-		if err := (DBThreads{}).DeleteByID(ctx, thread0ID); err != nil {
+		if err := (dbThreads{}).DeleteByID(ctx, thread0ID); err != nil {
 			t.Fatal(err)
 		}
-		ts, err := DBThreads{}.List(ctx, DBThreadsListOptions{RepositoryID: repo0.ID})
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{RepositoryID: repo0.ID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -162,5 +161,3 @@ func TestDB_Threads(t *testing.T) {
 		}
 	}
 }
-
-func strptr(s string) *string { return &s }

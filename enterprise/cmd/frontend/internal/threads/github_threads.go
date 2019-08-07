@@ -1,4 +1,4 @@
-package extsvc
+package threads
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
@@ -46,7 +45,7 @@ func ImportGitHubRepositoryThreads(ctx context.Context, repoID api.RepoID, extRe
 		thread.ImportedFromExternalServiceID = externalServiceID
 		toImport[thread] = comment
 	}
-	return threads.ImportExternalThreads(ctx, repoID, externalServiceID, toImport)
+	return ImportExternalThreads(ctx, repoID, externalServiceID, toImport)
 }
 
 func githubIssueOrPullRequestToThread(v *githubIssueOrPullRequest) (*dbThread, commentobjectdb.DBObjectCommentFields) {
@@ -67,14 +66,6 @@ func githubIssueOrPullRequestToThread(v *githubIssueOrPullRequest) (*dbThread, c
 		BaseRef:    getRefName(v.BaseRef, v.BaseRefOid),
 		HeadRef:    getRefName(v.HeadRef, v.HeadRefOid),
 		ExternalID: string(v.ID),
-	}
-	switch v.Typename {
-	case "Issue":
-		thread.Type = dbThreadTypeIssue
-	case "PullRequest":
-		thread.Type = dbThreadTypeChangeset
-	default:
-		panic("unknown github issue or pull request object: " + v.Typename)
 	}
 	var err error
 	thread.ExternalMetadata, err = json.Marshal(v)

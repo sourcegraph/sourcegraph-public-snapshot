@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func (r *RepositoryResolver) Thread(ctx context.Context, arg struct{ Number string }) (*Thread, error) {
+func (r *RepositoryResolver) Thread(ctx context.Context, arg struct{ Number string }) (Thread, error) {
 	return ThreadInRepository(ctx, r.ID(), arg.Number)
 }
 

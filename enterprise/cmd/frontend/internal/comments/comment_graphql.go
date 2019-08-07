@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 	"github.com/sourcegraph/sourcegraph/pkg/markdown"
 )
 
@@ -22,7 +21,7 @@ func commentObjectFromGQLID(id graphql.ID) (types.CommentObject, error) {
 	case gqlTypeCommentReply:
 		panic("CommentReply is its own comment object") // TODO!(sqs): clean up
 	case "Thread":
-		_, threadID, err := threads.UnmarshalID(id)
+		threadID, err := graphqlbackend.UnmarshalThreadID(id)
 		return types.CommentObject{ThreadID: threadID}, err
 	case "Campaign":
 		// TODO!(sqs): reduce duplication of logic and constants?
@@ -84,11 +83,11 @@ func newGQLToComment(ctx context.Context, dbComment *internal.DBComment) (graphq
 			},
 		}, nil
 	case dbComment.Object.ThreadID != 0:
-		v, err := threads.ThreadByDBID(ctx, dbComment.Object.ThreadID)
+		v, err := graphqlbackend.ThreadByID(ctx, graphqlbackend.MarshalThreadID(dbComment.Object.ThreadID))
 		if err != nil {
 			return nil, err
 		}
-		return &graphqlbackend.ToComment{Thread: v.Thread}, nil
+		return &graphqlbackend.ToComment{Thread: v}, nil
 	case dbComment.Object.CampaignID != 0:
 		v, err := graphqlbackend.CampaignByDBID(ctx, dbComment.Object.CampaignID)
 		if err != nil {

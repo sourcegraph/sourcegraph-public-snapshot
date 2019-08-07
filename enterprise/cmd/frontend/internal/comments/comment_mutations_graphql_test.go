@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
 	comments_types "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
 func TestGraphQL_AddCommentReply(t *testing.T) {
@@ -22,7 +21,7 @@ func TestGraphQL_AddCommentReply(t *testing.T) {
 		wantThreadID        = 1
 		wantThreadCommentID = 3
 	)
-	wantThreadGQLID := threads.MarshalID(threads.GQLTypeThread, wantThreadID)
+	wantThreadGQLID := graphqlbackend.MarshalThreadID(wantThreadID)
 	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{ID: wantUserID}, nil
 	}
@@ -76,7 +75,7 @@ func TestGraphQL_EditComment(t *testing.T) {
 		wantID       = 2
 		wantThreadID = 1
 	)
-	wantThreadGQLID := threads.MarshalID(threads.GQLTypeThread, wantThreadID)
+	wantThreadGQLID := graphqlbackend.MarshalThreadID(wantThreadID)
 	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{ID: 1}, nil
 	}
@@ -126,7 +125,7 @@ func TestGraphQL_EditComment(t *testing.T) {
 func TestGraphQL_DeleteComment(t *testing.T) {
 	internal.ResetMocks()
 	const wantID = 2
-	wantThreadGQLID := threads.MarshalID(threads.GQLTypeThread, 1)
+	wantThreadGQLID := graphqlbackend.MarshalThreadID(1)
 	db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{ID: 1}, nil
 	}
