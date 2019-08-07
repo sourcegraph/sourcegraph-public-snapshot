@@ -1,22 +1,18 @@
-import { JSONSchema4, JSONSchema4TypeName } from 'json-schema'
+import { JSONSchema4 } from 'json-schema'
 import refParser from 'json-schema-ref-parser'
 import { cloneDeep, isEqual, without } from 'lodash'
 import mapObj from 'map-obj'
 import rawSchema from './lsif.schema.json'
-
-export interface JSONSchemas {
-    /** The JSON schema for the shape we want to persist to DGraph */
-    storage: JSONSchema4
-}
+import { Schema } from 'jsonschema'
 
 /**
  * Loads the input and storage JSON schemas.
  */
-export async function getJsonSchemas(): Promise<JSONSchemas> {
+export async function getJsonSchema(): Promise<Schema> {
     // Remove title attributes from $refs so they don't override the title of the referenced type
     // The title is used for prefixing predicates so it must always refer to the type name, not the property name
     // tslint:disable-next-line: no-any
-    let modifiedSchema: JSONSchema4 = mapObj<any, any, any>(
+    let modifiedSchema: Schema = mapObj<any, any, any>(
         rawSchema,
         (key, value, obj) => {
             if (value && value.$ref) {
@@ -69,7 +65,7 @@ export async function getJsonSchemas(): Promise<JSONSchemas> {
         const { uri, contents, ...documentRest } = storageSchema.definitions!.Document.properties!
         // Flatten ranges
         const { start, end, ...rangeRest } = storageSchema.definitions!.Range.properties!
-        const flatRangeProperties: JSONSchema4['properties'] = {
+        const flatRangeProperties: Schema['properties'] = {
             startLine: { type: 'integer' },
             startCharacter: { type: 'integer' },
             endLine: { type: 'integer' },
@@ -107,13 +103,11 @@ export async function getJsonSchemas(): Promise<JSONSchemas> {
         }
     }
 
-    return {
-        storage: (await refParser.dereference(storageSchema)) as JSONSchema4,
-    }
+    return (await refParser.dereference(storageSchema as JSONSchema4)) as Schema
 }
 
 /** Returns the JSON schema type of a value */
-function getTypeOf(value: unknown): JSONSchema4TypeName {
+function getTypeOf(value: unknown): string {
     if (value === null) {
         return 'null'
     }
@@ -123,7 +117,7 @@ function getTypeOf(value: unknown): JSONSchema4TypeName {
     if (typeof value === 'number' && Number.isInteger(value)) {
         return 'integer'
     }
-    return typeof value as JSONSchema4TypeName
+    return typeof value
 }
 
 /**
@@ -132,11 +126,11 @@ function getTypeOf(value: unknown): JSONSchema4TypeName {
 export class ValidationError extends Error {
     public readonly name: 'ValidationError'
     public readonly status: 422
-    public schema: JSONSchema4
+    public schema: Schema
     public value: unknown
     public errors?: ValidationError[]
 
-    constructor(message: string, schema: JSONSchema4, value: unknown, errors?: ValidationError[]) {
+    constructor(message: string, schema: Schema, value: unknown, errors?: ValidationError[]) {
         if (schema.title) {
             super(`Schema "${schema.title}" did not match: ${message}`)
         } else {
@@ -162,8 +156,8 @@ export class ValidationError extends Error {
  *
  * @throws {ValidationError} if the validation failed
  */
-export function validate(schema: JSONSchema4, value: unknown): JSONSchema4 {
-    const validateWithContext = (s: JSONSchema4, v: unknown): JSONSchema4 => {
+export function validate(schema: Schema, value: unknown): Schema {
+    const validateWithContext = (s: Schema, v: unknown): Schema => {
         try {
             return validate(s, v)
         } catch (err) {
@@ -212,7 +206,7 @@ export function validate(schema: JSONSchema4, value: unknown): JSONSchema4 {
         if (!Array.isArray(value)) {
             throw new ValidationError('Expected array', schema, value)
         }
-        const items: JSONSchema4[] = value.map((item, i) => {
+        const items: Schema[] = value.map((item, i) => {
             // Handle tuple typing
             if (schema.items) {
                 if (Array.isArray(schema.items)) {
@@ -236,7 +230,7 @@ export function validate(schema: JSONSchema4, value: unknown): JSONSchema4 {
         if (typeof value !== 'object' || value === null) {
             throw new ValidationError('Expected type object, got ' + actualType, schema, value)
         }
-        const properties: { [k: string]: JSONSchema4 } = {}
+        const properties: { [k: string]: Schema } = {}
         for (const [key, propVal] of Object.entries(value)) {
             if (schema.properties && schema.properties[key]) {
                 properties[key] = validateWithContext(schema.properties[key], propVal)

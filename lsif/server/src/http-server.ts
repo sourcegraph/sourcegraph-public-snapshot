@@ -42,7 +42,7 @@ type SupportedMethods = 'hover' | 'definitions' | 'references'
 const SUPPORTED_METHODS: Set<SupportedMethods> = new Set(['hover', 'definitions', 'references'])
 
 // TODO(efritz) - make configurable
-const DEFAULT_BACKEND = 'dgraph'
+const DEFAULT_BACKEND = 'sqlite-graph'
 const AVAILABLE_BACKENDS: { [k: string]: () => Promise<Backend<QueryRunner>> } = {
     'sqlite-graph': async () => new SQLiteGraphBackend(),
     'sqlite-blob': async () => new SQLiteBlobBackend(),
@@ -76,7 +76,7 @@ async function main(): Promise<void> {
         res.end(Prometheus.register.metrics())
     })
 
-    app.get(
+    app.post(
         '/switch-backend',
         wrap(async (req, res) => {
             const { backendName } = req.query
@@ -108,15 +108,15 @@ async function main(): Promise<void> {
                 // Bust the cache
                 cache.delete(repository, commit)
 
+                // Emit metrics
+                emit(prometheusReporters, insertStats)
+
                 res.send({
                     data: null,
                     stats: {
                         insertStats: insertStats,
                     },
                 })
-
-                // Emit metrics
-                emit(prometheusReporters, insertStats)
             } finally {
                 // Temp files are cleaned up on process exit, but we want to do it
                 // proactively and in the event of exceptions so we do not fill up
@@ -143,6 +143,12 @@ async function main(): Promise<void> {
                     }
                 )
 
+                // Emit metrics
+                emit(prometheusReporters, cacheStats)
+                if (createRunnerStats) {
+                    emit(prometheusReporters, createRunnerStats)
+                }
+
                 res.send({
                     data: result,
                     stats: {
@@ -150,12 +156,6 @@ async function main(): Promise<void> {
                         createRunnerStats: createRunnerStats,
                     },
                 })
-
-                // Emit metrics
-                emit(prometheusReporters, cacheStats)
-                if (createRunnerStats) {
-                    emit(prometheusReporters, createRunnerStats)
-                }
             } catch (e) {
                 if ('code' in e && e.code === ERRNOLSIFDATA) {
                     // TODO(efritz) - emit stats
@@ -185,6 +185,10 @@ async function main(): Promise<void> {
                     return await queryRunner.query(method, path, position)
                 })
 
+                // Emit metrics
+                emit(prometheusReporters, cacheStats)
+                emit(prometheusReporters, queryStats)
+
                 res.json({
                     data: result || null,
                     stats: {
@@ -192,10 +196,6 @@ async function main(): Promise<void> {
                         queryStats: queryStats,
                     },
                 })
-
-                // Emit metrics
-                emit(prometheusReporters, cacheStats)
-                emit(prometheusReporters, queryStats)
             } catch (e) {
                 if ('code' in e && e.code === ERRNOLSIFDATA) {
                     throw Object.assign(e, { status: 404 })
@@ -210,9 +210,6 @@ async function main(): Promise<void> {
         console.log(`Listening for HTTP requests on port ${PORT}`)
     })
 }
-
-//
-// Helpers
 
 /**
  * Middleware functino used to convert uncaught exceptions into 500 responses.
@@ -340,9 +337,6 @@ async function readAndValidateContent(req: express.Request, tempPath: string, sc
 
     return contentLength
 }
-
-//
-// Validation
 
 /**
  * Type guard for SupportedMethods.
