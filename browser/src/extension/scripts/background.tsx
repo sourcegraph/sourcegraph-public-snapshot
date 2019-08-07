@@ -5,7 +5,7 @@ import { Endpoint } from '@sourcegraph/comlink'
 import { without } from 'lodash'
 import { noop, Observable } from 'rxjs'
 import { bufferCount, filter, groupBy, map, mergeMap, switchMap, take } from 'rxjs/operators'
-import * as domainPermissionToggle from 'webext-domain-permission-toggle'
+import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../shared/src/api/extension/worker'
 import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -252,7 +252,7 @@ async function main(): Promise<void> {
     setDefaultBrowserAction()
 
     // Add "Enable Sourcegraph on this domain" context menu item
-    domainPermissionToggle.addContextMenu()
+    addDomainPermissionToggle()
 
     const ENDPOINT_KIND_REGEX = /^(proxy|expose)-/
 
