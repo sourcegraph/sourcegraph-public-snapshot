@@ -1,6 +1,6 @@
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { ChangesetsIcon } from '../../changesets/icons'
 import { IssuesIcon } from '../../issues/icons'
+import { ChangesetsIcon } from '../../threads/icons'
 import { ThreadsIcon } from '../../threads/icons'
 
 /**
