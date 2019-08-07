@@ -8,11 +8,13 @@
     "node": ">=10.0.0"
   },
   "dependencies": {
+    "@types/split2": "^2.1.6",
     "async-middleware": "^1.2.1",
     "better-sqlite3": "^5.4.0",
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
     "express-async-handler": "^1.1.4",
+    "jsonschema": "^1.2.4",
     "lru-cache": "^5.1.1",
     "lsif-protocol": "0.4.0",
     "lsif-sqlite": "^0.4.5",
@@ -20,13 +22,14 @@
     "mz": "^2.7.0",
     "prom-client": "^11.5.3",
     "semver": "^6.0.0",
+    "split2": "^3.1.1",
     "tmp-promise": "^2.0.2",
     "vscode-languageserver": "^5.2.1",
     "vscode-uri": "^2.0.2"
   },
   "devDependencies": {
-    "@types/body-parser": "1.17.0",
     "@types/better-sqlite3": "^5.4.0",
+    "@types/body-parser": "1.17.0",
     "@types/express": "4.17.0",
     "@types/fs-extra": "8.0.0",
     "@types/lru-cache": "5.1.0",

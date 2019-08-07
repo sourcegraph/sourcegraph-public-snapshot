@@ -2,15 +2,16 @@ import * as Prometheus from 'prom-client'
 import * as tmp from 'tmp-promise'
 import bodyParser from 'body-parser'
 import express from 'express'
+import split2 from 'split2'
 import { Cache } from './cache'
 import { createPrometheusReporters, emit } from './prometheus'
 import { ERRNOLSIFDATA } from './backend'
 import { fs } from 'mz'
-import { JsonDatabase } from './ms/json'
-import { noopTransformer } from './ms/database'
 import { readEnvInt } from './env'
 import { SQLiteGraphBackend } from './sqlite'
+import { Validator } from 'jsonschema'
 import { wrap } from 'async-middleware'
+import through2 from 'through2'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -21,6 +22,16 @@ const PORT = readEnvInt({ key: 'LSIF_HTTP_PORT', defaultValue: 3186 })
  * Limit on the file size accepted by the /upload endpoint. Defaults to 100MB.
  */
 const MAX_FILE_SIZE = readEnvInt({ key: 'LSIF_MAX_FILE_SIZE', defaultValue: 100 * 1024 * 1024 })
+
+/**
+ * Limit the size of each line for a JSON-line encoded LSIF dump. Defaults to 1MB.
+ */
+const MAX_LINE_SIZE = readEnvInt({ key: 'LSIF_MAX_LINE_SIZE', defaultValue: 1024 * 1024 })
+
+/**
+ * Whether or not JSON-schema validation is performed when uploading LSIF dumps.
+ */
+const VALIDATE_INPUT = Boolean(process.env['LSIF_VALIDATE_INPUT'])
 
 /**
  * List of supported LSIF methods that can be passed to query runners.
@@ -36,6 +47,7 @@ function main(): void {
     const app = express()
     const backend = new SQLiteGraphBackend()
     const cache = new Cache()
+    const schema = JSON.parse(fs.readFileSync('./src/lsif.schema.json').toString())
     const prometheusReporters = createPrometheusReporters()
 
     app.use(errorHandler)
@@ -61,9 +73,10 @@ function main(): void {
             const tempFile = await tmp.file()
 
             try {
-                // Read the content and ensure the body is a valid LSIF dump
-                const contentLength = await readContent(req, tempFile.path)
-                await new JsonDatabase().load(tempFile.path, () => noopTransformer)
+                const contentLength = VALIDATE_INPUT
+                    ? await readAndValidateContent(req, tempFile.path, schema)
+                    : await readContent(req, tempFile.path)
+
                 const { insertStats } = await backend.insertDump(tempFile.path, repository, commit, contentLength)
 
                 // Bust the cache
@@ -189,33 +202,118 @@ function errorHandler(err: any, req: express.Request, res: express.Response, nex
     res.status(500).send({ message: 'Unknown error' })
 }
 
+//
+// TODO(efritz) - figure out where validation should live. It is VERY slow to do
+// in process here.
+//
+
 /**
- * Read the request body into the given file path.
+ * Read the request body into the given file path and return the contenLength
+ * of the input stream.
  */
 async function readContent(req: express.Request, tempPath: string): Promise<number> {
     let contentLength = 0
     const tempFileWriteStream = fs.createWriteStream(tempPath)
 
-    return new Promise((resolve, reject) => {
-        req.on('data', chunk => {
-            contentLength += chunk.length
-            if (contentLength > MAX_FILE_SIZE) {
-                tempFileWriteStream.destroy()
-
-                reject(
-                    Object.assign(
-                        new Error(
-                            `The size of the given LSIF file (${contentLength} bytes so far) exceeds the max of ${MAX_FILE_SIZE}`
-                        ),
-                        { status: 413 }
-                    )
+    const validateSize = (line: string, reject: (_: any) => void) => {
+        contentLength += line.length
+        if (contentLength > MAX_FILE_SIZE) {
+            reject(
+                Object.assign(
+                    new Error(
+                        `The size of the given LSIF file (${contentLength} bytes so far) exceeds the max of ${MAX_FILE_SIZE}`
+                    ),
+                    { status: 413 }
                 )
-            }
-        }).pipe(tempFileWriteStream)
+            )
+        }
+    }
 
-        tempFileWriteStream.on('close', () => resolve(contentLength))
-        tempFileWriteStream.on('error', reject)
-    })
+    try {
+        await new Promise((resolve, reject) => {
+            req.on('data', chunk => {
+                validateSize(chunk, reject)
+            }).pipe(tempFileWriteStream)
+
+            tempFileWriteStream.on('close', () => resolve(contentLength))
+            tempFileWriteStream.on('error', reject)
+        })
+    } catch (e) {
+        tempFileWriteStream.destroy()
+    }
+
+    return contentLength
+}
+
+/**
+ * Like readContent, but also validate each JSON line against the JSON schema on disk.
+ */
+async function readAndValidateContent(req: express.Request, tempPath: string, schema: any): Promise<number> {
+    let lineno = 0
+    let contentLength = 0
+    const validator = new Validator()
+    const tempFileWriteStream = fs.createWriteStream(tempPath)
+
+    const validateSize = (line: string, reject: (_: any) => void) => {
+        contentLength += line.length
+        if (contentLength > MAX_FILE_SIZE) {
+            reject(
+                Object.assign(
+                    new Error(
+                        `The size of the given LSIF file (${contentLength} bytes so far) exceeds the max of ${MAX_FILE_SIZE}`
+                    ),
+                    { status: 413 }
+                )
+            )
+        }
+    }
+
+    const validateJSON = (line: string, lineno: number, reject: (_: any) => void) => {
+        let data: any
+        try {
+            data = JSON.parse(line)
+        } catch (e) {
+            Object.assign(new Error(`Malformed JSON on line ${lineno}`), { status: 422 })
+        }
+
+        const result = validator.validate(data, schema)
+        if (result.errors.length > 0) {
+            reject(
+                Object.assign(
+                    // TODO(efritz) - better validation response
+                    new Error(`Invalid JSON data on line ${lineno} ${result.errors.join(', ')}`),
+                    { status: 422 }
+                )
+            )
+        }
+    }
+
+    try {
+        await new Promise((resolve, reject) => {
+            const appendNewLine = through2((data, _, callback) => {
+                callback(null, new Buffer(data + '\n'))
+            })
+
+            req.pipe(split2({ maxLength: MAX_LINE_SIZE }))
+                .on('data', line => {
+                    if (VALIDATE_INPUT) {
+                        validateJSON(line, lineno, reject)
+                    }
+
+                    validateSize(line, reject)
+                    lineno++
+                })
+                .pipe(appendNewLine)
+                .pipe(tempFileWriteStream)
+
+            tempFileWriteStream.on('close', () => resolve(contentLength))
+            tempFileWriteStream.on('error', reject)
+        })
+    } catch (e) {
+        tempFileWriteStream.destroy()
+    }
+
+    return contentLength
 }
 
 //
