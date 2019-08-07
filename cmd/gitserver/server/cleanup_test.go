@@ -464,13 +464,13 @@ func isEmptyDir(path string) (bool, error) {
 
 func TestFreeUpSpace(t *testing.T) {
 	t.Run("no error if no space requested and no repos", func(t *testing.T) {
-		s := &Server{}
+		s := &Server{DiskSizer: &fakeDiskSizer{}}
 		if err := s.freeUpSpace(0); err != nil {
 			t.Fatal(err)
 		}
 	})
 	t.Run("error if space requested and no repos", func(t *testing.T) {
-		s := &Server{}
+		s := &Server{DiskSizer: &fakeDiskSizer{}}
 		if err := s.freeUpSpace(1); err == nil {
 			t.Fatal("want error")
 		}
