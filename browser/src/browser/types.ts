@@ -85,7 +85,6 @@ export const defaultStorageItems: StorageItems = {
     repoLocations: {},
     phabricatorMappings: [],
     sourcegraphAnonymousUid: '',
-    disableExtension: false,
     featureFlags: featureFlagDefaults,
     clientConfiguration: {
         contentScriptUrls: [],
