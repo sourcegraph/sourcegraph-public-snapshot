@@ -127,11 +127,11 @@ func (v *gqlCampaign) Threads(ctx context.Context, arg *graphqlutil.ConnectionAr
 		return nil, err
 	}
 
-	threadlikeIDs := make([]int64, len(l))
+	threadIDs := make([]int64, len(l))
 	for i, e := range l {
-		threadlikeIDs[i] = e.Thread
+		threadIDs[i] = e.Thread
 	}
-	return threads.ThreadsByIDs(threadlikeIDs), nil
+	return threads.ThreadsByIDs(threadIDs), nil
 }
 
 func (v *gqlCampaign) getThreads(ctx context.Context) ([]graphqlbackend.Thread, error) {
@@ -139,19 +139,7 @@ func (v *gqlCampaign) getThreads(ctx context.Context) ([]graphqlbackend.Thread, 
 	if err != nil {
 		return nil, err
 	}
-	nodes, err := connection.Nodes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO!(sqs): easier way to filter down to only threads
-	threads := make([]graphqlbackend.Thread, 0, len(nodes))
-	for _, node := range nodes {
-		if thread, ok := node.ToThread(); ok {
-			threads = append(threads, thread)
-		}
-	}
-	return threads, nil
+	return connection.Nodes(ctx)
 }
 
 func (v *gqlCampaign) Repositories(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {

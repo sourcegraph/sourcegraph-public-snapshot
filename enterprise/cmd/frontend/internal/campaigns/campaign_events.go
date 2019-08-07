@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
 const (
@@ -19,7 +18,7 @@ func init() {
 		if err != nil {
 			return err
 		}
-		thread, err := threads.ThreadByDBID(ctx, data.Thread)
+		thread, err := graphqlbackend.ThreadByID(ctx, graphqlbackend.MarshalThreadID(data.Thread))
 		if err != nil {
 			return err
 		}

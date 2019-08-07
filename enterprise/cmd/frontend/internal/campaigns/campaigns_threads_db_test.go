@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads/testutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
@@ -43,11 +43,11 @@ func TestDB_CampaignsThreads(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	thread0, err := testutil.CreateThread(ctx, "t0", repo.ID, user1.ID)
+	thread0, err := threads.TestCreateThread(ctx, "t0", repo.ID, user1.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	thread1, err := testutil.CreateThread(ctx, "t1", repo.ID, user1.ID)
+	thread1, err := threads.TestCreateThread(ctx, "t1", repo.ID, user1.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

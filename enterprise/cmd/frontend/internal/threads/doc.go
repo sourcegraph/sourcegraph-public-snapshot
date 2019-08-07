@@ -1,2 +1,2 @@
-// Package threadlike implements the threads functionality.
+// Package threads implements threads functionality.
 package threads

@@ -12,7 +12,7 @@ import (
 func (GraphQLResolver) Campaigns(ctx context.Context, arg *graphqlbackend.CampaignsArgs) (graphqlbackend.CampaignConnection, error) {
 	var opt dbCampaignsListOptions
 	if arg.Object != nil {
-		_, threadID, err := threads.UnmarshalID(*arg.Object)
+		threadID, err := threads.UnmarshalID(*arg.Object)
 		if err != nil {
 			return nil, err
 		}
