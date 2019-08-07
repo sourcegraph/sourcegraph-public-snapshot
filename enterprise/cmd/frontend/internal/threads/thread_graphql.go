@@ -112,6 +112,12 @@ func (v *gqlThread) HeadRef() *string {
 	return &v.db.HeadRef
 }
 
+func (v *gqlThread) Diagnostics(ctx context.Context, arg *graphqlbackend.ThreadDiagnosticConnectionArgs) (graphqlbackend.ThreadDiagnosticConnection, error) {
+	threadID := v.ID()
+	arg.Thread = &threadID
+	return graphqlbackend.ThreadDiagnostics.ThreadDiagnostics(ctx, arg)
+}
+
 func (v *gqlThread) Kind() graphqlbackend.ThreadKind {
 	switch {
 	case v.db.BaseRef != "" || v.db.HeadRef != "":

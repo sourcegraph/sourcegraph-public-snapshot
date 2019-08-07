@@ -64,7 +64,7 @@ func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, 
 	}
 
 	if r.account.AccountData != nil {
-		return &JSONValue{value: r.account.AccountData}, nil
+		return &JSONValue{Value: r.account.AccountData}, nil
 	}
 	return nil, nil
 }

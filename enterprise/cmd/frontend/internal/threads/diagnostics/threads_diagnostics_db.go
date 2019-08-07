@@ -1,0 +1,197 @@
+package diagnostics
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"strings"
+
+	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+)
+
+// dbThreadDiagnostic represents a diagnostic's inclusion in a thread.
+type dbThreadDiagnostic struct {
+	ID       int64
+	ThreadID int64
+	//TODO!(sqs) LocationRepositoryID api.RepoID
+	Type string
+	Data json.RawMessage
+}
+
+// errThreadDiagnosticNotFound occurs when a database operation expects a specific thread diagnostic
+// to exist but it does not exist.
+var errThreadDiagnosticNotFound = errors.New("thread diagnostic not found")
+
+type dbThreadsDiagnostics struct{}
+
+const selectColumns = `id, thread_id, type, data`
+
+// Create adds a diagnostic to the thread.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to modify the thread.
+func (dbThreadsDiagnostics) Create(ctx context.Context, threadDiagnostic dbThreadDiagnostic) error {
+	if mocks.threadsDiagnostics.Create != nil {
+		return mocks.threadsDiagnostics.Create(threadDiagnostic)
+	}
+
+	args := []interface{}{
+		threadDiagnostic.ThreadID,
+		threadDiagnostic.Type,
+		threadDiagnostic.Data,
+	}
+	query := sqlf.Sprintf(
+		`INSERT INTO threads_diagnostics(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+selectColumns,
+		args...,
+	)
+	_, err := dbThreadsDiagnostics{}.scanRow(dbconn.Global.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
+	return err
+}
+
+// GetByID retrieves the thread diagnostic (if any) given its ID.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this thread diagnostic.
+func (s dbThreadsDiagnostics) GetByID(ctx context.Context, id int64) (*dbThreadDiagnostic, error) {
+	if mocks.threadsDiagnostics.GetByID != nil {
+		return mocks.threadsDiagnostics.GetByID(id)
+	}
+
+	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("id=%d", id)}, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, errThreadDiagnosticNotFound
+	}
+	return results[0], nil
+}
+
+// dbThreadsDiagnosticsListOptions contains options for listing threads.
+type dbThreadsDiagnosticsListOptions struct {
+	ThreadID   int64 // only list diagnostics for this thread
+	CampaignID int64 // only list diagnostics for threads in this campaign
+	*db.LimitOffset
+}
+
+func (o dbThreadsDiagnosticsListOptions) sqlConditions() []*sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if o.ThreadID != 0 {
+		conds = append(conds, sqlf.Sprintf("thread_id=%d", o.ThreadID))
+	}
+	if o.CampaignID != 0 {
+		conds = append(conds, sqlf.Sprintf("thread_id IN (SELECT thread_id FROM campaigns_threads WHERE campaign_id=%d)", o.CampaignID))
+	}
+	return conds
+}
+
+// List lists all thread diagnostics that satisfy the options.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to list with the specified
+//options.
+func (s dbThreadsDiagnostics) List(ctx context.Context, opt dbThreadsDiagnosticsListOptions) ([]*dbThreadDiagnostic, error) {
+	if mocks.threadsDiagnostics.List != nil {
+		return mocks.threadsDiagnostics.List(opt)
+	}
+
+	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
+}
+
+func (s dbThreadsDiagnostics) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbThreadDiagnostic, error) {
+	q := sqlf.Sprintf(`
+SELECT `+selectColumns+` FROM threads_diagnostics
+WHERE (%s)
+ORDER BY id ASC
+%s`,
+		sqlf.Join(conds, ") AND ("),
+		limitOffset.SQL(),
+	)
+	return s.query(ctx, q)
+}
+
+func (dbThreadsDiagnostics) query(ctx context.Context, query *sqlf.Query) ([]*dbThreadDiagnostic, error) {
+	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*dbThreadDiagnostic
+	for rows.Next() {
+		t, err := dbThreadsDiagnostics{}.scanRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, t)
+	}
+	return results, nil
+}
+
+func (dbThreadsDiagnostics) scanRow(row interface {
+	Scan(dest ...interface{}) error
+}) (*dbThreadDiagnostic, error) {
+	var t dbThreadDiagnostic
+	if err := row.Scan(
+		&t.ID,
+		&t.ThreadID,
+		&t.Type,
+		&t.Data,
+	); err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+// Count counts all thread diagnostics that satisfy the options (ignoring limit and offset).
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to count.
+func (dbThreadsDiagnostics) Count(ctx context.Context, opt dbThreadsDiagnosticsListOptions) (int, error) {
+	if mocks.threadsDiagnostics.Count != nil {
+		return mocks.threadsDiagnostics.Count(opt)
+	}
+
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM threads_diagnostics WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
+	var count int
+	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// DeleteByID removes a diagnostic from the thread.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to modify the thread and the
+// diagnostics.
+func (s dbThreadsDiagnostics) DeleteByID(ctx context.Context, id int64) error {
+	if mocks.threadsDiagnostics.DeleteByID != nil {
+		return mocks.threadsDiagnostics.DeleteByID(id)
+	}
+	return s.delete(ctx, sqlf.Sprintf("id=%d", id))
+}
+
+func (dbThreadsDiagnostics) delete(ctx context.Context, cond *sqlf.Query) error {
+	conds := []*sqlf.Query{cond, sqlf.Sprintf("TRUE")}
+	q := sqlf.Sprintf("DELETE FROM threads_diagnostics WHERE (%s)", sqlf.Join(conds, ") AND ("))
+
+	res, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return errThreadDiagnosticNotFound
+	}
+	return nil
+}
+
+// mockThreadsDiagnostics mocks the campaigns-threads-related DB operations.
+type mockThreadsDiagnostics struct {
+	Create     func(dbThreadDiagnostic) error
+	GetByID    func(int64) (*dbThreadDiagnostic, error)
+	List       func(dbThreadsDiagnosticsListOptions) ([]*dbThreadDiagnostic, error)
+	Count      func(dbThreadsDiagnosticsListOptions) (int, error)
+	DeleteByID func(int64) error
+}

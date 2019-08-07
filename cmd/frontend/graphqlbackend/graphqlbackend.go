@@ -222,7 +222,7 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
-	case "Campaign":
+	case GQLTypeCampaign:
 		return CampaignByID(ctx, id)
 	case "CommentReply":
 		return CommentReplyByID(ctx, id)
@@ -268,7 +268,7 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 		return savedSearchByID(ctx, id)
 	case "Site":
 		return siteByGQLID(ctx, id)
-	case "Thread":
+	case GQLTypeThread:
 		return ThreadByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")

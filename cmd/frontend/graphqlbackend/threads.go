@@ -176,6 +176,7 @@ type Thread interface {
 	BaseRef() *string
 	HeadRef() *string
 	IsPreview() bool
+	hasThreadDiagnostics
 	updatable
 	Kind() ThreadKind
 	URL(context.Context) (string, error)

@@ -3,8 +3,10 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
@@ -13,6 +15,20 @@ import (
 //
 // This is contributed by enterprise.
 var Campaigns CampaignsResolver
+
+const GQLTypeCampaign = "Campaign"
+
+func MarshalCampaignID(id int64) graphql.ID {
+	return relay.MarshalID(GQLTypeCampaign, id)
+}
+
+func UnmarshalCampaignID(id graphql.ID) (dbID int64, err error) {
+	if typ := relay.UnmarshalKind(id); typ != GQLTypeCampaign {
+		return 0, fmt.Errorf("campaign ID has unexpected type type %q", typ)
+	}
+	err = relay.UnmarshalSpec(id, &dbID)
+	return
+}
 
 var errCampaignsNotImplemented = errors.New("campaigns is not implemented")
 

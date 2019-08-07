@@ -6,7 +6,6 @@ import (
 	"sort"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
@@ -26,7 +25,7 @@ type gqlCampaign struct {
 // campaignByID looks up and returns the Campaign with the given GraphQL ID. If no such Campaign exists, it
 // returns a non-nil error.
 func campaignByID(ctx context.Context, id graphql.ID) (*gqlCampaign, error) {
-	dbID, err := unmarshalCampaignID(id)
+	dbID, err := graphqlbackend.UnmarshalCampaignID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -54,21 +53,12 @@ func (GraphQLResolver) CampaignByDBID(ctx context.Context, id int64) (graphqlbac
 func newGQLCampaign(v *dbCampaign) *gqlCampaign {
 	return &gqlCampaign{
 		db:             v,
-		PartialComment: comments.GraphQLResolver{}.LazyCommentByID(marshalCampaignID(v.ID)),
+		PartialComment: comments.GraphQLResolver{}.LazyCommentByID(graphqlbackend.MarshalCampaignID(v.ID)),
 	}
 }
 
 func (v *gqlCampaign) ID() graphql.ID {
-	return marshalCampaignID(v.db.ID)
-}
-
-func marshalCampaignID(id int64) graphql.ID {
-	return relay.MarshalID("Campaign", id)
-}
-
-func unmarshalCampaignID(id graphql.ID) (dbID int64, err error) {
-	err = relay.UnmarshalSpec(id, &dbID)
-	return
+	return graphqlbackend.MarshalCampaignID(v.db.ID)
 }
 
 func (v *gqlCampaign) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
@@ -203,4 +193,10 @@ func (v *gqlCampaign) RepositoryComparisons(ctx context.Context) ([]*graphqlback
 		rcs[i] = rc
 	}
 	return rcs, nil
+}
+
+func (v *gqlCampaign) Diagnostics(ctx context.Context, arg *graphqlbackend.ThreadDiagnosticConnectionArgs) (graphqlbackend.ThreadDiagnosticConnection, error) {
+	campaignID := v.ID()
+	arg.Campaign = &campaignID
+	return graphqlbackend.ThreadDiagnostics.ThreadDiagnostics(ctx, arg)
 }
