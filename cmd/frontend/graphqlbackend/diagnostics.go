@@ -2,5 +2,5 @@ package graphqlbackend
 
 type Diagnostic interface {
 	Type() string
-	Data() jsonValue
+	Data() JSONValue
 }
