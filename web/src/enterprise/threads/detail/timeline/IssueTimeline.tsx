@@ -7,7 +7,7 @@ import { TimelineItems } from '../../../timeline/TimelineItems'
 import { useIssueTimelineItems } from './useIssueTimelineItems'
 
 interface Props extends ExtensionsControllerProps {
-    issue: Pick<GQL.IIssue, 'id'>
+    issue: Pick<GQL.IThread, 'id'>
 
     className?: string
 }

@@ -7,14 +7,14 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/ut
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { ModalPage } from '../../../../components/ModalPage'
 import { PageTitle } from '../../../../components/PageTitle'
-import { ChangesetForm, ChangesetFormData } from '../../form/ChangesetForm'
-import { RepositoryChangesetsAreaContext } from '../RepositoryChangesetsArea'
+import { ThreadForm, ThreadFormData } from '../../form/ThreadForm'
+import { RepositoryThreadsAreaContext } from '../RepositoryThreadsArea'
 
-export const createChangeset = (input: GQL.ICreateChangesetInput): Promise<GQL.IChangeset> =>
+export const createThread = (input: GQL.ICreateThreadInput): Promise<GQL.IThread> =>
     mutateGraphQL(
         gql`
-            mutation CreateChangeset($input: CreateChangesetInput!) {
-                createChangeset(input: $input) {
+            mutation CreateThread($input: CreateThreadInput!) {
+                createThread(input: $input) {
                     id
                     url
                 }
@@ -24,18 +24,18 @@ export const createChangeset = (input: GQL.ICreateChangesetInput): Promise<GQL.I
     )
         .pipe(
             map(dataOrThrowErrors),
-            map(data => data.createChangeset)
+            map(data => data.createThread)
         )
         .toPromise()
 
-interface Props extends Pick<RepositoryChangesetsAreaContext, 'repo' | 'setBreadcrumbItem'> {}
+interface Props extends Pick<RepositoryThreadsAreaContext, 'repo' | 'setBreadcrumbItem'> {}
 
 const LOADING = 'loading' as const
 
 /**
- * Shows a form to create a new changeset.
+ * Shows a form to create a new thread.
  */
-export const ChangesetsNewPage: React.FunctionComponent<Props> = ({ repo, setBreadcrumbItem }) => {
+export const ThreadsNewPage: React.FunctionComponent<Props> = ({ repo, setBreadcrumbItem }) => {
     useEffect(() => {
         if (setBreadcrumbItem) {
             setBreadcrumbItem({ text: 'New' })
@@ -48,14 +48,14 @@ export const ChangesetsNewPage: React.FunctionComponent<Props> = ({ repo, setBre
     }, [setBreadcrumbItem])
 
     const [creationOrError, setCreationOrError] = useState<
-        null | typeof LOADING | Pick<GQL.IChangeset, 'url'> | ErrorLike
+        null | typeof LOADING | Pick<GQL.IThread, 'url'> | ErrorLike
     >(null)
     const onSubmit = useCallback(
-        async (data: ChangesetFormData) => {
+        async (data: ThreadFormData) => {
             setCreationOrError(LOADING)
             try {
                 setCreationOrError(
-                    await createChangeset({
+                    await createThread({
                         ...data,
                         repository: repo.id,
                         // TODO!(sqs): dummy
@@ -76,12 +76,12 @@ export const ChangesetsNewPage: React.FunctionComponent<Props> = ({ repo, setBre
             {creationOrError !== null && creationOrError !== LOADING && !isErrorLike(creationOrError) && (
                 <Redirect to={creationOrError.url} />
             )}
-            <PageTitle title="New changeset" />
+            <PageTitle title="New thread" />
             <ModalPage>
-                <h2>New changeset</h2>
-                <ChangesetForm
+                <h2>New thread</h2>
+                <ThreadForm
                     onSubmit={onSubmit}
-                    buttonText="Create changeset"
+                    buttonText="Create thread"
                     isLoading={creationOrError === LOADING}
                 />
                 {isErrorLike(creationOrError) && (

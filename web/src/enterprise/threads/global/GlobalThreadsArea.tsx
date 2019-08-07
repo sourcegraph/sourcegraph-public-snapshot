@@ -1,28 +1,28 @@
 import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { RepositoryChangesetsAreaContext } from '../repository/RepositoryChangesetsArea'
-import { GlobalChangesetsListPage } from './list/GlobalChangesetsListPage'
+import { RepositoryThreadsAreaContext } from '../repository/RepositoryThreadsArea'
+import { GlobalThreadsListPage } from './list/GlobalThreadsListPage'
 
 interface Props
     extends RouteComponentProps<{}>,
         Pick<
-            RepositoryChangesetsAreaContext,
-            Exclude<keyof RepositoryChangesetsAreaContext, 'changesetsURL' | 'repository' | 'setBreadcrumbItem'>
+            RepositoryThreadsAreaContext,
+            Exclude<keyof RepositoryThreadsAreaContext, 'threadsURL' | 'repository' | 'setBreadcrumbItem'>
         > {}
 
 /**
- * The global changesets area.
+ * The global threads area.
  */
-export const GlobalChangesetsArea: React.FunctionComponent<Props> = ({ match, ...props }) => {
-    const context: Pick<RepositoryChangesetsAreaContext, Exclude<keyof RepositoryChangesetsAreaContext, 'repository'>> = {
+export const GlobalThreadsArea: React.FunctionComponent<Props> = ({ match, ...props }) => {
+    const context: Pick<RepositoryThreadsAreaContext, Exclude<keyof RepositoryThreadsAreaContext, 'repository'>> = {
         ...props,
-        changesetsURL: match.url,
+        threadsURL: match.url,
     }
     return (
         <Switch>
-            <Route path={context.changesetsURL} exact={true}>
+            <Route path={context.threadsURL} exact={true}>
                 <div className="container mt-4">
-                    <GlobalChangesetsListPage {...context} />
+                    <GlobalThreadsListPage {...context} />
                 </div>
             </Route>
         </Switch>

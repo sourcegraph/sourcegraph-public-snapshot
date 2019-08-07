@@ -2,36 +2,36 @@ import H from 'history'
 import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { Comment } from '../../comments/Comment'
-import { ChangesetAreaContext } from './ChangesetArea'
-import { ChangesetHeaderEditableTitle } from './header/ChangesetHeaderEditableTitle'
+import { ThreadAreaContext } from './ThreadArea'
+import { ThreadHeaderEditableTitle } from './header/ThreadHeaderEditableTitle'
 
-interface Props extends Pick<ChangesetAreaContext, 'changeset' | 'onChangesetUpdate'>, ExtensionsControllerProps {
+interface Props extends Pick<ThreadAreaContext, 'thread' | 'onThreadUpdate'>, ExtensionsControllerProps {
     className?: string
 
     history: H.History
 }
 
 /**
- * The overview for a single changeset.
+ * The overview for a single thread.
  */
-export const ChangesetOverview: React.FunctionComponent<Props> = ({
-    changeset,
-    onChangesetUpdate,
+export const ThreadOverview: React.FunctionComponent<Props> = ({
+    thread,
+    onThreadUpdate,
     className = '',
     ...props
 }) => (
-    <div className={`changeset-overview ${className || ''}`}>
-        <ChangesetHeaderEditableTitle
+    <div className={`thread-overview ${className || ''}`}>
+        <ThreadHeaderEditableTitle
             {...props}
-            changeset={changeset}
-            onChangesetUpdate={onChangesetUpdate}
+            thread={thread}
+            onThreadUpdate={onThreadUpdate}
             className="mb-3"
         />
         <Comment
             {...props}
-            comment={changeset}
-            onCommentUpdate={onChangesetUpdate}
-            createdVerb="opened changeset"
+            comment={thread}
+            onCommentUpdate={onThreadUpdate}
+            createdVerb="opened thread"
             emptyBody="No description provided."
             className="mb-3"
         />

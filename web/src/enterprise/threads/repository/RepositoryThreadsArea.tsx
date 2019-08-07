@@ -13,17 +13,17 @@ import { RepoContainerContext } from '../../../repo/RepoContainer'
 import { RepoHeaderBreadcrumbNavItem } from '../../../repo/RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../../../repo/RepoHeaderContributionPortal'
 import { ThemeProps } from '../../../theme'
-import { ChangesetArea } from '../detail/ChangesetArea'
-import { RepositoryChangesetsListPage } from './list/RepositoryChangesetsListPage'
-import { ChangesetsNewPage } from './new/ChangesetsNewPage'
+import { ThreadArea } from '../detail/ThreadArea'
+import { RepositoryThreadsListPage } from './list/RepositoryThreadsListPage'
+import { ThreadsNewPage } from './new/ThreadsNewPage'
 
-export interface RepositoryChangesetsAreaContext
+export interface RepositoryThreadsAreaContext
     extends Pick<RepoContainerContext, 'repo' | 'repoHeaderContributionsLifecycleProps'>,
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps {
-    /** The URL to the repository changesets area. */
-    changesetsURL: string
+    /** The URL to the repository threads area. */
+    threadsURL: string
 
     setBreadcrumbItem?: (breadcrumbItem: BreadcrumbItem | undefined) => void
 
@@ -33,34 +33,34 @@ export interface RepositoryChangesetsAreaContext
 
 interface Props
     extends Pick<
-        RepositoryChangesetsAreaContext,
-        Exclude<keyof RepositoryChangesetsAreaContext, 'changesetsURL' | 'setBreadcrumbItem'>
+        RepositoryThreadsAreaContext,
+        Exclude<keyof RepositoryThreadsAreaContext, 'threadsURL' | 'setBreadcrumbItem'>
     > {}
 
 /**
- * The changesets area for a repository.
+ * The threads area for a repository.
  */
-export const RepositoryChangesetsArea: React.FunctionComponent<Props> = ({
+export const RepositoryThreadsArea: React.FunctionComponent<Props> = ({
     repoHeaderContributionsLifecycleProps,
     ...props
 }) => {
     const [breadcrumbItem, setBreadcrumbItem] = useState<BreadcrumbItem>()
 
-    const context: RepositoryChangesetsAreaContext = {
+    const context: RepositoryThreadsAreaContext = {
         ...props,
-        changesetsURL: `${props.repo.url}/-/changesets`,
+        threadsURL: `${props.repo.url}/-/threads`,
         setBreadcrumbItem,
     }
-    const newChangesetURL = `${context.changesetsURL}/new`
+    const newThreadURL = `${context.threadsURL}/new`
 
     const breadcrumbItems: BreadcrumbItem[] = useMemo(
         () =>
             [
                 { text: displayRepoName(props.repo.name), to: props.repo.url },
-                { text: 'Changesets', to: context.changesetsURL },
+                { text: 'Threads', to: context.threadsURL },
                 breadcrumbItem,
             ].filter(isDefined),
-        [breadcrumbItem, context.changesetsURL, props.repo.name, props.repo.url]
+        [breadcrumbItem, context.threadsURL, props.repo.name, props.repo.url]
     )
 
     const breadcrumbs = <Breadcrumbs items={breadcrumbItems} className="my-4" />
@@ -70,30 +70,30 @@ export const RepositoryChangesetsArea: React.FunctionComponent<Props> = ({
             <style>{`.repo-header{display:none !important;}` /* TODO!(sqs) */}</style>
             <RepoHeaderContributionPortal
                 position="nav"
-                element={<RepoHeaderBreadcrumbNavItem key="changesets">Changesets</RepoHeaderBreadcrumbNavItem>}
+                element={<RepoHeaderBreadcrumbNavItem key="threads">Threads</RepoHeaderBreadcrumbNavItem>}
                 repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
             />
             <Switch>
-                <Route path={context.changesetsURL} exact={true}>
+                <Route path={context.threadsURL} exact={true}>
                     <div className="container">
                         {breadcrumbs}
-                        <RepositoryChangesetsListPage {...context} newChangesetURL={newChangesetURL} />
+                        <RepositoryThreadsListPage {...context} newThreadURL={newThreadURL} />
                     </div>
                 </Route>
-                <Route path={newChangesetURL} exact={true}>
+                <Route path={newThreadURL} exact={true}>
                     <div className="container">
                         {breadcrumbs}
-                        <ChangesetsNewPage {...context} />
+                        <ThreadsNewPage {...context} />
                     </div>
                 </Route>
                 <Route
-                    path={`${context.changesetsURL}/:changesetNumber`}
+                    path={`${context.threadsURL}/:threadNumber`}
                     // tslint:disable-next-line:jsx-no-lambda
-                    render={(routeComponentProps: RouteComponentProps<{ changesetNumber: string }>) => (
-                        <ChangesetArea
+                    render={(routeComponentProps: RouteComponentProps<{ threadNumber: string }>) => (
+                        <ThreadArea
                             {...context}
                             {...routeComponentProps}
-                            changesetNumber={routeComponentProps.match.params.changesetNumber}
+                            threadNumber={routeComponentProps.match.params.threadNumber}
                             header={breadcrumbs}
                         />
                     )}

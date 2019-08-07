@@ -1,14 +1,14 @@
 import React from 'react'
 import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
-import { ChangesetsList } from '../../list/ChangesetsList'
-import { useChangesets } from '../../list/useChangesets'
+import { ThreadsList } from '../../list/ThreadsList'
+import { useThreads } from '../../list/useThreads'
 
 interface Props extends ExtensionsControllerNotificationProps {}
 
 /**
- * A list of all changesets.
+ * A list of all threads.
  */
-export const GlobalChangesetsListPage: React.FunctionComponent<Props> = props => {
-    const changesets = useChangesets()
-    return <ChangesetsList {...props} changesets={changesets} />
+export const GlobalThreadsListPage: React.FunctionComponent<Props> = props => {
+    const threads = useThreads()
+    return <ThreadsList {...props} threads={threads} />
 }

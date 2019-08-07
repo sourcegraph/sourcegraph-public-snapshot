@@ -3,10 +3,10 @@ import React from 'react'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { GitCommitNode } from '../../../../repo/commits/GitCommitNode'
-import { useChangesetCommits } from './useChangesetCommits'
+import { useThreadCommits } from './useThreadCommits'
 
 interface Props {
-    changeset: Pick<GQL.IChangeset, 'id'>
+    thread: Pick<GQL.IThread, 'id'>
 
     showCommits?: boolean
 
@@ -16,12 +16,12 @@ interface Props {
 const LOADING = 'loading' as const
 
 /**
- * A list of commits in a changeset.
+ * A list of commits in a thread.
  */
-export const ChangesetCommitsList: React.FunctionComponent<Props> = ({ changeset, className = '' }) => {
-    const commits = useChangesetCommits(changeset)
+export const ThreadCommitsList: React.FunctionComponent<Props> = ({ thread, className = '' }) => {
+    const commits = useThreadCommits(thread)
     return (
-        <div className={`changeset-commits-list ${className}`}>
+        <div className={`thread-commits-list ${className}`}>
             <ul className="list-group mb-4">
                 {commits === LOADING ? (
                     <LoadingSpinner className="icon-inline mt-3" />

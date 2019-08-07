@@ -9,27 +9,27 @@ import { queryGraphQL } from '../../../backend/graphql'
 const LOADING: 'loading' = 'loading'
 
 /**
- * A React hook that observes a changeset queried from the GraphQL API by ID.
+ * A React hook that observes a thread queried from the GraphQL API by ID.
  *
- * @param number The changeset number in its repository (i.e., the `Changeset.number` GraphQL
+ * @param number The thread number in its repository (i.e., the `Thread.number` GraphQL
  * API field).
  */
-export const useChangesetByNumberInRepository = (
+export const useThreadByNumberInRepository = (
     repository: GQL.ID,
-    number: GQL.IChangeset['number']
-): [typeof LOADING | GQL.IChangeset | null | ErrorLike, () => void] => {
+    number: GQL.IThread['number']
+): [typeof LOADING | GQL.IThread | null | ErrorLike, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
 
-    const [result, setResult] = useState<typeof LOADING | GQL.IChangeset | null | ErrorLike>(LOADING)
+    const [result, setResult] = useState<typeof LOADING | GQL.IThread | null | ErrorLike>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
-                query ChangesetByNumberInRepository($repository: ID!, $number: String!) {
+                query ThreadByNumberInRepository($repository: ID!, $number: String!) {
                     node(id: $repository) {
                         __typename
                         ... on Repository {
-                            changeset(number: $number) {
+                            thread(number: $number) {
                                 __typename
                                 id
                                 number
@@ -71,7 +71,7 @@ export const useChangesetByNumberInRepository = (
                     if (!data.node || data.node.__typename !== 'Repository') {
                         return null
                     }
-                    return data.node.changeset
+                    return data.node.thread
                 }),
                 startWith(LOADING)
             )

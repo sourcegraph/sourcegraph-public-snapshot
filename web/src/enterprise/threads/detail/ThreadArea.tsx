@@ -10,32 +10,34 @@ import { InfoSidebar, InfoSidebarSection } from '../../../components/infoSidebar
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { WithSidebar } from '../../../components/withSidebar/WithSidebar'
 import { threadlikeSidebarSections } from '../../threadlike/sidebar/ThreadlikeSidebar'
-import { ChangesetDeleteButton } from '../common/ChangesetDeleteButton'
-import { RepositoryChangesetsAreaContext } from '../repository/RepositoryChangesetsArea'
-import { ChangesetOverview } from './ChangesetOverview'
-import { ChangesetCommitsList } from './commits/ChangesetCommitsList'
-import { ChangesetFileDiffsList } from './fileDiffs/ChangesetFileDiffsList'
-import { useChangesetByNumberInRepository } from './useChangesetByNumberInRepository'
+import { ThreadDeleteButton } from '../common/ThreadDeleteButton'
+import { RepositoryThreadsAreaContext } from '../repository/RepositoryThreadsArea'
+import { IssueActivity } from './activity/IssueActivity'
+import { ThreadCommitsList } from './commits/ThreadCommitsList'
+import { IssueDiagnosticsList } from './diagnostics/IssueDiagnosticsList'
+import { ThreadFileDiffsList } from './fileDiffs/ThreadFileDiffsList'
+import { ThreadOverview } from './ThreadOverview'
+import { useThreadByNumberInRepository } from './useThreadByNumberInRepository'
 
-export interface ChangesetAreaContext
-    extends Pick<RepositoryChangesetsAreaContext, Exclude<keyof RepositoryChangesetsAreaContext, 'repository'>> {
-    /** The changeset, queried from the GraphQL API. */
-    changeset: GQL.IChangeset
+export interface ThreadAreaContext
+    extends Pick<RepositoryThreadsAreaContext, Exclude<keyof RepositoryThreadsAreaContext, 'repository'>> {
+    /** The thread, queried from the GraphQL API. */
+    thread: GQL.IThread
 
-    /** Called to refresh the changeset. */
-    onChangesetUpdate: () => void
+    /** Called to refresh the thread. */
+    onThreadUpdate: () => void
 
     location: H.Location
     history: H.History
 }
 
 interface Props
-    extends Pick<ChangesetAreaContext, Exclude<keyof ChangesetAreaContext, 'changeset' | 'onChangesetUpdate'>>,
+    extends Pick<ThreadAreaContext, Exclude<keyof ThreadAreaContext, 'thread' | 'onThreadUpdate'>>,
         RouteComponentProps<{}> {
     /**
-     * The changeset ID in its repository (i.e., the `Changeset.number` GraphQL API field).
+     * The thread ID in its repository (i.e., the `Thread.number` GraphQL API field).
      */
-    changesetNumber: GQL.IChangeset['number']
+    threadNumber: GQL.IThread['number']
 
     header: React.ReactFragment
 }
@@ -45,22 +47,22 @@ const LOADING = 'loading' as const
 const PAGE_CLASS_NAME = 'container mt-4'
 
 /**
- * The area for a single changeset.
+ * The area for a single thread.
  */
-export const ChangesetArea: React.FunctionComponent<Props> = ({
+export const ThreadArea: React.FunctionComponent<Props> = ({
     header,
-    changesetNumber,
+    threadNumber,
     setBreadcrumbItem,
     match,
     ...props
 }) => {
-    const [changeset, onChangesetUpdate] = useChangesetByNumberInRepository(props.repo.id, changesetNumber)
+    const [thread, onThreadUpdate] = useThreadByNumberInRepository(props.repo.id, threadNumber)
 
     useEffect(() => {
         if (setBreadcrumbItem) {
             setBreadcrumbItem(
-                changeset !== LOADING && changeset !== null && !isErrorLike(changeset)
-                    ? { text: `#${changeset.number}`, to: changeset.url }
+                thread !== LOADING && thread !== null && !isErrorLike(thread)
+                    ? { text: `#${thread.number}`, to: thread.url }
                     : undefined
             )
         }
@@ -69,53 +71,53 @@ export const ChangesetArea: React.FunctionComponent<Props> = ({
                 setBreadcrumbItem(undefined)
             }
         }
-    }, [changeset, setBreadcrumbItem])
+    }, [thread, setBreadcrumbItem])
 
-    const onChangesetDelete = useCallback(() => {
-        if (changeset !== LOADING && changeset !== null && !isErrorLike(changeset)) {
-            props.history.push(`${changeset.repository.url}/-/changesets`)
+    const onThreadDelete = useCallback(() => {
+        if (thread !== LOADING && thread !== null && !isErrorLike(thread)) {
+            props.history.push(`${thread.repository.url}/-/threads`)
         }
-    }, [changeset, props.history])
+    }, [thread, props.history])
 
     const sidebarSections = useMemo<InfoSidebarSection[]>(
         () =>
-            changeset !== LOADING && changeset !== null && !isErrorLike(changeset)
+            thread !== LOADING && thread !== null && !isErrorLike(thread)
                 ? [
                       ...threadlikeSidebarSections({
-                          thread: changeset,
-                          onThreadUpdate: onChangesetUpdate,
+                          thread,
+                          onThreadUpdate,
                           extensionsController: props.extensionsController,
                       }),
                       {
                           expanded: (
-                              <ChangesetDeleteButton
+                              <ThreadDeleteButton
                                   {...props}
-                                  changeset={changeset}
+                                  thread={thread}
                                   buttonClassName="btn-link"
                                   className="btn-sm px-0 text-decoration-none"
-                                  onDelete={onChangesetDelete}
+                                  onDelete={onThreadDelete}
                               />
                           ),
                       },
                   ]
                 : [],
-        [changeset, onChangesetDelete, onChangesetUpdate, props]
+        [thread, onThreadDelete, onThreadUpdate, props]
     )
 
-    if (changeset === LOADING) {
+    if (thread === LOADING) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
     }
-    if (changeset === null) {
-        return <HeroPage icon={AlertCircleIcon} title="Changeset not found" />
+    if (thread === null) {
+        return <HeroPage icon={AlertCircleIcon} title="Thread not found" />
     }
-    if (isErrorLike(changeset)) {
-        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={changeset.message} />
+    if (isErrorLike(thread)) {
+        return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={thread.message} />
     }
 
-    const context: ChangesetAreaContext = {
+    const context: ThreadAreaContext = {
         ...props,
-        changeset,
-        onChangesetUpdate,
+        thread,
+        onThreadUpdate,
         setBreadcrumbItem,
     }
 
@@ -127,21 +129,32 @@ export const ChangesetArea: React.FunctionComponent<Props> = ({
                 sidebar={<InfoSidebar sections={sidebarSections} />}
                 className="flex-1"
             >
-                <OverviewPagesArea<ChangesetAreaContext>
+                <OverviewPagesArea<ThreadAreaContext>
                     context={context}
                     header={header}
-                    overviewComponent={ChangesetOverview}
+                    overviewComponent={ThreadOverview}
                     pages={[
                         {
                             title: 'Changes',
                             path: '/',
                             exact: true,
-                            render: () => <ChangesetFileDiffsList {...context} className={PAGE_CLASS_NAME} />,
+                            render: () => <ThreadFileDiffsList {...context} className={PAGE_CLASS_NAME} />,
                         },
                         {
                             title: 'Commits',
                             path: '/commits',
-                            render: () => <ChangesetCommitsList {...context} className={PAGE_CLASS_NAME} />,
+                            render: () => <ThreadCommitsList {...context} className={PAGE_CLASS_NAME} />,
+                        },
+                        {
+                            title: 'Activity',
+                            path: '/',
+                            exact: true,
+                            render: () => <IssueActivity {...context} className={PAGE_CLASS_NAME} />,
+                        },
+                        {
+                            title: 'Diagnostics',
+                            path: '/diagnostics',
+                            render: () => <IssueDiagnosticsList {...context} className={PAGE_CLASS_NAME} />,
                         },
                     ]}
                     location={props.location}

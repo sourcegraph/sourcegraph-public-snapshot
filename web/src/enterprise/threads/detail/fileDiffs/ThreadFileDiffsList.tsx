@@ -7,10 +7,10 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { RepositoryCompareDiffPage } from '../../../../repo/compare/RepositoryCompareDiffPage'
 import { ThemeProps } from '../../../../theme'
-import { useChangesetFileDiffs } from './useChangesetFileDiffs'
+import { useThreadFileDiffs } from './useThreadFileDiffs'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemeProps {
-    changeset: Pick<GQL.IChangeset, 'id'>
+    thread: Pick<GQL.IThread, 'id'>
 
     className?: string
     location: H.Location
@@ -20,12 +20,12 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemePr
 const LOADING = 'loading' as const
 
 /**
- * A list of files diffs in a changeset.
+ * A list of files diffs in a thread.
  */
-export const ChangesetFileDiffsList: React.FunctionComponent<Props> = ({ changeset, className = '', ...props }) => {
-    const repositoryComparison = useChangesetFileDiffs(changeset)
+export const ThreadFileDiffsList: React.FunctionComponent<Props> = ({ thread, className = '', ...props }) => {
+    const repositoryComparison = useThreadFileDiffs(thread)
     return (
-        <div className={`changeset-file-diffs-list ${className}`}>
+        <div className={`thread-file-diffs-list ${className}`}>
             {repositoryComparison === LOADING ? (
                 <LoadingSpinner className="icon-inline mt-3" />
             ) : isErrorLike(repositoryComparison) ? (

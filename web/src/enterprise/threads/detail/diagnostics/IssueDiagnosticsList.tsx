@@ -4,7 +4,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 
 interface Props {
-    issue: Pick<GQL.IIssue, 'id'>
+    issue: Pick<GQL.IThread, 'id'>
 
     className?: string
 }

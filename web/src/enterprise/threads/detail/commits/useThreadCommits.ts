@@ -9,24 +9,24 @@ import { gitCommitFragment } from '../../../../repo/commits/RepositoryCommitsPag
 
 const LOADING: 'loading' = 'loading'
 
-export function useChangesetCommits(
-    changeset: Pick<GQL.IChangeset, 'id'>
+export function useThreadCommits(
+    thread: Pick<GQL.IThread, 'id'>
 ): typeof LOADING | GQL.IGitCommit[] | ErrorLike {
     const [data, setData] = useState<typeof LOADING | GQL.IGitCommit[] | ErrorLike>(LOADING)
     useEffect(() => {
-        const subscription = queryChangesetCommits(changeset).subscribe(setData, err => setData(asError(err)))
+        const subscription = queryThreadCommits(thread).subscribe(setData, err => setData(asError(err)))
         return () => subscription.unsubscribe()
-    }, [changeset])
+    }, [thread])
     return data
 }
 
-function queryChangesetCommits(changeset: Pick<GQL.IChangeset, 'id'>): Observable<GQL.IGitCommit[]> {
+function queryThreadCommits(thread: Pick<GQL.IThread, 'id'>): Observable<GQL.IGitCommit[]> {
     return queryGraphQL(
         gql`
-            query ChangesetCommits($changeset: ID!) {
-                node(id: $changeset) {
+            query ThreadCommits($thread: ID!) {
+                node(id: $thread) {
                     __typename
-                    ... on Changeset {
+                    ... on Thread {
                         repositoryComparison {
                             commits {
                                 nodes {
@@ -39,15 +39,15 @@ function queryChangesetCommits(changeset: Pick<GQL.IChangeset, 'id'>): Observabl
             }
             ${gitCommitFragment}
         `,
-        { changeset: changeset.id }
+        { thread: thread.id }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            if (!data || !data.node || data.node.__typename !== 'Changeset') {
-                throw new Error('changeset not found')
+            if (!data || !data.node || data.node.__typename !== 'Thread') {
+                throw new Error('thread not found')
             }
             if (!data.node.repositoryComparison) {
-                throw new Error('changeset has no repository comparison')
+                throw new Error('thread has no repository comparison')
             }
             return data.node.repositoryComparison.commits.nodes
         })

@@ -42,7 +42,7 @@ type Result = typeof LOADING | GQL.IThreadTimelineItemConnection | ErrorLike
  *
  * @param issue The issue whose timeline items to observe.
  */
-export const useIssueTimelineItems = (issue: Pick<GQL.IIssue, 'id'>): [Result, () => void] => {
+export const useIssueTimelineItems = (issue: Pick<GQL.IThread, 'id'>): [Result, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
 

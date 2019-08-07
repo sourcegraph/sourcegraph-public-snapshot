@@ -4,40 +4,40 @@ import { ExtensionsControllerNotificationProps } from '../../../../../shared/src
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { pluralize } from '../../../../../shared/src/util/strings'
-import { ChangesetListItem } from './ChangesetListItem'
+import { ThreadListItem } from './ThreadListItem'
 
 const LOADING: 'loading' = 'loading'
 
 interface Props extends ExtensionsControllerNotificationProps {
-    changesets: typeof LOADING | GQL.IChangesetConnection | ErrorLike
+    threads: typeof LOADING | GQL.IThreadConnection | ErrorLike
 }
 
 /**
- * Lists changesets.
+ * Lists threads.
  */
-export const ChangesetsList: React.FunctionComponent<Props> = ({ changesets, ...props }) => (
-    <div className="changesets-list">
-        {changesets === LOADING ? (
+export const ThreadsList: React.FunctionComponent<Props> = ({ threads, ...props }) => (
+    <div className="threads-list">
+        {threads === LOADING ? (
             <LoadingSpinner className="icon-inline mt-3" />
-        ) : isErrorLike(changesets) ? (
-            <div className="alert alert-danger mt-3">{changesets.message}</div>
+        ) : isErrorLike(threads) ? (
+            <div className="alert alert-danger mt-3">{threads.message}</div>
         ) : (
             <div className="card">
                 <div className="card-header">
                     <span className="text-muted">
-                        {changesets.totalCount} {pluralize('changeset', changesets.totalCount)}
+                        {threads.totalCount} {pluralize('thread', threads.totalCount)}
                     </span>
                 </div>
-                {changesets.nodes.length > 0 ? (
+                {threads.nodes.length > 0 ? (
                     <ul className="list-group list-group-flush">
-                        {changesets.nodes.map(changeset => (
-                            <li key={changeset.id} className="list-group-item">
-                                <ChangesetListItem {...props} changeset={changeset} />
+                        {threads.nodes.map(thread => (
+                            <li key={thread.id} className="list-group-item">
+                                <ThreadListItem {...props} thread={thread} />
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <div className="p-2 text-muted">No changesets yet.</div>
+                    <div className="p-2 text-muted">No threads yet.</div>
                 )}
             </div>
         )}

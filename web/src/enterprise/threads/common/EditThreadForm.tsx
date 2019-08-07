@@ -3,13 +3,13 @@ import { map, mapTo } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../backend/graphql'
-import { ChangesetForm, ChangesetFormData } from '../form/ChangesetForm'
+import { ThreadForm, ThreadFormData } from '../form/ThreadForm'
 
-export const updateChangeset = (input: GQL.IUpdateChangesetInput): Promise<void> =>
+export const updateThread = (input: GQL.IUpdateThreadInput): Promise<void> =>
     mutateGraphQL(
         gql`
-            mutation UpdateChangeset($input: UpdateChangesetInput!) {
-                updateChangeset(input: $input) {
+            mutation UpdateThread($input: UpdateThreadInput!) {
+                updateThread(input: $input) {
                     id
                 }
             }
@@ -23,46 +23,46 @@ export const updateChangeset = (input: GQL.IUpdateChangesetInput): Promise<void>
         .toPromise()
 
 interface Props {
-    changeset: Pick<GQL.IChangeset, 'id'> & ChangesetFormData
+    thread: Pick<GQL.IThread, 'id'> & ThreadFormData
 
     /** Called when the form is dismissed. */
     onDismiss: () => void
 
-    /** Called after the changeset is updated successfully. */
-    onChangesetUpdate: () => void
+    /** Called after the thread is updated successfully. */
+    onThreadUpdate: () => void
 
     className?: string
 }
 
 /**
- * A form to edit a changeset.
+ * A form to edit a thread.
  */
-export const EditChangesetForm: React.FunctionComponent<Props> = ({
-    changeset,
+export const EditThreadForm: React.FunctionComponent<Props> = ({
+    thread,
     onDismiss,
-    onChangesetUpdate,
+    onThreadUpdate,
     className = '',
 }) => {
     const [isLoading, setIsLoading] = useState(false)
     const onSubmit = useCallback(
-        async ({ title }: ChangesetFormData) => {
+        async ({ title }: ThreadFormData) => {
             setIsLoading(true)
             try {
-                await updateChangeset({ id: changeset.id, title })
+                await updateThread({ id: thread.id, title })
                 setIsLoading(false)
                 onDismiss()
-                onChangesetUpdate()
+                onThreadUpdate()
             } catch (err) {
                 setIsLoading(false)
                 alert(err.message) // TODO!(sqs)
             }
         },
-        [onDismiss, onChangesetUpdate, changeset.id]
+        [onDismiss, onThreadUpdate, thread.id]
     )
 
     return (
-        <ChangesetForm
-            initialValue={changeset}
+        <ThreadForm
+            initialValue={thread}
             onDismiss={onDismiss}
             onSubmit={onSubmit}
             buttonText="Save changes"

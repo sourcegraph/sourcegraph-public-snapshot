@@ -14,24 +14,24 @@ import { gitRevisionRangeFieldsFragment } from '../../../../repo/compare/Reposit
 
 const LOADING: 'loading' = 'loading'
 
-export function useChangesetFileDiffs(
-    changeset: Pick<GQL.IChangeset, 'id'>
+export function useThreadFileDiffs(
+    thread: Pick<GQL.IThread, 'id'>
 ): typeof LOADING | GQL.IRepositoryComparison | ErrorLike {
     const [result, setResult] = useState<typeof LOADING | GQL.IRepositoryComparison | ErrorLike>(LOADING)
     useEffect(() => {
-        const subscription = queryChangesetFileDiffs(changeset).subscribe(setResult, err => setResult(asError(err)))
+        const subscription = queryThreadFileDiffs(thread).subscribe(setResult, err => setResult(asError(err)))
         return () => subscription.unsubscribe()
-    }, [changeset])
+    }, [thread])
     return result
 }
 
-function queryChangesetFileDiffs(changeset: Pick<GQL.IChangeset, 'id'>): Observable<GQL.IRepositoryComparison> {
+function queryThreadFileDiffs(thread: Pick<GQL.IThread, 'id'>): Observable<GQL.IRepositoryComparison> {
     return queryGraphQL(
         gql`
-            query ChangesetFileDiffs($changeset: ID!) {
-                node(id: $changeset) {
+            query ThreadFileDiffs($thread: ID!) {
+                node(id: $thread) {
                     __typename
-                    ... on Changeset {
+                    ... on Thread {
                         repositoryComparison {
                             baseRepository {
                                 id
@@ -71,12 +71,12 @@ function queryChangesetFileDiffs(changeset: Pick<GQL.IChangeset, 'id'>): Observa
             ${fileDiffHunkRangeFieldsFragment}
             ${diffStatFieldsFragment}
         `,
-        { changeset: changeset.id }
+        { thread: thread.id }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            if (!data || !data.node || data.node.__typename !== 'Changeset') {
-                throw new Error('changeset not found')
+            if (!data || !data.node || data.node.__typename !== 'Thread') {
+                throw new Error('thread not found')
             }
             return data.node.repositoryComparison
         })

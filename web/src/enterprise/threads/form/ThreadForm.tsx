@@ -5,16 +5,16 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 import { ThreadlikeFormTitleField } from '../../threadlike/form/ThreadlikeFormTitleField'
 
-export interface ChangesetFormData extends Pick<GQL.IChangeset, 'title' | 'baseRef' | 'headRef'> {}
+export interface ThreadFormData extends Pick<GQL.IThread, 'title' | 'baseRef' | 'headRef'> {}
 
 interface Props {
-    initialValue?: ChangesetFormData
+    initialValue?: ThreadFormData
 
     /** Called when the form is dismissed with no action taken. */
     onDismiss?: () => void
 
     /** Called when the form is submitted. */
-    onSubmit: (changeset: ChangesetFormData) => void
+    onSubmit: (thread: ThreadFormData) => void
 
     buttonText: string
     isLoading: boolean
@@ -23,12 +23,12 @@ interface Props {
 }
 
 /**
- * A form to create or edit a changeset.
+ * A form to create or edit a thread.
  */
-export const ChangesetForm: React.FunctionComponent<Props> = ({
+export const ThreadForm: React.FunctionComponent<Props> = ({
     initialValue = { title: '', baseRef: 'master' /*TODO!(sqs):un-hardcode*/, headRef: '' },
     onDismiss,
-    onSubmit: onSubmitChangeset,
+    onSubmit: onSubmitThread,
     buttonText,
     isLoading,
     className = '',
@@ -54,9 +54,9 @@ export const ChangesetForm: React.FunctionComponent<Props> = ({
     const onSubmit = useCallback<React.FormEventHandler>(
         async e => {
             e.preventDefault()
-            onSubmitChangeset({ title, baseRef, headRef })
+            onSubmitThread({ title, baseRef, headRef })
         },
-        [onSubmitChangeset, title, baseRef, headRef]
+        [onSubmitThread, title, baseRef, headRef]
     )
 
     return (
@@ -64,11 +64,11 @@ export const ChangesetForm: React.FunctionComponent<Props> = ({
             <div className="form-row align-items-end">
                 <ThreadlikeFormTitleField value={title} onChange={onTitleChange} autoFocus={true} />
                 <div className="form-group">
-                    <label htmlFor="changeset-form__baseRef">Range</label>
+                    <label htmlFor="thread-form__baseRef">Range</label>
                     <div className="input-group align-items-center">
                         <input
                             type="text"
-                            id="changeset-form__baseRef"
+                            id="thread-form__baseRef"
                             className="form-control"
                             required={true}
                             placeholder="Base ref"
@@ -78,7 +78,7 @@ export const ChangesetForm: React.FunctionComponent<Props> = ({
                         <DotsHorizontalIcon className="icon-inline mx-2" />
                         <input
                             type="text"
-                            id="changeset-form__headRef"
+                            id="thread-form__headRef"
                             className="form-control"
                             required={true}
                             placeholder="Head ref"

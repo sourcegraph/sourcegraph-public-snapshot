@@ -8,11 +8,11 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../backend/graphql'
 
-const deleteChangeset = (args: GQL.IDeleteChangesetOnMutationArguments): Promise<void> =>
+const deleteThread = (args: GQL.IDeleteThreadOnMutationArguments): Promise<void> =>
     mutateGraphQL(
         gql`
-            mutation DeleteChangeset($changeset: ID!) {
-                deleteChangeset(changeset: $changeset) {
+            mutation DeleteThread($thread: ID!) {
+                deleteThread(thread: $thread) {
                     alwaysNil
                 }
             }
@@ -26,17 +26,17 @@ const deleteChangeset = (args: GQL.IDeleteChangesetOnMutationArguments): Promise
         .toPromise()
 
 interface Props extends ExtensionsControllerNotificationProps {
-    changeset: Pick<GQL.IChangeset, 'id'>
+    thread: Pick<GQL.IThread, 'id'>
     onDelete?: () => void
     className?: string
     buttonClassName?: string
 }
 
 /**
- * A button that permanently deletes a changeset.
+ * A button that permanently deletes a thread.
  */
-export const ChangesetDeleteButton: React.FunctionComponent<Props> = ({
-    changeset,
+export const ThreadDeleteButton: React.FunctionComponent<Props> = ({
+    thread,
     onDelete,
     className = '',
     buttonClassName = 'btn-link text-decoration-none',
@@ -46,12 +46,12 @@ export const ChangesetDeleteButton: React.FunctionComponent<Props> = ({
     const onClick = useCallback<React.FormEventHandler>(
         async e => {
             e.preventDefault()
-            if (!confirm('Are you sure? Deleting will remove all data associated with the changeset.')) {
+            if (!confirm('Are you sure? Deleting will remove all data associated with the thread.')) {
                 return
             }
             setIsLoading(true)
             try {
-                await deleteChangeset({ changeset: changeset.id })
+                await deleteThread({ thread: thread.id })
                 setIsLoading(false)
                 if (onDelete) {
                     onDelete()
@@ -59,17 +59,17 @@ export const ChangesetDeleteButton: React.FunctionComponent<Props> = ({
             } catch (err) {
                 setIsLoading(false)
                 extensionsController.services.notifications.showMessages.next({
-                    message: `Error deleting changeset: ${err.message}`,
+                    message: `Error deleting thread: ${err.message}`,
                     type: NotificationType.Error,
                 })
             }
         },
-        [extensionsController.services.notifications.showMessages, onDelete, changeset.id]
+        [extensionsController.services.notifications.showMessages, onDelete, thread.id]
     )
     return (
         <button type="button" disabled={isLoading} className={`btn ${buttonClassName} ${className}`} onClick={onClick}>
             {isLoading ? <LoadingSpinner className="icon-inline" /> : <DeleteIcon className="icon-inline" />} Delete
-            changeset
+            thread
         </button>
     )
 }

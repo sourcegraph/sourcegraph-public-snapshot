@@ -5,7 +5,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { IssueTimeline } from '../timeline/IssueTimeline'
 
 interface Props extends ExtensionsControllerProps {
-    issue: Pick<GQL.IIssue, 'id'>
+    issue: Pick<GQL.IThread, 'id'>
 
     className?: string
     history: H.History

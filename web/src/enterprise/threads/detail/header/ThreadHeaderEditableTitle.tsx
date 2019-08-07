@@ -3,40 +3,40 @@ import { NotificationType } from '../../../../../../shared/src/api/client/servic
 import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { Form } from '../../../../components/Form'
-import { updateChangeset } from '../../common/EditChangesetForm'
+import { updateThread } from '../../common/EditThreadForm'
 
 interface Props extends ExtensionsControllerNotificationProps {
-    changeset: Pick<GQL.IChangeset, 'id' | 'number' | 'title'>
-    onChangesetUpdate: () => void
+    thread: Pick<GQL.IThread, 'id' | 'number' | 'title'>
+    onThreadUpdate: () => void
     className?: string
 
     /** Provided by tests only. */
-    _updateChangeset?: typeof updateChangeset
+    _updateThread?: typeof updateThread
 }
 
 /**
- * The title in the changeset header, which has an edit mode.
+ * The title in the thread header, which has an edit mode.
  */
 // tslint:disable: jsx-no-lambda
-export const ChangesetHeaderEditableTitle: React.FunctionComponent<Props> = ({
-    changeset,
-    onChangesetUpdate,
+export const ThreadHeaderEditableTitle: React.FunctionComponent<Props> = ({
+    thread,
+    onThreadUpdate,
     className = '',
     extensionsController,
-    _updateChangeset = updateChangeset,
+    _updateThread = updateThread,
 }) => {
     const [state, setState] = useState<'viewing' | 'editing' | 'loading'>('viewing')
-    const [uncommittedTitle, setUncommittedTitle] = useState(changeset.title)
+    const [uncommittedTitle, setUncommittedTitle] = useState(thread.title)
 
     const onSubmit: React.FormEventHandler = async e => {
         e.preventDefault()
         setState('loading')
         try {
-            await _updateChangeset({ id: changeset.id, title: uncommittedTitle })
-            onChangesetUpdate()
+            await _updateThread({ id: thread.id, title: uncommittedTitle })
+            onThreadUpdate()
         } catch (err) {
             extensionsController.services.notifications.showMessages.next({
-                message: `Error editing changeset title: ${err.message}`,
+                message: `Error editing thread title: ${err.message}`,
                 type: NotificationType.Error,
             })
         } finally {
@@ -49,15 +49,15 @@ export const ChangesetHeaderEditableTitle: React.FunctionComponent<Props> = ({
         e => {
             e.preventDefault()
             setState('viewing')
-            setUncommittedTitle(changeset.title)
+            setUncommittedTitle(thread.title)
         },
-        [changeset.title]
+        [thread.title]
     )
 
     return state === 'viewing' ? (
         <div className={`d-flex align-items-start justify-content-between ${className}`}>
             <h1 className="font-weight-normal mb-0 h2 mr-2">
-                {changeset.title} <span className="text-muted font-weight-normal">#{changeset.number}</span>
+                {thread.title} <span className="text-muted font-weight-normal">#{thread.number}</span>
             </h1>
             <button type="button" className="btn btn-secondary btn-sm mt-1" onClick={onEditClick}>
                 Edit
