@@ -8,7 +8,6 @@
     "node": ">=10.0.0"
   },
   "dependencies": {
-    "@types/split2": "^2.1.6",
     "async-middleware": "^1.2.1",
     "better-sqlite3": "^5.4.0",
     "body-parser": "^1.19.0",
@@ -18,9 +17,11 @@
     "lru-cache": "^5.1.1",
     "lsif-protocol": "0.4.0",
     "lsif-sqlite": "^0.4.5",
+    "map-obj": "^4.1.0",
     "move-file": "^1.2.0",
     "mz": "^2.7.0",
     "prom-client": "^11.5.3",
+    "relateurl": "^0.2.7",
     "semver": "^6.0.0",
     "split2": "^3.1.1",
     "tmp-promise": "^2.0.2",
@@ -34,7 +35,9 @@
     "@types/fs-extra": "8.0.0",
     "@types/lru-cache": "5.1.0",
     "@types/mz": "0.0.32",
+    "@types/relateurl": "^0.2.28",
     "@types/semver": "6.0.1",
+    "@types/split2": "^2.1.6",
     "parcel-bundler": "^1.12.3",
     "tsc-watch": "^2.2.1",
     "tslint": "^5.18.0",
@@ -42,9 +45,10 @@
   },
   "scripts": {
     "typecheck": "tsc -p .",
-    "serve": "tsc-watch --onSuccess \"node out/http-server.js\" --noClear",
-    "build": "parcel build --out-dir out --out-file http-server.bundle.js --target node --bundle-node-modules src/http-server.ts",
+    "serve": "tsc-watch --noEmit --onSuccess \"bash -c 'yarn run build && node out/http-server.bundle.js'\" --noClear",
+    "build": "parcel build --out-dir out --out-file http-server.bundle.js --target node src/http-server.ts",
     "tslint": "../../node_modules/.bin/tslint -p tsconfig.json",
-    "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts?(x)'"
+    "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
+    "fixup": "sed -i 's/\r$//' ./node_modules/lsif-sqlite/bin/lsif-sqlite"
   }
 }
