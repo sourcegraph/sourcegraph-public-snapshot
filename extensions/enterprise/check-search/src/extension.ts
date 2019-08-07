@@ -9,7 +9,6 @@ import * as sourcegraph from 'sourcegraph'
 import { register as codeDuplicationRegister } from './codeDuplication'
 
 export function activate(ctx: sourcegraph.ExtensionContext): void {
-    console.log('Hello, world!')
     // ctx.subscriptions.add(eslintRegister())
     ctx.subscriptions.add(codeDuplicationRegister())
     // ctx.subscriptions.add(registerTravisGo())

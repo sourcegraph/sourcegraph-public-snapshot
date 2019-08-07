@@ -8,7 +8,9 @@ import { OTHER_CODE_ACTIONS, MAX_RESULTS, REPO_INCLUDE } from './misc'
 import { JSCPD, IClone, IOptions, MATCH_SOURCE_EVENT, CLONE_FOUND_EVENT, SOURCE_SKIPPED_EVENT, END_EVENT } from 'jscpd'
 import { IStoreManagerOptions } from 'jscpd/build/interfaces/store/store-manager-options.interface'
 import { ITokenLocation } from 'jscpd/build/interfaces/token/token-location.interface'
+import { StoresManager } from 'jscpd/build/stores/stores-manager'
 
+const FILE_ISSUE_COMMAND = 'codeDuplication.fileIssue'
 const IGNORE_COMMAND = 'codeDuplication.ignore'
 
 interface Settings {}
@@ -18,6 +20,9 @@ export function register(): Unsubscribable {
     subscriptions.add(startDiagnostics())
     subscriptions.add(registerCheckProvider(diagnostics))
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
+    subscriptions.add(
+        sourcegraph.commands.registerActionEditCommand(FILE_ISSUE_COMMAND, () => new sourcegraph.WorkspaceEdit())
+    )
     subscriptions.add(sourcegraph.commands.registerActionEditCommand(IGNORE_COMMAND, ignoreCommandCallback))
     return subscriptions
 }
@@ -40,14 +45,15 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                     { pattern: '', type: 'regexp' },
                     {
                         repositories: {
-                            includes: [REPO_INCLUDE],
+                            // includes: [],
+                            excludes: ['about|/sourcegraph/'], // exclude forks
                             type: 'regexp',
                         },
                         files: {
-                            includes: ['\\.[jt]sx?$'], // TODO!(sqs): typescript only
+                            includes: ['\\.(go|[jt]sx)?$'], // TODO!(sqs): typescript only
                             type: 'regexp',
                         },
-                        maxResults: 100, //MAX_RESULTS,
+                        maxResults: 175, //MAX_RESULTS,
                     }
                 )
             )
@@ -60,19 +66,30 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
 
         return from(settingsObservable<Settings>()).pipe(
             switchMap(async () => {
+                StoresManager.close()
+                StoresManager.flush()
                 const cpd = new JSCPD({})
-                const clones = flatten(
-                    await Promise.all(
-                        docs.map(async doc => await cpd.detect(doc.text, { id: doc.uri, format: jscpdFormat(doc) }))
-                    )
-                )
+                const clones: IClone[] = []
+                for (const doc of docs) {
+                    clones.push(...(await cpd.detect(doc.text, { id: doc.uri, format: jscpdFormat(doc) })))
+                }
                 const diagnostics: sourcegraph.Diagnostic[] = clones.map(c => {
+                    const numLines = c.duplicationA.end.line - c.duplicationA.start.line
                     return {
                         resource: new URL(c.duplicationA.sourceId),
                         range: duplicationRange(c.duplicationA),
-                        message: `Duplicated code (with ${c.duplicationB.sourceId})`,
+                        message: `Duplicated code (${numLines} line${numLines !== 1 ? 's' : ''})`,
                         source: 'codeDuplication',
                         severity: sourcegraph.DiagnosticSeverity.Information,
+                        relatedInformation: [
+                            {
+                                location: new sourcegraph.Location(
+                                    new URL(c.duplicationB.sourceId),
+                                    duplicationRange(c.duplicationB)
+                                ),
+                                message: 'Duplicated here',
+                            },
+                        ],
                         data: JSON.stringify(c),
                         tags: [c.format],
                         check: CHECK_CODE_DUPLICATION,
@@ -153,11 +170,11 @@ function registerCheckProvider(diagnostics: Observable<sourcegraph.Diagnostic[] 
             provideDiagnosticBatchActions: () =>
                 of([
                     {
-                        message: 'File in issue tracker',
+                        message: 'File all in issue tracker',
                         diagnostics: {
                             type: 'codeDuplication' /* TODO!(sqs) support >1 tag, so we can do, tag: 'auto-fixable' */,
                         },
-                        editCommand: { command: 'TODO!(sqs)', arguments: [] },
+                        editCommand: { command: FILE_ISSUE_COMMAND, arguments: [] },
                     },
                     {
                         message: 'Ignore all',
@@ -184,7 +201,7 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                     const actions: sourcegraph.Action[] = [
                         {
                             title: 'File on code owners (@alice @bob)',
-                            command: { title: 'TODO!(sqs)', command: 'TODO!(sqs)' },
+                            command: { title: 'File issue', command: FILE_ISSUE_COMMAND },
                             diagnostics: [diag],
                         },
                         {
@@ -230,7 +247,7 @@ function createWorkspaceEditForIgnore(
         `${startIndent ? startIndent[0] : ''}// jscpd:ignore-start\n`
     )
 
-    const endIndent = doc.text.slice(doc.offsetAt(range.start.with(undefined, 0))).match(/[ \t]*/)
+    const endIndent = doc.text.slice(doc.offsetAt(range.end.with(undefined, 0))).match(/[ \t]*/)
     edit.insert(
         new URL(doc.uri),
         doc.positionAt(1 + doc.offsetAt(range.end)),

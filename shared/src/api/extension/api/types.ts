@@ -1,7 +1,6 @@
 import { Position, Range } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 import * as sourcegraph from 'sourcegraph'
-import { WorkspaceEdit } from '../../types/workspaceEdit'
 
 /**
  * Converts from a plain object {@link clientType.Position} to an instance of {@link Position}.
@@ -21,6 +20,13 @@ export function fromLocation(location: sourcegraph.Location): clientType.Locatio
     return {
         uri: location.uri.toString(),
         range: fromRange(location.range),
+    }
+}
+
+export function toLocation(location: clientType.Location): sourcegraph.Location {
+    return {
+        uri: new URL(location.uri),
+        range: location.range ? Range.fromPlain(location.range) : undefined,
     }
 }
 

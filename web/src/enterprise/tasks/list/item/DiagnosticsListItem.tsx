@@ -12,6 +12,8 @@ import { displayRepoName } from '../../../../../../shared/src/components/RepoFil
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
+import { propertyIsDefined } from '../../../../../../shared/src/util/types'
+import { parseRepoURI } from '../../../../../../shared/src/util/url'
 import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/DiagnosticSeverityIcon'
 import { fetchHighlightedFileLines } from '../../../../repo/backend'
 import { ActionsWithPreview } from '../../../actions/ActionsWithPreview'
@@ -85,7 +87,9 @@ export const DiagnosticsListItem: React.FunctionComponent<Props> = ({
                 (selectedAction &&
                     actionsOrError !== LOADING &&
                     !isErrorLike(actionsOrError) &&
-                    actionsOrError.find(a => commandIsEqual(a.computeEdit, selectedAction.editCommand))) ||
+                    actionsOrError
+                        .filter(propertyIsDefined('computeEdit'))
+                        .find(a => commandIsEqual(a.computeEdit, selectedAction.editCommand))) ||
                 null
             }
             onActionSelect={onActionSelect}
@@ -93,20 +97,55 @@ export const DiagnosticsListItem: React.FunctionComponent<Props> = ({
             extensionsController={extensionsController}
             defaultPreview={
                 diagnostic.range && (
-                    <CodeExcerpt
-                        repoName={diagnostic.entry.repository.name}
-                        commitID={diagnostic.entry.commit.oid}
-                        filePath={diagnostic.entry.path}
-                        context={4}
-                        highlightRanges={[diagnostic.range].map(r => ({
-                            line: r.start.line,
-                            character: r.start.character,
-                            highlightLength: r.end.character - r.start.character,
-                        }))}
-                        className="w-100 h-100 overflow-auto p-2"
-                        isLightTheme={isLightTheme}
-                        fetchHighlightedFileLines={fetchHighlightedFileLines}
-                    />
+                    <>
+                        <CodeExcerpt
+                            repoName={diagnostic.entry.repository.name}
+                            commitID={diagnostic.entry.commit.oid}
+                            filePath={diagnostic.entry.path}
+                            context={4}
+                            highlightRanges={[diagnostic.range].map(r => ({
+                                line: r.start.line,
+                                character: r.start.character,
+                                highlightLength: r.end.character - r.start.character,
+                            }))}
+                            className="d-block w-100 h-100 overflow-auto p-2"
+                            isLightTheme={isLightTheme}
+                            fetchHighlightedFileLines={fetchHighlightedFileLines}
+                        />
+                        {diagnostic.relatedInformation &&
+                            diagnostic.relatedInformation.map((info, i) => (
+                                <div key={i} className="mt-4">
+                                    <h6 className="d-flex align-items-center font-weight-normal mb-0 ml-2">
+                                        <DiagnosticSeverityIcon severity={diagnostic.severity} className="small mr-2" />{' '}
+                                        {info.message} ({parseRepoURI(info.location.uri.toString()).filePath})
+                                    </h6>
+                                    <CodeExcerpt
+                                        repoName={diagnostic.entry.repository.name} // TODO!(sqs): not always the same
+                                        commitID={diagnostic.entry.commit.oid} // TODO!(sqs): not always the same
+                                        filePath={info.location.uri.toString().replace(/.*#/, '')} // TODO!(sqs): hack
+                                        context={Math.ceil(
+                                            (info.location.range!.end.line - info.location.range!.start.line) / 2
+                                        )}
+                                        highlightRanges={[
+                                            {
+                                                // TODO!(sqs): remove '!' non-null assertions
+                                                line: Math.ceil(
+                                                    (info.location.range!.start.line + info.location.range!.end.line) /
+                                                        2
+                                                ),
+                                                character: info.location.range!.start.character,
+                                                highlightLength:
+                                                    info.location.range!.end.character -
+                                                    info.location.range!.start.character,
+                                            },
+                                        ]}
+                                        className="w-100 h-100 overflow-auto p-2 d-block"
+                                        isLightTheme={isLightTheme}
+                                        fetchHighlightedFileLines={fetchHighlightedFileLines}
+                                    />
+                                </div>
+                            ))}
+                    </>
                 )
             }
         >

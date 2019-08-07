@@ -1,6 +1,6 @@
 import * as sourcegraph from 'sourcegraph'
-import { Diagnostic } from '@sourcegraph/extension-api-types'
-import { fromRange } from '../extension/api/types'
+import { Diagnostic, DiagnosticRelatedInformation } from '@sourcegraph/extension-api-types'
+import { fromRange, fromLocation, toLocation } from '../extension/api/types'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { isEqual } from 'lodash'
 
@@ -12,6 +12,7 @@ export function fromDiagnostic(diag: sourcegraph.Diagnostic): Diagnostic {
         ...diag,
         resource: diag.resource.toString(),
         range: fromRange(diag.range),
+        relatedInformation: diag.relatedInformation && diag.relatedInformation.map(fromDiagnosticRelatedInformation),
     }
 }
 
@@ -20,6 +21,23 @@ export function toDiagnostic(diag: Diagnostic): sourcegraph.Diagnostic {
         ...diag,
         resource: new URL(diag.resource),
         range: Range.fromPlain(diag.range),
+        relatedInformation: diag.relatedInformation && diag.relatedInformation.map(toDiagnosticRelatedInformation),
+    }
+}
+
+function fromDiagnosticRelatedInformation(
+    info: sourcegraph.DiagnosticRelatedInformation
+): DiagnosticRelatedInformation {
+    return {
+        ...info,
+        location: fromLocation(info.location),
+    }
+}
+
+function toDiagnosticRelatedInformation(info: DiagnosticRelatedInformation): sourcegraph.DiagnosticRelatedInformation {
+    return {
+        ...info,
+        location: toLocation(info.location),
     }
 }
 

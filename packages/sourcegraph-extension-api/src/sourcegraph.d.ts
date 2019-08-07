@@ -940,6 +940,21 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * Information about another location related to a diagnostic.
+     */
+    export interface DiagnosticRelatedInformation {
+        /**
+         * The location of the related diagnostic information.
+         */
+        readonly location: Location
+
+        /**
+         * The human-readable message about the related diagnostic information.
+         */
+        readonly message: string
+    }
+
+    /**
      * Represents a diagnostic, such as a compiler error or warning. Diagnostic objects are only
      * valid in the scope of a file.
      */
@@ -963,6 +978,11 @@ declare module 'sourcegraph' {
          * The severity, default is [error](#DiagnosticSeverity.Error).
          */
         readonly severity: DiagnosticSeverity
+
+        /**
+         * Information about other locations that are related to this diagnostic.
+         */
+        relatedInformation?: DiagnosticRelatedInformation[]
 
         /**
          * Opaque data for this diagnostic. This data can be used by other consumers of the
