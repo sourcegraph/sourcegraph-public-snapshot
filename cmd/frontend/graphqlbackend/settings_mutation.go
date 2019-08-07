@@ -78,7 +78,7 @@ func (updateSettingsPayload) Empty() *EmptyResponse { return nil }
 
 type settingsEdit struct {
 	KeyPath                   []*keyPathSegment
-	Value                     *jsonValue
+	Value                     *JSONValue
 	ValueIsJSONCEncodedString bool
 }
 
