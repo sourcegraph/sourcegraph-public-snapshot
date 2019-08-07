@@ -42,4 +42,4 @@ scrape_configs:
   - job_name: "node"
     file_sd_configs:
       - files:
-          - "/etc/prometheus/prometheus_targets_localhost.yml"
+          - "/etc/prometheus/prometheus_targets_local.yml"

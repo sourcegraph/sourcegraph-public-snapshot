@@ -3,16 +3,16 @@
     job: node
   targets:
     # frontend
-    - localhost:6063
+    - 127.0.0.1:6063
     # gitserver
-    - localhost:6068
+    - 127.0.0.1:6068
     # searcher
-    - localhost:6069
+    - 127.0.0.1:6069
     # symbols
-    - localhost:6071
+    - 127.0.0.1:6071
     # repo-updater
-    - localhost:6074
+    - 127.0.0.1:6074
     # query-runner
-    - localhost:6067
+    - 127.0.0.1:6067
     # zoekt-indexserver
-    # - localhost:6072
+    # - 127.0.0.1:6072
