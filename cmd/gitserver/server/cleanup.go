@@ -232,15 +232,15 @@ func (s *Server) howManyBytesToFree() (int64, error) {
 	}
 	desiredFreeBytes := uint64(float64(s.DesiredPercentFree) / 100.0 * float64(diskSizeBytes))
 	howManyBytesToFree := int64(desiredFreeBytes - actualFreeBytes)
-	G := float64(1024 * 1024 * 1024)
+	if howManyBytesToFree < 0 {
+		howManyBytesToFree = 0
+	}
+	const G = float64(1024 * 1024 * 1024)
 	log15.Debug("cleanup",
 		"desired percent free", s.DesiredPercentFree,
 		"actual percent free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0,
 		"amount to free in GiB", float64(howManyBytesToFree)/G,
 		"mount point", mountPoint)
-	if howManyBytesToFree < 0 {
-		howManyBytesToFree = 0
-	}
 	return howManyBytesToFree, nil
 }
 
