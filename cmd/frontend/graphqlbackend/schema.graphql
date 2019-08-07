@@ -1020,11 +1020,11 @@ type Query {
         open: Boolean
     ): ThreadConnection!
 
-    ##TODO!(sqs)# A list of diagnostics contained in threads.
-    ##TODO!(sqs)threadDiagnostics(
-    ##TODO!(sqs)    # Return the first n results.
-    ##TODO!(sqs)    first: Int
-    ##TODO!(sqs)): ThreadDiagnosticConnection!
+    # A list of diagnostics in threads.
+    threadDiagnostics(
+        # Return the first n results.
+        first: Int
+    ): ThreadDiagnosticConnection!
 
     # A list of campaigns. TODO!(sqs)
     campaigns(
@@ -4367,6 +4367,12 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
     # The actor who authored the thread.
     author: Actor
 
+    # A list of diagnostics in this thread.
+    diagnostics(
+        # Return the first n results.
+        first: Int
+    ): ThreadDiagnosticConnection!
+
     # The date and time when the thread was created.
     createdAt: DateTime!
 
@@ -4407,6 +4413,48 @@ type ThreadConnection {
     nodes: [Thread!]!
 
     # The total number of threads in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A diagnostic is information about a specific location in code.
+type Diagnostic {
+    # The type, as set when the diagnostic provider was registered.
+    type: String!
+
+    # The diagnostic data (which conforms to the sourcegraph.Diagnostic extension API type).
+    data: JSONValue!
+
+    # The code location. TODO!(sqs)
+    # location: TreeEntry
+}
+
+# A diagnostic that has been added to a thread.
+type ThreadDiagnosticEdge implements Node & Updatable {
+    # The globally unique ID of the thread diagnostic edge.
+    id: ID!
+
+    # The thread that contains the diagnostic.
+    thread: Thread!
+
+    # The diagnostic.
+    diagnostic: Diagnostic!
+
+    # Whether the viewer can update this thread diagnostic edge.
+    viewerCanUpdate: Boolean!
+}
+
+# A list of diagnostics in a thread.
+type ThreadDiagnosticConnection {
+    # The edges connecting the thread with its diagnostics.
+    edges: [ThreadDiagnosticEdge!]!
+
+    # A list of diagnostics in the thread.
+    nodes: [Diagnostic!]!
+
+    # The total number of diagnostics in the connection.
     totalCount: Int!
 
     # Pagination information.
@@ -4545,6 +4593,12 @@ type Campaign implements Node & Comment & Commentable {
     # The comparisons of before and after this campaign's thread's changes are applied (on all
     # affected repositories).
     repositoryComparisons: [RepositoryComparison!]!
+
+    # A list of diagnostics in this campaigns' threads.
+    diagnostics(
+        # Return the first n results.
+        first: Int
+    ): ThreadDiagnosticConnection!
 
     # A burndown chart of the states of the campaign's threads over time.
     burndownChart: CampaignBurndownChart!
