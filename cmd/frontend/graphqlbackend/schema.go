@@ -1034,6 +1034,12 @@ type Query {
         open: Boolean
     ): ThreadOrIssueOrChangesetConnection!
 
+    # A list of diagnostics contained in threads.
+    threadDiagnostics(
+        # Return the first n results.
+        first: Int
+    ): ThreadDiagnosticConnection!
+
     # A list of campaigns. TODO!(sqs)
     campaigns(
         # Returns the first n campaigns from the list.

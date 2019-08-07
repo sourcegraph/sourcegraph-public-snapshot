@@ -221,3 +221,8 @@ Review API consumers workflow:
 Diagnostic providers are responsible for querying the diagnostics GraphQL API (by whatever criteria they use for canonicalizing/deduping diagnostics) to see if a diagnostic is currently contained in any threads.
 
 Diagnostic providers can also 'resolve' a diagnostic given the data stored in the database. This is faster than running the provider over the entire workspace again.
+
+
+-------
+
+Key insight is that there is no meaningful distinction between issues and changesets in a world with automation? When you aren't reviewing the diff line-by-line, you might "approve" and "merge" changes that you only see a high-level description of (the intent of), not the actual changes. In that world, things that look like issues (with no code diff) have "approve" and "merge" buttons.
