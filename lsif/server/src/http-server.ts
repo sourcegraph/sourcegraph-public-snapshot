@@ -3,15 +3,16 @@ import * as tmp from 'tmp-promise'
 import bodyParser from 'body-parser'
 import express from 'express'
 import split2 from 'split2'
+import through2 from 'through2'
+import { Backend, ERRNOLSIFDATA, QueryRunner } from './backend'
 import { Cache } from './cache'
 import { createPrometheusReporters, emit } from './prometheus'
-import { ERRNOLSIFDATA } from './backend'
+import { DgraphBackend } from './dgraph'
 import { fs } from 'mz'
 import { readEnvInt } from './env'
-import { SQLiteGraphBackend } from './sqlite'
+import { SQLiteBlobBackend, SQLiteGraphBackend } from './sqlite'
 import { Validator } from 'jsonschema'
 import { wrap } from 'async-middleware'
-import through2 from 'through2'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -40,15 +41,29 @@ type SupportedMethods = 'hover' | 'definitions' | 'references'
 
 const SUPPORTED_METHODS: Set<SupportedMethods> = new Set(['hover', 'definitions', 'references'])
 
+// TODO(efritz) - make configurable
+const DEFAULT_BACKEND = 'dgraph'
+const AVAILABLE_BACKENDS: { [k: string]: () => Promise<Backend<QueryRunner>> } = {
+    'sqlite-graph': async () => new SQLiteGraphBackend(),
+    'sqlite-blob': async () => new SQLiteBlobBackend(),
+    dgraph: async () => {
+        const db = new DgraphBackend()
+        await db.initialize()
+        return db
+    },
+}
+
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
-function main(): void {
+async function main(): Promise<void> {
     const app = express()
-    const backend = new SQLiteGraphBackend()
     const cache = new Cache()
-    const schema = JSON.parse(fs.readFileSync('./src/lsif.schema.json').toString())
+    const schema = JSON.parse((await fs.readFile('./src/lsif.schema.json')).toString())
     const prometheusReporters = createPrometheusReporters()
+
+    // Choose a default backend
+    let backend = await AVAILABLE_BACKENDS[DEFAULT_BACKEND]()
 
     app.use(errorHandler)
 
@@ -60,6 +75,17 @@ function main(): void {
         res.set('Content-Type', Prometheus.register.contentType)
         res.end(Prometheus.register.metrics())
     })
+
+    app.get(
+        '/switch-backend',
+        wrap(async (req, res) => {
+            const { backendName } = req.query
+            backend.close()
+            backend = await AVAILABLE_BACKENDS[backendName]()
+            cache.reset()
+            res.send({ status: 'ok' })
+        })
+    )
 
     app.post(
         '/upload',
@@ -127,7 +153,6 @@ function main(): void {
 
                 // Emit metrics
                 emit(prometheusReporters, cacheStats)
-
                 if (createRunnerStats) {
                     emit(prometheusReporters, createRunnerStats)
                 }
@@ -371,4 +396,4 @@ function checkContentLength(rawContentLength: string | undefined): void {
     }
 }
 
-main()
+main().catch(console.error)

@@ -34,6 +34,17 @@ export class DgraphBackend implements Backend<DgraphQueryRunner> {
         // MUST reject if `key` doesn't exist
         return Promise.reject()
     }
+
+    /**
+     * Free any resources used by this object.
+     */
+    public close(): Promise<void> {
+        // TODO - do we need to synchronize with outstanding
+        // query runners? Closing this may make those in-flight
+        // requests fail in nasty ways
+
+        return Promise.resolve(this.clientStub.close())
+    }
 }
 
 export class DgraphQueryRunner implements QueryRunner {

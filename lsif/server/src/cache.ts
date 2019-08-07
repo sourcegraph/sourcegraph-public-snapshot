@@ -99,6 +99,13 @@ export class Cache {
     public delete(repository: string, commit: string): void {
         this.lru.del(makeKey(repository, commit))
     }
+
+    /**
+     * Remove all entries from the cache.
+     */
+    public reset(): void {
+        this.lru.reset()
+    }
 }
 
 /**

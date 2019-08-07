@@ -95,6 +95,13 @@ export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
     }
 
     /**
+     * Free any resources used by this object.
+     */
+    public close(): Promise<void> {
+        return Promise.resolve()
+    }
+
+    /**
      * Ensure the storage root directory exists.
      */
     private async createStorageRoot(): Promise<void> {

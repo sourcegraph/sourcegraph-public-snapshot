@@ -40,6 +40,11 @@ export interface Backend<T extends QueryRunner> {
      * `insertDump` (otherwise this method is expected to throw).
      */
     createRunner(repository: string, commit: string): Promise<{ queryRunner: T; createRunnerStats: CreateRunnerStats }>
+
+    /**
+     * Free any resources used by this object.
+     */
+    close(): Promise<void>
 }
 
 /**
