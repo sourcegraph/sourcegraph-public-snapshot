@@ -19,6 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Disk cleanup in gitserver is now done in terms of percentages to fix [#5059](https://github.com/sourcegraph/sourcegraph/issues/5059).
+
 ### Removed
 
 ## 3.6.2

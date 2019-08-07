@@ -313,6 +313,68 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 	)
 }
 
+func Test_howManyBytesToFree(t *testing.T) {
+	const G = 1024 * 1024 * 1024
+	s := &Server{
+		DesiredPercentFree: 10,
+	}
+
+	tcs := []struct {
+		name      string
+		diskSize  uint64
+		bytesFree uint64
+		want      int64
+	}{
+		{
+			name:      "if there is already enough space, no space is freed",
+			diskSize:  10 * G,
+			bytesFree: 1.5 * G,
+			want:      0,
+		},
+		{
+			name:      "if there is exactly enough space, no space is freed",
+			diskSize:  10 * G,
+			bytesFree: 1 * G,
+			want:      0,
+		},
+		{
+			name:      "if there not enough space, some space is freed",
+			diskSize:  10 * G,
+			bytesFree: 0.5 * G,
+			want:      int64(0.5 * G),
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			s.DiskSizer = &fakeDiskSizer{
+				diskSize:  tc.diskSize,
+				bytesFree: tc.bytesFree,
+			}
+			b, err := s.howManyBytesToFree()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if b != tc.want {
+				t.Errorf("s.howManyBytesToFree(...) is %v, want 0", b)
+			}
+		})
+	}
+}
+
+type fakeDiskSizer struct {
+	bytesFree uint64
+	diskSize  uint64
+}
+
+func (f *fakeDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
+	return f.bytesFree, nil
+}
+
+func (f *fakeDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
+	return f.diskSize, nil
+}
+
 func tmpDir(t *testing.T) (string, func()) {
 	t.Helper()
 	dir, err := ioutil.TempDir("", t.Name())
@@ -402,13 +464,13 @@ func isEmptyDir(path string) (bool, error) {
 
 func TestFreeUpSpace(t *testing.T) {
 	t.Run("no error if no space requested and no repos", func(t *testing.T) {
-		s := &Server{}
+		s := &Server{DiskSizer: &fakeDiskSizer{}}
 		if err := s.freeUpSpace(0); err != nil {
 			t.Fatal(err)
 		}
 	})
 	t.Run("error if space requested and no repos", func(t *testing.T) {
-		s := &Server{}
+		s := &Server{DiskSizer: &fakeDiskSizer{}}
 		if err := s.freeUpSpace(1); err == nil {
 			t.Fatal("want error")
 		}
@@ -439,7 +501,8 @@ func TestFreeUpSpace(t *testing.T) {
 
 		// Run.
 		s := Server{
-			ReposDir: rd,
+			ReposDir:  rd,
+			DiskSizer: &fakeDiskSizer{},
 		}
 		if err := s.freeUpSpace(1000); err != nil {
 			t.Fatal(err)
