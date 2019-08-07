@@ -982,7 +982,7 @@ declare module 'sourcegraph' {
         /**
          * Information about other locations that are related to this diagnostic.
          */
-        relatedInformation?: DiagnosticRelatedInformation[]
+        readonly relatedInformation?: DiagnosticRelatedInformation[]
 
         /**
          * Opaque data for this diagnostic. This data can be used by other consumers of the

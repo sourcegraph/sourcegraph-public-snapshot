@@ -34,6 +34,15 @@ ALTER TABLE threads ADD CONSTRAINT external_thread_has_id_and_data CHECK ((impor
 
 -----------------
 
+CREATE TABLE threads_diagnostics (
+	id bigserial PRIMARY KEY,
+    repository_id integer NOT NULL REFERENCES repo(id) ON DELETE CASCADE,
+    data jsonb NOT NULL,
+
+);
+
+-----------------
+
 CREATE TABLE campaigns (
 	id bigserial PRIMARY KEY,
     namespace_user_id integer REFERENCES users(id) ON DELETE CASCADE,

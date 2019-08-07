@@ -214,3 +214,10 @@ Review API consumers workflow:
 
 - Find all instances of ee
 - Create issues, grouped by (repository, code owner)
+
+
+-------
+
+Diagnostic providers are responsible for querying the diagnostics GraphQL API (by whatever criteria they use for canonicalizing/deduping diagnostics) to see if a diagnostic is currently contained in any threads.
+
+Diagnostic providers can also 'resolve' a diagnostic given the data stored in the database. This is faster than running the provider over the entire workspace again.
