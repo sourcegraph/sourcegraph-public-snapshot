@@ -55,7 +55,6 @@ export interface StorageItems {
     repoLocations: RepoLocations
     phabricatorMappings: PhabricatorMapping[]
     sourcegraphAnonymousUid: string
-    disableExtension: boolean
     /**
      * Storage for feature flags.
      */
