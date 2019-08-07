@@ -78,6 +78,7 @@
     "@types/chai": "4.1.7",
     "@types/chai-as-promised": "7.1.1",
     "@types/chalk": "2.2.0",
+    "@types/chrome": "^0.0.88",
     "@types/classnames": "2.2.9",
     "@types/d3-axis": "1.0.12",
     "@types/d3-scale": "2.1.1",
@@ -241,7 +242,7 @@
     "tslib": "^1.10.0",
     "utility-types": "^3.7.0",
     "uuid": "^3.3.2",
-    "webext-domain-permission-toggle": "^0.1.0",
+    "webext-domain-permission-toggle": "^1.0.0",
     "webextension-polyfill": "^0.4.0",
     "whatwg-url": "^7.0.0"
   },

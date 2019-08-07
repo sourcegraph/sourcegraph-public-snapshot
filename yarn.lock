@@ -1614,7 +1614,8 @@
   integrity sha512-Te7F1RQJLBH4C8wQ2xz0nPC2vpe13F80V+Yv+c3GySOoh4DcLNN4P5u51Kh4aZPqeS5DJ7CKvHyX2SM/1EBXNg==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "2.0.0"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^3.0.1":
   version "3.0.1"
@@ -2219,6 +2220,20 @@
   dependencies:
     chalk "*"
 
+"@types/chrome@0.0.86":
+  version "0.0.86"
+  resolved "https://registry.npmjs.org/@types/chrome/-/chrome-0.0.86.tgz#1026ef8e76db4fde1859cae858d73236fe670d69"
+  integrity sha512-7ehebPf/5IR64SYdD2Vig0q0oUCNbWMQ29kASlNJaHVVtA5/J/DnrxnYVPCID70o7LgHdYsav6I4/XdqAxjTLQ==
+  dependencies:
+    "@types/filesystem" "*"
+
+"@types/chrome@^0.0.88":
+  version "0.0.88"
+  resolved "https://registry.npmjs.org/@types/chrome/-/chrome-0.0.88.tgz#0041a101d69f78008910927c5b3299a00d8660db"
+  integrity sha512-JBsIrBZ2adJhlXvJ+1j0xLbcfOfwee/WAg7Lp2NE+Wf3m0vXMJFWv/PPjqNk5ZUXDeY/qDxPHe+PUjxnl8HWFg==
+  dependencies:
+    "@types/filesystem" "*"
+
 "@types/classnames@2.2.9":
   version "2.2.9"
   resolved "https://registry.npmjs.org/@types/classnames/-/classnames-2.2.9.tgz#d868b6febb02666330410fe7f58f3c4b8258be7b"
@@ -2312,6 +2327,18 @@
   version "1.3.1"
   resolved "https://registry.npmjs.org/@types/fancy-log/-/fancy-log-1.3.1.tgz#dd94fbc8c2e2ab8ab402ca8d04bb8c34965f0696"
   integrity sha512-31Dt9JaGfHretvwVxCBrCFL5iC9MQ3zOXpu+8C4qzW0cxc5rJJVGxB5c/vZ+wmeTk/JjPz/D0gv8BZ+Ip6iCqQ==
+
+"@types/filesystem@*":
+  version "0.0.29"
+  resolved "https://registry.npmjs.org/@types/filesystem/-/filesystem-0.0.29.tgz#ee3748eb5be140dcf980c3bd35f11aec5f7a3748"
+  integrity sha512-85/1KfRedmfPGsbK8YzeaQUyV1FQAvMPMTuWFQ5EkLd2w7szhNO96bk3Rh/SKmOfd9co2rCLf0Voy4o7ECBOvw==
+  dependencies:
+    "@types/filewriter" "*"
+
+"@types/filewriter@*":
+  version "0.0.28"
+  resolved "https://registry.npmjs.org/@types/filewriter/-/filewriter-0.0.28.tgz#c054e8af4d9dd75db4e63abc76f885168714d4b3"
+  integrity sha1-wFTor02d11205jq8dviFFocU1LM=
 
 "@types/glob-stream@*":
   version "6.1.0"
@@ -15567,7 +15594,8 @@ source-map@^0.7.2, source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "23.0.1"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
@@ -17338,10 +17366,19 @@ web-namespaces@^1.1.2:
   resolved "https://registry.npmjs.org/web-namespaces/-/web-namespaces-1.1.2.tgz#c8dc267ab639505276bae19e129dbd6ae72b22b4"
   integrity sha512-II+n2ms4mPxK+RnIxRPOw3zwF2jRscdJIUE9BfkKHm4FYEg9+biIoTMnaZF5MpemE3T+VhMLrhbyD4ilkPCSbg==
 
-webext-domain-permission-toggle@^0.1.0:
+webext-additional-permissions@^0.1.0:
   version "0.1.0"
-  resolved "https://registry.npmjs.org/webext-domain-permission-toggle/-/webext-domain-permission-toggle-0.1.0.tgz#82c0f611a075958e5b879fd77f69908236615607"
-  integrity sha512-zPwVKYa5EiH0htXedmoAWUaMqU7pOr+4dlzFyGVM64Q0jLVo3V8AVcYOVDKtY+c9qOkhtoSUCGcXCnbs5u8eNg==
+  resolved "https://registry.npmjs.org/webext-additional-permissions/-/webext-additional-permissions-0.1.0.tgz#bc5a2a6cb8e60098c81a6004c446bfae2aefd85a"
+  integrity sha512-eA1o6BdRbpU5ClL6GcmwhGtVVzNTbQSqX9esakpurWYVt9ykpGQ1ZNe5l30Yt19GW0eRC8VdroOeJSumP5cMpQ==
+  dependencies:
+    "@types/chrome" "0.0.86"
+
+webext-domain-permission-toggle@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmjs.org/webext-domain-permission-toggle/-/webext-domain-permission-toggle-1.0.0.tgz#6f9a6d3234ffe596921d1be5ae8823ef5b02ebd2"
+  integrity sha512-K6RAOYtVCMAmqjQPopMbGOIoxpFU05ERGgaLkUNvFCdpPsXLB5y4m1+Cq1dezyfx6FU0lLEqxoL/5/49+EY5zA==
+  dependencies:
+    webext-additional-permissions "^0.1.0"
 
 webextension-polyfill@^0.4.0:
   version "0.4.0"
