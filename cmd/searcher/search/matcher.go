@@ -25,6 +25,7 @@ import (
 
 const (
 	// maxFileMatches is the limit on number of matching files we return.
+	// We also use this as the maximum number of matches to return in a file.
 	maxFileMatches = 1000
 
 	// maxLineMatches is the limit on number of matches to return in a
@@ -206,7 +207,7 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 		return nil, false, nil
 	}
 
-	locs := rg.re.FindAllIndex(fileMatchBuf, maxFileMatches)
+	locs := rg.re.FindAllIndex(fileMatchBuf, maxLineMatches)
 	lastLineNumber := 0
 	lastMatchIndex := 0
 	lastLineStartIndex := 0
@@ -244,7 +245,7 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 		matches = appendMatches(matches, fileBuf[lineStart:lineEnd], fileMatchBuf[lineStart:lineEnd], lineNumber, start-lineStart, end-lineStart)
 
 	}
-	limitHit = len(matches) == maxLineMatches
+	limitHit = len(matches) >= maxLineMatches
 	return matches, limitHit, nil
 }
 
@@ -288,7 +289,7 @@ func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []
 			Preview:          string(fileBuf[:len(line)]),
 			LineNumber:       lineNumber,
 			OffsetAndLengths: [][2]int{{offset, length}},
-			LimitHit:         false, // TODO
+			LimitHit:         false, // TODO: should we remove/ignore this param now that we don't scan for matches by line?
 		})
 
 		lineNumber++

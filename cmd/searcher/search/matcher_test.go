@@ -455,7 +455,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, 0, true, false)
+	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, maxFileMatches, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -473,14 +473,17 @@ func TestMaxMatches(t *testing.T) {
 		if len(fm.LineMatches) != maxLineMatches {
 			t.Fatalf("expected %d line matches, got %d", maxLineMatches, len(fm.LineMatches))
 		}
-		for _, lm := range fm.LineMatches {
-			if !lm.LimitHit {
-				t.Fatalf("expected limitHit on line match")
-			}
-			if len(lm.OffsetAndLengths) != maxOffsets {
-				t.Fatalf("expected %d offsets, got %d", maxOffsets, len(lm.OffsetAndLengths))
-			}
-		}
+		// TODO: should we remove these tests? It doesn't make sense to have these in this new implementation
+		// because we return an individual line match for each offset and length, given that we don't scan
+		// line-by-line anymore.
+		// for _, lm := range fm.LineMatches {
+		// 	if !lm.LimitHit {
+		// 		t.Fatalf("expected limitHit on line match")
+		// 	}
+		// 	if len(lm.OffsetAndLengths) != maxOffsets {
+		// 		t.Fatalf("expected %d offsets, got %d", maxOffsets, len(lm.OffsetAndLengths))
+		// 	}
+		// }
 	}
 }
 
