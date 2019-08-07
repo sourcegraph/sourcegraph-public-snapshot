@@ -41,6 +41,9 @@ export interface QueryStats {
 export async function timeit<T>(fn: () => Promise<T>): Promise<{ result: T; elapsed: number }> {
     const start = process.hrtime()
     const result = await fn()
-    const elapsed = process.hrtime(start)[1] / 1000000
-    return { result, elapsed }
+
+    // Jump through hoops
+    const [seconds, nanoseconds] = process.hrtime(start)
+    const elapsedMs = seconds * 1e3 + nanoseconds / 1e6
+    return { result, elapsed:elapsedMs }
 }
