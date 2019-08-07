@@ -24,11 +24,6 @@ import (
 )
 
 const (
-	// maxLineSize is the maximum length of a line in bytes.
-	// Lines larger than this are not scanned for results.
-	// (e.g. minified javascript files that are all on one line).
-	maxLineSize = 500
-
 	// maxFileMatches is the limit on number of matching files we return.
 	maxFileMatches = 1000
 
@@ -215,7 +210,7 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 	lastLineNumber := 0
 	lastMatchIndex := 0
 	lastLineStartIndex := 0
-	//lineLimitHit := len(locs) == maxOffsets
+
 	for _, match := range locs {
 		start, end := match[0], match[1]
 
