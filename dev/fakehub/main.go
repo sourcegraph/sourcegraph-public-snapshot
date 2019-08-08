@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -64,7 +65,8 @@ func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "getting relative path of git dir")
 		}
-		relDirs = append(relDirs, rd)
+		// Render template without "/.git" suffix.
+		relDirs = append(relDirs, strings.TrimSuffix(rd, "/.git"))
 	}
 	tvars := &templateVars{n, relDirs, ln.Addr()}
 
@@ -75,11 +77,11 @@ func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {
 	})
 
 	if n == 1 {
-		mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(http.Dir(reposRoot))))
+		mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(httpDir{http.Dir(reposRoot)})))
 	} else {
 		for i := 1; i <= n; i++ {
 			pfx := fmt.Sprintf("/repos/%d/", i)
-			mux.Handle(pfx, http.StripPrefix(pfx, http.FileServer(http.Dir(reposRoot))))
+			mux.Handle(pfx, http.StripPrefix(pfx, http.FileServer(httpDir{http.Dir(reposRoot)})))
 		}
 	}
 
@@ -87,6 +89,27 @@ func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {
 		Handler: logger(mux),
 	}
 	return s, nil
+}
+
+type httpDir struct {
+	http.Dir
+}
+
+// Wraps the http.Dir to inject subdir "/.git" to the path.
+func (d httpDir) Open(name string) (http.File, error) {
+	// Backwards compatibility for old config, skip if name already contains "/.git/".
+	if !strings.Contains(name, "/.git/") {
+		// Loops over subpaths that are requested by Git client to find the insert point.
+		// The order of slice matters, must try to match "/objects/" before "/info/"
+		// because there is a path "/objects/info/" exists.
+		for _, sp := range []string{"/objects/", "/info/", "/HEAD"} {
+			if i := strings.LastIndex(name, sp); i > 0 {
+				name = name[:i] + "/.git" + name[i:]
+				break
+			}
+		}
+	}
+	return d.Dir.Open(name)
 }
 
 // configureRepos finds all .git directories and configures them to be served.
