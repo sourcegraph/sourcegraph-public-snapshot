@@ -127,12 +127,6 @@ window.sgdocs = (() => {
    * Check the URL to see if navigation to a schema key is desired
    */
   function schemaLinkCheck() {
-    function onKeyActive(targetKey) {
-      targetKey.style.fontWeight = '700' // Bold, then un-bold text to draw attention
-      setTimeout(() => targetKey.style.fontWeight = 400, 1000)
-      scrollToElement(targetKey, offsetTop)
-    }
-
     const schemaDocSelector = '.json-schema-doc'
     const offsetTop = document.querySelector('.global-navbar').clientHeight + 20
     const schemaDocs = document.querySelectorAll(schemaDocSelector)
@@ -147,6 +141,7 @@ window.sgdocs = (() => {
           return
         }
 
+        // Add a named anchor to get the hover functionality we need
         const keyText = keyNameMatch[1]
         const id = keyText.replace('.', '-')
         const anchor = document
@@ -157,8 +152,12 @@ window.sgdocs = (() => {
         anchor.style.color = el.style.color
         el.replaceWith(anchor)
 
+        // Temporarily change the id of the anchor to prevent the browser
+        // from scrolling to the element
         anchor.addEventListener('click', e => {
-          setTimeout(() => onKeyActive(e.target), 0)
+          let originalId = e.target.id
+          e.target.id = `${originalId}-id-miss`
+          setTimeout(() => e.target.id = originalId, 1000)
         })
       })
     })
@@ -166,7 +165,7 @@ window.sgdocs = (() => {
     // If URL hash is set and matches a schema key, scroll to it
     let targetKey = document.querySelector(`${schemaDocSelector} ${window.location.hash}`)
     if (window.location.hash && targetKey) {
-      onKeyActive(targetKey)
+      scrollToElement(targetKey, offsetTop)
     }
   }
 })()
