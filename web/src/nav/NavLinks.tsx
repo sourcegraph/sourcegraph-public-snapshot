@@ -1,5 +1,4 @@
 import * as H from 'history'
-import BellIcon from 'mdi-react/BellIcon'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
@@ -13,13 +12,9 @@ import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { LinkWithIconOnlyTooltip } from '../components/LinkWithIconOnlyTooltip'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { isDiscussionsEnabled } from '../discussions'
-import { AutomationIcon } from '../enterprise/a8n/icons'
 import { CampaignsIcon } from '../enterprise/campaigns/icons'
-import { ChangesIcon } from '../enterprise/changes/icons'
-import { ChangesetsNavItem } from '../enterprise/changesetsOLD/global/nav/ChangesetsNavItem'
 import { ChecksIcon } from '../enterprise/checks/icons'
 import { ThreadsIcon } from '../enterprise/threads/icons'
-import { ThreadsNavItem } from '../enterprise/threadsOLD/global/nav/ThreadsNavItem'
 import { KeybindingsProps } from '../keybindings'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
@@ -76,14 +71,6 @@ export class NavLinks extends React.PureComponent<Props> {
                                 to="/checks"
                                 text="Checks"
                                 icon={ChecksIcon}
-                                className="nav-link btn btn-link px-3 text-decoration-none"
-                            />
-                        </li>
-                        <li className="nav-item d-none">
-                            <LinkWithIconOnlyTooltip
-                                to="/automation"
-                                text="Automation"
-                                icon={AutomationIcon}
                                 className="nav-link btn btn-link px-3 text-decoration-none"
                             />
                         </li>

@@ -8,17 +8,17 @@ import { queryGraphQL } from '../../../backend/graphql'
 
 const LOADING: 'loading' = 'loading'
 
+type Result = typeof LOADING | GQL.ICampaign | null | ErrorLike
+
 /**
  * A React hook that observes a campaign queried from the GraphQL API by ID.
  *
  * @param campaign The campaign ID.
  */
-export const useCampaignByID = (
-    campaign: GQL.ID
-): [typeof LOADING | GQL.ICampaign | null | ErrorLike, (update?: Partial<GQL.ICampaign>) => void] => {
+export const useCampaignByID = (campaign: GQL.ID): [Result, (update?: Partial<GQL.ICampaign>) => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
 
-    const [result, setResult] = useState<typeof LOADING | GQL.ICampaign | null | ErrorLike>(LOADING)
+    const [result, setResult] = useState<Result>(LOADING)
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
@@ -37,7 +37,6 @@ export const useCampaignByID = (
                             updatedAt
                             viewerCanUpdate
                             isPreview
-                            rules
                             url
                         }
                     }

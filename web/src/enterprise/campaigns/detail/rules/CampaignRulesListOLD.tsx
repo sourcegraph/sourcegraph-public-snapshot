@@ -20,7 +20,7 @@ interface Props {
 /**
  * A list of rules applied by a campaign.
  */
-export const CampaignRulesList: React.FunctionComponent<Props> = ({ campaign, className = '' }) => {
+export const CampaignRulesListOLD: React.FunctionComponent<Props> = ({ campaign, className = '' }) => {
     const rules: ChangesetPlanOperation[] = JSON.parse(campaign.rules || '[]')
     return (
         <div className={`campaign-rules-list ${className}`}>

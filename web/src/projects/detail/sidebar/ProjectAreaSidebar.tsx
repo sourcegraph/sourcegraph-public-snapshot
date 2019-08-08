@@ -11,7 +11,7 @@ import { ChecksIcon } from '../../../enterprise/checks/icons'
 import { LabelIcon } from '../../../enterprise/labels/icons'
 import { ThreadsIcon } from '../../../enterprise/threadsOLD/icons'
 import { NavItemWithIconDescriptor } from '../../../util/contributions'
-import { GitPullRequestIcon } from '../../../util/octicons'
+import { GitPullRequestIcon, ZapIcon } from '../../../util/octicons'
 import { ProjectAvatar } from '../../components/ProjectAvatar'
 
 interface Props extends ExtensionsControllerProps {
@@ -24,7 +24,7 @@ const LINKS: NavItemWithIconDescriptor[] = [
     { to: '', label: 'Project', icon: HomeVariantIcon, exact: true },
     { to: '/tree', label: 'Repository', icon: FolderTextIcon },
     { to: '/changesets', label: 'Changesets', icon: GitPullRequestIcon },
-    { to: '/rules', label: 'Rules', icon: RulesIcon },
+    { to: '/rules', label: 'Rules', icon: ZapIcon },
     // { to: '/checks', label: 'Checks', icon: ChecksIcon },
     { to: '/threads', label: 'Threads', icon: ThreadsIcon },
     { to: '/labels', label: 'Labels', icon: LabelIcon },

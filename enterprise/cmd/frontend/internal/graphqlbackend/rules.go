@@ -2,7 +2,7 @@ package graphqlbackend
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/a8n/rules"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rules"
 )
 
 func init() {

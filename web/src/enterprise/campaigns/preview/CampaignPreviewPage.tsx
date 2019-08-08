@@ -11,7 +11,7 @@ import { GitPullRequestIcon } from '../../../util/octicons'
 import { CampaignImpactSummaryBar } from '../common/CampaignImpactSummaryBar'
 import { CampaignFileDiffsList } from '../detail/fileDiffs/CampaignFileDiffsList'
 import { CampaignRepositoriesList } from '../detail/repositories/CampaignRepositoriesList'
-import { CampaignRulesList } from '../detail/rules/CampaignRulesList'
+import { CampaignRulesListOLD } from '../detail/rules/CampaignRulesListOLD'
 import { useCampaignByID } from '../detail/useCampaignByID'
 import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsArea'
 import { CreateCampaignFromPreviewForm } from './CreateCampaignFromPreviewForm'
@@ -77,7 +77,7 @@ export const CampaignPreviewPage: React.FunctionComponent<Props> = props => {
             </div>
             <hr className="my-4" />
             <div className="container">
-                <CampaignRulesList {...props} campaign={campaign} className="mb-4" />
+                <CampaignRulesListOLD {...props} campaign={campaign} className="mb-4" />
                 <CampaignRepositoriesList {...props} campaign={campaign} />
                 <CampaignFileDiffsList {...props} campaign={campaign} platformContext={props.platformContext} />
             </div>

@@ -17,9 +17,10 @@ import { CampaignActivity } from './activity/CampaignActivity'
 import { CampaignOverview } from './CampaignOverview'
 import { CampaignFileDiffsList } from './fileDiffs/CampaignFileDiffsList'
 import { CampaignRepositoriesList } from './repositories/CampaignRepositoriesList'
-import { CampaignRulesList } from './rules/CampaignRulesList'
+import { CampaignRulesListOLD } from './rules/CampaignRulesListOLD'
 import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
 import { useCampaignByID } from './useCampaignByID'
+import { RulesList } from '../../rules/list/RulesList'
 
 export interface CampaignAreaContext
     extends Pick<NamespaceCampaignsAreaContext, Exclude<keyof NamespaceCampaignsAreaContext, 'namespace'>> {
@@ -144,7 +145,12 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                     {
                         title: 'Rules',
                         path: '/rules',
-                        render: () => <CampaignRulesList {...context} className={PAGE_CLASS_NAME} />,
+                        render: () => <RulesList {...context} container={campaign} className={PAGE_CLASS_NAME} />,
+                    },
+                    {
+                        title: 'RulesOLD',
+                        path: '/rulesOLD',
+                        render: () => <CampaignRulesListOLD {...context} className={PAGE_CLASS_NAME} />,
                     },
                     {
                         title: 'Threads',
