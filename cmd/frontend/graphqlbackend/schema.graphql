@@ -380,7 +380,7 @@ type Mutation {
     # Add diagnostics to a thread. A list of the just-added diagnostics is returned.
     #
     # TODO!(sqs): improve rawDiagnostics API
-    addDiagnosticsToThread(thread: ID!, rawDiagnostics: [String!]!): EmptyResponse
+    addDiagnosticsToThread(thread: ID!, rawDiagnostics: [String!]!): ThreadDiagnosticConnection!
 
     # Remove diagnostics from a thread.
     removeDiagnosticsFromThread(thread: ID!, threadDiagnosticEdges: [ID!]!): EmptyResponse

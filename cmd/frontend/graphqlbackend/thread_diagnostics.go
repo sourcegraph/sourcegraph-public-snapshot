@@ -55,7 +55,7 @@ func (schemaResolver) ThreadsDiagnosticEdgeByID(ctx context.Context, id graphql.
 	return ThreadDiagnostics.ThreadDiagnosticEdgeByID(ctx, id)
 }
 
-func (schemaResolver) AddDiagnosticsToThread(ctx context.Context, arg *AddDiagnosticsToThreadArgs) (*EmptyResponse, error) {
+func (schemaResolver) AddDiagnosticsToThread(ctx context.Context, arg *AddDiagnosticsToThreadArgs) (ThreadDiagnosticConnection, error) {
 	if ThreadDiagnostics == nil {
 		return nil, errThreadDiagnosticsNotImplemented
 	}
@@ -76,7 +76,7 @@ type ThreadDiagnosticsResolver interface {
 	ThreadDiagnostics(context.Context, *ThreadDiagnosticConnectionArgs) (ThreadDiagnosticConnection, error)
 
 	// Mutations
-	AddDiagnosticsToThread(context.Context, *AddDiagnosticsToThreadArgs) (*EmptyResponse, error)
+	AddDiagnosticsToThread(context.Context, *AddDiagnosticsToThreadArgs) (ThreadDiagnosticConnection, error)
 	RemoveDiagnosticsFromThread(context.Context, *RemoveDiagnosticsFromThreadArgs) (*EmptyResponse, error)
 
 	// ThreadDiagnosticEdgeByID is called by the ThreadDiagnosticEdgeByID func but is not in the

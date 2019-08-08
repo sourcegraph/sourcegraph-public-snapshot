@@ -90,12 +90,12 @@ func TestDB_CampaignsThreads(t *testing.T) {
 		}
 	}
 
-	// Remove 2 labels.
+	// Remove 2 threads.
 	if err := (dbCampaignsThreads{}).RemoveThreadsFromCampaign(ctx, campaign0.ID, []int64{thread0, thread1}); err != nil {
 		t.Fatal(err)
 	}
 
-	// Add back 1 label.
+	// Add back 1 thread.
 	if err := (dbCampaignsThreads{}).AddThreadsToCampaign(ctx, campaign0.ID, []int64{thread1}); err != nil {
 		t.Fatal(err)
 	}

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
@@ -31,7 +32,7 @@ const selectColumns = `id, thread_id, type, data`
 // Create adds a diagnostic to the thread.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to modify the thread.
-func (dbThreadsDiagnostics) Create(ctx context.Context, threadDiagnostic dbThreadDiagnostic) error {
+func (dbThreadsDiagnostics) Create(ctx context.Context, threadDiagnostic dbThreadDiagnostic) (id int64, err error) {
 	if mocks.threadsDiagnostics.Create != nil {
 		return mocks.threadsDiagnostics.Create(threadDiagnostic)
 	}
@@ -42,11 +43,13 @@ func (dbThreadsDiagnostics) Create(ctx context.Context, threadDiagnostic dbThrea
 		threadDiagnostic.Data,
 	}
 	query := sqlf.Sprintf(
-		`INSERT INTO threads_diagnostics(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+selectColumns,
+		`INSERT INTO threads_diagnostics(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING id`,
 		args...,
 	)
-	_, err := dbThreadsDiagnostics{}.scanRow(dbconn.Global.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
-	return err
+	if err := dbconn.Global.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&id); err != nil {
+		return 0, err
+	}
+	return id, nil
 }
 
 // GetByID retrieves the thread diagnostic (if any) given its ID.
@@ -69,6 +72,7 @@ func (s dbThreadsDiagnostics) GetByID(ctx context.Context, id int64) (*dbThreadD
 
 // dbThreadsDiagnosticsListOptions contains options for listing threads.
 type dbThreadsDiagnosticsListOptions struct {
+	IDs        []int64
 	ThreadID   int64 // only list diagnostics for this thread
 	CampaignID int64 // only list diagnostics for threads in this campaign
 	*db.LimitOffset
@@ -76,6 +80,9 @@ type dbThreadsDiagnosticsListOptions struct {
 
 func (o dbThreadsDiagnosticsListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if o.IDs != nil {
+		conds = append(conds, sqlf.Sprintf("id = ANY(%v)", pq.Array(o.IDs)))
+	}
 	if o.ThreadID != 0 {
 		conds = append(conds, sqlf.Sprintf("thread_id=%d", o.ThreadID))
 	}
@@ -162,11 +169,11 @@ func (dbThreadsDiagnostics) Count(ctx context.Context, opt dbThreadsDiagnosticsL
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to modify the thread and the
 // diagnostics.
-func (s dbThreadsDiagnostics) DeleteByID(ctx context.Context, id int64) error {
+func (s dbThreadsDiagnostics) DeleteByIDInThread(ctx context.Context, threadDiagnosticID, threadID int64) error {
 	if mocks.threadsDiagnostics.DeleteByID != nil {
-		return mocks.threadsDiagnostics.DeleteByID(id)
+		return mocks.threadsDiagnostics.DeleteByID(threadDiagnosticID, threadID)
 	}
-	return s.delete(ctx, sqlf.Sprintf("id=%d", id))
+	return s.delete(ctx, sqlf.Sprintf("id=%d AND thread_id=%d", threadDiagnosticID, threadID))
 }
 
 func (dbThreadsDiagnostics) delete(ctx context.Context, cond *sqlf.Query) error {
@@ -189,9 +196,9 @@ func (dbThreadsDiagnostics) delete(ctx context.Context, cond *sqlf.Query) error 
 
 // mockThreadsDiagnostics mocks the campaigns-threads-related DB operations.
 type mockThreadsDiagnostics struct {
-	Create     func(dbThreadDiagnostic) error
+	Create     func(dbThreadDiagnostic) (int64, error)
 	GetByID    func(int64) (*dbThreadDiagnostic, error)
 	List       func(dbThreadsDiagnosticsListOptions) ([]*dbThreadDiagnostic, error)
 	Count      func(dbThreadsDiagnosticsListOptions) (int, error)
-	DeleteByID func(int64) error
+	DeleteByID func(threadDiagnosticID, threadID int64) error
 }
