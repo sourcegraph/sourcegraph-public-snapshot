@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { map, startWith } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { actorFragment, actorQuery } from '../../../actor/graphql'
 import { queryGraphQL } from '../../../backend/graphql'
 
@@ -46,6 +46,7 @@ export const useThreadByNumberInRepository = (
                                 viewerCanUpdate
                                 url
                                 repository {
+                                    id
                                     url
                                 }
                                 repositoryComparison {
@@ -73,8 +74,7 @@ export const useThreadByNumberInRepository = (
                         return null
                     }
                     return data.node.thread
-                }),
-                startWith(LOADING)
+                })
             )
             .subscribe(setResult, err => setResult(asError(err)))
         return () => subscription.unsubscribe()

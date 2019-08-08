@@ -47,6 +47,9 @@
 
 .query-input3 {
     background-color: var(--input-bg);
+    min-height: 39px; // TODO!(sqs): hack to get same height as button
+    padding-top: $input-padding-x/2; // TODO!(sqs): hack to vertically center
+    padding-bottom: $input-padding-x/2; // TODO!(sqs): hack to vertically center
 
     &__global {
         max-width: 32rem;

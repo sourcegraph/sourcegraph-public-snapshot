@@ -2,7 +2,8 @@ import React from 'react'
 import { DropdownItem, DropdownMenu } from 'reactstrap'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
-import { useCampaigns } from '../list/useCampaigns'
+import { Label } from '../../../components/Label'
+import { useLabels } from '../useLabels'
 
 interface Props {
     repository: Pick<GQL.IRepository, 'id'>
@@ -16,7 +17,7 @@ const LOADING = 'loading' as const
 /**
  * A dropdown menu with a list of labels.
  */
-export const CampaignsDropdownMenu: React.FunctionComponent<Props> = ({ repository, onSelect, ...props }) => {
+export const LabelsDropdownMenu: React.FunctionComponent<Props> = ({ repository, onSelect, ...props }) => {
     const labels = useLabels(repository)
     return (
         <DropdownMenu {...props}>
@@ -28,11 +29,13 @@ export const CampaignsDropdownMenu: React.FunctionComponent<Props> = ({ reposito
                 <DropdownItem header={true} className="py-1">
                     Error loading labels
                 </DropdownItem>
+            ) : labels.nodes.length === 0 ? (
+                <DropdownItem header={true}>No labels defined in repository</DropdownItem>
             ) : (
                 labels.nodes.map(label => (
                     // tslint:disable-next-line: jsx-no-lambda
-                    <DropdownItem key={label.id} onClick={() => onSelect(label)}>
-                        <small className="text-muted">#{label.namespace.namespaceName}</small> {label.name}
+                    <DropdownItem key={label.id} onClick={() => onSelect(label)} className="d-flex align-items-stretch">
+                        <Label label={{ ...label, name: ' ' }} className="p-3 mr-3" /> {label.name}
                     </DropdownItem>
                 ))
             )}

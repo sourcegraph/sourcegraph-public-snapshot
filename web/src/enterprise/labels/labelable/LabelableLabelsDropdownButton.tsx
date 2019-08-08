@@ -6,16 +6,15 @@ import { ExtensionsControllerNotificationProps } from '../../../../../shared/src
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../backend/graphql'
-import { CampaignsDropdownMenu } from '../../campaigns/components/CampaignsDropdownMenu'
-import { CampaignsIcon } from '../../campaigns/icons'
 import { LabelIcon } from '../icons'
+import { LabelsDropdownMenu } from './LabelsDropdownMenu'
 
 export const addLabelsToLabelable = (input: GQL.IAddLabelsToLabelableOnMutationArguments): Promise<void> =>
     mutateGraphQL(
         gql`
             mutation AddLabelsToLabelable($labelable: ID!, $labels: [ID!]!) {
                 addLabelsToLabelable(labelable: $labelable, labels: $labels) {
-                    alwaysNil
+                    __typename
                 }
             }
         `,
@@ -28,6 +27,7 @@ export const addLabelsToLabelable = (input: GQL.IAddLabelsToLabelableOnMutationA
         .toPromise()
 
 interface Props extends ExtensionsControllerNotificationProps {
+    repository: Pick<GQL.IRepository, 'id'>
     labelable: Pick<GQL.Labelable, 'id'>
     onChange?: () => void
 
@@ -38,7 +38,8 @@ interface Props extends ExtensionsControllerNotificationProps {
 /**
  * A dropdown button with a menu to add the thread to a labelable.
  */
-export const ThreadCampaignsDropdownButton: React.FunctionComponent<Props> = ({
+export const LabelableLabelsDropdownButton: React.FunctionComponent<Props> = ({
+    repository,
     labelable,
     onChange,
     className = '',
@@ -49,11 +50,11 @@ export const ThreadCampaignsDropdownButton: React.FunctionComponent<Props> = ({
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
 
     const onSelect = useCallback(
-        async (labelable: Pick<GQL.ICampaign, 'id'>) => {
+        async (label: Pick<GQL.ILabel, 'id'>) => {
             try {
                 await addLabelsToLabelable({
                     labelable: labelable.id,
-                    labels: [labelable.id],
+                    labels: [label.id],
                 })
                 if (onChange) {
                     onChange()
@@ -65,15 +66,15 @@ export const ThreadCampaignsDropdownButton: React.FunctionComponent<Props> = ({
                 })
             }
         },
-        [extensionsController.services.notifications.showMessages, onChange]
+        [extensionsController.services.notifications.showMessages, labelable.id, onChange]
     )
 
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className={className}>
             <DropdownToggle color="" className={buttonClassName}>
-                <LabelIcon className="icon-inline small mr-2" /> Campaigns
+                <LabelIcon className="icon-inline small mr-2" /> Labels
             </DropdownToggle>
-            <CampaignsDropdownMenu onSelect={onSelect} />
+            <LabelsDropdownMenu repository={repository} onSelect={onSelect} />
         </ButtonDropdown>
     )
 }

@@ -4,6 +4,7 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../backend/graphql'
+import { LabelFragment } from '../useLabels'
 
 const LOADING: 'loading' = 'loading'
 
@@ -29,19 +30,18 @@ export const useLabelableLabels = (labelable: Pick<GQL.Labelable, '__typename' |
             gql`
                 query LabelableLabels($labelable: ID!) {
                     node(id: $labelable) {
+                        __typename
                         ... on Thread {
                             labels {
                                 nodes {
-                                    id
-                                    name
-                                    description
-                                    color
+                                    ...LabelFragment
                                 }
                                 totalCount
                             }
                         }
                     }
                 }
+                ${LabelFragment}
             `,
             { labelable: labelable.id }
         )

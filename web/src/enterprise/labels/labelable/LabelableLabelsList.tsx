@@ -1,10 +1,8 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React from 'react'
-import { Link } from 'react-router-dom'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { Label } from '../../../components/Label'
-import { LabelIcon } from '../icons'
 import { useLabelableLabels } from './useLabelableLabels'
 
 interface Props {
@@ -26,9 +24,14 @@ export const LabelableLabelsList: React.FunctionComponent<Props> = ({ labelable,
     ) : isErrorLike(labels) ? (
         <div className="alert alert-danger">{labels.message}</div>
     ) : labels.totalCount > 0 ? (
-        <ul className="list-unstyled">
+        <ul className="list-inline">
             {labels.nodes.map(label => (
-                <Label key={label.id} label={label} tag="li" className={`text-truncate ${itemClassName}`} />
+                <Label
+                    key={label.id}
+                    label={label}
+                    tag="li"
+                    className={`list-inline-item text-truncate ${itemClassName}`}
+                />
             ))}
         </ul>
     ) : (

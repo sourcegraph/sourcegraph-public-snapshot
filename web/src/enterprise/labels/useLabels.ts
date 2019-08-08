@@ -1,75 +1,62 @@
 import { useEffect, useState } from 'react'
 import { map, startWith } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
-import { queryGraphQL } from '../../../backend/graphql'
+import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { asError, ErrorLike } from '../../../../shared/src/util/errors'
+import { queryGraphQL } from '../../backend/graphql'
 
-const campaignFieldsFragment = gql`
-    fragment CampaignFields on Campaign {
+export const LabelFragment = gql`
+    fragment LabelFragment on Label {
         id
-        namespace {
-            namespaceName
-        }
         name
-        body
-        url
+        description
+        color
     }
 `
 
 const LOADING: 'loading' = 'loading'
 
+type Result = typeof LOADING | GQL.ILabelConnection | ErrorLike
+
 /**
- * A React hook that observes campaigns queried from the GraphQL API.
+ * A React hook that observes labels queried from the GraphQL API.
  *
- * @param namespace The (optional) namespace in which to observe the campaigns defined.
+ * @param repository The repository in which to observe the labels defined.
  */
-export const useCampaigns = (
-    namespace?: Pick<GQL.INamespace, 'id'>
-): typeof LOADING | GQL.ICampaignConnection | ErrorLike => {
-    const [campaigns, setCampaigns] = useState<typeof LOADING | GQL.ICampaignConnection | ErrorLike>(LOADING)
+export const useLabels = (repository: Pick<GQL.IRepository, 'id'>): Result => {
+    const [labels, setLabels] = useState<Result>(LOADING)
     useEffect(() => {
-        const results = namespace
-            ? queryGraphQL(
-                  gql`
-                      query CampaignsDefinedInNamespace($namespace: ID!) {
-                          namespace(id: $namespace) {
-                              campaigns {
-                                  nodes {
-                                      ...CampaignFields
-                                  }
-                                  totalCount
-                              }
-                          }
-                      }
-                      ${campaignFieldsFragment}
-                  `,
-                  { namespace: namespace.id }
-              ).pipe(
-                  map(dataOrThrowErrors),
-                  map(data => {
-                      if (!data.namespace) {
-                          throw new Error('not a namespace')
-                      }
-                      return data.namespace.campaigns
-                  })
-              )
-            : queryGraphQL(gql`
-                  query Campaigns {
-                      campaigns {
-                          nodes {
-                              ...CampaignFields
-                          }
-                          totalCount
-                      }
-                  }
-                  ${campaignFieldsFragment}
-              `).pipe(
-                  map(dataOrThrowErrors),
-                  map(data => data.campaigns)
-              )
-        const subscription = results.pipe(startWith(LOADING)).subscribe(setCampaigns, err => setCampaigns(asError(err)))
+        const subscription = queryGraphQL(
+            gql`
+                query LabelsInRepository($repository: ID!) {
+                    node(id: $repository) {
+                        __typename
+                        ... on Repository {
+                            labels {
+                                nodes {
+                                    ...LabelFragment
+                                }
+                                totalCount
+                            }
+                        }
+                    }
+                }
+                ${LabelFragment}
+            `,
+            { repository: repository.id }
+        )
+            .pipe(
+                map(dataOrThrowErrors),
+                map(data => {
+                    if (!data.node || data.node.__typename !== 'Repository') {
+                        throw new Error('not a repository')
+                    }
+                    return data.node.labels
+                })
+            )
+            .pipe(startWith(LOADING))
+            .subscribe(setLabels, err => setLabels(asError(err)))
         return () => subscription.unsubscribe()
-    }, [namespace])
-    return campaigns
+    }, [repository])
+    return labels
 }

@@ -9,6 +9,7 @@ import { InfoSidebarSection } from '../../../../components/infoSidebar/InfoSideb
 import { CampaignsIcon } from '../../../campaigns/icons'
 import { ObjectCampaignsList } from '../../../campaigns/object/ObjectCampaignsList'
 import { LabelIcon } from '../../../labels/icons'
+import { LabelableLabelsDropdownButton } from '../../../labels/labelable/LabelableLabelsDropdownButton'
 import { LabelableLabelsList } from '../../../labels/labelable/LabelableLabelsList'
 import { CopyThreadLinkButton } from '../../../threadsOLD/detail/CopyThreadLinkButton'
 import { ThreadStateBadge } from '../../common/threadState/ThreadStateBadge'
@@ -55,14 +56,15 @@ export const threadSidebarSections = ({ thread, onThreadUpdate, ...props }: Prop
     {
         expanded: {
             title: (
-                <LabelsDropdownButton
+                <LabelableLabelsDropdownButton
                     {...props}
                     labelable={thread}
+                    repository={thread.repository}
                     onChange={onThreadUpdate}
                     buttonClassName="btn-link p-0"
                 />
             ),
-            children: <LabelableLabelsList labelable={thread} itemClassName="small" />,
+            children: <LabelableLabelsList labelable={thread} itemClassName="small mr-2" />,
         },
         collapsed: {
             icon: LabelIcon,

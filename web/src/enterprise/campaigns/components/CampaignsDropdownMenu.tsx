@@ -26,6 +26,8 @@ export const CampaignsDropdownMenu: React.FunctionComponent<Props> = ({ onSelect
                 <DropdownItem header={true} className="py-1">
                     Error loading campaigns
                 </DropdownItem>
+            ) : campaigns.nodes.length === 0 ? (
+                <DropdownItem header={true}>No campaigns exist</DropdownItem>
             ) : (
                 campaigns.nodes.map(campaign => (
                     // tslint:disable-next-line: jsx-no-lambda
