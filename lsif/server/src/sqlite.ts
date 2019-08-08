@@ -1,8 +1,8 @@
 import * as lsp from 'vscode-languageserver'
 import * as path from 'path'
 import { Backend, NoLSIFDataError, QueryRunner } from './backend'
-import { child_process, fs } from 'mz'
-import { Database } from './ms/database'
+import { fs } from 'mz'
+import { Database } from './ms/server/database'
 import { InsertStats, QueryStats, timeit, CreateRunnerStats } from './stats'
 import { readEnvInt } from './env'
 
@@ -37,7 +37,7 @@ export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
         const outFile = makeFilename(repository, commit)
 
         const { elapsed } = await timeit(async () => {
-            await child_process.exec(this.buildCommand(tempPath, outFile))
+            await this.convert(tempPath, outFile)
         })
 
         this.cleanStorageRoot(Math.max(0, SOFT_MAX_STORAGE - contentLength))
@@ -150,9 +150,9 @@ export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
     }
 
     /**
-     * Build the command used to generate the SQLite dump from a temporary file.
+     * Generate a SQLite dump from a temporary file to the given target file.
      */
-    protected abstract buildCommand(inFile: string, outFile: string): string
+    protected abstract convert(inFile: string, outFile: string): Promise<void>
 
     /**
      * Create a new, empty Database. This object should be able to load the file

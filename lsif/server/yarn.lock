@@ -3471,13 +3471,6 @@ lru-cache@^5.1.1:
   dependencies:
     yallist "^3.0.2"
 
-lsif-protocol@0.4.0:
-  version "0.4.0"
-  resolved "https://registry.npmjs.org/lsif-protocol/-/lsif-protocol-0.4.0.tgz#64d8a4e9c065800538e69cbed7b972c6ead0506d"
-  integrity sha512-SDESdBHrn+bJvNiAIBgaiEF9MrMW5aSxxrj9t+3jFReGBlWpjm8CnfG+GIgwC6bhFjr3n+vpUWDO7xFPvhtvkw==
-  dependencies:
-    vscode-languageserver-protocol "^3.14.1"
-
 lsif-protocol@0.4.3:
   version "0.4.3"
   resolved "https://registry.npmjs.org/lsif-protocol/-/lsif-protocol-0.4.3.tgz#e528acc5d056b86b071dc242047a27182f7ddddf"

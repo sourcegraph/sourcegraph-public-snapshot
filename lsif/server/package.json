@@ -16,7 +16,7 @@
     "express-async-handler": "^1.1.4",
     "jsonschema": "^1.2.4",
     "lru-cache": "^5.1.1",
-    "lsif-protocol": "0.4.0",
+    "lsif-protocol": "0.4.3",
     "lsif-sqlite": "^0.4.5",
     "map-obj": "^4.1.0",
     "move-file": "^1.2.0",

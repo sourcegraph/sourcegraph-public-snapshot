@@ -1,36 +1,17 @@
-import { BlobStore } from './ms/blobStore'
-import { Database } from './ms/database'
+import { BlobStore } from './ms/server/blobStore'
+import { Database } from './ms/server/database'
 import { SQLiteBackend } from './sqlite'
-
-/**
- * The path of the binary used to convert JSON dumps to SQLite dumps.
- * See https://github.com/microsoft/lsif-node/tree/master/sqlite.
- */
-const SQLITE_CONVERTER_BINARY = './node_modules/lsif-sqlite/bin/lsif-sqlite'
+import { convertToBlob } from './ms/sqlite/convert'
 
 /**
  * Backend for blob-encoded SQLite dumps.
  */
 export class SQLiteBlobBackend extends SQLiteBackend {
     /**
-     * Build the command used to generate the SQLite dump from a temporary file.
+     * Generate a SQLite dump from a temporary file to the given target file.
      */
-    protected buildCommand(inFile: string, outFile: string): string {
-        // TODO(efritz) - give this a meaningful value
-        const projectVersion = '0'
-
-        return [
-            SQLITE_CONVERTER_BINARY,
-            '--in',
-            inFile,
-            '--out',
-            outFile,
-            '--format',
-            'blob',
-            '--delete',
-            '--projectVersion',
-            projectVersion,
-        ].join(' ')
+    protected async convert(inFile: string, outFile: string): Promise<void> {
+        await convertToBlob(inFile, outFile)
     }
 
     /**

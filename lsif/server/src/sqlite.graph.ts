@@ -1,22 +1,17 @@
-import { Database } from './ms/database'
-import { GraphStore } from './ms/graphStore'
+import { Database } from './ms/server/database'
+import { GraphStore } from './ms/server/graphStore'
 import { SQLiteBackend } from './sqlite'
-
-/**
- * The path of the binary used to convert JSON dumps to SQLite dumps.
- * See https://github.com/microsoft/lsif-node/tree/master/sqlite.
- */
-const SQLITE_CONVERTER_BINARY = './node_modules/lsif-sqlite/bin/lsif-sqlite'
+import { convertToGraph } from './ms/sqlite/convert'
 
 /**
  * Backend for graph-encoded SQLite dumps.
  */
 export class SQLiteGraphBackend extends SQLiteBackend {
     /**
-     * Build the command used to generate the SQLite dump from a temporary file.
+     * Generate a SQLite dump from a temporary file to the given target file.
      */
-    protected buildCommand(inFile: string, outFile: string): string {
-        return [SQLITE_CONVERTER_BINARY, '--in', inFile, '--out', outFile].join(' ')
+    protected async convert(inFile: string, outFile: string): Promise<void> {
+        await convertToGraph(inFile, outFile)
     }
 
     /**
