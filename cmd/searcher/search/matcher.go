@@ -32,9 +32,6 @@ const (
 	// file.
 	maxLineMatches = 100
 
-	// maxOffsets is the limit on number of matches to return on a line.
-	maxOffsets = 10
-
 	// numWorkers is how many concurrent readerGreps run per
 	// concurrentFind
 	numWorkers = 8
@@ -289,7 +286,7 @@ func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []
 			Preview:          string(fileBuf[:len(line)]),
 			LineNumber:       lineNumber,
 			OffsetAndLengths: [][2]int{{offset, length}},
-			LimitHit:         false, // TODO: should we remove/ignore this param now that we don't scan for matches by line?
+			LimitHit:         false, // We will always return false for this field since we no longer limit the number of offsets per line.
 		})
 
 		lineNumber++

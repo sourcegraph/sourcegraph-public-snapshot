@@ -435,10 +435,8 @@ func TestMaxMatches(t *testing.T) {
 			t.Fatal(err)
 		}
 		for j := 0; j < maxLineMatches+1; j++ {
-			for k := 0; k < maxOffsets+1; k++ {
-				w.Write([]byte(pattern))
-				w.Write([]byte{' '})
-			}
+			w.Write([]byte(pattern))
+			w.Write([]byte{' '})
 			w.Write([]byte{'\n'})
 		}
 	}
@@ -473,17 +471,6 @@ func TestMaxMatches(t *testing.T) {
 		if len(fm.LineMatches) != maxLineMatches {
 			t.Fatalf("expected %d line matches, got %d", maxLineMatches, len(fm.LineMatches))
 		}
-		// TODO: should we remove these tests? It doesn't make sense to have these in this new implementation
-		// because we return an individual line match for each offset and length, given that we don't scan
-		// line-by-line anymore.
-		// for _, lm := range fm.LineMatches {
-		// 	if !lm.LimitHit {
-		// 		t.Fatalf("expected limitHit on line match")
-		// 	}
-		// 	if len(lm.OffsetAndLengths) != maxOffsets {
-		// 		t.Fatalf("expected %d offsets, got %d", maxOffsets, len(lm.OffsetAndLengths))
-		// 	}
-		// }
 	}
 }
 
