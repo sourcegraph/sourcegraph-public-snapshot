@@ -5,19 +5,20 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
 func (GraphQLResolver) CreateLabel(ctx context.Context, arg *graphqlbackend.CreateLabelArgs) (graphqlbackend.Label, error) {
-	project, err := graphqlbackend.ProjectByID(ctx, arg.Input.Project)
+	repository, err := graphqlbackend.RepositoryByID(ctx, arg.Input.Repository)
 	if err != nil {
 		return nil, err
 	}
 
 	label, err := dbLabels{}.Create(ctx, &dbLabel{
-		ProjectID:   project.DBID(),
-		Name:        arg.Input.Name,
-		Description: arg.Input.Description,
-		Color:       arg.Input.Color,
+		RepositoryID: int64(repository.DBID()),
+		Name:         arg.Input.Name,
+		Description:  arg.Input.Description,
+		Color:        arg.Input.Color,
 	})
 	if err != nil {
 		return nil, err
@@ -49,17 +50,17 @@ func (GraphQLResolver) DeleteLabel(ctx context.Context, arg *graphqlbackend.Dele
 	return nil, dbLabels{}.DeleteByID(ctx, gqlLabel.db.ID)
 }
 
-func (GraphQLResolver) AddLabelsToLabelable(ctx context.Context, arg *graphqlbackend.AddRemoveLabelsToFromLabelableArgs) (graphqlbackend.Labelable, error) {
+func (GraphQLResolver) AddLabelsToLabelable(ctx context.Context, arg *graphqlbackend.AddRemoveLabelsToFromLabelableArgs) (*graphqlbackend.ToLabelable, error) {
 	return addRemoveLabelsToFromLabelable(ctx, arg.Labelable, arg.Labels, nil)
 }
 
-func (GraphQLResolver) RemoveLabelsFromLabelable(ctx context.Context, arg *graphqlbackend.AddRemoveLabelsToFromLabelableArgs) (graphqlbackend.Labelable, error) {
+func (GraphQLResolver) RemoveLabelsFromLabelable(ctx context.Context, arg *graphqlbackend.AddRemoveLabelsToFromLabelableArgs) (*graphqlbackend.ToLabelable, error) {
 	return addRemoveLabelsToFromLabelable(ctx, arg.Labelable, nil, arg.Labels)
 }
 
-func addRemoveLabelsToFromLabelable(ctx context.Context, labelable graphql.ID, addLabels []graphql.ID, removeLabels []graphql.ID) (graphqlbackend.Labelable, error) {
+func addRemoveLabelsToFromLabelable(ctx context.Context, labelable graphql.ID, addLabels []graphql.ID, removeLabels []graphql.ID) (*graphqlbackend.ToLabelable, error) {
 	// 🚨 SECURITY: Any viewer can add/remove labels to/from a thread.
-	thread, err := graphqlbackend.DiscussionThreadByID(ctx, labelable)
+	thread, err := threads.GraphQLResolver{}.ThreadByID(ctx, labelable)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +85,7 @@ func addRemoveLabelsToFromLabelable(ctx context.Context, labelable graphql.ID, a
 		}
 	}
 
-	return thread, nil
+	return &graphqlbackend.ToLabelable{Thread: thread}, nil
 }
 
 func getLabelDBIDs(ctx context.Context, labels []graphql.ID) ([]int64, error) {

@@ -94,7 +94,6 @@ type Project interface {
 	IDWithoutKind() string
 	Name() string
 	Namespace(context.Context) (*NamespaceResolver, error)
-	Labels(context.Context, *graphqlutil.ConnectionArgs) (LabelConnection, error)
 	Rules(context.Context, *graphqlutil.ConnectionArgs) (RuleConnection, error)
 	URL() string
 

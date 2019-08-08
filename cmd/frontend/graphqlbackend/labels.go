@@ -3,8 +3,10 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
@@ -13,6 +15,22 @@ import (
 //
 // This is contributed by enterprise.
 var Labels LabelsResolver
+
+const GQLTypeLabel = "Label"
+
+func MarshalLabelID(id int64) graphql.ID {
+	return relay.MarshalID(GQLTypeLabel, id)
+}
+
+func UnmarshalLabelID(id graphql.ID) (dbID int64, err error) {
+	if typ := relay.UnmarshalKind(id); typ != GQLTypeLabel {
+		return 0, fmt.Errorf("label ID has unexpected type type %q", typ)
+	}
+	err = relay.UnmarshalSpec(id, &dbID)
+	return
+}
+
+var errLabelsNotImplemented = errors.New("labels is not implemented")
 
 // LabelByID is called to look up a Label given its GraphQL ID.
 func LabelByID(ctx context.Context, id graphql.ID) (Label, error) {
@@ -24,29 +42,55 @@ func LabelByID(ctx context.Context, id graphql.ID) (Label, error) {
 
 // LabelsFor returns an instance of the GraphQL LabelConnection type with the list of labels for a
 // Labelable.
-//
-// NOTE: Currently DiscussionThread is the only type to have labels.
-func LabelsFor(ctx context.Context, labelable graphql.ID, arg *graphqlutil.ConnectionArgs) (LabelConnection, error) {
+func LabelsForLabelable(ctx context.Context, labelable graphql.ID, arg *graphqlutil.ConnectionArgs) (LabelConnection, error) {
 	if Labels == nil {
 		return nil, errors.New("labels is not implemented")
 	}
-	return Labels.LabelsFor(ctx, labelable, arg)
+	return Labels.LabelsForLabelable(ctx, labelable, arg)
 }
 
-// LabelsDefinedIn returns an instance of the GraphQL LabelConnection type with the list of labels
-// defined in a project.
-func LabelsDefinedIn(ctx context.Context, project graphql.ID, arg *graphqlutil.ConnectionArgs) (LabelConnection, error) {
+// LabelsInRepository returns an instance of the GraphQL LabelConnection type with the list of
+// labels defined in a repository.
+func LabelsInRepository(ctx context.Context, repository graphql.ID, arg *graphqlutil.ConnectionArgs) (LabelConnection, error) {
 	if Labels == nil {
 		return nil, errors.New("labels is not implemented")
 	}
-	return Labels.LabelsDefinedIn(ctx, project, arg)
+	return Labels.LabelsInRepository(ctx, repository, arg)
 }
 
-func (schemaResolver) Labels() (LabelsResolver, error) {
+func (schemaResolver) CreateLabel(ctx context.Context, arg *CreateLabelArgs) (Label, error) {
 	if Labels == nil {
-		return nil, errors.New("labels is not implemented")
+		return nil, errLabelsNotImplemented
 	}
-	return Labels, nil
+	return Labels.CreateLabel(ctx, arg)
+}
+
+func (schemaResolver) UpdateLabel(ctx context.Context, arg *UpdateLabelArgs) (Label, error) {
+	if Labels == nil {
+		return nil, errLabelsNotImplemented
+	}
+	return Labels.UpdateLabel(ctx, arg)
+}
+
+func (schemaResolver) DeleteLabel(ctx context.Context, arg *DeleteLabelArgs) (*EmptyResponse, error) {
+	if Labels == nil {
+		return nil, errLabelsNotImplemented
+	}
+	return Labels.DeleteLabel(ctx, arg)
+}
+
+func (schemaResolver) AddLabelsToLabelable(ctx context.Context, arg *AddRemoveLabelsToFromLabelableArgs) (*ToLabelable, error) {
+	if Labels == nil {
+		return nil, errLabelsNotImplemented
+	}
+	return Labels.AddLabelsToLabelable(ctx, arg)
+}
+
+func (schemaResolver) RemoveLabelsFromLabelable(ctx context.Context, arg *AddRemoveLabelsToFromLabelableArgs) (*ToLabelable, error) {
+	if Labels == nil {
+		return nil, errLabelsNotImplemented
+	}
+	return Labels.RemoveLabelsFromLabelable(ctx, arg)
 }
 
 // LabelsResolver is the interface for the GraphQL type LabelsMutation.
@@ -54,22 +98,22 @@ type LabelsResolver interface {
 	CreateLabel(context.Context, *CreateLabelArgs) (Label, error)
 	UpdateLabel(context.Context, *UpdateLabelArgs) (Label, error)
 	DeleteLabel(context.Context, *DeleteLabelArgs) (*EmptyResponse, error)
-	AddLabelsToLabelable(context.Context, *AddRemoveLabelsToFromLabelableArgs) (Labelable, error)
-	RemoveLabelsFromLabelable(context.Context, *AddRemoveLabelsToFromLabelableArgs) (Labelable, error)
+	AddLabelsToLabelable(context.Context, *AddRemoveLabelsToFromLabelableArgs) (*ToLabelable, error)
+	RemoveLabelsFromLabelable(context.Context, *AddRemoveLabelsToFromLabelableArgs) (*ToLabelable, error)
 
 	// LabelByID is called by the LabelByID func but is not in the GraphQL API.
 	LabelByID(context.Context, graphql.ID) (Label, error)
 
 	// LabelsFor is called by the LabelsFor func but is not in the GraphQL API.
-	LabelsFor(ctx context.Context, labelable graphql.ID, arg *graphqlutil.ConnectionArgs) (LabelConnection, error)
+	LabelsForLabelable(ctx context.Context, labelable graphql.ID, arg *graphqlutil.ConnectionArgs) (LabelConnection, error)
 
-	// LabelsDefinedIn is called by the LabelsDefinedIn func but is not in the GraphQL API.
-	LabelsDefinedIn(ctx context.Context, project graphql.ID, arg *graphqlutil.ConnectionArgs) (LabelConnection, error)
+	// LabelsInRepository is called by the LabelsInRepository func but is not in the GraphQL API.
+	LabelsInRepository(ctx context.Context, repository graphql.ID, arg *graphqlutil.ConnectionArgs) (LabelConnection, error)
 }
 
 type CreateLabelArgs struct {
 	Input struct {
-		Project     graphql.ID
+		Repository  graphql.ID
 		Name        string
 		Description *string
 		Color       string
@@ -100,13 +144,33 @@ type Label interface {
 	Name() string
 	Description() *string
 	Color() string
-	Project(context.Context) (Project, error)
+	Repository(context.Context) (*RepositoryResolver, error)
 }
 
-// Labelable is the interface for the GraphQL interface Labelable.
-type Labelable interface {
+// labelable is the interface for the Labelable GraphQL type.
+type labelable interface {
 	Labels(context.Context, *graphqlutil.ConnectionArgs) (LabelConnection, error)
-	ToDiscussionThread() (*discussionThreadResolver, bool)
+}
+
+type ToLabelable struct {
+	Thread Thread
+}
+
+func (v ToLabelable) labelable() labelable {
+	switch {
+	case v.Thread != nil:
+		return v.Thread
+	default:
+		panic("no labelable")
+	}
+}
+
+func (v ToLabelable) ToThread() (Thread, bool) {
+	return v.Thread, v.Thread != nil
+}
+
+func (v ToLabelable) Labels(ctx context.Context, arg *graphqlutil.ConnectionArgs) (LabelConnection, error) {
+	return v.labelable().Labels(ctx, arg)
 }
 
 // LabelConnection is the interface for the GraphQL type LabelConnection.

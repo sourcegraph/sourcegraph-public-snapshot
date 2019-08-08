@@ -6,16 +6,21 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
-func (GraphQLResolver) LabelsFor(ctx context.Context, labelable graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.LabelConnection, error) {
+func (GraphQLResolver) LabelsForLabelable(ctx context.Context, labelable graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.LabelConnection, error) {
 	// 🚨 SECURITY: Any viewer can add/remove labels to/from a thread.
-	thread, err := graphqlbackend.DiscussionThreadByID(ctx, labelable)
+	thread, err := threads.GraphQLResolver{}.ThreadByID(ctx, labelable)
+	if err != nil {
+		return nil, err
+	}
+	threadDBID, err := graphqlbackend.UnmarshalThreadID(thread.ID())
 	if err != nil {
 		return nil, err
 	}
 
-	list, err := dbLabelsObjects{}.List(ctx, dbLabelsObjectsListOptions{ThreadID: thread.DBID()})
+	list, err := dbLabelsObjects{}.List(ctx, dbLabelsObjectsListOptions{ThreadID: threadDBID})
 	if err != nil {
 		return nil, err
 	}
@@ -31,14 +36,14 @@ func (GraphQLResolver) LabelsFor(ctx context.Context, labelable graphql.ID, arg 
 	return &labelConnection{arg: arg, labels: labels}, nil
 }
 
-func (GraphQLResolver) LabelsDefinedIn(ctx context.Context, projectID graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.LabelConnection, error) {
+func (GraphQLResolver) LabelsInRepository(ctx context.Context, repositoryID graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.LabelConnection, error) {
 	// Check existence.
-	project, err := graphqlbackend.ProjectByID(ctx, projectID)
+	repository, err := graphqlbackend.RepositoryByID(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	list, err := dbLabels{}.List(ctx, dbLabelsListOptions{ProjectID: project.DBID()})
+	list, err := dbLabels{}.List(ctx, dbLabelsListOptions{RepositoryID: int64(repository.DBID())})
 	if err != nil {
 		return nil, err
 	}

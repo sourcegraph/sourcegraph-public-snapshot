@@ -27,6 +27,7 @@ export const ThreadDiagnosticListItem: React.FunctionComponent<Props> = ({
             selectedAction={null}
             // tslint:disable-next-line: jsx-no-lambda
             onActionSelect={() => void 0}
+            className="p-3"
         />
     </div>
 )

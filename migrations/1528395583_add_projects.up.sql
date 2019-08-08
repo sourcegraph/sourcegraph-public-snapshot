@@ -27,23 +27,4 @@ CREATE UNIQUE INDEX projects_name ON projects(name);
 ALTER TABLE discussion_threads ADD COLUMN project_id integer NOT NULL REFERENCES projects(id) ON DELETE CASCADE;
 CREATE INDEX discussion_threads_project_id ON discussion_threads(project_id);
 
-CREATE TABLE labels (
-       id bigserial PRIMARY KEY,
-       project_id bigint NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-       name citext NOT NULL,
-       description text,
-       color text NOT NULL
-);
-CREATE INDEX labels_name ON labels(name);
-CREATE INDEX labels_project_id ON labels(project_id);
-CREATE UNIQUE INDEX labels_name_project_uniq ON labels(name, project_id);
-
-CREATE TABLE labels_objects (
-       label_id bigint NOT NULL REFERENCES labels(id) ON DELETE CASCADE,
-       thread_id bigint REFERENCES discussion_threads(id) ON DELETE CASCADE
-);
-CREATE INDEX labels_objects_label_id ON labels_objects(label_id);
-CREATE INDEX labels_objects_thread_id ON labels_objects(thread_id) WHERE thread_id IS NOT NULL;
-CREATE UNIQUE INDEX labels_objects_uniq ON labels_objects(label_id, thread_id);
-
 COMMIT;

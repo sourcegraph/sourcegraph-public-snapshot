@@ -72,10 +72,6 @@ func (v *gqlProject) Namespace(ctx context.Context) (*graphqlbackend.NamespaceRe
 	return graphqlbackend.NamespaceByDBID(ctx, v.db.NamespaceUserID, v.db.NamespaceOrgID)
 }
 
-func (v *gqlProject) Labels(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.LabelConnection, error) {
-	return graphqlbackend.LabelsDefinedIn(ctx, v.ID(), args)
-}
-
 func (v *gqlProject) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
 	return graphqlbackend.CampaignsInNamespace(ctx, v.ID(), args)
 }

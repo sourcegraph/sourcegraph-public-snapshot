@@ -155,6 +155,17 @@ func (v *gqlThread) URL(ctx context.Context) (string, error) {
 	return path.Join(repository.URL(), "-", "threads", v.Number()), nil
 }
 
+func (v *gqlThread) RepositoryComparison(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
+	repo, err := v.Repository(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
+		Base: &v.db.BaseRef,
+		Head: &v.db.HeadRef,
+	})
+}
+
 func (v *gqlThread) Campaigns(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
 	return graphqlbackend.CampaignsWithObject(ctx, v.ID(), arg)
 }
@@ -166,13 +177,6 @@ func (v *gqlThread) TimelineItems(ctx context.Context, arg *graphqlbackend.Event
 	)
 }
 
-func (v *gqlThread) RepositoryComparison(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
-	repo, err := v.Repository(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
-		Base: &v.db.BaseRef,
-		Head: &v.db.HeadRef,
-	})
+func (v *gqlThread) Labels(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.LabelConnection, error) {
+	return graphqlbackend.LabelsForLabelable(ctx, v.ID(), arg)
 }

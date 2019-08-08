@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
-// dbObjectLabel describes an association between a discussion thread and a label.
+// dbObjectLabel describes an association between a labelable and a label.
 type dbObjectLabel struct {
 	Label  int64 // the ID of the label
 	Thread int64 // the ID of the thread
@@ -27,18 +27,9 @@ func (dbLabelsObjects) AddLabelsToThread(ctx context.Context, thread int64, labe
 	}
 
 	_, err := dbconn.Global.ExecContext(ctx,
-		// Include discussion_threads table query (with "FOR UPDATE") to ensure that the thread has not been
-		// deleted. If it was deleted, the query will return an error.
 		`
-WITH labelable_object AS (
-  SELECT id FROM discussion_threads WHERE id=$1 AND deleted_at IS NULL FOR UPDATE
-),
-insert_values AS (
-  SELECT unnest($2::bigint[]) AS label_id, labelable_object.id AS thread_id
-  FROM labelable_object
-)
-INSERT INTO labels_objects(label_id, thread_id) SELECT * FROM insert_values
-`,
+INSERT INTO labels_objects(label_id, thread_id)
+SELECT unnest($2::bigint[]) AS label_id, $1::bigint AS thread_id`,
 		thread, pq.Array(labels),
 	)
 	return err
@@ -54,15 +45,9 @@ func (dbLabelsObjects) RemoveLabelsFromThread(ctx context.Context, thread int64,
 	}
 
 	_, err := dbconn.Global.ExecContext(ctx,
-		// Include discussion_threads table query (with "FOR UPDATE") to ensure that the thread has not been
-		// deleted. If it was deleted, the query will return an error.
 		`
-WITH labelable_object AS (
-  SELECT id FROM discussion_threads WHERE id=$1 AND deleted_at IS NULL FOR UPDATE
-),
-delete_values AS (
-  SELECT unnest($2::bigint[]) AS label_id, labelable_object.id AS thread_id
-  FROM labelable_object
+WITH delete_values AS (
+  SELECT unnest($2::bigint[]) AS label_id, $1::bigint AS thread_id
 )
 DELETE FROM labels_objects o USING delete_values d WHERE o.label_id=d.label_id AND o.thread_id=d.thread_id
 `,

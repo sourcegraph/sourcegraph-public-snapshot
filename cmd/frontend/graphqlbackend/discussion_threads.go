@@ -766,10 +766,6 @@ func (d *discussionThreadResolver) ToDiscussionThread() (*discussionThreadResolv
 	return d, true
 }
 
-func (d *discussionThreadResolver) Labels(ctx context.Context, arg *graphqlutil.ConnectionArgs) (LabelConnection, error) {
-	return LabelsFor(ctx, d.ID(), arg)
-}
-
 // discussionThreadsConnectionResolver resolves a list of discussion comments.
 //
 // 🚨 SECURITY: When instantiating an discussionThreadsConnectionResolver

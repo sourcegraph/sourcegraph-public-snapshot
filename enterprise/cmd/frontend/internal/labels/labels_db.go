@@ -2,6 +2,7 @@ package labels
 
 import (
 	"context"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
@@ -11,11 +12,11 @@ import (
 
 // dbLabel describes a label for a discussion thread.
 type dbLabel struct {
-	ID          int64
-	ProjectID   int64  // the project that defines the label
-	Name        string // the name (case-preserving)
-	Description *string
-	Color       string // the hex color code (omitting the '#' prefix)
+	ID           int64
+	RepositoryID int64  // the repository that defines the label
+	Name         string // the name (case-preserving)
+	Description  *string
+	Color        string // the hex color code (omitting the '#' prefix)
 }
 
 // errLabelNotFound occurs when a database operation expects a specific label to exist but it does
@@ -24,6 +25,8 @@ var errLabelNotFound = errors.New("label not found")
 
 type dbLabels struct{}
 
+const selectColumns = `id, repository_id, name, description, color`
+
 // Create creates a label. The label argument's (Label).ID field is ignored. The database ID of the
 // new label is returned.
 func (dbLabels) Create(ctx context.Context, label *dbLabel) (*dbLabel, error) {
@@ -31,16 +34,17 @@ func (dbLabels) Create(ctx context.Context, label *dbLabel) (*dbLabel, error) {
 		return mocks.labels.Create(label)
 	}
 
-	var id int64
-	if err := dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO labels(project_id, name, description, color) VALUES($1, $2, $3, $4) RETURNING id`,
-		label.ProjectID, label.Name, label.Description, label.Color,
-	).Scan(&id); err != nil {
-		return nil, err
+	args := []interface{}{
+		label.RepositoryID,
+		label.Name,
+		label.Description,
+		label.Color,
 	}
-	created := *label
-	created.ID = id
-	return &created, nil
+	query := sqlf.Sprintf(
+		`INSERT INTO labels(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+selectColumns,
+		args...,
+	)
+	return dbLabels{}.scanRow(dbconn.Global.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
 }
 
 type dbLabelUpdate struct {
@@ -76,7 +80,7 @@ func (s dbLabels) Update(ctx context.Context, id int64, update dbLabelUpdate) (*
 		return nil, nil
 	}
 
-	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE labels SET %v WHERE id=%s RETURNING id, project_id, name, description, color`, sqlf.Join(setFields, ", "), id))
+	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE labels SET %v WHERE id=%s RETURNING `+selectColumns, sqlf.Join(setFields, ", "), id))
 	if err != nil {
 		return nil, err
 	}
@@ -106,8 +110,8 @@ func (s dbLabels) GetByID(ctx context.Context, id int64) (*dbLabel, error) {
 
 // dbLabelsListOptions contains options for listing labels.
 type dbLabelsListOptions struct {
-	Query     string // only list labels matching this query (case-insensitively)
-	ProjectID int64  // only list labels defined in this project
+	Query        string // only list labels matching this query (case-insensitively)
+	RepositoryID int64  // only list labels defined in this repository
 	*db.LimitOffset
 }
 
@@ -116,8 +120,8 @@ func (o dbLabelsListOptions) sqlConditions() []*sqlf.Query {
 	if o.Query != "" {
 		conds = append(conds, sqlf.Sprintf("name LIKE %s", "%"+o.Query+"%"))
 	}
-	if o.ProjectID != 0 {
-		conds = append(conds, sqlf.Sprintf("project_id=%d", o.ProjectID))
+	if o.RepositoryID != 0 {
+		conds = append(conds, sqlf.Sprintf("repository_id=%d", o.RepositoryID))
 	}
 	return conds
 }
@@ -136,7 +140,7 @@ func (s dbLabels) List(ctx context.Context, opt dbLabelsListOptions) ([]*dbLabel
 
 func (s dbLabels) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbLabel, error) {
 	q := sqlf.Sprintf(`
-SELECT id, project_id, name, description, color FROM labels
+SELECT `+selectColumns+` FROM labels
 WHERE (%s)
 ORDER BY name ASC
 %s`,
@@ -155,13 +159,29 @@ func (dbLabels) query(ctx context.Context, query *sqlf.Query) ([]*dbLabel, error
 
 	var results []*dbLabel
 	for rows.Next() {
-		var t dbLabel
-		if err := rows.Scan(&t.ID, &t.ProjectID, &t.Name, &t.Description, &t.Color); err != nil {
+		t, err := dbLabels{}.scanRow(rows)
+		if err != nil {
 			return nil, err
 		}
-		results = append(results, &t)
+		results = append(results, t)
 	}
 	return results, nil
+}
+
+func (dbLabels) scanRow(row interface {
+	Scan(dest ...interface{}) error
+}) (*dbLabel, error) {
+	var t dbLabel
+	if err := row.Scan(
+		&t.ID,
+		&t.RepositoryID,
+		&t.Name,
+		&t.Description,
+		&t.Color,
+	); err != nil {
+		return nil, err
+	}
+	return &t, nil
 }
 
 // Count counts all labels that satisfy the options (ignoring limit and offset).

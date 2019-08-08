@@ -343,8 +343,22 @@ type Mutation {
     deleteSavedSearch(id: ID!): EmptyResponse
     # Mutations related to projects.
     projects: ProjectsMutation!
-    # Mutations related to labels.
-    labels: LabelsMutation!
+
+    # Create a label associated with a project. Returns the newly created label.
+    createLabel(input: CreateLabelInput!): Label!
+
+    # Update a label. Returns the updated label.
+    updateLabel(input: UpdateLabelInput!): Label!
+
+    # Delete a label. All objects that were labeled with this label remain (and are not deleted when
+    # the label is deleted).
+    deleteLabel(label: ID!): EmptyResponse
+
+    # Add labels to a labelable object. Returns the object.
+    addLabelsToLabelable(labelable: ID!, labels: [ID!]!): Labelable!
+
+    # Remove labels from a labelable object. Returns the object.
+    removeLabelsFromLabelable(labelable: ID!, labels: [ID!]!): Labelable!
 
     # Create a comment on an object. The newly created comment is returned.
     addCommentReply(input: AddCommentReplyInput!): Comment!
@@ -440,29 +454,10 @@ input UpdateProjectInput {
     name: String
 }
 
-# Mutations related to labels.
-type LabelsMutation {
-    # Create a label associated with a project. Returns the newly created label.
-    createLabel(input: CreateLabelInput!): Label!
-
-    # Update a label. Returns the updated label.
-    updateLabel(input: UpdateLabelInput!): Label!
-
-    # Delete a label. All objects that were labeled with this label remain (and are not deleted when
-    # the label is deleted).
-    deleteLabel(label: ID!): EmptyResponse
-
-    # Add labels to a labelable object. Returns the object.
-    addLabelsToLabelable(labelable: ID!, labels: [ID!]!): Labelable!
-
-    # Remove labels from a labelable object. Returns the object.
-    removeLabelsFromLabelable(labelable: ID!, labels: [ID!]!): Labelable!
-}
-
 # Input arguments for creating a label.
 input CreateLabelInput {
-    # The ID of the project where this label is defined.
-    project: ID!
+    # The ID of the repository where this label is defined.
+    repository: ID!
     # The name of the label.
     name: String!
     # The (optional) description of the label.
@@ -477,7 +472,8 @@ input UpdateLabelInput {
     id: ID!
     # The new name of the label (if non-null).
     name: String
-    # The new description of the label. If it is the non-null empty string, the description is set to null.
+    # The new description of the label. If it is the non-null empty string, the description is set
+    # to null.
     description: String
     # The new hex color code for the label (if non-null).
     color: String
@@ -1542,6 +1538,13 @@ type Repository implements Node & GenericSearchResultInterface {
     detail: Markdown!
     # The result previews of the result.
     matches: [SearchResultMatch!]!
+
+    # The labels defined by this repository. This is the set of labels that may be applied to the
+    # repository's labelable resources.
+    labels(
+        # Return the first n labels from the list.
+        first: Int
+    ): LabelConnection!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
@@ -2892,7 +2895,7 @@ type DiscussionThreadTargetRepo {
 union DiscussionThreadTarget = DiscussionThreadTargetRepo | EmptyResponse
 
 # A discussion thread around some target (e.g. a file in a repo).
-type DiscussionThread implements Node & Labelable {
+type DiscussionThread implements Node {
     # The discussion thread ID (globally unique).
     id: ID!
 
@@ -2940,12 +2943,6 @@ type DiscussionThread implements Node & Labelable {
         # Returns the first n comments from the list.
         first: Int
     ): DiscussionCommentConnection!
-
-    # A list of labels associated with this thread.
-    labels(
-        # Returns the first n labels from the list.
-        first: Int
-    ): LabelConnection!
 }
 
 # A comment made within a discussion thread.
@@ -4085,13 +4082,6 @@ type Project implements Node {
     # The namespace where this project is defined.
     namespace: Namespace!
 
-    # The labels defined by this project. This is the set of labels that may be applied to the
-    # project's labelable resources.
-    labels(
-        # Return the first n labels from the list.
-        first: Int
-    ): LabelConnection!
-
     # The rules defined in this project.
     rules(
         # Return the first n rules from the list.
@@ -4116,22 +4106,28 @@ type ProjectConnection {
 type Label implements Node {
     # The globally unique ID of this label.
     id: ID!
+
     # The name of this label.
     name: String!
+
     # The (optional) description of this label.
     description: String
+
     # The hex color code for the label, without the '#' prefix. For example, "cdf6ee".
     color: String!
-    # The project where this label is defined.
-    project: Project!
+
+    # The repository where this label is defined.
+    repository: Repository!
 }
 
 # A list of labels.
 type LabelConnection {
     # A list of labels.
     nodes: [Label!]!
+
     # The total number of labels in the connection.
     totalCount: Int!
+
     # Pagination information.
     pageInfo: PageInfo!
 }
@@ -4334,7 +4330,7 @@ enum ThreadKind {
 }
 
 # A thread is collection of comments, diagnostics, and changes.
-type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & CampaignNode {
+type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & CampaignNode & Labelable {
     # The unique ID for the thread.
     id: ID!
 
@@ -4410,6 +4406,12 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
         # Only include the specified event types. TODO!(sqs): make this an enum?
         types: [String!]
     ): ThreadTimelineItemConnection!
+
+    # A list of labels applied to this thread.
+    labels(
+        # Returns the first n labels from the list.
+        first: Int
+    ): LabelConnection!
 }
 
 # A list of threads.

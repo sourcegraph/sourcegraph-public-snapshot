@@ -5,25 +5,26 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/projects"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
 func TestGraphQL_CreateLabel(t *testing.T) {
 	resetMocks()
-	const wantProjectID = 1
-	projects.MockProjectByDBID = func(id int64) (graphqlbackend.Project, error) {
-		return projects.TestNewProject(wantProjectID, "", 0, 0), nil
+	const wantRepositoryID = 1
+	graphqlbackend.MockRepositoryByID = func(id graphql.ID) (*graphqlbackend.RepositoryResolver, error) {
+		return graphqlbackend.NewRepositoryResolver(&types.Repo{ID: wantRepositoryID}), nil
 	}
+	defer func() { graphqlbackend.MockRepositoryByID = nil }()
 	wantLabel := &dbLabel{
-		ProjectID:   wantProjectID,
-		Name:        "n",
-		Description: strptr("d"),
-		Color:       "h",
+		RepositoryID: wantRepositoryID,
+		Name:         "n",
+		Description:  strptr("d"),
+		Color:        "h",
 	}
 	mocks.labels.Create = func(label *dbLabel) (*dbLabel, error) {
 		if !reflect.DeepEqual(label, wantLabel) {
@@ -39,22 +40,19 @@ func TestGraphQL_CreateLabel(t *testing.T) {
 			Context: backend.WithAuthzBypass(context.Background()),
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
-				mutation {
-					labels {
-						createLabel(input: { project: "T3JnOjE=", name: "n", description: "d", color: "h" }) {
-							id
-							name
-						}
+				mutation($repository: ID!) {
+					createLabel(input: { repository: $repository, name: "n", description: "d", color: "h" }) {
+						id
+						name
 					}
 				}
 			`,
+			Variables: map[string]interface{}{"repository": string(graphqlbackend.MarshalRepositoryID(wantRepositoryID))},
 			ExpectedResult: `
 				{
-					"labels": {
-						"createLabel": {
-							"id": "TGFiZWw6Mg==",
-							"name": "n"
-						}
+					"createLabel": {
+						"id": "TGFiZWw6Mg==",
+						"name": "n"
 					}
 				}
 			`,
@@ -76,11 +74,11 @@ func TestGraphQL_UpdateLabel(t *testing.T) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
 		return &dbLabel{
-			ID:          2,
-			ProjectID:   1,
-			Name:        "n1",
-			Description: strptr("d1"),
-			Color:       "h1",
+			ID:           2,
+			RepositoryID: 1,
+			Name:         "n1",
+			Description:  strptr("d1"),
+			Color:        "h1",
 		}, nil
 	}
 
@@ -90,25 +88,21 @@ func TestGraphQL_UpdateLabel(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					labels {
-						updateLabel(input: { id: "TGFiZWw6Mg==", name: "n1", description: "d1", color: "h1" }) {
-							id
-							name
-							description
-							color
-						}
+					updateLabel(input: { id: "TGFiZWw6Mg==", name: "n1", description: "d1", color: "h1" }) {
+						id
+						name
+						description
+						color
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"labels": {
-						"updateLabel": {
-							"id": "TGFiZWw6Mg==",
-							"name": "n1",
-							"description": "d1",
-							"color": "h1"
-						}
+					"updateLabel": {
+						"id": "TGFiZWw6Mg==",
+						"name": "n1",
+						"description": "d1",
+						"color": "h1"
 					}
 				}
 			`,
@@ -138,18 +132,14 @@ func TestGraphQL_DeleteLabel(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					labels {
-						deleteLabel(label: "TGFiZWw6Mg==") {
-							alwaysNil
-						}
+					deleteLabel(label: "TGFiZWw6Mg==") {
+						alwaysNil
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"labels": {
-						"deleteLabel": null
-					}
+					"deleteLabel": null
 				}
 			`,
 		},
@@ -159,9 +149,10 @@ func TestGraphQL_DeleteLabel(t *testing.T) {
 func TestGraphQL_AddRemoveLabelsToFromLabelable(t *testing.T) {
 	resetMocks()
 	const wantThreadID = 3
-	db.Mocks.DiscussionThreads.Get = func(int64) (*types.DiscussionThread, error) {
-		return &types.DiscussionThread{ID: wantThreadID}, nil
+	threads.MockThreadByID = func(id graphql.ID) (graphqlbackend.Thread, error) {
+		return mockThread{id: wantThreadID}, nil
 	}
+	defer func() { threads.MockThreadByID = nil }()
 	const wantID = 2
 	mocks.labels.GetByID = func(id int64) (*dbLabel, error) {
 		if id != wantID {
@@ -194,23 +185,19 @@ func TestGraphQL_AddRemoveLabelsToFromLabelable(t *testing.T) {
 					Schema:  graphqlbackend.GraphQLSchema,
 					Query: `
 				mutation {
-					labels {
-						` + name + `(labelable: "RGlzY3Vzc2lvblRocmVhZDoiMyI=", labels: ["TGFiZWw6Mg=="]) {
-							__typename
-							... on DiscussionThread {
-								id
-							}
+					` + name + `(labelable: "VGhyZWFkOjM=", labels: ["TGFiZWw6Mg=="]) {
+						__typename
+						... on Thread {
+							id
 						}
 					}
 				}
 			`,
 					ExpectedResult: `
 				{
-					"labels": {
-						"` + name + `": {
-							"__typename": "DiscussionThread",
-							"id": "RGlzY3Vzc2lvblRocmVhZDoiMyI="
-						}
+					"` + name + `": {
+						"__typename": "Thread",
+						"id": "VGhyZWFkOjM="
 					}
 				}
 			`,

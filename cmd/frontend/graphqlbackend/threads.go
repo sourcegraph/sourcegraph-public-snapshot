@@ -183,6 +183,7 @@ type Thread interface {
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)
 	RepositoryComparison(context.Context) (*RepositoryComparisonResolver, error)
 	CampaignNode
+	labelable
 }
 
 // ThreadConnection is the interface for the GraphQL type ThreadConnection.

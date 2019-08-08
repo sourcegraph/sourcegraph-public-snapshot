@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/projects"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
@@ -16,25 +16,27 @@ func TestDB_Labels(t *testing.T) {
 	resetMocks()
 	ctx := dbtesting.TestContext(t)
 
-	org1, err := db.Orgs.Create(ctx, "org1", nil)
+	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{Name: "r0", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	repo0, err := db.Repos.GetByName(ctx, "r0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	proj1, err := projects.TestCreateProject(ctx, "p1", 0, org1.ID)
-	if err != nil {
+	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{Name: "r1", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	proj2, err := projects.TestCreateProject(ctx, "p2", 0, org1.ID)
+	repo1, err := db.Repos.GetByName(ctx, "r1")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	wantLabel0 := &dbLabel{ProjectID: proj1, Name: "n0", Description: strptr("d0"), Color: "h0"}
+	wantLabel0 := &dbLabel{RepositoryID: int64(repo0.ID), Name: "n0", Description: strptr("d0"), Color: "h0"}
 	label0, err := dbLabels{}.Create(ctx, wantLabel0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	label1, err := dbLabels{}.Create(ctx, &dbLabel{ProjectID: proj1, Name: "n1", Description: strptr("d1"), Color: "h1"})
+	label1, err := dbLabels{}.Create(ctx, &dbLabel{RepositoryID: int64(repo0.ID), Name: "n1", Description: strptr("d1"), Color: "h1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,8 +88,8 @@ func TestDB_Labels(t *testing.T) {
 	}
 
 	{
-		// List proj1's labels.
-		ts, err := dbLabels{}.List(ctx, dbLabelsListOptions{ProjectID: proj1})
+		// List repo0's labels.
+		ts, err := dbLabels{}.List(ctx, dbLabelsListOptions{RepositoryID: int64(repo0.ID)})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -98,8 +100,8 @@ func TestDB_Labels(t *testing.T) {
 	}
 
 	{
-		// List proj2's labels.
-		ts, err := dbLabels{}.List(ctx, dbLabelsListOptions{ProjectID: proj2})
+		// List repo1's labels.
+		ts, err := dbLabels{}.List(ctx, dbLabelsListOptions{RepositoryID: int64(repo1.ID)})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -125,7 +127,7 @@ func TestDB_Labels(t *testing.T) {
 		if err := (dbLabels{}).DeleteByID(ctx, label0.ID); err != nil {
 			t.Fatal(err)
 		}
-		ts, err := dbLabels{}.List(ctx, dbLabelsListOptions{ProjectID: proj1})
+		ts, err := dbLabels{}.List(ctx, dbLabelsListOptions{RepositoryID: int64(repo0.ID)})
 		if err != nil {
 			t.Fatal(err)
 		}

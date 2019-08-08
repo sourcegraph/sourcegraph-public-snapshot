@@ -251,7 +251,7 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 		return externalServiceByID(ctx, id)
 	case "GitRef":
 		return gitRefByID(ctx, id)
-	case "Label":
+	case GQLTypeLabel:
 		return LabelByID(ctx, id)
 	case "Project":
 		return ProjectByID(ctx, id)

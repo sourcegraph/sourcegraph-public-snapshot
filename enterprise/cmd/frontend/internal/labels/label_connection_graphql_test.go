@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/projects"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
 func TestGraphQL_Labelable_LabelConnection(t *testing.T) {
@@ -18,9 +18,12 @@ func TestGraphQL_Labelable_LabelConnection(t *testing.T) {
 		wantThreadID = 3
 		wantLabelID  = 2
 	)
-	db.Mocks.DiscussionThreads.Get = func(int64) (*types.DiscussionThread, error) {
-		return &types.DiscussionThread{ID: wantThreadID}, nil
+	graphqlbackend.Threads = threads.GraphQLResolver{}
+	defer func() { graphqlbackend.Threads = nil }()
+	threads.MockThreadByID = func(id graphql.ID) (graphqlbackend.Thread, error) {
+		return mockThread{id: wantThreadID}, nil
 	}
+	defer func() { threads.MockThreadByID = nil }()
 	mocks.labelsObjects.List = func(dbLabelsObjectsListOptions) ([]*dbObjectLabel, error) {
 		return []*dbObjectLabel{{Thread: wantThreadID, Label: wantLabelID}}, nil
 	}
@@ -37,8 +40,8 @@ func TestGraphQL_Labelable_LabelConnection(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				{
-					node(id: "RGlzY3Vzc2lvblRocmVhZDoiMyI=") {
-						... on DiscussionThread {
+					node(id: "VGhyZWFkOjM=") {
+						... on Thread {
 							labels {
 								nodes {
 									name
@@ -73,15 +76,16 @@ func TestGraphQL_Labelable_LabelConnection(t *testing.T) {
 	})
 }
 
-func TestGraphQL_Project_LabelConnection(t *testing.T) {
+func TestGraphQL_Repository_LabelConnection(t *testing.T) {
 	resetMocks()
 	const (
-		wantProjectID = 3
-		wantLabelID   = 2
+		wantRepositoryID = 3
+		wantLabelID      = 2
 	)
-	projects.MockProjectByDBID = func(id int64) (graphqlbackend.Project, error) {
-		return projects.TestNewProject(wantProjectID, "", 0, 0), nil
+	graphqlbackend.MockRepositoryByID = func(id graphql.ID) (*graphqlbackend.RepositoryResolver, error) {
+		return graphqlbackend.NewRepositoryResolver(&types.Repo{ID: wantRepositoryID}), nil
 	}
+	defer func() { graphqlbackend.MockRepositoryByID = nil }()
 	mocks.labels.List = func(dbLabelsListOptions) ([]*dbLabel, error) {
 		return []*dbLabel{{ID: wantLabelID, Name: "n"}}, nil
 	}
@@ -92,8 +96,8 @@ func TestGraphQL_Project_LabelConnection(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				{
-					node(id: "UHJvamVjdDoz") {
-						... on Project {
+					node(id: "UmVwb3NpdG9yeToz") {
+						... on Repository {
 							labels {
 								nodes {
 									name
