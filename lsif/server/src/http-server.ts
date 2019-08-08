@@ -8,7 +8,8 @@ import { createPrometheusReporters, emit } from './prometheus'
 import { DgraphBackend } from './dgraph'
 import { fs } from 'mz'
 import { readEnvInt } from './env'
-import { SQLiteBlobBackend, SQLiteGraphBackend } from './sqlite'
+import { SQLiteGraphBackend } from './sqlite.graph'
+import { SQLiteBlobBackend } from './sqlite.blob'
 import { wrap } from 'async-middleware'
 import {
     checkRepository,

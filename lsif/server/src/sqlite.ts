@@ -1,11 +1,9 @@
 import * as lsp from 'vscode-languageserver'
 import * as path from 'path'
 import { Backend, NoLSIFDataError, QueryRunner } from './backend'
-import { BlobStore } from './ms/blobStore'
 import { child_process, fs } from 'mz'
 import { Database } from './ms/database'
 import { InsertStats, QueryStats, timeit, CreateRunnerStats } from './stats'
-import { GraphStore } from './ms/graphStore'
 import { readEnvInt } from './env'
 
 /**
@@ -19,12 +17,6 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * be kept under this limit. Defaults to 100GB.
  */
 const SOFT_MAX_STORAGE = readEnvInt({ key: 'LSIF_SOFT_MAX_STORAGE', defaultValue: 100 * 1024 * 1024 * 1024 })
-
-/**
- * The path of the binary used to convert JSON dumps to SQLite dumps.
- * See https://github.com/microsoft/lsif-node/tree/master/sqlite.
- */
-const SQLITE_CONVERTER_BINARY = './node_modules/lsif-sqlite/bin/lsif-sqlite'
 
 /**
  * The abstract SQLite backend base that supports graph and blob subclasses.
@@ -76,28 +68,31 @@ export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
         commit: string
     ): Promise<{ queryRunner: SQLiteQueryRunner; createRunnerStats: CreateRunnerStats }> {
         const file = makeFilename(repository, commit)
-        const db = this.createStore()
 
         try {
-            const { elapsed } = await timeit(async () => {
-                return await db.load(file, root => ({
-                    toDatabase: path => `${root}/${path}`,
-                    fromDatabase: uri => (uri.startsWith(root) ? uri.slice(`${root}/`.length) : uri),
-                }))
-            })
-
-            return {
-                queryRunner: new SQLiteQueryRunner(db),
-                createRunnerStats: {
-                    elapsedMs: elapsed,
-                },
-            }
+            await fs.stat(file)
         } catch (e) {
             if ('code' in e && e.code === 'ENOENT') {
                 throw new NoLSIFDataError(repository, commit)
             }
 
             throw e
+        }
+
+        const db = this.createStore()
+
+        const { elapsed } = await timeit(async () => {
+            return await db.load(file, root => ({
+                toDatabase: path => `${root}/${path}`,
+                fromDatabase: uri => (uri.startsWith(root) ? uri.slice(`${root}/`.length) : uri),
+            }))
+        })
+
+        return {
+            queryRunner: new SQLiteQueryRunner(db),
+            createRunnerStats: {
+                elapsedMs: elapsed,
+            },
         }
     }
 
@@ -211,60 +206,6 @@ export class SQLiteQueryRunner implements QueryRunner {
     public close(): Promise<void> {
         this.db.close()
         return Promise.resolve()
-    }
-}
-
-/**
- * Backend for graph-encoded SQLite dumps.
- */
-export class SQLiteGraphBackend extends SQLiteBackend {
-    /**
-     * Build the command used to generate the SQLite dump from a temporary file.
-     */
-    protected buildCommand(inFile: string, outFile: string): string {
-        return [SQLITE_CONVERTER_BINARY, '--in', inFile, '--out', outFile].join(' ')
-    }
-
-    /**
-     * Create a new, empty Database. This object should be able to load the file
-     * created by `buildCommand`.
-     */
-    protected createStore(): Database {
-        return new GraphStore()
-    }
-}
-
-/**
- * Backend for blob-encoded SQLite dumps.
- */
-export class SQLiteBlobBackend extends SQLiteBackend {
-    /**
-     * Build the command used to generate the SQLite dump from a temporary file.
-     */
-    protected buildCommand(inFile: string, outFile: string): string {
-        // TODO(efritz) - give this a meaningful value
-        const projectVersion = '0'
-
-        return [
-            SQLITE_CONVERTER_BINARY,
-            '--in',
-            inFile,
-            '--out',
-            outFile,
-            '--format',
-            'blob',
-            '--delete',
-            '--projectVersion',
-            projectVersion,
-        ].join(' ')
-    }
-
-    /**
-     * Create a new, empty Database. This object should be able to load the file
-     * created by `buildCommand`.
-     */
-    protected createStore(): Database {
-        return new BlobStore()
     }
 }
 
