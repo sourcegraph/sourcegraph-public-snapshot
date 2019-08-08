@@ -179,6 +179,7 @@ type Thread interface {
 	hasThreadDiagnostics
 	updatable
 	commentable
+	ruleContainer
 	Kind() ThreadKind
 	URL(context.Context) (string, error)
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)

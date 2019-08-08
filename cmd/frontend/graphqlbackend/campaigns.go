@@ -161,16 +161,14 @@ type CreateCampaignArgs struct {
 		Name      string
 		Body      *string
 		Preview   *bool
-		Rules     *string
 	}
 }
 
 type UpdateCampaignArgs struct {
 	Input struct {
-		ID    graphql.ID
-		Name  *string
-		Body  *string
-		Rules *string
+		ID   graphql.ID
+		Name *string
+		Body *string
 	}
 }
 
@@ -198,9 +196,9 @@ type Campaign interface {
 	Namespace(context.Context) (*NamespaceResolver, error)
 	Name() string
 	IsPreview() bool
-	Rules() string
 	updatable
 	commentable
+	ruleContainer
 	URL(context.Context) (string, error)
 	Threads(context.Context, *ThreadConnectionArgs) (ThreadConnection, error)
 	Repositories(context.Context) ([]*RepositoryResolver, error)

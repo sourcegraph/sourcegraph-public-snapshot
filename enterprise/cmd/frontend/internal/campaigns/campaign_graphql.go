@@ -69,13 +69,6 @@ func (v *gqlCampaign) Name() string { return v.db.Name }
 
 func (v *gqlCampaign) IsPreview() bool { return v.db.IsPreview }
 
-func (v *gqlCampaign) Rules() string {
-	if v.db.Rules != "" {
-		return v.db.Rules
-	}
-	return "[]"
-}
-
 func (v *gqlCampaign) ViewerCanUpdate(ctx context.Context) (bool, error) {
 	return commentobjectdb.ViewerCanUpdate(ctx, v.ID())
 }

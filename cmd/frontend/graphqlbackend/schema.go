@@ -4727,9 +4727,16 @@ input UpdateRuleInput {
     definition: JSONValue
 }
 
-# TODO!(sqs): introduce this type, it could be useful
-type JSONCValue {
-    input: String!
+# A JSONC document.
+type JSONC {
+    # The original JSONC input.
+    raw: String!
+
+    # The formatted JSONC document, with whitespace formatted but comments and trailing commas
+    # preserved.
+    formatted: String!
+
+    # The JSON value parsed from the JSONC input.
     parsed: JSONValue!
 }
 
@@ -4742,7 +4749,7 @@ interface RuleContainer {
 }
 
 # A rule describes a condition and an action that should be taken when the condition is true.
-type Rule implements Node {
+type Rule implements Node & Updatable {
     # The unique ID for the rule.
     id: ID!
 
@@ -4756,10 +4763,19 @@ type Rule implements Node {
     description: String
 
     # The definition of the rule.
-    definition: JSONCValue!
+    definition: JSONC!
+
+    # The date and time when the rule was created.
+    createdAt: DateTime!
+
+    # The date and time when the rule was updated.
+    updatedAt: DateTime!
 
     # The URL to this rule.
     url: String!
+
+    # Whether the viewer can update this rule.
+    viewerCanUpdate: Boolean!
 }
 
 # A list of rules.

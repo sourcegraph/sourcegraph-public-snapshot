@@ -71,7 +71,6 @@ CREATE TABLE campaigns (
     namespace_org_id integer REFERENCES orgs(id) ON DELETE CASCADE,
 	name text NOT NULL,
     is_preview boolean NOT NULL DEFAULT false,
-    rules text NOT NULL DEFAULT '[]',
 
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now()
@@ -116,12 +115,16 @@ ALTER TABLE campaigns ADD COLUMN primary_comment_id bigint NOT NULL REFERENCES c
 
 CREATE TABLE rules (
 	id bigserial PRIMARY KEY,
-	project_id bigint NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+	container_campaign_id bigint REFERENCES campaigns(id) ON DELETE CASCADE,
+    container_thread_id bigint REFERENCES threads(id) ON DELETE CASCADE,
 	name text NOT NULL,
 	description text,
-	settings text NOT NULL
+	definition text NOT NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    updated_at timestamp with time zone NOT NULL DEFAULT now()
 );
-CREATE INDEX rules_project_id ON rules(project_id);
+CREATE INDEX rules_campaign_id ON rules(campaign_id);
+CREATE INDEX rules_thread_id ON rules(thread_id);
 
 -----------------
 

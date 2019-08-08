@@ -9,11 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-func (schemaResolver) Commentable(ctx context.Context, arg *struct{ ID graphql.ID }) (interface {
-	commentable
-	ToCampaign() (Campaign, bool)
-	ToThread() (Thread, bool)
-}, error) {
+func (schemaResolver) Commentable(ctx context.Context, arg *struct{ ID graphql.ID }) (*ToCommentable, error) {
 	if Comments == nil {
 		return nil, errCommentsNotImplemented
 	}

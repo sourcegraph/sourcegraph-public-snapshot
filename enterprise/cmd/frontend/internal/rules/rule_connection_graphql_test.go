@@ -13,11 +13,11 @@ import (
 func TestGraphQL_Project_RuleConnection(t *testing.T) {
 	resetMocks()
 	const (
-		wantProjectID = 3
+		wantContainer = 3
 		wantRuleID    = 2
 	)
 	projects.MockProjectByDBID = func(id int64) (graphqlbackend.Project, error) {
-		return projects.TestNewProject(wantProjectID, "", 0, 0), nil
+		return projects.TestNewProject(wantContainer, "", 0, 0), nil
 	}
 	mocks.rules.List = func(dbRulesListOptions) ([]*dbRule, error) {
 		return []*dbRule{{ID: wantRuleID, Name: "n"}}, nil

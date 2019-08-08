@@ -12,18 +12,18 @@ func (GraphQLResolver) CreateRule(ctx context.Context, arg *graphqlbackend.Creat
 		return nil, err
 	}
 
-	var settings string
-	if arg.Input.Settings != nil {
-		settings = *arg.Input.Settings
+	var definition string
+	if arg.Input.Definition != nil {
+		definition = *arg.Input.Definition
 	} else {
-		settings = "{}"
+		definition = "{}"
 	}
 
 	rule, err := dbRules{}.Create(ctx, &dbRule{
-		ProjectID:   project.DBID(),
+		Container:   project.DBID(),
 		Name:        arg.Input.Name,
 		Description: arg.Input.Description,
-		Settings:    settings,
+		Definition:    definition,
 	})
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (GraphQLResolver) UpdateRule(ctx context.Context, arg *graphqlbackend.Updat
 	rule, err := dbRules{}.Update(ctx, l.db.ID, dbRuleUpdate{
 		Name:        arg.Input.Name,
 		Description: arg.Input.Description,
-		Settings:    arg.Input.Settings,
+		Definition:    arg.Input.Definition,
 	})
 	if err != nil {
 		return nil, err

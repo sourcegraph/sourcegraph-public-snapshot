@@ -29,12 +29,12 @@ func TestDB_Rules(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantRule0 := &dbRule{ProjectID: proj1, Name: "n0", Description: strptr("d0"), Settings: "h0"}
+	wantRule0 := &dbRule{Container: proj1, Name: "n0", Description: strptr("d0"), Definition: "h0"}
 	rule0, err := dbRules{}.Create(ctx, wantRule0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	rule1, err := dbRules{}.Create(ctx, &dbRule{ProjectID: proj1, Name: "n1", Description: strptr("d1"), Settings: "h1"})
+	rule1, err := dbRules{}.Create(ctx, &dbRule{Container: proj1, Name: "n1", Description: strptr("d1"), Definition: "h1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestDB_Rules(t *testing.T) {
 
 	{
 		// List proj1's rules.
-		ts, err := dbRules{}.List(ctx, dbRulesListOptions{ProjectID: proj1})
+		ts, err := dbRules{}.List(ctx, dbRulesListOptions{Container: proj1})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -99,7 +99,7 @@ func TestDB_Rules(t *testing.T) {
 
 	{
 		// List proj2's rules.
-		ts, err := dbRules{}.List(ctx, dbRulesListOptions{ProjectID: proj2})
+		ts, err := dbRules{}.List(ctx, dbRulesListOptions{Container: proj2})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -125,7 +125,7 @@ func TestDB_Rules(t *testing.T) {
 		if err := (dbRules{}).DeleteByID(ctx, rule0.ID); err != nil {
 			t.Fatal(err)
 		}
-		ts, err := dbRules{}.List(ctx, dbRulesListOptions{ProjectID: proj1})
+		ts, err := dbRules{}.List(ctx, dbRulesListOptions{Container: proj1})
 		if err != nil {
 			t.Fatal(err)
 		}

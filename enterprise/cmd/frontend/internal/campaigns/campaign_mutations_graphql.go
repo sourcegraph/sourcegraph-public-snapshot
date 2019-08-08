@@ -16,9 +16,6 @@ func (GraphQLResolver) CreateCampaign(ctx context.Context, arg *graphqlbackend.C
 		// TODO!(sqs): description, renamed to body but allow it to be updated here
 		IsPreview: arg.Input.Preview != nil && *arg.Input.Preview,
 	}
-	if arg.Input.Rules != nil {
-		v.Rules = *arg.Input.Rules
-	}
 
 	var err error
 	v.NamespaceUserID, v.NamespaceOrgID, err = graphqlbackend.NamespaceDBIDByID(ctx, arg.Input.Namespace)
@@ -50,7 +47,6 @@ func (GraphQLResolver) UpdateCampaign(ctx context.Context, arg *graphqlbackend.U
 	campaign, err := dbCampaigns{}.Update(ctx, l.db.ID, dbCampaignUpdate{
 		Name: arg.Input.Name,
 		// TODO!(sqs): description, renamed to body but allow it to be updated here
-		Rules: arg.Input.Rules,
 	})
 	if err != nil {
 		return nil, err

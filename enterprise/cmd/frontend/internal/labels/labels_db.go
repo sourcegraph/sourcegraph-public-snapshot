@@ -27,8 +27,7 @@ type dbLabels struct{}
 
 const selectColumns = `id, repository_id, name, description, color`
 
-// Create creates a label. The label argument's (Label).ID field is ignored. The database ID of the
-// new label is returned.
+// Create creates a label. The label argument's (Label).ID field is ignored.
 func (dbLabels) Create(ctx context.Context, label *dbLabel) (*dbLabel, error) {
 	if mocks.labels.Create != nil {
 		return mocks.labels.Create(label)

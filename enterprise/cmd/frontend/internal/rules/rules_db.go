@@ -2,6 +2,7 @@ package rules
 
 import (
 	"context"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
@@ -12,41 +13,44 @@ import (
 // dbRule describes a rule for a discussion thread.
 type dbRule struct {
 	ID          int64
-	ProjectID   int64  // the project that defines the rule
+	Container   ruleContainer
 	Name        string // the name (case-preserving)
 	Description *string
-	Settings    string // the JSON settings
+	Definition  string
 }
 
-// errRuleNotFound occurs when a database operation expects a specific rule to exist but it does
-// not exist.
+// errRuleNotFound occurs when a database operation expects a specific rule to exist but it does not
+// exist.
 var errRuleNotFound = errors.New("rule not found")
 
 type dbRules struct{}
 
-// Create creates a rule. The rule argument's (Rule).ID field is ignored. The database ID of the
-// new rule is returned.
+const selectColumns = `id, container_campaign_id, container_thread_id, name, description, definition, created_at, updated_at`
+
+// Create creates a rule. The rule argument's (Rule).ID field is ignored.
 func (dbRules) Create(ctx context.Context, rule *dbRule) (*dbRule, error) {
 	if mocks.rules.Create != nil {
 		return mocks.rules.Create(rule)
 	}
 
-	var id int64
-	if err := dbconn.Global.QueryRowContext(ctx,
-		`INSERT INTO rules(project_id, name, description, settings) VALUES($1, $2, $3, $4) RETURNING id`,
-		rule.ProjectID, rule.Name, rule.Description, rule.Settings,
-	).Scan(&id); err != nil {
-		return nil, err
+	args := []interface{}{
+		rule.Container.Campaign,
+		rule.Container.Thread,
+		rule.Name,
+		rule.Description,
+		rule.Definition,
 	}
-	created := *rule
-	created.ID = id
-	return &created, nil
+	query := sqlf.Sprintf(
+		`INSERT INTO rules(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`, DEFAULT,  DEFAULT) RETURNING `+selectColumns,
+		args...,
+	)
+	return dbRules{}.scanRow(dbconn.Global.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
 }
 
 type dbRuleUpdate struct {
 	Name        *string
 	Description *string
-	Settings    *string
+	Definition  *string
 }
 
 // Update updates a rule given its ID.
@@ -68,15 +72,15 @@ func (s dbRules) Update(ctx context.Context, id int64, update dbRuleUpdate) (*db
 		}
 		setFields = append(setFields, sqlf.Sprintf("description=%s", value))
 	}
-	if update.Settings != nil {
-		setFields = append(setFields, sqlf.Sprintf("settings=%s", *update.Settings))
+	if update.Definition != nil {
+		setFields = append(setFields, sqlf.Sprintf("definition=%s", *update.Definition))
 	}
 
 	if len(setFields) == 0 {
 		return nil, nil
 	}
 
-	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE rules SET %v WHERE id=%s RETURNING id, project_id, name, description, settings`, sqlf.Join(setFields, ", "), id))
+	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE rules SET %v WHERE id=%s RETURNING `+selectColumns, sqlf.Join(setFields, ", "), id))
 	if err != nil {
 		return nil, err
 	}
@@ -107,18 +111,22 @@ func (s dbRules) GetByID(ctx context.Context, id int64) (*dbRule, error) {
 // dbRulesListOptions contains options for listing rules.
 type dbRulesListOptions struct {
 	Query     string // only list rules matching this query (case-insensitively)
-	ProjectID int64  // only list rules defined in this project
+	Container ruleContainer
 	*db.LimitOffset
 }
 
 func (o dbRulesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.Query != "" {
-		conds = append(conds, sqlf.Sprintf("name LIKE %s", "%"+o.Query+"%"))
+		conds = append(conds, sqlf.Sprintf("name ILIKE %s", "%"+o.Query+"%"))
 	}
-	if o.ProjectID != 0 {
-		conds = append(conds, sqlf.Sprintf("project_id=%d", o.ProjectID))
+	addCondition := func(id int64, column string) {
+		if id != 0 {
+			conds = append(conds, sqlf.Sprintf(column+"=%d", id))
+		}
 	}
+	addCondition(o.Container.Campaign, "container_campaign_id")
+	addCondition(o.Container.Thread, "container_thread_id")
 	return conds
 }
 
@@ -136,7 +144,7 @@ func (s dbRules) List(ctx context.Context, opt dbRulesListOptions) ([]*dbRule, e
 
 func (s dbRules) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbRule, error) {
 	q := sqlf.Sprintf(`
-SELECT id, project_id, name, description, settings FROM rules
+SELECT `+selectColumns+` FROM rules
 WHERE (%s)
 ORDER BY name ASC
 %s`,
@@ -155,13 +163,32 @@ func (dbRules) query(ctx context.Context, query *sqlf.Query) ([]*dbRule, error) 
 
 	var results []*dbRule
 	for rows.Next() {
-		var t dbRule
-		if err := rows.Scan(&t.ID, &t.ProjectID, &t.Name, &t.Description, &t.Settings); err != nil {
+		t, err := dbRules{}.scanRow(rows)
+		if err != nil {
 			return nil, err
 		}
-		results = append(results, &t)
+		results = append(results, t)
 	}
 	return results, nil
+}
+
+func (dbRules) scanRow(row interface {
+	Scan(dest ...interface{}) error
+}) (*dbRule, error) {
+	var t dbRule
+	if err := row.Scan(
+		&t.ID,
+		&t.Container.Campaign,
+		&t.Container.Thread,
+		&t.Name,
+		&t.Description,
+		&t.Definition,
+		&t.CreatedAt,
+		&t.UpdatedAt,
+	); err != nil {
+		return nil, err
+	}
+	return &t, nil
 }
 
 // Count counts all rules that satisfy the options (ignoring limit and offset).

@@ -77,7 +77,7 @@ func (v *gqlProject) Campaigns(ctx context.Context, args *graphqlutil.Connection
 }
 
 func (v *gqlProject) Rules(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.RuleConnection, error) {
-	return graphqlbackend.RulesDefinedIn(ctx, v.ID(), args)
+	return graphqlbackend.RulesInRuleContainer(ctx, v.ID(), args)
 }
 
 func (v *gqlProject) URL() string { return URLToProject(v.db.ID) }

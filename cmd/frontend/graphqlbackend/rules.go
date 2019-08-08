@@ -3,8 +3,10 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
@@ -14,31 +16,68 @@ import (
 // This is contributed by enterprise.
 var Rules RulesResolver
 
+const GQLTypeRule = "Rule"
+
+func MarshalRuleID(id int64) graphql.ID {
+	return relay.MarshalID(GQLTypeRule, id)
+}
+
+func UnmarshalRuleID(id graphql.ID) (dbID int64, err error) {
+	if typ := relay.UnmarshalKind(id); typ != GQLTypeRule {
+		return 0, fmt.Errorf("rule ID has unexpected type type %q", typ)
+	}
+	err = relay.UnmarshalSpec(id, &dbID)
+	return
+}
+
+var errRulesNotImplemented = errors.New("rules is not implemented")
+
 // RuleByID is called to look up a Rule given its GraphQL ID.
 func RuleByID(ctx context.Context, id graphql.ID) (Rule, error) {
 	if Rules == nil {
-		return nil, errors.New("rules is not implemented")
+		return nil, errRulesNotImplemented
 	}
 	return Rules.RuleByID(ctx, id)
 }
 
-// RulesDefinedIn returns an instance of the GraphQL RuleConnection type with the list of rules
-// defined in a project.
-func RulesDefinedIn(ctx context.Context, project graphql.ID, arg *graphqlutil.ConnectionArgs) (RuleConnection, error) {
+// RulesInRuleContainer returns an instance of the GraphQL RuleConnection type with the list of
+// rules defined in a rule container.
+func RulesInRuleContainer(ctx context.Context, ruleContainer graphql.ID, arg *graphqlutil.ConnectionArgs) (RuleConnection, error) {
 	if Rules == nil {
-		return nil, errors.New("rules is not implemented")
+		return nil, errRulesNotImplemented
 	}
-	return Rules.RulesDefinedIn(ctx, project, arg)
+	return Rules.RulesInRuleContainer(ctx, ruleContainer, arg)
 }
 
-func (schemaResolver) Rules() (RulesResolver, error) {
+func (schemaResolver) RuleContainer(ctx context.Context, arg *struct{ ID graphql.ID }) (*ToRuleContainer, error) {
 	if Rules == nil {
-		return nil, errors.New("rules is not implemented")
+		return nil, errRulesNotImplemented
 	}
-	return Rules, nil
+	return Rules.RuleContainerByID(ctx, arg.ID)
 }
 
-// RulesResolver is the interface for the GraphQL type RulesMutation.
+func (schemaResolver) CreateRule(ctx context.Context, arg *CreateRuleArgs) (Rule, error) {
+	if Rules == nil {
+		return nil, errRulesNotImplemented
+	}
+	return Rules.CreateRule(ctx, arg)
+}
+
+func (schemaResolver) UpdateRule(ctx context.Context, arg *UpdateRuleArgs) (Rule, error) {
+	if Rules == nil {
+		return nil, errRulesNotImplemented
+	}
+	return Rules.UpdateRule(ctx, arg)
+}
+
+func (schemaResolver) DeleteRule(ctx context.Context, arg *DeleteRuleArgs) (*EmptyResponse, error) {
+	if Rules == nil {
+		return nil, errRulesNotImplemented
+	}
+	return Rules.DeleteRule(ctx, arg)
+}
+
+// RulesResolver is the interface for the rules GraphQL API.
 type RulesResolver interface {
 	CreateRule(context.Context, *CreateRuleArgs) (Rule, error)
 	UpdateRule(context.Context, *UpdateRuleArgs) (Rule, error)
@@ -47,16 +86,19 @@ type RulesResolver interface {
 	// RuleByID is called by the RuleByID func but is not in the GraphQL API.
 	RuleByID(context.Context, graphql.ID) (Rule, error)
 
-	// RulesDefinedIn is called by the RulesDefinedIn func but is not in the GraphQL API.
-	RulesDefinedIn(ctx context.Context, project graphql.ID, arg *graphqlutil.ConnectionArgs) (RuleConnection, error)
+	RuleContainerByID(context.Context, graphql.ID) (*ToRuleContainer, error)
+
+	// RulesInRuleContainer is called by the RulesInRuleContainer func but is not in the GraphQL
+	// API.
+	RulesInRuleContainer(ctx context.Context, container graphql.ID, arg *graphqlutil.ConnectionArgs) (RuleConnection, error)
 }
 
 type CreateRuleArgs struct {
 	Input struct {
-		Project     graphql.ID
+		Container   graphql.ID
 		Name        string
 		Description *string
-		Settings    *string
+		Definition  string
 	}
 }
 
@@ -65,7 +107,7 @@ type UpdateRuleArgs struct {
 		ID          graphql.ID
 		Name        *string
 		Description *string
-		Settings    *string
+		Definition  *string
 	}
 }
 
@@ -76,11 +118,13 @@ type DeleteRuleArgs struct {
 // Rule is the interface for the GraphQL type Rule.
 type Rule interface {
 	ID() graphql.ID
-	Project(context.Context) (Project, error)
+	Container(context.Context) (*ToRuleContainer, error)
 	Name() string
 	Description() *string
-	Settings() string
-	URL() string
+	Definition() JSONC
+	CreatedAt() DateTime
+	UpdatedAt() DateTime
+	updatable
 }
 
 // RuleConnection is the interface for the GraphQL type RuleConnection.
@@ -89,3 +133,30 @@ type RuleConnection interface {
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 }
+
+type ruleContainer interface {
+	Rules(context.Context, *graphqlutil.ConnectionArgs) (RuleConnection, error)
+}
+
+type ToRuleContainer struct {
+	Campaign Campaign
+	Thread   Thread
+}
+
+func (v ToRuleContainer) ruleContainer() ruleContainer {
+	switch {
+	case v.Campaign != nil:
+		return v.Campaign
+	case v.Thread != nil:
+		return v.Thread
+	default:
+		panic("invalid RuleContainer")
+	}
+}
+
+func (v ToRuleContainer) Rules(ctx context.Context, arg *graphqlutil.ConnectionArgs) (RuleConnection, error) {
+	return v.ruleContainer().Rules(ctx, arg)
+}
+
+func (v ToRuleContainer) ToCampaign() (Campaign, bool) { return v.Campaign, v.Campaign != nil }
+func (v ToRuleContainer) ToThread() (Thread, bool)     { return v.Thread, v.Thread != nil }

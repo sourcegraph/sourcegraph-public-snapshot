@@ -13,15 +13,15 @@ import (
 
 func TestGraphQL_CreateRule(t *testing.T) {
 	resetMocks()
-	const wantProjectID = 1
+	const wantContainer = 1
 	projects.MockProjectByDBID = func(id int64) (graphqlbackend.Project, error) {
-		return projects.TestNewProject(wantProjectID, "", 0, 0), nil
+		return projects.TestNewProject(wantContainer, "", 0, 0), nil
 	}
 	wantRule := &dbRule{
-		ProjectID:   wantProjectID,
+		Container:   wantContainer,
 		Name:        "n",
 		Description: strptr("d"),
-		Settings:    "h",
+		Definition:    "h",
 	}
 	mocks.rules.Create = func(rule *dbRule) (*dbRule, error) {
 		if !reflect.DeepEqual(rule, wantRule) {
@@ -39,7 +39,7 @@ func TestGraphQL_CreateRule(t *testing.T) {
 			Query: `
 				mutation {
 					rules {
-						createRule(input: { project: "T3JnOjE=", name: "n", description: "d", settings: "h" }) {
+						createRule(input: { project: "T3JnOjE=", name: "n", description: "d", definition: "h" }) {
 							id
 							name
 						}
@@ -70,15 +70,15 @@ func TestGraphQL_UpdateRule(t *testing.T) {
 		return &dbRule{ID: wantID}, nil
 	}
 	mocks.rules.Update = func(id int64, update dbRuleUpdate) (*dbRule, error) {
-		if want := (dbRuleUpdate{Name: strptr("n1"), Description: strptr("d1"), Settings: strptr("h1")}); !reflect.DeepEqual(update, want) {
+		if want := (dbRuleUpdate{Name: strptr("n1"), Description: strptr("d1"), Definition: strptr("h1")}); !reflect.DeepEqual(update, want) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
 		return &dbRule{
 			ID:          2,
-			ProjectID:   1,
+			Container:   1,
 			Name:        "n1",
 			Description: strptr("d1"),
-			Settings:    "h1",
+			Definition:    "h1",
 		}, nil
 	}
 
@@ -89,11 +89,11 @@ func TestGraphQL_UpdateRule(t *testing.T) {
 			Query: `
 				mutation {
 					rules {
-						updateRule(input: { id: "UnVsZToy", name: "n1", description: "d1", settings: "h1" }) {
+						updateRule(input: { id: "UnVsZToy", name: "n1", description: "d1", definition: "h1" }) {
 							id
 							name
 							description
-							settings
+							definition
 						}
 					}
 				}
@@ -105,7 +105,7 @@ func TestGraphQL_UpdateRule(t *testing.T) {
 							"id": "UnVsZToy",
 							"name": "n1",
 							"description": "d1",
-							"settings": "h1"
+							"definition": "h1"
 						}
 					}
 				}

@@ -257,7 +257,7 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 		return ProjectByID(ctx, id)
 	case "Repository":
 		return repositoryByID(ctx, id)
-	case "Rule":
+	case GQLTypeRule:
 		return RuleByID(ctx, id)
 	case GQLTypeThreadDiagnosticEdge:
 		return ThreadDiagnosticEdgeByID(ctx, id)
