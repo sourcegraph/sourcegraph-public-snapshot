@@ -435,9 +435,9 @@ func TestMaxMatches(t *testing.T) {
 			t.Fatal(err)
 		}
 		for j := 0; j < maxLineMatches+1; j++ {
-			w.Write([]byte(pattern))
-			w.Write([]byte{' '})
-			w.Write([]byte{'\n'})
+			_, _ = w.Write([]byte(pattern))
+			_, _ = w.Write([]byte{' '})
+			_, _ = w.Write([]byte{'\n'})
 		}
 	}
 	err := zw.Close()
