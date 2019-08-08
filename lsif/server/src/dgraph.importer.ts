@@ -4,7 +4,7 @@ import RelateUrl from 'relateurl'
 import { Document, Edge, EdgeLabels, ElementTypes, HoverResult, Range, Vertex, VertexLabels } from 'lsif-protocol'
 import { Hover, MarkupContent, MarkupKind } from 'vscode-languageserver-types'
 import { MetaData } from './ms/protocol.compress'
-import { Mutation, NQuad, Txn, Value, DgraphClient } from 'dgraph-js'
+import { Mutation, NQuad, Value, DgraphClient } from 'dgraph-js'
 import { Schema } from 'jsonschema'
 import { validate } from './dgraph.schema'
 import { flattenRange } from './dgraph.range'
@@ -13,13 +13,11 @@ import { flattenRange } from './dgraph.range'
  * Inserts LSIF dump data into Dgraph.
  */
 export class DgraphImporter {
-    private transaction: Txn
     private mutation: Mutation
     private idCounter = 0
     private rootInfo: { rootUri: URL; repoUidRef: string; commitUidRef: string } | undefined
 
-    constructor(client: DgraphClient, private repository: string, private commit: string, private schema: Schema) {
-        this.transaction = client.newTxn()
+    constructor(private client: DgraphClient, private repository: string, private commit: string, private schema: Schema) {
         this.mutation = new Mutation()
     }
 
@@ -29,26 +27,35 @@ export class DgraphImporter {
      * cleanup of the transaction.
      */
     public async import(items: (Vertex | Edge)[]): Promise<void> {
-        try {
-            items.forEach(element => {
-                if (element.type === ElementTypes.vertex) {
-                    this.insertVertex(element)
-                } else {
-                    this.insertEdge(element)
-                }
-            })
+        console.log('doing mutation setup')
+        console.time('setup')
 
-            console.log('nquads:', this.mutation.getSetList().length)
-            console.log('calling mutate')
+        items.forEach(element => {
+            if (element.type === ElementTypes.vertex) {
+                this.insertVertex(element)
+            } else {
+                this.insertEdge(element)
+            }
+        })
+
+        console.timeEnd('setup')
+
+        console.log('nquads:', this.mutation.getSetList().length)
+        console.log('calling mutate')
+
+        const transaction = this.client.newTxn()
+        try {
             console.time('mutate')
-            const assigned = await this.transaction.mutate(this.mutation)
+            const assigned = await transaction.mutate(this.mutation)
             console.timeEnd('mutate')
+
             console.log('calling commit')
-            await this.transaction.commit()
-            console.log('done')
+            console.time('commit')
+            await transaction.commit()
+            console.timeEnd('commit')
             console.log(assigned.toObject())
         } finally {
-            await this.transaction.discard()
+            await transaction.discard()
         }
     }
 
