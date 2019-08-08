@@ -37,6 +37,7 @@ func TestSearch(t *testing.T) {
 		"README.md": `# Hello World
 
 Hello world example in go
+
 `,
 		"main.go": `package main
 
@@ -46,8 +47,7 @@ func main() {
 	fmt.Println("Hello world")
 }
 `,
-		"abc.txt": `w
-		`,
+		"abc.txt":    "w",
 		"milton.png": string(miltonPNG),
 	}
 
