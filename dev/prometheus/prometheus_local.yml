@@ -1,0 +1,45 @@
+# Prometheus global config
+global:
+  scrape_interval: 30s # Scrape services for updated metrics every 30s. Default is 1m.
+  evaluation_interval: 30s # Evaluate rules every 30s. Default is 1m.
+  # scrape_timeout is set to the global default (10s).
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # deploy-sourcegraph-docker does not yet use prometheus alerts
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  - "frontend.rules"
+  - "searcher.rules"
+  - "service.rules"
+  - "symbols.rules"
+
+# A scrape configuration containing exactly one endpoint to scrape for metrics:
+scrape_configs:
+  # Scrape prometheus itself for metrics.
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Scrape Docker for metrics.
+  # You will need to configure docker for this to work: https://docs.docker.com/config/thirdparty/prometheus/#configure-docker
+  - job_name: "docker"
+    static_configs:
+      # For Linux, use this line:
+      #- targets: ["localhost:9323"]
+      #
+      # For Mac, use this line:
+      #- targets: ["docker.for.mac.host.internal:9323"]
+      #
+      # For Windows, use this line:
+      #- targets: ["docker.for.win.localhost:9090"]
+
+  - job_name: "node"
+    file_sd_configs:
+      - files:
+          - "/etc/prometheus/prometheus_targets_local.yml"

@@ -1,0 +1,18 @@
+---
+- labels:
+    job: node
+  targets:
+    # frontend
+    - 127.0.0.1:6063
+    # gitserver
+    - 127.0.0.1:6068
+    # searcher
+    - 127.0.0.1:6069
+    # symbols
+    - 127.0.0.1:6071
+    # repo-updater
+    - 127.0.0.1:6074
+    # query-runner
+    - 127.0.0.1:6067
+    # zoekt-indexserver
+    # - 127.0.0.1:6072
