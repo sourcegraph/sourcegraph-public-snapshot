@@ -6,7 +6,7 @@ import { ActorLink } from '../../../actor/ActorLink'
 import { TimelineItem } from '../TimelineItem'
 
 interface Props {
-    event: GQL.IRequestReviewEvent
+    event: GQL.ICommentOnThreadEvent
 
     className?: string
 }

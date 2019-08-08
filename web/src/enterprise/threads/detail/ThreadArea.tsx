@@ -44,7 +44,7 @@ interface Props
 
 const LOADING = 'loading' as const
 
-const PAGE_CLASS_NAME = 'container mt-5'
+const PAGE_CLASS_NAME = 'container my-5'
 
 /**
  * The area for a single thread.
@@ -135,8 +135,14 @@ export const ThreadArea: React.FunctionComponent<Props> = ({
                     overviewComponent={ThreadOverview}
                     pages={[
                         {
-                            title: 'Changes',
+                            title: 'Activity',
                             path: '/',
+                            exact: true,
+                            render: () => <ThreadActivity {...context} className={PAGE_CLASS_NAME} />,
+                        },
+                        {
+                            title: 'Changes',
+                            path: '/changes',
                             exact: true,
                             render: () => <ThreadFileDiffsList {...context} className={PAGE_CLASS_NAME} />,
                         },
@@ -144,12 +150,6 @@ export const ThreadArea: React.FunctionComponent<Props> = ({
                             title: 'Commits',
                             path: '/commits',
                             render: () => <ThreadCommitsList {...context} className={PAGE_CLASS_NAME} />,
-                        },
-                        {
-                            title: 'Activity',
-                            path: '/activity',
-                            exact: true,
-                            render: () => <ThreadActivity {...context} className={PAGE_CLASS_NAME} />,
                         },
                         {
                             title: 'Diagnostics',

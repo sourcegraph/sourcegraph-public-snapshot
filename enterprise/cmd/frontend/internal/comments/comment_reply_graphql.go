@@ -46,6 +46,21 @@ func unmarshalCommentReplyID(id graphql.ID) (dbID int64, err error) {
 	return
 }
 
+func (v *gqlCommentReply) Parent(ctx context.Context) (graphqlbackend.Comment, error) {
+	c, err := v.getComment(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if c.Object.ParentCommentID == 0 {
+		return nil, nil
+	}
+	dbParentComment, err := internal.DBComments{}.GetByID(ctx, c.Object.ParentCommentID)
+	if err != nil {
+		return nil, err
+	}
+	return newGQLToComment(ctx, dbParentComment)
+}
+
 func (v *gqlCommentReply) ViewerCanUpdate(ctx context.Context) (bool, error) {
 	return commentobjectdb.ViewerCanUpdate(ctx, v.ID())
 }

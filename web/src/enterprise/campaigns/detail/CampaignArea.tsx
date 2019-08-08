@@ -45,7 +45,7 @@ interface Props
 
 const LOADING = 'loading' as const
 
-const PAGE_CLASS_NAME = 'container mt-4'
+const PAGE_CLASS_NAME = 'container my-5'
 
 /**
  * The area for a single campaign.

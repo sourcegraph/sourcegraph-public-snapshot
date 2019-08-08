@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
@@ -41,6 +42,16 @@ func (GraphQLResolver) AddCommentReply(ctx context.Context, arg *graphqlbackend.
 	if err != nil {
 		return nil, err
 	}
+
+	if err := events.CreateEvent(ctx, events.CreationData{
+		Type:        eventTypeComment,
+		Objects:     events.Objects{Comment: comment.ID},
+		ActorUserID: authorUserID,
+		CreatedAt:   v.CreatedAt,
+	}); err != nil {
+		return nil, err
+	}
+
 	return newGQLToComment(ctx, comment)
 }
 

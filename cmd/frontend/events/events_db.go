@@ -121,7 +121,7 @@ func (o dbEventsListOptions) sqlConditions() []*sqlf.Query {
 	addCondition(o.Objects.Thread, "thread_id")
 	addCondition(o.Objects.ThreadDiagnosticEdge, "thread_diagnostic_edge_id")
 	if o.Objects.Campaign != 0 {
-		conds = append(conds, sqlf.Sprintf("campaign_id=%d OR thread_id IN (SELECT thread_id FROM campaigns_threads WHERE campaign_id=%d)", o.Objects.Campaign, o.Objects.Campaign))
+		conds = append(conds, sqlf.Sprintf("campaign_id=%d OR thread_id IN (SELECT thread_id FROM campaigns_threads WHERE campaign_id=%d) OR comment_id IN (SELECT comment_id FROM comments WHERE parent_comment_id IN (SELECT id FROM comments WHERE thread_id IN (SELECT thread_id FROM campaigns_threads WHERE campaign_id=%d)))", o.Objects.Campaign, o.Objects.Campaign, o.Objects.Campaign))
 	}
 	addCondition(o.Objects.Comment, "comment_id")
 	addCondition(o.Objects.Rule, "rule_id")

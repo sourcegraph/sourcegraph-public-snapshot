@@ -51,6 +51,24 @@ export const useCampaignTimelineItems = (campaign: Pick<GQL.ICampaign, 'id'>): [
                             timelineItems {
                                 nodes {
                                     ${eventQuery}
+                                    ... on CommentEvent {
+                                        id
+                                        createdAt
+                                        actor { ${actorQuery} }
+                                        comment {
+                                            __typename
+                                            bodyText
+                                            ... on CommentReply {
+                                                parent {
+                                                    __typename
+                                                    ... on Thread {
+                                                        title
+                                                        url
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                     ... on ReviewEvent {
                                         state
                                     }

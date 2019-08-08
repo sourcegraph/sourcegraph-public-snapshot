@@ -19,7 +19,7 @@ export const ThreadDiagnosticEdgeEventTimelineItem: React.FunctionComponent<Prop
         <TimelineItem icon={AlertCircleOutlineIcon} className={`${className}`} event={event}>
             <ActorLink actor={event.actor} /> {event.__typename === 'AddDiagnosticToThreadEvent' ? 'added' : 'removed'}{' '}
             the diagnostic <DiagnosticSeverityIcon severity={diagnostic.severity} className="icon-inline" />{' '}
-            <Link to="TODO!(sqs)">{diagnostic.message}</Link>{' '}
+            <Link to={`${event.thread.url}/diagnostics`}>{diagnostic.message}</Link>{' '}
             {event.__typename === 'AddDiagnosticToThreadEvent' ? 'to' : 'from'}{' '}
             <Link to={event.thread.url}>{event.thread.title}</Link>
         </TimelineItem>

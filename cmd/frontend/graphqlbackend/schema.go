@@ -4162,6 +4162,9 @@ interface Comment {
     # The body as Markdown.
     body: String!
 
+    # The body as plain text.
+    bodyText: String!
+
     # The body as HTML.
     bodyHTML: String!
 
@@ -4203,6 +4206,9 @@ type CommentReply implements Node & Comment & Updatable {
     # The body as Markdown.
     body: String!
 
+    # The body as plain text.
+    bodyText: String!
+
     # The body as HTML.
     bodyHTML: String!
 
@@ -4214,6 +4220,9 @@ type CommentReply implements Node & Comment & Updatable {
 
     # Whether the viewer can update this comment.
     viewerCanUpdate: Boolean!
+
+    # The comment that this comment is in reply to.
+    parent: Comment
 }
 
 # Input arguments for adding a reply to a comment.
@@ -4330,7 +4339,7 @@ enum ThreadKind {
 }
 
 # A thread is collection of comments, diagnostics, and changes.
-type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & CampaignNode & Labelable {
+type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & Commentable & CampaignNode & Labelable {
     # The unique ID for the thread.
     id: ID!
 
@@ -4346,6 +4355,9 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
 
     # The body as Markdown.
     body: String!
+
+    # The body as plain text.
+    bodyText: String!
 
     # The body as HTML.
     bodyHTML: String!
@@ -4385,6 +4397,18 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
 
     # Whether the viewer can update this thread.
     viewerCanUpdate: Boolean!
+
+    # Whether the viewer can comment on this thread.
+    viewerCanComment: Boolean!
+
+    # Reasons why the viewer cannot comment on this thread.
+    viewerCannotCommentReasons: [CannotCommentReason!]!
+
+    # A list of comments on the thread.
+    comments(
+        # Return the first n comments in the list.
+        first: Int
+    ): CommentConnection!
 
     # The comparison between this thread's base and head.
     repositoryComparison: RepositoryComparison!
@@ -4545,6 +4569,9 @@ type Campaign implements Node & Comment & Commentable {
 
     # The body as Markdown.
     body: String!
+
+    # The body as plain text.
+    bodyText: String!
 
     # The body as HTML.
     bodyHTML: String!
@@ -4735,6 +4762,7 @@ type RuleConnection {
 ## EVENTS TODO!(sqs): is it helpful to have a single union? or just have ThreadEvent, CampaignEvent, etc.?
 union Event =
       CreateThreadEvent
+    | CommentEvent
     | AddThreadToCampaignEvent
     | RemoveThreadFromCampaignEvent
     | ReviewEvent
@@ -4761,6 +4789,7 @@ type EventConnection {
 
 union ThreadTimelineItem =
       CreateThreadEvent
+    | CommentEvent
     | AddThreadToCampaignEvent
     | RemoveThreadFromCampaignEvent
     | ReviewEvent
@@ -4786,6 +4815,7 @@ type ThreadTimelineItemConnection {
 
 union CampaignTimelineItem =
       AddThreadToCampaignEvent
+    | CommentEvent
     | RemoveThreadFromCampaignEvent
     | ReviewEvent
     | RequestReviewEvent
@@ -4833,6 +4863,21 @@ type CreateThreadEvent implements EventCommon {
 
     # The thread.
     thread: Thread!
+}
+
+# The creation of a comment.
+type CommentEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The comment.
+    comment: Comment!
 }
 
 # The addition of a thread to a campaign.

@@ -11,9 +11,9 @@ import { ObjectCampaignsList } from '../../../campaigns/object/ObjectCampaignsLi
 import { LabelIcon } from '../../../labels/icons'
 import { LabelableLabelsDropdownButton } from '../../../labels/labelable/LabelableLabelsDropdownButton'
 import { LabelableLabelsList } from '../../../labels/labelable/LabelableLabelsList'
-import { CopyThreadLinkButton } from '../../../threadsOLD/detail/CopyThreadLinkButton'
 import { ThreadStateBadge } from '../../common/threadState/ThreadStateBadge'
 import { ThreadStateIcon } from '../../common/threadState/ThreadStateIcon'
+import { CopyThreadLinkButton } from './CopyThreadLinkButton'
 import { ThreadCampaignsDropdownButton } from './ThreadCampaignsDropdownButton'
 
 interface Props extends ExtensionsControllerNotificationProps {
@@ -109,10 +109,7 @@ export const threadSidebarSections = ({ thread, onThreadUpdate, ...props }: Prop
             ),
         },
         collapsed: (
-            <CopyThreadLinkButton
-                link={'aasdf TODO!(sqs)'}
-                className="btn btn-link btn-link-sm text-decoration-none px-0"
-            />
+            <CopyThreadLinkButton link={thread.url} className="btn btn-link btn-link-sm text-decoration-none px-0" />
         ),
     },
 ]

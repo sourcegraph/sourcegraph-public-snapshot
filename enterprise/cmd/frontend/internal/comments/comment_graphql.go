@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
@@ -153,6 +154,16 @@ func (v *gqlComment) Body(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return c.Body, nil
+}
+
+func (v *gqlComment) BodyText(ctx context.Context) (string, error) {
+	c, err := v.getComment(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	// TODO!(sqs): this doesnt remove markdown formatting like `*`, just HTML tags
+	return bluemonday.StrictPolicy().Sanitize(c.Body), nil
 }
 
 func (v *gqlComment) BodyHTML(ctx context.Context) (string, error) {

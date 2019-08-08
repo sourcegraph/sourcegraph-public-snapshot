@@ -178,6 +178,7 @@ type Thread interface {
 	IsPreview() bool
 	hasThreadDiagnostics
 	updatable
+	commentable
 	Kind() ThreadKind
 	URL(context.Context) (string, error)
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)

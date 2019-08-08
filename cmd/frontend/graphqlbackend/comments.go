@@ -96,6 +96,7 @@ type DeleteCommentArgs struct {
 type PartialComment interface {
 	Author(context.Context) (*Actor, error)
 	Body(context.Context) (string, error)
+	BodyText(context.Context) (string, error)
 	BodyHTML(context.Context) (string, error)
 	CreatedAt(context.Context) (DateTime, error)
 	UpdatedAt(context.Context) (DateTime, error)
@@ -134,6 +135,7 @@ func (v ToComment) comment() interface {
 func (v ToComment) ID() graphql.ID                                  { return v.comment().ID() }
 func (v ToComment) Author(ctx context.Context) (*Actor, error)      { return v.comment().Author(ctx) }
 func (v ToComment) Body(ctx context.Context) (string, error)        { return v.comment().Body(ctx) }
+func (v ToComment) BodyText(ctx context.Context) (string, error)    { return v.comment().BodyText(ctx) }
 func (v ToComment) BodyHTML(ctx context.Context) (string, error)    { return v.comment().BodyHTML(ctx) }
 func (v ToComment) UpdatedAt(ctx context.Context) (DateTime, error) { return v.comment().UpdatedAt(ctx) }
 func (v ToComment) CreatedAt(ctx context.Context) (DateTime, error) { return v.comment().CreatedAt(ctx) }
@@ -147,3 +149,10 @@ type CommentConnection interface {
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 }
+
+type CommentEvent struct {
+	EventCommon
+	Comment_ Comment
+}
+
+func (v CommentEvent) Comment() Comment { return v.Comment_ }

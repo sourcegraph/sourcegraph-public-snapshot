@@ -3,6 +3,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { Timeline } from '../../components/timeline/Timeline'
 import { AddThreadToCampaignEventTimelineItem } from './events/AddThreadToCampaignEventTimelineItem'
 import { CloseThreadEventTimelineItem } from './events/CloseThreadEventTimelineItem'
+import { CommentEventTimelineItem } from './events/CommentEventTimelineItem'
 import { CommentOnThreadEventTimelineItem } from './events/CommentOnThreadEventTimelineItem'
 import { CreateThreadEventTimelineItem } from './events/CreateThreadEventTimelineItem'
 import { MergeThreadEventTimelineItem } from './events/MergeThreadEventTimelineItem'
@@ -47,10 +48,12 @@ function timelineItemComponentForEvent(
     className?: string
 }> | null {
     switch (event) {
-        case 'AddThreadToCampaignEvent':
-            return AddThreadToCampaignEventTimelineItem
         case 'CreateThreadEvent':
             return CreateThreadEventTimelineItem
+        case 'CommentEvent':
+            return CommentEventTimelineItem
+        case 'AddThreadToCampaignEvent':
+            return AddThreadToCampaignEventTimelineItem
         case 'RemoveThreadFromCampaignEvent':
             return RemoveThreadFromCampaignEventTimelineItem
         case 'ReviewEvent':
@@ -64,6 +67,7 @@ function timelineItemComponentForEvent(
         case 'ReopenThreadEvent':
             return ReopenThreadEventTimelineItem
         case 'CommentOnThreadEvent':
+            // TODO!(sqs): remove this in favor of CommentEvent
             return CommentOnThreadEventTimelineItem
         case 'AddDiagnosticToThreadEvent':
             return ThreadDiagnosticEdgeEventTimelineItem

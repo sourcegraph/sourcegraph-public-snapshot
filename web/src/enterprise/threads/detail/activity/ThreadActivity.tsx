@@ -2,6 +2,7 @@ import H from 'history'
 import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { CommentList } from '../../../comments/CommentList'
 import { ThreadTimeline } from '../timeline/ThreadTimeline'
 
 interface Props extends ExtensionsControllerProps {
@@ -17,5 +18,6 @@ interface Props extends ExtensionsControllerProps {
 export const ThreadActivity: React.FunctionComponent<Props> = ({ thread, className = '', ...props }) => (
     <div className={`thread-activity ${className}`}>
         <ThreadTimeline {...props} thread={thread} className="mb-6" />
+        <CommentList {...props} commentable={thread} />
     </div>
 )

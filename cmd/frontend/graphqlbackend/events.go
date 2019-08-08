@@ -35,6 +35,7 @@ func (v *EventCommon) CreatedAt() DateTime { return v.CreatedAt_ }
 
 type ToEvent struct {
 	CreateThreadEvent               *CreateThreadEvent
+	CommentEvent                    *CommentEvent
 	AddThreadToCampaignEvent        *AddRemoveThreadToFromCampaignEvent
 	RemoveThreadFromCampaignEvent   *AddRemoveThreadToFromCampaignEvent
 	ReviewEvent                     *ReviewEvent
@@ -49,6 +50,10 @@ type ToEvent struct {
 
 func (v ToEvent) ToCreateThreadEvent() (*CreateThreadEvent, bool) {
 	return v.CreateThreadEvent, v.CreateThreadEvent != nil
+}
+
+func (v ToEvent) ToCommentEvent() (*CommentEvent, bool) {
+	return v.CommentEvent, v.CommentEvent != nil
 }
 
 func (v ToEvent) ToAddThreadToCampaignEvent() (*AddRemoveThreadToFromCampaignEvent, bool) {

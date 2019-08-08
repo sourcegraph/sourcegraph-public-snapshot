@@ -134,9 +134,7 @@ func (v *gqlThread) Kind() graphqlbackend.ThreadKind {
 }
 
 func (v *gqlThread) ViewerCanUpdate(ctx context.Context) (bool, error) {
-	// TODO!(sqs): commented out below due to package import cycle etc
-	return true, nil
-	// return commentobjectdb.ViewerCanUpdate(ctx, v.ID())
+	return commentobjectdb.ViewerCanUpdate(ctx, v.ID())
 }
 
 func (v *gqlThread) ViewerCanComment(ctx context.Context) (bool, error) {
@@ -145,6 +143,10 @@ func (v *gqlThread) ViewerCanComment(ctx context.Context) (bool, error) {
 
 func (v *gqlThread) ViewerCannotCommentReasons(ctx context.Context) ([]graphqlbackend.CannotCommentReason, error) {
 	return commentobjectdb.ViewerCannotCommentReasons(ctx)
+}
+
+func (v *gqlThread) Comments(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CommentConnection, error) {
+	return graphqlbackend.CommentsForObject(ctx, v.ID(), arg)
 }
 
 func (v *gqlThread) URL(ctx context.Context) (string, error) {

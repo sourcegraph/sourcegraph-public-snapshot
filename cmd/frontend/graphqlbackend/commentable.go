@@ -12,6 +12,7 @@ import (
 func (schemaResolver) Commentable(ctx context.Context, arg *struct{ ID graphql.ID }) (interface {
 	commentable
 	ToCampaign() (Campaign, bool)
+	ToThread() (Thread, bool)
 }, error) {
 	if Comments == nil {
 		return nil, errCommentsNotImplemented
@@ -24,8 +25,10 @@ func (schemaResolver) Commentable(ctx context.Context, arg *struct{ ID graphql.I
 	var toCommentable ToCommentable
 	switch relay.UnmarshalKind(arg.ID) {
 	// TODO!(sqs): support nested comments? comments on comments?
-	case "Campaign":
+	case GQLTypeCampaign:
 		toCommentable.Campaign = node.(Campaign)
+	case GQLTypeThread:
+		toCommentable.Thread = node.(Thread)
 	default:
 		return nil, fmt.Errorf("node %q is not commentable", arg.ID)
 	}
@@ -47,12 +50,15 @@ type commentable interface {
 
 type ToCommentable struct {
 	Campaign Campaign
+	Thread   Thread
 }
 
 func (v ToCommentable) commentable() commentable {
 	switch {
 	case v.Campaign != nil:
 		return v.Campaign
+	case v.Thread != nil:
+		return v.Thread
 	default:
 		panic("invalid Commentable")
 	}
@@ -71,3 +77,4 @@ func (v ToCommentable) Comments(ctx context.Context, arg *graphqlutil.Connection
 }
 
 func (v ToCommentable) ToCampaign() (Campaign, bool) { return v.Campaign, v.Campaign != nil }
+func (v ToCommentable) ToThread() (Thread, bool)     { return v.Thread, v.Thread != nil }
