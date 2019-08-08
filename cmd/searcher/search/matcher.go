@@ -205,6 +205,7 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 	}
 
 	locs := rg.re.FindAllIndex(fileMatchBuf, maxLineMatches)
+	lastStart := 0
 	lastLineNumber := 0
 	lastMatchIndex := 0
 	lastLineStartIndex := 0
@@ -217,17 +218,12 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 		// TODO match[0] is a newline
 
 		// TODO double check this makes sense with the conditionals below
-		lineStart := lastLineStartIndex + bytes.LastIndex(fileMatchBuf[lastLineStartIndex:start], []byte{'\n'})
-		if lineStart > 0 {
-			lastLineStartIndex = lineStart + 1
+		lineStart := lastLineStartIndex
+		if idx := bytes.LastIndex(fileMatchBuf[lastStart:start], []byte{'\n'}); idx >= 0 {
+			lineStart = lastStart + idx + 1
 		}
-		if lineStart < len(fileMatchBuf)-1 && len(fileMatchBuf) > 0 {
-			lineStart++
-		}
-
-		if lineStart < 0 {
-			lineStart = start
-		}
+		lastLineStartIndex = lineStart
+		lastStart = start
 
 		lineEnd := end
 		if idx := bytes.Index(fileMatchBuf[end:], []byte{'\n'}); idx >= 0 {
