@@ -121,11 +121,11 @@ func parseRev(spec string) RevisionSpecifier {
 
 // GitserverRepo is a convenience function to return the gitserver.Repo for
 // r.Repo. The returned Repo will not have the URL set, only the name.
-func (r RepositoryRevisions) GitserverRepo() gitserver.Repo {
+func (r *RepositoryRevisions) GitserverRepo() gitserver.Repo {
 	return gitserver.Repo{Name: r.Repo.Name}
 }
 
-func (r RepositoryRevisions) String() string {
+func (r *RepositoryRevisions) String() string {
 	if len(r.Revs) == 0 {
 		return string(r.Repo.Name)
 	}
