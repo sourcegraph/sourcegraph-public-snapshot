@@ -181,8 +181,8 @@ func (e *ExternalServicesStore) validateGithubConnection(c *schema.GitHubConnect
 		err = multierror.Append(err, validate(c))
 	}
 
-	if c.Repos == nil && c.RepositoryQuery == nil {
-		err = multierror.Append(err, errors.New("at least one of repositoryQuery or repos must be set"))
+	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil {
+		err = multierror.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
 	}
 
 	return err.ErrorOrNil()

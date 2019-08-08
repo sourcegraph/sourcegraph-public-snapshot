@@ -20,7 +20,6 @@ type MockRepos struct {
 	GetByName                 func(v0 context.Context, name api.RepoName) (*types.Repo, error)
 	AddGitHubDotComRepository func(name api.RepoName) error
 	List                      func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
-	ListWithLongestInterval   func(v0 context.Context, v1 int) ([]string, error)
 	GetCommit                 func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error)
 	ResolveRev                func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
 	GetInventory              func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)

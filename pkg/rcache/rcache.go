@@ -17,7 +17,14 @@ import (
 // change the key prefix that is used for all hash keys,
 // effectively resetting the cache at the same time the new code
 // is deployed.
-const dataVersion = "v1"
+const dataVersion = "v2"
+const dataVersionToDelete = "v1"
+
+// DeleteOldCacheData deletes the rcache data in the given Redis instance
+// that's prefixed with dataVersionToDelete
+func DeleteOldCacheData(c redis.Conn) error {
+	return deleteKeysWithPrefix(c, dataVersionToDelete)
+}
 
 // Cache implements httpcache.Cache
 type Cache struct {
@@ -196,15 +203,22 @@ func SetupForTest(t TB) {
 		}
 	}
 
-	_, err := c.Do("EVAL", `local keys = redis.call('keys', ARGV[1])
+	err := deleteKeysWithPrefix(c, globalPrefix)
+	if err != nil {
+		log15.Error("Could not clear test prefix", "name", t.Name(), "globalPrefix", globalPrefix, "error", err)
+	}
+}
+
+func deleteKeysWithPrefix(c redis.Conn, prefix string) error {
+	const script = `local keys = redis.call('keys', ARGV[1])
 if #keys > 0 then
 	return redis.call('del', unpack(keys))
 else
 	return ''
-end`, 0, globalPrefix+":*")
-	if err != nil {
-		log15.Error("Could not clear test prefix", "name", t.Name(), "globalPrefix", globalPrefix, "error", err)
-	}
+end`
+
+	_, err := c.Do("EVAL", script, 0, prefix+":*")
+	return err
 }
 
 var (

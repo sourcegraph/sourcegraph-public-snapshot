@@ -484,17 +484,16 @@ type Sentry struct {
 
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
-	AlertsShowPatchUpdates    bool                      `json:"alerts.showPatchUpdates,omitempty"`
-	CodeHostUseNativeTooltips bool                      `json:"codeHost.useNativeTooltips,omitempty"`
-	Extensions                map[string]bool           `json:"extensions,omitempty"`
-	Motd                      []string                  `json:"motd,omitempty"`
-	Notices                   []*Notice                 `json:"notices,omitempty"`
-	NotificationsSlack        *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
-	Quicklinks                []*QuickLink              `json:"quicklinks,omitempty"`
-	SearchContextLines        int                       `json:"search.contextLines,omitempty"`
-	SearchRepositoryGroups    map[string][]string       `json:"search.repositoryGroups,omitempty"`
-	SearchSavedQueries        []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
-	SearchScopes              []*SearchScope            `json:"search.scopes,omitempty"`
+	AlertsShowPatchUpdates    bool                  `json:"alerts.showPatchUpdates,omitempty"`
+	CodeHostUseNativeTooltips bool                  `json:"codeHost.useNativeTooltips,omitempty"`
+	Extensions                map[string]bool       `json:"extensions,omitempty"`
+	Motd                      []string              `json:"motd,omitempty"`
+	Notices                   []*Notice             `json:"notices,omitempty"`
+	Quicklinks                []*QuickLink          `json:"quicklinks,omitempty"`
+	SearchContextLines        int                   `json:"search.contextLines,omitempty"`
+	SearchRepositoryGroups    map[string][]string   `json:"search.repositoryGroups,omitempty"`
+	SearchSavedQueries        []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
+	SearchScopes              []*SearchScope        `json:"search.scopes,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
@@ -523,11 +522,6 @@ type SiteConfiguration struct {
 	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`
 	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
 	SearchLargeFiles                  []string                    `json:"search.largeFiles,omitempty"`
-}
-
-// SlackNotificationsConfig description: Configuration for sending notifications to Slack.
-type SlackNotificationsConfig struct {
-	WebhookURL string `json:"webhookURL"`
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`

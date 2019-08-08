@@ -56,6 +56,10 @@ yarn --cwd lsif/server
 yarn --cwd lsif/server run build
 cp lsif/server/out/http-server.bundle.js "$OUTPUT/lsif-server.js"
 
+echo "--- prometheus config"
+mkdir "$OUTPUT/etc"
+cp -r dev/prometheus "$OUTPUT/etc"
+
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
     --build-arg COMMIT_SHA \
