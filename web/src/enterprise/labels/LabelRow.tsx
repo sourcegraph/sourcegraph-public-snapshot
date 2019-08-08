@@ -1,8 +1,8 @@
 import PencilIcon from 'mdi-react/PencilIcon'
 import React, { useCallback, useState } from 'react'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { Label } from '../../../components/Label'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { Label } from '../../components/Label'
 import { UpdateLabelForm } from './EditLabelForm'
 import { LabelDeleteButton } from './LabelDeleteButton'
 
@@ -25,7 +25,7 @@ export const LabelRow: React.FunctionComponent<Props> = ({ label, onLabelUpdate,
     ) : (
         <div className="d-flex align-items-center flex-wrap">
             <div className="flex-1">
-                <Label label={label} className="h5 mb-0" />
+                <Label label={label} className="h3 mb-0" />
             </div>
             <p className="mb-0 flex-1">{label.description}</p>
             <div className="text-right flex-0">

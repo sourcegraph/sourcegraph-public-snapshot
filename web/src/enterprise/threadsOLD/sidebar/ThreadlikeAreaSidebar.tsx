@@ -5,7 +5,7 @@ import React from 'react'
 import { Toggle } from '../../../../../shared/src/components/Toggle'
 import { CollapsibleSidebar } from '../../../components/collapsibleSidebar/CollapsibleSidebar'
 import { ThreadlikeAreaContext } from '../../../components/overviewPagesArea/OverviewPagesArea'
-import { LabelIcon } from '../../../projects/icons'
+import { LabelIcon } from '../../labels/icons'
 
 interface Props extends Pick<ThreadlikeAreaContext, 'thread'> {
     className?: string

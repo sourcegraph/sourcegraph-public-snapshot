@@ -1,33 +1,27 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { useCallback, useState } from 'react'
-import { map } from 'rxjs/operators'
-import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
-import { ExtensionsControllerNotificationProps } from '../../../../../shared/src/extensions/controller'
-import { gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../../shared/src/util/errors'
-import { mutateGraphQL } from '../../../backend/graphql'
+import { map, mapTo } from 'rxjs/operators'
+import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
+import { ExtensionsControllerNotificationProps } from '../../../../shared/src/extensions/controller'
+import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { mutateGraphQL } from '../../backend/graphql'
 
-const deleteLabel = (args: GQL.IDeleteLabelOnLabelsMutationArguments): Promise<void> =>
+const deleteLabel = (args: GQL.IDeleteLabelOnMutationArguments): Promise<void> =>
     mutateGraphQL(
         gql`
             mutation DeleteLabel($label: ID!) {
-                labels {
-                    deleteLabel(label: $label) {
-                        alwaysNil
-                    }
+                deleteLabel(label: $label) {
+                    alwaysNil
                 }
             }
         `,
         args
     )
         .pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.labels || (errors && errors.length > 0)) {
-                    throw createAggregateError(errors)
-                }
-            })
+            map(dataOrThrowErrors),
+            mapTo(void 0)
         )
         .toPromise()
 

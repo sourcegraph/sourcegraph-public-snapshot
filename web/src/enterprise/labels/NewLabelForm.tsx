@@ -1,35 +1,29 @@
 import React, { useCallback, useState } from 'react'
-import { map } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../../shared/src/util/errors'
-import { mutateGraphQL } from '../../../backend/graphql'
+import { map, mapTo } from 'rxjs/operators'
+import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { mutateGraphQL } from '../../backend/graphql'
 import { LabelForm, LabelFormData } from './LabelForm'
 
 const createLabel = (input: GQL.ICreateLabelInput): Promise<void> =>
     mutateGraphQL(
         gql`
             mutation CreateLabel($input: CreateLabelInput!) {
-                labels {
-                    createLabel(input: $input) {
-                        id
-                    }
+                createLabel(input: $input) {
+                    id
                 }
             }
         `,
         { input }
     )
         .pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.labels || !data.labels.createLabel || (errors && errors.length > 0)) {
-                    throw createAggregateError(errors)
-                }
-            })
+            map(dataOrThrowErrors),
+            mapTo(void 0)
         )
         .toPromise()
 
 interface Props {
-    project: Pick<GQL.IProject, 'id'>
+    repository: Pick<GQL.IRepository, 'id'>
 
     /** Called when the form is dismissed. */
     onDismiss: () => void
@@ -43,13 +37,18 @@ interface Props {
 /**
  * A form to create a new label.
  */
-export const NewLabelForm: React.FunctionComponent<Props> = ({ project, onDismiss, onLabelCreate, className = '' }) => {
+export const NewLabelForm: React.FunctionComponent<Props> = ({
+    repository,
+    onDismiss,
+    onLabelCreate,
+    className = '',
+}) => {
     const [isLoading, setIsLoading] = useState(false)
     const onSubmit = useCallback(
         async ({ name, color, description }: LabelFormData) => {
             setIsLoading(true)
             try {
-                await createLabel({ name, color, description, project: project.id })
+                await createLabel({ name, color, description, repository: repository.id })
                 setIsLoading(false)
                 onDismiss()
                 onLabelCreate()
@@ -58,7 +57,7 @@ export const NewLabelForm: React.FunctionComponent<Props> = ({ project, onDismis
                 alert(err.message) // TODO!(sqs)
             }
         },
-        [onDismiss, onLabelCreate, project.id]
+        [onDismiss, onLabelCreate, repository.id]
     )
 
     return (

@@ -2,9 +2,9 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 import randomColor from 'randomcolor'
 import React, { useCallback, useEffect, useState } from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { Form } from '../../../components/Form'
-import { Label } from '../../../components/Label'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { Form } from '../../components/Form'
+import { Label } from '../../components/Label'
 
 const getRandomColor = () => randomColor() as string
 
@@ -68,9 +68,9 @@ export const LabelForm: React.FunctionComponent<Props> = ({
 
     return (
         <Form className={`form ${className}`} onSubmit={onSubmit}>
-            <Label label={{ name: name || 'Label preview', color }} className="h5 mb-2" />
-            <div className="form-row align-items-end">
-                <div className="form-group mb-md-0 col-md-3">
+            <Label label={{ name: name || 'Label preview', color }} className="h3 mt-2 mb-2" />
+            <div className="d-flex align-items-end">
+                <div className="form-group mb-0 mr-3">
                     <label htmlFor="new-label-form__name">Name</label>
                     <input
                         type="text"
@@ -78,24 +78,25 @@ export const LabelForm: React.FunctionComponent<Props> = ({
                         className="form-control"
                         required={true}
                         minLength={1}
+                        size={16}
                         placeholder="Label name"
                         value={name}
                         onChange={onNameChange}
                         autoFocus={true}
                     />
                 </div>
-                <div className="form-group mb-md-0 col-md-4">
+                <div className="form-group mb-0 flex-1 mr-3">
                     <label htmlFor="new-label-form__description">Description</label>
                     <input
                         type="text"
                         id="new-label-form__description"
-                        className="form-control"
+                        className="form-control w-100"
                         placeholder="Optional description"
                         value={description || ''}
                         onChange={onDescriptionChange}
                     />
                 </div>
-                <div className="form-group mb-md-0 col-md-2">
+                <div className="form-group mb-0 mr-3">
                     <label htmlFor="new-label-form__color">Color</label>
                     <div className="d-flex">
                         <Label
@@ -118,7 +119,7 @@ export const LabelForm: React.FunctionComponent<Props> = ({
                         />
                     </div>
                 </div>
-                <div className="form-group mb-md-0 col-md-3 text-right">
+                <div className="form-group mb-0">
                     <button type="reset" className="btn btn-secondary mr-2" onClick={onDismiss}>
                         Cancel
                     </button>

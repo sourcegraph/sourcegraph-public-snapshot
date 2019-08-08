@@ -8,11 +8,11 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CollapsibleSidebar } from '../../../components/collapsibleSidebar/CollapsibleSidebar'
 import { RulesIcon } from '../../../enterprise/a8n/icons'
 import { ChecksIcon } from '../../../enterprise/checks/icons'
+import { LabelIcon } from '../../../enterprise/labels/icons'
 import { ThreadsIcon } from '../../../enterprise/threadsOLD/icons'
 import { NavItemWithIconDescriptor } from '../../../util/contributions'
 import { GitPullRequestIcon } from '../../../util/octicons'
 import { ProjectAvatar } from '../../components/ProjectAvatar'
-import { LabelIcon } from '../../icons'
 
 interface Props extends ExtensionsControllerProps {
     project: GQL.IProject
