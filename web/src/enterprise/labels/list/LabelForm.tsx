@@ -2,9 +2,9 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 import randomColor from 'randomcolor'
 import React, { useCallback, useEffect, useState } from 'react'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { Form } from '../../components/Form'
-import { Label } from '../../components/Label'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { Form } from '../../../components/Form'
+import { Label } from '../../../components/Label'
 
 const getRandomColor = () => randomColor() as string
 

@@ -1,9 +1,9 @@
 import React, { useCallback, useState } from 'react'
 import { map, mapTo } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { mutateGraphQL } from '../../backend/graphql'
-import { LabelForm, LabelFormData } from './list/LabelForm'
+import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { mutateGraphQL } from '../../../backend/graphql'
+import { LabelForm, LabelFormData } from './LabelForm'
 
 const createLabel = (input: GQL.ICreateLabelInput): Promise<void> =>
     mutateGraphQL(

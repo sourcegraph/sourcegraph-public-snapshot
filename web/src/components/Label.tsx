@@ -5,7 +5,7 @@ import { contrastingForegroundColor } from '../util/contrastingForegroundColor'
 interface Props extends Pick<React.HTMLAttributes<HTMLElement>, 'className' | 'onClick'> {
     label: Pick<GQL.ILabel, 'name' | 'color'>
 
-    tag?: 'span' | 'button'
+    tag?: 'span' | 'li' | 'button'
 }
 
 /**

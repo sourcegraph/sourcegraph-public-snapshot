@@ -11,7 +11,7 @@ export const enterpriseRepoContainerRoutes: ReadonlyArray<RepoContainerRoute> = 
     },
     {
         path: '/-/labels',
-        render: lazyComponent(() => import('../labels/RepositoryLabelsPage'), 'RepositoryLabelsPage'),
+        render: lazyComponent(() => import('../labels/list/RepositoryLabelsPage'), 'RepositoryLabelsPage'),
     },
 ]
 

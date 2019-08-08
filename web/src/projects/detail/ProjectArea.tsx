@@ -15,7 +15,7 @@ import { RulesArea } from '../../enterprise/a8n/rules/scope/ScopeRulesArea'
 // import { ChangesetsArea } from '../../enterprise/changesetsOLD/global/ChangesetsArea'
 import { ChecksArea } from '../../enterprise/checks/scope/ScopeChecksArea'
 // import { ThreadsArea } from '../../enterprise/threadsOLD/global/ThreadsArea'
-import { ProjectLabelsPage } from '../../enterprise/labels/RepositoryLabelsPage'
+import { ProjectLabelsPage } from '../../enterprise/labels/list/RepositoryLabelsPage'
 import { ProjectSettingsPage } from './settings/ProjectSettingsPage'
 import { ProjectAreaSidebar } from './sidebar/ProjectAreaSidebar'
 
