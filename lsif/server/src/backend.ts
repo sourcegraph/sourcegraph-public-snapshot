@@ -35,6 +35,11 @@ export interface Backend<T extends QueryRunner> {
     ): Promise<{ insertStats: InsertStats }>
 
     /**
+     * Lists the query methods available from this backend.
+     */
+    availableQueries(): string[]
+
+    /**
      * Create a query runner relevant to the given repository and commit hash. This
      * assumes that data for this subset of data has already been inserted via
      * `insertDump` (otherwise this method is expected to throw).

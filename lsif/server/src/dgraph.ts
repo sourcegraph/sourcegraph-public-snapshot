@@ -65,7 +65,7 @@ export class DgraphBackend implements Backend<DgraphQueryRunner> {
         const { elapsed } = await timeit(async () => {
             const contents = await fs.readFile(tempPath, 'utf-8')
             const lines = contents.trim().split('\n')
-            const items = lines.map((line, index): Edge | Vertex => {
+            const items = lines.map((line, index): Vertex | Edge => {
                 try {
                     return JSON.parse(line)
                 } catch (err) {
@@ -85,6 +85,13 @@ export class DgraphBackend implements Backend<DgraphQueryRunner> {
                 diskKb: 0, // TODO
             },
         }
+    }
+
+    /**
+     * Lists the query methods available from this backend.
+     */
+    public availableQueries(): string[] {
+        return ['definitions', 'hover', 'references']
     }
 
     /**

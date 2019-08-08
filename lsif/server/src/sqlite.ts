@@ -60,6 +60,13 @@ export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
     }
 
     /**
+     * Lists the query methods available from this backend.
+     */
+    public availableQueries(): string[] {
+        return ['definitions', 'hover', 'references']
+    }
+
+    /**
      * Create a query runner relevant to the given repository and commit hash. This
      * assumes that data for this subset of data has already been inserted via
      * `insertDump` (otherwise this method is expected to throw).
