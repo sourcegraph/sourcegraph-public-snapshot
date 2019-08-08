@@ -3,6 +3,7 @@ import H from 'history'
 import React, { useCallback, useEffect, useState } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
+import { RuleDefinitionFormControl } from './definition/RuleDefinitionFormControl'
 
 export interface RuleFormData extends Pick<GQL.IRule, 'name' | 'description'> {
     definition: string
@@ -30,7 +31,7 @@ interface Props {
  */
 export const RuleForm: React.FunctionComponent<Props> = ({
     header,
-    initialValue = { name: '', description: '', definition: '' },
+    initialValue = { name: '', description: null, definition: '' },
     onDismiss,
     onSubmit: onSubmitRule,
     buttonText,
@@ -45,18 +46,15 @@ export const RuleForm: React.FunctionComponent<Props> = ({
     )
     useEffect(() => setName(initialValue.name), [initialValue.name])
 
-    const [description, setDescription] = useState(initialValue.description)
+    const [description, setDescription] = useState(initialValue.description || null)
     const onDescriptionChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         e => setDescription(e.currentTarget.value),
         []
     )
     useEffect(() => setDescription(initialValue.description), [initialValue.description])
+    const onAddDescriptionClick = useCallback(() => setDescription(''), [])
 
     const [definition, setDefinition] = useState(initialValue.definition)
-    const onDefinitionChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        e => setDefinition(e.currentTarget.value),
-        []
-    )
     useEffect(() => setDefinition(initialValue.definition), [initialValue.definition])
 
     const onSubmit = useCallback<React.FormEventHandler>(
@@ -97,32 +95,25 @@ export const RuleForm: React.FunctionComponent<Props> = ({
                     autoFocus={true}
                 />
             </div>
-            <div className="form-group">
-                <label htmlFor="rule-form__description">Description</label>
-                <input
-                    type="text"
-                    id="rule-form__description"
-                    className="form-control w-100"
-                    placeholder="Optional description"
-                    value={description || ''}
-                    onChange={onDescriptionChange}
-                />
-            </div>
-            <div className="form-group">
-                <label htmlFor="rule-form__definition">Definition</label>
-                <input
-                    type="text"
-                    id="rule-form__definition"
-                    className="form-control"
-                    placeholder="Definition"
-                    required={true}
-                    size={7}
-                    maxLength={7}
-                    value={definition}
-                    onChange={onDefinitionChange}
-                />
-            </div>
-            <div className="form-group mb-0">
+            {description !== null ? (
+                <div className="form-group">
+                    <label htmlFor="rule-form__description">Description</label>
+                    <input
+                        type="text"
+                        id="rule-form__description"
+                        className="form-control w-100"
+                        placeholder="Optional description"
+                        value={description || ''}
+                        onChange={onDescriptionChange}
+                    />
+                </div>
+            ) : (
+                <button type="button" className="btn btn-sm btn-link px-0 pt-0 mb-2" onClick={onAddDescriptionClick}>
+                    Add description
+                </button>
+            )}
+            <RuleDefinitionFormControl value={definition} onChange={setDefinition} />
+            <div className="form-group mt-4 mb-0">
                 <button type="reset" className="btn btn-secondary mr-2" onClick={onDismiss}>
                     Cancel
                 </button>

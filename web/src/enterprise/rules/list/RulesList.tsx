@@ -8,9 +8,9 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { pluralize } from '../../../../../shared/src/util/strings'
+import { EditRuleForm } from '../form/EditRuleForm'
+import { NewRuleForm } from '../form/NewRuleForm'
 import { useRules } from '../useRules'
-import { EditRuleForm } from './EditRuleForm'
-import { NewRuleForm } from './NewRuleForm'
 import { RuleRow } from './RuleRow'
 
 const FormModal: React.FunctionComponent<{ toggle: () => void }> = ({ toggle, children }) => (

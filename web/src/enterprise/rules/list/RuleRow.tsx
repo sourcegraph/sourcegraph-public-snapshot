@@ -3,7 +3,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { RuleDeleteButton } from './RuleDeleteButton'
+import { RuleDeleteButton } from '../components/RuleDeleteButton'
 
 interface Props extends ExtensionsControllerProps {
     rule: GQL.IRule
