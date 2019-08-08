@@ -1,5 +1,3 @@
-.git/
-
 /vagrant_ansible_inventory_default
 /.vagrant
 
@@ -68,6 +66,7 @@ yarn-error.log
 eb-bundle.zip
 
 /cmd/frontend/internal/app/assets/assets_vfsdata.go
+/cmd/frontend/internal/app/templates/data_vfsdata.go
 
 /release/
 
@@ -83,6 +82,7 @@ eb-bundle.zip
 
 .bin/
 .env
+.local
 
 /vendor/
 
@@ -97,12 +97,39 @@ cmd/indexer/debug
 
 # Web
 node_modules/
-/web
+package-lock.json
+.nyc_output/
+coverage/
+out/
+shared/src/graphql/schema.ts
+web/src/schema/*
+puppeteer/
+package-lock.json
+/dist
+sourcegraph-webapp-*.tgz
 
 # Extensions
 /packages/sourcegraph-extension-api/dist
 
 # Management console
-/cmd/management-console/web
-/cmd/management-console/assets
-!/cmd/management-console/assets/assets_vfsdata.go
+cmd/management-console/web/package-lock.json
+cmd/management-console/assets/*.go
+!cmd/management-console/web/yarn.lock
+!cmd/management-console/assets/gen.go
+!cmd/management-console/assets/replace_hack.go
+!cmd/management-console/assets/assets.go
+cmd/management-console/assets/*.map
+cmd/management-console/assets/*.js
+cmd/management-console/assets/*.css
+cmd/management-console/assets/*.html
+cmd/management-console/assets/favicon.*.png
+cmd/management-console/web/src/favicon.png
+cmd/management-console/web/.cache
+cmd/management-console/assets/assets_vfsdata.go
+
+# Symbols service: PCRE extension to sqlite3
+libsqlite3-pcre.dylib
+libsqlite3-pcre.so
+
+# Direnv
+.envrc

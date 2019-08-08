@@ -41,8 +41,9 @@ type SupportedMethods = 'hover' | 'definitions' | 'references'
 
 const SUPPORTED_METHODS: Set<SupportedMethods> = new Set(['hover', 'definitions', 'references'])
 
-// TODO(efritz) - make configurable
-const DEFAULT_BACKEND = 'sqlite-graph'
+/**
+ * A list of available backend factories by name.
+ */
 const AVAILABLE_BACKENDS: { [k: string]: () => Promise<Backend<QueryRunner>> } = {
     'sqlite-graph': async () => new SQLiteGraphBackend(),
     'sqlite-blob': async () => new SQLiteBlobBackend(),
@@ -52,6 +53,11 @@ const AVAILABLE_BACKENDS: { [k: string]: () => Promise<Backend<QueryRunner>> } =
         return db
     },
 }
+
+/**
+ * The name of the backend that the server initializes on startup.
+ */
+const DEFAULT_BACKEND = process.env['DEFAULT_BACKEND'] || 'sqlite-graph'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
