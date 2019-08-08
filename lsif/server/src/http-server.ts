@@ -56,8 +56,9 @@ async function main(): Promise<void> {
     const schema = JSON.parse((await fs.readFile('./src/lsif.schema.json')).toString())
     const prometheusReporters = createPrometheusReporters()
 
-    // Choose a default backend
-    let backend = await AVAILABLE_BACKENDS[DEFAULT_BACKEND]()
+    // Initialize default backend
+    let currentBackend = DEFAULT_BACKEND
+    let backend = await AVAILABLE_BACKENDS[currentBackend]()
 
     app.use(errorHandler)
 
@@ -70,14 +71,22 @@ async function main(): Promise<void> {
         res.end(Prometheus.register.metrics())
     })
 
+    app.get(
+        '/backend',
+        wrap(async (req, res) => {
+            res.send({ data: currentBackend })
+        })
+    )
+
     app.post(
-        '/switch-backend',
+        '/backend',
         wrap(async (req, res) => {
             const { backendName } = req.query
             backend.close()
+            currentBackend = backendName
             backend = await AVAILABLE_BACKENDS[backendName]()
             cache.reset()
-            res.send({ status: 'ok' })
+            res.send({ data: null })
         })
     )
 
