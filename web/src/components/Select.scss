@@ -1,8 +1,12 @@
+$icon-size: 1.625rem;
+
 .select {
-    position: relative;
+    display: flex;
+    align-items: center;
 
     &__picker {
         appearance: none;
+        padding-right: $icon-size;
 
         &:disabled {
             &,
@@ -15,9 +19,7 @@
     &__icon {
         display: block;
         pointer-events: none;
-        right: 0.5rem;
-        top: 0.25rem;
-        height: 1.625rem;
-        position: absolute;
+        height: $icon-size;
+        margin-left: -1 * $icon-size;
     }
 }
