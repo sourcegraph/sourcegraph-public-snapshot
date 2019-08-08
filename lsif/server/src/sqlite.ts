@@ -191,7 +191,7 @@ export class SQLiteQueryRunner implements QueryRunner {
                 case 'definitions':
                     return Promise.resolve(this.db.definitions(uri, position))
                 case 'references':
-                    return Promise.resolve(this.db.references(uri, position, { includeDeclaration: false }))
+                    return Promise.resolve(this.db.references(uri, position, { includeDeclaration: true }))
                 default:
                     throw new Error(`Unimplemented method ${method}`)
             }
