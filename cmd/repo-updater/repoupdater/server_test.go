@@ -998,7 +998,7 @@ func (g *fakeGitserverClient) ListCloned(ctx context.Context) ([]string, error) 
 }
 
 func formatJSON(s string) string {
-	formatted, err := jsonc.Format(s, true, 2)
+	formatted, err := jsonc.Format(s, nil)
 	if err != nil {
 		panic(err)
 	}
