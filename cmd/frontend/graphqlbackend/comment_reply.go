@@ -19,7 +19,7 @@ func CommentReplyByID(ctx context.Context, id graphql.ID) (CommentReply, error) 
 type CommentReply interface {
 	ID() graphql.ID
 	PartialComment
-	updatable
+	Updatable
 	Parent(context.Context) (Comment, error)
 
 	// IsCommentReply is a tag to distinguish this interface from other interfaces that are

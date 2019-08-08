@@ -4744,7 +4744,7 @@ type JSONC {
     formatted: String!
 
     # The JSON value parsed from the JSONC input.
-    parsed: JSONValue!
+    parsed: JSONValue
 }
 
 interface RuleContainer {

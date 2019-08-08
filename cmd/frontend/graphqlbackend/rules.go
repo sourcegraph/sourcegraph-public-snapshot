@@ -124,7 +124,7 @@ type Rule interface {
 	Definition() JSONC
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
-	updatable
+	Updatable
 }
 
 // RuleConnection is the interface for the GraphQL type RuleConnection.
@@ -143,7 +143,7 @@ type ToRuleContainer struct {
 	Thread   Thread
 }
 
-func (v ToRuleContainer) ruleContainer() ruleContainer {
+func (v ToRuleContainer) RuleContainer() ruleContainer {
 	switch {
 	case v.Campaign != nil:
 		return v.Campaign
@@ -155,7 +155,7 @@ func (v ToRuleContainer) ruleContainer() ruleContainer {
 }
 
 func (v ToRuleContainer) Rules(ctx context.Context, arg *graphqlutil.ConnectionArgs) (RuleConnection, error) {
-	return v.ruleContainer().Rules(ctx, arg)
+	return v.RuleContainer().Rules(ctx, arg)
 }
 
 func (v ToRuleContainer) ToCampaign() (Campaign, bool) { return v.Campaign, v.Campaign != nil }

@@ -177,7 +177,7 @@ type Thread interface {
 	HeadRef() *string
 	IsPreview() bool
 	hasThreadDiagnostics
-	updatable
+	Updatable
 	commentable
 	ruleContainer
 	Kind() ThreadKind

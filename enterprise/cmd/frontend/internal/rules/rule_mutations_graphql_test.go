@@ -8,20 +8,16 @@ import (
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/projects"
 )
 
 func TestGraphQL_CreateRule(t *testing.T) {
 	resetMocks()
-	const wantContainer = 1
-	projects.MockProjectByDBID = func(id int64) (graphqlbackend.Project, error) {
-		return projects.TestNewProject(wantContainer, "", 0, 0), nil
-	}
+	const wantContainerCampaignID = 1
 	wantRule := &dbRule{
-		Container:   wantContainer,
+		Container:   ruleContainer{Campaign: wantContainerCampaignID},
 		Name:        "n",
 		Description: strptr("d"),
-		Definition:    "h",
+		Definition:  "h",
 	}
 	mocks.rules.Create = func(rule *dbRule) (*dbRule, error) {
 		if !reflect.DeepEqual(rule, wantRule) {
@@ -37,22 +33,21 @@ func TestGraphQL_CreateRule(t *testing.T) {
 			Context: backend.WithAuthzBypass(context.Background()),
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
-				mutation {
-					rules {
-						createRule(input: { project: "T3JnOjE=", name: "n", description: "d", definition: "h" }) {
-							id
-							name
-						}
+				mutation($container: ID!) {
+					createRule(input: { container: $container, name: "n", description: "d", definition: "h" }) {
+						id
+						name
 					}
 				}
 			`,
+			Variables: map[string]interface{}{
+				"container": string(graphqlbackend.MarshalCampaignID(wantContainerCampaignID)),
+			},
 			ExpectedResult: `
 				{
-					"rules": {
-						"createRule": {
-							"id": "UnVsZToy",
-							"name": "n"
-						}
+					"createRule": {
+						"id": "UnVsZToy",
+						"name": "n"
 					}
 				}
 			`,
@@ -75,10 +70,9 @@ func TestGraphQL_UpdateRule(t *testing.T) {
 		}
 		return &dbRule{
 			ID:          2,
-			Container:   1,
 			Name:        "n1",
 			Description: strptr("d1"),
-			Definition:    "h1",
+			Definition:  "h1",
 		}, nil
 	}
 
@@ -88,24 +82,24 @@ func TestGraphQL_UpdateRule(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					rules {
-						updateRule(input: { id: "UnVsZToy", name: "n1", description: "d1", definition: "h1" }) {
-							id
-							name
-							description
-							definition
+					updateRule(input: { id: "UnVsZToy", name: "n1", description: "d1", definition: "h1" }) {
+						id
+						name
+						description
+						definition {
+							raw
 						}
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"rules": {
-						"updateRule": {
-							"id": "UnVsZToy",
-							"name": "n1",
-							"description": "d1",
-							"definition": "h1"
+					"updateRule": {
+						"id": "UnVsZToy",
+						"name": "n1",
+						"description": "d1",
+						"definition": {
+							"raw": "h1"
 						}
 					}
 				}
@@ -136,18 +130,14 @@ func TestGraphQL_DeleteRule(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					rules {
-						deleteRule(rule: "UnVsZToy") {
-							alwaysNil
-						}
+					deleteRule(rule: "UnVsZToy") {
+						alwaysNil
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"rules": {
-						"deleteRule": null
-					}
+					"deleteRule": null
 				}
 			`,
 		},

@@ -2,6 +2,6 @@ package graphqlbackend
 
 import "context"
 
-type updatable interface {
+type Updatable interface {
 	ViewerCanUpdate(context.Context) (bool, error)
 }

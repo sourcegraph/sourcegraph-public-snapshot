@@ -3,6 +3,7 @@ package campaigns
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -47,15 +48,19 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign, comment com
 	}
 
 	return campaign, commentobjectdb.CreateCommentWithObject(ctx, nil, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
-		var err error
-		campaign, err = dbCampaigns{}.scanRow(tx.QueryRowContext(ctx,
-			`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, DEFAULT, DEFAULT) RETURNING `+selectColumns,
+		args := []interface{}{
 			nnz.Int32(campaign.NamespaceUserID),
 			nnz.Int32(campaign.NamespaceOrgID),
 			campaign.Name,
 			campaign.IsPreview,
 			commentID,
-		))
+		}
+		query := sqlf.Sprintf(
+			`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`, DEFAULT,  DEFAULT) RETURNING `+selectColumns,
+			args...,
+		)
+		var err error
+		campaign, err = dbCampaigns{}.scanRow(tx.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
 		if err != nil {
 			return nil, err
 		}
@@ -254,4 +259,17 @@ type mockCampaigns struct {
 	List       func(dbCampaignsListOptions) ([]*dbCampaign, error)
 	Count      func(dbCampaignsListOptions) (int, error)
 	DeleteByID func(int64) error
+}
+
+// TestCreateCampaign creates a campaign in the DB, for use in tests only.
+func TestCreateCampaign(ctx context.Context, name string, namespaceUserID, namespaceOrgID int32) (id int64, err error) {
+	campaign, err := dbCampaigns{}.Create(ctx, &dbCampaign{
+		Name:            name,
+		NamespaceUserID: namespaceUserID,
+		NamespaceOrgID:  namespaceOrgID,
+	}, commentobjectdb.DBObjectCommentFields{AuthorExternalActorUsername: "u"})
+	if err != nil {
+		return 0, err
+	}
+	return campaign.ID, nil
 }

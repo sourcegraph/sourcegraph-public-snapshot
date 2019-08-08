@@ -196,7 +196,7 @@ type Campaign interface {
 	Namespace(context.Context) (*NamespaceResolver, error)
 	Name() string
 	IsPreview() bool
-	updatable
+	Updatable
 	commentable
 	ruleContainer
 	URL(context.Context) (string, error)

@@ -10,16 +10,10 @@ import (
 )
 
 func (GraphQLResolver) RulesInRuleContainer(ctx context.Context, containerID graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.RuleConnection, error) {
-	// Check existence. TODO!(sqs) check perms, security
-	container, err := GraphQLResolver{}.RuleContainerByID(ctx, containerID)
+	dbContainer, err := dbRuleContainerByID(containerID)
 	if err != nil {
 		return nil, err
 	}
-	dbContainer, err := toDBRuleContainer(container)
-	if err != nil {
-		return nil, err
-	}
-
 	opt := ruleConnectionArgsToListOptions(arg)
 	opt.Container = dbContainer
 	return &ruleConnection{opt: opt}, nil
@@ -64,7 +58,7 @@ func (r *ruleConnection) Nodes(ctx context.Context) ([]graphqlbackend.Rule, erro
 
 	rules := make([]graphqlbackend.Rule, len(dbRules))
 	for i, dbRule := range dbRules {
-		rules[i] = newGQLRule(dbRule)
+		rules[i] = &gqlRule{dbRule}
 	}
 	return rules, nil
 }

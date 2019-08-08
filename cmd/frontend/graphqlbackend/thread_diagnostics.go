@@ -99,7 +99,7 @@ type ThreadDiagnosticEdge interface {
 	ID() graphql.ID
 	Thread(context.Context) (Thread, error)
 	Diagnostic() (Diagnostic, error)
-	updatable
+	Updatable
 }
 
 type hasThreadDiagnostics interface {

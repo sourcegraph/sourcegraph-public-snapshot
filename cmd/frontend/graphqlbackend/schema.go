@@ -4737,7 +4737,7 @@ type JSONC {
     formatted: String!
 
     # The JSON value parsed from the JSONC input.
-    parsed: JSONValue!
+    parsed: JSONValue
 }
 
 interface RuleContainer {
@@ -4754,7 +4754,7 @@ type Rule implements Node & Updatable {
     id: ID!
 
     # The object where this rule is defined.
-    container: RuleContainer!
+    container: RuleContainer
 
     # The name of the rule.
     name: String!
@@ -4770,9 +4770,6 @@ type Rule implements Node & Updatable {
 
     # The date and time when the rule was updated.
     updatedAt: DateTime!
-
-    # The URL to this rule.
-    url: String!
 
     # Whether the viewer can update this rule.
     viewerCanUpdate: Boolean!

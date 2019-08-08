@@ -149,6 +149,10 @@ func (v *gqlThread) Comments(ctx context.Context, arg *graphqlutil.ConnectionArg
 	return graphqlbackend.CommentsForObject(ctx, v.ID(), arg)
 }
 
+func (v *gqlThread) Rules(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.RuleConnection, error) {
+	return graphqlbackend.RulesInRuleContainer(ctx, v.ID(), arg)
+}
+
 func (v *gqlThread) URL(ctx context.Context) (string, error) {
 	repository, err := v.Repository(ctx)
 	if err != nil {

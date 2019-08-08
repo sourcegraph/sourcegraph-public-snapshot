@@ -25,14 +25,15 @@ func (c ruleContainer) graphqlID() graphql.ID {
 	}
 }
 
-func toDBRuleContainer(v *graphqlbackend.ToRuleContainer) (c ruleContainer, err error) {
-	switch {
-	case v.Campaign != nil:
-		c.Campaign, err = graphqlbackend.UnmarshalCampaignID(v.Campaign.ID())
-	case v.Thread != nil:
-		c.Thread, err = graphqlbackend.UnmarshalThreadID(v.Thread.ID())
+func dbRuleContainerByID(ruleContainer graphql.ID) (c ruleContainer, err error) {
+	// TODO!(sqs) THIS MUST actually try to fetch the object so that we check and enforce perms SECURITY
+	switch relay.UnmarshalKind(ruleContainer) {
+	case graphqlbackend.GQLTypeCampaign:
+		c.Campaign, err = graphqlbackend.UnmarshalCampaignID(ruleContainer)
+	case graphqlbackend.GQLTypeThread:
+		c.Thread, err = graphqlbackend.UnmarshalThreadID(ruleContainer)
 	default:
-		panic("invalid ToRuleContainer")
+		err = fmt.Errorf("node %q is not a RuleContainer", ruleContainer)
 	}
 	return
 }

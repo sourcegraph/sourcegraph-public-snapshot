@@ -123,8 +123,8 @@ CREATE TABLE rules (
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now()
 );
-CREATE INDEX rules_campaign_id ON rules(campaign_id);
-CREATE INDEX rules_thread_id ON rules(thread_id);
+CREATE INDEX rules_container_campaign_id ON rules(container_campaign_id);
+CREATE INDEX rules_container_thread_id ON rules(container_thread_id);
 
 -----------------
 

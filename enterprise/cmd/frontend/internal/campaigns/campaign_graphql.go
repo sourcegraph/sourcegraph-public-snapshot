@@ -32,7 +32,12 @@ func campaignByID(ctx context.Context, id graphql.ID) (*gqlCampaign, error) {
 	return campaignByDBID(ctx, dbID)
 }
 
+var MockCampaignByID func(graphql.ID) (graphqlbackend.Campaign, error)
+
 func (GraphQLResolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.Campaign, error) {
+	if MockCampaignByID != nil {
+		return MockCampaignByID(id)
+	}
 	return campaignByID(ctx, id)
 }
 
@@ -83,6 +88,10 @@ func (v *gqlCampaign) ViewerCannotCommentReasons(ctx context.Context) ([]graphql
 
 func (v *gqlCampaign) Comments(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CommentConnection, error) {
 	return graphqlbackend.CommentsForObject(ctx, v.ID(), arg)
+}
+
+func (v *gqlCampaign) Rules(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.RuleConnection, error) {
+	return graphqlbackend.RulesInRuleContainer(ctx, v.ID(), arg)
 }
 
 func (v *gqlCampaign) URL(ctx context.Context) (string, error) {

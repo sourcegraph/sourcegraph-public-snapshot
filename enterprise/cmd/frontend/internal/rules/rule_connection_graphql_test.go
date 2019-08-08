@@ -4,21 +4,23 @@ import (
 	"context"
 	"testing"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/projects"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/campaigns"
 )
 
-func TestGraphQL_Project_RuleConnection(t *testing.T) {
+func TestGraphQL_RuleContainer_RuleConnection(t *testing.T) {
 	resetMocks()
 	const (
-		wantContainer = 3
-		wantRuleID    = 2
+		wantContainerCampaignID = 1
+		wantRuleID              = 2
 	)
-	projects.MockProjectByDBID = func(id int64) (graphqlbackend.Project, error) {
-		return projects.TestNewProject(wantContainer, "", 0, 0), nil
+	campaigns.MockCampaignByID = func(graphql.ID) (graphqlbackend.Campaign, error) {
+		return mockCampaign{id: wantContainerCampaignID}, nil
 	}
+	defer func() { campaigns.MockCampaignByID = nil }()
 	mocks.rules.List = func(dbRulesListOptions) ([]*dbRule, error) {
 		return []*dbRule{{ID: wantRuleID, Name: "n"}}, nil
 	}
@@ -28,22 +30,21 @@ func TestGraphQL_Project_RuleConnection(t *testing.T) {
 			Context: backend.WithAuthzBypass(context.Background()),
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
-				{
-					node(id: "UHJvamVjdDoz") {
-						... on Project {
+				query($container: ID!) {
+					node(id: $container) {
+						... on Campaign {
 							rules {
 								nodes {
 									name
-								}
-								totalCount
-								pageInfo {
-									hasNextPage
 								}
 							}
 						}
 					}
 				}
 			`,
+			Variables: map[string]interface{}{
+				"container": string(graphqlbackend.MarshalCampaignID(wantContainerCampaignID)),
+			},
 			ExpectedResult: `
 				{
 					"node": {
@@ -52,11 +53,7 @@ func TestGraphQL_Project_RuleConnection(t *testing.T) {
 								{
 									"name": "n"
 								}
-							],
-							"totalCount": 1,
-							"pageInfo": {
-								"hasNextPage": false
-							}
+							]
 						}
 					}
 				}

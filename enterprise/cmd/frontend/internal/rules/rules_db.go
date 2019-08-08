@@ -3,11 +3,13 @@ package rules
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/nnz"
 )
 
 // dbRule describes a rule for a discussion thread.
@@ -17,6 +19,8 @@ type dbRule struct {
 	Name        string // the name (case-preserving)
 	Description *string
 	Definition  string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 // errRuleNotFound occurs when a database operation expects a specific rule to exist but it does not
@@ -34,8 +38,8 @@ func (dbRules) Create(ctx context.Context, rule *dbRule) (*dbRule, error) {
 	}
 
 	args := []interface{}{
-		rule.Container.Campaign,
-		rule.Container.Thread,
+		nnz.Int64(rule.Container.Campaign),
+		nnz.Int64(rule.Container.Thread),
 		rule.Name,
 		rule.Description,
 		rule.Definition,
@@ -178,8 +182,8 @@ func (dbRules) scanRow(row interface {
 	var t dbRule
 	if err := row.Scan(
 		&t.ID,
-		&t.Container.Campaign,
-		&t.Container.Thread,
+		(*nnz.Int64)(&t.Container.Campaign),
+		(*nnz.Int64)(&t.Container.Thread),
 		&t.Name,
 		&t.Description,
 		&t.Definition,

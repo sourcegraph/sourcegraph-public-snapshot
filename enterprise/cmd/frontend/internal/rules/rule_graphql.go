@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
@@ -48,4 +49,19 @@ func (v *gqlRule) Name() string { return v.db.Name }
 
 func (v *gqlRule) Description() *string { return v.db.Description }
 
-func (v *gqlRule) Definition() string { return v.db.Definition }
+func (v *gqlRule) Definition() graphqlbackend.JSONC { return graphqlbackend.JSONC(v.db.Definition) }
+
+func (v *gqlRule) CreatedAt() graphqlbackend.DateTime { return graphqlbackend.DateTime{v.db.CreatedAt} }
+
+func (v *gqlRule) UpdatedAt() graphqlbackend.DateTime { return graphqlbackend.DateTime{v.db.UpdatedAt} }
+
+func (v *gqlRule) ViewerCanUpdate(ctx context.Context) (bool, error) {
+	toContainer, err := v.Container(ctx)
+	if err != nil {
+		return false, err
+	}
+	if u, ok := toContainer.RuleContainer().(graphqlbackend.Updatable); ok {
+		return u.ViewerCanUpdate(ctx)
+	}
+	return false, errors.New("unable to determine viewerCanUpdate")
+}
