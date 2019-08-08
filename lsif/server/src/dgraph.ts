@@ -218,9 +218,7 @@ export class DgraphQueryRunner implements QueryRunner {
         if (result.matchingRanges[0]) {
             const range = unflattenRange(result.matchingRanges[0])
             const flattened = result.resultSets.flatMap(r => r['textDocument/hover']).flatMap(h => h.result)
-
-            // TODO - rewrite this, it's confusing
-            return flattened.map(hover => ({ ...hover, range }))[0]
+            return { ...flattened[0], range }
         }
 
         return null
@@ -268,7 +266,6 @@ export class DgraphQueryRunner implements QueryRunner {
 
         const flattened = result.resultRanges.flatMap(r => r[key]).flatMap(r => r.item)
 
-        // TODO - rewrite this, it's confusing
         // Pluck the document, repo and commit from the definition was found in
         return flattened.flatMap(({ containedBy: [{ path }], ...flatRange }) => ({
             uri: path,
