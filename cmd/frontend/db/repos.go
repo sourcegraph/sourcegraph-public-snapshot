@@ -315,40 +315,6 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fetchSQL)
 }
 
-// ListWithLongestInterval returns the URIs of the top lim repositories
-// available on sourcegraph.com that have the longest interval between
-// created_at and updated_at. In ad-hoc queries this query has resulted in many
-// popular repositories being returned, so it would probably be a good
-// experience for people trying out search.
-func (s *repos) ListWithLongestInterval(ctx context.Context, lim int) (URIs []string, err error) {
-	query := fmt.Sprintf(`
-		SELECT name
-		FROM repo
-		WHERE deleted_at IS NULL
-		AND enabled = true
-		ORDER BY fork, COALESCE(updated_at - (CASE WHEN created_at = '0001-01-01 00:00:00+00' THEN NOW() ELSE created_at END), '0') DESC
-		LIMIT %d
-`, lim)
-	rows, err := dbconn.Global.QueryContext(ctx, query)
-	if err != nil {
-		return nil, errors.Wrap(err, "running SQL query")
-	}
-	defer rows.Close()
-
-	URIs = make([]string, 0, lim)
-	for rows.Next() {
-		var u string
-		if err := rows.Scan(&u); err != nil {
-			return nil, errors.Wrap(err, "scanning row")
-		}
-		URIs = append(URIs, u)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "iterating over repo SQL query rows")
-	}
-	return URIs, nil
-}
-
 // ListEnabledNames returns a list of all enabled repo names. This is commonly
 // requested information by other services (repo-updater and
 // indexed-search). We special case just returning enabled names so that we

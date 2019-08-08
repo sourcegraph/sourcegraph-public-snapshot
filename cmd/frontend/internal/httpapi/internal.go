@@ -1,11 +1,8 @@
 package httpapi
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
-	"os"
-	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
@@ -196,7 +193,7 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	var err error
 	var res []*types.Repo
 	if envvar.SourcegraphDotComMode() {
-		res, err = listReposForSgDotCom(r.Context())
+		res, err = backend.Repos.ListDefault(r.Context())
 	} else {
 		var opt db.ReposListOptions
 		if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
@@ -232,29 +229,6 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 	return nil
-}
-
-func listReposForSgDotCom(ctx context.Context) (res []*types.Repo, err error) {
-	limEnv := os.Getenv("SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
-	// Default to 10k longest lived repos if the env var isn't set.
-	lim := 10000
-	if limEnv != "" {
-		le, err := strconv.Atoi(limEnv)
-		if err != nil {
-			return nil, errors.Wrap(err, "parsing $SOURCEGRAPH_REPOS_TO_INDEX_LIMIT")
-		}
-		lim = le
-	}
-	// Grab a bunch of repos that are likely to be fairly popular,
-	// to demo Sourcegraph search.
-	URIs, err := backend.Repos.ListWithLongestInterval(ctx, lim)
-	if err != nil {
-		return nil, errors.Wrap(err, "listing repos with longest interval")
-	}
-	for _, u := range URIs {
-		res = append(res, &types.Repo{Name: api.RepoName(u)})
-	}
-	return res, nil
 }
 
 func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {

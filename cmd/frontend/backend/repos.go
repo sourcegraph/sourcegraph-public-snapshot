@@ -152,22 +152,17 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*typ
 	return db.Repos.List(ctx, opt)
 }
 
-// ListWithLongestInterval calls db.Repos.ListWithLongestInterval, with tracing.
-func (s *repos) ListWithLongestInterval(ctx context.Context, lim int) (URIs []string, err error) {
-	if Mocks.Repos.List != nil {
-		return Mocks.Repos.ListWithLongestInterval(ctx, lim)
-	}
-
-	ctx, done := trace(ctx, "Repos", "ListWithLongestInterval", map[string]interface{}{"lim": lim}, &err)
+// ListDefault calls db.DefaultRepos.List, with tracing.
+func (s *repos) ListDefault(ctx context.Context) (repos []*types.Repo, err error) {
+	ctx, done := trace(ctx, "Repos", "ListDefault", nil, &err)
 	defer func() {
 		if err == nil {
 			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(URIs)))
+			span.LogFields(otlog.Int("result.len", len(repos)))
 		}
 		done()
 	}()
-
-	return db.Repos.ListWithLongestInterval(ctx, lim)
+	return db.DefaultRepos.List(ctx)
 }
 
 var inventoryCache = rcache.New("inv")
