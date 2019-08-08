@@ -10,6 +10,7 @@ import { RemoveThreadFromCampaignEventTimelineItem } from './events/RemoveThread
 import { ReopenThreadEventTimelineItem } from './events/ReopenThreadEventTimelineItem'
 import { RequestReviewEventTimelineItem } from './events/RequestReviewEventTimelineItem'
 import { ReviewEventTimelineItem } from './events/ReviewEventTimelineItem'
+import { ThreadDiagnosticEdgeEventTimelineItem } from './events/ThreadDiagnosticEdgeEventTimelineItem'
 
 interface Props {
     events: Pick<GQL.IEventConnection, 'nodes'>
@@ -64,6 +65,10 @@ function timelineItemComponentForEvent(
             return ReopenThreadEventTimelineItem
         case 'CommentOnThreadEvent':
             return CommentOnThreadEventTimelineItem
+        case 'AddDiagnosticToThreadEvent':
+            return ThreadDiagnosticEdgeEventTimelineItem
+        case 'RemoveDiagnosticFromThreadEvent':
+            return ThreadDiagnosticEdgeEventTimelineItem
         default:
             return null
     }

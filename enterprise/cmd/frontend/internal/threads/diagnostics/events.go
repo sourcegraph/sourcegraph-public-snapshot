@@ -20,7 +20,8 @@ type jsonDiagnostic struct {
 }
 
 func init() {
-	for _, eventType := range []events.Type{eventTypeAddDiagnosticToThread, eventTypeRemoveDiagnosticFromThread} {
+	for _, eventType_ := range []events.Type{eventTypeAddDiagnosticToThread, eventTypeRemoveDiagnosticFromThread} {
+		eventType := eventType_
 		events.Register(eventType, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
 			thread, err := graphqlbackend.ThreadByID(ctx, graphqlbackend.MarshalThreadID(data.Thread))
 			if err != nil {

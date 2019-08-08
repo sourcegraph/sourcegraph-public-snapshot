@@ -13,7 +13,8 @@ const (
 )
 
 func init() {
-	for _, eventType := range []events.Type{eventTypeAddThreadToCampaign, eventTypeRemoveThreadFromCampaign} {
+	for _, eventType_ := range []events.Type{eventTypeAddThreadToCampaign, eventTypeRemoveThreadFromCampaign} {
+		eventType := eventType_
 		events.Register(eventType, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
 			campaign, err := campaignByDBID(ctx, data.Campaign)
 			if err != nil {

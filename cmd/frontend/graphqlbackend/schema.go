@@ -4741,6 +4741,8 @@ union Event =
     | CloseThreadEvent
     | ReopenThreadEvent
     | CommentOnThreadEvent
+    | AddDiagnosticToThreadEvent
+    | RemoveDiagnosticFromThreadEvent
 
 # A list of events.
 ## TODO!(sqs): is it helpful to have a single union? or just have ThreadEvent, CampaignEvent, etc.?
@@ -4765,6 +4767,8 @@ union ThreadTimelineItem =
     | CloseThreadEvent
     | ReopenThreadEvent
     | CommentOnThreadEvent
+    | AddDiagnosticToThreadEvent
+    | RemoveDiagnosticFromThreadEvent
 
 # A list of thread timeline items.
 type ThreadTimelineItemConnection {
@@ -4787,6 +4791,8 @@ union CampaignTimelineItem =
     | CloseThreadEvent
     | ReopenThreadEvent
     | CommentOnThreadEvent
+    | AddDiagnosticToThreadEvent
+    | RemoveDiagnosticFromThreadEvent
 
 # A list of campaign timeline items.
 type CampaignTimelineItemConnection {
@@ -4981,18 +4987,19 @@ type AddDiagnosticToThreadEvent implements EventCommon {
     # The date and time that the event occurred.
     createdAt: DateTime!
 
-    # The edge between the thread and the newly added diagnostic.
-    edge: ThreadDiagnosticEdge!
+    # The edge between the thread and the newly added diagnostic. If the diagnostic has since been
+    # removed, this field is null.
+    edge: ThreadDiagnosticEdge
+
+    # The thread that the diagnostic was added to.
+    thread: Thread!
 
     # The diagnostic that was added.
     diagnostic: Diagnostic!
-
-    # The thread that the thread was added to.
-    thread: Thread!
 }
 
-# The removal of a thread to a thread.
-type RemoveThreadFromThreadEvent implements EventCommon {
+# The removal of a diagnostic to a thread.
+type RemoveDiagnosticFromThreadEvent implements EventCommon {
     # The unique ID of the event.
     id: ID!
 
@@ -5002,10 +5009,10 @@ type RemoveThreadFromThreadEvent implements EventCommon {
     # The date and time that the event occurred.
     createdAt: DateTime!
 
-    # The thread that was removed.
+    # The thread that the diagnostic was removed from.
     thread: Thread!
 
-    # The thread that the thread was removed from.
-    thread: Thread!
+    # The diagnostic that was removed.
+    diagnostic: Diagnostic!
 }
 `

@@ -22,6 +22,8 @@ const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
         'CloseThreadEvent',
         'ReopenThreadEvent',
         'CommentOnThreadEvent',
+        'AddDiagnosticToThreadEvent',
+        'RemoveDiagnosticFromThreadEvent',
     ],
     ['id', 'createdAt'],
     [`actor { ${actorQuery} }`, `thread { ...ThreadFragment }`],
@@ -55,6 +57,12 @@ export const useThreadTimelineItems = (thread: Pick<GQL.IThread, 'id'>): [Result
                                     }
                                     ... on RemoveThreadFromCampaignEvent {
                                         campaign { name url }
+                                    }
+                                    ... on AddDiagnosticToThreadEvent {
+                                        diagnostic { type data }
+                                    }
+                                    ... on RemoveDiagnosticFromThreadEvent {
+                                        diagnostic { type data }
                                     }
                                 }
                                 totalCount
