@@ -20,6 +20,7 @@ interface Props {
     buttonClassName?: string
     activeButtonClassName?: string
     inactiveButtonClassName?: string
+    disabled?: boolean
 }
 
 /**
@@ -33,6 +34,7 @@ export const ActionRadioButton: React.FunctionComponent<Props> = ({
     buttonClassName = 'btn btn-link text-decoration-none',
     activeButtonClassName,
     inactiveButtonClassName,
+    disabled,
 }) => {
     const onInputChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         e => {
@@ -47,11 +49,15 @@ export const ActionRadioButton: React.FunctionComponent<Props> = ({
                 className={`${buttonClassName} ${value ? activeButtonClassName : inactiveButtonClassName}`}
                 style={{ cursor: 'pointer' }}
             >
-                <input type="radio" className="mr-2" checked={value} onChange={onInputChange} />
+                <input type="radio" className="mr-2" checked={value} onChange={onInputChange} disabled={disabled} />
                 {action.title}
             </label>
             {value && (
-                <button className={`${buttonClassName} ${inactiveButtonClassName} btn-sm text-muted`} onClick={onClear}>
+                <button
+                    className={`${buttonClassName} ${inactiveButtonClassName} btn-sm text-muted`}
+                    onClick={onClear}
+                    disabled={disabled}
+                >
                     <CloseIcon className="icon-inline" /> Clear
                 </button>
             )}

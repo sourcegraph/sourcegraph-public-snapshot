@@ -41,15 +41,16 @@ func UnmarshalThreadDiagnosticEdgeID(id graphql.ID) (dbID int64, err error) {
 
 var errThreadDiagnosticsNotImplemented = errors.New("thread diagnostics is not implemented")
 
-func (schemaResolver) ThreadsDiagnostics(ctx context.Context, arg *ThreadDiagnosticConnectionArgs) (ThreadDiagnosticConnection, error) {
+func (schemaResolver) ThreadDiagnostics(ctx context.Context, arg *ThreadDiagnosticConnectionArgs) (ThreadDiagnosticConnection, error) {
 	if ThreadDiagnostics == nil {
 		return nil, errThreadDiagnosticsNotImplemented
 	}
 	return ThreadDiagnostics.ThreadDiagnostics(ctx, arg)
 }
 
-func (schemaResolver) ThreadsDiagnosticEdgeByID(ctx context.Context, id graphql.ID) (ThreadDiagnosticEdge, error) {
-	if ThreadDiagnostics == nil {
+// ThreadDiagnosticEdgeByID is called to look up a ThreadDiagnosticEdge given its GraphQL ID.
+func ThreadDiagnosticEdgeByID(ctx context.Context, id graphql.ID) (ThreadDiagnosticEdge, error) {
+	if Threads == nil {
 		return nil, errThreadDiagnosticsNotImplemented
 	}
 	return ThreadDiagnostics.ThreadDiagnosticEdgeByID(ctx, id)
@@ -118,3 +119,14 @@ type ThreadDiagnosticConnection interface {
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 }
+
+type AddRemoveDiagnosticToFromThreadEvent struct {
+	EventCommon
+	Edge_       ThreadDiagnosticEdge // only set for AddDiagnosticToThreadEvent
+	Thread_     Thread
+	Diagnostic_ Diagnostic
+}
+
+func (v AddRemoveDiagnosticToFromThreadEvent) Edge() ThreadDiagnosticEdge { return v.Edge_ }
+func (v AddRemoveDiagnosticToFromThreadEvent) Thread() Thread             { return v.Thread_ }
+func (v AddRemoveDiagnosticToFromThreadEvent) Diagnostic() Diagnostic     { return v.Diagnostic_ }

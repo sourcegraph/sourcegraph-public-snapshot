@@ -40,7 +40,7 @@ export const ThreadDeleteButton: React.FunctionComponent<Props> = ({
             try {
                 await updateThread({ threadID, delete: true })
                 setIsLoading(false)
-                history.push(type === GQL.ThreadType.ISSUE ? '/checks' : '/threads')
+                history.push('/threads')
             } catch (err) {
                 setIsLoading(false)
                 extensionsController.services.notifications.showMessages.next({

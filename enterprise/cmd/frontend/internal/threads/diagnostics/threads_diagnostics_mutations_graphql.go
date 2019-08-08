@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
@@ -19,19 +20,10 @@ func (GraphQLResolver) AddDiagnosticsToThread(ctx context.Context, arg *graphqlb
 		return nil, err
 	}
 
-	// TODO!(sqs): record events
-	//
-	// if err := events.CreateEvent(ctx, events.CreationData{
-	// 	Type:    eventType,
-	// 	Objects: events.Objects{Thread: threadDBID},
-	// }); err != nil {
-	// 	return nil, err
-	// }
-
 	ids := make([]int64, len(arg.RawDiagnostics))
 	for i, rawDiagnostic := range arg.RawDiagnostics {
 		const dummytype = "TYPE TODO!(sqs)"
-		id, err := (dbThreadsDiagnostics{}).Create(ctx, dbThreadDiagnostic{
+		id, err := (dbThreadDiagnosticEdges{}).Create(ctx, dbThreadDiagnostic{
 			ThreadID: threadID,
 			Type:     dummytype,
 			Data:     json.RawMessage(rawDiagnostic),
@@ -40,9 +32,24 @@ func (GraphQLResolver) AddDiagnosticsToThread(ctx context.Context, arg *graphqlb
 			return nil, err
 		}
 		ids[i] = id
+
+		jsonData, err := json.Marshal(rawDiagnostic)
+		if err != nil {
+			return nil, err
+		}
+		if err := events.CreateEvent(ctx, events.CreationData{
+			Type: eventTypeAddDiagnosticToThread,
+			Objects: events.Objects{
+				Thread:               threadID,
+				ThreadDiagnosticEdge: id,
+			},
+			Data: jsonDiagnostic{Type: dummytype, Data: json.RawMessage(jsonData)},
+		}); err != nil {
+			return nil, err
+		}
 	}
 	return &threadDiagnosticConnection{
-		opt: dbThreadsDiagnosticsListOptions{IDs: ids},
+		opt: dbThreadDiagnosticEdgesListOptions{IDs: ids},
 	}, nil
 }
 
@@ -63,9 +70,28 @@ func (GraphQLResolver) RemoveDiagnosticsFromThread(ctx context.Context, arg *gra
 		if err != nil {
 			return nil, err
 		}
-		if err := (dbThreadsDiagnostics{}).DeleteByIDInThread(ctx, threadDiagnosticID, threadID); err != nil {
+
+		// Get the edge so we can create an event for this removal with its data (before deleting
+		// it).
+		edge, err := (dbThreadDiagnosticEdges{}).GetByID(ctx, threadDiagnosticID)
+		if err != nil {
 			return nil, err
 		}
+
+		if err := (dbThreadDiagnosticEdges{}).DeleteByIDInThread(ctx, threadDiagnosticID, threadID); err != nil {
+			return nil, err
+		}
+
+		if err := events.CreateEvent(ctx, events.CreationData{
+			Type: eventTypeRemoveDiagnosticFromThread,
+			Objects: events.Objects{
+				Thread: threadID,
+			},
+			Data: jsonDiagnostic{Type: edge.Type, Data: edge.Data},
+		}); err != nil {
+			return nil, err
+		}
+
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil

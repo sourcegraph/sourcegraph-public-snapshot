@@ -33,7 +33,7 @@ ALTER TABLE threads ADD CONSTRAINT external_thread_has_id_and_data CHECK ((impor
 
 -----------------
 
-CREATE TABLE threads_diagnostics (
+CREATE TABLE thread_diagnostic_edges (
 	id bigserial PRIMARY KEY,
     thread_id bigint NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
     --TODO!(sqs) location_repository_id integer NOT NULL REFERENCES repo(id) ON DELETE CASCADE,
@@ -41,7 +41,7 @@ CREATE TABLE threads_diagnostics (
     data jsonb NOT NULL
 );
 --TODO!(sqs) CREATE INDEX threads_diagnostics_location_repository_id ON threads_diagnostics(location_repository_id);
-CREATE INDEX threads_diagnostics_thread_id ON threads_diagnostics(thread_id);
+CREATE INDEX thread_diagnostic_edges_thread_id ON thread_diagnostic_edges(thread_id);
 
 -----------------
 
@@ -116,6 +116,7 @@ CREATE TABLE events (
 	-- The various event types give their own meanings to these columns.
     data jsonb,
 	thread_id bigint REFERENCES threads(id) ON DELETE CASCADE,
+    thread_diagnostic_edge_id bigint REFERENCES thread_diagnostic_edges(id) ON DELETE SET NULL,
 	campaign_id bigint REFERENCES campaigns(id) ON DELETE CASCADE,
 	comment_id bigint REFERENCES comments(id) ON DELETE CASCADE,
 	rule_id bigint REFERENCES rules(id) ON DELETE CASCADE,

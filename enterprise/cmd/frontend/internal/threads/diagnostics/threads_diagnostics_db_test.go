@@ -37,7 +37,7 @@ func TestDB_ThreadsDiagnostics(t *testing.T) {
 
 	{
 		// List is empty initially.
-		results, err := dbThreadsDiagnostics{}.List(ctx, dbThreadsDiagnosticsListOptions{})
+		results, err := dbThreadDiagnosticEdges{}.List(ctx, dbThreadDiagnosticEdgesListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -48,19 +48,18 @@ func TestDB_ThreadsDiagnostics(t *testing.T) {
 
 	// Create thread diagnostics.
 	wantTD0 := dbThreadDiagnostic{Type: "t0", Data: json.RawMessage(`{"a":1}`)}
-	td0, err := dbThreadsDiagnostics{}.Create(ctx, wantTD0)
+	td0, err := dbThreadDiagnosticEdges{}.Create(ctx, wantTD0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	wantTD1 := dbThreadDiagnostic{Type: "t1", Data: json.RawMessage(`{"a":2}`)}
-	td1, err := dbThreadsDiagnostics{}.Create(ctx, wantTD1)
-	if err != nil {
+	if _, err := (dbThreadDiagnosticEdges{}).Create(ctx, wantTD1); err != nil {
 		t.Fatal(err)
 	}
 
 	{
 		// List diagnostics by thread.
-		results, err := dbThreadsDiagnostics{}.List(ctx, dbThreadsDiagnosticsListOptions{ThreadID: thread0})
+		results, err := dbThreadDiagnosticEdges{}.List(ctx, dbThreadDiagnosticEdgesListOptions{ThreadID: thread0})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,13 +69,13 @@ func TestDB_ThreadsDiagnostics(t *testing.T) {
 	}
 
 	// Remove 1 diagnostic.
-	if err := (dbThreadsDiagnostics{}).DeleteByIDInThread(ctx, td0, thread0); err != nil {
+	if err := (dbThreadDiagnosticEdges{}).DeleteByIDInThread(ctx, td0, thread0); err != nil {
 		t.Fatal(err)
 	}
 
 	{
 		// List diagnostics by thread.
-		results, err := dbThreadsDiagnostics{}.List(ctx, dbThreadsDiagnosticsListOptions{ThreadID: thread0})
+		results, err := dbThreadDiagnosticEdges{}.List(ctx, dbThreadDiagnosticEdgesListOptions{ThreadID: thread0})
 		if err != nil {
 			t.Fatal(err)
 		}

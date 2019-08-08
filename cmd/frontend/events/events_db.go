@@ -32,7 +32,7 @@ var errEventNotFound = errors.New("event not found")
 
 type dbEvents struct{}
 
-const selectColumns = `id, type, actor_user_id, external_actor_username, external_actor_url, created_at, data, thread_id, campaign_id, comment_id, rule_id, repository_id, user_id, organization_id, registry_extension_id, imported_from_external_service_id`
+const selectColumns = `id, type, actor_user_id, external_actor_username, external_actor_url, created_at, data, thread_id, thread_diagnostic_edge_id, campaign_id, comment_id, rule_id, repository_id, user_id, organization_id, registry_extension_id, imported_from_external_service_id`
 
 // Create creates a event. The event argument's (Event).ID field is ignored. The new event is
 // returned.
@@ -56,6 +56,7 @@ func (dbEvents) Create(ctx context.Context, tx *sql.Tx, event *dbEvent) (*dbEven
 		event.CreatedAt,
 		data,
 		nnz.Int64(event.Objects.Thread),
+		nnz.Int64(event.Objects.ThreadDiagnosticEdge),
 		nnz.Int64(event.Objects.Campaign),
 		nnz.Int64(event.Objects.Comment),
 		nnz.Int64(event.Objects.Rule),
@@ -118,6 +119,7 @@ func (o dbEventsListOptions) sqlConditions() []*sqlf.Query {
 		}
 	}
 	addCondition(o.Objects.Thread, "thread_id")
+	addCondition(o.Objects.ThreadDiagnosticEdge, "thread_diagnostic_edge_id")
 	if o.Objects.Campaign != 0 {
 		conds = append(conds, sqlf.Sprintf("campaign_id=%d OR thread_id IN (SELECT thread_id FROM campaigns_threads WHERE campaign_id=%d)", o.Objects.Campaign, o.Objects.Campaign))
 	}
@@ -186,6 +188,7 @@ func (dbEvents) scanRow(row interface {
 		&t.CreatedAt,
 		&t.Data,
 		(*nnz.Int64)(&t.Objects.Thread),
+		(*nnz.Int64)(&t.Objects.ThreadDiagnosticEdge),
 		(*nnz.Int64)(&t.Objects.Campaign),
 		(*nnz.Int64)(&t.Objects.Comment),
 		(*nnz.Int64)(&t.Objects.Rule),

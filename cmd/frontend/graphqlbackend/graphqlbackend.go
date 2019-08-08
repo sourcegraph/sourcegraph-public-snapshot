@@ -149,6 +149,11 @@ func (r *NodeResolver) ToThread() (Thread, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToThreadDiagnosticEdge() (ThreadDiagnosticEdge, bool) {
+	n, ok := r.Node.(ThreadDiagnosticEdge)
+	return n, ok
+}
+
 func (r *NodeResolver) ToUser() (*UserResolver, bool) {
 	n, ok := r.Node.(*UserResolver)
 	return n, ok
@@ -254,6 +259,8 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 		return repositoryByID(ctx, id)
 	case "Rule":
 		return RuleByID(ctx, id)
+	case GQLTypeThreadDiagnosticEdge:
+		return ThreadDiagnosticEdgeByID(ctx, id)
 	case "User":
 		return UserByID(ctx, id)
 	case "Org":

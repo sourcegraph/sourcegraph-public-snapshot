@@ -15,14 +15,15 @@ import (
 // Objects refers to the foreign key relationships that an event may have, to refer to objects
 // related to the event.
 type Objects struct {
-	Campaign          int64
-	Thread            int64
-	Comment           int64
-	Rule              int64
-	Repository        int32
-	User              int32
-	Organization      int32
-	RegistryExtension int32
+	Thread               int64
+	ThreadDiagnosticEdge int64
+	Campaign             int64
+	Comment              int64
+	Rule                 int64
+	Repository           int32
+	User                 int32
+	Organization         int32
+	RegistryExtension    int32
 }
 
 // CreationData is the data required to create an event (in CreateEvent).

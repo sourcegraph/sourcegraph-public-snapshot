@@ -16,8 +16,8 @@ func (GraphQLResolver) ThreadDiagnostics(ctx context.Context, arg *graphqlbacken
 	return &threadDiagnosticConnection{opt: *opt}, nil
 }
 
-func threadDiagnosticConnectionArgsToListOptions(arg *graphqlbackend.ThreadDiagnosticConnectionArgs) (*dbThreadsDiagnosticsListOptions, error) {
-	var opt dbThreadsDiagnosticsListOptions
+func threadDiagnosticConnectionArgsToListOptions(arg *graphqlbackend.ThreadDiagnosticConnectionArgs) (*dbThreadDiagnosticEdgesListOptions, error) {
+	var opt dbThreadDiagnosticEdgesListOptions
 	arg.Set(&opt.LimitOffset)
 	if arg.Thread != nil {
 		var err error
@@ -37,7 +37,7 @@ func threadDiagnosticConnectionArgsToListOptions(arg *graphqlbackend.ThreadDiagn
 }
 
 type threadDiagnosticConnection struct {
-	opt dbThreadsDiagnosticsListOptions
+	opt dbThreadDiagnosticEdgesListOptions
 
 	once              sync.Once
 	threadDiagnostics []*dbThreadDiagnostic
@@ -53,22 +53,22 @@ func (r *threadDiagnosticConnection) compute(ctx context.Context) ([]*dbThreadDi
 			opt2.Limit++ // so we can detect if there is a next page
 		}
 
-		r.threadDiagnostics, r.err = dbThreadsDiagnostics{}.List(ctx, opt2)
+		r.threadDiagnostics, r.err = dbThreadDiagnosticEdges{}.List(ctx, opt2)
 	})
 	return r.threadDiagnostics, r.err
 }
 
 func (r *threadDiagnosticConnection) Edges(ctx context.Context) ([]graphqlbackend.ThreadDiagnosticEdge, error) {
-	dbThreadsDiagnostics, err := r.compute(ctx)
+	dbThreadDiagnosticEdges, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if r.opt.LimitOffset != nil && len(dbThreadsDiagnostics) > r.opt.LimitOffset.Limit {
-		dbThreadsDiagnostics = dbThreadsDiagnostics[:r.opt.LimitOffset.Limit]
+	if r.opt.LimitOffset != nil && len(dbThreadDiagnosticEdges) > r.opt.LimitOffset.Limit {
+		dbThreadDiagnosticEdges = dbThreadDiagnosticEdges[:r.opt.LimitOffset.Limit]
 	}
 
-	edges := make([]graphqlbackend.ThreadDiagnosticEdge, len(dbThreadsDiagnostics))
-	for i, dbThreadDiagnostic := range dbThreadsDiagnostics {
+	edges := make([]graphqlbackend.ThreadDiagnosticEdge, len(dbThreadDiagnosticEdges))
+	for i, dbThreadDiagnostic := range dbThreadDiagnosticEdges {
 		edges[i] = &gqlThreadDiagnosticEdge{db: dbThreadDiagnostic}
 	}
 	return edges, nil
@@ -92,7 +92,7 @@ func (r *threadDiagnosticConnection) Nodes(ctx context.Context) ([]graphqlbacken
 }
 
 func (r *threadDiagnosticConnection) TotalCount(ctx context.Context) (int32, error) {
-	count, err := dbThreadsDiagnostics{}.Count(ctx, r.opt)
+	count, err := dbThreadDiagnosticEdges{}.Count(ctx, r.opt)
 	return int32(count), err
 }
 

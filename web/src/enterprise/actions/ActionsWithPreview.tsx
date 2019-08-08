@@ -82,6 +82,7 @@ export const ActionsWithPreview: React.FunctionComponent<Props> = ({
                     buttonClassName="btn px-2 py-1"
                     activeButtonClassName="btn-primary"
                     inactiveButtonClassName="btn-link"
+                    extensionsController={extensionsController}
                 />
             ),
         preview:

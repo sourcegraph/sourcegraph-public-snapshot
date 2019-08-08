@@ -13,22 +13,32 @@ const (
 )
 
 func init() {
-	events.Register(eventTypeAddThreadToCampaign, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
-		campaign, err := campaignByDBID(ctx, data.Campaign)
-		if err != nil {
-			return err
-		}
-		thread, err := graphqlbackend.ThreadByID(ctx, graphqlbackend.MarshalThreadID(data.Thread))
-		if err != nil {
-			return err
-		}
-		toEvent.AddThreadToCampaignEvent = &graphqlbackend.AddRemoveThreadToFromCampaignEvent{
-			EventCommon: common,
-			Campaign_:   campaign,
-			Thread_:     thread,
-		}
-		return nil
-	})
+	for _, eventType := range []events.Type{eventTypeAddThreadToCampaign, eventTypeRemoveThreadFromCampaign} {
+		events.Register(eventType, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
+			campaign, err := campaignByDBID(ctx, data.Campaign)
+			if err != nil {
+				return err
+			}
+			thread, err := graphqlbackend.ThreadByID(ctx, graphqlbackend.MarshalThreadID(data.Thread))
+			if err != nil {
+				return err
+			}
+			event := &graphqlbackend.AddRemoveThreadToFromCampaignEvent{
+				EventCommon: common,
+				Campaign_:   campaign,
+				Thread_:     thread,
+			}
+			switch {
+			case eventType == eventTypeAddThreadToCampaign:
+				toEvent.AddThreadToCampaignEvent = event
+			case eventType == eventTypeRemoveThreadFromCampaign:
+				toEvent.RemoveThreadFromCampaignEvent = event
+			default:
+				panic("unexpected event type: " + eventType)
+			}
+			return nil
+		})
+	}
 }
 
 func (v *gqlCampaign) TimelineItems(ctx context.Context, arg *graphqlbackend.EventConnectionCommonArgs) (graphqlbackend.EventConnection, error) {

@@ -32,7 +32,7 @@ func (GraphQLResolver) ThreadDiagnosticEdgeByID(ctx context.Context, id graphql.
 // threadDiagnosticEdgeByDBID looks up and returns the ThreadDiagnosticEdge with the given database ID. If
 // no such ThreadDiagnosticEdge exists, it returns a non-nil error.
 func threadDiagnosticEdgeByDBID(ctx context.Context, dbID int64) (*gqlThreadDiagnosticEdge, error) {
-	v, err := dbThreadsDiagnostics{}.GetByID(ctx, dbID)
+	v, err := dbThreadDiagnosticEdges{}.GetByID(ctx, dbID)
 	if err != nil {
 		return nil, err
 	}

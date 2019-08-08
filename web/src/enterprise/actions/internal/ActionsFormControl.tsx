@@ -1,9 +1,11 @@
-import React from 'react'
-import { isCommandOnlyAction, Action } from '../../../../../shared/src/api/types/action'
+import { NotificationType } from '@sourcegraph/extension-api-classes'
+import React, { useState } from 'react'
+import { Action, isCommandOnlyAction } from '../../../../../shared/src/api/types/action'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { ActionRadioButton } from './ActionRadioButton'
 import { CommandActionButton } from './CommandActionButton'
 
-interface Props {
+interface Props extends ExtensionsControllerProps {
     actions: readonly Action[]
     selectedAction: Action | null
     onActionSetSelected: (value: boolean, action: Action) => void
@@ -16,8 +18,6 @@ interface Props {
 
 /**
  * A form control that displays {@link sourcegraph.Action}s.
- *
- * TODO!(sqs): dedupe with ThreadInboxItemActions?
  */
 export const ActionsFormControl: React.FunctionComponent<Props> = ({
     actions,
@@ -27,9 +27,12 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
     buttonClassName = '',
     activeButtonClassName = '',
     inactiveButtonClassName = '',
+    extensionsController,
 }) => {
     const planActions = actions.filter(action => !isCommandOnlyAction(action))
     const commandActions = actions.filter(isCommandOnlyAction)
+
+    const [isLoading, setIsLoading] = useState(false)
 
     return (
         <div className={`d-flex flex-column align-items-start ${className}`}>
@@ -43,6 +46,7 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
                     activeButtonClassName={activeButtonClassName}
                     inactiveButtonClassName={inactiveButtonClassName}
                     value={selectedAction === action}
+                    disabled={isLoading}
                 />
             ))}
             {commandActions.length > 0 && (
@@ -51,8 +55,20 @@ export const ActionsFormControl: React.FunctionComponent<Props> = ({
                         <CommandActionButton
                             key={i}
                             action={action}
-                            onClick={() => {
-                                throw new Error('TODO!')
+                            disabled={isLoading}
+                            // tslint:disable-next-line: jsx-no-lambda
+                            onClick={async () => {
+                                setIsLoading(true)
+                                try {
+                                    await extensionsController.executeCommand(action.command)
+                                    setIsLoading(false)
+                                } catch (err) {
+                                    setIsLoading(false)
+                                    extensionsController.services.notifications.showMessages.next({
+                                        message: `Error: ${err.message}`,
+                                        type: NotificationType.Error,
+                                    })
+                                }
                             }}
                             className={`${buttonClassName} ${inactiveButtonClassName} mr-2 mb-2`}
                         />

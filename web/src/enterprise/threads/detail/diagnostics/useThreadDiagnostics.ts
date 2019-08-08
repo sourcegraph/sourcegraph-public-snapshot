@@ -1,22 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
 import { map, startWith } from 'rxjs/operators'
-import { dataOrThrowErrors, gql, queryAndFragmentForUnion } from '../../../../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
-import { actorFragment, actorQuery } from '../../../../actor/graphql'
 import { queryGraphQL } from '../../../../backend/graphql'
-import { ThreadFragment } from '../../util/graphql'
 
 const LOADING: 'loading' = 'loading'
 
-type Result = typeof LOADING | GQL.IThreadTimelineItemConnection | ErrorLike
+type Result = typeof LOADING | GQL.IThreadDiagnosticConnection | ErrorLike
 
 /**
- * A React hook that observes all timeline items for a thread (queried from the GraphQL API).
+ * A React hook that observes all diagnostics for a thread (queried from the GraphQL API).
  *
- * @param thread The thread whose timeline items to observe.
+ * @param thread The thread whose diagnostics to observe.
  */
-export const useThreadTimelineItems = (thread: Pick<GQL.IThread, 'id'>): [Result, () => void] => {
+export const useThreadDiagnostics = (thread: Pick<GQL.IThread, 'id'>): [Result, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
 
@@ -24,26 +22,24 @@ export const useThreadTimelineItems = (thread: Pick<GQL.IThread, 'id'>): [Result
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
-                query ThreadTimelineItems($thread: ID!) {
+                query ThreadDiagnostics($thread: ID!) {
                     node(id: $thread) {
                         __typename
                         ... on Thread {
-                            timelineItems {
-                                nodes {
-                                    ${eventQuery}
-									... on AddThreadToCampaignEvent {
-                                        campaign { name url }
+                            diagnostics {
+                                edges {
+                                    id
+                                    diagnostic {
+                                        type
+                                        data
                                     }
-                                    ... on RemoveThreadFromCampaignEvent {
-                                        campaign { name url }
-                                    }
+                                    viewerCanUpdate
                                 }
                                 totalCount
                             }
                         }
                     }
                 }
-				${eventFragment}
             `,
             { thread: thread.id }
         )
@@ -53,7 +49,7 @@ export const useThreadTimelineItems = (thread: Pick<GQL.IThread, 'id'>): [Result
                     if (!data.node || data.node.__typename !== 'Thread') {
                         throw new Error('not an thread')
                     }
-                    return data.node.timelineItems
+                    return data.node.diagnostics
                 }),
                 startWith(LOADING)
             )

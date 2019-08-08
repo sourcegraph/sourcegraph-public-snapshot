@@ -5,6 +5,7 @@ import { ExtensionsControllerProps } from '../../shared/src/extensions/controlle
 import { registerHighlightContributions } from '../../shared/src/highlight/contributions'
 import { registerHoverContributions } from '../../shared/src/hover/actions'
 import { PlatformContextProps } from '../../shared/src/platform/context'
+import { register as registerThreadDiagnosticsContributions } from './enterprise/threads/contributions/AddDiagnosticToThreadAction'
 import { registerDiscussionsMentionCompletionContributions } from './repo/blob/discussions/mentionCompletion'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
@@ -22,6 +23,7 @@ export class GlobalContributions extends React.Component<Props> {
         registerHighlightContributions() // no way to unregister these
         this.subscriptions.add(registerHoverContributions(this.props))
         this.subscriptions.add(registerDiscussionsMentionCompletionContributions(this.props))
+        this.subscriptions.add(registerThreadDiagnosticsContributions(this.props))
     }
 
     public componentWillUnmount(): void {

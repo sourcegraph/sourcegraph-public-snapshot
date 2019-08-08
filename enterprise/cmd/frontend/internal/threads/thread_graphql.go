@@ -39,7 +39,12 @@ func threadByID(ctx context.Context, id graphql.ID) (*gqlThread, error) {
 	return threadByDBID(ctx, dbID)
 }
 
+var MockThreadByID func(id graphql.ID) (graphqlbackend.Thread, error)
+
 func (GraphQLResolver) ThreadByID(ctx context.Context, id graphql.ID) (graphqlbackend.Thread, error) {
+	if MockThreadByID != nil {
+		return MockThreadByID(id)
+	}
 	return threadByID(ctx, id)
 }
 

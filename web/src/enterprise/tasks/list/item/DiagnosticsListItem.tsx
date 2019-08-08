@@ -2,7 +2,7 @@ import H from 'history'
 import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Subscription } from 'rxjs'
-import { catchError, startWith } from 'rxjs/operators'
+import { catchError, map, startWith } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { Action } from '../../../../../../shared/src/api/types/action'
 import { fromDiagnostic, toDiagnostic } from '../../../../../../shared/src/api/types/diagnostic'
@@ -16,13 +16,15 @@ import { propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { parseRepoURI } from '../../../../../../shared/src/util/url'
 import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/DiagnosticSeverityIcon'
 import { fetchHighlightedFileLines } from '../../../../repo/backend'
+import { ThemeProps } from '../../../../theme'
 import { ActionsWithPreview } from '../../../actions/ActionsWithPreview'
 import { ChangesetPlanOperation } from '../../../changesetsOLD/plan/plan'
+import { ADD_DIAGNOSTIC_TO_THREAD_COMMAND } from '../../../threads/contributions/AddDiagnosticToThreadAction'
 import { DiagnosticInfo, getCodeActions } from '../../../threadsOLD/detail/backend'
 
 const LOADING: 'loading' = 'loading'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemeProps {
     diagnostic: DiagnosticInfo
     selectedAction: Pick<ChangesetPlanOperation, 'editCommand'> | null
     onActionSelect: (diagnostic: DiagnosticInfo, action: Action | null) => void
@@ -30,7 +32,6 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
     className?: string
     headerClassName?: string
     headerStyle?: React.CSSProperties
-    isLightTheme: boolean
     history: H.History
     location: H.Location
 }
@@ -64,6 +65,14 @@ export const DiagnosticsListItem: React.FunctionComponent<Props> = ({
         subscriptions.add(
             getCodeActions({ diagnostic: diagnostic2, extensionsController })
                 .pipe(
+                    map(actions => [
+                        ...actions,
+                        // Common actions
+                        {
+                            title: 'Add to thread',
+                            command: { ...ADD_DIAGNOSTIC_TO_THREAD_COMMAND, arguments: [diagnostic2] },
+                        },
+                    ]),
                     catchError(err => [asError(err)]),
                     startWith(LOADING)
                 )

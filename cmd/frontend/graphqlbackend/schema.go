@@ -370,6 +370,14 @@ type Mutation {
     # Delete a thread.
     deleteThread(thread: ID!): EmptyResponse
 
+    # Add diagnostics to a thread. A list of the just-added diagnostics is returned.
+    #
+    # TODO!(sqs): improve rawDiagnostics API
+    addDiagnosticsToThread(thread: ID!, rawDiagnostics: [String!]!): ThreadDiagnosticConnection!
+
+    # Remove diagnostics from a thread.
+    removeDiagnosticsFromThread(thread: ID!, threadDiagnosticEdges: [ID!]!): EmptyResponse
+
     # Mutations related to repositories' Git data.
     git: GitMutation!
 
@@ -1017,6 +1025,10 @@ type Query {
     threadDiagnostics(
         # Return the first n results.
         first: Int
+        # Only include diagnostics in the specified thread.
+        thread: ID
+        # Only include diagnostics in threads in the specified campaign.
+        campaign: ID
     ): ThreadDiagnosticConnection!
 
     # A list of campaigns. TODO!(sqs)
@@ -4420,8 +4432,8 @@ type Diagnostic {
     # The diagnostic data (which conforms to the sourcegraph.Diagnostic extension API type).
     data: JSONValue!
 
-    # The code location.
-    location: TreeEntry
+    # The code location. TODO!(sqs)
+    # location: TreeEntry
 }
 
 # A diagnostic that has been added to a thread.
@@ -4956,5 +4968,44 @@ type CommentOnThreadEvent implements EventCommon {
     #
     ## The comment that was posted.
     #comment: CommentReply!
+}
+
+# The addition of a diagnostic to a thread.
+type AddDiagnosticToThreadEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The edge between the thread and the newly added diagnostic.
+    edge: ThreadDiagnosticEdge!
+
+    # The diagnostic that was added.
+    diagnostic: Diagnostic!
+
+    # The thread that the thread was added to.
+    thread: Thread!
+}
+
+# The removal of a thread to a thread.
+type RemoveThreadFromThreadEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was removed.
+    thread: Thread!
+
+    # The thread that the thread was removed from.
+    thread: Thread!
 }
 `

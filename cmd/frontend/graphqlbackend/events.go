@@ -34,15 +34,17 @@ func (v *EventCommon) Actor() *Actor       { return v.Actor_ }
 func (v *EventCommon) CreatedAt() DateTime { return v.CreatedAt_ }
 
 type ToEvent struct {
-	CreateThreadEvent             *CreateThreadEvent
-	AddThreadToCampaignEvent      *AddRemoveThreadToFromCampaignEvent
-	RemoveThreadFromCampaignEvent *AddRemoveThreadToFromCampaignEvent
-	ReviewEvent                   *ReviewEvent
-	RequestReviewEvent            *RequestReviewEvent
-	MergeThreadEvent           *MergeThreadEvent
-	CloseThreadEvent              *CloseThreadEvent
-	ReopenThreadEvent             *ReopenThreadEvent
-	CommentOnThreadEvent          *CommentOnThreadEvent
+	CreateThreadEvent               *CreateThreadEvent
+	AddThreadToCampaignEvent        *AddRemoveThreadToFromCampaignEvent
+	RemoveThreadFromCampaignEvent   *AddRemoveThreadToFromCampaignEvent
+	ReviewEvent                     *ReviewEvent
+	RequestReviewEvent              *RequestReviewEvent
+	MergeThreadEvent                *MergeThreadEvent
+	CloseThreadEvent                *CloseThreadEvent
+	ReopenThreadEvent               *ReopenThreadEvent
+	CommentOnThreadEvent            *CommentOnThreadEvent
+	AddDiagnosticToThreadEvent      *AddRemoveDiagnosticToFromThreadEvent
+	RemoveDiagnosticFromThreadEvent *AddRemoveDiagnosticToFromThreadEvent
 }
 
 func (v ToEvent) ToCreateThreadEvent() (*CreateThreadEvent, bool) {
@@ -79,6 +81,14 @@ func (v ToEvent) ToReopenThreadEvent() (*ReopenThreadEvent, bool) {
 
 func (v ToEvent) ToCommentOnThreadEvent() (*CommentOnThreadEvent, bool) {
 	return v.CommentOnThreadEvent, v.CommentOnThreadEvent != nil
+}
+
+func (v ToEvent) ToAddDiagnosticToThreadEvent() (*AddRemoveDiagnosticToFromThreadEvent, bool) {
+	return v.AddDiagnosticToThreadEvent, v.AddDiagnosticToThreadEvent != nil
+}
+
+func (v ToEvent) ToRemoveDiagnosticFromThreadEvent() (*AddRemoveDiagnosticToFromThreadEvent, bool) {
+	return v.RemoveDiagnosticFromThreadEvent, v.RemoveDiagnosticFromThreadEvent != nil
 }
 
 // EventConnection is the interface for GraphQL connection types for event nodes.
