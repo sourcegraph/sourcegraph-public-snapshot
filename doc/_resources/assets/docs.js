@@ -27,7 +27,26 @@ window.sgdocs = (() => {
       mobileNavInit()
       navInit()
       breadcrumbsInit()
+      setTimeout(schemaLinkCheck, 0) // Browser scrolls straight to element without this
     },
+  }
+
+  /**
+   * Smoothly scroll to an element
+   *
+   * @param {*} element Element to scroll to
+   * @param {*} elementOffsetTop Optionally reduce vertical scroll distance
+   */
+  function scrollToElement(element, elementOffsetTop=0) {
+    if (!element) {
+      return
+    }
+
+    document.body.scrollTo({
+      top: element.offsetTop - elementOffsetTop,
+      left: 0,
+      behavior: 'smooth',
+    })
   }
 
   function searchInit() {
@@ -91,7 +110,6 @@ window.sgdocs = (() => {
       el.addEventListener('click', e => e.srcElement.closest('.content-nav-section').classList.toggle('expanded'))
     })
 
-    // TODO(ryan): Link titles should be auto-generated
     document.querySelectorAll('.content-nav a').forEach(el => (el.title = el.text.trim()))
   }
 
@@ -103,5 +121,51 @@ window.sgdocs = (() => {
         el.text = text
       }
     })
+  }
+
+  /**
+   * Check the URL to see if navigation to a schema key is desired
+   */
+  function schemaLinkCheck() {
+    const schemaDocSelector = '.json-schema-doc'
+    const offsetTop = document.querySelector('.global-navbar').clientHeight + 20
+    const schemaDocs = document.querySelectorAll(schemaDocSelector)
+
+    // Find spans that contain a key and swap them for anchors for hover functionality
+    schemaDocs.forEach(schemaDoc => {
+      schemaDoc.querySelectorAll(`span`).forEach(el => {
+        const keyNameMatch = el.innerText.match(/^"(.*)"/)
+        const isKey = el.nextSibling && el.nextSibling.textContent.includes(':') ? true : false
+
+        if (!isKey || !keyNameMatch) {
+          return
+        }
+
+        // Add a named anchor to get the hover functionality we need
+        const keyText = keyNameMatch[1]
+        const id = keyText.replace('.', '-')
+        const anchor = document
+          .createRange()
+          .createContextualFragment(
+            `<a id="${id}" class="schema-doc-key" href="#${id}" rel="nofollow" aria-hidden="true">"${keyText}"</a>`
+          ).firstElementChild
+        anchor.style.color = el.style.color
+        el.replaceWith(anchor)
+
+        // Temporarily change the id of the anchor to prevent the browser
+        // from scrolling to the element
+        anchor.addEventListener('click', e => {
+          let originalId = e.target.id
+          e.target.id = `${originalId}-id-miss`
+          setTimeout(() => e.target.id = originalId, 1000)
+        })
+      })
+    })
+
+    // If URL hash is set and matches a schema key, scroll to it
+    let targetKey = document.querySelector(`${schemaDocSelector} ${window.location.hash}`)
+    if (window.location.hash && targetKey) {
+      scrollToElement(targetKey, offsetTop)
+    }
   }
 })()
