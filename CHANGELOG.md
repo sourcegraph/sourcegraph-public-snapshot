@@ -15,6 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- In the [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) it's now possible to specify `orgs` without specifying `repositoryQuery` or `repos` too.
 - Out-of-the-box TypeScript code intelligence is much better with an updated ctags version with a built-in TypeScript parser.
 
 ### Fixed
