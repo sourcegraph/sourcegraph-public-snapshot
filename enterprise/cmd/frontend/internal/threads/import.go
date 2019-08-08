@@ -4,16 +4,24 @@ import (
 	"context"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	commentobjectdb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
-var MockImportExternalThreads func(repo api.RepoID, externalServiceID int64, toImport map[*dbThread]commentobjectdb.DBObjectCommentFields) error
+type externalThread struct {
+	thread        *dbThread
+	threadComment commentobjectdb.DBObjectCommentFields
 
-// ImportExternalThreads replaces all existing threads for the objects from the given external service
-// with a new set of threads.
-func ImportExternalThreads(ctx context.Context, repo api.RepoID, externalServiceID int64, toImport map[*dbThread]commentobjectdb.DBObjectCommentFields) error {
+	comments []*comments.ExternalComment
+}
+
+var MockImportExternalThreads func(repo api.RepoID, externalServiceID int64, toImport []*externalThread) error
+
+// ImportExternalThreads replaces all existing threads for the objects from the given external
+// service with a new set of threads.
+func ImportExternalThreads(ctx context.Context, repo api.RepoID, externalServiceID int64, toImport []*externalThread) error {
 	if MockImportExternalThreads != nil {
 		return MockImportExternalThreads(repo, externalServiceID, toImport)
 	}
@@ -42,20 +50,32 @@ func ImportExternalThreads(ctx context.Context, repo api.RepoID, externalService
 	}
 
 	// Delete all existing threads for the repository from the given external service.
+	//
+	// TODO!(sqs): if a user replied to an external thread on Sourcegraph and that reply wasnt
+	// persisted to the code host, their reply will be cascade-deleted
 	if err := (dbThreads{}).Delete(ctx, tx, opt); err != nil {
 		return err
 	}
 
 	// Insert the new threads.
-	for thread, comment := range toImport {
-		if thread.ImportedFromExternalServiceID != externalServiceID {
+	for _, x := range toImport {
+		if x.thread.ImportedFromExternalServiceID != externalServiceID {
 			panic("external service ID mismatch")
 		}
-		if thread.ExternalID == "" {
+		if x.thread.ExternalID == "" {
 			panic("thread has no external ID")
 		}
-		if _, err := (dbThreads{}).Create(ctx, tx, thread, comment); err != nil {
+		dbThread, err := (dbThreads{}).Create(ctx, tx, x.thread, x.threadComment)
+		if err != nil {
 			return err
+		}
+
+		for _, comment := range x.comments {
+			tmp := *comment
+			tmp.ThreadPrimaryCommentID = dbThread.PrimaryCommentID
+			if err := comments.CreateExternalCommentReply(ctx, tx, tmp); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

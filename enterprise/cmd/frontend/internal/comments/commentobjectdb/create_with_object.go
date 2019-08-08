@@ -52,6 +52,8 @@ func CreateCommentWithObject(ctx context.Context, tx *sql.Tx, comment DBObjectCo
 	dbComment := &internal.DBComment{
 		AuthorUserID: comment.AuthorUserID,
 		Body:         comment.Body,
+		CreatedAt:    comment.CreatedAt,
+		UpdatedAt:    comment.UpdatedAt,
 	}
 	if comment.AuthorExternalActorUsername != "" {
 		dbComment.AuthorExternalActorUsername.String = comment.AuthorExternalActorUsername

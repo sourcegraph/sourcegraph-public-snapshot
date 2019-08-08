@@ -9,6 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -29,7 +30,7 @@ func ImportGitHubRepositoryThreads(ctx context.Context, repoID api.RepoID, extRe
 		return err
 	}
 
-	toImport := make(map[*dbThread]commentobjectdb.DBObjectCommentFields, len(results))
+	toImport := make([]*externalThread, 0, len(results))
 	for _, result := range results {
 		// Skip cross-repository PRs because we don't handle those yet.
 		if result.IsCrossRepository {
@@ -40,10 +41,20 @@ func ImportGitHubRepositoryThreads(ctx context.Context, repoID api.RepoID, extRe
 			continue
 		}
 
-		thread, comment := githubIssueOrPullRequestToThread(result)
+		thread, threadComment := githubIssueOrPullRequestToThread(result)
 		thread.RepositoryID = repoID
 		thread.ImportedFromExternalServiceID = externalServiceID
-		toImport[thread] = comment
+
+		replyComments := make([]*comments.ExternalComment, len(result.Comments.Nodes))
+		for i, c := range result.Comments.Nodes {
+			replyComments[i] = githubIssueCommentToExternalComment(c)
+		}
+
+		toImport = append(toImport, &externalThread{
+			thread:        thread,
+			threadComment: threadComment,
+			comments:      replyComments,
+		})
 	}
 	return ImportExternalThreads(ctx, repoID, externalServiceID, toImport)
 }
@@ -74,14 +85,27 @@ func githubIssueOrPullRequestToThread(v *githubIssueOrPullRequest) (*dbThread, c
 	}
 
 	comment := commentobjectdb.DBObjectCommentFields{
-		Body: v.Body,
-		// TODO!(sqs): map to sourcegraph user if possible
-		AuthorExternalActorUsername: v.Author.Login,
-		AuthorExternalActorURL:      v.Author.URL,
-		CreatedAt:                   v.CreatedAt,
-		UpdatedAt:                   v.UpdatedAt,
+		Body:      v.Body,
+		CreatedAt: v.CreatedAt,
+		UpdatedAt: v.UpdatedAt,
 	}
+	githubActorSetDBObjectCommentFields(v.Author, &comment)
 	return thread, comment
+}
+
+func githubActorSetDBObjectCommentFields(actor *githubActor, f *commentobjectdb.DBObjectCommentFields) {
+	// TODO!(sqs): map to sourcegraph user if possible
+	f.AuthorExternalActorUsername = actor.Login
+	f.AuthorExternalActorURL = actor.URL
+}
+
+func githubIssueCommentToExternalComment(v *githubIssueComment) *comments.ExternalComment {
+	comment := comments.ExternalComment{}
+	githubActorSetDBObjectCommentFields(v.Author, &comment.DBObjectCommentFields)
+	comment.CreatedAt = v.CreatedAt
+	comment.UpdatedAt = v.UpdatedAt
+	comment.Body = v.Body
+	return &comment
 }
 
 type githubIssueOrPullRequest struct {
@@ -100,11 +124,23 @@ type githubIssueOrPullRequest struct {
 	URL               string       `json:"url"`
 	State             string       `json:"state"`
 	Author            *githubActor `json:"author"`
+	Comments          struct {
+		Nodes []*githubIssueComment `json:"nodes"`
+	} `json:"comments"`
 }
 
 type githubRef struct {
 	Name   string `json:"name"`
 	Prefix string `json:"prefix"`
+}
+
+type githubIssueComment struct {
+	ID        graphql.ID   `json:"id"`
+	Author    *githubActor `json:"author"`
+	Body      string       `json:"body"`
+	URL       string       `json:"url"`
+	CreatedAt time.Time    `json:"createdAt"`
+	UpdatedAt time.Time    `json:"updatedAt"`
 }
 
 const (
@@ -119,9 +155,16 @@ updatedAt
 url
 state
 author {
-	... on User {
-		login
+	...ActorFields
+}
+comments(first: 10) {
+	nodes {
+		id
+		author { ... ActorFields  }
+		body
 		url
+		createdAt
+		updatedAt
 	}
 }
 `
@@ -157,7 +200,7 @@ query ImportGitHubRepositoryIssuesAndPullRequests($repository: ID!) {
 		}
 	}
 }
-`, map[string]interface{}{
+`+githubActorFieldsFragment, map[string]interface{}{
 		"repository": githubRepositoryID,
 	}, &data); err != nil {
 		return nil, err

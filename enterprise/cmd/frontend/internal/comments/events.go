@@ -8,10 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
 )
 
-const eventTypeComment events.Type = "Comment"
+const EventTypeComment events.Type = "Comment"
 
 func init() {
-	events.Register(eventTypeComment, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
+	events.Register(EventTypeComment, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
 		dbComment, err := internal.DBComments{}.GetByID(ctx, data.Comment)
 		if err != nil {
 			return err

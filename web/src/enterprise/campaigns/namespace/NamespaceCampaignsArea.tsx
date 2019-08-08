@@ -65,55 +65,53 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
     )
 
     return (
-        <>
-            <Switch>
-                <Route path={context.campaignsURL} exact={true}>
-                    {breadcrumbs}
-                    <NamespaceCampaignsListPage {...context} newCampaignURL={newCampaignURL} />
-                </Route>
-                <Route path={newCampaignURL} exact={true}>
-                    {breadcrumbs}
-                    <CampaignsNewPage {...context} />
-                </Route>
-                <Route
-                    path={`${context.campaignsURL}/preview/:campaignID`}
-                    // tslint:disable-next-line:jsx-no-lambda
-                    render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
-                        <>
-                            <div className="container">{breadcrumbs}</div>
-                            {removeHeader}
-                            <CampaignPreviewPage
-                                {...context}
-                                {...routeComponentProps}
-                                platformContext={props.platformContext}
-                            />
-                        </>
-                    )}
+        <Switch>
+            <Route path={context.campaignsURL} exact={true}>
+                {breadcrumbs}
+                <NamespaceCampaignsListPage {...context} newCampaignURL={newCampaignURL} />
+            </Route>
+            <Route path={newCampaignURL} exact={true}>
+                {breadcrumbs}
+                <CampaignsNewPage {...context} />
+            </Route>
+            <Route
+                path={`${context.campaignsURL}/preview/:campaignID`}
+                // tslint:disable-next-line:jsx-no-lambda
+                render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
+                    <>
+                        <div className="container">{breadcrumbs}</div>
+                        {removeHeader}
+                        <CampaignPreviewPage
+                            {...context}
+                            {...routeComponentProps}
+                            platformContext={props.platformContext}
+                        />
+                    </>
+                )}
+            />
+            <Route
+                path={`${context.campaignsURL}/:campaignID`}
+                // tslint:disable-next-line:jsx-no-lambda
+                render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
+                    <>
+                        {removeHeader}
+                        <CampaignArea
+                            {...context}
+                            {...routeComponentProps}
+                            campaignID={routeComponentProps.match.params.campaignID}
+                            header={breadcrumbs}
+                            platformContext={props.platformContext}
+                        />
+                    </>
+                )}
+            />
+            <Route>
+                <HeroPage
+                    icon={MapSearchIcon}
+                    title="404: Not Found"
+                    subtitle="Sorry, the requested page was not found."
                 />
-                <Route
-                    path={`${context.campaignsURL}/:campaignID`}
-                    // tslint:disable-next-line:jsx-no-lambda
-                    render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
-                        <>
-                            {removeHeader}
-                            <CampaignArea
-                                {...context}
-                                {...routeComponentProps}
-                                campaignID={routeComponentProps.match.params.campaignID}
-                                header={breadcrumbs}
-                                platformContext={props.platformContext}
-                            />
-                        </>
-                    )}
-                />
-                <Route>
-                    <HeroPage
-                        icon={MapSearchIcon}
-                        title="404: Not Found"
-                        subtitle="Sorry, the requested page was not found."
-                    />
-                </Route>
-            </Switch>
-        </>
+            </Route>
+        </Switch>
     )
 }

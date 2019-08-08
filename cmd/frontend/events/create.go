@@ -43,11 +43,11 @@ type CreationData struct {
 var MockCreateEvent func(CreationData) error
 
 // CreateEvent creates an event in the database.
-func CreateEvent(ctx context.Context, event CreationData) error {
+func CreateEvent(ctx context.Context, tx *sql.Tx, event CreationData) error {
 	if MockCreateEvent != nil {
 		return MockCreateEvent(event)
 	}
-	return createEvent(ctx, nil, event, 0)
+	return createEvent(ctx, tx, event, 0)
 }
 
 func createEvent(ctx context.Context, tx *sql.Tx, event CreationData, importedFromExternalServiceID int64) error {

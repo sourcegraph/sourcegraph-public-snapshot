@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
@@ -47,6 +48,10 @@ func TestGraphQL_AddCommentReply(t *testing.T) {
 		tmp.ID = 2
 		return &tmp, nil
 	}
+	events.MockCreateEvent = func(event events.CreationData) error {
+		return nil
+	}
+	defer func() { events.MockCreateEvent = nil }()
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{

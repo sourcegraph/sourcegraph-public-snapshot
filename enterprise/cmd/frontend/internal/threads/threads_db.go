@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"strings"
 	"time"
 
@@ -30,9 +31,6 @@ type dbThread struct {
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 
-	// Issue
-	DiagnosticsData json.RawMessage
-
 	// Changeset
 	BaseRef          string
 	BaseRefOID       string
@@ -51,7 +49,7 @@ var errThreadNotFound = errors.New("thread not found")
 
 type dbThreads struct{}
 
-const SelectColumns = "id, repository_id, title, state, is_preview, primary_comment_id, created_at, updated_at, diagnostics_data, base_ref, base_ref_oid, head_repository_id, head_ref, head_ref_oid, imported_from_external_service_id, external_id, external_metadata"
+const SelectColumns = "id, repository_id, title, state, is_preview, primary_comment_id, created_at, updated_at, base_ref, base_ref_oid, head_repository_id, head_ref, head_ref_oid, imported_from_external_service_id, external_id, external_metadata"
 
 // Create creates a thread. The thread argument's (Thread).ID field is ignored. The new thread is
 // returned.
@@ -72,6 +70,8 @@ func (dbThreads) Create(ctx context.Context, tx *sql.Tx, thread *dbThread, comme
 		return t
 	}
 
+	log.Println("CREATEDAT", thread.CreatedAt, thread.CreatedAt.IsZero())
+
 	return thread, commentobjectdb.CreateCommentWithObject(ctx, tx, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
 		args := []interface{}{
 			thread.RepositoryID,
@@ -81,7 +81,6 @@ func (dbThreads) Create(ctx context.Context, tx *sql.Tx, thread *dbThread, comme
 			commentID,
 			nowIfZeroTime(thread.CreatedAt),
 			nowIfZeroTime(thread.UpdatedAt),
-			nnz.JSON(thread.DiagnosticsData),
 			nnz.String(thread.BaseRef),
 			nnz.String(thread.BaseRefOID),
 			nnz.Int32(thread.HeadRepositoryID),
@@ -258,7 +257,6 @@ func (dbThreads) scanRow(row interface {
 		&t.PrimaryCommentID,
 		&t.CreatedAt,
 		&t.UpdatedAt,
-		nnz.ToJSON(&t.DiagnosticsData),
 		(*nnz.String)(&t.BaseRef),
 		(*nnz.String)(&t.BaseRefOID),
 		nnz.ToInt32(&t.HeadRepositoryID),

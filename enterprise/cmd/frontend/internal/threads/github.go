@@ -47,3 +47,16 @@ type githubActor struct {
 	Login string `json:"login"`
 	URL   string `json:"url"`
 }
+
+const githubActorFieldsFragment = `
+fragment ActorFields on Actor {
+	... on User {
+		login
+		url
+	}
+	... on Bot {
+		login
+		url
+	}
+}
+`

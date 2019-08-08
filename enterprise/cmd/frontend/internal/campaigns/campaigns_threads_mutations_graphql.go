@@ -31,7 +31,7 @@ func addRemoveThreadsToFromCampaign(ctx context.Context, campaignID graphql.ID, 
 	}
 
 	createEvent := func(ctx context.Context, eventType events.Type, threadDBID int64) error {
-		return events.CreateEvent(ctx, events.CreationData{
+		return events.CreateEvent(ctx, nil, events.CreationData{
 			Type: eventType,
 			Objects: events.Objects{
 				Campaign: campaign.db.ID,

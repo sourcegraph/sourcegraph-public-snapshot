@@ -28,7 +28,7 @@ func TestCreateEvent(t *testing.T) {
 		return nil, nil
 	}
 
-	if err := CreateEvent(nil, creationData); err != nil {
+	if err := CreateEvent(nil, nil, creationData); err != nil {
 		t.Fatal(err)
 	}
 }

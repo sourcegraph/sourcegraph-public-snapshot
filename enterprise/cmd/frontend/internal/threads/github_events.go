@@ -20,7 +20,6 @@ const (
 	eventTypeMergeThread                 = "MergeThread"
 	eventTypeCloseThread                 = "CloseThread"
 	eventTypeReopenThread                = "ReopenThread"
-	eventTypeCommentOnThread             = "CommentOnThread"
 )
 
 func init() {
@@ -82,17 +81,6 @@ func init() {
 			return err
 		}
 		toEvent.CloseThreadEvent = &graphqlbackend.CloseThreadEvent{
-			EventCommon: common,
-			Thread_:     thread,
-		}
-		return nil
-	})
-	events.Register(eventTypeCommentOnThread, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
-		thread, err := threadByDBID(ctx, data.Thread)
-		if err != nil {
-			return err
-		}
-		toEvent.CommentOnThreadEvent = &graphqlbackend.CommentOnThreadEvent{
 			EventCommon: common,
 			Thread_:     thread,
 		}
@@ -171,7 +159,6 @@ var githubEventTypes = map[string]events.Type{
 	"MergedEvent":          eventTypeMergeThread,
 	"ClosedEvent":          eventTypeCloseThread,
 	"ReopenedEvent":        eventTypeReopenThread,
-	"IssueComment":         eventTypeCommentOnThread,
 }
 
 type githubPullRequestOrIssueTimelineData struct {
@@ -196,7 +183,7 @@ const (
 			author { ...ActorFields }
 			createdAt
 `
-	githubIssueOrPullRequestEventCommonTimelineItemTypes = `CLOSED_EVENT, REOPENED_EVENT, ISSUE_COMMENT`
+	githubIssueOrPullRequestEventCommonTimelineItemTypes = `CLOSED_EVENT, REOPENED_EVENT`
 	githubIssueOrPullRequestEventCommonQuery             = `
 ... on ClosedEvent {
 	id
@@ -206,12 +193,6 @@ const (
 ... on ReopenedEvent {
 	id
 	actor { ... ActorFields }
-	createdAt
-}
-... on IssueComment {
-	id
-	author { ... ActorFields  }
-	url
 	createdAt
 }
 `
@@ -260,15 +241,7 @@ query ImportGitHubThreadEvents($issueOrPullRequest: ID!) {
 		}
 	}
 }
-
-fragment ActorFields on Actor {
-	__typename
-	... on User {
-		login
-		url
-	}
-}
-`, map[string]interface{}{
+`+githubActorFieldsFragment, map[string]interface{}{
 		"issueOrPullRequest": githubIssueOrPullRequestID,
 	}, &data); err != nil {
 		return nil, err

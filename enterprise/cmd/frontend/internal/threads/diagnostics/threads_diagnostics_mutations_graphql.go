@@ -37,7 +37,7 @@ func (GraphQLResolver) AddDiagnosticsToThread(ctx context.Context, arg *graphqlb
 		if err != nil {
 			return nil, err
 		}
-		if err := events.CreateEvent(ctx, events.CreationData{
+		if err := events.CreateEvent(ctx, nil, events.CreationData{
 			Type: eventTypeAddDiagnosticToThread,
 			Objects: events.Objects{
 				Thread:               threadID,
@@ -82,7 +82,7 @@ func (GraphQLResolver) RemoveDiagnosticsFromThread(ctx context.Context, arg *gra
 			return nil, err
 		}
 
-		if err := events.CreateEvent(ctx, events.CreationData{
+		if err := events.CreateEvent(ctx, nil, events.CreationData{
 			Type: eventTypeRemoveDiagnosticFromThread,
 			Objects: events.Objects{
 				Thread: threadID,
