@@ -234,4 +234,12 @@ Key insight is that there is no meaningful distinction between issues and change
 
 ## Monitor existing campaign
 
+## Create new campaign to deprecate
+
+1. Go to Campaigns
+1. Select the organization that will own the campaign
+1. Select the type of campaign
+
+Campaign rules
+
 ## Eliminate code duplication

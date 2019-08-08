@@ -424,8 +424,15 @@ type Mutation {
     # Remove threads from a campaign.
     removeThreadsFromCampaign(campaign: ID!, threads: [ID!]!): EmptyResponse
 
-    # Mutations related to rules.
-    rules: RulesMutation!
+    # Create a rule. Returns the newly created rule.
+    createRule(input: CreateRuleInput!): Rule!
+
+    # Update a rule. Returns the updated rule.
+    updateRule(input: UpdateRuleInput!): Rule!
+
+    # Delete a rule. All objects that were associated with or created by this rule remain (and are
+    # not deleted when the rule is deleted).
+    deleteRule(rule: ID!): EmptyResponse
 }
 
 # Mutations related to projects.
@@ -1034,6 +1041,9 @@ type Query {
         # Returns campaigns that contain this object (such as a thread).
         object: ID
     ): CampaignConnection!
+
+    # A rule container by ID.
+    ruleContainer(id: ID!): RuleContainer
 
     # Look up a project.
     project(idWithoutKind: String!): Project
@@ -4339,7 +4349,7 @@ enum ThreadKind {
 }
 
 # A thread is collection of comments, diagnostics, and changes.
-type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & Commentable & CampaignNode & Labelable {
+type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & Commentable & CampaignNode & Labelable & RuleContainer {
     # The unique ID for the thread.
     id: ID!
 
@@ -4436,6 +4446,12 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
         # Returns the first n labels from the list.
         first: Int
     ): LabelConnection!
+
+    # A list of rules that are defined in this campaign.
+    rules(
+        # Return the first n results.
+        first: Int
+    ): RuleConnection!
 }
 
 # A list of threads.
@@ -4535,9 +4551,6 @@ input CreateCampaignInput {
 
     # Whether the campaign is a preview.
     preview: Boolean
-
-    # The JSON rules array for this campaign. TODO!(sqs)
-    rules: String
 }
 
 # Input arguments for updating a campaign.
@@ -4551,13 +4564,10 @@ input UpdateCampaignInput {
     # The new description of the campaign as Markdown. If it is the non-null empty string, the description is
     # set to null.
     body: String
-
-    # The new JSON rules array for this campaign. TODO!(sqs)
-    rules: String
 }
 
 # A campaign is a collection of threads.
-type Campaign implements Node & Comment & Commentable {
+type Campaign implements Node & Comment & Commentable & RuleContainer {
     # The unique ID for the campaign.
     id: ID!
 
@@ -4578,9 +4588,6 @@ type Campaign implements Node & Comment & Commentable {
 
     # Whether this campaign is a preview.
     isPreview: Boolean!
-
-    # TODO!(sqs) The JSON rules array for this campaign.
-    rules: String!
 
     # The actor who authored the comment.
     author: Actor
@@ -4648,6 +4655,12 @@ type Campaign implements Node & Comment & Commentable {
         # Only include the specified event types. TODO!(sqs): make this an enum?
         types: [String!]
     ): CampaignTimelineItemConnection!
+
+    # A list of rules that are defined in this campaign.
+    rules(
+        # Return the first n results.
+        first: Int
+    ): RuleConnection!
 }
 
 # A burndown chart of the states of the campaign's threads  over time.
@@ -4683,23 +4696,10 @@ type CampaignConnection {
     pageInfo: PageInfo!
 }
 
-# Mutations related to rules.
-type RulesMutation {
-    # Create a rule associated with a project. Returns the newly created rule.
-    createRule(input: CreateRuleInput!): Rule!
-
-    # Update a rule. Returns the updated rule.
-    updateRule(input: UpdateRuleInput!): Rule!
-
-    # Delete a rule. All objects that were associated with or created by this rule remain (and are
-    # not deleted when the rule is deleted).
-    deleteRule(rule: ID!): EmptyResponse
-}
-
 # Input arguments for creating a rule.
 input CreateRuleInput {
-    # The ID of the project where this rule is defined.
-    project: ID!
+    # The object where the rule is defined.
+    container: ID!
 
     # The name of the rule.
     name: String!
@@ -4707,8 +4707,8 @@ input CreateRuleInput {
     # The (optional) description of the rule.
     description: String
 
-    # The JSON settings object for the rule.
-    settings: String
+    # The definition of the rule as JSONC (with comments and trailing commas allowed).
+    definition: JSONValue!
 }
 
 # Input arguments for updating a rule.
@@ -4719,11 +4719,26 @@ input UpdateRuleInput {
     # The new name of the rule (if non-null).
     name: String
 
-    # The new description of the rule. If it is the non-null empty string, the description is set to null.
+    # The new description of the rule. If it is the non-null empty string, the description is set to
+    # null.
     description: String
 
-    # The new JSON settings object for the rule (if non-null).
-    settings: String
+    # The new definition of the rule (if non-null) as JSONC (with comments and trailing commas allowed).
+    definition: JSONValue
+}
+
+# TODO!(sqs): introduce this type, it could be useful
+type JSONCValue {
+    input: String!
+    parsed: JSONValue!
+}
+
+interface RuleContainer {
+    # A list of rules that are defined in this container object.
+    rules(
+        # Return the first n results.
+        first: Int
+    ): RuleConnection!
 }
 
 # A rule describes a condition and an action that should be taken when the condition is true.
@@ -4731,8 +4746,8 @@ type Rule implements Node {
     # The unique ID for the rule.
     id: ID!
 
-    # The project where this rule is defined.
-    project: Project!
+    # The object where this rule is defined.
+    container: RuleContainer!
 
     # The name of the rule.
     name: String!
@@ -4740,8 +4755,8 @@ type Rule implements Node {
     # The (optional) description of the rule.
     description: String
 
-    # The JSON settings object for the rule (in JSONC, with comments and trailing commas allowed).
-    settings: String!
+    # The definition of the rule.
+    definition: JSONCValue!
 
     # The URL to this rule.
     url: String!
