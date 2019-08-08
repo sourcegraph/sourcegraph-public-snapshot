@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Label } from '../../../components/Label'
-import { UpdateLabelForm } from './EditLabelForm'
+import { EditLabelForm } from './EditLabelForm'
 import { LabelDeleteButton } from './LabelDeleteButton'
 
 interface Props extends ExtensionsControllerProps {
@@ -21,7 +21,7 @@ export const LabelRow: React.FunctionComponent<Props> = ({ label, onLabelUpdate,
     const toggleIsEditing = useCallback(() => setIsEditing(!isEditing), [isEditing])
 
     return isEditing ? (
-        <UpdateLabelForm label={label} onLabelUpdate={onLabelUpdate} onDismiss={toggleIsEditing} />
+        <EditLabelForm label={label} onLabelUpdate={onLabelUpdate} onDismiss={toggleIsEditing} />
     ) : (
         <div className="d-flex align-items-center flex-wrap">
             <div className="flex-1">

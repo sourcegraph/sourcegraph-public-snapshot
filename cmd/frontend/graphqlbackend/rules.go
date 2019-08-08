@@ -124,6 +124,7 @@ type Rule interface {
 	Definition() JSONC
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
+	URL(context.Context) (string, error)
 	Updatable
 }
 

@@ -10,6 +10,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import { InfoSidebar, InfoSidebarSection } from '../../../components/infoSidebar/InfoSidebar'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { WithSidebar } from '../../../components/withSidebar/WithSidebar'
+import { RulesList } from '../../rules/list/RulesList'
 import { CampaignDeleteButton } from '../common/CampaignDeleteButton'
 import { CampaignForceRefreshButton } from '../common/CampaignForceRefreshButton'
 import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsArea'
@@ -20,7 +21,6 @@ import { CampaignRepositoriesList } from './repositories/CampaignRepositoriesLis
 import { CampaignRulesListOLD } from './rules/CampaignRulesListOLD'
 import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
 import { useCampaignByID } from './useCampaignByID'
-import { RulesList } from '../../rules/list/RulesList'
 
 export interface CampaignAreaContext
     extends Pick<NamespaceCampaignsAreaContext, Exclude<keyof NamespaceCampaignsAreaContext, 'namespace'>> {
@@ -145,7 +145,9 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                     {
                         title: 'Rules',
                         path: '/rules',
-                        render: () => <RulesList {...context} container={campaign} className={PAGE_CLASS_NAME} />,
+                        render: ({ match }) => (
+                            <RulesList {...context} container={campaign} match={match} className={PAGE_CLASS_NAME} />
+                        ),
                     },
                     {
                         title: 'RulesOLD',

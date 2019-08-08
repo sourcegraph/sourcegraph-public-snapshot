@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
@@ -6,7 +7,6 @@ import { RouteDescriptor } from '../../util/contributions'
 import { ErrorBoundary } from '../ErrorBoundary'
 import { HeroPage } from '../HeroPage'
 import { OverviewPagesAreaNavbar } from './navbar/OverviewPagesAreaNavbar'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 /**
  * @template P The props passed to the subcomponents of the {@link OverviewPagesArea}.

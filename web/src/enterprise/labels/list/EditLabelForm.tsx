@@ -35,14 +35,9 @@ interface Props {
 }
 
 /**
- * A form to update a label.
+ * A form to edit a label.
  */
-export const UpdateLabelForm: React.FunctionComponent<Props> = ({
-    label,
-    onDismiss,
-    onLabelUpdate,
-    className = '',
-}) => {
+export const EditLabelForm: React.FunctionComponent<Props> = ({ label, onDismiss, onLabelUpdate, className = '' }) => {
     const [isLoading, setIsLoading] = useState(false)
     const onSubmit = useCallback(
         async ({ name, color, description }: LabelFormData) => {

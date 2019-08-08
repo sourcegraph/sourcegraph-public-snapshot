@@ -16,6 +16,7 @@ export const RuleFragment = gql`
         }
         createdAt
         updatedAt
+        url
         viewerCanUpdate
     }
 `

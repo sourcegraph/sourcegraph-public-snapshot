@@ -1,3 +1,4 @@
+import H from 'history'
 import React, { useCallback, useState } from 'react'
 import { map, mapTo } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
@@ -32,12 +33,19 @@ interface Props {
     onRuleCreate: () => void
 
     className?: string
+    history: H.History
 }
 
 /**
  * A form to create a new rule.
  */
-export const NewRuleForm: React.FunctionComponent<Props> = ({ container, onDismiss, onRuleCreate, className = '' }) => {
+export const NewRuleForm: React.FunctionComponent<Props> = ({
+    container,
+    onDismiss,
+    onRuleCreate,
+    className = '',
+    history,
+}) => {
     const [isLoading, setIsLoading] = useState(false)
     const onSubmit = useCallback(
         async ({ name, description, definition }: RuleFormData) => {
@@ -57,11 +65,13 @@ export const NewRuleForm: React.FunctionComponent<Props> = ({ container, onDismi
 
     return (
         <RuleForm
+            header={<h2>New rule</h2>}
             onDismiss={onDismiss}
             onSubmit={onSubmit}
             buttonText="Create rule"
             isLoading={isLoading}
             className={className}
+            history={history}
         />
     )
 }

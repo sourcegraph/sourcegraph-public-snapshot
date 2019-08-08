@@ -1,48 +1,101 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { useCallback, useState } from 'react'
+import H from 'history'
+import React, { useCallback } from 'react'
+import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Link } from 'react-router-dom'
+import { Modal } from 'reactstrap'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { pluralize } from '../../../../../shared/src/util/strings'
 import { useRules } from '../useRules'
+import { EditRuleForm } from './EditRuleForm'
 import { NewRuleForm } from './NewRuleForm'
 import { RuleRow } from './RuleRow'
+
+const FormModal: React.FunctionComponent<{ toggle: () => void }> = ({ toggle, children }) => (
+    <Modal
+        isOpen={true}
+        autoFocus={true}
+        backdrop={true}
+        centered={true}
+        scrollable={true}
+        fade={false}
+        toggle={toggle}
+        className="container mx-auto"
+    >
+        {children}
+    </Modal>
+)
 
 const LOADING: 'loading' = 'loading'
 
 interface Props extends ExtensionsControllerProps {
     container: Pick<GQL.RuleContainer, 'id'>
 
+    /**
+     * The base URL of the area.
+     */
+    match: { url: string }
+
     className?: string
+    history: H.History
 }
 
 /**
  * A list of rules in a rule container.
  */
-export const RulesList: React.FunctionComponent<Props> = ({ container, className = '', ...props }) => {
+export const RulesList: React.FunctionComponent<Props> = ({ container, match, className = '', history, ...props }) => {
     const [rules, onRulesUpdate] = useRules(container)
 
-    const [isShowingNewRuleForm, setIsShowingNewRuleForm] = useState(false)
-    const toggleIsShowingNewRuleForm = useCallback(() => setIsShowingNewRuleForm(!isShowingNewRuleForm), [
-        isShowingNewRuleForm,
-    ])
+    const dismissNewRuleForm = useCallback(() => history.replace(match.url), [history, match.url])
 
     return (
         <div className={`rules-list ${className}`}>
             <div className="d-flex align-items-center justify-content-between mb-3">
                 <h2 className="mb-0">Rules</h2>
-                <button type="button" className="btn btn-success" onClick={toggleIsShowingNewRuleForm}>
+                <Link to={`${match.url}/new`} className="btn btn-success">
                     New rule
-                </button>
+                </Link>
             </div>
-            {isShowingNewRuleForm && (
-                <NewRuleForm
-                    container={container}
-                    onDismiss={toggleIsShowingNewRuleForm}
-                    onRuleCreate={onRulesUpdate}
-                    className="my-3 p-3 border"
+            <Switch>
+                <Route path={`${match.url}/new`}>
+                    <FormModal
+                        toggle={dismissNewRuleForm} // TODO!(sqs) prompt to save
+                    >
+                        <NewRuleForm
+                            container={container}
+                            onDismiss={dismissNewRuleForm}
+                            onRuleCreate={onRulesUpdate}
+                            className="p-4"
+                            history={history}
+                        />
+                    </FormModal>
+                </Route>
+                <Route
+                    path={`${match.url}/:ruleID`}
+                    // tslint:disable-next-line: jsx-no-lambda
+                    render={(routeComponentProps: RouteComponentProps<{ ruleID: string }>) => {
+                        const rule =
+                            rules !== LOADING && !isErrorLike(rules)
+                                ? rules.nodes.find(r => r.id === routeComponentProps.match.params.ruleID)
+                                : undefined
+                        return rule ? (
+                            <FormModal toggle={dismissNewRuleForm}>
+                                <EditRuleForm
+                                    rule={{ ...rule, definition: rule.definition.raw }}
+                                    onRuleUpdate={onRulesUpdate}
+                                    onDismiss={dismissNewRuleForm}
+                                    className="p-4"
+                                    history={history}
+                                />
+                            </FormModal>
+                        ) : (
+                            <div className="alert alert-danger mb-3">Rule to edit not found</div>
+                        )
+                    }}
                 />
-            )}
+            </Switch>
             {rules === LOADING ? (
                 <LoadingSpinner className="icon-inline mt-3" />
             ) : isErrorLike(rules) ? (

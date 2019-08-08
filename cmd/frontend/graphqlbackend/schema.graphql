@@ -4778,6 +4778,9 @@ type Rule implements Node & Updatable {
     # The date and time when the rule was updated.
     updatedAt: DateTime!
 
+    # The URL to the rule.
+    url: String!
+
     # Whether the viewer can update this rule.
     viewerCanUpdate: Boolean!
 }

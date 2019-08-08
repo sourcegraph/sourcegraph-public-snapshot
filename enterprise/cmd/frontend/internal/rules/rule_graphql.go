@@ -2,6 +2,7 @@ package rules
 
 import (
 	"context"
+	"path"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
@@ -54,6 +55,28 @@ func (v *gqlRule) Definition() graphqlbackend.JSONC { return graphqlbackend.JSON
 func (v *gqlRule) CreatedAt() graphqlbackend.DateTime { return graphqlbackend.DateTime{v.db.CreatedAt} }
 
 func (v *gqlRule) UpdatedAt() graphqlbackend.DateTime { return graphqlbackend.DateTime{v.db.UpdatedAt} }
+
+func (v *gqlRule) URL(ctx context.Context) (string, error) {
+	toContainer, err := v.Container(ctx)
+	if err != nil {
+		return "", err
+	}
+	var containerURL string
+	if u, ok := toContainer.RuleContainer().(interface {
+		URL(context.Context) (string, error)
+	}); ok {
+		var err error
+		containerURL, err = u.URL(ctx)
+		if err != nil {
+			return "", err
+		}
+	} else if u, ok := toContainer.RuleContainer().(interface{ URL() string }); ok {
+		containerURL = u.URL()
+	} else {
+		return "", errors.New("unable to get rule container URL")
+	}
+	return path.Join(containerURL, "rules", string(v.ID())), nil
+}
 
 func (v *gqlRule) ViewerCanUpdate(ctx context.Context) (bool, error) {
 	toContainer, err := v.Container(ctx)
