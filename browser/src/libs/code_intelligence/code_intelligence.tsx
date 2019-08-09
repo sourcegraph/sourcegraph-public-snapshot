@@ -849,13 +849,9 @@ export async function injectCodeIntelligenceToCodeHost(
     subscriptions.add(extensionsController)
 
     let codeHostSubscription: Subscription
-    observeStorageKey('sync', 'featureFlags').subscribe(featureFlags => {
-        const { disableExtension } = {
-            ...featureFlagDefaults,
-            ...featureFlags,
-        }
-
+    observeStorageKey('sync', 'disableExtension').subscribe(disableExtension => {
         if (disableExtension) {
+            // We don't need to unsubscribe if the extension starts with disabled state.
             if (codeHostSubscription) {
                 codeHostSubscription.unsubscribe()
                 subscriptions.remove(codeHostSubscription)

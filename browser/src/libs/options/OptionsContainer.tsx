@@ -6,6 +6,7 @@ import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
 import { ConnectionErrors } from './ServerURLForm'
+import { observeStorageKey, storage } from '../../browser/storage'
 
 export interface OptionsContainerProps {
     sourcegraphURL: string
@@ -107,6 +108,12 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
 
     public componentDidMount(): void {
         this.urlUpdates.next(this.state.sourcegraphURL)
+
+        observeStorageKey('sync', 'disableExtension').subscribe(disableExtension => {
+            this.setState({
+                isActivated: !disableExtension,
+            })
+        })
     }
     public componentDidUpdate(): void {
         this.urlUpdates.next(this.props.sourcegraphURL)
@@ -147,15 +154,10 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         }))
     }
 
-    private handleToggleActivationClick = (value: boolean) => {
+    private handleToggleActivationClick = async (value: boolean) => {
         this.setState(() => ({
             isActivated: value,
         }))
-        // alert(this.state.isActivated)
-        // if (this.state.isActivated) {
-        //     codeIntelSubscription.unsubscribe()
-        // } else {
-        //     console.log('noop')
-        // }
+        await storage.sync.set({ disableExtension: !value })
     }
 }

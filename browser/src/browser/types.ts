@@ -33,18 +33,12 @@ export interface FeatureFlags {
      * Support completion in text fields (such as on GitHub issues).
      */
     experimentalTextFieldCompletion: boolean
-
-    /**
-     * Support temporarily disable the browser extension features.
-     */
-    disableExtension: boolean
 }
 
 export const featureFlagDefaults: FeatureFlags = {
     allowErrorReporting: false,
     experimentalLinkPreviews: false,
     experimentalTextFieldCompletion: false,
-    disableExtension: false,
 }
 
 export interface StorageItems {
@@ -55,6 +49,10 @@ export interface StorageItems {
     repoLocations: RepoLocations
     phabricatorMappings: PhabricatorMapping[]
     sourcegraphAnonymousUid: string
+    /**
+     * Temporarily disable the browser extension features.
+     */
+    disableExtension: boolean
     /**
      * Storage for feature flags.
      */
@@ -85,6 +83,7 @@ export const defaultStorageItems: StorageItems = {
     repoLocations: {},
     phabricatorMappings: [],
     sourcegraphAnonymousUid: '',
+    disableExtension: false,
     featureFlags: featureFlagDefaults,
     clientConfiguration: {
         contentScriptUrls: [],
