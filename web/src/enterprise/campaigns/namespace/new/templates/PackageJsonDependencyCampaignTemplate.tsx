@@ -1,6 +1,7 @@
 import NpmIcon from 'mdi-react/NpmIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { CampaignTemplate, CampaignTemplateComponentContext } from '.'
+import { RuleDefinition } from '../../../../rules/form/definition/RuleDefinitionFormControl'
 
 interface Props extends CampaignTemplateComponentContext {}
 
@@ -34,9 +35,10 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                 // TODO!(sqs): hack
                 {
                     name: 'Find package.json dependencies entries',
-                    definition: {
+                    // tslint:disable-next-line: no-object-literal-type-assertion
+                    definition: JSON.stringify({
                         conditions: `file:(^|/)package\\.json$ '${JSON.stringify(packageNameOrPlaceholder)}'`,
-                    },
+                    } as RuleDefinition),
                 },
             ],
         })

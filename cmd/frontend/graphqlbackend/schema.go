@@ -4710,7 +4710,7 @@ input NewRuleInput {
     description: String
 
     # The definition of the rule as JSONC (with comments and trailing commas allowed).
-    definition: JSONValue!
+    definition: String!
 }
 
 # Input arguments for creating a rule.

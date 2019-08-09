@@ -17,7 +17,7 @@ func TestGraphQL_CreateRule(t *testing.T) {
 		Container:   RuleContainer{Campaign: wantContainerCampaignID},
 		Name:        "n",
 		Description: strptr("d"),
-		Definition:  "h",
+		Definition:  "[1]",
 	}
 	Mocks.Rules.Create = func(rule *DBRule) (*DBRule, error) {
 		if !reflect.DeepEqual(rule, wantRule) {
@@ -34,7 +34,7 @@ func TestGraphQL_CreateRule(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation($container: ID!) {
-					createRule(input: { container: $container, rule: { name: "n", description: "d", definition: "h" } }) {
+					createRule(input: { container: $container, rule: { name: "n", description: "d", definition: "[1]" } }) {
 						id
 						name
 					}
@@ -72,7 +72,7 @@ func TestGraphQL_UpdateRule(t *testing.T) {
 			ID:          2,
 			Name:        "n1",
 			Description: strptr("d1"),
-			Definition:  "h1",
+			Definition:  "true",
 		}, nil
 	}
 
@@ -99,7 +99,7 @@ func TestGraphQL_UpdateRule(t *testing.T) {
 						"name": "n1",
 						"description": "d1",
 						"definition": {
-							"raw": "h1"
+							"raw": "true"
 						}
 					}
 				}

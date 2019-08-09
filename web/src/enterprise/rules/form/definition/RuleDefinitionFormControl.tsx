@@ -20,7 +20,7 @@ interface Props {
     onChange: (value: GQL.IJSONC['raw']) => void
 }
 
-interface RuleDefinition {
+export interface RuleDefinition {
     conditions?: string
     action?: string
 }
