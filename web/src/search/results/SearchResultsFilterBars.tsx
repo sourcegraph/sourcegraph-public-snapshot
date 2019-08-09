@@ -32,16 +32,16 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
 }) => (
     <div className="search-results-filter-bars">
         {isSearchResults(results) &&
-            results.dynamicFilters.filter(filter => isScopeSelected(navbarSearchQuery, filter.value)).length > 0 && (
+            results.dynamicFilters.some(filter => isScopeSelected(navbarSearchQuery, filter.value)) && (
                 <div className="search-results-filter-bars__row">
                     Selected options:
                     <div className="search-results-filter-bars__filters">
                         {results.dynamicFilters
                             .filter(filter => filter.value !== '')
                             .filter(filter => isScopeSelected(navbarSearchQuery, filter.value))
-                            .map((filter, i) => (
+                            .map(filter => (
                                 <FilterChip
-                                    isSelected={isScopeSelected(navbarSearchQuery, filter.value)}
+                                    isSelected={true}
                                     onFilterChosen={onFilterClick}
                                     key={filter.label + filter.value}
                                     value={filter.value}
@@ -52,7 +52,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                 </div>
             )}
         {((isSearchResults(results) &&
-            filters.filter(filter => !isScopeSelected(navbarSearchQuery, filter.value)).length > 0) ||
+            filters.some(filter => !isScopeSelected(navbarSearchQuery, filter.value))) ||
             extensionFilters) && (
             <div className="search-results-filter-bars__row" data-testid="filters-bar">
                 Filters:
@@ -63,7 +63,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                             .filter(filter => !isScopeSelected(navbarSearchQuery, filter.value))
                             .map((filter, i) => (
                                 <FilterChip
-                                    isSelected={isScopeSelected(navbarSearchQuery, filter.value)}
+                                    isSelected={false}
                                     onFilterChosen={onFilterClick}
                                     key={filter.name + filter.value}
                                     value={filter.value}
@@ -75,7 +75,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                         .filter(filter => !isScopeSelected(navbarSearchQuery, filter.value))
                         .map((filter, i) => (
                             <FilterChip
-                                isSelected={isScopeSelected(navbarSearchQuery, filter.value)}
+                                isSelected={false}
                                 onFilterChosen={onFilterClick}
                                 key={filter.name + filter.value}
                                 value={filter.value}
@@ -98,7 +98,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                             .map((filter, i) => (
                                 <FilterChip
                                     name={filter.label}
-                                    isSelected={isScopeSelected(navbarSearchQuery, filter.value)}
+                                    isSelected={false}
                                     onFilterChosen={onFilterClick}
                                     key={filter.value}
                                     value={filter.value}
