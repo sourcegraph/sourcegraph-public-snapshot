@@ -135,37 +135,37 @@ main.go:6:	fmt.Println("Hello world")
 		{protocol.PatternInfo{Pattern: "", IsRegExp: false, IncludePatterns: []string{"\\.png"}, PathPatternsAreRegExps: true, PatternMatchesPath: true}, `
 milton.png
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"", IsCaseSensitive: false, IsRegExp: true, IncludePatterns: []string{}, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:1:package main
 main.go:2:
 main.go:3:import "fmt"
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\\s*import \"fmt\"", IsCaseSensitive: false, IsRegExp: true, IncludePatterns: []string{}, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\\s*import \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:1:package main
 main.go:2:
 main.go:3:import "fmt"
 `},
-		{protocol.PatternInfo{Pattern: "package main\n", IsCaseSensitive: false, IsRegExp: true, IncludePatterns: []string{}, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:1:package main
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, IncludePatterns: []string{}, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
-main.go:2:
-`},
-		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, IncludePatterns: []string{}, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:1:package main
 main.go:2:
 `},
-		{protocol.PatternInfo{Pattern: "\nfunc", IsCaseSensitive: false, IsRegExp: true, IncludePatterns: []string{}, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:1:package main
+main.go:2:
+`},
+		{protocol.PatternInfo{Pattern: "\nfunc", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:4:
 main.go:5:func main() {
 `},
-		{protocol.PatternInfo{Pattern: "\n\\s*func", IsCaseSensitive: false, IsRegExp: true, IncludePatterns: []string{}, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "\n\\s*func", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:3:import "fmt"
 main.go:4:
 main.go:5:func main() {
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsCaseSensitive: false, IsRegExp: true, IncludePatterns: []string{}, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:1:package main
 main.go:2:
 main.go:3:import "fmt"
