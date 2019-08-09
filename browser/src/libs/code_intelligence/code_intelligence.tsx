@@ -95,6 +95,8 @@ import {
 import { handleTextFields, TextField } from './text_fields'
 import { resolveRepoNames } from './util/file_info'
 import { ViewResolver } from './views'
+import { observeStorageKey } from '../../browser/storage'
+import { featureFlagDefaults } from '../../browser/types'
 
 registerHighlightContributions()
 
@@ -845,17 +847,34 @@ export async function injectCodeIntelligenceToCodeHost(
     const { platformContext, extensionsController } = initializeExtensions(codeHost, sourcegraphURL, isExtension)
     const telemetryService = new EventLogger(isExtension, platformContext.requestGraphQL)
     subscriptions.add(extensionsController)
-    subscriptions.add(
-        handleCodeHost({
-            mutations,
-            codeHost,
-            extensionsController,
-            platformContext,
-            showGlobalDebug,
-            sourcegraphURL,
-            telemetryService,
-            render: reactDOMRender,
-        })
-    )
+
+    let codeHostSubscription: Subscription
+    observeStorageKey('sync', 'featureFlags').subscribe(featureFlags => {
+        const { disableExtension } = {
+            ...featureFlagDefaults,
+            ...featureFlags,
+        }
+
+        if (disableExtension) {
+            if (codeHostSubscription) {
+                codeHostSubscription.unsubscribe()
+                subscriptions.remove(codeHostSubscription)
+            }
+            console.log('Browser extension is disabled')
+        } else {
+            codeHostSubscription = handleCodeHost({
+                mutations,
+                codeHost,
+                extensionsController,
+                platformContext,
+                showGlobalDebug,
+                sourcegraphURL,
+                telemetryService,
+                render: reactDOMRender,
+            })
+            subscriptions.add(codeHostSubscription)
+            console.log('Browser extension is enabled')
+        }
+    })
     return subscriptions
 }

@@ -17,8 +17,10 @@ storiesOf('Options - OptionsMenu', module)
                 onURLChange={action('Sourcegraph URL changed')}
                 onURLSubmit={action('New Sourcegraph URL submitted')}
                 onSettingsClick={action('Settings clicked')}
+                onToggleActivationClick={action('Toggle activation clicked')}
                 featureFlags={[]}
                 isSettingsOpen={false}
+                isActivated={true}
                 toggleFeatureFlag={action('Feature flag toggled')}
                 requestPermissions={() => undefined}
                 urlHasPermissions={true}
@@ -34,7 +36,9 @@ storiesOf('Options - OptionsMenu', module)
                 onURLChange={action('Sourcegraph URL changed')}
                 onURLSubmit={action('New Sourcegraph URL submitted')}
                 onSettingsClick={action('Settings clicked')}
+                onToggleActivationClick={action('Toggle activation clicked')}
                 isSettingsOpen={true}
+                isActivated={true}
                 toggleFeatureFlag={action('Feature flag toggled')}
                 requestPermissions={() => undefined}
                 urlHasPermissions={true}

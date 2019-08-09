@@ -21,7 +21,13 @@ export interface OptionsContainerProps {
 interface OptionsContainerState
     extends Pick<
         OptionsMenuProps,
-        'status' | 'sourcegraphURL' | 'connectionError' | 'isSettingsOpen' | 'urlHasPermissions' | 'currentTabStatus'
+        | 'status'
+        | 'sourcegraphURL'
+        | 'connectionError'
+        | 'isSettingsOpen'
+        | 'isActivated'
+        | 'urlHasPermissions'
+        | 'currentTabStatus'
     > {}
 
 export class OptionsContainer extends React.Component<OptionsContainerProps, OptionsContainerState> {
@@ -40,6 +46,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
             urlHasPermissions: false,
             connectionError: undefined,
             isSettingsOpen: false,
+            isActivated: true,
         }
 
         const fetchingSite: Observable<string | ErrorLike> = this.urlUpdates.pipe(
@@ -116,9 +123,11 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 version={this.version}
                 onURLChange={this.handleURLChange}
                 onURLSubmit={this.handleURLSubmit}
+                isActivated={this.state.isActivated}
                 toggleFeatureFlag={this.props.toggleFeatureFlag}
                 featureFlags={this.props.featureFlags}
                 onSettingsClick={this.handleSettingsClick}
+                onToggleActivationClick={this.handleToggleActivationClick}
                 requestPermissions={this.props.requestPermissions}
             />
         )
@@ -136,5 +145,17 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         this.setState(state => ({
             isSettingsOpen: !state.isSettingsOpen,
         }))
+    }
+
+    private handleToggleActivationClick = (value: boolean) => {
+        this.setState(() => ({
+            isActivated: value,
+        }))
+        // alert(this.state.isActivated)
+        // if (this.state.isActivated) {
+        //     codeIntelSubscription.unsubscribe()
+        // } else {
+        //     console.log('noop')
+        // }
     }
 }

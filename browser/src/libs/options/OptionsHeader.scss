@@ -1,3 +1,5 @@
+@import '../../../../shared/src/components/Toggle';
+
 .options-header {
     display: flex;
     align-items: stretch;
@@ -5,7 +7,18 @@
 
     &__logo {
         flex: 1;
-        max-width: 50%;
+        max-width: 65%;
+        width: 300px;
+    }
+
+    &__version {
+        flex: 1;
+        display: flex;
+        align-items: center;
+
+        font-weight: 500;
+        color: $color-light-bg-5;
+        margin-left: 30px;
     }
 
     &__right {
@@ -29,4 +42,20 @@
             color: $gray-23;
         }
     }
+}
+
+.toggle__bar {
+    background-color: #e1e6ef;
+}
+
+.toggle__knob {
+    background-color: #6d727c;
+}
+
+.toggle__bar--active {
+    background-color: rgba(28, 126, 214, 0.2);
+}
+
+.toggle__knob--active {
+    background-color: #1c7ed6;
 }

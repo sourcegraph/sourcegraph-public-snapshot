@@ -66,11 +66,6 @@ async function main(): Promise<void> {
         .toPromise()
 
     const items = await storage.sync.get()
-    if (items.featureFlags && items.featureFlags.disableExtension) {
-        console.log('Browser extension is temporarily disabled')
-        return
-    }
-
     const sourcegraphServerUrl = items.sourcegraphURL || DEFAULT_SOURCEGRAPH_URL
 
     const isSourcegraphServer = checkIsSourcegraph(sourcegraphServerUrl)
