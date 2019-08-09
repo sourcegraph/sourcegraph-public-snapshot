@@ -345,6 +345,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         onShowMoreResultsClick={this.props.onShowMoreResultsClick}
                                         showDotComMarketing={this.props.isSourcegraphDotCom}
                                         displayPerformanceWarning={this.state.displayPerformanceWarning}
+                                        // This isn't always correct, but the penalty for a false-positive is
+                                        // low.
+                                        hasRepoField={parsedQuery ? parsedQuery.includes("repo:") : false}
                                     />
 
                                     {/* Results */}
