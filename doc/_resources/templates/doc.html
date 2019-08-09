@@ -5,8 +5,8 @@
     <title>{{with .Content}}{{.Doc.Title}}{{if gt (len .Breadcrumbs ) 0}} - Sourcegraph docs{{end}}{{else}}Error{{end}}</title>
     <link rel="icon" type="image/png" href="https://about.sourcegraph.com/sourcegraph-mark.png" />
     <link rel="stylesheet" href="{{asset "bootstrap.min.css"}}?4.3.1" />
-    <link rel="stylesheet" href="{{asset "layout.css"}}?11" />
-    <link rel="stylesheet" href="{{asset "content.css"}}?11" />
+    <link rel="stylesheet" href="{{asset "layout.css"}}?12" />
+    <link rel="stylesheet" href="{{asset "content.css"}}?12" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" /> {{if (or (not .Content) .ContentVersion)}}
     <meta name="robots" content="noindex">{{end}}
 </head>
@@ -210,17 +210,17 @@
                         <a class="content-nav-section-header" href="/integration">Integrations</a>
                         <ul class="content-nav-section-group">
                                 <li><a href="/integration/github">GitHub</a></li>
-                                <li><a href="/integration/gitlab">GitLab</a></li>                                
+                                <li><a href="/integration/gitlab">GitLab</a></li>
                                 <li><a href="/integration/bitbucket_cloud">Bitbucket Cloud</a></li>
                                 <li><a href="/integration/bitbucket_server">Bitbucket Server</a></li>
                                 <li><a href="/integration/phabricator">Phabricator</a></li>
                                 <li><a href="/integration/aws_codecommit">AWS CodeCommit</a></li>
-                                <li><a href="/integration/gitolite">Gitolite</a></li>                                
+                                <li><a href="/integration/gitolite">Gitolite</a></li>
                                 <hr />
                                 <li><a href="/integration/browser_extension">Browser extension</a></li>
                                 <li><a href="/integration/browser_search_engine">Browser search engine shortcuts</a></li>
                                 <li><a href="/integration/editor">Editor integrations</a></li>
-                                <li><a href="/integration/google_gsuite">G Suite and Chrome Enterprise integration</a></li>        
+                                <li><a href="/integration/google_gsuite">G Suite and Chrome Enterprise integration</a></li>
                                 <li><a href="/integration/lightstep">LightStep</a></li>
                         </ul>
                     </li>
@@ -467,7 +467,7 @@
             </footer>
         </div>
     </div>
-    <script src="{{asset "docs.js"}}?10"></script>
+    <script src="{{asset "docs.js"}}?12"></script>
     {{with .Content}}
         <script>sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});</script>
     {{else}}
