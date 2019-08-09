@@ -224,7 +224,11 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 		lastStart = start
 
 		lineEnd := end
-		if idx := bytes.Index(fileMatchBuf[end-1:], []byte{'\n'}); idx >= 0 {
+		endBuf := end
+		if endBuf > 0 {
+			endBuf = endBuf - 1
+		}
+		if idx := bytes.Index(fileMatchBuf[endBuf:], []byte{'\n'}); idx >= 0 {
 			lineEnd = end + idx
 		}
 		lineNumber, matchIndex := hydrateLineNumbers(fileMatchBuf, lastLineNumber, lastMatchIndex, lineStart, match)
