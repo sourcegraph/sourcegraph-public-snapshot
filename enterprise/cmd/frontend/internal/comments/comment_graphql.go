@@ -3,6 +3,7 @@ package comments
 import (
 	"context"
 	"fmt"
+	"html"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -163,7 +164,7 @@ func (v *gqlComment) BodyText(ctx context.Context) (string, error) {
 	}
 
 	// TODO!(sqs): this doesnt remove markdown formatting like `*`, just HTML tags
-	return bluemonday.StrictPolicy().Sanitize(c.Body), nil
+	return html.UnescapeString(bluemonday.StrictPolicy().Sanitize(c.Body)), nil
 }
 
 func (v *gqlComment) BodyHTML(ctx context.Context) (string, error) {

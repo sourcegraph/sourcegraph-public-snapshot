@@ -186,13 +186,15 @@ func (v *gqlCampaign) RepositoryComparisons(ctx context.Context) ([]*graphqlback
 		return nil, err
 	}
 
-	rcs := make([]*graphqlbackend.RepositoryComparisonResolver, len(threads))
-	for i, thread := range threads {
+	rcs := make([]*graphqlbackend.RepositoryComparisonResolver, 0, len(threads))
+	for _, thread := range threads {
 		rc, err := thread.RepositoryComparison(ctx)
 		if err != nil {
 			return nil, err
 		}
-		rcs[i] = rc
+		if rc != nil {
+			rcs = append(rcs, rc)
+		}
 	}
 	return rcs, nil
 }

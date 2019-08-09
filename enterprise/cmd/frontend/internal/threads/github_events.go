@@ -86,6 +86,17 @@ func init() {
 		}
 		return nil
 	})
+	events.Register(eventTypeReopenThread, func(ctx context.Context, common graphqlbackend.EventCommon, data events.EventData, toEvent *graphqlbackend.ToEvent) error {
+		thread, err := threadByDBID(ctx, data.Thread)
+		if err != nil {
+			return err
+		}
+		toEvent.ReopenThreadEvent = &graphqlbackend.ReopenThreadEvent{
+			EventCommon: common,
+			Thread_:     thread,
+		}
+		return nil
+	})
 }
 
 var MockImportGitHubThreadEvents func() error // TODO!(sqs)

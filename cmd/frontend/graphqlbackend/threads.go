@@ -180,7 +180,7 @@ type Thread interface {
 	Updatable
 	commentable
 	ruleContainer
-	Kind() ThreadKind
+	Kind(context.Context) (ThreadKind, error)
 	URL(context.Context) (string, error)
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)
 	RepositoryComparison(context.Context) (*RepositoryComparisonResolver, error)

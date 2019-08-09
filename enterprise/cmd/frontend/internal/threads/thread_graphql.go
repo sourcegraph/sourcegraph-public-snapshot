@@ -123,14 +123,27 @@ func (v *gqlThread) Diagnostics(ctx context.Context, arg *graphqlbackend.ThreadD
 	return graphqlbackend.ThreadDiagnostics.ThreadDiagnostics(ctx, arg)
 }
 
-func (v *gqlThread) Kind() graphqlbackend.ThreadKind {
-	switch {
-	case v.db.BaseRef != "" || v.db.HeadRef != "":
-		return graphqlbackend.ThreadKindChangeset
-		// TODO!(sqs): how to determine if issue? check to see whether there are diagnostics
-	default:
-		return graphqlbackend.ThreadKindDiscussion
+func (v *gqlThread) Kind(ctx context.Context) (graphqlbackend.ThreadKind, error) {
+	if v.db.BaseRef != "" || v.db.HeadRef != "" {
+		return graphqlbackend.ThreadKindChangeset, nil
 	}
+
+	if v.db.ImportedFromExternalServiceID != 0 {
+		return graphqlbackend.ThreadKindIssue, nil
+	}
+
+	diagnosticConnection, err := v.Diagnostics(ctx, &graphqlbackend.ThreadDiagnosticConnectionArgs{})
+	if err != nil {
+		return "", err
+	}
+	count, err := diagnosticConnection.TotalCount(ctx)
+	if err != nil {
+		return "", err
+	}
+	if count > 0 {
+		return graphqlbackend.ThreadKindIssue, nil
+	}
+	return graphqlbackend.ThreadKindDiscussion, nil
 }
 
 func (v *gqlThread) ViewerCanUpdate(ctx context.Context) (bool, error) {
@@ -170,8 +183,10 @@ func (v *gqlThread) RepositoryComparison(ctx context.Context) (*graphqlbackend.R
 		return nil, err
 	}
 	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
-		Base: &v.db.BaseRef,
-		Head: &v.db.HeadRef,
+		Base:    &v.db.BaseRef,
+		BaseOID: &v.db.BaseRefOID,
+		Head:    &v.db.HeadRef,
+		HeadOID: &v.db.HeadRefOID,
 	})
 }
 

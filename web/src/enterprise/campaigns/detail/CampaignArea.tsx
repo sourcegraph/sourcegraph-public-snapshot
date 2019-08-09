@@ -23,7 +23,6 @@ import { CampaignActivity } from './activity/CampaignActivity'
 import { CampaignOverview } from './CampaignOverview'
 import { CampaignFileDiffsList } from './fileDiffs/CampaignFileDiffsList'
 import { CampaignRepositoriesList } from './repositories/CampaignRepositoriesList'
-import { CampaignRulesListOLD } from './rules/CampaignRulesListOLD'
 import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
 import { useCampaignByID } from './useCampaignByID'
 
@@ -144,7 +143,7 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                     {
                         title: 'Activity',
                         icon: ForumIcon,
-                        count: campaign.comments.totalCount,
+                        count: campaign.comments.totalCount - 1,
                         path: '',
                         exact: true,
                         render: () => <CampaignActivity {...context} className={PAGE_CLASS_NAME} />,

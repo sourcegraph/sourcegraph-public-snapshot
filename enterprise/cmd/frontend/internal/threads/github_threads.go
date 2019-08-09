@@ -60,22 +60,17 @@ func ImportGitHubRepositoryThreads(ctx context.Context, repoID api.RepoID, extRe
 }
 
 func githubIssueOrPullRequestToThread(v *githubIssueOrPullRequest) (*dbThread, commentobjectdb.DBObjectCommentFields) {
-	getRefName := func(ref *githubRef, oid string) string {
-		// If a base/head is deleted, point to its OID directly.
-		if ref == nil || v.State == "MERGED" {
-			return oid
-		}
-		return ref.Prefix + ref.Name
-	}
-
 	thread := &dbThread{
 		Title:      v.Title,
 		State:      v.State,
 		IsPreview:  false,
 		CreatedAt:  v.CreatedAt,
 		UpdatedAt:  v.UpdatedAt,
-		BaseRef:    getRefName(v.BaseRef, v.BaseRefOid),
-		HeadRef:    getRefName(v.HeadRef, v.HeadRefOid),
+		BaseRef:    v.BaseRefName,
+		BaseRefOID: v.BaseRefOid,
+		// TODO!(sqs): fill in headrepository
+		HeadRef:    v.HeadRefName,
+		HeadRefOID: v.HeadRefOid,
 		ExternalID: string(v.ID),
 	}
 	var err error
@@ -116,9 +111,9 @@ type githubIssueOrPullRequest struct {
 	Body              string       `json:"body"`
 	CreatedAt         time.Time    `json:"createdAt"`
 	UpdatedAt         time.Time    `json:"updatedAt"`
-	BaseRef           *githubRef   `json:"baseRef"`
+	BaseRefName       string       `json:"baseRefName"`
 	BaseRefOid        string       `json:"baseRefOid"`
-	HeadRef           *githubRef   `json:"headRef"`
+	HeadRefName       string       `json:"headRefName"`
 	HeadRefOid        string       `json:"headRefOid"`
 	IsCrossRepository bool         `json:"isCrossRepository"`
 	URL               string       `json:"url"`
@@ -190,9 +185,9 @@ query ImportGitHubRepositoryIssuesAndPullRequests($repository: ID!) {
 			pullRequests(first: 100, orderBy: { field: UPDATED_AT, direction: DESC }) {
 				nodes {
 `+githubIssueOrPullRequestCommonQuery+`
-					baseRef { name prefix }
+					baseRefName
 					baseRefOid
-					headRef { name prefix }
+					headRefName
 					headRefOid
 					isCrossRepository
 				}

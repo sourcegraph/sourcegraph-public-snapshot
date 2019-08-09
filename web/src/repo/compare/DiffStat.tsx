@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { pluralize } from '../../../../shared/src/util/strings'
+import { numberWithCommas, pluralize } from '../../../../shared/src/util/strings'
 
 const NUM_SQUARES = 5
 
@@ -58,24 +58,26 @@ export const DiffStat: React.FunctionComponent<{
 
     const labels: string[] = []
     if (added > 0) {
-        labels.push(`${added} ${pluralize('addition', added)}`)
+        labels.push(`${numberWithCommas(added)} ${pluralize('addition', added)}`)
     }
     if (changed > 0) {
-        labels.push(`${changed} ${pluralize('change', changed)}`)
+        labels.push(`${numberWithCommas(changed)} ${pluralize('change', changed)}`)
     }
     if (deleted > 0) {
-        labels.push(`${deleted} ${pluralize('deletion', deleted)}`)
+        labels.push(`${numberWithCommas(deleted)} ${pluralize('deletion', deleted)}`)
     }
     return (
         <div className={`diff-stat ${className}`} data-tooltip={labels.join(', ')}>
             {expandedCounts ? (
                 <span className="diff-stat__total font-weight-bold">
-                    <span className="diff-stat__text-added mr-1">+{added}</span>
-                    {changed > 0 && <span className="diff-stat__text-changed mr-1">={changed}</span>}
-                    <span className="diff-stat__text-deleted mr-1">-{deleted}</span>
+                    <span className="diff-stat__text-added mr-1">+{numberWithCommas(added)}</span>
+                    {changed > 0 && (
+                        <span className="diff-stat__text-changed mr-1">&bull;{numberWithCommas(changed)}</span>
+                    )}
+                    <span className="diff-stat__text-deleted mr-1">&minus;{numberWithCommas(deleted)}</span>
                 </span>
             ) : (
-                <small className="diff-stat__total">{total}</small>
+                <small className="diff-stat__total">{numberWithCommas(total)}</small>
             )}
             {squares.map((verb, i) => (
                 <div key={i} className={`diff-stat__square diff-stat__${verb}`} />

@@ -11,8 +11,14 @@ interface Props {
     className?: string
 }
 
-export const CloseThreadEventTimelineItem: React.FunctionComponent<Props> = ({ event, className = '' }) => (
-    <TimelineItem icon={CloseCircleIcon} className={className} event={event}>
-        <ActorLink actor={event.actor} /> closed <Link to={event.thread.url}>{event.thread.title}</Link>
-    </TimelineItem>
-)
+export const CloseThreadEventTimelineItem: React.FunctionComponent<Props> = ({ event, className = '' }) =>
+    event.thread.state !== GQL.ThreadState.MERGED ? (
+        <TimelineItem
+            icon={CloseCircleIcon}
+            className={className}
+            iconClassName={event.thread.kind === GQL.ThreadKind.CHANGESET ? 'text-danger' : 'text-success'}
+            event={event}
+        >
+            <ActorLink actor={event.actor} /> closed <Link to={event.thread.url}>{event.thread.title}</Link>
+        </TimelineItem>
+    ) : null

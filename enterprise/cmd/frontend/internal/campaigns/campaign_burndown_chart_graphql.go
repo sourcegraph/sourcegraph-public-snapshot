@@ -9,50 +9,47 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
-// func (v *gqlCampaign) FakeBurndownChart(ctx context.Context) (graphqlbackend.CampaignBurndownChart, error) {
-// 	openThreads := []int32{2071, 1918, 1231, 1121, 1018, 1003, 980, 979, 930, 945, 715, 331}
-// 	maxOpenBefore := func(i int) (max int32) {
-// 		if i == 0 && len(openThreads) > 0 {
-// 			return openThreads[0]
-// 		}
-// 		for _, v := range openThreads[:i] {
-// 			if v > max {
-// 				max = v
-// 			}
-// 		}
-// 		return max
-// 	}
-// 	mapOpenThreads := func(f func(v int32, i int) int32) []int32 {
-// 		vs := make([]int32, len(openThreads))
-// 		for i, v := range openThreads {
-// 			vs[i] = f(v, i)
-// 		}
-// 		return vs
-// 	}
-// 	dates := make([]time.Time, len(openThreads))
-// 	for i := range openThreads {
-// 		dates[i] = time.Now().Add(time.Duration(-1*24*(len(openThreads)-i)) * time.Hour)
-// 	}
-// 	return &gqlCampaignBurndownChart{
-// 		dates:               dates,
-// 		openThreads:         openThreads,
-// 		mergedThreads:       mapOpenThreads(func(v int32, i int) int32 { return maxOpenBefore(i) - v + maxOpenBefore(i)/int32(len(openThreads)-i+4) }),
-// 		closedThreads:       mapOpenThreads(func(v int32, i int) int32 { return maxOpenBefore(i) / int32(len(openThreads)-i+5) }),
-// 		openApprovedThreads: mapOpenThreads(func(v int32, i int) int32 { return v / int32(len(openThreads)-i+2) }),
-// 	}, nil
-// }
-
 type burndownChartData struct {
 	openThreads, mergedThreads, closedThreads, openApprovedThreads int32
 }
 
 func (v *gqlCampaign) BurndownChart(ctx context.Context) (graphqlbackend.CampaignBurndownChart, error) {
-	daysAgo := 14
-	dates := make([]time.Time, daysAgo+1)
-	for i := 0; i < daysAgo; i++ {
-		dates[i] = time.Now().Add(time.Duration(-1*24*(daysAgo-i)) * time.Hour)
+	// Find the earliest creation date of any thread (for the starting point of the burndown chart).
+	threadConnection, err := v.Threads(ctx, &graphqlbackend.ThreadConnectionArgs{})
+	if err != nil {
+		return nil, err
 	}
-	dates[daysAgo] = time.Now()
+	threadNodes, err := threadConnection.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	earliestCreationDate := time.Now()
+	for _, thread := range threadNodes {
+		createdAt, err := thread.CreatedAt(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if createdAt.Time.Before(earliestCreationDate) {
+			earliestCreationDate = createdAt.Time
+		}
+	}
+
+	// Compute data for every 24 hours since the first thread creation date.
+	const (
+		maxPeriods = 30
+		minPeriod  = 12 * time.Hour
+	)
+	sinceCreation := time.Since(earliestCreationDate)
+	period := sinceCreation / maxPeriods
+	if period < minPeriod {
+		period = minPeriod
+	}
+	numPeriods := int(sinceCreation / period)
+	dates := make([]time.Time, numPeriods+1)
+	for i := 0; i < numPeriods; i++ {
+		dates[i] = earliestCreationDate.Add(time.Duration(period * time.Duration(i)))
+	}
+	dates[numPeriods] = time.Now()
 
 	data := make([]*burndownChartData, len(dates))
 	for i, date := range dates {
@@ -87,13 +84,6 @@ func computeBurndownChartData(ctx context.Context, campaignID int64, date time.T
 	// 	}
 
 	var data burndownChartData
-	/*{
-		openThreads:         123,
-		mergedThreads:       43,
-		closedThreads:       11,
-		openApprovedThreads: 111,
-	}*/
-	//for _, thread := range threads {
 	ec, err := events.GetEventConnection(ctx,
 		&graphqlbackend.EventConnectionCommonArgs{
 			BeforeDate: &graphqlbackend.DateTime{date},
@@ -118,17 +108,17 @@ func computeBurndownChartData(ctx context.Context, campaignID int64, date time.T
 		case event.CloseThreadEvent != nil:
 			data.closedThreads++
 		case event.ReviewEvent != nil:
-			// TODO!(sqs): check review state, only increment if APPROVED
-			//
 			// TODO!(sqs): check if this is sufficient or if other reviews are required, or maybe
-			// this reviewer went back and changed teir review to non-approved, etc.; also this
-			// counts 2 approvals on one PR as 2x
+			// this reviewer went back and changed teir review to non-approved, etc.
 			if event.ReviewEvent.State() == graphqlbackend.ReviewStateApproved {
 				openApprovedThreads[event.ReviewEvent.Thread().ID()] = struct{}{}
 			}
 		}
 	}
 	data.openApprovedThreads = int32(len(openApprovedThreads))
+
+	// Every merged thread was also closed, so remove double-counting.
+	data.closedThreads -= data.mergedThreads
 
 	return &data, nil
 }

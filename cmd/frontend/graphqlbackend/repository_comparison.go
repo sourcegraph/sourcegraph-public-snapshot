@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -21,33 +22,52 @@ import (
 const devNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
 type RepositoryComparisonInput struct {
-	Base *string
-	Head *string
+	Base    *string
+	BaseOID *string
+	Head    *string
+	HeadOID *string
+}
+
+type resolvedRevspec struct {
+	expr     string
+	commitID api.CommitID
 }
 
 func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
-	var baseRevspec, headRevspec string
+	var baseRevspec, headRevspec resolvedRevspec
 	if args.Base == nil {
-		baseRevspec = "HEAD"
+		baseRevspec = resolvedRevspec{expr: "HEAD"}
 	} else {
-		baseRevspec = *args.Base
+		baseRevspec = resolvedRevspec{expr: *args.Base}
+	}
+	if args.BaseOID != nil {
+		baseRevspec.commitID = api.CommitID(*args.BaseOID)
 	}
 	if args.Head == nil {
-		headRevspec = "HEAD"
+		headRevspec = resolvedRevspec{expr: "HEAD"}
 	} else {
-		headRevspec = *args.Head
+		headRevspec = resolvedRevspec{expr: *args.Head}
+	}
+	if args.HeadOID != nil {
+		headRevspec.commitID = api.CommitID(*args.HeadOID)
 	}
 
-	getCommit := func(ctx context.Context, repo gitserver.Repo, revspec string) (*GitCommitResolver, error) {
-		if revspec == devNullSHA {
+	getCommit := func(ctx context.Context, repo gitserver.Repo, revspec resolvedRevspec) (*GitCommitResolver, error) {
+		if revspec.expr == devNullSHA || revspec.commitID == devNullSHA {
 			return nil, nil
 		}
 
-		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
-		// exist).
-		commitID, err := git.ResolveRevision(ctx, repo, nil, revspec, nil)
-		if err != nil {
-			return nil, err
+		var commitID api.CommitID
+		if revspec.commitID != "" {
+			commitID = revspec.commitID
+		} else {
+			// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
+			// exist).
+			var err error
+			commitID, err = git.ResolveRevision(ctx, repo, nil, revspec.expr, nil)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		commit, err := git.GetCommit(ctx, repo, nil, commitID)
@@ -65,9 +85,15 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 	if err != nil {
 		return nil, err
 	}
+	if baseRevspec.commitID == "" {
+		baseRevspec.commitID = api.CommitID(base.oid)
+	}
 	head, err := getCommit(ctx, *grepo, headRevspec)
 	if err != nil {
 		return nil, err
+	}
+	if headRevspec.commitID == "" {
+		headRevspec.commitID = api.CommitID(head.oid)
 	}
 
 	return &RepositoryComparisonResolver{
@@ -84,7 +110,7 @@ func (r *RepositoryResolver) Comparison(ctx context.Context, args *RepositoryCom
 }
 
 type RepositoryComparisonResolver struct {
-	baseRevspec, headRevspec string
+	baseRevspec, headRevspec resolvedRevspec
 	base, head               *GitCommitResolver
 	repo                     *RepositoryResolver
 }
@@ -95,16 +121,16 @@ func (r *RepositoryComparisonResolver) HeadRepository() *RepositoryResolver { re
 
 func (r *RepositoryComparisonResolver) Range() *gitRevisionRange {
 	return &gitRevisionRange{
-		expr:      r.baseRevspec + "..." + r.headRevspec,
-		base:      &gitRevSpec{expr: &gitRevSpecExpr{expr: r.baseRevspec, repo: r.repo}},
-		head:      &gitRevSpec{expr: &gitRevSpecExpr{expr: r.headRevspec, repo: r.repo}},
+		expr:      r.baseRevspec.expr + "..." + r.headRevspec.expr,
+		base:      &gitRevSpec{expr: &gitRevSpecExpr{expr: r.baseRevspec.expr, repo: r.repo}},
+		head:      &gitRevSpec{expr: &gitRevSpecExpr{expr: r.headRevspec.expr, repo: r.repo}},
 		mergeBase: nil, // not currently used
 	}
 }
 
 func (r *RepositoryComparisonResolver) Commits(args *graphqlutil.ConnectionArgs) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
-		revisionRange: string(r.baseRevspec) + ".." + string(r.headRevspec),
+		revisionRange: string(r.baseRevspec.commitID) + ".." + string(r.headRevspec.commitID),
 		first:         args.First,
 		repo:          r.repo,
 	}
@@ -136,7 +162,7 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 		hOid := r.cmp.head.OID()
 		if r.cmp.base == nil {
 			// Rare case: the base is the empty tree, in which case we need ".." not "..." because the latter only works for commits.
-			rangeSpec = string(r.cmp.baseRevspec) + ".." + string(hOid)
+			rangeSpec = string(r.cmp.baseRevspec.commitID) + ".." + string(hOid)
 		} else {
 			rangeSpec = string(r.cmp.base.OID()) + "..." + string(hOid)
 		}

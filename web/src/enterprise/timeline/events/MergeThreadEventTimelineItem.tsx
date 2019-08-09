@@ -1,4 +1,4 @@
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import FlashCircleIcon from 'mdi-react/FlashCircleIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export const MergeThreadEventTimelineItem: React.FunctionComponent<Props> = ({ event, className = '' }) => (
-    <TimelineItem icon={CheckCircleIcon} className={className} event={event}>
+    <TimelineItem icon={FlashCircleIcon} className={className} iconClassName="text-success" event={event}>
         <ActorLink actor={event.actor} /> merged <Link to={event.thread.url}>{event.thread.title}</Link>
     </TimelineItem>
 )

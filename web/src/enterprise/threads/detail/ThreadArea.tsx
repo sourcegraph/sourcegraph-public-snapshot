@@ -142,7 +142,7 @@ export const ThreadArea: React.FunctionComponent<Props> = ({
                         {
                             title: 'Activity',
                             icon: ForumIcon,
-                            count: thread.comments.totalCount,
+                            count: thread.comments.totalCount - 1,
                             path: '',
                             exact: true,
                             render: () => <ThreadActivity {...context} className={PAGE_CLASS_NAME} />,

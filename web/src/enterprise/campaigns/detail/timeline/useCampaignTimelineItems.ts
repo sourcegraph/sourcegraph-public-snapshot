@@ -18,6 +18,7 @@ const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
         'RemoveThreadFromCampaignEvent',
         'ReviewEvent',
         'RequestReviewEvent',
+        'MergeThreadEvent',
         'CloseThreadEvent',
         'ReopenThreadEvent',
         'CommentOnThreadEvent',
