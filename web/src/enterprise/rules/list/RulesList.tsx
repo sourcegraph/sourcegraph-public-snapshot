@@ -1,5 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
+import SyncIcon from 'mdi-react/SyncIcon'
 import React, { useCallback } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -12,7 +13,6 @@ import { EditRuleForm } from '../form/EditRuleForm'
 import { NewRuleForm } from '../form/NewRuleForm'
 import { useRules } from '../useRules'
 import { RuleRow } from './RuleRow'
-
 const FormModal: React.FunctionComponent<{ toggle: () => void }> = ({ toggle, children }) => (
     <Modal
         isOpen={true}
@@ -57,6 +57,16 @@ export const RulesList: React.FunctionComponent<Props> = ({ container, match, cl
                 <Link to={`${match.url}/new`} className="btn btn-success">
                     New rule
                 </Link>
+            </div>
+            <div className="border border-success p-3 my-4 d-flex align-items-start">
+                <SyncIcon className="flex-0 mr-2" />
+                <div className="flex-1">
+                    <h4 className="mb-0">Continuously applying rules</h4>
+                    <p className="mb-0">
+                        The rules run when any base branch changes or when a new repository matches.
+                        {/* TODO!(sqs): this isnt true */}
+                    </p>
+                </div>
             </div>
             <Switch>
                 <Route path={`${match.url}/new`}>

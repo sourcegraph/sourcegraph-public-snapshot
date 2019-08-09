@@ -60,7 +60,7 @@ export const NewRuleForm: React.FunctionComponent<Props> = ({
                 alert(err.message) // TODO!(sqs)
             }
         },
-        [container, onDismiss, onRuleCreate]
+        [container.id, onDismiss, onRuleCreate]
     )
 
     return (

@@ -46,7 +46,7 @@ export const RuleDeleteButton: React.FunctionComponent<Props> = ({
     const onClick = useCallback<React.FormEventHandler>(
         async e => {
             e.preventDefault()
-            if (!confirm('Are you sure? Deleting will remove it from all threads.')) {
+            if (!confirm('Really delete the rule?')) {
                 return
             }
             setIsLoading(true)

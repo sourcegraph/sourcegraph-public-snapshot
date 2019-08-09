@@ -51,15 +51,20 @@ export const RuleForm: React.FunctionComponent<Props> = ({
         e => setDescription(e.currentTarget.value),
         []
     )
-    useEffect(() => setDescription(initialValue.description), [initialValue.description])
+    useEffect(() => setDescription(initialValue.description || null), [initialValue.description])
     const onAddDescriptionClick = useCallback(() => setDescription(''), [])
 
     const [definition, setDefinition] = useState(initialValue.definition)
     useEffect(() => setDefinition(initialValue.definition), [initialValue.definition])
 
+    // TODO!(sqs): hackDidSave works around a problem where the history.block prompt shows up after
+    // creating/editing successfully.
+    const [hackDidSave, setHackDidSave] = useState(false)
+
     const onSubmit = useCallback<React.FormEventHandler>(
-        async e => {
+        e => {
             e.preventDefault()
+            setHackDidSave(true)
             onSubmitRule({ name, description, definition })
         },
         [onSubmitRule, name, definition, description]
@@ -69,13 +74,22 @@ export const RuleForm: React.FunctionComponent<Props> = ({
     useEffect(() => {
         const isDirty =
             name !== initialValue.name ||
-            description !== initialValue.description ||
+            (description || '') !== (initialValue.description || '') ||
             definition !== initialValue.definition
-        if (isDirty) {
+        if (isDirty && !hackDidSave) {
             return history.block('Discard unsaved rule?')
         }
         return undefined
-    }, [definition, description, history, initialValue.definition, initialValue.description, initialValue.name, name])
+    }, [
+        definition,
+        description,
+        hackDidSave,
+        history,
+        initialValue.definition,
+        initialValue.description,
+        initialValue.name,
+        name,
+    ])
 
     return (
         <Form className={`form ${className}`} onSubmit={onSubmit}>
@@ -88,7 +102,6 @@ export const RuleForm: React.FunctionComponent<Props> = ({
                     className="form-control"
                     required={true}
                     minLength={1}
-                    size={16}
                     placeholder="Rule name"
                     value={name}
                     onChange={onNameChange}

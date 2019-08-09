@@ -143,18 +143,6 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                         render: () => <CampaignActivity {...context} className={PAGE_CLASS_NAME} />,
                     },
                     {
-                        title: 'Rules',
-                        path: '/rules',
-                        render: ({ match }) => (
-                            <RulesList {...context} container={campaign} match={match} className={PAGE_CLASS_NAME} />
-                        ),
-                    },
-                    {
-                        title: 'RulesOLD',
-                        path: '/rulesOLD',
-                        render: () => <CampaignRulesListOLD {...context} className={PAGE_CLASS_NAME} />,
-                    },
-                    {
                         title: 'Threads',
                         path: '/threads',
                         render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
@@ -175,6 +163,13 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                                 platformContext={props.platformContext}
                                 className={PAGE_CLASS_NAME}
                             />
+                        ),
+                    },
+                    {
+                        title: 'Rules',
+                        path: '/rules',
+                        render: ({ match }) => (
+                            <RulesList {...context} container={campaign} match={match} className={PAGE_CLASS_NAME} />
                         ),
                     },
                     {
