@@ -85,7 +85,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 			mu.Lock()
 			defer mu.Unlock()
 			limitHit := symbolCount(res) > limit
-			repoErr = handleRepoSearchResult(common, *repoRevs, limitHit, false, repoErr)
+			repoErr = handleRepoSearchResult(common, repoRevs, limitHit, false, repoErr)
 			if repoErr != nil {
 				if ctx.Err() == nil || errors.Cause(repoErr) != ctx.Err() {
 					// Only record error if it's not directly caused by a context error.

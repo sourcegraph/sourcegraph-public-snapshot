@@ -164,7 +164,7 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 	)
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
-		repoRev := *repoRev // shadow variable so it doesn't change while goroutine is running
+		repoRev := repoRev // shadow variable so it doesn't change while goroutine is running
 		goroutine.Go(func() {
 			defer wg.Done()
 			results, searchErr := callCodemodInRepo(ctx, repoRev, cmodArgs)
@@ -180,7 +180,7 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 			mu.Lock()
 			defer mu.Unlock()
 			if fatalErr := handleRepoSearchResult(common, repoRev, false, repoTimedOut, searchErr); fatalErr != nil {
-				err = errors.Wrapf(searchErr, "failed to call codemod %s", &repoRev)
+				err = errors.Wrapf(searchErr, "failed to call codemod %s", repoRev)
 				cancel()
 			}
 			if len(results) > 0 {
@@ -221,7 +221,7 @@ func toMatchResolver(fileURL string, raw *rawCodemodResult) ([]*searchResultMatc
 		nil
 }
 
-func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, args *args) (results []codemodResultResolver, err error) {
+func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, args *args) (results []codemodResultResolver, err error) {
 	tr, ctx := trace.New(ctx, "callCodemodInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v, replace: %+v", repoRevs, args.matchTemplate, args.rewriteTemplate))
 	defer func() {
 		tr.LazyPrintf("%d results", len(results))
