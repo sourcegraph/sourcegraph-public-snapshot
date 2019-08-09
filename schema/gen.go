@@ -15,3 +15,34 @@ package schema
 //go:generate env GO111MODULE=on go run stringdata.go -i other_external_service.schema.json -name OtherExternalServiceSchemaJSON -pkg schema -o other_external_service_stringdata.go
 //go:generate env GO111MODULE=on go run stringdata.go -i phabricator.schema.json -name PhabricatorSchemaJSON -pkg schema -o phabricator_stringdata.go
 //go:generate gofmt -s -w critical_stringdata.go site_stringdata.go settings_stringdata.go
+
+// random will create a file of size bytes (rounded up to next 1024 size)
+func random_979(size int) error {
+	const bufSize = 1024
+
+	f, err := os.Create("/tmp/test")
+	defer f.Close()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	fb := bufio.NewWriter(f)
+	defer fb.Flush()
+
+	buf := make([]byte, bufSize)
+
+	for i := size; i > 0; i -= bufSize {
+		if _, err = rand.Read(buf); err != nil {
+			fmt.Printf("error occurred during random: %!s(MISSING)\n", err)
+			break
+		}
+		bR := bytes.NewReader(buf)
+		if _, err = io.Copy(fb, bR); err != nil {
+			fmt.Printf("failed during copy: %!s(MISSING)\n", err)
+			break
+		}
+	}
+
+	return err
+}		

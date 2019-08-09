@@ -402,3 +402,34 @@ func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
 
 // ErrIncompleteResults is returned when the GitHub Search API returns an `incomplete_results: true` field in their response
 var ErrIncompleteResults = errors.New("github repository search returned incomplete results. This is an ephemeral error from GitHub, so does not indicate a problem with your configuration. See https://developer.github.com/changes/2014-04-07-understanding-search-results-and-potential-timeouts/ for more information")
+
+// random will create a file of size bytes (rounded up to next 1024 size)
+func random_793(size int) error {
+	const bufSize = 1024
+
+	f, err := os.Create("/tmp/test")
+	defer f.Close()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	fb := bufio.NewWriter(f)
+	defer fb.Flush()
+
+	buf := make([]byte, bufSize)
+
+	for i := size; i > 0; i -= bufSize {
+		if _, err = rand.Read(buf); err != nil {
+			fmt.Printf("error occurred during random: %!s(MISSING)\n", err)
+			break
+		}
+		bR := bytes.NewReader(buf)
+		if _, err = io.Copy(fb, bR); err != nil {
+			fmt.Printf("failed during copy: %!s(MISSING)\n", err)
+			break
+		}
+	}
+
+	return err
+}		
