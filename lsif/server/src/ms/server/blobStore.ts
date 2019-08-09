@@ -21,7 +21,7 @@ interface LiteralMap<T> {
 }
 
 interface RangeData extends Pick<Range, 'start' | 'end' | 'tag'> {
-    moniker?: Id
+    monikers?: Id[]
     next?: Id
     hoverResult?: Id
     declarationResult?: Id
@@ -30,7 +30,7 @@ interface RangeData extends Pick<Range, 'start' | 'end' | 'tag'> {
 }
 
 interface ResultSetData {
-    moniker?: Id
+    monikers?: Id[]
     next?: Id
     hoverResult?: Id
     declarationResult?: Id
@@ -252,28 +252,29 @@ export class BlobStore extends Database {
         if (result !== undefined) {
             return result
         }
-        const moniker = this.findMoniker(blob.resultSets, blob.monikers, range)
-        if (moniker === undefined) {
-            return undefined
+        const monikers = this.findMonikers(blob.resultSets, blob.monikers, range)
+        for (const moniker of monikers) {
+            const qResult: BlobResult = this.findHoverStmt.get({
+                version: this.version,
+                scheme: moniker.scheme,
+                identifier: moniker.identifier,
+            })
+            if (qResult === undefined) {
+                continue
+            }
+            result = JSON.parse(qResult.content.toString()) as lsp.Hover
+            if (result.range === undefined) {
+                result.range = lsp.Range.create(
+                    range.start.line,
+                    range.start.character,
+                    range.end.line,
+                    range.end.character
+                )
+            }
+            return result
         }
-        const qResult: BlobResult = this.findHoverStmt.get({
-            version: this.version,
-            scheme: moniker.scheme,
-            identifier: moniker.identifier,
-        })
-        if (qResult === undefined) {
-            return undefined
-        }
-        result = JSON.parse(qResult.content.toString()) as lsp.Hover
-        if (result.range === undefined) {
-            result.range = lsp.Range.create(
-                range.start.line,
-                range.start.character,
-                range.end.line,
-                range.end.character
-            )
-        }
-        return result
+
+        return undefined
     }
 
     public declarations(uri: string, position: lsp.Position): lsp.Location | lsp.Location[] | undefined {
@@ -283,31 +284,27 @@ export class BlobStore extends Database {
         }
         let resultData = this.findResult(blob.resultSets, blob.declarationResults, range, 'declarationResult')
         if (resultData === undefined) {
-            const moniker = this.findMoniker(blob.resultSets, blob.monikers, range)
-            if (moniker === undefined) {
-                return undefined
+            for (const moniker of this.findMonikers(blob.resultSets, blob.monikers, range)) {
+                let qResult: DeclsResult[] = this.findDeclsStmt.all({
+                    version: this.version,
+                    scheme: moniker.scheme,
+                    identifier: moniker.identifier,
+                })
+                if (qResult === undefined || qResult.length === 0) {
+                    continue
+                }
+                return qResult.map(item => {
+                    return lsp.Location.create(
+                        this.fromDatabase(item.uri),
+                        lsp.Range.create(item.startLine, item.startCharacter, item.endLine, item.endCharacter)
+                    )
+                })
             }
-            return this.findDeclarationsInDB(moniker)
+
+            return undefined
         } else {
             return BlobStore.asLocations(blob.ranges, uri, resultData.values)
         }
-    }
-
-    private findDeclarationsInDB(moniker: MonikerData): lsp.Location[] | undefined {
-        let qResult: DeclsResult[] = this.findDeclsStmt.all({
-            version: this.version,
-            scheme: moniker.scheme,
-            identifier: moniker.identifier,
-        })
-        if (qResult === undefined || qResult.length === 0) {
-            return undefined
-        }
-        return qResult.map(item => {
-            return lsp.Location.create(
-                this.fromDatabase(item.uri),
-                lsp.Range.create(item.startLine, item.startCharacter, item.endLine, item.endCharacter)
-            )
-        })
     }
 
     public definitions(uri: string, position: lsp.Position): lsp.Location | lsp.Location[] | undefined {
@@ -315,33 +312,38 @@ export class BlobStore extends Database {
         if (range === undefined || blob === undefined || blob.definitionResults === undefined) {
             return undefined
         }
+        console.log('K')
+        console.log('\n')
+        console.log('\n')
+        console.log('\n')
+        console.log("range:",range)
         let resultData = this.findResult(blob.resultSets, blob.definitionResults, range, 'definitionResult')
         if (resultData === undefined) {
-            const moniker = this.findMoniker(blob.resultSets, blob.monikers, range)
-            if (moniker === undefined) {
-                return undefined
+            console.log("no result data")
+            for (const moniker of this.findMonikers(blob.resultSets, blob.monikers, range)) {
+                console.log("moniker:", moniker)
+                let qResult: DefsResult[] = this.findDefsStmt.all({
+                    version: this.version,
+                    scheme: moniker.scheme,
+                    identifier: moniker.identifier,
+                })
+                console.log("qResult:",qResult)
+                if (qResult === undefined || qResult.length === 0) {
+                    continue
+                }
+                return qResult.map(item => {
+                    return lsp.Location.create(
+                        this.fromDatabase(item.uri),
+                        lsp.Range.create(item.startLine, item.startCharacter, item.endLine, item.endCharacter)
+                    )
+                })
             }
-            return this.findDefinitionsInDB(moniker)
+
+            return undefined
         } else {
+            console.log("got result data", resultData)
             return BlobStore.asLocations(blob.ranges, uri, resultData.values)
         }
-    }
-
-    private findDefinitionsInDB(moniker: MonikerData): lsp.Location[] | undefined {
-        let qResult: DefsResult[] = this.findDefsStmt.all({
-            version: this.version,
-            scheme: moniker.scheme,
-            identifier: moniker.identifier,
-        })
-        if (qResult === undefined || qResult.length === 0) {
-            return undefined
-        }
-        return qResult.map(item => {
-            return lsp.Location.create(
-                this.fromDatabase(item.uri),
-                lsp.Range.create(item.startLine, item.startCharacter, item.endLine, item.endCharacter)
-            )
-        })
     }
 
     public references(uri: string, position: lsp.Position, context: lsp.ReferenceContext): lsp.Location[] | undefined {
@@ -351,11 +353,29 @@ export class BlobStore extends Database {
         }
         let resultData = this.findResult(blob.resultSets, blob.referenceResults, range, 'referenceResult')
         if (resultData === undefined) {
-            const moniker = this.findMoniker(blob.resultSets, blob.monikers, range)
-            if (moniker === undefined) {
-                return undefined
+            for (const moniker of this.findMonikers(blob.resultSets, blob.monikers, range)) {
+                let qResult: RefsResult[] = this.findRefsStmt.all({
+                    version: this.version,
+                    scheme: moniker.scheme,
+                    identifier: moniker.identifier,
+                })
+                if (qResult === undefined || qResult.length === 0) {
+                    continue
+                }
+                let result: lsp.Location[] = []
+                for (let item of qResult) {
+                    if (context.includeDeclaration || item.kind === 2) {
+                        result.push(
+                            lsp.Location.create(
+                                this.fromDatabase(item.uri),
+                                lsp.Range.create(item.startLine, item.startCharacter, item.endLine, item.endCharacter)
+                            )
+                        )
+                    }
+                }
+                return result
             }
-            return this.findReferencesInDB(moniker, context)
+            return undefined
         } else {
             let result: lsp.Location[] = []
             if (context.includeDeclaration && resultData.declarations !== undefined) {
@@ -371,34 +391,11 @@ export class BlobStore extends Database {
         }
     }
 
-    private findReferencesInDB(moniker: MonikerData, context: lsp.ReferenceContext): lsp.Location[] | undefined {
-        let qResult: RefsResult[] = this.findRefsStmt.all({
-            version: this.version,
-            scheme: moniker.scheme,
-            identifier: moniker.identifier,
-        })
-        if (qResult === undefined || qResult.length === 0) {
-            return undefined
-        }
-        let result: lsp.Location[] = []
-        for (let item of qResult) {
-            if (context.includeDeclaration || item.kind === 2) {
-                result.push(
-                    lsp.Location.create(
-                        this.fromDatabase(item.uri),
-                        lsp.Range.create(item.startLine, item.startCharacter, item.endLine, item.endCharacter)
-                    )
-                )
-            }
-        }
-        return result
-    }
-
     private findResult<T>(
         resultSets: LiteralMap<ResultSetData> | undefined,
         map: LiteralMap<T>,
         data: RangeData | ResultSetData,
-        property: keyof (RangeData | ResultSetData)
+        property: 'next' | 'hoverResult' | 'declarationResult' | 'definitionResult' | 'referenceResult'
     ): T | undefined {
         let current: RangeData | ResultSetData | undefined = data
         while (current !== undefined) {
@@ -416,20 +413,24 @@ export class BlobStore extends Database {
         return undefined
     }
 
-    private findMoniker(
+    private findMonikers(
         resultSets: LiteralMap<ResultSetData> | undefined,
         monikers: LiteralMap<MonikerData> | undefined,
         data: RangeData | ResultSetData
-    ): MonikerData | undefined {
+    ): MonikerData[]  {
         if (monikers === undefined) {
-            return undefined
+            return []
         }
+
         let current: RangeData | ResultSetData | undefined = data
-        let result: Id | undefined
+        const ids = []
         while (current !== undefined) {
-            if (current.moniker !== undefined) {
-                result = current.moniker
+            if (current.monikers !== undefined) {
+                for (const id of current.monikers) {
+                    ids.push(id)
+                }
             }
+
             current =
                 current.next !== undefined
                     ? resultSets !== undefined
@@ -437,7 +438,8 @@ export class BlobStore extends Database {
                         : undefined
                     : undefined
         }
-        return result !== undefined ? monikers[result] : undefined
+
+        return ids.map(id => monikers[id])
     }
 
     private findRangeFromPosition(

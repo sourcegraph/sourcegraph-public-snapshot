@@ -12,7 +12,7 @@ import {
     Edge, Vertex, ElementTypes, VertexLabels, Document, Range, EdgeLabels, contains, Event, EventScope, EventKind, Id, DocumentEvent, FoldingRangeResult,
     RangeBasedDocumentSymbol, DocumentSymbolResult, DiagnosticResult, Moniker, next, ResultSet, moniker, HoverResult, textDocument_hover, textDocument_foldingRange,
     textDocument_documentSymbol, textDocument_diagnostic, MonikerKind, textDocument_declaration, textDocument_definition, textDocument_references, item,
-    ItemEdgeProperties, DeclarationResult, DefinitionResult, ReferenceResult, MetaData
+    ItemEdgeProperties, DeclarationResult, DefinitionResult, ReferenceResult, MetaData, nextMoniker, packageInformation
 } from 'lsif-protocol';
 import { Compressor, foldingRangeCompressor, CompressorOptions, diagnosticCompressor } from './compress';
 import { Inserter } from './inserter';
@@ -124,7 +124,7 @@ namespace LiteralMap {
 }
 
 interface RangeData extends Pick<Range, 'start' | 'end' | 'tag'> {
-    moniker?: Id;
+    monikers?: Id[];
     next?: Id;
     hoverResult?: Id;
     declarationResult?: Id;
@@ -133,7 +133,7 @@ interface RangeData extends Pick<Range, 'start' | 'end' | 'tag'> {
 }
 
 interface ResultSetData {
-    moniker?: Id;
+    monikers?: Id[];
     next?: Id;
     hoverResult?: Id;
     declarationResult?: Id;
@@ -268,9 +268,11 @@ class DocumentData {
 
     private addReferencedData(id: Id, item: RangeData | ResultSetData): void {
         let moniker: MonikerData | undefined;
-        if (item.moniker !== undefined) {
-            moniker = assertDefined(this.provider.getMonikerData(item.moniker));
-            this.addMoniker(item.moniker, moniker);
+        if (item.monikers !== undefined) {
+            for (const itemMoniker of item.monikers) {
+                moniker = assertDefined(this.provider.getMonikerData(itemMoniker));
+                this.addMoniker(itemMoniker, moniker);
+            }
         }
         if (item.next !== undefined) {
             this.addResultSetData(item.next, assertDefined(this.provider.getResultData(item.next)));
@@ -468,7 +470,7 @@ export class BlobStore implements DataProvider {
     private versionInserter: Inserter;
     private declarationInserter: Inserter;
     private definitionInserter: Inserter;
-    private referneceInserter: Inserter;
+    private referenceInserter: Inserter;
     private hoverInserter: Inserter;
 
     private knownHashes: Set<string>;
@@ -485,6 +487,8 @@ export class BlobStore implements DataProvider {
     private rangeDatas: Map<Id, RangeData>;
     private resultSetDatas: Map<Id, ResultSetData>;
     private monikerDatas: Map<Id, MonikerData>;
+    private monikerSets: Map<Id, Set<Id>>;
+    private monikerAttachments: Map<Id, Id>;
     private hoverDatas: Map<Id, lsp.Hover>;
     private declarationDatas: Map<Id /* result id */, Map<Id /* document id */, DeclarationResultData>>;
     private definitionDatas: Map<Id /* result id */, Map<Id /* document id */, DefinitionResultData>>;
@@ -509,6 +513,8 @@ export class BlobStore implements DataProvider {
         this.rangeDatas = new Map();
         this.resultSetDatas = new Map();
         this.monikerDatas = new Map();
+        this.monikerSets = new Map();
+        this.monikerAttachments = new Map();
         this.hoverDatas = new Map();
         this.declarationDatas = new Map();
         this.definitionDatas = new Map();
@@ -535,7 +541,7 @@ export class BlobStore implements DataProvider {
         this.versionInserter = new Inserter(this.db, 'Insert Into versions (version, hash)', 2, 256);
         this.declarationInserter = new Inserter(this.db, 'Insert Into decls (scheme, identifier, documentHash, startLine, startCharacter, endLine, endCharacter)', 7, 128);
         this.definitionInserter = new Inserter(this.db, 'Insert Into defs (scheme, identifier, documentHash, startLine, startCharacter, endLine, endCharacter)', 7, 128);
-        this.referneceInserter = new Inserter(this.db, 'Insert Into refs (scheme, identifier, documentHash, kind, startLine, startCharacter, endLine, endCharacter)', 8, 64);
+        this.referenceInserter = new Inserter(this.db, 'Insert Into refs (scheme, identifier, documentHash, kind, startLine, startCharacter, endLine, endCharacter)', 8, 64);
         this.hoverInserter = new Inserter(this.db, 'Insert Into hovers (scheme, identifier, hoverHash)', 3, 128);
 
         if (!forceDelete) {
@@ -613,6 +619,9 @@ export class BlobStore implements DataProvider {
                 case VertexLabels.event:
                     this.handleEvent(element);
                     break;
+                case VertexLabels.packageInformation:
+                    console.log('packageInformation vertex unimplemented')
+                    break
             }
         } else if (element.type === ElementTypes.edge) {
             switch(element.label) {
@@ -621,6 +630,12 @@ export class BlobStore implements DataProvider {
                     break;
                 case EdgeLabels.moniker:
                     this.handleMonikerEdge(element)
+                    break;
+                case EdgeLabels.nextMoniker:
+                    this.handleNextMonikerEdge(element)
+                    break;
+                case EdgeLabels.packageInformation:
+                    this.handlePackageInformationEdge(element)
                     break;
                 case EdgeLabels.textDocument_foldingRange:
                     this.handleFoldingRangeEdge(element);
@@ -710,7 +725,7 @@ export class BlobStore implements DataProvider {
         this.versionInserter.finish();
         this.declarationInserter.finish();
         this.definitionInserter.finish();
-        this.referneceInserter.finish();
+        this.referenceInserter.finish();
         this.hoverInserter.finish();
         if (this.forceDelete) {
             this.createIndices();
@@ -768,9 +783,36 @@ export class BlobStore implements DataProvider {
     }
 
     private handleMonikerEdge(moniker: moniker): void {
-        const source: RangeData | ResultSetData = assertDefined(this.rangeDatas.get(moniker.outV) || this.resultSetDatas.get(moniker.outV));
-        assertDefined(this.monikerDatas.get(moniker.inV));
-        source.moniker = moniker.inV;
+        assertDefined(this.rangeDatas.get(moniker.outV) || this.resultSetDatas.get(moniker.outV));
+        assertDefined(this.monikerDatas.get(moniker.inV))
+        this.monikerAttachments.set(moniker.outV, moniker.inV)
+        this.updateMonikerSets([moniker.inV])
+    }
+
+    private handleNextMonikerEdge(nextMoniker: nextMoniker): void {
+        assertDefined(this.monikerDatas.get(nextMoniker.inV))
+        assertDefined(this.monikerDatas.get(nextMoniker.outV))
+        this.updateMonikerSets([nextMoniker.inV, nextMoniker.outV])
+    }
+
+    private updateMonikerSets(vals: Id[]): void {
+        const combined = new Set<Id>()
+        for (const val of vals) {
+            combined.add(val)
+
+            for (const v of this.monikerSets.get(val) || new Set()) {
+                combined.add(v)
+            }
+        }
+
+        for (const val of combined) {
+            this.monikerSets.set(val, combined)
+        }
+    }
+
+    // TODO - implement
+    private handlePackageInformationEdge(packageInformation: packageInformation): void {
+        // console.log('packageInformation', packageInformation)
     }
 
     private handleHover(hover: HoverResult): void {
@@ -817,22 +859,15 @@ export class BlobStore implements DataProvider {
         outV.referenceResult = edge.inV;
     }
 
+    // TODO - no-op this? Not sure it does anything now
     private ensureMoniker(data: RangeData | ResultSetData): void {
-        if (data.moniker !== undefined) {
+        if (data.monikers !== undefined) {
             return;
         }
         const monikerData: MonikerData = { scheme: '$synthetic', identifier: uuid.v4() };
-        data.moniker = monikerData.identifier;
+        data.monikers = [monikerData.identifier];
         this.monikerDatas.set(monikerData.identifier, monikerData);
     }
-
-    // private lookupMoniker(id: Id): MonikerData | undefined {
-    // 	let data = this.rangeDatas.get(id) || this.resultSetDatas.get(id);
-    // 	if (data === undefined  || data.moniker === undefined) {
-    // 		return undefined;
-    // 	}
-    // 	return this.monikerDatas.get(data.moniker);
-    // }
 
     private handleItemEdge(edge: item): void {
         let property: ItemEdgeProperties | undefined = edge.property;
@@ -922,6 +957,17 @@ export class BlobStore implements DataProvider {
     }
 
     private handleDocumentEnd(event: DocumentEvent) {
+        for (const [key, value] of this.monikerAttachments.entries()) {
+            const ids = this.monikerSets.get(value)
+            if (!ids) {
+                throw new Error("moniker set is empty")
+            }
+
+            const source: RangeData | ResultSetData = assertDefined(this.rangeDatas.get(key) || this.resultSetDatas.get(key));
+            ids.forEach(id => assertDefined(this.monikerDatas.get(id)))
+            source.monikers = Array.from(ids)
+        }
+
         const documentData = this.getEnsureDocumentData(event.data);
         const contains = this.containsDatas.get(event.data);
         if (contains !== undefined) {
@@ -955,17 +1001,17 @@ export class BlobStore implements DataProvider {
                 for (let reference of data.references) {
                     if (reference.declarations) {
                         for (let range of reference.declarations) {
-                            this.referneceInserter.do(reference.scheme, reference.indentifier, data.hash, 0, range[0], range[1], range[2], range[3]);
+                            this.referenceInserter.do(reference.scheme, reference.indentifier, data.hash, 0, range[0], range[1], range[2], range[3]);
                         }
                     }
                     if (reference.definitions) {
                         for (let range of reference.definitions) {
-                            this.referneceInserter.do(reference.scheme, reference.indentifier, data.hash, 1, range[0], range[1], range[2], range[3]);
+                            this.referenceInserter.do(reference.scheme, reference.indentifier, data.hash, 1, range[0], range[1], range[2], range[3]);
                         }
                     }
                     if (reference.references) {
                         for (let range of reference.references) {
-                            this.referneceInserter.do(reference.scheme, reference.indentifier, data.hash, 2, range[0], range[1], range[2], range[3]);
+                            this.referenceInserter.do(reference.scheme, reference.indentifier, data.hash, 2, range[0], range[1], range[2], range[3]);
                         }
                     }
                 }
