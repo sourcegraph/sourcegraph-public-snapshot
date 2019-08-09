@@ -145,15 +145,13 @@ func handleConfigOverrides() error {
 			}
 			for a := range toAdd {
 				for b := range toRemove {
-					if isEquiv(a, b) {
+					if isEquiv(a, b) { // Nothing changed
 						delete(toAdd, a)
 						delete(toRemove, b)
-					} else {
-						if shouldUpdate(a, b) {
-							delete(toAdd, a)
-							delete(toRemove, b)
-							toUpdate[b.ID] = a
-						}
+					} else if shouldUpdate(a, b) {
+						delete(toAdd, a)
+						delete(toRemove, b)
+						toUpdate[b.ID] = a
 					}
 				}
 			}
