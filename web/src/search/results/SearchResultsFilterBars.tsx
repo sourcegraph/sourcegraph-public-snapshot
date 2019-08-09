@@ -33,9 +33,8 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
     <div className="search-results-filter-bars">
         {isSearchResults(results) &&
             results.dynamicFilters.some(filter => isScopeSelected(navbarSearchQuery, filter.value)) && (
-                <div className="search-results-filter-bars__row">
-                    Selected options:
-                    <div className="search-results-filter-bars__filters">
+                <div className="search-results-filter-bars__row global-navbar--bg">
+                    <div className="search-results-filter-bars__filters__selected">
                         {results.dynamicFilters
                             .filter(filter => filter.value !== '')
                             .filter(filter => isScopeSelected(navbarSearchQuery, filter.value))
