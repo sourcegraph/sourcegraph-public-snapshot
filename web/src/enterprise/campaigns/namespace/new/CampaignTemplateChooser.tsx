@@ -15,7 +15,7 @@ export const CampaignTemplateChooser: React.FunctionComponent<Props> = ({ urlToF
     <div className={className}>
         <div className="card">
             <ul className="list-group list-group-flush">
-                {CAMPAIGN_TEMPLATES.map((template, i) => (
+                {CAMPAIGN_TEMPLATES.filter(template => !template.isEmpty).map((template, i) => (
                     <CampaignTemplateRow
                         key={i}
                         template={template}

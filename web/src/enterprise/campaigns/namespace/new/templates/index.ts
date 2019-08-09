@@ -14,10 +14,13 @@ export interface CampaignTemplateComponentContext extends CampaignFormControl {
 export interface CampaignTemplate {
     id: string
     title: string
-    detail: string
-    icon: React.ComponentType<{ className?: string }>
+    detail?: string
+    icon?: React.ComponentType<{ className?: string }>
     renderForm: React.FunctionComponent<CampaignTemplateComponentContext>
+    isEmpty?: boolean
 }
+
+export const EMPTY_CAMPAIGN_TEMPLATE_ID = 'empty'
 
 export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     JavaArtifactDependencyCampaignTemplate,
@@ -26,4 +29,5 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     CodeOwnershipValidationCampaignTemplate,
     FindReplaceCampaignTemplate,
     TriageSearchResultsCampaignTemplate,
+    { id: EMPTY_CAMPAIGN_TEMPLATE_ID, title: '', renderForm: () => null, isEmpty: true },
 ]

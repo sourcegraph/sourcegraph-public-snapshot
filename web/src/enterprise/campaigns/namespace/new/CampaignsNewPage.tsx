@@ -9,6 +9,7 @@ import { mutateGraphQL } from '../../../../backend/graphql'
 import { PageTitle } from '../../../../components/PageTitle'
 import { NamespaceCampaignsAreaContext } from '../NamespaceCampaignsArea'
 import { CampaignForm, CampaignFormData } from './CampaignForm'
+import { EMPTY_CAMPAIGN_TEMPLATE_ID } from './templates'
 
 export const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICampaign> =>
     mutateGraphQL(
@@ -52,7 +53,7 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
     }, [setBreadcrumbItem])
 
     const templateID = new URLSearchParams(location.search).get('template')
-    const preview = !!templateID
+    const preview = !!templateID && templateID !== EMPTY_CAMPAIGN_TEMPLATE_ID
 
     const [creationOrError, setCreationOrError] = useState<
         null | typeof LOADING | Pick<GQL.ICampaign, 'url'> | ErrorLike
