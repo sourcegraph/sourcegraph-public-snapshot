@@ -63,7 +63,7 @@ func TestRequestMeterTransport(t *testing.T) {
 		t.Error(err)
 	}
 
-	c, err := rm.counter.GetMetricWith(map[string]string{"category":"/apiCallA", "code":"200"})
+	c, err := rm.counter.GetMetricWith(map[string]string{"category": "/apiCallA", "code": "200"})
 	if err != nil {
 		t.Error(err)
 	}
