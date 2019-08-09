@@ -31,6 +31,9 @@ interface SearchResultsInfoBarProps {
     didSave: boolean
 
     displayPerformanceWarning: boolean
+
+    // Whether the search query contains a repo: field.
+    hasRepoishField: boolean
 }
 
 /**
@@ -149,7 +152,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 </div>
             </small>
         )}
-        {!props.results.alert && props.showDotComMarketing && <ServerBanner />}
+        {!props.results.alert && props.showDotComMarketing && !props.hasRepoishField && <ServerBanner />}
         {!props.results.alert && props.displayPerformanceWarning && <PerformanceWarningAlert />}
     </div>
 )
