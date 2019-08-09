@@ -75,11 +75,12 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 		return nil, fmt.Errorf("blank external service configuration is invalid (must be valid JSONC)")
 	}
 
+	ps := conf.Get().Critical.AuthProviders
 	update := &db.ExternalServiceUpdate{
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
-	if err := db.ExternalServices.Update(ctx, externalServiceID, update); err != nil {
+	if err := db.ExternalServices.Update(ctx, ps, externalServiceID, update); err != nil {
 		return nil, err
 	}
 

@@ -243,7 +243,7 @@ type ExternalServiceUpdate struct {
 // Update updates a external service.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) Update(ctx context.Context, id int64, update *ExternalServiceUpdate) error {
+func (c *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error {
 	if update.Config != nil {
 		// Query to get the kind (which is immutable) so we can validate the new config.
 		externalService, err := c.GetByID(ctx, id)
@@ -251,7 +251,6 @@ func (c *ExternalServicesStore) Update(ctx context.Context, id int64, update *Ex
 			return err
 		}
 
-		ps := conf.Get().Critical.AuthProviders
 		if err := c.ValidateConfig(externalService.Kind, *update.Config, ps); err != nil {
 			return err
 		}
