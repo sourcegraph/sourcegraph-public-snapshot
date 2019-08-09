@@ -54,6 +54,7 @@ func (r *codemodResultResolver) ToFileMatch() (*fileMatchResolver, bool)   { ret
 func (r *codemodResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
 }
+
 func (r *codemodResultResolver) ToCodemodResult() (*codemodResultResolver, bool) {
 	return r, true
 }
@@ -61,6 +62,7 @@ func (r *codemodResultResolver) ToCodemodResult() (*codemodResultResolver, bool)
 func (r *codemodResultResolver) searchResultURIs() (string, string) {
 	return string(r.commit.repo.repo.Name), r.path
 }
+
 func (r *codemodResultResolver) resultCount() int32 {
 	return int32(len(r.matches))
 }
@@ -119,7 +121,7 @@ func validateQuery(q *query.Query) (*args, error) {
 	if len(includeFileFilter) > 0 {
 		includeFileFilterText = includeFileFilter[0]
 		// only file names or files with extensions in the following characterset are allowed
-		var IsAlphanumericWithPeriod = regexp.MustCompile(`^[a-zA-Z0-9_.]+$`).MatchString
+		IsAlphanumericWithPeriod := regexp.MustCompile(`^[a-zA-Z0-9_.]+$`).MatchString
 		if !IsAlphanumericWithPeriod(includeFileFilterText) {
 			return nil, errors.New("the 'file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
 		}
@@ -128,7 +130,7 @@ func validateQuery(q *query.Query) (*args, error) {
 	var excludeFileFilterText string
 	if len(excludeFileFilter) > 0 {
 		excludeFileFilterText = excludeFileFilter[0]
-		var IsAlphanumericWithPeriod = regexp.MustCompile(`^[a-zA-Z_.]+$`).MatchString
+		IsAlphanumericWithPeriod := regexp.MustCompile(`^[a-zA-Z_.]+$`).MatchString
 		if !IsAlphanumericWithPeriod(includeFileFilterText) {
 			return nil, errors.New("the '-file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
 		}
@@ -178,7 +180,7 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 			mu.Lock()
 			defer mu.Unlock()
 			if fatalErr := handleRepoSearchResult(common, repoRev, false, repoTimedOut, searchErr); fatalErr != nil {
-				err = errors.Wrapf(searchErr, "failed to call codemod %s", repoRev)
+				err = errors.Wrapf(searchErr, "failed to call codemod %s", &repoRev)
 				cancel()
 			}
 			if len(results) > 0 {
