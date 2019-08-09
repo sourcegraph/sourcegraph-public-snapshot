@@ -67,6 +67,7 @@ func (r *commitSearchResultResolver) ToFileMatch() (*fileMatchResolver, bool)   
 func (r *commitSearchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return r, true
 }
+
 func (r *commitSearchResultResolver) ToCodemodResult() (*codemodResultResolver, bool) {
 	return nil, false
 }
@@ -81,9 +82,9 @@ func (r *commitSearchResultResolver) resultCount() int32 {
 	return 1
 }
 
-var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
+var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
-func searchCommitDiffsInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+func searchCommitDiffsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	if mockSearchCommitDiffsInRepo != nil {
 		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, query)
 	}
@@ -102,9 +103,9 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs search.RepositoryRevi
 	})
 }
 
-var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
+var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
-func searchCommitLogInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	if mockSearchCommitLogInRepo != nil {
 		return mockSearchCommitLogInRepo(ctx, repoRevs, info, query)
 	}
@@ -124,7 +125,7 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs search.RepositoryRevisi
 }
 
 type commitSearchOp struct {
-	repoRevs           search.RepositoryRevisions
+	repoRevs           *search.RepositoryRevisions
 	info               *search.PatternInfo
 	query              *query.Query
 	diff               bool
@@ -463,7 +464,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.Args) ([]searchR
 	)
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
-		go func(repoRev search.RepositoryRevisions) {
+		go func(repoRev *search.RepositoryRevisions) {
 			defer wg.Done()
 			results, repoLimitHit, repoTimedOut, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.Pattern, args.Query)
 			if ctx.Err() == context.Canceled {
@@ -484,7 +485,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.Args) ([]searchR
 			if len(results) > 0 {
 				unflattened = append(unflattened, results)
 			}
-		}(*repoRev)
+		}(repoRev)
 	}
 	wg.Wait()
 	if err != nil {
@@ -524,7 +525,7 @@ func searchCommitLogInRepos(ctx context.Context, args *search.Args) ([]searchRes
 	)
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
-		go func(repoRev search.RepositoryRevisions) {
+		go func(repoRev *search.RepositoryRevisions) {
 			defer wg.Done()
 			results, repoLimitHit, repoTimedOut, searchErr := searchCommitLogInRepo(ctx, repoRev, args.Pattern, args.Query)
 			if ctx.Err() == context.Canceled {
@@ -545,7 +546,7 @@ func searchCommitLogInRepos(ctx context.Context, args *search.Args) ([]searchRes
 			if len(results) > 0 {
 				unflattened = append(unflattened, results)
 			}
-		}(*repoRev)
+		}(repoRev)
 	}
 	wg.Wait()
 	if err != nil {

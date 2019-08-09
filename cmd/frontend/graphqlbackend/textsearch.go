@@ -118,6 +118,7 @@ func (fm *fileMatchResolver) ToFileMatch() (*fileMatchResolver, bool)   { return
 func (fm *fileMatchResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
 }
+
 func (r *fileMatchResolver) ToCodemodResult() (*codemodResultResolver, bool) {
 	return nil, false
 }
@@ -1057,7 +1058,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 
 		wg.Add(1)
-		go func(ctx context.Context, done context.CancelFunc, repoRev search.RepositoryRevisions) {
+		go func(ctx context.Context, done context.CancelFunc, repoRev *search.RepositoryRevisions) {
 			defer wg.Done()
 			defer done()
 
@@ -1091,7 +1092,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				cancel()
 			}
 			addMatches(matches)
-		}(limitCtx, limitDone, *repoRev)
+		}(limitCtx, limitDone, repoRev)
 	}
 
 	wg.Wait()

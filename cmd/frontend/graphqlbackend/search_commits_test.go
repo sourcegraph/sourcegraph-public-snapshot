@@ -52,7 +52,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repoRevs := search.RepositoryRevisions{
+	repoRevs := &search.RepositoryRevisions{
 		Repo: &types.Repo{ID: 1, Name: "repo"},
 		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}

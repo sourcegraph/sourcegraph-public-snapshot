@@ -771,7 +771,7 @@ func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns
 // updating common as to reflect that new information. If searchErr is a fatal error,
 // it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
 // nil error.
-func handleRepoSearchResult(common *searchResultsCommon, repoRev search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (fatalErr error) {
+func handleRepoSearchResult(common *searchResultsCommon, repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (fatalErr error) {
 	common.limitHit = common.limitHit || limitHit
 	if vcs.IsRepoNotExist(searchErr) {
 		if vcs.IsCloneInProgress(searchErr) {
