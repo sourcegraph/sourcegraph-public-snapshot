@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rules"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
@@ -36,6 +37,22 @@ func (GraphQLResolver) CreateCampaign(ctx context.Context, arg *graphqlbackend.C
 	if err != nil {
 		return nil, err
 	}
+
+	if arg.Input.Rules != nil {
+		for _, newRule := range *arg.Input.Rules {
+			if _, err := (rules.DBRules{}).Create(ctx, &rules.DBRule{
+				Container:   rules.RuleContainer{Campaign: campaign.ID},
+				Name:        newRule.Name,
+				Description: newRule.Description,
+				Definition:  newRule.Definition,
+				CreatedAt:   campaign.CreatedAt,
+				UpdatedAt:   campaign.UpdatedAt,
+			}); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	return newGQLCampaign(campaign), nil
 }
 

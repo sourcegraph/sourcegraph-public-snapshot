@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { Form } from '../../../../components/Form'
+import { useLocalStorage } from '../../../../util/useLocalStorage'
 import { CampaignFormCommonFields } from './CampaignFormCommonFields'
 import { CampaignTemplateChooser } from './CampaignTemplateChooser'
 import { CAMPAIGN_TEMPLATES, CampaignTemplate, EMPTY_CAMPAIGN_TEMPLATE_ID } from './templates'
@@ -83,6 +84,15 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
     const TemplateIcon = template !== null && !isErrorLike(template) ? template.icon : undefined
     const TemplateForm = template !== null && !isErrorLike(template) ? template.renderForm : undefined
 
+    const [isCreateCampaignInputVisible, setIsCreateCampaignInputVisible] = useLocalStorage(
+        'CampaignForm.isCreateCampaignInputVisible',
+        false
+    )
+    const toggleIsCreateCampaignInputVisible = useCallback(
+        () => setIsCreateCampaignInputVisible(!isCreateCampaignInputVisible),
+        [isCreateCampaignInputVisible, setIsCreateCampaignInputVisible]
+    )
+
     return (
         <Form className={`form ${className}`} onSubmit={onSubmit}>
             {template === null || isErrorLike(template) ? (
@@ -133,6 +143,20 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
                         <button type="submit" className="btn btn-success" disabled={formControlProps.disabled}>
                             {isLoading ? <LoadingSpinner className="icon-inline" /> : buttonText}
                         </button>
+                    </div>
+                    <div className="form-group">
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-link px-0"
+                            onClick={toggleIsCreateCampaignInputVisible}
+                        >
+                            {isCreateCampaignInputVisible ? 'Hide' : 'Show'} JSON
+                        </button>
+                        {isCreateCampaignInputVisible && (
+                            <pre className="small border p-2">
+                                <code>{JSON.stringify(value, null, 2)}</code>
+                            </pre>
+                        )}
                     </div>
                 </>
             )}

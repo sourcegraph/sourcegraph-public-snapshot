@@ -1,11 +1,11 @@
 package rules
 
 type dbMocks struct {
-	rules mockRules
+	Rules mockRules
 }
 
-var mocks dbMocks
+var Mocks dbMocks
 
-func resetMocks() {
-	mocks = dbMocks{}
+func ResetMocks() {
+	Mocks = dbMocks{}
 }

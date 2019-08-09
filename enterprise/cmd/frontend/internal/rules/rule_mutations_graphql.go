@@ -11,11 +11,11 @@ func (GraphQLResolver) CreateRule(ctx context.Context, arg *graphqlbackend.Creat
 	if err != nil {
 		return nil, err
 	}
-	rule, err := dbRules{}.Create(ctx, &dbRule{
+	rule, err := DBRules{}.Create(ctx, &DBRule{
 		Container:   dbContainer,
-		Name:        arg.Input.Name,
-		Description: arg.Input.Description,
-		Definition:  arg.Input.Definition,
+		Name:        arg.Input.Rule.Name,
+		Description: arg.Input.Rule.Description,
+		Definition:  arg.Input.Rule.Definition,
 	})
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (GraphQLResolver) UpdateRule(ctx context.Context, arg *graphqlbackend.Updat
 	if err != nil {
 		return nil, err
 	}
-	rule, err := dbRules{}.Update(ctx, l.db.ID, dbRuleUpdate{
+	rule, err := DBRules{}.Update(ctx, l.db.ID, dbRuleUpdate{
 		Name:        arg.Input.Name,
 		Description: arg.Input.Description,
 		Definition:  arg.Input.Definition,
@@ -44,5 +44,5 @@ func (GraphQLResolver) DeleteRule(ctx context.Context, arg *graphqlbackend.Delet
 	if err != nil {
 		return nil, err
 	}
-	return nil, dbRules{}.DeleteByID(ctx, gqlRule.db.ID)
+	return nil, DBRules{}.DeleteByID(ctx, gqlRule.db.ID)
 }

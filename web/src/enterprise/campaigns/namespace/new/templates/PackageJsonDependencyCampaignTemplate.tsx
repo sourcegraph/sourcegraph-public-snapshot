@@ -24,11 +24,21 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
     }, [])
 
     useEffect(() => {
+        const packageNameOrPlaceholder = packageName || '<package>'
         onChange({
             ...value,
-            name: `Deprecate ${packageName}${
+            name: `Deprecate ${packageNameOrPlaceholder}${
                 versionRange && versionRange !== ALL_VERSION_RANGE ? `@${versionRange}` : ''
             } (npm)`,
+            rules: [
+                // TODO!(sqs): hack
+                {
+                    name: 'Find package.json dependencies entries',
+                    definition: {
+                        conditions: `file:(^|/)package\\.json$ '${JSON.stringify(packageNameOrPlaceholder)}'`,
+                    },
+                },
+            ],
         })
     }, [onChange, packageName, value, versionRange])
 

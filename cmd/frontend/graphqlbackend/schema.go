@@ -4553,6 +4553,9 @@ input CreateCampaignInput {
 
     # Whether the campaign is a preview.
     preview: Boolean
+
+    # Rules to create in the campaign.
+    rules: [NewRuleInput!]
 }
 
 # Input arguments for updating a campaign.
@@ -4698,11 +4701,8 @@ type CampaignConnection {
     pageInfo: PageInfo!
 }
 
-# Input arguments for creating a rule.
-input CreateRuleInput {
-    # The object where the rule is defined.
-    container: ID!
-
+# Input argument for a new rule.
+input NewRuleInput {
     # The name of the rule.
     name: String!
 
@@ -4711,6 +4711,15 @@ input CreateRuleInput {
 
     # The definition of the rule as JSONC (with comments and trailing commas allowed).
     definition: JSONValue!
+}
+
+# Input arguments for creating a rule.
+input CreateRuleInput {
+    # The object where the rule is defined.
+    container: ID!
+
+    # The new rule.
+    rule: NewRuleInput!
 }
 
 # Input arguments for updating a rule.

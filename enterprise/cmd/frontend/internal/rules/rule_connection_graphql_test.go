@@ -1,4 +1,4 @@
-package rules
+package rules_test
 
 import (
 	"context"
@@ -9,10 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rules"
 )
 
 func TestGraphQL_RuleContainer_RuleConnection(t *testing.T) {
-	resetMocks()
+	rules.ResetMocks()
 	const (
 		wantContainerCampaignID = 1
 		wantRuleID              = 2
@@ -21,8 +22,8 @@ func TestGraphQL_RuleContainer_RuleConnection(t *testing.T) {
 		return mockCampaign{id: wantContainerCampaignID}, nil
 	}
 	defer func() { campaigns.MockCampaignByID = nil }()
-	mocks.rules.List = func(dbRulesListOptions) ([]*dbRule, error) {
-		return []*dbRule{{ID: wantRuleID, Name: "n"}}, nil
+	rules.Mocks.Rules.List = func(rules.DBRulesListOptions) ([]*rules.DBRule, error) {
+		return []*rules.DBRule{{ID: wantRuleID, Name: "n"}}, nil
 	}
 
 	gqltesting.RunTests(t, []*gqltesting.Test{

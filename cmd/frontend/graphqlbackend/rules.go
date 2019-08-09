@@ -93,12 +93,16 @@ type RulesResolver interface {
 	RulesInRuleContainer(ctx context.Context, container graphql.ID, arg *graphqlutil.ConnectionArgs) (RuleConnection, error)
 }
 
+type NewRuleInput struct {
+	Name        string
+	Description *string
+	Definition  string
+}
+
 type CreateRuleArgs struct {
 	Input struct {
-		Container   graphql.ID
-		Name        string
-		Description *string
-		Definition  string
+		Container graphql.ID
+		Rule      NewRuleInput
 	}
 }
 

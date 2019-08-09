@@ -9,23 +9,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
-type ruleContainer struct {
+type RuleContainer struct {
 	Campaign int64
 	Thread   int64
 }
 
-func (c ruleContainer) graphqlID() graphql.ID {
+func (c RuleContainer) graphqlID() graphql.ID {
 	switch {
 	case c.Campaign != 0:
 		return graphqlbackend.MarshalCampaignID(c.Campaign)
 	case c.Thread != 0:
 		return graphqlbackend.MarshalThreadID(c.Thread)
 	default:
-		panic("invalid ruleContainer")
+		panic("invalid RuleContainer")
 	}
 }
 
-func dbRuleContainerByID(ruleContainer graphql.ID) (c ruleContainer, err error) {
+func dbRuleContainerByID(ruleContainer graphql.ID) (c RuleContainer, err error) {
 	// TODO!(sqs) THIS MUST actually try to fetch the object so that we check and enforce perms SECURITY
 	switch relay.UnmarshalKind(ruleContainer) {
 	case graphqlbackend.GQLTypeCampaign:

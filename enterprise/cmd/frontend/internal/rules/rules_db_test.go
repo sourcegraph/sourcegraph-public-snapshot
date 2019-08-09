@@ -1,4 +1,4 @@
-package rules
+package rules_test
 
 import (
 	"reflect"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rules"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
@@ -14,11 +15,11 @@ func TestDB_Rules(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	resetMocks()
+	rules.ResetMocks()
 	ctx := dbtesting.TestContext(t)
 
 	// for testing equality of all other fields
-	norm := func(vs ...*dbRule) {
+	norm := func(vs ...*rules.DBRule) {
 		for _, v := range vs {
 			v.ID = 0
 			v.CreatedAt = time.Time{}
@@ -39,19 +40,19 @@ func TestDB_Rules(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantRule0 := &dbRule{
-		Container:   ruleContainer{Campaign: campaign1},
+	wantRule0 := &rules.DBRule{
+		Container:   rules.RuleContainer{Campaign: campaign1},
 		Name:        "n0",
 		Description: strptr("d0"),
 		Definition:  "h0",
 	}
-	rule0, err := dbRules{}.Create(ctx, wantRule0)
+	rule0, err := rules.DBRules{}.Create(ctx, wantRule0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	rule0ID := rule0.ID
-	rule1, err := dbRules{}.Create(ctx, &dbRule{
-		Container:   ruleContainer{Campaign: campaign1},
+	rule1, err := rules.DBRules{}.Create(ctx, &rules.DBRule{
+		Container:   rules.RuleContainer{Campaign: campaign1},
 		Name:        "n1",
 		Description: strptr("d1"),
 		Definition:  "h1",
@@ -72,7 +73,7 @@ func TestDB_Rules(t *testing.T) {
 
 	{
 		// Get a rule.
-		rule, err := dbRules{}.GetByID(ctx, rule0ID)
+		rule, err := rules.DBRules{}.GetByID(ctx, rule0ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -87,7 +88,7 @@ func TestDB_Rules(t *testing.T) {
 
 	{
 		// List all rules.
-		ts, err := dbRules{}.List(ctx, dbRulesListOptions{})
+		ts, err := rules.DBRules{}.List(ctx, rules.DBRulesListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -95,7 +96,7 @@ func TestDB_Rules(t *testing.T) {
 		if len(ts) != want {
 			t.Errorf("got %d rules, want %d", len(ts), want)
 		}
-		count, err := dbRules{}.Count(ctx, dbRulesListOptions{})
+		count, err := rules.DBRules{}.Count(ctx, rules.DBRulesListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -106,7 +107,7 @@ func TestDB_Rules(t *testing.T) {
 
 	{
 		// List campaign1's rules.
-		ts, err := dbRules{}.List(ctx, dbRulesListOptions{Container: ruleContainer{Campaign: campaign1}})
+		ts, err := rules.DBRules{}.List(ctx, rules.DBRulesListOptions{Container: rules.RuleContainer{Campaign: campaign1}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -118,7 +119,7 @@ func TestDB_Rules(t *testing.T) {
 
 	{
 		// List campaign2's rules.
-		ts, err := dbRules{}.List(ctx, dbRulesListOptions{Container: ruleContainer{Campaign: campaign2}})
+		ts, err := rules.DBRules{}.List(ctx, rules.DBRulesListOptions{Container: rules.RuleContainer{Campaign: campaign2}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -130,21 +131,21 @@ func TestDB_Rules(t *testing.T) {
 
 	{
 		// Query rules.
-		ts, err := dbRules{}.List(ctx, dbRulesListOptions{Query: "n1"})
+		ts, err := rules.DBRules{}.List(ctx, rules.DBRulesListOptions{Query: "n1"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if want := []*dbRule{rule1}; !reflect.DeepEqual(ts, want) {
+		if want := []*rules.DBRule{rule1}; !reflect.DeepEqual(ts, want) {
 			t.Errorf("got %+v, want %+v", ts, want)
 		}
 	}
 
 	{
 		// Delete a rule.
-		if err := (dbRules{}).DeleteByID(ctx, rule0ID); err != nil {
+		if err := (rules.DBRules{}).DeleteByID(ctx, rule0ID); err != nil {
 			t.Fatal(err)
 		}
-		ts, err := dbRules{}.List(ctx, dbRulesListOptions{Container: ruleContainer{Campaign: campaign1}})
+		ts, err := rules.DBRules{}.List(ctx, rules.DBRulesListOptions{Container: rules.RuleContainer{Campaign: campaign1}})
 		if err != nil {
 			t.Fatal(err)
 		}

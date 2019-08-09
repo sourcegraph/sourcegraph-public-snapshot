@@ -161,6 +161,7 @@ type CreateCampaignArgs struct {
 		Name      string
 		Body      *string
 		Preview   *bool
+		Rules     *[]NewRuleInput
 	}
 }
 

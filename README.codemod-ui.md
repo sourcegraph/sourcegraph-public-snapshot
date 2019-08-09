@@ -247,6 +247,10 @@ Campaign rules
 
 ----
 
+make CreateCampaignInput take all the stuff, including the rules and threads, and also make a one-shot preview endpoint that lets us show live stats on the new-campaign page
+
+----
+
 demo todos:
 
 - add <PageTitle /> components everywhere

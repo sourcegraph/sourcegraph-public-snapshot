@@ -51,7 +51,7 @@ export const NewRuleForm: React.FunctionComponent<Props> = ({
         async ({ name, description, definition }: RuleFormData) => {
             setIsLoading(true)
             try {
-                await createRule({ container: container.id, name, description, definition })
+                await createRule({ container: container.id, rule: { name, description, definition } })
                 setIsLoading(false)
                 onDismiss()
                 onRuleCreate()

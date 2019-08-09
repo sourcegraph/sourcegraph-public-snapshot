@@ -11,15 +11,15 @@ import (
 )
 
 func TestGraphQL_CreateRule(t *testing.T) {
-	resetMocks()
+	ResetMocks()
 	const wantContainerCampaignID = 1
-	wantRule := &dbRule{
-		Container:   ruleContainer{Campaign: wantContainerCampaignID},
+	wantRule := &DBRule{
+		Container:   RuleContainer{Campaign: wantContainerCampaignID},
 		Name:        "n",
 		Description: strptr("d"),
 		Definition:  "h",
 	}
-	mocks.rules.Create = func(rule *dbRule) (*dbRule, error) {
+	Mocks.Rules.Create = func(rule *DBRule) (*DBRule, error) {
 		if !reflect.DeepEqual(rule, wantRule) {
 			t.Errorf("got rule %+v, want %+v", rule, wantRule)
 		}
@@ -34,7 +34,7 @@ func TestGraphQL_CreateRule(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation($container: ID!) {
-					createRule(input: { container: $container, name: "n", description: "d", definition: "h" }) {
+					createRule(input: { container: $container, rule: { name: "n", description: "d", definition: "h" } }) {
 						id
 						name
 					}
@@ -56,19 +56,19 @@ func TestGraphQL_CreateRule(t *testing.T) {
 }
 
 func TestGraphQL_UpdateRule(t *testing.T) {
-	resetMocks()
+	ResetMocks()
 	const wantID = 2
-	mocks.rules.GetByID = func(id int64) (*dbRule, error) {
+	Mocks.Rules.GetByID = func(id int64) (*DBRule, error) {
 		if id != wantID {
 			t.Errorf("got ID %d, want %d", id, wantID)
 		}
-		return &dbRule{ID: wantID}, nil
+		return &DBRule{ID: wantID}, nil
 	}
-	mocks.rules.Update = func(id int64, update dbRuleUpdate) (*dbRule, error) {
+	Mocks.Rules.Update = func(id int64, update dbRuleUpdate) (*DBRule, error) {
 		if want := (dbRuleUpdate{Name: strptr("n1"), Description: strptr("d1"), Definition: strptr("h1")}); !reflect.DeepEqual(update, want) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
-		return &dbRule{
+		return &DBRule{
 			ID:          2,
 			Name:        "n1",
 			Description: strptr("d1"),
@@ -109,15 +109,15 @@ func TestGraphQL_UpdateRule(t *testing.T) {
 }
 
 func TestGraphQL_DeleteRule(t *testing.T) {
-	resetMocks()
+	ResetMocks()
 	const wantID = 2
-	mocks.rules.GetByID = func(id int64) (*dbRule, error) {
+	Mocks.Rules.GetByID = func(id int64) (*DBRule, error) {
 		if id != wantID {
 			t.Errorf("got ID %d, want %d", id, wantID)
 		}
-		return &dbRule{ID: wantID}, nil
+		return &DBRule{ID: wantID}, nil
 	}
-	mocks.rules.DeleteByID = func(id int64) error {
+	Mocks.Rules.DeleteByID = func(id int64) error {
 		if id != wantID {
 			t.Errorf("got ID %d, want %d", id, wantID)
 		}
@@ -143,3 +143,5 @@ func TestGraphQL_DeleteRule(t *testing.T) {
 		},
 	})
 }
+
+func strptr(s string) *string { return &s }

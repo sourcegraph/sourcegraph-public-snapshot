@@ -12,7 +12,7 @@ import (
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
 
 // gqlRule implements the GraphQL type Rule.
-type gqlRule struct{ db *dbRule }
+type gqlRule struct{ db *DBRule }
 
 // ruleByID looks up and returns the Rule with the given GraphQL ID. If no such Rule exists, it
 // returns a non-nil error.
@@ -31,7 +31,7 @@ func (GraphQLResolver) RuleByID(ctx context.Context, id graphql.ID) (graphqlback
 // ruleByDBID looks up and returns the Rule with the given database ID. If no such Rule exists,
 // it returns a non-nil error.
 func ruleByDBID(ctx context.Context, dbID int64) (*gqlRule, error) {
-	v, err := dbRules{}.GetByID(ctx, dbID)
+	v, err := DBRules{}.GetByID(ctx, dbID)
 	if err != nil {
 		return nil, err
 	}

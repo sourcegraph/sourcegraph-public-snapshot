@@ -1,4 +1,4 @@
-package rules
+package rules_test
 
 import (
 	"context"
@@ -6,10 +6,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rules"
 )
 
 func init() {
-	graphqlbackend.Rules = GraphQLResolver{}
+	graphqlbackend.Rules = rules.GraphQLResolver{}
 	graphqlbackend.Campaigns = campaigns.GraphQLResolver{}
 }
 

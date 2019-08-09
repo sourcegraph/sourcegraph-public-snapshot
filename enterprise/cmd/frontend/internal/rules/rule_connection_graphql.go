@@ -19,21 +19,21 @@ func (GraphQLResolver) RulesInRuleContainer(ctx context.Context, containerID gra
 	return &ruleConnection{opt: opt}, nil
 }
 
-func ruleConnectionArgsToListOptions(arg *graphqlutil.ConnectionArgs) dbRulesListOptions {
-	var opt dbRulesListOptions
+func ruleConnectionArgsToListOptions(arg *graphqlutil.ConnectionArgs) DBRulesListOptions {
+	var opt DBRulesListOptions
 	arg.Set(&opt.LimitOffset)
 	return opt
 }
 
 type ruleConnection struct {
-	opt dbRulesListOptions
+	opt DBRulesListOptions
 
 	once  sync.Once
-	rules []*dbRule
+	rules []*DBRule
 	err   error
 }
 
-func (r *ruleConnection) compute(ctx context.Context) ([]*dbRule, error) {
+func (r *ruleConnection) compute(ctx context.Context) ([]*DBRule, error) {
 	r.once.Do(func() {
 		opt2 := r.opt
 		if opt2.LimitOffset != nil {
@@ -42,7 +42,7 @@ func (r *ruleConnection) compute(ctx context.Context) ([]*dbRule, error) {
 			opt2.Limit++ // so we can detect if there is a next page
 		}
 
-		r.rules, r.err = dbRules{}.List(ctx, opt2)
+		r.rules, r.err = DBRules{}.List(ctx, opt2)
 	})
 	return r.rules, r.err
 }
@@ -64,7 +64,7 @@ func (r *ruleConnection) Nodes(ctx context.Context) ([]graphqlbackend.Rule, erro
 }
 
 func (r *ruleConnection) TotalCount(ctx context.Context) (int32, error) {
-	count, err := dbRules{}.Count(ctx, r.opt)
+	count, err := DBRules{}.Count(ctx, r.opt)
 	return int32(count), err
 }
 

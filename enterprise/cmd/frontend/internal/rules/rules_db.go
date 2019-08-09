@@ -12,10 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/nnz"
 )
 
-// dbRule describes a rule for a discussion thread.
-type dbRule struct {
+// DBRule describes a rule for a discussion thread.
+type DBRule struct {
 	ID          int64
-	Container   ruleContainer
+	Container   RuleContainer
 	Name        string // the name (case-preserving)
 	Description *string
 	Definition  string
@@ -27,14 +27,14 @@ type dbRule struct {
 // exist.
 var errRuleNotFound = errors.New("rule not found")
 
-type dbRules struct{}
+type DBRules struct{}
 
 const selectColumns = `id, container_campaign_id, container_thread_id, name, description, definition, created_at, updated_at`
 
 // Create creates a rule. The rule argument's (Rule).ID field is ignored.
-func (dbRules) Create(ctx context.Context, rule *dbRule) (*dbRule, error) {
-	if mocks.rules.Create != nil {
-		return mocks.rules.Create(rule)
+func (DBRules) Create(ctx context.Context, rule *DBRule) (*DBRule, error) {
+	if Mocks.Rules.Create != nil {
+		return Mocks.Rules.Create(rule)
 	}
 
 	args := []interface{}{
@@ -48,7 +48,7 @@ func (dbRules) Create(ctx context.Context, rule *dbRule) (*dbRule, error) {
 		`INSERT INTO rules(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`, DEFAULT,  DEFAULT) RETURNING `+selectColumns,
 		args...,
 	)
-	return dbRules{}.scanRow(dbconn.Global.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
+	return DBRules{}.scanRow(dbconn.Global.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...))
 }
 
 type dbRuleUpdate struct {
@@ -58,9 +58,9 @@ type dbRuleUpdate struct {
 }
 
 // Update updates a rule given its ID.
-func (s dbRules) Update(ctx context.Context, id int64, update dbRuleUpdate) (*dbRule, error) {
-	if mocks.rules.Update != nil {
-		return mocks.rules.Update(id, update)
+func (s DBRules) Update(ctx context.Context, id int64, update dbRuleUpdate) (*DBRule, error) {
+	if Mocks.Rules.Update != nil {
+		return Mocks.Rules.Update(id, update)
 	}
 
 	var setFields []*sqlf.Query
@@ -97,9 +97,9 @@ func (s dbRules) Update(ctx context.Context, id int64, update dbRuleUpdate) (*db
 // GetByID retrieves the rule (if any) given its ID.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to view this rule.
-func (s dbRules) GetByID(ctx context.Context, id int64) (*dbRule, error) {
-	if mocks.rules.GetByID != nil {
-		return mocks.rules.GetByID(id)
+func (s DBRules) GetByID(ctx context.Context, id int64) (*DBRule, error) {
+	if Mocks.Rules.GetByID != nil {
+		return Mocks.Rules.GetByID(id)
 	}
 
 	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("id=%d", id)}, nil)
@@ -112,14 +112,14 @@ func (s dbRules) GetByID(ctx context.Context, id int64) (*dbRule, error) {
 	return results[0], nil
 }
 
-// dbRulesListOptions contains options for listing rules.
-type dbRulesListOptions struct {
+// DBRulesListOptions contains options for listing rules.
+type DBRulesListOptions struct {
 	Query     string // only list rules matching this query (case-insensitively)
-	Container ruleContainer
+	Container RuleContainer
 	*db.LimitOffset
 }
 
-func (o dbRulesListOptions) sqlConditions() []*sqlf.Query {
+func (o DBRulesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.Query != "" {
 		conds = append(conds, sqlf.Sprintf("name ILIKE %s", "%"+o.Query+"%"))
@@ -138,15 +138,15 @@ func (o dbRulesListOptions) sqlConditions() []*sqlf.Query {
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to list with the specified
 // options.
-func (s dbRules) List(ctx context.Context, opt dbRulesListOptions) ([]*dbRule, error) {
-	if mocks.rules.List != nil {
-		return mocks.rules.List(opt)
+func (s DBRules) List(ctx context.Context, opt DBRulesListOptions) ([]*DBRule, error) {
+	if Mocks.Rules.List != nil {
+		return Mocks.Rules.List(opt)
 	}
 
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (s dbRules) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*dbRule, error) {
+func (s DBRules) list(ctx context.Context, conds []*sqlf.Query, limitOffset *db.LimitOffset) ([]*DBRule, error) {
 	q := sqlf.Sprintf(`
 SELECT `+selectColumns+` FROM rules
 WHERE (%s)
@@ -158,16 +158,16 @@ ORDER BY name ASC
 	return s.query(ctx, q)
 }
 
-func (dbRules) query(ctx context.Context, query *sqlf.Query) ([]*dbRule, error) {
+func (DBRules) query(ctx context.Context, query *sqlf.Query) ([]*DBRule, error) {
 	rows, err := dbconn.Global.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var results []*dbRule
+	var results []*DBRule
 	for rows.Next() {
-		t, err := dbRules{}.scanRow(rows)
+		t, err := DBRules{}.scanRow(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -176,10 +176,10 @@ func (dbRules) query(ctx context.Context, query *sqlf.Query) ([]*dbRule, error) 
 	return results, nil
 }
 
-func (dbRules) scanRow(row interface {
+func (DBRules) scanRow(row interface {
 	Scan(dest ...interface{}) error
-}) (*dbRule, error) {
-	var t dbRule
+}) (*DBRule, error) {
+	var t DBRule
 	if err := row.Scan(
 		&t.ID,
 		(*nnz.Int64)(&t.Container.Campaign),
@@ -198,9 +198,9 @@ func (dbRules) scanRow(row interface {
 // Count counts all rules that satisfy the options (ignoring limit and offset).
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to count the rules.
-func (dbRules) Count(ctx context.Context, opt dbRulesListOptions) (int, error) {
-	if mocks.rules.Count != nil {
-		return mocks.rules.Count(opt)
+func (DBRules) Count(ctx context.Context, opt DBRulesListOptions) (int, error) {
+	if Mocks.Rules.Count != nil {
+		return Mocks.Rules.Count(opt)
 	}
 
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM rules WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
@@ -214,14 +214,14 @@ func (dbRules) Count(ctx context.Context, opt dbRulesListOptions) (int, error) {
 // Delete deletes a rule given its ID.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the rule.
-func (s dbRules) DeleteByID(ctx context.Context, id int64) error {
-	if mocks.rules.DeleteByID != nil {
-		return mocks.rules.DeleteByID(id)
+func (s DBRules) DeleteByID(ctx context.Context, id int64) error {
+	if Mocks.Rules.DeleteByID != nil {
+		return Mocks.Rules.DeleteByID(id)
 	}
 	return s.delete(ctx, sqlf.Sprintf("id=%d", id))
 }
 
-func (dbRules) delete(ctx context.Context, cond *sqlf.Query) error {
+func (DBRules) delete(ctx context.Context, cond *sqlf.Query) error {
 	conds := []*sqlf.Query{cond, sqlf.Sprintf("TRUE")}
 	q := sqlf.Sprintf("DELETE FROM rules WHERE (%s)", sqlf.Join(conds, ") AND ("))
 
@@ -239,12 +239,12 @@ func (dbRules) delete(ctx context.Context, cond *sqlf.Query) error {
 	return nil
 }
 
-// mockRules mocks the rules-related DB operations.
+// mockRules Mocks the rules-related DB operations.
 type mockRules struct {
-	Create     func(*dbRule) (*dbRule, error)
-	Update     func(int64, dbRuleUpdate) (*dbRule, error)
-	GetByID    func(int64) (*dbRule, error)
-	List       func(dbRulesListOptions) ([]*dbRule, error)
-	Count      func(dbRulesListOptions) (int, error)
+	Create     func(*DBRule) (*DBRule, error)
+	Update     func(int64, dbRuleUpdate) (*DBRule, error)
+	GetByID    func(int64) (*DBRule, error)
+	List       func(DBRulesListOptions) ([]*DBRule, error)
+	Count      func(DBRulesListOptions) (int, error)
 	DeleteByID func(int64) error
 }
