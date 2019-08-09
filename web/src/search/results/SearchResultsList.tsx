@@ -347,7 +347,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         displayPerformanceWarning={this.state.displayPerformanceWarning}
                                         // This isn't always correct, but the penalty for a false-positive is
                                         // low.
-                                        hasRepoField={parsedQuery ? parsedQuery.includes("repo:") : false}
+                                        hasRepoishField={parsedQuery ? parsedQuery.includes("repo:") ||
+                                            parsedQuery.includes("repogroup:") : false}
                                     />
 
                                     {/* Results */}
