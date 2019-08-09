@@ -212,12 +212,10 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 
 	for _, match := range locs {
 		start, end := match[0], match[1]
-
 		// TODO regexes matching newlines
 		// TODO match[1] is a newline
 		// TODO match[0] is a newline
 
-		// TODO double check this makes sense with the conditionals below
 		lineStart := lastLineStartIndex
 		if idx := bytes.LastIndex(fileMatchBuf[lastStart:start], []byte{'\n'}); idx >= 0 {
 			lineStart = lastStart + idx + 1
@@ -226,15 +224,13 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 		lastStart = start
 
 		lineEnd := end
-		if idx := bytes.Index(fileMatchBuf[end:], []byte{'\n'}); idx >= 0 {
+		if idx := bytes.Index(fileMatchBuf[end-1:], []byte{'\n'}); idx >= 0 {
 			lineEnd = end + idx
 		}
-
 		lineNumber, matchIndex := hydrateLineNumbers(fileMatchBuf, lastLineNumber, lastMatchIndex, lineStart, match)
 
 		lastMatchIndex = matchIndex
 		lastLineNumber = lineNumber
-
 		matches = appendMatches(matches, fileBuf[lineStart:lineEnd], fileMatchBuf[lineStart:lineEnd], lineNumber, start-lineStart, end-lineStart)
 
 	}
@@ -255,7 +251,8 @@ func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []
 	// We assume there are no newlines before start.
 	for len(matchLineBuf) > 0 {
 		var line []byte
-		if eol := bytes.Index(matchLineBuf[start:], []byte{'\n'}); eol < 0 {
+		var eol int
+		if eol = bytes.Index(matchLineBuf[start:], []byte{'\n'}); eol < 0 {
 			line = matchLineBuf
 			matchLineBuf = []byte{}
 		} else {
@@ -272,18 +269,25 @@ func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []
 
 		offset := utf8.RuneCount(line[:start])
 		length := utf8.RuneCount(line[start:e])
-
+		limit := eol
+		if limit < 0 {
+			limit = len(fileBuf)
+		}
 		matches = append(matches, protocol.LineMatch{
 			// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
 			// which currently occurs before Preview has been serialized.
 			// TODO: consider moving the call to Close until after we are
 			// done with Preview, and stop making a copy here.
 			// Special care must be taken to call Close on all possible paths, including error paths.
-			Preview:          string(fileBuf[:len(line)]),
+			Preview:          string(fileBuf[:limit]),
 			LineNumber:       lineNumber,
 			OffsetAndLengths: [][2]int{{offset, length}},
 			LimitHit:         false, // We will always return false for this field since we no longer limit the number of offsets per line.
 		})
+
+		if eol >= 0 {
+			fileBuf = fileBuf[eol+1:]
+		}
 
 		lineNumber++
 		start = 0
