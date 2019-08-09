@@ -4,7 +4,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 const onClickInstall = (): void => {
     eventLogger.log('InstallSourcegraphServerCTAClicked', { location_on_page: 'banner' })
-};
+}
 
 export const ServerBanner: React.FunctionComponent = () => (
     <DismissibleAlert partialStorageKey="set-up-self-hosted" className="alert alert-info">
@@ -15,7 +15,7 @@ export const ServerBanner: React.FunctionComponent = () => (
             </a>
         </span>
     </DismissibleAlert>
-);
+)
 
 export const ServerBannerNoRepo: React.FunctionComponent = () => (
     <DismissibleAlert partialStorageKey="set-up-self-hosted" className="alert alert-info">
@@ -27,4 +27,4 @@ export const ServerBannerNoRepo: React.FunctionComponent = () => (
             </a>
         </span>
     </DismissibleAlert>
-);
+)
