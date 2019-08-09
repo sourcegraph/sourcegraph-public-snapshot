@@ -1,4 +1,3 @@
-FROM sourcegraph/prometheus:v1.4.1@sha256:1a02878ac9a0f532a68673bda93d406b21786706446c42a40cb3ed3e867278c0 AS prom
 FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0 AS ctags
 
 # hadolint ignore=DL3003,DL3018,DL4006
@@ -56,7 +55,17 @@ COPY --from=comby/comby:0.7.0 /usr/local/bin/comby /usr/local/bin/comby
 COPY --from=sourcegraph/syntect_server:5e1efbb@sha256:6ec136246b302a6c8fc113f087a66d5f9a89a9f5b851e9abb917c8b5e1d8c4b1 /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 
-COPY --from=prom /bin/prometheus /usr/local/bin
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:v1.4.1@sha256:1a02878ac9a0f532a68673bda93d406b21786706446c42a40cb3ed3e867278c0 /bin/prometheus /usr/local/bin
+
+# hadolint ignore=DL3018
+RUN set -ex && \
+ addgroup -S grafana && \
+ adduser -S -G grafana grafana && \
+ apk add --no-cache libc6-compat=1.1.23-r3 ca-certificates su-exec
+
+# hadolint ignore=DL3022
+COPY --from=grafana/grafana:6.1.1@sha256:e7a513bf7f33ef9681b2d35a799136e1ce9330f9055f75dfa2101d812946184b /usr/share/grafana /usr/share/grafana
 
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
