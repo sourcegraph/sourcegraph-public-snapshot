@@ -101,7 +101,13 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign
                         type="number"
                         stroke="var(--text-muted)"
                     />
-                    <YAxis tickFormatter={numberWithCommas} stroke="var(--text-muted)" type="number" />
+                    <YAxis
+                        tickFormatter={numberWithCommas}
+                        stroke="var(--text-muted)"
+                        type="number"
+                        allowDecimals={false}
+                        domain={[0, 'dataMax']}
+                    />
                     <Tooltip
                         // formatter={tooltipFormatter}
                         labelFormatter={tooltipLabelFormatter}

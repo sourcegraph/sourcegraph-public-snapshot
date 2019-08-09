@@ -4,7 +4,7 @@ import { OverviewPagesAreaPage } from '../OverviewPagesArea'
 
 interface Props {
     areaUrl: string
-    pages: Pick<OverviewPagesAreaPage<never>, 'title' | 'icon' | 'count' | 'path' | 'exact'>[]
+    pages: Pick<OverviewPagesAreaPage<never>, 'title' | 'icon' | 'count' | 'path' | 'exact' | 'navbarDividerBefore'>[]
     className?: string
 }
 
@@ -17,19 +17,22 @@ export const OverviewPagesAreaNavbar: React.FunctionComponent<Props> = ({ areaUr
     <nav className={`overview-pages-area-navbar border-bottom ${className}`}>
         <div className="container">
             <ul className="nav flex-nowrap">
-                {pages.map(({ title, icon: Icon, count, path, exact }, i) => (
-                    <li key={i} className="overview-pages-area-navbar__nav-item nav-item">
-                        <NavLink
-                            to={path ? `${areaUrl}${path}` : areaUrl}
-                            exact={exact}
-                            className={NAV_LINK_CLASS_NAME}
-                            activeClassName="overview-pages-area-navbar__nav-link--active"
-                            aria-label={title}
-                        >
-                            {Icon && <Icon className="icon-inline" />} {title}{' '}
-                            {count !== undefined && <span className="badge badge-secondary ml-1">{count}</span>}
-                        </NavLink>
-                    </li>
+                {pages.map(({ title, icon: Icon, count, path, exact, navbarDividerBefore }, i) => (
+                    <React.Fragment key={i}>
+                        {navbarDividerBefore && <li className="border-right my-3 mx-3 pr-3" role="divider" />}
+                        <li className="overview-pages-area-navbar__nav-item nav-item">
+                            <NavLink
+                                to={path ? `${areaUrl}${path}` : areaUrl}
+                                exact={exact}
+                                className={NAV_LINK_CLASS_NAME}
+                                activeClassName="overview-pages-area-navbar__nav-link--active"
+                                aria-label={title}
+                            >
+                                {Icon && <Icon className="icon-inline" />} {title}{' '}
+                                {count !== undefined && <span className="badge badge-secondary ml-1">{count}</span>}
+                            </NavLink>
+                        </li>
+                    </React.Fragment>
                 ))}
             </ul>
         </div>

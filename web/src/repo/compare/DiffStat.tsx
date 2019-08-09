@@ -15,8 +15,11 @@ export const DiffStat: React.FunctionComponent<{
     /** Number of deletions (deleted lines). */
     deleted: number
 
+    /* Show +/- numbers, not just the total change count. */
+    expandedCounts?: boolean
+
     className?: string
-}> = ({ added, changed, deleted, className = '' }) => {
+}> = ({ added, changed, deleted, expandedCounts = false, className = '' }) => {
     const total = added + changed + deleted
     const numSquares = Math.min(NUM_SQUARES, total)
     let addedSquares = allocateSquares(added, total)
@@ -65,7 +68,15 @@ export const DiffStat: React.FunctionComponent<{
     }
     return (
         <div className={`diff-stat ${className}`} data-tooltip={labels.join(', ')}>
-            <small className="diff-stat__total">{total}</small>
+            {expandedCounts ? (
+                <span className="diff-stat__total font-weight-bold">
+                    <span className="diff-stat__text-added mr-1">+{added}</span>
+                    {changed > 0 && <span className="diff-stat__text-changed mr-1">={changed}</span>}
+                    <span className="diff-stat__text-deleted mr-1">-{deleted}</span>
+                </span>
+            ) : (
+                <small className="diff-stat__total">{total}</small>
+            )}
             {squares.map((verb, i) => (
                 <div key={i} className={`diff-stat__square diff-stat__${verb}`} />
             ))}

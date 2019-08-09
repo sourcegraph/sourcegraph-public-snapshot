@@ -13,11 +13,12 @@ import { EditRuleForm } from '../form/EditRuleForm'
 import { NewRuleForm } from '../form/NewRuleForm'
 import { useRules } from '../useRules'
 import { RuleRow } from './RuleRow'
+
 const FormModal: React.FunctionComponent<{ toggle: () => void }> = ({ toggle, children }) => (
     <Modal
         isOpen={true}
-        autoFocus={true}
         backdrop={true}
+        autoFocus={false}
         centered={true}
         scrollable={true}
         fade={false}

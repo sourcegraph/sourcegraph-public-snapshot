@@ -105,7 +105,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         const subscription = new Subscription()
         subscription.add(registerCodemodContributions(props))
         return () => subscription.unsubscribe()
-    })
+    }, [props])
 
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {

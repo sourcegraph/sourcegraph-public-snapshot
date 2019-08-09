@@ -2027,6 +2027,8 @@ type PageInfo {
 type GitCommitConnection {
     # A list of Git commits.
     nodes: [GitCommit!]!
+    # The total number of Git commits in the connection.
+    totalCount: Int
     # Pagination information.
     pageInfo: PageInfo!
 }
@@ -4427,8 +4429,8 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
         first: Int
     ): CommentConnection!
 
-    # The comparison between this thread's base and head.
-    repositoryComparison: RepositoryComparison!
+    # The comparison between this thread's base and head, or null if there is none.
+    repositoryComparison: RepositoryComparison
 
     # A list of campaigns that contain this thread.
     campaigns(

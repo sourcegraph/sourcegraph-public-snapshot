@@ -38,6 +38,23 @@ export const useCampaignByID = (campaign: GQL.ID): [Result, (update?: Partial<GQ
                             viewerCanUpdate
                             isPreview
                             url
+                            comments {
+                                totalCount
+                            }
+                            diagnostics {
+                                totalCount
+                            }
+                            repositoryComparisons {
+                                fileDiffs {
+                                    totalCount
+                                }
+                            }
+                            threads {
+                                totalCount
+                            }
+                            rules {
+                                totalCount
+                            }
                         }
                     }
                 }

@@ -1,6 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import ForumIcon from 'mdi-react/ForumIcon'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -10,7 +11,11 @@ import { HeroPage } from '../../../components/HeroPage'
 import { InfoSidebar, InfoSidebarSection } from '../../../components/infoSidebar/InfoSidebar'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { WithSidebar } from '../../../components/withSidebar/WithSidebar'
+import { DiffIcon } from '../../../util/octicons'
+import { DiagnosticsIcon } from '../../checks/icons'
+import { RulesIcon } from '../../rules/icons'
 import { RulesList } from '../../rules/list/RulesList'
+import { ThreadsIcon } from '../../threads/icons'
 import { CampaignDeleteButton } from '../common/CampaignDeleteButton'
 import { CampaignForceRefreshButton } from '../common/CampaignForceRefreshButton'
 import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsArea'
@@ -138,44 +143,50 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                 pages={[
                     {
                         title: 'Activity',
-                        path: '/',
+                        icon: ForumIcon,
+                        count: campaign.comments.totalCount,
+                        path: '',
                         exact: true,
                         render: () => <CampaignActivity {...context} className={PAGE_CLASS_NAME} />,
                     },
                     {
-                        title: 'Threads',
-                        path: '/threads',
-                        render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
+                        title: 'Diagnostics',
+                        icon: DiagnosticsIcon,
+                        count: campaign.diagnostics.totalCount,
+                        path: '/diagnostics',
+                        render: () => <ThreadDiagnosticsList {...context} className={PAGE_CLASS_NAME} />,
+                        condition: () => campaign.diagnostics.totalCount > 0,
                     },
-                    {
-                        title: 'Commits',
-                        path: '/commits',
-                        render: () => (
-                            <CampaignRepositoriesList {...context} showCommits={true} className={PAGE_CLASS_NAME} />
-                        ),
-                    },
+
                     {
                         title: 'Changes',
+                        icon: DiffIcon,
+                        count: campaign.repositoryComparisons.reduce((n, c) => n + (c.fileDiffs.totalCount || 0), 0),
                         path: '/changes',
                         render: () => (
-                            <CampaignFileDiffsList
-                                {...context}
-                                platformContext={props.platformContext}
-                                className={PAGE_CLASS_NAME}
-                            />
+                            <div className={PAGE_CLASS_NAME}>
+                                <CampaignRepositoriesList {...context} showCommits={true} />
+                                <CampaignFileDiffsList {...context} platformContext={props.platformContext} />
+                            </div>
                         ),
+                        condition: () => campaign.repositoryComparisons.length > 0,
+                    },
+                    {
+                        title: 'Threads',
+                        icon: ThreadsIcon,
+                        count: campaign.threads.totalCount,
+                        path: '/threads',
+                        render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
+                        navbarDividerBefore: true,
                     },
                     {
                         title: 'Rules',
+                        icon: RulesIcon,
+                        count: campaign.rules.totalCount,
                         path: '/rules',
                         render: ({ match }) => (
                             <RulesList {...context} container={campaign} match={match} className={PAGE_CLASS_NAME} />
                         ),
-                    },
-                    {
-                        title: 'Impact',
-                        path: '/impact',
-                        render: () => 'TODO!(sqs)',
                     },
                 ]}
                 location={props.location}

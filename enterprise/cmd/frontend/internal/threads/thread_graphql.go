@@ -162,6 +162,9 @@ func (v *gqlThread) URL(ctx context.Context) (string, error) {
 }
 
 func (v *gqlThread) RepositoryComparison(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
+	if v.db.BaseRef == "" && v.db.HeadRef == "" {
+		return nil, nil
+	}
 	repo, err := v.Repository(ctx)
 	if err != nil {
 		return nil, err

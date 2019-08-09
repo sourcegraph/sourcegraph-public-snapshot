@@ -49,6 +49,12 @@ export const useThreadByNumberInRepository = (
                                     id
                                     url
                                 }
+                                rules {
+                                    totalCount
+                                }
+                                comments {
+                                    totalCount
+                                }
                                 repositoryComparison {
                                     range {
                                         baseRevSpec {
@@ -58,6 +64,15 @@ export const useThreadByNumberInRepository = (
                                             expr
                                         }
                                     }
+                                    commits {
+                                        totalCount
+                                    }
+                                    fileDiffs {
+                                        totalCount
+                                    }
+                                }
+                                diagnostics {
+                                    totalCount
                                 }
                             }
                         }

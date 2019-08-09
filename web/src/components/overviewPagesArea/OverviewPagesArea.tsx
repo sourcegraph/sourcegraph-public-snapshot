@@ -15,6 +15,7 @@ export interface OverviewPagesAreaPage<P extends object> extends RouteDescriptor
     title: string
     icon?: React.ComponentType<{ className?: string }>
     count?: number
+    navbarDividerBefore?: boolean
 }
 
 interface Props<P extends object> {
@@ -80,6 +81,7 @@ export const OverviewPagesArea = <P extends object>({
                             <Route
                                 key={i}
                                 path={`${match.url}${page.path}`}
+                                strict={true}
                                 exact={page.exact}
                                 // tslint:disable-next-line: jsx-no-lambda
                                 render={routeComponentProps => page.render({ ...routeComponentProps, ...context })}

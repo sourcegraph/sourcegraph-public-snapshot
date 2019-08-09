@@ -86,6 +86,18 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitRe
 	return resolvers, nil
 }
 
+func (r *gitCommitConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
+	if r.first != nil {
+		return nil, nil
+	}
+	commits, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	n := int32(len(commits))
+	return &n, nil
+}
+
 func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	commits, err := r.compute(ctx)
 	if err != nil {

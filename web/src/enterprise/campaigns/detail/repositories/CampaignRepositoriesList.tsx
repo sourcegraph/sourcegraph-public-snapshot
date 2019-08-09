@@ -45,8 +45,9 @@ export const CampaignRepositoriesList: React.FunctionComponent<Props> = ({ campa
                                     className="mr-3"
                                 />
                                 <span className="text-muted d-inline-flex align-items-center">
-                                    {c.range.baseRevSpec.expr} <DotsHorizontalIcon className="icon-inline small" />{' '}
-                                    {c.range.headRevSpec.expr}
+                                    {c.range.baseRevSpec.expr.replace(/^refs\/heads\//, '')}{' '}
+                                    <DotsHorizontalIcon className="icon-inline small" />{' '}
+                                    {c.range.headRevSpec.expr.replace(/^refs\/heads\//, '')}
                                 </span>
                                 <div className="flex-1"></div>
                                 {!showCommits && (

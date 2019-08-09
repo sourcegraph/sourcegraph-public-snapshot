@@ -68,7 +68,7 @@ export const CollapsibleSidebar: React.FunctionComponent<Props> = ({
                 onClick={toggleIsExpanded}
             >
                 <Icon className="icon-inline mr-1" />
-                {isExpanded && <>&nbsp;Collapse sidebar</>}
+                {isExpanded && 'Collapse sidebar'}
             </button>
         </div>
     )

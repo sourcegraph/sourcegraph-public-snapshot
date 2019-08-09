@@ -1,5 +1,5 @@
 import { LocationDescriptor } from 'history'
-import React from 'react'
+import React, { PropsWithChildren } from 'react'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { pluralize } from '../../../../shared/src/util/strings'
 
@@ -9,6 +9,7 @@ export interface SummaryCountItemDescriptor<C> {
     icon: React.ComponentType<{ className?: string }>
     count: number | ((context: C) => number)
     url?: LocationDescriptor | ((context: C) => LocationDescriptor)
+    after?: (context: C) => JSX.Element
     condition?: (context: C) => boolean
 }
 
@@ -26,7 +27,7 @@ export const SummaryCountBar = <C extends {}>({
     itemDescriptors,
     context,
     className = '',
-}: Props<C>): React.ReactElement => (
+}: PropsWithChildren<Props<C>>): React.ReactElement => (
     <nav className={`summary-count-bar border ${className}`}>
         <ul className="nav w-100">
             {itemDescriptors
@@ -41,6 +42,7 @@ export const SummaryCountBar = <C extends {}>({
                             >
                                 <Icon className="icon-inline text-muted" /> <strong>{count}</strong>{' '}
                                 <span className="text-muted">{pluralize(item.noun, count || 0, item.pluralNoun)}</span>
+                                {item.after && item.after(context)}
                             </LinkOrSpan>
                         </li>
                     )

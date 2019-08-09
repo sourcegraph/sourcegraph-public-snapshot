@@ -1,6 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import ForumIcon from 'mdi-react/ForumIcon'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -9,6 +10,10 @@ import { HeroPage } from '../../../components/HeroPage'
 import { InfoSidebar, InfoSidebarSection } from '../../../components/infoSidebar/InfoSidebar'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { WithSidebar } from '../../../components/withSidebar/WithSidebar'
+import { DiffIcon, GitCommitIcon } from '../../../util/octicons'
+import { DiagnosticsIcon } from '../../checks/icons'
+import { RulesIcon } from '../../rules/icons'
+import { RulesList } from '../../rules/list/RulesList'
 import { ThreadDeleteButton } from '../common/ThreadDeleteButton'
 import { RepositoryThreadsAreaContext } from '../repository/RepositoryThreadsArea'
 import { ThreadActivity } from './activity/ThreadActivity'
@@ -136,25 +141,51 @@ export const ThreadArea: React.FunctionComponent<Props> = ({
                     pages={[
                         {
                             title: 'Activity',
-                            path: '/',
+                            icon: ForumIcon,
+                            count: thread.comments.totalCount,
+                            path: '',
                             exact: true,
                             render: () => <ThreadActivity {...context} className={PAGE_CLASS_NAME} />,
                         },
                         {
-                            title: 'Changes',
-                            path: '/changes',
-                            exact: true,
-                            render: () => <ThreadFileDiffsList {...context} className={PAGE_CLASS_NAME} />,
+                            title: 'Diagnostics',
+                            icon: DiagnosticsIcon,
+                            count: thread.diagnostics.totalCount,
+                            path: '/diagnostics',
+                            render: () => <ThreadDiagnosticsList {...context} className={PAGE_CLASS_NAME} />,
+                            condition: () => thread.diagnostics.totalCount > 0,
                         },
                         {
                             title: 'Commits',
+                            icon: GitCommitIcon,
+                            count:
+                                (thread.repositoryComparison && thread.repositoryComparison.commits.totalCount) ||
+                                undefined,
                             path: '/commits',
+                            exact: true,
                             render: () => <ThreadCommitsList {...context} className={PAGE_CLASS_NAME} />,
+                            condition: () => !!thread.repositoryComparison,
                         },
                         {
-                            title: 'Diagnostics',
-                            path: '/diagnostics',
-                            render: () => <ThreadDiagnosticsList {...context} className={PAGE_CLASS_NAME} />,
+                            title: 'Changes',
+                            icon: DiffIcon,
+                            count:
+                                (thread.repositoryComparison && thread.repositoryComparison.fileDiffs.totalCount) ||
+                                undefined,
+                            path: '/changes',
+                            exact: true,
+                            render: () => <ThreadFileDiffsList {...context} className={PAGE_CLASS_NAME} />,
+                            condition: () => !!thread.repositoryComparison,
+                        },
+                        {
+                            title: 'Rules',
+                            icon: RulesIcon,
+                            count: thread.rules.totalCount,
+                            path: '/rules',
+                            render: ({ match }) => (
+                                <RulesList {...context} container={thread} match={match} className={PAGE_CLASS_NAME} />
+                            ),
+                            navbarDividerBefore: true,
                         },
                     ]}
                     location={props.location}
