@@ -274,11 +274,11 @@ export class TreePage extends React.PureComponent<Props, State> {
                             )}
                             <section className="tree-page__section">
                                 <Link
-                                    className="btn btn-primary d-inline-flex align-items-center"
+                                    className="btn btn-secondary d-inline-flex align-items-center"
                                     to={`/search?${buildSearchURLQuery(this.getQueryPrefix())}`}
                                 >
                                     <SearchIcon className="icon-inline"></SearchIcon>
-                                    Search in this {this.props.filePath ? 'tree' : 'repository'}
+                                    Search in this {this.props.filePath ? 'directory' : 'repository'}
                                 </Link>
                             </section>
                             <TreeEntriesSection
