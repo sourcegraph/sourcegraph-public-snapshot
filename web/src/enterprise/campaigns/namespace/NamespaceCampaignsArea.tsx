@@ -70,10 +70,17 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
                 {breadcrumbs}
                 <NamespaceCampaignsListPage {...context} newCampaignURL={newCampaignURL} />
             </Route>
-            <Route path={newCampaignURL} exact={true}>
-                {breadcrumbs}
-                <CampaignsNewPage {...context} />
-            </Route>
+            <Route
+                path={newCampaignURL}
+                exact={true}
+                // tslint:disable-next-line: jsx-no-lambda
+                render={(routeComponentProps: RouteComponentProps<{}>) => (
+                    <>
+                        {breadcrumbs}
+                        <CampaignsNewPage {...context} {...routeComponentProps} />
+                    </>
+                )}
+            />
             <Route
                 path={`${context.campaignsURL}/preview/:campaignID`}
                 // tslint:disable-next-line:jsx-no-lambda

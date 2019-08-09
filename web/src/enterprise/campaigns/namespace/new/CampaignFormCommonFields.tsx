@@ -3,7 +3,7 @@ import TextareaAutosize from 'react-textarea-autosize'
 import { CampaignFormControl } from './CampaignForm'
 
 interface Props extends CampaignFormControl {
-    disabled?: boolean
+    autoFocus?: boolean
     className?: string
 }
 
@@ -14,6 +14,7 @@ export const CampaignFormCommonFields: React.FunctionComponent<Props> = ({
     value,
     onChange,
     disabled,
+    autoFocus,
     className = '',
 }) => {
     const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
@@ -28,7 +29,7 @@ export const CampaignFormCommonFields: React.FunctionComponent<Props> = ({
     return (
         <div className={className}>
             <div className="form-group">
-                <label htmlFor="campaign-form-common-fields__name">Name</label>
+                <label htmlFor="campaign-form-common-fields__name">Campaign name</label>
                 <input
                     type="text"
                     id="campaign-form-common-fields__name"
@@ -36,19 +37,19 @@ export const CampaignFormCommonFields: React.FunctionComponent<Props> = ({
                     required={true}
                     minLength={1}
                     placeholder="Campaign name"
-                    value={name}
+                    value={value.name}
                     onChange={onNameChange}
-                    autoFocus={true}
+                    autoFocus={autoFocus}
                     disabled={disabled}
                 />
             </div>
             <div className="form-group">
-                <label htmlFor="campaign-form-common-fields__body">Body</label>
+                <label htmlFor="campaign-form-common-fields__body">Campaign description</label>
                 <TextareaAutosize
                     type="text"
                     id="campaign-form-common-fields__body"
                     className="form-control"
-                    placeholder="Body"
+                    placeholder="Describe the purpose of this campaign, link to relevant internal documentation, etc."
                     value={value.body || ''}
                     minRows={3}
                     onChange={onBodyChange}

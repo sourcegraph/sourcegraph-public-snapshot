@@ -6,11 +6,9 @@ import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/gra
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../../../backend/graphql'
-import { ModalPage } from '../../../../components/ModalPage'
 import { PageTitle } from '../../../../components/PageTitle'
 import { NamespaceCampaignsAreaContext } from '../NamespaceCampaignsArea'
 import { CampaignForm, CampaignFormData } from './CampaignForm'
-import { CampaignTemplateChooser } from './CampaignTemplateChooser'
 
 export const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICampaign> =>
     mutateGraphQL(
@@ -32,7 +30,7 @@ export const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICa
 
 interface Props
     extends Pick<NamespaceCampaignsAreaContext, 'namespace' | 'setBreadcrumbItem'>,
-        RouteComponentProps<never> {
+        RouteComponentProps<{}> {
     location: H.Location
 }
 
@@ -53,6 +51,9 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
         }
     }, [setBreadcrumbItem])
 
+    const templateID = new URLSearchParams(location.search).get('template')
+    const preview = !!templateID
+
     const [creationOrError, setCreationOrError] = useState<
         null | typeof LOADING | Pick<GQL.ICampaign, 'url'> | ErrorLike
     >(null)
@@ -60,16 +61,14 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
         async (data: CampaignFormData) => {
             setCreationOrError(LOADING)
             try {
-                setCreationOrError(await createCampaign({ ...data, namespace: namespace.id }))
+                setCreationOrError(await createCampaign({ ...data, namespace: namespace.id, preview }))
             } catch (err) {
                 setCreationOrError(asError(err))
                 alert(err.message) // TODO!(sqs)
             }
         },
-        [namespace.id]
+        [namespace.id, preview]
     )
-
-    const templateID = new URLSearchParams(location.search).get('template')
 
     return (
         <>
@@ -77,13 +76,13 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
                 <Redirect to={creationOrError.url} />
             )}
             <PageTitle title="New campaign" />
-            <h2>New campaign</h2>
             <CampaignForm
                 templateID={templateID}
                 onSubmit={onSubmit}
-                buttonText="Create campaign"
+                buttonText={preview ? 'Preview campaign' : 'Create campaign'}
                 isLoading={creationOrError === LOADING}
                 match={match}
+                location={location}
             />
             {isErrorLike(creationOrError) && <div className="alert alert-danger mt-3">{creationOrError.message}</div>}
         </>

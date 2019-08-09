@@ -2,6 +2,7 @@ import H from 'history'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { CampaignFormControl } from './CampaignForm'
+import { CampaignTemplateRow } from './CampaignTemplateRow'
 import { CAMPAIGN_TEMPLATES } from './templates'
 
 interface Props extends CampaignFormControl {
@@ -10,29 +11,26 @@ interface Props extends CampaignFormControl {
     className?: string
 }
 
-export const CampaignTemplateChooser: React.FunctionComponent<Props> = ({ urlToFormWithTemplate, className = '' }) => {
-    const a = 1
-    console.log(a)
-    return (
-        <div className={className}>
-            <div className="card">
-                <ul className="list-group list-group-flush">
-                    {CAMPAIGN_TEMPLATES.map((template, i) => (
-                        <li
-                            key={i}
-                            className="list-group-item position-relative d-flex align-items-start justify-content-between"
-                        >
-                            <div>
-                                <h5 className="mb-0">{template.title}</h5>
-                                {template.detail && <p className="mb-0">{template.detail}</p>}
-                            </div>
-                            <Link to={urlToFormWithTemplate(template.id)} className="btn btn-primary">
+export const CampaignTemplateChooser: React.FunctionComponent<Props> = ({ urlToFormWithTemplate, className = '' }) => (
+    <div className={className}>
+        <div className="card">
+            <ul className="list-group list-group-flush">
+                {CAMPAIGN_TEMPLATES.map((template, i) => (
+                    <CampaignTemplateRow
+                        key={i}
+                        template={template}
+                        after={
+                            <Link
+                                to={urlToFormWithTemplate(template.id)}
+                                className="btn btn-primary flex-0 stretched-link mt-2 mr-1"
+                            >
                                 Get started
                             </Link>
-                        </li>
-                    ))}
-                </ul>
-            </div>
+                        }
+                        className="list-group-item position-relative"
+                    />
+                ))}
+            </ul>
         </div>
-    )
-}
+    </div>
+)

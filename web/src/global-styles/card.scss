@@ -25,11 +25,12 @@ $card-spacer: $spacer;
 
 .card-header {
     border-bottom: 1px solid var(--border-color);
+}
 
-    + .list-group {
-        .list-group-item:first-child {
-            border-top: 0;
-        }
+.card > .list-group:first-child,
+.card-header + .list-group {
+    .list-group-item:first-child {
+        border-top: 0;
     }
 }
 
