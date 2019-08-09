@@ -56,6 +56,16 @@ export function queryIndexOfScope(query: string, scope: string): number {
 }
 
 /**
+ * For a given query, identifies if the scope specified is present
+ *
+ * @param query the current user query
+ * @param scope the scope to look for presence of, indicating it is currently selected.
+ */
+export function isScopeSelected(query: string, scope: string): boolean {
+    return queryIndexOfScope(query, scope) !== -1
+}
+
+/**
  * Toggles the given search scope by adding or removing it from the current
  * user query string.
  *

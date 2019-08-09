@@ -3,7 +3,7 @@ import { SearchFilters } from '../../../../shared/src/api/protocol'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { QuickLink } from '../../schema/settings.schema'
 import { FilterChip } from '../FilterChip'
-import { isSearchResults, queryIndexOfScope } from '../helpers'
+import { isScopeSelected, isSearchResults } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 
 export interface SearchScopeWithOptionalName {
@@ -100,7 +100,3 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
         )}
     </div>
 )
-
-function isScopeSelected(query: string, scope: string): boolean {
-    return queryIndexOfScope(query, scope) !== -1
-}

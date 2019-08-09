@@ -14,7 +14,7 @@ import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { FilterChip } from '../FilterChip'
 import {
-    queryIndexOfScope,
+    isScopeSelected,
     submitSearch,
     toggleSearchFilter,
     toggleSearchFilterAndReplaceSampleRepogroup,
@@ -178,8 +178,4 @@ function scopeForRepo(repoName: string): ISearchScope {
     return {
         value: `repo:^${escapeRegExp(repoName)}$`,
     }
-}
-
-function isScopeSelected(query: string, scope: string): boolean {
-    return queryIndexOfScope(query, scope) !== -1
 }
