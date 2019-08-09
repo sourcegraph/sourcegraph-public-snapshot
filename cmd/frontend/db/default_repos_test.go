@@ -23,6 +23,15 @@ func Test_defaultRepos_List(t *testing.T) {
 			repos: nil,
 		},
 		{
+			name: "one repo",
+			repos: []*types.Repo{
+				{
+					ID:   api.RepoID(0),
+					Name: "github.com/foo/bar",
+				},
+			},
+		},
+		{
 			name: "a few repos",
 			repos: []*types.Repo{
 				{
