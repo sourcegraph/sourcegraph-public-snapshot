@@ -185,7 +185,7 @@ main.go:5:func main() {
 	s := &search.StoreSearcher{Store: store}
 	defer s.Close()
 
-	for i, test := range cases {
+	for _, test := range cases {
 		test.arg.PatternMatchesContent = true
 		req := protocol.Request{
 			Repo:         "foo",
@@ -224,31 +224,6 @@ main.go:5:func main() {
 		}
 		if test.arg.IsWordMatch {
 			continue
-		}
-
-		q, err := patternToQuery(&test.arg)
-		if err != nil {
-			t.Errorf("%v failed to convert query: %s", test.arg, err)
-			continue
-		}
-		q = query.Simplify(query.NewAnd(&query.Ref{Pattern: string(req.Commit)}, q))
-
-		sr, err := s.Search(context.Background(), q, &searchapi.Options{Repositories: []api.RepoName{"foo"}})
-		if err != nil {
-			t.Errorf("%v failed to search: %s", q, err)
-			continue
-		}
-
-		sort.Slice(sr.Files, func(i, j int) bool {
-			return sr.Files[i].Path < sr.Files[j].Path
-		})
-		got = toStringNew(sr)
-		if got != test.want {
-			d, err := diff(test.want, got)
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Errorf("%d %v unexpected response:\n%s", i, q, d)
 		}
 	}
 }
