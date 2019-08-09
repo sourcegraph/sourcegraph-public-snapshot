@@ -141,16 +141,9 @@ interface Props
 interface State {
     /** This tree, or an error. Undefined while loading. */
     treeOrError?: GQL.IGitTree | ErrorLike
-
-    /**
-     * The value of the search query input field.
-     */
-    query: string
 }
 
 export class TreePage extends React.PureComponent<Props, State> {
-    public state: State = { query: '' }
-
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
