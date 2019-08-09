@@ -1,5 +1,6 @@
+import H from 'history'
 import React, { useCallback, useEffect, useState } from 'react'
-import { Redirect } from 'react-router'
+import { Redirect, RouteComponentProps } from 'react-router'
 import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
@@ -7,8 +8,9 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/ut
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { ModalPage } from '../../../../components/ModalPage'
 import { PageTitle } from '../../../../components/PageTitle'
-import { CampaignForm, CampaignFormData } from '../../form/CampaignForm'
 import { NamespaceCampaignsAreaContext } from '../NamespaceCampaignsArea'
+import { CampaignForm, CampaignFormData } from './CampaignForm'
+import { CampaignTemplateChooser } from './CampaignTemplateChooser'
 
 export const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICampaign> =>
     mutateGraphQL(
@@ -28,14 +30,18 @@ export const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICa
         )
         .toPromise()
 
-interface Props extends Pick<NamespaceCampaignsAreaContext, 'namespace' | 'setBreadcrumbItem'> {}
+interface Props
+    extends Pick<NamespaceCampaignsAreaContext, 'namespace' | 'setBreadcrumbItem'>,
+        RouteComponentProps<never> {
+    location: H.Location
+}
 
 const LOADING = 'loading' as const
 
 /**
  * Shows a form to create a new campaign.
  */
-export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, setBreadcrumbItem }) => {
+export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, setBreadcrumbItem, location, match }) => {
     useEffect(() => {
         if (setBreadcrumbItem) {
             setBreadcrumbItem({ text: 'New' })
@@ -63,23 +69,23 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
         [namespace.id]
     )
 
+    const templateID = new URLSearchParams(location.search).get('template')
+
     return (
         <>
             {creationOrError !== null && creationOrError !== LOADING && !isErrorLike(creationOrError) && (
                 <Redirect to={creationOrError.url} />
             )}
             <PageTitle title="New campaign" />
-            <ModalPage>
-                <h2>New campaign</h2>
-                <CampaignForm
-                    onSubmit={onSubmit}
-                    buttonText="Create campaign"
-                    isLoading={creationOrError === LOADING}
-                />
-                {isErrorLike(creationOrError) && (
-                    <div className="alert alert-danger mt-3">{creationOrError.message}</div>
-                )}
-            </ModalPage>
+            <h2>New campaign</h2>
+            <CampaignForm
+                templateID={templateID}
+                onSubmit={onSubmit}
+                buttonText="Create campaign"
+                isLoading={creationOrError === LOADING}
+                match={match}
+            />
+            {isErrorLike(creationOrError) && <div className="alert alert-danger mt-3">{creationOrError.message}</div>}
         </>
     )
 }
