@@ -556,10 +556,6 @@ github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614 h1:MrlKMpoGse4bC
 github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
-github.com/sourcegraph/zoekt v0.0.0-20190614204709-c84cd1977f24 h1:XMSPEwhlzcbJj2d23OuSR5hnyNDOafgYSn1zwKKO2U4=
-github.com/sourcegraph/zoekt v0.0.0-20190614204709-c84cd1977f24/go.mod h1:Sa1TO1+Y/kM0jA9AISpwx6islOvLy7tsnEUKIFwOb7I=
-github.com/sourcegraph/zoekt v0.0.0-20190712184556-51c44e6be086 h1:n6m5cZjD5KFvIbq+2oC8Zjp+Psalxuk4RHqqkmwwcc0=
-github.com/sourcegraph/zoekt v0.0.0-20190712184556-51c44e6be086/go.mod h1:tDAyQ+Ui8gE8QxzLA1Gl8KTu+EM5rjerL4GQ6nnFYM8=
 github.com/sourcegraph/zoekt v0.0.0-20190718092054-9cdf2d3e8edb h1:CcRIAIQC9bYIPZt5JlA7wgdlCkLhmXyU5UvtcSnVM5c=
 github.com/sourcegraph/zoekt v0.0.0-20190718092054-9cdf2d3e8edb/go.mod h1:tDAyQ+Ui8gE8QxzLA1Gl8KTu+EM5rjerL4GQ6nnFYM8=
 github.com/spf13/afero v1.1.0 h1:bopulORc2JeYaxfHLvJa5NzxviA9PoWhpiiJkru7Ji4=
@@ -690,10 +686,6 @@ golang.org/x/sys v0.0.0-20190109145017-48ac38b7c8cb/go.mod h1:STP8DvDyc/dI5b8T5h
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a h1:1BGLXjeY4akVXGgbC9HugT3Jv3hCI0z56oJR5vAMgBU=
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190312061237-fead79001313/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20190701071227-04f50cda93cb h1:Lg1hzdbqYD5SXgexpVrmRiyybANxq2at3ALUbcfxsfM=
-golang.org/x/sys v0.0.0-20190701071227-04f50cda93cb/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20190801071659-cbf593c0f2f3 h1:kkdv9YeZHZStHs+7m2zV+jGd34JQ0vuycs2cXxSkRmM=
-golang.org/x/sys v0.0.0-20190801071659-cbf593c0f2f3/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20190805094706-51ab0e2deafa h1:gtlpviTG25dzTyqfoSSaQcLXTUZ4jbpE/J995IsQvU0=
 golang.org/x/sys v0.0.0-20190805094706-51ab0e2deafa/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.0.0-20170915090833-1cbadb444a80/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
