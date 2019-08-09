@@ -10,6 +10,9 @@ import { DocumentInfo } from './files'
 import { Id, MetaData, Moniker, Range, RangeBasedDocumentSymbol } from 'lsif-protocol'
 import { URI } from 'vscode-uri'
 
+const MONIKER_KIND_PREFERENCES = ['import', 'local', 'export']
+const MONIKER_SCHEME_PREFERENCES = ['npm', 'tsc']
+
 interface MetaDataResult {
     id: number
     value: string
@@ -312,25 +315,28 @@ export class BlobStore extends Database {
         if (range === undefined || blob === undefined || blob.definitionResults === undefined) {
             return undefined
         }
-        console.log('K')
-        console.log('\n')
-        console.log('\n')
-        console.log('\n')
-        console.log("range:",range)
+
         let resultData = this.findResult(blob.resultSets, blob.definitionResults, range, 'definitionResult')
         if (resultData === undefined) {
-            console.log("no result data")
-            for (const moniker of this.findMonikers(blob.resultSets, blob.monikers, range)) {
-                console.log("moniker:", moniker)
+            const monikers = this.findMonikers(blob.resultSets, blob.monikers, range)
+
+            for (const moniker of monikers) {
+                if (moniker.kind === "import") {
+                    // TODO(efritz) - implement xrepo find defs here
+                    console.log("UNIMPLEMENTED")
+                    console.log("MONIKERS:", monikers)
+                    return undefined;
+                }
+
                 let qResult: DefsResult[] = this.findDefsStmt.all({
                     version: this.version,
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
                 })
-                console.log("qResult:",qResult)
                 if (qResult === undefined || qResult.length === 0) {
                     continue
                 }
+
                 return qResult.map(item => {
                     return lsp.Location.create(
                         this.fromDatabase(item.uri),
@@ -341,7 +347,6 @@ export class BlobStore extends Database {
 
             return undefined
         } else {
-            console.log("got result data", resultData)
             return BlobStore.asLocations(blob.ranges, uri, resultData.values)
         }
     }
@@ -439,7 +444,18 @@ export class BlobStore extends Database {
                     : undefined
         }
 
-        return ids.map(id => monikers[id])
+        const resultMonikers = ids.map(id => monikers[id])
+
+        resultMonikers.sort((a, b) => {
+            const ord = MONIKER_KIND_PREFERENCES.indexOf(a.kind!) - MONIKER_KIND_PREFERENCES.indexOf(b.kind!)
+            if (ord !== 0) {
+                return ord
+            }
+
+            return MONIKER_SCHEME_PREFERENCES.indexOf(a.scheme!) - MONIKER_SCHEME_PREFERENCES.indexOf(b.scheme!)
+        })
+
+        return resultMonikers
     }
 
     private findRangeFromPosition(

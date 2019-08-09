@@ -860,7 +860,6 @@ export class BlobStore implements DataProvider {
         outV.referenceResult = edge.inV;
     }
 
-    // TODO - no-op this? Not sure it does anything now
     private ensureMoniker(data: RangeData | ResultSetData): void {
         if (data.monikers !== undefined) {
             return;
