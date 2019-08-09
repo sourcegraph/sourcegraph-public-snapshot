@@ -267,68 +267,69 @@ class DocumentData {
     }
 
     private addReferencedData(id: Id, item: RangeData | ResultSetData): void {
-        let moniker: MonikerData | undefined;
+        const monikers = []
+
         if (item.monikers !== undefined) {
             for (const itemMoniker of item.monikers) {
-                moniker = assertDefined(this.provider.getMonikerData(itemMoniker));
+                const moniker = assertDefined(this.provider.getMonikerData(itemMoniker));
                 this.addMoniker(itemMoniker, moniker);
+                monikers.push(moniker)
             }
         }
         if (item.next !== undefined) {
             this.addResultSetData(item.next, assertDefined(this.provider.getResultData(item.next)));
         }
-        if (item.hoverResult !== undefined) {
-            moniker = assertDefined(moniker);
-            if (Monikers.isLocal(moniker)) {
-                if (this.blob.hovers === undefined) {
-                    this.blob.hovers = LiteralMap.create();
-                }
-                if (this.blob.hovers[item.hoverResult] === undefined) {
-                    this.blob.hovers[item.hoverResult] = assertDefined(this.provider.getAndDeleteHoverData(item.hoverResult));
-                }
-            } else {
-                this.provider.storeHover(moniker, item.hoverResult);
-            }
-        }
-        if (item.declarationResult) {
-            moniker = assertDefined(moniker);
-            const declarations = this.provider.getAndDeleteDeclarations(item.declarationResult, this.id);
-            if (declarations !== undefined) {
+
+        for (const moniker of monikers) {
+            if (item.hoverResult !== undefined) {
                 if (Monikers.isLocal(moniker)) {
-                    if (this.blob.declarationResults === undefined) {
-                        this.blob.declarationResults = LiteralMap.create();
+                    if (this.blob.hovers === undefined) {
+                        this.blob.hovers = LiteralMap.create();
                     }
-                    this.blob.declarationResults[item.declarationResult] = declarations;
+                    if (this.blob.hovers[item.hoverResult] === undefined) {
+                        this.blob.hovers[item.hoverResult] = assertDefined(this.provider.getAndDeleteHoverData(item.hoverResult));
+                    }
                 } else {
-                    this.declarations.push({ moniker, data: declarations});
+                    this.provider.storeHover(moniker, item.hoverResult);
                 }
             }
-        }
-        if (item.definitionResult) {
-            moniker = assertDefined(moniker);
-            const definitions = this.provider.getAndDeleteDefinitions(item.definitionResult, this.id);
-            if (definitions !== undefined) {
-                if (Monikers.isLocal(moniker)) {
-                    if (this.blob.definitionResults === undefined) {
-                        this.blob.definitionResults = LiteralMap.create();
+            if (item.declarationResult) {
+                const declarations = this.provider.getAndDeleteDeclarations(item.declarationResult, this.id);
+                if (declarations !== undefined) {
+                    if (Monikers.isLocal(moniker)) {
+                        if (this.blob.declarationResults === undefined) {
+                            this.blob.declarationResults = LiteralMap.create();
+                        }
+                        this.blob.declarationResults[item.declarationResult] = declarations;
+                    } else {
+                        this.declarations.push({ moniker, data: declarations});
                     }
-                    this.blob.definitionResults[item.definitionResult] = definitions;
-                } else {
-                    this.definitions.push({ moniker, data: definitions });
                 }
             }
-        }
-        if (item.referenceResult) {
-            moniker = assertDefined(moniker);
-            const references = this.provider.getAndDeleteReferences(item.referenceResult, this.id);
-            if (references !== undefined) {
-                if (Monikers.isLocal(moniker)) {
-                    if (this.blob.referenceResults === undefined) {
-                        this.blob.referenceResults = LiteralMap.create();
+            if (item.definitionResult) {
+                const definitions = this.provider.getAndDeleteDefinitions(item.definitionResult, this.id);
+                if (definitions !== undefined) {
+                    if (Monikers.isLocal(moniker)) {
+                        if (this.blob.definitionResults === undefined) {
+                            this.blob.definitionResults = LiteralMap.create();
+                        }
+                        this.blob.definitionResults[item.definitionResult] = definitions;
+                    } else {
+                        this.definitions.push({ moniker, data: definitions });
                     }
-                    this.blob.referenceResults[item.referenceResult] = references;
-                } else {
-                    this.references.push({ moniker, data: references });
+                }
+            }
+            if (item.referenceResult) {
+                const references = this.provider.getAndDeleteReferences(item.referenceResult, this.id);
+                if (references !== undefined) {
+                    if (Monikers.isLocal(moniker)) {
+                        if (this.blob.referenceResults === undefined) {
+                            this.blob.referenceResults = LiteralMap.create();
+                        }
+                        this.blob.referenceResults[item.referenceResult] = references;
+                    } else {
+                        this.references.push({ moniker, data: references });
+                    }
                 }
             }
         }
