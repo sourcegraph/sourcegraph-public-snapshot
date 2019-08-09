@@ -29,5 +29,6 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     CodeOwnershipValidationCampaignTemplate,
     FindReplaceCampaignTemplate,
     TriageSearchResultsCampaignTemplate,
+    // TODO!(sqs): add all github issues/PRs matching a certain query
     { id: EMPTY_CAMPAIGN_TEMPLATE_ID, title: '', renderForm: () => null, isEmpty: true },
 ]

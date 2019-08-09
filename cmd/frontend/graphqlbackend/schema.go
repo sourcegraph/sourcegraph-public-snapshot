@@ -1042,6 +1042,10 @@ type Query {
         object: ID
     ): CampaignConnection!
 
+    # A preview of a campaign. Unlike Mutation.createCampaign with the preview argument set to true,
+    # the campaign is not persisted.
+    campaignPreview(input: CreateCampaignInput!): CampaignPreview!
+
     # A rule container by ID.
     ruleContainer(id: ID!): RuleContainer
 
@@ -4480,6 +4484,18 @@ type Diagnostic {
     # location: TreeEntry
 }
 
+# A list of diagnostics.
+type DiagnosticConnection {
+    # A list of diagnostics.
+    nodes: [Diagnostic!]!
+
+    # The total number of diagnostics in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
 # A diagnostic that has been added to a thread.
 type ThreadDiagnosticEdge implements Node & Updatable {
     # The globally unique ID of the thread diagnostic edge.
@@ -4571,6 +4587,52 @@ input UpdateCampaignInput {
     body: String
 }
 
+# A campaign preview is a preview of a campaign that is not persisted and does not mutate any state.
+type CampaignPreview {
+    # The name of the campaign.
+    name: String!
+
+    # The body as Markdown.
+    body: String!
+
+    # The body as plain text.
+    bodyText: String!
+
+    # The body as HTML.
+    bodyHTML: String!
+
+    # The actor who authored the comment.
+    author: Actor
+
+    # A list of threads in this campaign.
+    threads(
+        # Returns the first n results from the list.
+        first: Int
+
+        # Only include threads that are open.
+        open: Boolean
+    ): ThreadConnection!
+
+    # The list of repositories affected by this campaign's threads.
+    repositories: [Repository!]!
+
+    # The list of commits (from one or more repositories) in this campaign's threads.
+    commits: [GitCommit!]!
+
+    # The comparisons of before and after this campaign's thread's changes are applied (on all
+    # affected repositories).
+    repositoryComparisons: [RepositoryComparison!]!
+
+    # A list of diagnostics in this campaigns' threads.
+    diagnostics(
+        # Return the first n results.
+        first: Int
+    ): DiagnosticConnection!
+
+    # A burndown chart of the states of the campaign's threads over time.
+    burndownChart: CampaignBurndownChart!
+}
+
 # A campaign is a collection of threads.
 type Campaign implements Node & Comment & Commentable & RuleContainer {
     # The unique ID for the campaign.
@@ -4592,6 +4654,8 @@ type Campaign implements Node & Comment & Commentable & RuleContainer {
     bodyHTML: String!
 
     # Whether this campaign is a preview.
+    #
+    # TODO!(sqs): clarify how this differs from CampaignPreview
     isPreview: Boolean!
 
     # The actor who authored the comment.
@@ -4640,7 +4704,7 @@ type Campaign implements Node & Comment & Commentable & RuleContainer {
     # affected repositories).
     repositoryComparisons: [RepositoryComparison!]!
 
-    # A list of diagnostics in this campaigns' threads.
+    # A list of diagnostics in this campaign's threads.
     diagnostics(
         # Return the first n results.
         first: Int

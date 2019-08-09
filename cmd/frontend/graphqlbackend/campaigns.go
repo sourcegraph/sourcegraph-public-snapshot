@@ -73,6 +73,13 @@ func (schemaResolver) Campaigns(ctx context.Context, arg *CampaignsArgs) (Campai
 	return Campaigns.Campaigns(ctx, arg)
 }
 
+func (r schemaResolver) CampaignPreview(ctx context.Context, arg *CampaignPreviewArgs) (CampaignPreview, error) {
+	if Campaigns == nil {
+		return nil, errCampaignsNotImplemented
+	}
+	return Campaigns.CampaignPreview(ctx, arg)
+}
+
 func (r schemaResolver) CreateCampaign(ctx context.Context, arg *CreateCampaignArgs) (Campaign, error) {
 	if Campaigns == nil {
 		return nil, errCampaignsNotImplemented
@@ -126,6 +133,7 @@ func (r schemaResolver) RemoveThreadsFromCampaign(ctx context.Context, arg *AddR
 type CampaignsResolver interface {
 	// Queries
 	Campaigns(context.Context, *CampaignsArgs) (CampaignConnection, error)
+	CampaignPreview(context.Context, *CampaignPreviewArgs) (CampaignPreview, error)
 
 	// Mutations
 	CreateCampaign(context.Context, *CreateCampaignArgs) (Campaign, error)
@@ -155,14 +163,20 @@ type CampaignsArgs struct {
 	Object *graphql.ID
 }
 
+type CampaignPreviewArgs struct {
+	Input CreateCampaignInput
+}
+
+type CreateCampaignInput struct {
+	Namespace graphql.ID
+	Name      string
+	Body      *string
+	Preview   *bool
+	Rules     *[]NewRuleInput
+}
+
 type CreateCampaignArgs struct {
-	Input struct {
-		Namespace graphql.ID
-		Name      string
-		Body      *string
-		Preview   *bool
-		Rules     *[]NewRuleInput
-	}
+	Input CreateCampaignInput
 }
 
 type UpdateCampaignArgs struct {

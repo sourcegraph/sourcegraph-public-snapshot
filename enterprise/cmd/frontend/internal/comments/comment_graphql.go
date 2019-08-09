@@ -157,14 +157,21 @@ func (v *gqlComment) Body(ctx context.Context) (string, error) {
 	return c.Body, nil
 }
 
+func ToBodyText(body string) string {
+	// TODO!(sqs): this doesnt remove markdown formatting like `*`, just HTML tags
+	return html.UnescapeString(bluemonday.StrictPolicy().Sanitize(body))
+}
+
 func (v *gqlComment) BodyText(ctx context.Context) (string, error) {
 	c, err := v.getComment(ctx)
 	if err != nil {
 		return "", err
 	}
+	return ToBodyText(c.Body), nil
+}
 
-	// TODO!(sqs): this doesnt remove markdown formatting like `*`, just HTML tags
-	return html.UnescapeString(bluemonday.StrictPolicy().Sanitize(c.Body)), nil
+func ToBodyHTML(body string) string {
+	return markdown.Render(body, nil)
 }
 
 func (v *gqlComment) BodyHTML(ctx context.Context) (string, error) {
@@ -172,7 +179,7 @@ func (v *gqlComment) BodyHTML(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return markdown.Render(c.Body, nil), nil
+	return ToBodyHTML(c.Body), nil
 }
 
 func (v *gqlComment) CreatedAt(ctx context.Context) (graphqlbackend.DateTime, error) {

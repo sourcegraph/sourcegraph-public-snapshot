@@ -3,7 +3,6 @@ package campaigns
 import (
 	"context"
 	"path"
-	"sort"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -11,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
@@ -135,49 +133,19 @@ func (v *gqlCampaign) getThreads(ctx context.Context) ([]graphqlbackend.Thread, 
 }
 
 func (v *gqlCampaign) Repositories(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
-	threadNodes, err := v.getThreads(ctx)
+	threads, err := v.getThreads(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	byRepositoryDBID := map[api.RepoID]*graphqlbackend.RepositoryResolver{}
-	for _, thread := range threadNodes {
-		repo, err := thread.Repository(ctx)
-		if err != nil {
-			return nil, err
-		}
-		key := repo.DBID()
-		if _, seen := byRepositoryDBID[key]; !seen {
-			byRepositoryDBID[key] = repo
-		}
-	}
-
-	repos := make([]*graphqlbackend.RepositoryResolver, 0, len(byRepositoryDBID))
-	for _, repo := range byRepositoryDBID {
-		repos = append(repos, repo)
-	}
-	sort.Slice(repos, func(i, j int) bool {
-		return repos[i].DBID() < repos[j].DBID()
-	})
-	return repos, nil
+	return campaignRepositories(ctx, threads)
 }
 
 func (v *gqlCampaign) Commits(ctx context.Context) ([]*graphqlbackend.GitCommitResolver, error) {
-	rcs, err := v.RepositoryComparisons(ctx)
+	threads, err := v.getThreads(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	var allCommits []*graphqlbackend.GitCommitResolver
-	for _, rc := range rcs {
-		cc := rc.Commits(&graphqlutil.ConnectionArgs{})
-		commits, err := cc.Nodes(ctx)
-		if err != nil {
-			return nil, err
-		}
-		allCommits = append(allCommits, commits...)
-	}
-	return allCommits, nil
+	return campaignCommits(ctx, threads)
 }
 
 func (v *gqlCampaign) RepositoryComparisons(ctx context.Context) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
@@ -185,18 +153,7 @@ func (v *gqlCampaign) RepositoryComparisons(ctx context.Context) ([]*graphqlback
 	if err != nil {
 		return nil, err
 	}
-
-	rcs := make([]*graphqlbackend.RepositoryComparisonResolver, 0, len(threads))
-	for _, thread := range threads {
-		rc, err := thread.RepositoryComparison(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if rc != nil {
-			rcs = append(rcs, rc)
-		}
-	}
-	return rcs, nil
+	return campaignRepositoryComparisons(ctx, threads)
 }
 
 func (v *gqlCampaign) Diagnostics(ctx context.Context, arg *graphqlbackend.ThreadDiagnosticConnectionArgs) (graphqlbackend.ThreadDiagnosticConnection, error) {
