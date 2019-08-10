@@ -5,15 +5,17 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/repos/git"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 )
 
-func NewGQLThreadPreview(input graphqlbackend.CreateThreadInput) graphqlbackend.ThreadPreview {
-	return &gqlThreadPreview{input}
+func NewGQLThreadPreview(input graphqlbackend.CreateThreadInput, repoComparison *git.GQLRepositoryComparisonPreview) graphqlbackend.ThreadPreview {
+	return &gqlThreadPreview{input: input, repoComparison: repoComparison}
 }
 
 type gqlThreadPreview struct {
-	input graphqlbackend.CreateThreadInput
+	input          graphqlbackend.CreateThreadInput
+	repoComparison *git.GQLRepositoryComparisonPreview
 }
 
 func (v *gqlThreadPreview) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
@@ -50,7 +52,11 @@ func (v *gqlThreadPreview) Kind(ctx context.Context) (graphqlbackend.ThreadKind,
 	return graphqlbackend.ThreadKindChangeset, nil
 }
 
-func (v *gqlThreadPreview) RepositoryComparison(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
+func (v *gqlThreadPreview) RepositoryComparison(ctx context.Context) (*git.GQLRepositoryComparisonPreview, error) {
+	if v.repoComparison != nil {
+		return v.repoComparison, nil
+	}
+
 	if v.input.BaseRef == nil && v.input.HeadRef == nil {
 		return nil, nil
 	}

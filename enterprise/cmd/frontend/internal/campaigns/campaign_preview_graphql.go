@@ -6,10 +6,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/repos/git"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/diagnostics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
@@ -54,14 +57,21 @@ func (v *gqlCampaignPreview) getThreads(ctx context.Context) ([]graphqlbackend.T
 }
 
 func (v *gqlCampaignPreview) Threads(ctx context.Context, args *graphqlbackend.ThreadConnectionArgs) (graphqlbackend.ThreadOrThreadPreviewConnection, error) {
-	// TODO!(sqs): hacky
+	var allThreads []graphqlbackend.ToThreadOrThreadPreview
+
+	getRepoFromURI := func(uriStr string) (*types.Repo, error) {
+		uri, err := gituri.Parse(uriStr)
+		if err != nil {
+			return nil, err
+		}
+		return backend.Repos.GetByName(ctx, uri.Repo())
+	}
 
 	// Include issues for each diagnostic.
 	diagnostics, err := v.getDiagnostics(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var issues []graphqlbackend.ToThreadOrThreadPreview
 	for _, d := range diagnostics {
 		var dd struct {
 			Resource string
@@ -70,22 +80,51 @@ func (v *gqlCampaignPreview) Threads(ctx context.Context, args *graphqlbackend.T
 		if err := json.Unmarshal([]byte(d.Data().Value.(json.RawMessage)), &dd); err != nil {
 			return nil, err
 		}
-		uri, err := gituri.Parse(dd.Resource)
+		repo, err := getRepoFromURI(dd.Resource)
 		if err != nil {
 			return nil, err
 		}
-		repo, err := backend.Repos.GetByName(ctx, uri.Repo())
-		if err != nil {
-			return nil, err
-		}
-		issues = append(issues, graphqlbackend.ToThreadOrThreadPreview{
+		allThreads = append(allThreads, graphqlbackend.ToThreadOrThreadPreview{
 			ThreadPreview: threads.NewGQLThreadPreview(graphqlbackend.CreateThreadInput{
 				Repository: graphqlbackend.NewRepositoryResolver(repo).ID(),
 				Title:      dd.Message,
-			}),
+			}, nil),
 		})
 	}
-	return threads.ConstThreadOrThreadPreviewConnection(issues), nil
+
+	// Include changesets for each diff.
+	type fileDiff struct {
+		parsed *diff.FileDiff
+		repo   *types.Repo
+	}
+	diffs := make([]fileDiff, len(v.input.RawFileDiffs))
+	for i, diffStr := range v.input.RawFileDiffs {
+		var err error
+		diffs[i].parsed, err = diff.ParseFileDiff([]byte(diffStr))
+		if err != nil {
+			return nil, err
+		}
+		diffs[i].repo, err = getRepoFromURI(diffs[i].parsed.NewName)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for _, d := range diffs {
+		repoComparison := &git.GQLRepositoryComparisonPreview{
+			BaseRepository_: graphqlbackend.NewRepositoryResolver(d.repo),
+			HeadRepository_: graphqlbackend.NewRepositoryResolver(d.repo),
+			FileDiffs_:      []*diff.FileDiff{d},
+		}
+		allThreads = append(allThreads, graphqlbackend.ToThreadOrThreadPreview{
+			ThreadPreview: threads.NewGQLThreadPreview(graphqlbackend.CreateThreadInput{
+				Repository: graphqlbackend.NewRepositoryResolver(d.repo).ID(),
+				Title:      "DIFF TODO!(sqs)",
+			}, repoComparison),
+		})
+	}
+	// TODO!(sqs): include existing issues/threads matched by rules
+
+	return threads.ConstThreadOrThreadPreviewConnection(allThreads), nil
 }
 
 func (v *gqlCampaignPreview) Repositories(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {

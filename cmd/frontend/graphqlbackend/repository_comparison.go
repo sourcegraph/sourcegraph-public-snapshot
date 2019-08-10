@@ -21,6 +21,15 @@ import (
 // when computing the `git diff` of the root commit.
 const devNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
+// RepositoryComparison implements the RepositoryComparison GraphQL type.
+type RepositoryComparison interface {
+	BaseRepository() *RepositoryResolver
+	HeadRepository() *RepositoryResolver
+	Range() *gitRevisionRange
+	Commits(context.Context, *graphqlutil.ConnectionArgs) (*gitCommitConnectionResolver, error)
+	FileDiffs(*graphqlutil.ConnectionArgs) FileDiffConnection
+}
+
 type RepositoryComparisonInput struct {
 	Base    *string
 	BaseOID *string
@@ -33,7 +42,7 @@ type resolvedRevspec struct {
 	commitID api.CommitID
 }
 
-func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
+func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *RepositoryComparisonInput) (RepositoryComparison, error) {
 	var baseRevspec, headRevspec resolvedRevspec
 	if args.Base == nil {
 		baseRevspec = resolvedRevspec{expr: "HEAD"}
@@ -136,13 +145,18 @@ func (r *RepositoryComparisonResolver) Commits(args *graphqlutil.ConnectionArgs)
 	}
 }
 
-func (r *RepositoryComparisonResolver) FileDiffs(args *struct {
-	First *int32
-}) *fileDiffConnectionResolver {
+func (r *RepositoryComparisonResolver) FileDiffs(args *graphqlutil.ConnectionArgs) FileDiffConnection {
 	return &fileDiffConnectionResolver{
 		cmp:   r,
 		first: args.First,
 	}
+}
+
+// FileDiffConnection implements the FileDiffConnection GraphQL type.
+type FileDiffConnection interface {
+	Nodes(context.Context) ([]FileDiff, error)
+	TotalCount(context.Context) (int32, error)
+	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 }
 
 type fileDiffConnectionResolver struct {
@@ -285,6 +299,21 @@ func (r *fileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error
 	}
 	b, err := diff.PrintMultiFileDiff(fileDiffs)
 	return string(b), err
+}
+
+type FileDiff interface {
+	OldPath() *string
+	NewPath() *string
+	Hunks() []*diffHunk
+	Stat() *diffStat
+	OldFile() *gitTreeEntryResolver
+	NewFile() *gitTreeEntryResolver
+	MostRelevantFile() *gitTreeEntryResolver
+	InternalID() string
+}
+
+func NewFileDiff(fileDiff *diff.FileDiff, cmp *RepositoryComparisonResolver) FileDiff {
+	return &fileDiffResolver{fileDiff: fileDiff, cmp: cmp}
 }
 
 type fileDiffResolver struct {
