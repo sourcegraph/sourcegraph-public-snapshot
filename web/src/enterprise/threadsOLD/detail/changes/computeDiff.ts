@@ -13,6 +13,7 @@ import { ChangesetPlanOperation } from '../../../changesetsOLD/plan/plan'
 export interface FileDiff extends Pick<GQL.IFileDiff, 'oldPath' | 'newPath'> {
     hunks: GQL.IFileDiffHunk[]
     patch: string
+    patchWithFullURIs: string
 }
 
 export const npmDiffToFileDiffHunk = (hunk: Hunk): GQL.IFileDiffHunk => ({
@@ -77,6 +78,8 @@ export async function computeDiffFromEdits(
             newPath: uri.toString(),
             hunks: hunks.map(npmDiffToFileDiffHunk),
             patch: createTwoFilesPatch('a/' + p.filePath!, 'b/' + p.filePath!, oldText, newText, undefined, undefined),
+            // TODO!(sqs): hack that we have 2 different patches w/different URIs
+            patchWithFullURIs: createTwoFilesPatch(uri, uri, oldText, newText, undefined, undefined),
         })
     }
     return fileDiffs

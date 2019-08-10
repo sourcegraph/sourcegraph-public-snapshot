@@ -1209,7 +1209,7 @@ declare module 'sourcegraph' {
          * If a {@link ChangesetPlanOperation#diagnosticQuery} is specified, the edits are assumed to
          * resolve all diagnostics that match the query.
          */
-        editCommand: Pick<sourcegraph.Command, 'command' | 'arguments'>
+        editCommand: Pick<Command, 'command' | 'arguments'>
     }
 
     /**
