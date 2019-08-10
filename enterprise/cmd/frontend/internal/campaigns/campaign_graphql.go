@@ -3,8 +3,10 @@ package campaigns
 import (
 	"context"
 	"path"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
@@ -124,40 +126,61 @@ func (v *gqlCampaign) Threads(ctx context.Context, arg *graphqlbackend.ThreadCon
 	return threads.ThreadsByIDs(threadIDs, arg), nil
 }
 
-func (v *gqlCampaign) getThreads(ctx context.Context) ([]graphqlbackend.Thread, error) {
+func (v *gqlCampaign) getThreads(ctx context.Context) ([]graphqlbackend.ToThreadOrThreadPreview, error) {
 	connection, err := v.Threads(ctx, &graphqlbackend.ThreadConnectionArgs{})
 	if err != nil {
 		return nil, err
 	}
-	return connection.Nodes(ctx)
+	threads, err := connection.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return toThreadOrThreadPreviews(threads), nil
 }
 
 func (v *gqlCampaign) Repositories(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
-	threads, err := v.getThreads(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return campaignRepositories(ctx, toThreadOrThreadPreviews(threads))
+	return campaignRepositories(ctx, v)
 }
 
 func (v *gqlCampaign) Commits(ctx context.Context) ([]*graphqlbackend.GitCommitResolver, error) {
-	threads, err := v.getThreads(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return campaignCommits(ctx, toThreadOrThreadPreviews(threads))
+	return campaignCommits(ctx, v)
 }
 
 func (v *gqlCampaign) RepositoryComparisons(ctx context.Context) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
-	threads, err := v.getThreads(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return campaignRepositoryComparisons(ctx, toThreadOrThreadPreviews(threads))
+	return campaignRepositoryComparisons(ctx, v)
 }
 
 func (v *gqlCampaign) Diagnostics(ctx context.Context, arg *graphqlbackend.ThreadDiagnosticConnectionArgs) (graphqlbackend.ThreadDiagnosticConnection, error) {
 	campaignID := v.ID()
 	arg.Campaign = &campaignID
 	return graphqlbackend.ThreadDiagnostics.ThreadDiagnostics(ctx, arg)
+}
+
+func (v *gqlCampaign) BurndownChart(ctx context.Context) (graphqlbackend.CampaignBurndownChart, error) {
+	return campaignBurndownChart(ctx, v)
+}
+
+func (v *gqlCampaign) getEvents(ctx context.Context, beforeDate time.Time, eventTypes []events.Type) ([]graphqlbackend.ToEvent, error) {
+	eventTypes2 := make([]string, len(eventTypes))
+	for i, t := range eventTypes {
+		eventTypes2[i] = string(t)
+	}
+	ec, err := events.GetEventConnection(ctx,
+		&graphqlbackend.EventConnectionCommonArgs{
+			BeforeDate: &graphqlbackend.DateTime{beforeDate},
+			Types:      &eventTypes2,
+		},
+		events.Objects{Campaign: v.db.ID},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return ec.Nodes(ctx)
+}
+
+func (v *gqlCampaign) TimelineItems(ctx context.Context, arg *graphqlbackend.EventConnectionCommonArgs) (graphqlbackend.EventConnection, error) {
+	return events.GetEventConnection(ctx,
+		arg,
+		events.Objects{Campaign: v.db.ID},
+	)
 }

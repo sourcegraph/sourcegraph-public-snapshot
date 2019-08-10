@@ -13,24 +13,28 @@ type burndownChartData struct {
 	openThreads, mergedThreads, closedThreads, openApprovedThreads int32
 }
 
-func (v *gqlCampaign) BurndownChart(ctx context.Context) (graphqlbackend.CampaignBurndownChart, error) {
+func campaignBurndownChart(ctx context.Context, campaign interface {
+	threadsGetter
+	eventsGetter
+}) (graphqlbackend.CampaignBurndownChart, error) {
 	// Find the earliest creation date of any thread (for the starting point of the burndown chart).
-	threadConnection, err := v.Threads(ctx, &graphqlbackend.ThreadConnectionArgs{})
+	threads, err := campaign.getThreads(ctx)
 	if err != nil {
 		return nil, err
 	}
-	threadNodes, err := threadConnection.Nodes(ctx)
-	if err != nil {
-		return nil, err
-	}
-	earliestCreationDate := time.Now()
-	for _, thread := range threadNodes {
-		createdAt, err := thread.CreatedAt(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if createdAt.Time.Before(earliestCreationDate) {
-			earliestCreationDate = createdAt.Time
+	now := time.Now()
+	earliestCreationDate := now
+	for _, thread := range threads {
+		// The creation date of ThreadPreviews is now, so we ignore them for the purpose of
+		// computing earliestCreationDate.
+		if thread.Thread != nil {
+			createdAt, err := thread.Thread.CreatedAt(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if createdAt.Time.Before(earliestCreationDate) {
+				earliestCreationDate = createdAt.Time
+			}
 		}
 	}
 
@@ -51,10 +55,17 @@ func (v *gqlCampaign) BurndownChart(ctx context.Context) (graphqlbackend.Campaig
 	}
 	dates[numPeriods] = time.Now()
 
+	// To compute the data for the chart, we look at all of the events that occurred before each
+	// date. For campaign previews, we don't have the events persisted, so we need to fetch them on
+	// the fly. TODO!(sqs): implement this for campaign previews
 	data := make([]*burndownChartData, len(dates))
 	for i, date := range dates {
-		var err error
-		data[i], err = computeBurndownChartData(ctx, v.db.ID, date)
+		// TODO!(sqs): use constants for these event types
+		events, err := campaign.getEvents(ctx, date, []events.Type{"CreateThread", "MergeThread", "CloseThread", "Review"})
+		if err != nil {
+			return nil, err
+		}
+		data[i], err = computeBurndownChartData(ctx, events)
 		if err != nil {
 			return nil, err
 		}
@@ -66,38 +77,8 @@ func (v *gqlCampaign) BurndownChart(ctx context.Context) (graphqlbackend.Campaig
 	}, nil
 }
 
-func computeBurndownChartData(ctx context.Context, campaignID int64, date time.Time) (*burndownChartData, error) {
-	// A thread is considered to be part of the campaign when it was created, not when it was added
-	// to the campaign. This is so that you can use campaigns to track efforts that you started
-	// before you created the campaign.
-	// 	threads, err := threads.DBQuery(ctx, sqlf.Sprintf(`
-	// SELECT `+threads.DBSelectColumns+` FROM threads
-	// INNER JOIN campaigns_threads ct ON ct.thread_id=threads.id AND ct.campaign_id=%d
-	// LEFT JOIN events ON events.thread_id=threads.id AND type='CreateThread'
-	// WHERE events.created_at <= %v
-	// `,
-	// 		campaignID,
-	// 		date,
-	// 	))
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-
+func computeBurndownChartData(ctx context.Context, events []graphqlbackend.ToEvent) (*burndownChartData, error) {
 	var data burndownChartData
-	ec, err := events.GetEventConnection(ctx,
-		&graphqlbackend.EventConnectionCommonArgs{
-			BeforeDate: &graphqlbackend.DateTime{date},
-			Types:      &[]string{"CreateThread", "MergeThread", "CloseThread", "Review"},
-		},
-		events.Objects{Campaign: campaignID},
-	)
-	if err != nil {
-		return nil, err
-	}
-	events, err := ec.Nodes(ctx)
-	if err != nil {
-		return nil, err
-	}
 	openApprovedThreads := map[graphql.ID]struct{}{}
 	for _, event := range events {
 		switch {
