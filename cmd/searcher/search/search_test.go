@@ -172,6 +172,19 @@ main.go:3:import "fmt"
 main.go:4:
 main.go:5:func main() {
 `},
+		{protocol.PatternInfo{Pattern: "\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+README.md:1:# Hello World
+README.md:2:
+README.md:3:Hello world example in go
+README.md:4:
+main.go:1:package main
+main.go:2:
+main.go:3:import "fmt"
+main.go:4:
+main.go:5:func main() {
+main.go:6:	fmt.Println("Hello world")
+main.go:7:}
+`},
 	}
 
 	store, cleanup, err := newStore(files)
