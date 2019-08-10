@@ -1,5 +1,5 @@
 import H from 'history'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
@@ -75,6 +75,8 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
         [namespace.id, preview]
     )
 
+    const initialValue = useMemo<CampaignFormData>(() => ({ name: '', namespace: namespace.id }), [namespace.id])
+
     return (
         <>
             {creationOrError !== null && creationOrError !== LOADING && !isErrorLike(creationOrError) && (
@@ -85,6 +87,7 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
                 <div style={{ flex: '1 0 50%', minWidth: '32rem' }}>
                     <CampaignForm
                         templateID={templateID}
+                        initialValue={initialValue}
                         onChange={onChange}
                         onSubmit={onSubmit}
                         buttonText={preview ? 'Preview campaign' : 'Create campaign'}
@@ -94,9 +97,10 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
                         className="flex-1"
                     />
                 </div>
-                <div style={{ flex: '2 0 24rem' }}>
-                    <CampaignPreview data={data} />
-                </div>
+                {/* TODO!(sqs): be smart about when to show the preview pane */}
+                {templateID && templateID !== EMPTY_CAMPAIGN_TEMPLATE_ID && (
+                    <div style={{ flex: '2 0 24rem' }}>{data && <CampaignPreview data={data} />}</div>
+                )}
             </div>
             {isErrorLike(creationOrError) && <div className="alert alert-danger mt-3">{creationOrError.message}</div>}
         </>

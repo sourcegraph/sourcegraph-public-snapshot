@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
@@ -11,18 +11,18 @@ import { CampaignTemplateChooser } from './CampaignTemplateChooser'
 import { CAMPAIGN_TEMPLATES, CampaignTemplate, EMPTY_CAMPAIGN_TEMPLATE_ID } from './templates'
 
 export interface CampaignFormData
-    extends Pick<GQL.ICreateCampaignInput, Exclude<keyof GQL.ICreateCampaignInput, 'namespace'>> {}
+    extends Pick<GQL.ICreateCampaignInput, Exclude<keyof GQL.ICreateCampaignInput, 'preview'>> {}
 
 export interface CampaignFormControl {
     value: CampaignFormData
-    onChange: (value: CampaignFormData) => void
+    onChange: (value: Partial<CampaignFormData>) => void
     disabled: boolean
 }
 
 interface Props {
     templateID: string | null
 
-    initialValue?: CampaignFormData
+    initialValue: CampaignFormData
 
     /** Called when the form's data is changed. */
     onChange: (data: CampaignFormData) => void
@@ -50,9 +50,10 @@ interface Props {
  */
 export const CampaignForm: React.FunctionComponent<Props> = ({
     templateID,
-    initialValue = { name: '', body: null },
+    initialValue,
+    onChange: parentOnChange,
     onDismiss,
-    onSubmit: onSubmitCampaign,
+    onSubmit: parentOnSubmit,
     buttonText,
     isLoading,
     className = '',
@@ -60,13 +61,17 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
     location,
 }) => {
     const [value, setValue] = useState<CampaignFormData>(initialValue)
+    const onChange = useCallback((value: Partial<CampaignFormData>) => {
+        setValue(prevValue => ({ ...prevValue, ...value }))
+    }, [])
+    useEffect(() => parentOnChange(value), [parentOnChange, value])
 
     const onSubmit = useCallback<React.FormEventHandler>(
         async e => {
             e.preventDefault()
-            onSubmitCampaign(value)
+            parentOnSubmit(value)
         },
-        [onSubmitCampaign, value]
+        [parentOnSubmit, value]
     )
 
     const template: null | CampaignTemplate | ErrorLike =
@@ -76,7 +81,7 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
             : null
     const formControlProps: CampaignFormControl = {
         value,
-        onChange: setValue,
+        onChange,
         disabled: isLoading,
     }
 

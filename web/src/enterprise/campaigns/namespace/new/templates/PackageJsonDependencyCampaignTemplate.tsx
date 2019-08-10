@@ -8,7 +8,6 @@ interface Props extends CampaignTemplateComponentContext {}
 const ALL_VERSION_RANGE = '*'
 
 const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> = ({
-    value,
     onChange,
     disabled,
     location,
@@ -27,7 +26,6 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
     useEffect(() => {
         const packageNameOrPlaceholder = packageName || '<package>'
         onChange({
-            ...value,
             name: `Deprecate ${packageNameOrPlaceholder}${
                 versionRange && versionRange !== ALL_VERSION_RANGE ? `@${versionRange}` : ''
             } (npm)`,
@@ -42,7 +40,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                 },
             ],
         })
-    }, [onChange, packageName, value, versionRange])
+    }, [onChange, packageName, versionRange])
 
     return (
         <>
