@@ -31,12 +31,35 @@ type ToThreadOrThreadPreview struct {
 	ThreadPreview ThreadPreview
 }
 
-func (v ToThreadOrThreadPreview) Repository(ctx context.Context) (*RepositoryResolver, error) {
+func (v ToThreadOrThreadPreview) thread() interface {
+	Repository(ctx context.Context) (*RepositoryResolver, error)
+	Kind(context.Context) (ThreadKind, error)
+	RepositoryComparison(context.Context) (*RepositoryComparisonResolver, error)
+} {
 	switch {
 	case v.Thread != nil:
-		return v.Thread.Repository(ctx)
+		return v.Thread
 	case v.ThreadPreview != nil:
-		return v.ThreadPreview.Repository(ctx)
+		return v.ThreadPreview
+	default:
+		panic("invalid ToThreadOrThreadPreview")
+	}
+}
+
+func (v ToThreadOrThreadPreview) Repository(ctx context.Context) (*RepositoryResolver, error) {
+	return v.thread().Repository(ctx)
+}
+
+func (v ToThreadOrThreadPreview) RepositoryComparison(ctx context.Context) (*RepositoryComparisonResolver, error) {
+	return v.thread().RepositoryComparison(ctx)
+}
+
+func (v ToThreadOrThreadPreview) Diagnostics(ctx context.Context, args *graphqlutil.ConnectionArgs) (DiagnosticConnection, error) {
+	switch {
+	case v.Thread != nil:
+		return v.Thread.Diagnostics(ctx, &ThreadDiagnosticConnectionArgs{ConnectionArgs: *args})
+	case v.ThreadPreview != nil:
+		return v.ThreadPreview.Diagnostics(ctx, args)
 	default:
 		panic("invalid ToThreadOrThreadPreview")
 	}

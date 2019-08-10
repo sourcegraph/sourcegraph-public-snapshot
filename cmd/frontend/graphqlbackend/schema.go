@@ -4354,6 +4354,53 @@ enum ThreadKind {
     CHANGESET
 }
 
+union ThreadOrThreadPreview = Thread | ThreadPreview
+
+# A list of threads and thread previews.
+type ThreadOrThreadPreviewConnection {
+    # A list of threads and thread previews.
+    nodes: [ThreadOrThreadPreview!]!
+
+    # The total number of results in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A thread preview is a preview of a thread that is not persisted.
+type ThreadPreview {
+    # The repository that contains this thread.
+    repository: Repository!
+
+    # The title of the thread.
+    title: String!
+
+    # The body as Markdown.
+    body: String!
+
+    # The body as plain text.
+    bodyText: String!
+
+    # The body as HTML.
+    bodyHTML: String!
+
+    # The actor who authored the thread.
+    author: Actor
+
+    # A list of diagnostics in this thread.
+    diagnostics(
+        # Return the first n results.
+        first: Int
+    ): DiagnosticConnection!
+
+    # The kind of this thread, determined based on the thread's contents.
+    kind: ThreadKind!
+
+    # The comparison between this thread's base and head, or null if there is none.
+    repositoryComparison: RepositoryComparison
+}
+
 # A thread is collection of comments, diagnostics, and changes.
 type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & Commentable & CampaignNode & Labelable & RuleContainer {
     # The unique ID for the thread.
@@ -4611,7 +4658,7 @@ type CampaignPreview {
 
         # Only include threads that are open.
         open: Boolean
-    ): ThreadConnection!
+    ): ThreadOrThreadPreviewConnection!
 
     # The list of repositories affected by this campaign's threads.
     repositories: [Repository!]!

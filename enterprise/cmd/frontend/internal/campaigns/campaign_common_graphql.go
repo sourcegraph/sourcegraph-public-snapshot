@@ -46,7 +46,7 @@ func campaignRepositories(ctx context.Context, threads []graphqlbackend.ToThread
 	return repos, nil
 }
 
-func campaignCommits(ctx context.Context, threads []graphqlbackend.ThreadOrThreadPreview) ([]*graphqlbackend.GitCommitResolver, error) {
+func campaignCommits(ctx context.Context, threads []graphqlbackend.ToThreadOrThreadPreview) ([]*graphqlbackend.GitCommitResolver, error) {
 	rcs, err := campaignRepositoryComparisons(ctx, threads)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func campaignCommits(ctx context.Context, threads []graphqlbackend.ThreadOrThrea
 	return allCommits, nil
 }
 
-func campaignRepositoryComparisons(ctx context.Context, threads []graphqlbackend.ThreadOrThreadPreview) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
+func campaignRepositoryComparisons(ctx context.Context, threads []graphqlbackend.ToThreadOrThreadPreview) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
 	rcs := make([]*graphqlbackend.RepositoryComparisonResolver, 0, len(threads))
 	for _, thread := range threads {
 		rc, err := thread.RepositoryComparison(ctx)

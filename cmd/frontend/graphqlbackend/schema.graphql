@@ -4363,6 +4363,18 @@ enum ThreadKind {
 
 union ThreadOrThreadPreview = Thread | ThreadPreview
 
+# A list of threads and thread previews.
+type ThreadOrThreadPreviewConnection {
+    # A list of threads and thread previews.
+    nodes: [ThreadOrThreadPreview!]!
+
+    # The total number of results in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
 # A thread preview is a preview of a thread that is not persisted.
 type ThreadPreview {
     # The repository that contains this thread.
@@ -4379,12 +4391,6 @@ type ThreadPreview {
 
     # The body as HTML.
     bodyHTML: String!
-
-    # The base ref of the thread.
-    baseRef: String
-
-    # The head ref of the thread.
-    headRef: String
 
     # The actor who authored the thread.
     author: Actor
