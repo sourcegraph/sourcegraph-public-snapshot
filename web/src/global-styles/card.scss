@@ -23,8 +23,12 @@ $card-spacer: $spacer;
     margin-bottom: 0;
 }
 
-.card-header {
+.card-header:not(:last-child) {
     border-bottom: 1px solid var(--border-color);
+}
+
+.card-footer:not(:first-child) {
+    border-top: 1px solid var(--border-color);
 }
 
 .card > .list-group:first-child,
@@ -32,8 +36,4 @@ $card-spacer: $spacer;
     .list-group-item:first-child {
         border-top: 0;
     }
-}
-
-.card-footer {
-    border-top: 1px solid var(--border-color);
 }

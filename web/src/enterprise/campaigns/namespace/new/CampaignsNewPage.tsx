@@ -2,6 +2,7 @@ import H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { map } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
@@ -32,7 +33,8 @@ export const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICa
 
 interface Props
     extends Pick<NamespaceCampaignsAreaContext, 'namespace' | 'setBreadcrumbItem'>,
-        RouteComponentProps<{}> {
+        RouteComponentProps<{}>,
+        ExtensionsControllerProps {
     location: H.Location
 }
 
@@ -41,7 +43,13 @@ const LOADING = 'loading' as const
 /**
  * Shows a form to create a new campaign.
  */
-export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, setBreadcrumbItem, location, match }) => {
+export const CampaignsNewPage: React.FunctionComponent<Props> = ({
+    namespace,
+    setBreadcrumbItem,
+    location,
+    match,
+    extensionsController,
+}) => {
     useEffect(() => {
         if (setBreadcrumbItem) {
             setBreadcrumbItem({ text: 'New' })
@@ -99,7 +107,9 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
                 </div>
                 {/* TODO!(sqs): be smart about when to show the preview pane */}
                 {templateID && templateID !== EMPTY_CAMPAIGN_TEMPLATE_ID && (
-                    <div style={{ flex: '2 0 24rem' }}>{data && <CampaignPreview data={data} />}</div>
+                    <div className="overflow-auto" style={{ flex: '2 0 24rem' }}>
+                        {data && <CampaignPreview data={data} extensionsController={extensionsController} />}
+                    </div>
                 )}
             </div>
             {isErrorLike(creationOrError) && <div className="alert alert-danger mt-3">{creationOrError.message}</div>}

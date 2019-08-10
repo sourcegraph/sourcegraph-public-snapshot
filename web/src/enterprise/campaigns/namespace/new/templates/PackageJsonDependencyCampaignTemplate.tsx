@@ -71,8 +71,10 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                     disabled={disabled}
                 />
                 <small className="form-help text-muted">
-                    <a href="https://docs.npmjs.com/misc/semver#ranges">How to specify version ranges</a> (
-                    <code>{ALL_VERSION_RANGE}</code> matches all versions)
+                    <a href="https://docs.npmjs.com/misc/semver#ranges" target="_blank">
+                        How to specify version ranges
+                    </a>{' '}
+                    (<code>{ALL_VERSION_RANGE}</code> matches all versions)
                 </small>
             </div>
         </>
