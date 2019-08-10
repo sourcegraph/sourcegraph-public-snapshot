@@ -2,13 +2,18 @@ package campaigns
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/diagnostics"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 )
 
 func (GraphQLResolver) CampaignPreview(ctx context.Context, arg *graphqlbackend.CampaignPreviewArgs) (graphqlbackend.CampaignPreview, error) {
@@ -16,10 +21,10 @@ func (GraphQLResolver) CampaignPreview(ctx context.Context, arg *graphqlbackend.
 }
 
 type gqlCampaignPreview struct {
-	input graphqlbackend.CreateCampaignInput
+	input graphqlbackend.CampaignPreviewInput
 }
 
-func (v *gqlCampaignPreview) Name() string { return v.input.Name }
+func (v *gqlCampaignPreview) Name() string { return v.input.Campaign.Name }
 
 func (v *gqlCampaignPreview) Author(ctx context.Context) (*graphqlbackend.Actor, error) {
 	user, err := graphqlbackend.CurrentUser(ctx)
@@ -30,19 +35,15 @@ func (v *gqlCampaignPreview) Author(ctx context.Context) (*graphqlbackend.Actor,
 }
 
 func (v *gqlCampaignPreview) Body() string {
-	if v.input.Body == nil {
+	if v.input.Campaign.Body == nil {
 		return ""
 	}
-	return *v.input.Body
+	return *v.input.Campaign.Body
 }
 
 func (v *gqlCampaignPreview) BodyText() string { return comments.ToBodyText(v.Body()) }
 
 func (v *gqlCampaignPreview) BodyHTML() string { return comments.ToBodyHTML(v.Body()) }
-
-func (v *gqlCampaignPreview) Threads(context.Context, *graphqlbackend.ThreadConnectionArgs) (graphqlbackend.ThreadOrThreadPreviewConnection, error) {
-	return nil, errors.New("threads not implemented for CampaignPreview")
-}
 
 func (v *gqlCampaignPreview) getThreads(ctx context.Context) ([]graphqlbackend.ToThreadOrThreadPreview, error) {
 	connection, err := v.Threads(ctx, &graphqlbackend.ThreadConnectionArgs{})
@@ -50,6 +51,41 @@ func (v *gqlCampaignPreview) getThreads(ctx context.Context) ([]graphqlbackend.T
 		return nil, err
 	}
 	return connection.Nodes(ctx)
+}
+
+func (v *gqlCampaignPreview) Threads(ctx context.Context, args *graphqlbackend.ThreadConnectionArgs) (graphqlbackend.ThreadOrThreadPreviewConnection, error) {
+	// TODO!(sqs): hacky
+
+	// Include issues for each diagnostic.
+	diagnostics, err := v.getDiagnostics(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var issues []graphqlbackend.ToThreadOrThreadPreview
+	for _, d := range diagnostics {
+		var dd struct {
+			Resource string
+			Message  string
+		}
+		if err := json.Unmarshal([]byte(d.Data().Value.(json.RawMessage)), &dd); err != nil {
+			return nil, err
+		}
+		uri, err := gituri.Parse(dd.Resource)
+		if err != nil {
+			return nil, err
+		}
+		repo, err := backend.Repos.GetByName(ctx, uri.Repo())
+		if err != nil {
+			return nil, err
+		}
+		issues = append(issues, graphqlbackend.ToThreadOrThreadPreview{
+			ThreadPreview: threads.NewGQLThreadPreview(graphqlbackend.CreateThreadInput{
+				Repository: graphqlbackend.NewRepositoryResolver(repo).ID(),
+				Title:      dd.Message,
+			}),
+		})
+	}
+	return threads.ConstThreadOrThreadPreviewConnection(issues), nil
 }
 
 func (v *gqlCampaignPreview) Repositories(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
@@ -64,8 +100,24 @@ func (v *gqlCampaignPreview) RepositoryComparisons(ctx context.Context) ([]*grap
 	return campaignRepositoryComparisons(ctx, v)
 }
 
+func (v *gqlCampaignPreview) getDiagnostics(ctx context.Context) ([]graphqlbackend.Diagnostic, error) {
+	ds := make([]graphqlbackend.Diagnostic, len(v.input.RawDiagnostics))
+	for i, diagnosticStr := range v.input.RawDiagnostics {
+		var d diagnostics.GQLDiagnostic
+		if err := json.Unmarshal([]byte(diagnosticStr), &d); err != nil {
+			return nil, err
+		}
+		ds[i] = d
+	}
+	return ds, nil
+}
+
 func (v *gqlCampaignPreview) Diagnostics(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.DiagnosticConnection, error) {
-	return nil, errors.New("diagnostics not implemented for CampaignPreview")
+	ds, err := v.getDiagnostics(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return diagnostics.ConstConnection(ds), nil
 }
 
 func (v *gqlCampaignPreview) BurndownChart(ctx context.Context) (graphqlbackend.CampaignBurndownChart, error) {

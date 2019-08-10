@@ -9,6 +9,27 @@ import { queryGraphQL } from '../../../../../backend/graphql'
 export const CampaignPreviewFragment = gql`
     fragment CampaignPreviewFragment on CampaignPreview {
         name
+        threads {
+            nodes {
+                __typename
+                ... on ThreadPreview {
+                    repository {
+                        id
+                        name
+                        url
+                    }
+                    title
+                }
+            }
+            totalCount
+        }
+        diagnostics {
+            nodes {
+                type
+                data
+            }
+            totalCount
+        }
     }
 `
 
@@ -21,49 +42,44 @@ type Result = typeof LOADING | GQL.ICampaignPreview | ErrorLike
  */
 export const useCampaignPreview = (
     { extensionsController }: ExtensionsControllerProps,
-    input: GQL.ICreateCampaignInput
+    campaignInput: GQL.ICreateCampaignInput
 ): [Result, boolean] => {
     const [isLoading, setIsLoading] = useState(true)
     const [result, setResult] = useState<Result>(LOADING)
     useEffect(() => {
-        const subscription = queryGraphQL(
-            gql`
-                query CampaignPreview($input: CreateCampaignInput!) {
-                    campaignPreview(input: $input) {
-                        ...CampaignPreviewFragment
-                    }
-                }
-                ${CampaignPreviewFragment}
-            `,
-            { input }
-        )
+        const subscription = extensionsController.services.diagnostics
+            .observeDiagnostics({}, 'eslint')
             .pipe(
+                map(diagnostics =>
+                    diagnostics.map(d =>
+                        // tslint:disable-next-line: no-object-literal-type-assertion
+                        JSON.stringify({
+                            __typename: 'Diagnostic',
+                            type: d.type,
+                            data: d,
+                        } as GQL.IDiagnostic)
+                    )
+                ),
+                switchMap(rawDiagnostics =>
+                    queryGraphQL(
+                        gql`
+                            query CampaignPreview($input: CampaignPreviewInput!) {
+                                campaignPreview(input: $input) {
+                                    ...CampaignPreviewFragment
+                                }
+                            }
+                            ${CampaignPreviewFragment}
+                        `,
+                        // tslint:disable-next-line: no-object-literal-type-assertion
+                        {
+                            input: { campaign: campaignInput, rawDiagnostics, rawFileDiffs: ['TODO!(sqs)'] },
+                        } as GQL.ICampaignPreviewOnQueryArguments
+                    )
+                ),
                 map(dataOrThrowErrors),
                 map(data => data.campaignPreview),
-                switchMap(campaignPreview =>
-                    extensionsController.services.diagnostics.observeDiagnostics({}, 'eslint').pipe(
-                        map(diagnostics => ({
-                            ...campaignPreview,
-                            // tslint:disable-next-line: no-object-literal-type-assertion
-                            diagnostics: {
-                                __typename: 'DiagnosticConnection',
-                                nodes: diagnostics.map(
-                                    d =>
-                                        // tslint:disable-next-line: no-object-literal-type-assertion
-                                        ({
-                                            __typename: 'Diagnostic',
-                                            type: d.type,
-                                            data: JSON.stringify(d),
-                                        } as GQL.IDiagnostic)
-                                ),
-                                totalCount: diagnostics.length,
-                                pageInfo: { hasNextPage: false },
-                            } as GQL.IDiagnosticConnection,
-                        }))
-                    )
-                )
+                startWith(LOADING)
             )
-            .pipe(startWith(LOADING))
             .subscribe(
                 result => {
                     setResult(prevResult => {
@@ -74,9 +90,12 @@ export const useCampaignPreview = (
                             : result
                     })
                 },
-                err => setResult(asError(err))
+                err => {
+                    setIsLoading(false)
+                    setResult(asError(err))
+                }
             )
         return () => subscription.unsubscribe()
-    }, [extensionsController, input])
+    }, [extensionsController, campaignInput])
     return [result, isLoading]
 }

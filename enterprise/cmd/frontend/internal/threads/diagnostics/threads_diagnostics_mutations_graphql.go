@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/diagnostics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 )
 
@@ -43,7 +44,7 @@ func (GraphQLResolver) AddDiagnosticsToThread(ctx context.Context, arg *graphqlb
 				Thread:               threadID,
 				ThreadDiagnosticEdge: id,
 			},
-			Data: jsonDiagnostic{Type: dummytype, Data: json.RawMessage(jsonData)},
+			Data: diagnostics.GQLDiagnostic{Type_: dummytype, Data_: json.RawMessage(jsonData)},
 		}); err != nil {
 			return nil, err
 		}
@@ -87,7 +88,7 @@ func (GraphQLResolver) RemoveDiagnosticsFromThread(ctx context.Context, arg *gra
 			Objects: events.Objects{
 				Thread: threadID,
 			},
-			Data: jsonDiagnostic{Type: edge.Type, Data: edge.Data},
+			Data: diagnostics.GQLDiagnostic{Type_: edge.Type, Data_: edge.Data},
 		}); err != nil {
 			return nil, err
 		}

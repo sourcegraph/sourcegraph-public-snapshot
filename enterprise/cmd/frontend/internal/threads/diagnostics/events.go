@@ -14,11 +14,6 @@ const (
 	eventTypeRemoveDiagnosticFromThread             = "RemoveDiagnosticFromThread"
 )
 
-type jsonDiagnostic struct {
-	Type string          `json:"type"`
-	Data json.RawMessage `json:"data"`
-}
-
 func init() {
 	for _, eventType_ := range []events.Type{eventTypeAddDiagnosticToThread, eventTypeRemoveDiagnosticFromThread} {
 		eventType := eventType_
@@ -34,11 +29,11 @@ func init() {
 
 			// Store the diagnostic in the event data so that it is still accessible even if the
 			// diagnostic is removed from the thread.
-			var o jsonDiagnostic
+			var o diagnostics.GQLDiagnostic
 			if err := json.Unmarshal(data.Data, &o); err != nil {
 				return err
 			}
-			event.Diagnostic_ = diagnostics.NewGQLDiagnostic(o.Type, o.Data)
+			event.Diagnostic_ = o
 
 			switch {
 			case eventType == eventTypeAddDiagnosticToThread:

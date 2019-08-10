@@ -6,15 +6,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
-// gqlDiagnostic implements the GraphQL Diagnostic type.
-type gqlDiagnostic struct {
-	typ  string          // diagnostic type
-	data json.RawMessage // diagnostic data (conforms to sourcegraph.Diagnostic extension API type)
+// GQLDiagnostic implements the GraphQL Diagnostic type.
+type GQLDiagnostic struct {
+	Type_ string          `json:"type"` // diagnostic type
+	Data_ json.RawMessage `json:"data"` // diagnostic data (conforms to sourcegraph.Diagnostic extension API type)
 }
 
-func NewGQLDiagnostic(typ string, data json.RawMessage) graphqlbackend.Diagnostic {
-	return &gqlDiagnostic{typ: typ, data: data}
-}
-
-func (v *gqlDiagnostic) Type() string                   { return v.typ }
-func (v *gqlDiagnostic) Data() graphqlbackend.JSONValue { return graphqlbackend.JSONValue{v.data} }
+func (v GQLDiagnostic) Type() string                   { return v.Type_ }
+func (v GQLDiagnostic) Data() graphqlbackend.JSONValue { return graphqlbackend.JSONValue{v.Data_} }

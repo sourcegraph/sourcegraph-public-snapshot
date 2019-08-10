@@ -48,7 +48,7 @@ func (v *gqlThreadDiagnosticEdge) Thread(ctx context.Context) (graphqlbackend.Th
 }
 
 func (v *gqlThreadDiagnosticEdge) Diagnostic() (graphqlbackend.Diagnostic, error) {
-	return diagnostics.NewGQLDiagnostic(v.db.Type, v.db.Data), nil
+	return diagnostics.GQLDiagnostic{Type_: v.db.Type, Data_: v.db.Data}, nil
 }
 
 func (v *gqlThreadDiagnosticEdge) ViewerCanUpdate(ctx context.Context) (bool, error) {

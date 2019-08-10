@@ -164,7 +164,13 @@ type CampaignsArgs struct {
 }
 
 type CampaignPreviewArgs struct {
-	Input CreateCampaignInput
+	Input CampaignPreviewInput
+}
+
+type CampaignPreviewInput struct {
+	Campaign       CreateCampaignInput
+	RawDiagnostics []string
+	RawFileDiffs   []string
 }
 
 type CreateCampaignInput struct {

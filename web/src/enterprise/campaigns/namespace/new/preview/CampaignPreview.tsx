@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import EyeIcon from 'mdi-react/EyeIcon'
 import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import { isErrorLike } from '../../../../../../../shared/src/util/errors'
@@ -21,16 +20,22 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
     const [campaignPreview, isLoading] = useCampaignPreview({ extensionsController }, data)
     return (
         <div className={`card campaign-preview ${className}`}>
-            <h4 className="card-header">
-                <EyeIcon className="icon-inline" /> Preview
+            <h5 className="card-header">
+                Preview
                 {isLoading && <LoadingSpinner className="icon-inline ml-2" />}
-            </h4>
+            </h5>
             {campaignPreview !== LOADING &&
                 (isErrorLike(campaignPreview) ? (
                     <div className="alert alert-danger border-0">Error: {campaignPreview.message}</div>
                 ) : (
                     <div className="card-body" style={isLoading ? { opacity: '0.7', cursor: 'wait' } : undefined}>
-                        asdf
+                        <ul>
+                            <li>Diagnostics: {campaignPreview.diagnostics.totalCount}</li>
+                            <li>
+                                Threads: {campaignPreview.threads.totalCount}{' '}
+                                {campaignPreview.threads.nodes.map(t => t.title).join(', ')}
+                            </li>
+                        </ul>
                     </div>
                 ))}
         </div>

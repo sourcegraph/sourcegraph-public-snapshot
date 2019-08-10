@@ -1051,7 +1051,7 @@ type Query {
 
     # A preview of a campaign. Unlike Mutation.createCampaign with the preview argument set to true,
     # the campaign is not persisted.
-    campaignPreview(input: CreateCampaignInput!): CampaignPreview!
+    campaignPreview(input: CampaignPreviewInput!): CampaignPreview!
 
     # A rule container by ID.
     ruleContainer(id: ID!): RuleContainer
@@ -4639,6 +4639,15 @@ input UpdateCampaignInput {
     # The new description of the campaign as Markdown. If it is the non-null empty string, the description is
     # set to null.
     body: String
+}
+
+# Input arguments for generating a campaign preview.
+input CampaignPreviewInput {
+    # The description of the campaign to preview.
+    campaign: CreateCampaignInput!
+
+    rawDiagnostics: [String!]!
+    rawFileDiffs: [String!]!
 }
 
 # A campaign preview is a preview of a campaign that is not persisted and does not mutate any state.
