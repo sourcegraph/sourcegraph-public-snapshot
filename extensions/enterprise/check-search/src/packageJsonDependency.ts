@@ -77,7 +77,7 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                             range: range,
                             severity: sourcegraph.DiagnosticSeverity.Warning,
                             data: JSON.stringify(dep),
-                            tags: [DEPENDENCY_TAG],
+                            tags: [DEPENDENCY_TAG, dep.name],
                         }))
                         return diagnostics
                     })
@@ -92,7 +92,7 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {
         provideCodeActions: (doc, _rangeOrSelection, context): Observable<sourcegraph.Action[]> => {
-            const diag = context.diagnostics.find(isDependencyRulesDiagnostic)
+            const diag = context.diagnostics.find(isProviderDiagnostic)
             if (!diag) {
                 return of([])
             }
@@ -101,6 +101,7 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
                     {
                         title: `Remove dependency from package.json (further edits required)`,
                         edit: computeRemoveDependencyEdit(diag, doc),
+                        computeEdit: { title: 'Remove', command: REMOVE_COMMAND },
                         diagnostics: [diag],
                     },
                 ])
@@ -143,7 +144,7 @@ function findDependencyMatchRange(text: string, depName: string): sourcegraph.Ra
     throw new Error(`dependency ${depName} not found in package.json`)
 }
 
-function isDependencyRulesDiagnostic(diag: sourcegraph.Diagnostic): boolean {
+function isProviderDiagnostic(diag: sourcegraph.Diagnostic): boolean {
     return diag.tags && diag.tags.includes(DEPENDENCY_TAG)
 }
 

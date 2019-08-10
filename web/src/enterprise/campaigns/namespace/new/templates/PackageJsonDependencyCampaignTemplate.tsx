@@ -1,7 +1,7 @@
 import NpmIcon from 'mdi-react/NpmIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { CampaignTemplate, CampaignTemplateComponentContext } from '.'
-import { RuleDefinition } from '../../../../rules/form/definition/RuleDefinitionFormControl'
+import { RuleDefinition } from '../../../../rules/types'
 
 interface Props extends CampaignTemplateComponentContext {}
 
@@ -29,16 +29,23 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
             name: `Deprecate ${packageNameOrPlaceholder}${
                 versionRange && versionRange !== ALL_VERSION_RANGE ? `@${versionRange}` : ''
             } (npm)`,
-            rules: [
-                // TODO!(sqs): hack
-                {
-                    name: 'Find package.json dependencies entries',
-                    // tslint:disable-next-line: no-object-literal-type-assertion
-                    definition: JSON.stringify({
-                        conditions: `file:(^|/)package\\.json$ '${JSON.stringify(packageNameOrPlaceholder)}'`,
-                    } as RuleDefinition),
-                },
-            ],
+            rules: packageName
+                ? [
+                      // TODO!(sqs): hack
+                      {
+                          name: 'Find package.json dependencies entries',
+                          // tslint:disable-next-line: no-object-literal-type-assertion
+                          definition: JSON.stringify({
+                              type: 'DiagnosticRule',
+                              query: {
+                                  type: 'packageJsonDependency',
+                                  tag: [packageNameOrPlaceholder],
+                              },
+                              action: 'packageJsonDependency.remove',
+                          } as RuleDefinition),
+                      },
+                  ]
+                : [],
         })
     }, [onChange, packageName, versionRange])
 

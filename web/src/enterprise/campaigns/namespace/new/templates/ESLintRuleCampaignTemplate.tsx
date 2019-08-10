@@ -1,7 +1,7 @@
 import EslintIcon from 'mdi-react/EslintIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { CampaignTemplate, CampaignTemplateComponentContext } from '.'
-import { RuleDefinition } from '../../../../rules/form/definition/RuleDefinitionFormControl'
+import { RuleDefinition } from '../../../../rules/types'
 
 interface Props extends CampaignTemplateComponentContext {}
 
@@ -22,10 +22,12 @@ const ESLintRuleCampaignTemplateForm: React.FunctionComponent<Props> = ({ onChan
                     name: 'Warn on ESLint rule violations',
                     // tslint:disable-next-line: no-object-literal-type-assertion
                     definition: JSON.stringify({
-                        conditions: `is:diagnostic diagnostic.type:eslint eslint.rule:${rulesOrPlaceholder.replace(
-                            /\s/g,
-                            ''
-                        )}`,
+                        type: 'DiagnosticRule',
+                        query: {
+                            type: 'eslint',
+                            tag: rulesOrPlaceholder.split(/[,\s]+/g).filter(s => !!s),
+                        },
+                        action: 'eslint.fix',
                     } as RuleDefinition),
                 },
             ],
