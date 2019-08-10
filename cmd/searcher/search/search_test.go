@@ -36,9 +36,7 @@ func TestSearch(t *testing.T) {
 	files := map[string]string{
 		"README.md": `# Hello World
 
-Hello world example in go
-
-`,
+Hello world example in go`,
 		"main.go": `package main
 
 import "fmt"
@@ -175,8 +173,6 @@ main.go:5:func main() {
 		{protocol.PatternInfo{Pattern: "\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 README.md:1:# Hello World
 README.md:2:
-README.md:3:Hello world example in go
-README.md:4:
 main.go:1:package main
 main.go:2:
 main.go:3:import "fmt"
