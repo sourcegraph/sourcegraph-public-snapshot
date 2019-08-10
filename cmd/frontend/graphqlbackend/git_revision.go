@@ -41,6 +41,16 @@ func (r *gitRevSpec) ToGitRef() (*GitRefResolver, bool)         { return r.ref, 
 func (r *gitRevSpec) ToGitRevSpecExpr() (*gitRevSpecExpr, bool) { return r.expr, r.expr != nil }
 func (r *gitRevSpec) ToGitObject() (*gitObject, bool)           { return r.object, r.object != nil }
 
+// GitRevisionRange implements the GitRevisionRange GraphQL type.
+type GitRevisionRange interface {
+	Expr() string
+	Base() *gitRevSpec
+	BaseRevSpec() *gitRevSpecExpr
+	Head() *gitRevSpec
+	HeadRevSpec() *gitRevSpecExpr
+	MergeBase() *gitObject
+}
+
 type gitRevisionRange struct {
 	expr       string
 	base, head *gitRevSpec

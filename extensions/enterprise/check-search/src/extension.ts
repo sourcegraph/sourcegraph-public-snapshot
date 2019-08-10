@@ -6,11 +6,13 @@ import * as sourcegraph from 'sourcegraph'
 // import { registerTravisGo } from './travisGo'
 // import { registerSampleStatusProviders } from './sampleStatus'
 import { register as eslintRegister } from './eslint'
+import { register as packageJsonDependencyRegister } from './packageJsonDependency'
 import { register as codeDuplicationRegister } from './codeDuplication'
 
 export function activate(ctx: sourcegraph.ExtensionContext): void {
     ctx.subscriptions.add(eslintRegister())
     ctx.subscriptions.add(codeDuplicationRegister())
+    ctx.subscriptions.add(packageJsonDependencyRegister())
     // ctx.subscriptions.add(registerTravisGo())
     // ctx.subscriptions.add(registerImportStar())
     // ctx.subscriptions.add(registerNoInlineProps())

@@ -78,7 +78,7 @@ export const CampaignPreviewPage: React.FunctionComponent<Props> = props => {
             <div className="container">
                 {/* TODO!(sqs): show rules */}
                 <CampaignRepositoriesList {...props} campaign={campaign} />
-                <CampaignFileDiffsList {...props} campaign={campaign} platformContext={props.platformContext} />
+                <CampaignFileDiffsList {...props} campaign={campaign} />
             </div>
         </div>
     )

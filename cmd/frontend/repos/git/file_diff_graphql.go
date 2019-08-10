@@ -23,7 +23,14 @@ func (c FileDiffConnection) PageInfo(context.Context) (*graphqlutil.PageInfo, er
 }
 
 func (c FileDiffConnection) DiffStat(context.Context) (graphqlbackend.IDiffStat, error) {
-	panic("TODO!(sqs)")
+	var stat graphqlbackend.DiffStat
+	for _, fileDiff := range c {
+		s := fileDiff.Stat()
+		stat.Added_ += s.Added()
+		stat.Changed_ += s.Changed()
+		stat.Deleted_ += s.Deleted()
+	}
+	return stat, nil
 }
 
 func (c FileDiffConnection) RawDiff(context.Context) (string, error) {

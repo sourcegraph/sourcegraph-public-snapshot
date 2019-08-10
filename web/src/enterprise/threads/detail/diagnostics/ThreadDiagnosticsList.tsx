@@ -20,7 +20,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemePr
 const LOADING = 'loading' as const
 
 /**
- * A list of diagnostics in an thread.
+ * A list of diagnostics in a thread.
  */
 export const ThreadDiagnosticsList: React.FunctionComponent<Props> = ({ thread, className = '', ...props }) => {
     const [diagnostics] = useThreadDiagnostics(thread)

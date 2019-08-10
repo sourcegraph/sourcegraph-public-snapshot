@@ -70,6 +70,8 @@ enum RulePolicy {
 
 const CHECK_ESLINT = 'eslint'
 
+const TAG = CHECK_ESLINT
+
 const LOADING: 'loading' = 'loading'
 
 const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(sourcegraph.workspace.rootChanges).pipe(
@@ -93,7 +95,7 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                             includes: ['\\.[jt]sx?$'], // TODO!(sqs): typescript only
                             type: 'regexp',
                         },
-                        maxResults: 12, //MAX_RESULTS,
+                        maxResults: 19, //MAX_RESULTS,
                     }
                 )
             )
@@ -184,7 +186,7 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                                     source: r.source,
                                     severity: linterSeverityToDiagnosticSeverity(r.severity),
                                     data: JSON.stringify(r),
-                                    tags: [r.ruleId],
+                                    tags: [r.ruleId, TAG],
                                     check: CHECK_ESLINT,
                                 } as sourcegraph.Diagnostic
                             })
@@ -418,8 +420,7 @@ function getRulePolicyFromSettings(settings: Settings, ruleId: string): RulePoli
 }
 
 function isESLintDiagnostic(diag: sourcegraph.Diagnostic): boolean {
-    // TODO!(sqs)
-    return true
+    return diag.tags && diag.tags.includes(TAG)
 }
 
 function getLintMessageFromDiagnosticData(diag: sourcegraph.Diagnostic): Linter.LintMessage {

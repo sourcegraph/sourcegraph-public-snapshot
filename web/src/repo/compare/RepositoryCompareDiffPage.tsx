@@ -144,6 +144,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}
+                    shouldUpdateURLQuery={false}
                     extensionsController={this.props.extensionsController}
                 />
             </div>

@@ -25,7 +25,7 @@ const devNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 type RepositoryComparison interface {
 	BaseRepository() *RepositoryResolver
 	HeadRepository() *RepositoryResolver
-	Range() *gitRevisionRange
+	Range() GitRevisionRange
 	Commits(*graphqlutil.ConnectionArgs) *gitCommitConnectionResolver
 	FileDiffs(*graphqlutil.ConnectionArgs) FileDiffConnection
 }
@@ -128,11 +128,15 @@ func (r *RepositoryComparisonResolver) BaseRepository() *RepositoryResolver { re
 
 func (r *RepositoryComparisonResolver) HeadRepository() *RepositoryResolver { return r.repo }
 
-func (r *RepositoryComparisonResolver) Range() *gitRevisionRange {
+func (r *RepositoryComparisonResolver) Range() GitRevisionRange {
+	return NewGitRevisionRange(r.baseRevspec.expr, r.repo, r.headRevspec.expr, r.repo)
+}
+
+func NewGitRevisionRange(baseRevspec string, baseRepo *RepositoryResolver, headRevspec string, headRepo *RepositoryResolver) GitRevisionRange {
 	return &gitRevisionRange{
-		expr:      r.baseRevspec.expr + "..." + r.headRevspec.expr,
-		base:      &gitRevSpec{expr: &gitRevSpecExpr{expr: r.baseRevspec.expr, repo: r.repo}},
-		head:      &gitRevSpec{expr: &gitRevSpecExpr{expr: r.headRevspec.expr, repo: r.repo}},
+		expr:      baseRevspec + "..." + headRevspec,
+		base:      &gitRevSpec{expr: &gitRevSpecExpr{expr: baseRevspec, repo: baseRepo}},
+		head:      &gitRevSpec{expr: &gitRevSpecExpr{expr: headRevspec, repo: headRepo}},
 		mergeBase: nil, // not currently used
 	}
 }
@@ -253,7 +257,8 @@ func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, err
 	for i, fileDiff := range fileDiffs {
 		resolvers[i] = &fileDiffResolver{
 			fileDiff: fileDiff,
-			cmp:      r.cmp,
+			base:     r.cmp.base,
+			head:     r.cmp.head,
 		}
 	}
 	return resolvers, nil
@@ -314,13 +319,13 @@ type FileDiff interface {
 	InternalID() string
 }
 
-func NewFileDiff(fileDiff *diff.FileDiff, cmp *RepositoryComparisonResolver) FileDiff {
-	return &fileDiffResolver{fileDiff: fileDiff, cmp: cmp}
+func NewFileDiff(fileDiff *diff.FileDiff, base, head *GitCommitResolver) FileDiff {
+	return &fileDiffResolver{fileDiff: fileDiff, base: base, head: head}
 }
 
 type fileDiffResolver struct {
-	fileDiff *diff.FileDiff
-	cmp      *RepositoryComparisonResolver // {base,head}{,RevSpec} and repo
+	fileDiff   *diff.FileDiff
+	base, head *GitCommitResolver
 }
 
 func (r *fileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
@@ -347,7 +352,7 @@ func (r *fileDiffResolver) OldFile() *gitTreeEntryResolver {
 		return nil
 	}
 	return &gitTreeEntryResolver{
-		commit: r.cmp.base,
+		commit: r.base,
 		path:   r.fileDiff.OrigName,
 		stat:   createFileInfo(r.fileDiff.OrigName, false),
 	}
@@ -358,7 +363,7 @@ func (r *fileDiffResolver) NewFile() *gitTreeEntryResolver {
 		return nil
 	}
 	return &gitTreeEntryResolver{
-		commit: r.cmp.head,
+		commit: r.head,
 		path:   r.fileDiff.NewName,
 		stat:   createFileInfo(r.fileDiff.NewName, false),
 	}
@@ -419,9 +424,9 @@ func (r *diffStat) Deleted() int32 { return r.deleted }
 
 type DiffStat struct{ Added_, Changed_, Deleted_ int32 }
 
-func (v *DiffStat) Added() int32   { return v.Added_ }
-func (v *DiffStat) Changed() int32 { return v.Changed_ }
-func (v *DiffStat) Deleted() int32 { return v.Deleted_ }
+func (v DiffStat) Added() int32   { return v.Added_ }
+func (v DiffStat) Changed() int32 { return v.Changed_ }
+func (v DiffStat) Deleted() int32 { return v.Deleted_ }
 
 type IDiffStat interface {
 	Added() int32

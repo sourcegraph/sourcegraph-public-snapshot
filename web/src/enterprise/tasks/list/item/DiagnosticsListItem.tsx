@@ -1,4 +1,3 @@
-import H from 'history'
 import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Subscription } from 'rxjs'
@@ -32,8 +31,6 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemePr
     className?: string
     headerClassName?: string
     headerStyle?: React.CSSProperties
-    history: H.History
-    location: H.Location
 }
 
 /**

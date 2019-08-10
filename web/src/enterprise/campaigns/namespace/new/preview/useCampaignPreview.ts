@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { combineLatest, from } from 'rxjs'
-import { map, startWith, switchMap } from 'rxjs/operators'
+import { map, startWith, switchMap, tap } from 'rxjs/operators'
 import { fromDiagnostic } from '../../../../../../../shared/src/api/types/diagnostic'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../../../shared/src/graphql/graphql'
@@ -8,6 +8,10 @@ import * as GQL from '../../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../../shared/src/util/errors'
 import { propertyIsDefined } from '../../../../../../../shared/src/util/types'
 import { queryGraphQL } from '../../../../../backend/graphql'
+import {
+    diffStatFieldsFragment,
+    fileDiffHunkRangeFieldsFragment,
+} from '../../../../../repo/compare/RepositoryCompareDiffPage'
 import { getCodeActions, getDiagnosticInfos } from '../../../../threadsOLD/detail/backend'
 import { computeDiff } from '../../../../threadsOLD/detail/changes/computeDiff'
 
@@ -35,7 +39,61 @@ export const CampaignPreviewFragment = gql`
             }
             totalCount
         }
+        repositoryComparisons {
+            baseRepository {
+                id
+                name
+                url
+            }
+            headRepository {
+                id
+                name
+                url
+            }
+            range {
+                expr
+                baseRevSpec {
+                    object {
+                        oid
+                    }
+                    expr
+                }
+                headRevSpec {
+                    expr
+                }
+            }
+            fileDiffs {
+                nodes {
+                    oldPath
+                    newPath
+                    hunks {
+                        oldRange {
+                            ...FileDiffHunkRangeFields
+                        }
+                        oldNoNewlineAt
+                        newRange {
+                            ...FileDiffHunkRangeFields
+                        }
+                        section
+                        body
+                    }
+                    stat {
+                        ...DiffStatFields
+                    }
+                    internalID
+                }
+                totalCount
+                pageInfo {
+                    hasNextPage
+                }
+                diffStat {
+                    ...DiffStatFields
+                }
+            }
+        }
     }
+    ${fileDiffHunkRangeFieldsFragment}
+    ${diffStatFieldsFragment}
 `
 
 const LOADING: 'loading' = 'loading'
@@ -52,7 +110,7 @@ export const useCampaignPreview = (
     const [isLoading, setIsLoading] = useState(true)
     const [result, setResult] = useState<Result>(LOADING)
     useEffect(() => {
-        const subscription = getDiagnosticInfos(extensionsController, 'eslint')
+        const subscription = getDiagnosticInfos(extensionsController, 'packageJsonDependency')
             .pipe(
                 switchMap(diagnostics =>
                     combineLatest(
@@ -104,7 +162,16 @@ export const useCampaignPreview = (
                                 } as GQL.ICampaignPreviewOnQueryArguments
                             ).pipe(
                                 map(dataOrThrowErrors),
-                                map(data => data.campaignPreview)
+                                map(data => data.campaignPreview),
+                                tap(data => {
+                                    // TODO!(sqs) hack, compensate for the RepositoryComparison head not existing
+                                    for (const c of data.repositoryComparisons) {
+                                        c.range.headRevSpec.object = { oid: '' } as any
+                                        for (const d of c.fileDiffs.nodes) {
+                                            d.mostRelevantFile = { path: d.newPath, url: '' } as any
+                                        }
+                                    }
+                                })
                             )
                         )
                     )

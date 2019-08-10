@@ -26,10 +26,14 @@ func (v *GQLRepositoryComparisonPreview) HeadRepository() *graphqlbackend.Reposi
 	return v.HeadRepository_
 }
 
+func (v *GQLRepositoryComparisonPreview) Range() graphqlbackend.GitRevisionRange {
+	return graphqlbackend.NewGitRevisionRange("master" /* TODO!(sqs): incorrect in general, hack */, v.BaseRepository_, "preview", v.HeadRepository_)
+}
+
 func (v *GQLRepositoryComparisonPreview) FileDiffs(args *graphqlutil.ConnectionArgs) graphqlbackend.FileDiffConnection {
 	fileDiffs := make([]graphqlbackend.FileDiff, len(v.FileDiffs_))
 	for i, d := range v.FileDiffs_ {
-		fileDiffs[i] = graphqlbackend.NewFileDiff(d, nil)
+		fileDiffs[i] = graphqlbackend.NewFileDiff(d, nil, nil)
 	}
 	return FileDiffConnection(fileDiffs)
 }

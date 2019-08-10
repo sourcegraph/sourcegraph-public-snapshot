@@ -5,9 +5,11 @@ import { map } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { PageTitle } from '../../../../components/PageTitle'
+import { ThemeProps } from '../../../../theme'
 import { NamespaceCampaignsAreaContext } from '../NamespaceCampaignsArea'
 import { CampaignForm, CampaignFormData } from './CampaignForm'
 import { CampaignPreview } from './preview/CampaignPreview'
@@ -34,8 +36,11 @@ export const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICa
 interface Props
     extends Pick<NamespaceCampaignsAreaContext, 'namespace' | 'setBreadcrumbItem'>,
         RouteComponentProps<{}>,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        ThemeProps {
     location: H.Location
+    history: H.History
 }
 
 const LOADING = 'loading' as const
@@ -48,7 +53,7 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
     setBreadcrumbItem,
     location,
     match,
-    extensionsController,
+    ...props
 }) => {
     useEffect(() => {
         if (setBreadcrumbItem) {
@@ -92,6 +97,7 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
             )}
             <PageTitle title="New campaign" />
             <div className="d-flex flex-gap-3 flex-wrap">
+                {/* tslint:disable-next-line: jsx-ban-props */}
                 <div style={{ flex: '1 0 50%', minWidth: '32rem' }}>
                     <CampaignForm
                         templateID={templateID}
@@ -107,8 +113,9 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
                 </div>
                 {/* TODO!(sqs): be smart about when to show the preview pane */}
                 {templateID && templateID !== EMPTY_CAMPAIGN_TEMPLATE_ID && (
+                    // tslint:disable-next-line: jsx-ban-props
                     <div className="overflow-auto" style={{ flex: '2 0 24rem' }}>
-                        {data && <CampaignPreview data={data} extensionsController={extensionsController} />}
+                        {data && <CampaignPreview {...props} data={data} location={location} />}
                     </div>
                 )}
             </div>
