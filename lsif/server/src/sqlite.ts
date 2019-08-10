@@ -3,7 +3,7 @@ import * as path from 'path'
 import { Backend, NoLSIFDataError, QueryRunner } from './backend'
 import { fs } from 'mz'
 import { Database } from './ms/server/database'
-import { InsertStats, QueryStats, timeit, CreateRunnerStats } from './stats'
+import { InsertStats, QueryStats, instrument, CreateRunnerStats } from './stats'
 import { readEnvInt } from './env'
 
 /**
@@ -36,7 +36,7 @@ export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
         await this.createStorageRoot()
         const outFile = makeFilename(repository, commit)
 
-        const { elapsed } = await timeit(async () => {
+        const { processStats } = await instrument(async () => {
             await this.convert(tempPath, outFile)
         })
 
@@ -45,7 +45,7 @@ export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
 
         return {
             insertStats: {
-                elapsedMs: elapsed,
+                processStats,
                 diskKb: fileStat.size / 1000,
             },
         }
@@ -81,7 +81,7 @@ export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
 
         const db = this.createStore()
 
-        const { elapsed } = await timeit(async () => {
+        const { processStats } = await instrument(async () => {
             return await db.load(file, root => ({
                 toDatabase: path => `${root}/${path}`,
                 fromDatabase: uri => (uri.startsWith(root) ? uri.slice(`${root}/`.length) : uri),
@@ -90,9 +90,7 @@ export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
 
         return {
             queryRunner: new SQLiteQueryRunner(db),
-            createRunnerStats: {
-                elapsedMs: elapsed,
-            },
+            createRunnerStats: { processStats },
         }
     }
 
@@ -179,7 +177,7 @@ export class SQLiteQueryRunner implements QueryRunner {
         uri: string,
         position: lsp.Position
     ): Promise<{ result: any; queryStats: QueryStats }> {
-        const { result, elapsed } = await timeit(async () => {
+        const { result, processStats } = await instrument(async () => {
             switch (method) {
                 case 'hover':
                     return Promise.resolve(this.db.hover(uri, position))
@@ -194,9 +192,7 @@ export class SQLiteQueryRunner implements QueryRunner {
 
         return Promise.resolve({
             result,
-            queryStats: {
-                elapsedMs: elapsed,
-            },
+            queryStats: { processStats },
         })
     }
 

@@ -1,6 +1,6 @@
 import LRU from 'lru-cache'
 import { Backend, QueryRunner } from './backend'
-import { CacheStats, CreateRunnerStats, timeit } from './stats'
+import { CacheStats, CreateRunnerStats, instrument } from './stats'
 import { readEnvInt } from './env'
 
 /**
@@ -73,8 +73,8 @@ export class Cache {
 
         const {
             result: { queryRunner, createRunnerStats },
-            elapsed,
-        } = await timeit(async () => {
+            processStats,
+        } = await instrument(async () => {
             return await (<LRUDBEntry>entry).promise
         })
 
@@ -86,7 +86,7 @@ export class Cache {
             result,
             cacheStats: {
                 cacheHit: hit,
-                elapsedMs: elapsed,
+                processStats,
             },
             // Only return createRunnerStats if it wasn't a cache hit
             createRunnerStats: (!hit || undefined) && createRunnerStats,

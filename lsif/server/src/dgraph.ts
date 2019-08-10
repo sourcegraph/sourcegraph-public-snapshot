@@ -1,6 +1,6 @@
 import * as lsp from 'vscode-languageserver'
 import { Backend, QueryRunner } from './backend'
-import { CreateRunnerStats, InsertStats, QueryStats, timeit } from './stats'
+import { CreateRunnerStats, InsertStats, QueryStats, instrument } from './stats'
 import { DgraphClient, DgraphClientStub, Operation } from 'dgraph-js'
 import { DgraphImporter } from './dgraph.importer'
 import { Edge, Vertex } from 'lsif-protocol'
@@ -62,7 +62,7 @@ export class DgraphBackend implements Backend<DgraphQueryRunner> {
         commit: string,
         contentLength: number
     ): Promise<{ insertStats: InsertStats }> {
-        const { elapsed } = await timeit(async () => {
+        const { processStats } = await instrument(async () => {
             const contents = await fs.readFile(tempPath, 'utf-8')
             const lines = contents.trim().split('\n')
             const items = lines.map((line, index): Vertex | Edge => {
@@ -81,7 +81,7 @@ export class DgraphBackend implements Backend<DgraphQueryRunner> {
 
         return {
             insertStats: {
-                elapsedMs: elapsed,
+                processStats,
                 diskKb: 0, // TODO
             },
         }
@@ -103,16 +103,14 @@ export class DgraphBackend implements Backend<DgraphQueryRunner> {
         repository: string,
         commit: string
     ): Promise<{ queryRunner: DgraphQueryRunner; createRunnerStats: CreateRunnerStats }> {
-        const { result, elapsed } = await timeit(async () => {
+        const { result, processStats } = await instrument(async () => {
             // TODO - MUST reject if repository and commit don't exist
             return new DgraphQueryRunner(this.client, repository, commit)
         })
 
         return {
             queryRunner: result,
-            createRunnerStats: {
-                elapsedMs: elapsed,
-            },
+            createRunnerStats: { processStats },
         }
     }
 
@@ -161,7 +159,7 @@ export class DgraphQueryRunner implements QueryRunner {
         uri: string,
         position: lsp.Position
     ): Promise<{ result: any; queryStats: QueryStats }> {
-        const { result, elapsed } = await timeit(async () => {
+        const { result, processStats } = await instrument(async () => {
             switch (method) {
                 case 'hover':
                     return Promise.resolve(this.queryHover(uri, position))
@@ -176,9 +174,7 @@ export class DgraphQueryRunner implements QueryRunner {
 
         return Promise.resolve({
             result,
-            queryStats: {
-                elapsedMs: elapsed,
-            },
+            queryStats: { processStats },
         })
     }
 

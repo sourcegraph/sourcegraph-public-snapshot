@@ -115,6 +115,7 @@ async function main(): Promise<void> {
                 cache.delete(repository, commit)
 
                 // Emit metrics
+                console.log('insert stats:', insertStats)
                 emit(prometheusReporters, insertStats)
 
                 res.send({
@@ -150,8 +151,11 @@ async function main(): Promise<void> {
                 )
 
                 // Emit metrics
+                console.log('cache stats:', cacheStats)
                 emit(prometheusReporters, cacheStats)
+
                 if (createRunnerStats) {
+                    console.log('create runner stats:', createRunnerStats)
                     emit(prometheusReporters, createRunnerStats)
                 }
 
@@ -192,6 +196,8 @@ async function main(): Promise<void> {
                 })
 
                 // Emit metrics
+                console.log('cache stats:', cacheStats)
+                console.log('query stats:', queryStats)
                 emit(prometheusReporters, cacheStats)
                 emit(prometheusReporters, queryStats)
 

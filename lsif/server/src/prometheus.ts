@@ -68,7 +68,7 @@ export function emit(reporters: PrometheusReporters, stats: InsertStats): void
 export function emit(reporters: PrometheusReporters, stats: CreateRunnerStats): void
 export function emit(reporters: PrometheusReporters, stats: QueryStats): void {
     if (isCacheStats(stats)) {
-        reporters.cacheDuration.observe(stats.elapsedMs)
+        reporters.cacheDuration.observe(stats.processStats.elapsedMs)
 
         if (stats.cacheHit) {
             reporters.cacheHits.inc()
@@ -78,15 +78,15 @@ export function emit(reporters: PrometheusReporters, stats: QueryStats): void {
     }
 
     if (isInsertStats(stats)) {
-        reporters.insertDumpDuration.observe(stats.elapsedMs)
+        reporters.insertDumpDuration.observe(stats.processStats.elapsedMs)
     }
 
     if (isCreateRunnerStats(stats)) {
-        reporters.createRunnerDuration.observe(stats.elapsedMs)
+        reporters.createRunnerDuration.observe(stats.processStats.elapsedMs)
     }
 
     if (isQueryStats(stats)) {
-        reporters.queryDuration.observe(stats.elapsedMs)
+        reporters.queryDuration.observe(stats.processStats.elapsedMs)
     }
 }
 
