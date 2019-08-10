@@ -146,7 +146,7 @@ func (v *gqlCampaign) Commits(ctx context.Context) ([]*graphqlbackend.GitCommitR
 	return campaignCommits(ctx, v)
 }
 
-func (v *gqlCampaign) RepositoryComparisons(ctx context.Context) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
+func (v *gqlCampaign) RepositoryComparisons(ctx context.Context) ([]graphqlbackend.RepositoryComparison, error) {
 	return campaignRepositoryComparisons(ctx, v)
 }
 

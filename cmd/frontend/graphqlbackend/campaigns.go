@@ -224,7 +224,7 @@ type Campaign interface {
 	Threads(context.Context, *ThreadConnectionArgs) (ThreadConnection, error)
 	Repositories(context.Context) ([]*RepositoryResolver, error)
 	Commits(context.Context) ([]*GitCommitResolver, error)
-	RepositoryComparisons(context.Context) ([]*RepositoryComparisonResolver, error)
+	RepositoryComparisons(context.Context) ([]RepositoryComparison, error)
 	Diagnostics(context.Context, *ThreadDiagnosticConnectionArgs) (ThreadDiagnosticConnection, error)
 	BurndownChart(context.Context) (CampaignBurndownChart, error)
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)

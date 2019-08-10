@@ -185,7 +185,7 @@ type Thread interface {
 	Kind(context.Context) (ThreadKind, error)
 	URL(context.Context) (string, error)
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)
-	RepositoryComparison(context.Context) (*RepositoryComparisonResolver, error)
+	RepositoryComparison(context.Context) (RepositoryComparison, error)
 	CampaignNode
 	labelable
 }

@@ -174,7 +174,7 @@ func (v *gqlThread) URL(ctx context.Context) (string, error) {
 	return path.Join(repository.URL(), "-", "threads", v.Number()), nil
 }
 
-func (v *gqlThread) RepositoryComparison(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
+func (v *gqlThread) RepositoryComparison(ctx context.Context) (graphqlbackend.RepositoryComparison, error) {
 	if v.db.BaseRef == "" && v.db.HeadRef == "" {
 		return nil, nil
 	}

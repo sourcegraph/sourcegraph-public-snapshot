@@ -47,15 +47,18 @@ func TestDB_ThreadsDiagnostics(t *testing.T) {
 	}
 
 	// Create thread diagnostics.
-	wantTD0 := dbThreadDiagnostic{ThreadID: thread0, Type: "t0", Data: json.RawMessage(`{"a":1}`)}
+	wantTD0 := dbThreadDiagnostic{ThreadID: thread0, Type: "t0", Data: json.RawMessage(`{"a": 1}`)}
 	td0, err := dbThreadDiagnosticEdges{}.Create(ctx, wantTD0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantTD1 := dbThreadDiagnostic{ThreadID: thread0, Type: "t1", Data: json.RawMessage(`{"a":2}`)}
-	if _, err := (dbThreadDiagnosticEdges{}).Create(ctx, wantTD1); err != nil {
+	wantTD0.ID = td0
+	wantTD1 := dbThreadDiagnostic{ThreadID: thread0, Type: "t1", Data: json.RawMessage(`{"a": 2}`)}
+	td1, err := (dbThreadDiagnosticEdges{}).Create(ctx, wantTD1)
+	if err != nil {
 		t.Fatal(err)
 	}
+	wantTD1.ID = td1
 
 	{
 		// List diagnostics by thread.

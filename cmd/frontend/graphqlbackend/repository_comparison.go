@@ -26,7 +26,7 @@ type RepositoryComparison interface {
 	BaseRepository() *RepositoryResolver
 	HeadRepository() *RepositoryResolver
 	Range() *gitRevisionRange
-	Commits(context.Context, *graphqlutil.ConnectionArgs) (*gitCommitConnectionResolver, error)
+	Commits(*graphqlutil.ConnectionArgs) *gitCommitConnectionResolver
 	FileDiffs(*graphqlutil.ConnectionArgs) FileDiffConnection
 }
 
@@ -114,7 +114,7 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 	}, nil
 }
 
-func (r *RepositoryResolver) Comparison(ctx context.Context, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
+func (r *RepositoryResolver) Comparison(ctx context.Context, args *RepositoryComparisonInput) (RepositoryComparison, error) {
 	return NewRepositoryComparison(ctx, r, args)
 }
 
@@ -155,8 +155,10 @@ func (r *RepositoryComparisonResolver) FileDiffs(args *graphqlutil.ConnectionArg
 // FileDiffConnection implements the FileDiffConnection GraphQL type.
 type FileDiffConnection interface {
 	Nodes(context.Context) ([]FileDiff, error)
-	TotalCount(context.Context) (int32, error)
+	TotalCount(context.Context) (*int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+	DiffStat(context.Context) (IDiffStat, error)
+	RawDiff(context.Context) (string, error)
 }
 
 type fileDiffConnectionResolver struct {
@@ -236,7 +238,7 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 	return r.fileDiffs, r.err
 }
 
-func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]*fileDiffResolver, error) {
+func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, error) {
 	fileDiffs, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -247,7 +249,7 @@ func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]*fileDiffReso
 		fileDiffs = fileDiffs[:*r.first]
 	}
 
-	resolvers := make([]*fileDiffResolver, len(fileDiffs))
+	resolvers := make([]FileDiff, len(fileDiffs))
 	for i, fileDiff := range fileDiffs {
 		resolvers[i] = &fileDiffResolver{
 			fileDiff: fileDiff,
@@ -276,7 +278,7 @@ func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 	return graphqlutil.HasNextPage(r.hasNextPage), nil
 }
 
-func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*diffStat, error) {
+func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (IDiffStat, error) {
 	fileDiffs, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -305,7 +307,7 @@ type FileDiff interface {
 	OldPath() *string
 	NewPath() *string
 	Hunks() []*diffHunk
-	Stat() *diffStat
+	Stat() IDiffStat
 	OldFile() *gitTreeEntryResolver
 	NewFile() *gitTreeEntryResolver
 	MostRelevantFile() *gitTreeEntryResolver
@@ -331,7 +333,7 @@ func (r *fileDiffResolver) Hunks() []*diffHunk {
 	return hunks
 }
 
-func (r *fileDiffResolver) Stat() *diffStat {
+func (r *fileDiffResolver) Stat() IDiffStat {
 	stat := r.fileDiff.Stat()
 	return &diffStat{
 		added:   stat.Added,
@@ -414,3 +416,15 @@ type diffStat struct{ added, changed, deleted int32 }
 func (r *diffStat) Added() int32   { return r.added }
 func (r *diffStat) Changed() int32 { return r.changed }
 func (r *diffStat) Deleted() int32 { return r.deleted }
+
+type DiffStat struct{ Added_, Changed_, Deleted_ int32 }
+
+func (v *DiffStat) Added() int32   { return v.Added_ }
+func (v *DiffStat) Changed() int32 { return v.Changed_ }
+func (v *DiffStat) Deleted() int32 { return v.Deleted_ }
+
+type IDiffStat interface {
+	Added() int32
+	Changed() int32
+	Deleted() int32
+}

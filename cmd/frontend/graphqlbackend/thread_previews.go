@@ -15,7 +15,7 @@ type ThreadPreview interface {
 	BodyText() string
 	BodyHTML() string
 	Kind(context.Context) (ThreadKind, error)
-	RepositoryComparison(context.Context) (*RepositoryComparisonResolver, error)
+	RepositoryComparison(context.Context) (RepositoryComparison, error)
 	Diagnostics(context.Context, *graphqlutil.ConnectionArgs) (DiagnosticConnection, error)
 }
 
@@ -34,7 +34,7 @@ type ToThreadOrThreadPreview struct {
 func (v ToThreadOrThreadPreview) thread() interface {
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	Kind(context.Context) (ThreadKind, error)
-	RepositoryComparison(context.Context) (*RepositoryComparisonResolver, error)
+	RepositoryComparison(context.Context) (RepositoryComparison, error)
 } {
 	switch {
 	case v.Thread != nil:
@@ -50,7 +50,7 @@ func (v ToThreadOrThreadPreview) Repository(ctx context.Context) (*RepositoryRes
 	return v.thread().Repository(ctx)
 }
 
-func (v ToThreadOrThreadPreview) RepositoryComparison(ctx context.Context) (*RepositoryComparisonResolver, error) {
+func (v ToThreadOrThreadPreview) RepositoryComparison(ctx context.Context) (RepositoryComparison, error) {
 	return v.thread().RepositoryComparison(ctx)
 }
 

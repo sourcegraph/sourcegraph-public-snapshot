@@ -16,7 +16,7 @@ type CampaignPreview interface {
 	Threads(context.Context, *ThreadConnectionArgs) (ThreadOrThreadPreviewConnection, error)
 	Repositories(context.Context) ([]*RepositoryResolver, error)
 	Commits(context.Context) ([]*GitCommitResolver, error)
-	RepositoryComparisons(context.Context) ([]*RepositoryComparisonResolver, error)
+	RepositoryComparisons(context.Context) ([]RepositoryComparison, error)
 	Diagnostics(context.Context, *graphqlutil.ConnectionArgs) (DiagnosticConnection, error)
 	BurndownChart(context.Context) (CampaignBurndownChart, error)
 }

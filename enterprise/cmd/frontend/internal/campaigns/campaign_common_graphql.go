@@ -74,13 +74,13 @@ func campaignCommits(ctx context.Context, campaign threadsGetter) ([]*graphqlbac
 	return allCommits, nil
 }
 
-func campaignRepositoryComparisons(ctx context.Context, campaign threadsGetter) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
+func campaignRepositoryComparisons(ctx context.Context, campaign threadsGetter) ([]graphqlbackend.RepositoryComparison, error) {
 	threads, err := campaign.getThreads(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	rcs := make([]*graphqlbackend.RepositoryComparisonResolver, 0, len(threads))
+	rcs := make([]graphqlbackend.RepositoryComparison, 0, len(threads))
 	for _, thread := range threads {
 		rc, err := thread.RepositoryComparison(ctx)
 		if err != nil {

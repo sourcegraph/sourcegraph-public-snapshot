@@ -113,7 +113,7 @@ func (v *gqlCampaignPreview) Threads(ctx context.Context, args *graphqlbackend.T
 		repoComparison := &git.GQLRepositoryComparisonPreview{
 			BaseRepository_: graphqlbackend.NewRepositoryResolver(d.repo),
 			HeadRepository_: graphqlbackend.NewRepositoryResolver(d.repo),
-			FileDiffs_:      []*diff.FileDiff{d},
+			FileDiffs_:      []*diff.FileDiff{d.parsed},
 		}
 		allThreads = append(allThreads, graphqlbackend.ToThreadOrThreadPreview{
 			ThreadPreview: threads.NewGQLThreadPreview(graphqlbackend.CreateThreadInput{
@@ -135,7 +135,7 @@ func (v *gqlCampaignPreview) Commits(ctx context.Context) ([]*graphqlbackend.Git
 	return campaignCommits(ctx, v)
 }
 
-func (v *gqlCampaignPreview) RepositoryComparisons(ctx context.Context) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
+func (v *gqlCampaignPreview) RepositoryComparisons(ctx context.Context) ([]graphqlbackend.RepositoryComparison, error) {
 	return campaignRepositoryComparisons(ctx, v)
 }
 
