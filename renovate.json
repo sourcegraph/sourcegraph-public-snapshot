@@ -2,5 +2,14 @@
   "$schema": "http://json.schemastore.org/renovate",
   "extends": ["github>sourcegraph/renovate-config"],
   "semanticCommits": false,
-  "labels": ["bot"]
+  "labels": ["bot"],
+  "packageRules": [
+    {
+      "languages": ["golang"],
+      "packagePatterns": [".*"],
+      "groupName": "godeps",
+      "schedule": ["on the 22nd of each month"],
+      "reviewers": ["team:core-services"]
+    }
+  ]
 }
