@@ -9,6 +9,7 @@ import { mutateGraphQL } from '../../../../backend/graphql'
 import { PageTitle } from '../../../../components/PageTitle'
 import { NamespaceCampaignsAreaContext } from '../NamespaceCampaignsArea'
 import { CampaignForm, CampaignFormData } from './CampaignForm'
+import { CampaignPreview } from './preview/CampaignPreview'
 import { EMPTY_CAMPAIGN_TEMPLATE_ID } from './templates'
 
 export const createCampaign = (input: GQL.ICreateCampaignInput): Promise<GQL.ICampaign> =>
@@ -55,6 +56,9 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
     const templateID = new URLSearchParams(location.search).get('template')
     const preview = !!templateID && templateID !== EMPTY_CAMPAIGN_TEMPLATE_ID
 
+    const [data, setData] = useState<CampaignFormData>()
+    const onChange = useCallback(data => setData(data), [])
+
     const [creationOrError, setCreationOrError] = useState<
         null | typeof LOADING | Pick<GQL.ICampaign, 'url'> | ErrorLike
     >(null)
@@ -77,14 +81,23 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
                 <Redirect to={creationOrError.url} />
             )}
             <PageTitle title="New campaign" />
-            <CampaignForm
-                templateID={templateID}
-                onSubmit={onSubmit}
-                buttonText={preview ? 'Preview campaign' : 'Create campaign'}
-                isLoading={creationOrError === LOADING}
-                match={match}
-                location={location}
-            />
+            <div className="d-flex flex-gap-3 flex-wrap">
+                <div style={{ flex: '1 0 50%', minWidth: '32rem' }}>
+                    <CampaignForm
+                        templateID={templateID}
+                        onChange={onChange}
+                        onSubmit={onSubmit}
+                        buttonText={preview ? 'Preview campaign' : 'Create campaign'}
+                        isLoading={creationOrError === LOADING}
+                        match={match}
+                        location={location}
+                        className="flex-1"
+                    />
+                </div>
+                <div style={{ flex: '2 0 24rem' }}>
+                    <CampaignPreview data={data} />
+                </div>
+            </div>
             {isErrorLike(creationOrError) && <div className="alert alert-danger mt-3">{creationOrError.message}</div>}
         </>
     )

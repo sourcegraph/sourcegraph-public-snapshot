@@ -32,6 +32,9 @@
     .d-lg-none {
         display: none !important;
     }
+    .d-lg-flex {
+        display: flex !important;
+    }
     .d-lg-inline-block {
         display: inline-block !important;
     }
@@ -179,6 +182,13 @@
 @include generate-spacing-classes(pr, padding-right);
 @include generate-spacing-classes(pb, padding-bottom);
 @include generate-spacing-classes(pl, padding-left);
+
+.flex-gap-3 {
+    margin: -0.75rem;
+}
+.flex-gap-3 > * {
+    padding: 0.75rem;
+}
 
 .mx-auto {
     margin-right: auto !important;

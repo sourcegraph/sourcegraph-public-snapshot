@@ -24,11 +24,14 @@ interface Props {
 
     initialValue?: CampaignFormData
 
+    /** Called when the form's data is changed. */
+    onChange: (data: CampaignFormData) => void
+
     /** Called when the form is dismissed with no action taken. */
     onDismiss?: () => void
 
     /** Called when the form is submitted. */
-    onSubmit: (campaign: CampaignFormData) => void
+    onSubmit: (data: CampaignFormData) => void
 
     buttonText: string
     isLoading: boolean
@@ -115,8 +118,8 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
                         <h2>New campaign</h2>
                     ) : (
                         <>
-                            <h2 className="d-flex align-items-center">
-                                {TemplateIcon && <TemplateIcon className="icon-inline mr-2" />} New campaign:{' '}
+                            <h2 className="d-flex align-items-start">
+                                {TemplateIcon && <TemplateIcon className="icon-inline mr-2 flex-0" />} New campaign:{' '}
                                 {template.title}
                             </h2>
                             <p>
@@ -153,7 +156,7 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
                             {isCreateCampaignInputVisible ? 'Hide' : 'Show'} JSON
                         </button>
                         {isCreateCampaignInputVisible && (
-                            <pre className="small border p-2">
+                            <pre className="small border p-2 overflow-auto">
                                 <code>{JSON.stringify(value, null, 2)}</code>
                             </pre>
                         )}

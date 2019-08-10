@@ -2,6 +2,7 @@ import H from 'history'
 import { CampaignFormControl } from '../CampaignForm'
 import { CodeOwnershipValidationCampaignTemplate } from './CodeOwnershipValidationCampaignTemplate'
 import { ESLintRuleCampaignTemplate } from './ESLintRuleCampaignTemplate'
+import { ExistingExternalChangesetsAndIssuesCampaignTemplate } from './ExistingExternalChangesetsAndIssuesCampaignTemplate'
 import { FindReplaceCampaignTemplate } from './FindReplaceCampaignTemplate'
 import { JavaArtifactDependencyCampaignTemplate } from './JavaArtifactDependencyCampaignTemplate'
 import { PackageJsonDependencyCampaignTemplate } from './PackageJsonDependencyCampaignTemplate'
@@ -29,6 +30,6 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     CodeOwnershipValidationCampaignTemplate,
     FindReplaceCampaignTemplate,
     TriageSearchResultsCampaignTemplate,
-    // TODO!(sqs): add all github issues/PRs matching a certain query
+    ExistingExternalChangesetsAndIssuesCampaignTemplate,
     { id: EMPTY_CAMPAIGN_TEMPLATE_ID, title: '', renderForm: () => null, isEmpty: true },
 ]
