@@ -13,7 +13,7 @@ type CampaignPreview interface {
 	Body() string
 	BodyText() string
 	BodyHTML() string
-	Threads(context.Context, *ThreadConnectionArgs) (ThreadConnection, error)
+	Threads(context.Context, *ThreadConnectionArgs) (ThreadOrThreadPreviewConnection, error)
 	Repositories(context.Context) ([]*RepositoryResolver, error)
 	Commits(context.Context) ([]*GitCommitResolver, error)
 	RepositoryComparisons(context.Context) ([]*RepositoryComparisonResolver, error)

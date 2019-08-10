@@ -137,7 +137,7 @@ func (v *gqlCampaign) Repositories(ctx context.Context) ([]*graphqlbackend.Repos
 	if err != nil {
 		return nil, err
 	}
-	return campaignRepositories(ctx, threads)
+	return campaignRepositories(ctx, toThreadOrThreadPreviews(threads))
 }
 
 func (v *gqlCampaign) Commits(ctx context.Context) ([]*graphqlbackend.GitCommitResolver, error) {
@@ -145,7 +145,7 @@ func (v *gqlCampaign) Commits(ctx context.Context) ([]*graphqlbackend.GitCommitR
 	if err != nil {
 		return nil, err
 	}
-	return campaignCommits(ctx, threads)
+	return campaignCommits(ctx, toThreadOrThreadPreviews(threads))
 }
 
 func (v *gqlCampaign) RepositoryComparisons(ctx context.Context) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
@@ -153,7 +153,7 @@ func (v *gqlCampaign) RepositoryComparisons(ctx context.Context) ([]*graphqlback
 	if err != nil {
 		return nil, err
 	}
-	return campaignRepositoryComparisons(ctx, threads)
+	return campaignRepositoryComparisons(ctx, toThreadOrThreadPreviews(threads))
 }
 
 func (v *gqlCampaign) Diagnostics(ctx context.Context, arg *graphqlbackend.ThreadDiagnosticConnectionArgs) (graphqlbackend.ThreadDiagnosticConnection, error) {

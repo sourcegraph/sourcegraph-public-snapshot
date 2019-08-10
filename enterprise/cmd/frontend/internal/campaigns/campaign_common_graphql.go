@@ -9,15 +9,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
+func toThreadOrThreadPreviews(threads []graphqlbackend.Thread) []graphqlbackend.ToThreadOrThreadPreview {
+	v := make([]graphqlbackend.ToThreadOrThreadPreview, len(threads))
+	for i, t := range threads {
+		v[i] = graphqlbackend.ToThreadOrThreadPreview{Thread: t}
+	}
+	return v
+}
+
 // gqlCampaignThreadDerived implements the fields/methods of the Campaign and CampaignPrevie GraphQL
 // types that are derived from the campaign's set of threads.
 type gqlCampaignThreadDerived struct {
 	getThreads func(context.Context) ([]*graphqlbackend.Thread, error)
 }
 
-func campaignRepositories(ctx context.Context, threads []graphqlbackend.Thread) ([]*graphqlbackend.RepositoryResolver, error) {
+func campaignRepositories(ctx context.Context, threads []graphqlbackend.ToThreadOrThreadPreview) ([]*graphqlbackend.RepositoryResolver, error) {
 	byRepositoryDBID := map[api.RepoID]*graphqlbackend.RepositoryResolver{}
-	for _, thread := range threadNodes {
+	for _, thread := range threads {
 		repo, err := thread.Repository(ctx)
 		if err != nil {
 			return nil, err
@@ -38,7 +46,7 @@ func campaignRepositories(ctx context.Context, threads []graphqlbackend.Thread) 
 	return repos, nil
 }
 
-func campaignCommits(ctx context.Context, threads []graphqlbackend.Thread) ([]*graphqlbackend.GitCommitResolver, error) {
+func campaignCommits(ctx context.Context, threads []graphqlbackend.ThreadOrThreadPreview) ([]*graphqlbackend.GitCommitResolver, error) {
 	rcs, err := campaignRepositoryComparisons(ctx, threads)
 	if err != nil {
 		return nil, err
@@ -56,7 +64,7 @@ func campaignCommits(ctx context.Context, threads []graphqlbackend.Thread) ([]*g
 	return allCommits, nil
 }
 
-func campaignRepositoryComparisons(ctx context.Context, threads []graphqlbackend.Thread) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
+func campaignRepositoryComparisons(ctx context.Context, threads []graphqlbackend.ThreadOrThreadPreview) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
 	rcs := make([]*graphqlbackend.RepositoryComparisonResolver, 0, len(threads))
 	for _, thread := range threads {
 		rc, err := thread.RepositoryComparison(ctx)

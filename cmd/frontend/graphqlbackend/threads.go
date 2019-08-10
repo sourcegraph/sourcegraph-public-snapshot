@@ -119,15 +119,17 @@ type ThreadConnectionArgs struct {
 	Open *bool
 }
 
+type CreateThreadInput struct {
+	Repository graphql.ID
+	Title      string
+	Body       *string
+	Preview    *bool
+	BaseRef    *string
+	HeadRef    *string
+}
+
 type CreateThreadArgs struct {
-	Input struct {
-		Repository graphql.ID
-		Title      string
-		Body       *string
-		Preview    *bool
-		BaseRef    *string
-		HeadRef    *string
-	}
+	Input CreateThreadInput
 }
 
 type UpdateThreadArgs struct {
