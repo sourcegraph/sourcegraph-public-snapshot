@@ -426,7 +426,7 @@ func TestMaxMatches(t *testing.T) {
 	// Create a zip archive which contains our limits + 1
 	buf := new(bytes.Buffer)
 	zw := zip.NewWriter(buf)
-	for i := 0; i < maxFileMatches+1; i++ {
+	for i := 0; i < maxFileAndLineMatches+1; i++ {
 		w, err := zw.CreateHeader(&zip.FileHeader{
 			Name:   strconv.Itoa(i),
 			Method: zip.Store,
@@ -453,7 +453,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, maxFileMatches, true, false)
+	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, maxFileAndLineMatches, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -461,8 +461,8 @@ func TestMaxMatches(t *testing.T) {
 		t.Fatalf("expected limitHit on concurrentFind")
 	}
 
-	if len(fileMatches) != maxFileMatches {
-		t.Fatalf("expected %d file matches, got %d", maxFileMatches, len(fileMatches))
+	if len(fileMatches) != maxFileAndLineMatches {
+		t.Fatalf("expected %d file matches, got %d", maxFileAndLineMatches, len(fileMatches))
 	}
 	for _, fm := range fileMatches {
 		if !fm.LimitHit {

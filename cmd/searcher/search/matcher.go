@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	// maxFileMatches is the limit on number of matching files we return.
-	// We also use this as the maximum number of matches to return in a file.
-	maxFileMatches = 1000
+	// maxFileAndLineMatches is the limit on number of matching files we return,
+	// and the number of matching lines in a file we return.
+	maxFileAndLineMatches = 1000
 
 	// maxLineMatches is the limit on number of matches to return in a
 	// file.
@@ -330,8 +330,8 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, file
 		patternMatchesContent = true
 	}
 
-	if fileMatchLimit > maxFileMatches || fileMatchLimit <= 0 {
-		fileMatchLimit = maxFileMatches
+	if fileMatchLimit > maxFileAndLineMatches || fileMatchLimit <= 0 {
+		fileMatchLimit = maxFileAndLineMatches
 	}
 
 	// If we reach fileMatchLimit we use cancel to stop the search
