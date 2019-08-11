@@ -31,7 +31,7 @@ func TestGraphQL_CampaignPreview(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				 query {
-					campaignPreview(input: { campaign: { namespace: "T3JnOjE=", name: "n" }, rawDiagnostics: [], rawFileDiffs: [] }) {
+					campaignPreview(input: { campaign: { namespace: "T3JnOjE=", name: "n", extensionData: { rawDiagnostics: [], rawFileDiffs: [] } } }) {
 						name
 					}
 				}

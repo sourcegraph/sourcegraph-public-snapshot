@@ -402,7 +402,7 @@ type Mutation {
     # Force-refresh a campaign, including the external states of all of the campaign's threads.
     # Campaigns are automatically refreshed on a regular basis, and this mutation should not usually
     # be necessary.
-    forceRefreshCampaign(campaign: ID!): Campaign!
+    forceRefreshCampaign(campaign: ID!, extensionData: CampaignExtensionData!): Campaign!
 
     # Delete a campaign. All threads that were associated with or created by this campaign remain
     # (and are not deleted when the campaign is deleted).
@@ -4586,6 +4586,13 @@ type GitCreateRefFromPatchPayload {
     ref: GitRef!
 }
 
+# Information needed by the campaign that comes from extensions (and therefore must be sent by the
+# client to the backend because it is not currently possible to run extensions on the backend).
+input CampaignExtensionData {
+    rawDiagnostics: [String!]!
+    rawFileDiffs: [String!]!
+}
+
 # Input arguments for creating a campaign.
 input CreateCampaignInput {
     # The ID of the namespace where this campaign is defined.
@@ -4599,6 +4606,9 @@ input CreateCampaignInput {
 
     # Rules to create in the campaign.
     rules: [NewRuleInput!]
+
+    # Extension data for the campaign.
+    extensionData: CampaignExtensionData!
 }
 
 # Input arguments for updating a campaign.
@@ -4618,9 +4628,6 @@ input UpdateCampaignInput {
 input CampaignPreviewInput {
     # The description of the campaign to preview.
     campaign: CreateCampaignInput!
-
-    rawDiagnostics: [String!]!
-    rawFileDiffs: [String!]!
 }
 
 # A campaign preview is a preview of a campaign that is not persisted and does not mutate any state.

@@ -115,7 +115,6 @@ type CreateThreadInput struct {
 	Repository graphql.ID
 	Title      string
 	Body       *string
-	Preview    *bool
 	BaseRef    *string
 	HeadRef    *string
 }

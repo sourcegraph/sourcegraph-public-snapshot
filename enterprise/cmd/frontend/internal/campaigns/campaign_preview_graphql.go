@@ -98,8 +98,8 @@ func (v *gqlCampaignPreview) Threads(ctx context.Context, args *graphqlbackend.T
 		parsed *diff.FileDiff
 		repo   *types.Repo
 	}
-	diffs := make([]fileDiff, len(v.input.RawFileDiffs))
-	for i, diffStr := range v.input.RawFileDiffs {
+	diffs := make([]fileDiff, len(v.input.Campaign.ExtensionData.RawFileDiffs))
+	for i, diffStr := range v.input.Campaign.ExtensionData.RawFileDiffs {
 		var err error
 		diffs[i].parsed, err = diff.ParseFileDiff([]byte(diffStr))
 		if err != nil {
@@ -150,8 +150,8 @@ func (v *gqlCampaignPreview) RepositoryComparisons(ctx context.Context) ([]graph
 }
 
 func (v *gqlCampaignPreview) getDiagnostics(ctx context.Context) ([]graphqlbackend.Diagnostic, error) {
-	ds := make([]graphqlbackend.Diagnostic, len(v.input.RawDiagnostics))
-	for i, diagnosticStr := range v.input.RawDiagnostics {
+	ds := make([]graphqlbackend.Diagnostic, len(v.input.Campaign.ExtensionData.RawDiagnostics))
+	for i, diagnosticStr := range v.input.Campaign.ExtensionData.RawDiagnostics {
 		var d diagnostics.GQLDiagnostic
 		if err := json.Unmarshal([]byte(diagnosticStr), &d); err != nil {
 			return nil, err

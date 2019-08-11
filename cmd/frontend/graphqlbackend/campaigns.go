@@ -159,18 +159,21 @@ type CampaignPreviewArgs struct {
 	Input CampaignPreviewInput
 }
 
-type CampaignPreviewInput struct {
-	Campaign       CreateCampaignInput
+type CampaignExtensionData struct {
 	RawDiagnostics []string
 	RawFileDiffs   []string
 }
 
+type CampaignPreviewInput struct {
+	Campaign CreateCampaignInput
+}
+
 type CreateCampaignInput struct {
-	Namespace graphql.ID
-	Name      string
-	Body      *string
-	Preview   *bool
-	Rules     *[]NewRuleInput
+	Namespace     graphql.ID
+	Name          string
+	Body          *string
+	Rules         *[]NewRuleInput
+	ExtensionData CampaignExtensionData
 }
 
 type CreateCampaignArgs struct {
@@ -186,7 +189,8 @@ type UpdateCampaignArgs struct {
 }
 
 type ForceRefreshCampaignArgs struct {
-	Campaign graphql.ID
+	Campaign      graphql.ID
+	ExtensionData CampaignExtensionData
 }
 
 type DeleteCampaignArgs struct {

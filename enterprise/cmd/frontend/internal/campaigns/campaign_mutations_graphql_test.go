@@ -40,7 +40,7 @@ func TestGraphQL_CreateCampaign(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					createCampaign(input: { namespace: "T3JnOjE=", name: "n" }) {
+					createCampaign(input: { namespace: "T3JnOjE=", name: "n", extensionData: { rawDiagnostics: [], rawFileDiffs: [] } }) {
 						id
 						name
 					}
