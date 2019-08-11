@@ -36,7 +36,6 @@ export const useCampaignByID = (campaign: GQL.ID): [Result, (update?: Partial<GQ
                             createdAt
                             updatedAt
                             viewerCanUpdate
-                            isPreview
                             url
                             comments {
                                 totalCount

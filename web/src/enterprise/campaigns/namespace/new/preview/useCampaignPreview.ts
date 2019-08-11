@@ -1,25 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
-import { combineLatest, merge, Observable, of, Subject } from 'rxjs'
-import { debounceTime, map, mapTo, switchMap, tap, throttleTime } from 'rxjs/operators'
-import { fromDiagnostic } from '../../../../../../../shared/src/api/types/diagnostic'
+import { merge, Subject } from 'rxjs'
+import { map, mapTo, switchMap, tap, throttleTime } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../../shared/src/util/errors'
-import { propertyIsDefined } from '../../../../../../../shared/src/util/types'
 import { queryGraphQL } from '../../../../../backend/graphql'
 import {
     diffStatFieldsFragment,
     fileDiffHunkRangeFieldsFragment,
 } from '../../../../../repo/compare/RepositoryCompareDiffPage'
-import { RuleDefinition } from '../../../../rules/types'
-import {
-    DiagnosticInfo,
-    diagnosticQueryMatcher,
-    getCodeActions,
-    getDiagnosticInfos,
-} from '../../../../threadsOLD/detail/backend'
-import { computeDiff, FileDiff } from '../../../../threadsOLD/detail/changes/computeDiff'
+import { getCampaignExtensionData } from '../../../extensionData'
 
 export const CampaignPreviewFragment = gql`
     fragment CampaignPreviewFragment on CampaignPreview {
@@ -110,70 +101,19 @@ const LOADING: 'loading' = 'loading'
 
 type Result = typeof LOADING | GQL.ICampaignPreview | ErrorLike
 
-interface DiagnosticsAndFileDiffs {
-    diagnostics: DiagnosticInfo[]
-    fileDiffs: Pick<FileDiff, 'patchWithFullURIs'>[]
-}
-
-const getDiagnosticsAndFileDiffs = (
-    extensionsController: ExtensionsControllerProps['extensionsController'],
-    rule: RuleDefinition
-): Observable<DiagnosticsAndFileDiffs> => {
-    if (rule.type !== 'DiagnosticRule') {
-        return of({ diagnostics: [], fileDiffs: [] })
-    }
-    const matchesQuery = diagnosticQueryMatcher(rule.query)
-    return getDiagnosticInfos(extensionsController, rule.query.type).pipe(
-        map(diagnostics => diagnostics.filter(matchesQuery)),
-        switchMap(diagnostics =>
-            diagnostics.length > 0
-                ? combineLatest(
-                      diagnostics.map(d =>
-                          getCodeActions({
-                              diagnostic: d,
-                              extensionsController,
-                          }).pipe(
-                              map(actions => ({
-                                  diagnostic: d,
-                                  action:
-                                      rule.action !== undefined
-                                          ? actions
-                                                .filter(propertyIsDefined('computeEdit'))
-                                                .find(a => a.computeEdit && a.computeEdit.command === rule.action)
-                                          : undefined,
-                              }))
-                          )
-                      )
-                  )
-                : of([])
-        ),
-        switchMap(async diagnosticsAndActions => {
-            const fileDiffs = await computeDiff(
-                extensionsController,
-                diagnosticsAndActions
-                    .filter(propertyIsDefined('action'))
-                    .map(d => ({
-                        actionEditCommand: d.action.computeEdit,
-                        diagnostic: fromDiagnostic(d.diagnostic),
-                    }))
-                    .filter(propertyIsDefined('actionEditCommand'))
-            )
-            return {
-                diagnostics: diagnosticsAndActions.filter(({ action }) => !action).map(({ diagnostic }) => diagnostic),
-                fileDiffs,
-            }
-        })
-    )
-}
+type CreateCampaignInputWithoutExtensionData = Pick<
+    GQL.ICreateCampaignInput,
+    Exclude<keyof GQL.ICreateCampaignInput, 'extensionData'>
+>
 
 /**
  * A React hook that observes a campaign preview queried from the GraphQL API.
  */
 export const useCampaignPreview = (
     { extensionsController }: ExtensionsControllerProps,
-    input: GQL.ICreateCampaignInput
+    input: CreateCampaignInputWithoutExtensionData
 ): [Result, boolean] => {
-    const inputSubject = useMemo(() => new Subject<GQL.ICreateCampaignInput>(), [])
+    const inputSubject = useMemo(() => new Subject<CreateCampaignInputWithoutExtensionData>(), [])
     const [isLoading, setIsLoading] = useState(true)
     const [result, setResult] = useState<Result>(LOADING)
     useEffect(() => inputSubject.next(input), [input, inputSubject])
@@ -183,23 +123,8 @@ export const useCampaignPreview = (
             inputSubject.pipe(
                 throttleTime(1000, undefined, { leading: true, trailing: true }),
                 switchMap(input =>
-                    (input.rules && input.rules.length > 0
-                        ? combineLatest(
-                              (input.rules || []).map(rule => {
-                                  const def: RuleDefinition = JSON.parse(rule.definition)
-                                  return getDiagnosticsAndFileDiffs(extensionsController, def)
-                              })
-                          )
-                        : of<DiagnosticsAndFileDiffs[]>([{ diagnostics: [], fileDiffs: [] }])
-                    ).pipe(
-                        map(results => {
-                            const combined: DiagnosticsAndFileDiffs = {
-                                diagnostics: results.flatMap(r => r.diagnostics),
-                                fileDiffs: results.flatMap(r => r.fileDiffs),
-                            }
-                            return combined
-                        }),
-                        switchMap(({ diagnostics, fileDiffs }) =>
+                    getCampaignExtensionData(extensionsController, input).pipe(
+                        switchMap(extensionData =>
                             queryGraphQL(
                                 gql`
                                     query CampaignPreview($input: CampaignPreviewInput!) {
@@ -212,16 +137,10 @@ export const useCampaignPreview = (
                                 // tslint:disable-next-line: no-object-literal-type-assertion
                                 {
                                     input: {
-                                        campaign: input,
-                                        rawDiagnostics: diagnostics.map(d =>
-                                            // tslint:disable-next-line: no-object-literal-type-assertion
-                                            JSON.stringify({
-                                                __typename: 'Diagnostic',
-                                                type: d.type,
-                                                data: d,
-                                            } as GQL.IDiagnostic)
-                                        ),
-                                        rawFileDiffs: fileDiffs.map(({ patchWithFullURIs }) => patchWithFullURIs),
+                                        campaign: {
+                                            ...input,
+                                            extensionData,
+                                        },
                                     },
                                 } as GQL.ICampaignPreviewOnQueryArguments
                             ).pipe(

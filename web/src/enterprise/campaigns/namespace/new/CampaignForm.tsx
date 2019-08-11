@@ -11,7 +11,7 @@ import { CampaignTemplateChooser } from './CampaignTemplateChooser'
 import { CAMPAIGN_TEMPLATES, CampaignTemplate, EMPTY_CAMPAIGN_TEMPLATE_ID } from './templates'
 
 export interface CampaignFormData
-    extends Pick<GQL.ICreateCampaignInput, Exclude<keyof GQL.ICreateCampaignInput, 'preview'>> {
+    extends Pick<GQL.ICreateCampaignInput, Exclude<keyof GQL.ICreateCampaignInput, 'extensionData'>> {
     isValid: boolean
     dueDate?: string
 }

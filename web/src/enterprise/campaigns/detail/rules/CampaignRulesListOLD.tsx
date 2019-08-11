@@ -12,7 +12,7 @@ import { ChangesetPlanOperation } from '../../../changesetsOLD/plan/plan'
 import { ThreadSettings } from '../../../threadsOLD/settings'
 
 interface Props {
-    campaign: Pick<GQL.ICampaign, 'isPreview' | 'rules'>
+    campaign: Pick<GQL.ICampaign, 'rules'>
 
     className?: string
 }
@@ -31,8 +31,7 @@ export const CampaignRulesListOLD: React.FunctionComponent<Props> = ({ campaign,
                         <div className="flex-1">
                             <h4 className="mb-0">Continuously applying rules</h4>
                             <p className="mb-0">
-                                The rules {campaign.isPreview ? 'will' : ''} run when any base branch changes or when a
-                                new repository matches.
+                                The rules run when any base branch changes or when a new repository matches.
                             </p>
                         </div>
                     </div>

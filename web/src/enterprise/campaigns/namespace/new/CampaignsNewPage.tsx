@@ -1,7 +1,7 @@
 import H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { map } from 'rxjs/operators'
+import { first, map } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
@@ -10,6 +10,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/ut
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { PageTitle } from '../../../../components/PageTitle'
 import { ThemeProps } from '../../../../theme'
+import { getCampaignExtensionData } from '../../extensionData'
 import { NamespaceCampaignsAreaContext } from '../NamespaceCampaignsArea'
 import { CampaignForm, CampaignFormData } from './CampaignForm'
 import { CampaignPreview } from './preview/CampaignPreview'
@@ -78,13 +79,16 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
         async (data: CampaignFormData) => {
             setCreationOrError(LOADING)
             try {
-                setCreationOrError(await createCampaign({ ...data, namespace: namespace.id }))
+                const extensionData = await getCampaignExtensionData(props.extensionsController, data)
+                    .pipe(first())
+                    .toPromise()
+                setCreationOrError(await createCampaign({ ...data, namespace: namespace.id, extensionData }))
             } catch (err) {
                 setCreationOrError(asError(err))
                 alert(err.message) // TODO!(sqs)
             }
         },
-        [namespace.id]
+        [namespace.id, props.extensionsController]
     )
 
     const initialValue = useMemo<CampaignFormData>(() => ({ name: '', namespace: namespace.id, isValid: true }), [
