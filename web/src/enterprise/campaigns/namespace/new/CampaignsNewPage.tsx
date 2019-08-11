@@ -87,7 +87,9 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
         [namespace.id]
     )
 
-    const initialValue = useMemo<CampaignFormData>(() => ({ name: '', namespace: namespace.id }), [namespace.id])
+    const initialValue = useMemo<CampaignFormData>(() => ({ name: '', namespace: namespace.id, isValid: true }), [
+        namespace.id,
+    ])
 
     return (
         <>
@@ -111,7 +113,7 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
                     <div className="alert alert-danger mt-3">{creationOrError.message}</div>
                 )}
                 {/* TODO!(sqs): be smart about when to show the preview pane */}
-                {templateID && templateID !== EMPTY_CAMPAIGN_TEMPLATE_ID && data && (
+                {templateID && templateID !== EMPTY_CAMPAIGN_TEMPLATE_ID && data && data.isValid && (
                     <>
                         <hr className="my-5" />
                         <CampaignPreview {...props} data={data} location={location} />

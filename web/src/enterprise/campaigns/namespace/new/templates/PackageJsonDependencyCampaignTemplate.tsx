@@ -38,6 +38,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
     useEffect(() => {
         const packageNameOrPlaceholder = packageName || '<package>'
         onChange({
+            isValid: !!packageName,
             name: `Deprecate ${packageNameOrPlaceholder}${
                 versionRange && versionRange !== ALL_VERSION_RANGE ? `@${versionRange}` : ''
             } (npm)`,

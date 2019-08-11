@@ -11,7 +11,9 @@ import { CampaignTemplateChooser } from './CampaignTemplateChooser'
 import { CAMPAIGN_TEMPLATES, CampaignTemplate, EMPTY_CAMPAIGN_TEMPLATE_ID } from './templates'
 
 export interface CampaignFormData
-    extends Pick<GQL.ICreateCampaignInput, Exclude<keyof GQL.ICreateCampaignInput, 'preview'>> {}
+    extends Pick<GQL.ICreateCampaignInput, Exclude<keyof GQL.ICreateCampaignInput, 'preview'>> {
+    isValid: boolean
+}
 
 export interface CampaignFormControl {
     value: CampaignFormData
@@ -144,7 +146,7 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
                                 type="reset"
                                 className="btn btn-secondary mr-2"
                                 onClick={onDismiss}
-                                disabled={formControlProps.disabled}
+                                disabled={!value.isValid || formControlProps.disabled}
                             >
                                 Cancel
                             </button>
