@@ -38,6 +38,14 @@ type Lang struct {
 
 var byFilename = filelang.Langs.CompileByFilename()
 
+var byName = func() map[string]*filelang.Language {
+	m := make(map[string]*filelang.Language, len(filelang.Langs))
+	for _, l := range filelang.Langs {
+		m[l.Name] = l
+	}
+	return m
+}()
+
 // Get performs an inventory of the files passed in.
 func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
 	langs := map[string]uint64{}
@@ -58,19 +66,14 @@ func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
 
 	var inv Inventory
 	for lang, totalBytes := range langs {
-		inv.Languages = append(inv.Languages, &Lang{Name: lang, TotalBytes: totalBytes})
-	}
-	sort.Sort(sort.Reverse(langsByTotalBytes(inv.Languages)))
-
-	// Set Type field.
-	for _, il := range inv.Languages {
-		for _, l := range filelang.Langs {
-			if il.Name == l.Name {
-				il.Type = l.Type
-				break
-			}
+		il := &Lang{Name: lang, TotalBytes: totalBytes}
+		if l, ok := byName[lang]; ok {
+			il.Type = l.Type
 		}
+		inv.Languages = append(inv.Languages, il)
 	}
+
+	sort.Sort(sort.Reverse(langsByTotalBytes(inv.Languages)))
 
 	return &inv, nil
 }
