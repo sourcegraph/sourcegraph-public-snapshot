@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { combineLatest, merge, Observable, of, Subject } from 'rxjs'
-import { delay, map, switchMap, takeUntil, tap, throttleTime, withLatestFrom } from 'rxjs/operators'
+import { debounceTime, map, mapTo, switchMap, tap, throttleTime } from 'rxjs/operators'
 import { fromDiagnostic } from '../../../../../../../shared/src/api/types/diagnostic'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../../../shared/src/graphql/graphql'
@@ -171,11 +171,12 @@ export const useCampaignPreview = (
     const [result, setResult] = useState<Result>(LOADING)
     useEffect(() => inputSubject.next(input), [input, inputSubject])
     useEffect(() => {
-        const subscription = inputSubject
-            .pipe(
+        const subscription = merge(
+            inputSubject.pipe(mapTo(LOADING)),
+            inputSubject.pipe(
                 throttleTime(1000, undefined, { leading: true, trailing: true }),
-                switchMap(input => {
-                    const result = (input.rules && input.rules.length > 0
+                switchMap(input =>
+                    (input.rules && input.rules.length > 0
                         ? combineLatest(
                               (input.rules || []).map(rule => {
                                   const def: RuleDefinition = JSON.parse(rule.definition)
@@ -231,24 +232,23 @@ export const useCampaignPreview = (
                             )
                         )
                     )
-                    return merge(result, of(LOADING).pipe(takeUntil(result)))
+                )
+            )
+        ).subscribe(
+            result => {
+                setResult(prevResult => {
+                    setIsLoading(result === LOADING)
+                    // Reuse last non-error result while loading, to reduce UI jitter.
+                    return result === LOADING && prevResult !== LOADING && !isErrorLike(prevResult)
+                        ? prevResult
+                        : result
                 })
-            )
-            .subscribe(
-                result => {
-                    setResult(prevResult => {
-                        setIsLoading(result === LOADING)
-                        // Reuse last non-error result while loading, to reduce UI jitter.
-                        return result === LOADING && prevResult !== LOADING && !isErrorLike(prevResult)
-                            ? prevResult
-                            : result
-                    })
-                },
-                err => {
-                    setIsLoading(false)
-                    setResult(asError(err))
-                }
-            )
+            },
+            err => {
+                setIsLoading(false)
+                setResult(asError(err))
+            }
+        )
         return () => subscription.unsubscribe()
     }, [extensionsController, inputSubject])
     return [result, isLoading]
