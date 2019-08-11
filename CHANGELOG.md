@@ -16,6 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Out-of-the-box TypeScript code intelligence is much better with an updated ctags version with a built-in TypeScript parser.
+- Sourcegraph uses Git protocol version 2 for increased efficiency and performance when fetching data from compatible code hosts.
 
 ### Fixed
 
