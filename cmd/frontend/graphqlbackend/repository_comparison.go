@@ -317,6 +317,8 @@ type FileDiff interface {
 	NewFile() *gitTreeEntryResolver
 	MostRelevantFile() *gitTreeEntryResolver
 	InternalID() string
+
+	Raw() *diff.FileDiff
 }
 
 func NewFileDiff(fileDiff *diff.FileDiff, base, head *GitCommitResolver) FileDiff {
@@ -327,6 +329,8 @@ type fileDiffResolver struct {
 	fileDiff   *diff.FileDiff
 	base, head *GitCommitResolver
 }
+
+func (r *fileDiffResolver) Raw() *diff.FileDiff { return r.fileDiff }
 
 func (r *fileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
 func (r *fileDiffResolver) NewPath() *string { return diffPathOrNull(r.fileDiff.NewName) }

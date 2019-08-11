@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
@@ -34,5 +35,10 @@ func (c FileDiffConnection) DiffStat(context.Context) (graphqlbackend.IDiffStat,
 }
 
 func (c FileDiffConnection) RawDiff(context.Context) (string, error) {
-	panic("TODO!(sqs)")
+	diffs := make([]*diff.FileDiff, len(c))
+	for i, d := range c {
+		diffs[i] = d.Raw()
+	}
+	b, err := diff.PrintMultiFileDiff(diffs)
+	return string(b), err
 }

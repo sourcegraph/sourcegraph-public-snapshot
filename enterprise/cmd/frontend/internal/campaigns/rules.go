@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/repos/git"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -111,6 +112,43 @@ func (x *rulesExecutor) syncThreads(ctx context.Context, campaignID int64) error
 		if err != nil {
 			return err
 		}
+
+		repoComparison, err := thread.RepositoryComparison(ctx)
+		if err != nil {
+			return err
+		}
+		fileDiffConnection := repoComparison.FileDiffs(&graphqlutil.ConnectionArgs{})
+		if err != nil {
+			return err
+		}
+		patch, err := fileDiffConnection.RawDiff(ctx)
+		if err != nil {
+			return err
+		}
+
+		defaultBranch, err := repo.DefaultBranch(ctx)
+		if err != nil {
+			return err
+		}
+		oid, err := defaultBranch.Target().OID(ctx)
+		if err != nil {
+			return err
+		}
+		_, err = git.GraphQLResolver{}.CreateRefFromPatch(ctx, &struct {
+			Input graphqlbackend.GitCreateRefFromPatchInput
+		}{
+			Input: graphqlbackend.GitCreateRefFromPatchInput{
+				Repository:    repo.ID(),
+				Name:          "sourcegraph-a8n", //TODO!(sqs)
+				BaseCommit:    oid,
+				Patch:         patch,
+				CommitMessage: "sourcegraph a8n",
+			},
+		})
+		if err != nil {
+			return err
+		}
+
 		threadID, err := threads.CreateOrGetExistingGitHubPullRequest(ctx, repo.DBID(), repo.DBExternalRepo(), threads.CreateChangesetData{
 			BaseRefName: "master",          // TODO!(sqs): hack
 			HeadRefName: "sourcegraph-a8n", // TODO!(sqs): hack

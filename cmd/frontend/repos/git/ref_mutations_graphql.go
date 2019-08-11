@@ -21,15 +21,6 @@ func (GraphQLResolver) CreateRefFromPatch(ctx context.Context, arg *struct {
 		return nil, err
 	}
 
-	targetRef := arg.Input.Name
-	if targetRef == "" {
-		defaultBranch, err := repo.DefaultBranch(ctx)
-		if err != nil {
-			return nil, err
-		}
-		targetRef = defaultBranch.Name()
-	}
-
 	if !strings.HasPrefix(repo.Name(), "github.com/sd9/") && !strings.HasPrefix(repo.Name(), "github.com/sd9org/") {
 		return nil, errors.New("refusing to modify non-sd9 test repo") // TODO!(sqs)
 	}
