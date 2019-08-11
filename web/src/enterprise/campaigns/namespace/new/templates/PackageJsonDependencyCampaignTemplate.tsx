@@ -41,7 +41,13 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
 
     useEffect(() => {
         const packageNameOrPlaceholder = packageName || '<package>'
-        const commonDiagnosticQuery: ParsedDiagnosticQuery = parseDiagnosticQuery(`repo:${includeRepositories}`)
+        const commonDiagnosticQuery: ParsedDiagnosticQuery = parseDiagnosticQuery(
+            includeRepositories
+                .split(/[\s,]/g)
+                .filter(s => !!s)
+                .map(repo => `repo:${repo}`)
+                .join(' ')
+        )
         onChange({
             isValid: !!packageName,
             name: `Deprecate ${packageNameOrPlaceholder}${

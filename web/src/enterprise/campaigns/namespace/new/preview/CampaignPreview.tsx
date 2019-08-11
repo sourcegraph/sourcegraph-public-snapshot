@@ -30,7 +30,6 @@ const LOADING = 'loading' as const
  */
 export const CampaignPreview: React.FunctionComponent<Props> = ({ data, className = '', ...props }) => {
     const [campaignPreview, isLoading] = useCampaignPreview(props, data)
-    console.log({ data, campaignPreview, isLoading })
     return (
         <div className="campaign-preview">
             <h2 className="d-flex align-items-center">

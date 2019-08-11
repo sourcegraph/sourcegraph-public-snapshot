@@ -146,12 +146,16 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
                                 type="reset"
                                 className="btn btn-secondary mr-2"
                                 onClick={onDismiss}
-                                disabled={!value.isValid || formControlProps.disabled}
+                                disabled={formControlProps.disabled}
                             >
                                 Cancel
                             </button>
                         )}
-                        <button type="submit" className="btn btn-success" disabled={formControlProps.disabled}>
+                        <button
+                            type="submit"
+                            className="btn btn-success"
+                            disabled={!value.isValid || formControlProps.disabled}
+                        >
                             {isLoading ? <LoadingSpinner className="icon-inline" /> : buttonText}
                         </button>
                         <button
