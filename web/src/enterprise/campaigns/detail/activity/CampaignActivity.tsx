@@ -8,7 +8,7 @@ import { CampaignBurndownChart } from '../burndownChart/CampaignBurndownChart'
 import { CampaignTimeline } from '../timeline/CampaignTimeline'
 
 interface Props extends ExtensionsControllerProps {
-    campaign: Pick<GQL.ICampaign, 'id'>
+    campaign: Pick<GQL.ICampaign, 'id' | 'url'>
 
     className?: string
     history: H.History

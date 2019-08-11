@@ -3,11 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { CampaignTemplate, CampaignTemplateComponentContext } from '.'
 import { pluralize } from '../../../../../../../shared/src/util/strings'
 import { isDefined } from '../../../../../../../shared/src/util/types'
-import {
-    appendToDiagnosticQuery,
-    ParsedDiagnosticQuery,
-    parseDiagnosticQuery,
-} from '../../../../checks/detail/diagnostics/diagnosticQuery'
+import { ParsedDiagnosticQuery, parseDiagnosticQuery } from '../../../../checks/detail/diagnostics/diagnosticQuery'
 import { RuleDefinition } from '../../../../rules/types'
 import { CampaignFormFiltersFormControl } from '../CampaignFormFiltersFormControl'
 

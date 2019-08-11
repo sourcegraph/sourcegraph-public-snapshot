@@ -67,6 +67,7 @@ mutation CreatePullRequest($input: CreatePullRequestInput!) {
     createPullRequest(input: $input) {
         pullRequest {
 `+githubIssueOrPullRequestCommonQuery+`
+`+githubPullRequestQuery+`
         }
     }
 }
@@ -98,6 +99,7 @@ query GetPullRequest($repositoryId: ID!, $headRefName: String!) {
             pullRequests(first: 1, headRefName: $headRefName)  {
                 nodes {
 `+githubIssueOrPullRequestCommonQuery+`
+`+githubPullRequestQuery+`
                 }
             }
         }

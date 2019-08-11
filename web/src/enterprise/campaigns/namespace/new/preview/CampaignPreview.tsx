@@ -6,6 +6,7 @@ import { ExtensionsControllerProps } from '../../../../../../../shared/src/exten
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../../../shared/src/platform/context'
 import { isErrorLike } from '../../../../../../../shared/src/util/errors'
+import { parseRepoURI } from '../../../../../../../shared/src/util/url'
 import { DiagnosticListByResource } from '../../../../../diagnostics/list/byResource/DiagnosticListByResource'
 import { FileDiffNode } from '../../../../../repo/compare/FileDiffNode'
 import { ThemeProps } from '../../../../../theme'
@@ -88,7 +89,12 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                             <FileDiffNode
                                                 key={`${i}:${j}`}
                                                 {...props}
-                                                node={d}
+                                                // TODO!(sqs): hack dont show full uri in diff header
+                                                node={{
+                                                    ...d,
+                                                    oldPath: parseRepoURI(d.oldPath!).filePath!,
+                                                    newPath: parseRepoURI(d.newPath!).filePath!,
+                                                }}
                                                 base={{
                                                     repoName: c.baseRepository.name,
                                                     repoID: c.baseRepository.id,
@@ -116,7 +122,6 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                             ...d.data,
                                             ...toDiagnostic(d.data),
                                         }))}
-                                        className="card-body"
                                     />
                                 </div>
                             </>

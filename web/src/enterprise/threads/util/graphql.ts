@@ -9,6 +9,10 @@ export const ThreadFragment = gql`
         state
         kind
         url
+        externalURLs {
+            url
+            serviceType
+        }
         repository {
             name
         }

@@ -23,28 +23,27 @@ func (GraphQLResolver) AddDiagnosticsToThread(ctx context.Context, arg *graphqlb
 
 	ids := make([]int64, len(arg.RawDiagnostics))
 	for i, rawDiagnostic := range arg.RawDiagnostics {
-		const dummytype = "TYPE TODO!(sqs)"
+		var d diagnostics.GQLDiagnostic
+		if err := json.Unmarshal([]byte(rawDiagnostic), &d); err != nil {
+			return nil, err
+		}
 		id, err := (dbThreadDiagnosticEdges{}).Create(ctx, dbThreadDiagnostic{
 			ThreadID: threadID,
-			Type:     dummytype,
-			Data:     json.RawMessage(rawDiagnostic),
+			Type:     d.Type_,
+			Data:     d.Data_,
 		})
 		if err != nil {
 			return nil, err
 		}
 		ids[i] = id
 
-		jsonData, err := json.Marshal(rawDiagnostic)
-		if err != nil {
-			return nil, err
-		}
 		if err := events.CreateEvent(ctx, nil, events.CreationData{
 			Type: eventTypeAddDiagnosticToThread,
 			Objects: events.Objects{
 				Thread:               threadID,
 				ThreadDiagnosticEdge: id,
 			},
-			Data: diagnostics.GQLDiagnostic{Type_: dummytype, Data_: json.RawMessage(jsonData)},
+			Data: d,
 		}); err != nil {
 			return nil, err
 		}

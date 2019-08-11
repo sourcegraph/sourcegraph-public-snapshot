@@ -1,6 +1,7 @@
 import { NotificationType } from '@sourcegraph/extension-api-classes'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
+import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import React, { useCallback } from 'react'
 import { Link } from 'react-router-dom'
@@ -32,7 +33,7 @@ const removeThreadsFromCampaign = (input: GQL.IRemoveThreadsFromCampaignOnMutati
 
 interface Props extends ExtensionsControllerNotificationProps {
     campaign: Pick<GQL.ICampaign, 'id'>
-    thread: Pick<GQL.IThread, 'id' | 'repository' | 'title' | 'url'> & ThreadStateFields
+    thread: Pick<GQL.IThread, 'id' | 'repository' | 'title' | 'url' | 'externalURLs'> & ThreadStateFields
     onUpdate: () => void
 }
 
@@ -81,10 +82,18 @@ export const CampaignThreadListItem: React.FunctionComponent<Props> = ({
             ) : (
                 <span className="badge badge-success mr-2">Approved</span>
             )}
-            {thread.externalURL && (
-                <a href={thread.externalURL}>
-                    <GithubCircleIcon className="icon-inline mr-1" />
-                </a>
+            {thread.externalURLs && thread.externalURLs.length > 0 && (
+                <ul className="list-inline">
+                    {thread.externalURLs.map(({ url, serviceType }, i) => (
+                        <a key={i} href={url} target="_blank">
+                            {serviceType === 'github' /* TODO!(sqs) un-hardcode */ ? (
+                                <GithubCircleIcon className="icon-inline mr-1" />
+                            ) : (
+                                <ExternalLinkIcon className="icon-inline mr-1" />
+                            )}
+                        </a>
+                    ))}
+                </ul>
             )}
             <button
                 className="btn btn-link btn-sm p-1"

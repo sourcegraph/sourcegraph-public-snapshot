@@ -39,7 +39,15 @@ func (GraphQLResolver) CreateThread(ctx context.Context, arg *graphqlbackend.Cre
 	if err != nil {
 		return nil, err
 	}
-	return newGQLThread(thread), nil
+	gqlThread := newGQLThread(thread)
+
+	if arg.Input.RawDiagnostics != nil {
+		if _, err := graphqlbackend.ThreadDiagnostics.AddDiagnosticsToThread(ctx, &graphqlbackend.AddDiagnosticsToThreadArgs{Thread: gqlThread.ID(), RawDiagnostics: *arg.Input.RawDiagnostics}); err != nil {
+			return nil, err
+		}
+	}
+
+	return gqlThread, nil
 }
 
 func (GraphQLResolver) UpdateThread(ctx context.Context, arg *graphqlbackend.UpdateThreadArgs) (graphqlbackend.Thread, error) {

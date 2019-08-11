@@ -4308,6 +4308,9 @@ input CreateThreadInput {
 
     # The head ref of the thread.
     headRef: String
+
+    # Diagnostics to associate with the thread.
+    rawDiagnostics: [String!]
 }
 
 # Input arguments for updating a thread.
@@ -4422,6 +4425,9 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
 
     # The URL to this thread on Sourcegraph.
     url: String!
+
+    # The URLs to this thread on external services associated with it.
+    externalURLs: [ExternalLink!]!
 
     # The actor who authored the thread.
     author: Actor

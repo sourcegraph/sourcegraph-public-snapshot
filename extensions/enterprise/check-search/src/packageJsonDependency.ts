@@ -3,6 +3,7 @@ import { flatten, sortedUniq } from 'lodash'
 import { Subscription, Observable, of, Unsubscribable, from } from 'rxjs'
 import { map, switchMap, startWith, toArray, filter } from 'rxjs/operators'
 import { settingsObservable, memoizedFindTextInFiles } from './util'
+import { propertyIsDefined } from '../../../../shared/src/util/types'
 
 const REMOVE_COMMAND = 'packageJsonDependency.remove'
 
@@ -47,14 +48,13 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                     {
                         repositories: {
                             includes: [],
-                            excludes: ['hackathon'],
                             type: 'regexp',
                         },
                         files: {
                             includes: ['(^|/)package.json$'],
                             type: 'regexp',
                         },
-                        maxResults: 7,
+                        maxResults: 50,
                     }
                 )
             )
@@ -124,7 +124,9 @@ function parseDependencies(text: string): (Dependency & { range: sourcegraph.Ran
             ...Object.keys(data.devDependencies || {}),
             ...Object.keys(data.peerDependencies || {}),
         ])
-        return depNames.map(name => ({ name, range: findDependencyMatchRange(text, name) }))
+        return depNames
+            .map(name => ({ name, range: findDependencyMatchRange(text, name) }))
+            .filter(propertyIsDefined('range'))
     } catch (err) {
         // TODO!(sqs): better error handling
         console.error('Error parsing package.json:', err)
@@ -132,15 +134,16 @@ function parseDependencies(text: string): (Dependency & { range: sourcegraph.Ran
     }
 }
 
-function findDependencyMatchRange(text: string, depName: string): sourcegraph.Range {
+function findDependencyMatchRange(text: string, depName: string): sourcegraph.Range | null {
     for (const [i, line] of text.split('\n').entries()) {
-        const pat = new RegExp(`"${depName}"`, 'g')
+        const pat = new RegExp(`"${depName}":`, 'g')
         const match = pat.exec(line)
         if (match) {
             return new sourcegraph.Range(i, match.index, i, match.index + match[0].length)
         }
     }
-    throw new Error(`dependency ${depName} not found in package.json`)
+    return null
+    // throw new Error(`dependency ${depName} not found in package.json`)
 }
 
 function isProviderDiagnostic(diag: sourcegraph.Diagnostic): boolean {

@@ -14,7 +14,7 @@ interface Props {
 }
 
 export const ThreadDiagnosticEdgeEventTimelineItem: React.FunctionComponent<Props> = ({ event, className = '' }) => {
-    const diagnostic: Diagnostic = JSON.parse(event.diagnostic.data)
+    const diagnostic: Diagnostic = event.diagnostic.data
     return (
         <TimelineItem icon={AlertCircleOutlineIcon} className={`${className}`} event={event}>
             <ActorLink actor={event.actor} /> {event.__typename === 'AddDiagnosticToThreadEvent' ? 'added' : 'removed'}{' '}

@@ -12,12 +12,18 @@ interface Props extends ExtensionsControllerProps {
     diagnostics: (Diagnostic | sourcegraph.Diagnostic)[]
 
     className?: string
+    itemClassName?: string
 }
 
 /**
  * A list of diagnostics, grouped by resource URI.
  */
-export const DiagnosticListByResource: React.FunctionComponent<Props> = ({ diagnostics, className = '', ...props }) => {
+export const DiagnosticListByResource: React.FunctionComponent<Props> = ({
+    diagnostics,
+    className = '',
+    itemClassName = 'py-2',
+    ...props
+}) => {
     const byPath = useMemo(() => {
         const map = new Map<string, (Diagnostic | sourcegraph.Diagnostic)[]>()
         for (const diagnostic of diagnostics) {
@@ -34,11 +40,11 @@ export const DiagnosticListByResource: React.FunctionComponent<Props> = ({ diagn
 
     return byPath.length > 0 ? (
         <div className={className}>
-            <ul className="list-unstyled">
+            <ul className="list-group list-group-flush">
                 {byPath.map(([uri, diagnostics], i) => {
                     const parsedURI = parseRepoURI(uri)
                     return (
-                        <li key={i}>
+                        <li key={i} className="list-group-item">
                             <LinkOrSpan
                                 to={toPrettyBlobURL({
                                     ...parsedURI,
@@ -58,10 +64,14 @@ export const DiagnosticListByResource: React.FunctionComponent<Props> = ({ diagn
                                     displayRepoName(parsedURI.repoName)
                                 )}
                             </LinkOrSpan>
-                            <ul className="list-unstyled ml-4">
+                            <ul className="list-unstyled ml-4 mb-3">
                                 {diagnostics.map((diagnostic, j) => (
                                     <li key={j}>
-                                        <DiagnosticListItem {...props} diagnostic={diagnostic} />
+                                        <DiagnosticListItem
+                                            {...props}
+                                            diagnostic={diagnostic}
+                                            className={itemClassName}
+                                        />
                                     </li>
                                 ))}
                             </ul>

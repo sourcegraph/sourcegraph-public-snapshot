@@ -2,6 +2,7 @@ package threads
 
 import (
 	"context"
+	"encoding/json"
 	"path"
 	"strconv"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	commentobjectdb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
@@ -170,6 +172,15 @@ func (v *gqlThread) URL(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return path.Join(repository.URL(), "-", "threads", v.Number()), nil
+}
+
+func (v *gqlThread) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
+	// TODO!(sqs): make non-github-specific
+	var githubData struct{ URL string }
+	if err := json.Unmarshal(v.db.ExternalMetadata, &githubData); err != nil || githubData.URL == "" {
+		return nil, nil
+	}
+	return []*externallink.Resolver{externallink.NewResolver(githubData.URL, "github")}, nil
 }
 
 func (v *gqlThread) RepositoryComparison(ctx context.Context) (graphqlbackend.RepositoryComparison, error) {

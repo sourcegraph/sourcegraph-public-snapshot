@@ -7,6 +7,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
@@ -112,11 +113,12 @@ type ThreadConnectionArgs struct {
 }
 
 type CreateThreadInput struct {
-	Repository graphql.ID
-	Title      string
-	Body       *string
-	BaseRef    *string
-	HeadRef    *string
+	Repository     graphql.ID
+	Title          string
+	Body           *string
+	BaseRef        *string
+	HeadRef        *string
+	RawDiagnostics *[]string
 }
 
 type CreateThreadArgs struct {
@@ -170,6 +172,7 @@ type Thread interface {
 	ruleContainer
 	Kind(context.Context) (ThreadKind, error)
 	URL(context.Context) (string, error)
+	ExternalURLs(context.Context) ([]*externallink.Resolver, error)
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)
 	RepositoryComparison(context.Context) (RepositoryComparison, error)
 	CampaignNode

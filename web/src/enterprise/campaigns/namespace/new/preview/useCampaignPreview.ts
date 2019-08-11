@@ -116,7 +116,6 @@ export const useCampaignPreview = (
     const inputSubject = useMemo(() => new Subject<CreateCampaignInputWithoutExtensionData>(), [])
     const [isLoading, setIsLoading] = useState(true)
     const [result, setResult] = useState<Result>(LOADING)
-    useEffect(() => inputSubject.next(input), [input, inputSubject])
     useEffect(() => {
         const subscription = merge(
             inputSubject.pipe(mapTo(LOADING)),
@@ -177,5 +176,6 @@ export const useCampaignPreview = (
         )
         return () => subscription.unsubscribe()
     }, [extensionsController, inputSubject])
+    useEffect(() => inputSubject.next(input), [input, inputSubject])
     return [result, isLoading]
 }

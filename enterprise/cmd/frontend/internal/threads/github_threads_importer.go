@@ -164,6 +164,14 @@ comments(first: 10) {
 	}
 }
 `
+
+	githubPullRequestQuery = `
+baseRefName
+baseRefOid
+headRefName
+headRefOid
+isCrossRepository
+`
 )
 
 func listGitHubRepositoryIssuesAndPullRequests(ctx context.Context, client *github.Client, githubRepositoryID graphql.ID) (results []*githubIssueOrPullRequest, err error) {
@@ -186,11 +194,7 @@ query ImportGitHubRepositoryIssuesAndPullRequests($repository: ID!) {
 			pullRequests(first: 100, orderBy: { field: UPDATED_AT, direction: DESC }) {
 				nodes {
 `+githubIssueOrPullRequestCommonQuery+`
-					baseRefName
-					baseRefOid
-					headRefName
-					headRefOid
-					isCrossRepository
+`+githubPullRequestQuery+`
 				}
 			}
 		}

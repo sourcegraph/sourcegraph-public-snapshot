@@ -24,19 +24,20 @@ func (extdata) parseDiagnostics(d graphqlbackend.CampaignExtensionData) ([]graph
 }
 
 type diagnosticInfo struct {
-	Resource    string
-	ResourceURI gituri.URI
-	Message     string
+	Resource      string
+	ResourceURI   gituri.URI
+	Message       string
+	RawDiagnostic diagnostics.GQLDiagnostic
 }
 
 func (extdata) parseDiagnosticInfos(d graphqlbackend.CampaignExtensionData) ([]diagnosticInfo, error) {
-	diagnostics, err := extdata{}.parseDiagnostics(d)
+	diags, err := extdata{}.parseDiagnostics(d)
 	if err != nil {
 		return nil, err
 	}
 
-	dis := make([]diagnosticInfo, len(diagnostics))
-	for i, diagnostic := range diagnostics {
+	dis := make([]diagnosticInfo, len(diags))
+	for i, diagnostic := range diags {
 		if err := json.Unmarshal([]byte(diagnostic.Data().Value.(json.RawMessage)), &dis[i]); err != nil {
 			return nil, err
 		}
@@ -45,6 +46,7 @@ func (extdata) parseDiagnosticInfos(d graphqlbackend.CampaignExtensionData) ([]d
 			return nil, err
 		}
 		dis[i].ResourceURI = *uri
+		dis[i].RawDiagnostic = diagnostic.(diagnostics.GQLDiagnostic)
 	}
 	return dis, nil
 }

@@ -11,8 +11,8 @@ import { mutateGraphQL } from '../../../backend/graphql'
 const forceRefreshCampaign = (args: GQL.IForceRefreshCampaignOnMutationArguments): Promise<void> =>
     mutateGraphQL(
         gql`
-            mutation ForceRefreshCampaign($campaign: ID!) {
-                forceRefreshCampaign(campaign: $campaign) {
+            mutation ForceRefreshCampaign($campaign: ID!, $extensionData: CampaignExtensionData!) {
+                forceRefreshCampaign(campaign: $campaign, extensionData: $extensionData) {
                     id
                 }
             }
@@ -48,7 +48,11 @@ export const CampaignForceRefreshButton: React.FunctionComponent<Props> = ({
             e.preventDefault()
             setIsLoading(true)
             try {
-                await forceRefreshCampaign({ campaign: campaign.id })
+                await forceRefreshCampaign({
+                    campaign: campaign.id,
+                    // TODO!(sqs): support refreshing
+                    extensionData: { rawDiagnostics: [], rawFileDiffs: [] },
+                })
                 setIsLoading(false)
                 if (onComplete) {
                     onComplete()

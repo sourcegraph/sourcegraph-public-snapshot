@@ -15,6 +15,7 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { numberWithCommas } from '../../../../../../shared/src/util/strings'
+import { DismissibleAlert } from '../../../../components/DismissibleAlert'
 import { useCampaignBurndownChart } from './useCampaignBurndownChart'
 
 interface Props extends ExtensionsControllerProps {
@@ -44,6 +45,10 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign
         <div className={`campaign-burndown-chart ${className}`}>
             {isErrorLike(burndownChart) ? (
                 <div className="alert alert-danger">Error generating burndown chart: {burndownChart.message}</div>
+            ) : burndownChart !== LOADING && burndownChart.dates.length <= 1 ? (
+                <DismissibleAlert partialStorageKey="CampaignBurndownChart.insufficientData" className="alert-info">
+                    Burndown chart will be shown when there is more than 1 day of data.
+                </DismissibleAlert>
             ) : (
                 <ResponsiveContainer width="100%" height={300}>
                     <ComposedChart

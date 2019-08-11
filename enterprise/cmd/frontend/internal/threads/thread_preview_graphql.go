@@ -2,10 +2,12 @@ package threads
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/diagnostics"
 )
 
 func NewGQLThreadPreview(input graphqlbackend.CreateThreadInput, repoComparison graphqlbackend.RepositoryComparison) graphqlbackend.ThreadPreview {
@@ -43,7 +45,18 @@ func (v *gqlThreadPreview) BodyText() string { return comments.ToBodyText(v.Body
 func (v *gqlThreadPreview) BodyHTML() string { return comments.ToBodyHTML(v.Body()) }
 
 func (v *gqlThreadPreview) Diagnostics(context.Context, *graphqlutil.ConnectionArgs) (graphqlbackend.DiagnosticConnection, error) {
-	panic("TODO!(sqs)")
+	var diags []graphqlbackend.Diagnostic
+	if v.input.RawDiagnostics != nil {
+		diags = make([]graphqlbackend.Diagnostic, len(*v.input.RawDiagnostics))
+		for i, rd := range *v.input.RawDiagnostics {
+			var d diagnostics.GQLDiagnostic
+			if err := json.Unmarshal([]byte(rd), &d); err != nil {
+				return nil, err
+			}
+			diags[i] = d
+		}
+	}
+	return diagnostics.ConstConnection(diags), nil
 }
 
 func (v *gqlThreadPreview) Kind(ctx context.Context) (graphqlbackend.ThreadKind, error) {

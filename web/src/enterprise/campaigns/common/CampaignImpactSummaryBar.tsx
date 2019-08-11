@@ -68,7 +68,7 @@ export const CampaignImpactSummaryBar: React.FunctionComponent<Props> = ({ campa
     if (impactSummary === LOADING || isErrorLike(impactSummary)) {
         return null
     }
-    return <CampaignImpactSummaryBarNoFetch campaign={campaign} impactSummary={impactSummary} />
+    return <CampaignImpactSummaryBarNoFetch campaign={campaign} impactSummary={impactSummary} className={className} />
 }
 
 export const CampaignImpactSummaryBarNoFetch: React.FunctionComponent<
