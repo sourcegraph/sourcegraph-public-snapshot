@@ -41,7 +41,7 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                     <div className="alert alert-danger">Error: {campaignPreview.message}</div>
                 ) : (
                     // tslint:disable-next-line: jsx-ban-props
-                    <div style={isLoading ? { opacity: 0.7, cursor: 'wait' } : undefined}>
+                    <div style={isLoading ? { opacity: 0.5, cursor: 'wait' } : undefined}>
                         {campaignPreview.repositoryComparisons.length === 0 &&
                         campaignPreview.diagnostics.nodes.length === 0 ? (
                             <p className="text-muted">No changes</p>

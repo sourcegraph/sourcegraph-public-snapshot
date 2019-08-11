@@ -2,6 +2,7 @@ import NpmIcon from 'mdi-react/NpmIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { CampaignTemplate, CampaignTemplateComponentContext } from '.'
 import { pluralize } from '../../../../../../../shared/src/util/strings'
+import { isDefined } from '../../../../../../../shared/src/util/types'
 import { RuleDefinition } from '../../../../rules/types'
 
 interface Props extends CampaignTemplateComponentContext {}
@@ -24,6 +25,16 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
         setVersionRange(e.currentTarget.value)
     }, [])
 
+    const [createChangesets, setCreateChangesets] = useState(true)
+    const onCreateChangesetsChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(e => {
+        setCreateChangesets(e.currentTarget.checked)
+    }, [])
+
+    const [showWarnings, setShowWarnings] = useState(true)
+    const onShowWarningsChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(e => {
+        setShowWarnings(e.currentTarget.checked)
+    }, [])
+
     useEffect(() => {
         const packageNameOrPlaceholder = packageName || '<package>'
         onChange({
@@ -33,22 +44,37 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
             rules: packageName
                 ? [
                       // TODO!(sqs): hack
-                      {
-                          name: 'Find package.json dependencies entries',
-                          // tslint:disable-next-line: no-object-literal-type-assertion
-                          definition: JSON.stringify({
-                              type: 'DiagnosticRule',
-                              query: {
-                                  type: 'packageJsonDependency',
-                                  tag: [packageNameOrPlaceholder],
-                              },
-                              action: 'packageJsonDependency.remove',
-                          } as RuleDefinition),
-                      },
-                  ]
+                      createChangesets
+                          ? {
+                                name: 'Create changesets to remove dependency from package.json',
+                                // tslint:disable-next-line: no-object-literal-type-assertion
+                                definition: JSON.stringify({
+                                    type: 'DiagnosticRule',
+                                    query: {
+                                        type: 'packageJsonDependency',
+                                        tag: [packageNameOrPlaceholder],
+                                    },
+                                    action: 'packageJsonDependency.remove',
+                                } as RuleDefinition),
+                            }
+                          : undefined,
+                      showWarnings
+                          ? {
+                                name: 'Show warnings on all active branches',
+                                // tslint:disable-next-line: no-object-literal-type-assertion
+                                definition: JSON.stringify({
+                                    type: 'DiagnosticRule',
+                                    query: {
+                                        type: 'packageJsonDependency',
+                                        tag: [packageNameOrPlaceholder],
+                                    },
+                                } as RuleDefinition),
+                            }
+                          : undefined,
+                  ].filter(isDefined)
                 : [],
         })
-    }, [onChange, packageName, versionRange])
+    }, [createChangesets, onChange, packageName, showWarnings, versionRange])
 
     return (
         <>
@@ -93,6 +119,35 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                     </a>{' '}
                     (<code>{ALL_VERSION_RANGE}</code> matches all versions)
                 </p>
+            </div>
+            <div className="form-group">
+                <label>Options</label>
+                <ul className="list-unstyled">
+                    <li>
+                        <label className="d-flex align-items-center">
+                            <input
+                                type="checkbox"
+                                className="form-check"
+                                checked={createChangesets}
+                                onChange={onCreateChangesetsChange}
+                                disabled={disabled}
+                            />
+                            Create changesets with dependency removed from package.json
+                        </label>
+                    </li>
+                    <li>
+                        <label className="d-flex align-items-center">
+                            <input
+                                type="checkbox"
+                                className="form-check"
+                                checked={showWarnings}
+                                onChange={onShowWarningsChange}
+                                disabled={disabled}
+                            />
+                            Show warnings on all active branches
+                        </label>
+                    </li>
+                </ul>
             </div>
         </>
     )

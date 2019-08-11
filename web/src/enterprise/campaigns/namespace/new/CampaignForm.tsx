@@ -138,7 +138,7 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
                         </>
                     )}
                     <CampaignFormCommonFields {...formControlProps} className="mt-4" />
-                    <div className="form-group mb-md-0 col-md-3 text-right">
+                    <div className="form-group text-right">
                         {onDismiss && (
                             <button
                                 type="reset"
@@ -152,21 +152,19 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
                         <button type="submit" className="btn btn-success" disabled={formControlProps.disabled}>
                             {isLoading ? <LoadingSpinner className="icon-inline" /> : buttonText}
                         </button>
-                    </div>
-                    <div className="form-group">
                         <button
                             type="button"
-                            className="btn btn-sm btn-link px-0"
+                            className="btn btn-sm btn-link ml-2"
                             onClick={toggleIsCreateCampaignInputVisible}
                         >
                             {isCreateCampaignInputVisible ? 'Hide' : 'Show'} JSON
                         </button>
-                        {isCreateCampaignInputVisible && (
-                            <pre className="small border p-2 overflow-auto">
-                                <code>{JSON.stringify(value, null, 2)}</code>
-                            </pre>
-                        )}
                     </div>
+                    {isCreateCampaignInputVisible && (
+                        <pre className="small mt-4 border p-2 overflow-auto">
+                            <code>{JSON.stringify(value, null, 2)}</code>
+                        </pre>
+                    )}
                 </>
             )}
         </Form>

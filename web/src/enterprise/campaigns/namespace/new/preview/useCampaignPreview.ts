@@ -158,7 +158,10 @@ const getDiagnosticsAndFileDiffs = (
                     }))
                     .filter(propertyIsDefined('actionEditCommand'))
             )
-            return { diagnostics: diagnosticsAndActions.map(({ diagnostic }) => diagnostic), fileDiffs }
+            return {
+                diagnostics: diagnosticsAndActions.filter(({ action }) => !action).map(({ diagnostic }) => diagnostic),
+                fileDiffs,
+            }
         })
     )
 }

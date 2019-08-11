@@ -31,6 +31,10 @@
     }
 }
 
+.form-check {
+    margin-right: map-get($spacers, 2);
+}
+
 .form-group {
     margin-bottom: map-get($spacers, 3);
 }
