@@ -63,7 +63,6 @@ func githubIssueOrPullRequestToThread(v *githubIssueOrPullRequest) (*dbThread, c
 	thread := &dbThread{
 		Title:      v.Title,
 		State:      v.State,
-		IsPreview:  false,
 		CreatedAt:  v.CreatedAt,
 		UpdatedAt:  v.UpdatedAt,
 		BaseRef:    v.BaseRefName,

@@ -25,7 +25,6 @@ type dbThread struct {
 	RepositoryID api.RepoID // the repository associated with this thread
 	Title        string
 	State        string
-	IsPreview    bool
 
 	PrimaryCommentID int64
 	CreatedAt        time.Time
@@ -49,7 +48,7 @@ var errThreadNotFound = errors.New("thread not found")
 
 type dbThreads struct{}
 
-const SelectColumns = "id, repository_id, title, state, is_preview, primary_comment_id, created_at, updated_at, base_ref, base_ref_oid, head_repository_id, head_ref, head_ref_oid, imported_from_external_service_id, external_id, external_metadata"
+const SelectColumns = "id, repository_id, title, state, primary_comment_id, created_at, updated_at, base_ref, base_ref_oid, head_repository_id, head_ref, head_ref_oid, imported_from_external_service_id, external_id, external_metadata"
 
 // Create creates a thread. The thread argument's (Thread).ID field is ignored. The new thread is
 // returned.
@@ -77,7 +76,6 @@ func (dbThreads) Create(ctx context.Context, tx *sql.Tx, thread *dbThread, comme
 			thread.RepositoryID,
 			thread.Title,
 			thread.State,
-			thread.IsPreview,
 			commentID,
 			nowIfZeroTime(thread.CreatedAt),
 			nowIfZeroTime(thread.UpdatedAt),
@@ -104,11 +102,10 @@ func (dbThreads) Create(ctx context.Context, tx *sql.Tx, thread *dbThread, comme
 }
 
 type dbThreadUpdate struct {
-	Title     *string
-	State     *string
-	IsPreview *bool
-	BaseRef   *string
-	HeadRef   *string
+	Title   *string
+	State   *string
+	BaseRef *string
+	HeadRef *string
 }
 
 // Update updates a thread given its ID.
@@ -123,9 +120,6 @@ func (s dbThreads) Update(ctx context.Context, id int64, update dbThreadUpdate) 
 	}
 	if update.State != nil {
 		setFields = append(setFields, sqlf.Sprintf("state=%s", *update.State))
-	}
-	if update.IsPreview != nil {
-		setFields = append(setFields, sqlf.Sprintf("is_preview=%s", *update.IsPreview))
 	}
 	if update.BaseRef != nil {
 		setFields = append(setFields, sqlf.Sprintf("base_ref=%s", *update.BaseRef))
@@ -253,7 +247,6 @@ func (dbThreads) scanRow(row interface {
 		&t.RepositoryID,
 		&t.Title,
 		&t.State,
-		&t.IsPreview,
 		&t.PrimaryCommentID,
 		&t.CreatedAt,
 		&t.UpdatedAt,

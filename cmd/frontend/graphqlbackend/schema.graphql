@@ -382,12 +382,6 @@ type Mutation {
     # Update a thread. Returns the updated thread.
     updateThread(input: UpdateThreadInput!): Thread!
 
-    # Publish a thread that was created as a preview. If the thread contains code changes, this will
-    # result in the head branch and changeset being created on the associated upstream repository.
-    # If the thread contains diagnostics, this will result in an issue being created on the upstream
-    # repository. The updated thread is returned.
-    publishPreviewThread(thread: ID!): Thread!
-
     # Delete a thread.
     deleteThread(thread: ID!): EmptyResponse
 
@@ -411,10 +405,6 @@ type Mutation {
 
     # Update a campaign. The updated campaign is returned.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
-
-    # Publish a campaign that was created as a preview. This will result in branches and changesets
-    # being created on all affected repositories. The updated campaign is returned.
-    publishPreviewCampaign(campaign: ID!): Campaign!
 
     # Force-refresh a campaign, including the external states of all of the campaign's threads.
     # Campaigns are automatically refreshed on a regular basis, and this mutation should not usually
@@ -1049,8 +1039,7 @@ type Query {
         object: ID
     ): CampaignConnection!
 
-    # A preview of a campaign. Unlike Mutation.createCampaign with the preview argument set to true,
-    # the campaign is not persisted.
+    # A preview of a campaign. The campaign preview is not persisted.
     campaignPreview(input: CampaignPreviewInput!): CampaignPreview!
 
     # A rule container by ID.
@@ -4321,9 +4310,6 @@ input CreateThreadInput {
     # The body of the thread.
     body: String
 
-    # Whether the thread is a preview.
-    preview: Boolean
-
     # The base ref of the thread.
     baseRef: String
 
@@ -4434,9 +4420,6 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
 
     # The state of this thread.
     state: ThreadState!
-
-    # Whether this thread is a preview.
-    isPreview: Boolean!
 
     # The base ref of the thread.
     baseRef: String
@@ -4621,9 +4604,6 @@ input CreateCampaignInput {
     # The description of the campaign as Markdown.
     body: String
 
-    # Whether the campaign is a preview.
-    preview: Boolean
-
     # Rules to create in the campaign.
     rules: [NewRuleInput!]
 }
@@ -4715,11 +4695,6 @@ type Campaign implements Node & Comment & Commentable & RuleContainer {
 
     # The body as HTML.
     bodyHTML: String!
-
-    # Whether this campaign is a preview.
-    #
-    # TODO!(sqs): clarify how this differs from CampaignPreview
-    isPreview: Boolean!
 
     # The actor who authored the comment.
     author: Actor

@@ -78,13 +78,6 @@ func (r schemaResolver) UpdateThread(ctx context.Context, arg *UpdateThreadArgs)
 	return Threads.UpdateThread(ctx, arg)
 }
 
-func (r schemaResolver) PublishPreviewThread(ctx context.Context, arg *PublishPreviewThreadArgs) (Thread, error) {
-	if Threads == nil {
-		return nil, errThreadsNotImplemented
-	}
-	return Threads.PublishPreviewThread(ctx, arg)
-}
-
 func (r schemaResolver) DeleteThread(ctx context.Context, arg *DeleteThreadArgs) (*EmptyResponse, error) {
 	if Threads == nil {
 		return nil, errThreadsNotImplemented
@@ -100,7 +93,6 @@ type ThreadsResolver interface {
 	// Mutations
 	CreateThread(context.Context, *CreateThreadArgs) (Thread, error)
 	UpdateThread(context.Context, *UpdateThreadArgs) (Thread, error)
-	PublishPreviewThread(context.Context, *PublishPreviewThreadArgs) (Thread, error)
 	DeleteThread(context.Context, *DeleteThreadArgs) (*EmptyResponse, error)
 
 	// ThreadByID is called by the ThreadByID func but is not in the GraphQL API.
@@ -142,10 +134,6 @@ type UpdateThreadArgs struct {
 	}
 }
 
-type PublishPreviewThreadArgs struct {
-	Thread graphql.ID
-}
-
 type DeleteThreadArgs struct {
 	Thread graphql.ID
 }
@@ -177,7 +165,6 @@ type Thread interface {
 	State() ThreadState
 	BaseRef() *string
 	HeadRef() *string
-	IsPreview() bool
 	hasThreadDiagnostics
 	Updatable
 	commentable

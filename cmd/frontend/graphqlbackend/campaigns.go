@@ -94,13 +94,6 @@ func (r schemaResolver) UpdateCampaign(ctx context.Context, arg *UpdateCampaignA
 	return Campaigns.UpdateCampaign(ctx, arg)
 }
 
-func (r schemaResolver) PublishPreviewCampaign(ctx context.Context, arg *PublishPreviewCampaignArgs) (Campaign, error) {
-	if Campaigns == nil {
-		return nil, errCampaignsNotImplemented
-	}
-	return Campaigns.PublishPreviewCampaign(ctx, arg)
-}
-
 func (r schemaResolver) ForceRefreshCampaign(ctx context.Context, arg *ForceRefreshCampaignArgs) (Campaign, error) {
 	if Campaigns == nil {
 		return nil, errCampaignsNotImplemented
@@ -138,7 +131,6 @@ type CampaignsResolver interface {
 	// Mutations
 	CreateCampaign(context.Context, *CreateCampaignArgs) (Campaign, error)
 	UpdateCampaign(context.Context, *UpdateCampaignArgs) (Campaign, error)
-	PublishPreviewCampaign(context.Context, *PublishPreviewCampaignArgs) (Campaign, error)
 	ForceRefreshCampaign(context.Context, *ForceRefreshCampaignArgs) (Campaign, error)
 	DeleteCampaign(context.Context, *DeleteCampaignArgs) (*EmptyResponse, error)
 	AddThreadsToCampaign(context.Context, *AddRemoveThreadsToFromCampaignArgs) (*EmptyResponse, error)
@@ -193,10 +185,6 @@ type UpdateCampaignArgs struct {
 	}
 }
 
-type PublishPreviewCampaignArgs struct {
-	Campaign graphql.ID
-}
-
 type ForceRefreshCampaignArgs struct {
 	Campaign graphql.ID
 }
@@ -216,7 +204,6 @@ type Campaign interface {
 	ID() graphql.ID
 	Namespace(context.Context) (*NamespaceResolver, error)
 	Name() string
-	IsPreview() bool
 	Updatable
 	commentable
 	ruleContainer

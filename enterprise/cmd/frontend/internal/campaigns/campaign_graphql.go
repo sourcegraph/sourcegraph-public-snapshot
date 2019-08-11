@@ -72,8 +72,6 @@ func (v *gqlCampaign) Namespace(ctx context.Context) (*graphqlbackend.NamespaceR
 
 func (v *gqlCampaign) Name() string { return v.db.Name }
 
-func (v *gqlCampaign) IsPreview() bool { return v.db.IsPreview }
-
 func (v *gqlCampaign) ViewerCanUpdate(ctx context.Context) (bool, error) {
 	return commentobjectdb.ViewerCanUpdate(ctx, v.ID())
 }
@@ -99,13 +97,7 @@ func (v *gqlCampaign) URL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	var preview string
-	if v.db.IsPreview {
-		preview = "preview"
-	}
-
-	return path.Join(namespace.URL(), "campaigns", preview, string(v.ID())), nil
+	return path.Join(namespace.URL(), "campaigns", string(v.ID())), nil
 	//
 	// TODO!(sqs): use global url?
 	// return path.Join("/campaigns", string(v.ID())), nil

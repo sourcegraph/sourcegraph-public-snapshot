@@ -3,7 +3,6 @@ package campaigns
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
@@ -15,7 +14,6 @@ func (GraphQLResolver) CreateCampaign(ctx context.Context, arg *graphqlbackend.C
 	v := &dbCampaign{
 		Name: arg.Input.Name,
 		// TODO!(sqs): description, renamed to body but allow it to be updated here
-		IsPreview: arg.Input.Preview != nil && *arg.Input.Preview,
 	}
 
 	var err error
@@ -64,26 +62,6 @@ func (GraphQLResolver) UpdateCampaign(ctx context.Context, arg *graphqlbackend.U
 	campaign, err := dbCampaigns{}.Update(ctx, l.db.ID, dbCampaignUpdate{
 		Name: arg.Input.Name,
 		// TODO!(sqs): description, renamed to body but allow it to be updated here
-	})
-	if err != nil {
-		return nil, err
-	}
-	return newGQLCampaign(campaign), nil
-}
-
-func (GraphQLResolver) PublishPreviewCampaign(ctx context.Context, arg *graphqlbackend.PublishPreviewCampaignArgs) (graphqlbackend.Campaign, error) {
-	l, err := campaignByID(ctx, arg.Campaign)
-	if err != nil {
-		return nil, err
-	}
-
-	if !l.IsPreview() {
-		return nil, errors.New("campaign has already been published (and is not in preview)")
-	}
-
-	v := false
-	campaign, err := dbCampaigns{}.Update(ctx, l.db.ID, dbCampaignUpdate{
-		IsPreview: &v,
 	})
 	if err != nil {
 		return nil, err

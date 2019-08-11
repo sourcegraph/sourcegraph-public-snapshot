@@ -5,7 +5,6 @@ CREATE TABLE threads (
 	repository_id integer NOT NULL REFERENCES repo(id) ON DELETE CASCADE,
 	title text NOT NULL,
 	state text NOT NULL,
-    is_preview boolean NOT NULL,
 
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
@@ -70,7 +69,6 @@ CREATE TABLE campaigns (
     namespace_user_id integer REFERENCES users(id) ON DELETE CASCADE,
     namespace_org_id integer REFERENCES orgs(id) ON DELETE CASCADE,
 	name text NOT NULL,
-    is_preview boolean NOT NULL DEFAULT false,
 
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now()

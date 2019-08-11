@@ -101,8 +101,6 @@ func (v *gqlThread) State() graphqlbackend.ThreadState {
 	return graphqlbackend.ThreadState(v.db.State)
 }
 
-func (v *gqlThread) IsPreview() bool { return v.db.IsPreview }
-
 func (v *gqlThread) BaseRef() *string {
 	if v.db.BaseRef == "" {
 		return nil

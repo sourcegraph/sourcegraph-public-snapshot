@@ -21,7 +21,6 @@ type dbCampaign struct {
 	NamespaceUserID int32  // the user namespace where this campaign is defined
 	NamespaceOrgID  int32  // the org namespace where this campaign is defined
 	Name            string // the name (case-preserving)
-	IsPreview       bool
 
 	PrimaryCommentID int64
 	CreatedAt        time.Time
@@ -34,7 +33,7 @@ var errCampaignNotFound = errors.New("campaign not found")
 
 type dbCampaigns struct{}
 
-const selectColumns = `id, namespace_user_id, namespace_org_id, name, is_preview, primary_comment_id, created_at, updated_at`
+const selectColumns = `id, namespace_user_id, namespace_org_id, name, primary_comment_id, created_at, updated_at`
 
 // Create creates a campaign. The campaign argument's (Campaign).ID field is ignored. The new
 // campaign is returned.
@@ -52,7 +51,6 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign, comment com
 			nnz.Int32(campaign.NamespaceUserID),
 			nnz.Int32(campaign.NamespaceOrgID),
 			campaign.Name,
-			campaign.IsPreview,
 			commentID,
 		}
 		query := sqlf.Sprintf(
@@ -69,8 +67,7 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign, comment com
 }
 
 type dbCampaignUpdate struct {
-	Name      *string
-	IsPreview *bool
+	Name *string
 }
 
 // Update updates a campaign given its ID.
@@ -82,9 +79,6 @@ func (s dbCampaigns) Update(ctx context.Context, id int64, update dbCampaignUpda
 	var setFields []*sqlf.Query
 	if update.Name != nil {
 		setFields = append(setFields, sqlf.Sprintf("name=%s", *update.Name))
-	}
-	if update.IsPreview != nil {
-		setFields = append(setFields, sqlf.Sprintf("is_preview=%s", *update.IsPreview))
 	}
 
 	if len(setFields) == 0 {
@@ -197,7 +191,6 @@ func (dbCampaigns) scanRow(row interface {
 		nnz.ToInt32(&t.NamespaceUserID),
 		nnz.ToInt32(&t.NamespaceOrgID),
 		&t.Name,
-		&t.IsPreview,
 		&t.PrimaryCommentID,
 		&t.CreatedAt,
 		&t.UpdatedAt,

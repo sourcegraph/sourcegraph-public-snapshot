@@ -3,7 +3,6 @@ package threads
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
@@ -28,8 +27,7 @@ func (GraphQLResolver) CreateThread(ctx context.Context, arg *graphqlbackend.Cre
 		RepositoryID: repo.DBID(),
 		Title:        arg.Input.Title,
 		////TODO!(sqs) ExternalURL:  arg.Input.ExternalURL,
-		State:     string(graphqlbackend.ThreadStateOpen),
-		IsPreview: arg.Input.Preview != nil && *arg.Input.Preview,
+		State: string(graphqlbackend.ThreadStateOpen),
 	}
 	if arg.Input.BaseRef != nil {
 		data.BaseRef = *arg.Input.BaseRef
@@ -54,26 +52,6 @@ func (GraphQLResolver) UpdateThread(ctx context.Context, arg *graphqlbackend.Upd
 		// TODO!(sqs): handle body update
 		BaseRef: arg.Input.BaseRef,
 		HeadRef: arg.Input.HeadRef,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return newGQLThread(thread), nil
-}
-
-func (GraphQLResolver) PublishPreviewThread(ctx context.Context, arg *graphqlbackend.PublishPreviewThreadArgs) (graphqlbackend.Thread, error) {
-	l, err := threadByID(ctx, arg.Thread)
-	if err != nil {
-		return nil, err
-	}
-
-	if !l.IsPreview() {
-		return nil, errors.New("thread has already been published (and is not in preview)")
-	}
-
-	v := false
-	thread, err := dbThreads{}.Update(ctx, l.db.ID, dbThreadUpdate{
-		IsPreview: &v,
 	})
 	if err != nil {
 		return nil, err
