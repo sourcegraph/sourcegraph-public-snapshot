@@ -3,7 +3,9 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { CampaignTemplate, CampaignTemplateComponentContext } from '.'
 import { pluralize } from '../../../../../../../shared/src/util/strings'
 import { isDefined } from '../../../../../../../shared/src/util/types'
+import { ParsedDiagnosticQuery, parseDiagnosticQuery } from '../../../../checks/detail/diagnostics/diagnosticQuery'
 import { RuleDefinition } from '../../../../rules/types'
+import { CampaignFormIncludeRepositoriesFormControl } from '../CampaignFormIncludeRepositoriesFormControl'
 
 interface Props extends CampaignTemplateComponentContext {}
 
@@ -35,8 +37,11 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
         setShowWarnings(e.currentTarget.checked)
     }, [])
 
+    const [includeRepositories, setIncludeRepositories] = useState('')
+
     useEffect(() => {
         const packageNameOrPlaceholder = packageName || '<package>'
+        const commonDiagnosticQuery: ParsedDiagnosticQuery = parseDiagnosticQuery(`repo:${includeRepositories}`)
         onChange({
             isValid: !!packageName,
             name: `Deprecate ${packageNameOrPlaceholder}${
@@ -52,6 +57,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                                 definition: JSON.stringify({
                                     type: 'DiagnosticRule',
                                     query: {
+                                        ...commonDiagnosticQuery,
                                         type: 'packageJsonDependency',
                                         tag: [packageNameOrPlaceholder],
                                     },
@@ -66,6 +72,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                                 definition: JSON.stringify({
                                     type: 'DiagnosticRule',
                                     query: {
+                                        ...commonDiagnosticQuery,
                                         type: 'packageJsonDependency',
                                         tag: [packageNameOrPlaceholder],
                                     },
@@ -75,7 +82,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                   ].filter(isDefined)
                 : [],
         })
-    }, [createChangesets, onChange, packageName, showWarnings, versionRange])
+    }, [createChangesets, includeRepositories, onChange, packageName, showWarnings, versionRange])
 
     return (
         <>
@@ -150,6 +157,11 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                     </li>
                 </ul>
             </div>
+            <CampaignFormIncludeRepositoriesFormControl
+                value={includeRepositories}
+                onChange={setIncludeRepositories}
+                disabled={disabled}
+            />
         </>
     )
 }
