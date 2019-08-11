@@ -3,9 +3,13 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { CampaignTemplate, CampaignTemplateComponentContext } from '.'
 import { pluralize } from '../../../../../../../shared/src/util/strings'
 import { isDefined } from '../../../../../../../shared/src/util/types'
-import { ParsedDiagnosticQuery, parseDiagnosticQuery } from '../../../../checks/detail/diagnostics/diagnosticQuery'
+import {
+    appendToDiagnosticQuery,
+    ParsedDiagnosticQuery,
+    parseDiagnosticQuery,
+} from '../../../../checks/detail/diagnostics/diagnosticQuery'
 import { RuleDefinition } from '../../../../rules/types'
-import { CampaignFormIncludeRepositoriesFormControl } from '../CampaignFormIncludeRepositoriesFormControl'
+import { CampaignFormFiltersFormControl } from '../CampaignFormFiltersFormControl'
 
 interface Props extends CampaignTemplateComponentContext {}
 
@@ -37,17 +41,12 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
         setShowWarnings(e.currentTarget.checked)
     }, [])
 
-    const [includeRepositories, setIncludeRepositories] = useState('')
+    const [filters, setFilters] = useState('')
 
     useEffect(() => {
         const packageNameOrPlaceholder = packageName || '<package>'
-        const commonDiagnosticQuery: ParsedDiagnosticQuery = parseDiagnosticQuery(
-            includeRepositories
-                .split(/[\s,]/g)
-                .filter(s => !!s)
-                .map(repo => `repo:${repo}`)
-                .join(' ')
-        )
+        const diagnosticQuery = (query: string): ParsedDiagnosticQuery =>
+            parseDiagnosticQuery(`${filters}${filters ? ' ' : ''}${query}`)
         onChange({
             isValid: !!packageName,
             name: `Deprecate ${packageNameOrPlaceholder}${
@@ -62,11 +61,9 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                                 // tslint:disable-next-line: no-object-literal-type-assertion
                                 definition: JSON.stringify({
                                     type: 'DiagnosticRule',
-                                    query: {
-                                        ...commonDiagnosticQuery,
-                                        type: 'packageJsonDependency',
-                                        tag: [packageNameOrPlaceholder],
-                                    },
+                                    query: diagnosticQuery(
+                                        `type:packageJsonDependency tag:${packageNameOrPlaceholder}`
+                                    ),
                                     action: 'packageJsonDependency.remove',
                                 } as RuleDefinition),
                             }
@@ -77,18 +74,16 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                                 // tslint:disable-next-line: no-object-literal-type-assertion
                                 definition: JSON.stringify({
                                     type: 'DiagnosticRule',
-                                    query: {
-                                        ...commonDiagnosticQuery,
-                                        type: 'packageJsonDependency',
-                                        tag: [packageNameOrPlaceholder],
-                                    },
+                                    query: diagnosticQuery(
+                                        `type:packageJsonDependency tag:${packageNameOrPlaceholder}`
+                                    ),
                                 } as RuleDefinition),
                             }
                           : undefined,
                   ].filter(isDefined)
                 : [],
         })
-    }, [createChangesets, includeRepositories, onChange, packageName, showWarnings, versionRange])
+    }, [createChangesets, filters, onChange, packageName, showWarnings, versionRange])
 
     return (
         <>
@@ -163,11 +158,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                     </li>
                 </ul>
             </div>
-            <CampaignFormIncludeRepositoriesFormControl
-                value={includeRepositories}
-                onChange={setIncludeRepositories}
-                disabled={disabled}
-            />
+            <CampaignFormFiltersFormControl value={filters} onChange={setFilters} disabled={disabled} />
         </>
     )
 }

@@ -7,11 +7,11 @@ import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { authenticatedUser } from '../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { fetchRepository } from '../../../repo/settings/backend'
+import { createThread } from '../../threads/repository/new/ThreadsNewPage'
 import { FileDiff } from '../../threadsOLD/detail/changes/computeDiff'
 import { GitHubPRLink } from '../../threadsOLD/settings'
 import { addThreadsToCampaign } from '../detail/threads/AddThreadToCampaignDropdownButton'
 import { createCampaign } from '../namespace/new/CampaignsNewPage'
-import { createThread } from '../../threads/repository/new/ThreadsNewPage'
 
 export const FAKE_PROJECT_ID = 'UHJvamVjdDox' // TODO!(sqs)
 

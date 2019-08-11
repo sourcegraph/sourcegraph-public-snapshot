@@ -1,9 +1,28 @@
 import React, { useCallback, useState } from 'react'
+import { map, mapTo } from 'rxjs/operators'
 import { NotificationType } from '../../../../../../shared/src/api/client/services/notifications'
 import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
+import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { mutateGraphQL } from '../../../../backend/graphql'
 import { Form } from '../../../../components/Form'
-import { updateCampaign } from '../../preview/CreateCampaignFromPreviewForm'
+
+export const updateCampaign = (args: GQL.IUpdateCampaignOnMutationArguments): Promise<void> =>
+    mutateGraphQL(
+        gql`
+            mutation UpdateCampaign($input: UpdateCampaignInput!) {
+                updateCampaign(input: $input) {
+                    id
+                }
+            }
+        `,
+        args
+    )
+        .pipe(
+            map(dataOrThrowErrors),
+            mapTo(void 0)
+        )
+        .toPromise()
 
 interface Props extends ExtensionsControllerNotificationProps {
     campaign: Pick<GQL.ICampaign, 'id' | 'name'>

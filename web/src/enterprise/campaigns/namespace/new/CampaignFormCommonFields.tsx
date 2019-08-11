@@ -1,4 +1,6 @@
-import React, { useCallback } from 'react'
+import CloseIcon from 'mdi-react/CloseIcon'
+import PlusIcon from 'mdi-react/PlusIcon'
+import React, { useCallback, useState } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 import { CampaignFormControl } from './CampaignForm'
 
@@ -25,6 +27,19 @@ export const CampaignFormCommonFields: React.FunctionComponent<Props> = ({
         e => onChange({ ...value, body: e.currentTarget.value }),
         [onChange, value]
     )
+    const [rawDueDate, setRawDueDate] = useState<string | null>(null)
+    const onDueDateChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        e => {
+            setRawDueDate(e.currentTarget.value)
+            onChange({
+                ...value,
+                dueDate: e.currentTarget.valueAsDate ? e.currentTarget.valueAsDate.toISOString() : undefined,
+            })
+        },
+        [onChange, value]
+    )
+    const onAddDueDateClick = useCallback(() => setRawDueDate(''), [])
+    const onClearDueDateClick = useCallback(() => setRawDueDate(null), [])
 
     return (
         <div className={className}>
@@ -43,7 +58,7 @@ export const CampaignFormCommonFields: React.FunctionComponent<Props> = ({
                     disabled={disabled}
                 />
             </div>
-            <div className="form-group">
+            <div className="form-group mb-1">
                 <label htmlFor="campaign-form-common-fields__body">Campaign description</label>
                 <TextareaAutosize
                     type="text"
@@ -55,6 +70,33 @@ export const CampaignFormCommonFields: React.FunctionComponent<Props> = ({
                     onChange={onBodyChange}
                     disabled={disabled}
                 />
+            </div>
+            <div className="form-group">
+                {rawDueDate === null ? (
+                    <button type="button" className="btn btn-link pl-0 pr-1" onClick={onAddDueDateClick}>
+                        <PlusIcon className="icon-inline" /> Due date
+                    </button>
+                ) : (
+                    <>
+                        <label htmlFor="campaign-form-common-fields__dueDate">Campaign due date</label>
+                        <div className="input-group">
+                            <input
+                                type="date"
+                                id="campaign-form-common-fields__dueDate"
+                                className="form-control w-auto flex-0"
+                                min="2019-08-11"
+                                value={rawDueDate}
+                                onChange={onDueDateChange}
+                                disabled={disabled}
+                            />
+                            <div className="input-group-append">
+                                <button type="button" className="btn btn-link" onClick={onClearDueDateClick}>
+                                    <CloseIcon className="icon-inline" /> Remove due date
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     )

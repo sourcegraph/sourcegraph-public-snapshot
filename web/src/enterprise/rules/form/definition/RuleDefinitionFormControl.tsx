@@ -1,12 +1,13 @@
-import { applyEdits } from '@sqs/jsonc-parser'
+import { applyEdits, format } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import React, { useCallback } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { Select } from '../../../../components/Select'
 import { parseJSON } from '../../../../settings/configuration'
 import { defaultFormattingOptions } from '../../../../site-admin/configHelpers'
 import { useLocalStorage } from '../../../../util/useLocalStorage'
+import { parseDiagnosticQuery } from '../../../checks/detail/diagnostics/diagnosticQuery'
+import { RuleDefinition } from '../../types'
 
 interface Props {
     /**
@@ -27,18 +28,18 @@ export const RuleDefinitionFormControl: React.FunctionComponent<Props> = ({ valu
     const parsed: RuleDefinition = raw ? parseJSON(raw) : {}
 
     const onPropertyChange = useCallback(
-        (property: keyof RuleDefinition, value: string) => {
+        <P extends keyof RuleDefinition>(property: P, value: RuleDefinition[P]) => {
             onChange(applyEdits(raw, setProperty(raw, [property], value, defaultFormattingOptions)))
         },
         [onChange, raw]
     )
 
-    const onConditionsChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        e => onPropertyChange('conditions', e.currentTarget.value),
+    const onQueryChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        e => onPropertyChange('query', parseDiagnosticQuery(e.currentTarget.value)),
         [onPropertyChange]
     )
 
-    const onActionChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
+    const onActionChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         e => onPropertyChange('action', e.currentTarget.value),
         [onPropertyChange]
     )
@@ -54,25 +55,25 @@ export const RuleDefinitionFormControl: React.FunctionComponent<Props> = ({ valu
     return (
         <>
             <div className="form-group">
-                <label htmlFor="rule-definition-form-control__conditions">Watch for objects matching</label>
+                <label htmlFor="rule-definition-form-control__query">Query</label>
                 <input
                     type="text"
-                    id="rule-definition-form-control__conditions"
+                    id="rule-definition-form-control__query"
                     className="form-control"
                     placeholder="Search query"
-                    value={parsed.conditions || ''}
-                    onChange={onConditionsChange}
+                    value={parsed.query.input}
+                    onChange={onQueryChange}
                 />
             </div>
             <div className="form-group">
-                <label htmlFor="rule-definition-form-control__subject">Action</label>
-                <Select className="form-control w-auto" onChange={onActionChange} value={parsed.action}>
-                    <option value={undefined} disabled={true}>
-                        Select...
-                    </option>
-                    <option value="changeset-fix">Open or update changesets with action: Fix</option>
-                    <option value="add-diagnostics">Add diagnostics to thread</option>
-                </Select>
+                <label htmlFor="rule-definition-form-control__action">Action</label>
+                <input
+                    id="rule-definition-form-control__action"
+                    type="text"
+                    className="form-control"
+                    onChange={onActionChange}
+                    value={parsed.action}
+                />
             </div>
             {isRawVisible ? (
                 <div className="form-group">
@@ -82,7 +83,7 @@ export const RuleDefinitionFormControl: React.FunctionComponent<Props> = ({ valu
                         className="form-control text-monospace small"
                         required={true}
                         minRows={4}
-                        value={raw || '{}'}
+                        value={raw ? applyEdits(raw, format(raw, undefined as any, defaultFormattingOptions)) : '{}'}
                         onChange={onRawChange}
                         readOnly={true}
                     />

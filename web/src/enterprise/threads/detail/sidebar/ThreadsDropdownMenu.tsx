@@ -28,7 +28,7 @@ export const ThreadsDropdownMenu: React.FunctionComponent<Props> = ({ onSelect, 
                     Error loading threads
                 </DropdownItem>
             ) : (
-                threads.nodes.map(thread => (
+                threads.nodes.slice(0, 20 /* TODO!(sqs) hack */).map(thread => (
                     // tslint:disable-next-line: jsx-no-lambda
                     <DropdownItem key={thread.id} onClick={() => onSelect(thread)}>
                         <ThreadStateIcon thread={thread} className="small mr-1" />

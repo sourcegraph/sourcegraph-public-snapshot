@@ -13,6 +13,7 @@ import { CAMPAIGN_TEMPLATES, CampaignTemplate, EMPTY_CAMPAIGN_TEMPLATE_ID } from
 export interface CampaignFormData
     extends Pick<GQL.ICreateCampaignInput, Exclude<keyof GQL.ICreateCampaignInput, 'preview'>> {
     isValid: boolean
+    dueDate?: string
 }
 
 export interface CampaignFormControl {
@@ -140,7 +141,7 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
                         </>
                     )}
                     <CampaignFormCommonFields {...formControlProps} className="mt-4" />
-                    <div className="form-group text-right">
+                    <div className="form-group mt-4">
                         {onDismiss && (
                             <button
                                 type="reset"

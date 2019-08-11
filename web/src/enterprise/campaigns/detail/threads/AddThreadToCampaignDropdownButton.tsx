@@ -63,7 +63,7 @@ export const AddThreadToCampaignDropdownButton: React.FunctionComponent<Props> =
     )
 
     return (
-        <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className={className}>
+        <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className={className} direction="down">
             <DropdownToggle color="" className="btn btn-primary">
                 <PlusBoxIcon className="icon-inline mr-2" /> Add thread
             </DropdownToggle>

@@ -11,13 +11,13 @@ import { HeroPage } from '../../../components/HeroPage'
 import { NamespaceAreaContext } from '../../../namespaces/NamespaceArea'
 import { ThemeProps } from '../../../theme'
 import { CampaignArea } from '../detail/CampaignArea'
-import { CampaignPreviewPage } from '../preview/CampaignPreviewPage'
 import { NamespaceCampaignsListPage } from './list/NamespaceCampaignsListPage'
 import { CampaignsNewPage } from './new/CampaignsNewPage'
 
 export interface NamespaceCampaignsAreaContext
     extends Pick<NamespaceAreaContext, 'namespace'>,
         ExtensionsControllerProps,
+        PlatformContextProps,
         ThemeProps {
     /** The URL to the campaigns area. */
     campaignsURL: string
@@ -78,21 +78,6 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
                     <>
                         {breadcrumbs}
                         <CampaignsNewPage {...context} {...routeComponentProps} />
-                    </>
-                )}
-            />
-            <Route
-                path={`${context.campaignsURL}/preview/:campaignID`}
-                // tslint:disable-next-line:jsx-no-lambda
-                render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
-                    <>
-                        <div className="container">{breadcrumbs}</div>
-                        {removeHeader}
-                        <CampaignPreviewPage
-                            {...context}
-                            {...routeComponentProps}
-                            platformContext={props.platformContext}
-                        />
                     </>
                 )}
             />
