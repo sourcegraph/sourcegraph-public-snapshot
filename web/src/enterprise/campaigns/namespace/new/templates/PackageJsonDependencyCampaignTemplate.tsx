@@ -1,6 +1,7 @@
 import NpmIcon from 'mdi-react/NpmIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { CampaignTemplate, CampaignTemplateComponentContext } from '.'
+import { pluralize } from '../../../../../../../shared/src/util/strings'
 import { RuleDefinition } from '../../../../rules/types'
 
 interface Props extends CampaignTemplateComponentContext {}
@@ -64,7 +65,16 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                     onChange={onPackageNameChange}
                     autoFocus={true}
                     disabled={disabled}
+                    list="campaign-template-form__packageName-datalist"
                 />
+                <datalist id="campaign-template-form__packageName-datalist">
+                    {/* tslint:disable-next-line: no-use-before-declare */}
+                    {SAMPLE_PACKAGE_NAMES.map(({ packageName, count }) => (
+                        <option key={packageName} value={packageName}>
+                            {count} {pluralize('dependent', count)}
+                        </option>
+                    ))}
+                </datalist>
             </div>
             <div className="form-group">
                 <label htmlFor="campaign-template-form__versionRange">Version range (to deprecate)</label>
@@ -96,3 +106,12 @@ export const PackageJsonDependencyCampaignTemplate: CampaignTemplate = {
     icon: NpmIcon,
     renderForm: PackageJsonDependencyCampaignTemplateForm,
 }
+
+const SAMPLE_PACKAGE_NAMES: { packageName: string; count: number }[] = [
+    { packageName: 'typescript', count: 5 },
+    { packageName: 'react', count: 3 },
+    { packageName: 'lodash', count: 3 },
+    { packageName: 'mdi-react', count: 3 },
+    { packageName: 'glob', count: 2 },
+    { packageName: '@sourcegraph/codeintellify', count: 1 },
+]
