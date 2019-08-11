@@ -3,6 +3,7 @@ package campaigns
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -115,10 +116,19 @@ func (v *gqlCampaignPreview) Threads(ctx context.Context, args *graphqlbackend.T
 			HeadRepository_: graphqlbackend.NewRepositoryResolver(d.repo),
 			FileDiffs_:      []*diff.FileDiff{d.parsed},
 		}
+
+		// TODO!(sqs) hack get title from diagnostic threads
+		var threadTitle string
+		if len(diagnostics) > 0 && len(allThreads) > 0 && allThreads[0].ThreadPreview != nil {
+			threadTitle = allThreads[0].ThreadPreview.Title()
+		} else {
+			threadTitle = "Fix problems" // TODO!(sqs)
+		}
+
 		allThreads = append(allThreads, graphqlbackend.ToThreadOrThreadPreview{
 			ThreadPreview: threads.NewGQLThreadPreview(graphqlbackend.CreateThreadInput{
 				Repository: graphqlbackend.NewRepositoryResolver(d.repo).ID(),
-				Title:      "DIFF TODO!(sqs)",
+				Title:      fmt.Sprintf("Fix: %s", threadTitle),
 			}, repoComparison),
 		})
 	}

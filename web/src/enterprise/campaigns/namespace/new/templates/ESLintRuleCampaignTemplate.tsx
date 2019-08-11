@@ -5,9 +5,11 @@ import { RuleDefinition } from '../../../../rules/types'
 
 interface Props extends CampaignTemplateComponentContext {}
 
+const DEFAULT_RULES = 'semi' // TODO!(sqs): only for demo; after the demo, make empty and communicate to the user it must be filled in
+
 const ESLintRuleCampaignTemplateForm: React.FunctionComponent<Props> = ({ onChange, disabled, location }) => {
     const params = new URLSearchParams(location.search)
-    const [rules, setRules] = useState(params.get('rules') || '')
+    const [rules, setRules] = useState(params.get('rules') || DEFAULT_RULES)
     const onRulesChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(e => {
         setRules(e.currentTarget.value)
     }, [])

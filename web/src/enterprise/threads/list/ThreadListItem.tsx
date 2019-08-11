@@ -21,20 +21,23 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({ thread, showRep
             thread={thread.state ? thread : { kind: thread.kind, state: GQL.ThreadState.OPEN }}
             className="mr-2"
         />
-        {thread.number !== undefined ? (
-            <span className="text-muted mr-2">
-                {showRepository && (
-                    <>
-                        <Link to={thread.repository.url}>{displayRepoName(thread.repository.name)}</Link>/
-                    </>
-                )}
-                #{thread.number}
-            </span>
-        ) : (
-            <span className="text-muted mr-2">
-                New in <Link to={thread.repository.url}>{displayRepoName(thread.repository.name)}</Link>:
-            </span>
-        )}
-        {thread.title}
+        <span className="text-truncate">
+            {thread.number !== undefined ? (
+                <span className="text-muted mr-2">
+                    {showRepository && (
+                        <>
+                            <Link to={thread.repository.url}>{displayRepoName(thread.repository.name)}</Link>/
+                        </>
+                    )}
+                    #{thread.number}
+                </span>
+            ) : (
+                <span className="text-muted mr-2">
+                    New {thread.kind.toLowerCase()} in{' '}
+                    <Link to={thread.repository.url}>{displayRepoName(thread.repository.name)}</Link>:
+                </span>
+            )}
+            {thread.title}
+        </span>
     </LinkOrSpan>
 )

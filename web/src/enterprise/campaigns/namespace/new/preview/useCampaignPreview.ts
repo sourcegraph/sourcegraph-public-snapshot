@@ -123,7 +123,7 @@ const getDiagnosticsAndFileDiffs = (
         return of({ diagnostics: [], fileDiffs: [] })
     }
     const matchesQuery = diagnosticQueryMatcher(rule.query)
-    return getDiagnosticInfos(extensionsController, 'packageJsonDependency').pipe(
+    return getDiagnosticInfos(extensionsController, rule.query.type).pipe(
         map(diagnostics => diagnostics.filter(matchesQuery)),
         switchMap(diagnostics =>
             diagnostics.length > 0

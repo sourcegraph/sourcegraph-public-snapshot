@@ -47,8 +47,10 @@ func (v *gqlThreadPreview) Diagnostics(context.Context, *graphqlutil.ConnectionA
 }
 
 func (v *gqlThreadPreview) Kind(ctx context.Context) (graphqlbackend.ThreadKind, error) {
-	// TODO!(sqs) un-hardcode
-	return graphqlbackend.ThreadKindChangeset, nil
+	if v.repoComparison != nil {
+		return graphqlbackend.ThreadKindChangeset, nil
+	}
+	return graphqlbackend.ThreadKindIssue, nil
 }
 
 func (v *gqlThreadPreview) RepositoryComparison(ctx context.Context) (graphqlbackend.RepositoryComparison, error) {
