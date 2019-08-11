@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/repos/git"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 )
 
@@ -42,6 +42,7 @@ func (x *rulesExecutor) planThreads(ctx context.Context) ([]graphqlbackend.Threa
 		if err != nil {
 			return nil, err
 		}
+		byRepo := map[api.RepoID]*git.GQLRepositoryComparisonPreview{}
 		for _, d := range diffs {
 			newNameURI, err := gituri.Parse(d.NewName)
 			if err != nil {
@@ -51,10 +52,20 @@ func (x *rulesExecutor) planThreads(ctx context.Context) ([]graphqlbackend.Threa
 			if err != nil {
 				return nil, err
 			}
-			repoComparison := &git.GQLRepositoryComparisonPreview{
-				BaseRepository_: graphqlbackend.NewRepositoryResolver(repo),
-				HeadRepository_: graphqlbackend.NewRepositoryResolver(repo),
-				FileDiffs_:      []*diff.FileDiff{d},
+			repoComparison, ok := byRepo[repo.ID]
+			if !ok {
+				repoComparison = &git.GQLRepositoryComparisonPreview{
+					BaseRepository_: graphqlbackend.NewRepositoryResolver(repo),
+					HeadRepository_: graphqlbackend.NewRepositoryResolver(repo),
+				}
+				byRepo[repo.ID] = repoComparison
+			}
+			repoComparison.FileDiffs_ = append(repoComparison.FileDiffs_, d)
+		}
+		for repoID, repoComparison := range byRepo {
+			repo, err := backend.Repos.Get(ctx, repoID)
+			if err != nil {
+				return nil, err
 			}
 
 			// TODO!(sqs) hack get title from diagnostic threads

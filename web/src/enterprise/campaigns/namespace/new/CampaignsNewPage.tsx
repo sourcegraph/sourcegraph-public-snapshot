@@ -1,3 +1,4 @@
+import { NotificationType } from '@sourcegraph/extension-api-classes'
 import H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
@@ -6,7 +7,6 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
-import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { PageTitle } from '../../../../components/PageTitle'
 import { ThemeProps } from '../../../../theme'
@@ -72,9 +72,7 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
     const [data, setData] = useState<CampaignFormData>()
     const onChange = useCallback(data => setData(data), [])
 
-    const [creationOrError, setCreationOrError] = useState<
-        null | typeof LOADING | Pick<GQL.ICampaign, 'url'> | ErrorLike
-    >(null)
+    const [creationOrError, setCreationOrError] = useState<null | typeof LOADING | Pick<GQL.ICampaign, 'url'>>(null)
     const onSubmit = useCallback(
         async (data: CampaignFormData) => {
             setCreationOrError(LOADING)
@@ -84,8 +82,11 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
                     .toPromise()
                 setCreationOrError(await createCampaign({ ...data, namespace: namespace.id, extensionData }))
             } catch (err) {
-                setCreationOrError(asError(err))
-                alert(err.message) // TODO!(sqs)
+                setCreationOrError(null)
+                props.extensionsController.services.notifications.showMessages.next({
+                    message: `Error creating campaign: ${err.message}`,
+                    type: NotificationType.Error,
+                })
             }
         },
         [namespace.id, props.extensionsController]
@@ -97,9 +98,7 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            {creationOrError !== null && creationOrError !== LOADING && !isErrorLike(creationOrError) && (
-                <Redirect to={creationOrError.url} />
-            )}
+            {creationOrError !== null && creationOrError !== LOADING && <Redirect to={creationOrError.url} />}
             <PageTitle title="New campaign" />
             <div>
                 <CampaignForm
@@ -113,9 +112,6 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
                     location={location}
                     className="flex-1"
                 />
-                {isErrorLike(creationOrError) && (
-                    <div className="alert alert-danger mt-3">{creationOrError.message}</div>
-                )}
                 {/* TODO!(sqs): be smart about when to show the preview pane */}
                 {templateID && templateID !== EMPTY_CAMPAIGN_TEMPLATE_ID && data && data.isValid && (
                     <>

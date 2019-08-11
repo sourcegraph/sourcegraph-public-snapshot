@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
@@ -16,6 +17,17 @@ type CreateChangesetData struct {
 }
 
 func CreateOrGetExistingGitHubPullRequest(ctx context.Context, repoID api.RepoID, extRepo api.ExternalRepoSpec, data CreateChangesetData) (threadID int64, err error) {
+	{
+		// TODO!(sqs): demo only, make sure we dont accidentally make PRs to other repos
+		repo, err := backend.Repos.Get(ctx, repoID)
+		if err != nil {
+			return 0, err
+		}
+		if !strings.Contains(string(repo.Name), "/sd9/") && !strings.Contains(string(repo.Name), "/sd9org/") {
+			return 0, fmt.Errorf("refusing to create issue/PR for demo on non-demo repo %q", repo.Name)
+		}
+	}
+
 	client, externalServiceID, err := getClientForRepo(ctx, repoID)
 	if err != nil {
 		return 0, err
