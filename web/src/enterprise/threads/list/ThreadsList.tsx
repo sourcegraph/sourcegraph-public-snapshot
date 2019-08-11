@@ -1,6 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React from 'react'
-import { ExtensionsControllerNotificationProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { pluralize } from '../../../../../shared/src/util/strings'
@@ -8,7 +7,7 @@ import { ThreadListItem } from './ThreadListItem'
 
 const LOADING: 'loading' = 'loading'
 
-interface Props extends ExtensionsControllerNotificationProps {
+interface Props {
     threads: typeof LOADING | GQL.IThreadConnection | ErrorLike
 }
 

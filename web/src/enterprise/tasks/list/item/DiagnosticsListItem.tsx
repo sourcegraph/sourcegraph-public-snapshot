@@ -13,6 +13,7 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { parseRepoURI } from '../../../../../../shared/src/util/url'
+import { DiagnosticMessageWithIcon } from '../../../../diagnostics/components/DiagnosticMessageWithIcon'
 import { DiagnosticSeverityIcon } from '../../../../diagnostics/components/DiagnosticSeverityIcon'
 import { fetchHighlightedFileLines } from '../../../../repo/backend'
 import { ThemeProps } from '../../../../theme'
@@ -176,10 +177,7 @@ export const DiagnosticsListItem: React.FunctionComponent<Props> = ({
                                 </h3>
                             </div>
                         </header>
-                        <div className={`d-flex align-items-start mt-2 mb-1`}>
-                            <DiagnosticSeverityIcon severity={diagnostic.severity} className="icon-inline mr-2" />
-                            <span>{diagnostic.message}</span>
-                        </div>
+                        <DiagnosticMessageWithIcon diagnostic={diagnostic} className="mt-2 mb-1" />
                         {actions}
                     </div>
                     {preview && (

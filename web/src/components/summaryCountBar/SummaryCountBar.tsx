@@ -8,7 +8,7 @@ export interface SummaryCountItemDescriptor<C> {
     pluralNoun?: string
     icon: React.ComponentType<{ className?: string }>
     count: number | ((context: C) => number)
-    url?: LocationDescriptor | ((context: C) => LocationDescriptor)
+    url?: LocationDescriptor | ((context: C) => LocationDescriptor | undefined)
     after?: (context: C) => JSX.Element
     condition?: (context: C) => boolean
 }

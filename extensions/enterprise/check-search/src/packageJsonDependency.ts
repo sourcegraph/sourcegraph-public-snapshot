@@ -3,7 +3,6 @@ import { flatten, sortedUniq } from 'lodash'
 import { Subscription, Observable, of, Unsubscribable, from } from 'rxjs'
 import { map, switchMap, startWith, toArray, filter } from 'rxjs/operators'
 import { settingsObservable, memoizedFindTextInFiles } from './util'
-import { REPO_INCLUDE } from './misc'
 
 const REMOVE_COMMAND = 'packageJsonDependency.remove'
 
@@ -55,7 +54,7 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                             includes: ['(^|/)package.json$'],
                             type: 'regexp',
                         },
-                        maxResults: 3,
+                        maxResults: 7,
                     }
                 )
             )
@@ -73,7 +72,7 @@ const diagnostics: Observable<sourcegraph.Diagnostic[] | typeof LOADING> = from(
                             sourcegraph.Diagnostic
                         >(({ range, ...dep }) => ({
                             resource: new URL(uri),
-                            message: `npm dependency '${dep.name}'`,
+                            message: `npm dependency '${dep.name}' is deprecated`,
                             range: range,
                             severity: sourcegraph.DiagnosticSeverity.Warning,
                             data: JSON.stringify(dep),

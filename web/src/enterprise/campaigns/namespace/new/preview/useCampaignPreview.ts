@@ -34,6 +34,7 @@ export const CampaignPreviewFragment = gql`
                         url
                     }
                     title
+                    kind
                 }
             }
             totalCount
@@ -44,6 +45,9 @@ export const CampaignPreviewFragment = gql`
                 data
             }
             totalCount
+        }
+        repositories {
+            id
         }
         repositoryComparisons {
             baseRepository {

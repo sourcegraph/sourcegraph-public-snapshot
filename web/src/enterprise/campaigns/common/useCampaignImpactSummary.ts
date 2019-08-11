@@ -77,7 +77,7 @@ export function useCampaignImpactSummary(campaign: Pick<GQL.ICampaign, 'id'>): R
     return result
 }
 
-function sumDiffStats(diffStats: GQL.IDiffStat[]): GQL.IDiffStat {
+export function sumDiffStats(diffStats: GQL.IDiffStat[]): GQL.IDiffStat {
     const sum: GQL.IDiffStat = {
         __typename: 'DiffStat',
         added: 0,

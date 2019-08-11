@@ -16,7 +16,7 @@ interface Props {
 }
 
 interface Context extends CampaignImpactSummary {
-    campaign: Pick<GQL.ICampaign, 'url'>
+    campaign?: Pick<GQL.ICampaign, 'url'>
 }
 
 const ITEMS: SummaryCountItemDescriptor<Context>[] = [
@@ -25,35 +25,35 @@ const ITEMS: SummaryCountItemDescriptor<Context>[] = [
         icon: CommentTextMultipleIcon,
         count: c => c.discussions,
         condition: c => c.discussions > 0,
-        url: c => c.campaign.url,
+        url: c => c.campaign && c.campaign.url,
     },
     {
         noun: 'issue',
         icon: DiagnosticsIcon,
         count: c => c.issues,
         condition: c => c.issues > 0,
-        url: c => `${c.campaign.url}/threads`,
+        url: c => c.campaign && `${c.campaign.url}/threads`,
     },
     {
         noun: 'changeset',
         icon: GitPullRequestIcon,
         count: c => c.changesets,
         condition: c => c.changesets > 0,
-        url: c => `${c.campaign.url}/threads`,
+        url: c => c.campaign && `${c.campaign.url}/threads`,
     },
     {
         noun: 'repository affected',
         pluralNoun: 'repositories affected',
         icon: RepositoryIcon,
         count: c => c.repositories,
-        url: c => `${c.campaign.url}/changes`,
+        url: c => c.campaign && `${c.campaign.url}/changes`,
     },
     {
         noun: 'file changed',
         pluralNoun: 'files changed',
         icon: DiffIcon,
         count: c => c.files,
-        url: c => `${c.campaign.url}/changes`,
+        url: c => c.campaign && `${c.campaign.url}/changes`,
         after: c => <DiffStat {...c.diffStat} expandedCounts={true} className="d-inline-flex ml-3" />,
     },
 ]
@@ -68,11 +68,14 @@ export const CampaignImpactSummaryBar: React.FunctionComponent<Props> = ({ campa
     if (impactSummary === LOADING || isErrorLike(impactSummary)) {
         return null
     }
-    return (
-        <SummaryCountBar<Context>
-            className={className}
-            context={{ ...impactSummary, campaign }}
-            itemDescriptors={ITEMS}
-        />
-    )
+    return <CampaignImpactSummaryBarNoFetch campaign={campaign} impactSummary={impactSummary} />
 }
+
+export const CampaignImpactSummaryBarNoFetch: React.FunctionComponent<
+    Pick<Props, Exclude<keyof Props, 'campaign'>> & {
+        campaign?: Pick<GQL.ICampaign, 'id' | 'url'>
+        impactSummary: CampaignImpactSummary
+    }
+> = ({ campaign, impactSummary, className = '' }) => (
+    <SummaryCountBar<Context> className={className} context={{ ...impactSummary, campaign }} itemDescriptors={ITEMS} />
+)
