@@ -29,16 +29,22 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
     const [campaignPreview, isLoading] = useCampaignPreview(props, data)
     return (
         <div className={`card campaign-preview ${className}`}>
-            <h5 className="card-header">
+            <h4 className="card-header d-flex align-items-center">
                 Preview
                 {isLoading && <LoadingSpinner className="icon-inline ml-2" />}
-            </h5>
+            </h4>
             {campaignPreview !== LOADING &&
                 (isErrorLike(campaignPreview) ? (
                     <div className="alert alert-danger border-0">Error: {campaignPreview.message}</div>
                 ) : (
                     // tslint:disable-next-line: jsx-ban-props
                     <div style={isLoading ? { opacity: 0.7, cursor: 'wait' } : undefined}>
+                        {campaignPreview.repositoryComparisons.length === 0 &&
+                            campaignPreview.diagnostics.nodes.length === 0 && (
+                                <div className="card-body">
+                                    <span className="text-muted">No changes</span>
+                                </div>
+                            )}
                         {campaignPreview.repositoryComparisons.flatMap((c, i) =>
                             c.fileDiffs.nodes.map((d, j) => (
                                 <FileDiffNode
@@ -59,22 +65,25 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                     }}
                                     showRepository={true}
                                     lineNumbers={false}
+                                    className="mb-0 border-top-0 border-left-0 border-right-0"
                                 />
                             ))
                         )}
-                        <ul className="list-unstyled">
-                            {campaignPreview.diagnostics.nodes.map((diagnostic, i) => (
-                                <DiagnosticsListItem
-                                    key={i}
-                                    {...props}
-                                    diagnostic={{ ...diagnostic.data, ...toDiagnostic(diagnostic.data) }}
-                                    selectedAction={null}
-                                    // tslint:disable-next-line: jsx-no-lambda
-                                    onActionSelect={() => void 0}
-                                    className="p-3"
-                                />
-                            ))}
-                        </ul>
+                        {campaignPreview.diagnostics.nodes.length > 0 && (
+                            <ul className="list-unstyled">
+                                {campaignPreview.diagnostics.nodes.map((diagnostic, i) => (
+                                    <DiagnosticsListItem
+                                        key={i}
+                                        {...props}
+                                        diagnostic={{ ...diagnostic.data, ...toDiagnostic(diagnostic.data) }}
+                                        selectedAction={null}
+                                        // tslint:disable-next-line: jsx-no-lambda
+                                        onActionSelect={() => void 0}
+                                        className="p-3"
+                                    />
+                                ))}
+                            </ul>
+                        )}
                     </div>
                 ))}
         </div>

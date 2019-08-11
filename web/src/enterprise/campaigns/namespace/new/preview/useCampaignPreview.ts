@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { combineLatest, Observable, of } from 'rxjs'
-import { map, startWith, switchMap, tap } from 'rxjs/operators'
+import { useEffect, useMemo, useState } from 'react'
+import { combineLatest, merge, Observable, of, Subject } from 'rxjs'
+import { delay, map, switchMap, takeUntil, tap, throttleTime, withLatestFrom } from 'rxjs/operators'
 import { fromDiagnostic } from '../../../../../../../shared/src/api/types/diagnostic'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../../../shared/src/graphql/graphql'
@@ -164,68 +164,75 @@ const getDiagnosticsAndFileDiffs = (
  */
 export const useCampaignPreview = (
     { extensionsController }: ExtensionsControllerProps,
-    campaignInput: GQL.ICreateCampaignInput
+    input: GQL.ICreateCampaignInput
 ): [Result, boolean] => {
+    const inputSubject = useMemo(() => new Subject<GQL.ICreateCampaignInput>(), [])
     const [isLoading, setIsLoading] = useState(true)
     const [result, setResult] = useState<Result>(LOADING)
+    useEffect(() => inputSubject.next(input), [input, inputSubject])
     useEffect(() => {
-        const subscription = (campaignInput.rules && campaignInput.rules.length > 0
-            ? combineLatest(
-                  (campaignInput.rules || []).map(rule => {
-                      const def: RuleDefinition = JSON.parse(rule.definition)
-                      return getDiagnosticsAndFileDiffs(extensionsController, def)
-                  })
-              )
-            : of<DiagnosticsAndFileDiffs[]>([{ diagnostics: [], fileDiffs: [] }])
-        )
+        const subscription = inputSubject
             .pipe(
-                map(results => {
-                    const combined: DiagnosticsAndFileDiffs = {
-                        diagnostics: results.flatMap(r => r.diagnostics),
-                        fileDiffs: results.flatMap(r => r.fileDiffs),
-                    }
-                    return combined
-                }),
-                switchMap(({ diagnostics, fileDiffs }) =>
-                    queryGraphQL(
-                        gql`
-                            query CampaignPreview($input: CampaignPreviewInput!) {
-                                campaignPreview(input: $input) {
-                                    ...CampaignPreviewFragment
-                                }
-                            }
-                            ${CampaignPreviewFragment}
-                        `,
-                        // tslint:disable-next-line: no-object-literal-type-assertion
-                        {
-                            input: {
-                                campaign: campaignInput,
-                                rawDiagnostics: diagnostics.map(d =>
-                                    // tslint:disable-next-line: no-object-literal-type-assertion
-                                    JSON.stringify({
-                                        __typename: 'Diagnostic',
-                                        type: d.type,
-                                        data: d,
-                                    } as GQL.IDiagnostic)
-                                ),
-                                rawFileDiffs: fileDiffs.map(({ patchWithFullURIs }) => patchWithFullURIs),
-                            },
-                        } as GQL.ICampaignPreviewOnQueryArguments
+                throttleTime(1000, undefined, { leading: true, trailing: true }),
+                switchMap(input => {
+                    const result = (input.rules && input.rules.length > 0
+                        ? combineLatest(
+                              (input.rules || []).map(rule => {
+                                  const def: RuleDefinition = JSON.parse(rule.definition)
+                                  return getDiagnosticsAndFileDiffs(extensionsController, def)
+                              })
+                          )
+                        : of<DiagnosticsAndFileDiffs[]>([{ diagnostics: [], fileDiffs: [] }])
                     ).pipe(
-                        map(dataOrThrowErrors),
-                        map(data => data.campaignPreview),
-                        tap(data => {
-                            // TODO!(sqs) hack, compensate for the RepositoryComparison head not existing
-                            for (const c of data.repositoryComparisons) {
-                                c.range.headRevSpec.object = { oid: '' } as any
-                                for (const d of c.fileDiffs.nodes) {
-                                    d.mostRelevantFile = { path: d.newPath, url: '' } as any
-                                }
+                        map(results => {
+                            const combined: DiagnosticsAndFileDiffs = {
+                                diagnostics: results.flatMap(r => r.diagnostics),
+                                fileDiffs: results.flatMap(r => r.fileDiffs),
                             }
-                        })
+                            return combined
+                        }),
+                        switchMap(({ diagnostics, fileDiffs }) =>
+                            queryGraphQL(
+                                gql`
+                                    query CampaignPreview($input: CampaignPreviewInput!) {
+                                        campaignPreview(input: $input) {
+                                            ...CampaignPreviewFragment
+                                        }
+                                    }
+                                    ${CampaignPreviewFragment}
+                                `,
+                                // tslint:disable-next-line: no-object-literal-type-assertion
+                                {
+                                    input: {
+                                        campaign: input,
+                                        rawDiagnostics: diagnostics.map(d =>
+                                            // tslint:disable-next-line: no-object-literal-type-assertion
+                                            JSON.stringify({
+                                                __typename: 'Diagnostic',
+                                                type: d.type,
+                                                data: d,
+                                            } as GQL.IDiagnostic)
+                                        ),
+                                        rawFileDiffs: fileDiffs.map(({ patchWithFullURIs }) => patchWithFullURIs),
+                                    },
+                                } as GQL.ICampaignPreviewOnQueryArguments
+                            ).pipe(
+                                map(dataOrThrowErrors),
+                                map(data => data.campaignPreview),
+                                tap(data => {
+                                    // TODO!(sqs) hack, compensate for the RepositoryComparison head not existing
+                                    for (const c of data.repositoryComparisons) {
+                                        c.range.headRevSpec.object = { oid: '' } as any
+                                        for (const d of c.fileDiffs.nodes) {
+                                            d.mostRelevantFile = { path: d.newPath, url: '' } as any
+                                        }
+                                    }
+                                })
+                            )
+                        )
                     )
-                ),
-                startWith(LOADING)
+                    return merge(result, of(LOADING).pipe(takeUntil(result)))
+                })
             )
             .subscribe(
                 result => {
@@ -243,6 +250,6 @@ export const useCampaignPreview = (
                 }
             )
         return () => subscription.unsubscribe()
-    }, [extensionsController, campaignInput])
+    }, [extensionsController, inputSubject])
     return [result, isLoading]
 }

@@ -70,7 +70,7 @@ export async function computeDiffFromEdits(
             })
         )
         const { hunks } = structuredPatch(uri.toString(), uri.toString(), oldText, newText, undefined, undefined, {
-            context: 4,
+            context: 2,
         })
         const p = parseRepoURI(uri)
         fileDiffs.push({
@@ -79,7 +79,7 @@ export async function computeDiffFromEdits(
             hunks: hunks.map(npmDiffToFileDiffHunk),
             patch: createTwoFilesPatch('a/' + p.filePath!, 'b/' + p.filePath!, oldText, newText, undefined, undefined),
             // TODO!(sqs): hack that we have 2 different patches w/different URIs
-            patchWithFullURIs: createTwoFilesPatch(uri, uri, oldText, newText, undefined, undefined),
+            patchWithFullURIs: createTwoFilesPatch(uri, uri, oldText, newText, undefined, undefined, { context: 2 }),
         })
     }
     return fileDiffs
