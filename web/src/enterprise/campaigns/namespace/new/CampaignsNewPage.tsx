@@ -67,7 +67,6 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
     }, [setBreadcrumbItem])
 
     const templateID = new URLSearchParams(location.search).get('template')
-    const preview = !!templateID && templateID !== EMPTY_CAMPAIGN_TEMPLATE_ID
 
     const [data, setData] = useState<CampaignFormData>()
     const onChange = useCallback(data => setData(data), [])
@@ -79,13 +78,13 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
         async (data: CampaignFormData) => {
             setCreationOrError(LOADING)
             try {
-                setCreationOrError(await createCampaign({ ...data, namespace: namespace.id, preview }))
+                setCreationOrError(await createCampaign({ ...data, namespace: namespace.id }))
             } catch (err) {
                 setCreationOrError(asError(err))
                 alert(err.message) // TODO!(sqs)
             }
         },
-        [namespace.id, preview]
+        [namespace.id]
     )
 
     const initialValue = useMemo<CampaignFormData>(() => ({ name: '', namespace: namespace.id }), [namespace.id])
@@ -96,30 +95,29 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
                 <Redirect to={creationOrError.url} />
             )}
             <PageTitle title="New campaign" />
-            <div className="d-flex flex-gap-3 flex-wrap">
-                {/* tslint:disable-next-line: jsx-ban-props */}
-                <div style={{ flex: '1 0 50%', minWidth: '32rem' }}>
-                    <CampaignForm
-                        templateID={templateID}
-                        initialValue={initialValue}
-                        onChange={onChange}
-                        onSubmit={onSubmit}
-                        buttonText={preview ? 'Preview campaign' : 'Create campaign'}
-                        isLoading={creationOrError === LOADING}
-                        match={match}
-                        location={location}
-                        className="flex-1"
-                    />
-                </div>
+            <div>
+                <CampaignForm
+                    templateID={templateID}
+                    initialValue={initialValue}
+                    onChange={onChange}
+                    onSubmit={onSubmit}
+                    buttonText="Create campaign"
+                    isLoading={creationOrError === LOADING}
+                    match={match}
+                    location={location}
+                    className="flex-1"
+                />
+                {isErrorLike(creationOrError) && (
+                    <div className="alert alert-danger mt-3">{creationOrError.message}</div>
+                )}
                 {/* TODO!(sqs): be smart about when to show the preview pane */}
-                {templateID && templateID !== EMPTY_CAMPAIGN_TEMPLATE_ID && (
-                    // tslint:disable-next-line: jsx-ban-props
-                    <div className="overflow-auto" style={{ flex: '2 0 24rem' }}>
-                        {data && <CampaignPreview {...props} data={data} location={location} />}
-                    </div>
+                {templateID && templateID !== EMPTY_CAMPAIGN_TEMPLATE_ID && data && (
+                    <>
+                        <hr className="my-5" />
+                        <CampaignPreview {...props} data={data} location={location} />
+                    </>
                 )}
             </div>
-            {isErrorLike(creationOrError) && <div className="alert alert-danger mt-3">{creationOrError.message}</div>}
         </>
     )
 }

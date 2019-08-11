@@ -16,6 +16,7 @@ export interface SummaryCountItemDescriptor<C> {
 interface Props<C> {
     itemDescriptors: SummaryCountItemDescriptor<C>[]
     context: C
+    vertical?: boolean
 
     className?: string
 }
@@ -26,10 +27,11 @@ interface Props<C> {
 export const SummaryCountBar = <C extends {}>({
     itemDescriptors,
     context,
+    vertical,
     className = '',
 }: PropsWithChildren<Props<C>>): React.ReactElement => (
     <nav className={`summary-count-bar border ${className}`}>
-        <ul className="nav w-100">
+        <ul className={`nav w-100 ${vertical ? 'flex-column align-items-start' : ''}`}>
             {itemDescriptors
                 .filter(({ condition }) => !condition || condition(context))
                 .map(({ icon: Icon, ...item }, i) => {

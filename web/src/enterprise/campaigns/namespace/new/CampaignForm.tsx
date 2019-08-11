@@ -103,6 +103,7 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
 
     return (
         <Form className={`form ${className}`} onSubmit={onSubmit}>
+            <style>{`.form-group { max-width: 45rem; }` /* TODO!(sqs): hack */}</style>
             {template === null || isErrorLike(template) ? (
                 <>
                     {isErrorLike(template) && <div className="alert alert-danger">{template.message}</div>}
