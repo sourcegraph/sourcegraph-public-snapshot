@@ -127,7 +127,7 @@ func (v *gqlCampaign) getThreads(ctx context.Context) ([]graphqlbackend.ToThread
 	if err != nil {
 		return nil, err
 	}
-	return toThreadOrThreadPreviews(threads), nil
+	return toThreadOrThreadPreviews(threads, nil), nil
 }
 
 func (v *gqlCampaign) Repositories(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {

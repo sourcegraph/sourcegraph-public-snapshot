@@ -40,23 +40,25 @@ func ImportGitHubRepositoryThreads(ctx context.Context, repoID api.RepoID, extRe
 		if strings.HasPrefix(result.Title, "Update dependency ") {
 			continue
 		}
-
-		thread, threadComment := githubIssueOrPullRequestToThread(result)
-		thread.RepositoryID = repoID
-		thread.ImportedFromExternalServiceID = externalServiceID
-
-		replyComments := make([]*comments.ExternalComment, len(result.Comments.Nodes))
-		for i, c := range result.Comments.Nodes {
-			replyComments[i] = githubIssueCommentToExternalComment(c)
-		}
-
-		toImport = append(toImport, &externalThread{
-			thread:        thread,
-			threadComment: threadComment,
-			comments:      replyComments,
-		})
+		toImport = append(toImport, newExternalThread(result, repoID, externalServiceID))
 	}
 	return ImportExternalThreads(ctx, repoID, externalServiceID, toImport)
+}
+
+func newExternalThread(result *githubIssueOrPullRequest, repoID api.RepoID, externalServiceID int64) *externalThread {
+	thread, threadComment := githubIssueOrPullRequestToThread(result)
+	thread.RepositoryID = repoID
+	thread.ImportedFromExternalServiceID = externalServiceID
+
+	replyComments := make([]*comments.ExternalComment, len(result.Comments.Nodes))
+	for i, c := range result.Comments.Nodes {
+		replyComments[i] = githubIssueCommentToExternalComment(c)
+	}
+	return &externalThread{
+		thread:        thread,
+		threadComment: threadComment,
+		comments:      replyComments,
+	}
 }
 
 func githubIssueOrPullRequestToThread(v *githubIssueOrPullRequest) (*dbThread, commentobjectdb.DBObjectCommentFields) {

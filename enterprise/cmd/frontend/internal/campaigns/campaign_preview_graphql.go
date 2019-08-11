@@ -2,22 +2,15 @@ package campaigns
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/repos/git"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/diagnostics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 )
 
 func (GraphQLResolver) CampaignPreview(ctx context.Context, arg *graphqlbackend.CampaignPreviewArgs) (graphqlbackend.CampaignPreview, error) {
@@ -58,83 +51,11 @@ func (v *gqlCampaignPreview) getThreads(ctx context.Context) ([]graphqlbackend.T
 }
 
 func (v *gqlCampaignPreview) Threads(ctx context.Context, args *graphqlbackend.ThreadConnectionArgs) (graphqlbackend.ThreadOrThreadPreviewConnection, error) {
-	var allThreads []graphqlbackend.ToThreadOrThreadPreview
-
-	getRepoFromURI := func(uriStr string) (*types.Repo, error) {
-		uri, err := gituri.Parse(uriStr)
-		if err != nil {
-			return nil, err
-		}
-		return backend.Repos.GetByName(ctx, uri.Repo())
-	}
-
-	// Include issues for each diagnostic.
-	diagnostics, err := v.getDiagnostics(ctx)
+	allThreads, err := (&rulesExecutor{extensionData: v.input.Campaign.ExtensionData}).planThreads(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for _, d := range diagnostics {
-		var dd struct {
-			Resource string
-			Message  string
-		}
-		if err := json.Unmarshal([]byte(d.Data().Value.(json.RawMessage)), &dd); err != nil {
-			return nil, err
-		}
-		repo, err := getRepoFromURI(dd.Resource)
-		if err != nil {
-			return nil, err
-		}
-		allThreads = append(allThreads, graphqlbackend.ToThreadOrThreadPreview{
-			ThreadPreview: threads.NewGQLThreadPreview(graphqlbackend.CreateThreadInput{
-				Repository: graphqlbackend.NewRepositoryResolver(repo).ID(),
-				Title:      dd.Message,
-			}, nil),
-		})
-	}
-
-	// Include changesets for each diff.
-	type fileDiff struct {
-		parsed *diff.FileDiff
-		repo   *types.Repo
-	}
-	diffs := make([]fileDiff, len(v.input.Campaign.ExtensionData.RawFileDiffs))
-	for i, diffStr := range v.input.Campaign.ExtensionData.RawFileDiffs {
-		var err error
-		diffs[i].parsed, err = diff.ParseFileDiff([]byte(diffStr))
-		if err != nil {
-			return nil, err
-		}
-		diffs[i].repo, err = getRepoFromURI(diffs[i].parsed.NewName)
-		if err != nil {
-			return nil, err
-		}
-	}
-	for _, d := range diffs {
-		repoComparison := &git.GQLRepositoryComparisonPreview{
-			BaseRepository_: graphqlbackend.NewRepositoryResolver(d.repo),
-			HeadRepository_: graphqlbackend.NewRepositoryResolver(d.repo),
-			FileDiffs_:      []*diff.FileDiff{d.parsed},
-		}
-
-		// TODO!(sqs) hack get title from diagnostic threads
-		var threadTitle string
-		if len(diagnostics) > 0 && len(allThreads) > 0 && allThreads[0].ThreadPreview != nil {
-			threadTitle = allThreads[0].ThreadPreview.Title()
-		} else {
-			threadTitle = "Fix problems" // TODO!(sqs)
-		}
-
-		allThreads = append(allThreads, graphqlbackend.ToThreadOrThreadPreview{
-			ThreadPreview: threads.NewGQLThreadPreview(graphqlbackend.CreateThreadInput{
-				Repository: graphqlbackend.NewRepositoryResolver(d.repo).ID(),
-				Title:      fmt.Sprintf("Fix: %s", threadTitle),
-			}, repoComparison),
-		})
-	}
-	// TODO!(sqs): include existing issues/threads matched by rules
-
-	return threads.ConstThreadOrThreadPreviewConnection(allThreads), nil
+	return threads.ConstThreadOrThreadPreviewConnection(toThreadOrThreadPreviews(nil, allThreads)), nil
 }
 
 func (v *gqlCampaignPreview) Repositories(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
@@ -150,15 +71,7 @@ func (v *gqlCampaignPreview) RepositoryComparisons(ctx context.Context) ([]graph
 }
 
 func (v *gqlCampaignPreview) getDiagnostics(ctx context.Context) ([]graphqlbackend.Diagnostic, error) {
-	ds := make([]graphqlbackend.Diagnostic, len(v.input.Campaign.ExtensionData.RawDiagnostics))
-	for i, diagnosticStr := range v.input.Campaign.ExtensionData.RawDiagnostics {
-		var d diagnostics.GQLDiagnostic
-		if err := json.Unmarshal([]byte(diagnosticStr), &d); err != nil {
-			return nil, err
-		}
-		ds[i] = d
-	}
-	return ds, nil
+	return extdata{}.parseDiagnostics(v.input.Campaign.ExtensionData)
 }
 
 func (v *gqlCampaignPreview) Diagnostics(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.DiagnosticConnection, error) {

@@ -25,6 +25,7 @@ CREATE TABLE threads (
 CREATE INDEX threads_repository_id ON threads(repository_id);
 CREATE INDEX threads_imported_from_external_service_id ON threads(imported_from_external_service_id);
 ALTER TABLE threads ADD CONSTRAINT external_thread_has_id_and_data CHECK ((imported_from_external_service_id IS NULL) = (external_id IS NULL) AND (external_id IS NULL) = (external_metadata IS NULL));
+CREATE UNIQUE INDEX threads_external ON threads(imported_from_external_service_id, external_id) WHERE imported_from_external_service_id IS NOT NULL;
 
 -----------------
 

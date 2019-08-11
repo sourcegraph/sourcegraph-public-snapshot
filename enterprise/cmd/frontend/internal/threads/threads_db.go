@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"log"
 	"strings"
 	"time"
 
@@ -68,8 +67,6 @@ func (dbThreads) Create(ctx context.Context, tx *sql.Tx, thread *dbThread, comme
 		}
 		return t
 	}
-
-	log.Println("CREATEDAT", thread.CreatedAt, thread.CreatedAt.IsZero())
 
 	return thread, commentobjectdb.CreateCommentWithObject(ctx, tx, comment, func(ctx context.Context, tx *sql.Tx, commentID int64) (*types.CommentObject, error) {
 		args := []interface{}{
@@ -153,6 +150,25 @@ func (s dbThreads) GetByID(ctx context.Context, id int64) (*dbThread, error) {
 	}
 
 	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("id=%d", id)}, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, errThreadNotFound
+	}
+	return results[0], nil
+}
+
+// GetByExternal retrieves the thread (if any) given its external service ID information.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this thread.
+func (s dbThreads) GetByExternal(ctx context.Context, importedFromExternalServiceID int64, externalID string) (*dbThread, error) {
+	results, err := s.list(ctx, []*sqlf.Query{
+		sqlf.Sprintf("imported_from_external_service_id=%d AND external_id=%s",
+			importedFromExternalServiceID,
+			externalID,
+		),
+	}, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -14,10 +14,13 @@ type threadsGetter interface {
 	getThreads(ctx context.Context) ([]graphqlbackend.ToThreadOrThreadPreview, error)
 }
 
-func toThreadOrThreadPreviews(threads []graphqlbackend.Thread) []graphqlbackend.ToThreadOrThreadPreview {
-	v := make([]graphqlbackend.ToThreadOrThreadPreview, len(threads))
+func toThreadOrThreadPreviews(threads []graphqlbackend.Thread, threadPreviews []graphqlbackend.ThreadPreview) []graphqlbackend.ToThreadOrThreadPreview {
+	v := make([]graphqlbackend.ToThreadOrThreadPreview, len(threads)+len(threadPreviews))
 	for i, t := range threads {
 		v[i] = graphqlbackend.ToThreadOrThreadPreview{Thread: t}
+	}
+	for i, t := range threadPreviews {
+		v[len(threads)+i] = graphqlbackend.ToThreadOrThreadPreview{ThreadPreview: t}
 	}
 	return v
 }

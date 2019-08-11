@@ -2,6 +2,7 @@ package threads
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
@@ -65,18 +66,24 @@ func ImportExternalThreads(ctx context.Context, repo api.RepoID, externalService
 		if x.thread.ExternalID == "" {
 			panic("thread has no external ID")
 		}
-		dbThread, err := (dbThreads{}).Create(ctx, tx, x.thread, x.threadComment)
-		if err != nil {
+		if _, err := dbCreateExternalThread(ctx, tx, x); err != nil {
 			return err
-		}
-
-		for _, comment := range x.comments {
-			tmp := *comment
-			tmp.ThreadPrimaryCommentID = dbThread.PrimaryCommentID
-			if err := comments.CreateExternalCommentReply(ctx, tx, tmp); err != nil {
-				return err
-			}
 		}
 	}
 	return nil
+}
+
+func dbCreateExternalThread(ctx context.Context, tx *sql.Tx, x *externalThread) (threadID int64, err error) {
+	dbThread, err := (dbThreads{}).Create(ctx, tx, x.thread, x.threadComment)
+	if err != nil {
+		return 0, err
+	}
+	for _, comment := range x.comments {
+		tmp := *comment
+		tmp.ThreadPrimaryCommentID = dbThread.PrimaryCommentID
+		if err := comments.CreateExternalCommentReply(ctx, tx, tmp); err != nil {
+			return 0, err
+		}
+	}
+	return dbThread.ID, nil
 }
