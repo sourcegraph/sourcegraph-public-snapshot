@@ -203,7 +203,7 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 		return nil, false, nil
 	}
 
-	locs := rg.re.FindAllIndex(fileMatchBuf, maxLineMatches)
+	locs := rg.re.FindAllIndex(fileMatchBuf, maxLineMatches+1)
 	lastStart := 0
 	lastLineNumber := 0
 	lastMatchIndex := 0
@@ -237,11 +237,11 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 		matches = appendMatches(matches, fileBuf[lineStart:lineEnd], fileMatchBuf[lineStart:lineEnd], lineNumber, start-lineStart, end-lineStart)
 
 		if len(matches) > maxLineMatches {
+			matches = matches[:maxLineMatches]
+			limitHit = true
 			break
 		}
-
 	}
-	limitHit = len(matches) >= maxLineMatches
 	return matches, limitHit, nil
 }
 
