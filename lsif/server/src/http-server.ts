@@ -29,7 +29,9 @@ const PORT = readEnvInt({ key: 'LSIF_HTTP_PORT', defaultValue: 3186 })
  */
 const AVAILABLE_BACKENDS: { [k: string]: () => Promise<Backend<QueryRunner>> } = {
     sqlite: async () => {
-        return new SQLiteBackend()
+        const db = new SQLiteBackend()
+        await db.initialize()
+        return db
     },
     dgraph: async () => {
         const db = new DgraphBackend()

@@ -7,6 +7,8 @@ import Sqlite from 'better-sqlite3'
 import { URI } from 'vscode-uri'
 import { Range, Id, MetaData, RangeBasedDocumentSymbol, Moniker, PackageInformation } from 'lsif-protocol'
 import * as lsp from 'vscode-languageserver-protocol'
+import { CorrelationDatabase } from './sqlite.xrepo'
+import { makeFilename } from './sqlite'
 
 export interface DocumentBlob {
     contents: string
@@ -69,7 +71,6 @@ export interface LiteralMap<T> {
     [key: number]: T
 }
 
-
 const MONIKER_KIND_PREFERENCES = ['import', 'local', 'export']
 const MONIKER_SCHEME_PREFERENCES = ['npm', 'tsc']
 
@@ -117,6 +118,7 @@ export class Database {
     private uriTransformer!: UriTransformer
     private db!: Sqlite.Database
 
+    private allDocumentsStmt!: Sqlite.Statement
     private findDocumentStmt!: Sqlite.Statement
     private findBlobStmt!: Sqlite.Statement
     private findDefsStmt!: Sqlite.Statement
@@ -126,11 +128,16 @@ export class Database {
     private version!: string
     private blobs: Map<Id, DocumentBlob>
 
-    public constructor() {
+    public constructor(private correlationDb: CorrelationDatabase) {
         this.blobs = new Map()
     }
 
-    public load(file: string, transformerFactory: (projectRoot: string) => UriTransformer): Promise<void> {
+    public load(file: string): Promise<void> {
+        const transformerFactory: (projectRoot: string) => UriTransformer = root => ({
+            toDatabase: path => `${root}/${path}`,
+            fromDatabase: uri => (uri.startsWith(root) ? uri.slice(`${root}/`.length) : uri),
+        })
+
         this.db = new Sqlite(file, { readonly: true })
         let result: MetaDataResult[] = this.db.prepare('Select * from meta').all()
         if (result === undefined || result.length !== 1) {
@@ -141,6 +148,10 @@ export class Database {
             throw new Error('No project root provided.')
         }
         const projectRoot = URI.parse(metaData.projectRoot).toString(true)
+
+        this.allDocumentsStmt = this.db.prepare(
+            'Select d.* FROM documents d Inner Join versions v On v.hash = d.documentHash'
+        )
 
         this.findDocumentStmt = this.db.prepare(
             [
@@ -236,19 +247,71 @@ export class Database {
             const monikers = this.findMonikers(blob.resultSets, blob.monikers, range)
 
             for (const moniker of monikers) {
+                
                 if (moniker.kind === 'import') {
-                    // TODO(efritz) - implement xrepo find defs here
-                    console.log('UNIMPLEMENTED')
-                    for (const moniker of monikers) {
-                        console.log('MONIKER:', moniker)
+                    // TODO - clean this up
+                    // for (const moniker of monikers) {
                         if (moniker.packageInformation) {
-                            console.log('PACKAGE INFORMATION:', blob.packageInformation![moniker.packageInformation])
-                        }
-                    }
+                            const packageInformation = blob.packageInformation![moniker.packageInformation]
+                            const result = this.correlationDb.lookup(
+                                moniker.scheme,
+                                packageInformation.name,
+                                packageInformation.version!
+                            )
 
-                    console.log('.')
-                    console.log('.')
-                    console.log('.')
+                            if (result) {
+                                const { repository, commit } = result
+
+                                // TODO(efritz) - use cached handle if open
+                                const subDb = new Database(this.correlationDb)
+                                subDb.load(makeFilename(repository, commit))
+
+                                try {
+                                    // TODO(efritz) - determine why npm monikers are mismatched
+                                    const parts = moniker.identifier.split(':')
+                                    parts[1] = '' // WTF
+                                    moniker.identifier = parts.join(':')
+
+                                    // TODO(efritz) - make this indexable in db
+                                    for (const qResult of subDb.allDocumentsStmt.all()) {
+                                        const blob = subDb.getBlob(qResult.documentHash)
+                                        for (const id of Object.keys(blob.monikers!)) {
+                                            const m = blob.monikers![id]
+                                            // TODO(efritz) - skip non-definitions?
+                                            if (m.scheme === moniker.scheme && m.identifier === moniker.identifier) {
+                                                for (const otherId of Object.keys(blob.ranges)) {
+                                                    const range = blob.ranges[otherId]
+                                                    const monikers = subDb.findMonikers(
+                                                        blob.resultSets,
+                                                        blob.monikers,
+                                                        range
+                                                    )
+
+                                                    if (monikers.includes(m)) {
+                                                        const subUri = subDb.fromDatabase(qResult.uri)
+
+                                                        return [
+                                                            lsp.Location.create(
+                                                                `git://${repository}?${commit}#${subUri}`,
+                                                                lsp.Range.create(
+                                                                    range.start.line,
+                                                                    range.start.character,
+                                                                    range.end.line,
+                                                                    range.end.character
+                                                                )
+                                                            ),
+                                                        ]
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                } finally {
+                                    subDb.close()
+                                }
+                            }
+                        }
+                    // }
 
                     return undefined
                 }
@@ -282,6 +345,7 @@ export class Database {
             return undefined
         }
         let resultData = this.findResult(blob.resultSets, blob.referenceResults, range, 'referenceResult')
+        console.log('ref data:', resultData)
         if (resultData === undefined) {
             for (const moniker of this.findMonikers(blob.resultSets, blob.monikers, range)) {
                 let qResult: RefsResult[] = this.findRefsStmt.all({

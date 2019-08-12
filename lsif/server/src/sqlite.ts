@@ -6,6 +6,7 @@ import { Database } from './sqlite.database'
 import { InsertStats, QueryStats, timeit, CreateRunnerStats } from './stats'
 import { readEnvInt } from './env'
 import { convertToBlob } from './sqlite.importer'
+import { CorrelationDatabase } from './sqlite.xrepo'
 
 /**
  * Where on the file system to store LSIF files.
@@ -23,6 +24,28 @@ const SOFT_MAX_STORAGE = readEnvInt({ key: 'LSIF_SOFT_MAX_STORAGE', defaultValue
  * Backend for LSIF dumps stored in SQLite.
  */
 export class SQLiteBackend implements Backend<SQLiteQueryRunner> {
+    private correlationDb!: CorrelationDatabase
+
+    async initialize() {
+        await this.createStorageRoot()
+        const filename = path.join(STORAGE_ROOT, 'correlation.db')
+
+        let exists = true
+        try {
+            await fs.stat(filename)
+        } catch (e) {
+            if ('code' in e && e['code'] === 'ENOENT') {
+                exists = false
+            }
+        }
+
+        this.correlationDb = new CorrelationDatabase(filename)
+
+        if (!exists) {
+            this.correlationDb.create()
+        }
+    }
+
     /**
      * Read the content of the temporary file containing a JSON-encoded LSIF
      * dump. Insert these contents into some storage with an encoding that
@@ -37,9 +60,19 @@ export class SQLiteBackend implements Backend<SQLiteQueryRunner> {
         await this.createStorageRoot()
         const outFile = makeFilename(repository, commit)
 
-        const { elapsed } = await timeit(async () => {
-            await convertToBlob(tempPath, outFile)
+        const { result, elapsed } = await timeit(async () => {
+            return await convertToBlob(tempPath, outFile)
         })
+
+        for (const exportedPackage of result) {
+            this.correlationDb.insert(
+                exportedPackage.scheme,
+                exportedPackage.name,
+                exportedPackage.version,
+                repository,
+                commit
+            )
+        }
 
         this.cleanStorageRoot(Math.max(0, SOFT_MAX_STORAGE - contentLength))
         const fileStat = await fs.stat(outFile)
@@ -80,13 +113,10 @@ export class SQLiteBackend implements Backend<SQLiteQueryRunner> {
             throw e
         }
 
-        const db = new Database()
+        const db = new Database(this.correlationDb)
 
         const { elapsed } = await timeit(async () => {
-            return await db.load(file, root => ({
-                toDatabase: path => `${root}/${path}`,
-                fromDatabase: uri => (uri.startsWith(root) ? uri.slice(`${root}/`.length) : uri),
-            }))
+            return await db.load(file)
         })
 
         return {
@@ -101,6 +131,7 @@ export class SQLiteBackend implements Backend<SQLiteQueryRunner> {
      * Free any resources used by this object.
      */
     public close(): Promise<void> {
+        this.correlationDb.close()
         return Promise.resolve()
     }
 
@@ -202,6 +233,6 @@ export class SQLiteQueryRunner implements QueryRunner {
 /**
  *.Computes the filename of the LSIF dump from the given repository and commit hash.
  */
-function makeFilename(repository: string, commit: string): string {
+export function makeFilename(repository: string, commit: string): string {
     return path.join(STORAGE_ROOT, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
 }

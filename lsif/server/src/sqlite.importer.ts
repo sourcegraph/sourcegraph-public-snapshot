@@ -13,7 +13,13 @@ import * as db from './sqlite.database'
 import * as compression from './sqlite.compression'
 import * as protocol from 'lsif-protocol'
 
-export async function convertToBlob(inFile: string, outFile: string): Promise<void> {
+export interface ExportedPackage {
+    scheme: string
+    name: string
+    version: string
+}
+
+export async function convertToBlob(inFile: string, outFile: string): Promise<Set<ExportedPackage>> {
     const db = new BlobStore(outFile, '0')
     const input = fs.createReadStream(inFile, { encoding: 'utf8' })
 
@@ -93,16 +99,12 @@ export async function convertToBlob(inFile: string, outFile: string): Promise<vo
                     throw new Error(`Parsing failed for line:\n${line}`)
                 }
 
-                try {
-                    insertElement(element)
-                } catch (e) {
-                    throw e
-                }
+                insertElement(element)
             })
 
             rd.on('close', () => {
                 db.close()
-                resolve()
+                resolve(db.exportedPackages)
             })
         })
     })
@@ -123,7 +125,7 @@ class DocumentData {
         this.id = document.id
         this._uri = document.uri
         this.blob = {
-            contents: Buffer.from(document.contents!, 'base64').toString('utf8'),
+            contents: Buffer.from(document.contents! || '', 'base64').toString('utf8'),
             ranges: Object.create(null),
         }
         this.declarations = []
@@ -400,6 +402,7 @@ class BlobStore {
     private monikerSets: Map<protocol.Id, Set<protocol.Id>>
     private monikerAttachments: Map<protocol.Id, protocol.Id>
     private packageInformationDatas: Map<protocol.Id, db.PackageInformationData>
+    public exportedPackages: Set<ExportedPackage>
     private hoverDatas: Map<protocol.Id, lsp.Hover>
     private declarationDatas: Map<
         protocol.Id /* result id */,
@@ -432,6 +435,7 @@ class BlobStore {
         this.monikerSets = new Map()
         this.monikerAttachments = new Map()
         this.packageInformationDatas = new Map()
+        this.exportedPackages = new Set()
         this.hoverDatas = new Map()
         this.declarationDatas = new Map()
         this.definitionDatas = new Map()
@@ -547,9 +551,6 @@ class BlobStore {
                     break
                 case protocol.VertexLabels.event:
                     this.handleEvent(element)
-                    break
-                case protocol.VertexLabels.packageInformation:
-                    console.log('packageInformation vertex unimplemented')
                     break
             }
         } else if (element.type === protocol.ElementTypes.edge) {
@@ -757,8 +758,12 @@ class BlobStore {
 
     private handlePackageInformationEdge(packageInformation: protocol.packageInformation): void {
         const source: db.MonikerData = assertDefined(this.monikerDatas.get(packageInformation.outV))
-        assertDefined(this.packageInformationDatas.get(packageInformation.inV))
+        const packageInfo = assertDefined(this.packageInformationDatas.get(packageInformation.inV))
         source.packageInformation = packageInformation.inV
+
+        if (source.kind === 'export') {
+            this.exportedPackages.add({ scheme: source.scheme, name: packageInfo.name, version: packageInfo.version! })
+        }
     }
 
     private handleHover(hover: protocol.HoverResult): void {
