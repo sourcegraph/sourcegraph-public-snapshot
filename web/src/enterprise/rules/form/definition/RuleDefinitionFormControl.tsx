@@ -69,7 +69,7 @@ export const RuleDefinitionFormControl: React.FunctionComponent<Props> = ({
                     id="rule-definition-form-control__query"
                     className="form-control"
                     placeholder="Search query"
-                    value={parsed.query.input}
+                    value={parsed.query ? parsed.query.input : ''}
                     onChange={onQueryChange}
                 />
             </div>
@@ -80,7 +80,7 @@ export const RuleDefinitionFormControl: React.FunctionComponent<Props> = ({
                     type="text"
                     className="form-control"
                     onChange={onActionChange}
-                    value={parsed.action}
+                    value={parsed.action || ''}
                     list="rule-definition-form-control__action-datalist"
                 />
                 <datalist id="rule-definition-form-control__action-datalist">
