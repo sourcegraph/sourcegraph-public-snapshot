@@ -24,9 +24,8 @@ import (
 )
 
 const (
-	// maxFileAndLineMatches is the limit on number of matching files we return,
-	// and the number of matching lines in a file we return.
-	maxFileAndLineMatches = 1000
+	// maxFileMatches is the limit on number of matching files we return.
+	maxFileMatches = 1000
 
 	// maxLineMatches is the limit on number of matches to return in a
 	// file.
@@ -237,6 +236,10 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 		lastLineNumber = lineNumber
 		matches = appendMatches(matches, fileBuf[lineStart:lineEnd], fileMatchBuf[lineStart:lineEnd], lineNumber, start-lineStart, end-lineStart)
 
+		if len(matches) > maxLineMatches {
+			break
+		}
+
 	}
 	limitHit = len(matches) >= maxLineMatches
 	return matches, limitHit, nil
@@ -247,8 +250,6 @@ func hydrateLineNumbers(fileBuf []byte, lastLineNumber, lastMatchIndex, lineStar
 	return lineNumber, lineStart
 }
 
-// TODO document invariants
-// TODO test corner cases, ie start / end containing new lines / being on buf boundaries / etc.
 // matchLineBuf is a byte slice that contains the full line(s) that the match appears on.
 func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []byte, lineNumber, start, end int) []protocol.LineMatch {
 	// If any newlines appear between start and end, we need to append multiple LineMatch.
@@ -330,8 +331,8 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, file
 		patternMatchesContent = true
 	}
 
-	if fileMatchLimit > maxFileAndLineMatches || fileMatchLimit <= 0 {
-		fileMatchLimit = maxFileAndLineMatches
+	if fileMatchLimit > maxFileMatches || fileMatchLimit <= 0 {
+		fileMatchLimit = maxFileMatches
 	}
 
 	// If we reach fileMatchLimit we use cancel to stop the search
