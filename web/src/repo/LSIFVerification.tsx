@@ -1,10 +1,11 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import CheckIcon from 'mdi-react/CheckIcon'
 import * as React from 'react'
-import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike, normalizeAjaxError } from '../../../shared/src/util/errors'
 import { CopyableText } from '../components/CopyableText'
-import { Subscription, from } from 'rxjs'
-import { catchError } from 'rxjs/operators'
+import { Subscription, Subject, of } from 'rxjs'
+import { catchError, tap, switchMap, map } from 'rxjs/operators'
+import { ajax, AjaxResponse } from 'rxjs/ajax'
 
 interface Props {
     repoName: string
@@ -26,22 +27,8 @@ type VerifyResponse =
       }
     | { token: string }
 
-async function fetchChallenge(): Promise<string> {
-    const response = await fetch(new URL('/.api/lsif/challenge', window.location.href).href, {
-        headers: {
-            'X-Requested-With': 'Sourcegraph',
-        },
-    })
-    if (response.status !== 200) {
-        throw new Error(
-            'Unable to fetch the LSIF challenge. Make sure lsifUploadSecret is set in the site configuration.'
-        )
-    }
-    const json: ChallengeResponse = await response.json()
-    return json.challenge
-}
-
 export class LSIFVerification extends React.PureComponent<Props, State> {
+    private verifies = new Subject<undefined>()
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
@@ -52,12 +39,65 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            from(fetchChallenge())
-                .pipe(catchError(error => [asError(error)]))
-                .subscribe(challengeOrError => {
-                    this.setState({ challengeOrError })
-                })
+            ajax({
+                url: new URL('/.api/lsif/challenge', window.location.href).href,
+                headers: window.context.xhrHeaders,
+            })
+                .pipe(
+                    catchError<AjaxResponse, never>(err => {
+                        normalizeAjaxError(err)
+                        throw err
+                    }),
+                    map<AjaxResponse, ChallengeResponse>(({ response }) => response)
+                )
+                .subscribe(
+                    ({ challenge }) => this.setState({ challengeOrError: challenge }),
+                    error =>
+                        this.setState({
+                            challengeOrError: new Error(
+                                'Unable to fetch the LSIF challenge. Make sure lsifUploadSecret is set in the site configuration. Inner error: ' +
+                                    error.message
+                            ),
+                        })
+                )
         )
+
+        this.subscriptions.add(
+            this.verifies
+                .pipe(
+                    tap(() => this.setState({ tokenOrError: undefined, verifying: true })),
+                    switchMap(() => {
+                        const url = new URL('/.api/lsif/verify', window.location.href)
+                        url.searchParams.set('repository', this.props.repoName)
+                        return ajax({
+                            url: url.href,
+                            headers: window.context.xhrHeaders,
+                        }).pipe(
+                            catchError<AjaxResponse, never>(err => {
+                                normalizeAjaxError(err)
+                                throw err
+                            }),
+                            map<AjaxResponse, VerifyResponse>(({ response }) => response),
+                            tap(response => {
+                                if ('failure' in response) {
+                                    throw new Error(response.failure)
+                                }
+                                this.setState({ tokenOrError: response.token })
+                            }),
+                            catchError(error => {
+                                this.setState({ tokenOrError: error })
+                                return of(undefined)
+                            })
+                        )
+                    }),
+                    tap(() => this.setState({ verifying: false }))
+                )
+                .subscribe()
+        )
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -88,7 +128,7 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
                                     type="button"
                                     className="btn btn-primary"
                                     disabled={this.state.verifying}
-                                    onClick={this.verify}
+                                    onClick={this.onClickVerify}
                                 >
                                     {this.state.verifying && <LoadingSpinner className="icon-inline" />}
                                     Check now
@@ -106,24 +146,5 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
         )
     }
 
-    private verify = async () => {
-        this.setState({ tokenOrError: undefined, verifying: true })
-        try {
-            const url = new URL('/.api/lsif/verify', window.location.href)
-            url.searchParams.set('repository', this.props.repoName)
-            const response: VerifyResponse = await (await fetch(url.href, {
-                headers: {
-                    'X-Requested-With': 'Sourcegraph',
-                },
-            })).json()
-            if ('failure' in response) {
-                throw new Error(response.failure)
-            }
-            this.setState({ tokenOrError: response.token })
-        } catch (error) {
-            this.setState({ tokenOrError: error })
-        } finally {
-            this.setState({ verifying: false })
-        }
-    }
+    private onClickVerify = () => this.verifies.next()
 }
