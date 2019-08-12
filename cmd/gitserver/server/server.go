@@ -808,7 +808,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		defer pw.Close()
 		go readCloneProgress(repo, url, lock, pr)
 
-		if output, err := s.runWithRemoteOpts(ctx, cmd, pw); err != nil {
+		if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
 			return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 		}
 
@@ -965,7 +965,7 @@ func (s *Server) isCloneable(ctx context.Context, url string) error {
 	}
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := s.runWithRemoteOpts(ctx, cmd, nil)
+	out, err := runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -1255,7 +1255,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	if output, err := s.runWithRemoteOpts(ctx, cmd, nil); err != nil {
+	if output, err := runWithRemoteOpts(ctx, cmd, nil); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "failed to update")
 	}
@@ -1270,7 +1270,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	// try to fetch HEAD from origin
 	cmd = exec.CommandContext(ctx, "git", "remote", "show", url)
 	cmd.Dir = path.Join(s.ReposDir, string(repo))
-	output, err := s.runWithRemoteOpts(ctx, cmd, nil)
+	output, err := runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
 		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "failed to fetch remote info")

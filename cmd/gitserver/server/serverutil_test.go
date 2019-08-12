@@ -3,9 +3,54 @@ package server
 import (
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 )
+
+func TestConfigureGitCommand(t *testing.T) {
+	expectedEnv := []string{
+		"GIT_ASKPASS=true",
+		"GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30",
+	}
+	tests := []struct {
+		input        *exec.Cmd
+		expectedEnv  []string
+		expectedArgs []string
+	}{
+		{
+			input:        exec.Command("git", "clone"),
+			expectedEnv:  expectedEnv,
+			expectedArgs: []string{"git", "-c", "credential.helper=", "-c", "protocol.version=2", "clone"},
+		},
+		{
+			input:        exec.Command("git", "fetch"),
+			expectedEnv:  expectedEnv,
+			expectedArgs: []string{"git", "-c", "credential.helper=", "-c", "protocol.version=2", "fetch"},
+		},
+		{
+			input:       exec.Command("git", "ls-remote"),
+			expectedEnv: expectedEnv,
+
+			// Don't use protocol.version=2 for ls-remote because it hurts perf.
+			expectedArgs: []string{"git", "-c", "credential.helper=", "ls-remote"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(strings.Join(test.input.Args, " "), func(t *testing.T) {
+			configureGitCommand(test.input)
+			if !reflect.DeepEqual(test.input.Env, test.expectedEnv) {
+				t.Errorf("\ngot:  %s\nwant: %s\n", test.input.Env, test.expectedEnv)
+			}
+			if !reflect.DeepEqual(test.input.Args, test.expectedArgs) {
+				t.Errorf("\ngot:  %s\nwant: %s\n", test.input.Args, test.expectedArgs)
+			}
+		})
+	}
+}
 
 func TestProgressWriter(t *testing.T) {
 	testCases := []struct {
