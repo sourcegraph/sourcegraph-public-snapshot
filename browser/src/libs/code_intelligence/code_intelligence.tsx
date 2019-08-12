@@ -11,7 +11,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { render as reactDOMRender } from 'react-dom'
 import {
-    animationFrameScheduler,
+    asyncScheduler,
     combineLatest,
     EMPTY,
     from,
@@ -564,7 +564,7 @@ export function handleCodeHost({
             }
             throw err
         }),
-        observeOn(animationFrameScheduler)
+        observeOn(asyncScheduler)
     )
 
     /** Map from workspace URI to number of editors referencing it */

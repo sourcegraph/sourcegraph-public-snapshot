@@ -1,6 +1,6 @@
 import React from 'react'
 import { render } from 'react-dom'
-import { animationFrameScheduler, fromEvent, Observable, Subscription, Unsubscribable } from 'rxjs'
+import { asyncScheduler, fromEvent, Observable, Subscription, Unsubscribable } from 'rxjs'
 import { observeOn } from 'rxjs/operators'
 import { COMMENT_URI_SCHEME } from '../../../../shared/src/api/client/types/textDocument'
 import { EditorCompletionWidget } from '../../../../shared/src/components/completion/EditorCompletionWidget'
@@ -32,7 +32,7 @@ export function handleTextFields(
     /** A stream of added or removed text fields. */
     const textFields = mutations.pipe(
         trackViews(textFieldResolvers || []),
-        observeOn(animationFrameScheduler)
+        observeOn(asyncScheduler)
     )
 
     // Don't use lodash.uniqueId because that makes it harder to hard-code expected URI values in
@@ -80,7 +80,7 @@ function synchronizeTextField(
     // Keep the text field in sync with the editor and model.
     subscriptions.add(
         fromEvent(element, 'input')
-            .pipe(observeOn(animationFrameScheduler))
+            .pipe(observeOn(asyncScheduler))
             .subscribe(() => {
                 EditorTextFieldUtils.updateModelFromElement(modelService, modelUri, element)
                 EditorTextFieldUtils.updateEditorSelectionFromElement(editorService, editor, element)
@@ -88,7 +88,7 @@ function synchronizeTextField(
     )
     subscriptions.add(
         fromEvent(element, 'keydown')
-            .pipe(observeOn(animationFrameScheduler))
+            .pipe(observeOn(asyncScheduler))
             .subscribe(() => {
                 EditorTextFieldUtils.updateEditorSelectionFromElement(editorService, editor, element)
             })
