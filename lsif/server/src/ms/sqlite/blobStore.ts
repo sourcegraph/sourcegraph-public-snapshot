@@ -12,7 +12,7 @@ import {
     Edge, Vertex, ElementTypes, VertexLabels, Document, Range, EdgeLabels, contains, Event, EventScope, EventKind, Id, DocumentEvent, FoldingRangeResult,
     RangeBasedDocumentSymbol, DocumentSymbolResult, DiagnosticResult, Moniker, next, ResultSet, moniker, HoverResult, textDocument_hover, textDocument_foldingRange,
     textDocument_documentSymbol, textDocument_diagnostic, MonikerKind, textDocument_declaration, textDocument_definition, textDocument_references, item,
-    ItemEdgeProperties, DeclarationResult, DefinitionResult, ReferenceResult, MetaData, nextMoniker, packageInformation
+    ItemEdgeProperties, DeclarationResult, DefinitionResult, ReferenceResult, MetaData, nextMoniker, packageInformation, PackageInformation
 } from 'lsif-protocol';
 import { Compressor, foldingRangeCompressor, CompressorOptions, diagnosticCompressor } from './compress';
 import { Inserter } from './inserter';
@@ -155,7 +155,14 @@ interface ReferenceResultData {
     references?: Id[];
 }
 
-type MonikerData = Pick<Moniker, 'scheme' | 'identifier' | 'kind'>;
+type MonikerData = Pick<Moniker, 'scheme' | 'identifier' | 'kind'> & {
+    packageInformation?: Id
+}
+
+type PackageInformationData = Pick<
+    PackageInformation,
+    'name' | 'manager' | 'uri' | 'contents' | 'version' | 'repository'
+>
 
 enum BlobFormat {
     utf8Json = 1,
@@ -163,17 +170,18 @@ enum BlobFormat {
 }
 
 interface DocumentBlob {
-    contents: string;
-    ranges: LiteralMap<RangeData>;
-    resultSets?: LiteralMap<ResultSetData>;
-    monikers?: LiteralMap<MonikerData>;
-    hovers?: LiteralMap<lsp.Hover>;
-    declarationResults?: LiteralMap<DeclarationResultData>;
-    definitionResults?: LiteralMap<DefinitionResultData>;
-    referenceResults?: LiteralMap<ReferenceResultData>;
-    foldingRanges?: lsp.FoldingRange[];
-    documentSymbols?: lsp.DocumentSymbol[] | RangeBasedDocumentSymbol[];
-    diagnostics?: lsp.Diagnostic[];
+    contents: string
+    ranges: LiteralMap<RangeData>
+    resultSets?: LiteralMap<ResultSetData>
+    monikers?: LiteralMap<MonikerData>
+    packageInformation?: LiteralMap<PackageInformationData>
+    hovers?: LiteralMap<lsp.Hover>
+    declarationResults?: LiteralMap<DeclarationResultData>
+    definitionResults?: LiteralMap<DefinitionResultData>
+    referenceResults?: LiteralMap<ReferenceResultData>
+    foldingRanges?: lsp.FoldingRange[]
+    documentSymbols?: lsp.DocumentSymbol[] | RangeBasedDocumentSymbol[]
+    diagnostics?: lsp.Diagnostic[]
 }
 
 interface DataProvider {
@@ -351,7 +359,14 @@ class DocumentData {
         if (this.blob.monikers === undefined) {
             this.blob.monikers = LiteralMap.create();
         }
-        this.blob.monikers![id] = moniker;
+        this.blob.monikers![id] = moniker
+    }
+
+    public addPackageInformation(id: Id, packageInformation: PackageInformationData): void {
+        if (this.blob.packageInformation === undefined) {
+            this.blob.packageInformation = LiteralMap.create()
+        }
+        this.blob.packageInformation![id] = packageInformation
     }
 
     public finalize(): DocumentDatabaseData {
@@ -490,6 +505,7 @@ export class BlobStore implements DataProvider {
     private monikerDatas: Map<Id, MonikerData>;
     private monikerSets: Map<Id, Set<Id>>;
     private monikerAttachments: Map<Id, Id>;
+    private packageInformationDatas: Map<Id, PackageInformationData>;
     private hoverDatas: Map<Id, lsp.Hover>;
     private declarationDatas: Map<Id /* result id */, Map<Id /* document id */, DeclarationResultData>>;
     private definitionDatas: Map<Id /* result id */, Map<Id /* document id */, DefinitionResultData>>;
@@ -516,6 +532,7 @@ export class BlobStore implements DataProvider {
         this.monikerDatas = new Map();
         this.monikerSets = new Map();
         this.monikerAttachments = new Map();
+        this.packageInformationDatas = new Map();
         this.hoverDatas = new Map();
         this.declarationDatas = new Map();
         this.definitionDatas = new Map();
@@ -595,6 +612,9 @@ export class BlobStore implements DataProvider {
                     break;
                 case VertexLabels.moniker:
                     this.handleMoniker(element);
+                    break;
+                case VertexLabels.packageInformation:
+                    this.handlePackageInformation(element)
                     break;
                 case VertexLabels.hoverResult:
                     this.handleHover(element);
@@ -811,9 +831,23 @@ export class BlobStore implements DataProvider {
         }
     }
 
-    // TODO - implement
+    private handlePackageInformation(packageInformation: PackageInformation): void {
+        let data: PackageInformationData = {
+            name: packageInformation.name,
+            manager: packageInformation.manager,
+            uri: packageInformation.uri,
+            contents: packageInformation.contents,
+            version: packageInformation.version,
+            repository: packageInformation.repository,
+        }
+
+        this.packageInformationDatas.set(packageInformation.id, data)
+    }
+
     private handlePackageInformationEdge(packageInformation: packageInformation): void {
-        // console.log('packageInformation', packageInformation)
+        const source: MonikerData = assertDefined(this.monikerDatas.get(packageInformation.outV))
+        assertDefined(this.packageInformationDatas.get(packageInformation.inV))
+        source.packageInformation = packageInformation.inV
     }
 
     private handleHover(hover: HoverResult): void {
@@ -976,7 +1010,10 @@ export class BlobStore implements DataProvider {
                 documentData.addRangeData(id, range);
             }
         }
-        let data = documentData.finalize();
+        for (const [key, value] of this.packageInformationDatas) {
+            documentData.addPackageInformation(key, value)
+        }
+        let data = documentData.finalize()
         if (this.knownHashes.has(data.hash)) {
             this.versionInserter.do(this.version, data.hash);
         } else {

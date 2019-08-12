@@ -7,7 +7,7 @@ import * as lsp from 'vscode-languageserver'
 import Sqlite from 'better-sqlite3'
 import { Database, UriTransformer } from './database'
 import { DocumentInfo } from './files'
-import { Id, MetaData, Moniker, Range, RangeBasedDocumentSymbol } from 'lsif-protocol'
+import { Id, MetaData, Moniker, Range, RangeBasedDocumentSymbol, PackageInformation } from 'lsif-protocol'
 import { URI } from 'vscode-uri'
 
 const MONIKER_KIND_PREFERENCES = ['import', 'local', 'export']
@@ -55,13 +55,21 @@ interface ReferenceResultData {
     references?: Id[]
 }
 
-type MonikerData = Pick<Moniker, 'scheme' | 'identifier' | 'kind'>
+type MonikerData = Pick<Moniker, 'scheme' | 'identifier' | 'kind'> & {
+    packageInformation: Id
+}
+
+type PackageInformationData = Pick<
+    PackageInformation,
+    'name' | 'manager' | 'uri' | 'contents' | 'version' | 'repository'
+>
 
 interface DocumentBlob {
     contents: string
     ranges: LiteralMap<RangeData>
     resultSets?: LiteralMap<ResultSetData>
     monikers?: LiteralMap<MonikerData>
+    packageInformation?: LiteralMap<PackageInformationData>
     hovers?: LiteralMap<lsp.Hover>
     declarationResults?: LiteralMap<DeclarationResultData>
     definitionResults?: LiteralMap<DefinitionResultData>
@@ -321,11 +329,21 @@ export class BlobStore extends Database {
             const monikers = this.findMonikers(blob.resultSets, blob.monikers, range)
 
             for (const moniker of monikers) {
-                if (moniker.kind === "import") {
+                if (moniker.kind === 'import') {
                     // TODO(efritz) - implement xrepo find defs here
-                    console.log("UNIMPLEMENTED")
-                    console.log("MONIKERS:", monikers)
-                    return undefined;
+                    console.log('UNIMPLEMENTED')
+                    for (const moniker of monikers) {
+                        console.log('MONIKER:', moniker)
+                        if (moniker.packageInformation) {
+                            console.log('PACKAGE INFORMATION:', blob.packageInformation![moniker.packageInformation])
+                        }
+                    }
+
+                    console.log('.')
+                    console.log('.')
+                    console.log('.')
+
+                    return undefined
                 }
 
                 let qResult: DefsResult[] = this.findDefsStmt.all({
