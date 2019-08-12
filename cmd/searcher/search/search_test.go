@@ -194,46 +194,38 @@ main.go:7:}
 	s := &search.StoreSearcher{Store: store}
 	defer s.Close()
 
-	for _, test := range cases {
-		test.arg.PatternMatchesContent = true
-		req := protocol.Request{
-			Repo:         "foo",
-			URL:          "u",
-			Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			PatternInfo:  test.arg,
-			FetchTimeout: "500ms",
-		}
-		m, err := doSearch(ts.URL, &req)
-		if err != nil {
-			t.Errorf("%v failed: %s", test.arg, err)
-			continue
-		}
-		sort.Sort(sortByPath(m))
-		got := toString(m)
-		err = sanityCheckSorted(m)
-		if err != nil {
-			t.Errorf("%v malformed response: %s\n%s", test.arg, err, got)
-		}
-		// We have an extra newline to make expected readable
-		if len(test.want) > 0 {
-			test.want = test.want[1:]
-		}
-		if got != test.want {
-			d, err := diff(test.want, got)
-			if err != nil {
-				t.Fatal(err)
+	for i, test := range cases {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			test.arg.PatternMatchesContent = true
+			req := protocol.Request{
+				Repo:         "foo",
+				URL:          "u",
+				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+				PatternInfo:  test.arg,
+				FetchTimeout: "500ms",
 			}
-			t.Errorf("%v unexpected response:\n%s", test.arg, d)
-			continue
-		}
-
-		// we do not support those in query
-		if !test.arg.PathPatternsAreRegExps && (len(test.arg.IncludePatterns) > 0 || test.arg.IncludePattern != "" || test.arg.ExcludePattern != "") {
-			continue
-		}
-		if test.arg.IsWordMatch {
-			continue
-		}
+			m, err := doSearch(ts.URL, &req)
+			if err != nil {
+				t.Fatalf("%v failed: %s", test.arg, err)
+			}
+			sort.Sort(sortByPath(m))
+			got := toString(m)
+			err = sanityCheckSorted(m)
+			if err != nil {
+				t.Fatalf("%v malformed response: %s\n%s", test.arg, err, got)
+			}
+			// We have an extra newline to make expected readable
+			if len(test.want) > 0 {
+				test.want = test.want[1:]
+			}
+			if got != test.want {
+				d, err := diff(test.want, got)
+				if err != nil {
+					t.Fatal(err)
+				}
+				t.Fatalf("%s unexpected response:\n%s", test.arg.String(), d)
+			}
+		})
 	}
 }
 
