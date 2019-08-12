@@ -8,4 +8,4 @@ path=${3:-"./..."}
 
 echo "---- Running benchmarks @$commit ----"
 git checkout "$commit"
-go test -run=^$ -bench=. -benchmem -timeout=0 -cpu=1 -count="$iter" "$path"
+go test -short -run=^$ -bench=. -benchmem -timeout=0 -count="$iter" "$path"
