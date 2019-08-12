@@ -1,9 +1,18 @@
 import * as lsp from 'vscode-languageserver'
 import * as semver from 'semver'
 import RelateUrl from 'relateurl'
-import { Document, Edge, EdgeLabels, ElementTypes, HoverResult, Range, Vertex, VertexLabels } from 'lsif-protocol'
+import {
+    Document,
+    Edge,
+    EdgeLabels,
+    ElementTypes,
+    HoverResult,
+    Range,
+    Vertex,
+    VertexLabels,
+    MetaData,
+} from 'lsif-protocol'
 import { Hover, MarkupContent, MarkupKind } from 'vscode-languageserver-types'
-import { MetaData } from './ms/server/protocol.compress'
 import { Mutation, NQuad, Value, DgraphClient } from 'dgraph-js'
 import { Schema } from 'jsonschema'
 import { validate } from './dgraph.schema'
@@ -17,7 +26,12 @@ export class DgraphImporter {
     private idCounter = 0
     private rootInfo: { rootUri: URL; repoUidRef: string; commitUidRef: string } | undefined
 
-    constructor(private client: DgraphClient, private repository: string, private commit: string, private schema: Schema) {
+    constructor(
+        private client: DgraphClient,
+        private repository: string,
+        private commit: string,
+        private schema: Schema
+    ) {
         this.mutation = new Mutation()
     }
 
