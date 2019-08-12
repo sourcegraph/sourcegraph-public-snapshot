@@ -1,70 +1,14 @@
 /* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
+ * Copyright (c) Sourcegraph and Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
  * ------------------------------------------------------------------------------------------ */
 
-import * as lsp from 'vscode-languageserver'
 import Sqlite from 'better-sqlite3'
-import { Database, UriTransformer } from './database'
-import { DocumentInfo } from './files'
-import { Id, MetaData, Moniker, Range, RangeBasedDocumentSymbol, PackageInformation } from 'lsif-protocol'
 import { URI } from 'vscode-uri'
+import { Range, Id, MetaData, RangeBasedDocumentSymbol, Moniker, PackageInformation } from 'lsif-protocol'
+import * as lsp from 'vscode-languageserver-protocol'
 
-const MONIKER_KIND_PREFERENCES = ['import', 'local', 'export']
-const MONIKER_SCHEME_PREFERENCES = ['npm', 'tsc']
-
-interface MetaDataResult {
-    id: number
-    value: string
-}
-
-interface LiteralMap<T> {
-    [key: string]: T
-    [key: number]: T
-}
-
-interface RangeData extends Pick<Range, 'start' | 'end' | 'tag'> {
-    monikers?: Id[]
-    next?: Id
-    hoverResult?: Id
-    declarationResult?: Id
-    definitionResult?: Id
-    referenceResult?: Id
-}
-
-interface ResultSetData {
-    monikers?: Id[]
-    next?: Id
-    hoverResult?: Id
-    declarationResult?: Id
-    definitionResult?: Id
-    referenceResult?: Id
-}
-
-interface DeclarationResultData {
-    values: Id[]
-}
-
-interface DefinitionResultData {
-    values: Id[]
-}
-
-interface ReferenceResultData {
-    declarations?: Id[]
-    definitions?: Id[]
-    references?: Id[]
-}
-
-type MonikerData = Pick<Moniker, 'scheme' | 'identifier' | 'kind'> & {
-    packageInformation: Id
-}
-
-type PackageInformationData = Pick<
-    PackageInformation,
-    'name' | 'manager' | 'uri' | 'contents' | 'version' | 'repository'
->
-
-interface DocumentBlob {
+export interface DocumentBlob {
     contents: string
     ranges: LiteralMap<RangeData>
     resultSets?: LiteralMap<ResultSetData>
@@ -79,9 +23,59 @@ interface DocumentBlob {
     diagnostics?: lsp.Diagnostic[]
 }
 
-interface DocumentsResult {
-    documentHash: string
-    uri: string
+export interface RangeData extends Pick<Range, 'start' | 'end' | 'tag'> {
+    monikers?: Id[]
+    next?: Id
+    hoverResult?: Id
+    declarationResult?: Id
+    definitionResult?: Id
+    referenceResult?: Id
+}
+
+export interface ResultSetData {
+    monikers?: Id[]
+    next?: Id
+    hoverResult?: Id
+    declarationResult?: Id
+    definitionResult?: Id
+    referenceResult?: Id
+}
+
+export interface DeclarationResultData {
+    values: Id[]
+}
+
+export interface DefinitionResultData {
+    values: Id[]
+}
+
+export interface ReferenceResultData {
+    declarations?: Id[]
+    definitions?: Id[]
+    references?: Id[]
+}
+
+export type MonikerData = Pick<Moniker, 'scheme' | 'identifier' | 'kind'> & {
+    packageInformation?: Id
+}
+
+export type PackageInformationData = Pick<
+    PackageInformation,
+    'name' | 'manager' | 'uri' | 'contents' | 'version' | 'repository'
+>
+
+export interface LiteralMap<T> {
+    [key: string]: T
+    [key: number]: T
+}
+
+
+const MONIKER_KIND_PREFERENCES = ['import', 'local', 'export']
+const MONIKER_SCHEME_PREFERENCES = ['npm', 'tsc']
+
+interface MetaDataResult {
+    id: number
+    value: string
 }
 
 interface BlobResult {
@@ -100,14 +94,6 @@ interface DefsResult {
     endCharacter: number
 }
 
-interface DeclsResult {
-    uri: string
-    startLine: number
-    startCharacter: number
-    endLine: number
-    endCharacter: number
-}
-
 interface RefsResult {
     uri: string
     kind: number
@@ -117,37 +103,45 @@ interface RefsResult {
     endCharacter: number
 }
 
-export class BlobStore extends Database {
+export interface UriTransformer {
+    toDatabase(uri: string): string
+    fromDatabase(uri: string): string
+}
+
+export const noopTransformer: UriTransformer = {
+    toDatabase: uri => uri,
+    fromDatabase: uri => uri,
+}
+
+export class Database {
+    private uriTransformer!: UriTransformer
     private db!: Sqlite.Database
 
-    private allDocumentsStmt!: Sqlite.Statement
     private findDocumentStmt!: Sqlite.Statement
     private findBlobStmt!: Sqlite.Statement
-    private findDeclsStmt!: Sqlite.Statement
     private findDefsStmt!: Sqlite.Statement
     private findRefsStmt!: Sqlite.Statement
     private findHoverStmt!: Sqlite.Statement
 
     private version!: string
-    private projectRoot!: URI
     private blobs: Map<Id, DocumentBlob>
 
     public constructor() {
-        super()
-        this.version
         this.blobs = new Map()
     }
 
     public load(file: string, transformerFactory: (projectRoot: string) => UriTransformer): Promise<void> {
         this.db = new Sqlite(file, { readonly: true })
-        this.readMetaData()
-        this.allDocumentsStmt = this.db.prepare(
-            [
-                'Select d.documentHash, d.uri From documents d',
-                'Inner Join versions v On v.hash = d.documentHash',
-                'Where v.version = ?',
-            ].join(' ')
-        )
+        let result: MetaDataResult[] = this.db.prepare('Select * from meta').all()
+        if (result === undefined || result.length !== 1) {
+            throw new Error('Failed to read meta data record.')
+        }
+        let metaData: MetaData = JSON.parse(result[0].value)
+        if (metaData.projectRoot === undefined) {
+            throw new Error('No project root provided.')
+        }
+        const projectRoot = URI.parse(metaData.projectRoot).toString(true)
+
         this.findDocumentStmt = this.db.prepare(
             [
                 'Select d.documentHash From documents d',
@@ -156,14 +150,6 @@ export class BlobStore extends Database {
             ].join(' ')
         )
         this.findBlobStmt = this.db.prepare('Select content From blobs Where hash = ?')
-        this.findDeclsStmt = this.db.prepare(
-            [
-                'Select doc.uri, d.startLine, d.startCharacter, d.endLine, d.endCharacter From decls d',
-                'Inner Join versions v On d.documentHash = v.hash',
-                'Inner Join documents doc On d.documentHash = doc.documentHash',
-                'Where v.version = $version and d.scheme = $scheme and d.identifier = $identifier',
-            ].join(' ')
-        )
         this.findDefsStmt = this.db.prepare(
             [
                 'Select doc.uri, d.startLine, d.startCharacter, d.endLine, d.endCharacter From defs d',
@@ -192,66 +178,17 @@ export class BlobStore extends Database {
         if (typeof this.version !== 'string') {
             throw new Error('Version tag must be a string')
         }
-        this.initialize(transformerFactory)
+
+        this.uriTransformer = transformerFactory ? transformerFactory(projectRoot) : noopTransformer
         return Promise.resolve()
-    }
-
-    private readMetaData(): void {
-        let result: MetaDataResult[] = this.db.prepare('Select * from meta').all()
-        if (result === undefined || result.length !== 1) {
-            throw new Error('Failed to read meta data record.')
-        }
-        let metaData: MetaData = JSON.parse(result[0].value)
-        if (metaData.projectRoot === undefined) {
-            throw new Error('No project root provided.')
-        }
-        this.projectRoot = URI.parse(metaData.projectRoot)
-    }
-
-    public getProjectRoot(): URI {
-        return this.projectRoot
     }
 
     public close(): void {
         this.db.close()
     }
 
-    protected getDocumentInfos(): DocumentInfo[] {
-        let result: DocumentsResult[] = this.allDocumentsStmt.all(this.version)
-        if (result === undefined) {
-            return []
-        }
-        return result.map(item => {
-            return { id: item.documentHash, uri: item.uri }
-        })
-    }
-
-    private getBlob(documentId: Id): DocumentBlob {
-        let result = this.blobs.get(documentId)
-        if (result === undefined) {
-            const blobResult: BlobResult = this.findBlobStmt.get(documentId)
-            result = JSON.parse(blobResult.content.toString('utf8')) as DocumentBlob
-            this.blobs.set(documentId, result)
-        }
-        return result
-    }
-
-    protected findFile(uri: string): Id | undefined {
-        let result: DocumentResult = this.findDocumentStmt.get({ version: this.version, uri: uri })
-        return result !== undefined ? result.documentHash : undefined
-    }
-
-    protected fileContent(documentId: Id): string {
-        const blob = this.getBlob(documentId)
-        return Buffer.from(blob.contents).toString('base64')
-    }
-
-    public foldingRanges(uri: string): lsp.FoldingRange[] | undefined {
-        return undefined
-    }
-
-    public documentSymbols(uri: string): lsp.DocumentSymbol[] | undefined {
-        return undefined
+    public exists(uri: string): boolean {
+        return Boolean(this.findFile(this.uriTransformer.toDatabase(uri)))
     }
 
     public hover(uri: string, position: lsp.Position): lsp.Hover | undefined {
@@ -286,36 +223,6 @@ export class BlobStore extends Database {
         }
 
         return undefined
-    }
-
-    public declarations(uri: string, position: lsp.Position): lsp.Location | lsp.Location[] | undefined {
-        const { range, blob } = this.findRangeFromPosition(this.toDatabase(uri), position)
-        if (range === undefined || blob === undefined || blob.declarationResults === undefined) {
-            return undefined
-        }
-        let resultData = this.findResult(blob.resultSets, blob.declarationResults, range, 'declarationResult')
-        if (resultData === undefined) {
-            for (const moniker of this.findMonikers(blob.resultSets, blob.monikers, range)) {
-                let qResult: DeclsResult[] = this.findDeclsStmt.all({
-                    version: this.version,
-                    scheme: moniker.scheme,
-                    identifier: moniker.identifier,
-                })
-                if (qResult === undefined || qResult.length === 0) {
-                    continue
-                }
-                return qResult.map(item => {
-                    return lsp.Location.create(
-                        this.fromDatabase(item.uri),
-                        lsp.Range.create(item.startLine, item.startCharacter, item.endLine, item.endCharacter)
-                    )
-                })
-            }
-
-            return undefined
-        } else {
-            return BlobStore.asLocations(blob.ranges, uri, resultData.values)
-        }
     }
 
     public definitions(uri: string, position: lsp.Position): lsp.Location | lsp.Location[] | undefined {
@@ -365,7 +272,7 @@ export class BlobStore extends Database {
 
             return undefined
         } else {
-            return BlobStore.asLocations(blob.ranges, uri, resultData.values)
+            return asLocations(blob.ranges, uri, resultData.values)
         }
     }
 
@@ -402,13 +309,13 @@ export class BlobStore extends Database {
         } else {
             let result: lsp.Location[] = []
             if (context.includeDeclaration && resultData.declarations !== undefined) {
-                result.push(...BlobStore.asLocations(blob.ranges, uri, resultData.declarations))
+                result.push(...asLocations(blob.ranges, uri, resultData.declarations))
             }
             if (context.includeDeclaration && resultData.definitions !== undefined) {
-                result.push(...BlobStore.asLocations(blob.ranges, uri, resultData.definitions))
+                result.push(...asLocations(blob.ranges, uri, resultData.definitions))
             }
             if (resultData.references !== undefined) {
-                result.push(...BlobStore.asLocations(blob.ranges, uri, resultData.references))
+                result.push(...asLocations(blob.ranges, uri, resultData.references))
             }
             return result
         }
@@ -440,7 +347,7 @@ export class BlobStore extends Database {
         resultSets: LiteralMap<ResultSetData> | undefined,
         monikers: LiteralMap<MonikerData> | undefined,
         data: RangeData | ResultSetData
-    ): MonikerData[]  {
+    ): MonikerData[] {
         if (monikers === undefined) {
             return []
         }
@@ -488,11 +395,11 @@ export class BlobStore extends Database {
         let candidate: RangeData | undefined
         for (let key of Object.keys(blob.ranges)) {
             let range = blob.ranges[key]
-            if (BlobStore.containsPosition(range, position)) {
+            if (containsPosition(range, position)) {
                 if (!candidate) {
                     candidate = range
                 } else {
-                    if (BlobStore.containsRange(candidate, range)) {
+                    if (containsRange(candidate, range)) {
                         candidate = range
                     }
                 }
@@ -501,45 +408,68 @@ export class BlobStore extends Database {
         return { range: candidate, blob }
     }
 
-    private static asLocations(ranges: LiteralMap<RangeData>, uri: string, ids: Id[]): lsp.Location[] {
-        return ids.map(id => {
-            let range = ranges[id]
-            return lsp.Location.create(
-                uri,
-                lsp.Range.create(range.start.line, range.start.character, range.end.line, range.end.character)
-            )
-        })
+    private getBlob(documentId: Id): DocumentBlob {
+        let result = this.blobs.get(documentId)
+        if (result === undefined) {
+            const blobResult: BlobResult = this.findBlobStmt.get(documentId)
+            result = JSON.parse(blobResult.content.toString('utf8')) as DocumentBlob
+            this.blobs.set(documentId, result)
+        }
+        return result
     }
 
-    private static containsPosition(range: lsp.Range, position: lsp.Position): boolean {
-        if (position.line < range.start.line || position.line > range.end.line) {
-            return false
-        }
-        if (position.line === range.start.line && position.character < range.start.character) {
-            return false
-        }
-        if (position.line === range.end.line && position.character > range.end.character) {
-            return false
-        }
-        return true
+    private findFile(uri: string): Id | undefined {
+        let result: DocumentResult = this.findDocumentStmt.get({ version: this.version, uri: uri })
+        return result !== undefined ? result.documentHash : undefined
     }
 
-    /**
-     * Test if `otherRange` is in `range`. If the ranges are equal, will return true.
-     */
-    public static containsRange(range: lsp.Range, otherRange: lsp.Range): boolean {
-        if (otherRange.start.line < range.start.line || otherRange.end.line < range.start.line) {
-            return false
-        }
-        if (otherRange.start.line > range.end.line || otherRange.end.line > range.end.line) {
-            return false
-        }
-        if (otherRange.start.line === range.start.line && otherRange.start.character < range.start.character) {
-            return false
-        }
-        if (otherRange.end.line === range.end.line && otherRange.end.character > range.end.character) {
-            return false
-        }
-        return true
+    private toDatabase(uri: string): string {
+        return this.uriTransformer.toDatabase(uri)
     }
+
+    private fromDatabase(uri: string): string {
+        return this.uriTransformer.fromDatabase(uri)
+    }
+}
+
+function asLocations(ranges: LiteralMap<RangeData>, uri: string, ids: Id[]): lsp.Location[] {
+    return ids.map(id => {
+        let range = ranges[id]
+        return lsp.Location.create(
+            uri,
+            lsp.Range.create(range.start.line, range.start.character, range.end.line, range.end.character)
+        )
+    })
+}
+
+function containsPosition(range: lsp.Range, position: lsp.Position): boolean {
+    if (position.line < range.start.line || position.line > range.end.line) {
+        return false
+    }
+    if (position.line === range.start.line && position.character < range.start.character) {
+        return false
+    }
+    if (position.line === range.end.line && position.character > range.end.character) {
+        return false
+    }
+    return true
+}
+
+/**
+ * Test if `otherRange` is in `range`. If the ranges are equal, will return true.
+ */
+function containsRange(range: lsp.Range, otherRange: lsp.Range): boolean {
+    if (otherRange.start.line < range.start.line || otherRange.end.line < range.start.line) {
+        return false
+    }
+    if (otherRange.start.line > range.end.line || otherRange.end.line > range.end.line) {
+        return false
+    }
+    if (otherRange.start.line === range.start.line && otherRange.start.character < range.start.character) {
+        return false
+    }
+    if (otherRange.end.line === range.end.line && otherRange.end.character > range.end.character) {
+        return false
+    }
+    return true
 }

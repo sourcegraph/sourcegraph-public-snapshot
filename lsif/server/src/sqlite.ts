@@ -2,9 +2,10 @@ import * as lsp from 'vscode-languageserver'
 import * as path from 'path'
 import { Backend, NoLSIFDataError, QueryRunner } from './backend'
 import { fs } from 'mz'
-import { Database } from './ms/server/database'
+import { Database } from './sqlite.database'
 import { InsertStats, QueryStats, timeit, CreateRunnerStats } from './stats'
 import { readEnvInt } from './env'
+import { convertToBlob } from './sqlite.importer'
 
 /**
  * Where on the file system to store LSIF files.
@@ -19,9 +20,9 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 const SOFT_MAX_STORAGE = readEnvInt({ key: 'LSIF_SOFT_MAX_STORAGE', defaultValue: 100 * 1024 * 1024 * 1024 })
 
 /**
- * The abstract SQLite backend base that supports graph and blob subclasses.
+ * Backend for LSIF dumps stored in SQLite.
  */
-export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
+export class SQLiteBackend implements Backend<SQLiteQueryRunner> {
     /**
      * Read the content of the temporary file containing a JSON-encoded LSIF
      * dump. Insert these contents into some storage with an encoding that
@@ -37,7 +38,7 @@ export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
         const outFile = makeFilename(repository, commit)
 
         const { elapsed } = await timeit(async () => {
-            await this.convert(tempPath, outFile)
+            await convertToBlob(tempPath, outFile)
         })
 
         this.cleanStorageRoot(Math.max(0, SOFT_MAX_STORAGE - contentLength))
@@ -79,7 +80,7 @@ export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
             throw e
         }
 
-        const db = this.createStore()
+        const db = new Database()
 
         const { elapsed } = await timeit(async () => {
             return await db.load(file, root => ({
@@ -148,17 +149,6 @@ export abstract class SQLiteBackend implements Backend<SQLiteQueryRunner> {
             totalSize = totalSize - f.stat.size
         }
     }
-
-    /**
-     * Generate a SQLite dump from a temporary file to the given target file.
-     */
-    protected abstract convert(inFile: string, outFile: string): Promise<void>
-
-    /**
-     * Create a new, empty Database. This object should be able to load the file
-     * created by `buildCommand`.
-     */
-    protected abstract createStore(): Database
 }
 
 export class SQLiteQueryRunner implements QueryRunner {
@@ -168,7 +158,7 @@ export class SQLiteQueryRunner implements QueryRunner {
      * Determines whether or not data exists for the given file.
      */
     public exists(file: string): Promise<boolean> {
-        return Promise.resolve(Boolean(this.db.stat(file)))
+        return Promise.resolve(this.db.exists(file))
     }
 
     /**

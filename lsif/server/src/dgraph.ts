@@ -14,7 +14,7 @@ import { unflattenRange, FlatRange } from './dgraph.range'
 const DGRAPH_ADDRESS = process.env['DGRAPH_ADDRESS'] || undefined
 
 /**
- * Backend for SQLite dumps stored in Dgraph.
+ * Backend for LSIF dumps stored in Dgraph.
  */
 export class DgraphBackend implements Backend<DgraphQueryRunner> {
     private clientStub: DgraphClientStub

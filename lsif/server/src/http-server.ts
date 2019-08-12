@@ -8,8 +8,7 @@ import { createPrometheusReporters, emit } from './prometheus'
 import { DgraphBackend } from './dgraph'
 import { fs } from 'mz'
 import { readEnvInt } from './env'
-import { SQLiteGraphBackend } from './sqlite.graph'
-import { SQLiteBlobBackend } from './sqlite.blob'
+import { SQLiteBackend } from './sqlite'
 import { wrap } from 'async-middleware'
 import {
     checkRepository,
@@ -29,8 +28,9 @@ const PORT = readEnvInt({ key: 'LSIF_HTTP_PORT', defaultValue: 3186 })
  * A list of available backend factories by name.
  */
 const AVAILABLE_BACKENDS: { [k: string]: () => Promise<Backend<QueryRunner>> } = {
-    'sqlite-graph': async () => new SQLiteGraphBackend(),
-    'sqlite-blob': async () => new SQLiteBlobBackend(),
+    sqlite: async () => {
+        return new SQLiteBackend()
+    },
     dgraph: async () => {
         const db = new DgraphBackend()
         await db.initialize()
@@ -41,7 +41,7 @@ const AVAILABLE_BACKENDS: { [k: string]: () => Promise<Backend<QueryRunner>> } =
 /**
  * The name of the backend that the server initializes on startup.
  */
-const DEFAULT_BACKEND = process.env['DEFAULT_BACKEND'] || 'sqlite-blob'
+const DEFAULT_BACKEND = process.env['DEFAULT_BACKEND'] || 'sqlite'
 
 /**
  * Whether or not JSON-schema validation is performed when uploading LSIF dumps.
