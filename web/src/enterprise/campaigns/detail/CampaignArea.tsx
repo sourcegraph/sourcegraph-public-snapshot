@@ -25,7 +25,7 @@ import { CampaignOverview } from './CampaignOverview'
 import { CampaignDiagnostics } from './diagnostics/CampaignDiagnostics'
 import { CampaignFileDiffsList } from './fileDiffs/CampaignFileDiffsList'
 import { CampaignRepositoriesList } from './repositories/CampaignRepositoriesList'
-import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
+import { CampaignThreadListPage } from './threads/CampaignThreadListPage'
 import { useCampaignByID } from './useCampaignByID'
 
 export interface CampaignAreaContext
@@ -177,7 +177,7 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                         icon: ThreadsIcon,
                         count: campaign.threads.totalCount,
                         path: '/threads',
-                        render: () => <CampaignThreadsListPage {...context} className={PAGE_CLASS_NAME} />,
+                        render: () => <CampaignThreadListPage {...context} className={PAGE_CLASS_NAME} />,
                         navbarDividerBefore: true,
                     },
                     {

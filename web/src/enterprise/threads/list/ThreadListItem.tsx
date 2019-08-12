@@ -38,14 +38,14 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
                 <div
                     className="form-check ml-1 mr-2"
                     /* tslint:disable-next-line:jsx-ban-props */
-                    style={{ marginTop: '2px' /* stylelint-disable-line declaration-property-unit-whitelist */ }}
+                    style={{ marginTop: '4px' /* stylelint-disable-line declaration-property-unit-whitelist */ }}
                 >
                     <input className="form-check-input position-static" type="checkbox" aria-label="Select item" />
                 </div>
             )}
             <ThreadStateIcon
                 thread={thread.state ? thread : { kind: thread.kind, state: GQL.ThreadState.OPEN }}
-                className="mr-2"
+                className="mt-1 mr-2"
             />
             <div className="flex-1">
                 <div className="d-flex align-items-center flex-wrap">
@@ -56,7 +56,12 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
                         <span className="badge badge-secondary ml-1 d-none">123</span> {/* TODO!(sqs) */}
                     </h3>
                     {thread.__typename === 'Thread' && (
-                        <LabelableLabelsList labelable={thread} showNoLabels={false} itemClassName="mr-2" />
+                        <LabelableLabelsList
+                            labelable={thread}
+                            showNoLabels={false}
+                            className="d-flex align-items-center"
+                            itemClassName="mr-2"
+                        />
                     )}
                 </div>
                 <ul className="list-unstyled d-flex align-items-center small text-muted mb-0">
@@ -92,10 +97,10 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
             </div>
             <div>
                 <ul className="list-inline d-flex align-items-center">
-                    {thread.__typename === 'Thread' && thread.comments.totalCount > 0 && (
+                    {thread.__typename === 'Thread' && thread.comments.totalCount >= 1 && (
                         <li className="list-inline-item">
                             <small className="text-muted">
-                                <MessageOutlineIcon className="icon-inline" /> {thread.comments.totalCount}
+                                <MessageOutlineIcon className="icon-inline" /> {thread.comments.totalCount - 1}
                             </small>
                         </li>
                     )}

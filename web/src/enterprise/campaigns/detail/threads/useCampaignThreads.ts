@@ -3,9 +3,9 @@ import { map, startWith } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
+import { ActorFragment } from '../../../../actor/graphql'
 import { queryGraphQL } from '../../../../backend/graphql'
 import { ThreadFragment } from '../../../threads/util/graphql'
-
 const LOADING: 'loading' = 'loading'
 
 /**
@@ -37,6 +37,7 @@ export const useCampaignThreads = (
                     }
                 }
                 ${ThreadFragment}
+                ${ActorFragment}
             `,
             { campaign: campaign.id }
         )

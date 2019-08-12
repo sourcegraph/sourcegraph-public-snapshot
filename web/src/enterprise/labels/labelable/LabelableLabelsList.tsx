@@ -11,6 +11,7 @@ interface Props {
 
     showNoLabels?: boolean
 
+    className?: string
     itemClassName?: string
 }
 
@@ -22,7 +23,8 @@ const LOADING = 'loading' as const
 export const LabelableLabelsList: React.FunctionComponent<Props> = ({
     labelable,
     showNoLabels = true,
-    itemClassName,
+    className = '',
+    itemClassName = '',
 }) => {
     const [labels] = useLabelableLabels(labelable)
     return labels === LOADING ? (
@@ -30,7 +32,7 @@ export const LabelableLabelsList: React.FunctionComponent<Props> = ({
     ) : isErrorLike(labels) ? (
         <div className="alert alert-danger">{labels.message}</div>
     ) : labels.totalCount > 0 ? (
-        <ul className="list-inline">
+        <ul className={`list-inline ${className}`}>
             {labels.nodes.map(label => (
                 <Label
                     key={label.id}
@@ -40,7 +42,7 @@ export const LabelableLabelsList: React.FunctionComponent<Props> = ({
                 />
             ))}
         </ul>
-    ) : (
-        showNoLabels && <small className="text-muted">No labels</small>
-    )
+    ) : showNoLabels ? (
+        <small className="text-muted">No labels</small>
+    ) : null
 }
