@@ -40,6 +40,7 @@ export function validateContent(tempPath: string, schema: any): Promise<void> {
         lineno++
     }
 
+    // TODO(efritz) - possibly faster with readline
     return new Promise((resolve, reject) => {
         fs.createReadStream(tempPath)
             .pipe(split2({ maxLength: MAX_LINE_SIZE }))
