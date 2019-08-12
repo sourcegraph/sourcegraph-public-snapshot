@@ -133,6 +133,54 @@ main.go:6:	fmt.Println("Hello world")
 		{protocol.PatternInfo{Pattern: "", IsRegExp: false, IncludePatterns: []string{"\\.png"}, PathPatternsAreRegExps: true, PatternMatchesPath: true}, `
 milton.png
 `},
+		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:1:package main
+main.go:2:
+main.go:3:import "fmt"
+`},
+		{protocol.PatternInfo{Pattern: "package main\n\\s*import \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:1:package main
+main.go:2:
+main.go:3:import "fmt"
+`},
+		{protocol.PatternInfo{Pattern: "package main\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:1:package main
+`},
+		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:1:package main
+main.go:2:
+`},
+		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:1:package main
+main.go:2:
+`},
+		{protocol.PatternInfo{Pattern: "\nfunc", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:4:
+main.go:5:func main() {
+`},
+		{protocol.PatternInfo{Pattern: "\n\\s*func", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:3:import "fmt"
+main.go:4:
+main.go:5:func main() {
+`},
+		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:1:package main
+main.go:2:
+main.go:3:import "fmt"
+main.go:4:
+main.go:5:func main() {
+`},
+		{protocol.PatternInfo{Pattern: "\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+README.md:1:# Hello World
+README.md:2:
+main.go:1:package main
+main.go:2:
+main.go:3:import "fmt"
+main.go:4:
+main.go:5:func main() {
+main.go:6:	fmt.Println("Hello world")
+main.go:7:}
+`},
 	}
 
 	store, cleanup, err := newStore(files)
@@ -146,7 +194,7 @@ milton.png
 	s := &search.StoreSearcher{Store: store}
 	defer s.Close()
 
-	for i, test := range cases {
+	for _, test := range cases {
 		test.arg.PatternMatchesContent = true
 		req := protocol.Request{
 			Repo:         "foo",
@@ -185,31 +233,6 @@ milton.png
 		}
 		if test.arg.IsWordMatch {
 			continue
-		}
-
-		q, err := patternToQuery(&test.arg)
-		if err != nil {
-			t.Errorf("%v failed to convert query: %s", test.arg, err)
-			continue
-		}
-		q = query.Simplify(query.NewAnd(&query.Ref{Pattern: string(req.Commit)}, q))
-
-		sr, err := s.Search(context.Background(), q, &searchapi.Options{Repositories: []api.RepoName{"foo"}})
-		if err != nil {
-			t.Errorf("%v failed to search: %s", q, err)
-			continue
-		}
-
-		sort.Slice(sr.Files, func(i, j int) bool {
-			return sr.Files[i].Path < sr.Files[j].Path
-		})
-		got = toStringNew(sr)
-		if got != test.want {
-			d, err := diff(test.want, got)
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Errorf("%d %v unexpected response:\n%s", i, q, d)
 		}
 	}
 }
