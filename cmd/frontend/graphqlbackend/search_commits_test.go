@@ -248,9 +248,9 @@ func Test_highlightMatches(t *testing.T) {
 		// https://github.com/sourcegraph/sourcegraph/issues/4791
 		{
 			name: "unicode search that would be broken by tolower",
-			args: args {
+			args: args{
 				pattern: regexp.MustCompile(`İ`),
-				data: []byte(`İi`),
+				data:    []byte(`İi`),
 			},
 			want: &highlightedString{
 				value: "İi",
