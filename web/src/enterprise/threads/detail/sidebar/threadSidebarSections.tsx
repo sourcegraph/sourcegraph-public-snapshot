@@ -1,4 +1,5 @@
 import BellIcon from 'mdi-react/BellIcon'
+import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import UserGroupIcon from 'mdi-react/UserGroupIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import React from 'react'
@@ -112,4 +113,21 @@ export const threadSidebarSections = ({ thread, onThreadUpdate, ...props }: Prop
             <CopyThreadLinkButton link={thread.url} className="btn btn-link btn-link-sm text-decoration-none px-0" />
         ),
     },
+    ...thread.externalURLs.map(({ url, serviceType }) => ({
+        expanded: {
+            title: (
+                <div className="d-flex align-items-center justify-content-between position-relative">
+                    {serviceType === 'github' ? 'GitHub' : serviceType}
+                    <a href={url} target="_blank" className="stretched-link">
+                        <GithubCircleIcon className="icon-inline" />
+                    </a>
+                </div>
+            ),
+        },
+        collapsed: (
+            <a href={url} target="_blank">
+                <GithubCircleIcon className="icon-inline" />
+            </a>
+        ),
+    })),
 ]

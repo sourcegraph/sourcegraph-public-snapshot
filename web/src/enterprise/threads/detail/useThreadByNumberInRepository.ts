@@ -45,6 +45,10 @@ export const useThreadByNumberInRepository = (
                                 kind
                                 viewerCanUpdate
                                 url
+                                externalURLs {
+                                    url
+                                    serviceType
+                                }
                                 repository {
                                     id
                                     url
