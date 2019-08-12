@@ -3,13 +3,14 @@ package bitbucketserver
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
@@ -18,36 +19,44 @@ import (
 
 // A store of Permissions with in-memory caching, safe for concurrent use.
 //
-// It leverages Postgres row locking for concurrency control of cache fill events,
+// It implements and optimistic locking strategy similar to compare and swap
 // so that many concurrent requests during an expiration don't overload the Bitbucket Server API.
 //
 // The second in-memory read-through layer avoids the round-trip and serialization
 // costs associated with talking to Postgres, further speeding up the steady state
 // operations.
 type store struct {
-	db    dbutil.DB
-	ttl   time.Duration
-	cache *cache
-	clock func() time.Time
+	db      dbutil.DB
+	hardTTL time.Duration
+	softTTL time.Duration
+	cache   *cache
+	clock   func() time.Time
 }
 
 func newStore(db dbutil.DB, ttl time.Duration, clock func() time.Time, cache *cache) *store {
 	return &store{
-		db:    db,
-		ttl:   ttl,
-		cache: cache,
-		clock: clock,
+		db:      db,
+		softTTL: ttl,
+		hardTTL: 3 * 24 * time.Hour, // 3 days
+		cache:   cache,
+		clock:   clock,
 	}
+}
+
+// PermissionsID uniquely identifies a set of Permissions.
+type PermissionsID struct {
+	UserID int32
+	Perm   authz.Perms
+	Type   string
 }
 
 // Permissions of a user to perform an action on the
 // given set of object IDs of the defined type.
 type Permissions struct {
-	UserID    int32
-	Perm      authz.Perms
-	Type      string
+	PermissionsID
 	IDs       *roaring.Bitmap
 	UpdatedAt time.Time
+	Version   uint64
 }
 
 // Authorized returns the intersection of the given ids with
@@ -66,60 +75,56 @@ func (p *Permissions) Authorized(repos []*types.Repo) []authz.RepoPerms {
 // to fetch updated permissions when they expire.
 func (s *store) LoadPermissions(
 	ctx context.Context,
-	p **Permissions,
-	update func() (objectIDs []uint32, _ error),
+	ps *Permissions,
+	update updateFunc,
 ) (err error) {
 	ctx, save := s.observe(ctx, "LoadPermissions", "")
-	defer func() { save(*p, &err) }()
+	defer func() { save(ps, &err) }()
 
 	if s == nil {
 		return nil
 	}
 
-	// Do we have unexpired permissions cached in-memory?
-	if s.cache.load(p) {
-		return nil // Yes, in-memory cache hit!
-	}
-
-	// Nope, in-memory cache miss. Sad. Do we have unexpired
-	// permissions stored in the Postgres user_permissions table?
-	// Let's find out...
-
-	ps := *p
-	stored := &Permissions{
-		UserID: ps.UserID,
-		Perm:   ps.Perm,
-		Type:   ps.Type,
-	}
-
-	// Load the permissions with a read lock.
-	if err = s.load(ctx, stored, "SHARE"); err != nil {
-		return err
-	}
-
-	// Did these permissions expire? If so, it's time for a slow
-	// cache filling event.
-	now := s.clock()
-	if expired := !now.Before(stored.UpdatedAt.Add(s.ttl)); expired {
-		if err = s.update(ctx, stored, update); err != nil {
+	if !s.cache.load(ps) {
+		if err = s.load(ctx, ps); err != nil {
 			return err
 		}
 	}
 
-	// At this point we have fresh permissions in `stored`, either because
-	// we loaded them or updated them. So we store them in our read-through
-	// cache and update the passed Permissions pointer!
-	s.cache.update(stored)
-	*p = stored
+	now := s.clock()
+	expired := !now.Before(ps.UpdatedAt.Add(s.softTTL))
+	stale := !now.Before(ps.UpdatedAt.Add(s.hardTTL))
+	updating := ps.Version%2 == 1
+
+	if !updating && (expired || stale) {
+		if _, err = s.update(ctx, ps, update); err != nil {
+			return err
+		}
+	}
+
+	if stale {
+		return &StalePermissionsError{Permissions: ps}
+	}
 
 	return nil
 }
 
-func (s *store) load(ctx context.Context, p *Permissions, lock string) (err error) {
-	ctx, save := s.observe(ctx, "load", lock)
-	defer save(p, &err)
+// StalePermissionsError is returned by LoadPermissions when the stored
+// permissions are stale (i.e. surpassed the hard-TTL before being updated).
+// Callers should pass this error up to the user.
+type StalePermissionsError struct {
+	*Permissions
+}
 
-	q := s.loadQuery(p, lock)
+func (e StalePermissionsError) Error() string {
+	return fmt.Sprintf("%s:%s permissions for user=%d are stale", e.Perm, e.Type, e.UserID)
+}
+
+func (s *store) load(ctx context.Context, ps *Permissions) (err error) {
+	ctx, save := s.observe(ctx, "load", "")
+	defer func() { save(ps, &err) }()
+
+	q := s.loadQuery(ps)
 
 	var rows *sql.Rows
 	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
@@ -132,7 +137,7 @@ func (s *store) load(ctx context.Context, p *Permissions, lock string) (err erro
 	}
 
 	var ids []byte
-	if err = rows.Scan(&ids, &p.UpdatedAt); err != nil {
+	if err = rows.Scan(&ids, &ps.UpdatedAt, &ps.Version); err != nil {
 		return err
 	}
 
@@ -140,18 +145,13 @@ func (s *store) load(ctx context.Context, p *Permissions, lock string) (err erro
 		return err
 	}
 
-	if p.IDs == nil {
-		p.IDs = roaring.NewBitmap()
-	} else {
-		p.IDs.Clear()
-	}
-
-	return p.IDs.UnmarshalBinary(ids)
+	ps.IDs = roaring.New()
+	return ps.IDs.UnmarshalBinary(ids)
 }
 
-func (s *store) loadQuery(p *Permissions, lock string) *sqlf.Query {
+func (s *store) loadQuery(p *Permissions) *sqlf.Query {
 	return sqlf.Sprintf(
-		loadQueryFmtStr+lock,
+		loadQueryFmtStr,
 		p.UserID,
 		p.Perm.String(),
 		p.Type,
@@ -160,103 +160,97 @@ func (s *store) loadQuery(p *Permissions, lock string) *sqlf.Query {
 
 const loadQueryFmtStr = `
 -- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.load
-SELECT object_ids, updated_at
+SELECT object_ids, updated_at, version
 FROM user_permissions
-WHERE user_id = %s AND permission = %s AND object_type = %s
-FOR `
+WHERE user_id = %s AND permission = %s AND object_type = %s`
 
-func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uint32, error)) (err error) {
+type updateFunc func(context.Context) (objectIDs []uint32, err error)
+
+func (s *store) update(ctx context.Context, p *Permissions, update updateFunc) (ok bool, err error) {
 	ctx, save := s.observe(ctx, "update", "")
 	defer save(p, &err)
 
-	// Open a transaction for concurrency control.
-	var tx *sql.Tx
-	if tx, err = s.tx(ctx); err != nil {
-		return err
+	p.Version++
+	if ok, err = s.upsert(ctx, p); !ok || err != nil {
+		return ok, err
 	}
 
-	// Either rollback or commit this transaction, when we're done.
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		} else {
-			err = tx.Commit()
+	go func(ps *Permissions) {
+		for {
+			if ok, err := s.refresh(ps, update); !ok || err != nil {
+				log15.Error("bitbucketserver.authz.store.update", "error", err, "updated", ok)
+				time.Sleep(10 * time.Second)
+			}
+			return
 		}
-	}()
+	}(&Permissions{
+		PermissionsID: p.PermissionsID,
+		IDs:           p.IDs,
+		UpdatedAt:     p.UpdatedAt,
+		Version:       p.Version + 1,
+	})
 
-	// Make another store with this underlying transaction.
-	txs := store{db: tx, clock: s.clock}
+	return true, nil
+}
 
-	// We're here because we need to update our permissions. In order
-	// to prevent multiple concurrent (and distributed) cache fills,
-	// which would hammer the upstream code host, we acquire an exclusive
-	// write lock over the Postgres row for these permissions.
-	//
-	// This means other processes will block until the cache fill succeeds,
-	// which is the desired behaviour.
-	if err = txs.load(ctx, p, "UPDATE"); err != nil {
-		return err
-	}
-
-	// We have acquired an exclusive write lock over these permissions,
-	// but maybe another process already finished the cache fill event.
-	// If so, we don't have to update it again until it expires.
-	now := s.clock()
-	if now.Before(p.UpdatedAt.Add(s.ttl)) { // Valid!
-		return nil // Updated by another process!
-	}
-
+func (s *store) refresh(ps *Permissions, update updateFunc) (ok bool, err error) {
 	// Slow cache update operation, talks to the code host.
-	var ids []uint32
-	if ids, err = update(); err != nil {
-		return err
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	ids, err := update(ctx)
+	cancel()
+
+	if err != nil {
+		return false, err
 	}
 
-	// Create a set of the given ids and update the timestamp.
-	p.IDs = roaring.BitmapOf(ids...)
-	p.UpdatedAt = now
+	ps.UpdatedAt = s.clock()
+	ps.IDs = roaring.BitmapOf(ids...)
 
-	// Write back the updated permissions to the database.
-	return txs.upsert(ctx, p)
-}
-
-func (s *store) tx(ctx context.Context) (*sql.Tx, error) {
-	switch t := s.db.(type) {
-	case *sql.Tx:
-		return t, nil
-	case *sql.DB:
-		return t.BeginTx(ctx, nil)
-	default:
-		panic("can't open transaction with unknown implementation of dbutil.DB")
+	if ok, err = s.upsert(ctx, ps); !ok || err != nil {
+		return ok, err
 	}
+
+	s.cache.update(ps)
+
+	return true, nil
 }
 
-func (s *store) upsert(ctx context.Context, p *Permissions) (err error) {
+func (s *store) upsert(ctx context.Context, p *Permissions) (ok bool, err error) {
 	ctx, save := s.observe(ctx, "upsert", "")
 	defer save(p, &err)
 
 	var q *sqlf.Query
 	if q, err = s.upsertQuery(p); err != nil {
-		return err
+		return false, err
 	}
 
 	var rows *sql.Rows
 	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return rows.Close()
+	var userID uint32
+	for rows.Next() {
+		if err = rows.Scan(&userID); err != nil {
+			return false, err
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return false, err
+	}
+
+	return userID != 0, rows.Close()
 }
 
-func (s *store) upsertQuery(p *Permissions) (*sqlf.Query, error) {
-	ids, err := p.IDs.ToBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	if p.UpdatedAt.IsZero() {
-		return nil, errors.New("UpdatedAt timestamp must be set")
+func (s *store) upsertQuery(p *Permissions) (_ *sqlf.Query, err error) {
+	var ids []byte
+	if p.IDs != nil {
+		ids, err = p.IDs.ToBytes()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return sqlf.Sprintf(
@@ -266,20 +260,25 @@ func (s *store) upsertQuery(p *Permissions) (*sqlf.Query, error) {
 		p.Type,
 		ids,
 		p.UpdatedAt.UTC(),
+		p.Version,
 	), nil
 }
 
 const upsertQueryFmtStr = `
 -- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.upsert
 INSERT INTO user_permissions
-  (user_id, permission, object_type, object_ids, updated_at)
+  (user_id, permission, object_type, object_ids, updated_at, version)
 VALUES
-  (%s, %s, %s, %s, %s)
+  (%s, %s, %s, %s, %s, %s)
 ON CONFLICT ON CONSTRAINT
   user_permissions_perm_object_unique
 DO UPDATE SET
   object_ids = excluded.object_ids,
-  updated_at = excluded.updated_at
+  updated_at = excluded.updated_at,
+  version    = excluded.version
+WHERE
+  user_permissions.version = excluded.version - 1
+RETURNING user_id
 `
 
 func (s *store) observe(ctx context.Context, family, title string) (context.Context, func(*Permissions, *error)) {
@@ -318,45 +317,28 @@ func (s *store) observe(ctx context.Context, family, title string) (context.Cont
 // A store's in-memory read-through cache used in LoadPermissions.
 type cache struct {
 	mu    sync.RWMutex
-	cache map[cacheKey]*Permissions
-	ttl   time.Duration
-	clock func() time.Time
+	cache map[PermissionsID]*Permissions
 }
 
 func newCache(ttl time.Duration, clock func() time.Time) *cache {
-	return &cache{
-		cache: map[cacheKey]*Permissions{},
-		ttl:   ttl,
-		clock: clock,
-	}
+	return &cache{cache: map[PermissionsID]*Permissions{}}
 }
 
-type cacheKey struct {
-	UserID int32
-	Perm   authz.Perms
-	Type   string
-}
-
-// load sets the given Permissions pointer with a matching cached
-// Permissions. If no cached Permissions are found or if they are
-// now expired,
-func (c *cache) load(p **Permissions) (hit bool) {
+func (c *cache) load(ps *Permissions) (ok bool) {
 	if c == nil {
 		return false
 	}
 
-	k := newCacheKey(*p)
-
 	c.mu.RLock()
-	e, ok := c.cache[k]
-	c.mu.RUnlock()
+	defer c.mu.RUnlock()
 
-	now := c.clock()
-	if hit = ok && now.Before(e.UpdatedAt.Add(c.ttl)); hit {
-		*p = e
+	cached, ok := c.cache[ps.PermissionsID]
+	if !ok {
+		return false
 	}
 
-	return
+	*ps = *cached
+	return true
 }
 
 func (c *cache) update(p *Permissions) {
@@ -364,20 +346,13 @@ func (c *cache) update(p *Permissions) {
 		return
 	}
 
-	k := newCacheKey(p)
 	c.mu.Lock()
-	c.cache[k] = p
+	c.cache[p.PermissionsID] = p
 	c.mu.Unlock()
 }
 
-func newCacheKey(p *Permissions) cacheKey {
-	if p.Type == "" {
-		panic("empty Type")
-	}
-
-	return cacheKey{
-		UserID: p.UserID,
-		Perm:   p.Perm,
-		Type:   p.Type,
-	}
+func (c *cache) delete(p PermissionsID) {
+	c.mu.Lock()
+	delete(c.cache, p)
+	c.mu.Unlock()
 }

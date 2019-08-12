@@ -27,7 +27,7 @@ func BenchmarkStore(b *testing.B) {
 		ids[i] = uint32(i)
 	}
 
-	update := func() ([]uint32, error) {
+	update := func(context.Context) ([]uint32, error) {
 		time.Sleep(2 * time.Second) // Emulate slow code host
 		return ids, nil
 	}
@@ -38,13 +38,15 @@ func BenchmarkStore(b *testing.B) {
 		ttl := time.Duration(0)
 		s := newStore(db, ttl, clock, newCache(ttl, clock))
 		ps := &Permissions{
-			UserID: 99,
-			Perm:   authz.Read,
-			Type:   "repos",
+			PermissionsID: PermissionsID{
+				UserID: 99,
+				Perm:   authz.Read,
+				Type:   "repos",
+			},
 		}
 
 		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
+			err := s.LoadPermissions(ctx, ps, update)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -55,13 +57,15 @@ func BenchmarkStore(b *testing.B) {
 		ttl := 60 * time.Second
 		s := newStore(db, ttl, clock, nil)
 		ps := &Permissions{
-			UserID: 99,
-			Perm:   authz.Read,
-			Type:   "repos",
+			PermissionsID: PermissionsID{
+				UserID: 99,
+				Perm:   authz.Read,
+				Type:   "repos",
+			},
 		}
 
 		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
+			err := s.LoadPermissions(ctx, ps, update)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -72,13 +76,15 @@ func BenchmarkStore(b *testing.B) {
 		ttl := 60 * time.Second
 		s := newStore(db, ttl, clock, newCache(ttl, clock))
 		ps := &Permissions{
-			UserID: 99,
-			Perm:   authz.Read,
-			Type:   "repos",
+			PermissionsID: PermissionsID{
+				UserID: 99,
+				Perm:   authz.Read,
+				Type:   "repos",
+			},
 		}
 
 		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
+			err := s.LoadPermissions(ctx, ps, update)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -104,7 +110,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 		ids := []uint32{1, 2, 3}
 		e := error(nil)
 		calls := uint64(0)
-		update := func() ([]uint32, error) {
+		update := func(context.Context) ([]uint32, error) {
 			atomic.AddUint64(&calls, 1)
 			return ids, e
 		}
@@ -112,20 +118,20 @@ func testStore(db *sql.DB) func(*testing.T) {
 		ctx := context.Background()
 		load := func(s *store) (*Permissions, error) {
 			ps := &Permissions{
-				UserID: 42,
-				Perm:   authz.Read,
-				Type:   "repos",
+				PermissionsID: PermissionsID{
+					UserID: 99,
+					Perm:   authz.Read,
+					Type:   "repos",
+				},
 			}
-
-			err := s.LoadPermissions(ctx, &ps, update)
-			return ps, err
+			return ps, s.LoadPermissions(ctx, ps, update)
 		}
 
 		{
 			// not cached nor stored
 			ps, err := load(s)
-			equal(t, "err", err, nil)
-			equal(t, "ids", ps.IDs.ToArray(), ids)
+			equal(t, "err", err, &StalePermissionsError{Permissions: ps})
+			equal(t, "ids", ps.IDs, nil)
 		}
 
 		ids = append(ids, 4, 5, 6)
@@ -142,12 +148,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 			// Not cached but stored.  Clear in-memory cache, still
 			// no update should have happened, but permissions get
 			// loaded from the store.
-			s.cache.cache = map[cacheKey]*Permissions{}
+			s.cache.cache = map[PermissionsID]*Permissions{}
 			ps, err := load(s)
 			equal(t, "err", err, nil)
 			equal(t, "ids", ps.IDs.ToArray(), ids[:3])
 			equal(t, "cache",
-				s.cache.cache[newCacheKey(ps)],
+				s.cache.cache[ps.PermissionsID],
 				ps,
 			)
 		}

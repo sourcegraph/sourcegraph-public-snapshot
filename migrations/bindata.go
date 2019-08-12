@@ -229,6 +229,8 @@
 // 1528395582_add_default_repos.up.sql (80B)
 // 1528395583_add_default_repos_primary_key.down.sql (77B)
 // 1528395583_add_default_repos_primary_key.up.sql (67B)
+// 1528395584_add_version_column_to_user_permissions.down.sql (67B)
+// 1528395584_add_version_column_to_user_permissions.up.sql (92B)
 
 package migrations
 
@@ -4877,6 +4879,46 @@ func _1528395583_add_default_repos_primary_keyUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395584_add_version_column_to_user_permissionsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x8a\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x4b\x2d\x02\x09\x5a\x73\x71\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x71\x6b\x53\x9e\x43\x00\x00\x00")
+
+func _1528395584_add_version_column_to_user_permissionsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395584_add_version_column_to_user_permissionsDownSql,
+		"1528395584_add_version_column_to_user_permissions.down.sql",
+	)
+}
+
+func _1528395584_add_version_column_to_user_permissionsDownSql() (*asset, error) {
+	bytes, err := _1528395584_add_version_column_to_user_permissionsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395584_add_version_column_to_user_permissions.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xfb, 0x8f, 0x59, 0xac, 0xa3, 0xc5, 0x5b, 0xa1, 0xe1, 0x4f, 0x4c, 0x9, 0x7, 0xf7, 0x8a, 0x90, 0x60, 0xef, 0x76, 0x61, 0xf9, 0xb6, 0xb4, 0xe, 0x6, 0x3b, 0x3b, 0xea, 0xf0, 0xae, 0x1e, 0xcf}}
+	return a, nil
+}
+
+var __1528395584_add_version_column_to_user_permissionsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x14\xc8\x3d\x0e\x42\x21\x0c\x07\xf0\xbd\xa7\xf8\x1f\xc1\x9d\x09\x1e\xf5\xa5\x49\x29\x89\x29\xb3\x13\x03\x83\x1f\xa1\xd1\xf3\x1b\xd7\x5f\xe1\x53\x2c\x11\x65\x75\xbe\xc1\x73\x51\xc6\x27\xe6\xbe\xbf\xe7\x7e\xac\x88\xf5\x7a\x06\xe5\x5a\x71\x74\x1d\xcd\xf0\x9d\xfb\x6f\x28\x72\x8a\x39\xac\x3b\x6c\xa8\xa2\xf2\x35\x0f\x75\x5c\x12\xd1\xd1\x5b\x13\x4f\xf4\x0b\x00\x00\xff\xff\xbb\x71\x06\x96\x5c\x00\x00\x00")
+
+func _1528395584_add_version_column_to_user_permissionsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395584_add_version_column_to_user_permissionsUpSql,
+		"1528395584_add_version_column_to_user_permissions.up.sql",
+	)
+}
+
+func _1528395584_add_version_column_to_user_permissionsUpSql() (*asset, error) {
+	bytes, err := _1528395584_add_version_column_to_user_permissionsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395584_add_version_column_to_user_permissions.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x92, 0x1d, 0x95, 0xba, 0x5f, 0x3c, 0xad, 0x31, 0x2, 0xec, 0x54, 0x97, 0x5c, 0x8c, 0x63, 0xcf, 0x53, 0x17, 0x71, 0x35, 0xd9, 0xc, 0x26, 0x6, 0x70, 0x80, 0xa9, 0x64, 0x73, 0xae, 0xf6, 0x71}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5425,6 +5467,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395583_add_default_repos_primary_key.down.sql": _1528395583_add_default_repos_primary_keyDownSql,
 
 	"1528395583_add_default_repos_primary_key.up.sql": _1528395583_add_default_repos_primary_keyUpSql,
+
+	"1528395584_add_version_column_to_user_permissions.down.sql": _1528395584_add_version_column_to_user_permissionsDownSql,
+
+	"1528395584_add_version_column_to_user_permissions.up.sql": _1528395584_add_version_column_to_user_permissionsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5697,6 +5743,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395582_add_default_repos.up.sql":                         {_1528395582_add_default_reposUpSql, map[string]*bintree{}},
 	"1528395583_add_default_repos_primary_key.down.sql":           {_1528395583_add_default_repos_primary_keyDownSql, map[string]*bintree{}},
 	"1528395583_add_default_repos_primary_key.up.sql":             {_1528395583_add_default_repos_primary_keyUpSql, map[string]*bintree{}},
+	"1528395584_add_version_column_to_user_permissions.down.sql":  {_1528395584_add_version_column_to_user_permissionsDownSql, map[string]*bintree{}},
+	"1528395584_add_version_column_to_user_permissions.up.sql":    {_1528395584_add_version_column_to_user_permissionsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

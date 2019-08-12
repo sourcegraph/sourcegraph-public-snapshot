@@ -109,7 +109,7 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		}
 	}
 
-	update := func() ([]uint32, error) {
+	update := func(ctx context.Context) ([]uint32, error) {
 		visible, err := p.repos(ctx, userName)
 		if err != nil && err != errNoResults {
 			return nil, err
@@ -126,12 +126,14 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 	}
 
 	ps := &Permissions{
-		UserID: userID,
-		Perm:   authz.Read,
-		Type:   "repos",
+		PermissionsID: PermissionsID{
+			UserID: userID,
+			Perm:   authz.Read,
+			Type:   "repos",
+		},
 	}
 
-	err = p.store.LoadPermissions(ctx, &ps, update)
+	err = p.store.LoadPermissions(ctx, ps, update)
 	if err != nil {
 		return nil, err
 	}
