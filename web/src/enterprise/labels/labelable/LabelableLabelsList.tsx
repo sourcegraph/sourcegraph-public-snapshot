@@ -9,6 +9,8 @@ interface Props {
     /** The labelable object whose labels to list. */
     labelable: Pick<GQL.Labelable, '__typename' | 'id'>
 
+    showNoLabels?: boolean
+
     itemClassName?: string
 }
 
@@ -17,7 +19,11 @@ const LOADING = 'loading' as const
 /**
  * A list of labels that are applied to a labelable object.
  */
-export const LabelableLabelsList: React.FunctionComponent<Props> = ({ labelable, itemClassName }) => {
+export const LabelableLabelsList: React.FunctionComponent<Props> = ({
+    labelable,
+    showNoLabels = true,
+    itemClassName,
+}) => {
     const [labels] = useLabelableLabels(labelable)
     return labels === LOADING ? (
         <LoadingSpinner className="icon-inline" />
@@ -35,6 +41,6 @@ export const LabelableLabelsList: React.FunctionComponent<Props> = ({ labelable,
             ))}
         </ul>
     ) : (
-        <small className="text-muted">No labels</small>
+        showNoLabels && <small className="text-muted">No labels</small>
     )
 }

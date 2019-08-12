@@ -1,4 +1,5 @@
 import { gql } from '../../../../../shared/src/graphql/graphql'
+import { ActorQuery } from '../../../actor/graphql'
 
 export const ThreadFragment = gql`
     fragment ThreadFragment on Thread {
@@ -9,12 +10,20 @@ export const ThreadFragment = gql`
         state
         kind
         url
+        createdAt
         externalURLs {
             url
             serviceType
         }
         repository {
             name
+            url
+        }
+        author {
+            ${ActorQuery}
+        }
+        comments {
+            totalCount
         }
     }
 `

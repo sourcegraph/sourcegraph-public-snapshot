@@ -3,7 +3,7 @@ import { map, startWith } from 'rxjs/operators'
 import { dataOrThrowErrors, gql, queryAndFragmentForUnion } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
-import { actorFragment, actorQuery } from '../../../../actor/graphql'
+import { ActorFragment, ActorQuery } from '../../../../actor/graphql'
 import { queryGraphQL } from '../../../../backend/graphql'
 import { ThreadFragment } from '../../../threads/util/graphql'
 
@@ -26,8 +26,8 @@ const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
         'RemoveDiagnosticFromThreadEvent',
     ],
     ['id', 'createdAt'],
-    [`actor { ${actorQuery} }`, `thread { ...ThreadFragment }`],
-    [actorFragment, ThreadFragment]
+    [`actor { ${ActorQuery} }`, `thread { ...ThreadFragment }`],
+    [ActorFragment, ThreadFragment]
 )
 
 type Result = typeof LOADING | GQL.ICampaignTimelineItemConnection | ErrorLike
@@ -55,7 +55,7 @@ export const useCampaignTimelineItems = (campaign: Pick<GQL.ICampaign, 'id'>): [
                                     ... on CommentEvent {
                                         id
                                         createdAt
-                                        actor { ${actorQuery} }
+                                        actor { ${ActorQuery} }
                                         comment {
                                             __typename
                                             bodyText

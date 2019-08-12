@@ -3,7 +3,7 @@ import { map, startWith } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../shared/src/util/errors'
-import { actorFragment, actorQuery } from '../../actor/graphql'
+import { ActorFragment, ActorQuery } from '../../actor/graphql'
 import { queryGraphQL } from '../../backend/graphql'
 
 const replyCommentFieldsFragment = gql`
@@ -13,13 +13,13 @@ const replyCommentFieldsFragment = gql`
         body
         bodyHTML
         author {
-            ${actorQuery}
+            ${ActorQuery}
         }
         createdAt
         updatedAt
         viewerCanUpdate
     }
-    ${actorFragment}
+    ${ActorFragment}
 `
 
 const LOADING: 'loading' = 'loading'

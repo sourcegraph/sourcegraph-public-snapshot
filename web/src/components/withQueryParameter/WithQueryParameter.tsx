@@ -43,6 +43,23 @@ export const WithQueryParameter: React.FunctionComponent<Props> = ({
     return children({ query, onQueryChange })
 }
 
+export const useQueryParameter = (
+    { location, history }: { location: H.Location; history: H.History },
+    defaultQuery = ''
+): [string, (query: string) => void] => {
+    const q = new URLSearchParams(location.search).get('q')
+    const query = q === null ? defaultQuery : q
+    const onQueryChange = useCallback(
+        (query: string) => {
+            const params = new URLSearchParams(location.search)
+            params.set('q', query)
+            history.push({ search: `${params}` })
+        },
+        [history, location.search]
+    )
+    return [query, onQueryChange]
+}
+
 export const withQueryParameter = <P extends object>(
     component: React.FunctionComponent<P & QueryParameterProps>
 ): React.FunctionComponent<P & Pick<Props, Exclude<keyof Props, 'children'>>> => {

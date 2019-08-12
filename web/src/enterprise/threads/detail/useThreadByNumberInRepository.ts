@@ -3,7 +3,7 @@ import { map, startWith } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { actorFragment, actorQuery } from '../../../actor/graphql'
+import { ActorFragment, ActorQuery } from '../../../actor/graphql'
 import { queryGraphQL } from '../../../backend/graphql'
 
 const LOADING: 'loading' = 'loading'
@@ -38,7 +38,7 @@ export const useThreadByNumberInRepository = (
                                 body
                                 bodyHTML
                                 author {
-                                    ${actorQuery}
+                                    ${ActorQuery}
                                 }
                                 createdAt
                                 updatedAt
@@ -82,7 +82,7 @@ export const useThreadByNumberInRepository = (
                         }
                     }
                 }
-                ${actorFragment}
+                ${ActorFragment}
             `,
             { repository, number }
         )
