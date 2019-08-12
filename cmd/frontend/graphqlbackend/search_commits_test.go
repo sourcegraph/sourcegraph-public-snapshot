@@ -257,7 +257,7 @@ func Test_highlightMatches(t *testing.T) {
 				highlights: []*highlightedRange{
 					{
 						line:      1,
-						character: 1,
+						character: 0,
 						length:    1,
 					},
 				},
