@@ -110,10 +110,11 @@ func ImportGitHubThreadEvents(ctx context.Context, threadID, threadExternalServi
 	if err != nil {
 		return err
 	}
-
 	if externalServiceID != threadExternalServiceID {
 		// TODO!(sqs): handle this case, not sure when it would happen, also is complicated by when
-		// there are multiple external services for a repo.
+		// there are multiple external services for a repo.  TODO!(sqs): also make this look up the
+		// external service using the externalServiceID directly when repo-updater exposes an API to
+		// do that.
 		return fmt.Errorf("thread %d: external service %d in DB does not match repository external service %d", threadID, threadExternalServiceID, externalServiceID)
 	}
 

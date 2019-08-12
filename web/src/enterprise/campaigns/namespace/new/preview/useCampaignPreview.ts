@@ -1,6 +1,7 @@
+import { isEqual } from 'lodash'
 import { useEffect, useMemo, useState } from 'react'
 import { merge, Subject } from 'rxjs'
-import { map, mapTo, switchMap, tap, throttleTime } from 'rxjs/operators'
+import { distinctUntilChanged, map, mapTo, switchMap, tap, throttleTime } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
@@ -117,9 +118,13 @@ export const useCampaignPreview = (
     const [isLoading, setIsLoading] = useState(true)
     const [result, setResult] = useState<Result>(LOADING)
     useEffect(() => {
+        // Don't refresh on changes to the name or description.
+        const inputSubjectChanges = inputSubject.pipe(
+            distinctUntilChanged((a, b) => a.namespace === b.namespace && isEqual(a.rules, b.rules))
+        )
         const subscription = merge(
-            inputSubject.pipe(mapTo(LOADING)),
-            inputSubject.pipe(
+            inputSubjectChanges.pipe(mapTo(LOADING)),
+            inputSubjectChanges.pipe(
                 throttleTime(1000, undefined, { leading: true, trailing: true }),
                 switchMap(input =>
                     getCampaignExtensionData(extensionsController, input).pipe(

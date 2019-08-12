@@ -2,6 +2,7 @@ import H from 'history'
 import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { DropdownMenuFilter } from '../../../../components/dropdownMenuFilter/DropdownMenuFilter'
 
 interface Item {
     text: string
@@ -36,10 +37,6 @@ export const DiagnosticQueryBuilderFilterDropdownButton: React.FunctionComponent
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
 
     const [filter, setFilter] = useState('')
-    const onFilterChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(e => {
-        setFilter(e.currentTarget.value)
-    }, [])
-
     const itemsFiltered = items.filter(({ text }) => text.toLowerCase().includes(filter.toLowerCase()))
 
     return (
@@ -48,23 +45,12 @@ export const DiagnosticQueryBuilderFilterDropdownButton: React.FunctionComponent
                 {buttonText}
             </DropdownToggle>
             <DropdownMenu /* TODO!(sqs) set width to avoid changing width when filter changes */>
-                <DropdownItem header={true}>{headerText}</DropdownItem>
-                <DropdownItem
-                    tag="div"
-                    role="search"
-                    header={true}
-                    /* TODO!(sqs): make Esc key when focused close the dropdown */
-                >
-                    <input
-                        type="search"
-                        className="form-control small py-2"
-                        value={filter}
-                        placeholder={queryPlaceholderText}
-                        onChange={onFilterChange}
-                        autoFocus={true}
-                    />
-                </DropdownItem>
-                <DropdownItem divider={true} />
+                <DropdownMenuFilter
+                    value={filter}
+                    onChange={setFilter}
+                    placeholder={queryPlaceholderText}
+                    header={headerText}
+                />
                 {itemsFiltered.length > 0 ? (
                     itemsFiltered.map(({ text, url, count }) => (
                         <Link

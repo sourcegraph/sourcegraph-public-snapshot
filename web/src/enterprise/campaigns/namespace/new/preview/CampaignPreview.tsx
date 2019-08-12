@@ -82,48 +82,52 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                         </ul>
                                     </div>
                                 )}
-                                <div className="card border-left border-right border-top mb-4">
-                                    <h4 className="card-header">File changes</h4>
-                                    {campaignPreview.repositoryComparisons.flatMap((c, i) =>
-                                        c.fileDiffs.nodes.map((d, j) => (
-                                            <FileDiffNode
-                                                key={`${i}:${j}`}
-                                                {...props}
-                                                // TODO!(sqs): hack dont show full uri in diff header
-                                                node={{
-                                                    ...d,
-                                                    oldPath: parseRepoURI(d.oldPath!).filePath!,
-                                                    newPath: parseRepoURI(d.newPath!).filePath!,
-                                                }}
-                                                base={{
-                                                    repoName: c.baseRepository.name,
-                                                    repoID: c.baseRepository.id,
-                                                    rev: c.range.baseRevSpec.expr,
-                                                    commitID: c.range.baseRevSpec.object!.oid, // TODO!(sqs)
-                                                }}
-                                                head={{
-                                                    repoName: c.headRepository.name,
-                                                    repoID: c.headRepository.id,
-                                                    rev: c.range.headRevSpec.expr,
-                                                    commitID: c.range.headRevSpec.object!.oid, // TODO!(sqs)
-                                                }}
-                                                showRepository={true}
-                                                lineNumbers={false}
-                                                className="mb-0 border-top-0 border-left-0 border-right-0"
-                                            />
-                                        ))
-                                    )}
-                                </div>
-                                <div className="card mb-4">
-                                    <h4 className="card-header">Diagnostics</h4>
-                                    <DiagnosticListByResource
-                                        {...props}
-                                        diagnostics={campaignPreview.diagnostics.nodes.map(d => ({
-                                            ...d.data,
-                                            ...toDiagnostic(d.data),
-                                        }))}
-                                    />
-                                </div>
+                                {campaignPreview.repositoryComparisons.length > 0 && (
+                                    <div className="card border-left border-right border-top mb-4">
+                                        <h4 className="card-header">File changes</h4>
+                                        {campaignPreview.repositoryComparisons.flatMap((c, i) =>
+                                            c.fileDiffs.nodes.map((d, j) => (
+                                                <FileDiffNode
+                                                    key={`${i}:${j}`}
+                                                    {...props}
+                                                    // TODO!(sqs): hack dont show full uri in diff header
+                                                    node={{
+                                                        ...d,
+                                                        oldPath: parseRepoURI(d.oldPath!).filePath!,
+                                                        newPath: parseRepoURI(d.newPath!).filePath!,
+                                                    }}
+                                                    base={{
+                                                        repoName: c.baseRepository.name,
+                                                        repoID: c.baseRepository.id,
+                                                        rev: c.range.baseRevSpec.expr,
+                                                        commitID: c.range.baseRevSpec.object!.oid, // TODO!(sqs)
+                                                    }}
+                                                    head={{
+                                                        repoName: c.headRepository.name,
+                                                        repoID: c.headRepository.id,
+                                                        rev: c.range.headRevSpec.expr,
+                                                        commitID: c.range.headRevSpec.object!.oid, // TODO!(sqs)
+                                                    }}
+                                                    showRepository={true}
+                                                    lineNumbers={false}
+                                                    className="mb-0 border-top-0 border-left-0 border-right-0"
+                                                />
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                                {campaignPreview.diagnostics.nodes.length > 0 && (
+                                    <div className="card mb-4">
+                                        <h4 className="card-header">Diagnostics</h4>
+                                        <DiagnosticListByResource
+                                            {...props}
+                                            diagnostics={campaignPreview.diagnostics.nodes.map(d => ({
+                                                ...d.data,
+                                                ...toDiagnostic(d.data),
+                                            }))}
+                                        />
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>
