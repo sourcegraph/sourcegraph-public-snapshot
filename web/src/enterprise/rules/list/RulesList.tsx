@@ -75,6 +75,7 @@ export const RulesList: React.FunctionComponent<Props> = ({ container, match, cl
                         toggle={dismissNewRuleForm} // TODO!(sqs) prompt to save
                     >
                         <NewRuleForm
+                            {...props}
                             container={container}
                             onDismiss={dismissNewRuleForm}
                             onRuleCreate={onRulesUpdate}
@@ -94,6 +95,7 @@ export const RulesList: React.FunctionComponent<Props> = ({ container, match, cl
                         return rule ? (
                             <FormModal toggle={dismissNewRuleForm}>
                                 <EditRuleForm
+                                    {...props}
                                     rule={{ ...rule, definition: rule.definition.raw }}
                                     onRuleUpdate={onRulesUpdate}
                                     onDismiss={dismissNewRuleForm}

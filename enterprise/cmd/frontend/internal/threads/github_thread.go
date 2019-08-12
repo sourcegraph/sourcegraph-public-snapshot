@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func UpdateGitHubThreadMetadata(ctx context.Context, threadID, externalServiceID int64, externalID string, repoID api.RepoID) error {
+func UpdateGitHubThreadMetadata(ctx context.Context, threadID, threadExternalServiceID int64, externalID string, repoID api.RepoID) error {
 	client, externalServiceID, err := getClientForRepo(ctx, repoID)
 	if err != nil {
 		return err
@@ -44,4 +44,7 @@ query($id: ID!) {
 		return fmt.Errorf("github issue or pull request with ID %q not found", externalID)
 	}
 
+	externalThread := newExternalThread(data.Node, repoID, externalServiceID)
+	_ = externalThread
+	return nil
 }

@@ -1,6 +1,7 @@
 import H from 'history'
 import React, { useCallback, useState } from 'react'
 import { map, mapTo } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../backend/graphql'
@@ -23,7 +24,7 @@ const updateRule = (input: GQL.IUpdateRuleInput): Promise<void> =>
         )
         .toPromise()
 
-interface Props {
+interface Props extends ExtensionsControllerProps {
     rule: Pick<GQL.IRule, 'id'> & RuleFormData
 
     /** Called when the form is dismissed. */
@@ -44,7 +45,7 @@ export const EditRuleForm: React.FunctionComponent<Props> = ({
     onDismiss,
     onRuleUpdate,
     className = '',
-    history,
+    ...props
 }) => {
     const [isLoading, setIsLoading] = useState(false)
     const onSubmit = useCallback(
@@ -65,6 +66,7 @@ export const EditRuleForm: React.FunctionComponent<Props> = ({
 
     return (
         <RuleForm
+            {...props}
             header={<h2>Edit rule</h2>}
             initialValue={rule}
             onDismiss={onDismiss}
@@ -72,7 +74,6 @@ export const EditRuleForm: React.FunctionComponent<Props> = ({
             buttonText="Save changes"
             isLoading={isLoading}
             className={className}
-            history={history}
         />
     )
 }

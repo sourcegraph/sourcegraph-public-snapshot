@@ -125,6 +125,7 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                                 ...d.data,
                                                 ...toDiagnostic(d.data),
                                             }))}
+                                            listClassName="list-group list-group-flush"
                                         />
                                     </div>
                                 )}

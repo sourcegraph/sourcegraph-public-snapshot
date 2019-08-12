@@ -12,6 +12,7 @@ interface Props extends ExtensionsControllerProps {
     diagnostics: (Diagnostic | sourcegraph.Diagnostic)[]
 
     className?: string
+    listClassName?: string
     itemClassName?: string
 }
 
@@ -21,6 +22,7 @@ interface Props extends ExtensionsControllerProps {
 export const DiagnosticListByResource: React.FunctionComponent<Props> = ({
     diagnostics,
     className = '',
+    listClassName = 'list-group',
     itemClassName = 'py-2',
     ...props
 }) => {
@@ -40,7 +42,7 @@ export const DiagnosticListByResource: React.FunctionComponent<Props> = ({
 
     return byPath.length > 0 ? (
         <div className={className}>
-            <ul className="list-group list-group-flush">
+            <ul className={listClassName}>
                 {byPath.map(([uri, diagnostics], i) => {
                     const parsedURI = parseRepoURI(uri)
                     return (

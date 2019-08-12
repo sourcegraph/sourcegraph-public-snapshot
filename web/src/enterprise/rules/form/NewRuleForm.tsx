@@ -1,6 +1,7 @@
 import H from 'history'
 import React, { useCallback, useState } from 'react'
 import { map, mapTo } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../backend/graphql'
@@ -23,7 +24,7 @@ const createRule = (input: GQL.ICreateRuleInput): Promise<void> =>
         )
         .toPromise()
 
-interface Props {
+interface Props extends ExtensionsControllerProps {
     container: Pick<GQL.RuleContainer, 'id'>
 
     /** Called when the form is dismissed. */
@@ -44,7 +45,7 @@ export const NewRuleForm: React.FunctionComponent<Props> = ({
     onDismiss,
     onRuleCreate,
     className = '',
-    history,
+    ...props
 }) => {
     const [isLoading, setIsLoading] = useState(false)
     const onSubmit = useCallback(
@@ -65,13 +66,13 @@ export const NewRuleForm: React.FunctionComponent<Props> = ({
 
     return (
         <RuleForm
+            {...props}
             header={<h2>New rule</h2>}
             onDismiss={onDismiss}
             onSubmit={onSubmit}
             buttonText="Create rule"
             isLoading={isLoading}
             className={className}
-            history={history}
         />
     )
 }

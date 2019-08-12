@@ -11,6 +11,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import { InfoSidebar, InfoSidebarSection } from '../../../components/infoSidebar/InfoSidebar'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { WithSidebar } from '../../../components/withSidebar/WithSidebar'
+import { DiagnosticListByResource } from '../../../diagnostics/list/byResource/DiagnosticListByResource'
 import { DiffIcon } from '../../../util/octicons'
 import { DiagnosticsIcon } from '../../checks/icons'
 import { RulesIcon } from '../../rules/icons'
@@ -21,6 +22,7 @@ import { CampaignForceRefreshButton } from '../common/CampaignForceRefreshButton
 import { NamespaceCampaignsAreaContext } from '../namespace/NamespaceCampaignsArea'
 import { CampaignActivity } from './activity/CampaignActivity'
 import { CampaignOverview } from './CampaignOverview'
+import { CampaignDiagnostics } from './diagnostics/CampaignDiagnostics'
 import { CampaignFileDiffsList } from './fileDiffs/CampaignFileDiffsList'
 import { CampaignRepositoriesList } from './repositories/CampaignRepositoriesList'
 import { CampaignThreadsListPage } from './threads/CampaignThreadsListPage'
@@ -153,7 +155,7 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                         icon: DiagnosticsIcon,
                         count: campaign.diagnostics.totalCount,
                         path: '/diagnostics',
-                        render: () => <ThreadDiagnosticsList {...context} className={PAGE_CLASS_NAME} />,
+                        render: () => <CampaignDiagnostics {...context} className={PAGE_CLASS_NAME} />,
                         condition: () => campaign.diagnostics.totalCount > 0,
                     },
 

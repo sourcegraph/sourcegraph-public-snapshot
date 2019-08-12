@@ -1,15 +1,17 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import React, { useCallback, useEffect, useState } from 'react'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 import { RuleDefinitionFormControl } from './definition/RuleDefinitionFormControl'
+import { useCommandRegistryCommands } from './useCommandRegistryCommands'
 
 export interface RuleFormData extends Pick<GQL.IRule, 'name' | 'description'> {
     definition: string
 }
 
-interface Props {
+interface Props extends ExtensionsControllerProps {
     header: React.ReactFragment
     initialValue?: RuleFormData
 
@@ -38,6 +40,7 @@ export const RuleForm: React.FunctionComponent<Props> = ({
     isLoading,
     className = '',
     history,
+    extensionsController,
 }) => {
     const [name, setName] = useState(initialValue.name)
     const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
@@ -125,7 +128,11 @@ export const RuleForm: React.FunctionComponent<Props> = ({
                     Add description
                 </button>
             )}
-            <RuleDefinitionFormControl value={definition} onChange={setDefinition} />
+            <RuleDefinitionFormControl
+                value={definition}
+                onChange={setDefinition}
+                extensionsController={extensionsController}
+            />
             <div className="form-group mt-4 mb-0">
                 <button type="reset" className="btn btn-secondary mr-2" onClick={onDismiss}>
                     Cancel

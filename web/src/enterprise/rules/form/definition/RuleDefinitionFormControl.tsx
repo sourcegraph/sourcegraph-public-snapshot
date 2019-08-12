@@ -2,14 +2,16 @@ import { applyEdits, format } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import React, { useCallback } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
+import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { parseJSON } from '../../../../settings/configuration'
 import { defaultFormattingOptions } from '../../../../site-admin/configHelpers'
 import { useLocalStorage } from '../../../../util/useLocalStorage'
 import { parseDiagnosticQuery } from '../../../checks/detail/diagnostics/diagnosticQuery'
 import { RuleDefinition } from '../../types'
+import { useCommandRegistryCommands } from '../useCommandRegistryCommands'
 
-interface Props {
+interface Props extends ExtensionsControllerProps {
     /**
      * The raw definition as JSONC.
      */
@@ -24,7 +26,11 @@ interface Props {
 /**
  * A form control for specifying a rule's definition.
  */
-export const RuleDefinitionFormControl: React.FunctionComponent<Props> = ({ value: raw, onChange }) => {
+export const RuleDefinitionFormControl: React.FunctionComponent<Props> = ({
+    value: raw,
+    onChange,
+    extensionsController,
+}) => {
     const parsed: RuleDefinition = raw ? parseJSON(raw) : {}
 
     const onPropertyChange = useCallback(
@@ -52,6 +58,8 @@ export const RuleDefinitionFormControl: React.FunctionComponent<Props> = ({ valu
         [onChange]
     )
 
+    const registeredCommands = useCommandRegistryCommands(extensionsController)
+
     return (
         <>
             <div className="form-group">
@@ -73,7 +81,13 @@ export const RuleDefinitionFormControl: React.FunctionComponent<Props> = ({ valu
                     className="form-control"
                     onChange={onActionChange}
                     value={parsed.action}
+                    list="rule-definition-form-control__action-datalist"
                 />
+                <datalist id="rule-definition-form-control__action-datalist">
+                    {registeredCommands.map(({ command }) => (
+                        <option key={command} value={command} />
+                    ))}
+                </datalist>
             </div>
             {isRawVisible ? (
                 <div className="form-group">

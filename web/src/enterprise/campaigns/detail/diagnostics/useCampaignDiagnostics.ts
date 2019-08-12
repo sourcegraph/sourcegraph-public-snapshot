@@ -4,31 +4,18 @@ import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/gra
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../../backend/graphql'
-
-export const ThreadDiagnosticConnectionFragment = gql`
-    fragment ThreadDiagnosticConnectionFragment on ThreadDiagnosticConnection {
-        edges {
-            id
-            diagnostic {
-                type
-                data
-            }
-            viewerCanUpdate
-        }
-        totalCount
-    }
-`
+import { ThreadDiagnosticConnectionFragment } from '../../../threads/detail/diagnostics/useThreadDiagnostics'
 
 const LOADING: 'loading' = 'loading'
 
 type Result = typeof LOADING | GQL.IThreadDiagnosticConnection | ErrorLike
 
 /**
- * A React hook that observes all diagnostics for a thread (queried from the GraphQL API).
+ * A React hook that observes all diagnostics for all threads in a campaign (queried from the GraphQL API).
  *
- * @param thread The thread whose diagnostics to observe.
+ * @param campaign The campaign whose diagnostics to observe.
  */
-export const useThreadDiagnostics = (thread: Pick<GQL.IThread, 'id'>): [Result, () => void] => {
+export const useCampaignDiagnostics = (campaign: Pick<GQL.ICampaign, 'id'>): [Result, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])
 
@@ -36,10 +23,10 @@ export const useThreadDiagnostics = (thread: Pick<GQL.IThread, 'id'>): [Result, 
     useEffect(() => {
         const subscription = queryGraphQL(
             gql`
-                query ThreadDiagnostics($thread: ID!) {
-                    node(id: $thread) {
+                query CampaignDiagnostics($campaign: ID!) {
+                    node(id: $campaign) {
                         __typename
-                        ... on Thread {
+                        ... on Campaign {
                             diagnostics {
                                 ...ThreadDiagnosticConnectionFragment
                             }
@@ -48,13 +35,13 @@ export const useThreadDiagnostics = (thread: Pick<GQL.IThread, 'id'>): [Result, 
                 }
                 ${ThreadDiagnosticConnectionFragment}
             `,
-            { thread: thread.id }
+            { campaign: campaign.id }
         )
             .pipe(
                 map(dataOrThrowErrors),
                 map(data => {
-                    if (!data.node || data.node.__typename !== 'Thread') {
-                        throw new Error('not a thread')
+                    if (!data.node || data.node.__typename !== 'Campaign') {
+                        throw new Error('not a campaign')
                     }
                     return data.node.diagnostics
                 }),
@@ -62,6 +49,6 @@ export const useThreadDiagnostics = (thread: Pick<GQL.IThread, 'id'>): [Result, 
             )
             .subscribe(setResult, err => setResult(asError(err)))
         return () => subscription.unsubscribe()
-    }, [thread, updateSequence])
+    }, [campaign.id, updateSequence])
     return [result, incrementUpdateSequence]
 }

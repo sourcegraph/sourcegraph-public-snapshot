@@ -49,7 +49,7 @@ func TestGraphQL_AddDiagnosticsToThread(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					addDiagnosticsToThread(thread: "RGlzY3Vzc2lvblRocmVhZDoiMyI=", rawDiagnostics: ["a", "b"]) {
+					addDiagnosticsToThread(thread: "RGlzY3Vzc2lvblRocmVhZDoiMyI=", rawDiagnostics: ["{}", "{}"]) {
 						__typename
 					}
 				}
