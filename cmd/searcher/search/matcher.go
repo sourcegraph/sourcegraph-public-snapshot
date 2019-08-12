@@ -219,16 +219,16 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 		lastLineStartIndex = lineStart
 		lastStart = start
 
-		lineEnd := end
-		endBuf := end
-		if endBuf > 0 {
-			// Subtract 1 from end so that we can detect the proper lineEnd byte for empty new lines.
-			endBuf--
-		}
-		if idx := bytes.Index(fileMatchBuf[endBuf:], []byte{'\n'}); idx >= 0 {
-			lineEnd += idx
+		// lineEnd is the index of the next \n. If the last character of our
+		// match is already a newline, then lineEnd instead points end to
+		// include the newline in the match preview.
+		var lineEnd int
+		if end > 0 && fileMatchBuf[end-1] == '\n' {
+			lineEnd = end // Note: fileMatchBuf[lineEnd] may not be a \n
+		} else if idx := bytes.Index(fileMatchBuf[end:], []byte{'\n'}); idx >= 0 {
+			lineEnd = end + idx
 		} else {
-			lineEnd += len(fileMatchBuf[end:])
+			lineEnd = len(fileMatchBuf)
 		}
 
 		lineNumber, matchIndex := hydrateLineNumbers(fileMatchBuf, lastLineNumber, lastMatchIndex, lineStart, match)

@@ -181,6 +181,8 @@ main.go:5:func main() {
 main.go:6:	fmt.Println("Hello world")
 main.go:7:}
 `},
+
+		{protocol.PatternInfo{Pattern: "^$", IsRegExp: true}, ``},
 	}
 
 	store, cleanup, err := newStore(files)
