@@ -7,7 +7,6 @@ import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
 import { ConnectionErrors } from './ServerURLForm'
 import { observeStorageKey, storage } from '../../browser/storage'
-import { boolean } from '@storybook/addon-knobs'
 
 export interface OptionsContainerProps {
     sourcegraphURL: string
