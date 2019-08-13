@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Disk cleanup in gitserver is now done in terms of percentages to fix [#5059](https://github.com/sourcegraph/sourcegraph/issues/5059).
+- Search results now correctly show highlighting of matches with runes like 'İ' that lowercase to runes with a different number of bytes in UTF-8 [#4791](https://github.com/sourcegraph/sourcegraph/issues/5059).
 
 ### Removed
 

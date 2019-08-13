@@ -244,6 +244,25 @@ func Test_highlightMatches(t *testing.T) {
 				},
 			},
 		},
+
+		// https://github.com/sourcegraph/sourcegraph/issues/4791
+		{
+			name: "unicode search that would be broken by tolower",
+			args: args{
+				pattern: regexp.MustCompile(`İ`),
+				data:    []byte(`İi`),
+			},
+			want: &highlightedString{
+				value: "İi",
+				highlights: []*highlightedRange{
+					{
+						line:      1,
+						character: 0,
+						length:    1,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -422,7 +422,7 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
 	const maxMatchesPerLine = 25 // arbitrary
 
 	var highlights []*highlightedRange
-	for i, line := range bytes.Split(bytes.ToLower(data), []byte("\n")) {
+	for i, line := range bytes.Split(data, []byte("\n")) {
 		for _, match := range pattern.FindAllIndex(line, maxMatchesPerLine) {
 			highlights = append(highlights, &highlightedRange{
 				line:      int32(i + 1),
