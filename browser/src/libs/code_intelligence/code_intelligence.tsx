@@ -96,7 +96,6 @@ import { handleTextFields, TextField } from './text_fields'
 import { resolveRepoNames } from './util/file_info'
 import { ViewResolver } from './views'
 import { observeStorageKey } from '../../browser/storage'
-import { featureFlagDefaults } from '../../browser/types'
 
 registerHighlightContributions()
 

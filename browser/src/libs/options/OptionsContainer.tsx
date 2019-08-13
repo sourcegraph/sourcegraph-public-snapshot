@@ -1,12 +1,13 @@
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, share, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, filter, map, share, switchMap, concatMap } from 'rxjs/operators'
 import { ERAUTHREQUIRED } from '../../../../shared/src/backend/errors'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
 import { ConnectionErrors } from './ServerURLForm'
 import { observeStorageKey, storage } from '../../browser/storage'
+import { boolean } from '@storybook/addon-knobs'
 
 export interface OptionsContainerProps {
     sourcegraphURL: string
@@ -35,6 +36,8 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
     private version = getExtensionVersion()
 
     private urlUpdates = new Subject<string>()
+
+    private activationClicks = new Subject<boolean>()
 
     private subscriptions = new Subscription()
 
@@ -114,7 +117,15 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 isActivated: !disableExtension,
             })
         })
+
+        this.subscriptions.add(
+            this.activationClicks
+                .pipe(concatMap(isActivated => storage.sync.set({ disableExtension: !isActivated })))
+                .subscribe()
+        )
+        this.subscriptions.add(this.activationClicks.subscribe(isActivated => this.setState({ isActivated })))
     }
+
     public componentDidUpdate(): void {
         this.urlUpdates.next(this.props.sourcegraphURL)
     }
@@ -154,10 +165,5 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         }))
     }
 
-    private handleToggleActivationClick = async (value: boolean) => {
-        this.setState(() => ({
-            isActivated: value,
-        }))
-        await storage.sync.set({ disableExtension: !value })
-    }
+    private handleToggleActivationClick = (value: boolean) => this.activationClicks.next(value)
 }
