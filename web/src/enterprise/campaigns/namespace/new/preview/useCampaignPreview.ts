@@ -11,12 +11,13 @@ import {
     diffStatFieldsFragment,
     fileDiffHunkRangeFieldsFragment,
 } from '../../../../../repo/compare/RepositoryCompareDiffPage'
+import { ThreadConnectionFiltersFragment } from '../../../../threads/list/useThreads'
 import { getCampaignExtensionData } from '../../../extensionData'
 
 export const CampaignPreviewFragment = gql`
     fragment CampaignPreviewFragment on CampaignPreview {
         name
-        threads {
+        threads(filters: { query: $query }) {
             nodes {
                 __typename
                 ... on ThreadPreview {
@@ -30,6 +31,9 @@ export const CampaignPreviewFragment = gql`
                 }
             }
             totalCount
+            filters {
+                ...ThreadConnectionFiltersFragment
+            }
         }
         diagnostics {
             nodes {
@@ -112,7 +116,8 @@ type CreateCampaignInputWithoutExtensionData = Pick<
  */
 export const useCampaignPreview = (
     { extensionsController }: ExtensionsControllerProps,
-    input: CreateCampaignInputWithoutExtensionData
+    input: CreateCampaignInputWithoutExtensionData,
+    query: string // TODO!(sqs): the query param is currently ignored
 ): [Result, boolean] => {
     const inputSubject = useMemo(() => new Subject<CreateCampaignInputWithoutExtensionData>(), [])
     const [isLoading, setIsLoading] = useState(true)
@@ -131,12 +136,13 @@ export const useCampaignPreview = (
                         switchMap(extensionData =>
                             queryGraphQL(
                                 gql`
-                                    query CampaignPreview($input: CampaignPreviewInput!) {
+                                    query CampaignPreview($input: CampaignPreviewInput!, $query: String) {
                                         campaignPreview(input: $input) {
                                             ...CampaignPreviewFragment
                                         }
                                     }
                                     ${CampaignPreviewFragment}
+                                    ${ThreadConnectionFiltersFragment}
                                 `,
                                 // tslint:disable-next-line: no-object-literal-type-assertion
                                 {
@@ -146,6 +152,7 @@ export const useCampaignPreview = (
                                             extensionData,
                                         },
                                     },
+                                    query,
                                 } as GQL.ICampaignPreviewOnQueryArguments
                             ).pipe(
                                 map(dataOrThrowErrors),
@@ -180,7 +187,7 @@ export const useCampaignPreview = (
             }
         )
         return () => subscription.unsubscribe()
-    }, [extensionsController, inputSubject])
+    }, [extensionsController, inputSubject, query])
     useEffect(() => inputSubject.next(input), [input, inputSubject])
     return [result, isLoading]
 }

@@ -1,6 +1,9 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
+import { useQueryParameter } from '../../../../components/withQueryParameter/WithQueryParameter'
+import { ThreadListFilterContext } from '../../list/header/ThreadListFilterDropdownButton'
+import { ThreadListHeaderCommonFilters } from '../../list/header/ThreadListHeader'
 import { ThreadList, ThreadListContext } from '../../list/ThreadList'
 import { useThreads } from '../../list/useThreads'
 import { RepositoryThreadsAreaContext } from '../RepositoryThreadsArea'
@@ -16,7 +19,13 @@ interface Props
  * Lists a repository's threads.
  */
 export const RepositoryThreadsListPage: React.FunctionComponent<Props> = ({ newThreadURL, repo, ...props }) => {
-    const threads = useThreads(repo)
+    const [query, onQueryChange] = useQueryParameter(props)
+    const threads = useThreads({ query, repositories: [repo.id] })
+    const filterProps: ThreadListFilterContext = {
+        threadConnection: threads,
+        query,
+        onQueryChange,
+    }
     return (
         <div className="repository-threads-list-page">
             {newThreadURL && (
@@ -24,7 +33,20 @@ export const RepositoryThreadsListPage: React.FunctionComponent<Props> = ({ newT
                     New thread
                 </Link>
             )}
-            <ThreadList {...props} threads={threads} />
+            <ThreadList
+                {...props}
+                threads={threads}
+                query={query}
+                onQueryChange={onQueryChange}
+                itemCheckboxes={true}
+                headerItems={{
+                    right: (
+                        <>
+                            <ThreadListHeaderCommonFilters {...filterProps} />
+                        </>
+                    ),
+                }}
+            />
         </div>
     )
 }

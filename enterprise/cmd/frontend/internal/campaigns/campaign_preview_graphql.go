@@ -51,6 +51,7 @@ func (v *gqlCampaignPreview) getThreads(ctx context.Context) ([]graphqlbackend.T
 }
 
 func (v *gqlCampaignPreview) Threads(ctx context.Context, args *graphqlbackend.ThreadConnectionArgs) (graphqlbackend.ThreadOrThreadPreviewConnection, error) {
+	// TODO!(sqs): dont ignore args
 	allThreads, err := (&rulesExecutor{extensionData: v.input.Campaign.ExtensionData}).planThreads(ctx)
 	if err != nil {
 		return nil, err

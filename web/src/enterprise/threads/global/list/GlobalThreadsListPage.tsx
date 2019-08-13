@@ -11,6 +11,7 @@ import { ThreadListLabelFilterDropdownButton } from '../../list/header/ThreadLis
 import { ThreadListRepositoryFilterDropdownButton } from '../../list/header/ThreadListRepositoryFilterDropdownButton'
 import { ThreadList } from '../../list/ThreadList'
 import { useThreads } from '../../list/useThreads'
+import { ThreadListHeaderCommonFilters } from '../../list/header/ThreadListHeader'
 
 interface Props extends ExtensionsControllerNotificationProps {
     location: H.Location
@@ -79,8 +80,7 @@ export const GlobalThreadsListPage: React.FunctionComponent<Props> = props => {
                 headerItems={{
                     right: (
                         <>
-                            <ThreadListRepositoryFilterDropdownButton {...filterProps} />
-                            <ThreadListLabelFilterDropdownButton {...filterProps} />
+                            <ThreadListHeaderCommonFilters {...filterProps} />
                         </>
                     ),
                 }}

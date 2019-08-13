@@ -11,8 +11,9 @@ import { useQueryParameter } from '../../../../../components/withQueryParameter/
 import { DiagnosticListByResource } from '../../../../../diagnostics/list/byResource/DiagnosticListByResource'
 import { FileDiffNode } from '../../../../../repo/compare/FileDiffNode'
 import { ThemeProps } from '../../../../../theme'
+import { ThreadListFilterContext } from '../../../../threads/list/header/ThreadListFilterDropdownButton'
+import { ThreadListHeaderCommonFilters } from '../../../../threads/list/header/ThreadListHeader'
 import { ThreadList } from '../../../../threads/list/ThreadList'
-import { ThreadListItem } from '../../../../threads/list/ThreadListItem'
 import { CampaignImpactSummaryBar } from '../../../common/CampaignImpactSummaryBar'
 import { sumDiffStats } from '../../../common/useCampaignImpactSummary'
 import { CampaignFormData } from '../CampaignForm'
@@ -32,8 +33,14 @@ const LOADING = 'loading' as const
  * A campaign preview.
  */
 export const CampaignPreview: React.FunctionComponent<Props> = ({ data, className = '', ...props }) => {
-    const [campaignPreview, isLoading] = useCampaignPreview(props, data)
     const [query, onQueryChange] = useQueryParameter(props)
+    const [campaignPreview, isLoading] = useCampaignPreview(props, data, query)
+    const threadFilterProps: ThreadListFilterContext = {
+        threadConnection:
+            campaignPreview !== LOADING && !isErrorLike(campaignPreview) ? campaignPreview.threads : campaignPreview,
+        query,
+        onQueryChange,
+    }
     return (
         <div className="campaign-preview">
             <h2 className="d-flex align-items-center">
@@ -85,6 +92,13 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                             onQueryChange={onQueryChange}
                                             threads={campaignPreview.threads}
                                             showRepository={true}
+                                            headerItems={{
+                                                right: (
+                                                    <>
+                                                        <ThreadListHeaderCommonFilters {...threadFilterProps} />
+                                                    </>
+                                                ),
+                                            }}
                                             className="mb-4"
                                         />
                                     </>

@@ -62,6 +62,10 @@ export const ThreadListFilterDropdownButton = <
     )
 
     const [query, setQuery] = useState('')
+    const isEmpty =
+        threadConnection !== LOADING &&
+        !isErrorLike(threadConnection) &&
+        threadConnection.filters[filterKey].length === 0
     const itemsFiltered: typeof LOADING | ThreadListFilterItem[] | ErrorLike =
         threadConnection !== LOADING && !isErrorLike(threadConnection)
             ? // TODO!(sqs): this type error is erroneous
@@ -91,7 +95,9 @@ export const ThreadListFilterDropdownButton = <
                         Error loading {pluralNoun}
                     </DropdownItem>
                 ) : itemsFiltered.length === 0 ? (
-                    <DropdownItem header={true}>No {pluralNoun} match</DropdownItem>
+                    <DropdownItem header={true}>
+                        No {pluralNoun} {!isEmpty && 'match'}
+                    </DropdownItem>
                 ) : (
                     itemsFiltered.slice(0, 20 /* TODO!(sqs) hack */).map(item => (
                         <DropdownItem

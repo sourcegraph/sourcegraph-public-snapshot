@@ -4,6 +4,9 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../../../../shared/src/util/errors'
 import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { ThreadListContext } from '../ThreadList'
+import { ThreadListFilterContext } from './ThreadListFilterDropdownButton'
+import { ThreadListRepositoryFilterDropdownButton } from './ThreadListRepositoryFilterDropdownButton'
+import { ThreadListLabelFilterDropdownButton } from './ThreadListLabelFilterDropdownButton'
 
 const LOADING = 'loading' as const
 
@@ -45,4 +48,11 @@ export const ThreadListHeader: React.FunctionComponent<Props> = ({ items, itemCh
         <div className="flex-1" />
         {items && items.right}
     </div>
+)
+
+export const ThreadListHeaderCommonFilters: React.FunctionComponent<ThreadListFilterContext> = props => (
+    <>
+        <ThreadListRepositoryFilterDropdownButton {...props} />
+        <ThreadListLabelFilterDropdownButton {...props} />
+    </>
 )

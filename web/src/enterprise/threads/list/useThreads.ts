@@ -7,6 +7,28 @@ import { ActorFragment } from '../../../actor/graphql'
 import { queryGraphQL } from '../../../backend/graphql'
 import { ThreadFragment } from '../util/graphql'
 
+export const ThreadConnectionFiltersFragment = gql`
+    fragment ThreadConnectionFiltersFragment on ThreadConnectionFilters {
+        repository {
+            repository {
+                id
+                name
+            }
+            count
+            isApplied
+        }
+        label {
+            label {
+                name
+                color
+            }
+            labelName
+            count
+            isApplied
+        }
+    }
+`
+
 const ThreadConnectionFragment = gql`
     fragment ThreadConnectionFragment on ThreadConnection {
         nodes {
@@ -14,23 +36,7 @@ const ThreadConnectionFragment = gql`
         }
         totalCount
         filters {
-            repository {
-                repository {
-                    id
-                    name
-                }
-                count
-                isApplied
-            }
-            label {
-                label {
-                    name
-                    color
-                }
-                labelName
-                count
-                isApplied
-            }
+            ...ThreadConnectionFiltersFragment
         }
     }
 `
@@ -54,6 +60,7 @@ export const useThreads = (filters: GQL.IThreadFilters | null): Result => {
                     }
                 }
                 ${ThreadConnectionFragment}
+                ${ThreadConnectionFiltersFragment}
                 ${ThreadFragment}
                 ${ActorFragment}
             `,
