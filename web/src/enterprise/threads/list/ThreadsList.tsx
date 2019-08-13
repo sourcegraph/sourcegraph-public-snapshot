@@ -30,9 +30,7 @@ export const ThreadsList: React.FunctionComponent<Props> = ({ threads, ...props 
                 {threads.nodes.length > 0 ? (
                     <ul className="list-group list-group-flush">
                         {threads.nodes.map(thread => (
-                            <li key={thread.id} className="list-group-item">
-                                <ThreadListItem {...props} thread={thread} />
-                            </li>
+                            <ThreadListItem key={thread.id} {...props} thread={thread} />
                         ))}
                     </ul>
                 ) : (
