@@ -201,6 +201,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 // repoShouldBeAdded determines whether a repository should be included in the result set based on whether the repository fits in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
 func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *search.RepositoryRevisions, pattern *search.PatternInfo) (bool, error) {
+	repos := []*search.RepositoryRevisions{repo}
 	rsta, err := reposToAdd(ctx, zoekt, repos, pattern)
 	if err != nil {
 		return false, err
