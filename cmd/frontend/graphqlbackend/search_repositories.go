@@ -51,7 +51,7 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 	common = &searchResultsCommon{}
 	var results []searchResultResolver
 	if len(args.Pattern.FilePatternsReposMustExclude) > 0 || len(args.Pattern.FilePatternsReposMustInclude) > 0 {
-		rsta, err := reposToAdd(ctx, args.Zoekt, repo, args.Pattern)
+		rsta, err := reposToAdd(ctx, args.Zoekt, args.Repos, args.Pattern)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -92,7 +92,7 @@ func reposToAdd(ctx context.Context, zoekt *searchbackend.Zoekt, repos []*search
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.ID] = true
+				matchingIDs[m.repo.ID] = true
 			}
 		}
 	}
@@ -110,7 +110,7 @@ func reposToAdd(ctx context.Context, zoekt *searchbackend.Zoekt, repos []*search
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.ID] = false
+				matchingIDs[m.repo.ID] = false
 			}
 		}
 	}
