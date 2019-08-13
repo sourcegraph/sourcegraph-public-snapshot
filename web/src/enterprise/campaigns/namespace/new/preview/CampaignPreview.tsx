@@ -11,6 +11,7 @@ import { useQueryParameter } from '../../../../../components/withQueryParameter/
 import { DiagnosticListByResource } from '../../../../../diagnostics/list/byResource/DiagnosticListByResource'
 import { FileDiffNode } from '../../../../../repo/compare/FileDiffNode'
 import { ThemeProps } from '../../../../../theme'
+import { ParticipantList } from '../../../../participants/ParticipantList'
 import { ThreadListFilterContext } from '../../../../threads/list/header/ThreadListFilterDropdownButton'
 import { ThreadListHeaderCommonFilters } from '../../../../threads/list/header/ThreadListHeader'
 import { ThreadList } from '../../../../threads/list/ThreadList'
@@ -69,6 +70,7 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                         changesets: campaignPreview.threads.nodes.filter(
                                             ({ kind }) => kind === GQL.ThreadKind.CHANGESET
                                         ).length,
+                                        participants: campaignPreview.participants.totalCount,
                                         diagnostics: campaignPreview.diagnostics.totalCount,
                                         repositories: campaignPreview.repositories.length,
                                         files: campaignPreview.repositoryComparisons.reduce(
@@ -99,6 +101,17 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                                     </>
                                                 ),
                                             }}
+                                            className="mb-4"
+                                        />
+                                    </>
+                                )}
+                                {campaignPreview.participants.totalCount > 0 && (
+                                    <>
+                                        <a id="participants" />
+                                        <ParticipantList
+                                            {...props}
+                                            participants={campaignPreview.participants}
+                                            showRepository={true}
                                             className="mb-4"
                                         />
                                     </>

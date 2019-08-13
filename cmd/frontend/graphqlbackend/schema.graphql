@@ -4748,6 +4748,33 @@ type CampaignPreview {
 
     # A burndown chart of the states of the campaign's threads over time.
     burndownChart: CampaignBurndownChart!
+
+    # People involved in or affected by the campaign.
+    participants(
+        # Return the first n results.
+        first: Int
+    ): ParticipantConnection!
+}
+
+# A list of participants (people involved or affected by something).
+type ParticipantConnection {
+    # The edges that describe how each participant is affected.
+    edges: [ParticipantEdge!]!
+
+    # A list of participants.
+    nodes: [Actor!]!
+
+    # The total number of participants in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A description of how a participant is involved in or affected by something.
+type ParticipantEdge {
+    # The participant.
+    actor: Actor!
 }
 
 # A campaign is a collection of threads.
@@ -4842,6 +4869,12 @@ type Campaign implements Node & Comment & Commentable & RuleContainer {
         # Return the first n results.
         first: Int
     ): RuleConnection!
+
+    # People involved in or affected by the campaign.
+    participants(
+        # Return the first n results.
+        first: Int
+    ): ParticipantConnection!
 }
 
 # A burndown chart of the states of the campaign's threads  over time.

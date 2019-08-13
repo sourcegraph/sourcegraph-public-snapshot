@@ -11,6 +11,7 @@ export interface CampaignImpactSummary {
     discussions: number
     issues: number
     changesets: number
+    participants: number
     diagnostics: number
     repositories: number
     files: number
@@ -34,6 +35,9 @@ export function useCampaignImpactSummary(campaign: Pick<GQL.ICampaign, 'id'>): R
                                 nodes {
                                     kind
                                 }
+                            }
+                            participants {
+                                totalCount
                             }
                             diagnostics {
                                 totalCount

@@ -94,3 +94,7 @@ func (v *gqlCampaignPreview) getEvents(ctx context.Context, beforeDate time.Time
 func (v *gqlCampaignPreview) TimelineItems(ctx context.Context, arg *graphqlbackend.EventConnectionCommonArgs) (graphqlbackend.EventConnection, error) {
 	return nil, errors.New("timelineItems not implemented for CampaignPreview")
 }
+
+func (v *gqlCampaignPreview) Participants(ctx context.Context, arg *graphqlbackend.ParticipantConnectionArgs) (graphqlbackend.ParticipantConnection, error) {
+	return campaignParticipants(ctx, v)
+}

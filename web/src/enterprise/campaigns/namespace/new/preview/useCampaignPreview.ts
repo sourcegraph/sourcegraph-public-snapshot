@@ -6,6 +6,7 @@ import { ExtensionsControllerProps } from '../../../../../../../shared/src/exten
 import { dataOrThrowErrors, gql } from '../../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../../shared/src/util/errors'
+import { ActorFragment, ActorQuery } from '../../../../../actor/graphql'
 import { queryGraphQL } from '../../../../../backend/graphql'
 import {
     diffStatFieldsFragment,
@@ -34,6 +35,14 @@ export const CampaignPreviewFragment = gql`
             filters {
                 ...ThreadConnectionFiltersFragment
             }
+        }
+        participants {
+            edges {
+                actor {
+                    ${ActorQuery}
+                }
+            }
+            totalCount
         }
         diagnostics {
             nodes {
@@ -143,6 +152,7 @@ export const useCampaignPreview = (
                                     }
                                     ${CampaignPreviewFragment}
                                     ${ThreadConnectionFiltersFragment}
+                                    ${ActorFragment}
                                 `,
                                 // tslint:disable-next-line: no-object-literal-type-assertion
                                 {

@@ -219,6 +219,7 @@ type Campaign interface {
 	Diagnostics(context.Context, *ThreadDiagnosticConnectionArgs) (ThreadDiagnosticConnection, error)
 	BurndownChart(context.Context) (CampaignBurndownChart, error)
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)
+	hasParticipants
 }
 
 // CampaignNode is the interface for the GraphQL interface CampaignNode.

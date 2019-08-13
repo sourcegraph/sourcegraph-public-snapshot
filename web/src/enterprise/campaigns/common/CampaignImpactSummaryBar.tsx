@@ -1,4 +1,5 @@
 import CommentTextMultipleIcon from 'mdi-react/CommentTextMultipleIcon'
+import UserGroupIcon from 'mdi-react/UserGroupIcon'
 import React from 'react'
 import { RepositoryIcon } from '../../../../../shared/src/components/icons'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
@@ -43,6 +44,13 @@ const ITEMS: SummaryCountItemDescriptor<Context>[] = [
         count: c => c.changesets,
         condition: c => c.changesets > 0,
         url: c => `${c.baseURL}${c.urlFragmentOrPath}threads`,
+    },
+    {
+        noun: 'participants',
+        icon: UserGroupIcon,
+        count: c => c.participants,
+        condition: c => c.participants > 0,
+        url: c => `${c.baseURL}${c.urlFragmentOrPath}participants`,
     },
     {
         noun: 'diagnostic',

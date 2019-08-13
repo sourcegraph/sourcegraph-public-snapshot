@@ -10,14 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-/*
-   addDiagnosticsToThread(thread: ID!, rawDiagnostics: [String!]!): ThreadDiagnosticColleciton
-
-   # Remove diagnostics from a thread.
-   removeDiagnosticsFromThread(thread: ID!, threadDiagnosticEdges: [ID!]!): EmptyResponse
-
-*/
-
 // ThreadDiagnostics is the implementation of the GraphQL API for thread diagnostics queries and
 // mutations. If it is not set at runtime, a "not implemented" error is returned to API clients who
 // invoke it.

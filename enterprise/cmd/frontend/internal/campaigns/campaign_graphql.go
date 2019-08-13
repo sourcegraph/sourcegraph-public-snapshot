@@ -176,3 +176,7 @@ func (v *gqlCampaign) TimelineItems(ctx context.Context, arg *graphqlbackend.Eve
 		events.Objects{Campaign: v.db.ID},
 	)
 }
+
+func (v *gqlCampaign) Participants(ctx context.Context, arg *graphqlbackend.ParticipantConnectionArgs) (graphqlbackend.ParticipantConnection, error) {
+	return campaignParticipants(ctx, v)
+}

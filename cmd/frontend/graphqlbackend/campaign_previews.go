@@ -19,4 +19,5 @@ type CampaignPreview interface {
 	RepositoryComparisons(context.Context) ([]RepositoryComparison, error)
 	Diagnostics(context.Context, *graphqlutil.ConnectionArgs) (DiagnosticConnection, error)
 	BurndownChart(context.Context) (CampaignBurndownChart, error)
+	hasParticipants
 }
