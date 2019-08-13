@@ -40,7 +40,7 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             ajax({
-                url: new URL('/.api/lsif/challenge', window.location.href).href,
+                url: '/.api/lsif/challenge',
                 headers: window.context.xhrHeaders,
             })
                 .pipe(
