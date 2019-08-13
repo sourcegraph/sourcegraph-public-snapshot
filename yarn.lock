@@ -1577,12 +1577,11 @@
   resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
   integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
 
-"@sourcegraph/eslint-config@^0.0.5":
-  version "0.0.5"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.0.5.tgz#af1418419930152393eb2f958a97cc2bc79a0b08"
-  integrity sha512-affq3OLlYjqZbulOuuQkF/KXVFSKWU0WRSTbV+a468hTZGFlk3o1LYl2M21lxjdmie5YFIKkV/gRRKD6k8Odjg==
+"@sourcegraph/eslint-config@^0.0.6":
+  version "0.0.6"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.0.6.tgz#6c8349cfd7bf604028de7564cdd0562f63bc850f"
+  integrity sha512-gPRPJhpvbV9cMEdq6WsBzjC/jtKLnEqds3Hw3RdRwQL7one4ca0Yz6ZqaZf4viZn+EZFZhyzku/JbsWgDV4i1w==
   dependencies:
-    "@sourcegraph/tslint-config" "^13.4.0"
     "@typescript-eslint/eslint-plugin" "^1.13.0"
     "@typescript-eslint/parser" "^1.13.0"
     eslint-config-prettier "^6.0.0"
@@ -1639,16 +1638,6 @@
   version "4.0.0"
   resolved "https://registry.npmjs.org/@sourcegraph/tsconfig/-/tsconfig-4.0.0.tgz#dd2a406f90760bb789fd89fde4bd0a8d681f2767"
   integrity sha512-jxrhKbek4yu1HUDpUhqR9hAGFiUgaJ9NIM+c8JEkAnvpW67ab1AUFWb82aSVfZWX1UVqfR84AMr7xP3E8LlL+A==
-
-"@sourcegraph/tslint-config@^13.4.0":
-  version "13.4.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/tslint-config/-/tslint-config-13.4.0.tgz#946f82eb464d66190caf6d9dc5e9e473e2de2fe9"
-  integrity sha512-Uci+0uZ/6ztsBA4m9nYVNsdbCtcphJatU7xi8a4aLtdqVyceSgl8HicUbesKYUmriBUbcX+XTZB0LJxXYD2fRA==
-  dependencies:
-    rxjs-tslint-rules "^4.23.0"
-    tslint-config-prettier "^1.18.0"
-    tslint-react "^4.0.0"
-    tslint-react-hooks "^2.1.0"
 
 "@sourcegraph/tslint-config@^14.0.1":
   version "14.0.1"
@@ -16662,23 +16651,6 @@ tslib@^1, tslib@^1.10.0, tslib@^1.8.0, tslib@^1.8.1, tslib@^1.9.0, tslib@^1.9.3:
   resolved "https://registry.npmjs.org/tslib/-/tslib-1.10.0.tgz#c3c19f95973fb0a62973fb09d90d961ee43e5c8a"
   integrity sha512-qOebF53frne81cf0S9B41ByenJ3/IuH8yJKngAX35CmiZySA0khhkovshKK+jGCaMnVomla7gVlIcc3EvKPbTQ==
 
-tslint-config-prettier@^1.18.0:
-  version "1.18.0"
-  resolved "https://registry.npmjs.org/tslint-config-prettier/-/tslint-config-prettier-1.18.0.tgz#75f140bde947d35d8f0d238e0ebf809d64592c37"
-  integrity sha512-xPw9PgNPLG3iKRxmK7DWr+Ea/SzrvfHtjFt5LBl61gk2UBG/DB9kCXRjv+xyIU1rUtnayLeMUVJBcMX8Z17nDg==
-
-tslint-react-hooks@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.npmjs.org/tslint-react-hooks/-/tslint-react-hooks-2.1.0.tgz#cc9841da0cef20d3527c8d16412f029c33767898"
-  integrity sha512-ccjyguEHGEU5rXikLDaQ6kT1AVo3C0HV8gi2MIJc7SbYAXjbzJkpbs4IXulgfqdEY1T6RnNSuGhyXg+2jTm5Bg==
-
-tslint-react@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.npmjs.org/tslint-react/-/tslint-react-4.0.0.tgz#b4bb4c01c32448cb14d23f143a2f5e4989bb961e"
-  integrity sha512-9fNE0fm9zNDx1+b6hgy8rgDN2WsQLRiIrn3+fbqm0tazBVF6jiaCFAITxmU+WSFWYE03Xhp1joCircXOe1WVAQ==
-  dependencies:
-    tsutils "^3.9.1"
-
 tslint@^5.18.0:
   version "5.18.0"
   resolved "https://registry.npmjs.org/tslint/-/tslint-5.18.0.tgz#f61a6ddcf372344ac5e41708095bbf043a147ac6"
@@ -16710,7 +16682,7 @@ tsutils@^2.29.0:
   dependencies:
     tslib "^1.8.1"
 
-tsutils@^3.0.0, tsutils@^3.7.0, tsutils@^3.9.1:
+tsutils@^3.0.0, tsutils@^3.7.0:
   version "3.14.0"
   resolved "https://registry.npmjs.org/tsutils/-/tsutils-3.14.0.tgz#bf8d5a7bae5369331fa0f2b0a5a10bd7f7396c77"
   integrity sha512-SmzGbB0l+8I0QwsPgjooFRaRvHLBLNYM8SeQ0k6rtNDru5sCGeLJcZdwilNndN+GysuFjF5EIYgN8GfFG6UeUw==
