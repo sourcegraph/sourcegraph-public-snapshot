@@ -1,18 +1,18 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
-import React from 'react'
+import React, { useState } from 'react'
 import { toDiagnostic } from '../../../../../../../shared/src/api/types/diagnostic'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../../../shared/src/platform/context'
 import { isErrorLike } from '../../../../../../../shared/src/util/errors'
 import { parseRepoURI } from '../../../../../../../shared/src/util/url'
+import { ConnectionListFilterContext } from '../../../../../components/connectionList/ConnectionListFilterDropdownButton'
 import { useQueryParameter } from '../../../../../components/withQueryParameter/WithQueryParameter'
 import { DiagnosticListByResource } from '../../../../../diagnostics/list/byResource/DiagnosticListByResource'
 import { FileDiffNode } from '../../../../../repo/compare/FileDiffNode'
 import { ThemeProps } from '../../../../../theme'
 import { ParticipantList } from '../../../../participants/ParticipantList'
-import { ThreadListFilterContext } from '../../../../threads/list/header/ThreadListFilterDropdownButton'
 import { ThreadList, ThreadListHeaderCommonFilters } from '../../../../threads/list/ThreadList'
 import { CampaignImpactSummaryBar } from '../../../common/CampaignImpactSummaryBar'
 import { sumDiffStats } from '../../../common/useCampaignImpactSummary'
@@ -35,12 +35,15 @@ const LOADING = 'loading' as const
 export const CampaignPreview: React.FunctionComponent<Props> = ({ data, className = '', ...props }) => {
     const [query, onQueryChange] = useQueryParameter(props)
     const [campaignPreview, isLoading] = useCampaignPreview(props, data, query)
-    const threadFilterProps: ThreadListFilterContext = {
-        threadConnection:
+    const threadFilterProps: ConnectionListFilterContext<GQL.IThreadConnectionFilters> = {
+        connection:
             campaignPreview !== LOADING && !isErrorLike(campaignPreview) ? campaignPreview.threads : campaignPreview,
         query,
         onQueryChange,
     }
+
+    const [participantsQuery, onParticipantsQueryChange] = useState('')
+
     return (
         <div className="campaign-preview">
             <h2 className="d-flex align-items-center">
@@ -94,6 +97,7 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                             threads={campaignPreview.threads}
                                             showRepository={true}
                                             headerItems={{
+                                                left: <h4 className="mb-0">Changesets &amp; issues</h4>,
                                                 right: (
                                                     <>
                                                         <ThreadListHeaderCommonFilters {...threadFilterProps} />
@@ -109,8 +113,16 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                         <a id="participants" />
                                         <ParticipantList
                                             {...props}
-                                            participants={campaignPreview.participants}
-                                            showRepository={true}
+                                            query={participantsQuery}
+                                            onQueryChange={onParticipantsQueryChange}
+                                            participants={{
+                                                ...campaignPreview.participants,
+                                                edges: campaignPreview.participants.edges.filter(edge =>
+                                                    `${edge.actor.username}${edge.actor.displayName}`
+                                                        .toLowerCase()
+                                                        .includes(participantsQuery)
+                                                ),
+                                            }}
                                             className="mb-4"
                                         />
                                     </>

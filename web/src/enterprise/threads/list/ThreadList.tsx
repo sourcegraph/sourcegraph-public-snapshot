@@ -3,12 +3,12 @@ import H from 'history'
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { ConnectionListFilterContext } from '../../../components/connectionList/ConnectionListFilterDropdownButton'
 import {
     ConnectionListHeader,
     ConnectionListHeaderItems,
 } from '../../../components/connectionList/ConnectionListHeader'
 import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
-import { ThreadListFilterContext } from './header/ThreadListFilterDropdownButton'
 import { ThreadListLabelFilterDropdownButton } from './header/ThreadListLabelFilterDropdownButton'
 import { ThreadListRepositoryFilterDropdownButton } from './header/ThreadListRepositoryFilterDropdownButton'
 import { ThreadListItem, ThreadListItemContext } from './ThreadListItem'
@@ -56,7 +56,7 @@ export const ThreadList: React.FunctionComponent<Props> = ({
                 {threads === LOADING ? (
                     <LoadingSpinner className="m-3" />
                 ) : threads.nodes.length === 0 ? (
-                    <p className="p-2 mb-0 text-muted">No threads found.</p>
+                    <p className="p-3 mb-0 text-muted">No threads found.</p>
                 ) : (
                     <ul className="list-group list-group-flush">
                         {(threads.nodes as GQL.ThreadOrThreadPreview[]).map((thread, i) => (
@@ -69,7 +69,9 @@ export const ThreadList: React.FunctionComponent<Props> = ({
     </div>
 )
 
-export const ThreadListHeaderCommonFilters: React.FunctionComponent<ThreadListFilterContext> = props => (
+export const ThreadListHeaderCommonFilters: React.FunctionComponent<
+    ConnectionListFilterContext<GQL.IThreadConnectionFilters>
+> = props => (
     <>
         <ThreadListRepositoryFilterDropdownButton {...props} />
         <ThreadListLabelFilterDropdownButton {...props} />

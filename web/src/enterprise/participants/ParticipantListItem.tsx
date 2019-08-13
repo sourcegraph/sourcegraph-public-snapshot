@@ -2,9 +2,7 @@ import React from 'react'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { ActorLink } from '../../actor/ActorLink'
 
-export interface ParticipantListItemContext {
-    showRepository?: boolean
-}
+export interface ParticipantListItemContext {}
 
 interface Props extends ParticipantListItemContext {
     participant: GQL.IParticipantEdge

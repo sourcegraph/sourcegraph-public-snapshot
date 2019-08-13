@@ -1,31 +1,51 @@
 import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useCallback, useEffect, useState } from 'react'
-import { Form } from '../../../components/Form'
+import { Form } from '../Form'
+import { QueryParameterProps } from '../withQueryParameter/WithQueryParameter'
 
-interface Props {
-    /** The current value of the filter. */
-    value: string
-
-    /** Called when the value changes. */
-    onChange: (value: string) => void
-
+interface Props extends QueryParameterProps {
     beforeInputFragment?: React.ReactFragment
+
+    /**
+     * Update the query immediately after each keystroke instead of waiting for the user to submit
+     * the form (by pressing enter).
+     */
+    instant?: boolean
 
     className?: string
 }
 
 /**
- * The filter control (dropdown and input field) for a list of threads.
+ * The filter control for a {@link ConnectionList}.
  */
-// tslint:disable: jsx-no-lambda
-export const ThreadsListFilter: React.FunctionComponent<Props> = ({
-    value,
-    onChange,
+export const ConnectionListFilterQueryInput: React.FunctionComponent<Props> = ({
+    query,
+    onQueryChange,
     beforeInputFragment,
+    instant,
     className,
 }) => {
-    const [uncommittedValue, setUncommittedValue] = useState(value)
-    useEffect(() => setUncommittedValue(value), [value])
+    const [uncommittedValue, setUncommittedValue] = useState(query)
+    useEffect(() => {
+        setUncommittedValue(query)
+    }, [instant, query])
+    const onChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        e => {
+            setUncommittedValue(e.currentTarget.value)
+            if (instant) {
+                onQueryChange(e.currentTarget.value)
+            }
+        },
+        [instant, onQueryChange]
+    )
+
+    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
+        e => {
+            e.preventDefault()
+            onQueryChange(uncommittedValue)
+        },
+        [onQueryChange, uncommittedValue]
+    )
 
     const [isFocused, setIsFocused] = useState(false)
     const onFocus = useCallback(() => setIsFocused(true), [])
@@ -34,13 +54,7 @@ export const ThreadsListFilter: React.FunctionComponent<Props> = ({
     const prependSearchIcon = !beforeInputFragment
 
     return (
-        <Form
-            className={`form ${className}`}
-            onSubmit={e => {
-                e.preventDefault()
-                onChange(uncommittedValue)
-            }}
-        >
+        <Form className={`form ${className}`} onSubmit={onSubmit}>
             <div
                 className={`input-group ${prependSearchIcon ? 'bg-form-control border rounded' : ''} ${
                     isFocused ? 'form-control-focus' : ''
@@ -56,10 +70,10 @@ export const ThreadsListFilter: React.FunctionComponent<Props> = ({
                 <input
                     type="text"
                     className={`form-control ${prependSearchIcon ? 'shadow-none border-0 rounded-0 pl-1' : ''}`}
-                    aria-label="Filter threads"
+                    aria-label="Filter list"
                     autoCapitalize="off"
                     value={uncommittedValue}
-                    onChange={e => setUncommittedValue(e.currentTarget.value)}
+                    onChange={onChange}
                     onFocus={onFocus}
                     onBlur={onBlur}
                 />

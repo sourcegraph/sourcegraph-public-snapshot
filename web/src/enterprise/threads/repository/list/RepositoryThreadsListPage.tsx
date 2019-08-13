@@ -1,8 +1,9 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { ConnectionListFilterContext } from '../../../../components/connectionList/ConnectionListFilterDropdownButton'
 import { useQueryParameter } from '../../../../components/withQueryParameter/WithQueryParameter'
-import { ThreadListFilterContext } from '../../list/header/ThreadListFilterDropdownButton'
 import { ThreadList, ThreadListContext, ThreadListHeaderCommonFilters } from '../../list/ThreadList'
 import { useThreads } from '../../list/useThreads'
 import { RepositoryThreadsAreaContext } from '../RepositoryThreadsArea'
@@ -20,8 +21,8 @@ interface Props
 export const RepositoryThreadsListPage: React.FunctionComponent<Props> = ({ newThreadURL, repo, ...props }) => {
     const [query, onQueryChange] = useQueryParameter(props)
     const threads = useThreads({ query, repositories: [repo.id] })
-    const filterProps: ThreadListFilterContext = {
-        threadConnection: threads,
+    const filterProps: ConnectionListFilterContext<GQL.IThreadConnectionFilters> = {
+        connection: threads,
         query,
         onQueryChange,
     }

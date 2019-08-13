@@ -1,23 +1,19 @@
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
-import { pluralize } from '../../../../../../shared/src/util/strings'
-import { DropdownMenuFilter } from '../../../../components/dropdownMenuFilter/DropdownMenuFilter'
-import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { pluralize } from '../../../../shared/src/util/strings'
+import { DropdownMenuFilter } from '../../components/dropdownMenuFilter/DropdownMenuFilter'
+import { QueryParameterProps } from '../../components/withQueryParameter/WithQueryParameter'
 
 const LOADING = 'loading' as const
 
-export interface ThreadListFilterContext extends QueryParameterProps {
-    threadConnection:
-        | typeof LOADING
-        | Pick<GQL.IThreadConnection | GQL.IThreadOrThreadPreviewConnection, 'filters'>
-        | ErrorLike
+export interface ConnectionListFilterContext<F extends {}> extends QueryParameterProps {
+    connection: typeof LOADING | { filters: F } | ErrorLike
 
     className?: string
 }
 
-export interface ThreadListFilterItem {
+export interface ConnectionListFilterItem {
     beforeText?: React.ReactFragment
     text: string
     count: number | null
@@ -25,11 +21,12 @@ export interface ThreadListFilterItem {
     isApplied: boolean
 }
 
-interface Props<
-    P extends keyof Pick<GQL.IThreadConnectionFilters, Exclude<keyof GQL.IThreadConnectionFilters, '__typename'>>
-> extends ThreadListFilterContext, QueryParameterProps {
+// tslint:disable-next-line: no-any
+interface Props<F extends { [key in string]: any[] }, P extends keyof Pick<F, Exclude<keyof F, '__typename'>>>
+    extends ConnectionListFilterContext<F>,
+        QueryParameterProps {
     filterKey: P
-    itemFunc: (filter: GQL.IThreadConnectionFilters[P][number]) => ThreadListFilterItem
+    itemFunc: (filter: F[P][number]) => ConnectionListFilterItem
 
     buttonText: string
     noun: string
@@ -38,10 +35,12 @@ interface Props<
     className?: string
 }
 
-export const ThreadListFilterDropdownButton = <
-    P extends keyof Pick<GQL.IThreadConnectionFilters, Exclude<keyof GQL.IThreadConnectionFilters, '__typename'>>
+export const ConnectionListFilterDropdownButton = <
+    // tslint:disable-next-line: no-any
+    F extends { [property in P]: any[] },
+    P extends keyof Pick<F, Exclude<keyof F, '__typename'>>
 >({
-    threadConnection,
+    connection,
     filterKey,
     itemFunc,
     buttonText,
@@ -50,29 +49,26 @@ export const ThreadListFilterDropdownButton = <
     query: parentQuery,
     onQueryChange: parentOnQueryChange,
     className = '',
-}: Props<P>): React.ReactElement => {
+}: Props<F, P>): React.ReactElement => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
 
     const onSelect = useCallback(
-        (item: ThreadListFilterItem) => {
+        (item: ConnectionListFilterItem) => {
             parentOnQueryChange(`${parentQuery}${parentQuery ? ' ' : ''}${item.queryPart}`)
         },
         [parentOnQueryChange, parentQuery]
     )
 
     const [query, setQuery] = useState('')
-    const isEmpty =
-        threadConnection !== LOADING &&
-        !isErrorLike(threadConnection) &&
-        threadConnection.filters[filterKey].length === 0
-    const itemsFiltered: typeof LOADING | ThreadListFilterItem[] | ErrorLike =
-        threadConnection !== LOADING && !isErrorLike(threadConnection)
+    const isEmpty = connection !== LOADING && !isErrorLike(connection) && connection.filters[filterKey].length === 0
+    const itemsFiltered: typeof LOADING | ConnectionListFilterItem[] | ErrorLike =
+        connection !== LOADING && !isErrorLike(connection)
             ? // TODO!(sqs): this type error is erroneous
-              threadConnection.filters[filterKey]
+              connection.filters[filterKey]
                   .map(itemFunc)
                   .filter(({ text }) => text.toLowerCase().includes(query.toLowerCase()))
-            : threadConnection
+            : connection
 
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className={className} direction="down">

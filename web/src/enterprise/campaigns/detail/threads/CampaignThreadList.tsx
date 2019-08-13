@@ -2,10 +2,10 @@ import H from 'history'
 import React from 'react'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../../../../shared/src/util/errors'
+import { ConnectionListFilterContext } from '../../../../components/connectionList/ConnectionListFilterDropdownButton'
+import { ConnectionListFilterQueryInput } from '../../../../components/connectionList/ConnectionListFilterQueryInput'
 import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
-import { ThreadListFilterContext } from '../../../threads/list/header/ThreadListFilterDropdownButton'
 import { ThreadList, ThreadListHeaderCommonFilters } from '../../../threads/list/ThreadList'
-import { ThreadsListFilter } from '../../../threadsOLD/list/ThreadsListFilter'
 import { ThreadsListButtonDropdownFilter } from '../../../threadsOLD/list/ThreadsListFilterButtonDropdown'
 
 const LOADING = 'loading' as const
@@ -29,8 +29,8 @@ export const CampaignThreadList: React.FunctionComponent<Props> = ({
     onQueryChange,
     ...props
 }) => {
-    const filterProps: ThreadListFilterContext = {
-        threadConnection: threads,
+    const filterProps: ConnectionListFilterContext<GQL.IThreadConnectionFilters> = {
+        connection: threads,
         query,
         onQueryChange,
     }
@@ -39,9 +39,9 @@ export const CampaignThreadList: React.FunctionComponent<Props> = ({
             <header className="d-flex justify-content-between align-items-start">
                 <div className="flex-1 mr-2 d-flex">
                     <div className="flex-1 mb-3 mr-2">
-                        <ThreadsListFilter
-                            value={query}
-                            onChange={onQueryChange}
+                        <ConnectionListFilterQueryInput
+                            query={query}
+                            onQueryChange={onQueryChange}
                             beforeInputFragment={
                                 <div className="input-group-prepend">
                                     <ThreadsListButtonDropdownFilter />

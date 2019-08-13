@@ -1,15 +1,15 @@
 import React from 'react'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { Label } from '../../../../components/Label'
 import {
-    ThreadListFilterContext,
-    ThreadListFilterDropdownButton,
-    ThreadListFilterItem,
-} from './ThreadListFilterDropdownButton'
+    ConnectionListFilterContext,
+    ConnectionListFilterDropdownButton,
+    ConnectionListFilterItem,
+} from '../../../../components/connectionList/ConnectionListFilterDropdownButton'
+import { Label } from '../../../../components/Label'
 
-interface Props extends ThreadListFilterContext {}
+interface Props extends ConnectionListFilterContext<GQL.IThreadConnectionFilters> {}
 
-const ITEM_FUNC = (f: GQL.ILabelFilter): ThreadListFilterItem => ({
+const ITEM_FUNC = (f: GQL.ILabelFilter): ConnectionListFilterItem => ({
     ...f,
     beforeText: <Label label={f.label || { name: '', color: '#cccccc' }} colorOnly={true} className="mr-3" />,
     text: f.labelName,
@@ -17,7 +17,7 @@ const ITEM_FUNC = (f: GQL.ILabelFilter): ThreadListFilterItem => ({
 })
 
 export const ThreadListLabelFilterDropdownButton: React.FunctionComponent<Props> = props => (
-    <ThreadListFilterDropdownButton
+    <ConnectionListFilterDropdownButton<GQL.IThreadConnectionFilters, 'label'>
         {...props}
         filterKey="label"
         itemFunc={ITEM_FUNC}

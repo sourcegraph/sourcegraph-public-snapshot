@@ -3,6 +3,7 @@ import H from 'history'
 import React from 'react'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { ConnectionListFilterQueryInput } from '../../components/connectionList/ConnectionListFilterQueryInput'
 import { ConnectionListHeader, ConnectionListHeaderItems } from '../../components/connectionList/ConnectionListHeader'
 import { QueryParameterProps } from '../../components/withQueryParameter/WithQueryParameter'
 import { ParticipantListItem, ParticipantListItemContext } from './ParticipantListItem'
@@ -34,6 +35,8 @@ export const ParticipantList: React.FunctionComponent<Props> = ({
     participants,
     headerItems,
     itemCheckboxes,
+    query,
+    onQueryChange,
     className = '',
     ...props
 }) => (
@@ -42,11 +45,33 @@ export const ParticipantList: React.FunctionComponent<Props> = ({
             <div className="alert alert-danger">{participants.message}</div>
         ) : (
             <div className="card">
-                <ConnectionListHeader {...props} items={headerItems} itemCheckboxes={itemCheckboxes} />
+                <ConnectionListHeader
+                    {...props}
+                    items={{
+                        ...headerItems,
+                        left: (
+                            <>
+                                <h4 className="mb-0">Participants</h4>
+                                {headerItems && headerItems.left}
+                            </>
+                        ),
+                        right: (
+                            <>
+                                {headerItems && headerItems.right}
+                                <ConnectionListFilterQueryInput
+                                    query={query}
+                                    onQueryChange={onQueryChange}
+                                    instant={true}
+                                />
+                            </>
+                        ),
+                    }}
+                    itemCheckboxes={itemCheckboxes}
+                />
                 {participants === LOADING ? (
                     <LoadingSpinner className="m-3" />
                 ) : participants.edges.length === 0 ? (
-                    <p className="p-2 mb-0 text-muted">No participants.</p>
+                    <p className="p-3 mb-0 text-muted">No participants.</p>
                 ) : (
                     <ul className="list-group list-group-flush">
                         {participants.edges.map((edge, i) => (
@@ -57,11 +82,4 @@ export const ParticipantList: React.FunctionComponent<Props> = ({
             </div>
         )}
     </div>
-)
-
-export const ParticipantListHeaderCommonFilters: React.FunctionComponent<ParticipantListFilterContext> = props => (
-    <>
-        <ThreadListRepositoryFilterDropdownButton {...props} />
-        <ThreadListLabelFilterDropdownButton {...props} />
-    </>
 )

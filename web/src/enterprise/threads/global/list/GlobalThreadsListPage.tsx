@@ -1,11 +1,12 @@
 import H from 'history'
 import React from 'react'
 import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { ConnectionListFilterContext } from '../../../../components/connectionList/ConnectionListFilterDropdownButton'
+import { ConnectionListFilterQueryInput } from '../../../../components/connectionList/ConnectionListFilterQueryInput'
 import { useQueryParameter } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { ListHeaderQueryLinksButtonGroup } from '../../../threadsOLD/components/ListHeaderQueryLinks'
-import { ThreadsListFilter } from '../../../threadsOLD/list/ThreadsListFilter'
 import { ThreadsIcon } from '../../icons'
-import { ThreadListFilterContext } from '../../list/header/ThreadListFilterDropdownButton'
 import { ThreadList, ThreadListHeaderCommonFilters } from '../../list/ThreadList'
 import { useThreads } from '../../list/useThreads'
 
@@ -22,8 +23,8 @@ const QUERY_FIELDS_IN_USE = ['involves', 'author', 'mentions']
 export const GlobalThreadsListPage: React.FunctionComponent<Props> = props => {
     const [query, onQueryChange] = useQueryParameter(props)
     const threads = useThreads({ query })
-    const filterProps: ThreadListFilterContext = {
-        threadConnection: threads,
+    const filterProps: ConnectionListFilterContext<GQL.IThreadConnectionFilters> = {
+        connection: threads,
         query,
         onQueryChange,
     }
@@ -63,7 +64,7 @@ export const GlobalThreadsListPage: React.FunctionComponent<Props> = props => {
                     />
                 </div>
                 <div className="flex-1 mb-3">
-                    <ThreadsListFilter value={query} onChange={onQueryChange} />
+                    <ConnectionListFilterQueryInput query={query} onQueryChange={onQueryChange} />
                 </div>
             </div>
             <ThreadList
