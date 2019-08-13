@@ -45,7 +45,9 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
             parseDiagnosticQuery(`${filters}${filters ? ' ' : ''}${query}`)
         onChange({
             isValid: !!packageName,
-            name: `Deprecate ${packageNameOrPlaceholder}${
+            name: `${
+                versionRange && versionRange !== ALL_VERSION_RANGE ? 'Deprecate' : 'Ban'
+            } ${packageNameOrPlaceholder}${
                 versionRange && versionRange !== ALL_VERSION_RANGE ? `@${versionRange}` : ''
             } (npm)`,
             rules: packageName

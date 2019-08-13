@@ -22,6 +22,12 @@ export const ThreadFragment = gql`
         author {
             ${ActorQuery}
         }
+        assignees {
+            nodes {
+                ${ActorQuery}
+            }
+            totalCount
+        }
         comments {
             totalCount
         }

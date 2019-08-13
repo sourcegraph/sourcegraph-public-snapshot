@@ -57,7 +57,7 @@ const ITEMS: SummaryCountItemDescriptor<Context>[] = [
         icon: DiagnosticsIcon,
         count: c => c.diagnostics,
         url: c => `${c.baseURL}${c.urlFragmentOrPath}diagnostics`,
-        condition: c => c.discussions > 0,
+        condition: c => c.diagnostics > 0,
     },
     {
         noun: 'repository affected',

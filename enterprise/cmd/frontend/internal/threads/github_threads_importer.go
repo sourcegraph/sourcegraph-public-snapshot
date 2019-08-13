@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
@@ -74,6 +75,13 @@ func githubIssueOrPullRequestToThread(v *githubIssueOrPullRequest) (*dbThread, c
 		HeadRefOID: v.HeadRefOid,
 		ExternalID: string(v.ID),
 	}
+	if len(v.Assignees.Nodes) >= 1 {
+		// TODO!(sqs): support multiple assignees
+		thread.Assignee = actor.DBColumns{
+			ExternalActorUsername: v.Assignees.Nodes[0].Login,
+			ExternalActorURL:      v.Assignees.Nodes[0].URL,
+		}
+	}
 	var err error
 	thread.ExternalMetadata, err = json.Marshal(v)
 	if err != nil {
@@ -120,7 +128,10 @@ type githubIssueOrPullRequest struct {
 	URL               string       `json:"url"`
 	State             string       `json:"state"`
 	Author            *githubActor `json:"author"`
-	Comments          struct {
+	Assignees         struct {
+		Nodes []*githubActor `json:"nodes"`
+	} `json:"assignees"`
+	Comments struct {
 		Nodes []*githubIssueComment `json:"nodes"`
 	} `json:"comments"`
 }
@@ -152,6 +163,12 @@ url
 state
 author {
 	...ActorFields
+}
+assignees(first: 1) {
+	nodes {
+		login
+		url
+	}
 }
 comments(first: 10) {
 	nodes {

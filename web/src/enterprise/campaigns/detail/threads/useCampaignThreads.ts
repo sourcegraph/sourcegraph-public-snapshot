@@ -5,6 +5,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike } from '../../../../../../shared/src/util/errors'
 import { ActorFragment } from '../../../../actor/graphql'
 import { queryGraphQL } from '../../../../backend/graphql'
+import { ThreadConnectionFiltersFragment, ThreadConnectionFragment } from '../../../threads/list/useThreads'
 import { ThreadFragment } from '../../../threads/util/graphql'
 const LOADING: 'loading' = 'loading'
 
@@ -28,14 +29,13 @@ export const useCampaignThreads = (
                         __typename
                         ... on Campaign {
                             threads {
-                                nodes {
-                                    ...ThreadFragment
-                                }
-                                totalCount
+                                ...ThreadConnectionFragment
                             }
                         }
                     }
                 }
+                ${ThreadConnectionFragment}
+                ${ThreadConnectionFiltersFragment}
                 ${ThreadFragment}
                 ${ActorFragment}
             `,

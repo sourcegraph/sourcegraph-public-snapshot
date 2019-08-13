@@ -42,6 +42,10 @@ type resolvedRevspec struct {
 	commitID api.CommitID
 }
 
+func NewResolvedRevspec(expr string, commitID api.CommitID) resolvedRevspec {
+	return resolvedRevspec{expr: expr, commitID: commitID}
+}
+
 func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *RepositoryComparisonInput) (RepositoryComparison, error) {
 	var baseRevspec, headRevspec resolvedRevspec
 	if args.Base == nil {
@@ -129,14 +133,14 @@ func (r *RepositoryComparisonResolver) BaseRepository() *RepositoryResolver { re
 func (r *RepositoryComparisonResolver) HeadRepository() *RepositoryResolver { return r.repo }
 
 func (r *RepositoryComparisonResolver) Range() GitRevisionRange {
-	return NewGitRevisionRange(r.baseRevspec.expr, r.repo, r.headRevspec.expr, r.repo)
+	return NewGitRevisionRange(r.baseRevspec, r.repo, r.headRevspec, r.repo)
 }
 
-func NewGitRevisionRange(baseRevspec string, baseRepo *RepositoryResolver, headRevspec string, headRepo *RepositoryResolver) GitRevisionRange {
+func NewGitRevisionRange(baseRevspec resolvedRevspec, baseRepo *RepositoryResolver, headRevspec resolvedRevspec, headRepo *RepositoryResolver) GitRevisionRange {
 	return &gitRevisionRange{
-		expr:      baseRevspec + "..." + headRevspec,
-		base:      &gitRevSpec{expr: &gitRevSpecExpr{expr: baseRevspec, repo: baseRepo}},
-		head:      &gitRevSpec{expr: &gitRevSpecExpr{expr: headRevspec, repo: headRepo}},
+		expr:      baseRevspec.expr + "..." + headRevspec.expr,
+		base:      &gitRevSpec{expr: &gitRevSpecExpr{expr: baseRevspec.expr, oid: GitObjectID(baseRevspec.commitID), repo: baseRepo}},
+		head:      &gitRevSpec{expr: &gitRevSpecExpr{expr: headRevspec.expr, oid: GitObjectID(headRevspec.commitID), repo: headRepo}},
 		mergeBase: nil, // not currently used
 	}
 }

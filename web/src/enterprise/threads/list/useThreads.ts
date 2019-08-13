@@ -29,7 +29,7 @@ export const ThreadConnectionFiltersFragment = gql`
     }
 `
 
-const ThreadConnectionFragment = gql`
+export const ThreadConnectionFragment = gql`
     fragment ThreadConnectionFragment on ThreadConnection {
         nodes {
             ...ThreadFragment

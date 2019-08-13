@@ -27,7 +27,7 @@ func (v *GQLRepositoryComparisonPreview) HeadRepository() *graphqlbackend.Reposi
 }
 
 func (v *GQLRepositoryComparisonPreview) Range() graphqlbackend.GitRevisionRange {
-	return graphqlbackend.NewGitRevisionRange("master" /* TODO!(sqs): incorrect in general, hack */, v.BaseRepository_, "preview", v.HeadRepository_)
+	return graphqlbackend.NewGitRevisionRange(graphqlbackend.NewResolvedRevspec("master", "") /* TODO!(sqs): incorrect in general, hack */, v.BaseRepository_, graphqlbackend.NewResolvedRevspec("preview", ""), v.HeadRepository_)
 }
 
 func (v *GQLRepositoryComparisonPreview) FileDiffs(args *graphqlutil.ConnectionArgs) graphqlbackend.FileDiffConnection {

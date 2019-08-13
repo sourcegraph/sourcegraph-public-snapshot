@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -17,11 +18,11 @@ import (
 )
 
 type rulesExecutor struct {
-	extensionData graphqlbackend.CampaignExtensionData
+	input graphqlbackend.CreateCampaignInput
 }
 
 func (x *rulesExecutor) planThreads(ctx context.Context) ([]graphqlbackend.ThreadPreview, error) {
-	diagnostics, err := extdata{}.parseDiagnosticInfos(x.extensionData)
+	diagnostics, err := extdata{}.parseDiagnosticInfos(x.input.ExtensionData)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +50,7 @@ func (x *rulesExecutor) planThreads(ctx context.Context) ([]graphqlbackend.Threa
 	planIssues := func(ctx context.Context) (issues []graphqlbackend.ThreadPreview, err error) {
 		// TODO!(sqs): hack, if there are any RawFileDiffs, assume the whole campaign is changesets
 		// only and issues arent wanted.
-		if len(x.extensionData.RawFileDiffs) > 0 {
+		if len(x.input.ExtensionData.RawFileDiffs) > 0 {
 			return nil, nil
 		}
 
@@ -76,6 +77,7 @@ func (x *rulesExecutor) planThreads(ctx context.Context) ([]graphqlbackend.Threa
 			issues = append(issues, threads.NewGQLThreadPreview(graphqlbackend.CreateThreadInput{
 				Repository:     graphqlbackend.NewRepositoryResolver(repo).ID(),
 				Title:          title,
+				Body:           x.input.Body,
 				RawDiagnostics: &rawDiagnostics,
 			}, nil))
 		}
@@ -84,7 +86,7 @@ func (x *rulesExecutor) planThreads(ctx context.Context) ([]graphqlbackend.Threa
 
 	planChangesets := func(ctx context.Context) (changesets []graphqlbackend.ThreadPreview, err error) {
 		// Include changesets for each diff.
-		diffs, err := extdata{}.parseRawFileDiffs(x.extensionData)
+		diffs, err := extdata{}.parseRawFileDiffs(x.input.ExtensionData)
 		if err != nil {
 			return nil, err
 		}
@@ -114,16 +116,11 @@ func (x *rulesExecutor) planThreads(ctx context.Context) ([]graphqlbackend.Threa
 				return nil, err
 			}
 
-			// TODO!(sqs) hack get title from diagnostic threads
-			threadTitle := "Fix problems" // TODO!(sqs)
 			rawDiagnostics := toRawDiagnostics(diagnosticsByRepo[repoID])
-			if len(rawDiagnostics) > 0 {
-				threadTitle = fmt.Sprintf("Fix: %s", diagnosticsByRepo[repoID][0].Message)
-			}
-
 			changesets = append(changesets, threads.NewGQLThreadPreview(graphqlbackend.CreateThreadInput{
 				Repository:     graphqlbackend.NewRepositoryResolver(repo).ID(),
-				Title:          threadTitle,
+				Title:          x.input.Name,
+				Body:           x.input.Body,
 				RawDiagnostics: &rawDiagnostics,
 			}, repoComparison))
 		}
@@ -216,7 +213,8 @@ func (x *rulesExecutor) syncChangeset(ctx context.Context, campaignID int64, thr
 	if err != nil {
 		return err
 	}
-	const branchName = "sourcegraph-a8n-2"
+	var IsAlphanumericWithPeriod = regexp.MustCompile(`[^a-zA-Z0-9_.]+`)
+	branchName := "a8n/" + IsAlphanumericWithPeriod.ReplaceAllString(x.input.Name, "-") // TODO!(sqs): hack
 	_, err = git.GraphQLResolver{}.CreateRefFromPatch(ctx, &struct {
 		Input graphqlbackend.GitCreateRefFromPatchInput
 	}{
@@ -225,7 +223,7 @@ func (x *rulesExecutor) syncChangeset(ctx context.Context, campaignID int64, thr
 			Name:          "refs/heads/" + branchName, //TODO!(sqs)
 			BaseCommit:    oid,
 			Patch:         patch,
-			CommitMessage: "sourcegraph a8n",
+			CommitMessage: "a8n: " + x.input.Name,
 		},
 	})
 	if err != nil {
@@ -236,6 +234,7 @@ func (x *rulesExecutor) syncChangeset(ctx context.Context, campaignID int64, thr
 		BaseRefName: "master",   // TODO!(sqs): hack
 		HeadRefName: branchName, // TODO!(sqs): hack
 		Title:       thread.Title(),
+		Body:        thread.Body(),
 	})
 	if err != nil {
 		return err

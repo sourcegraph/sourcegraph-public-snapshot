@@ -43,6 +43,9 @@ export const useCampaignByID = (campaign: GQL.ID): [Result, (update?: Partial<GQ
                             diagnostics {
                                 totalCount
                             }
+                            participants {
+                                totalCount
+                            }
                             repositoryComparisons {
                                 fileDiffs {
                                     totalCount

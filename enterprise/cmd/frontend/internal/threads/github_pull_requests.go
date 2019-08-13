@@ -14,6 +14,7 @@ import (
 type CreateChangesetData struct {
 	BaseRefName, HeadRefName string
 	Title                    string
+	Body                     string
 }
 
 func CreateOrGetExistingGitHubPullRequest(ctx context.Context, repoID api.RepoID, extRepo api.ExternalRepoSpec, data CreateChangesetData) (threadID int64, err error) {
@@ -77,6 +78,7 @@ mutation CreatePullRequest($input: CreatePullRequestInput!) {
 			"baseRefName":  data.BaseRefName,
 			"headRefName":  data.HeadRefName,
 			"title":        data.Title,
+			"body":         data.Body,
 		},
 	}, &resp); err != nil {
 		return nil, err

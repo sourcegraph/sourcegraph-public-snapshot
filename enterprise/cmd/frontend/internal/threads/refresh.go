@@ -15,6 +15,9 @@ func Refresh(ctx context.Context, dbID int64) error {
 	}
 
 	// Update this thread's metadata.
+	if err := UpdateGitHubThreadMetadata(ctx, dbThread.ID, dbThread.ImportedFromExternalServiceID, dbThread.ExternalID, dbThread.RepositoryID); err != nil {
+		return err
+	}
 
 	return ImportGitHubThreadEvents(ctx, dbID, dbThread.ImportedFromExternalServiceID, dbThread.ExternalID, dbThread.RepositoryID)
 }

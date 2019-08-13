@@ -45,6 +45,5 @@ query($id: ID!) {
 	}
 
 	externalThread := newExternalThread(data.Node, repoID, externalServiceID)
-	_ = externalThread
-	return nil
+	return dbUpdateExternalThread(ctx, threadID, externalThread)
 }

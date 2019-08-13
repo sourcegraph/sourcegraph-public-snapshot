@@ -2,6 +2,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ForumIcon from 'mdi-react/ForumIcon'
+import UserGroupIcon from 'mdi-react/UserGroupIcon'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -10,8 +11,8 @@ import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { HeroPage } from '../../../components/HeroPage'
 import { InfoSidebar, InfoSidebarSection } from '../../../components/infoSidebar/InfoSidebar'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
+import { PageTitle } from '../../../components/PageTitle'
 import { WithSidebar } from '../../../components/withSidebar/WithSidebar'
-import { DiagnosticListByResource } from '../../../diagnostics/list/byResource/DiagnosticListByResource'
 import { DiffIcon } from '../../../util/octicons'
 import { DiagnosticsIcon } from '../../checks/icons'
 import { RulesIcon } from '../../rules/icons'
@@ -24,6 +25,7 @@ import { CampaignActivity } from './activity/CampaignActivity'
 import { CampaignOverview } from './CampaignOverview'
 import { CampaignDiagnostics } from './diagnostics/CampaignDiagnostics'
 import { CampaignFileDiffsList } from './fileDiffs/CampaignFileDiffsList'
+import { CampaignParticipantListPage } from './participants/CampaignParticipantListPage'
 import { CampaignRepositoriesList } from './repositories/CampaignRepositoriesList'
 import { CampaignThreadListPage } from './threads/CampaignThreadListPage'
 import { useCampaignByID } from './useCampaignByID'
@@ -136,63 +138,85 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <WithSidebar sidebarPosition="right" sidebar={<InfoSidebar sections={sidebarSections} />} className="flex-1">
-            <OverviewPagesArea<CampaignAreaContext>
-                context={context}
-                header={header}
-                overviewComponent={CampaignOverview}
-                pages={[
-                    {
-                        title: 'Activity',
-                        icon: ForumIcon,
-                        count: campaign.comments.totalCount - 1,
-                        path: '',
-                        exact: true,
-                        render: () => <CampaignActivity {...context} className={PAGE_CLASS_NAME} />,
-                    },
-                    {
-                        title: 'Diagnostics',
-                        icon: DiagnosticsIcon,
-                        count: campaign.diagnostics.totalCount,
-                        path: '/diagnostics',
-                        render: () => <CampaignDiagnostics {...context} className={PAGE_CLASS_NAME} />,
-                        condition: () => campaign.diagnostics.totalCount > 0,
-                    },
+        <>
+            <PageTitle title={campaign.name} />
+            <WithSidebar
+                sidebarPosition="right"
+                sidebar={<InfoSidebar sections={sidebarSections} />}
+                className="flex-1"
+            >
+                <OverviewPagesArea<CampaignAreaContext>
+                    context={context}
+                    header={header}
+                    overviewComponent={CampaignOverview}
+                    pages={[
+                        {
+                            title: 'Activity',
+                            icon: ForumIcon,
+                            count: campaign.comments.totalCount - 1,
+                            path: '',
+                            exact: true,
+                            render: () => <CampaignActivity {...context} className={PAGE_CLASS_NAME} />,
+                        },
+                        {
+                            title: 'Diagnostics',
+                            icon: DiagnosticsIcon,
+                            count: campaign.diagnostics.totalCount,
+                            path: '/diagnostics',
+                            render: () => <CampaignDiagnostics {...context} className={PAGE_CLASS_NAME} />,
+                            condition: () => campaign.diagnostics.totalCount > 0,
+                        },
 
-                    {
-                        title: 'Changes',
-                        icon: DiffIcon,
-                        count: campaign.repositoryComparisons.reduce((n, c) => n + (c.fileDiffs.totalCount || 0), 0),
-                        path: '/changes',
-                        render: () => (
-                            <div className={PAGE_CLASS_NAME}>
-                                <CampaignRepositoriesList {...context} showCommits={true} />
-                                <CampaignFileDiffsList {...context} platformContext={props.platformContext} />
-                            </div>
-                        ),
-                        condition: () => campaign.repositoryComparisons.length > 0,
-                    },
-                    {
-                        title: 'Threads',
-                        icon: ThreadsIcon,
-                        count: campaign.threads.totalCount,
-                        path: '/threads',
-                        render: () => <CampaignThreadListPage {...context} className={PAGE_CLASS_NAME} />,
-                        navbarDividerBefore: true,
-                    },
-                    {
-                        title: 'Rules',
-                        icon: RulesIcon,
-                        count: campaign.rules.totalCount,
-                        path: '/rules',
-                        render: ({ match }) => (
-                            <RulesList {...context} container={campaign} match={match} className={PAGE_CLASS_NAME} />
-                        ),
-                    },
-                ]}
-                location={props.location}
-                match={match}
-            />
-        </WithSidebar>
+                        {
+                            title: 'Changes',
+                            icon: DiffIcon,
+                            count: campaign.repositoryComparisons.reduce(
+                                (n, c) => n + (c.fileDiffs.totalCount || 0),
+                                0
+                            ),
+                            path: '/changes',
+                            render: () => (
+                                <div className={PAGE_CLASS_NAME}>
+                                    <CampaignRepositoriesList {...context} showCommits={true} />
+                                    <CampaignFileDiffsList {...context} platformContext={props.platformContext} />
+                                </div>
+                            ),
+                            condition: () => campaign.repositoryComparisons.length > 0,
+                        },
+                        {
+                            title: 'Threads',
+                            icon: ThreadsIcon,
+                            count: campaign.threads.totalCount,
+                            path: '/threads',
+                            render: () => <CampaignThreadListPage {...context} className={PAGE_CLASS_NAME} />,
+                            navbarDividerBefore: true,
+                        },
+                        {
+                            title: 'Participants',
+                            icon: UserGroupIcon,
+                            count: campaign.participants.totalCount,
+                            path: '/participants',
+                            render: () => <CampaignParticipantListPage {...context} className={PAGE_CLASS_NAME} />,
+                        },
+                        {
+                            title: 'Rules',
+                            icon: RulesIcon,
+                            count: campaign.rules.totalCount,
+                            path: '/rules',
+                            render: ({ match }) => (
+                                <RulesList
+                                    {...context}
+                                    container={campaign}
+                                    match={match}
+                                    className={PAGE_CLASS_NAME}
+                                />
+                            ),
+                        },
+                    ]}
+                    location={props.location}
+                    match={match}
+                />
+            </WithSidebar>
+        </>
     )
 }

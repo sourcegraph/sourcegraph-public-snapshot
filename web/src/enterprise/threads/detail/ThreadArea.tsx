@@ -23,6 +23,7 @@ import { ThreadFileDiffsList } from './fileDiffs/ThreadFileDiffsList'
 import { threadSidebarSections } from './sidebar/threadSidebarSections'
 import { ThreadOverview } from './ThreadOverview'
 import { useThreadByNumberInRepository } from './useThreadByNumberInRepository'
+import { PageTitle } from '../../../components/PageTitle'
 
 export interface ThreadAreaContext
     extends Pick<RepositoryThreadsAreaContext, Exclude<keyof RepositoryThreadsAreaContext, 'repository'>> {
@@ -129,6 +130,7 @@ export const ThreadArea: React.FunctionComponent<Props> = ({
     return (
         <>
             <style>{`.user-area-header, .org-header { display: none; } .org-area > .container, .user-area > .container { margin: unset; margin-top: unset !important; width: 100%; max-width: unset !important; overflow:hidden; padding: unset; } /* TODO!(sqs): hack */`}</style>
+            <PageTitle title={thread.title} />
             <WithSidebar
                 sidebarPosition="right"
                 sidebar={<InfoSidebar sections={sidebarSections} />}
