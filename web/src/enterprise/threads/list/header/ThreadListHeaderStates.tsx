@@ -1,8 +1,8 @@
 import AlertOutlineIcon from 'mdi-react/AlertOutlineIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import React from 'react'
-import { isErrorLike } from '../../../../../shared/src/util/errors'
-import { ListHeaderQueryLinksNav } from '../../threadsOLD/components/ListHeaderQueryLinks'
+import { isErrorLike } from '../../../../../../shared/src/util/errors'
+import { ListHeaderQueryLinksNav } from '../../../threadsOLD/components/ListHeaderQueryLinks'
 import { ThreadListHeaderContext } from './ThreadListHeader'
 
 const LOADING = 'loading' as const

@@ -1,9 +1,9 @@
 import H from 'history'
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { ErrorLike } from '../../../../../shared/src/util/errors'
-import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
-import { ThreadListContext } from './ThreadList'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { ErrorLike } from '../../../../../../shared/src/util/errors'
+import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
+import { ThreadListContext } from '../ThreadList'
 
 const LOADING = 'loading' as const
 

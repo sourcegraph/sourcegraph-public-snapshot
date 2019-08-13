@@ -55,7 +55,7 @@ func (v *gqlCampaignPreview) Threads(ctx context.Context, args *graphqlbackend.T
 	if err != nil {
 		return nil, err
 	}
-	return threads.ConstThreadOrThreadPreviewConnection(toThreadOrThreadPreviews(nil, allThreads)), nil
+	return threads.ConstThreadOrThreadPreviewConnection(threads.ToThreadOrThreadPreviews(nil, allThreads)), nil
 }
 
 func (v *gqlCampaignPreview) Repositories(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {

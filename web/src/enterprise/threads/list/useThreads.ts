@@ -7,6 +7,25 @@ import { ActorFragment } from '../../../actor/graphql'
 import { queryGraphQL } from '../../../backend/graphql'
 import { ThreadFragment } from '../util/graphql'
 
+const ThreadConnectionFragment = gql`
+    fragment ThreadConnectionFragment on ThreadConnection {
+        nodes {
+            ...ThreadFragment
+        }
+        totalCount
+        filters {
+            repository {
+                repository {
+                    id
+                    name
+                }
+                count
+                isApplied
+            }
+        }
+    }
+`
+
 const LOADING: 'loading' = 'loading'
 
 /**
@@ -27,14 +46,12 @@ export const useThreads = (
                               __typename
                               ... on Repository {
                                   threads {
-                                      nodes {
-                                          ...ThreadFragment
-                                      }
-                                      totalCount
+                                      ...ThreadConnectionFragment
                                   }
                               }
                           }
                       }
+                      ${ThreadConnectionFragment}
                       ${ThreadFragment}
                       ${ActorFragment}
                   `,
@@ -51,12 +68,10 @@ export const useThreads = (
             : queryGraphQL(gql`
                   query Threads {
                       threads {
-                          nodes {
-                              ...ThreadFragment
-                          }
-                          totalCount
+                          ...ThreadConnectionFragment
                       }
                   }
+                  ${ThreadConnectionFragment}
                   ${ThreadFragment}
                   ${ActorFragment}
               `).pipe(

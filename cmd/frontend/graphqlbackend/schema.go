@@ -4355,6 +4355,9 @@ type ThreadOrThreadPreviewConnection {
 
     # Pagination information.
     pageInfo: PageInfo!
+
+    # Information about filters that can be applied to the list.
+    filters: ThreadConnectionFilters!
 }
 
 # A thread preview is a preview of a thread that is not persisted.
@@ -4506,6 +4509,27 @@ type ThreadConnection {
 
     # Pagination information.
     pageInfo: PageInfo!
+
+    # Information about filters that can be applied to the list.
+    filters: ThreadConnectionFilters!
+}
+
+# Filters that can be applied to a list of threads.
+type ThreadConnectionFilters {
+    # Repository filters.
+    repository: [RepositoryFilter!]!
+}
+
+# A repository filter that can be applied to a list.
+type RepositoryFilter {
+    # The repository.
+    repository: Repository!
+
+    # The item count for this repository.
+    count: Int
+
+    # Whether this filter is currently applied to the list of threads.
+    isApplied: Boolean!
 }
 
 # A diagnostic is information about a specific location in code.

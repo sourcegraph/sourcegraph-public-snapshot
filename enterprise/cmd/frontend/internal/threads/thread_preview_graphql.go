@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/diagnostics"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func NewGQLThreadPreview(input graphqlbackend.CreateThreadInput, repoComparison graphqlbackend.RepositoryComparison) graphqlbackend.ThreadPreview {
@@ -21,6 +22,14 @@ type gqlThreadPreview struct {
 
 func (v *gqlThreadPreview) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	return graphqlbackend.RepositoryByID(ctx, v.input.Repository)
+}
+
+func (v *gqlThreadPreview) Internal_RepositoryID() api.RepoID {
+	dbID, err := graphqlbackend.UnmarshalRepositoryID(v.input.Repository)
+	if err != nil {
+		panic(err)
+	}
+	return api.RepoID(dbID)
 }
 
 func (v *gqlThreadPreview) Title() string { return v.input.Title }

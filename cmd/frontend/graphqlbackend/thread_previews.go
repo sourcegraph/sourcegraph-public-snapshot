@@ -4,11 +4,13 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // ThreadPreview is the interface for the GraphQL type ThreadPreview.
 type ThreadPreview interface {
 	Repository(context.Context) (*RepositoryResolver, error)
+	Internal_RepositoryID() api.RepoID
 	Title() string
 	Author(context.Context) (*Actor, error)
 	Body() string
@@ -24,6 +26,7 @@ type ThreadOrThreadPreviewConnection interface {
 	Nodes(context.Context) ([]ToThreadOrThreadPreview, error)
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+	Filters(context.Context) (ThreadConnectionFilters, error)
 }
 
 type ToThreadOrThreadPreview struct {
@@ -31,8 +34,9 @@ type ToThreadOrThreadPreview struct {
 	ThreadPreview ThreadPreview
 }
 
-func (v ToThreadOrThreadPreview) thread() interface {
+func (v ToThreadOrThreadPreview) Common() interface {
 	Repository(ctx context.Context) (*RepositoryResolver, error)
+	Internal_RepositoryID() api.RepoID
 	Kind(context.Context) (ThreadKind, error)
 	RepositoryComparison(context.Context) (RepositoryComparison, error)
 } {
@@ -47,11 +51,11 @@ func (v ToThreadOrThreadPreview) thread() interface {
 }
 
 func (v ToThreadOrThreadPreview) Repository(ctx context.Context) (*RepositoryResolver, error) {
-	return v.thread().Repository(ctx)
+	return v.Common().Repository(ctx)
 }
 
 func (v ToThreadOrThreadPreview) RepositoryComparison(ctx context.Context) (RepositoryComparison, error) {
-	return v.thread().RepositoryComparison(ctx)
+	return v.Common().RepositoryComparison(ctx)
 }
 
 func (v ToThreadOrThreadPreview) Diagnostics(ctx context.Context, args *graphqlutil.ConnectionArgs) (DiagnosticConnection, error) {

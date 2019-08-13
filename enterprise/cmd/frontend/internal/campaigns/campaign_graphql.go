@@ -123,11 +123,11 @@ func (v *gqlCampaign) getThreads(ctx context.Context) ([]graphqlbackend.ToThread
 	if err != nil {
 		return nil, err
 	}
-	threads, err := connection.Nodes(ctx)
+	nodes, err := connection.Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return toThreadOrThreadPreviews(threads, nil), nil
+	return threads.ToThreadOrThreadPreviews(nodes, nil), nil
 }
 
 func (v *gqlCampaign) Repositories(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {

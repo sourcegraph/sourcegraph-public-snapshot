@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	commentobjectdb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // 🚨 SECURITY: TODO!(sqs): there needs to be security checks everywhere here! there are none
@@ -92,6 +93,8 @@ func (v *gqlThread) ID() graphql.ID {
 func (v *gqlThread) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	return graphqlbackend.RepositoryByDBID(ctx, v.db.RepositoryID)
 }
+
+func (v *gqlThread) Internal_RepositoryID() api.RepoID { return v.db.RepositoryID }
 
 func (v *gqlThread) Number() string { return strconv.FormatInt(v.db.ID, 10) }
 

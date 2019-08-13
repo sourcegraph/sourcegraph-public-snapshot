@@ -4,7 +4,7 @@ import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
-import { ThreadListHeader, ThreadListHeaderItems } from './ThreadListHeader'
+import { ThreadListHeader, ThreadListHeaderItems } from './header/ThreadListHeader'
 import { ThreadListItem, ThreadListItemContext } from './ThreadListItem'
 
 export interface ThreadListContext extends ThreadListItemContext {

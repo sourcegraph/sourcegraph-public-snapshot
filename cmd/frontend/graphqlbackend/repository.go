@@ -80,6 +80,8 @@ func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 
 var MarshalRepositoryID = marshalRepositoryID
 
+var UnmarshalRepositoryID = unmarshalRepositoryID
+
 func (r *RepositoryResolver) DBID() api.RepoID { return r.repo.ID }
 
 func (r *RepositoryResolver) DBExternalRepo() api.ExternalRepoSpec { return r.repo.ExternalRepo }

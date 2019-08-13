@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // Threads is the implementation of the GraphQL API for threads queries and mutations. If it is not
@@ -161,6 +162,7 @@ type Thread interface {
 	ID() graphql.ID
 	DBID() int64
 	Repository(context.Context) (*RepositoryResolver, error)
+	Internal_RepositoryID() api.RepoID
 	Number() string
 	Title() string
 	State() ThreadState
@@ -184,4 +186,5 @@ type ThreadConnection interface {
 	Nodes(context.Context) ([]Thread, error)
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+	Filters(context.Context) (ThreadConnectionFilters, error)
 }

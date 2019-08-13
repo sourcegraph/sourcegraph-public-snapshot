@@ -68,12 +68,15 @@ func (r *threadConnection) Nodes(ctx context.Context) ([]graphqlbackend.Thread, 
 	if r.opt.LimitOffset != nil && len(dbThreads) > r.opt.LimitOffset.Limit {
 		dbThreads = dbThreads[:r.opt.LimitOffset.Limit]
 	}
+	return toThreads(dbThreads), nil
+}
 
+func toThreads(dbThreads []*dbThread) []graphqlbackend.Thread {
 	threads := make([]graphqlbackend.Thread, len(dbThreads))
 	for i, dbThread := range dbThreads {
 		threads[i] = newGQLThread(dbThread)
 	}
-	return threads, nil
+	return threads
 }
 
 func (r *threadConnection) TotalCount(ctx context.Context) (int32, error) {
@@ -87,4 +90,8 @@ func (r *threadConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo,
 		return nil, err
 	}
 	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(threads) > r.opt.Limit), nil
+}
+
+func (r *threadConnection) Filters(ctx context.Context) (graphqlbackend.ThreadConnectionFilters, error) {
+	return newThreadConnectionFiltersFromDB(ctx, r.opt)
 }
