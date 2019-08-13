@@ -81,7 +81,7 @@ func reposToAdd(ctx context.Context, zoekt *searchbackend.Zoekt, repos []*search
 	matchingIDs := make(map[api.RepoID]bool)
 	if len(pattern.FilePatternsReposMustInclude) > 0 {
 		for _, pattern := range pattern.FilePatternsReposMustInclude {
-			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: int32(len(repos)), IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 			q, err := query.ParseAndCheck("file:" + pattern)
 			if err != nil {
 				return nil, err
@@ -99,7 +99,7 @@ func reposToAdd(ctx context.Context, zoekt *searchbackend.Zoekt, repos []*search
 
 	if len(pattern.FilePatternsReposMustExclude) > 0 {
 		for _, pattern := range pattern.FilePatternsReposMustExclude {
-			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: int32(len(repos)), IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 			q, err := query.ParseAndCheck("file:" + pattern)
 			if err != nil {
 				return nil, err
