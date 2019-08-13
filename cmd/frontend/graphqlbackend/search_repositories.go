@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"regexp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
@@ -49,24 +50,24 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 
 	common = &searchResultsCommon{}
 	var results []searchResultResolver
-	for _, repo := range args.Repos {
-		if len(results) == int(limit) {
-			common.limitHit = true
-			break
+	if len(args.Pattern.FilePatternsReposMustExclude) > 0 || len(args.Pattern.FilePatternsReposMustInclude) > 0 {
+		rsta, err := reposToAdd(ctx, args.Zoekt, repo, args.Pattern)
+		if err != nil {
+			return nil, nil, err
 		}
 
-		if pattern.MatchString(string(repo.Repo.Name)) {
-			if len(args.Pattern.FilePatternsReposMustExclude) > 0 || len(args.Pattern.FilePatternsReposMustInclude) > 0 {
-				shouldBeAdded, err := repoShouldBeAdded(ctx, args.Zoekt, repo, args.Pattern)
-				if err != nil {
-					return nil, nil, err
-				}
+		for _, r := range rsta {
+			results = append(results, &repositoryResolver{repo: r.Repo, icon: repoIcon})
+		}
+	} else {
+		for _, r := range args.Repos {
+			if len(results) == int(limit) {
+				common.limitHit = true
+				break
+			}
 
-				if shouldBeAdded {
-					results = append(results, &repositoryResolver{repo: repo.Repo, icon: repoIcon})
-				}
-			} else {
-				results = append(results, &repositoryResolver{repo: repo.Repo, icon: repoIcon})
+			if pattern.MatchString(string(r.Repo.Name)) {
+				results = append(results, &repositoryResolver{repo: r.Repo, icon: repoIcon})
 			}
 		}
 	}
@@ -74,24 +75,24 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 	return results, common, nil
 }
 
-// repoShouldBeAdded determines whether a repository should be included in the result set based on whether the repository fits in the subset
+// reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *search.RepositoryRevisions, pattern *search.PatternInfo) (bool, error) {
-	shouldBeAdded := true
+func reposToAdd(ctx context.Context, zoekt *searchbackend.Zoekt, repos []*search.RepositoryRevisions, pattern *search.PatternInfo) ([]*search.RepositoryRevisions, error) {
+	matchingIDs := make(map[api.RepoID]bool)
 	if len(pattern.FilePatternsReposMustInclude) > 0 {
 		for _, pattern := range pattern.FilePatternsReposMustInclude {
 			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 			q, err := query.ParseAndCheck("file:" + pattern)
 			if err != nil {
-				return false, err
+				return nil, err
 			}
-			newArgs := search.Args{Pattern: &p, Repos: []*search.RepositoryRevisions{repo}, Query: q, UseFullDeadline: true, Zoekt: zoekt}
+			newArgs := search.Args{Pattern: &p, Repos: repos, Query: q, UseFullDeadline: true, Zoekt: zoekt}
 			matches, _, err := searchFilesInRepos(ctx, &newArgs)
 			if err != nil {
-				return false, err
+				return nil, err
 			}
-			if len(matches) == 0 {
-				return false, err
+			for _, m := range matches {
+				matchingIDs[m.Repo.ID] = true
 			}
 		}
 	}
@@ -101,18 +102,25 @@ func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *se
 			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 			q, err := query.ParseAndCheck("file:" + pattern)
 			if err != nil {
-				return false, err
+				return nil, err
 			}
-			newArgs := search.Args{Pattern: &p, Repos: []*search.RepositoryRevisions{repo}, Query: q, UseFullDeadline: true, Zoekt: zoekt}
+			newArgs := search.Args{Pattern: &p, Repos: repos, Query: q, UseFullDeadline: true, Zoekt: zoekt}
 			matches, _, err := searchFilesInRepos(ctx, &newArgs)
 			if err != nil {
-				return false, err
+				return nil, err
 			}
-			if len(matches) > 0 {
-				return false, nil
+			for _, m := range matches {
+				matchingIDs[m.Repo.ID] = false
 			}
 		}
 	}
 
-	return shouldBeAdded, nil
+	var rsta []*search.RepositoryRevisions
+	for _, r := range repos {
+		if matchingIDs[r.Repo.ID] {
+			rsta = append(rsta, r)
+		}
+	}
+
+	return rsta, nil
 }
