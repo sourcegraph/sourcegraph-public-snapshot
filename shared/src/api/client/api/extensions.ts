@@ -3,6 +3,7 @@ import { from, Subscription } from 'rxjs'
 import { bufferCount, startWith } from 'rxjs/operators'
 import { ExtExtensionsAPI } from '../../extension/api/extensions'
 import { ExecutableExtension, ExtensionsService } from '../services/extensionsService'
+import { eventLogger } from '../../../../../web/src/tracking/eventLogger'
 
 /** @internal */
 export class ClientExtensions {
@@ -16,6 +17,13 @@ export class ClientExtensions {
      * upon subscription and whenever it changes.
      */
     constructor(private proxy: ProxyResult<ExtExtensionsAPI>, extensionRegistry: ExtensionsService) {
+        // Log which external extensions are active on sourcegraph.com.
+        // TODO: Send these logs to the backend to log from privante instances.
+        extensionRegistry.activeExtensions.subscribe(extensions => {
+            const activeExtensions = extensions.map(activeExtension => activeExtension.id)
+            eventLogger.log('ActiveExtensions', { activeExtensions })
+        })
+
         this.subscriptions.add(
             from(extensionRegistry.activeExtensions)
                 .pipe(
