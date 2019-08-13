@@ -19,7 +19,17 @@ export interface ExportedPackage {
     version: string
 }
 
-export async function convertToBlob(inFile: string, outFile: string): Promise<Set<ExportedPackage>> {
+export interface ImportedSymbol {
+    scheme: string
+    name: string
+    version: string
+    identifier: string
+}
+
+export async function convertToBlob(
+    inFile: string,
+    outFile: string
+): Promise<{ exportedPackages: Set<ExportedPackage>; importedSymbols: Set<ImportedSymbol> }> {
     const db = new BlobStore(outFile, '0')
     const input = fs.createReadStream(inFile, { encoding: 'utf8' })
 
@@ -104,7 +114,10 @@ export async function convertToBlob(inFile: string, outFile: string): Promise<Se
 
             rd.on('close', () => {
                 db.close()
-                resolve(db.exportedPackages)
+                resolve({
+                    exportedPackages: db.exportedPackages,
+                    importedSymbols: db.importedSymbols,
+                })
             })
         })
     })
@@ -403,6 +416,7 @@ class BlobStore {
     private monikerAttachments: Map<protocol.Id, protocol.Id>
     private packageInformationDatas: Map<protocol.Id, db.PackageInformationData>
     public exportedPackages: Set<ExportedPackage>
+    public importedSymbols: Set<ImportedSymbol>
     private hoverDatas: Map<protocol.Id, lsp.Hover>
     private declarationDatas: Map<
         protocol.Id /* result id */,
@@ -436,6 +450,7 @@ class BlobStore {
         this.monikerAttachments = new Map()
         this.packageInformationDatas = new Map()
         this.exportedPackages = new Set()
+        this.importedSymbols = new Set()
         this.hoverDatas = new Map()
         this.declarationDatas = new Map()
         this.definitionDatas = new Map()
@@ -921,6 +936,19 @@ class BlobStore {
     }
 
     private handleDocumentEnd(event: protocol.DocumentEvent) {
+        for (const data of this.monikerDatas.values()) {
+            if (data.kind === 'import' && data.packageInformation) {
+                const packageInformation = assertDefined(this.packageInformationDatas.get(data.packageInformation!))
+
+                this.importedSymbols.add({
+                    scheme: data.scheme,
+                    name: packageInformation!.name!,
+                    version: packageInformation!.version!,
+                    identifier: data.identifier,
+                })
+            }
+        }
+
         for (const [key, value] of this.monikerAttachments.entries()) {
             const ids = this.monikerSets.get(value)
             if (!ids) {

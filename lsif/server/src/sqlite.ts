@@ -5,7 +5,7 @@ import { fs } from 'mz'
 import { Database } from './sqlite.database'
 import { InsertStats, QueryStats, timeit, CreateRunnerStats } from './stats'
 import { readEnvInt } from './env'
-import { convertToBlob } from './sqlite.importer'
+import { convertToBlob, ImportedSymbol } from './sqlite.importer'
 import { CorrelationDatabase } from './sqlite.xrepo'
 
 /**
@@ -60,17 +60,49 @@ export class SQLiteBackend implements Backend<SQLiteQueryRunner> {
         await this.createStorageRoot()
         const outFile = makeFilename(repository, commit)
 
-        const { result, elapsed } = await timeit(async () => {
+        const {
+            result: { exportedPackages, importedSymbols },
+            elapsed,
+        } = await timeit(async () => {
             return await convertToBlob(tempPath, outFile)
         })
 
-        for (const exportedPackage of result) {
-            this.correlationDb.insert(
+        for (const exportedPackage of exportedPackages) {
+            this.correlationDb.insertRepositoryCommitPackage(
                 exportedPackage.scheme,
                 exportedPackage.name,
                 exportedPackage.version,
                 repository,
                 commit
+            )
+        }
+
+        const identifiers: Map<
+            string,
+            {
+                importedSymbol: ImportedSymbol
+                ids: Set<string>
+            }
+        > = new Map()
+
+        for (const importedSymbol of importedSymbols) {
+            const hash = `${importedSymbol.scheme}::${importedSymbol.name}::${importedSymbol.version}`
+            if (identifiers.has(hash)) {
+                const { ids } = identifiers.get(hash)!
+                ids.add(importedSymbol.identifier)
+            } else {
+                identifiers.set(hash, { importedSymbol, ids: new Set([importedSymbol.identifier]) })
+            }
+        }
+
+        for (const { importedSymbol, ids } of identifiers.values()) {
+            this.correlationDb.insertRepositoryCommitReference(
+                importedSymbol.scheme,
+                importedSymbol.name,
+                importedSymbol.version,
+                repository,
+                commit,
+                Array.from(ids),
             )
         }
 
