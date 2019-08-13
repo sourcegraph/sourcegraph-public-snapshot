@@ -861,7 +861,9 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 
 		for _, branch := range repo.Branches {
 			if branch.Name == "HEAD" {
+				rev.Lock()
 				rev.IndexedHEADCommit = api.CommitID(branch.Version)
+				rev.Unlock()
 				break
 			}
 		}

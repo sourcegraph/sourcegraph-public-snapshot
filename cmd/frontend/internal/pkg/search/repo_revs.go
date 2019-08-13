@@ -3,6 +3,7 @@ package search
 import (
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 	dbquery "github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
@@ -57,6 +58,8 @@ func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
 // globs.  If no revspecs and no ref globs are specified, then the
 // repository's default branch is used.
 type RepositoryRevisions struct {
+	sync.Mutex
+
 	Repo *types.Repo
 	Revs []RevisionSpecifier
 	// IndexedHEADCommit contains the HEAD Git commit indexed by Zoekt.
