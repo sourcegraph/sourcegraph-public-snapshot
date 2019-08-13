@@ -14,6 +14,8 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Multi-line search now works for non-indexed search.
+- New site config option `branding.brandName` configures the brand name to display in the Sourcegraph \<title\> element.
+- `repositoryPathPattern` option added to the "Other" external service type for repository name customization.
 
 ### Changed
 
