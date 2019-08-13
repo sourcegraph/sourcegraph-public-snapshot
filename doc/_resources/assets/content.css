@@ -585,6 +585,23 @@ a:hover {
 .markdown-body hr {
     border-bottom-color: #eee;
 }
+
+/* Display hash  on hover for schema doc key */
+
+.markdown-body .json-schema-doc-heading {
+    margin-bottom: -1rem;
+}
+.schema-doc-key {
+    position: relative;
+}
+.schema-doc-key:hover::before {
+    content: '#';
+    position: absolute;
+    top: -2px;
+    left: -15px;
+    padding-right: 20px;
+    font-size: 1rem;
+}
 /*
 
 Visibility classes:

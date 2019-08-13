@@ -23,6 +23,11 @@ import (
 )
 
 func TestReplace(t *testing.T) {
+	// If we are not on CI skip the test if comby is not installed.
+	if _, err := exec.LookPath("comby"); os.Getenv("CI") == "" && err != nil {
+		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+	}
+
 	files := map[string]string{
 
 		"README.md": `# Hello World
