@@ -17,8 +17,8 @@ export class ClientExtensions {
      * upon subscription and whenever it changes.
      */
     constructor(private proxy: ProxyResult<ExtExtensionsAPI>, extensionRegistry: ExtensionsService) {
-        // Log which external extensions are active on sourcegraph.com.
-        // TODO: Send these logs to the backend to log from privante instances.
+        // Anonymously log which external extensions are active on sourcegraph.com.
+        // TODO: Send these logs to the backend to anonymously log active extensions from private instances.
         extensionRegistry.activeExtensions.subscribe(extensions => {
             const activeExtensions = extensions.map(activeExtension => activeExtension.id)
             eventLogger.log('ActiveExtensions', { activeExtensions })
