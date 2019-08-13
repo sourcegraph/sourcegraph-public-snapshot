@@ -4392,6 +4392,12 @@ type ThreadPreview {
     # The comparison between this thread's base and head, or null if there is none.
     repositoryComparison: RepositoryComparison
 
+    # A list of users assigned to the thread.
+    assignees(
+        # Return only the first n results.
+        first: Int
+    ): ActorConnection!
+
     # A list of labels applied to this thread.
     labels(
         # Returns the first n labels from the list.
@@ -4399,8 +4405,29 @@ type ThreadPreview {
     ): LabelConnection!
 }
 
+# An object that can have users assigned to it.
+interface Assignable {
+    # A list of users assigned to the object.
+    assignees(
+        # Return only the first n results.
+        first: Int
+    ): ActorConnection!
+}
+
+# A list of actors.
+type ActorConnection {
+    # A list of actors.
+    nodes: [Actor!]!
+
+    # The total number of actors in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
 # A thread is collection of comments, diagnostics, and changes.
-type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & Commentable & CampaignNode & Labelable & RuleContainer {
+type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & Commentable & CampaignNode & Assignable & Labelable & RuleContainer {
     # The unique ID for the thread.
     id: ID!
 
@@ -4491,6 +4518,12 @@ type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & 
         # Only include the specified event types. TODO!(sqs): make this an enum?
         types: [String!]
     ): ThreadTimelineItemConnection!
+
+    # A list of users assigned to this thread.
+    assignees(
+        # Return only the first n results.
+        first: Int
+    ): ActorConnection!
 
     # A list of labels applied to this thread.
     labels(
@@ -4741,6 +4774,48 @@ type CampaignPreview {
 
     # A burndown chart of the states of the campaign's threads over time.
     burndownChart: CampaignBurndownChart!
+
+    # People involved in or affected by the campaign.
+    participants(
+        # Return the first n results.
+        first: Int
+    ): ParticipantConnection!
+}
+
+# A list of participants (people involved or affected by something).
+type ParticipantConnection {
+    # The edges that describe how each participant is affected.
+    edges: [ParticipantEdge!]!
+
+    # A list of participants.
+    nodes: [Actor!]!
+
+    # The total number of participants in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# Reasons why someone is considered a participant.
+enum ParticipantReason {
+    # They are a code owner of affected code.
+    CODE_OWNER
+
+    # They are an assignee.
+    ASSIGNEE
+
+    # They are the author.
+    AUTHOR
+}
+
+# A description of how a participant is involved in or affected by something.
+type ParticipantEdge {
+    # The participant.
+    actor: Actor!
+
+    # Reasons why the actor is considered to be a participant.
+    reasons: [ParticipantReason!]!
 }
 
 # A campaign is a collection of threads.
@@ -4835,6 +4910,12 @@ type Campaign implements Node & Comment & Commentable & RuleContainer {
         # Return the first n results.
         first: Int
     ): RuleConnection!
+
+    # People involved in or affected by the campaign.
+    participants(
+        # Return the first n results.
+        first: Int
+    ): ParticipantConnection!
 }
 
 # A burndown chart of the states of the campaign's threads  over time.

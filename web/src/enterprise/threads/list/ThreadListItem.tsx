@@ -95,6 +95,14 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
                             created <Timestamp date={thread.createdAt} /> by <ActorLink actor={thread.author} />
                         </li>
                     )}
+                    {thread.assignees.nodes.length > 0 && (
+                        <li className="mx-2">
+                            &bull; Assigned to{' '}
+                            {thread.assignees.nodes.map((assignee, i) => (
+                                <ActorLink key={i} actor={assignee} className="mr-1" />
+                            ))}
+                        </li>
+                    )}
                     {/* TODO!(sqs): show contents {thread.targets.totalCount > 0 && (
                         <li className="ml-2 d-flex align-items-center">
                             <FileFindIcon className="icon-inline mr-1" /> {thread.targets.totalCount}{' '}

@@ -4751,7 +4751,7 @@ type CampaignPreview {
     # The body as HTML.
     bodyHTML: String!
 
-    # The actor who authored the comment.
+    # The actor who authored the campaign.
     author: Actor
 
     # A list of threads in this campaign.
@@ -4804,10 +4804,25 @@ type ParticipantConnection {
     pageInfo: PageInfo!
 }
 
+# Reasons why someone is considered a participant.
+enum ParticipantReason {
+    # They are a code owner of affected code.
+    CODE_OWNER
+
+    # They are an assignee.
+    ASSIGNEE
+
+    # They are the author.
+    AUTHOR
+}
+
 # A description of how a participant is involved in or affected by something.
 type ParticipantEdge {
     # The participant.
     actor: Actor!
+
+    # Reasons why the actor is considered to be a participant.
+    reasons: [ParticipantReason!]!
 }
 
 # A campaign is a collection of threads.
@@ -4830,7 +4845,7 @@ type Campaign implements Node & Comment & Commentable & RuleContainer {
     # The body as HTML.
     bodyHTML: String!
 
-    # The actor who authored the comment.
+    # The actor who authored the campaign.
     author: Actor
 
     # The URL to this campaign.

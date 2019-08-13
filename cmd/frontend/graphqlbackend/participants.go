@@ -12,7 +12,16 @@ type ParticipantConnectionArgs struct {
 
 type ParticipantEdge interface {
 	Actor(context.Context) (Actor, error)
+	Reasons() []ParticipantReason
 }
+
+type ParticipantReason string
+
+const (
+	ParticipantReasonCodeOwner ParticipantReason = "CODE_OWNER"
+	ParticipantReasonAssignee                    = "ASSIGNEE"
+	ParticipantReasonAuthor                      = "AUTHOR"
+)
 
 type hasParticipants interface {
 	Participants(context.Context, *ParticipantConnectionArgs) (ParticipantConnection, error)

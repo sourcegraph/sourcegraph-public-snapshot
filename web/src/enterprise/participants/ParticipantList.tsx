@@ -2,12 +2,11 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React from 'react'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { QueryParameterProps } from '../../components/withQueryParameter/WithQueryParameter'
 import { ParticipantListItem, ParticipantListItemContext } from './ParticipantListItem'
 
 const LOADING: 'loading' = 'loading'
 
-interface Props extends ParticipantListItemContext, QueryParameterProps {
+interface Props extends ParticipantListItemContext {
     participants: typeof LOADING | GQL.IParticipantConnection | ErrorLike
 
     className?: string

@@ -35,3 +35,21 @@ func (c *DBColumns) GQL(ctx context.Context) (*graphqlbackend.Actor, error) {
 		return nil, nil
 	}
 }
+
+// FromGQL returns the DBColumns value that represents the Actor GraphQL value.
+func FromGQL(actor *graphqlbackend.Actor) DBColumns {
+	if actor == nil {
+		return DBColumns{}
+	}
+	switch {
+	case actor.User != nil:
+		return DBColumns{UserID: actor.User.DatabaseID()}
+	case actor.ExternalActor != nil:
+		return DBColumns{
+			ExternalActorUsername: actor.ExternalActor.Username_,
+			ExternalActorURL:      actor.ExternalActor.URL_,
+		}
+	default:
+		panic("empty actor")
+	}
+}

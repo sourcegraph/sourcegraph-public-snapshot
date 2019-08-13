@@ -29,6 +29,11 @@ export const CampaignPreviewFragment = gql`
                     }
                     title
                     kind
+                    assignees {
+                        nodes {
+                            ${ActorQuery}
+                        }
+                    }
                 }
             }
             totalCount
@@ -41,6 +46,7 @@ export const CampaignPreviewFragment = gql`
                 actor {
                     ${ActorQuery}
                 }
+                reasons
             }
             totalCount
         }

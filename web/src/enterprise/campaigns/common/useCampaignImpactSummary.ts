@@ -72,6 +72,7 @@ export function useCampaignImpactSummary(campaign: Pick<GQL.ICampaign, 'id'>): R
                         issues: data.node.threads.nodes.filter(thread => thread.kind === GQL.ThreadKind.ISSUE).length,
                         changesets: data.node.threads.nodes.filter(thread => thread.kind === GQL.ThreadKind.CHANGESET)
                             .length,
+                        participants: data.node.participants.totalCount,
                         diagnostics: data.node.diagnostics.totalCount,
                         repositories: uniq(data.node.repositoryComparisons.map(c => c.baseRepository.id)).length,
                         files: data.node.repositoryComparisons.reduce((n, c) => n + (c.fileDiffs.totalCount || 0), 0),
