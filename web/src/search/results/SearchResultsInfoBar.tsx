@@ -9,7 +9,7 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import * as React from 'react'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../shared/src/util/strings'
-import { ServerBanner } from '../../marketing/ServerBanner'
+import { ServerBanner, ServerBannerNoRepo } from '../../marketing/ServerBanner'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 
 interface SearchResultsInfoBarProps {
@@ -152,7 +152,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 </div>
             </small>
         )}
-        {!props.results.alert && props.showDotComMarketing && !props.hasRepoishField && <ServerBanner />}
+        {!props.results.alert &&
+            props.showDotComMarketing &&
+            (props.hasRepoishField ? <ServerBanner /> : <ServerBannerNoRepo />)}
         {!props.results.alert && props.displayPerformanceWarning && <PerformanceWarningAlert />}
     </div>
 )

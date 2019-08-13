@@ -420,51 +420,6 @@ func TestReadAll(t *testing.T) {
 	}
 }
 
-func TestLineLimit(t *testing.T) {
-	rg, err := compile(&protocol.PatternInfo{Pattern: "a"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tests := []struct {
-		size    int
-		matches bool
-	}{
-		{size: maxLineSize, matches: true},
-		{size: maxLineSize + 1, matches: false},
-	}
-
-	// calculate maximum size in tests,
-	// needed because readerGreps re-use their buffers.
-	maxBuf := 0
-	for _, test := range tests {
-		if test.size > maxBuf {
-			maxBuf = test.size
-		}
-	}
-
-	for i, test := range tests {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			fakeZipFile := store.ZipFile{
-				MaxLen: maxBuf,
-				Data:   bytes.Repeat([]byte("A"), test.size),
-			}
-			fakeSrcFile := store.SrcFile{Len: int32(test.size)}
-			matches, limitHit, err := rg.Find(&fakeZipFile, &fakeSrcFile)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if limitHit {
-				t.Fatalf("expected limit to not hit")
-			}
-			hasMatches := len(matches) != 0
-			if hasMatches != test.matches {
-				t.Fatalf("hasMatches=%t test.matches=%t", hasMatches, test.matches)
-			}
-		})
-	}
-}
-
 func TestMaxMatches(t *testing.T) {
 	pattern := "foo"
 
@@ -480,11 +435,9 @@ func TestMaxMatches(t *testing.T) {
 			t.Fatal(err)
 		}
 		for j := 0; j < maxLineMatches+1; j++ {
-			for k := 0; k < maxOffsets+1; k++ {
-				w.Write([]byte(pattern))
-				w.Write([]byte{' '})
-			}
-			w.Write([]byte{'\n'})
+			_, _ = w.Write([]byte(pattern))
+			_, _ = w.Write([]byte{' '})
+			_, _ = w.Write([]byte{'\n'})
 		}
 	}
 	err := zw.Close()
@@ -500,7 +453,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, 0, true, false)
+	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, maxFileMatches, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -517,14 +470,6 @@ func TestMaxMatches(t *testing.T) {
 		}
 		if len(fm.LineMatches) != maxLineMatches {
 			t.Fatalf("expected %d line matches, got %d", maxLineMatches, len(fm.LineMatches))
-		}
-		for _, lm := range fm.LineMatches {
-			if !lm.LimitHit {
-				t.Fatalf("expected limitHit on line match")
-			}
-			if len(lm.OffsetAndLengths) != maxOffsets {
-				t.Fatalf("expected %d offsets, got %d", maxOffsets, len(lm.OffsetAndLengths))
-			}
 		}
 	}
 }
