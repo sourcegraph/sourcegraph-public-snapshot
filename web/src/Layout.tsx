@@ -12,6 +12,7 @@ import { SettingsCascadeProps } from '../../shared/src/settings/settings'
 import { ErrorLike } from '../../shared/src/util/errors'
 import { parseHash } from '../../shared/src/util/url'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
 import { registerCodemodContributions } from './enterprise/codemod/contributions'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
@@ -100,6 +101,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
+
+    useScrollToLocationHash(props.location)
 
     useEffect(() => {
         const subscription = new Subscription()

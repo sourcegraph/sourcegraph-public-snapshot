@@ -11,6 +11,7 @@ export interface CampaignImpactSummary {
     discussions: number
     issues: number
     changesets: number
+    diagnostics: number
     repositories: number
     files: number
     diffStat: GQL.IDiffStat
@@ -33,6 +34,9 @@ export function useCampaignImpactSummary(campaign: Pick<GQL.ICampaign, 'id'>): R
                                 nodes {
                                     kind
                                 }
+                            }
+                            diagnostics {
+                                totalCount
                             }
                             repositoryComparisons {
                                 baseRepository {
@@ -64,6 +68,7 @@ export function useCampaignImpactSummary(campaign: Pick<GQL.ICampaign, 'id'>): R
                         issues: data.node.threads.nodes.filter(thread => thread.kind === GQL.ThreadKind.ISSUE).length,
                         changesets: data.node.threads.nodes.filter(thread => thread.kind === GQL.ThreadKind.CHANGESET)
                             .length,
+                        diagnostics: data.node.diagnostics.totalCount,
                         repositories: uniq(data.node.repositoryComparisons.map(c => c.baseRepository.id)).length,
                         files: data.node.repositoryComparisons.reduce((n, c) => n + (c.fileDiffs.totalCount || 0), 0),
                         diffStat: sumDiffStats(data.node.repositoryComparisons.map(c => c.fileDiffs.diffStat)),

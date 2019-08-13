@@ -41,46 +41,38 @@ export const DiagnosticListByResource: React.FunctionComponent<Props> = ({
     }, [diagnostics])
 
     return byPath.length > 0 ? (
-        <div className={className}>
-            <ul className={listClassName}>
-                {byPath.map(([uri, diagnostics], i) => {
-                    const parsedURI = parseRepoURI(uri)
-                    return (
-                        <li key={i} className="list-group-item">
-                            <LinkOrSpan
-                                to={toPrettyBlobURL({
-                                    ...parsedURI,
-                                    rev: parsedURI.rev || parsedURI.commitID!,
-                                    filePath: parsedURI.filePath || '',
-                                })}
-                                className="d-block"
-                            >
-                                {parsedURI.filePath ? (
-                                    <>
-                                        <span className="font-weight-normal">
-                                            {displayRepoName(parsedURI.repoName)}
-                                        </span>{' '}
-                                        › {parsedURI.filePath}
-                                    </>
-                                ) : (
-                                    displayRepoName(parsedURI.repoName)
-                                )}
-                            </LinkOrSpan>
-                            <ul className="list-unstyled ml-4 mb-3">
-                                {diagnostics.map((diagnostic, j) => (
-                                    <li key={j}>
-                                        <DiagnosticListItem
-                                            {...props}
-                                            diagnostic={diagnostic}
-                                            className={itemClassName}
-                                        />
-                                    </li>
-                                ))}
-                            </ul>
-                        </li>
-                    )
-                })}
-            </ul>
-        </div>
+        <ul className={`${className} ${listClassName}`}>
+            {byPath.map(([uri, diagnostics], i) => {
+                const parsedURI = parseRepoURI(uri)
+                return (
+                    <li key={i} className="list-group-item">
+                        <LinkOrSpan
+                            to={toPrettyBlobURL({
+                                ...parsedURI,
+                                rev: parsedURI.rev || parsedURI.commitID!,
+                                filePath: parsedURI.filePath || '',
+                            })}
+                            className="d-block"
+                        >
+                            {parsedURI.filePath ? (
+                                <>
+                                    <span className="font-weight-normal">{displayRepoName(parsedURI.repoName)}</span> ›{' '}
+                                    {parsedURI.filePath}
+                                </>
+                            ) : (
+                                displayRepoName(parsedURI.repoName)
+                            )}
+                        </LinkOrSpan>
+                        <ul className="list-unstyled ml-4 mb-3">
+                            {diagnostics.map((diagnostic, j) => (
+                                <li key={j}>
+                                    <DiagnosticListItem {...props} diagnostic={diagnostic} className={itemClassName} />
+                                </li>
+                            ))}
+                        </ul>
+                    </li>
+                )
+            })}
+        </ul>
     ) : null
 }

@@ -7,7 +7,6 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
 import { ListHeaderQueryLinksNav } from '../../threadsOLD/components/ListHeaderQueryLinks'
-import { threadNoun } from '../../threadsOLD/util'
 import { ThreadListItem, ThreadListItemContext } from './ThreadListItem'
 
 export interface ThreadListContext extends ThreadListItemContext {
@@ -20,13 +19,14 @@ export interface ThreadListContext extends ThreadListItemContext {
 const LOADING: 'loading' = 'loading'
 
 interface Props extends QueryParameterProps, ThreadListContext {
-    threads: typeof LOADING | GQL.IThreadConnection | ErrorLike
+    threads: typeof LOADING | GQL.IThreadConnection | GQL.IThreadOrThreadPreviewConnection | ErrorLike
 
     /**
      * A React fragment to render on the right side of the list header.
      */
     rightHeaderFragment?: React.ReactFragment
 
+    className?: string
     history: H.History
     location: H.Location
 }
@@ -40,9 +40,10 @@ export const ThreadList2: React.FunctionComponent<Props> = ({
     itemCheckboxes,
     query,
     onQueryChange,
+    className = '',
     ...props
 }) => (
-    <div className="thread-list">
+    <div className={`thread-list ${className}`}>
         {isErrorLike(threads) ? (
             <div className="alert alert-danger mt-2">{threads.message}</div>
         ) : (
@@ -90,7 +91,7 @@ export const ThreadList2: React.FunctionComponent<Props> = ({
                     <p className="p-2 mb-0 text-muted">No threads found.</p>
                 ) : (
                     <ul className="list-group list-group-flush">
-                        {threads.nodes.map((thread, i) => (
+                        {(threads.nodes as GQL.ThreadOrThreadPreview[]).map((thread, i) => (
                             <ThreadListItem key={i} {...props} thread={thread} itemCheckboxes={itemCheckboxes} />
                         ))}
                     </ul>

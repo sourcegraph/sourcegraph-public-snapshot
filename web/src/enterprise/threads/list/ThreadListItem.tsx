@@ -15,10 +15,7 @@ export interface ThreadListItemContext {
 }
 
 interface Props extends ThreadListItemContext, ThreadListContext {
-    thread: Pick<GQL.ThreadOrThreadPreview, 'title' | 'kind' | 'repository'> &
-        (
-            | Pick<GQL.IThread, '__typename' | 'id' | 'number' | 'state' | 'url' | 'createdAt' | 'author' | 'comments'>
-            | { __typename: 'ThreadPreview'; id?: undefined; number?: undefined; state?: undefined; url?: undefined })
+    thread: GQL.ThreadOrThreadPreview
 
     className?: string
 }
@@ -33,7 +30,7 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
     className = '',
 }) => (
     <li className={`list-group-item ${className}`}>
-        <div className="d-flex align-items-start pl-1">
+        <div className="d-flex align-items-start">
             {itemCheckboxes && (
                 <div
                     className="form-check ml-1 mr-2"
@@ -44,17 +41,20 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
                 </div>
             )}
             <ThreadStateIcon
-                thread={thread.state ? thread : { kind: thread.kind, state: GQL.ThreadState.OPEN }}
+                thread={thread.__typename === 'Thread' ? thread : { kind: thread.kind, state: GQL.ThreadState.OPEN }}
                 className="mt-1 mr-2"
             />
             <div className="flex-1">
                 <div className="d-flex align-items-center flex-wrap">
-                    <h3 className="d-flex align-items-center mb-0 mr-2">
-                        <LinkOrSpan to={thread.url} className="text-decoration-none text-body">
+                    <h4 className="d-flex align-items-center mb-0 mr-2">
+                        <LinkOrSpan
+                            to={thread.__typename === 'Thread' ? thread.url : undefined}
+                            className="text-decoration-none text-body"
+                        >
                             {thread.title}
                         </LinkOrSpan>
                         <span className="badge badge-secondary ml-1 d-none">123</span> {/* TODO!(sqs) */}
-                    </h3>
+                    </h4>
                     {thread.__typename === 'Thread' && (
                         <LabelableLabelsList
                             labelable={thread}
@@ -66,7 +66,7 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
                 </div>
                 <ul className="list-unstyled d-flex align-items-center small text-muted mb-0">
                     <li>
-                        {thread.number !== undefined ? (
+                        {thread.__typename === 'Thread' ? (
                             <span className="text-muted mr-2">
                                 {showRepository && (
                                     <Link to={thread.repository.url} className="text-muted">
@@ -77,8 +77,15 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
                             </span>
                         ) : (
                             <span className="text-muted mr-2">
-                                New {thread.kind.toLowerCase()} in{' '}
-                                <Link to={thread.repository.url}>{displayRepoName(thread.repository.name)}</Link>:
+                                Create new {thread.kind.toLowerCase()}{' '}
+                                {showRepository && (
+                                    <>
+                                        in{' '}
+                                        <Link to={thread.repository.url}>
+                                            {displayRepoName(thread.repository.name)}
+                                        </Link>
+                                    </>
+                                )}
                             </span>
                         )}
                     </li>
