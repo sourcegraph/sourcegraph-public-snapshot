@@ -3,8 +3,14 @@ import H from 'history'
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import {
+    ConnectionListHeader,
+    ConnectionListHeaderItems,
+} from '../../../components/connectionList/ConnectionListHeader'
 import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
-import { ThreadListHeader, ThreadListHeaderItems } from './header/ThreadListHeader'
+import { ThreadListFilterContext } from './header/ThreadListFilterDropdownButton'
+import { ThreadListLabelFilterDropdownButton } from './header/ThreadListLabelFilterDropdownButton'
+import { ThreadListRepositoryFilterDropdownButton } from './header/ThreadListRepositoryFilterDropdownButton'
 import { ThreadListItem, ThreadListItemContext } from './ThreadListItem'
 
 export interface ThreadListContext extends ThreadListItemContext {
@@ -22,7 +28,7 @@ const LOADING: 'loading' = 'loading'
 interface Props extends QueryParameterProps, ThreadListContext {
     threads: typeof LOADING | GQL.IThreadConnection | GQL.IThreadOrThreadPreviewConnection | ErrorLike
 
-    headerItems?: ThreadListHeaderItems
+    headerItems?: ConnectionListHeaderItems
 
     className?: string
     history: H.History
@@ -43,16 +49,10 @@ export const ThreadList: React.FunctionComponent<Props> = ({
 }) => (
     <div className={`thread-list ${className}`}>
         {isErrorLike(threads) ? (
-            <div className="alert alert-danger mt-2">{threads.message}</div>
+            <div className="alert alert-danger">{threads.message}</div>
         ) : (
             <div className="card">
-                <ThreadListHeader
-                    {...props}
-                    threads={threads}
-                    items={headerItems}
-                    itemCheckboxes={itemCheckboxes}
-                    query={query}
-                />
+                <ConnectionListHeader {...props} items={headerItems} itemCheckboxes={itemCheckboxes} />
                 {threads === LOADING ? (
                     <LoadingSpinner className="m-3" />
                 ) : threads.nodes.length === 0 ? (
@@ -67,4 +67,11 @@ export const ThreadList: React.FunctionComponent<Props> = ({
             </div>
         )}
     </div>
+)
+
+export const ThreadListHeaderCommonFilters: React.FunctionComponent<ThreadListFilterContext> = props => (
+    <>
+        <ThreadListRepositoryFilterDropdownButton {...props} />
+        <ThreadListLabelFilterDropdownButton {...props} />
+    </>
 )

@@ -14,6 +14,8 @@ interface Props extends ParticipantListItemContext {
 
 const REASON_DESCRIPTION: Record<GQL.ParticipantReason, string> = {
     CODE_OWNER: 'code owner',
+    ASSIGNEE: 'assigned to thread',
+    AUTHOR: 'campaign author',
 }
 
 /**
@@ -26,7 +28,7 @@ export const ParticipantListItem: React.FunctionComponent<Props> = ({ participan
             <ul className="list-inline ml-3">
                 {participant.reasons.map((reason, i) => (
                     <li key={i} className="list-inline-item badge badge-secondary mr-2">
-                        {REASON_DESCRIPTION[reason]}
+                        {REASON_DESCRIPTION[reason] || reason.toLowerCase()}
                     </li>
                 ))}
             </ul>

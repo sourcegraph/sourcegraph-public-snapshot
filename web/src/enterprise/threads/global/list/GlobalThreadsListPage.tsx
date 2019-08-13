@@ -4,14 +4,10 @@ import { ExtensionsControllerNotificationProps } from '../../../../../../shared/
 import { useQueryParameter } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { ListHeaderQueryLinksButtonGroup } from '../../../threadsOLD/components/ListHeaderQueryLinks'
 import { ThreadsListFilter } from '../../../threadsOLD/list/ThreadsListFilter'
-import { ThreadsListHeaderFilterButtonDropdown } from '../../../threadsOLD/list/ThreadsListHeaderFilterButtonDropdown'
 import { ThreadsIcon } from '../../icons'
 import { ThreadListFilterContext } from '../../list/header/ThreadListFilterDropdownButton'
-import { ThreadListLabelFilterDropdownButton } from '../../list/header/ThreadListLabelFilterDropdownButton'
-import { ThreadListRepositoryFilterDropdownButton } from '../../list/header/ThreadListRepositoryFilterDropdownButton'
-import { ThreadList } from '../../list/ThreadList'
+import { ThreadList, ThreadListHeaderCommonFilters } from '../../list/ThreadList'
 import { useThreads } from '../../list/useThreads'
-import { ThreadListHeaderCommonFilters } from '../../list/header/ThreadListHeader'
 
 interface Props extends ExtensionsControllerNotificationProps {
     location: H.Location

@@ -4,11 +4,9 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../../../../shared/src/util/errors'
 import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
 import { ThreadListFilterContext } from '../../../threads/list/header/ThreadListFilterDropdownButton'
-import { ThreadListHeaderCommonFilters } from '../../../threads/list/header/ThreadListHeader'
-import { ThreadList } from '../../../threads/list/ThreadList'
+import { ThreadList, ThreadListHeaderCommonFilters } from '../../../threads/list/ThreadList'
 import { ThreadsListFilter } from '../../../threadsOLD/list/ThreadsListFilter'
 import { ThreadsListButtonDropdownFilter } from '../../../threadsOLD/list/ThreadsListFilterButtonDropdown'
-import { ThreadsListHeaderFilterButtonDropdown } from '../../../threadsOLD/list/ThreadsListHeaderFilterButtonDropdown'
 
 const LOADING = 'loading' as const
 
