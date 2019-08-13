@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
@@ -260,7 +261,7 @@ func TestCreateCampaign(ctx context.Context, name string, namespaceUserID, names
 		Name:            name,
 		NamespaceUserID: namespaceUserID,
 		NamespaceOrgID:  namespaceOrgID,
-	}, commentobjectdb.DBObjectCommentFields{AuthorExternalActorUsername: "u"})
+	}, commentobjectdb.DBObjectCommentFields{Author: actor.DBColumns{ExternalActorUsername: "u"}})
 	if err != nil {
 		return 0, err
 	}

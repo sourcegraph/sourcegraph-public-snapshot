@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
@@ -16,12 +17,10 @@ type insertRelatedObjectFunc func(ctx context.Context, tx *sql.Tx, commentID int
 // DBObjectCommentFields contains the subset of fields required when creating a comment that is
 // related to another object.
 type DBObjectCommentFields struct {
-	AuthorUserID                int32
-	AuthorExternalActorUsername string
-	AuthorExternalActorURL      string
-	Body                        string
-	CreatedAt                   time.Time
-	UpdatedAt                   time.Time
+	Author    actor.DBColumns
+	Body      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // CreateCommentWithObject creates a comment and its related object (such as a thread or campaign)
@@ -50,18 +49,10 @@ func CreateCommentWithObject(ctx context.Context, tx *sql.Tx, comment DBObjectCo
 	}
 
 	dbComment := &internal.DBComment{
-		AuthorUserID: comment.AuthorUserID,
-		Body:         comment.Body,
-		CreatedAt:    comment.CreatedAt,
-		UpdatedAt:    comment.UpdatedAt,
-	}
-	if comment.AuthorExternalActorUsername != "" {
-		dbComment.AuthorExternalActorUsername.String = comment.AuthorExternalActorUsername
-		dbComment.AuthorExternalActorUsername.Valid = true
-	}
-	if comment.AuthorExternalActorURL != "" {
-		dbComment.AuthorExternalActorURL.String = comment.AuthorExternalActorURL
-		dbComment.AuthorExternalActorURL.Valid = true
+		Author:    comment.Author,
+		Body:      comment.Body,
+		CreatedAt: comment.CreatedAt,
+		UpdatedAt: comment.UpdatedAt,
 	}
 	insertedComment, err := internal.DBComments{}.Create(ctx, tx, dbComment)
 	if err != nil {

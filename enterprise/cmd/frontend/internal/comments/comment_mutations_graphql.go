@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
@@ -37,9 +38,9 @@ func (GraphQLResolver) AddCommentReply(ctx context.Context, arg *graphqlbackend.
 	}
 
 	v := &internal.DBComment{
-		AuthorUserID: authorUserID,
-		Body:         arg.Input.Body,
-		Object:       types.CommentObject{ParentCommentID: parentComment.ID},
+		Author: actor.DBColumns{UserID: authorUserID},
+		Body:   arg.Input.Body,
+		Object: types.CommentObject{ParentCommentID: parentComment.ID},
 	}
 	comment, err := internal.DBComments{}.Create(ctx, nil, v)
 	if err != nil {
@@ -72,18 +73,20 @@ type ExternalComment struct {
 // TODO!(sqs) hack
 func CreateExternalCommentReply(ctx context.Context, tx *sql.Tx, comment ExternalComment) error {
 	v := &internal.DBComment{
-		Object:                      types.CommentObject{ParentCommentID: comment.ThreadPrimaryCommentID},
-		AuthorExternalActorUsername: sql.NullString{String: comment.AuthorExternalActorUsername, Valid: true},
-		AuthorExternalActorURL:      sql.NullString{String: comment.AuthorExternalActorURL, Valid: true},
-		Body:                        comment.Body,
-		CreatedAt:                   comment.CreatedAt,
-		UpdatedAt:                   comment.UpdatedAt,
+		Object: types.CommentObject{ParentCommentID: comment.ThreadPrimaryCommentID},
+		Author: actor.DBColumns{
+			ExternalActorUsername: comment.Author.ExternalActorUsername,
+			ExternalActorURL:      comment.Author.ExternalActorURL,
+		},
+		Body:      comment.Body,
+		CreatedAt: comment.CreatedAt,
+		UpdatedAt: comment.UpdatedAt,
 	}
 	dbComment, err := internal.DBComments{}.Create(ctx, tx, v)
 	if err != nil {
 		return err
 	}
-	return createCommentEventForReply(ctx, tx, dbComment.ID, 0, comment.AuthorExternalActorUsername, comment.AuthorExternalActorURL, comment.CreatedAt)
+	return createCommentEventForReply(ctx, tx, dbComment.ID, 0, comment.Author.ExternalActorUsername, comment.Author.ExternalActorURL, comment.CreatedAt)
 }
 
 func (GraphQLResolver) EditComment(ctx context.Context, arg *graphqlbackend.EditCommentArgs) (graphqlbackend.Comment, error) {

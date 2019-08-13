@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/internal"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
@@ -35,18 +36,18 @@ func TestDB_Comments(t *testing.T) {
 	}
 
 	wantComment0 := &internal.DBComment{
-		Object:       types.CommentObject{}, // empty for test
-		AuthorUserID: user.ID,
-		Body:         "b0",
+		Object: types.CommentObject{}, // empty for test
+		Author: actor.DBColumns{UserID: user.ID},
+		Body:   "b0",
 	}
 	comment0, err := internal.DBComments{}.Create(ctx, nil, wantComment0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	comment1, err := internal.DBComments{}.Create(ctx, nil, &internal.DBComment{
-		Object:       types.CommentObject{}, // empty for test
-		AuthorUserID: user.ID,
-		Body:         "b1",
+		Object: types.CommentObject{}, // empty for test
+		Author: actor.DBColumns{UserID: user.ID},
+		Body:   "b1",
 	})
 	if err != nil {
 		t.Fatal(err)

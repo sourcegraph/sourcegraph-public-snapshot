@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
@@ -16,14 +17,12 @@ import (
 
 // DBComment describes a comment.
 type DBComment struct {
-	ID                          int64
-	Object                      types.CommentObject
-	AuthorUserID                int32
-	AuthorExternalActorUsername sql.NullString
-	AuthorExternalActorURL      sql.NullString
-	Body                        string
-	CreatedAt                   time.Time
-	UpdatedAt                   time.Time
+	ID        int64
+	Object    types.CommentObject
+	Author    actor.DBColumns
+	Body      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // ErrCommentNotFound occurs when a database operation expects a specific comment to exist but it
@@ -49,9 +48,9 @@ func (DBComments) Create(ctx context.Context, tx *sql.Tx, comment *DBComment) (*
 		return t
 	}
 	args := []interface{}{
-		nnz.Int32(comment.AuthorUserID),
-		comment.AuthorExternalActorUsername,
-		comment.AuthorExternalActorURL,
+		nnz.Int32(comment.Author.UserID),
+		nnz.String(comment.Author.ExternalActorUsername),
+		nnz.String(comment.Author.ExternalActorURL),
 		comment.Body,
 		nowIfZeroTime(comment.CreatedAt),
 		nowIfZeroTime(comment.UpdatedAt),
@@ -208,9 +207,9 @@ func (DBComments) scanRow(row interface {
 	var t DBComment
 	if err := row.Scan(
 		&t.ID,
-		nnz.ToInt32(&t.AuthorUserID),
-		&t.AuthorExternalActorUsername,
-		&t.AuthorExternalActorURL,
+		nnz.ToInt32(&t.Author.UserID),
+		(*nnz.String)(&t.Author.ExternalActorUsername),
+		(*nnz.String)(&t.Author.ExternalActorURL),
 		&t.Body,
 		&t.CreatedAt,
 		&t.UpdatedAt,

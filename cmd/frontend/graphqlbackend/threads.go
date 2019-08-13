@@ -184,6 +184,7 @@ type Thread interface {
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)
 	RepositoryComparison(context.Context) (RepositoryComparison, error)
 	CampaignNode
+	Assignable
 	Labelable
 }
 

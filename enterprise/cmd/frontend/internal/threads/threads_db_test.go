@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	commentobjectdb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -41,7 +42,7 @@ func TestDB_Threads(t *testing.T) {
 	}
 
 	wantThread0 := &dbThread{RepositoryID: repo0.ID, Title: "t0"}
-	thread0, err := dbThreads{}.Create(ctx, nil, wantThread0, commentobjectdb.DBObjectCommentFields{AuthorUserID: user.ID})
+	thread0, err := dbThreads{}.Create(ctx, nil, wantThread0, commentobjectdb.DBObjectCommentFields{Author: actor.DBColumns{UserID: user.ID}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +50,7 @@ func TestDB_Threads(t *testing.T) {
 	thread1, err := dbThreads{}.Create(ctx, nil, &dbThread{
 		RepositoryID: repo0.ID,
 		Title:        "t1",
-	}, commentobjectdb.DBObjectCommentFields{AuthorUserID: user.ID})
+	}, commentobjectdb.DBObjectCommentFields{Author: actor.DBColumns{UserID: user.ID}})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
@@ -40,7 +41,7 @@ func TestDB_Campaigns(t *testing.T) {
 	wantCampaign0 := &dbCampaign{NamespaceUserID: user1.ID, Name: "n0"}
 	campaign0, err := dbCampaigns{}.Create(ctx,
 		wantCampaign0,
-		commentobjectdb.DBObjectCommentFields{AuthorUserID: user1.ID, Body: "b0"},
+		commentobjectdb.DBObjectCommentFields{Author: actor.DBColumns{UserID: user1.ID}, Body: "b0"},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -48,7 +49,7 @@ func TestDB_Campaigns(t *testing.T) {
 	campaign0PrimaryCommentID := campaign0.PrimaryCommentID // needed below but is zeroed out by norm
 	campaign1, err := dbCampaigns{}.Create(ctx,
 		&dbCampaign{NamespaceUserID: user1.ID, Name: "n1"},
-		commentobjectdb.DBObjectCommentFields{AuthorUserID: user1.ID, Body: "b0"},
+		commentobjectdb.DBObjectCommentFields{Author: actor.DBColumns{UserID: user1.ID}, Body: "b0"},
 	)
 	if err != nil {
 		t.Fatal(err)

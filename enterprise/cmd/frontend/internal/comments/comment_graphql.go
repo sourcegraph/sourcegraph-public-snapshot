@@ -130,23 +130,7 @@ func (v *gqlComment) Author(ctx context.Context) (*graphqlbackend.Actor, error) 
 	if err != nil {
 		return nil, err
 	}
-	switch {
-	case c.AuthorUserID != 0:
-		user, err := graphqlbackend.UserByIDInt32(ctx, c.AuthorUserID)
-		if err != nil {
-			return nil, err
-		}
-		return &graphqlbackend.Actor{User: user}, nil
-	case c.AuthorExternalActorUsername.Valid || c.AuthorExternalActorURL.Valid:
-		return &graphqlbackend.Actor{
-			ExternalActor: &graphqlbackend.ExternalActor{
-				Username_: c.AuthorExternalActorUsername.String,
-				URL_:      c.AuthorExternalActorURL.String,
-			},
-		}, nil
-	default:
-		return nil, nil
-	}
+	return c.Author.GQL(ctx)
 }
 
 func (v *gqlComment) Body(ctx context.Context) (string, error) {

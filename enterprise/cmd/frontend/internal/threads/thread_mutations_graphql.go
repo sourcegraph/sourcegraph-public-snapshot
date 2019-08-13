@@ -3,6 +3,7 @@ package threads
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
@@ -18,7 +19,7 @@ func (GraphQLResolver) CreateThread(ctx context.Context, arg *graphqlbackend.Cre
 	if err != nil {
 		return nil, err
 	}
-	comment := commentobjectdb.DBObjectCommentFields{AuthorUserID: authorUserID}
+	comment := commentobjectdb.DBObjectCommentFields{Author: actor.DBColumns{UserID: authorUserID}}
 	if arg.Input.Body != nil {
 		comment.Body = *arg.Input.Body
 	}

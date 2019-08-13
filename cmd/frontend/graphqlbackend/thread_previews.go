@@ -19,6 +19,7 @@ type ThreadPreview interface {
 	Kind(context.Context) (ThreadKind, error)
 	RepositoryComparison(context.Context) (RepositoryComparison, error)
 	Diagnostics(context.Context, *graphqlutil.ConnectionArgs) (DiagnosticConnection, error)
+	Assignable
 	Labelable
 }
 
@@ -40,6 +41,7 @@ func (v ToThreadOrThreadPreview) Common() interface {
 	Internal_RepositoryID() api.RepoID
 	Kind(context.Context) (ThreadKind, error)
 	RepositoryComparison(context.Context) (RepositoryComparison, error)
+	Assignable
 	Labelable
 } {
 	switch {
@@ -69,6 +71,10 @@ func (v ToThreadOrThreadPreview) Diagnostics(ctx context.Context, args *graphqlu
 	default:
 		panic("invalid ToThreadOrThreadPreview")
 	}
+}
+
+func (v ToThreadOrThreadPreview) Assignees(ctx context.Context, arg *graphqlutil.ConnectionArgs) (ActorConnection, error) {
+	return v.Common().Assignees(ctx, arg)
 }
 
 func (v ToThreadOrThreadPreview) Labels(ctx context.Context, arg *graphqlutil.ConnectionArgs) (LabelConnection, error) {

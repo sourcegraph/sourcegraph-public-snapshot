@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	commentobjectdb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/types"
@@ -20,11 +21,11 @@ import (
 
 // dbThread describes a thread.
 type dbThread struct {
-	ID           int64
-	RepositoryID api.RepoID // the repository associated with this thread
-	Title        string
-	State        string
-
+	ID               int64
+	RepositoryID     api.RepoID // the repository associated with this thread
+	Title            string
+	State            string
+	Assignee         actor.DBColumns
 	PrimaryCommentID int64
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
@@ -47,7 +48,7 @@ var errThreadNotFound = errors.New("thread not found")
 
 type dbThreads struct{}
 
-const SelectColumns = "id, repository_id, title, state, primary_comment_id, created_at, updated_at, base_ref, base_ref_oid, head_repository_id, head_ref, head_ref_oid, imported_from_external_service_id, external_id, external_metadata"
+const SelectColumns = "id, repository_id, title, state, assignee_user_id, assignee_external_actor_username, assignee_external_actor_url, primary_comment_id, created_at, updated_at, base_ref, base_ref_oid, head_repository_id, head_ref, head_ref_oid, imported_from_external_service_id, external_id, external_metadata"
 
 // Create creates a thread. The thread argument's (Thread).ID field is ignored. The new thread is
 // returned.
@@ -73,6 +74,9 @@ func (dbThreads) Create(ctx context.Context, tx *sql.Tx, thread *dbThread, comme
 			thread.RepositoryID,
 			thread.Title,
 			thread.State,
+			nnz.Int32(thread.Assignee.UserID),
+			nnz.String(thread.Assignee.ExternalActorUsername),
+			nnz.String(thread.Assignee.ExternalActorURL),
 			commentID,
 			nowIfZeroTime(thread.CreatedAt),
 			nowIfZeroTime(thread.UpdatedAt),
@@ -275,6 +279,9 @@ func (dbThreads) scanRow(row interface {
 		&t.RepositoryID,
 		&t.Title,
 		&t.State,
+		nnz.ToInt32(&t.Assignee.UserID),
+		(*nnz.String)(&t.Assignee.ExternalActorUsername),
+		(*nnz.String)(&t.Assignee.ExternalActorURL),
 		&t.PrimaryCommentID,
 		&t.CreatedAt,
 		&t.UpdatedAt,
@@ -367,7 +374,7 @@ func TestCreateThread(ctx context.Context, title string, repositoryID api.RepoID
 			RepositoryID: repositoryID,
 			Title:        title,
 		},
-		commentobjectdb.DBObjectCommentFields{AuthorUserID: authorUserID},
+		commentobjectdb.DBObjectCommentFields{Author: actor.DBColumns{UserID: authorUserID}},
 	)
 	if err != nil {
 		return 0, err

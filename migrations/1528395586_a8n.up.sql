@@ -6,6 +6,10 @@ CREATE TABLE threads (
 	title text NOT NULL,
 	state text NOT NULL,
 
+    assignee_user_id integer REFERENCES users(id) ON DELETE SET NULL,
+    assignee_external_actor_username text,
+    assignee_external_actor_url text,
+
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
 

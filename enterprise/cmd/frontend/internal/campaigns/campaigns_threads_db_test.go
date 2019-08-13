@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/comments/commentobjectdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
@@ -29,7 +30,7 @@ func TestDB_CampaignsThreads(t *testing.T) {
 	}
 	campaign0, err := dbCampaigns{}.Create(ctx,
 		&dbCampaign{NamespaceOrgID: org1.ID, Name: "n0"},
-		commentobjectdb.DBObjectCommentFields{AuthorUserID: user1.ID, Body: "b0"},
+		commentobjectdb.DBObjectCommentFields{Author: actor.DBColumns{UserID: user1.ID}, Body: "b0"},
 	)
 	if err != nil {
 		t.Fatal(err)

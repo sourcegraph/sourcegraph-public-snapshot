@@ -216,3 +216,14 @@ func (v *gqlThread) TimelineItems(ctx context.Context, arg *graphqlbackend.Event
 func (v *gqlThread) Labels(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.LabelConnection, error) {
 	return graphqlbackend.LabelsForLabelable(ctx, v.ID(), arg)
 }
+
+func (v *gqlThread) Assignees(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ActorConnection, error) {
+	actor, err := v.db.Assignee.GQL(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if actor == nil {
+		return graphqlbackend.ActorConnection{}, nil
+	}
+	return graphqlbackend.ActorConnection{*actor}, nil
+}

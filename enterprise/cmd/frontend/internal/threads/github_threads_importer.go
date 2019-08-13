@@ -91,8 +91,8 @@ func githubIssueOrPullRequestToThread(v *githubIssueOrPullRequest) (*dbThread, c
 
 func githubActorSetDBObjectCommentFields(actor *githubActor, f *commentobjectdb.DBObjectCommentFields) {
 	// TODO!(sqs): map to sourcegraph user if possible
-	f.AuthorExternalActorUsername = actor.Login
-	f.AuthorExternalActorURL = actor.URL
+	f.Author.ExternalActorUsername = actor.Login
+	f.Author.ExternalActorURL = actor.URL
 }
 
 func githubIssueCommentToExternalComment(v *githubIssueComment) *comments.ExternalComment {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/gqltesting"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -36,9 +37,9 @@ func TestGraphQL_AddCommentReply(t *testing.T) {
 	mockNewGQLToComment = func(v *internal.DBComment) (graphqlbackend.Comment, error) { return &mockComment{body: v.Body}, nil }
 	defer func() { mockNewGQLToComment = nil }()
 	wantComment := &internal.DBComment{
-		Object:       comments_types.CommentObject{ParentCommentID: wantThreadCommentID},
-		AuthorUserID: wantUserID,
-		Body:         "b",
+		Object: comments_types.CommentObject{ParentCommentID: wantThreadCommentID},
+		Author: actor.DBColumns{UserID: wantUserID},
+		Body:   "b",
 	}
 	internal.Mocks.Comments.Create = func(comment *internal.DBComment) (*internal.DBComment, error) {
 		if !reflect.DeepEqual(comment, wantComment) {
@@ -99,10 +100,10 @@ func TestGraphQL_EditComment(t *testing.T) {
 			t.Errorf("got update %+v, want %+v", update, want)
 		}
 		return &internal.DBComment{
-			ID:           2,
-			Object:       comments_types.CommentObject{ThreadID: 1},
-			AuthorUserID: 1,
-			Body:         "b1",
+			ID:     2,
+			Object: comments_types.CommentObject{ThreadID: 1},
+			Author: actor.DBColumns{UserID: 1},
+			Body:   "b1",
 		}, nil
 	}
 

@@ -96,3 +96,49 @@ func (v *gqlThreadPreview) RepositoryComparison(ctx context.Context) (graphqlbac
 func (v *gqlThreadPreview) Labels(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.LabelConnection, error) {
 	return graphqlbackend.EmptyLabelConnection, nil // empty for now
 }
+
+func (v *gqlThreadPreview) Assignees(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.ActorConnection, error) {
+	// TODO!(sqs): hack, get code owners
+	//
+
+	// repoComparison, err := v.RepositoryComparison(ctx)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	repo, err := v.Repository(ctx)
+	if err != nil {
+		return nil, err
+	}
+	commit, err := graphqlbackend.GetGitCommit(ctx, repo, "master")
+	if err != nil {
+		return nil, err
+	}
+	person := commit.Author().Person()
+	user, err := person.User(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if user != nil {
+		return graphqlbackend.ActorConnection{graphqlbackend.Actor{User: user}}, nil
+	}
+
+	username, err := person.Name(ctx)
+	if err != nil {
+		return nil, err
+	}
+	displayName, err := person.DisplayName(ctx)
+	if err != nil {
+		return nil, err
+	}
+	email := person.Email()
+	return graphqlbackend.ActorConnection{
+		graphqlbackend.Actor{
+			ExternalActor: &graphqlbackend.ExternalActor{
+				Username_:    username,
+				DisplayName_: &displayName,
+				URL_:         "mailto:" + email,
+			},
+		},
+	}, nil
+}
