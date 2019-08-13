@@ -4,6 +4,7 @@ import { contrastingForegroundColor } from '../util/contrastingForegroundColor'
 
 interface Props extends Pick<React.HTMLAttributes<HTMLElement>, 'className' | 'onClick'> {
     label: Pick<GQL.ILabel, 'name' | 'color'>
+    colorOnly?: boolean
 
     tag?: 'span' | 'li' | 'button'
 }
@@ -13,6 +14,7 @@ interface Props extends Pick<React.HTMLAttributes<HTMLElement>, 'className' | 'o
  */
 export const Label: React.FunctionComponent<Props> = ({
     label: { name, color },
+    colorOnly = false,
     tag: Tag = 'span',
     className = '',
     children,
@@ -20,11 +22,11 @@ export const Label: React.FunctionComponent<Props> = ({
 }) => (
     <Tag
         {...props}
-        className={`badge ${className}`}
+        className={`badge ${colorOnly ? 'p-3' : ''} ${className}`}
         // tslint:disable-next-line: jsx-ban-props
         style={{ backgroundColor: color, color: contrastingForegroundColor(color) }}
     >
-        {name}
+        {!colorOnly && name}
         {children}
     </Tag>
 )

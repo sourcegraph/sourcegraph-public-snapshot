@@ -180,9 +180,10 @@ func (s dbThreads) GetByExternal(ctx context.Context, importedFromExternalServic
 
 // dbThreadsListOptions contains options for listing threads.
 type dbThreadsListOptions struct {
-	Query                         string     // only list threads matching this query (case-insensitively)
-	RepositoryID                  api.RepoID // only list threads in this repository
+	Query                         string       // only list threads matching this query (case-insensitively)
+	RepositoryIDs                 []api.RepoID // only list threads in these repositories
 	ThreadIDs                     []int64
+	LabelNames                    []string
 	State                         string
 	ImportedFromExternalServiceID int64
 	*db.LimitOffset
@@ -193,12 +194,23 @@ func (o dbThreadsListOptions) sqlConditions() []*sqlf.Query {
 	if o.Query != "" {
 		conds = append(conds, sqlf.Sprintf("title ILIKE %s", "%"+o.Query+"%"))
 	}
-	if o.RepositoryID != 0 {
-		conds = append(conds, sqlf.Sprintf("repository_id=%d", o.RepositoryID))
+	if o.RepositoryIDs != nil {
+		if len(o.RepositoryIDs) > 0 {
+			conds = append(conds, sqlf.Sprintf("repository_id=ANY(%v)", pq.Array(o.RepositoryIDs)))
+		} else {
+			conds = append(conds, sqlf.Sprintf("FALSE"))
+		}
 	}
 	if o.ThreadIDs != nil {
 		if len(o.ThreadIDs) > 0 {
 			conds = append(conds, sqlf.Sprintf("id=ANY(%v)", pq.Array(o.ThreadIDs)))
+		} else {
+			conds = append(conds, sqlf.Sprintf("FALSE"))
+		}
+	}
+	if o.LabelNames != nil {
+		if len(o.LabelNames) > 0 {
+			conds = append(conds, sqlf.Sprintf("EXISTS (SELECT 1 FROM labels l LEFT JOIN labels_objects lo ON l.id=lo.label_id WHERE l.name=ANY(%v) AND lo.thread_id=threads.id)", pq.Array(o.LabelNames)))
 		} else {
 			conds = append(conds, sqlf.Sprintf("FALSE"))
 		}

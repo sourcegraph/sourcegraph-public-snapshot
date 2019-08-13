@@ -2,8 +2,10 @@ package threads
 
 import (
 	"context"
+	"sort"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -40,5 +42,45 @@ func (f *threadConnectionFilters) Repository(ctx context.Context) ([]graphqlback
 		}
 		filters = append(filters, graphqlbackend.RepositoryFilter{Repository_: repo, Count_: count})
 	}
+	sort.Slice(filters, func(i, j int) bool { return filters[i].Count_ > filters[j].Count_ })
+	return filters, nil
+}
+
+func (f *threadConnectionFilters) Label(ctx context.Context) ([]graphqlbackend.LabelFilter, error) {
+	// TODO!(sqs) security respect label perms
+	var (
+		labelForName       = map[string]graphqlbackend.Label{}
+		labelNameConflicts = map[string]struct{}{}
+		labelCounts        = map[string]int32{}
+	)
+	for _, t := range f.allThreads {
+		labelConnection, err := t.Common().Labels(ctx, &graphqlutil.ConnectionArgs{})
+		if err != nil {
+			return nil, err
+		}
+		labels, err := labelConnection.Nodes(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, label := range labels {
+			name := label.Name()
+			if _, conflict := labelForName[name]; conflict {
+				labelNameConflicts[name] = struct{}{}
+			} else if _, conflict := labelNameConflicts[name]; !conflict {
+				labelForName[name] = label
+			}
+			labelCounts[name]++
+		}
+	}
+
+	filters := make([]graphqlbackend.LabelFilter, 0, len(labelCounts))
+	for labelName, count := range labelCounts {
+		filters = append(filters, graphqlbackend.LabelFilter{
+			Label_:     labelForName[labelName],
+			LabelName_: labelName,
+			Count_:     count,
+		})
+	}
+	sort.Slice(filters, func(i, j int) bool { return filters[i].Count_ > filters[j].Count_ })
 	return filters, nil
 }

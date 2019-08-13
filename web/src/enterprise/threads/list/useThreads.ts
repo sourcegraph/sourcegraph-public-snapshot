@@ -22,64 +22,50 @@ const ThreadConnectionFragment = gql`
                 count
                 isApplied
             }
+            label {
+                label {
+                    name
+                    color
+                }
+                labelName
+                count
+                isApplied
+            }
         }
     }
 `
 
 const LOADING: 'loading' = 'loading'
 
+type Result = typeof LOADING | GQL.IThreadConnection | ErrorLike
+
 /**
  * A React hook that observes threads queried from the GraphQL API.
- *
- * @param repository The (optional) repository in which to observe the threads.
  */
-export const useThreads = (
-    repository?: Pick<GQL.IRepository, 'id'>
-): typeof LOADING | GQL.IThreadConnection | ErrorLike => {
-    const [threads, setThreads] = useState<typeof LOADING | GQL.IThreadConnection | ErrorLike>(LOADING)
+export const useThreads = (filters: GQL.IThreadFilters | null): Result => {
+    const filtersJSON = JSON.stringify(filters)
+    const [result, setResult] = useState<Result>(LOADING)
     useEffect(() => {
-        const results = repository
-            ? queryGraphQL(
-                  gql`
-                      query RepositoryThreads($repository: ID!) {
-                          node(id: $repository) {
-                              __typename
-                              ... on Repository {
-                                  threads {
-                                      ...ThreadConnectionFragment
-                                  }
-                              }
-                          }
-                      }
-                      ${ThreadConnectionFragment}
-                      ${ThreadFragment}
-                      ${ActorFragment}
-                  `,
-                  { repository: repository.id }
-              ).pipe(
-                  map(dataOrThrowErrors),
-                  map(data => {
-                      if (!data.node || data.node.__typename !== 'Repository') {
-                          throw new Error('invalid repository')
-                      }
-                      return data.node.threads
-                  })
-              )
-            : queryGraphQL(gql`
-                  query Threads {
-                      threads {
-                          ...ThreadConnectionFragment
-                      }
-                  }
-                  ${ThreadConnectionFragment}
-                  ${ThreadFragment}
-                  ${ActorFragment}
-              `).pipe(
-                  map(dataOrThrowErrors),
-                  map(data => data.threads)
-              )
-        const subscription = results.pipe(startWith(LOADING)).subscribe(setThreads, err => setThreads(asError(err)))
+        const subscription = queryGraphQL(
+            gql`
+                query Threads($filters: ThreadFilters) {
+                    threads(filters: $filters) {
+                        ...ThreadConnectionFragment
+                    }
+                }
+                ${ThreadConnectionFragment}
+                ${ThreadFragment}
+                ${ActorFragment}
+            `,
+            { filters: JSON.parse(filtersJSON) }
+        )
+            .pipe(
+                map(dataOrThrowErrors),
+                map(data => data.threads),
+                startWith(LOADING)
+            )
+            .subscribe(setResult, err => setResult(asError(err)))
         return () => subscription.unsubscribe()
-    }, [repository])
-    return threads
+    }, [filtersJSON])
+    return result
 }

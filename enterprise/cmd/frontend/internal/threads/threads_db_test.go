@@ -101,7 +101,7 @@ func TestDB_Threads(t *testing.T) {
 
 	{
 		// List repo0's threads.
-		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{RepositoryID: repo0.ID})
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{RepositoryIDs: []api.RepoID{repo0.ID}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -151,7 +151,7 @@ func TestDB_Threads(t *testing.T) {
 		if err := (dbThreads{}).DeleteByID(ctx, thread0ID); err != nil {
 			t.Fatal(err)
 		}
-		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{RepositoryID: repo0.ID})
+		ts, err := dbThreads{}.List(ctx, dbThreadsListOptions{RepositoryIDs: []api.RepoID{repo0.ID}})
 		if err != nil {
 			t.Fatal(err)
 		}

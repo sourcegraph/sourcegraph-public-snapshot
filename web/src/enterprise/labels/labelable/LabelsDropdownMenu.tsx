@@ -35,7 +35,7 @@ export const LabelsDropdownMenu: React.FunctionComponent<Props> = ({ repository,
                 labels.nodes.map(label => (
                     // tslint:disable-next-line: jsx-no-lambda
                     <DropdownItem key={label.id} onClick={() => onSelect(label)} className="d-flex align-items-stretch">
-                        <Label label={{ ...label, name: ' ' }} className="p-3 mr-3" /> {label.name}
+                        <Label label={label} colorOnly={true} className="mr-3" /> {label.name}
                     </DropdownItem>
                 ))
             )}

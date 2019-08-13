@@ -110,7 +110,13 @@ type ThreadsResolver interface {
 
 type ThreadConnectionArgs struct {
 	graphqlutil.ConnectionArgs
-	Open *bool
+	Filters *ThreadFiltersInput
+}
+
+type ThreadFiltersInput struct {
+	Query        *string
+	Repositories *[]graphql.ID
+	States       *[]ThreadState
 }
 
 type CreateThreadInput struct {
@@ -178,7 +184,7 @@ type Thread interface {
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)
 	RepositoryComparison(context.Context) (RepositoryComparison, error)
 	CampaignNode
-	labelable
+	Labelable
 }
 
 // ThreadConnection is the interface for the GraphQL type ThreadConnection.

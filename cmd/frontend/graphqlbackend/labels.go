@@ -40,8 +40,8 @@ func LabelByID(ctx context.Context, id graphql.ID) (Label, error) {
 	return Labels.LabelByID(ctx, id)
 }
 
-// LabelsFor returns an instance of the GraphQL LabelConnection type with the list of labels for a
-// Labelable.
+// LabelsForLabelable returns an instance of the GraphQL LabelConnection type with the list of
+// labels for a Labelable.
 func LabelsForLabelable(ctx context.Context, labelable graphql.ID, arg *graphqlutil.ConnectionArgs) (LabelConnection, error) {
 	if Labels == nil {
 		return nil, errors.New("labels is not implemented")
@@ -147,8 +147,8 @@ type Label interface {
 	Repository(context.Context) (*RepositoryResolver, error)
 }
 
-// labelable is the interface for the Labelable GraphQL type.
-type labelable interface {
+// Labelable is the interface for the Labelable GraphQL type.
+type Labelable interface {
 	Labels(context.Context, *graphqlutil.ConnectionArgs) (LabelConnection, error)
 }
 
@@ -156,7 +156,7 @@ type ToLabelable struct {
 	Thread Thread
 }
 
-func (v ToLabelable) labelable() labelable {
+func (v ToLabelable) Labelable() Labelable {
 	switch {
 	case v.Thread != nil:
 		return v.Thread
@@ -170,7 +170,7 @@ func (v ToLabelable) ToThread() (Thread, bool) {
 }
 
 func (v ToLabelable) Labels(ctx context.Context, arg *graphqlutil.ConnectionArgs) (LabelConnection, error) {
-	return v.labelable().Labels(ctx, arg)
+	return v.Labelable().Labels(ctx, arg)
 }
 
 // LabelConnection is the interface for the GraphQL type LabelConnection.
@@ -178,4 +178,14 @@ type LabelConnection interface {
 	Nodes(context.Context) ([]Label, error)
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+}
+
+var EmptyLabelConnection emptyLabelConnection
+
+type emptyLabelConnection struct{}
+
+func (emptyLabelConnection) Nodes(context.Context) ([]Label, error)    { return nil, nil }
+func (emptyLabelConnection) TotalCount(context.Context) (int32, error) { return 0, nil }
+func (emptyLabelConnection) PageInfo(context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(false), nil
 }

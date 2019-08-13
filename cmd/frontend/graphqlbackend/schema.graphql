@@ -1017,8 +1017,8 @@ type Query {
         # Returns the first n threads from the list.
         first: Int
 
-        # Only include threads that are open.
-        open: Boolean
+        # Only include threads matching these filters.
+        filters: ThreadFilters
     ): ThreadConnection!
 
     # A list of diagnostics in threads.
@@ -1514,8 +1514,8 @@ type Repository implements Node & GenericSearchResultInterface {
         # Returns the first n threads from the list.
         first: Int
 
-        # Only include threads that are open.
-        open: Boolean
+        # Only include threads matching these filters.
+        filters: ThreadFilters
     ): ThreadConnection!
 
     # A Git comparison in this repository between a base and head commit.
@@ -4398,6 +4398,12 @@ type ThreadPreview {
 
     # The comparison between this thread's base and head, or null if there is none.
     repositoryComparison: RepositoryComparison
+
+    # A list of labels applied to this thread.
+    labels(
+        # Returns the first n labels from the list.
+        first: Int
+    ): LabelConnection!
 }
 
 # A thread is collection of comments, diagnostics, and changes.
@@ -4525,6 +4531,9 @@ type ThreadConnection {
 type ThreadConnectionFilters {
     # Repository filters.
     repository: [RepositoryFilter!]!
+
+    # Label filters.
+    label: [LabelFilter!]!
 }
 
 # A repository filter that can be applied to a list.
@@ -4532,10 +4541,26 @@ type RepositoryFilter {
     # The repository.
     repository: Repository!
 
-    # The item count for this repository.
+    # The item count for this filter.
     count: Int
 
-    # Whether this filter is currently applied to the list of threads.
+    # Whether this filter is currently applied to the list.
+    isApplied: Boolean!
+}
+
+# A label filter that can be applied to a list.
+type LabelFilter {
+    # The label. If the list contains items labeled with labels of the same name from different
+    # repositories, this field is null.
+    label: Label
+
+    # The label name.
+    labelName: String!
+
+    # The item count for this filter.
+    count: Int
+
+    # Whether this filter is currently applied to the list.
     isApplied: Boolean!
 }
 
@@ -4667,6 +4692,18 @@ input CampaignPreviewInput {
     campaign: CreateCampaignInput!
 }
 
+# Filters for a list of threads.
+input ThreadFilters {
+    # List threads matching this query.
+    query: String
+
+    # List threads in any of these repositories.
+    repositories: [ID!]
+
+    # List threads in any of these states.
+    states: [ThreadState!]
+}
+
 # A campaign preview is a preview of a campaign that is not persisted and does not mutate any state.
 type CampaignPreview {
     # The name of the campaign.
@@ -4689,8 +4726,8 @@ type CampaignPreview {
         # Returns the first n results from the list.
         first: Int
 
-        # Only include threads that are open.
-        open: Boolean
+        # Only include threads matching these filters.
+        filters: ThreadFilters
     ): ThreadOrThreadPreviewConnection!
 
     # The list of repositories affected by this campaign's threads.
@@ -4765,8 +4802,8 @@ type Campaign implements Node & Comment & Commentable & RuleContainer {
         # Returns the first n results from the list.
         first: Int
 
-        # Only include threads that are open.
-        open: Boolean
+        # Only include threads matching these filters.
+        filters: ThreadFilters
     ): ThreadConnection!
 
     # The list of repositories affected by this campaign's threads.

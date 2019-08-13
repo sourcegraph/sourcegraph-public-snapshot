@@ -59,6 +59,7 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
                         <LabelableLabelsList
                             labelable={thread}
                             showNoLabels={false}
+                            showLoadingAndError={false}
                             className="d-flex align-items-center ml-2"
                             itemClassName="mr-2 py-1"
                         />

@@ -92,3 +92,7 @@ func (v *gqlThreadPreview) RepositoryComparison(ctx context.Context) (graphqlbac
 		Head: v.input.HeadRef,
 	})
 }
+
+func (v *gqlThreadPreview) Labels(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.LabelConnection, error) {
+	return graphqlbackend.EmptyLabelConnection, nil // empty for now
+}

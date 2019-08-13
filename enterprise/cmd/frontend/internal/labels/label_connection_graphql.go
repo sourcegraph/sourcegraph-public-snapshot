@@ -33,7 +33,7 @@ func (GraphQLResolver) LabelsForLabelable(ctx context.Context, labelable graphql
 		}
 		labels[i] = label
 	}
-	return &labelConnection{arg: arg, labels: labels}, nil
+	return &labelConnection{arg: arg, labels: toLabels(labels)}, nil
 }
 
 func (GraphQLResolver) LabelsInRepository(ctx context.Context, repositoryID graphql.ID, arg *graphqlutil.ConnectionArgs) (graphqlbackend.LabelConnection, error) {
@@ -51,12 +51,16 @@ func (GraphQLResolver) LabelsInRepository(ctx context.Context, repositoryID grap
 	for i, a := range list {
 		labels[i] = &gqlLabel{db: a}
 	}
-	return &labelConnection{arg: arg, labels: labels}, nil
+	return &labelConnection{arg: arg, labels: toLabels(labels)}, nil
+}
+
+func ConstLabelConnection(labels []graphqlbackend.Label) graphqlbackend.LabelConnection {
+	return &labelConnection{arg: &graphqlutil.ConnectionArgs{}, labels: labels}
 }
 
 type labelConnection struct {
 	arg    *graphqlutil.ConnectionArgs
-	labels []*gqlLabel
+	labels []graphqlbackend.Label
 }
 
 func (r *labelConnection) Nodes(ctx context.Context) ([]graphqlbackend.Label, error) {
@@ -64,12 +68,15 @@ func (r *labelConnection) Nodes(ctx context.Context) ([]graphqlbackend.Label, er
 	if first := r.arg.First; first != nil && len(labels) > int(*first) {
 		labels = labels[:int(*first)]
 	}
+	return labels, nil
+}
 
-	labels2 := make([]graphqlbackend.Label, len(labels))
-	for i, l := range labels {
-		labels2[i] = l
+func toLabels(gqlLabels []*gqlLabel) []graphqlbackend.Label {
+	labels := make([]graphqlbackend.Label, len(gqlLabels))
+	for i, l := range gqlLabels {
+		labels[i] = l
 	}
-	return labels2, nil
+	return labels
 }
 
 func (r *labelConnection) TotalCount(ctx context.Context) (int32, error) {

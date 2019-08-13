@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useCallback, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
@@ -18,6 +18,7 @@ export interface ThreadListFilterContext extends QueryParameterProps {
 }
 
 export interface ThreadListFilterItem {
+    beforeText?: React.ReactFragment
     text: string
     count: number | null
     queryPart: string
@@ -61,9 +62,10 @@ export const ThreadListFilterDropdownButton = <
     )
 
     const [query, setQuery] = useState('')
-    const itemsFiltered =
+    const itemsFiltered: typeof LOADING | ThreadListFilterItem[] | ErrorLike =
         threadConnection !== LOADING && !isErrorLike(threadConnection)
-            ? threadConnection.filters[filterKey]
+            ? // TODO!(sqs): this type error is erroneous
+              threadConnection.filters[filterKey]
                   .map(itemFunc)
                   .filter(({ text }) => text.toLowerCase().includes(query.toLowerCase()))
             : threadConnection
@@ -96,9 +98,11 @@ export const ThreadListFilterDropdownButton = <
                             key={item.queryPart}
                             // tslint:disable-next-line: jsx-no-lambda
                             onClick={() => onSelect(item)}
-                            className="d-flex align-items-center justify-content-between"
+                            className="d-flex align-items-center"
                         >
+                            {item.beforeText}
                             <span className="text-truncate">{item.text}</span>
+                            <span className="flex-1" />
                             {typeof item.count === 'number' && (
                                 <span className="ml-3 badge badge-secondary">{item.count}</span>
                             )}

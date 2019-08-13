@@ -10,6 +10,7 @@ interface Props {
     labelable: Pick<GQL.Labelable, '__typename' | 'id'>
 
     showNoLabels?: boolean
+    showLoadingAndError?: boolean
 
     className?: string
     itemClassName?: string
@@ -23,14 +24,19 @@ const LOADING = 'loading' as const
 export const LabelableLabelsList: React.FunctionComponent<Props> = ({
     labelable,
     showNoLabels = true,
+    showLoadingAndError = true,
     className = '',
     itemClassName = '',
 }) => {
     const [labels] = useLabelableLabels(labelable)
     return labels === LOADING ? (
-        <LoadingSpinner className="icon-inline" />
+        showLoadingAndError ? (
+            <LoadingSpinner className="icon-inline" />
+        ) : null
     ) : isErrorLike(labels) ? (
-        <div className="alert alert-danger">{labels.message}</div>
+        showLoadingAndError ? (
+            <div className="alert alert-danger">{labels.message}</div>
+        ) : null
     ) : labels.totalCount > 0 ? (
         <ul className={`list-inline ${className}`}>
             {labels.nodes.map(label => (

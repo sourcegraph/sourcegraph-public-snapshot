@@ -3,8 +3,8 @@ import { DropdownItem, DropdownMenu } from 'reactstrap'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { DropdownMenuFilter } from '../../../../components/dropdownMenuFilter/DropdownMenuFilter'
-import { useThreads } from '../../../campaigns/detail/threads/useThreads'
 import { ThreadStateIcon } from '../../common/threadState/ThreadStateIcon'
+import { useThreads } from '../../list/useThreads'
 
 interface Props {
     /** Called when the user selects a thread in the menu. */
@@ -18,7 +18,7 @@ const LOADING = 'loading' as const
  */
 export const ThreadsDropdownMenu: React.FunctionComponent<Props> = ({ onSelect, ...props }) => {
     const [query, setQuery] = useState('')
-    const threads = useThreads(true)
+    const threads = useThreads({ states: [GQL.ThreadState.OPEN] })
     return (
         <DropdownMenu {...props}>
             <DropdownMenuFilter value={query} onChange={setQuery} placeholder="Filter threads" header="Add a thread" />

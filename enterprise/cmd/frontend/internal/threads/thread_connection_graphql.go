@@ -2,15 +2,23 @@ package threads
 
 import (
 	"context"
+	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 func (GraphQLResolver) Threads(ctx context.Context, arg *graphqlbackend.ThreadConnectionArgs) (graphqlbackend.ThreadConnection, error) {
-	return &threadConnection{opt: threadConnectionArgsToListOptions(arg)}, nil
+	opt, err := threadConnectionArgsToListOptions(ctx, arg)
+	if err != nil {
+		return nil, err
+	}
+	return &threadConnection{opt: opt}, nil
 }
 
 func (GraphQLResolver) ThreadsForRepository(ctx context.Context, repositoryID graphql.ID, arg *graphqlbackend.ThreadConnectionArgs) (graphqlbackend.ThreadConnection, error) {
@@ -18,24 +26,64 @@ func (GraphQLResolver) ThreadsForRepository(ctx context.Context, repositoryID gr
 	if err != nil {
 		return nil, err
 	}
-	opt := threadConnectionArgsToListOptions(arg)
-	opt.RepositoryID = repo.DBID()
+	opt, err := threadConnectionArgsToListOptions(ctx, arg)
+	if err != nil {
+		return nil, err
+	}
+	opt.RepositoryIDs = []api.RepoID{repo.DBID()}
 	return &threadConnection{opt: opt}, nil
 }
 
-func ThreadsByIDs(threadIDs []int64, arg *graphqlbackend.ThreadConnectionArgs) graphqlbackend.ThreadConnection {
-	opt := threadConnectionArgsToListOptions(arg)
+func ThreadsByIDs(ctx context.Context, threadIDs []int64, arg *graphqlbackend.ThreadConnectionArgs) (graphqlbackend.ThreadConnection, error) {
+	opt, err := threadConnectionArgsToListOptions(ctx, arg)
+	if err != nil {
+		return nil, err
+	}
 	opt.ThreadIDs = threadIDs
-	return &threadConnection{opt: opt}
+	return &threadConnection{opt: opt}, nil
 }
 
-func threadConnectionArgsToListOptions(arg *graphqlbackend.ThreadConnectionArgs) dbThreadsListOptions {
+func threadConnectionArgsToListOptions(ctx context.Context, arg *graphqlbackend.ThreadConnectionArgs) (dbThreadsListOptions, error) {
 	var opt dbThreadsListOptions
 	arg.Set(&opt.LimitOffset)
-	if arg.Open != nil && *arg.Open {
-		opt.State = string(graphqlbackend.ThreadStateOpen)
+	if arg.Filters != nil {
+		f := *arg.Filters
+		if f.States != nil {
+			if len(*f.States) != 1 {
+				return opt, errors.New("ThreadFilters only supports having exactly 1 state (or null)")
+			}
+			opt.State = string((*f.States)[0])
+		}
+		if f.Repositories != nil {
+			for _, repoGQLID := range *f.Repositories {
+				// TODO!(sqs): security check perms
+				dbID, err := graphqlbackend.UnmarshalRepositoryID(repoGQLID)
+				if err != nil {
+					return opt, err
+				}
+				opt.RepositoryIDs = append(opt.RepositoryIDs, dbID)
+			}
+		}
+		// TODO!(sqs): hacky repo parser
+		if f.Query != nil {
+			for _, token := range strings.Fields(*f.Query) {
+				switch {
+				case strings.HasPrefix(token, "repo:"):
+					repoName := api.RepoName(token[len("repo:"):])
+					// TODO!(sqs): security check perms
+					repo, err := backend.Repos.GetByName(ctx, repoName)
+					if err != nil {
+						return opt, err
+					}
+					opt.RepositoryIDs = append(opt.RepositoryIDs, repo.ID)
+				case strings.HasPrefix(token, "label:"):
+					labelName := token[len("label:"):]
+					opt.LabelNames = append(opt.LabelNames, labelName)
+				}
+			}
+		}
 	}
-	return opt
+	return opt, nil
 }
 
 type threadConnection struct {

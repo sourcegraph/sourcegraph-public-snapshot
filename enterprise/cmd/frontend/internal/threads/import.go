@@ -46,7 +46,7 @@ func ImportExternalThreads(ctx context.Context, repo api.RepoID, externalService
 		panic("externalServiceID must be nonzero")
 	}
 	opt := dbThreadsListOptions{
-		RepositoryID:                  repo,
+		RepositoryIDs:                 []api.RepoID{repo},
 		ImportedFromExternalServiceID: externalServiceID,
 	}
 
