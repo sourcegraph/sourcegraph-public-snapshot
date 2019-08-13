@@ -248,8 +248,6 @@ export class Database {
 
             for (const moniker of monikers) {
                 if (moniker.kind === 'import') {
-                    // TODO - clean this up
-                    // for (const moniker of monikers) {
                     if (moniker.packageInformation) {
                         const packageInformation = blob.packageInformation![moniker.packageInformation]
                         const result = this.correlationDb.lookupRepositoryCommitByPackage(
@@ -260,57 +258,9 @@ export class Database {
 
                         if (result) {
                             const { repository, commit } = result
-
-                            // TODO(efritz) - use cached handle if open
-                            const subDb = new Database(this.correlationDb)
-                            subDb.load(makeFilename(repository, commit))
-
-                            try {
-                                // TODO(efritz) - determine why npm monikers are mismatched
-                                const parts = moniker.identifier.split(':')
-                                parts[1] = '' // WTF
-                                moniker.identifier = parts.join(':')
-
-                                // TODO(efritz) - make this indexable in db
-                                for (const qResult of subDb.allDocumentsStmt.all()) {
-                                    const blob = subDb.getBlob(qResult.documentHash)
-                                    for (const id of Object.keys(blob.monikers!)) {
-                                        const m = blob.monikers![id]
-                                        // TODO(efritz) - skip non-definitions?
-                                        if (m.scheme === moniker.scheme && m.identifier === moniker.identifier) {
-                                            for (const otherId of Object.keys(blob.ranges)) {
-                                                const range = blob.ranges[otherId]
-                                                const monikers = subDb.findMonikers(
-                                                    blob.resultSets,
-                                                    blob.monikers,
-                                                    range
-                                                )
-
-                                                if (monikers.includes(m)) {
-                                                    const subUri = subDb.fromDatabase(qResult.uri)
-
-                                                    return [
-                                                        lsp.Location.create(
-                                                            `git://${repository}?${commit}#${subUri}`,
-                                                            lsp.Range.create(
-                                                                range.start.line,
-                                                                range.start.character,
-                                                                range.end.line,
-                                                                range.end.character
-                                                            )
-                                                        ),
-                                                    ]
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            } finally {
-                                subDb.close()
-                            }
+                            return this.findByMoniker(repository, commit, moniker)
                         }
                     }
-                    // }
 
                     return undefined
                 }
@@ -345,11 +295,11 @@ export class Database {
         }
         let resultData = this.findResult(blob.resultSets, blob.referenceResults, range, 'referenceResult')
         const monikers = this.findMonikers(blob.resultSets, blob.monikers, range)
-        const result = this.localReferences(uri, blob, range, resultData, monikers, context) || []
+        const result = this.localReferences(uri, blob, resultData, monikers, context) || []
 
         for (const moniker of monikers) {
             if (moniker.kind === 'export') {
-                const remoteReferences = this.remoteReferences(uri, blob, moniker)
+                const remoteReferences = this.remoteReferences(blob, moniker)
                 if (remoteReferences !== undefined) {
                     result.push(...remoteReferences)
                 }
@@ -361,79 +311,9 @@ export class Database {
         return result
     }
 
-    private remoteReferences(uri: string, blob: DocumentBlob, moniker: MonikerData): lsp.Location[] | undefined {
-        if (moniker.packageInformation) {
-            const packageInformation = blob.packageInformation![moniker.packageInformation]
-            const results = this.correlationDb.getAllRepositoryCommitReferences(
-                moniker.scheme,
-                packageInformation.name!,
-                packageInformation.version!,
-                moniker.identifier
-            )
-
-            for (const result of results) {
-                const { repository, commit } = result
-
-                //
-                // TODO - duplicated code
-                //
-
-                // TODO(efritz) - use cached handle if open
-                const subDb = new Database(this.correlationDb)
-                subDb.load(makeFilename(repository, commit))
-
-                try {
-                    // TODO(efritz) - determine why npm monikers are mismatched
-                    const parts = moniker.identifier.split(':')
-                    parts[1] = '' // WTF
-                    moniker.identifier = parts.join(':')
-
-                    // TODO(efritz) - make this indexable in db
-                    for (const qResult of subDb.allDocumentsStmt.all()) {
-                        const blob = subDb.getBlob(qResult.documentHash)
-                        for (const id of Object.keys(blob.monikers!)) {
-                            const m = blob.monikers![id]
-                            if (m.scheme === moniker.scheme && m.identifier === moniker.identifier) {
-                                for (const otherId of Object.keys(blob.ranges)) {
-                                    const range = blob.ranges[otherId]
-                                    const monikers = subDb.findMonikers(blob.resultSets, blob.monikers, range)
-
-                                    if (monikers.includes(m)) {
-                                        const subUri = subDb.fromDatabase(qResult.uri)
-
-                                        return [
-                                            lsp.Location.create(
-                                                `git://${repository}?${commit}#${subUri}`,
-                                                lsp.Range.create(
-                                                    range.start.line,
-                                                    range.start.character,
-                                                    range.end.line,
-                                                    range.end.character
-                                                )
-                                            ),
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } finally {
-                    subDb.close()
-                }
-
-                //
-                // END - duplicated code
-                //
-            }
-        }
-
-        return undefined
-    }
-
     private localReferences(
         uri: string,
         blob: DocumentBlob,
-        range: RangeData,
         resultData: ReferenceResultData | undefined,
         monikers: MonikerData[],
         context: lsp.ReferenceContext
@@ -475,6 +355,73 @@ export class Database {
             }
             return result
         }
+    }
+
+    private remoteReferences(blob: DocumentBlob, moniker: MonikerData): lsp.Location[] | undefined {
+        if (moniker.packageInformation) {
+            const packageInformation = blob.packageInformation![moniker.packageInformation]
+            const results = this.correlationDb.getAllRepositoryCommitReferences(
+                moniker.scheme,
+                packageInformation.name!,
+                packageInformation.version!,
+                moniker.identifier
+            )
+
+            for (const result of results) {
+                const { repository, commit } = result
+                return this.findByMoniker(repository, commit, moniker)
+            }
+        }
+
+        return undefined
+    }
+
+    private findByMoniker(repository: string, commit: string, moniker: MonikerData): lsp.Location[] | undefined {
+        // TODO(efritz) - determine why npm monikers are mismatched
+        const parts = moniker.identifier.split(':')
+        parts[1] = '' // WTF
+        moniker.identifier = parts.join(':')
+
+        // TODO - need to cache db handles instead of backends
+        // if we end up going with SQLite databases
+        const subDb = new Database(this.correlationDb)
+        subDb.load(makeFilename(repository, commit))
+
+        try {
+            // TODO(efritz) - make this indexable in db
+            for (const qResult of subDb.allDocumentsStmt.all()) {
+                const blob = subDb.getBlob(qResult.documentHash)
+                for (const id of Object.keys(blob.monikers!)) {
+                    const m = blob.monikers![id]
+                    if (m.scheme === moniker.scheme && m.identifier === moniker.identifier) {
+                        for (const otherId of Object.keys(blob.ranges)) {
+                            const range = blob.ranges[otherId]
+                            const monikers = subDb.findMonikers(blob.resultSets, blob.monikers, range)
+
+                            if (monikers.includes(m)) {
+                                const subUri = subDb.fromDatabase(qResult.uri)
+
+                                return [
+                                    lsp.Location.create(
+                                        `git://${repository}?${commit}#${subUri}`,
+                                        lsp.Range.create(
+                                            range.start.line,
+                                            range.start.character,
+                                            range.end.line,
+                                            range.end.character
+                                        )
+                                    ),
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        } finally {
+            subDb.close()
+        }
+
+        return undefined
     }
 
     private findResult<T>(
