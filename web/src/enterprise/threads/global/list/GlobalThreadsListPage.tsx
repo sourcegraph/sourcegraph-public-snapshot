@@ -6,7 +6,7 @@ import { ListHeaderQueryLinksButtonGroup } from '../../../threadsOLD/components/
 import { ThreadsListFilter } from '../../../threadsOLD/list/ThreadsListFilter'
 import { ThreadsListHeaderFilterButtonDropdown } from '../../../threadsOLD/list/ThreadsListHeaderFilterButtonDropdown'
 import { ThreadsIcon } from '../../icons'
-import { ThreadList2 } from '../../list/ThreadList2'
+import { ThreadList } from '../../list/ThreadList'
 import { useThreads } from '../../list/useThreads'
 
 interface Props extends ExtensionsControllerNotificationProps {
@@ -61,7 +61,7 @@ export const GlobalThreadsListPage: React.FunctionComponent<Props> = props => {
                     <ThreadsListFilter value={query} onChange={onQueryChange} />
                 </div>
             </div>
-            <ThreadList2
+            <ThreadList
                 {...props}
                 threads={threads}
                 query={query}

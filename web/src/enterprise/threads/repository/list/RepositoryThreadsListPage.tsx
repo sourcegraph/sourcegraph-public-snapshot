@@ -1,11 +1,14 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
-import { ThreadsList } from '../../list/ThreadsList'
+import { ThreadList, ThreadListContext } from '../../list/ThreadList'
 import { useThreads } from '../../list/useThreads'
 import { RepositoryThreadsAreaContext } from '../RepositoryThreadsArea'
 
-interface Props extends Pick<RepositoryThreadsAreaContext, 'repo'>, ExtensionsControllerNotificationProps {
+interface Props
+    extends Pick<RepositoryThreadsAreaContext, 'repo'>,
+        ThreadListContext,
+        ExtensionsControllerNotificationProps {
     newThreadURL: string | null
 }
 
@@ -21,7 +24,7 @@ export const RepositoryThreadsListPage: React.FunctionComponent<Props> = ({ newT
                     New thread
                 </Link>
             )}
-            <ThreadsList {...props} threads={threads} />
+            <ThreadList {...props} threads={threads} />
         </div>
     )
 }

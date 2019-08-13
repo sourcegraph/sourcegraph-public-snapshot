@@ -3,7 +3,7 @@ import React from 'react'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../../../../shared/src/util/errors'
 import { QueryParameterProps } from '../../../../components/withQueryParameter/WithQueryParameter'
-import { ThreadList2 } from '../../../threads/list/ThreadList2'
+import { ThreadList } from '../../../threads/list/ThreadList'
 import { ThreadsListFilter } from '../../../threadsOLD/list/ThreadsListFilter'
 import { ThreadsListButtonDropdownFilter } from '../../../threadsOLD/list/ThreadsListFilterButtonDropdown'
 import { ThreadsListHeaderFilterButtonDropdown } from '../../../threadsOLD/list/ThreadsListHeaderFilterButtonDropdown'
@@ -46,7 +46,7 @@ export const CampaignThreadList: React.FunctionComponent<Props> = ({
             </div>
             {action}
         </header>
-        <ThreadList2
+        <ThreadList
             {...props}
             threads={threads}
             query={query}

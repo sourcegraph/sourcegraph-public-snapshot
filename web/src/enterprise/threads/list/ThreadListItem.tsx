@@ -8,7 +8,7 @@ import { ActorLink } from '../../../actor/ActorLink'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { LabelableLabelsList } from '../../labels/labelable/LabelableLabelsList'
 import { ThreadStateIcon } from '../common/threadState/ThreadStateIcon'
-import { ThreadListContext } from './ThreadList2'
+import { ThreadListContext } from './ThreadList'
 
 export interface ThreadListItemContext {
     showRepository?: boolean
@@ -59,8 +59,8 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
                         <LabelableLabelsList
                             labelable={thread}
                             showNoLabels={false}
-                            className="d-flex align-items-center"
-                            itemClassName="mr-2"
+                            className="d-flex align-items-center ml-2"
+                            itemClassName="mr-2 py-1"
                         />
                     )}
                 </div>

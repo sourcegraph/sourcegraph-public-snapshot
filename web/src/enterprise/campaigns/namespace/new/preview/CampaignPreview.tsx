@@ -11,7 +11,7 @@ import { useQueryParameter } from '../../../../../components/withQueryParameter/
 import { DiagnosticListByResource } from '../../../../../diagnostics/list/byResource/DiagnosticListByResource'
 import { FileDiffNode } from '../../../../../repo/compare/FileDiffNode'
 import { ThemeProps } from '../../../../../theme'
-import { ThreadList2 } from '../../../../threads/list/ThreadList2'
+import { ThreadList } from '../../../../threads/list/ThreadList'
 import { ThreadListItem } from '../../../../threads/list/ThreadListItem'
 import { CampaignImpactSummaryBar } from '../../../common/CampaignImpactSummaryBar'
 import { sumDiffStats } from '../../../common/useCampaignImpactSummary'
@@ -79,7 +79,7 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                 {campaignPreview.threads.nodes.length > 0 && (
                                     <>
                                         <a id="threads" />
-                                        <ThreadList2
+                                        <ThreadList
                                             {...props}
                                             query={query}
                                             onQueryChange={onQueryChange}
