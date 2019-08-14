@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	minimumVersion := "1.12"
+	minimumVersion := "1.12.8"
 	rawVersion := runtime.Version()
 	versionNumber := strings.TrimPrefix(rawVersion, "go")
 	minimumVersionMet := version.Compare(minimumVersion, versionNumber, "<=")
