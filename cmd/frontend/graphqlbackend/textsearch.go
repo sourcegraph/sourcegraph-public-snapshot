@@ -667,7 +667,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
 			symbols:      symbols,
 			repo:         repoRev.Repo,
-			commitID:     repoRev.IndexedHEADCommit,
+			commitID:     repoRev.IndexedHEADCommit(),
 		}
 	}
 
@@ -900,7 +900,7 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 
 		for _, branch := range repo.Branches {
 			if branch.Name == "HEAD" {
-				rev.IndexedHEADCommit = api.CommitID(branch.Version)
+				rev.SetIndexedHEADCommit(api.CommitID(branch.Version))
 				break
 			}
 		}
