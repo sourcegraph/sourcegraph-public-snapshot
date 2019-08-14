@@ -18,6 +18,7 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -162,7 +163,7 @@ func main() {
 	if logRequests {
 		h = handlers.LoggingHandler(os.Stdout, h)
 	}
-	h = prometheus.InstrumentHandler("github-proxy", h)
+	h = instrumentHandler(prometheus.DefaultRegisterer, h)
 	http.Handle("/", h)
 
 	host := ""
@@ -172,4 +173,57 @@ func main() {
 	addr := net.JoinHostPort(host, port)
 	log15.Info("github-proxy: listening", "addr", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
+}
+
+func instrumentHandler(r prometheus.Registerer, h http.Handler) http.Handler {
+	var (
+		inFlightGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: "src",
+			Subsystem: "githubproxy",
+			Name:      "in_flight_requests",
+			Help:      "A gauge of requests currently being served by github-proxy.",
+		})
+
+		counter = prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Namespace: "src",
+				Subsystem: "githubproxy",
+				Name:      "requests_total",
+				Help:      "A counter for requests to github-proxy.",
+			},
+			[]string{"code", "method"},
+		)
+
+		duration = prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Namespace: "src",
+				Subsystem: "githubproxy",
+				Name:      "request_duration_seconds",
+				Help:      "A histogram of latencies for requests.",
+				Buckets:   []float64{.25, .5, 1, 2.5, 5, 10},
+			},
+			[]string{"method"},
+		)
+
+		responseSize = prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Namespace: "src",
+				Subsystem: "githubproxy",
+				Name:      "response_size_bytes",
+				Help:      "A histogram of response sizes for requests.",
+				Buckets:   []float64{200, 500, 900, 1500},
+			},
+			[]string{},
+		)
+	)
+
+	r.MustRegister(inFlightGauge, counter, duration, responseSize)
+
+	return promhttp.InstrumentHandlerInFlight(inFlightGauge,
+		promhttp.InstrumentHandlerDuration(duration,
+			promhttp.InstrumentHandlerCounter(counter,
+				promhttp.InstrumentHandlerResponseSize(responseSize, h),
+			),
+		),
+	)
 }
