@@ -23,14 +23,14 @@ export class ClientExtensions {
     ) {
         // Anonymously log which external extensions are active on sourcegraph.com.
         // TODO: Send these logs to the backend to anonymously log active extensions from private instances.
-        extensionRegistry.activeExtensions.subscribe(extensions => {
-            const activeExtensions = extensions.map(activeExtension => activeExtension.id)
-            if (telemetryService) {
+        if (telemetryService) {
+            extensionRegistry.activeExtensions.subscribe(extensions => {
+                const activeExtensions = extensions.map(activeExtension => activeExtension.id)
                 for (let extension of activeExtensions) {
                     telemetryService.log(extension)
                 }
-            }
-        })
+            })
+        }
 
         this.subscriptions.add(
             from(extensionRegistry.activeExtensions)
