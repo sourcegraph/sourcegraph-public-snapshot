@@ -216,15 +216,6 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 	return res2, common, err
 }
 
-// symbolCount returns the total number of symbols in a slice of fileMatchResolvers.
-func symbolCount(fmrs []*fileMatchResolver) int {
-	nsym := 0
-	for _, fmr := range fmrs {
-		nsym += len(fmr.symbols)
-	}
-	return nsym
-}
-
 // limitSymbolResults returns a new version of res containing no more than limit symbol matches.
 func limitSymbolResults(res []*fileMatchResolver, limit int) []*fileMatchResolver {
 	res2 := make([]*fileMatchResolver, 0, len(res))
@@ -243,6 +234,15 @@ func limitSymbolResults(res []*fileMatchResolver, limit int) []*fileMatchResolve
 		}
 	}
 	return res2
+}
+
+// symbolCount returns the total number of symbols in a slice of fileMatchResolvers.
+func symbolCount(fmrs []*fileMatchResolver) int {
+	nsym := 0
+	for _, fmr := range fmrs {
+		nsym += len(fmr.symbols)
+	}
+	return nsym
 }
 
 func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.PatternInfo, query *query.Query, limit int) (res []*fileMatchResolver, err error) {
