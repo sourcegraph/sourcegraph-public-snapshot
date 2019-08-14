@@ -57,9 +57,9 @@ export const GlobalNewCampaignDropdownButton: React.FunctionComponent<Props> = (
                         Error loading namespaces
                     </DropdownItem>
                 ) : (
-                    namespaces.map(({ __typename, id, namespaceName, url }) => (
+                    namespaces.map(({ id, namespaceName, url }) => (
                         <Link key={id} className="dropdown-item" to={`${url}/campaigns/new`}>
-                            {namespaceName} ({__typename})
+                            {namespaceName}
                         </Link>
                     ))
                 )}
