@@ -176,6 +176,8 @@ func TestRepoQuery(t *testing.T) {
 }
 
 func TestRepositoryRevisions(t *testing.T) {
+
+	// This test has to be run with -race to be effective.
 	t.Run("concurrent access to indexedHEADCommit", func(t *testing.T) {
 		rr := &RepositoryRevisions{}
 		var wg sync.WaitGroup

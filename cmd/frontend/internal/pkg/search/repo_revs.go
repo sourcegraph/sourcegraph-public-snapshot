@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 // RevisionSpecifier represents either a revspec or a ref glob. At most one
@@ -62,14 +63,19 @@ type RepositoryRevisions struct {
 	// It is written to by zoektIndexedRepos and read later by zoektSearchHEAD.
 	// See https://github.com/sourcegraph/sourcegraph/pull/4702 for the performance
 	// rationale.
+	mu sync.Mutex
 	indexedHEADCommit api.CommitID
 }
 
 func (r *RepositoryRevisions) IndexedHEADCommit() api.CommitID {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	return r.indexedHEADCommit
 }
 
 func (r *RepositoryRevisions) SetIndexedHEADCommit(ihc api.CommitID) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.indexedHEADCommit = ihc
 }
 
