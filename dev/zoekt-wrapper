@@ -7,4 +7,9 @@ if [[ "$1" == "zoekt-sourcegraph-indexserver" ]]; then
     sleep 5
 fi
 
+# Mirroring:
+# - https://github.com/sourcegraph/infrastructure/blob/d67cfdaf7760b926df165745e40f7bd9507d1c20/docker-images/zoekt-indexserver/Dockerfile#L28-L35
+# - https://github.com/sourcegraph/infrastructure/blob/d67cfdaf7760b926df165745e40f7bd9507d1c20/docker-images/zoekt-webserver/Dockerfile#L27-L34
+export GOGC=50
+
 exec $@
