@@ -672,6 +672,16 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		patternsToCombine = append(patternsToCombine, ".")
 	}
 
+	// Handle type:symbol case.
+	var isSymbol bool
+	resultTypes, _ := r.query.StringValues(query.FieldType)
+	for _, v := range resultTypes {
+		if v == "symbol" {
+			isSymbol = true
+			break
+		}
+	}
+
 	// Handle file: and -file: filters.
 	includePatterns, excludePatterns := r.query.RegexpPatterns(query.FieldFile)
 	filePatternsReposMustInclude, filePatternsReposMustExclude := r.query.RegexpPatterns(query.FieldRepoHasFile)
@@ -692,6 +702,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 
 	patternInfo := &search.PatternInfo{
 		IsRegExp:                     true,
+		IsSymbol: isSymbol,
 		IsCaseSensitive:              r.query.IsCaseSensitive(),
 		FileMatchLimit:               r.maxResults(),
 		Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
