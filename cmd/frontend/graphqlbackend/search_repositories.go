@@ -58,7 +58,9 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 		}
 
 		for _, r := range rsta {
-			results = append(results, &repositoryResolver{repo: r.Repo, icon: repoIcon})
+			if pattern.MatchString(string(r.Repo.Name)) {
+				results = append(results, &repositoryResolver{repo: r.Repo, icon: repoIcon})
+			}
 		}
 	} else {
 		for _, r := range args.Repos {
