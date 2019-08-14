@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -15,8 +16,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
+
+var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	Input *struct {
@@ -29,7 +33,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
@@ -67,7 +71,7 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
@@ -122,7 +126,7 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
