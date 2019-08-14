@@ -1,9 +1,9 @@
 import { ProxyResult } from '@sourcegraph/comlink'
 import { from, Subscription } from 'rxjs'
 import { bufferCount, startWith } from 'rxjs/operators'
-import { ExecutableExtension, ExtensionsService } from '../services/extensionsService'
 import { ExtExtensionsAPI } from '../../extension/api/extensions'
 import { TelemetryService } from '../../../telemetry/telemetryService'
+import { ExecutableExtension, ExtensionsService } from '../services/extensionsService'
 
 /** @internal */
 export class ClientExtensions {
