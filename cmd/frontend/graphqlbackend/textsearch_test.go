@@ -377,6 +377,10 @@ func (ss *fakeSearcher) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoLi
 	return ss.repos, nil
 }
 
+func (ss *fakeSearcher) String() string {
+	return fmt.Sprintf("fakeSearcher(result = %v, repos = %v)", ss.result, ss.repos)
+}
+
 type errorSearcher struct {
 	err error
 
