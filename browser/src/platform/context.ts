@@ -146,7 +146,6 @@ export function createPlatformContext(
         sideloadedExtensionURL: isInPage
             ? new LocalStorageSubject<string | null>('sideloadedExtensionURL', null)
             : new ExtensionStorageSubject('sideloadedExtensionURL', null),
-        telemetryService: undefined,
     }
     return context
 }
