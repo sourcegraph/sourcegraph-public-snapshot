@@ -49,30 +49,31 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 		return nil, nil, err
 	}
 
+	// Filter args.Repos by matching their names against the query pattern.
 	common = &searchResultsCommon{}
-	var results []searchResultResolver
+	repos := make([]*search.RepositoryRevisions, 0, len(args.Repos))
+	for _, r := range args.Repos {
+		if pattern.MatchString(string(r.Repo.Name)) {
+			repos = append(repos, r)
+		}
+	}
+
+	// Filter the repos if there is a repohasfile: or -repohasfile field.
 	if len(args.Pattern.FilePatternsReposMustExclude) > 0 || len(args.Pattern.FilePatternsReposMustInclude) > 0 {
-		rsta, err := reposToAdd(ctx, args.Zoekt, args.Repos, args.Pattern)
+		repos, err = reposToAdd(ctx, args.Zoekt, repos, args.Pattern)
 		if err != nil {
 			return nil, nil, err
 		}
+	}
 
-		for _, r := range rsta {
-			if pattern.MatchString(string(r.Repo.Name)) {
-				results = append(results, &repositoryResolver{repo: r.Repo, icon: repoIcon})
-			}
+	// Convert the repos to repositoryResolvers.
+	results := make([]searchResultResolver, 0, len(repos))
+	for _, r := range repos {
+		if len(results) == int(limit) {
+			common.limitHit = true
+			break
 		}
-	} else {
-		for _, r := range args.Repos {
-			if len(results) == int(limit) {
-				common.limitHit = true
-				break
-			}
-
-			if pattern.MatchString(string(r.Repo.Name)) {
-				results = append(results, &repositoryResolver{repo: r.Repo, icon: repoIcon})
-			}
-		}
+		results = append(results, &repositoryResolver{repo: r.Repo, icon: repoIcon})
 	}
 
 	return results, common, nil
