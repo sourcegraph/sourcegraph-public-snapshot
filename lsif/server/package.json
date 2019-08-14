@@ -24,6 +24,7 @@
     "prom-client": "^11.5.3",
     "relateurl": "^0.2.7",
     "semver": "^6.0.0",
+    "source-map-support": "^0.5.13",
     "split2": "^3.1.1",
     "tmp-promise": "^2.0.2",
     "vscode-languageserver": "^5.2.1",
@@ -46,8 +47,8 @@
   },
   "scripts": {
     "typecheck": "tsc -p .",
-    "serve": "tsc-watch --noEmit --onSuccess \"bash -c 'yarn run build && node out/http-server.bundle.js'\" --noClear",
-    "build": "parcel build --out-dir out --out-file http-server.bundle.js --target node src/http-server.ts",
+    "serve": "tsc-watch --noEmit --onSuccess \"bash -c 'yarn run build && node -r source-map-support/register out/http-server.bundle.js'\" --noClear",
+    "build": "parcel build --out-dir out --out-file http-server.bundle.js --target node --public-url ./ src/http-server.ts",
     "tslint": "../../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
     "fixup": "sed -i '' 's/\r$//' ./node_modules/lsif-sqlite/bin/lsif-sqlite"
