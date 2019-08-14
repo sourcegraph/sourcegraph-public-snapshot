@@ -14,6 +14,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Multi-line search now works for non-indexed search.
+- Indexed search now supports symbol queries.
 
 ### Changed
 

@@ -30,8 +30,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
 	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
+	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -492,7 +494,7 @@ func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 	return searchOpts
 }
 
-func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -505,7 +507,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
 	}
 
-	queryExceptRepos, err := queryToZoektQuery(query)
+	queryExceptRepos, err := queryToZoektQuery(query, isSymbol)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -603,6 +605,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 
 		limitHit = true
 	}
+
 	matches := make([]*fileMatchResolver, len(resp.Files))
 	for i, file := range resp.Files {
 		fileLimitHit := false
@@ -611,7 +614,11 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 			fileLimitHit = true
 			limitHit = true
 		}
+		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
+		inputRev := repoRev.RevSpecs()[0]
+		baseURI := &gituri.URI{URL: url.URL{Scheme: "git://", Host: string(repoRev.Repo.Name), RawQuery: "?" + url.QueryEscape(inputRev)}}
 		lines := make([]*lineMatch, 0, len(file.LineMatches))
+		symbols := []*searchSymbolResult{}
 		for _, l := range file.LineMatches {
 			if !l.FileName {
 				if len(l.LineFragments) > maxLineFragmentMatches {
@@ -622,20 +629,43 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 					offset := utf8.RuneCount(l.Line[:m.LineOffset])
 					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 					offsets[k] = [2]int32{int32(offset), int32(length)}
+					if isSymbol && m.SymbolInfo != nil {
+						commit := &gitCommitResolver{
+							repo:     &repositoryResolver{repo: repoRev.Repo},
+							oid:      gitObjectID(repoRev.IndexedHEADCommit),
+							inputRev: &inputRev,
+						}
+
+						symbols = append(symbols, &searchSymbolResult{
+							symbol: protocol.Symbol{
+								Name:       m.SymbolInfo.Sym,
+								Kind:       m.SymbolInfo.Kind,
+								Parent:     m.SymbolInfo.Parent,
+								ParentKind: m.SymbolInfo.ParentKind,
+								Path:       file.FileName,
+								Line:       l.LineNumber,
+							},
+							lang:    strings.ToLower(file.Language),
+							baseURI: baseURI,
+							commit:  commit,
+						})
+					}
 				}
-				lines = append(lines, &lineMatch{
-					JPreview:          string(l.Line),
-					JLineNumber:       int32(l.LineNumber - 1),
-					JOffsetAndLengths: offsets,
-				})
+				if !isSymbol {
+					lines = append(lines, &lineMatch{
+						JPreview:          string(l.Line),
+						JLineNumber:       int32(l.LineNumber - 1),
+						JOffsetAndLengths: offsets,
+					})
+				}
 			}
 		}
-		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
 		matches[i] = &fileMatchResolver{
 			JPath:        file.FileName,
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,
 			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
+			symbols:      symbols,
 			repo:         repoRev.Repo,
 			commitID:     repoRev.IndexedHEADCommit,
 		}
@@ -760,24 +790,33 @@ func fileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	return parseRe(pattern, true, queryIsCaseSensitive)
 }
 
-func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
+func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
+	var q zoektquery.Q
 	if query.IsRegExp {
-		q, err := parseRe(query.Pattern, false, query.IsCaseSensitive)
+		var err error
+		q, err = parseRe(query.Pattern, false, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
-		and = append(and, q)
 	} else {
-		and = append(and, &zoektquery.Substring{
+		q = &zoektquery.Substring{
 			Pattern:       query.Pattern,
 			CaseSensitive: query.IsCaseSensitive,
 
 			FileName: true,
 			Content:  true,
-		})
+		}
 	}
+
+	if isSymbol {
+		q = &zoektquery.Symbol{
+			Expr: q,
+		}
+	}
+
+	and = append(and, q)
 
 	// zoekt also uses regular expressions for file paths
 	// TODO PathPatternsAreCaseSensitive
@@ -987,7 +1026,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		query := args.Pattern
 		k := zoektResultCountFactor(len(zoektRepos), query)
 		opts := zoektSearchOpts(k, query)
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, args.UseFullDeadline, args.Zoekt.Client, opts, time.Since)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, args.UseFullDeadline, args.Zoekt.Client, opts, false, time.Since)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
