@@ -15,6 +15,7 @@ import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
 import { PlatformContext } from '../../shared/src/platform/context'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
+import { TelemetryProps } from '../../shared/src/telemetry/telemetryService'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -49,13 +50,15 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 
-export interface SourcegraphWebAppProps extends KeybindingsProps {
-    exploreSections: readonly ExploreSectionDescriptor[]
-    extensionAreaRoutes: readonly ExtensionAreaRoute[]
-    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
-    extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
-    extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
-    siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
+import './SourcegraphWebApp.scss'
+
+export interface SourcegraphWebAppProps extends KeybindingsProps, TelemetryProps {
+    exploreSections: ReadonlyArray<ExploreSectionDescriptor>
+    extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
+    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
+    extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>
+    extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
+    siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: readonly React.ComponentType[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]

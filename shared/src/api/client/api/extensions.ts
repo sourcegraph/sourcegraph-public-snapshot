@@ -3,7 +3,7 @@ import { from, Subscription } from 'rxjs'
 import { bufferCount, startWith } from 'rxjs/operators'
 import { ExtExtensionsAPI } from '../../extension/api/extensions'
 import { ExecutableExtension, ExtensionsService } from '../services/extensionsService'
-import { eventLogger } from '../../../../../web/src/tracking/eventLogger'
+import { TelemetryService } from '../../../telemetry/telemetryService'
 
 /** @internal */
 export class ClientExtensions {
@@ -16,12 +16,20 @@ export class ClientExtensions {
      * @param extensions An observable that emits the set of extensions that should be activated
      * upon subscription and whenever it changes.
      */
-    constructor(private proxy: ProxyResult<ExtExtensionsAPI>, extensionRegistry: ExtensionsService) {
+    constructor(
+        private proxy: ProxyResult<ExtExtensionsAPI>,
+        extensionRegistry: ExtensionsService,
+        telemetryService?: TelemetryService
+    ) {
         // Anonymously log which external extensions are active on sourcegraph.com.
         // TODO: Send these logs to the backend to anonymously log active extensions from private instances.
         extensionRegistry.activeExtensions.subscribe(extensions => {
             const activeExtensions = extensions.map(activeExtension => activeExtension.id)
-            eventLogger.log('ActiveExtensions', { activeExtensions })
+            if (telemetryService) {
+                for (let extension of activeExtensions) {
+                    telemetryService.log(extension)
+                }
+            }
         })
 
         this.subscriptions.add(
