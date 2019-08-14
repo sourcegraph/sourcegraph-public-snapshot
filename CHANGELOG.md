@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Out-of-the-box TypeScript code intelligence is much better with an updated ctags version with a built-in TypeScript parser.
 - Sourcegraph uses Git protocol version 2 for increased efficiency and performance when fetching data from compatible code hosts.
 - Zoekt now runs with GOGC=50 by default, helping to reduce the memory consumption of Sourcegraph. [#3792](https://github.com/sourcegraph/sourcegraph/issues/3792)
+- Upgraded the version of Go in use, which improves security for publicly accessible Sourcegraph instances.
 
 ### Fixed
 
