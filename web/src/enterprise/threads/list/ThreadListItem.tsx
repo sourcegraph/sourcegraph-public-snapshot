@@ -17,8 +17,10 @@ import { ThreadListContext } from './ThreadList'
 export interface ThreadListItemContext {
     showRepository?: boolean
 
-    /** A fragment shown under the title. */
-    itemSubtitle?: React.ReactFragment
+    /** A component rendered under the title. */
+    itemSubtitle?: React.ComponentType<{
+        thread: GQL.ThreadOrThreadPreview
+    }>
 
     /** A component rendered on the right side.  */
     right?: React.ComponentType<
@@ -51,7 +53,7 @@ interface Props
 export const ThreadListItem: React.FunctionComponent<Props> = ({
     thread,
     showRepository,
-    itemSubtitle,
+    itemSubtitle: ItemSubtitle,
     right: Right,
     itemCheckboxes,
     className = '',
@@ -131,7 +133,11 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
                             ))}
                         </li>
                     )}
-                    {itemSubtitle && <li className="ml-1">&bull; {itemSubtitle}</li>}
+                    {ItemSubtitle && (
+                        <li className="ml-2">
+                            &bull; <ItemSubtitle thread={thread} />
+                        </li>
+                    )}
                     {/* TODO!(sqs): show contents {thread.targets.totalCount > 0 && (
                         <li className="ml-2 d-flex align-items-center">
                             <FileFindIcon className="icon-inline mr-1" /> {thread.targets.totalCount}{' '}

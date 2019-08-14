@@ -47,15 +47,17 @@ export const CampaignThreadList: React.FunctionComponent<Props> = ({
     const itemSubtitleComponent = useCallback<React.FunctionComponent<{ thread: GQL.ThreadOrThreadPreview }>>(
         ({ thread }) =>
             thread.__typename === 'Thread' && thread.externalURLs && thread.externalURLs.length > 0 ? (
-                <ul className="list-inline">
+                <ul className="list-inline d-inline">
                     {thread.externalURLs.map(({ url, serviceType }, i) => (
-                        <a key={i} href={url} target="_blank">
-                            {serviceType === 'github' /* TODO!(sqs) un-hardcode */ ? (
-                                <GithubCircleIcon className="icon-inline mr-1" />
-                            ) : (
-                                <ExternalLinkIcon className="icon-inline mr-1" />
-                            )}
-                        </a>
+                        <li key={i} className="list-inline-item">
+                            <a href={url} target="_blank">
+                                {serviceType === 'github' /* TODO!(sqs) un-hardcode */ ? (
+                                    <GithubCircleIcon className="icon-inline mr-1" />
+                                ) : (
+                                    <ExternalLinkIcon className="icon-inline mr-1" />
+                                )}
+                            </a>
+                        </li>
                     ))}
                 </ul>
             ) : null,
@@ -65,7 +67,17 @@ export const CampaignThreadList: React.FunctionComponent<Props> = ({
         ({ thread, ...props }) =>
             thread.__typename === 'Thread' ? (
                 <>
-                    <span className="badge badge-danger">Build failing {thread.title}</span>
+                    {/* TODO!(sqs): hack */}
+                    {parseInt(thread.number, 10) % 3 === 0 ? (
+                        <span className="badge badge-danger">Build failing</span>
+                    ) : parseInt(thread.number, 10) % 3 === 1 ? (
+                        <>
+                            <span className="badge badge-success mr-1">Build passing</span>
+                            <span className="badge badge-success">Approved</span>
+                        </>
+                    ) : (
+                        <span className="badge badge-warning">Build in progress</span>
+                    )}
                     <RemoveThreadFromCampaignButton
                         {...props}
                         campaign={campaign}
