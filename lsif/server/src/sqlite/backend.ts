@@ -1,12 +1,12 @@
 import * as lsp from 'vscode-languageserver'
 import * as path from 'path'
-import { Backend, NoLSIFDataError, QueryRunner } from './backend'
+import { Backend, NoLSIFDataError, QueryRunner } from '../backend'
 import { fs } from 'mz'
-import { Database } from './sqlite.database'
-import { InsertStats, QueryStats, timeit, CreateRunnerStats } from './stats'
-import { readEnvInt } from './env'
-import { convertToBlob, ImportedSymbol } from './sqlite.importer'
-import { CorrelationDatabase } from './sqlite.xrepo'
+import { Database } from './database'
+import { InsertStats, QueryStats, timeit, CreateRunnerStats } from '../stats'
+import { readEnvInt } from '../env'
+import { convertToBlob, ImportedSymbol } from './importer'
+import { CorrelationDatabase } from './xrepo'
 
 /**
  * Where on the file system to store LSIF files.
@@ -102,7 +102,7 @@ export class SQLiteBackend implements Backend<SQLiteQueryRunner> {
                 importedSymbol.version,
                 repository,
                 commit,
-                Array.from(ids),
+                Array.from(ids)
             )
         }
 
@@ -239,7 +239,7 @@ export class SQLiteQueryRunner implements QueryRunner {
                 case 'definitions':
                     return Promise.resolve(this.db.definitions(uri, position))
                 case 'references':
-                    return Promise.resolve(this.db.references(uri, position, { includeDeclaration: true }))
+                    return Promise.resolve(this.db.references(uri, position))
                 default:
                     throw new Error(`Unimplemented method ${method}`)
             }
