@@ -99,11 +99,11 @@ func TestParseCloneURL(t *testing.T) {
 				Path: "/path/to/repo.git/",
 			},
 		}, {
-			input: "ssh://user@host.xz:port/path/to/repo.git/",
+			input: "ssh://user@host.xz:1234/path/to/repo.git/",
 			output: &url.URL{
 				Scheme: "ssh",
 				User:   url.User("user"),
-				Host:   "host.xz:port",
+				Host:   "host.xz:1234",
 				Path:   "/path/to/repo.git/",
 			},
 		}, {
