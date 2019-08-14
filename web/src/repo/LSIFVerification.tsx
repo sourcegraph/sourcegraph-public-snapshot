@@ -1,11 +1,11 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import CheckIcon from 'mdi-react/CheckIcon'
 import * as React from 'react'
-import { ErrorLike, isErrorLike, normalizeAjaxError } from '../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { CopyableText } from '../components/CopyableText'
 import { Subscription, Subject, of } from 'rxjs'
-import { catchError, tap, switchMap, map } from 'rxjs/operators'
-import { ajax, AjaxResponse } from 'rxjs/ajax'
+import { catchError, tap, switchMap } from 'rxjs/operators'
+import { backendRequest } from '../backend/backend'
 
 interface Props {
     repoName: string
@@ -39,27 +39,16 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            ajax({
-                url: '/.api/lsif/challenge',
-                headers: window.context.xhrHeaders,
-            })
-                .pipe(
-                    catchError<AjaxResponse, never>(err => {
-                        normalizeAjaxError(err)
-                        throw err
-                    }),
-                    map<AjaxResponse, ChallengeResponse>(({ response }) => response)
-                )
-                .subscribe(
-                    ({ challenge }) => this.setState({ challengeOrError: challenge }),
-                    error =>
-                        this.setState({
-                            challengeOrError: new Error(
-                                'Unable to fetch the LSIF challenge. Make sure lsifUploadSecret is set in the site configuration. Inner error: ' +
-                                    error.message
-                            ),
-                        })
-                )
+            backendRequest<ChallengeResponse>('/.api/lsif/challenge').subscribe(
+                ({ challenge }) => this.setState({ challengeOrError: challenge }),
+                error =>
+                    this.setState({
+                        challengeOrError: new Error(
+                            'Unable to fetch the LSIF challenge. Make sure lsifUploadSecret is set in the site configuration. Inner error: ' +
+                                error.message
+                        ),
+                    })
+            )
         )
 
         this.subscriptions.add(
@@ -69,15 +58,7 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
                     switchMap(() => {
                         const url = new URL('/.api/lsif/verify', window.location.href)
                         url.searchParams.set('repository', this.props.repoName)
-                        return ajax({
-                            url: url.href,
-                            headers: window.context.xhrHeaders,
-                        }).pipe(
-                            catchError<AjaxResponse, never>(err => {
-                                normalizeAjaxError(err)
-                                throw err
-                            }),
-                            map<AjaxResponse, VerifyResponse>(({ response }) => response),
+                        return backendRequest<VerifyResponse>(url.href).pipe(
                             tap(response => {
                                 if ('failure' in response) {
                                     throw new Error(response.failure)
