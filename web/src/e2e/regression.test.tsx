@@ -187,12 +187,9 @@ describe('regression test suite', () => {
             },
             5 * 1000
         )
-        test(
-            'Perform global text search for "repohasfile:copying", expect many results.',
-            async () => {
-                await driver.page.goto(baseURL + '/search?q=repohasfile:copying')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            }
-        )
+        test('Perform global text search for "repohasfile:copying", expect many results.', async () => {
+            await driver.page.goto(baseURL + '/search?q=repohasfile:copying')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+        })
     })
 })
