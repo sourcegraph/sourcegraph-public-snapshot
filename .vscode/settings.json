@@ -8,6 +8,7 @@
     "browser/build": true,
     "**/coverage": true,
     "/cmd/management-console/assets/": true,
+    "out": true,
   },
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",

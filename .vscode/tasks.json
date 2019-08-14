@@ -6,7 +6,6 @@
     "cwd": "${workspaceFolder}",
   },
   "tasks": [
-    //#region typecheck tasks to run on folder open
     {
       "type": "typescript",
       "isBackground": true,
@@ -72,8 +71,6 @@
         "runOn": "folderOpen",
       },
     },
-    //#endregion
-
     {
       "label": "launch",
       "command": "${workspaceRoot}/dev/launch.sh",
@@ -86,7 +83,6 @@
       "args": ["--prefix", "web", "tslint"],
       "problemMatcher": "$tslint5",
     },
-
     {
       "label": "eslint web",
       "command": "yarn",
@@ -123,7 +119,18 @@
         "reveal": "never",
       },
     },
-
+    {
+      "label": "eslint lsif/server",
+      "command": "yarn",
+      "options": {
+        "cwd": "${workspaceFolder}/lsif/server",
+      },
+      "args": ["run", "eslint", "--quiet"],
+      "problemMatcher": "$eslint-stylish",
+      "presentation": {
+        "reveal": "never",
+      },
+    },
     {
       "label": "stylelint",
       "command": "npm",

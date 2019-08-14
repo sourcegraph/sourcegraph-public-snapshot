@@ -13,6 +13,7 @@
     "zignd.html-css-class-completion",
     "orta.vscode-jest",
     "dbaeumer.vscode-eslint",
+    "micheldiz.vscode-dgraph-snippets",
   ],
   "unwantedRecommendations": [
     "eg2.tslint", // deprecated
