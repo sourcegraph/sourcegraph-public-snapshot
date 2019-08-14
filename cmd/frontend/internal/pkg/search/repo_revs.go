@@ -1,16 +1,14 @@
 package search
 
 import (
-	"regexp"
-	"strings"
-	"sync"
-
 	"github.com/pkg/errors"
 	dbquery "github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	"regexp"
+	"strings"
 )
 
 // RevisionSpecifier represents either a revspec or a ref glob. At most one
@@ -58,15 +56,21 @@ func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
 // globs.  If no revspecs and no ref globs are specified, then the
 // repository's default branch is used.
 type RepositoryRevisions struct {
-	sync.RWMutex
-
 	Repo *types.Repo
 	Revs []RevisionSpecifier
 	// IndexedHEADCommit contains the HEAD Git commit indexed by Zoekt.
 	// It is written to by zoektIndexedRepos and read later by zoektSearchHEAD.
 	// See https://github.com/sourcegraph/sourcegraph/pull/4702 for the performance
 	// rationale.
-	IndexedHEADCommit api.CommitID
+	indexedHEADCommit api.CommitID
+}
+
+func (r *RepositoryRevisions) IndexedHEADCommit() api.CommitID {
+	return r.indexedHEADCommit
+}
+
+func (r *RepositoryRevisions) SetIndexedHEADCommit(ihc api.CommitID) {
+	r.indexedHEADCommit = ihc
 }
 
 // ParseRepositoryRevisions parses strings that refer to a repository and 0

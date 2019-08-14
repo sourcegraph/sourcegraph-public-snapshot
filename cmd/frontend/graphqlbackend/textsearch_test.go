@@ -405,12 +405,9 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		since           func(time.Time) time.Duration
 	}
 
-	singleRepositoryRevisions := []*search.RepositoryRevisions{
-		{
-			Repo:              &types.Repo{},
-			IndexedHEADCommit: "abc",
-		},
-	}
+	rr := &search.RepositoryRevisions{Repo:&types.Repo{}}
+	rr.SetIndexedHEADCommit("abc")
+	singleRepositoryRevisions := []*search.RepositoryRevisions{ rr }
 
 	tests := []struct {
 		name              string
@@ -686,7 +683,7 @@ func Test_zoektIndexedRepos(t *testing.T) {
 		var indexed []*search.RepositoryRevisions
 		for _, r := range repos {
 			rev := *r
-			rev.IndexedHEADCommit = "deadbeef"
+			rev.SetIndexedHEADCommit("deadbeef")
 			indexed = append(indexed, &rev)
 		}
 		return indexed
