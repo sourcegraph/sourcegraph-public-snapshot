@@ -25,6 +25,7 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
+	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -612,6 +613,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 			limitHit = true
 		}
 		lines := make([]*lineMatch, 0, len(file.LineMatches))
+		symbols := []*searchSymbolResult{}
 		for _, l := range file.LineMatches {
 			if !l.FileName {
 				if len(l.LineFragments) > maxLineFragmentMatches {
@@ -622,6 +624,17 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 					offset := utf8.RuneCount(l.Line[:m.LineOffset])
 					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 					offsets[k] = [2]int32{int32(offset), int32(length)}
+					if m.SymbolInfo != nil {
+						symbols = append(symbols, &searchSymbolResult{
+							symbol: protocol.Symbol{
+								Name: m.SymbolInfo.Sym,
+								Kind: m.SymbolInfo.Kind,
+								Parent: m.SymbolInfo.Parent,
+								ParentKind: m.SymbolInfo.ParentKind,
+							},
+						})
+						fmt.Println("FOUND", m.SymbolInfo)
+					}
 				}
 				lines = append(lines, &lineMatch{
 					JPreview:          string(l.Line),
@@ -636,6 +649,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,
 			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
+			symbols:      symbols,
 			repo:         repoRev.Repo,
 			commitID:     repoRev.IndexedHEADCommit,
 		}
@@ -763,21 +777,30 @@ func fileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
+	var q zoektquery.Q
 	if query.IsRegExp {
-		q, err := parseRe(query.Pattern, false, query.IsCaseSensitive)
+		var err error
+		q, err = parseRe(query.Pattern, false, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
-		and = append(and, q)
 	} else {
-		and = append(and, &zoektquery.Substring{
+		q = &zoektquery.Substring{
 			Pattern:       query.Pattern,
 			CaseSensitive: query.IsCaseSensitive,
 
 			FileName: true,
 			Content:  true,
-		})
+		}
 	}
+
+	if query.IsSymbol {
+		q = &zoektquery.Symbol{
+			Expr: q,
+		}
+	}
+
+	and = append(and, q)
 
 	// zoekt also uses regular expressions for file paths
 	// TODO PathPatternsAreCaseSensitive
