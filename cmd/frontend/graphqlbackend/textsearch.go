@@ -25,7 +25,6 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -33,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
 	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
+	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -627,9 +627,9 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 					if m.SymbolInfo != nil {
 						symbols = append(symbols, &searchSymbolResult{
 							symbol: protocol.Symbol{
-								Name: m.SymbolInfo.Sym,
-								Kind: m.SymbolInfo.Kind,
-								Parent: m.SymbolInfo.Parent,
+								Name:       m.SymbolInfo.Sym,
+								Kind:       m.SymbolInfo.Kind,
+								Parent:     m.SymbolInfo.Parent,
 								ParentKind: m.SymbolInfo.ParentKind,
 							},
 						})

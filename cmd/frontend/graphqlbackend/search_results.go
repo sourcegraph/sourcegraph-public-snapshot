@@ -702,7 +702,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 
 	patternInfo := &search.PatternInfo{
 		IsRegExp:                     true,
-		IsSymbol: isSymbol,
+		IsSymbol:                     isSymbol,
 		IsCaseSensitive:              r.query.IsCaseSensitive(),
 		FileMatchLimit:               r.maxResults(),
 		Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
