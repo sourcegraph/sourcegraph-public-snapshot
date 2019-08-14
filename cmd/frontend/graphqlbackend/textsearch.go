@@ -616,7 +616,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 		}
 		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
 		inputRev := repoRev.RevSpecs()[0]
-		baseURI := &gituri.URI{url.URL{Scheme: "git://", Host: string(repoRev.Repo.Name), RawQuery: "?" + url.QueryEscape(inputRev)}}
+		baseURI := &gituri.URI{URL: url.URL{Scheme: "git://", Host: string(repoRev.Repo.Name), RawQuery: "?" + url.QueryEscape(inputRev)}}
 		lines := make([]*lineMatch, 0, len(file.LineMatches))
 		symbols := []*searchSymbolResult{}
 		for _, l := range file.LineMatches {
