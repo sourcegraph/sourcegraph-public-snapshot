@@ -14,6 +14,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Multi-line search now works for non-indexed search.
+- Sped up searches with `repohasfile:` [#4833](https://github.com/sourcegraph/sourcegraph/issues/4833).
 
 ### Changed
 
