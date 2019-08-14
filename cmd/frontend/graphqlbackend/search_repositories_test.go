@@ -221,4 +221,3 @@ func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *se
 	}
 	return len(rsta) == 1, nil
 }
-

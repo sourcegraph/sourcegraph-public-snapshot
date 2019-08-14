@@ -1,15 +1,16 @@
 package search
 
 import (
+	"regexp"
+	"strings"
+	"sync"
+
 	"github.com/pkg/errors"
 	dbquery "github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
-	"regexp"
-	"strings"
-	"sync"
 )
 
 // RevisionSpecifier represents either a revspec or a ref glob. At most one
@@ -63,7 +64,7 @@ type RepositoryRevisions struct {
 	// It is written to by zoektIndexedRepos and read later by zoektSearchHEAD.
 	// See https://github.com/sourcegraph/sourcegraph/pull/4702 for the performance
 	// rationale.
-	mu sync.Mutex
+	mu                sync.Mutex
 	indexedHEADCommit api.CommitID
 }
 

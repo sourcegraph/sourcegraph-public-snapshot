@@ -405,9 +405,9 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		since           func(time.Time) time.Duration
 	}
 
-	rr := &search.RepositoryRevisions{Repo:&types.Repo{}}
+	rr := &search.RepositoryRevisions{Repo: &types.Repo{}}
 	rr.SetIndexedHEADCommit("abc")
-	singleRepositoryRevisions := []*search.RepositoryRevisions{ rr }
+	singleRepositoryRevisions := []*search.RepositoryRevisions{rr}
 
 	tests := []struct {
 		name              string
