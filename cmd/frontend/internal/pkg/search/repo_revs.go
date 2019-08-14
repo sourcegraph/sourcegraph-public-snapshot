@@ -58,7 +58,7 @@ func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
 // globs.  If no revspecs and no ref globs are specified, then the
 // repository's default branch is used.
 type RepositoryRevisions struct {
-	sync.Mutex
+	sync.RWMutex
 
 	Repo *types.Repo
 	Revs []RevisionSpecifier

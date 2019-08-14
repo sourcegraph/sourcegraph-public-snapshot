@@ -631,7 +631,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 			}
 		}
 		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
-		repoRev.Lock()
+		repoRev.RLock()
 		matches[i] = &fileMatchResolver{
 			JPath:        file.FileName,
 			JLineMatches: lines,
@@ -640,7 +640,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 			repo:         repoRev.Repo,
 			commitID:     repoRev.IndexedHEADCommit,
 		}
-		repoRev.Unlock()
+		repoRev.RUnlock()
 	}
 
 	return matches, limitHit, reposLimitHit, nil
