@@ -2,6 +2,8 @@ package threads
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -141,4 +143,13 @@ func (v *gqlThreadPreview) Assignees(ctx context.Context, arg *graphqlutil.Conne
 			},
 		},
 	}, nil
+}
+
+func (v *gqlThreadPreview) InternalID() (string, error) {
+	b, err := json.Marshal(v.input)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])[:32], nil
 }

@@ -11,7 +11,6 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { ActorLink } from '../../actor/ActorLink'
 import { mutateGraphQL } from '../../backend/graphql'
 import { Timestamp } from '../../components/time/Timestamp'
-import { PersonLink } from '../../user/PersonLink'
 import { CommentForm } from './CommentForm'
 
 const editComment = (
@@ -53,8 +52,11 @@ const deleteComment = (args: GQL.IDeleteCommentOnMutationArguments): Promise<voi
         .toPromise()
 
 interface Props extends ExtensionsControllerProps {
-    comment: GQL.Comment
-    onCommentUpdate: (update?: Partial<Pick<GQL.IComment, Exclude<keyof GQL.IComment, '__typename'>>>) => void
+    comment: Pick<
+        GQL.Comment,
+        '__typename' | 'id' | 'author' | 'body' | 'bodyHTML' | 'createdAt' | 'updatedAt' | 'viewerCanUpdate'
+    >
+    onCommentUpdate: ((update?: Partial<Pick<GQL.IComment, Exclude<keyof GQL.IComment, '__typename'>>>) => void) | null
     createdVerb?: string
     emptyBody?: string
 
@@ -86,6 +88,9 @@ export const Comment: React.FunctionComponent<Props> = ({
             ;(async () => {
                 setIsEditLoading(true)
                 try {
+                    if (!onCommentUpdate) {
+                        throw new Error('onCommentUpdate callback not set')
+                    }
                     onCommentUpdate(await editComment({ input: { id: comment.id, body } }))
                     setIsEditLoading(false)
                     setIsEditing(false)
@@ -110,6 +115,9 @@ export const Comment: React.FunctionComponent<Props> = ({
         ;(async () => {
             setIsDeleteLoading(true)
             try {
+                if (!onCommentUpdate) {
+                    throw new Error('onCommentUpdate callback not set')
+                }
                 await deleteComment({ comment: comment.id })
                 setIsDeleteLoading(false)
                 setIsEditing(false)
@@ -134,7 +142,7 @@ export const Comment: React.FunctionComponent<Props> = ({
                     {createdVerb} <Timestamp date={comment.createdAt} />{' '}
                     {comment.updatedAt !== comment.createdAt && <> &bull; edited</>}
                 </span>
-                {comment.viewerCanUpdate && (
+                {onCommentUpdate && comment.viewerCanUpdate && (
                     <span>
                         {!isEditing && (
                             <button

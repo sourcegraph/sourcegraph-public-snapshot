@@ -14,6 +14,7 @@ import { FileDiffNode } from '../../../../../repo/compare/FileDiffNode'
 import { ThemeProps } from '../../../../../theme'
 import { ParticipantList } from '../../../../participants/ParticipantList'
 import { ThreadList, ThreadListHeaderCommonFilters } from '../../../../threads/list/ThreadList'
+import { ShowThreadPreviewModalButton } from '../../../../threads/preview/ShowThreadPreviewModalButton'
 import { CampaignImpactSummaryBar } from '../../../common/CampaignImpactSummaryBar'
 import { sumDiffStats } from '../../../common/useCampaignImpactSummary'
 import { CampaignFormData } from '../CampaignForm'
@@ -104,6 +105,7 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                                     </>
                                                 ),
                                             }}
+                                            right={ShowThreadPreviewModalButton}
                                             className="mb-4"
                                         />
                                     </>
@@ -149,9 +151,9 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                         <div className="card border-left border-right border-top mb-4">
                                             <h4 className="card-header">File changes</h4>
                                             {campaignPreview.repositoryComparisons.flatMap((c, i) =>
-                                                c.fileDiffs.nodes.map((d, j) => (
+                                                c.fileDiffs.nodes.map(d => (
                                                     <FileDiffNode
-                                                        key={`${i}:${j}`}
+                                                        key={`${i}:${d.internalID}`}
                                                         {...props}
                                                         // TODO!(sqs): hack dont show full uri in diff header
                                                         node={{

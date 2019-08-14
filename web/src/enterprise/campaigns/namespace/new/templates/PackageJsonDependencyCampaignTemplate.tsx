@@ -37,6 +37,11 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
         setShowWarnings(e.currentTarget.checked)
     }, [])
 
+    const [ban, setBan] = useState(false)
+    const onBanChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(e => {
+        setBan(e.currentTarget.checked)
+    }, [])
+
     const [filters, setFilters] = useState('')
 
     useEffect(() => {
@@ -45,9 +50,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
             parseDiagnosticQuery(`${filters}${filters ? ' ' : ''}${query}`)
         onChange({
             isValid: !!packageName,
-            name: `${
-                versionRange && versionRange !== ALL_VERSION_RANGE ? 'Deprecate' : 'Ban'
-            } ${packageNameOrPlaceholder}${
+            name: `${ban ? 'Ban' : 'Deprecate'} ${packageNameOrPlaceholder}${
                 versionRange && versionRange !== ALL_VERSION_RANGE ? `@${versionRange}` : ''
             } (npm)`,
             rules: packageName
@@ -81,7 +84,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                   ].filter(isDefined)
                 : [],
         })
-    }, [createChangesets, filters, onChange, packageName, showWarnings, versionRange])
+    }, [ban, createChangesets, filters, onChange, packageName, showWarnings, versionRange])
 
     return (
         <>
@@ -151,7 +154,19 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                                 onChange={onShowWarningsChange}
                                 disabled={disabled}
                             />
-                            Show warnings on all active branches
+                            Show diagnostics on all active branches
+                        </label>
+                    </li>
+                    <li>
+                        <label className="d-flex align-items-center">
+                            <input
+                                type="checkbox"
+                                className="form-check"
+                                checked={ban}
+                                onChange={onBanChange}
+                                disabled={disabled}
+                            />
+                            Ban (immediately fail all builds, including default branches, with this dependency version)
                         </label>
                     </li>
                 </ul>

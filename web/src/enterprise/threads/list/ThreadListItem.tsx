@@ -1,23 +1,48 @@
+import H from 'history'
 import MessageOutlineIcon from 'mdi-react/MessageOutlineIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { LinkOrSpan } from '../../../../../shared/src/components/LinkOrSpan'
 import { displayRepoName } from '../../../../../shared/src/components/RepoFileLink'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ActorLink } from '../../../actor/ActorLink'
 import { Timestamp } from '../../../components/time/Timestamp'
+import { ThemeProps } from '../../../theme'
 import { LabelableLabelsList } from '../../labels/labelable/LabelableLabelsList'
 import { ThreadStateIcon } from '../common/threadState/ThreadStateIcon'
 import { ThreadListContext } from './ThreadList'
 
 export interface ThreadListItemContext {
     showRepository?: boolean
+
+    /** A fragment shown under the title. */
+    itemSubtitle?: React.ReactFragment
+
+    /** A component rendered on the right side.  */
+    right?: React.ComponentType<
+        {
+            thread: GQL.ThreadOrThreadPreview
+            location: H.Location
+            history: H.History
+        } & ExtensionsControllerProps &
+            PlatformContextProps &
+            ThemeProps
+    >
 }
 
-interface Props extends ThreadListItemContext, ThreadListContext {
+interface Props
+    extends ThreadListItemContext,
+        ThreadListContext,
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        ThemeProps {
     thread: GQL.ThreadOrThreadPreview
 
     className?: string
+    location: H.Location
+    history: H.History
 }
 
 /**
@@ -26,8 +51,11 @@ interface Props extends ThreadListItemContext, ThreadListContext {
 export const ThreadListItem: React.FunctionComponent<Props> = ({
     thread,
     showRepository,
+    itemSubtitle,
+    right: Right,
     itemCheckboxes,
     className = '',
+    ...props
 }) => (
     <li className={`list-group-item ${className}`}>
         <div className="d-flex align-items-start">
@@ -96,13 +124,14 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
                         </li>
                     )}
                     {thread.assignees.nodes.length > 0 && (
-                        <li className="mx-2">
+                        <li>
                             &bull; Assigned to{' '}
                             {thread.assignees.nodes.map((assignee, i) => (
                                 <ActorLink key={i} actor={assignee} className="mr-1" />
                             ))}
                         </li>
                     )}
+                    {itemSubtitle && <li className="ml-1">&bull; {itemSubtitle}</li>}
                     {/* TODO!(sqs): show contents {thread.targets.totalCount > 0 && (
                         <li className="ml-2 d-flex align-items-center">
                             <FileFindIcon className="icon-inline mr-1" /> {thread.targets.totalCount}{' '}
@@ -113,6 +142,7 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
             </div>
             <div>
                 <ul className="list-inline d-flex align-items-center">
+                    {Right && <Right {...props} thread={thread} />}
                     {thread.__typename === 'Thread' && thread.comments.totalCount >= 1 && (
                         <li className="list-inline-item">
                             <small className="text-muted">

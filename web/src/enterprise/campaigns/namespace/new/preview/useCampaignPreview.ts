@@ -15,6 +15,58 @@ import {
 import { ThreadConnectionFiltersFragment } from '../../../../threads/list/useThreads'
 import { getCampaignExtensionData } from '../../../extensionData'
 
+const RepositoryComparisonQuery = gql`
+baseRepository {
+    id
+    name
+    url
+}
+headRepository {
+    id
+    name
+    url
+}
+range {
+    expr
+    baseRevSpec {
+        object {
+            oid
+        }
+        expr
+    }
+    headRevSpec {
+        expr
+    }
+}
+fileDiffs {
+    nodes {
+        oldPath
+        newPath
+        hunks {
+            oldRange {
+                ...FileDiffHunkRangeFields
+            }
+            oldNoNewlineAt
+            newRange {
+                ...FileDiffHunkRangeFields
+            }
+            section
+            body
+        }
+        stat {
+            ...DiffStatFields
+        }
+        internalID
+    }
+    totalCount
+    pageInfo {
+        hasNextPage
+    }
+    diffStat {
+        ...DiffStatFields
+    }
+}`
+
 export const CampaignPreviewFragment = gql`
     fragment CampaignPreviewFragment on CampaignPreview {
         name
@@ -22,6 +74,9 @@ export const CampaignPreviewFragment = gql`
             nodes {
                 __typename
                 ... on ThreadPreview {
+                    author {
+                        ${ActorQuery}
+                    }
                     repository {
                         id
                         name
@@ -34,6 +89,10 @@ export const CampaignPreviewFragment = gql`
                             ${ActorQuery}
                         }
                     }
+                    repositoryComparison {
+                        ${RepositoryComparisonQuery}
+                    }
+                    internalID
                 }
             }
             totalCount
@@ -61,56 +120,7 @@ export const CampaignPreviewFragment = gql`
             id
         }
         repositoryComparisons {
-            baseRepository {
-                id
-                name
-                url
-            }
-            headRepository {
-                id
-                name
-                url
-            }
-            range {
-                expr
-                baseRevSpec {
-                    object {
-                        oid
-                    }
-                    expr
-                }
-                headRevSpec {
-                    expr
-                }
-            }
-            fileDiffs {
-                nodes {
-                    oldPath
-                    newPath
-                    hunks {
-                        oldRange {
-                            ...FileDiffHunkRangeFields
-                        }
-                        oldNoNewlineAt
-                        newRange {
-                            ...FileDiffHunkRangeFields
-                        }
-                        section
-                        body
-                    }
-                    stat {
-                        ...DiffStatFields
-                    }
-                    internalID
-                }
-                totalCount
-                pageInfo {
-                    hasNextPage
-                }
-                diffStat {
-                    ...DiffStatFields
-                }
-            }
+            ${RepositoryComparisonQuery}
         }
     }
     ${fileDiffHunkRangeFieldsFragment}
@@ -175,10 +185,18 @@ export const useCampaignPreview = (
                                 map(data => data.campaignPreview),
                                 tap(data => {
                                     // TODO!(sqs) hack, compensate for the RepositoryComparison head not existing
-                                    for (const c of data.repositoryComparisons) {
+                                    const fixup = (c: GQL.IRepositoryComparison) => {
                                         c.range.headRevSpec.object = { oid: '' } as any
                                         for (const d of c.fileDiffs.nodes) {
                                             d.mostRelevantFile = { path: d.newPath, url: '' } as any
+                                        }
+                                    }
+                                    for (const c of data.repositoryComparisons) {
+                                        fixup(c)
+                                    }
+                                    for (const t of data.threads.nodes) {
+                                        if (t.repositoryComparison) {
+                                            fixup(t.repositoryComparison)
                                         }
                                     }
                                 })

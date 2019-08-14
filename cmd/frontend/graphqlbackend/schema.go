@@ -4403,6 +4403,12 @@ type ThreadPreview {
         # Returns the first n labels from the list.
         first: Int
     ): LabelConnection!
+
+    # FOR INTERNAL USE ONLY.
+    #
+    # An identifier for the thread preview that is unique among all other thread previews in the
+    # list that contains it.
+    internalID: String!
 }
 
 # An object that can have users assigned to it.
@@ -4744,7 +4750,7 @@ type CampaignPreview {
     # The body as HTML.
     bodyHTML: String!
 
-    # The actor who authored the comment.
+    # The actor who authored the campaign.
     author: Actor
 
     # A list of threads in this campaign.
@@ -4838,7 +4844,7 @@ type Campaign implements Node & Comment & Commentable & RuleContainer {
     # The body as HTML.
     bodyHTML: String!
 
-    # The actor who authored the comment.
+    # The actor who authored the campaign.
     author: Actor
 
     # The URL to this campaign.

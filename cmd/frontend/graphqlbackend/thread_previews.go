@@ -21,6 +21,7 @@ type ThreadPreview interface {
 	Diagnostics(context.Context, *graphqlutil.ConnectionArgs) (DiagnosticConnection, error)
 	Assignable
 	Labelable
+	InternalID() (string, error)
 }
 
 // ThreadOrThreadPreviewConnection is the interface for the GraphQL type ThreadOrThreadPreviewConnection.

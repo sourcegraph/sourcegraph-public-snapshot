@@ -6,9 +6,10 @@ import { LinkOrSpan } from '../../../../../shared/src/components/LinkOrSpan'
 import { displayRepoName } from '../../../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { parseRepoURI, toPrettyBlobURL } from '../../../../../shared/src/util/url'
+import { ThemeProps } from '../../../theme'
 import { DiagnosticListItem } from '../DiagnosticListItem'
 
-interface Props extends ExtensionsControllerProps {
+interface Props extends ExtensionsControllerProps, ThemeProps {
     diagnostics: (Diagnostic | sourcegraph.Diagnostic)[]
 
     className?: string
@@ -23,7 +24,7 @@ export const DiagnosticListByResource: React.FunctionComponent<Props> = ({
     diagnostics,
     className = '',
     listClassName = 'list-group',
-    itemClassName = 'py-2',
+    itemClassName = 'pt-2',
     ...props
 }) => {
     const byPath = useMemo(() => {
@@ -63,7 +64,7 @@ export const DiagnosticListByResource: React.FunctionComponent<Props> = ({
                                 displayRepoName(parsedURI.repoName)
                             )}
                         </LinkOrSpan>
-                        <ul className="list-unstyled ml-4 mb-3">
+                        <ul className="list-unstyled ml-4">
                             {diagnostics.map((diagnostic, j) => (
                                 <li key={j}>
                                     <DiagnosticListItem {...props} diagnostic={diagnostic} className={itemClassName} />

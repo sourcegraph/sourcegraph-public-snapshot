@@ -9,6 +9,7 @@ import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { HeroPage } from '../../../components/HeroPage'
 import { InfoSidebar, InfoSidebarSection } from '../../../components/infoSidebar/InfoSidebar'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
+import { PageTitle } from '../../../components/PageTitle'
 import { WithSidebar } from '../../../components/withSidebar/WithSidebar'
 import { DiffIcon, GitCommitIcon } from '../../../util/octicons'
 import { DiagnosticsIcon } from '../../checks/icons'
@@ -23,7 +24,6 @@ import { ThreadFileDiffsList } from './fileDiffs/ThreadFileDiffsList'
 import { threadSidebarSections } from './sidebar/threadSidebarSections'
 import { ThreadOverview } from './ThreadOverview'
 import { useThreadByNumberInRepository } from './useThreadByNumberInRepository'
-import { PageTitle } from '../../../components/PageTitle'
 
 export interface ThreadAreaContext
     extends Pick<RepositoryThreadsAreaContext, Exclude<keyof RepositoryThreadsAreaContext, 'repository'>> {

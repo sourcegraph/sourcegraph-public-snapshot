@@ -1,7 +1,9 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import React from 'react'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { ConnectionListFilterContext } from '../../../components/connectionList/ConnectionListFilterDropdownButton'
 import {
@@ -9,6 +11,7 @@ import {
     ConnectionListHeaderItems,
 } from '../../../components/connectionList/ConnectionListHeader'
 import { QueryParameterProps } from '../../../components/withQueryParameter/WithQueryParameter'
+import { ThemeProps } from '../../../theme'
 import { ThreadListLabelFilterDropdownButton } from './header/ThreadListLabelFilterDropdownButton'
 import { ThreadListRepositoryFilterDropdownButton } from './header/ThreadListRepositoryFilterDropdownButton'
 import { ThreadListItem, ThreadListItemContext } from './ThreadListItem'
@@ -25,7 +28,12 @@ export interface ThreadListContext extends ThreadListItemContext {
 
 const LOADING: 'loading' = 'loading'
 
-interface Props extends QueryParameterProps, ThreadListContext {
+interface Props
+    extends QueryParameterProps,
+        ThreadListContext,
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        ThemeProps {
     threads: typeof LOADING | GQL.IThreadConnection | GQL.IThreadOrThreadPreviewConnection | ErrorLike
 
     headerItems?: ConnectionListHeaderItems

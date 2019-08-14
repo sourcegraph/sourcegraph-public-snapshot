@@ -4410,6 +4410,12 @@ type ThreadPreview {
         # Returns the first n labels from the list.
         first: Int
     ): LabelConnection!
+
+    # FOR INTERNAL USE ONLY.
+    #
+    # An identifier for the thread preview that is unique among all other thread previews in the
+    # list that contains it.
+    internalID: String!
 }
 
 # An object that can have users assigned to it.
