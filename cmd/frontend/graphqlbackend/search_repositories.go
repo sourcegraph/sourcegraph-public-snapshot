@@ -2,8 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"regexp"
+
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
