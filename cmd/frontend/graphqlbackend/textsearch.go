@@ -605,6 +605,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 
 		limitHit = true
 	}
+
 	matches := make([]*fileMatchResolver, len(resp.Files))
 	for i, file := range resp.Files {
 		fileLimitHit := false
@@ -614,6 +615,8 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 			limitHit = true
 		}
 		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
+		inputRev := repoRev.RevSpecs()[0]
+		baseURI := &gituri.URI{url.URL{Scheme: "git://", Host: string(repoRev.Repo.Name), RawQuery: "?" + url.QueryEscape(inputRev)}}
 		lines := make([]*lineMatch, 0, len(file.LineMatches))
 		symbols := []*searchSymbolResult{}
 		for _, l := range file.LineMatches {
@@ -626,17 +629,13 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 					offset := utf8.RuneCount(l.Line[:m.LineOffset])
 					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 					offsets[k] = [2]int32{int32(offset), int32(length)}
-					if m.SymbolInfo != nil {
-						inputRev := repoRev.RevSpecs()[0]
+					if isSymbol && m.SymbolInfo != nil {
 						commit := &gitCommitResolver{
 							repo:     &repositoryResolver{repo: repoRev.Repo},
 							oid:      gitObjectID(repoRev.IndexedHEADCommit),
 							inputRev: &inputRev,
 						}
-						baseURI, err := gituri.Parse("git://" + string(repoRev.Repo.Name) + "?" + url.QueryEscape(inputRev))
-						if err != nil {
-							continue
-						}
+
 						symbols = append(symbols, &searchSymbolResult{
 							symbol: protocol.Symbol{
 								Name:       m.SymbolInfo.Sym,
@@ -652,7 +651,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 						})
 					}
 				}
-				if isSymbol {
+				if !isSymbol {
 					lines = append(lines, &lineMatch{
 						JPreview:          string(l.Line),
 						JLineNumber:       int32(l.LineNumber - 1),

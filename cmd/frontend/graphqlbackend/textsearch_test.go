@@ -101,7 +101,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to parse %q: %v", tt.Query, err)
 			}
-			got, err := queryToZoektQuery(tt.Pattern)
+			got, err := queryToZoektQuery(tt.Pattern, false)
 			if err != nil {
 				t.Fatal("queryToZoektQuery failed:", err)
 			}
@@ -483,7 +483,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.repos, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts, tt.args.since)
+			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.repos, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts, false, tt.args.since)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
