@@ -52,12 +52,12 @@ import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import './SourcegraphWebApp.scss'
 
 export interface SourcegraphWebAppProps extends KeybindingsProps {
-    exploreSections: ReadonlyArray<ExploreSectionDescriptor>
-    extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
-    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
-    extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>
-    extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
-    siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
+    exploreSections: readonly ExploreSectionDescriptor[]
+    extensionAreaRoutes: readonly ExtensionAreaRoute[]
+    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
+    extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
+    extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
+    siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: readonly React.ComponentType[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
