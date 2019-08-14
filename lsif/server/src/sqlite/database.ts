@@ -4,7 +4,7 @@ import { Range, Id, MetaData, RangeBasedDocumentSymbol, Moniker, PackageInformat
 import * as lsp from 'vscode-languageserver-protocol'
 import { CorrelationDatabase } from './xrepo'
 import { makeFilename } from './backend'
-import { gunzipSync } from 'mz/zlib';
+import { gunzipSync } from 'mz/zlib'
 
 export interface DocumentBlob {
     ranges: LiteralMap<RangeData>
@@ -95,7 +95,6 @@ export interface UriTransformer {
 export class Database {
     private db!: Sqlite.Database
     private uriTransformer!: UriTransformer
-    private allDocumentsStmt!: Sqlite.Statement
     private findDocumentStmt!: Sqlite.Statement
     private findBlobStmt!: Sqlite.Statement
     private findDefsStmt!: Sqlite.Statement
@@ -118,7 +117,6 @@ export class Database {
         }
 
         // TODO - find a way to declare these as well?
-        this.allDocumentsStmt = this.db.prepare('select d.* from documents d')
         this.findDocumentStmt = this.db.prepare('select d.documentHash from documents d where d.uri = $uri')
         this.findBlobStmt = this.db.prepare('select content from blobs where hash = ?')
         this.findDefsStmt = this.db.prepare(
@@ -188,6 +186,10 @@ export class Database {
                 return this.getRemoteDefinition(blob, moniker)
             }
 
+            // TODO(efritz) - prove that this returns something useful
+            // in some circumstances. I'm not sure if this was meant to
+            // do what we're trying to do now...
+
             const defsResult: DefsResult[] = this.findDefsStmt.all({
                 scheme: moniker.scheme,
                 identifier: moniker.identifier,
@@ -222,7 +224,40 @@ export class Database {
             return undefined
         }
 
-        return this.findByMoniker(repositoryCommit.repository, repositoryCommit.commit, moniker)
+        // TODO(efritz) - determine why npm monikers are mismatched
+        const parts = moniker.identifier.split(':')
+        parts[1] = '' // WTF
+        moniker.identifier = parts.join(':')
+
+        // TODO - need to cache db handles instead of backends
+        // if we end up going with SQLite databases
+        const subDb = new Database(this.correlationDb)
+        subDb.load(makeFilename(repositoryCommit.repository, repositoryCommit.commit))
+
+        try {
+            const defsResult: DefsResult[] = subDb.findDefsStmt.all({
+                scheme: moniker.scheme,
+                identifier: moniker.identifier,
+            })
+
+            for (const defxResult of defsResult || []) {
+                const subUri = subDb.uriTransformer.fromDatabase(defxResult.uri)
+
+                return lsp.Location.create(
+                    `git://${repositoryCommit.repository}?${repositoryCommit.commit}#${subUri}`,
+                    lsp.Range.create(
+                        defxResult.startLine,
+                        defxResult.startCharacter,
+                        defxResult.endLine,
+                        defxResult.endCharacter
+                    )
+                )
+            }
+        } finally {
+            subDb.close()
+        }
+
+        return undefined
     }
 
     //
@@ -299,9 +334,41 @@ export class Database {
 
         const allReferences = []
         for (const repositoryCommit of repositoryCommits) {
-            const references = this.findByMoniker(repositoryCommit.repository, repositoryCommit.commit, moniker)
-            if (references) {
-                allReferences.push(...references)
+            // TODO(efritz) - determine why npm monikers are mismatched
+            const parts = moniker.identifier.split(':')
+            parts[1] = '' // WTF
+            moniker.identifier = parts.join(':')
+
+            // TODO - need to cache db handles instead of backends
+            // if we end up going with SQLite databases
+            const subDb = new Database(this.correlationDb)
+            subDb.load(makeFilename(repositoryCommit.repository, repositoryCommit.commit))
+
+            try {
+                const refsResult: RefsResult[] = subDb.findRefsStmt.all({
+                    scheme: moniker.scheme,
+                    identifier: moniker.identifier,
+                })
+
+                if (refsResult && refsResult.length > 0) {
+                    for (const refxResult of refsResult) {
+                        const subUri = subDb.uriTransformer.fromDatabase(refxResult.uri)
+
+                        allReferences.push(
+                            lsp.Location.create(
+                                `git://${repositoryCommit.repository}?${repositoryCommit.commit}#${subUri}`,
+                                lsp.Range.create(
+                                    refxResult.startLine,
+                                    refxResult.startCharacter,
+                                    refxResult.endLine,
+                                    refxResult.endCharacter
+                                )
+                            )
+                        )
+                    }
+                }
+            } finally {
+                subDb.close()
             }
         }
 
@@ -349,62 +416,6 @@ export class Database {
 
     //
     // TODO - categorize
-
-    private findByMoniker(repository: string, commit: string, moniker: MonikerData): lsp.Location[] | undefined {
-        // TODO(efritz) - determine why npm monikers are mismatched
-        const parts = moniker.identifier.split(':')
-        parts[1] = '' // WTF
-        moniker.identifier = parts.join(':')
-
-        // TODO - need to cache db handles instead of backends
-        // if we end up going with SQLite databases
-        const subDb = new Database(this.correlationDb)
-        subDb.load(makeFilename(repository, commit))
-
-        try {
-            //
-            // TODO(efritz) - make this indexable in db
-            //
-
-
-            // Summary: for all monikers with matching scheme and identifier in some
-            //          document, find the ranges in that document that point to that
-            //          moniker.
-
-            for (const document of subDb.allDocumentsStmt.all()) {
-                const blob = subDb.getBlob(document.documentHash)
-                for (const id of Object.keys(blob.monikers!)) {
-                    const m = blob.monikers![id]
-                    if (m.scheme === moniker.scheme && m.identifier === moniker.identifier) {
-                        for (const otherId of Object.keys(blob.ranges)) {
-                            const range = blob.ranges[otherId]
-                            const monikers = subDb.findMonikers(blob.resultSets, blob.monikers, range)
-
-                            if (monikers.includes(m)) {
-                                const subUri = subDb.uriTransformer.fromDatabase(document.uri)
-
-                                return [
-                                    lsp.Location.create(
-                                        `git://${repository}?${commit}#${subUri}`,
-                                        lsp.Range.create(
-                                            range.start.line,
-                                            range.start.character,
-                                            range.end.line,
-                                            range.end.character
-                                        )
-                                    ),
-                                ]
-                            }
-                        }
-                    }
-                }
-            }
-        } finally {
-            subDb.close()
-        }
-
-        return undefined
-    }
 
     private findResult<T>(
         resultSets: LiteralMap<ResultSetData> | undefined,

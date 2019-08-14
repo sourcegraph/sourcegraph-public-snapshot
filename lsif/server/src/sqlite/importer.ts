@@ -705,48 +705,67 @@ class DocumentData {
             this.addResultSetData(item.next, assertDefined(this.provider.getResultData(item.next)))
         }
 
-        for (const moniker of monikers) {
-            if (item.hoverResult !== undefined) {
-                if (Monikers.isLocal(moniker)) {
-                    if (this.blob.hovers === undefined) {
-                        this.blob.hovers = LiteralMap.create()
-                    }
-
-                    if (this.blob.hovers[item.hoverResult] === undefined) {
-                        this.blob.hovers[item.hoverResult] = assertDefined(
-                            this.provider.getAndDeleteHoverData(item.hoverResult)
-                        )
-                    }
-                } else {
+        if (item.hoverResult !== undefined) {
+            let local = true
+            for (const moniker of monikers) {
+                if (!Monikers.isLocal(moniker)) {
+                    local = false
                     this.provider.storeHover(moniker, item.hoverResult)
                 }
             }
 
-            if (item.definitionResult) {
-                const definitions = this.provider.getAndDeleteDefinitions(item.definitionResult, this.id)
-                if (definitions !== undefined) {
-                    if (Monikers.isLocal(moniker)) {
+            if (local) {
+                if (this.blob.hovers === undefined) {
+                    this.blob.hovers = LiteralMap.create()
+                }
+
+                if (this.blob.hovers[item.hoverResult] === undefined) {
+                    this.blob.hovers[item.hoverResult] = assertDefined(
+                        this.provider.getAndDeleteHoverData(item.hoverResult)
+                    )
+                }
+            }
+        }
+
+        if (item.definitionResult) {
+            const definitions = this.provider.getAndDeleteDefinitions(item.definitionResult, this.id)
+
+            if (definitions !== undefined) {
+                let local = true
+                for (const moniker of monikers) {
+                    if (!Monikers.isLocal(moniker)) {
+                        local = false
+                        this.definitions.push({ moniker, data: definitions })
+                    }
+
+                    if (local) {
                         if (this.blob.definitionResults === undefined) {
                             this.blob.definitionResults = LiteralMap.create()
                         }
+
                         this.blob.definitionResults[item.definitionResult] = definitions
-                    } else {
-                        this.definitions.push({ moniker, data: definitions })
                     }
                 }
             }
+        }
 
-            if (item.referenceResult) {
-                const references = this.provider.getAndDeleteReferences(item.referenceResult, this.id)
-                if (references !== undefined) {
-                    if (Monikers.isLocal(moniker)) {
-                        if (this.blob.referenceResults === undefined) {
-                            this.blob.referenceResults = LiteralMap.create()
-                        }
-                        this.blob.referenceResults[item.referenceResult] = references
-                    } else {
+        if (item.referenceResult) {
+            const references = this.provider.getAndDeleteReferences(item.referenceResult, this.id)
+
+            if (references !== undefined) {
+                let local = true
+                for (const moniker of monikers) {
+                    if (!Monikers.isLocal(moniker)) {
+                        local = false
                         this.references.push({ moniker, data: references })
                     }
+                }
+
+                if (local) {
+                    if (this.blob.referenceResults === undefined) {
+                        this.blob.referenceResults = LiteralMap.create()
+                    }
+                    this.blob.referenceResults[item.referenceResult] = references
                 }
             }
         }
