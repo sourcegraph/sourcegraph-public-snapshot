@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
 	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
@@ -612,6 +613,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 			fileLimitHit = true
 			limitHit = true
 		}
+		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
 		lines := make([]*lineMatch, 0, len(file.LineMatches))
 		symbols := []*searchSymbolResult{}
 		for _, l := range file.LineMatches {
@@ -625,25 +627,40 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 					offsets[k] = [2]int32{int32(offset), int32(length)}
 					if m.SymbolInfo != nil {
+						inputRev := repoRev.RevSpecs()[0]
+						commit := &gitCommitResolver{
+							repo:     &repositoryResolver{repo: repoRev.Repo},
+							oid:      gitObjectID(repoRev.IndexedHEADCommit),
+							inputRev: &inputRev,
+						}
+						baseURI, err := gituri.Parse("git://" + string(repoRev.Repo.Name) + "?" + url.QueryEscape(inputRev))
+						if err != nil {
+							continue
+						}
 						symbols = append(symbols, &searchSymbolResult{
 							symbol: protocol.Symbol{
 								Name:       m.SymbolInfo.Sym,
 								Kind:       m.SymbolInfo.Kind,
 								Parent:     m.SymbolInfo.Parent,
 								ParentKind: m.SymbolInfo.ParentKind,
+								Path:       file.FileName,
+								Line:       l.LineNumber,
 							},
+							lang:    strings.ToLower(file.Language),
+							baseURI: baseURI,
+							commit:  commit,
 						})
-						fmt.Println("FOUND", m.SymbolInfo)
 					}
 				}
-				lines = append(lines, &lineMatch{
-					JPreview:          string(l.Line),
-					JLineNumber:       int32(l.LineNumber - 1),
-					JOffsetAndLengths: offsets,
-				})
+				if !query.IsSymbol {
+					lines = append(lines, &lineMatch{
+						JPreview:          string(l.Line),
+						JLineNumber:       int32(l.LineNumber - 1),
+						JOffsetAndLengths: offsets,
+					})
+				}
 			}
 		}
-		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
 		matches[i] = &fileMatchResolver{
 			JPath:        file.FileName,
 			JLineMatches: lines,
