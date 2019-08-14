@@ -64,7 +64,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 
 	common = &searchResultsCommon{}
 	var (
-		run = parallel.NewRun(20)
+		run = parallel.NewRun(conf.SearchSymbolsParallelism())
 		mu  sync.Mutex
 	)
 	for _, repoRevs := range args.Repos {
