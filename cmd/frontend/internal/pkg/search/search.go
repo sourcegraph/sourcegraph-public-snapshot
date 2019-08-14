@@ -13,7 +13,6 @@ import (
 type PatternInfo struct {
 	Pattern         string
 	IsRegExp        bool
-	IsSymbol        bool
 	IsWordMatch     bool
 	IsCaseSensitive bool
 	FileMatchLimit  int32
