@@ -134,18 +134,16 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 				a, b := matches[i].uri, matches[j].uri
 				return a > b
 			})
-		}
-		unflattened = append(unflattened, matches)
-		flattenedSize += len(matches)
+			unflattened = append(unflattened, matches)
+			flattenedSize += len(matches)
 
-		/*
 			if flattenedSize > int(args.Pattern.FileMatchLimit) {
 				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.Pattern.FileMatchLimit)
 				overLimitCanceled = true
 				common.limitHit = true
 				cancelAll()
 			}
-		*/
+		}
 	}
 
 	run.Acquire()
