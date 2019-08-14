@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash'
 import { useEffect, useMemo, useState } from 'react'
 import { merge, Subject } from 'rxjs'
-import { distinctUntilChanged, map, mapTo, switchMap, tap, throttleTime } from 'rxjs/operators'
+import { debounceTime, distinctUntilChanged, map, mapTo, switchMap, tap, throttleTime } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
@@ -83,6 +83,7 @@ export const CampaignPreviewFragment = gql`
                         url
                     }
                     title
+                    bodyHTML
                     kind
                     assignees {
                         nodes {
@@ -148,9 +149,13 @@ export const useCampaignPreview = (
     const [isLoading, setIsLoading] = useState(true)
     const [result, setResult] = useState<Result>(LOADING)
     useEffect(() => {
-        // Don't refresh on changes to the name or description.
-        const inputSubjectChanges = inputSubject.pipe(
-            distinctUntilChanged((a, b) => a.namespace === b.namespace && isEqual(a.rules, b.rules))
+        // Refresh more slowly on changes to the name or description.
+        const inputSubjectChanges = merge(
+            inputSubject.pipe(distinctUntilChanged((a, b) => a.namespace === b.namespace && isEqual(a.rules, b.rules))),
+            inputSubject.pipe(
+                distinctUntilChanged((a, b) => a.name === b.name && a.body === b.body),
+                debounceTime(2000)
+            )
         )
         const subscription = merge(
             inputSubjectChanges.pipe(mapTo(LOADING)),

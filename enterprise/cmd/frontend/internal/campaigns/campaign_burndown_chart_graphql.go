@@ -88,6 +88,7 @@ func computeBurndownChartData(ctx context.Context, events []graphqlbackend.ToEve
 			data.mergedThreads++
 		case event.CloseThreadEvent != nil:
 			data.closedThreads++
+			data.openThreads--
 		case event.ReviewEvent != nil:
 			// TODO!(sqs): check if this is sufficient or if other reviews are required, or maybe
 			// this reviewer went back and changed teir review to non-approved, etc.

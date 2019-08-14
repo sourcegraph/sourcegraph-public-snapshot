@@ -1,13 +1,19 @@
 import H from 'history'
 import React from 'react'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { useQueryParameter } from '../../../../components/withQueryParameter/WithQueryParameter'
+import { ThemeProps } from '../../../../theme'
 import { CampaignAreaContext } from '../CampaignArea'
 import { AddThreadToCampaignDropdownButton } from './AddThreadToCampaignDropdownButton'
 import { CampaignThreadList } from './CampaignThreadList'
 import { useCampaignThreads } from './useCampaignThreads'
 
-interface Props extends Pick<CampaignAreaContext, 'campaign'>, ExtensionsControllerProps {
+interface Props
+    extends Pick<CampaignAreaContext, 'campaign'>,
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        ThemeProps {
     className?: string
 
     location: H.Location
@@ -23,6 +29,7 @@ export const CampaignThreadListPage: React.FunctionComponent<Props> = ({ campaig
             <CampaignThreadList
                 {...props}
                 threads={threads}
+                onThreadsUpdate={onThreadsUpdate}
                 campaign={campaign}
                 query={query}
                 onQueryChange={onQueryChange}
