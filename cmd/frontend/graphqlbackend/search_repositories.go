@@ -95,6 +95,11 @@ func reposToAdd(ctx context.Context, zoekt *searchbackend.Zoekt, repos []*search
 				matchingIDs[m.repo.ID] = true
 			}
 		}
+	} else {
+		// Default to including all the repos, then excluding some of them below.
+		for _, r := range repos {
+			matchingIDs[r.Repo.ID] = true
+		}
 	}
 
 	if len(pattern.FilePatternsReposMustExclude) > 0 {
