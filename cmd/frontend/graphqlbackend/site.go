@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/version"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -178,6 +180,8 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 	return conf.ValidateSite(contents)
 }
 
+var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
+
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
 	LastID int32
 	Input  string
@@ -187,7 +191,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return false, err
 	}
-	if os.Getenv("SITE_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+	if os.Getenv("SITE_CONFIG_FILE") != "" && !siteConfigAllowEdits {
 		return false, errors.New("updating site configuration not allowed when using SITE_CONFIG_FILE")
 	}
 	if strings.TrimSpace(args.Input) == "" {
