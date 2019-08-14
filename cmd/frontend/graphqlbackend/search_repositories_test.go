@@ -65,13 +65,13 @@ func TestSearchRepositories(t *testing.T) {
 
 	})
 
-	t.Run("search for all repositories where the repo name includes 'one'", func(t *testing.T) {
-		q, err := query.ParseAndCheck("type:repo one")
+	t.Run("search for all repositories where the repo name includes 'foo/one'", func(t *testing.T) {
+		q, err := query.ParseAndCheck("type:repo foo/one")
 		if err != nil {
 			t.Fatal(err)
 		}
 		args := search.Args{
-			Pattern: &search.PatternInfo{Pattern: "one", IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
+			Pattern: &search.PatternInfo{Pattern: "foo/one", IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
 			Repos:   repositories,
 			Query:   q,
 			Zoekt:   zoekt,
