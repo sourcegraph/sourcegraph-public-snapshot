@@ -112,14 +112,14 @@ func (s *store) LoadPermissions(
 		return nil
 	}
 
-	updated := **p
+	expired := **p
 
 	if !s.block { // Non blocking code path
 		go func(expired *Permissions) {
 			if err := s.update(ctx, expired, update); err != nil {
 				log15.Error("bitbucketserver.authz.store.update", "error", err)
 			}
-		}(&updated)
+		}(&expired)
 
 		if (*p).UpdatedAt.IsZero() { // No valid permissions available yet.
 			return &StalePermissionsError{Permissions: *p}
@@ -129,13 +129,14 @@ func (s *store) LoadPermissions(
 	}
 
 	// Blocking code path
-	err = s.update(ctx, &updated, update)
+	err = s.update(ctx, &expired, update)
 	if err != nil && err != errLockNotAvailable {
 		return err
 	}
 
-	s.cache.update(&updated)
-	*p = &updated
+	// Update the cache with the now updated permissions.
+	s.cache.update(&expired)
+	*p = &expired
 
 	return nil
 }
