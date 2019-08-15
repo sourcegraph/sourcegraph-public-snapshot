@@ -377,10 +377,6 @@ func (ss *fakeSearcher) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoLi
 	return ss.repos, nil
 }
 
-func (ss *fakeSearcher) String() string {
-	return fmt.Sprintf("fakeSearcher(result = %v, repos = %v)", ss.result, ss.repos)
-}
-
 type errorSearcher struct {
 	err error
 
@@ -405,9 +401,12 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		since           func(time.Time) time.Duration
 	}
 
-	rr := &search.RepositoryRevisions{Repo: &types.Repo{}}
-	rr.SetIndexedHEADCommit("abc")
-	singleRepositoryRevisions := []*search.RepositoryRevisions{rr}
+	singleRepositoryRevisions := []*search.RepositoryRevisions{
+		{
+			Repo:              &types.Repo{},
+			IndexedHEADCommit: "abc",
+		},
+	}
 
 	tests := []struct {
 		name              string
@@ -683,7 +682,7 @@ func Test_zoektIndexedRepos(t *testing.T) {
 		var indexed []*search.RepositoryRevisions
 		for _, r := range repos {
 			rev := *r
-			rev.SetIndexedHEADCommit("deadbeef")
+			rev.IndexedHEADCommit = "deadbeef"
 			indexed = append(indexed, &rev)
 		}
 		return indexed

@@ -3,7 +3,6 @@ package search
 import (
 	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/pkg/errors"
 	dbquery "github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
@@ -64,20 +63,7 @@ type RepositoryRevisions struct {
 	// It is written to by zoektIndexedRepos and read later by zoektSearchHEAD.
 	// See https://github.com/sourcegraph/sourcegraph/pull/4702 for the performance
 	// rationale.
-	mu                sync.Mutex
-	indexedHEADCommit api.CommitID
-}
-
-func (r *RepositoryRevisions) IndexedHEADCommit() api.CommitID {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return r.indexedHEADCommit
-}
-
-func (r *RepositoryRevisions) SetIndexedHEADCommit(ihc api.CommitID) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.indexedHEADCommit = ihc
+	IndexedHEADCommit api.CommitID
 }
 
 // ParseRepositoryRevisions parses strings that refer to a repository and 0
