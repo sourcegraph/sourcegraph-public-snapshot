@@ -26,9 +26,7 @@ export class ClientExtensions {
         if (telemetryService) {
             extensionRegistry.activeExtensions.subscribe(extensions => {
                 const activeExtensions = extensions.map(activeExtension => activeExtension.id)
-                for (const extension of activeExtensions) {
-                    telemetryService.log(extension)
-                }
+                telemetryService.log('activeExtensions', { activeExtensions })
             })
         }
 
