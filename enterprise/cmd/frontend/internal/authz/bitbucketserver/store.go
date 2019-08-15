@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 	"time"
+	"unsafe"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
@@ -208,9 +209,14 @@ func lockQuery(p *Permissions) *sqlf.Query {
 	lockID := fnv1.HashString32(fmt.Sprintf("%d:%s:%s", p.UserID, p.Perm, p.Type))
 	return sqlf.Sprintf(
 		lockQueryFmtStr,
-		int32(lockNamespace),
-		int32(lockID),
+		cast(lockNamespace),
+		cast(lockID),
 	)
+}
+
+// cast returns the int32 represented by the same bits as the given uint32.
+func cast(n uint32) int32 {
+	return *(*int32)(unsafe.Pointer(&n))
 }
 
 const lockQueryFmtStr = `
