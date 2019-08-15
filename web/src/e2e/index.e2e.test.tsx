@@ -101,11 +101,11 @@ describe('e2e test suite', () => {
                 selectMethod: 'keyboard',
             })
             await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
-            await driver.page.waitForSelector('.e2e-global-alert', { visible: true })
+            await driver.page.waitForSelector('.e2e-global-alert .global-alerts__alert', { visible: true })
             await driver.page.evaluate(() => {
-                const elem = document.querySelector('.e2e-global-alert')
+                const elem = document.querySelector('.e2e-global-alert .global-alerts__alert')
                 if (!elem) {
-                    throw new Error('No .e2e-global-alert element found')
+                    throw new Error('No .e2e-global-alert .global-alerts__alert element found')
                 }
                 const notice = 'A wild notice appears!'
                 if (!(elem as HTMLElement).innerText.includes(notice)) {
