@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/cespare/xxhash"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
@@ -157,6 +157,9 @@ func (e StalePermissionsError) Error() string {
 
 var errLockNotAvailable = errors.New("lock not available")
 
+// lock uses Postgres advisory locks to acquire an exclusive lock over the
+// given Permissions. Concurrent processes that call this method while a lock is
+// already held by another process will have errLockNotAvailable returned.
 func (s *store) lock(ctx context.Context, p *Permissions) (err error) {
 	ctx, save := s.observe(ctx, "lock", "")
 	defer save(p, &err)
@@ -189,14 +192,27 @@ func (s *store) lock(ctx context.Context, p *Permissions) (err error) {
 	return nil
 }
 
+var lockNamespace = fnv1.HashString32("perms")
+
 func lockQuery(p *Permissions) *sqlf.Query {
-	lockID := xxhash.Sum64String(fmt.Sprintf("perms:%d:%s:%s", p.UserID, p.Perm, p.Type))
-	return sqlf.Sprintf(lockQueryFmtStr, int64(lockID))
+	// Postgres advisory lock ids are a global namespace within one database.
+	// It's very unlikely that another part of our application uses a lock
+	// namespace identicaly to this one. It's equally unlikely that there are
+	// lock id conflicts for different permissions, but if it'd happen, no safety
+	// guarantees would be violated, since those two different users would simply
+	// have to wait on the other's update to finish, using stale permissions until
+	// it would.
+	lockID := fnv1.HashString32(fmt.Sprintf("%d:%s:%s", p.UserID, p.Perm, p.Type))
+	return sqlf.Sprintf(
+		lockQueryFmtStr,
+		int32(lockNamespace),
+		int32(lockID),
+	)
 }
 
 const lockQueryFmtStr = `
 -- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.lock
-SELECT pg_try_advisory_lock(%s)
+SELECT pg_try_advisory_lock(%s, %s)
 `
 
 func (s *store) load(ctx context.Context, p *Permissions) (err error) {

@@ -9,7 +9,6 @@ require (
 	github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
 	github.com/boj/redistore v0.0.0-20160128113310-fc113767cd6b
 	github.com/certifi/gocertifi v0.0.0-20190105021324-abcd57078448 // indirect
-	github.com/cespare/xxhash v1.1.0
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/coreos/go-oidc v0.0.0-20171002155002-a93f71fdfe73
 	github.com/coreos/go-semver v0.3.0
@@ -79,7 +78,6 @@ require (
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/honeycombio/libhoney-go v1.8.1
-	github.com/inconshreveable/log15 v0.0.0-20180818164646-67afb5ed74ec // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/joho/godotenv v1.3.0
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
@@ -118,6 +116,7 @@ require (
 	github.com/prometheus/client_golang v1.1.0
 	github.com/russellhaering/gosaml2 v0.3.2-0.20190403162508-649841e7f48a
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
+	github.com/segmentio/fasthash v1.0.0
 	github.com/sergi/go-diff v1.0.0
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
 	github.com/shurcooL/go v0.0.0-20190704215121-7189cc372560 // indirect
@@ -153,7 +152,7 @@ require (
 	github.com/uber/gonduit v0.3.2
 	github.com/uber/jaeger-client-go v2.14.0+incompatible
 	github.com/uber/jaeger-lib v1.5.0
-	github.com/ugorji/go v1.1.7 // indirect
+	github.com/ugorji/go/codec v1.1.7 // indirect
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
