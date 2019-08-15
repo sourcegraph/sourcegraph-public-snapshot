@@ -72,3 +72,13 @@ The `docs` folder has additional documentation for developing and understanding 
 Sourcegraph OSS is available freely under the [Apache 2 license](LICENSE.apache). Sourcegraph OSS comprises all files in this repository except those in the `enterprise/` and `web/src/enterprise` directories.
 
 All files in the `enterprise/` and `web/src/enterprise/` directories are subject to the [Sourcegraph Enterprise license](LICENSE.enterprise).
+
+### Security
+
+We support and maintain the latest two minor versions of Sourcegraph.
+
+If you think that you have found a security issue, please email us at security@sourcegraph.com. Please do not publicly disclose the issue until we’ve addressed it.
+
+We provide monetary rewards, up to $4,000, for open bounties. This is determined based on the percentage of users impacted, the likelihood of encountering the vulnerability under normal use of the site, and the severity of potential service disruption or data leakage.
+
+Visit https://about.sourcegraph.com/security to learn more.
