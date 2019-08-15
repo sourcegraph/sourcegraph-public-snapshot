@@ -73,7 +73,7 @@ func (p *Permissions) Authorized(repos []*types.Repo) []authz.RepoPerms {
 }
 
 // LoadPermissions loads stored permissions into p, calling the given update closure
-// to asycnhronously fetch updated permissions when they expire. When there are no
+// to asynchronously fetch updated permissions when they expire. When there are no
 // valid permissions available (i.e. the first time a user needs them), an error is
 // returned.
 //
