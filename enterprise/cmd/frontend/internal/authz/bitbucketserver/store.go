@@ -72,6 +72,11 @@ func (p *Permissions) Authorized(repos []*types.Repo) []authz.RepoPerms {
 	return perms
 }
 
+// PermissionsUpdateFunc fetches updated permissions from a source of truth,
+// returning the correspondent Sourcegraph ids (e.g. repo table ids) of those objects
+// for which the authenticated user has permissions for.
+type PermissionsUpdateFunc func(context.Context) (ids []uint32, err error)
+
 // LoadPermissions loads stored permissions into p, calling the given update closure
 // to asynchronously fetch updated permissions when they expire. When there are no
 // valid permissions available (i.e. the first time a user needs them), an error is
@@ -82,7 +87,7 @@ func (p *Permissions) Authorized(repos []*types.Repo) []authz.RepoPerms {
 func (s *store) LoadPermissions(
 	ctx context.Context,
 	p **Permissions,
-	update func() (objectIDs []uint32, _ error),
+	update PermissionsUpdateFunc,
 ) (err error) {
 	if s == nil || p == nil || *p == nil {
 		return nil
@@ -240,7 +245,7 @@ FROM user_permissions
 WHERE user_id = %s AND permission = %s AND object_type = %s
 `
 
-func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uint32, error)) (err error) {
+func (s *store) update(ctx context.Context, p *Permissions, update PermissionsUpdateFunc) (err error) {
 	ctx, save := s.observe(ctx, "update", "")
 	defer save(p, &err)
 
@@ -292,7 +297,7 @@ func (s *store) update(ctx context.Context, p *Permissions, update func() ([]uin
 
 	// Slow cache update operation, talks to the code host.
 	var ids []uint32
-	if ids, err = update(); err != nil {
+	if ids, err = update(ctx); err != nil {
 		return err
 	}
 

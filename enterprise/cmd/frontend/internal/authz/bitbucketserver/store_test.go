@@ -27,7 +27,7 @@ func BenchmarkStore(b *testing.B) {
 		ids[i] = uint32(i)
 	}
 
-	update := func() ([]uint32, error) {
+	update := func(context.Context) ([]uint32, error) {
 		time.Sleep(2 * time.Second) // Emulate slow code host
 		return ids, nil
 	}
@@ -107,7 +107,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 		ids := []uint32{1, 2, 3}
 		e := error(nil)
-		update := func() ([]uint32, error) { return ids, e }
+		update := func(context.Context) ([]uint32, error) {
+			return ids, e
+		}
 
 		ctx := context.Background()
 
@@ -185,7 +187,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			atomic.AddInt64(&now, int64(2*ttl))
 
 			delay := make(chan struct{})
-			update = func() ([]uint32, error) {
+			update = func(context.Context) ([]uint32, error) {
 				<-delay
 				return ids, e
 			}
