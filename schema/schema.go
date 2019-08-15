@@ -501,6 +501,7 @@ type SiteConfiguration struct {
 	AuthAccessTokens                  *AuthAccessTokens           `json:"auth.accessTokens,omitempty"`
 	Branding                          *Branding                   `json:"branding,omitempty"`
 	CorsOrigin                        string                      `json:"corsOrigin,omitempty"`
+	DebugSearchSymbolsParallelism     int                         `json:"debug.search.symbolsParallelism,omitempty"`
 	DisableAutoGitUpdates             bool                        `json:"disableAutoGitUpdates,omitempty"`
 	DisableBuiltInSearches            bool                        `json:"disableBuiltInSearches,omitempty"`
 	DisablePublicRepoRedirects        bool                        `json:"disablePublicRepoRedirects,omitempty"`

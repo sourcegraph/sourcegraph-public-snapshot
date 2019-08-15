@@ -21,6 +21,9 @@ source "$DEV_PRIVATE_PATH/enterprise/dev/env"
 export CRITICAL_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/critical-config.json
 export SITE_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/site-config.json
 export EXTSVC_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json
+export SITE_CONFIG_ALLOW_EDITS=true
+export EXTSVC_CONFIG_ALLOW_EDITS=true
+
 export WATCH_ADDITIONAL_GO_DIRS="$PWD/cmd $PWD/dev $PWD/pkg"
 export ENTERPRISE_COMMANDS="frontend management-console"
 export ENTERPRISE=1

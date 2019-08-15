@@ -116,7 +116,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
 
-		fileMatches, _, err := searchSymbols(ctx, &search.Args{Pattern: p, Repos: repoRevs, Query: r.query}, 7)
+		fileMatches, _, err := searchSymbols(ctx, &search.Args{Pattern: p, Repos: repoRevs, Query: r.query, Zoekt: r.zoekt}, 7)
 		if err != nil {
 			return nil, err
 		}
