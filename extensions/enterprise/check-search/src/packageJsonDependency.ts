@@ -73,7 +73,7 @@ const provideDiagnostics = (
                       )
                           .pipe(toArray())
                           .toPromise()
-                  ).slice(0, 20)
+                  )
                   const docs = await Promise.all(
                       results.map(async ({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
                   )

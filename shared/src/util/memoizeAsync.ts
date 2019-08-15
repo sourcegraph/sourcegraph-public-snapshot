@@ -1,14 +1,9 @@
-import * as sourcegraph from 'sourcegraph'
-import { Observable, from } from 'rxjs'
 import localforage from 'localforage'
-import { first } from 'rxjs/operators'
-
-// localforage.clear()
 
 const USE_PERSISTENT_MEMOIZATION_CACHE = true
 
 interface Cache<T> {
-    get(key: string): Promise<T> | undefined
+    get(key: string): Promise<T | undefined>
     set(key: string, value: T | Promise<T>): Promise<void>
     delete(key: string): Promise<void>
 }
@@ -40,7 +35,7 @@ const createMemoizationCache = <T>(): Cache<T> => {
 const createVolatileCache = <T>(): Cache<T> => {
     const map = new Map<string, Promise<T>>()
     const cache: Cache<T> = {
-        get: async key => map.get(key),
+        get: async key => (map.has(key) ? map.get(key) : Promise.resolve(undefined)),
         set: async (key, value) => {
             map.set(key, Promise.resolve(value))
         },
@@ -79,28 +74,3 @@ export function memoizeAsync<P, T>(
         return p
     }
 }
-
-export const queryGraphQL = memoizeAsync(
-    async ({ query, vars }: { query: string; vars: { [name: string]: any } }): Promise<any> => {
-        return sourcegraph.commands.executeCommand<any>('queryGraphQL', query, vars)
-    },
-    arg => JSON.stringify({ query: arg.query, vars: arg.vars })
-)
-
-const _findTextInFiles = memoizeAsync(
-    (args: Parameters<typeof sourcegraph.search.findTextInFiles>) =>
-        from(sourcegraph.search.findTextInFiles(...args))
-            .pipe(first())
-            .toPromise(),
-    args => JSON.stringify(args)
-)
-
-export const memoizedFindTextInFiles = (...args: Parameters<typeof sourcegraph.search.findTextInFiles>) =>
-    _findTextInFiles(args)
-
-export const settingsObservable = <T extends object>() =>
-    new Observable<T>(subscriber =>
-        sourcegraph.configuration.subscribe(() => {
-            subscriber.next(sourcegraph.configuration.get<T>().value)
-        })
-    )

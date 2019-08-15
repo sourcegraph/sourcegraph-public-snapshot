@@ -40,7 +40,7 @@ func campaignBurndownChart(ctx context.Context, campaign interface {
 
 	// Compute data for every 24 hours since the first thread creation date.
 	const (
-		maxPeriods = 30
+		maxPeriods = 25
 		minPeriod  = 12 * time.Hour
 	)
 	sinceCreation := time.Since(earliestCreationDate)

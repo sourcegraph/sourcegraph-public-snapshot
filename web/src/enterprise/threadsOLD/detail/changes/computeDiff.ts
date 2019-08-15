@@ -6,6 +6,7 @@ import { positionToOffset } from '../../../../../../shared/src/api/client/types/
 import { WorkspaceEdit } from '../../../../../../shared/src/api/types/workspaceEdit'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { memoizeAsync } from '../../../../../../shared/src/util/memoizeAsync'
 import { isDefined } from '../../../../../../shared/src/util/types'
 import { parseRepoURI } from '../../../../../../shared/src/util/url'
 import { ChangesetPlanOperation } from '../../../changesetsOLD/plan/plan'
@@ -25,29 +26,10 @@ export const npmDiffToFileDiffHunk = (hunk: Hunk): GQL.IFileDiffHunk => ({
     section: null,
 })
 
-/**
- * Computes the combined diff from applying all active code actions' workspace edits.
- */
-export async function computeDiff(
-    extensionsController: ExtensionsControllerProps['extensionsController'],
-    actionInvocations: { actionEditCommand: ChangesetPlanOperation['editCommand']; diagnostic: Diagnostic | null }[]
-): Promise<FileDiff[]> {
-    const edits = await Promise.all(
-        actionInvocations.map(async ({ actionEditCommand, diagnostic }) => {
-            const edit = await extensionsController.services.commands.executeActionEditCommand(
-                diagnostic,
-                actionEditCommand
-            )
-            return edit && WorkspaceEdit.fromJSON(edit)
-        })
-    )
-    return computeDiffFromEdits(extensionsController, edits.filter(isDefined))
-}
-
-export async function computeDiffFromEdits(
+export const computeDiffFromEdits = async (
     extensionsController: ExtensionsControllerProps['extensionsController'],
     workspaceEdits: WorkspaceEdit[]
-): Promise<FileDiff[]> {
+): Promise<FileDiff[]> => {
     // TODO!(sqs): handle conflicting edits
     const editsByUri = new Map<string, TextEdit[]>()
     for (const edit of workspaceEdits) {
@@ -82,9 +64,32 @@ export async function computeDiffFromEdits(
             patchWithFullURIs: createTwoFilesPatch(uri, uri, oldText, newText, undefined, undefined, { context: 2 }),
         })
     }
-    console.log('Filediffs', fileDiffs)
     return fileDiffs
 }
+
+/**
+ * Computes the combined diff from applying all active code actions' workspace edits.
+ */
+export const computeDiff = memoizeAsync(
+    async ({
+        extensionsController,
+        actionInvocations,
+    }: ExtensionsControllerProps & {
+        actionInvocations: { actionEditCommand: ChangesetPlanOperation['editCommand']; diagnostic: Diagnostic | null }[]
+    }): Promise<FileDiff[]> => {
+        const edits = await Promise.all(
+            actionInvocations.map(async ({ actionEditCommand, diagnostic }) => {
+                const edit = await extensionsController.services.commands.executeActionEditCommand(
+                    diagnostic,
+                    actionEditCommand
+                )
+                return edit && WorkspaceEdit.fromJSON(edit)
+            })
+        )
+        return computeDiffFromEdits(extensionsController, edits.filter(isDefined))
+    },
+    ({ actionInvocations }) => JSON.stringify(actionInvocations)
+)
 
 // TODO!(sqs) hacky impl
 export function computeDiffStat(

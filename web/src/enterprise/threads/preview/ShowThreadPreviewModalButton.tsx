@@ -68,20 +68,22 @@ export const ShowThreadPreviewModalButton: React.FunctionComponent<Props> = ({
                 toggle={hideThreadModal}
                 className="container mx-auto"
             >
-                <div className="overflow-auto" style={{ maxHeight: '80vh' }}>
-                    <ThreadPreview
-                        {...props}
-                        thread={thread}
-                        titleRight={
-                            <button className="btn btn-link p-0" aria-label="Close" onClick={hideThreadModal}>
-                                <CloseIcon className="icon-inline" /> Close preview
-                            </button>
-                        }
-                        className="p-4"
-                        location={location}
-                        history={history}
-                    />
-                </div>
+                {isOpen && (
+                    <div className="overflow-auto" style={{ maxHeight: '80vh' }}>
+                        <ThreadPreview
+                            {...props}
+                            thread={thread}
+                            titleRight={
+                                <button className="btn btn-link p-0" aria-label="Close" onClick={hideThreadModal}>
+                                    <CloseIcon className="icon-inline" /> Close preview
+                                </button>
+                            }
+                            className="p-4"
+                            location={location}
+                            history={history}
+                        />
+                    </div>
+                )}
             </Modal>
         </>
     ) : null

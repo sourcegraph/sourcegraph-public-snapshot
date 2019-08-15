@@ -50,7 +50,7 @@ const getDiagnosticsAndFileDiffs = (
                     diagnostic: fromDiagnostic(d.diagnostic),
                 }))
                 .filter(propertyIsDefined('actionEditCommand'))
-            const fileDiffs = await computeDiff(extensionsController, actionInvocations)
+            const fileDiffs = await computeDiff({ extensionsController, actionInvocations })
             return {
                 diagnostics: diagnosticsAndActions.filter(({ action }) => !action).map(({ diagnostic }) => diagnostic),
                 fileDiffs,

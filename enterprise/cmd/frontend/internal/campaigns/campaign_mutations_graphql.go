@@ -53,7 +53,7 @@ func (GraphQLResolver) CreateCampaign(ctx context.Context, arg *graphqlbackend.C
 	}
 
 	x := &rulesExecutor{input: arg.Input}
-	if err := x.executeRules(ctx, campaign.ID); err != nil {
+	if err := x.executeRules(ctx, campaign.ID, campaign.Name); err != nil {
 		return nil, err
 	}
 

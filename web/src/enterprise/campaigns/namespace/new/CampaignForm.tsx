@@ -141,7 +141,7 @@ export const CampaignForm: React.FunctionComponent<Props> = ({
                         </>
                     )}
                     <CampaignFormCommonFields {...formControlProps} className="mt-4" />
-                    <div className="form-group mt-4">
+                    <div className="form-group mt-4" style={{ minHeight: '2.5rem' }}>
                         {onDismiss && (
                             <button
                                 type="reset"

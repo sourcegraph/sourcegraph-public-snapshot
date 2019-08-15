@@ -208,7 +208,9 @@ export const computeChangesets = (
                 ? combineLatest(diagnostics.map(d => getActiveCodeAction(d, extensionsController, threadSettings)))
                 : of([])
         ),
-        switchMap(codeActions => computeDiff(extensionsController, codeActions.filter(isDefined))),
+        switchMap(codeActions =>
+            computeDiff({ extensionsController, actionInvocations: codeActions.filter(isDefined) })
+        ),
         map(fileDiffs => {
             const byRepo = new Map<string, FileDiff[]>()
             for (const fileDiff of fileDiffs) {

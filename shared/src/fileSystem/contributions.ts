@@ -6,6 +6,7 @@ import { PlatformContext } from '../platform/context'
 import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoizeObservable'
 import { parseRepoURI } from '../util/url'
+import { memoizeAsync } from '../util/memoizeAsync'
 
 export function registerFileSystemContributions(
     { fileSystem }: Pick<Services, 'fileSystem'>,
@@ -13,7 +14,7 @@ export function registerFileSystemContributions(
 ): Unsubscribable {
     const subscriptions = new Subscription()
 
-    const readFile = memoizeObservable(
+    const readFile = memoizeAsync(
         (variables: { repo: string; rev: string; path: string }) =>
             requestGraphQL({
                 request: gql`
@@ -30,7 +31,9 @@ export function registerFileSystemContributions(
                 `,
                 variables,
                 mightContainPrivateInfo: false,
-            }).pipe(first()),
+            })
+                .pipe(first())
+                .toPromise(),
         ({ repo, rev, path }) => `${repo}:${rev}:${path}`
     )
     subscriptions.add(
@@ -40,7 +43,7 @@ export function registerFileSystemContributions(
                 repo: parsed.repoName,
                 rev: parsed.rev || parsed.commitID!,
                 path: parsed.filePath!,
-            }).toPromise()
+            })
             if (errors && errors.length > 0) {
                 throw createAggregateError(errors)
             }

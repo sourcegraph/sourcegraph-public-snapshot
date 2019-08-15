@@ -1,11 +1,12 @@
 import { isEqual } from 'lodash'
 import { useEffect, useMemo, useState } from 'react'
-import { merge, Subject } from 'rxjs'
-import { debounceTime, distinctUntilChanged, map, mapTo, switchMap, tap, throttleTime } from 'rxjs/operators'
+import { from, merge, Subject } from 'rxjs'
+import { debounceTime, distinctUntilChanged, first, map, mapTo, switchMap, tap, throttleTime } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../../../shared/src/util/errors'
+import { memoizeAsync } from '../../../../../../../shared/src/util/memoizeAsync'
 import { ActorFragment, ActorQuery } from '../../../../../actor/graphql'
 import { queryGraphQL } from '../../../../../backend/graphql'
 import {
@@ -137,6 +138,67 @@ type CreateCampaignInputWithoutExtensionData = Pick<
     Exclude<keyof GQL.ICreateCampaignInput, 'extensionData'>
 >
 
+const queryCampaignPreview = memoizeAsync(
+    ({
+        extensionsController,
+        input,
+        query,
+    }: ExtensionsControllerProps & {
+        input: Pick<GQL.ICreateCampaignInput, Exclude<keyof GQL.ICreateCampaignInput, 'extensionData'>>
+        query: string
+    }) =>
+        getCampaignExtensionData(extensionsController, input)
+            .pipe(
+                switchMap(extensionData =>
+                    queryGraphQL(
+                        gql`
+                            query CampaignPreview($input: CampaignPreviewInput!, $query: String) {
+                                campaignPreview(input: $input) {
+                                    ...CampaignPreviewFragment
+                                }
+                            }
+                            ${CampaignPreviewFragment}
+                            ${ThreadConnectionFiltersFragment}
+                            ${ActorFragment}
+                        `,
+                        // tslint:disable-next-line: no-object-literal-type-assertion
+                        {
+                            input: {
+                                campaign: {
+                                    ...input,
+                                    extensionData,
+                                },
+                            },
+                            query,
+                        } as GQL.ICampaignPreviewOnQueryArguments
+                    ).pipe(
+                        map(dataOrThrowErrors),
+                        map(data => data.campaignPreview),
+                        tap(data => {
+                            // TODO!(sqs) hack, compensate for the RepositoryComparison head not existing
+                            const fixup = (c: GQL.IRepositoryComparison) => {
+                                c.range.headRevSpec.object = { oid: '' } as any
+                                for (const d of c.fileDiffs.nodes) {
+                                    d.mostRelevantFile = { path: d.newPath, url: '' } as any
+                                }
+                            }
+                            for (const c of data.repositoryComparisons) {
+                                fixup(c)
+                            }
+                            for (const t of data.threads.nodes) {
+                                if (t.repositoryComparison) {
+                                    fixup(t.repositoryComparison)
+                                }
+                            }
+                        })
+                    )
+                ),
+                first()
+            )
+            .toPromise(),
+    ({ input, query }) => JSON.stringify({ input, query })
+)
+
 /**
  * A React hook that observes a campaign preview queried from the GraphQL API.
  */
@@ -161,54 +223,7 @@ export const useCampaignPreview = (
             inputSubjectChanges.pipe(mapTo(LOADING)),
             inputSubjectChanges.pipe(
                 throttleTime(1000, undefined, { leading: true, trailing: true }),
-                switchMap(input =>
-                    getCampaignExtensionData(extensionsController, input).pipe(
-                        switchMap(extensionData =>
-                            queryGraphQL(
-                                gql`
-                                    query CampaignPreview($input: CampaignPreviewInput!, $query: String) {
-                                        campaignPreview(input: $input) {
-                                            ...CampaignPreviewFragment
-                                        }
-                                    }
-                                    ${CampaignPreviewFragment}
-                                    ${ThreadConnectionFiltersFragment}
-                                    ${ActorFragment}
-                                `,
-                                // tslint:disable-next-line: no-object-literal-type-assertion
-                                {
-                                    input: {
-                                        campaign: {
-                                            ...input,
-                                            extensionData,
-                                        },
-                                    },
-                                    query,
-                                } as GQL.ICampaignPreviewOnQueryArguments
-                            ).pipe(
-                                map(dataOrThrowErrors),
-                                map(data => data.campaignPreview),
-                                tap(data => {
-                                    // TODO!(sqs) hack, compensate for the RepositoryComparison head not existing
-                                    const fixup = (c: GQL.IRepositoryComparison) => {
-                                        c.range.headRevSpec.object = { oid: '' } as any
-                                        for (const d of c.fileDiffs.nodes) {
-                                            d.mostRelevantFile = { path: d.newPath, url: '' } as any
-                                        }
-                                    }
-                                    for (const c of data.repositoryComparisons) {
-                                        fixup(c)
-                                    }
-                                    for (const t of data.threads.nodes) {
-                                        if (t.repositoryComparison) {
-                                            fixup(t.repositoryComparison)
-                                        }
-                                    }
-                                })
-                            )
-                        )
-                    )
-                )
+                switchMap(input => from(queryCampaignPreview({ extensionsController, input, query })))
             )
         ).subscribe(
             result => {

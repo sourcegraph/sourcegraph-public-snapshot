@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/neelance/parallel"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -141,7 +142,7 @@ func (x *rulesExecutor) planThreads(ctx context.Context) ([]graphqlbackend.Threa
 	return append(issues, changesets...), nil
 }
 
-func (x *rulesExecutor) syncThreads(ctx context.Context, campaignID int64) error {
+func (x *rulesExecutor) syncThreads(ctx context.Context, campaignID int64, campaignName string) error {
 	allThreads, err := x.planThreads(ctx)
 	if err != nil {
 		return err
@@ -162,7 +163,7 @@ func (x *rulesExecutor) syncThreads(ctx context.Context, campaignID int64) error
 			}
 			switch kind {
 			case graphqlbackend.ThreadKindChangeset:
-				if err := x.syncChangeset(ctx, campaignID, thread); err != nil {
+				if err := x.syncChangeset(ctx, campaignID, campaignName, thread); err != nil {
 					run.Error(err)
 					return
 				}
@@ -173,7 +174,7 @@ func (x *rulesExecutor) syncThreads(ctx context.Context, campaignID int64) error
 	return run.Wait()
 }
 
-func (x *rulesExecutor) syncChangeset(ctx context.Context, campaignID int64, thread graphqlbackend.ThreadPreview) error {
+func (x *rulesExecutor) syncChangeset(ctx context.Context, campaignID int64, campaignName string, thread graphqlbackend.ThreadPreview) error {
 	repo, err := thread.Repository(ctx)
 	if err != nil {
 		return err
@@ -242,12 +243,12 @@ func (x *rulesExecutor) syncChangeset(ctx context.Context, campaignID int64, thr
 		BaseRefName: defaultBranch.AbbrevName(),
 		HeadRefName: branchName,
 		Title:       thread.Title(),
-		Body:        thread.Body(),
+		Body:        thread.Body() + fmt.Sprintf(`\n\n<img src="https://about.sourcegraph.com/sourcegraph-mark.png" width=12 height=12> Campaign: [%s](#)`, campaignName),
 	})
 	if err != nil {
 		return err
 	}
-	if err := (dbCampaignsThreads{}).AddThreadsToCampaign(ctx, campaignID, []int64{threadID}); err != nil {
+	if err := addRemoveThreadsToFromCampaign(ctx, graphqlbackend.MarshalCampaignID(campaignID), []graphql.ID{graphqlbackend.MarshalThreadID(threadID)}, nil); err != nil {
 		return err
 	}
 
@@ -266,8 +267,8 @@ func (x *rulesExecutor) syncChangeset(ctx context.Context, campaignID int64, thr
 	return nil
 }
 
-func (x *rulesExecutor) executeRules(ctx context.Context, campaignID int64) error {
-	return x.syncThreads(ctx, campaignID)
+func (x *rulesExecutor) executeRules(ctx context.Context, campaignID int64, campaignName string) error {
+	return x.syncThreads(ctx, campaignID, campaignName)
 }
 
 func toRawDiagnosticsFromGQL(diags []graphqlbackend.Diagnostic) []string {
