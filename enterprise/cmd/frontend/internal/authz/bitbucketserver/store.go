@@ -136,8 +136,6 @@ func (s *store) LoadPermissions(
 		return err
 	}
 
-	// Update the cache with the now updated permissions.
-	s.cache.update(&expired)
 	*p = &expired
 
 	return nil
