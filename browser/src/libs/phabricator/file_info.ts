@@ -1,5 +1,5 @@
 import { from, Observable, zip } from 'rxjs'
-import { catchError, filter, map, switchMap } from 'rxjs/operators'
+import { catchError, filter, map, switchMap, tap } from 'rxjs/operators'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { FileInfo } from '../code_intelligence'
 import { DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
@@ -43,8 +43,12 @@ export const resolveDiffFileInfo = (
                     filePath: baseFilePath || filePath,
                     isBase: true,
                 },
-                requestGraphQL
+                requestGraphQL,
+                'base'
             ).pipe(
+                tap(info => {
+                    console.log('resolveBaseCommitID', info)
+                }),
                 map(({ commitID, stagingRepoName }) => ({
                     baseCommitID: commitID,
                     baseRawRepoName: stagingRepoName || state.baseRawRepoName,
@@ -64,8 +68,12 @@ export const resolveDiffFileInfo = (
                     filePath,
                     isBase: false,
                 },
-                requestGraphQL
+                requestGraphQL,
+                'head'
             ).pipe(
+                tap(info => {
+                    console.log('resolveHeadCommitID', info)
+                }),
                 map(({ commitID, stagingRepoName }) => ({
                     commitID,
                     rawRepoName: stagingRepoName || state.headRawRepoName,
@@ -81,7 +89,7 @@ export const resolveDiffFileInfo = (
                         baseCommitID,
                         commitID,
                         filePath,
-                        baseFilePath,
+                        baseFilePath: baseFilePath || filePath,
                         baseRawRepoName,
                         rawRepoName,
                     })

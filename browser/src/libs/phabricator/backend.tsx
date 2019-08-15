@@ -1,5 +1,5 @@
-import { from, Observable } from 'rxjs'
-import { map, mapTo } from 'rxjs/operators'
+import { from, Observable, of } from 'rxjs'
+import { map, mapTo, switchMap, catchError, tap } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
@@ -126,27 +126,21 @@ export async function getPhabricatorCSS(sourcegraphURL: string): Promise<string>
     return resp.text()
 }
 
-function getDiffDetailsFromConduit(diffID: number, differentialID: number): Promise<ConduitDiffDetails> {
-    return new Promise((resolve, reject) => {
-        const form = createConduitRequestForm()
-        form.set('params[ids]', `[${diffID}]`)
-        form.set('params[revisionIDs]', `[${differentialID}]`)
+async function getDiffDetailsFromConduit(diffID: number, differentialID: number): Promise<ConduitDiffDetails> {
+    const form = createConduitRequestForm()
+    form.set('params[ids]', `[${diffID}]`)
+    form.set('params[revisionIDs]', `[${differentialID}]`)
 
-        fetch(window.location.origin + '/api/differential.querydiffs', {
-            method: 'POST',
-            body: form,
-            credentials: 'include',
-            headers: new Headers({ Accept: 'application/json' }),
-        })
-            .then(resp => resp.json())
-            .then((res: ConduitDiffDetailsResponse) => {
-                if (res.error_code) {
-                    reject(new Error(`error ${res.error_code}: ${res.error_info}`))
-                }
-                resolve(res.result['' + diffID])
-            })
-            .catch(reject)
-    })
+    const res = await (await fetch(window.location.origin + '/api/differential.querydiffs', {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+        headers: new Headers({ Accept: 'application/json' }),
+    })).json()
+    if (res.error_code) {
+        throw new Error(`error ${res.error_code}: ${res.error_info}`)
+    }
+    return res.result['' + diffID]
 }
 
 interface ConduitRawDiffResponse {
@@ -526,53 +520,26 @@ interface ResolveDiffOpt {
     useBaseForDiff: boolean // indicates whether the diff should use the base commit
 }
 
-interface PropsWithInfo {
+interface PropsWithInfo extends ResolveDiffOpt {
     info: ConduitDiffDetails
-    repoName: string
-    filePath: string
-    differentialID: number
-    diffID: number
-    leftDiffID?: number | undefined
-    isBase: boolean
-    useDiffForBase: boolean
-    useBaseForDiff: boolean
 }
 
-function getPropsWithInfo(props: ResolveDiffOpt): Promise<PropsWithInfo> {
-    return new Promise((resolve, reject) => {
-        getDiffDetailsFromConduit(props.diffID, props.differentialID)
-            .then(info => ({
-                ...props,
-                info,
-            }))
-            .then(propsWithInfo => {
-                if (propsWithInfo.isBase || !propsWithInfo.leftDiffID) {
-                    // no need to update propsWithInfo
-                } else if (
-                    hasThisFileChanged(propsWithInfo.filePath, propsWithInfo.info.changes) ||
-                    propsWithInfo.isBase ||
-                    !propsWithInfo.leftDiffID
-                ) {
-                    // no need to update propsWithInfo
-                } else {
-                    getDiffDetailsFromConduit(propsWithInfo.leftDiffID, propsWithInfo.differentialID)
-                        .then(info =>
-                            resolve({
-                                ...propsWithInfo,
-                                info,
-                                diffID: propsWithInfo.leftDiffID!,
-                                useBaseForDiff: true,
-                            })
-                        )
-                        .catch(reject)
-                }
-
-                resolve(propsWithInfo)
-            })
-            .catch(() => {
-                // TODO: handle error
-            })
-    })
+async function getPropsWithInfo(props: ResolveDiffOpt): Promise<PropsWithInfo> {
+    let info = await getDiffDetailsFromConduit(props.diffID, props.differentialID)
+    if (props.isBase || !props.leftDiffID || hasThisFileChanged(props.filePath, info.changes)) {
+        // no need to update props
+        return {
+            ...props,
+            info,
+        }
+    }
+    info = await getDiffDetailsFromConduit(props.leftDiffID, props.differentialID)
+    return {
+        ...props,
+        info,
+        diffID: props.leftDiffID!,
+        useBaseForDiff: true,
+    }
 }
 
 function getStagingDetails(
@@ -612,86 +579,76 @@ interface ResolvedDiff {
 
 export function resolveDiffRev(
     props: ResolveDiffOpt,
-    requestGraphQL: PlatformContext['requestGraphQL']
+    requestGraphQL: PlatformContext['requestGraphQL'],
+    part: 'base' | 'head'
 ): Observable<ResolvedDiff> {
-    // TODO: Do a proper refactor and convert all of this function call and it's deps from Promises to Observables.
-    return from(
-        new Promise<ResolvedDiff>((resolve, reject) => {
-            getPropsWithInfo(props)
-                .then(propsWithInfo => {
-                    const stagingDetails = getStagingDetails(propsWithInfo)
-                    const conduitProps = {
-                        repoName: propsWithInfo.repoName,
-                        diffID: propsWithInfo.diffID,
-                        baseRev: propsWithInfo.info.sourceControlBaseRevision,
-                        date: propsWithInfo.info.dateCreated,
-                        authorName: propsWithInfo.info.authorName,
-                        authorEmail: propsWithInfo.info.authorEmail,
-                        description: propsWithInfo.info.description,
-                    }
-                    if (!stagingDetails || stagingDetails.unconfigured) {
-                        // The last diff (final commit) is not found in the staging area, but rather on the description.
-                        if (propsWithInfo.isBase && !propsWithInfo.useDiffForBase) {
-                            resolve({ commitID: propsWithInfo.info.sourceControlBaseRevision })
-                            return
-                        }
-                        getRawDiffFromConduit(propsWithInfo.diffID)
-                            .then(patch =>
-                                resolveStagingRev({ ...conduitProps, patch, requestGraphQL }).subscribe(commitID => {
-                                    if (commitID) {
-                                        resolve({ commitID })
-                                    }
-                                })
-                            )
-                            .catch(() => reject(new Error('unable to fetch raw diff')))
-                        return
-                    }
+    console.log(`Resolving diff rev for ${part}`, props)
+    const ensureCommitID = (commitID: string | null): { commitID: string } => {
+        if (!commitID) {
+            throw new Error('commitID cannot be null')
+        }
+        return { commitID }
+    }
+    return from(getPropsWithInfo(props)).pipe(
+        switchMap(propsWithInfo => {
+            console.log('propsWithInfo', propsWithInfo)
+            const stagingDetails = getStagingDetails(propsWithInfo)
+            const conduitProps = {
+                repoName: propsWithInfo.repoName,
+                diffID: propsWithInfo.diffID,
+                baseRev: propsWithInfo.info.sourceControlBaseRevision,
+                date: propsWithInfo.info.dateCreated,
+                authorName: propsWithInfo.info.authorName,
+                authorEmail: propsWithInfo.info.authorEmail,
+                description: propsWithInfo.info.description,
+            }
+            if (propsWithInfo.isBase && !propsWithInfo.useDiffForBase) {
+                console.log(1)
+                return of({ commitID: propsWithInfo.info.sourceControlBaseRevision })
+            }
+            if (!stagingDetails || stagingDetails.unconfigured) {
+                console.log('No staging details or staging details unconfigured')
+                // The last diff (final commit) is not found in the staging area, but rather on the description.
+                console.log(2)
+                return from(getRawDiffFromConduit(propsWithInfo.diffID)).pipe(
+                    switchMap(patch => resolveStagingRev({ ...conduitProps, patch, requestGraphQL })),
+                    map(ensureCommitID)
+                )
+            }
 
-                    if (!stagingDetails.unconfigured) {
-                        // Ensure the staging repo exists before resolving. Otherwise create the patch.
-                        resolveRepo({ rawRepoName: stagingDetails.repoName, requestGraphQL }).subscribe(
-                            () =>
-                                resolve({
-                                    commitID: stagingDetails.ref.commit,
-                                    stagingRepoName: stagingDetails.repoName,
-                                }),
-                            error => {
-                                getRawDiffFromConduit(propsWithInfo.diffID)
-                                    .then(patch =>
-                                        // TODO refactor this
-                                        // tslint:disable-next-line: rxjs-no-nested-subscribe
-                                        resolveStagingRev({ ...conduitProps, patch, requestGraphQL }).subscribe(
-                                            commitID => {
-                                                if (commitID) {
-                                                    resolve({ commitID })
-                                                    return
-                                                }
-                                                reject(new Error('unable to resolve staging object'))
-                                            }
-                                        )
-                                    )
-                                    .catch(() => reject(new Error('unable to fetch raw diff')))
-                            }
+            if (!stagingDetails.unconfigured) {
+                console.log(3, stagingDetails)
+                // Ensure the staging repo exists before resolving. Otherwise create the patch.
+                return resolveRepo({ rawRepoName: stagingDetails.repoName, requestGraphQL }).pipe(
+                    tap(() => {
+                        console.log('resolvedRepo')
+                    }),
+                    mapTo({
+                        commitID: stagingDetails.ref.commit,
+                        stagingRepoName: stagingDetails.repoName,
+                    }),
+                    catchError(error => {
+                        console.log('3 error', error)
+                        return from(getRawDiffFromConduit(propsWithInfo.diffID)).pipe(
+                            switchMap(patch => resolveStagingRev({ ...conduitProps, patch, requestGraphQL })),
+                            map(ensureCommitID),
+                            tap(({ commitID }) => {
+                                console.log(4, commitID, part)
+                            })
                         )
-                        return
-                    }
+                    })
+                )
+            }
 
-                    if (!propsWithInfo.isBase) {
-                        for (const commit of Object.keys(propsWithInfo.info.properties['local:commits'])) {
-                            return resolve({ commitID: commit })
-                        }
-                    }
-                    // last ditch effort to search conduit API for commit ID
-                    try {
-                        searchForCommitID(propsWithInfo)
-                            .then(commitID => resolve({ commitID }))
-                            .catch(reject)
-                    } catch (e) {
-                        // ignore
-                    }
-                    reject(new Error('did not find commitID'))
-                })
-                .catch(reject)
+            if (!propsWithInfo.isBase) {
+                for (const commit of Object.keys(propsWithInfo.info.properties['local:commits'])) {
+                    console.log(5)
+                    return of({ commitID: commit })
+                }
+            }
+            // last ditch effort to search conduit API for commit ID
+            console.log(6)
+            return from(searchForCommitID(propsWithInfo)).pipe(map(commitID => ({ commitID })))
         })
     )
 }
