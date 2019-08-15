@@ -117,7 +117,8 @@ func (s *store) LoadPermissions(
 
 	if !s.block { // Non blocking code path
 		go func(expired *Permissions) {
-			if err := s.update(ctx, expired, update); err != nil {
+			err := s.update(ctx, expired, update)
+			if err != nil && err != errLockNotAvailable {
 				log15.Error("bitbucketserver.authz.store.update", "error", err)
 			}
 		}(&expired)
