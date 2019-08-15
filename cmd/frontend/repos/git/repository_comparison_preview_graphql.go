@@ -1,6 +1,8 @@
 package git
 
 import (
+	"context"
+
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -26,8 +28,12 @@ func (v *GQLRepositoryComparisonPreview) HeadRepository() *graphqlbackend.Reposi
 	return v.HeadRepository_
 }
 
-func (v *GQLRepositoryComparisonPreview) Range() graphqlbackend.GitRevisionRange {
-	return graphqlbackend.NewGitRevisionRange(graphqlbackend.NewResolvedRevspec("master", "") /* TODO!(sqs): incorrect in general, hack */, v.BaseRepository_, graphqlbackend.NewResolvedRevspec("preview", ""), v.HeadRepository_)
+func (v *GQLRepositoryComparisonPreview) Range(ctx context.Context) (graphqlbackend.GitRevisionRange, error) {
+	defaultBranch, err := v.BaseRepository().DefaultBranch(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlbackend.NewGitRevisionRange(graphqlbackend.NewResolvedRevspec(defaultBranch.AbbrevName(), ""), v.BaseRepository_, graphqlbackend.NewResolvedRevspec("preview", ""), v.HeadRepository_), nil
 }
 
 func (v *GQLRepositoryComparisonPreview) FileDiffs(args *graphqlutil.ConnectionArgs) graphqlbackend.FileDiffConnection {

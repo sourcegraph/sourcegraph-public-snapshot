@@ -1,5 +1,7 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
-import React, { useCallback } from 'react'
+import CloseIcon from 'mdi-react/CloseIcon'
+import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Modal } from 'reactstrap'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
@@ -28,8 +30,29 @@ export const ShowThreadPreviewModalButton: React.FunctionComponent<Props> = ({
         hashParams.delete('thread')
         history.push({ ...location, hash: hashParams.toString() })
     }, [history, location])
+
+    const [tryBuildStatus, setTryBuildStatus] = useState(false)
+    const onTryBuildClick = useCallback<React.MouseEventHandler<HTMLButtonElement>>(e => {
+        e.preventDefault()
+        setTryBuildStatus(true)
+    }, [])
+
     return thread.__typename === 'ThreadPreview' ? (
         <>
+            <button
+                type="button"
+                className={`btn ${tryBuildStatus ? 'btn-link' : 'btn-secondary'} mr-2 mt-2`}
+                disabled={tryBuildStatus}
+                onClick={onTryBuildClick}
+            >
+                {tryBuildStatus ? (
+                    <>
+                        <LoadingSpinner className="icon-inline mr-2" /> Waiting for build
+                    </>
+                ) : (
+                    'Try build'
+                )}
+            </button>
             <Link
                 className="btn btn-secondary mt-2"
                 to={{ ...location, hash: new URLSearchParams({ thread: thread.internalID }).toString() }}
@@ -46,7 +69,18 @@ export const ShowThreadPreviewModalButton: React.FunctionComponent<Props> = ({
                 className="container mx-auto"
             >
                 <div className="overflow-auto" style={{ maxHeight: '80vh' }}>
-                    <ThreadPreview {...props} thread={thread} className="p-4" location={location} history={history} />
+                    <ThreadPreview
+                        {...props}
+                        thread={thread}
+                        titleRight={
+                            <button className="btn btn-link p-0" aria-label="Close" onClick={hideThreadModal}>
+                                <CloseIcon className="icon-inline" /> Close preview
+                            </button>
+                        }
+                        className="p-4"
+                        location={location}
+                        history={history}
+                    />
                 </div>
             </Modal>
         </>

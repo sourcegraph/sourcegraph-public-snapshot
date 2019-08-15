@@ -16,8 +16,8 @@ export const createExtDiagnostics = (
         ): sourcegraph.Unsubscribable => {
             const providerFunction: ProxyInput<
                 Parameters<ClientDiagnosticsAPI['$registerDiagnosticProvider']>[1]
-            > = proxyValue(async scope =>
-                toProxyableSubscribable(provider.provideDiagnostics(scope), diagnostics =>
+            > = proxyValue(async (scope, context) =>
+                toProxyableSubscribable(provider.provideDiagnostics(scope, context), diagnostics =>
                     diagnostics ? diagnostics.map(fromDiagnostic) : []
                 )
             )

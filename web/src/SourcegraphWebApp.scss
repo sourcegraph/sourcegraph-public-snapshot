@@ -56,4 +56,5 @@ This is the main entry point for all styles. It should import all component styl
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 @import '../../shared/src/index';
-@import './projects/index.scss';
+@import './projects/index';
+@import './diagnostics/index';

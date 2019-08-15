@@ -1,6 +1,7 @@
 import NpmIcon from 'mdi-react/NpmIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { CampaignTemplate, CampaignTemplateComponentContext } from '.'
+import { PackageJsonDependencyCampaignContext } from '../../../../../../../extensions/enterprise/check-search/src/packageJsonDependency'
 import { pluralize } from '../../../../../../../shared/src/util/strings'
 import { isDefined } from '../../../../../../../shared/src/util/types'
 import { ParsedDiagnosticQuery, parseDiagnosticQuery } from '../../../../checks/detail/diagnostics/diagnosticQuery'
@@ -48,11 +49,16 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
         const packageNameOrPlaceholder = packageName || '<package>'
         const diagnosticQuery = (query: string): ParsedDiagnosticQuery =>
             parseDiagnosticQuery(`${filters}${filters ? ' ' : ''}${query}`)
+        const campaignName = `${ban ? 'Ban' : 'Deprecate'} ${packageNameOrPlaceholder}${
+            versionRange && versionRange !== ALL_VERSION_RANGE ? `@${versionRange}` : ''
+        } (npm)`
+        const context: PackageJsonDependencyCampaignContext = {
+            packageName,
+            campaignName,
+        }
         onChange({
             isValid: !!packageName,
-            name: `${ban ? 'Ban' : 'Deprecate'} ${packageNameOrPlaceholder}${
-                versionRange && versionRange !== ALL_VERSION_RANGE ? `@${versionRange}` : ''
-            } (npm)`,
+            name: campaignName,
             rules: packageName
                 ? [
                       // TODO!(sqs): hack
@@ -62,9 +68,8 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                                 // tslint:disable-next-line: no-object-literal-type-assertion
                                 definition: JSON.stringify({
                                     type: 'DiagnosticRule',
-                                    query: diagnosticQuery(
-                                        `type:packageJsonDependency tag:${packageNameOrPlaceholder}`
-                                    ),
+                                    query: diagnosticQuery(`type:packageJsonDependency`),
+                                    context,
                                     action: 'packageJsonDependency.remove',
                                 } as RuleDefinition),
                             }
@@ -75,9 +80,8 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                                 // tslint:disable-next-line: no-object-literal-type-assertion
                                 definition: JSON.stringify({
                                     type: 'DiagnosticRule',
-                                    query: diagnosticQuery(
-                                        `type:packageJsonDependency tag:${packageNameOrPlaceholder}`
-                                    ),
+                                    query: diagnosticQuery(`type:packageJsonDependency`),
+                                    context,
                                 } as RuleDefinition),
                             }
                           : undefined,

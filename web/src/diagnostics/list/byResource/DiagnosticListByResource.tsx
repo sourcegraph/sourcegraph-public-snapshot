@@ -1,6 +1,6 @@
 import { Diagnostic } from '@sourcegraph/extension-api-types'
 import { sortBy } from 'lodash'
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import * as sourcegraph from 'sourcegraph'
 import { LinkOrSpan } from '../../../../../shared/src/components/LinkOrSpan'
 import { displayRepoName } from '../../../../../shared/src/components/RepoFileLink'
@@ -41,9 +41,13 @@ export const DiagnosticListByResource: React.FunctionComponent<Props> = ({
         return sortBy(Array.from(map.entries()), 0)
     }, [diagnostics])
 
+    const DEFAULT_MAX = 5
+    const [max, setMax] = useState<number | undefined>(DEFAULT_MAX)
+    const onShowAllClick = useCallback(() => setMax(undefined), [])
+
     return byPath.length > 0 ? (
         <ul className={`${className} ${listClassName}`}>
-            {byPath.map(([uri, diagnostics], i) => {
+            {byPath.slice(0, max).map(([uri, diagnostics], i) => {
                 const parsedURI = parseRepoURI(uri)
                 return (
                     <li key={i} className="list-group-item">
@@ -74,6 +78,13 @@ export const DiagnosticListByResource: React.FunctionComponent<Props> = ({
                     </li>
                 )
             })}
+            {max !== undefined && byPath.length > max && (
+                <li className="list-group-item card-footer p-0">
+                    <button type="button" className="btn btn-sm btn-link" onClick={onShowAllClick}>
+                        Show {byPath.length - max} more
+                    </button>
+                </li>
+            )}
         </ul>
     ) : null
 }

@@ -96,10 +96,11 @@ export const toDiagnosticInfos = async (diagnostics: DiagnosticWithType[]) => {
  */
 export const getDiagnosticInfos = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
+    context: sourcegraph.ContextValues,
     type?: sourcegraph.DiagnosticQuery['type']
 ): Observable<DiagnosticInfo[]> =>
-    from(extensionsController.services.diagnostics.observeDiagnostics({}, type)).pipe(
-        switchMap(diagEntries => toDiagnosticInfos(diagEntries))
+    from(extensionsController.services.diagnostics.observeDiagnostics({}, context, type)).pipe(
+        switchMap(diagEntries => toDiagnosticInfos(diagEntries.slice(0, 5 /* TODO!(sqs) */)))
     )
 
 export function diagnosticQueryMatcher(
@@ -138,16 +139,11 @@ export const getCodeActions = memoizeObservable(
     ({
         diagnostic,
         extensionsController,
-    }: { diagnostic: DiagnosticInfo } & ExtensionsControllerProps): Observable<Action[]> =>
+    }: { diagnostic: DiagnosticWithType } & ExtensionsControllerProps): Observable<Action[]> =>
         from(
             extensionsController.services.codeActions.getCodeActions({
                 textDocument: {
-                    uri: makeRepoURI({
-                        repoName: diagnostic.entry.repository.name,
-                        rev: diagnostic.entry.commit.oid,
-                        commitID: diagnostic.entry.commit.oid,
-                        filePath: diagnostic.entry.path,
-                    }),
+                    uri: diagnostic.resource.toString(),
                 },
                 range: Range.fromPlain(diagnostic.range),
                 context: { diagnostics: [diagnostic] },

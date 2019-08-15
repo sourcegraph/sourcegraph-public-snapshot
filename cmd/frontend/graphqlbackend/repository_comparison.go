@@ -25,7 +25,7 @@ const devNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 type RepositoryComparison interface {
 	BaseRepository() *RepositoryResolver
 	HeadRepository() *RepositoryResolver
-	Range() GitRevisionRange
+	Range(context.Context) (GitRevisionRange, error)
 	Commits(*graphqlutil.ConnectionArgs) *gitCommitConnectionResolver
 	FileDiffs(*graphqlutil.ConnectionArgs) FileDiffConnection
 }
@@ -132,8 +132,8 @@ func (r *RepositoryComparisonResolver) BaseRepository() *RepositoryResolver { re
 
 func (r *RepositoryComparisonResolver) HeadRepository() *RepositoryResolver { return r.repo }
 
-func (r *RepositoryComparisonResolver) Range() GitRevisionRange {
-	return NewGitRevisionRange(r.baseRevspec, r.repo, r.headRevspec, r.repo)
+func (r *RepositoryComparisonResolver) Range(context.Context) (GitRevisionRange, error) {
+	return NewGitRevisionRange(r.baseRevspec, r.repo, r.headRevspec, r.repo), nil
 }
 
 func NewGitRevisionRange(baseRevspec resolvedRevspec, baseRepo *RepositoryResolver, headRevspec resolvedRevspec, headRepo *RepositoryResolver) GitRevisionRange {

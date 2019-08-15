@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strings"
 
+	"github.com/neelance/parallel"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -147,22 +149,28 @@ func (x *rulesExecutor) syncThreads(ctx context.Context, campaignID int64) error
 
 	// TODO!(sqs): sync issues too - right now we only sync changesets because they are easier to
 	// sync because they have a base/head that uniquely identifies them.
+	run := parallel.NewRun(16)
 	for _, thread := range allThreads {
-		kind, err := thread.Kind(ctx)
-		if err != nil {
-			return err
-		}
-		switch kind {
-		case graphqlbackend.ThreadKindChangeset:
-			if err := x.syncChangeset(ctx, campaignID, thread); err != nil {
-				return err
+		run.Acquire()
+		// TODO!(sqs): use goroutine.Go, but it's in cmd/frontend/internal
+		go func(thread graphqlbackend.ThreadPreview) {
+			defer run.Release()
+			kind, err := thread.Kind(ctx)
+			if err != nil {
+				run.Error(err)
+				return
 			}
-		default:
-			// TODO!(sqs): support issues, discussions (other thread kinds)
-			continue
-		}
+			switch kind {
+			case graphqlbackend.ThreadKindChangeset:
+				if err := x.syncChangeset(ctx, campaignID, thread); err != nil {
+					run.Error(err)
+					return
+				}
+				// TODO!(sqs): support issues, discussions (other thread kinds)
+			}
+		}(thread)
 	}
-	return nil
+	return run.Wait()
 }
 
 func (x *rulesExecutor) syncChangeset(ctx context.Context, campaignID int64, thread graphqlbackend.ThreadPreview) error {
@@ -214,7 +222,7 @@ func (x *rulesExecutor) syncChangeset(ctx context.Context, campaignID int64, thr
 		return err
 	}
 	var IsAlphanumericWithPeriod = regexp.MustCompile(`[^a-zA-Z0-9_.]+`)
-	branchName := "a8n/" + IsAlphanumericWithPeriod.ReplaceAllString(x.input.Name, "-") // TODO!(sqs): hack
+	branchName := "a8n/" + strings.TrimSuffix(IsAlphanumericWithPeriod.ReplaceAllString(x.input.Name, "-"), "-") // TODO!(sqs): hack
 	_, err = git.GraphQLResolver{}.CreateRefFromPatch(ctx, &struct {
 		Input graphqlbackend.GitCreateRefFromPatchInput
 	}{
@@ -231,8 +239,8 @@ func (x *rulesExecutor) syncChangeset(ctx context.Context, campaignID int64, thr
 	}
 
 	threadID, err := threads.CreateOrGetExistingGitHubPullRequest(ctx, repo.DBID(), repo.DBExternalRepo(), threads.CreateChangesetData{
-		BaseRefName: "master",   // TODO!(sqs): hack
-		HeadRefName: branchName, // TODO!(sqs): hack
+		BaseRefName: defaultBranch.AbbrevName(),
+		HeadRefName: branchName,
 		Title:       thread.Title(),
 		Body:        thread.Body(),
 	})

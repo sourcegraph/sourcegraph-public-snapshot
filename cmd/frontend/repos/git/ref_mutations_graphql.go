@@ -41,8 +41,13 @@ func (GraphQLResolver) CreateRefFromPatch(ctx context.Context, arg *struct {
 		return nil, err
 	}
 
+	defaultBranch, err := repo.DefaultBranch(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// Push up the update to GitHub. TODO!(sqs) this only makes sense for the demo
-	cmd := gitserver.DefaultClient.Command("git", "push", "-f", "--", "origin", "refs/heads/master:refs/heads/master", arg.Input.Name+":"+arg.Input.Name)
+	cmd := gitserver.DefaultClient.Command("git", "push", "-f", "--", "origin", fmt.Sprintf("refs/heads/%s:refs/heads/%s", defaultBranch.AbbrevName(), defaultBranch.AbbrevName()), arg.Input.Name+":"+arg.Input.Name)
 	cmd.Repo = gitserver.Repo{Name: api.RepoName(repo.Name())}
 	if out, err := cmd.CombinedOutput(ctx); err != nil {
 		return nil, fmt.Errorf("%s\n\n%s", err, out)

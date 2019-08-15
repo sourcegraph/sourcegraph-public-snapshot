@@ -112,9 +112,16 @@ func (v *gqlThreadPreview) Assignees(ctx context.Context, arg *graphqlutil.Conne
 	if err != nil {
 		return nil, err
 	}
-	commit, err := graphqlbackend.GetGitCommit(ctx, repo, "master")
+	defaultBranch, err := repo.DefaultBranch(ctx)
 	if err != nil {
 		return nil, err
+	}
+	commit, err := defaultBranch.Target().Commit(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if commit == nil {
+		return graphqlbackend.ActorConnection{}, nil
 	}
 	person := commit.Author().Person()
 	user, err := person.User(ctx)

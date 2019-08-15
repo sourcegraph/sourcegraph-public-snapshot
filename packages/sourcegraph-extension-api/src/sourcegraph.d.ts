@@ -975,6 +975,11 @@ declare module 'sourcegraph' {
         readonly message: string
 
         /**
+         * Additional human-readable detail.
+         */
+        readonly detail?: string
+
+        /**
          * The severity, default is [error](#DiagnosticSeverity.Error).
          */
         readonly severity: DiagnosticSeverity
@@ -1039,9 +1044,12 @@ declare module 'sourcegraph' {
          * TODO!(sqs) there should be a way to send partial updates, eg per file, instead of always
          * sending the full thing.
          */
-        provideDiagnostics(scope: {
-            /* TODO!(sqs) */
-        }): Subscribable<Diagnostic[]>
+        provideDiagnostics(
+            scope: {
+                /* TODO!(sqs) */
+            },
+            context: ContextValues
+        ): Subscribable<Diagnostic[]>
     }
 
     /**

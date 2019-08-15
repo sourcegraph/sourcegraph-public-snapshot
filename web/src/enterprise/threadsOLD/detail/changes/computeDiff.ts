@@ -82,6 +82,7 @@ export async function computeDiffFromEdits(
             patchWithFullURIs: createTwoFilesPatch(uri, uri, oldText, newText, undefined, undefined, { context: 2 }),
         })
     }
+    console.log('Filediffs', fileDiffs)
     return fileDiffs
 }
 

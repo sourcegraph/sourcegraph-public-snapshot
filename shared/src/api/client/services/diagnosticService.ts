@@ -23,6 +23,7 @@ export interface DiagnosticService {
      */
     observeDiagnostics(
         scope: Parameters<sourcegraph.DiagnosticProvider['provideDiagnostics']>[0],
+        context: Parameters<sourcegraph.DiagnosticProvider['provideDiagnostics']>[1],
         type?: Parameters<typeof sourcegraph.workspace.registerDiagnosticProvider>[0]
     ): Observable<DiagnosticWithType[]>
 
@@ -44,7 +45,7 @@ export function createDiagnosticService(logErrors = true): DiagnosticService {
     }
     const registrations = new BehaviorSubject<Registration[]>([])
     return {
-        observeDiagnostics: (scope, type) => {
+        observeDiagnostics: (scope, context, type) => {
             return registrations.pipe(
                 switchMap(registrations =>
                     // Use combineLatest not combineLatestOrDefault because we don't want to falsely
@@ -52,7 +53,7 @@ export function createDiagnosticService(logErrors = true): DiagnosticService {
                     combineLatest(
                         (type === undefined ? registrations : registrations.filter(r => r.type === type)).map(
                             ({ type, provider }) =>
-                                from(provider.provideDiagnostics(scope)).pipe(
+                                from(provider.provideDiagnostics(scope, context)).pipe(
                                     map(diagnostics => diagnostics.map(diagnostic => ({ ...diagnostic, type }))),
                                     catchError(err => {
                                         if (logErrors) {

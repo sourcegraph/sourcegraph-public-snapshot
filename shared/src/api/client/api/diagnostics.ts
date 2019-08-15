@@ -6,12 +6,15 @@ import { ProxySubscribable } from '../../extension/api/common'
 import { wrapRemoteObservable } from './common'
 import { map } from 'rxjs/operators'
 import { toDiagnostic } from '../../types/diagnostic'
+import { ContextValues } from 'sourcegraph'
 
 /** @internal */
 export interface ClientDiagnosticsAPI extends ProxyValue {
     $registerDiagnosticProvider(
         name: string,
-        providerFunction: ProxyResult<((scope: {}) => ProxySubscribable<Diagnostic[]>) & ProxyValue>
+        providerFunction: ProxyResult<
+            ((scope: {}, context: ContextValues) => ProxySubscribable<Diagnostic[]>) & ProxyValue
+        >
     ): Unsubscribable & ProxyValue
 }
 
@@ -24,11 +27,13 @@ export const createClientDiagnostics = (
         [proxyValueSymbol]: true,
         $registerDiagnosticProvider: (
             type: string,
-            providerFunction: ProxyResult<((scope: {}) => ProxySubscribable<Diagnostic[]>) & ProxyValue>
+            providerFunction: ProxyResult<
+                ((scope: {}, context: ContextValues) => ProxySubscribable<Diagnostic[]>) & ProxyValue
+            >
         ): Unsubscribable & ProxyValue => {
             const subscription = diagnosticService.registerDiagnosticProvider(type, {
-                provideDiagnostics: scope =>
-                    wrapRemoteObservable(providerFunction(scope)).pipe(
+                provideDiagnostics: (scope, context) =>
+                    wrapRemoteObservable(providerFunction(scope, context)).pipe(
                         map(diagnostics => diagnostics.map(d => toDiagnostic(d)))
                     ),
             })

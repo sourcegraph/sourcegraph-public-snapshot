@@ -1,16 +1,12 @@
 import { combineLatest, Observable, of } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { debounceTime, map, switchMap } from 'rxjs/operators'
+import { DiagnosticWithType } from '../../../../shared/src/api/client/services/diagnosticService'
 import { fromDiagnostic } from '../../../../shared/src/api/types/diagnostic'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { propertyIsDefined } from '../../../../shared/src/util/types'
 import { RuleDefinition } from '../rules/types'
-import {
-    DiagnosticInfo,
-    diagnosticQueryMatcher,
-    getCodeActions,
-    getDiagnosticInfos,
-} from '../threadsOLD/detail/backend'
+import { diagnosticQueryMatcher, getCodeActions } from '../threadsOLD/detail/backend'
 import { computeDiff, FileDiff } from '../threadsOLD/detail/changes/computeDiff'
 
 const getDiagnosticsAndFileDiffs = (
@@ -21,7 +17,7 @@ const getDiagnosticsAndFileDiffs = (
         return of({ diagnostics: [], fileDiffs: [] })
     }
     const matchesQuery = diagnosticQueryMatcher(rule.query)
-    return getDiagnosticInfos(extensionsController, rule.query.type).pipe(
+    return extensionsController.services.diagnostics.observeDiagnostics({}, rule.context || {}, rule.query.type).pipe(
         map(diagnostics => diagnostics.filter(matchesQuery)),
         switchMap(diagnostics =>
             diagnostics.length > 0
@@ -45,17 +41,16 @@ const getDiagnosticsAndFileDiffs = (
                   )
                 : of([])
         ),
+        debounceTime(0),
         switchMap(async diagnosticsAndActions => {
-            const fileDiffs = await computeDiff(
-                extensionsController,
-                diagnosticsAndActions
-                    .filter(propertyIsDefined('action'))
-                    .map(d => ({
-                        actionEditCommand: d.action.computeEdit,
-                        diagnostic: fromDiagnostic(d.diagnostic),
-                    }))
-                    .filter(propertyIsDefined('actionEditCommand'))
-            )
+            const actionInvocations = diagnosticsAndActions
+                .filter(propertyIsDefined('action'))
+                .map(d => ({
+                    actionEditCommand: d.action.computeEdit,
+                    diagnostic: fromDiagnostic(d.diagnostic),
+                }))
+                .filter(propertyIsDefined('actionEditCommand'))
+            const fileDiffs = await computeDiff(extensionsController, actionInvocations)
             return {
                 diagnostics: diagnosticsAndActions.filter(({ action }) => !action).map(({ diagnostic }) => diagnostic),
                 fileDiffs,
@@ -65,7 +60,7 @@ const getDiagnosticsAndFileDiffs = (
 }
 
 interface DiagnosticsAndFileDiffs {
-    diagnostics: DiagnosticInfo[]
+    diagnostics: DiagnosticWithType[]
     fileDiffs: Pick<FileDiff, 'patchWithFullURIs'>[]
 }
 

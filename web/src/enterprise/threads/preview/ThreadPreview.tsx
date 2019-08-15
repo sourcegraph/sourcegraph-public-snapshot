@@ -16,18 +16,26 @@ import { THREAD_COMMENT_CREATED_VERB, THREAD_COMMENT_EMPTY_BODY } from '../detai
 interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemeProps {
     thread: GQL.IThreadPreview
 
+    titleRight?: React.ReactFragment
+
     className?: string
     location: H.Location
     history: H.History
 }
 
-export const ThreadPreview: React.FunctionComponent<Props> = ({ thread, className = '', ...props }) => {
+export const ThreadPreview: React.FunctionComponent<Props> = ({ thread, titleRight, className = '', ...props }) => {
     const now = useMemo(() => new Date().toISOString(), [])
     const c = thread.repositoryComparison
     return (
         <div className={`thread-preview ${className}`}>
-            <span className="badge badge-info font-weight-bold mb-3">Previewing individual thread in campaign</span>
-            <h2 className="mb-3">{thread.title}</h2>
+            <h2 className="d-flex align-items-center mb-3">
+                {thread.title}{' '}
+                <span className="badge border border-info text-info ml-3 mt-1">
+                    {thread.kind.toLowerCase()} preview
+                </span>
+                <div className="flex-1" />
+                {titleRight}
+            </h2>
             <div className="d-flex align-items-center mb-3">
                 <ThreadStateBadge thread={{ ...thread, state: GQL.ThreadState.OPEN }} className="mr-3" />
                 <Link to={thread.repository.url}>

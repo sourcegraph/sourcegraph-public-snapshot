@@ -234,7 +234,25 @@ Key insight is that there is no meaningful distinction between issues and change
 
 ## Monitor existing campaign
 
-## Create new campaign to deprecate
+## Deprecate lodash
+
+I'm Quinn, the CEO of Sourcegraph. We're building the standard developer platform for engineering teams. We started with code search and navigation, and now many companies you know have every engineer using Sourcegraph for code search and navigation (see our site for customer logos).
+
+With tons of developers using our product, we get to learn how so many different teams build software and the problems they face. One problem kept coming up again and again: it's super painful to make large-scale code changes that touch hundreds or thousands of internal projects and code owners.
+
+We're excited to preview our solution to this problem. We're calling it automation, and when it's released, the Sourcegraph standard developer platform will be search plus automation.
+
+Let me set the stage for the demo now. Large engineering teams need to make large-scale code changes to pay down tech debt, remove legacy code, keep dependencies up-to-date, and address critical security issues. This is painful in 3 ways:
+
+- It's hard to write and test the code that performs the edits.
+- It's hard to create and update branches and pull requests across thousands of teammates and repositories (or trees in a monorepo).
+- It's hard to track the progress of the campaign and help code owners merge changes ASAP.
+
+Because of this pain, way too few large-scale code changes are made. Automatically fixable tech debt like lint issues persists, legacy code remains and nobody knows if it's called, dependencies diverge and get stale, and you're never really sure if everyone has upgraded (and stayed upgraded) to dependencies with critical security fixes.
+
+We want to give you the power to automate and manage large-scale code changes so you can focus on the coding tasks that truly engage your brain, without all that background noise. Let's jump in and see how you can deprecate a dependency across your entire company with Sourcegraph.
+
+Sourcegraph wants to make this much easier for you, so you can 
 
 1. Go to Campaigns
 1. Select the organization that will own the campaign
