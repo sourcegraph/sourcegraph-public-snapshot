@@ -553,16 +553,16 @@ describe('e2e test suite', () => {
                     symbolPath: '/blob/src/main/java/com/gitblit/models/Activity.java#L140:13-140:27',
                 },
                 {
-                    name: 'displays valid symbols at different file depths for Go (1)',
-                    repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
-                    filePath: '/tree/traceapp',
-                    symbolPath: '/blob/traceapp/tmpl/data.go#L11:6-11:21',
-                },
-                {
-                    name: 'displays valid symbols at different file depths for Go (2)',
+                    name: 'displays valid symbols at different file depths for Go (./router.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                     filePath: '/tree/traceapp',
                     symbolPath: '/blob/traceapp/router.go#L31:6-31:15',
+                },
+                {
+                    name: 'displays valid symbols at different file depths for Go (./tmpl/data.go)',
+                    repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
+                    filePath: '/tree/traceapp',
+                    symbolPath: '/blob/traceapp/tmpl/data.go#L11:6-11:21',
                 },
             ]
 
