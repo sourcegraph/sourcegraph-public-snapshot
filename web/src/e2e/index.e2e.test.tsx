@@ -582,6 +582,46 @@ describe('e2e test suite', () => {
                     await driver.assertWindowLocation(repoBaseURL + navigationTest.symbolPath, true)
                 })
             }
+
+            const highlightSymbolTests = [
+                {
+                    name: 'highlights correct line for Go',
+                    filePath:
+                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.go',
+                },
+                {
+                    name: 'highlights correct line for Typescript',
+                    filePath:
+                        '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
+                },
+            ]
+
+            for (const highlightSymbolTest of highlightSymbolTests) {
+                test(highlightSymbolTest.name, async () => {
+                    await driver.page.goto(baseURL + highlightSymbolTest.filePath)
+
+                    await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
+
+                    await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
+
+                    let evaluated = false
+                    for await (const selector of await driver.page.$$('.e2e-symbol-link')) {
+                        const href = await (await selector.getProperty('href')).jsonValue()
+                        const line = href.match(/#L(\d+):\d+-\d+:\d+$/)[1]
+                        await selector.click()
+                        const selectedLine = await driver.page.waitForSelector('.e2e-blob .selected .line')
+                        const selectedLineNumber = await driver.page.evaluate(
+                            e => e.getAttribute('data-line'),
+                            selectedLine
+                        )
+
+                        evaluated = true
+                        expect(line).toEqual(selectedLineNumber)
+                    }
+
+                    expect(evaluated).toEqual(true)
+                })
+            }
         })
 
         describe('directory page', () => {
