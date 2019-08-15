@@ -83,6 +83,38 @@ describe('e2e test suite', () => {
         }
     })
 
+    describe('Core functionality', () => {
+        test('Check settings are saved and applied', async () => {
+            await driver.page.goto(baseURL + '/users/test/settings')
+            await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
+            await driver.replaceText({
+                selector: '.e2e-settings-file .monaco-editor',
+                newText: JSON.stringify({
+                    notices: [
+                        {
+                            dismissable: false,
+                            location: 'top',
+                            message: 'A wild notice appears!',
+                        },
+                    ],
+                }),
+                selectMethod: 'keyboard',
+            })
+            await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
+            await driver.page.waitForSelector('.e2e-global-alert .global-alerts__alert', { visible: true })
+            await driver.page.evaluate(() => {
+                const elem = document.querySelector('.e2e-global-alert .global-alerts__alert')
+                if (!elem) {
+                    throw new Error('No .e2e-global-alert .global-alerts__alert element found')
+                }
+                const notice = 'A wild notice appears!'
+                if (!(elem as HTMLElement).innerText.includes(notice)) {
+                    throw new Error('Expected "' + notice + '" message, but didn\'t find it')
+                }
+            })
+        })
+    })
+
     describe('External services', () => {
         test('External service add, edit, delete', async () => {
             const displayName = 'e2e-github-test-2'
