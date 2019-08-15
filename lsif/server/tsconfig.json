@@ -9,6 +9,8 @@
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "outDir": "out",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,

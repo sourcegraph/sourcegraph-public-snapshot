@@ -17,7 +17,12 @@ export class DgraphImporter {
     private idCounter = 0
     private rootInfo: { rootUri: URL; repoUidRef: string; commitUidRef: string } | undefined
 
-    constructor(private client: DgraphClient, private repository: string, private commit: string, private schema: Schema) {
+    constructor(
+        private client: DgraphClient,
+        private repository: string,
+        private commit: string,
+        private schema: Schema
+    ) {
         this.mutation = new Mutation()
     }
 
@@ -324,7 +329,7 @@ function normalizeContent(content: string | lsp.MarkupContent | { language: stri
     }
 
     if (content.value) {
-        return '```' + `${content.language}\n${content.value}` + '```'
+        return '```' + `${content.language}\n${content.value}\n` + '```'
     }
 
     return ''

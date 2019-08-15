@@ -7,11 +7,13 @@ import { Edge, Vertex } from 'lsif-protocol'
 import { fs } from 'mz'
 import { getJsonSchema } from './dgraph.schema'
 import { unflattenRange, FlatRange } from './dgraph.range'
+import dedent from 'dedent'
+import chalk from 'chalk'
 
 /**
  * Which host and port to use to connect to the Dgraph gRPC server.
  */
-const DGRAPH_ADDRESS = process.env['DGRAPH_ADDRESS'] || undefined
+const DGRAPH_ADDRESS = process.env.DGRAPH_ADDRESS || undefined
 
 /**
  * Backend for SQLite dumps stored in Dgraph.
@@ -103,10 +105,11 @@ export class DgraphBackend implements Backend<DgraphQueryRunner> {
         repository: string,
         commit: string
     ): Promise<{ queryRunner: DgraphQueryRunner; createRunnerStats: CreateRunnerStats }> {
-        const { result, processStats } = await instrument(async () => {
-            // TODO - MUST reject if repository and commit don't exist
-            return new DgraphQueryRunner(this.client, repository, commit)
-        })
+        const { result, processStats } = await instrument(
+            async () =>
+                // TODO - MUST reject if repository and commit don't exist
+                new DgraphQueryRunner(this.client, repository, commit)
+        )
 
         return {
             queryRunner: result,
@@ -141,6 +144,19 @@ export class DgraphQueryRunner implements QueryRunner {
                 }
             }
         `
+
+        console.log(query)
+        console.log(
+            JSON.stringify(
+                {
+                    $repository: this.repository,
+                    $commit: this.commit,
+                    $path: file,
+                },
+                null,
+                2
+            )
+        )
 
         const result = (await this.client.newTxn().queryWithVars(query, {
             $repository: this.repository,
@@ -189,12 +205,12 @@ export class DgraphQueryRunner implements QueryRunner {
     // IN PROGRESS
 
     private async queryHover(path: string, position: lsp.Position): Promise<lsp.Hover | null> {
-        const query = `
+        const query = dedent`
             query queryHover {
                 ${this.makeResultSetsQuery(path, position.line, position.character)}
 
                 # Filter over all found resultSets the ones that have a textDocument/hover edge
-                resultSets(func: uid(results)) @filter(has(<textDocument/hover>)) {
+                resultSets(func: uid(results)) @normalize @filter(has(<textDocument/hover>)) {
                     <textDocument/hover> (first: 1) {
                         result: HoverResult.result {
                             contents: Hover.contents {
@@ -207,14 +223,23 @@ export class DgraphQueryRunner implements QueryRunner {
             }
         `
 
+        console.log()
+        console.log(chalk.green('Hover Dgraph query:'))
+        console.log(query)
+        console.log(chalk.green('Hover Dgraph variables:'))
+        console.log(JSON.stringify({ path, position }, null, 2))
+
         const result = (await this.client.newTxn().queryWithVars(query, {
             // TODO- try to put args in here instead of escaping in resultSetsQueryPart
         })).getJson() as QueryHoverResult
 
+        console.log(chalk.cyan('====> Hover Dgraph response:'))
+        console.log(JSON.stringify(result, null, 2))
+
         if (result.matchingRanges[0]) {
             const range = unflattenRange(result.matchingRanges[0])
-            const flattened = result.resultSets.flatMap(r => r['textDocument/hover']).flatMap(h => h.result)
-            return { ...flattened[0], range }
+            const flattened = result.resultSets
+            return { contents: flattened[0], range }
         }
 
         return null
@@ -327,11 +352,7 @@ interface ExistsResult {
  */
 interface QueryHoverResult {
     matchingRanges: [FlatRange]
-    resultSets: [
-        {
-            ['textDocument/hover']: [{ result: lsp.Hover[] }]
-        }
-    ]
+    resultSets: lsp.MarkupContent[]
 }
 
 /**

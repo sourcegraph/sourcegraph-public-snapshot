@@ -197,8 +197,8 @@ async function main(): Promise<void> {
                 })
 
                 // Emit metrics
-                console.log('cache stats:', cacheStats)
-                console.log('query stats:', queryStats)
+                // console.log('cache stats:', cacheStats)
+                // console.log('query stats:', queryStats)
                 emit(prometheusReporters, cacheStats)
                 emit(prometheusReporters, queryStats)
 
