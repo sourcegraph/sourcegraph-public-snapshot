@@ -1,4 +1,4 @@
-import { Range, Id, RangeBasedDocumentSymbol, Moniker, PackageInformation } from 'lsif-protocol'
+import { Range, Id,  Moniker, PackageInformation } from 'lsif-protocol'
 import * as lsp from 'vscode-languageserver-protocol'
 import { CorrelationDatabase } from './xrepo'
 import { makeFilename } from './backend'
@@ -8,17 +8,16 @@ import { Connection } from 'typeorm'
 import { connectionCache, blobCache } from './cache'
 
 export interface DocumentBlob {
-    ranges: LiteralMap<RangeData>
+    ranges: LiteralMap<RangeData> // TODO - make searcahble via two-phase binary search
     resultSets?: LiteralMap<ResultSetData>
-    monikers?: LiteralMap<MonikerData>
-    packageInformation?: LiteralMap<PackageInformationData>
-    hovers?: LiteralMap<lsp.Hover>
     definitionResults?: LiteralMap<DefinitionResultData>
     referenceResults?: LiteralMap<ReferenceResultData>
-    foldingRanges?: lsp.FoldingRange[]
-    documentSymbols?: lsp.DocumentSymbol[] | RangeBasedDocumentSymbol[]
+    hovers?: LiteralMap<lsp.Hover>
+    monikers?: LiteralMap<MonikerData>
+    packageInformation?: LiteralMap<PackageInformationData>
 }
 
+// TODO - defan these, move them into entities
 export interface RangeData extends Pick<Range, 'start' | 'end' | 'tag'> {
     monikers?: Id[]
     next?: Id
@@ -44,10 +43,12 @@ export interface ReferenceResultData {
     references?: Id[]
 }
 
+// TODO - defan these, move them into entities
 export type MonikerData = Pick<Moniker, 'id' | 'scheme' | 'identifier' | 'kind'> & {
     packageInformation?: Id
 }
 
+// TODO - defan these, move them into entities
 export type PackageInformationData = Pick<PackageInformation, 'name' | 'manager' | 'uri' | 'version' | 'repository'>
 
 export interface LiteralMap<T> {

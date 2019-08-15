@@ -24,6 +24,45 @@ export interface ImportedSymbol {
     identifier: string
 }
 
+namespace LiteralMap {
+    export function create<T = any>(): db.LiteralMap<T> {
+        return Object.create(null)
+    }
+}
+
+namespace Monikers {
+    export function isLocal(moniker: db.MonikerData): boolean {
+        return moniker.kind === protocol.MonikerKind.local
+    }
+}
+
+type InlineRange = [number, number, number, number]
+
+interface ExternalDefinition {
+    scheme: string
+    indentifier: string
+    ranges: InlineRange[]
+}
+
+interface ExternalReference {
+    scheme: string
+    indentifier: string
+    definitions?: InlineRange[]
+    references?: InlineRange[]
+}
+
+interface DocumentDatabaseData {
+    hash: string
+    encoded: string
+    definitions?: ExternalDefinition[]
+    references?: ExternalReference[]
+}
+
+interface MonikerScopedResultData<T> {
+    moniker: db.MonikerData
+    data: T
+}
+
 export async function convertToBlob(
     inFile: string, // TODO - make a stream instead
     outFile: string
@@ -66,7 +105,6 @@ class BlobStore {
 
     private definitionDatas: Map<protocol.Id, Map<protocol.Id, db.DefinitionResultData>> = new Map()
     private documents: Map<protocol.Id, protocol.Document> = new Map()
-    private documentSymbols: Map<protocol.Id, lsp.DocumentSymbol[] | protocol.RangeBasedDocumentSymbol[]> = new Map()
     public hoverDatas: Map<protocol.Id, lsp.Hover> = new Map() // TODO - visibility
     public monikerDatas: Map<protocol.Id, db.MonikerData> = new Map() // TODO - visibility
     private packageInformationDatas: Map<protocol.Id, protocol.PackageInformation> = new Map()
@@ -96,7 +134,6 @@ class BlobStore {
 
         this.vertexHandlerMap[protocol.VertexLabels.definitionResult] = wrap(this.handleDefinitionResult)
         this.vertexHandlerMap[protocol.VertexLabels.document] = wrap(this.handleDocument)
-        this.vertexHandlerMap[protocol.VertexLabels.documentSymbolResult] = wrap(this.handleDocumentSymbols)
         this.vertexHandlerMap[protocol.VertexLabels.event] = this.handleEvent.bind(this)
         this.vertexHandlerMap[protocol.VertexLabels.hoverResult] = wrap(this.handleHover)
         this.vertexHandlerMap[protocol.VertexLabels.metaData] = this.handleMetaData.bind(this)
@@ -113,7 +150,6 @@ class BlobStore {
         this.edgeHandlerMap[protocol.EdgeLabels.nextMoniker] = wrap(this.handleNextMonikerEdge)
         this.edgeHandlerMap[protocol.EdgeLabels.packageInformation] = wrap(this.handlePackageInformationEdge)
         this.edgeHandlerMap[protocol.EdgeLabels.textDocument_definition] = wrap(this.handleDefinitionEdge)
-        this.edgeHandlerMap[protocol.EdgeLabels.textDocument_documentSymbol] = wrap(this.handleDocumentSymbolEdge)
         this.edgeHandlerMap[protocol.EdgeLabels.textDocument_hover] = wrap(this.handleHoverEdge)
         this.edgeHandlerMap[protocol.EdgeLabels.textDocument_references] = wrap(this.handleReferenceEdge)
     }
@@ -153,7 +189,6 @@ class BlobStore {
 
     private handleDefinitionResult = this.setById(this.definitionDatas, () => new Map())
     private handleDocument = this.setById(this.documents, (e: protocol.Document) => e)
-    private handleDocumentSymbols = this.setById(this.documentSymbols, (e: protocol.DocumentSymbolResult) => e.result)
     private handleHover = this.setById(this.hoverDatas, (e: protocol.HoverResult) => e.result)
     private handleMoniker = this.setById(this.monikerDatas, e => e)
     private handlePackageInformation = this.setById(this.packageInformationDatas, e => e)
@@ -256,10 +291,6 @@ class BlobStore {
         outV.definitionResult = edge.inV
     }
 
-    private handleDocumentSymbolEdge(edge: protocol.textDocument_documentSymbol): void {
-        const source = assertDefined(edge.outV, this.documentDatas)
-        source.addDocumentSymbolResult(assertDefined(edge.inV, this.documentSymbols))
-    }
 
     private handleHoverEdge(edge: protocol.textDocument_hover): void {
         const outV = assertDefined<db.RangeData | db.ResultSetData>(edge.outV, this.rangeDatas, this.resultSetDatas)
@@ -284,6 +315,8 @@ class BlobStore {
     }
 
     private async handleDocumentEnd(event: protocol.DocumentEvent): Promise<void> {
+        const documentData = assertDefined(event.data, this.documentDatas)
+
         for (const data of this.monikerDatas.values()) {
             if (data.kind === 'import' && data.packageInformation) {
                 const packageInformation = assertDefined(data.packageInformation!, this.packageInformationDatas)
@@ -308,7 +341,6 @@ class BlobStore {
             source.monikers = Array.from(ids)
         }
 
-        const documentData = this.getEnsureDocumentData(event.data)
         const contains = this.containsDatas.get(event.data)
         if (contains !== undefined) {
             for (let id of contains) {
@@ -322,9 +354,14 @@ class BlobStore {
         }
 
         let data = await documentData.finalize()
-        if (this.knownHashes.has(data.hash)) {
-            // TODO - see how this can happen (empty files?)
-            console.log('woah, duplicate?')
+
+        try {
+            if (this.knownHashes.has(data.hash)) {
+                // TODO - see how this can happen (empty files?)
+                console.log('woah, duplicate?')
+                return
+            }
+        } finally {
             this.documentDatas.set(event.id, null)
         }
 
@@ -384,20 +421,6 @@ class BlobStore {
 
     //
     // TODO - categorize
-
-    private getEnsureDocumentData(id: protocol.Id): DocumentData {
-        return assertDefined(id, this.documentDatas)
-        // let result: DocumentData | undefined | null = .get(id)
-        // if (result === undefined) {
-        //     throw new Error(`No document data found for id ${id}`)
-        // }
-
-        // if (result === null) {
-        //     throw new Error(`The document with Id ${id} has already been processed.`)
-        // }
-
-        // return result
-    }
 
     private getOrCreateDocumentData(document: protocol.Document): DocumentData {
         let result: DocumentData | undefined | null = this.documentDatas.get(document.id)
@@ -509,7 +532,7 @@ class DocumentData {
 
     public async addRangeData(id: protocol.Id, data: db.RangeData): Promise<void> {
         this.blob.ranges[id] = data
-        await this.addReferencedData(id, data)
+        await this.addReferencedData(data)
     }
 
     private async addResultSetData(id: protocol.Id, resultSet: db.ResultSetData): Promise<void> {
@@ -524,10 +547,10 @@ class DocumentData {
         }
 
         this.blob.resultSets[id] = resultSet
-        await this.addReferencedData(id, resultSet)
+        await this.addReferencedData(resultSet)
     }
 
-    private async addReferencedData(id: protocol.Id, item: db.RangeData | db.ResultSetData): Promise<void> {
+    private async addReferencedData(item: db.RangeData | db.ResultSetData): Promise<void> {
         const monikers = []
 
         if (item.monikers !== undefined) {
@@ -606,10 +629,6 @@ class DocumentData {
         }
     }
 
-    public addDocumentSymbolResult(value: lsp.DocumentSymbol[] | protocol.RangeBasedDocumentSymbol[]): void {
-        this.blob.documentSymbols = value
-    }
-
     private addMoniker(id: protocol.Id, moniker: db.MonikerData): void {
         if (this.blob.monikers === undefined) {
             this.blob.monikers = LiteralMap.create()
@@ -674,43 +693,4 @@ function assertDefined<T>(id: protocol.Id, ...maps: Map<protocol.Id, T | null>[]
     }
 
     throw new Error(`Element '${id}' is referenced before its definition.`)
-}
-
-namespace LiteralMap {
-    export function create<T = any>(): db.LiteralMap<T> {
-        return Object.create(null)
-    }
-}
-
-namespace Monikers {
-    export function isLocal(moniker: db.MonikerData): boolean {
-        return moniker.kind === protocol.MonikerKind.local
-    }
-}
-
-type InlineRange = [number, number, number, number]
-
-interface ExternalDefinition {
-    scheme: string
-    indentifier: string
-    ranges: InlineRange[]
-}
-
-interface ExternalReference {
-    scheme: string
-    indentifier: string
-    definitions?: InlineRange[]
-    references?: InlineRange[]
-}
-
-interface DocumentDatabaseData {
-    hash: string
-    encoded: string
-    definitions?: ExternalDefinition[]
-    references?: ExternalReference[]
-}
-
-interface MonikerScopedResultData<T> {
-    moniker: db.MonikerData
-    data: T
 }
