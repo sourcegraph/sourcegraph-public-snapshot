@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -94,9 +95,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
-		now := time.Now().UTC()
+		now := time.Now().UTC().UnixNano()
 		ttl := time.Second
-		clock := func() time.Time { return now.Truncate(time.Microsecond) }
+
+		clock := func() time.Time {
+			return time.Unix(0, atomic.LoadInt64(&now)).Truncate(time.Microsecond)
+		}
 
 		s := newStore(db, ttl, clock, newCache())
 		s.updates = make(chan *Permissions)
@@ -157,7 +161,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 		{
 			// Cache expired, update called in the background, but stale
 			// permissions are returned immediatelly.
-			now = now.Add(ttl)
+			atomic.AddInt64(&now, int64(ttl))
 			ps, err := load(s)
 			equal(t, "err", err, nil)
 			equal(t, "ids", array(ps.IDs), ids[:3])
@@ -178,7 +182,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 		{
 			// Cache expired, and source of truth changed. Here we test
 			// that no concurrent updates are performed.
-			now = now.Add(2 * ttl)
+			atomic.AddInt64(&now, int64(2*ttl))
 
 			delay := make(chan struct{})
 			update = func() ([]uint32, error) {
