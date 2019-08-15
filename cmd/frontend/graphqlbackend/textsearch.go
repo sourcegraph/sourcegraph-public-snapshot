@@ -632,7 +632,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 					if isSymbol && m.SymbolInfo != nil {
 						commit := &gitCommitResolver{
 							repo:     &repositoryResolver{repo: repoRev.Repo},
-							oid:      gitObjectID(repoRev.IndexedHEADCommit),
+							oid:      gitObjectID(repoRev.IndexedHEADCommit()),
 							inputRev: &inputRev,
 						}
 
