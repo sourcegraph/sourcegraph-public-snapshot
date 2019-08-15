@@ -22,6 +22,7 @@ describe('e2e test suite', () => {
 
     async function init(): Promise<void> {
         const repoSlugs = [
+            'gitblit/gitblit',
             'gorilla/mux',
             'gorilla/securecookie',
             'sourcegraphtest/AlwaysCloningTest',
@@ -467,6 +468,53 @@ describe('e2e test suite', () => {
                     ],
                     symbolTypes: ['constant', 'constant', 'constant', 'function', 'function', 'function', 'constant'],
                 },
+                {
+                    name: 'lists symbols in file for Java',
+                    filePath:
+                        '/github.com/gitblit/gitblit@41e6a701953c6f3ec0c4b2375426e4205a1c6a00/-/blob/src/main/java/com/gitblit/models/Activity.java',
+                    symbolNames: [
+                        'com.gitblit.models',
+                        'Activity',
+                        'serialVersionUID',
+                        'startDate',
+                        'endDate',
+                        'commits',
+                        'authorMetrics',
+                        'repositoryMetrics',
+                        'authorExclusions',
+                        'Activity',
+                        'Activity',
+                        'excludeAuthors',
+                        'addCommit',
+                        'addCommit',
+                        'getCommitCount',
+                        'getCommits',
+                        'getAuthorMetrics',
+                        'getRepositoryMetrics',
+                        'compareTo',
+                    ],
+                    symbolTypes: [
+                        'package',
+                        'class',
+                        'field',
+                        'field',
+                        'field',
+                        'field',
+                        'field',
+                        'field',
+                        'field',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                    ],
+                },
             ]
 
             for (const symbolTest of listSymbolsTests) {
@@ -491,22 +539,37 @@ describe('e2e test suite', () => {
                 })
             }
 
-            test('navigates to file on symbol click', async () => {
-                const repoBaseURL =
-                    baseURL + '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-'
-                const symbolPath = '/blob/cmd/go-diff/go-diff.go#L19:2-19:10'
+            const navigateToSymbolTests = [
+                {
+                    name: 'navigates to file on symbol click for Go',
+                    repoPath: '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d',
+                    filePath: '/tree/cmd',
+                    symbolPath: '/blob/cmd/go-diff/go-diff.go#L19:2-19:10',
+                },
+                {
+                    name: 'navigates to file on symbol click for Java',
+                    repoPath: '/github.com/gitblit/gitblit@41e6a701953c6f3ec0c4b2375426e4205a1c6a00',
+                    filePath: '/tree/src/main/java/com/gitblit/models',
+                    symbolPath: '/blob/src/main/java/com/gitblit/models/Activity.java#L140:13-140:27',
+                },
+            ]
 
-                await driver.page.goto(repoBaseURL + '/tree/cmd')
+            for (const navigationTest of navigateToSymbolTests) {
+                test(navigationTest.name, async () => {
+                    const repoBaseURL = baseURL + navigationTest.repoPath + '/-'
 
-                await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
+                    await driver.page.goto(repoBaseURL + navigationTest.filePath)
 
-                await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
+                    await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
 
-                await (await driver.page.waitForSelector(`.e2e-symbol-link[href*="${symbolPath}"]`, {
-                    visible: true,
-                })).click()
-                await driver.assertWindowLocation(repoBaseURL + symbolPath, true)
-            })
+                    await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
+
+                    await (await driver.page.waitForSelector(`.e2e-symbol-link[href*="${navigationTest.symbolPath}"]`, {
+                        visible: true,
+                    })).click()
+                    await driver.assertWindowLocation(repoBaseURL + navigationTest.symbolPath, true)
+                })
+            }
         })
 
         describe('directory page', () => {
