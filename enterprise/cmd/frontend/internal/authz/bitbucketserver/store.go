@@ -215,7 +215,7 @@ func lockQuery(p *Permissions) *sqlf.Query {
 
 const lockQueryFmtStr = `
 -- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.lock
-SELECT pg_try_advisory_lock(%s, %s)
+SELECT pg_try_advisory_xact_lock(%s, %s)
 `
 
 func (s *store) load(ctx context.Context, p *Permissions) (err error) {
