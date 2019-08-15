@@ -113,6 +113,7 @@ func (s *store) LoadPermissions(
 	}
 
 	expired := **p
+	expired.IDs = nil
 
 	if !s.block { // Non blocking code path
 		go func(expired *Permissions) {
